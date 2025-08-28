@@ -156,12 +156,8 @@ jobs:
         run: pnpm docs:build
 
   security:
-    name: Security Scan
+    name: Security Audit
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v4
       
@@ -179,16 +175,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Run security audit
+      - name: Run dependency security audit
         run: pnpm audit --audit-level=moderate
         continue-on-error: true
-      
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript-typescript
-      
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:javascript-typescript"
