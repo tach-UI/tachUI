@@ -1,0 +1,30 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": false,
+    "moduleResolution": "bundler",
+
+    /* Build */
+    "outDir": "./dist",
+    "rootDir": "./src",
+    
+    /* Path mapping */
+    "baseUrl": ".",
+    "paths": {
+      "@tachui/core": ["../core/dist"],
+      "@tachui/core/*": ["../core/dist/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__/**/*"
+  ]
+}

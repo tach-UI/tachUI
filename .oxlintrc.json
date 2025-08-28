@@ -1,0 +1,73 @@
+{
+  "plugins": ["unicorn", "typescript", "oxc"],
+  "categories": {
+    "correctness": "warn",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "typescript/no-extra-non-null-assertion": "off",
+    "typescript/no-extraneous-class": "off",
+    "typescript/no-this-alias": "off",
+    "unicorn/prefer-add-event-listener": "off",
+    "unicorn/no-useless-spread": "off",
+    "unicorn/no-empty-file": "off",
+    "unicorn/require-post-message-target-origin": "off",
+    "no-new": "off",
+    "no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/examples/**",
+        "**/docs/**",
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/*.benchmark.ts",
+        "**/benchmarks/**",
+        "**/__tests__/**"
+      ],
+      "rules": {
+        "typescript/no-explicit-any": "off",
+        "typescript/ban-types": "off",
+        "no-unused-vars": "off",
+        "unicorn/consistent-function-scoping": "off",
+        "no-new": "off",
+        "no-useless-constructor": "off",
+        "oxc/erasing-op": "off"
+      }
+    },
+    {
+      "files": [
+        "**/compiler/**",
+        "**/assets/**",
+        "**/navigation/**",
+        "**/viewport/**",
+        "**/types.ts",
+        "**/components/List.ts",
+        "**/components/Menu.ts",
+        "**/components/ScrollView.ts",
+        "**/components/Show.ts",
+        "**/components/Stepper.ts",
+        "**/components/Text.ts",
+        "**/components/wrapper.ts",
+        "**/modifiers/**",
+        "**/plugins/**",
+        "**/reactive/**",
+        "**/developer-experience/**",
+        "**/globals.d.ts",
+        "packages/forms/**"
+      ],
+      "rules": {
+        "typescript/no-explicit-any": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["node_modules", "dist", "build", ".next", "coverage"]
+}

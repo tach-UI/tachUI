@@ -1,0 +1,66 @@
+{
+  "name": "@tachui/navigation",
+  "version": "0.1.0",
+  "description": "Navigation components for tachUI - NavigationView, TabView, and routing utilities",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "src/**/*",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "dev": "vite build --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit",
+    "bench": "vitest bench",
+    "benchmark": "vitest bench --config vitest.benchmark.config.ts benchmarks/navigation-performance.bench.ts",
+    "benchmark:quick": "vitest bench --config vitest.benchmark.config.ts benchmarks/quick.bench.ts",
+    "benchmark:bundle": "vitest bench --config vitest.benchmark.config.ts benchmarks/bundle-size.bench.ts",
+    "benchmark:browser": "playwright test benchmarks/browser.spec.ts",
+    "benchmark:all": "pnpm benchmark && pnpm benchmark:bundle && pnpm benchmark:browser"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@tachui/core": "^0.1.0"
+  },
+  "devDependencies": {
+    "@tachui/core": "workspace:*",
+    "@types/node": "^20.0.0",
+    "@playwright/test": "^1.40.0",
+    "typescript": "^5.2.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "tachui",
+    "navigation",
+    "swiftui",
+    "web-framework",
+    "typescript",
+    "reactive"
+  ],
+  "author": "tachUI Team",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tachui/tachui",
+    "directory": "packages/navigation"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "sideEffects": false
+}

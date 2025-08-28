@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Button State</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-info {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .test-button {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 8px;
+            background: #007AFF;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .test-button:hover {
+            transform: scale(1.05);
+        }
+        .test-button:active {
+            transform: scale(0.95) !important;
+        }
+        .test-button.stuck {
+            transform: scale(0.95);
+            background: #FF3B30;
+        }
+        .status {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug: Button Scale Sticking Issue</h1>
+    
+    <div class="debug-info">
+        <h2>Test Case: Button with :active state</h2>
+        <p>This button uses CSS :active with !important to test if the scale gets stuck:</p>
+        <button class="test-button" id="testButton" onclick="handleClick()">
+            Test Button
+        </button>
+        <div class="status" id="status">Click the button above (mouse or keyboard)</div>
+    </div>
+
+    <div class="debug-info">
+        <h2>Calculator App Issue Reproduction</h2>
+        <p>To reproduce the calculator issue:</p>
+        <ol>
+            <li>Open calculator: <code>pnpm dev</code> (running on port 3006)</li>
+            <li>Click any calculator button</li>
+            <li>Check if transform: scale(0.95) sticks after release</li>
+            <li>Inspect element to see computed styles</li>
+        </ol>
+        
+        <h3>Possible Causes:</h3>
+        <ul>
+            <li><strong>CSS Specificity</strong>: Hover styles with !important overriding inline styles</li>
+            <li><strong>State Management</strong>: Button state getting stuck in 'pressed'</li>
+            <li><strong>Event Conflict</strong>: Keyboard hook interfering with button events</li>
+            <li><strong>Timing Issue</strong>: Race condition between mouse/keyboard events</li>
+        </ul>
+        
+        <h3>Debug Steps:</h3>
+        <ol>
+            <li>Check computed styles on stuck button</li>
+            <li>Verify button state signal value</li>
+            <li>Check if mouseup/keyup events are firing</li>
+            <li>Verify CSS specificity in DevTools</li>
+        </ol>
+    </div>
+
+    <script>
+        let clickCount = 0;
+        
+        function handleClick() {
+            clickCount++;
+            const button = document.getElementById('testButton');
+            const status = document.getElementById('status');
+            
+            status.textContent = `Clicked ${clickCount} times at ${new Date().toLocaleTimeString()}`;
+            
+            // Simulate potential sticking issue
+            if (clickCount % 5 === 0) {
+                button.classList.add('stuck');
+                status.textContent += ' - STUCK! (simulated)';
+                setTimeout(() => {
+                    button.classList.remove('stuck');
+                    status.textContent += ' - UNSTUCK';
+                }, 2000);
+            }
+        }
+        
+        // Add keyboard support for testing
+        document.addEventListener('keydown', function(event) {
+            const button = document.getElementById('testButton');
+            if (document.activeElement === button && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                handleClick();
+            }
+        });
+    </script>
+</body>
+</html>

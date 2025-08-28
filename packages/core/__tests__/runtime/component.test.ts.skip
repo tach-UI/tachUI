@@ -1,0 +1,353 @@
+/**
+ * Component Management System Tests (Phase 3.1.1)
+ * 
+ * Tests for component lifecycle, registration, cleanup, and reactive integration.
+ */
+
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { createSignal, createEffect } from '../../src/reactive'
+import { 
+  ComponentManager, 
+  createComponent, 
+  withLifecycle,
+  createReactiveComponent,
+  createErrorBoundary
+} from '../../src/runtime/component'
+import type { ComponentProps, LifecycleHooks, DOMNode } from '../../src/runtime/types'
+
+describe('Component Management System', () => {
+  let manager: ComponentManager
+
+  beforeEach(() => {
+    // Get fresh manager instance for each test
+    manager = ComponentManager.getInstance()
+    manager.cleanup() // Clean up any previous state
+  })
+
+  describe('ComponentManager', () => {
+    it('should be a singleton', () => {
+      const manager1 = ComponentManager.getInstance()
+      const manager2 = ComponentManager.getInstance()
+      expect(manager1).toBe(manager2)
+    })
+
+    it('should register and retrieve components', () => {
+      const mockComponent = createComponent(() => ({ type: 'text', text: 'test' } as DOMNode))
+      const instance = mockComponent({})
+      
+      manager.registerComponent(instance)
+      
+      expect(manager.getComponent(instance.id)).toBe(instance)
+      expect(manager.getAllComponents()).toContain(instance)
+    })
+
+    it('should unregister components and run cleanup', () => {
+      let cleanupCalled = false
+      const cleanup = vi.fn(() => { cleanupCalled = true })
+      
+      const mockComponent = createComponent(() => ({ type: 'text', text: 'test' } as DOMNode))
+      const instance = mockComponent({})
+      instance.cleanup = [cleanup]
+      
+      manager.registerComponent(instance)
+      manager.unregisterComponent(instance.id)
+      
+      expect(manager.getComponent(instance.id)).toBeUndefined()
+      expect(cleanup).toHaveBeenCalled()
+      expect(cleanupCalled).toBe(true)
+    })
+
+    it('should handle cleanup errors gracefully', () => {
+      const errorCleanup = vi.fn(() => { throw new Error('Cleanup error') })
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+      
+      const mockComponent = createComponent(() => ({ type: 'text', text: 'test' } as DOMNode))
+      const instance = mockComponent({})
+      instance.cleanup = [errorCleanup]
+      
+      manager.registerComponent(instance)
+      manager.unregisterComponent(instance.id)
+      
+      expect(errorCleanup).toHaveBeenCalled()
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining('Cleanup error for component'),
+        expect.any(Error)
+      )
+      
+      consoleError.mockRestore()
+    })
+
+    it('should schedule and flush updates', async () => {
+      const mockComponent = createComponent(() => ({ type: 'text', text: 'test' } as DOMNode))
+      const instance = mockComponent({})
+      
+      manager.registerComponent(instance)
+      
+      // Schedule update
+      manager.scheduleUpdate(instance.id)
+      
+      // Wait for microtask
+      await new Promise(resolve => queueMicrotask(resolve))
+      
+      // Component should still be registered (update doesn't remove it)
+      expect(manager.getComponent(instance.id)).toBe(instance)
+    })
+  })
+
+  describe('createComponent', () => {
+    it('should create a basic component', () => {
+      const render = vi.fn(() => ({ type: 'text', text: 'Hello' } as DOMNode))
+      const component = createComponent(render)
+      
+      expect(typeof component).toBe('function')
+    })
+
+    it('should create component instance with correct structure', () => {
+      const render = () => ({ type: 'text', text: 'Hello' } as DOMNode)
+      const component = createComponent(render, { displayName: 'TestComponent' })
+      
+      const instance = component({})
+      
+      expect(instance.type).toBe('component')
+      expect(instance.id).toMatch(/^component_\d+_[a-z0-9]+$/)
+      expect(typeof instance.render).toBe('function')
+      expect(instance.props).toEqual({})
+      expect(instance.context).toBeDefined()
+    })
+
+    it('should merge default props', () => {
+      interface Props extends ComponentProps {
+        message: string
+        count?: number
+      }
+      
+      const component = createComponent<Props>(
+        (props) => ({ type: 'text', text: props.message } as DOMNode),
+        { 
+          displayName: 'TestComponent',
+          defaultProps: { count: 0 }
+        }
+      )
+      
+      const instance = component({ message: 'Hello' })
+      
+      expect(instance.props).toEqual({ message: 'Hello', count: 0 })
+    })
+
+    it('should handle lifecycle hooks', () => {
+      const onMount = vi.fn()
+      const onUnmount = vi.fn()
+      const onError = vi.fn()
+      
+      const hooks: LifecycleHooks = {
+        onMount,
+        onUnmount,
+        onError
+      }
+      
+      const component = createComponent(
+        () => ({ type: 'text', text: 'Test' } as DOMNode),
+        { lifecycle: hooks }
+      )
+      
+      const instance = component({})
+      
+      // Render to trigger lifecycle
+      instance.render()
+      
+      expect(onMount).toHaveBeenCalled()
+    })
+
+    it('should handle onMount cleanup', () => {
+      const cleanup = vi.fn()
+      const onMount = vi.fn(() => cleanup)
+      
+      const component = createComponent(
+        () => ({ type: 'text', text: 'Test' } as DOMNode),
+        { lifecycle: { onMount } }
+      )
+      
+      const instance = component({})
+      instance.render()
+      
+      expect(onMount).toHaveBeenCalled()
+      expect(instance.cleanup).toContain(cleanup)
+    })
+  })
+
+  describe('withLifecycle', () => {
+    it('should add lifecycle hooks to existing component', () => {
+      const onMount = vi.fn()
+      const onUnmount = vi.fn()
+      
+      const baseComponent = createComponent(() => ({ type: 'text', text: 'Base' } as DOMNode))
+      const enhancedComponent = withLifecycle(baseComponent, { onMount, onUnmount })
+      
+      expect(enhancedComponent.displayName).toBe('withLifecycle(Component)')
+      
+      const instance = enhancedComponent({})
+      instance.render()
+      
+      expect(onMount).toHaveBeenCalled()
+    })
+
+    it('should preserve existing cleanup functions', () => {
+      const baseCleanup = vi.fn()
+      const baseComponent = createComponent(() => {
+        return { type: 'text', text: 'Base' } as DOMNode
+      })
+      
+      const additionalCleanup = vi.fn()
+      const enhancedComponent = withLifecycle(baseComponent, {
+        onUnmount: additionalCleanup
+      })
+      
+      const instance = enhancedComponent({})
+      instance.render()
+      
+      expect(instance.cleanup).toContain(additionalCleanup)
+    })
+  })
+
+  describe('createReactiveComponent', () => {
+    it('should create component that reacts to prop changes', () => {
+      const [message, setMessage] = createSignal('Hello')
+      let renderCount = 0
+      
+      const component = createReactiveComponent<{ message: string }>((props) => {
+        renderCount++
+        return { type: 'text', text: props.message } as DOMNode
+      })
+      
+      const instance = component({ message: message() })
+      instance.render()
+      
+      expect(renderCount).toBe(1)
+    })
+  })
+
+  describe('createErrorBoundary', () => {
+    it('should catch and handle component errors', () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const fallback = vi.fn(() => ({ type: 'text', text: 'Error occurred' } as DOMNode))
+      
+      const errorBoundary = createErrorBoundary(fallback)
+      
+      // Create a component that throws an error
+      const errorComponent = createComponent(() => {
+        throw new Error('Test error')
+      })
+      
+      const errorInstance = errorComponent({})
+      const boundaryInstance = errorBoundary({ children: errorInstance })
+      
+      const result = boundaryInstance.render()
+      
+      expect(fallback).toHaveBeenCalledWith(expect.any(Error))
+      expect(consoleError).toHaveBeenCalled()
+      
+      consoleError.mockRestore()
+    })
+
+    it('should have correct display name', () => {
+      const errorBoundary = createErrorBoundary(() => ({ type: 'text', text: 'Error' } as DOMNode))
+      expect(errorBoundary.displayName).toBe('ErrorBoundary')
+    })
+  })
+
+  describe('Component Integration with Reactive System', () => {
+    it('should integrate with signals and effects', () => {
+      const [count, setCount] = createSignal(0)
+      let renderCount = 0
+      
+      const component = createComponent(() => {
+        renderCount++
+        let currentText = ''
+        
+        createEffect(() => {
+          currentText = `Count: ${count()}`
+        })
+        
+        return { type: 'text', text: currentText } as DOMNode
+      })
+      
+      const instance = component({})
+      instance.render()
+      
+      expect(renderCount).toBe(1)
+      
+      // Update signal
+      setCount(1)
+      
+      // Effect should have run, but render count should be same
+      expect(renderCount).toBe(1)
+    })
+
+    it('should clean up reactive subscriptions on unmount', () => {
+      const [count, setCount] = createSignal(0)
+      let effectCount = 0
+      
+      const component = createComponent(() => {
+        createEffect(() => {
+          count() // Subscribe to signal
+          effectCount++
+        })
+        
+        return { type: 'text', text: 'Test' } as DOMNode
+      })
+      
+      const instance = component({})
+      const cleanup = instance.render()
+      
+      expect(effectCount).toBe(1)
+      
+      // Update signal
+      setCount(1)
+      expect(effectCount).toBe(2)
+      
+      // Cleanup component
+      if (typeof cleanup === 'function') {
+        cleanup()
+      }
+      
+      // Update signal again - effect should not run
+      setCount(2)
+      expect(effectCount).toBe(2) // Should stay the same
+    })
+  })
+
+  describe('Memory Management', () => {
+    it('should not leak memory after component cleanup', () => {
+      const component = createComponent(() => ({ type: 'text', text: 'Test' } as DOMNode))
+      const instance = component({})
+      
+      manager.registerComponent(instance)
+      
+      const initialComponentCount = manager.getAllComponents().length
+      
+      manager.unregisterComponent(instance.id)
+      
+      expect(manager.getAllComponents().length).toBe(initialComponentCount - 1)
+      expect(manager.getComponent(instance.id)).toBeUndefined()
+    })
+
+    it('should handle rapid component creation and cleanup', () => {
+      const components: string[] = []
+      
+      // Create many components
+      for (let i = 0; i < 100; i++) {
+        const component = createComponent(() => ({ type: 'text', text: `Test ${i}` } as DOMNode))
+        const instance = component({})
+        manager.registerComponent(instance)
+        components.push(instance.id)
+      }
+      
+      expect(manager.getAllComponents().length).toBe(100)
+      
+      // Clean up all components
+      components.forEach(id => manager.unregisterComponent(id))
+      
+      expect(manager.getAllComponents().length).toBe(0)
+    })
+  })
+})

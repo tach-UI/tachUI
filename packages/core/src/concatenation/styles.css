@@ -1,0 +1,120 @@
+/**
+ * Concatenation Styles
+ * 
+ * CSS styles for concatenated components to ensure proper rendering
+ * across different component type combinations.
+ */
+
+/* Base concatenated component container */
+.tachui-concatenated {
+  display: inline;
+}
+
+/* Text-only concatenations */
+.tachui-concatenated.text-composition {
+  white-space: pre-wrap;
+}
+
+/* Image-only concatenations */
+.tachui-concatenated.image-composition {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+/* Image and text combinations */
+.tachui-concatenated.image-text-composition {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25em;
+}
+
+/* Mixed content (images, text, buttons, links) */
+.tachui-concatenated.mixed-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+/* Generic composition fallback */
+.tachui-concatenated.generic-composition {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+}
+
+/* Individual segment styling */
+.tachui-concatenated .text-segment {
+  display: inline;
+}
+
+.tachui-concatenated .image-segment {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.tachui-concatenated .button-segment {
+  display: inline-flex;
+}
+
+.tachui-concatenated .link-segment {
+  display: inline;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .tachui-concatenated.mixed-content {
+    gap: 0.125em; /* Tighter spacing on mobile */
+  }
+  
+  .tachui-concatenated.image-text-composition {
+    gap: 0.125em;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .tachui-concatenated {
+    /* Inherit parent color scheme */
+    color: inherit;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .tachui-concatenated {
+    /* Ensure components maintain contrast in concatenation */
+    outline: none;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .tachui-concatenated * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Layout component styles */
+.tachui-hstack {
+  flex-direction: var(--flex-direction, row);
+}
+
+.tachui-vstack {
+  flex-direction: var(--flex-direction, column);
+}
+
+/* Print styles */
+@media print {
+  .tachui-concatenated {
+    display: inline;
+    gap: 0;
+  }
+  
+  .tachui-concatenated.image-composition,
+  .tachui-concatenated.image-text-composition,
+  .tachui-concatenated.mixed-content {
+    display: inline;
+  }
+}

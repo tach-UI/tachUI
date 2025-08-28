@@ -1,0 +1,78 @@
+{
+  "name": "@tachui/symbols",
+  "version": "0.1.0",
+  "description": "SwiftUI-inspired symbol/icon system for tachUI framework",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest",
+    "test:ci": "vitest run 2>/dev/null",
+    "test:quiet": "vitest run 2>/dev/null",
+    "type-check": "tsc --noEmit",
+    "lint": "oxlint src",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "tachui",
+    "symbols",
+    "icons",
+    "lucide",
+    "ui",
+    "components",
+    "plugin"
+  ],
+  "author": "tachUI Team",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tachUI/tachui.git",
+    "directory": "packages/symbols"
+  },
+  "peerDependencies": {
+    "@tachui/core": "^0.1.0"
+  },
+  "dependencies": {
+    "lucide": "^0.447.0"
+  },
+  "devDependencies": {
+    "@tachui/core": "workspace:*",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.1.1",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^3.2.4"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.js"
+    },
+    "./icon-sets": {
+      "types": "./dist/icon-sets/index.d.ts",
+      "import": "./dist/icon-sets/index.js"
+    },
+    "./modifiers": {
+      "types": "./dist/modifiers/index.d.ts",
+      "import": "./dist/modifiers/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js"
+    }
+  },
+  "sideEffects": [
+    "./dist/index.js",
+    "./src/index.ts"
+  ]
+}

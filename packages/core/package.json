@@ -1,0 +1,128 @@
+{
+  "name": "@tachui/core",
+  "version": "0.1.0",
+  "description": "tachUI core framework with reactive system and compiler",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./minimal": {
+      "types": "./dist/minimal.d.ts",
+      "import": "./dist/minimal.js"
+    },
+    "./common": {
+      "types": "./dist/common.d.ts", 
+      "import": "./dist/common.js"
+    },
+    "./essential": {
+      "types": "./dist/essential.d.ts",
+      "import": "./dist/essential.js"
+    },
+    "./minimal-prod": {
+      "types": "./dist/minimal-prod.d.ts",
+      "import": "./dist/minimal-prod.js"
+    },
+    "./reactive": {
+      "types": "./dist/reactive/index.d.ts",
+      "import": "./dist/reactive/index.js"
+    },
+    "./compiler": {
+      "types": "./dist/compiler/index.d.ts",
+      "import": "./dist/compiler/index.js"
+    },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.js"
+    },
+    "./plugins": {
+      "types": "./dist/plugins/index.d.ts",
+      "import": "./dist/plugins/index.js"
+    },
+    "./validation": {
+      "types": "./dist/validation/index.d.ts",
+      "import": "./dist/validation/index.js"
+    },
+    "./viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "import": "./dist/viewport/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && vite build && tsc --project tsconfig.build.json",
+    "dev": "vite build --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:ci": "npm run test:run",
+    "test:all": "vitest run --config vitest.all.config.ts",
+    "bench": "vitest bench",
+    "benchmark": "vitest run --config vitest.benchmark.config.ts benchmarks/full.bench.ts",
+    "benchmark:quick": "vitest run --config vitest.benchmark.config.ts benchmarks/quick.bench.ts",
+    "benchmark:compare": "vitest run --config vitest.benchmark.config.ts benchmarks/compare.bench.ts",
+    "benchmark:browser": "playwright test benchmarks/browser.spec.ts",
+    "benchmark:browser:quick": "playwright test benchmarks/browser-quick.spec.ts",
+    "benchmark:browser:all": "playwright test benchmarks/",
+    "serve:benchmark": "vite serve benchmarks/public --port 3000",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "lint": "oxlint src",
+    "format": "echo 'Prettier not configured yet - TODO: Add Prettier'",
+    "quality:check": "npm run type-check && npm run lint && npm run test:coverage",
+    "quality:pre-commit": "npm run quality:check && echo '✅ All quality gates passed!'",
+    "quality:full": "npm run quality:check && npm run benchmark:regression",
+    "benchmark:regression": "npm run benchmark:quick && npm run benchmark:browser:quick",
+    "security:audit": "npm audit --audit-level moderate",
+    "coverage:report": "vitest run --coverage --reporter=html",
+    "coverage:check": "vitest run --coverage",
+    "bundle:analyze": "node scripts/bundle-analyzer.js",
+    "bundle:size": "node scripts/bundle-analyzer.js",
+    "migrate": "node scripts/migration-tool.js",
+    "migrate:fix": "node scripts/migration-tool.js --fix"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/jsdom": "^21.1.6",
+    "@vitest/coverage-v8": "^1.0.0",
+    "@playwright/test": "^1.40.0",
+    "jsdom": "^23.2.0",
+    "tsx": "^4.7.1",
+    "typedoc": "^0.28.7",
+    "typescript": "^5.2.0",
+    "vite": "^7.1.1",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "ui",
+    "framework",
+    "reactive",
+    "swiftui",
+    "typescript",
+    "vite"
+  ],
+  "author": "tachUI Team",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tachui/tachui",
+    "directory": "packages/core"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "downlevelIteration": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "src/globals.d.ts"],
+  "exclude": [
+    "dist",
+    "**/*.test.ts",
+    "**/*.bench.ts",
+    "src/assets/example.ts",
+    "src/assets/test-*.ts",
+    "src/assets/usage-example.ts",
+    "src/modifiers/examples/",
+    "src/components/examples/"
+  ]
+}

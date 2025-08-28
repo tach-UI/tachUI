@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "downlevelIteration": true
+  },
+  "include": ["src/**/*", "src/globals.d.ts"],
+  "exclude": [
+    "dist",
+    "**/*.test.ts",
+    "**/*.bench.ts", 
+    "tests",
+    "src/assets/example.ts",
+    "src/assets/test-*.ts",
+    "src/assets/usage-example.ts",
+    "src/modifiers/examples/",
+    "src/components/examples/",
+    "src/plugins/old-backup/"
+  ]
+}

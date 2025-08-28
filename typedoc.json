@@ -1,0 +1,26 @@
+{
+  "entryPoints": [
+    "./packages/core/src/index.ts",
+    "./packages/cli/src/index.ts",
+    "./packages/forms/src/index.ts",
+    "./packages/navigation/src/index.ts",
+    "./packages/symbols/src/index.ts"
+  ],
+  "out": "./docs/api",
+  "name": "tachUI API Documentation",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "defaultCategory": "Other",
+  "categoryOrder": ["Reactive System", "Core Components", "Forms", "Navigation", "Symbols", "CLI Tools", "*"],
+  "groupOrder": ["Functions", "Classes", "Interfaces", "Type Aliases", "*"],
+  "sort": ["source-order"],
+  "exclude": ["**/*.test.ts", "**/*.bench.ts", "**/node_modules/**"],
+  "validation": {
+    "notExported": true,
+    "invalidLink": true
+  },
+  "treatWarningsAsErrors": false,
+  "skipErrorChecking": false,
+  "plugin": ["typedoc-plugin-markdown"],
+  "tsconfig": "./tsconfig.json"
+}

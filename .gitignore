@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+# build/
+*.tsbuildinfo
+# Generated TypeScript declarations (should only be in dist/)
+src/**/*.d.ts
+src/**/*.d.ts.map
+!src/**/globals.d.ts
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary folders
+tmp/
+temp/
+
+# Benchmark results
+benchmarks/results/
+
+# Markdown editor
+.obsidian
+
+# VitePress cache and temporary files
+**/.vitepress/cache/
+**/.vitepress/dist/
+
+# Generated API documentation
+docs/api/

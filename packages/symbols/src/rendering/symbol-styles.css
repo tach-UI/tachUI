@@ -1,0 +1,355 @@
+/**
+ * Advanced Symbol Styles (Phase 2)
+ * Comprehensive CSS for enhanced rendering modes and animations
+ */
+
+/* Base Symbol Styles */
+.tachui-symbol {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+/* Scale Variants */
+.tachui-symbol--scale-small {
+  width: 16px;
+  height: 16px;
+}
+
+.tachui-symbol--scale-medium {
+  width: 24px;
+  height: 24px;
+}
+
+.tachui-symbol--scale-large {
+  width: 32px;
+  height: 32px;
+}
+
+.tachui-symbol--scale-xlarge {
+  width: 48px;
+  height: 48px;
+}
+
+/* Rendering Mode Styles */
+
+/* Monochrome Mode */
+.tachui-symbol--monochrome {
+  color: currentColor;
+}
+
+.tachui-symbol--monochrome svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Hierarchical Mode */
+.tachui-symbol--hierarchical {
+  --symbol-primary: currentColor;
+  --symbol-secondary: color-mix(in srgb, var(--symbol-primary) 68%, transparent);
+  --symbol-tertiary: color-mix(in srgb, var(--symbol-primary) 32%, transparent);
+}
+
+.tachui-symbol--hierarchical svg .primary {
+  fill: var(--symbol-primary);
+  opacity: 1;
+}
+
+.tachui-symbol--hierarchical svg .secondary {
+  fill: var(--symbol-primary);
+  opacity: 0.68;
+}
+
+.tachui-symbol--hierarchical svg .tertiary {
+  fill: var(--symbol-primary);
+  opacity: 0.32;
+}
+
+/* Palette Mode */
+.tachui-symbol--palette {
+  --symbol-primary: currentColor;
+  --symbol-secondary: hsl(from var(--symbol-primary) calc(h + 30) s l);
+  --symbol-tertiary: hsl(from var(--symbol-primary) calc(h - 30) s l);
+}
+
+.tachui-symbol--palette svg .primary {
+  fill: var(--symbol-primary);
+}
+
+.tachui-symbol--palette svg .secondary {
+  fill: var(--symbol-secondary);
+}
+
+.tachui-symbol--palette svg .tertiary {
+  fill: var(--symbol-tertiary);
+}
+
+/* Multicolor Mode */
+.tachui-symbol--multicolor svg {
+  /* Preserve original colors */
+}
+
+/* Interactive States */
+.tachui-symbol--interactive {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.tachui-symbol--interactive:hover {
+  transform: scale(1.05);
+}
+
+.tachui-symbol--interactive:active {
+  transform: scale(0.95);
+}
+
+/* Loading and Error States */
+.tachui-symbol--loading {
+  opacity: 0.6;
+  animation: tachui-symbol-pulse 1.5s ease-in-out infinite;
+}
+
+.tachui-symbol--error {
+  color: #ef4444;
+  opacity: 0.8;
+}
+
+.tachui-symbol__spinner {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: tachui-symbol-spinner 1s linear infinite;
+}
+
+/* Animation Effects */
+
+/* Base Animation Classes */
+.tachui-symbol--animated {
+  animation-play-state: running;
+}
+
+/* Effect Classes */
+.tachui-symbol--effect-bounce {
+  animation: tachui-symbol-bounce var(--bounce-duration, 0.6s) ease-in-out infinite;
+}
+
+.tachui-symbol--effect-shake {
+  animation: tachui-symbol-shake var(--shake-duration, 0.3s) ease-in-out infinite;
+}
+
+.tachui-symbol--effect-heartbeat {
+  animation: tachui-symbol-heartbeat var(--heartbeat-duration, 1.2s) ease-in-out infinite;
+}
+
+.tachui-symbol--effect-glow {
+  animation: tachui-symbol-glow var(--glow-duration, 2.5s) ease-in-out infinite;
+}
+
+/* Intensity Modifiers */
+.tachui-symbol--effect-subtle { opacity: 0.7; }
+.tachui-symbol--effect-intense { opacity: 1; }
+
+/* Speed Modifiers */
+.tachui-symbol--effect-slow { animation-duration: calc(var(--effect-duration, 2s) * 2); }
+.tachui-symbol--effect-fast { animation-duration: calc(var(--effect-duration, 2s) * 0.5); }
+
+/* Variable Value Bounce */
+@keyframes tachui-symbol-bounce {
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(calc(-1 * var(--bounce-height, 25%))); 
+  }
+}
+
+/* Pulse Effect */
+.tachui-symbol--effect-pulse {
+  animation: tachui-symbol-pulse var(--pulse-duration, 2s) ease-in-out infinite;
+}
+
+@keyframes tachui-symbol-pulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: var(--pulse-opacity, 0.7); 
+    transform: scale(var(--pulse-scale, 1.1)); 
+  }
+}
+
+/* Wiggle Effect */
+.tachui-symbol--effect-wiggle {
+  animation: tachui-symbol-wiggle var(--wiggle-duration, 0.5s) ease-in-out infinite;
+}
+
+@keyframes tachui-symbol-wiggle {
+  0%, 100% { 
+    transform: rotate(0deg); 
+  }
+  25% { 
+    transform: rotate(calc(-1 * var(--wiggle-angle, 3deg))); 
+  }
+  75% { 
+    transform: rotate(var(--wiggle-angle, 3deg)); 
+  }
+}
+
+/* Rotate Effect */
+.tachui-symbol--effect-rotate {
+  animation: tachui-symbol-rotate 2s linear infinite;
+}
+
+@keyframes tachui-symbol-rotate {
+  from { 
+    transform: rotate(0deg); 
+  }
+  to { 
+    transform: rotate(360deg); 
+  }
+}
+
+/* Breathe Effect */
+.tachui-symbol--effect-breathe {
+  animation: tachui-symbol-breathe var(--breathe-duration, 3s) ease-in-out infinite;
+}
+
+@keyframes tachui-symbol-breathe {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 1; 
+  }
+  50% { 
+    transform: scale(var(--breathe-scale, 1.1)); 
+    opacity: var(--breathe-opacity, 0.8); 
+  }
+}
+
+/* Shake Effect */
+@keyframes tachui-symbol-shake {
+  0%, 100% { 
+    transform: translateX(0); 
+  }
+  25% { 
+    transform: translateX(calc(-1 * var(--shake-distance, 4px))); 
+  }
+  75% { 
+    transform: translateX(var(--shake-distance, 4px)); 
+  }
+}
+
+/* Heartbeat Effect */
+@keyframes tachui-symbol-heartbeat {
+  0%, 14%, 70%, 100% { 
+    transform: scale(1); 
+  }
+  7% { 
+    transform: scale(var(--heartbeat-scale-1, 1.1)); 
+  }
+  21% { 
+    transform: scale(var(--heartbeat-scale-2, 1.15)); 
+  }
+  28% { 
+    transform: scale(1); 
+  }
+}
+
+/* Glow Effect */
+@keyframes tachui-symbol-glow {
+  0%, 100% { 
+    filter: drop-shadow(0 0 var(--glow-intensity, 5px) currentColor);
+    opacity: 1;
+  }
+  50% { 
+    filter: drop-shadow(0 0 calc(var(--glow-intensity, 5px) * 2) currentColor);
+    opacity: var(--glow-opacity, 0.8);
+  }
+}
+
+/* Variable Speed Support */
+.tachui-symbol--effect-speed-slow {
+  animation-duration: calc(var(--effect-duration, 2s) * 2);
+}
+
+.tachui-symbol--effect-speed-fast {
+  animation-duration: calc(var(--effect-duration, 2s) * 0.5);
+}
+
+/* Spinner for loading */
+@keyframes tachui-symbol-spinner {
+  from { 
+    transform: rotate(0deg); 
+  }
+  to { 
+    transform: rotate(360deg); 
+  }
+}
+
+/* Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+  .tachui-symbol--effect-bounce,
+  .tachui-symbol--effect-pulse,
+  .tachui-symbol--effect-wiggle,
+  .tachui-symbol--effect-rotate,
+  .tachui-symbol--effect-breathe,
+  .tachui-symbol--effect-shake,
+  .tachui-symbol--effect-heartbeat,
+  .tachui-symbol--effect-glow,
+  .tachui-symbol--loading {
+    animation: none;
+  }
+  
+  .tachui-symbol--interactive:hover {
+    transform: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .tachui-symbol--hierarchical svg .secondary {
+    opacity: 0.8;
+  }
+  
+  .tachui-symbol--hierarchical svg .tertiary {
+    opacity: 0.6;
+  }
+}
+
+/* Dark mode adaptations */
+@media (prefers-color-scheme: dark) {
+  .tachui-symbol--loading {
+    filter: brightness(1.2);
+  }
+  
+  .tachui-symbol--error {
+    color: #f87171;
+  }
+}
+
+/* Focus styles for interactive symbols */
+.tachui-symbol--interactive:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Print styles */
+@media print {
+  .tachui-symbol--effect-bounce,
+  .tachui-symbol--effect-pulse,
+  .tachui-symbol--effect-wiggle,
+  .tachui-symbol--effect-rotate,
+  .tachui-symbol--effect-breathe,
+  .tachui-symbol--effect-shake,
+  .tachui-symbol--effect-heartbeat,
+  .tachui-symbol--effect-glow {
+    animation: none;
+  }
+}

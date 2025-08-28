@@ -1,0 +1,844 @@
+/**
+ * Performance Monitoring System Tests (Phase 3.2.2)
+ * 
+ * Comprehensive tests for the performance monitoring and debugging tools.
+ * Tests all performance tracking, metrics collection, and debugging utilities.
+ */
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { 
+  PerformanceMonitor, 
+  globalPerformanceMonitor, 
+  performanceUtils,
+  type PerformanceMetric,
+  type ComponentMetrics,
+  type MonitoringOptions
+} from '../../src/runtime/performance'
+import { 
+  DevTools,
+  globalDevTools,
+  devUtils,
+  enablePerformanceTracking,
+  enableDevelopmentMode,
+  type ComponentTreeNode,
+  type DebugEvent
+} from '../../src/runtime/dev-tools'
+
+describe('PerformanceMonitor', () => {
+  let monitor: PerformanceMonitor
+  
+  beforeEach(() => {
+    monitor = PerformanceMonitor.getInstance()
+    monitor.clear()
+    monitor.disable()
+  })
+  
+  afterEach(() => {
+    monitor.clear()
+    monitor.disable()
+  })
+  
+  describe('Basic Configuration', () => {
+    it('should create singleton instance', () => {
+      const instance1 = PerformanceMonitor.getInstance()
+      const instance2 = PerformanceMonitor.getInstance()
+      expect(instance1).toBe(instance2)
+    })
+    
+    it('should configure monitoring options', () => {
+      const options: Partial<MonitoringOptions> = {
+        enabled: true,
+        trackComponents: false,
+        sampleRate: 0.5
+      }
+      
+      monitor.configure(options)
+      expect(monitor.isEnabled()).toBe(false) // Not enabled until enable() is called
+    })
+    
+    it('should enable and disable monitoring', () => {
+      expect(monitor.isEnabled()).toBe(false)
+      
+      monitor.enable()
+      expect(monitor.isEnabled()).toBe(true)
+      
+      monitor.disable()
+      expect(monitor.isEnabled()).toBe(false)
+    })
+  })
+  
+  describe('Timer Operations', () => {
+    beforeEach(() => {
+      monitor.enable()
+    })
+    
+    it('should start and end timers', () => {
+      monitor.startTimer('test-operation')
+      
+      // Simulate some work
+      const start = performance.now()
+      while (performance.now() - start < 10) {
+        // Wait ~10ms
+      }
+      
+      const duration = monitor.endTimer('test-operation')
+      expect(duration).toBeGreaterThan(5)
+      expect(duration).toBeLessThan(50)
+    })
+    
+    it('should handle missing timer gracefully', () => {
+      const duration = monitor.endTimer('non-existent-timer')
+      expect(duration).toBe(0)
+    })
+    
+    it('should record metrics when timer ends', () => {
+      // Ensure clean state
+      monitor.clear()
+      monitor.enable()
+      
+      monitor.startTimer('metric-test')
+      monitor.endTimer('metric-test', 'component', 'comp-123')
+      
+      const metrics = monitor.getMetrics()
+      expect(metrics).toHaveLength(1)
+      expect(metrics[0].name).toBe('metric-test')
+      expect(metrics[0].category).toBe('component')
+      expect(metrics[0].componentId).toBe('comp-123')
+      expect(metrics[0].unit).toBe('ms')
+    })
+  })
+  
+  describe('Metric Recording', () => {
+    beforeEach(() => {
+      monitor.enable()
+    })
+    
+    it('should record custom metrics', () => {
+      const metric: PerformanceMetric = {
+        name: 'custom-metric',
+        value: 42,
+        unit: 'count',
+        timestamp: performance.now(),
+        category: 'reactive'
+      }
+      
+      monitor.recordMetric(metric)
+      
+      const metrics = monitor.getMetrics()
+      expect(metrics).toHaveLength(2) // monitoring_enabled + custom-metric
+      expect(metrics[1]).toEqual(metric) // custom metric is second
+    })
+    
+    it('should limit metrics array size', () => {
+      // Configure small limit for testing
+      monitor.configure({ maxMetrics: 5 })
+      
+      // Add more metrics than the limit
+      for (let i = 0; i < 10; i++) {
+        monitor.recordMetric({
+          name: `metric-${i}`,
+          value: i,
+          unit: 'count',
+          timestamp: performance.now(),
+          category: 'component'
+        })
+      }
+      
+      const metrics = monitor.getMetrics()
+      expect(metrics).toHaveLength(5)
+      expect(metrics[0].name).toBe('metric-5') // Oldest removed
+    })
+    
+    it('should respect sample rate', () => {
+      monitor.configure({ sampleRate: 0 }) // No sampling
+      
+      monitor.recordMetric({
+        name: 'sampled-metric',
+        value: 1,
+        unit: 'count',
+        timestamp: performance.now(),
+        category: 'component'
+      })
+      
+      // Should be sampled out
+      expect(monitor.getMetrics()).toHaveLength(0)
+    })
+  })
+  
+  describe('Component Tracking', () => {
+    beforeEach(() => {
+      monitor.enable()
+    })
+    
+    it('should track component mount', () => {
+      monitor.trackComponentMount('comp-1', 'TestComponent')
+      
+      const componentMetrics = monitor.getComponentMetrics()
+      expect(componentMetrics.has('comp-1')).toBe(true)
+      
+      const metrics = componentMetrics.get('comp-1')!
+      expect(metrics.id).toBe('comp-1')
+      expect(metrics.name).toBe('TestComponent')
+      expect(metrics.updateCount).toBe(0)
+    })
+    
+    it('should track component unmount', () => {
+      monitor.trackComponentMount('comp-1', 'TestComponent')
+      monitor.trackComponentUnmount('comp-1')
+      
+      const componentMetrics = monitor.getComponentMetrics()
+      expect(componentMetrics.has('comp-1')).toBe(false)
+      
+      const metrics = monitor.getMetrics()
+      const unmountMetric = metrics.find(m => m.name === 'component_unmount')
+      expect(unmountMetric).toBeDefined()
+      expect(unmountMetric!.componentId).toBe('comp-1')
+    })
+    
+    it('should track component renders', () => {
+      monitor.trackComponentMount('comp-1', 'TestComponent')
+      monitor.trackComponentRender('comp-1', 15.5)
+      
+      const componentMetrics = monitor.getComponentMetrics()
+      const metrics = componentMetrics.get('comp-1')!
+      
+      expect(metrics.renderTime).toBe(15.5)
+      expect(metrics.lastRenderDuration).toBe(15.5)
+      expect(metrics.updateCount).toBe(1)
+    })
+    
+    it('should track props changes', () => {
+      monitor.trackComponentMount('comp-1', 'TestComponent')
+      monitor.trackPropsChange('comp-1', ['prop1', 'prop2'])
+      
+      const componentMetrics = monitor.getComponentMetrics()
+      const metrics = componentMetrics.get('comp-1')!
+      
+      expect(metrics.propsChanges).toBe(1)
+      
+      const allMetrics = monitor.getMetrics()
+      const propsMetric = allMetrics.find(m => m.name === 'props_change')
+      expect(propsMetric).toBeDefined()
+      expect(propsMetric!.value).toBe(2) // Number of changed keys
+    })
+  })
+  
+  describe('Reactive System Tracking', () => {
+    beforeEach(() => {
+      monitor.enable()
+    })
+    
+    it('should track reactive operations', () => {
+      monitor.trackReactiveOperation('signal', 'create')
+      monitor.trackReactiveOperation('signal', 'update', 5.2)
+      monitor.trackReactiveOperation('computed', 'execute', 3.1)
+      
+      const reactiveMetrics = monitor.getReactiveMetrics()
+      expect(reactiveMetrics.signalCount).toBe(1)
+      expect(reactiveMetrics.signalUpdates).toBe(1)
+      expect(reactiveMetrics.computedRecalculations).toBe(1)
+      expect(reactiveMetrics.averageUpdateTime).toBeGreaterThan(0)
+    })
+    
+    it('should update average update time correctly', () => {
+      monitor.trackReactiveOperation('signal', 'update', 10)
+      monitor.trackReactiveOperation('signal', 'update', 20)
+      
+      const reactiveMetrics = monitor.getReactiveMetrics()
+      expect(reactiveMetrics.averageUpdateTime).toBe(15) // (10 + 20) / 2
+    })
+  })
+  
+  describe('Memory Tracking', () => {
+    beforeEach(() => {
+      monitor.enable()
+    })
+    
+    it('should track memory usage', () => {
+      monitor.trackMemoryUsage()
+      
+      const metrics = monitor.getMetrics()
+      const memoryMetric = metrics.find(m => m.name === 'memory_usage')
+      
+      expect(memoryMetric).toBeDefined()
+      expect(memoryMetric!.category).toBe('memory')
+      expect(memoryMetric!.unit).toBe('bytes')
+      expect(memoryMetric!.value).toBeGreaterThan(0)
+    })
+  })
+  
+  describe('Metrics Analysis', () => {
+    beforeEach(() => {
+      monitor.enable()
+      
+      // Add test data
+      monitor.recordMetric({
+        name: 'test-metric',
+        value: 10,
+        unit: 'ms',
+        timestamp: performance.now(),
+        category: 'render',
+        componentId: 'comp-1'
+      })
+      
+      monitor.recordMetric({
+        name: 'test-metric',
+        value: 20,
+        unit: 'ms',
+        timestamp: performance.now(),
+        category: 'render',
+        componentId: 'comp-2'
+      })
+    })
+    
+    it('should get metrics by category', () => {
+      const renderMetrics = monitor.getMetricsByCategory('render')
+      expect(renderMetrics).toHaveLength(2)
+      expect(renderMetrics.every(m => m.category === 'render')).toBe(true)
+    })
+    
+    it('should get metrics by component', () => {
+      const comp1Metrics = monitor.getMetricsByComponent('comp-1')
+      expect(comp1Metrics).toHaveLength(1)
+      expect(comp1Metrics[0].componentId).toBe('comp-1')
+    })
+    
+    it('should calculate average metric value', () => {
+      const average = monitor.getAverageMetric('test-metric')
+      expect(average).toBe(15) // (10 + 20) / 2
+    })
+    
+    it('should generate performance summary', () => {
+      monitor.trackComponentMount('comp-1', 'TestComponent')
+      
+      const summary = monitor.getSummary()
+      expect(summary.totalMetrics).toBeGreaterThan(0)
+      expect(summary.componentCount).toBe(1)
+      expect(summary.averageRenderTime).toBeGreaterThan(0)
+      expect(summary.mostActiveComponent).toBeDefined()
+    })
+  })
+  
+  describe('Data Export/Import', () => {
+    beforeEach(() => {
+      monitor.enable()
+    })
+    
+    it('should export metrics to JSON', () => {
+      monitor.recordMetric({
+        name: 'export-test',
+        value: 123,
+        unit: 'count',
+        timestamp: performance.now(),
+        category: 'component'
+      })
+      
+      const exported = monitor.exportMetrics()
+      const data = JSON.parse(exported)
+      
+      expect(data.metrics).toHaveLength(1)
+      expect(data.metrics[0].name).toBe('export-test')
+      expect(data.timestamp).toBeTypeOf('number')
+    })
+    
+    it('should import metrics from JSON', () => {
+      const testData = {
+        metrics: [{
+          name: 'imported-metric',
+          value: 456,
+          unit: 'ms',
+          timestamp: performance.now(),
+          category: 'reactive'
+        }],
+        componentMetrics: [['comp-1', {
+          id: 'comp-1',
+          name: 'ImportedComponent',
+          mountTime: performance.now(),
+          renderTime: 0,
+          updateCount: 0,
+          propsChanges: 0,
+          lastRenderDuration: 0,
+          memoryUsage: 1024,
+          children: []
+        }]]
+      }
+      
+      monitor.importMetrics(JSON.stringify(testData))
+      
+      const metrics = monitor.getMetrics()
+      expect(metrics).toHaveLength(1)
+      expect(metrics[0].name).toBe('imported-metric')
+      
+      const componentMetrics = monitor.getComponentMetrics()
+      expect(componentMetrics.has('comp-1')).toBe(true)
+    })
+  })
+  
+  describe('Performance Listeners', () => {
+    beforeEach(() => {
+      monitor.enable()
+    })
+    
+    it('should add and remove performance listeners', () => {
+      const listener = vi.fn()
+      const unsubscribe = monitor.addListener(listener)
+      
+      monitor.recordMetric({
+        name: 'listener-test',
+        value: 1,
+        unit: 'count',
+        timestamp: performance.now(),
+        category: 'component'
+      })
+      
+      expect(listener).toHaveBeenCalledOnce()
+      
+      unsubscribe()
+      
+      monitor.recordMetric({
+        name: 'listener-test-2',
+        value: 2,
+        unit: 'count',
+        timestamp: performance.now(),
+        category: 'component'
+      })
+      
+      expect(listener).toHaveBeenCalledOnce() // Should not be called again
+    })
+  })
+})
+
+describe('DevTools', () => {
+  let devTools: DevTools
+  
+  beforeEach(() => {
+    devTools = DevTools.getInstance()
+    devTools.clear()
+    devTools.disable()
+  })
+  
+  afterEach(() => {
+    devTools.clear()
+    devTools.disable()
+  })
+  
+  describe('Basic Operations', () => {
+    it('should create singleton instance', () => {
+      const instance1 = DevTools.getInstance()
+      const instance2 = DevTools.getInstance()
+      expect(instance1).toBe(instance2)
+    })
+    
+    it('should enable and disable dev tools', () => {
+      expect(devTools.isEnabled()).toBe(false)
+      
+      devTools.enable()
+      expect(devTools.isEnabled()).toBe(true)
+      
+      devTools.disable()
+      expect(devTools.isEnabled()).toBe(false)
+    })
+    
+    it('should configure dev tools', () => {
+      devTools.configure({
+        trackAllComponents: false,
+        updateInterval: 200
+      })
+      
+      // Configuration should be applied
+      expect(devTools.isEnabled()).toBe(false) // Not auto-enabled
+    })
+    
+    it('should auto-enable when configured', () => {
+      devTools.configure({
+        autoEnable: true
+      })
+      
+      expect(devTools.isEnabled()).toBe(true)
+    })
+  })
+  
+  describe('Component Registration', () => {
+    beforeEach(() => {
+      devTools.enable()
+    })
+    
+    it('should register components', () => {
+      const mockInstance = {
+        type: 'component' as const,
+        id: 'test-comp',
+        props: { title: 'Test' },
+        render: () => []
+      }
+      
+      devTools.registerComponent('comp-1', mockInstance)
+      
+      const tree = devTools.getComponentTree()
+      expect(tree.has('comp-1')).toBe(true)
+      
+      const node = tree.get('comp-1')!
+      expect(node.name).toBe('test-comp')
+      expect(node.props).toEqual({ title: 'Test' })
+      expect(node.depth).toBe(0)
+    })
+    
+    it('should register nested components', () => {
+      const parentInstance = {
+        type: 'component' as const,
+        id: 'parent',
+        props: {},
+        render: () => []
+      }
+      
+      const childInstance = {
+        type: 'component' as const,
+        id: 'child',
+        props: {},
+        render: () => []
+      }
+      
+      devTools.registerComponent('parent', parentInstance)
+      devTools.registerComponent('child', childInstance, 'parent')
+      
+      const tree = devTools.getComponentTree()
+      const parent = tree.get('parent')!
+      const child = tree.get('child')!
+      
+      expect(child.parent).toBe(parent)
+      expect(child.depth).toBe(1)
+      expect(parent.children).toContain(child)
+    })
+    
+    it('should unregister components', () => {
+      const mockInstance = {
+        type: 'component' as const,
+        id: 'test-comp',
+        props: {},
+        render: () => []
+      }
+      
+      devTools.registerComponent('comp-1', mockInstance)
+      expect(devTools.getComponentTree().has('comp-1')).toBe(true)
+      
+      devTools.unregisterComponent('comp-1')
+      expect(devTools.getComponentTree().has('comp-1')).toBe(false)
+    })
+    
+    it('should remove nested components when parent is unregistered', () => {
+      const instances = {
+        parent: { type: 'component' as const, id: 'parent', props: {}, render: () => [] },
+        child: { type: 'component' as const, id: 'child', props: {}, render: () => [] },
+        grandchild: { type: 'component' as const, id: 'grandchild', props: {}, render: () => [] }
+      }
+      
+      devTools.registerComponent('parent', instances.parent)
+      devTools.registerComponent('child', instances.child, 'parent')
+      devTools.registerComponent('grandchild', instances.grandchild, 'child')
+      
+      devTools.unregisterComponent('parent')
+      
+      const tree = devTools.getComponentTree()
+      expect(tree.has('parent')).toBe(false)
+      expect(tree.has('child')).toBe(false)
+      expect(tree.has('grandchild')).toBe(false)
+    })
+  })
+  
+  describe('Component Updates', () => {
+    beforeEach(() => {
+      devTools.enable()
+      
+      const mockInstance = {
+        type: 'component' as const,
+        id: 'test-comp',
+        props: {},
+        render: () => []
+      }
+      
+      devTools.registerComponent('comp-1', mockInstance)
+    })
+    
+    it('should update component data', () => {
+      devTools.updateComponent('comp-1', {
+        renderCount: 5,
+        lastRenderTime: 12.3
+      })
+      
+      const node = devTools.getComponent('comp-1')!
+      expect(node.renderCount).toBe(5)
+      expect(node.lastRenderTime).toBe(12.3)
+    })
+    
+    it('should add warnings to components', () => {
+      devTools.addWarning('comp-1', 'Slow render detected')
+      
+      const node = devTools.getComponent('comp-1')!
+      expect(node.warnings).toContain('Slow render detected')
+    })
+    
+    it('should add errors to components', () => {
+      const error = new Error('Test error')
+      devTools.addError('comp-1', error)
+      
+      const node = devTools.getComponent('comp-1')!
+      expect(node.errors).toContain('Test error')
+    })
+  })
+  
+  describe('Debug Events', () => {
+    beforeEach(() => {
+      devTools.enable()
+    })
+    
+    it('should track debug events', () => {
+      devTools.trackReactiveOperation('signal', 'create', 'comp-1')
+      devTools.trackContextChange('theme', 'dark', 'comp-1')
+      
+      const events = devTools.getDebugEvents()
+      expect(events).toHaveLength(3) // Including devtools enabled event
+      
+      const reactiveEvent = events.find(e => e.type === 'reactive_update')
+      expect(reactiveEvent).toBeDefined()
+      expect(reactiveEvent!.componentId).toBe('comp-1')
+      
+      const contextEvent = events.find(e => e.type === 'context_change')
+      expect(contextEvent).toBeDefined()
+      expect(contextEvent!.data.contextName).toBe('theme')
+    })
+    
+    it('should limit debug events array size', () => {
+      // Add many events
+      for (let i = 0; i < 1200; i++) {
+        devTools.trackReactiveOperation('signal', 'update')
+      }
+      
+      const events = devTools.getDebugEvents()
+      expect(events.length).toBeLessThanOrEqual(1000)
+    })
+  })
+  
+  describe('Component Tree Analysis', () => {
+    beforeEach(() => {
+      devTools.enable()
+    })
+    
+    it('should find root components', () => {
+      const instances = {
+        root1: { type: 'component' as const, id: 'root1', props: {}, render: () => [] },
+        root2: { type: 'component' as const, id: 'root2', props: {}, render: () => [] },
+        child: { type: 'component' as const, id: 'child', props: {}, render: () => [] }
+      }
+      
+      devTools.registerComponent('root1', instances.root1)
+      devTools.registerComponent('root2', instances.root2)
+      devTools.registerComponent('child', instances.child, 'root1')
+      
+      const roots = devTools.getRootComponents()
+      expect(roots).toHaveLength(2)
+      expect(roots.map(r => r.id)).toContain('root1')
+      expect(roots.map(r => r.id)).toContain('root2')
+    })
+    
+    it('should find components by name', () => {
+      const instances = {
+        test1: { type: 'component' as const, id: 'test1', props: {}, render: () => [], displayName: 'TestComponent' },
+        test2: { type: 'component' as const, id: 'test2', props: {}, render: () => [], displayName: 'AnotherTest' },
+        other: { type: 'component' as const, id: 'other', props: {}, render: () => [], displayName: 'Different' }
+      }
+      
+      devTools.registerComponent('test1', instances.test1)
+      devTools.registerComponent('test2', instances.test2)
+      devTools.registerComponent('other', instances.other)
+      
+      const testComponents = devTools.findComponentsByName('test')
+      expect(testComponents).toHaveLength(2)
+    })
+    
+    it('should generate performance summary', () => {
+      const instance = {
+        type: 'component' as const,
+        id: 'slow-comp',
+        props: {},
+        render: () => []
+      }
+      
+      devTools.registerComponent('slow-comp', instance)
+      devTools.updateComponent('slow-comp', {
+        lastRenderTime: 25, // Slow component
+        memoryUsage: 1024 * 1024 * 2 // 2MB
+      })
+      
+      devTools.addWarning('slow-comp', 'Slow render')
+      devTools.addError('slow-comp', 'Test error')
+      
+      const summary = devTools.getPerformanceSummary()
+      expect(summary.componentCount).toBe(1)
+      expect(summary.averageRenderTime).toBe(25)
+      expect(summary.warningCount).toBe(1)
+      expect(summary.errorCount).toBe(1)
+      expect(summary.slowComponents).toHaveLength(1)
+      expect(summary.slowComponents[0].renderTime).toBe(25)
+    })
+  })
+  
+  describe('Data Export/Import', () => {
+    beforeEach(() => {
+      devTools.enable()
+    })
+    
+    it('should export debug data', () => {
+      const instance = {
+        type: 'component' as const,
+        id: 'test',
+        props: {},
+        render: () => []
+      }
+      
+      devTools.registerComponent('test', instance)
+      devTools.trackReactiveOperation('signal', 'create')
+      
+      const exported = devTools.exportDebugData()
+      const data = JSON.parse(exported)
+      
+      expect(data.componentTree).toHaveLength(1)
+      expect(data.debugEvents.length).toBeGreaterThan(0)
+      expect(data.timestamp).toBeTypeOf('number')
+    })
+  })
+})
+
+describe('Performance Utils', () => {
+  beforeEach(() => {
+    globalPerformanceMonitor.enable()
+  })
+  
+  afterEach(() => {
+    globalPerformanceMonitor.clear()
+    globalPerformanceMonitor.disable()
+  })
+  
+  it('should measure function execution', () => {
+    const result = performanceUtils.measure('test-function', () => {
+      // Simulate work
+      let sum = 0
+      for (let i = 0; i < 1000; i++) {
+        sum += i
+      }
+      return sum
+    })
+    
+    expect(result).toBe(499500) // Sum of 0..999
+    
+    const metrics = globalPerformanceMonitor.getMetrics()
+    const measureMetric = metrics.find(m => m.name === 'test-function')
+    expect(measureMetric).toBeDefined()
+    expect(measureMetric!.unit).toBe('ms')
+  })
+  
+  it('should measure async function execution', async () => {
+    const result = await performanceUtils.measureAsync('async-test', async () => {
+      await new Promise(resolve => setTimeout(resolve, 10))
+      return 'done'
+    })
+    
+    expect(result).toBe('done')
+    
+    const metrics = globalPerformanceMonitor.getMetrics()
+    const measureMetric = metrics.find(m => m.name === 'async-test')
+    expect(measureMetric).toBeDefined()
+    expect(measureMetric!.value).toBeGreaterThan(8)
+  })
+  
+  it('should handle errors in measured functions', () => {
+    expect(() => {
+      performanceUtils.measure('error-test', () => {
+        throw new Error('Test error')
+      })
+    }).toThrow('Test error')
+    
+    // Should still record the metric
+    const metrics = globalPerformanceMonitor.getMetrics()
+    const measureMetric = metrics.find(m => m.name === 'error-test')
+    expect(measureMetric).toBeDefined()
+  })
+  
+  it('should create performance tracking wrapper', () => {
+    const testFn = vi.fn(() => 'result')
+    const wrappedFn = performanceUtils.withPerformanceTracking(testFn, 'TestComponent')
+    
+    const result = wrappedFn('arg1', 'arg2')
+    
+    expect(result).toBe('result')
+    expect(testFn).toHaveBeenCalledWith('arg1', 'arg2')
+    
+    // Should track component mount and render
+    const componentMetrics = globalPerformanceMonitor.getComponentMetrics()
+    expect(componentMetrics.size).toBe(1)
+  })
+})
+
+describe('Global Functions', () => {
+  afterEach(() => {
+    globalPerformanceMonitor.clear()
+    globalPerformanceMonitor.disable()
+    globalDevTools.clear()
+    globalDevTools.disable()
+  })
+  
+  it('should enable performance tracking', () => {
+    enablePerformanceTracking()
+    
+    expect(globalPerformanceMonitor.isEnabled()).toBe(true)
+    expect(globalDevTools.isEnabled()).toBe(true)
+  })
+  
+  it('should enable development mode', () => {
+    enableDevelopmentMode({
+      trackMemoryUsage: false
+    })
+    
+    expect(globalDevTools.isEnabled()).toBe(true)
+  })
+})
+
+describe('Dev Utils', () => {
+  beforeEach(() => {
+    globalDevTools.enable()
+  })
+  
+  afterEach(() => {
+    globalDevTools.clear()
+    globalDevTools.disable()
+  })
+  
+  it('should find components', () => {
+    const instance = {
+      type: 'component' as const,
+      id: 'test',
+      props: {},
+      render: () => [],
+      displayName: 'TestComponent'
+    }
+    
+    globalDevTools.registerComponent('test', instance)
+    
+    const found = devUtils.findComponent('Test')
+    expect(found).toHaveLength(1)
+    expect(found[0].name).toBe('TestComponent')
+  })
+  
+  it('should inspect components', () => {
+    const instance = {
+      type: 'component' as const,
+      id: 'test',
+      props: { title: 'Test' },
+      render: () => []
+    }
+    
+    globalDevTools.registerComponent('test', instance)
+    
+    const inspected = devUtils.inspectComponent('test')
+    expect(inspected).toBeDefined()
+    expect(inspected!.props).toEqual({ title: 'Test' })
+  })
+})
