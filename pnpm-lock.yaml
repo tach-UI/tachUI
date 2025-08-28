@@ -175,11 +175,10 @@ importers:
         version: 1.6.1(@types/node@20.19.11)(jsdom@23.2.0)
 
   packages/mobile-patterns:
-    dependencies:
+    devDependencies:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
-    devDependencies:
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.11
