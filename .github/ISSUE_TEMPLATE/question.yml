@@ -1,4 +1,4 @@
-name: ❓ Question / Help
+name: Question / Help
 description: Ask a question or get help with tachUI
 title: "[Question]: "
 labels: ["question", "help-wanted"]
@@ -6,13 +6,13 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your question! 
-        
+        Thanks for your question!
+
         Before asking, please check:
-        - 📚 [Documentation](../../docs/guide/)
-        - 🗺 [Component Examples](../../apps/examples/)
-        - 💬 [Existing Discussions](../../discussions)
-        
+        - [Documentation](../../docs/guide/)
+        - [Component Examples](../../apps/examples/)
+        - [Existing Discussions](../../discussions)
+
   - type: dropdown
     id: question-type
     attributes:

@@ -1,4 +1,4 @@
-name: ✨ Feature Request
+name: Feature Request
 description: Suggest a new feature or enhancement for tachUI
 title: "[Feature]: "
 labels: ["enhancement", "needs-discussion"]
@@ -6,10 +6,10 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for suggesting a new feature! 
-        
+        Thanks for suggesting a new feature!
+
         Please check if a similar feature request already exists before submitting.
-        
+
   - type: dropdown
     id: feature-type
     attributes:

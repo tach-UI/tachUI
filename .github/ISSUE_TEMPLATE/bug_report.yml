@@ -1,4 +1,4 @@
-name: 🐛 Bug Report
+name: Bug Report
 description: Report a bug or unexpected behavior in tachUI
 title: "[Bug]: "
 labels: ["bug", "needs-triage"]
@@ -6,10 +6,10 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report! 
-        
+        Thanks for taking the time to fill out this bug report!
+
         Before submitting, please check if your issue has already been reported.
-        
+
   - type: input
     id: version
     attributes:
@@ -64,7 +64,7 @@ body:
       render: typescript
       placeholder: |
         import { Text, Button } from '@tachui/core'
-        
+
         // Your minimal reproduction case here
     validations:
       required: false

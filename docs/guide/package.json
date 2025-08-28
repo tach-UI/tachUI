@@ -10,10 +10,11 @@
     "docs:generate": "typedoc --options ../../typedoc.json"
   },
   "dependencies": {
-    "@tachui/core": "workspace:*"
+    "@tachui/core": "workspace:*",
+    "vue": "^3.4.0"
   },
   "devDependencies": {
-    "vitepress": "^1.0.0",
+    "vitepress": "^1.6.4",
     "typescript": "^5.2.0"
   },
   "author": "tachUI Team",
