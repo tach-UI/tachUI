@@ -7,8 +7,8 @@ import {
   GradientTypeGuards,
   GradientExamples,
   GradientDebugger,
-} from '../index'
-import { LinearGradient } from '../index'
+} from '../../src/gradients/index'
+import { LinearGradient } from '../../src/gradients/index'
 
 describe('Phase 4 Features', () => {
   describe('Gradient Presets', () => {

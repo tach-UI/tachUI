@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { StateGradientAsset, StateGradient } from '../state-gradient-asset'
-import { LinearGradient } from '../index'
-import type { StateGradientOptions } from '../types'
+import {
+  StateGradientAsset,
+  StateGradient,
+} from '../../src/gradients/state-gradient-asset'
+import { LinearGradient } from '../../src/gradients/index'
+import type { StateGradientOptions } from '../../src/gradients/types'
 
 describe('StateGradientAsset', () => {
   let stateGradients: StateGradientOptions

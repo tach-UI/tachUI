@@ -20,7 +20,7 @@ import {
   Visibility,
   Spacing,
   ResponsiveTypography,
-} from '../layout-patterns'
+} from '../../../src/modifiers/responsive'
 
 describe('Responsive Layout Patterns', () => {
   describe('ResponsiveGridPatterns', () => {

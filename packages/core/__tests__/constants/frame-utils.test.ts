@@ -16,9 +16,9 @@ import {
   fullScreen,
   remainingSpace,
   equalShare,
-} from '../frame-utils'
-import { infinity } from '../layout'
-import type { LayoutModifierProps } from '../../modifiers/types'
+} from '../../src/constants/frame-utils'
+import { infinity } from '../../src/constants/layout'
+import type { LayoutModifierProps } from '../../src/modifiers/types'
 
 describe('Frame Utilities', () => {
   describe('fillMaxWidth', () => {

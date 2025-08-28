@@ -12,7 +12,7 @@ import {
   dimensionToCSS,
   infinityToFlexCSS,
   shouldExpandForInfinity,
-} from '../layout'
+} from '../../src/constants/layout'
 
 describe('TachUI Layout Constants', () => {
   describe('infinity constant', () => {

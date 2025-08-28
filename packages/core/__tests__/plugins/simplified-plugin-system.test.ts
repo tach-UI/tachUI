@@ -8,8 +8,11 @@ import {
   SimplifiedPluginManager,
   SimplifiedComponentRegistry,
   PluginError,
-} from '../simplified-index'
-import type { TachUIPlugin, TachUIInstance } from '../simplified-types'
+} from '../../src/plugins/simplified-index'
+import type {
+  TachUIPlugin,
+  TachUIInstance,
+} from '../../src/plugins/simplified-types'
 
 describe('Simplified Plugin System', () => {
   let instance: SimplifiedTachUIInstance

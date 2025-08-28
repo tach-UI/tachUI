@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { BasicSanitizer } from '../basic-sanitizer'
+import { BasicSanitizer } from '../../src/modifiers/basic-sanitizer'
 
 describe('BasicSanitizer Security Tests', () => {
   const xssVectors = [

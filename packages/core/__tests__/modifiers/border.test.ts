@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createSignal } from '../../reactive/signal'
-import type { ModifierContext } from '../types'
+import { createSignal } from '../../src/reactive/signal'
+import type { ModifierContext } from '../../src/modifiers/types'
 import {
   BorderModifier,
   border,
@@ -12,7 +12,7 @@ import {
   borderTrailing,
   borderHorizontal,
   borderVertical,
-} from '../border'
+} from '../../src/modifiers/border'
 
 describe('BorderModifier', () => {
   let mockElement: any

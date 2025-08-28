@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { BackgroundModifier } from '../../modifiers/background'
-import { LinearGradient } from '../index'
-import { createColorAsset } from '../../assets'
-import type { ModifierContext } from '../../modifiers/types'
+import { BackgroundModifier } from '../../src/modifiers/background'
+import { LinearGradient } from '../../src/gradients/index'
+import { createColorAsset } from '../../src/assets'
+import type { ModifierContext } from '../../src/modifiers/types'
 
 describe('BackgroundModifier', () => {
   let mockElement: HTMLElement

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { BackgroundModifier } from '../../modifiers/background'
-import { LinearGradient } from '../index'
-import type { StateGradientOptions } from '../types'
-import type { ModifierContext } from '../../modifiers/types'
+import { BackgroundModifier } from '../../src/modifiers/background'
+import { LinearGradient } from '../../src/gradients/index'
+import type { StateGradientOptions } from '../../src/gradients/types'
+import type { ModifierContext } from '../../src/modifiers/types'
 
 // Mock DOM environment
 Object.defineProperty(window, 'MutationObserver', {

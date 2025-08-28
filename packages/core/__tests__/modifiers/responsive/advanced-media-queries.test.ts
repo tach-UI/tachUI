@@ -6,9 +6,13 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
-import { ResponsiveModifierBuilderImpl } from '../responsive-builder'
-import { MediaQueries, combineMediaQueries, orMediaQueries } from '../utilities'
-import { createMediaQueryModifier } from '../responsive-modifier'
+import {
+  MediaQueries,
+  createMediaQueryModifier,
+  ResponsiveModifierBuilderImpl,
+  combineMediaQueries,
+  orMediaQueries,
+} from '../../../src/modifiers/responsive'
 
 // Mock ModifierBuilder
 class MockModifierBuilder {

@@ -9,7 +9,7 @@ import {
   marginVertical,
   marginTop,
   marginBottom,
-} from '../margin'
+} from '../../src/modifiers/margin'
 
 describe('Margin Modifier - String Value Support', () => {
   it('should accept string values for horizontal/vertical', () => {

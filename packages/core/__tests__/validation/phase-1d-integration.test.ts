@@ -10,20 +10,23 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import type { EnhancedValidationError } from '../enhanced-runtime'
+import type { EnhancedValidationError } from '../../src/validation/enhanced-runtime'
 import {
   DeveloperExperienceUtils,
   type IntelligentFixSuggestion,
-} from '../developer-experience'
-import { IDEIntegrationUtils, type LSPDiagnostic } from '../ide-integration'
+} from '../../src/validation/developer-experience'
+import {
+  IDEIntegrationUtils,
+  type LSPDiagnostic,
+} from '../../src/validation/ide-integration'
 import {
   DocumentationIntegrationUtils,
   type UserLearningProfile,
-} from '../documentation-integration'
+} from '../../src/validation/documentation-integration'
 import {
   AdvancedDebuggingUtils,
   type AdvancedDebuggingSession,
-} from '../advanced-debugging'
+} from '../../src/validation/advanced-debugging'
 
 // Mock enhanced validation error for testing
 class MockEnhancedValidationError {

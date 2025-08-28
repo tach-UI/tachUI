@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { RadialGradient } from '../index'
-import { generateRadialGradientCSS } from '../css-generator'
-import { createColorAsset } from '../../assets'
+import { RadialGradient } from '../../src/gradients/index'
+import { generateRadialGradientCSS } from '../../src/gradients/css-generator'
+import { createColorAsset } from '../../src/assets'
 
 describe('RadialGradient', () => {
   it('creates a radial gradient definition', () => {

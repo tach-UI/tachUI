@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { ModifierBuilderImpl } from '../builder'
+import { ModifierBuilderImpl } from '../../src/modifiers/builder'
 
 // Mock components for testing integration
 const mockTextComponent = (content: string) => ({

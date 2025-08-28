@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ModifierBuilderImpl } from '../../modifiers/builder'
-import { LinearGradient } from '../index'
-import { StateGradient } from '../state-gradient-asset'
-import type { ComponentInstance } from '../../runtime/types'
-import type { StateGradientOptions } from '../types'
+import { ModifierBuilderImpl } from '../../src/modifiers/builder'
+import { LinearGradient } from '../../src/gradients/index'
+import { StateGradient } from '../../src/gradients/state-gradient-asset'
+import type { ComponentInstance } from '../../src/runtime/types'
+import type { StateGradientOptions } from '../../src/gradients/types'
 
 describe('State Gradient Integration Tests', () => {
   let mockComponent: ComponentInstance

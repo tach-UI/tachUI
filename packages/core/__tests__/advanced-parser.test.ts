@@ -1,5 +1,5 @@
 /**
- * Simple Advanced Parser Tests
+ * Advanced SwiftUI Parser Tests
  */
 
 import { describe, expect, it } from 'vitest'

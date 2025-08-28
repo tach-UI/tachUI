@@ -1,6 +1,6 @@
 /**
  * Responsive Design System - Main Export
- * 
+ *
  * Complete CSS-native responsive design system for tachUI.
  * Provides mobile-first responsive modifiers with TypeScript support.
  */
@@ -39,11 +39,15 @@ export * from './dev-tools'
 export type {
   ResponsiveValue,
   BreakpointKey,
-  ResponsiveStyleConfig
+  ResponsiveStyleConfig,
 } from './types'
 
-export type {
-  ResponsiveModifierBuilder
+export type { ResponsiveModifierBuilder } from './responsive-builder'
+
+export {
+  ResponsiveModifierBuilderImpl,
+  withResponsive,
+  createResponsiveBuilder,
 } from './responsive-builder'
 
 // Re-export commonly used functions
@@ -55,31 +59,24 @@ export {
   getViewportDimensions,
   createBreakpointContext,
   generateMediaQuery,
-  BreakpointPresets
+  BreakpointPresets,
 } from './breakpoints'
 
 export {
   createResponsiveModifier,
   createMediaQueryModifier,
   createResponsivePropertyModifier,
-  createResponsiveLayoutModifier
+  createResponsiveLayoutModifier,
 } from './responsive-modifier'
 
-export {
-  useBreakpoint,
-  useMediaQuery,
-  useResponsiveValue,
-  withResponsive
-} from './utilities'
+export { useBreakpoint, useMediaQuery, useResponsiveValue } from './utilities'
 
-export {
-  DEFAULT_BREAKPOINTS
-} from './types'
+export { DEFAULT_BREAKPOINTS } from './types'
 
 export {
   MediaQueries,
   enableResponsiveDebugOverlay,
-  logResponsiveState
+  logResponsiveState,
 } from './utilities'
 
 export {
@@ -95,7 +92,7 @@ export {
   Container,
   Visibility,
   Spacing,
-  ResponsiveTypography
+  ResponsiveTypography,
 } from './layout-patterns'
 
 export {
@@ -103,17 +100,17 @@ export {
   ResponsiveHooks,
   ResponsiveTargeting,
   ResponsiveDataUtils,
-  ResponsiveAdvanced
+  ResponsiveAdvanced,
 } from './advanced-utilities'
 
 export {
   OptimizedCSSGenerator,
   ResponsivePerformanceMonitor,
-  cssRuleCache
+  cssRuleCache,
 } from './performance'
 
 export {
   ResponsiveDevTools,
   BrowserCompatibility,
-  useResponsiveInspector
+  useResponsiveInspector,
 } from './dev-tools'

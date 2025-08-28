@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { LinearGradient } from '../index'
-import { generateLinearGradientCSS } from '../css-generator'
-import { createColorAsset } from '../../assets'
+import { LinearGradient } from '../../src/gradients/index'
+import { generateLinearGradientCSS } from '../../src/gradients/css-generator'
+import { createColorAsset } from '../../src/assets'
 
 describe('LinearGradient', () => {
   it('creates a linear gradient definition', () => {

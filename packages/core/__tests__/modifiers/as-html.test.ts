@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
-import { AsHTMLModifier, asHTML } from '../as-html'
-import { BasicSanitizer } from '../basic-sanitizer'
-import { AsHTMLValidator } from '../as-html-validator'
+import { AsHTMLModifier, asHTML } from '../../src/modifiers/as-html'
+import { BasicSanitizer } from '../../src/modifiers/basic-sanitizer'
+import { AsHTMLValidator } from '../../src/modifiers/as-html-validator'
 
 // Mock Text component for testing
 const mockTextComponent = (content: string) => ({

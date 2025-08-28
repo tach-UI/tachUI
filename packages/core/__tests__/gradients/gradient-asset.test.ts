@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createGradientAsset } from '../gradient-asset'
-import { LinearGradient } from '../index'
+import { createGradientAsset } from '../../src/gradients/gradient-asset'
+import { LinearGradient } from '../../src/gradients/index'
 
 describe('GradientAsset', () => {
   beforeEach(() => {

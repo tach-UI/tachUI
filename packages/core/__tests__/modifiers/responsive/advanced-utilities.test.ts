@@ -6,38 +6,41 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
-import { createSignal } from '../../../reactive'
+import { createSignal } from '../../../src/reactive'
 import {
   AdvancedBreakpointUtils,
   ResponsiveHooks,
   ResponsiveTargeting,
   ResponsiveDataUtils,
   ResponsiveAdvanced,
-} from '../advanced-utilities'
+} from '../../../src/modifiers/responsive'
 
 // Mock breakpoint system
-vi.mock('../breakpoints', () => ({
-  getCurrentBreakpoint: vi.fn(() => createSignal('md')[0]),
-  getBreakpointIndex: vi.fn((bp: string) => {
-    const order = ['base', 'sm', 'md', 'lg', 'xl', '2xl']
-    return order.indexOf(bp)
-  }),
-  createBreakpointContext: vi.fn(() => ({
-    current: 'md',
-    width: 768,
-    height: 1024,
-    isTouch: false,
-    userAgent: 'test',
-  })),
-  getCurrentBreakpointConfig: vi.fn(() => ({
-    base: '0px',
-    sm: '640px',
-    md: '768px',
-    lg: '1024px',
-    xl: '1280px',
-    '2xl': '1536px',
-  })),
-}))
+vi.mock('../../../src/modifiers/responsive/breakpoints', () => {
+  const currentBreakpoint = createSignal('md')
+  return {
+    getCurrentBreakpoint: vi.fn(() => currentBreakpoint[0]),
+    getBreakpointIndex: vi.fn((bp: string) => {
+      const order = ['base', 'sm', 'md', 'lg', 'xl', '2xl']
+      return order.indexOf(bp)
+    }),
+    createBreakpointContext: vi.fn(() => ({
+      current: 'md',
+      width: 768,
+      height: 1024,
+      isTouch: false,
+      userAgent: 'test',
+    })),
+    getCurrentBreakpointConfig: vi.fn(() => ({
+      base: '0px',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1536px',
+    })),
+  }
+})
 
 describe('Advanced Responsive Utilities', () => {
   beforeEach(() => {

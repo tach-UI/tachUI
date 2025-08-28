@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { RepeatingLinearGradient, RepeatingRadialGradient } from '../index'
+import {
+  RepeatingLinearGradient,
+  RepeatingRadialGradient,
+} from '../../src/gradients/index'
 import {
   generateRepeatingLinearGradientCSS,
   generateRepeatingRadialGradientCSS,
-} from '../css-generator'
-import { createColorAsset } from '../../assets'
+} from '../../src/gradients/css-generator'
+import { createColorAsset } from '../../src/assets'
 
 describe('RepeatingLinearGradient', () => {
   it('creates a repeating linear gradient definition', () => {

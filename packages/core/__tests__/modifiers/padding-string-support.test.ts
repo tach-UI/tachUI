@@ -9,7 +9,7 @@ import {
   paddingVertical,
   paddingTop,
   paddingBottom,
-} from '../padding'
+} from '../../src/modifiers/padding'
 
 describe('Padding Modifier - String Value Support', () => {
   it('should accept string values for horizontal/vertical', () => {

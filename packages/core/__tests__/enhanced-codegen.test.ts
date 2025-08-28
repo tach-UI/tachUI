@@ -1,5 +1,5 @@
 /**
- * Simple Enhanced Codegen Tests
+ * Enhanced DOM Code Generator Tests
  */
 
 import { describe, expect, it } from 'vitest'

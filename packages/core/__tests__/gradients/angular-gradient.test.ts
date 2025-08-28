@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { AngularGradient } from '../index'
-import { generateAngularGradientCSS } from '../css-generator'
-import { createColorAsset } from '../../assets'
+import { AngularGradient } from '../../src/gradients/index'
+import { generateAngularGradientCSS } from '../../src/gradients/css-generator'
+import { createColorAsset } from '../../src/assets'
 
 describe('AngularGradient', () => {
   it('creates an angular gradient definition', () => {
