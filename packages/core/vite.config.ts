@@ -5,17 +5,15 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
-        // Phase 3: Epic Killington Bundle Strategy
-        
         // Bundle variants (tree-shakable)
-        'index': resolve(__dirname, 'src/bundles/complete.ts'),    // Complete (with validation)
-        'minimal': resolve(__dirname, 'src/bundles/minimal.ts'),   // Dev minimal (with validation)
-        'common': resolve(__dirname, 'src/bundles/common.ts'),     // Dev common (with validation)
-        'essential': resolve(__dirname, 'src/bundles/essential.ts'), // Dev essential (with validation)
-        
+        index: resolve(__dirname, 'src/bundles/complete.ts'), // Complete (with validation)
+        minimal: resolve(__dirname, 'src/bundles/minimal.ts'), // Dev minimal (with validation)
+        common: resolve(__dirname, 'src/bundles/common.ts'), // Dev common (with validation)
+        essential: resolve(__dirname, 'src/bundles/essential.ts'), // Dev essential (with validation)
+
         // Production bundles (no validation, no TypeScript)
         'minimal-prod': resolve(__dirname, 'src/bundles/production-minimal.ts'), // ~45KB production
-        
+
         // Granular exports (for maximum optimization)
         'reactive/index': resolve(__dirname, 'src/reactive/index.ts'),
         'compiler/index': resolve(__dirname, 'src/compiler/index.ts'),
@@ -23,16 +21,16 @@ export default defineConfig({
         'plugins/index': resolve(__dirname, 'src/plugins/index.ts'),
         'runtime/dom-bridge': resolve(__dirname, 'src/runtime/dom-bridge.ts'),
         'runtime/renderer': resolve(__dirname, 'src/runtime/renderer.ts'),
-        'debug': resolve(__dirname, 'src/debug/index.ts'),
+        debug: resolve(__dirname, 'src/debug/index.ts'),
         'validation/index': resolve(__dirname, 'src/validation/index.ts'),
         'viewport/index': resolve(__dirname, 'src/viewport/index.ts'),
       },
       name: 'TachUICore',
-      formats: ['es', 'cjs'],
+      formats: ['es'],
     },
     rollupOptions: {
       // External dependencies (not bundled)
-      external: (id) => {
+      external: id => {
         // Always externalize TypeScript
         if (id === 'typescript' || id.includes('typescript')) {
           return true
@@ -41,10 +39,11 @@ export default defineConfig({
       },
       output: {
         exports: 'named',
-        preserveModules: true, // Enable tree-shaking (cannot use with manualChunks)
-      }
+        preserveModules: false, // Use optimized bundles instead of individual modules
+        manualChunks: undefined, // Let Rollup optimize chunking
+      },
     },
-    sourcemap: true,
+    sourcemap: false,
     minify: 'esbuild',
     target: 'es2020',
   },

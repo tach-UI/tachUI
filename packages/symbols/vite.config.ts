@@ -22,14 +22,14 @@ export default defineConfig({
         'utils/index': resolve(__dirname, 'src/utils/index.ts'),
       },
       name: 'TachUISymbols',
-      formats: ['es', 'cjs'],
+      formats: ['es'],
     },
     rollupOptions: {
       external: ['@tachui/core', '@tachui/core/validation', 'lucide'],
       output: {
         globals: {
           '@tachui/core': 'TachUICore',
-          'lucide': 'Lucide',
+          lucide: 'Lucide',
         },
         exports: 'named',
         // Temporarily disable manual chunks to fix Symbol export
@@ -49,7 +49,7 @@ export default defineConfig({
         // },
       },
     },
-    sourcemap: true,
+    sourcemap: false,
     minify: 'esbuild',
     target: 'es2020',
   },

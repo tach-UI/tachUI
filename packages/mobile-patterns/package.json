@@ -13,8 +13,7 @@
     }
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "scripts": {
     "build": "rm -rf dist && vite build",
@@ -25,10 +24,11 @@
     "test:coverage": "vitest run --coverage",
     "type-check": "echo 'Type checking disabled for plugin - using runtime validation from @tachui/core'"
   },
-  "dependencies": {
-    "@tachui/core": "workspace:*"
+  "peerDependencies": {
+    "@tachui/core": "^0.1.0"
   },
   "devDependencies": {
+    "@tachui/core": "workspace:*",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^1.0.0",
     "typescript": "^5.2.0",
@@ -39,7 +39,7 @@
     "ui",
     "mobile",
     "actionsheet",
-    "alert", 
+    "alert",
     "navigation",
     "tachui",
     "plugin"
@@ -48,7 +48,7 @@
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tachui/tachui",
+    "url": "https://github.com/tach-UI/tachUI",
     "directory": "packages/mobile-patterns"
   }
 }

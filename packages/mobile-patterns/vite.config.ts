@@ -6,18 +6,18 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'TachUIMobilePatterns',
-      formats: ['es', 'cjs'],
+      formats: ['es'],
     },
     rollupOptions: {
       // Mark @tachui/core as external since it's a peer dependency
       external: ['@tachui/core'],
       output: {
         globals: {
-          '@tachui/core': 'TachUICore'
-        }
-      }
+          '@tachui/core': 'TachUICore',
+        },
+      },
     },
-    sourcemap: true,
+    sourcemap: false,
     minify: 'esbuild',
     target: 'es2020',
   },

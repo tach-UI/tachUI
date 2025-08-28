@@ -6,7 +6,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist/"
+    "dist"
   ],
   "scripts": {
     "build": "vite build",
@@ -31,7 +31,7 @@
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tachUI/tachui.git",
+    "url": "https://github.com/tach-UI/tachUI",
     "directory": "packages/symbols"
   },
   "peerDependencies": {
@@ -51,8 +51,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     },
     "./components": {
       "types": "./dist/components/index.d.ts",

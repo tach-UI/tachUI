@@ -1,27 +1,30 @@
 # @tachui/navigation
 
-SwiftUI-inspired navigation components for TachUI. This package provides stack-based and tab-based navigation with automatic back button handling, URL routing, and deep linking support.
+> Navigation components and routing utilities for tachUI framework
+
+[![npm version](https://img.shields.io/npm/v/@tachui/navigation.svg)](https://www.npmjs.com/package/@tachui/navigation)
+[![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](https://opensource.org/licenses/MPL-2.0)
+
+## Overview
+
+The tachUI navigation package provides SwiftUI-compatible navigation components including NavigationView, TabView, and routing utilities for building multi-screen applications with smooth transitions and deep linking support.
+
+## Features
+
+- 🧭 **NavigationView & NavigationStack** - Hierarchical navigation with back button support
+- 📑 **TabView** - Tab-based navigation with customizable tab bars
+- 🔗 **Deep Linking** - URL-based navigation with parameter parsing
+- 🎨 **Customizable Transitions** - Smooth page transitions and animations
+- 📱 **Mobile-optimized** - Touch gestures and mobile navigation patterns
+- 🔧 **TypeScript-first** - Complete type safety for routing and navigation
 
 ## Installation
 
 ```bash
-npm install @tachui/navigation @tachui/core
+npm install @tachui/core @tachui/navigation
 # or
-pnpm add @tachui/navigation @tachui/core
-# or
-yarn add @tachui/navigation @tachui/core
+pnpm add @tachui/core @tachui/navigation
 ```
-
-## Overview
-
-The navigation package includes:
-
-- **NavigationView**: Stack-based navigation with automatic back button
-- **NavigationLink**: Declarative navigation to other views  
-- **TabView**: Tab-based navigation interface
-- **EnhancedTabView**: Modern SwiftUI features (floating tabs, customization)
-- **Navigation Router**: Programmatic navigation and URL routing
-- **Navigation Manager**: Global navigation state management
 
 ## Quick Start
 
@@ -32,21 +35,20 @@ import { NavigationView, NavigationLink } from '@tachui/navigation'
 import { Text, VStack, Button } from '@tachui/core'
 
 // Root view
-const ContentView = () => VStack([
-  Text('Home'),
-  NavigationLink(() => DetailView(), 'Go to Detail')
-])
+const ContentView = () =>
+  VStack([Text('Home'), NavigationLink(() => DetailView(), 'Go to Detail')])
 
 // Detail view
-const DetailView = () => VStack([
-  Text('Detail View'),
-  NavigationLink(() => AnotherView(), 'Go Further')
-])
+const DetailView = () =>
+  VStack([
+    Text('Detail View'),
+    NavigationLink(() => AnotherView(), 'Go Further'),
+  ])
 
 // App with navigation
 const App = NavigationView(() => ContentView(), {
   title: 'My App',
-  navigationBarTitleDisplayMode: 'large'
+  navigationBarTitleDisplayMode: 'large',
 })
 ```
 
@@ -56,22 +58,25 @@ const App = NavigationView(() => ContentView(), {
 import { TabView } from '@tachui/navigation'
 import { Text, VStack } from '@tachui/core'
 
-const App = TabView([
+const App = TabView(
+  [
+    {
+      id: 'home',
+      title: 'Home',
+      icon: '🏠',
+      view: () => VStack([Text('Home Content')]),
+    },
+    {
+      id: 'profile',
+      title: 'Profile',
+      icon: '👤',
+      view: () => VStack([Text('Profile Content')]),
+    },
+  ],
   {
-    id: 'home',
-    title: 'Home',
-    icon: '🏠',
-    view: () => VStack([Text('Home Content')])
-  },
-  {
-    id: 'profile', 
-    title: 'Profile',
-    icon: '👤',
-    view: () => VStack([Text('Profile Content')])
+    tabPlacement: 'bottom',
   }
-], {
-  tabPlacement: 'bottom'
-})
+)
 ```
 
 ### Programmatic Navigation
@@ -82,7 +87,7 @@ import { createNavigationRouter } from '@tachui/navigation'
 const router = createNavigationRouter({
   '/home': () => HomeView(),
   '/profile': () => ProfileView(),
-  '/detail/:id': ({ id }) => DetailView(id)
+  '/detail/:id': ({ id }) => DetailView(id),
 })
 
 // Navigate programmatically
@@ -169,16 +174,16 @@ const router = createNavigationRouter({
   // Static routes
   '/': () => HomeView(),
   '/about': () => AboutView(),
-  
+
   // Dynamic routes with parameters
   '/user/:id': ({ id }) => UserView(id),
   '/post/:id/comments': ({ id }) => CommentsView(id),
-  
+
   // Wildcard routes
   '/admin/*': () => AdminView(),
-  
+
   // Query parameter handling
-  '/search': ({ query, page }) => SearchView(query, page)
+  '/search': ({ query, page }) => SearchView(query, page),
 })
 ```
 
@@ -209,8 +214,8 @@ const router = createNavigationRouter(routes, {
   deepLinking: {
     enabled: true,
     baseURL: 'https://myapp.com',
-    handleUnknownRoutes: (path) => NotFoundView(path)
-  }
+    handleUnknownRoutes: path => NotFoundView(path),
+  },
 })
 ```
 
@@ -224,14 +229,14 @@ NavigationView(() => ContentView(), {
     push: {
       type: 'slide',
       direction: 'left',
-      duration: 0.3
+      duration: 0.3,
     },
     pop: {
-      type: 'slide', 
+      type: 'slide',
       direction: 'right',
-      duration: 0.3
-    }
-  }
+      duration: 0.3,
+    },
+  },
 })
 ```
 
@@ -242,8 +247,8 @@ NavigationView(() => ContentView(), {
   persistence: {
     enabled: true,
     key: 'main-navigation',
-    storage: 'localStorage' // or 'sessionStorage'
-  }
+    storage: 'localStorage', // or 'sessionStorage'
+  },
 })
 ```
 
@@ -256,14 +261,14 @@ EnhancedTabView(tabs, {
     {
       id: 'main',
       title: 'Main',
-      tabs: ['home', 'search', 'favorites']
+      tabs: ['home', 'search', 'favorites'],
     },
     {
       id: 'account',
-      title: 'Account', 
-      tabs: ['profile', 'settings']
-    }
-  ]
+      title: 'Account',
+      tabs: ['profile', 'settings'],
+    },
+  ],
 })
 ```
 
@@ -273,8 +278,7 @@ Navigation components work seamlessly with all TachUI Core components and the mo
 
 ```typescript
 NavigationView(() => ContentView())
-  .modifier
-  .padding(16)
+  .modifier.padding(16)
   .backgroundColor('#f5f5f5')
   .build()
 ```
@@ -284,11 +288,11 @@ NavigationView(() => ContentView())
 Full TypeScript support with comprehensive type definitions:
 
 ```typescript
-import type { 
+import type {
   NavigationDestination,
   NavigationContext,
   TabItem,
-  NavigationRouter
+  NavigationRouter,
 } from '@tachui/navigation'
 ```
 

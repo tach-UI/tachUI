@@ -16,7 +16,7 @@
       "import": "./dist/minimal.js"
     },
     "./common": {
-      "types": "./dist/common.d.ts", 
+      "types": "./dist/common.d.ts",
       "import": "./dist/common.js"
     },
     "./essential": {
@@ -53,8 +53,7 @@
     }
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "scripts": {
     "build": "rm -rf dist && vite build && tsc --project tsconfig.build.json",
@@ -122,7 +121,7 @@
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tachui/tachui",
+    "url": "https://github.com/tach-UI/tachUI",
     "directory": "packages/core"
   }
 }

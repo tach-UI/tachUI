@@ -7,7 +7,7 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'TachUINavigation',
       fileName: 'index',
-      formats: ['es', 'cjs'],
+      formats: ['es'],
     },
     rollupOptions: {
       // External dependencies that shouldn't be bundled
@@ -19,8 +19,7 @@ export default defineConfig({
         exports: 'named',
       },
     },
-    // Ensure source maps for debugging
-    sourcemap: true,
+    sourcemap: false,
     minify: 'esbuild',
     // Target modern browsers for better performance
     target: 'es2020',

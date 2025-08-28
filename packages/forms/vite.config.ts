@@ -11,7 +11,7 @@ export default defineConfig({
         'state/index': resolve(__dirname, 'src/state/index.ts'),
       },
       name: 'TachUIForms',
-      formats: ['es', 'cjs'],
+      formats: ['es'],
     },
     rollupOptions: {
       external: ['@tachui/core', '@tachui/core/validation'],
@@ -20,21 +20,10 @@ export default defineConfig({
           '@tachui/core': 'TachUICore',
         },
         exports: 'named',
-        manualChunks: {
-          // Core form utilities - most likely to be used
-          'forms-core': ['./src/state/index.ts', './src/validation/index.ts'],
-          // Basic input components - commonly used
-          'forms-inputs': [
-            './src/components/input/TextField.ts',
-            './src/components/input/Checkbox.ts',
-            './src/components/input/Radio.ts',
-          ],
-          // Complex components - loaded on demand
-          'forms-complex': ['./src/components/input/Select.ts'],
-        },
+        manualChunks: undefined,
       },
     },
-    sourcemap: true,
+    sourcemap: false,
     minify: 'esbuild',
     target: 'es2020',
   },
