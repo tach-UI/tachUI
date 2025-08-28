@@ -14,9 +14,9 @@ describe('State Gradient Integration Tests', () => {
       type: 'test-component',
       id: 'test-123',
       props: {},
-      children: []
+      children: [],
     }
-    
+
     builder = new ModifierBuilderImpl(mockComponent)
   })
 
@@ -26,17 +26,17 @@ describe('State Gradient Integration Tests', () => {
         default: LinearGradient({
           startPoint: 'top',
           endPoint: 'bottom',
-          colors: ['#ff0000', '#0000ff']
+          colors: ['#ff0000', '#0000ff'],
         }),
         hover: LinearGradient({
           startPoint: 'leading',
           endPoint: 'trailing',
-          colors: ['#ff6666', '#6666ff']
+          colors: ['#ff6666', '#6666ff'],
         }),
         animation: {
           duration: 250,
-          easing: 'ease-in-out'
-        }
+          easing: 'ease-in-out',
+        },
       }
 
       expect(() => {
@@ -52,7 +52,7 @@ describe('State Gradient Integration Tests', () => {
       const asset = StateGradient('test-asset', {
         default: '#ff0000',
         hover: '#00ff00',
-        active: '#0000ff'
+        active: '#0000ff',
       })
 
       expect(() => {
@@ -67,7 +67,7 @@ describe('State Gradient Integration Tests', () => {
       const gradient = LinearGradient({
         startPoint: 'top',
         endPoint: 'bottom',
-        colors: ['#ff0000', '#0000ff']
+        colors: ['#ff0000', '#0000ff'],
       })
 
       // Test gradient
@@ -83,7 +83,7 @@ describe('State Gradient Integration Tests', () => {
     it('should chain with other modifiers correctly', () => {
       const stateGradients: StateGradientOptions = {
         default: '#ff0000',
-        hover: '#00ff00'
+        hover: '#00ff00',
       }
 
       const modifiedComponent = builder
@@ -93,9 +93,11 @@ describe('State Gradient Integration Tests', () => {
         .build()
 
       expect(modifiedComponent.modifiers).toHaveLength(3)
-      
+
       // Background should have high priority (95)
-      const backgroundModifier = modifiedComponent.modifiers.find(m => m.type === 'background')
+      const backgroundModifier = modifiedComponent.modifiers.find(
+        m => m.type === 'background'
+      )
       expect(backgroundModifier?.priority).toBe(95)
     })
   })
@@ -106,7 +108,7 @@ describe('State Gradient Integration Tests', () => {
       const validGradients: StateGradientOptions = {
         default: '#ff0000',
         hover: '#00ff00',
-        animation: { duration: 300 }
+        animation: { duration: 300 },
       }
 
       expect(() => {
@@ -118,7 +120,7 @@ describe('State Gradient Integration Tests', () => {
       // This should cause TypeScript error (but test in JS context)
       const invalidGradients = {
         hover: '#00ff00',
-        active: '#0000ff'
+        active: '#0000ff',
         // Missing required 'default'
       }
 
@@ -136,23 +138,23 @@ describe('State Gradient Integration Tests', () => {
         default: LinearGradient({
           startPoint: 'top',
           endPoint: 'bottom',
-          colors: ['#007AFF', '#0051D2']
+          colors: ['#007AFF', '#0051D2'],
         }),
         hover: LinearGradient({
           startPoint: 'top',
           endPoint: 'bottom',
-          colors: ['#1A8FFF', '#0062E3']
+          colors: ['#1A8FFF', '#0062E3'],
         }),
         active: LinearGradient({
           startPoint: 'top',
           endPoint: 'bottom',
-          colors: ['#0066CC', '#004499']
+          colors: ['#0066CC', '#004499'],
         }),
         disabled: '#CCCCCC',
         animation: {
           duration: 150,
-          easing: 'ease-out'
-        }
+          easing: 'ease-out',
+        },
       }
 
       const button = builder
@@ -164,8 +166,10 @@ describe('State Gradient Integration Tests', () => {
         .build()
 
       expect(button.modifiers).toHaveLength(5)
-      
-      const backgroundModifier = button.modifiers.find(m => m.type === 'background')
+
+      const backgroundModifier = button.modifiers.find(
+        m => m.type === 'background'
+      )
       expect(backgroundModifier?.properties.background).toBe(buttonGradients)
     })
 
@@ -175,12 +179,12 @@ describe('State Gradient Integration Tests', () => {
         hover: LinearGradient({
           startPoint: 'topLeading',
           endPoint: 'bottomTrailing',
-          colors: ['#F8F9FA', '#E9ECEF']
+          colors: ['#F8F9FA', '#E9ECEF'],
         }),
         animation: {
           duration: 200,
-          easing: 'ease'
-        }
+          easing: 'ease',
+        },
       }
 
       const card = builder
@@ -199,13 +203,13 @@ describe('State Gradient Integration Tests', () => {
         focus: LinearGradient({
           startPoint: 'top',
           endPoint: 'bottom',
-          colors: ['#F0F8FF', '#E6F3FF']
+          colors: ['#F0F8FF', '#E6F3FF'],
         }),
         disabled: '#F5F5F5',
         animation: {
           duration: 100,
-          easing: 'ease-in-out'
-        }
+          easing: 'ease-in-out',
+        },
       }
 
       const input = builder
@@ -223,7 +227,7 @@ describe('State Gradient Integration Tests', () => {
     it('should create modifier only once per background call', () => {
       const stateGradients: StateGradientOptions = {
         default: '#ff0000',
-        hover: '#00ff00'
+        hover: '#00ff00',
       }
 
       builder.background(stateGradients)
@@ -231,7 +235,7 @@ describe('State Gradient Integration Tests', () => {
 
       // Building again should reuse the same modifier list (reference equality)
       const modifiers2 = builder.build().modifiers
-      
+
       expect(modifiers1).toStrictEqual(modifiers2) // Use deep equality instead
       expect(modifiers1).toHaveLength(1)
     })
@@ -242,34 +246,34 @@ describe('State Gradient Integration Tests', () => {
           startPoint: 'topLeading',
           endPoint: 'bottomTrailing',
           colors: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57'],
-          stops: [0, 25, 50, 75, 100]
+          stops: [0, 25, 50, 75, 100],
         }),
         hover: LinearGradient({
           startPoint: 'bottomLeading',
           endPoint: 'topTrailing',
           colors: ['#FF8E53', '#FF6B9D', '#C44569', '#F8B500', '#FFD93D'],
-          stops: [0, 20, 40, 70, 100]
+          stops: [0, 20, 40, 70, 100],
         }),
         active: LinearGradient({
           startPoint: 'leading',
           endPoint: 'trailing',
           colors: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe'],
-          stops: [10, 30, 50, 80, 100]
+          stops: [10, 30, 50, 80, 100],
         }),
         animation: {
           duration: 300,
-          easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
-        }
+          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        },
       }
 
       // Should handle complex gradients without performance issues
       const start = performance.now()
-      
+
       builder.background(complexGradients)
       const modifiedComponent = builder.build()
-      
+
       const end = performance.now()
-      
+
       expect(end - start).toBeLessThan(50) // Should be very fast
       expect(modifiedComponent.modifiers).toHaveLength(1)
     })

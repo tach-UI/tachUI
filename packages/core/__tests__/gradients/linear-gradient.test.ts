@@ -8,7 +8,7 @@ describe('LinearGradient', () => {
     const gradient = LinearGradient({
       colors: ['#FF0000', '#00FF00'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     expect(gradient.type).toBe('linear')
@@ -21,7 +21,7 @@ describe('LinearGradient', () => {
     const css = generateLinearGradientCSS({
       colors: ['#FF0000', '#00FF00'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     expect(css).toBe('linear-gradient(to bottom, #FF0000, #00FF00)')
@@ -31,7 +31,7 @@ describe('LinearGradient', () => {
     const css = generateLinearGradientCSS({
       colors: ['#FF0000', '#00FF00'],
       startPoint: 'topLeading',
-      endPoint: 'bottomTrailing'
+      endPoint: 'bottomTrailing',
     })
 
     expect(css).toBe('linear-gradient(to bottom right, #FF0000, #00FF00)')
@@ -42,7 +42,7 @@ describe('LinearGradient', () => {
       colors: ['#FF0000', '#00FF00'],
       startPoint: 'top',
       endPoint: 'bottom',
-      angle: 45
+      angle: 45,
     })
 
     expect(css).toBe('linear-gradient(45deg, #FF0000, #00FF00)')
@@ -53,10 +53,12 @@ describe('LinearGradient', () => {
       colors: ['#FF0000', '#00FF00', '#0000FF'],
       startPoint: 'top',
       endPoint: 'bottom',
-      stops: [0, 50, 100]
+      stops: [0, 50, 100],
     })
 
-    expect(css).toBe('linear-gradient(to bottom, #FF0000 0%, #00FF00 50%, #0000FF 100%)')
+    expect(css).toBe(
+      'linear-gradient(to bottom, #FF0000 0%, #00FF00 50%, #0000FF 100%)'
+    )
   })
 
   it('works with Asset colors', () => {
@@ -67,7 +69,7 @@ describe('LinearGradient', () => {
     const css = generateLinearGradientCSS({
       colors: [redAsset, greenAsset],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     expect(css).toContain('linear-gradient(to bottom,')
@@ -81,7 +83,7 @@ describe('LinearGradient', () => {
     const css = generateLinearGradientCSS({
       colors: ['#FF0000', blueAsset, '#00FF00'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     expect(css).toContain('linear-gradient(to bottom,')

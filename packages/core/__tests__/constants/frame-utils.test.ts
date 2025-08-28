@@ -15,7 +15,7 @@ import {
   flexible,
   fullScreen,
   remainingSpace,
-  equalShare
+  equalShare,
 } from '../frame-utils'
 import { infinity } from '../layout'
 import type { LayoutModifierProps } from '../../modifiers/types'
@@ -215,7 +215,7 @@ describe('Frame Utilities', () => {
         fillMaxHeight(),
         fillMaxSize(),
         expand(),
-        flexible()
+        flexible(),
       ]
 
       modifiers.forEach(modifier => {

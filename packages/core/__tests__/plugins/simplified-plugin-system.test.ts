@@ -7,7 +7,7 @@ import {
   SimplifiedTachUIInstance,
   SimplifiedPluginManager,
   SimplifiedComponentRegistry,
-  PluginError
+  PluginError,
 } from '../simplified-index'
 import type { TachUIPlugin, TachUIInstance } from '../simplified-types'
 
@@ -25,7 +25,7 @@ describe('Simplified Plugin System', () => {
         version: '1.0.0',
         async install(instance: TachUIInstance) {
           instance.registerService('test-service', { value: 'test' })
-        }
+        },
       }
 
       await instance.plugins.install(plugin)
@@ -41,17 +41,21 @@ describe('Simplified Plugin System', () => {
         version: '1.0.0',
         async install() {
           throw new Error('Installation failed')
-        }
+        },
       }
 
-      await expect(instance.plugins.install(failingPlugin)).rejects.toThrow('Installation failed')
+      await expect(instance.plugins.install(failingPlugin)).rejects.toThrow(
+        'Installation failed'
+      )
       expect(instance.plugins.isInstalled('failing-plugin')).toBe(false)
     })
 
     test('should validate plugin basics correctly', async () => {
       const invalidPlugin = { name: '', version: '1.0.0' } // Missing install method
 
-      await expect(instance.plugins.install(invalidPlugin as any)).rejects.toThrow('Plugin must have a valid name string')
+      await expect(
+        instance.plugins.install(invalidPlugin as any)
+      ).rejects.toThrow('Plugin must have a valid name string')
     })
 
     test('should uninstall plugins correctly', async () => {
@@ -63,7 +67,7 @@ describe('Simplified Plugin System', () => {
         },
         async uninstall() {
           // Cleanup logic would go here
-        }
+        },
       }
 
       await instance.plugins.install(plugin)
@@ -77,17 +81,19 @@ describe('Simplified Plugin System', () => {
   describe('SimplifiedComponentRegistry', () => {
     test('should register and retrieve components', () => {
       const testComponent = () => ({ type: 'div', props: {}, children: [] })
-      
+
       instance.components.register({
         name: 'TestComponent',
         component: testComponent,
         category: 'test',
-        tags: ['example']
+        tags: ['example'],
       })
 
       expect(instance.components.has('TestComponent')).toBe(true)
-      expect(instance.components.getComponent('TestComponent')).toBe(testComponent)
-      
+      expect(instance.components.getComponent('TestComponent')).toBe(
+        testComponent
+      )
+
       const registration = instance.components.get('TestComponent')
       expect(registration?.category).toBe('test')
       expect(registration?.tags).toContain('example')
@@ -100,13 +106,13 @@ describe('Simplified Plugin System', () => {
       instance.components.register({
         name: 'TestComponent1',
         component: testComponent1,
-        category: 'test'
+        category: 'test',
       })
 
       instance.components.register({
-        name: 'TestComponent2', 
+        name: 'TestComponent2',
         component: testComponent2,
-        category: 'test'
+        category: 'test',
       })
 
       const testComponents = instance.components.listByCategory('test')
@@ -117,14 +123,14 @@ describe('Simplified Plugin System', () => {
 
     test('should unregister components correctly', () => {
       const testComponent = () => ({ type: 'div', props: {}, children: [] })
-      
+
       instance.components.register({
         name: 'TestComponent',
-        component: testComponent
+        component: testComponent,
       })
 
       expect(instance.components.has('TestComponent')).toBe(true)
-      
+
       const unregistered = instance.components.unregister('TestComponent')
       expect(unregistered).toBe(true)
       expect(instance.components.has('TestComponent')).toBe(false)
@@ -137,19 +143,23 @@ describe('Simplified Plugin System', () => {
         name: 'ui-plugin',
         version: '1.0.0',
         async install(instance: TachUIInstance) {
-          const buttonComponent = () => ({ type: 'button', props: {}, children: [] })
+          const buttonComponent = () => ({
+            type: 'button',
+            props: {},
+            children: [],
+          })
           instance.registerComponent('Button', buttonComponent, {
             category: 'input',
-            tags: ['interactive']
+            tags: ['interactive'],
           })
-        }
+        },
       }
 
       await instance.installPlugin(plugin)
 
       expect(instance.isPluginInstalled('ui-plugin')).toBe(true)
       expect(instance.components.has('Button')).toBe(true)
-      
+
       const stats = instance.getStats()
       expect(stats.plugins.installed).toBe(1)
       expect(stats.components.totalComponents).toBe(1)
@@ -157,10 +167,10 @@ describe('Simplified Plugin System', () => {
 
     test('should handle services correctly', () => {
       instance.registerService('config', { theme: 'dark' })
-      
+
       expect(instance.hasService('config')).toBe(true)
       expect(instance.getService('config')).toEqual({ theme: 'dark' })
-      
+
       instance.unregisterService('config')
       expect(instance.hasService('config')).toBe(false)
     })
@@ -171,7 +181,7 @@ describe('Simplified Plugin System', () => {
         version: '1.0.0',
         async install(instance: TachUIInstance) {
           instance.registerService('test-service', { value: 'test' })
-        }
+        },
       }
 
       await instance.installPlugin(plugin)

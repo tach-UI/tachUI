@@ -9,7 +9,7 @@ describe('AngularGradient', () => {
       colors: ['#FF0000', '#00FF00', '#0000FF'],
       center: 'center',
       startAngle: 0,
-      endAngle: 360
+      endAngle: 360,
     })
 
     expect(gradient.type).toBe('angular')
@@ -24,7 +24,7 @@ describe('AngularGradient', () => {
       colors: ['#FF0000', '#00FF00'],
       center: 'center',
       startAngle: 0,
-      endAngle: 360
+      endAngle: 360,
     })
 
     expect(css).toBe('conic-gradient(from 0deg at center, #FF0000, #00FF00)')
@@ -35,7 +35,7 @@ describe('AngularGradient', () => {
       colors: ['#FF0000', '#00FF00'],
       center: 'top',
       startAngle: 45,
-      endAngle: 225
+      endAngle: 225,
     })
 
     expect(css).toBe('conic-gradient(from 45deg at top, #FF0000, #00FF00)')
@@ -46,7 +46,7 @@ describe('AngularGradient', () => {
       colors: ['#FF0000', '#00FF00'],
       center: [30, 70],
       startAngle: 90,
-      endAngle: 270
+      endAngle: 270,
     })
 
     expect(css).toBe('conic-gradient(from 90deg at 30% 70%, #FF0000, #00FF00)')
@@ -54,10 +54,18 @@ describe('AngularGradient', () => {
 
   it('supports rainbow gradients', () => {
     const css = generateAngularGradientCSS({
-      colors: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3'],
+      colors: [
+        '#ff0000',
+        '#ff7f00',
+        '#ffff00',
+        '#00ff00',
+        '#0000ff',
+        '#4b0082',
+        '#9400d3',
+      ],
       center: 'center',
       startAngle: 0,
-      endAngle: 360
+      endAngle: 360,
     })
 
     expect(css).toContain('conic-gradient(from 0deg at center,')
@@ -71,10 +79,12 @@ describe('AngularGradient', () => {
       center: 'center',
       startAngle: 0,
       endAngle: 360,
-      stops: [0, 50, 100]
+      stops: [0, 50, 100],
     })
 
-    expect(css).toBe('conic-gradient(from 0deg at center, #FF0000 0%, #FFFF00 50%, #00FF00 100%)')
+    expect(css).toBe(
+      'conic-gradient(from 0deg at center, #FF0000 0%, #FFFF00 50%, #00FF00 100%)'
+    )
   })
 
   it('works with Asset colors', () => {
@@ -85,7 +95,7 @@ describe('AngularGradient', () => {
       colors: [redAsset, blueAsset],
       center: 'center',
       startAngle: 0,
-      endAngle: 180
+      endAngle: 180,
     })
 
     expect(css).toContain('conic-gradient(from 0deg at center,')
@@ -100,7 +110,7 @@ describe('AngularGradient', () => {
       colors: ['#FF0000', greenAsset, '#0000FF'],
       center: 'center',
       startAngle: 45,
-      endAngle: 315
+      endAngle: 315,
     })
 
     expect(css).toContain('conic-gradient(from 45deg at center,')

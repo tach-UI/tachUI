@@ -11,7 +11,7 @@ import {
   isInfinity,
   dimensionToCSS,
   infinityToFlexCSS,
-  shouldExpandForInfinity
+  shouldExpandForInfinity,
 } from '../layout'
 
 describe('TachUI Layout Constants', () => {
@@ -78,7 +78,7 @@ describe('TachUI Layout Constants', () => {
       expect(flexProps).toEqual({
         flexGrow: '1',
         flexShrink: '1',
-        flexBasis: '0%'
+        flexBasis: '0%',
       })
     })
   })
@@ -92,7 +92,7 @@ describe('TachUI Layout Constants', () => {
         flexGrow: '1 !important',
         flexShrink: '1 !important',
         flexBasis: '0% !important',
-        alignSelf: 'stretch !important'
+        alignSelf: 'stretch !important',
       })
     })
 
@@ -104,7 +104,7 @@ describe('TachUI Layout Constants', () => {
         flexGrow: '1 !important',
         flexShrink: '1 !important',
         flexBasis: '0% !important',
-        alignSelf: 'stretch !important'
+        alignSelf: 'stretch !important',
       })
     })
 
@@ -116,7 +116,7 @@ describe('TachUI Layout Constants', () => {
         flexGrow: '1 !important',
         flexShrink: '1 !important',
         flexBasis: '0% !important',
-        alignSelf: 'stretch !important'
+        alignSelf: 'stretch !important',
       })
     })
 
@@ -128,14 +128,14 @@ describe('TachUI Layout Constants', () => {
         flexGrow: '1 !important',
         flexShrink: '1 !important',
         flexBasis: '0% !important',
-        alignSelf: 'stretch !important'
+        alignSelf: 'stretch !important',
       })
     })
 
     it('should handle both dimensions being infinity', () => {
-      const result = shouldExpandForInfinity({ 
-        width: infinity, 
-        height: infinity 
+      const result = shouldExpandForInfinity({
+        width: infinity,
+        height: infinity,
       })
       expect(result.expandWidth).toBe(true)
       expect(result.expandHeight).toBe(true)
@@ -143,7 +143,7 @@ describe('TachUI Layout Constants', () => {
         flexGrow: '1 !important',
         flexShrink: '1 !important',
         flexBasis: '0% !important',
-        alignSelf: 'stretch !important'
+        alignSelf: 'stretch !important',
       })
     })
 
@@ -152,7 +152,7 @@ describe('TachUI Layout Constants', () => {
         width: 100,
         height: '50%',
         maxWidth: 500,
-        maxHeight: '80vh'
+        maxHeight: '80vh',
       })
       expect(result.expandWidth).toBe(false)
       expect(result.expandHeight).toBe(false)
@@ -164,7 +164,7 @@ describe('TachUI Layout Constants', () => {
         width: 100,
         maxWidth: infinity,
         height: 200,
-        maxHeight: infinity
+        maxHeight: infinity,
       })
       expect(result.expandWidth).toBe(true)
       expect(result.expandHeight).toBe(true)
@@ -172,7 +172,7 @@ describe('TachUI Layout Constants', () => {
         flexGrow: '1 !important',
         flexShrink: '1 !important',
         flexBasis: '0% !important',
-        alignSelf: 'stretch !important'
+        alignSelf: 'stretch !important',
       })
     })
 

@@ -9,34 +9,34 @@ describe('StateGradientAsset', () => {
 
   beforeEach(() => {
     vi.useFakeTimers()
-    
+
     stateGradients = {
       default: LinearGradient({
         startPoint: 'top',
         endPoint: 'bottom',
-        colors: ['#ff0000', '#0000ff']
+        colors: ['#ff0000', '#0000ff'],
       }),
       hover: LinearGradient({
         startPoint: 'top',
         endPoint: 'bottom',
-        colors: ['#ff6666', '#6666ff']
+        colors: ['#ff6666', '#6666ff'],
       }),
       active: LinearGradient({
         startPoint: 'top',
         endPoint: 'bottom',
-        colors: ['#cc0000', '#0000cc']
+        colors: ['#cc0000', '#0000cc'],
       }),
       focus: LinearGradient({
         startPoint: 'top',
         endPoint: 'bottom',
-        colors: ['#ffaa00', '#00aaff']
+        colors: ['#ffaa00', '#00aaff'],
       }),
       disabled: '#cccccc',
       animation: {
         duration: 300,
         easing: 'ease-in-out',
-        delay: 50
-      }
+        delay: 50,
+      },
     }
 
     asset = new StateGradientAsset('test-gradient', stateGradients)
@@ -82,10 +82,10 @@ describe('StateGradientAsset', () => {
 
     it('should resolve different gradients for different states', () => {
       const defaultGradient = asset.resolve()
-      
+
       asset.setState('hover')
       const hoverGradient = asset.resolve()
-      
+
       expect(defaultGradient).not.toBe(hoverGradient)
       expect(hoverGradient).toContain('#ff6666')
       expect(hoverGradient).toContain('#6666ff')
@@ -102,7 +102,7 @@ describe('StateGradientAsset', () => {
       asset.setState('hover')
       asset.setState('active') // Should be ignored due to transition
       expect(asset.getState()).toBe('hover')
-      
+
       // After transition completes
       vi.advanceTimersByTime(350) // duration + delay
       asset.setState('active')
@@ -137,13 +137,15 @@ describe('StateGradientAsset', () => {
   describe('animation configuration', () => {
     it('should generate correct animation CSS', () => {
       const animationCSS = asset.getAnimationCSS()
-      expect(animationCSS).toContain('transition: background 300ms ease-in-out 50ms;')
+      expect(animationCSS).toContain(
+        'transition: background 300ms ease-in-out 50ms;'
+      )
     })
 
     it('should handle default animation options', () => {
       const simpleGradients = {
         default: '#ff0000',
-        hover: '#0000ff'
+        hover: '#0000ff',
       }
       const simpleAsset = new StateGradientAsset('simple', simpleGradients)
       const animationCSS = simpleAsset.getAnimationCSS()
@@ -161,7 +163,7 @@ describe('StateGradientAsset', () => {
     it('should cache resolved gradients', () => {
       const resolved1 = asset.resolve()
       const resolved2 = asset.resolve()
-      
+
       // Should return the same instance (cached)
       expect(resolved1).toBe(resolved2)
     })
@@ -169,7 +171,7 @@ describe('StateGradientAsset', () => {
     it('should clear cache when requested', () => {
       asset.resolve() // Cache the result
       asset.clearCache()
-      
+
       // Should work fine after cache clear
       const resolved = asset.resolve()
       expect(resolved).toBeTruthy()
@@ -177,15 +179,15 @@ describe('StateGradientAsset', () => {
 
     it('should update gradients and clear cache', () => {
       const originalResolved = asset.resolve()
-      
+
       const newGradients: StateGradientOptions = {
         default: '#ffffff',
-        hover: '#000000'
+        hover: '#000000',
       }
-      
+
       asset.updateStateGradients(newGradients)
       const newResolved = asset.resolve()
-      
+
       expect(newResolved).not.toBe(originalResolved)
       expect(newResolved).toBe('#ffffff')
     })
@@ -209,7 +211,7 @@ describe('StateGradientAsset', () => {
     it('should get specific state gradients without changing current state', () => {
       asset.setState('default')
       const hoverGradient = asset.getStateGradient('hover')
-      
+
       expect(asset.getState()).toBe('default') // Should not change
       expect(hoverGradient).toContain('#ff6666')
     })
@@ -218,7 +220,7 @@ describe('StateGradientAsset', () => {
       const defaultResolved = asset.getStateGradient('default')
       // @ts-ignore - Testing missing state
       const missingResolved = asset.getStateGradient('missing')
-      
+
       expect(missingResolved).toBe(defaultResolved)
     })
   })
@@ -226,9 +228,9 @@ describe('StateGradientAsset', () => {
   describe('edge cases', () => {
     it('should handle asset with only default gradient', () => {
       const minimalGradients: StateGradientOptions = {
-        default: '#ff0000'
+        default: '#ff0000',
       }
-      
+
       const minimalAsset = new StateGradientAsset('minimal', minimalGradients)
       expect(minimalAsset.resolve()).toBe('#ff0000')
       expect(minimalAsset.getAvailableStates()).toEqual(['default'])
@@ -238,9 +240,9 @@ describe('StateGradientAsset', () => {
       const quickGradients: StateGradientOptions = {
         default: '#ff0000',
         hover: '#0000ff',
-        animation: { duration: 0 }
+        animation: { duration: 0 },
       }
-      
+
       const quickAsset = new StateGradientAsset('quick', quickGradients)
       quickAsset.setState('hover')
       // Should allow immediate state changes with zero duration
@@ -251,9 +253,9 @@ describe('StateGradientAsset', () => {
     it('should handle missing animation configuration', () => {
       const noAnimGradients: StateGradientOptions = {
         default: '#ff0000',
-        hover: '#0000ff'
+        hover: '#0000ff',
       }
-      
+
       const noAnimAsset = new StateGradientAsset('no-anim', noAnimGradients)
       const animCSS = noAnimAsset.getAnimationCSS()
       expect(animCSS).toContain('300ms ease 0ms') // Default values

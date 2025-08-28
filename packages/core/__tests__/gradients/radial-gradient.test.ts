@@ -9,7 +9,7 @@ describe('RadialGradient', () => {
       colors: ['#FF0000', '#00FF00'],
       center: 'center',
       startRadius: 0,
-      endRadius: 100
+      endRadius: 100,
     })
 
     expect(gradient.type).toBe('radial')
@@ -24,10 +24,12 @@ describe('RadialGradient', () => {
       colors: ['#FF0000', '#00FF00'],
       center: 'center',
       startRadius: 0,
-      endRadius: 100
+      endRadius: 100,
     })
 
-    expect(css).toBe('radial-gradient(circle 100px at center, #FF0000, #00FF00)')
+    expect(css).toBe(
+      'radial-gradient(circle 100px at center, #FF0000, #00FF00)'
+    )
   })
 
   it('generates correct CSS for elliptical gradient', () => {
@@ -36,10 +38,12 @@ describe('RadialGradient', () => {
       center: 'center',
       startRadius: 0,
       endRadius: 100,
-      shape: 'ellipse'
+      shape: 'ellipse',
     })
 
-    expect(css).toBe('radial-gradient(ellipse 100px 100px at center, #FF0000, #00FF00)')
+    expect(css).toBe(
+      'radial-gradient(ellipse 100px 100px at center, #FF0000, #00FF00)'
+    )
   })
 
   it('supports custom center positioning', () => {
@@ -47,7 +51,7 @@ describe('RadialGradient', () => {
       colors: ['#FF0000', '#00FF00'],
       center: 'top',
       startRadius: 0,
-      endRadius: 50
+      endRadius: 50,
     })
 
     expect(css).toBe('radial-gradient(circle 50px at top, #FF0000, #00FF00)')
@@ -58,10 +62,12 @@ describe('RadialGradient', () => {
       colors: ['#FF0000', '#00FF00'],
       center: [25, 75],
       startRadius: 0,
-      endRadius: 80
+      endRadius: 80,
     })
 
-    expect(css).toBe('radial-gradient(circle 80px at 25% 75%, #FF0000, #00FF00)')
+    expect(css).toBe(
+      'radial-gradient(circle 80px at 25% 75%, #FF0000, #00FF00)'
+    )
   })
 
   it('supports color stops', () => {
@@ -70,10 +76,12 @@ describe('RadialGradient', () => {
       center: 'center',
       startRadius: 0,
       endRadius: 100,
-      stops: [0, 50, 100]
+      stops: [0, 50, 100],
     })
 
-    expect(css).toBe('radial-gradient(circle 100px at center, #FF0000 0%, #FFFF00 50%, #00FF00 100%)')
+    expect(css).toBe(
+      'radial-gradient(circle 100px at center, #FF0000 0%, #FFFF00 50%, #00FF00 100%)'
+    )
   })
 
   it('works with Asset colors', () => {
@@ -84,7 +92,7 @@ describe('RadialGradient', () => {
       colors: [redAsset, greenAsset],
       center: 'center',
       startRadius: 0,
-      endRadius: 100
+      endRadius: 100,
     })
 
     expect(css).toContain('radial-gradient(circle 100px at center,')
@@ -99,7 +107,7 @@ describe('RadialGradient', () => {
       colors: ['#FF0000', blueAsset, '#00FF00'],
       center: 'center',
       startRadius: 10,
-      endRadius: 100
+      endRadius: 100,
     })
 
     expect(css).toContain('radial-gradient(circle 100px at center,')

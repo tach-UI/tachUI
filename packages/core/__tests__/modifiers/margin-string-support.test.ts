@@ -3,7 +3,13 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { margin, marginHorizontal, marginVertical, marginTop, marginBottom } from '../margin'
+import {
+  margin,
+  marginHorizontal,
+  marginVertical,
+  marginTop,
+  marginBottom,
+} from '../margin'
 
 describe('Margin Modifier - String Value Support', () => {
   it('should accept string values for horizontal/vertical', () => {
@@ -22,7 +28,7 @@ describe('Margin Modifier - String Value Support', () => {
       top: 10,
       bottom: 20,
       left: 'auto',
-      right: 'auto'
+      right: 'auto',
     })
     expect(modifier).toBeDefined()
   })

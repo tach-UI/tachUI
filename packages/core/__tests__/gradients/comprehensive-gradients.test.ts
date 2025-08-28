@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { 
-  LinearGradient, 
-  RadialGradient, 
+import {
+  LinearGradient,
+  RadialGradient,
   AngularGradient,
   RepeatingLinearGradient,
   RepeatingRadialGradient,
-  createGradientAsset
+  createGradientAsset,
 } from '../index'
 import { gradientToCSS } from '../css-generator'
 import { BackgroundModifier } from '../../modifiers/background'
@@ -21,7 +21,7 @@ describe('Comprehensive Gradient Integration', () => {
     mockContext = {
       componentId: 'test-component',
       element: mockElement,
-      phase: 'creation'
+      phase: 'creation',
     } as ModifierContext
   })
 
@@ -30,13 +30,15 @@ describe('Comprehensive Gradient Integration', () => {
       const gradient = LinearGradient({
         colors: ['#FF0000', '#00FF00'],
         startPoint: 'top',
-        endPoint: 'bottom'
+        endPoint: 'bottom',
       })
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe('linear-gradient(to bottom, #FF0000, #00FF00)')
+      expect(mockElement.style.background).toBe(
+        'linear-gradient(to bottom, #FF0000, #00FF00)'
+      )
     })
 
     it('applies RadialGradient through background modifier', () => {
@@ -44,13 +46,15 @@ describe('Comprehensive Gradient Integration', () => {
         colors: ['#FF0000', '#00FF00'],
         center: 'center',
         startRadius: 0,
-        endRadius: 100
+        endRadius: 100,
       })
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe('radial-gradient(circle 100px at center, #FF0000, #00FF00)')
+      expect(mockElement.style.background).toBe(
+        'radial-gradient(circle 100px at center, #FF0000, #00FF00)'
+      )
     })
 
     it('applies AngularGradient through background modifier', () => {
@@ -58,39 +62,45 @@ describe('Comprehensive Gradient Integration', () => {
         colors: ['#FF0000', '#00FF00'],
         center: 'center',
         startAngle: 0,
-        endAngle: 360
+        endAngle: 360,
       })
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe('conic-gradient(from 0deg at center, #FF0000, #00FF00)')
+      expect(mockElement.style.background).toBe(
+        'conic-gradient(from 0deg at center, #FF0000, #00FF00)'
+      )
     })
 
     it('applies RepeatingLinearGradient through background modifier', () => {
       const gradient = RepeatingLinearGradient({
         colors: ['#FF0000', '#00FF00'],
         direction: '45deg',
-        colorStops: ['0px', '20px']
+        colorStops: ['0px', '20px'],
       })
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe('repeating-linear-gradient(45deg, #FF0000 0px, #00FF00 20px)')
+      expect(mockElement.style.background).toBe(
+        'repeating-linear-gradient(45deg, #FF0000 0px, #00FF00 20px)'
+      )
     })
 
     it('applies RepeatingRadialGradient through background modifier', () => {
       const gradient = RepeatingRadialGradient({
         colors: ['#FF0000', '#00FF00'],
         center: 'center',
-        colorStops: ['0px', '30px']
+        colorStops: ['0px', '30px'],
       })
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe('repeating-radial-gradient(circle at center, #FF0000 0px, #00FF00 30px)')
+      expect(mockElement.style.background).toBe(
+        'repeating-radial-gradient(circle at center, #FF0000 0px, #00FF00 30px)'
+      )
     })
   })
 
@@ -102,7 +112,7 @@ describe('Comprehensive Gradient Integration', () => {
       const gradient = LinearGradient({
         colors: [redAsset, blueAsset],
         startPoint: 'top',
-        endPoint: 'bottom'
+        endPoint: 'bottom',
       })
 
       const css = gradientToCSS(gradient)
@@ -118,7 +128,7 @@ describe('Comprehensive Gradient Integration', () => {
         colors: [greenAsset, yellowAsset],
         center: 'center',
         startRadius: 0,
-        endRadius: 50
+        endRadius: 50,
       })
 
       const css = gradientToCSS(gradient)
@@ -134,7 +144,7 @@ describe('Comprehensive Gradient Integration', () => {
         colors: [purpleAsset, orangeAsset],
         center: 'center',
         startAngle: 0,
-        endAngle: 180
+        endAngle: 180,
       })
 
       const css = gradientToCSS(gradient)
@@ -149,13 +159,13 @@ describe('Comprehensive Gradient Integration', () => {
         light: LinearGradient({
           colors: ['#ffffff', '#f8f9fa'],
           startPoint: 'top',
-          endPoint: 'bottom'
+          endPoint: 'bottom',
         }),
         dark: LinearGradient({
           colors: ['#343a40', '#212529'],
           startPoint: 'top',
-          endPoint: 'bottom'
-        })
+          endPoint: 'bottom',
+        }),
       })
 
       expect(gradientAsset.resolve()).toContain('linear-gradient')
@@ -167,14 +177,14 @@ describe('Comprehensive Gradient Integration', () => {
           colors: ['#007bff', '#0056b3'],
           center: 'center',
           startRadius: 0,
-          endRadius: 100
+          endRadius: 100,
         }),
         dark: RadialGradient({
           colors: ['#0d6efd', '#0b5ed7'],
           center: 'center',
           startRadius: 0,
-          endRadius: 100
-        })
+          endRadius: 100,
+        }),
       })
 
       expect(gradientAsset.resolve()).toContain('radial-gradient')
@@ -186,14 +196,14 @@ describe('Comprehensive Gradient Integration', () => {
           colors: ['#20c997', '#17a2b8'],
           center: 'center',
           startAngle: 0,
-          endAngle: 360
+          endAngle: 360,
         }),
         dark: AngularGradient({
           colors: ['#20c997', '#0dcaf0'],
           center: 'center',
           startAngle: 0,
-          endAngle: 360
-        })
+          endAngle: 360,
+        }),
       })
 
       expect(gradientAsset.resolve()).toContain('conic-gradient')
@@ -206,7 +216,7 @@ describe('Comprehensive Gradient Integration', () => {
         colors: ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff'],
         startPoint: 'top',
         endPoint: 'bottom',
-        stops: [0, 25, 50, 75, 100]
+        stops: [0, 25, 50, 75, 100],
       })
 
       const css = gradientToCSS(gradient)
@@ -223,7 +233,7 @@ describe('Comprehensive Gradient Integration', () => {
         center: 'center',
         startRadius: 0,
         endRadius: 100,
-        stops: [0, 60, 100]
+        stops: [0, 60, 100],
       })
 
       const css = gradientToCSS(gradient)
@@ -238,7 +248,7 @@ describe('Comprehensive Gradient Integration', () => {
         center: 'center',
         startAngle: 0,
         endAngle: 360,
-        stops: [0, 50, 100]
+        stops: [0, 50, 100],
       })
 
       const css = gradientToCSS(gradient)
@@ -258,11 +268,11 @@ describe('Comprehensive Gradient Integration', () => {
           '#00ff00', // Green
           '#0000ff', // Blue
           '#4b0082', // Indigo
-          '#9400d3'  // Violet
+          '#9400d3', // Violet
         ],
         center: 'center',
         startAngle: 0,
-        endAngle: 360
+        endAngle: 360,
       })
 
       const css = gradientToCSS(rainbow)
@@ -275,22 +285,26 @@ describe('Comprehensive Gradient Integration', () => {
       const stripes = RepeatingLinearGradient({
         colors: ['#000000', '#ffffff'],
         direction: '90deg',
-        colorStops: ['0px', '10px']
+        colorStops: ['0px', '10px'],
       })
 
       const css = gradientToCSS(stripes)
-      expect(css).toBe('repeating-linear-gradient(90deg, #000000 0px, #ffffff 10px)')
+      expect(css).toBe(
+        'repeating-linear-gradient(90deg, #000000 0px, #ffffff 10px)'
+      )
     })
 
     it('creates concentric circles with repeating radial gradient', () => {
       const circles = RepeatingRadialGradient({
         colors: ['#ff0000', 'transparent'],
         center: 'center',
-        colorStops: ['0px', '20px']
+        colorStops: ['0px', '20px'],
       })
 
       const css = gradientToCSS(circles)
-      expect(css).toBe('repeating-radial-gradient(circle at center, #ff0000 0px, transparent 20px)')
+      expect(css).toBe(
+        'repeating-radial-gradient(circle at center, #ff0000 0px, transparent 20px)'
+      )
     })
   })
 })

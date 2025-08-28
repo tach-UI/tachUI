@@ -3,7 +3,13 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { padding, paddingHorizontal, paddingVertical, paddingTop, paddingBottom } from '../padding'
+import {
+  padding,
+  paddingHorizontal,
+  paddingVertical,
+  paddingTop,
+  paddingBottom,
+} from '../padding'
 
 describe('Padding Modifier - String Value Support', () => {
   it('should accept string values for horizontal/vertical', () => {
@@ -22,7 +28,7 @@ describe('Padding Modifier - String Value Support', () => {
       top: 10,
       bottom: 20,
       left: '1rem',
-      right: '2rem'
+      right: '2rem',
     })
     expect(modifier).toBeDefined()
   })

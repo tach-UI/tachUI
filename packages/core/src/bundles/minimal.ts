@@ -36,6 +36,12 @@ export * from '../modifiers/size'
 export * from '../modifiers/typography'
 export * from '../modifiers/background'
 
+// Responsive system (needed for landing pages)
+export {
+  initializeResponsiveSystem,
+  configureBreakpoints,
+} from '../modifiers/responsive'
+
 // State management
 export { State, isState, unwrapValue } from '../state/state'
 export { createBinding, isBinding } from '../state/binding'
@@ -55,6 +61,9 @@ export {
 
 // Essential utilities
 export { infinity, SUI, isInfinity } from '../constants'
+
+// Basic gradients (needed for landing pages)
+export { LinearGradient } from '../gradients'
 
 // Debug system
 export {

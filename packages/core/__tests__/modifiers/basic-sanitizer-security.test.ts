@@ -8,7 +8,7 @@ describe('BasicSanitizer Security Tests', () => {
     '<script src="evil.js"></script>',
     '<script>document.location="http://evil.com"</script>',
     '<SCRIPT>alert("xss")</SCRIPT>',
-    
+
     // Event handlers
     '<img src="x" onerror="alert(1)">',
     '<div onclick="alert(1)">click</div>',
@@ -16,64 +16,64 @@ describe('BasicSanitizer Security Tests', () => {
     '<input onfocus="alert(1)" autofocus>',
     '<div onmouseover="alert(1)">hover</div>',
     '<button ondblclick="alert(1)">double click</button>',
-    
+
     // JavaScript URLs
     '<a href="javascript:alert(1)">link</a>',
     '<iframe src="javascript:alert(1)"></iframe>',
     '<form action="javascript:alert(1)">',
     '<img src="javascript:alert(1)">',
     '<area href="javascript:alert(1)">',
-    
+
     // Data URLs with scripts
     '<iframe src="data:text/html,<script>alert(1)</script>"></iframe>',
     '<object data="data:text/html,<script>alert(1)</script>"></object>',
     '<embed src="data:text/html,<script>alert(1)</script>">',
-    
+
     // CSS injection
     '<style>body{background:url("javascript:alert(1)")}</style>',
     '<div style="background:url(javascript:alert(1))">',
     '<style>@import "javascript:alert(1)";</style>',
     '<style>body{background:expression(alert(1))}</style>',
-    
+
     // HTML entity encoding attempts
     '<img src="x" onerror="&#97;lert(1)">',
     '<script>&#97;lert("xss")</script>',
     '<div onclick="&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;alert(1)">',
-    
+
     // Mixed case evasion
     '<ScRiPt>alert("xss")</ScRiPt>',
     '<IMG SRC="javascript:alert(1)">',
     '<DiV OnClIcK="alert(1)">',
-    
+
     // Nested/malformed tags
     '<scr<script>ipt>alert("xss")</script>',
     '<img src="x" one<script>rror="alert(1)">',
     '<<SCRIPT>alert("xss")//<</SCRIPT>',
-    
+
     // SVG vectors
     '<svg onload="alert(1)">',
     '<svg><script>alert(1)</script></svg>',
     '<svg><g onmouseover="alert(1)"><path/></g></svg>',
-    
+
     // Form-related vectors
     '<form><input type="submit" formaction="javascript:alert(1)">',
     '<form><button formaction="javascript:alert(1)">click</button></form>',
     '<input type="image" src="x" onerror="alert(1)">',
-    
+
     // Meta and link tag vectors
     '<meta http-equiv="refresh" content="0;url=javascript:alert(1)">',
     '<link rel="stylesheet" href="javascript:alert(1)">',
     '<base href="javascript:alert(1)//">',
-    
+
     // CSS expression variations
     '<div style="width:expression(alert(1))">',
     '<style>@import url("javascript:alert(1)");</style>',
     '<style>body{background:url(vbscript:alert(1))}</style>',
   ]
 
-  test.each(xssVectors)('blocks XSS vector: %s', (maliciousHTML) => {
+  test.each(xssVectors)('blocks XSS vector: %s', maliciousHTML => {
     const sanitized = BasicSanitizer.sanitize(maliciousHTML)
-    
+
     // Should not contain dangerous content
     expect(sanitized.toLowerCase()).not.toMatch(/<script/i)
     expect(sanitized.toLowerCase()).not.toMatch(/javascript:/i)
@@ -121,7 +121,7 @@ describe('BasicSanitizer Security Tests', () => {
     `
 
     const sanitized = BasicSanitizer.sanitize(legitimateHTML)
-    
+
     // Should preserve legitimate elements
     expect(sanitized).toContain('<article>')
     expect(sanitized).toContain('<h1>')
@@ -143,9 +143,9 @@ describe('BasicSanitizer Security Tests', () => {
 
   test('handles malformed HTML gracefully', () => {
     const malformedHTML = '<div><p>Unclosed paragraph<span>Nested</div>'
-    
+
     const sanitized = BasicSanitizer.sanitize(malformedHTML)
-    
+
     // Should not crash and should return some content
     expect(sanitized).toBeTruthy()
     expect(typeof sanitized).toBe('string')
@@ -219,11 +219,11 @@ describe('BasicSanitizer Security Tests', () => {
 
   test('performance with large HTML content', () => {
     const largeHTML = '<div>' + 'x'.repeat(10000) + '</div>'.repeat(100)
-    
+
     const startTime = performance.now()
     const sanitized = BasicSanitizer.sanitize(largeHTML)
     const endTime = performance.now()
-    
+
     expect(sanitized).toBeTruthy()
     expect(endTime - startTime).toBeLessThan(100) // Should complete in under 100ms
   })
@@ -236,10 +236,13 @@ describe('BasicSanitizer Security Tests', () => {
   })
 
   test('custom patterns option works', () => {
-    const htmlWithCustomDanger = '<div>Normal content</div><customtag>Remove this</customtag>'
+    const htmlWithCustomDanger =
+      '<div>Normal content</div><customtag>Remove this</customtag>'
     const customPatterns = [/<customtag.*?<\/customtag>/gi]
 
-    const sanitized = BasicSanitizer.sanitize(htmlWithCustomDanger, { customPatterns })
+    const sanitized = BasicSanitizer.sanitize(htmlWithCustomDanger, {
+      customPatterns,
+    })
 
     expect(sanitized).toContain('Normal content')
     expect(sanitized).not.toContain('<customtag>')
@@ -249,7 +252,8 @@ describe('BasicSanitizer Security Tests', () => {
   })
 
   test('custom allowed tags option works', () => {
-    const htmlContent = '<div>Div content</div><p>Paragraph</p><span>Span content</span>'
+    const htmlContent =
+      '<div>Div content</div><p>Paragraph</p><span>Span content</span>'
     const allowedTags = ['div', 'p'] // Only allow div and p, not span
 
     const sanitized = BasicSanitizer.sanitize(htmlContent, { allowedTags })
@@ -264,13 +268,16 @@ describe('BasicSanitizer Security Tests', () => {
   })
 
   test('custom allowed attributes option works', () => {
-    const htmlContent = '<div class="test" id="myid" data-custom="value">Content</div>'
+    const htmlContent =
+      '<div class="test" id="myid" data-custom="value">Content</div>'
     const allowedAttributes = {
       '*': ['class'], // Only allow class globally
-      'div': [] // No div-specific attributes
+      div: [], // No div-specific attributes
     }
 
-    const sanitized = BasicSanitizer.sanitize(htmlContent, { allowedAttributes })
+    const sanitized = BasicSanitizer.sanitize(htmlContent, {
+      allowedAttributes,
+    })
 
     expect(sanitized).toContain('class="test"')
     expect(sanitized).not.toContain('id="myid"')
@@ -280,12 +287,16 @@ describe('BasicSanitizer Security Tests', () => {
 
   test('DOM validation can be disabled', () => {
     const htmlContent = '<div>Content</div>'
-    
+
     // With DOM validation (default)
-    const withValidation = BasicSanitizer.sanitize(htmlContent, { validateDOM: true })
-    
+    const withValidation = BasicSanitizer.sanitize(htmlContent, {
+      validateDOM: true,
+    })
+
     // Without DOM validation
-    const withoutValidation = BasicSanitizer.sanitize(htmlContent, { validateDOM: false })
+    const withoutValidation = BasicSanitizer.sanitize(htmlContent, {
+      validateDOM: false,
+    })
 
     // Both should contain the content, but the implementation path is different
     expect(withValidation).toContain('Content')

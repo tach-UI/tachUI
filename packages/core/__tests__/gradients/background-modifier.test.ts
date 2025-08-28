@@ -13,13 +13,13 @@ describe('BackgroundModifier', () => {
     mockContext = {
       componentId: 'test-component',
       element: mockElement,
-      phase: 'creation'
+      phase: 'creation',
     } as ModifierContext
   })
 
   it('applies string background', () => {
     const modifier = new BackgroundModifier({
-      background: 'red'
+      background: 'red',
     })
 
     modifier.apply({} as any, mockContext)
@@ -31,23 +31,25 @@ describe('BackgroundModifier', () => {
     const gradient = LinearGradient({
       colors: ['#FF0000', '#00FF00'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const modifier = new BackgroundModifier({
-      background: gradient
+      background: gradient,
     })
 
     modifier.apply({} as any, mockContext)
 
-    expect(mockElement.style.background).toBe('linear-gradient(to bottom, #FF0000, #00FF00)')
+    expect(mockElement.style.background).toBe(
+      'linear-gradient(to bottom, #FF0000, #00FF00)'
+    )
   })
 
   it('applies Asset background', () => {
     const backgroundAsset = createColorAsset('white', 'black', 'test-bg')
 
     const modifier = new BackgroundModifier({
-      background: backgroundAsset
+      background: backgroundAsset,
     })
 
     modifier.apply({} as any, mockContext)
@@ -57,7 +59,7 @@ describe('BackgroundModifier', () => {
 
   it('has correct priority', () => {
     const modifier = new BackgroundModifier({
-      background: '#FF0000'
+      background: '#FF0000',
     })
 
     expect(modifier.priority).toBe(95)
@@ -66,12 +68,12 @@ describe('BackgroundModifier', () => {
 
   it('handles missing element gracefully', () => {
     const modifier = new BackgroundModifier({
-      background: '#FF0000'
+      background: '#FF0000',
     })
 
     const contextWithoutElement = {
       componentId: 'test-component',
-      phase: 'creation'
+      phase: 'creation',
     } as ModifierContext
 
     expect(() => {

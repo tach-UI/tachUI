@@ -12,18 +12,18 @@ describe('GradientAsset', () => {
     const lightGradient = LinearGradient({
       colors: ['#FFFFFF', '#F0F0F0'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const darkGradient = LinearGradient({
       colors: ['#333333', '#000000'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const gradientAsset = createGradientAsset({
       light: lightGradient,
-      dark: darkGradient
+      dark: darkGradient,
     })
 
     expect(gradientAsset).toBeDefined()
@@ -33,26 +33,26 @@ describe('GradientAsset', () => {
     const lightGradient = LinearGradient({
       colors: ['#FFFFFF', '#F0F0F0'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const darkGradient = LinearGradient({
       colors: ['#333333', '#000000'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const gradientAsset = createGradientAsset({
       light: lightGradient,
-      dark: darkGradient
+      dark: darkGradient,
     })
 
     // Mock light theme
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: vi.fn().mockImplementation(() => ({
-        matches: false // Light theme
-      }))
+        matches: false, // Light theme
+      })),
     })
 
     const css = gradientAsset.resolve()
@@ -63,26 +63,26 @@ describe('GradientAsset', () => {
     const lightGradient = LinearGradient({
       colors: ['#FFFFFF', '#F0F0F0'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const darkGradient = LinearGradient({
       colors: ['#333333', '#000000'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const gradientAsset = createGradientAsset({
       light: lightGradient,
-      dark: darkGradient
+      dark: darkGradient,
     })
 
     // Mock dark theme
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: vi.fn().mockImplementation(() => ({
-        matches: true // Dark theme
-      }))
+        matches: true, // Dark theme
+      })),
     })
 
     const css = gradientAsset.resolve()
@@ -93,20 +93,20 @@ describe('GradientAsset', () => {
     const lightGradient = LinearGradient({
       colors: ['#FFFFFF', '#F0F0F0'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const gradientAsset = createGradientAsset({
       light: lightGradient,
-      dark: lightGradient // Same as light for this test
+      dark: lightGradient, // Same as light for this test
     })
 
     // Mock dark theme preference
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: vi.fn().mockImplementation(() => ({
-        matches: true // Dark theme
-      }))
+        matches: true, // Dark theme
+      })),
     })
 
     const css = gradientAsset.resolve()
@@ -117,18 +117,18 @@ describe('GradientAsset', () => {
     const lightGradient = LinearGradient({
       colors: ['#FFFFFF', '#F0F0F0'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const darkGradient = LinearGradient({
       colors: ['#333333', '#000000'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     const gradientAsset = createGradientAsset({
       light: lightGradient,
-      dark: darkGradient
+      dark: darkGradient,
     })
 
     // Mock server environment (no window)

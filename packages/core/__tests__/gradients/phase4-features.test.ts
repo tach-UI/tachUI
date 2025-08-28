@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
-import { 
+import {
   LinearGradientPresets,
   InteractiveGradientPresets,
   GradientUtilities as GradientUtils,
   GradientValidation,
   GradientTypeGuards,
   GradientExamples,
-  GradientDebugger
+  GradientDebugger,
 } from '../index'
 import { LinearGradient } from '../index'
 
@@ -46,7 +46,7 @@ describe('Phase 4 Features', () => {
     const testGradient = LinearGradient({
       colors: ['#ff0000', '#0000ff'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     it('should reverse gradient colors', () => {
@@ -120,7 +120,7 @@ describe('Phase 4 Features', () => {
       const validGradient = LinearGradient({
         colors: ['#ff0000', '#0000ff'],
         startPoint: 'top',
-        endPoint: 'bottom'
+        endPoint: 'bottom',
       })
 
       const validation = GradientValidation.validateGradient(validGradient)
@@ -134,8 +134,8 @@ describe('Phase 4 Features', () => {
         options: {
           colors: ['invalid-color'],
           startPoint: 'invalid-point',
-          endPoint: 'bottom'
-        }
+          endPoint: 'bottom',
+        },
       } as any
 
       const validation = GradientValidation.validateGradient(invalidGradient)
@@ -155,7 +155,10 @@ describe('Phase 4 Features', () => {
     })
 
     it('should validate color arrays', () => {
-      const validColors = GradientValidation.validateColors(['#ff0000', '#00ff00'])
+      const validColors = GradientValidation.validateColors([
+        '#ff0000',
+        '#00ff00',
+      ])
       expect(validColors.valid).toBe(true)
 
       const invalidColors = GradientValidation.validateColors(['#ff0000'])
@@ -167,24 +170,30 @@ describe('Phase 4 Features', () => {
     const testGradient = LinearGradient({
       colors: ['#ff0000', '#0000ff'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     it('should identify gradient definitions', () => {
       expect(GradientTypeGuards.isGradientDefinition(testGradient)).toBe(true)
-      expect(GradientTypeGuards.isGradientDefinition('not-a-gradient')).toBe(false)
+      expect(GradientTypeGuards.isGradientDefinition('not-a-gradient')).toBe(
+        false
+      )
       expect(GradientTypeGuards.isGradientDefinition(null)).toBe(false)
     })
 
     it('should identify linear gradients', () => {
       expect(GradientTypeGuards.isLinearGradient(testGradient)).toBe(true)
-      expect(GradientTypeGuards.isLinearGradient({ type: 'radial', options: {} })).toBe(false)
+      expect(
+        GradientTypeGuards.isLinearGradient({ type: 'radial', options: {} })
+      ).toBe(false)
     })
 
     it('should identify state gradient options', () => {
       const stateOptions = { default: testGradient, hover: testGradient }
       expect(GradientTypeGuards.isStateGradientOptions(stateOptions)).toBe(true)
-      expect(GradientTypeGuards.isStateGradientOptions(testGradient)).toBe(false)
+      expect(GradientTypeGuards.isStateGradientOptions(testGradient)).toBe(
+        false
+      )
     })
 
     it('should identify gradient start points', () => {
@@ -225,7 +234,7 @@ describe('Phase 4 Features', () => {
     const baseGradient = LinearGradient({
       colors: ['#007AFF', '#0051D2'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     it('should create hover effects', () => {
@@ -236,7 +245,10 @@ describe('Phase 4 Features', () => {
     })
 
     it('should create button states', () => {
-      const buttonStates = GradientUtils.createButtonStates('#007AFF', 'primary')
+      const buttonStates = GradientUtils.createButtonStates(
+        '#007AFF',
+        'primary'
+      )
       expect(buttonStates.default).toBeDefined()
       expect(buttonStates.hover).toBeDefined()
       expect(buttonStates.active).toBeDefined()
@@ -278,7 +290,7 @@ describe('Phase 4 Features', () => {
     const testGradient = LinearGradient({
       colors: ['#ff0000', '#0000ff'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     it('should debug gradient configurations', () => {
@@ -294,7 +306,7 @@ describe('Phase 4 Features', () => {
       const stateGradient = {
         default: testGradient,
         hover: testGradient,
-        animation: { duration: 200, easing: 'ease' }
+        animation: { duration: 200, easing: 'ease' },
       }
 
       const debug = GradientDebugger.debugStateGradient(stateGradient)
@@ -305,18 +317,18 @@ describe('Phase 4 Features', () => {
 
     it('should profile operations', () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-      
+
       const result = GradientDebugger.profileOperation('test-operation', () => {
         return 'test-result'
       })
-      
+
       expect(result).toBe('test-result')
-      
+
       // In development mode, should log timing
       if (process.env.NODE_ENV === 'development') {
         expect(consoleSpy).toHaveBeenCalled()
       }
-      
+
       consoleSpy.mockRestore()
     })
   })
@@ -325,7 +337,7 @@ describe('Phase 4 Features', () => {
     const testGradient = LinearGradient({
       colors: ['#ff0000', '#0000ff'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     it('should convert gradients to CSS', () => {
@@ -351,7 +363,7 @@ describe('Phase 4 Features', () => {
     const testGradient = LinearGradient({
       colors: ['#ff0000', '#0000ff'],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
 
     it('should clone gradients', () => {
@@ -364,19 +376,19 @@ describe('Phase 4 Features', () => {
       const gradient1 = LinearGradient({
         colors: ['#ff0000', '#0000ff'],
         startPoint: 'top',
-        endPoint: 'bottom'
+        endPoint: 'bottom',
       })
 
       const gradient2 = LinearGradient({
         colors: ['#ff0000', '#0000ff'],
         startPoint: 'top',
-        endPoint: 'bottom'
+        endPoint: 'bottom',
       })
 
       const gradient3 = LinearGradient({
         colors: ['#00ff00', '#0000ff'],
         startPoint: 'top',
-        endPoint: 'bottom'
+        endPoint: 'bottom',
       })
 
       expect(GradientUtils.equals(gradient1, gradient2)).toBe(true)

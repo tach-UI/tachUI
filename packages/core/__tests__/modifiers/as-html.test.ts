@@ -8,14 +8,14 @@ const mockTextComponent = (content: string) => ({
   type: 'Text',
   __tachui_component_type: 'Text',
   content,
-  props: { content }
+  props: { content },
 })
 
 // Mock non-Text component for testing
 const mockVStackComponent = () => ({
   type: 'VStack',
   __tachui_component_type: 'VStack',
-  props: { children: [] }
+  props: { children: [] },
 })
 
 // Mock Button component for testing
@@ -23,7 +23,7 @@ const mockButtonComponent = (label: string) => ({
   type: 'Button',
   __tachui_component_type: 'Button',
   label,
-  props: { label }
+  props: { label },
 })
 
 describe('AsHTML Modifier', () => {
@@ -34,7 +34,9 @@ describe('AsHTML Modifier', () => {
   beforeEach(() => {
     consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     consoleGroupSpy = vi.spyOn(console, 'group').mockImplementation(() => {})
-    consoleGroupEndSpy = vi.spyOn(console, 'groupEnd').mockImplementation(() => {})
+    consoleGroupEndSpy = vi
+      .spyOn(console, 'groupEnd')
+      .mockImplementation(() => {})
   })
 
   afterEach(() => {
@@ -54,7 +56,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -74,7 +76,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -90,13 +92,13 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       // Apply multiple times - content should remain the same
       modifier.apply(null as any, context)
       const firstResult = element.innerHTML
-      
+
       modifier.apply(null as any, context)
       const secondResult = element.innerHTML
 
@@ -115,7 +117,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       expect(() => {
@@ -132,12 +134,14 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       expect(() => {
         modifier.apply(null as any, context)
-      }).toThrow('Found: Button component. Use Text(\'<your-html>\').modifier.asHTML() instead.')
+      }).toThrow(
+        "Found: Button component. Use Text('<your-html>').modifier.asHTML() instead."
+      )
     })
 
     test('error message suggests correct usage', () => {
@@ -149,18 +153,19 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       expect(() => {
         modifier.apply(null as any, context)
-      }).toThrow('Use Text(\'<your-html>\').modifier.asHTML() instead.')
+      }).toThrow("Use Text('<your-html>').modifier.asHTML() instead.")
     })
   })
 
   describe('Security - Basic Sanitization', () => {
     test('removes script tags by default', () => {
-      const maliciousHTML = '<p>Hello</p><script>alert("xss")</script><p>World</p>'
+      const maliciousHTML =
+        '<p>Hello</p><script>alert("xss")</script><p>World</p>'
       const modifier = asHTML()
       const element = document.createElement('div')
       const component = mockTextComponent(maliciousHTML)
@@ -169,7 +174,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -190,7 +195,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -210,7 +215,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -221,7 +226,8 @@ describe('AsHTML Modifier', () => {
     })
 
     test('removes dangerous elements by default', () => {
-      const maliciousHTML = '<iframe src="evil.html"></iframe><object data="evil.swf"></object>'
+      const maliciousHTML =
+        '<iframe src="evil.html"></iframe><object data="evil.swf"></object>'
       const modifier = asHTML()
       const element = document.createElement('div')
       const component = mockTextComponent(maliciousHTML)
@@ -230,7 +236,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -260,7 +266,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -287,7 +293,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -309,7 +315,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -324,9 +330,12 @@ describe('AsHTML Modifier', () => {
 
   describe('Custom Sanitizer Option', () => {
     test('uses custom sanitizer when provided', () => {
-      const customSanitizer = vi.fn((html: string) => html.replace(/<script.*?<\/script>/gi, ''))
-      const maliciousHTML = '<p>Hello</p><script>alert("xss")</script><p>World</p>'
-      
+      const customSanitizer = vi.fn((html: string) =>
+        html.replace(/<script.*?<\/script>/gi, '')
+      )
+      const maliciousHTML =
+        '<p>Hello</p><script>alert("xss")</script><p>World</p>'
+
       const modifier = asHTML({ customSanitizer })
       const element = document.createElement('div')
       const component = mockTextComponent(maliciousHTML)
@@ -335,11 +344,11 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
-      
+
       expect(customSanitizer).toHaveBeenCalledWith(maliciousHTML)
       expect(element.innerHTML).toContain('Hello')
       expect(element.innerHTML).toContain('World')
@@ -354,18 +363,22 @@ describe('AsHTML Modifier', () => {
 
       const modifier = asHTML()
       const element = document.createElement('div')
-      const component = mockTextComponent('<p>Hello</p><script>alert(1)</script>')
+      const component = mockTextComponent(
+        '<p>Hello</p><script>alert(1)</script>'
+      )
 
       const context = {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
 
-      expect(consoleGroupSpy).toHaveBeenCalledWith('🔒 AsHTML Security Warnings')
+      expect(consoleGroupSpy).toHaveBeenCalledWith(
+        '🔒 AsHTML Security Warnings'
+      )
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('Script tags detected')
       )
@@ -385,7 +398,7 @@ describe('AsHTML Modifier', () => {
         componentId: 'test',
         componentInstance: component,
         element,
-        phase: 'creation' as const
+        phase: 'creation' as const,
       }
 
       modifier.apply(null as any, context)
@@ -403,18 +416,26 @@ describe('AsHTML Modifier', () => {
         // Direct content property
         { content: '<p>Direct content</p>', text: undefined, props: {} },
         // Props content
-        { content: undefined, text: undefined, props: { content: '<p>Props content</p>' } },
+        {
+          content: undefined,
+          text: undefined,
+          props: { content: '<p>Props content</p>' },
+        },
         // Text property
         { content: undefined, text: '<p>Text property</p>', props: {} },
         // Props text
-        { content: undefined, text: undefined, props: { text: '<p>Props text</p>' } },
+        {
+          content: undefined,
+          text: undefined,
+          props: { text: '<p>Props text</p>' },
+        },
       ]
 
       testCases.forEach((testCase, index) => {
         const component = {
           type: 'Text',
           __tachui_component_type: 'Text',
-          ...testCase
+          ...testCase,
         }
 
         const modifier = asHTML()
@@ -424,7 +445,7 @@ describe('AsHTML Modifier', () => {
           componentId: `test-${index}`,
           componentInstance: component,
           element,
-          phase: 'creation' as const
+          phase: 'creation' as const,
         }
 
         modifier.apply(null as any, context)
