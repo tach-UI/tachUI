@@ -1,0 +1,127 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior in tachUI
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 
+        
+        Before submitting, please check if your issue has already been reported.
+        
+  - type: input
+    id: version
+    attributes:
+      label: tachUI Version
+      description: What version of tachUI are you using?
+      placeholder: "0.7.0-alpha1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: packages
+    attributes:
+      label: Affected Package(s)
+      description: Which tachUI packages are involved?
+      multiple: true
+      options:
+        - @tachui/core
+        - @tachui/forms
+        - @tachui/navigation
+        - @tachui/symbols
+        - @tachui/mobile-patterns
+        - @tachui/cli
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe what happened and what you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Please provide detailed steps to reproduce the issue
+      placeholder: |
+        1. Create component with...
+        2. Add modifier...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Code Sample
+      description: Minimal code example that reproduces the issue
+      render: typescript
+      placeholder: |
+        import { Text, Button } from '@tachui/core'
+        
+        // Your minimal reproduction case here
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Include error messages if any.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: Browser(s)
+      description: Which browsers are affected?
+      multiple: true
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you using?
+      placeholder: "macOS 14.0, Windows 11, Ubuntu 22.04"
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: What version of Node.js are you using?
+      placeholder: "20.10.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem (screenshots, related issues, etc.)
+    validations:
+      required: false

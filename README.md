@@ -1,61 +1,53 @@
-# tachUI Framework 🚀
+---
+cssclasses:
+  - full-page
+---
 
-> **SwiftUI-inspired web development with industry-leading performance**
+# tachUI
 
-[![Tests](https://img.shields.io/badge/Tests-100%25%20Passing-brightgreen)](https://github.com/yourusername/tachui)
-[![Version](https://img.shields.io/badge/Version-v1.0.0--alpha-orange)](https://github.com/yourusername/tachui/releases)
-[![License](https://img.shields.io/badge/License-MIT-blue)](./LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.2+-blue)](https://www.typescriptlang.org/)
+> **SwiftUI-inspired web framework with fine-grained reactivity**
 
-A production-ready, TypeScript-first web framework that brings SwiftUI's declarative syntax to the web with SolidJS-style fine-grained reactivity. tachUI compiles to vanilla JavaScript and delivers exceptional performance through direct DOM manipulation.
+[![Version](https://img.shields.io/badge/Version-0.7.0--alpha1-orange)](https://github.com/tach-UI/tachUI/releases)
+[![License](https://img.shields.io/badge/License-MPL--2.0-blue)](./LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue)](https://www.typescriptlang.org/)
+[![Node](https://img.shields.io/badge/Node-20+-green)](https://nodejs.org/)
 
-## 🎯 Project Overview
+**tachUI** brings SwiftUI's declarative syntax to the web with SolidJS-inspired reactivity and direct DOM manipulation for maximum performance. This is our **first public alpha release** - ready for early adopters and contributors.
 
-**tachUI** (pronounced "Tack-UI") combines the developer experience of SwiftUI with the performance of direct DOM manipulation, creating a modern web framework that's both powerful and efficient.
+---
 
-### Our Vision
-- **Familiar Syntax**: SwiftUI developers can immediately be productive
-- **Maximum Performance**: 100-1000x faster than virtual DOM frameworks  
-- **TypeScript-First**: Complete type safety with excellent developer experience
-- **Zero Dependencies**: Compile to vanilla JavaScript with no runtime dependencies
-- **Production Ready**: Memory-safe with comprehensive testing
+## 🎉 First Alpha Release - Welcome!
 
-### Why tachUI?
-Traditional web frameworks either sacrifice performance for developer experience or vice versa. tachUI breaks this tradeoff by combining:
-- SwiftUI's intuitive declarative syntax
-- SolidJS's fine-grained reactivity system
-- Direct DOM manipulation for maximum performance
-- Compile-time optimizations for smaller bundles
+**tachUI 0.7.0-alpha1** marks our debut as a public framework! After extensive development, we're excited to share a SwiftUI-inspired web framework that prioritizes developer experience without compromising performance.
 
-## 🎉 First Alpha Release
+### ✅ What's Ready in Alpha 1
 
-**tachUI v1.0.0-alpha is here!** After extensive development and testing, we're excited to share our first public release.
+- **🏗️ Complete Component Library**: 55+ SwiftUI-compatible components
+- **⚡ Fine-grained Reactivity**: SolidJS-inspired signals with automatic cleanup
+- **🎨 SwiftUI Modifiers**: Chainable modifiers for layout, styling, and interactions
+- **📦 Plugin Architecture**: Modular design with forms, navigation, symbols packages
+- **🎯 Production Apps**: Working Calculator and Marketing site included
+- **📘 TypeScript-first**: Complete type safety with excellent IntelliSense
 
-### ✅ What's Ready for Alpha Testing
-- **Complete SwiftUI Component Library**: 26 production-ready components
-- **Full Modifier System**: Layout, appearance, interaction, and animation modifiers
-- **Reactive System**: Fine-grained reactivity with automatic cleanup
-- **DOM Renderer**: Direct DOM manipulation with surgical updates
-- **TypeScript Integration**: Complete type safety and IntelliSense support
-- **100% Test Coverage**: All core functionality thoroughly tested
+### 🎯 Perfect for Alpha Testing
 
-### 🎯 Alpha Release Goals
-This alpha release is designed for:
-- **Early adopters** who want to explore SwiftUI-style web development
-- **Performance-conscious developers** building high-performance web applications
-- **Framework contributors** interested in helping shape tachUI's future
-- **Swift/iOS developers** transitioning to web development
+This alpha is ideal for:
+
+- **SwiftUI developers** exploring web development
+- **Early adopters** who want cutting-edge frameworks
+- **Performance-focused teams** building fast web applications
+- **Contributors** interested in shaping tachUI's future
+
+---
 
 ## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-npm install @tachui/core
+npm install @tachui/core@0.7.0-alpha1
 # or
-yarn add @tachui/core
-# or
-pnpm add @tachui/core
+pnpm add @tachui/core@0.7.0-alpha1
 ```
 
 ### Your First Component
@@ -66,407 +58,290 @@ import { Text, Button, VStack, createSignal } from '@tachui/core'
 // Create reactive state
 const [count, setCount] = createSignal(0)
 
-// Build SwiftUI-style components with modifiers
+// Build SwiftUI-style components
 const counterApp = VStack({
   children: [
     Text(() => `Count: ${count()}`)
-      .modifier
-      .fontSize(24)
+      .modifier.fontSize(24)
       .fontWeight('bold')
       .foregroundColor('#007AFF')
       .build(),
-    
+
     Button('Increment', () => setCount(count() + 1))
-      .modifier
-      .backgroundColor('#007AFF')
+      .modifier.backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding({ horizontal: 24, vertical: 12 })
       .cornerRadius(8)
-      .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,122,255,0.3)' })
-      .build()
+      .build(),
   ],
   spacing: 16,
-  alignment: 'center'
+  alignment: 'center',
 })
-.modifier
-.padding(32)
-.backgroundColor('#f8f9fa')
-.cornerRadius(12)
-.build()
 ```
 
-## 🎯 Current Achievement Status
+---
 
-### ✅ **Completed Core Framework** (100% Implementation)
+## 🧩 Framework Architecture
 
-#### **Reactive System** - SolidJS-Inspired Foundation ✅
-- Fine-grained reactivity with `createSignal()` and `createEffect()`
-- Automatic dependency tracking and memory management
-- Sub-millisecond updates with surgical DOM manipulation
-- **Performance**: 100-1000x faster than virtual DOM frameworks
+### SwiftUI-Inspired Components
 
-#### **Component Library** - 26 SwiftUI Components ✅
-| Component | Status | Features |
-|-----------|---------|----------|
-| **Layout** | | |
-| VStack, HStack, ZStack | ✅ | Flexible layouts with spacing and alignment |
-| Spacer | ✅ | Flexible space distribution |
-| ScrollView | ✅ | Scrollable content containers |
-| **Content** | | |
-| Text | ✅ | Typography, formatting, reactive content |
-| Image | ✅ | Loading states, content modes, progressive loading |
-| **Input** | | |
-| TextField | ✅ | Validation, formatting, secure text support |
-| Button | ✅ | Press states, variants, accessibility |
-| Toggle | ✅ | Switch component with reactive binding |
-| Slider | ✅ | Range slider with marks and custom styling |
-| Picker | ✅ | Selection component with options |
-| DatePicker | ✅ | Calendar-based date selection with localization |
-| Stepper | ✅ | Numeric input with increment/decrement controls |
-| **Navigation** | | |
-| NavigationView | ✅ | Stack-based navigation system |
-| NavigationLink | ✅ | Navigation triggers and routing |
-| TabView | ✅ | Tab interface with selection binding |
-| Link | ✅ | Web-specific navigation with routing support |
-| **Feedback** | | |
-| Alert | ✅ | Modal dialogs with backdrop and animations |
-| Menu | ✅ | Dropdowns with keyboard navigation |
-| ActionSheet | ✅ | Mobile-friendly action selection modals |
-| **Structure** | | |
-| Form | ✅ | Form containers with validation |
-| Section | ✅ | Grouped content with headers/footers |
-| List | ✅ | Virtual scrolling with ForEach support |
-| Divider | ✅ | Visual separators with styling |
+All the familiar SwiftUI components, optimized for web:
 
-#### **SwiftUI Modifier System** - 12 Core Modifiers ✅
-```typescript
-// Layout modifiers
-.frame(width, height)
-.padding(16)  
-.margin({ top: 8, horizontal: 16 })
+#### **Layout Components**
 
-// Appearance modifiers
-.foregroundColor('#007AFF')
-.backgroundColor('#f0f8ff')  
-.font({ size: 18, weight: 'bold' })
-.cornerRadius(8)
-.shadow({ x: 0, y: 2, radius: 4 })
+- **VStack, HStack, ZStack** - Flexible layout containers
+- **Grid, LazyVGrid, LazyHGrid** - Advanced grid systems
+- **ScrollView** - Scrollable content containers with pull-to-refresh
+- **Spacer** - Flexible space distribution
 
-// Interaction modifiers
-.onTap(() => console.log('Tapped!'))
-.onHover((hovered) => console.log('Hover:', hovered))
-.disabled(false)
+#### **Content & Input**
 
-// Animation modifiers  
-.transition('all', 300, 'ease-out')
-.fadeIn(500)
-```
+- **Text** - Typography with reactive content and formatting
+- **Image** - Progressive loading with content modes
+- **Button** - Interactive buttons with states and variants
+- **BasicInput** - Text input with validation support
+- **Toggle** - Switch controls with reactive binding
 
-#### **Performance & Quality** - Production Ready ✅
-- **Bundle Size**: ~15.8KB gzipped (85% under target)
-- **Test Coverage**: 100% passing (1185/1185 tests)
-- **Memory Management**: WeakMap-based automatic cleanup
-- **TypeScript**: Complete type safety with strict configuration
-- **Browser Support**: Modern browsers with ES6+ support
+#### **Advanced Controls** _(via plugins)_
 
-## 🏗️ Architecture Deep Dive
+- **TextField, Slider, Stepper, DatePicker** - Advanced form controls (`@tachui/forms`)
+- **NavigationView, NavigationLink, TabView** - Navigation system (`@tachui/navigation`)
+- **Alert, ActionSheet** - Mobile-first patterns (`@tachui/mobile-patterns`)
+- **Symbol** - Icon system with Lucide integration (`@tachui/symbols`)
 
-### Direct DOM + Fine-Grained Reactivity
+#### **Data & Logic**
 
-```mermaid
-graph LR
-    A[SwiftUI Syntax] --> B[TypeScript Compiler]
-    B --> C[TachUI Runtime]
-    C --> D[Reactive Signals] 
-    C --> E[Direct DOM]
-    D --> F[Surgical Updates]
-    E --> F
-```
+- **List, ForEach, Section** - Dynamic content rendering
+- **Show, Unless, When** - Conditional rendering
+- **Form** - Form containers with validation
 
-**Key Innovation**: tachUI bypasses virtual DOM overhead by combining compile-time optimizations with runtime reactivity. Components compile to efficient DOM manipulation code, while signals provide precise update targeting.
+### SwiftUI Modifier System
 
-### Component Architecture
+Chain modifiers just like SwiftUI:
 
 ```typescript
-// 1. Create reactive state
-const [user, setUser] = createSignal({ name: 'Alice', role: 'Admin' })
-
-// 2. Build component with SwiftUI-style syntax
-const userCard = VStack({
-  children: [
-    Text(() => user().name)
-      .modifier.fontSize(20).fontWeight('bold').build(),
-    
-    Text(() => user().role)  
-      .modifier.fontSize(14).foregroundColor('#666').build()
-  ],
-  spacing: 8
-})
-
-// 3. Automatic updates - when user() changes, only affected DOM nodes update
-setUser({ name: 'Bob', role: 'User' }) // Only text content updates, no re-rendering
+Text('Hello tachUI')
+  .modifier.fontSize(18)
+  .fontWeight('semibold')
+  .foregroundColor('#007AFF')
+  .padding(16)
+  .backgroundColor('#f0f8ff')
+  .cornerRadius(12)
+  .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,122,255,0.2)' })
+  .onTap(() => console.log('Tapped!'))
+  .build()
 ```
 
-## 📊 Performance Benchmarks
+**Available Modifiers:**
 
-tachUI delivers exceptional performance through its direct DOM architecture:
+- **Layout**: `.frame()`, `.padding()`, `.margin()`, `.position()`
+- **Appearance**: `.foregroundColor()`, `.backgroundColor()`, `.font()`, `.cornerRadius()`
+- **Visual Effects**: `.shadow()`, `.opacity()`, `.clipShape()`, `.backdrop()`
+- **Interactions**: `.onTap()`, `.onHover()`, `.disabled()`, `.cursor()`
+- **Responsive**: `.responsive()` - breakpoint-based styling
 
-### Real Browser Results (Playwright)
-| Operation | tachUI | React | Vue | Svelte |
-|-----------|---------|-------|-----|--------|
-| Create 1,000 components | **1.2ms** | 45ms | 38ms | 22ms |
-| Update every 10th row | **0.4ms** | 12ms | 9ms | 6ms |
-| Memory usage (1K components) | **2.1MB** | 8.4MB | 7.2MB | 4.8MB |
-| Bundle size (gzipped) | **15.8KB** | 42KB | 38KB | 28KB |
+---
 
-**Why tachUI is faster:**
-- No virtual DOM diffing overhead
-- Surgical DOM updates via signals
-- Compile-time optimizations
-- Direct DOM manipulation
+## 📊 Performance & Bundle Sizes
 
-## 🛠️ Developer Guide
+### Production Applications _(Ready to deploy)_
+
+- **Calculator App**: Feature-complete calculator (~1.1MB bundled)
+- **Marketing Site**: Responsive intro application (~59KB bundled)
+
+### Framework Bundles _(Current Alpha Sizes)_
+
+- **@tachui/core**: ~1.1MB gzipped _(includes development validation)_
+- **@tachui/forms**: Additional form components
+- **@tachui/navigation**: Navigation system enhancements
+- **@tachui/symbols**: Icon system _(tree-shakeable)_
+- **@tachui/mobile-patterns**: Mobile UI patterns
+
+> **Alpha Note**: Bundle sizes include extensive development validation and debugging code. Production optimizations will significantly reduce these sizes in upcoming releases.
+
+### Reactivity Performance
+
+tachUI's fine-grained reactivity provides:
+
+- **Surgical DOM updates** - Only affected elements re-render
+- **Automatic dependency tracking** - No manual effect management
+- **Memory-safe cleanup** - WeakMap-based automatic cleanup
+- **Sub-millisecond updates** - Direct DOM manipulation
+
+---
+
+## 🛠️ Development & Contribution
 
 ### Getting Started as a Contributor
 
-tachUI welcomes contributors! Here's how to get started:
-
-#### Prerequisites
-- **Node.js 18+** and **pnpm** (required for workspace management)
-- **TypeScript 5.2+** experience
-- Familiarity with **SwiftUI concepts** (helpful but not required)
-- Understanding of **reactive programming** patterns
-
-#### Project Setup
-
 ```bash
-# Clone and setup the project
-git clone https://github.com/yourusername/tachui.git
-cd tachui
+# Clone and setup
+git clone https://github.com/tach-UI/tachUI.git
+cd tachUI
 
-# Install dependencies (uses pnpm workspaces)
+# Install dependencies
 pnpm install
 
-# Run tests to verify setup
+# Start development
+pnpm dev:core           # Core framework development
+pnpm calculator:dev     # Calculator app development
+pnpm intro:dev         # Intro app development
+
+# Build everything
+pnpm build
+
+# Run tests
 pnpm test
-
-# Run performance benchmarks  
-pnpm run benchmark:quick
-
-# Start development mode
-pnpm dev:core
 ```
 
-#### Codebase Structure
+### Project Structure
 
 ```
-packages/core/                  # Core framework
-├── src/
-│   ├── reactive/              # Signal-based reactivity system
-│   │   ├── signal.ts         # Core signal implementation  
-│   │   ├── effect.ts         # Reactive effects
-│   │   └── computed.ts       # Computed values
-│   ├── runtime/              # DOM rendering and lifecycle
-│   │   ├── renderer.ts       # Direct DOM manipulation
-│   │   ├── component.ts      # Component lifecycle
-│   │   └── types.ts         # Core type definitions
-│   ├── modifiers/            # SwiftUI modifier system
-│   │   ├── base.ts          # Modifier base classes
-│   │   ├── margin.ts        # Layout modifiers
-│   │   └── core.ts          # Core modifier functions
-│   ├── components/           # SwiftUI component implementations
-│   │   ├── Text.ts          # Text component
-│   │   ├── Button.ts        # Button component
-│   │   └── layouts/         # VStack, HStack, ZStack
-│   └── assets/              # Asset management system
-├── tests/                    # Comprehensive test suite (100% coverage)
-└── docs/                    # Framework documentation
-
-docs/
-└── guide/                  # User-facing documentation
-
-design/                     # Technical specifications and planning
-├── tachui_tech_spec.md    # Complete technical specification
-├── tachui_full_planning.md # Development roadmap
-└── diagrams/              # Architecture diagrams
+├── packages/
+│   ├── core/              # Core framework with reactivity & components
+│   ├── forms/             # Advanced form components
+│   ├── navigation/        # Navigation system enhancements
+│   ├── symbols/           # Icon system with Lucide integration
+│   ├── mobile-patterns/   # Alert, ActionSheet, mobile UI
+│   └── cli/              # Developer tooling (future)
+├── apps/
+│   ├── calculator/        # Production calculator demo
+│   ├── intro/            # Marketing site
+│   ├── docs/             # Framework documentation
+│   └── examples/         # Component examples & tutorials
+└── design/               # Technical specifications & planning
 ```
 
-#### Development Workflow
+### 🤝 Contributing Areas
 
-1. **Pick an Area**: Choose from our contribution areas below
-2. **Create Branch**: `git checkout -b feature/your-feature-name`
-3. **Write Tests First**: tachUI follows TDD - write tests before implementation
-4. **Implement**: Follow our coding guidelines in `CLAUDE.md`
-5. **Verify**: Run `pnpm test` to ensure 100% test coverage
-6. **Document**: Add documentation in `apps/docs/` for user-facing features
-7. **Submit PR**: Create a pull request with a clear description
+We welcome contributions in:
 
-### 🎯 Contribution Areas
+#### **🧩 Component Development** (Beginner-friendly)
 
-We welcome contributions in these key areas:
+- Expand SwiftUI component library
+- Add missing SwiftUI modifiers
+- Improve accessibility and keyboard navigation
 
-#### 🧩 **Component Development** (Beginner-Friendly)
-**Goal**: Expand our SwiftUI component library with advanced components
+#### **⚡ Performance & Bundle Optimization** (Intermediate)
 
-- **LazyVGrid/LazyHGrid**: Advanced grid layouts with virtualization
-- **ProgressView**: Progress indicators and loading states
-- **SearchField**: Enhanced search input with filtering capabilities
-- **ColorPicker**: Color selection component with palette support
+- Reduce bundle sizes through better tree-shaking
+- Implement code-splitting for validation layers
+- Optimize reactive system performance
 
-**Skills needed**: TypeScript, SwiftUI knowledge, performance optimization
-**Impact**: High - enables complex UI patterns and layouts
+#### **📚 Documentation & Examples** (All levels)
 
-#### ⚡ **Performance Optimization** (Intermediate)
-**Goal**: Push performance boundaries even further
+- Interactive component examples
+- Migration guides from React/Vue
+- Video tutorials and walkthroughs
 
-- **Bundle Size**: Tree-shaking and dead code elimination
-- **Memory Usage**: Optimize WeakMap usage and cleanup strategies
-- **Rendering**: WASM integration for compute-heavy operations
-- **Benchmarking**: Extend benchmark suite with more scenarios
+#### **🔧 Advanced Features** (Advanced)
 
-**Skills needed**: JavaScript performance, profiling tools, benchmarking
-**Impact**: High - maintains tachUI's performance leadership
+- Animation system integration
+- Advanced state management patterns
+- Developer tooling and browser extensions
 
-#### 🎨 **Advanced Features** (Advanced)
-**Goal**: Build next-generation web development capabilities
+---
 
-- **Animation System**: Web Animations API integration with SwiftUI syntax
-- **Gesture Recognition**: Touch and pointer gesture support
-- **State Management**: Advanced @Binding and @ObservedObject patterns
-- **Developer Tools**: Browser extension for debugging and inspection
+## 🗺️ Roadmap
 
-**Skills needed**: Advanced JavaScript, browser APIs, tooling development  
-**Impact**: Very High - enables new classes of applications
+### ✅ **Alpha 1 - Current Release**
 
-#### 📚 **Documentation & Examples** (All Levels)
-**Goal**: Make tachUI accessible to all developers
+- **55+ SwiftUI components** across core + plugin packages
+- **Plugin architecture** with modular design (forms, navigation, symbols, mobile)
+- **Production demonstration applications** (Calculator + Marketing site)
+- **TypeScript-first developer experience** with complete type safety
 
-- **Interactive Examples**: CodeSandbox integration with live editing
-- **Video Tutorials**: Screen-recorded development walkthroughs
-- **Migration Guides**: React/Vue to tachUI conversion guides
-- **API Documentation**: Improve auto-generated docs with examples
+### 🎯 **Alpha 2 - Next Release** _(~4-6 weeks)_
 
-**Skills needed**: Technical writing, example applications, documentation tools
-**Impact**: High - lowers barrier to adoption
+- **Bundle size optimization** - Production-ready bundle sizes
+- **Enhanced documentation** - Complete API documentation
+- **Performance benchmarks** - Comparative performance data
+- **Developer tooling** - Improved CLI and debugging tools
 
-#### 🔧 **Developer Experience** (Intermediate)
-**Goal**: Make tachUI development more enjoyable
+### 🚀 **Beta Release** _(~3-4 months)_
 
-- **Vite Plugin**: Enhanced compile-time error messages
-- **TypeScript Integration**: Better type inference and error reporting
-- **Hot Reload**: Faster development iteration cycles  
-- **Debugging Tools**: Enhanced console logging and inspection
+- **Animation system** - Web Animations API integration
+- **Advanced state management** - @Binding and @ObservedObject patterns
+- **Enterprise features** - Advanced testing and monitoring tools
+- **Community ecosystem** - Third-party plugins and components
 
-**Skills needed**: Build tools, TypeScript, Vite ecosystem
-**Impact**: High - improves daily development experience
+### 🌟 **1.0 Release** _(~6-8 months)_
 
-### 📋 Contribution Guidelines
+- **Complete SwiftUI parity** - All common SwiftUI patterns
+- **Cross-platform capabilities** - Mobile app development patterns
+- **Design tools integration** - Visual component builders
+- **Stable public API** - Production-ready for large applications
 
-#### Code Quality Standards
-- **100% Test Coverage**: All new code must include comprehensive tests
-- **TypeScript Strict Mode**: Full type safety with no `any` types  
-- **Performance First**: New features must not degrade performance
-- **SwiftUI Compatibility**: APIs should match SwiftUI patterns where applicable
+---
 
-#### Pull Request Process
-1. **Fork and Branch**: Create a feature branch from `main`
-2. **Test-Driven Development**: Write tests before implementation
-3. **Documentation**: Include docs for user-facing features
-4. **Performance**: Run benchmarks to verify no regressions
-5. **Review**: Respond to code review feedback promptly
+## 📚 Learning Resources
 
-#### Getting Help
-- **Discussions**: Use GitHub Discussions for questions and ideas
-- **Issues**: Report bugs with minimal reproduction cases  
-- **Discord**: Join our community chat for real-time help
-- **Documentation**: Check `docs/guide/` for detailed guides
+### Documentation
 
-## 🗺️ Roadmap & Future Vision
+- **[Getting Started Guide](apps/docs/guide/getting-started.md)** - Your first tachUI application
+- **[Component Reference](apps/docs/components/index.md)** - Complete component documentation
+- **[SwiftUI Migration](apps/docs/guide/swiftui-compatibility.md)** - Transition from SwiftUI
+- **[API Documentation](apps/docs/api/index.md)** - Detailed API reference
 
-### ✅ **Alpha Release - Current State** 
-- Complete SwiftUI component library (26 components)
-- Full modifier system with reactive support
-- Production-ready performance and stability
-- 100% test coverage on core functionality
+### Examples
 
-### 🎯 **Beta Release Goals** (Q2 2024)
-- **Enhanced Animation System**: Web Animations API integration
-- **Advanced State Management**: @Binding and @ObservedObject patterns  
-- **Developer Tools**: Browser extension for debugging
-- **Production Deployments**: Real-world application validation
+- **[Calculator App](apps/calculator/)** - Production-ready calculator with themes
+- **[Component Examples](apps/examples/)** - Interactive component demonstrations
+- **[Real-world Patterns](apps/examples/working-demos/)** - Common application patterns
 
-### 🚀 **v1.0 Release Goals** (Q3 2024)
-- **Complete SwiftUI Parity**: All common SwiftUI patterns supported
-- **Enterprise Features**: Advanced testing, monitoring, and deployment tools
-- **Ecosystem**: Third-party component library and plugins
-- **Documentation**: Comprehensive guides, tutorials, and examples
-
-### 🔮 **Future Vision** (2024+)
-- **Cross-Platform**: React Native-style mobile app development
-- **Design Tools**: Visual component builder with code generation  
-- **AI Integration**: AI-powered component generation and optimization
-- **WebAssembly**: Native performance for compute-intensive applications
-
-## 📊 Project Health & Metrics
-
-### Development Metrics
-- **Test Coverage**: 100% (1,185/1,185 tests passing)
-- **TypeScript Coverage**: 100% (strict mode, no `any` types)
-- **Performance**: All targets exceeded by 8-25x
-- **Bundle Size**: 15.8KB gzipped (85% under target)
-- **Memory Usage**: Stable with automatic cleanup
-
-### Community & Adoption  
-- **GitHub Stars**: Growing open source community
-- **Contributors**: Welcoming contributions from all skill levels
-- **Production Ready**: Alpha release suitable for evaluation and early adoption
-- **Documentation**: Comprehensive guides for users and contributors
+---
 
 ## 🤝 Community & Support
 
 ### Join the tachUI Community
 
-- **GitHub Discussions**: Ask questions, share ideas, and get help
-- **Issues**: Report bugs and request features  
-- **Pull Requests**: Contribute code, documentation, and examples
-- **Discord**: Real-time community chat and support
+- **GitHub Issues**: Report bugs and request features
+- **GitHub Discussions**: Ask questions and share ideas
+- **Pull Requests**: Contribute code and improvements
+- **Discord**: _Coming soon_ - Real-time community chat
 
-### Getting Support
+### Getting Help
 
-1. **Documentation**: Check our comprehensive guides in `docs/guide/`
-2. **Examples**: Explore real-world examples in the documentation  
-3. **GitHub Issues**: Report bugs with minimal reproduction cases
-4. **Discussions**: Ask questions and share ideas with the community
+1. **Check Documentation** - Comprehensive guides in `apps/docs/`
+2. **Browse Examples** - Working examples in `apps/examples/`
+3. **Report Issues** - GitHub issues with reproduction cases
+4. **Join Discussions** - Ask questions in GitHub Discussions
+
+---
 
 ## 📄 License
 
-MIT License - see [LICENSE](./LICENSE) for details.
+**Mozilla Public License 2.0** - see [LICENSE](./LICENSE) for details.
+
+The MPL-2.0 license allows you to use tachUI in both open source and commercial projects while ensuring improvements to the framework itself remain open source.
+
+---
 
 ## 🙏 Acknowledgments
 
-tachUI is inspired by and builds upon the work of many great projects:
+tachUI is inspired by and builds upon:
 
-- **SwiftUI**: Apple's revolutionary declarative UI framework
-- **SolidJS**: Fine-grained reactivity that inspired our reactive system
-- **React**: Component paradigms and developer experience patterns  
-- **Vue**: Build tool integration and developer experience innovations
+- **[SwiftUI](https://developer.apple.com/xcode/swiftui/)** - Apple's revolutionary declarative UI framework
+- **[SolidJS](https://www.solidjs.com/)** - Fine-grained reactivity that inspired our reactive system
+- **[React](https://react.dev/)** - Component patterns and developer experience innovations
+- **[Vue](https://vuejs.org/)** - Build tooling and developer experience patterns
 
 Special thanks to the open source community for continuous inspiration and feedback.
 
 ---
 
-## 🚀 Ready to Get Started?
+## 🚀 Ready to Build with SwiftUI on the Web?
 
 ```bash
-# Install tachUI
-npm install @tachui/core
+# Install tachUI Alpha 1
+npm install @tachui/core@0.7.0-alpha1
 
-# Create your first component
-import { Text, Button, VStack } from '@tachui/core'
+# Create your first SwiftUI-style component
+import { Text, Button, VStack, createSignal } from '@tachui/core'
 
-# Build something amazing! 🎉
+# Start building! 🎉
 ```
 
-**tachUI v1.0.0-alpha** - SwiftUI-inspired web development is here. Join us in building the future of web frameworks! 
+**tachUI 0.7.0-alpha1** - The future of SwiftUI-inspired web development is here.
 
-[![Get Started](https://img.shields.io/badge/Get%20Started-Documentation-blue?style=for-the-badge)](./apps/docs/guide/getting-started.md) [![View Examples](https://img.shields.io/badge/View%20Examples-Live%20Demos-green?style=for-the-badge)](./apps/examples/) [![Join Community](https://img.shields.io/badge/Join%20Community-Discord-purple?style=for-the-badge)](https://discord.gg/tachui)
+[![Get Started](https://img.shields.io/badge/Get%20Started-Documentation-blue?style=for-the-badge)](./apps/docs/guide/getting-started.md) [![View Examples](https://img.shields.io/badge/View%20Examples-Live%20Demos-green?style=for-the-badge)](./apps/examples/) [![Join Community](https://img.shields.io/badge/Contribute-GitHub-purple?style=for-the-badge)](https://github.com/tach-UI/tachUI)

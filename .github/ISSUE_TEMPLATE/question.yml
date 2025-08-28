@@ -1,0 +1,110 @@
+name: ❓ Question / Help
+description: Ask a question or get help with tachUI
+title: "[Question]: "
+labels: ["question", "help-wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your question! 
+        
+        Before asking, please check:
+        - 📚 [Documentation](../../docs/guide/)
+        - 🗺 [Component Examples](../../apps/examples/)
+        - 💬 [Existing Discussions](../../discussions)
+        
+  - type: dropdown
+    id: question-type
+    attributes:
+      label: Question Type
+      description: What type of help do you need?
+      options:
+        - How to use a specific component
+        - How to implement a pattern
+        - Migration from React/Vue/Angular
+        - SwiftUI compatibility question
+        - Performance optimization
+        - Best practices
+        - Troubleshooting
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: packages
+    attributes:
+      label: Related Package(s)
+      description: Which tachUI packages is this question about?
+      multiple: true
+      options:
+        - @tachui/core
+        - @tachui/forms
+        - @tachui/navigation
+        - @tachui/symbols
+        - @tachui/mobile-patterns
+        - @tachui/cli
+        - General Framework
+    validations:
+      required: false
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+      placeholder: Please be as specific as possible
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: What You're Trying to Achieve
+      description: What's the bigger picture? What are you building?
+      placeholder: I'm trying to build a responsive dashboard with...
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What You've Tried
+      description: What approaches have you already attempted?
+      render: typescript
+      placeholder: |
+        // Code you've tried
+        const component = Text("Hello")
+          .modifier
+          .fontSize(16)
+          .build()
+    validations:
+      required: false
+
+  - type: textarea
+    id: research
+    attributes:
+      label: Research Done
+      description: What documentation or examples have you looked at?
+      placeholder: |
+        - Checked the Text component docs
+        - Looked at the calculator app example
+        - Searched for similar questions
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: tachUI Version
+      description: What version of tachUI are you using?
+      placeholder: "0.7.0-alpha1"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other information that might be helpful
+    validations:
+      required: false

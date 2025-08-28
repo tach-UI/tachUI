@@ -1,0 +1,130 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for tachUI
+title: "[Feature]: "
+labels: ["enhancement", "needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! 
+        
+        Please check if a similar feature request already exists before submitting.
+        
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: Feature Type
+      description: What type of feature are you requesting?
+      options:
+        - New Component
+        - New Modifier
+        - API Enhancement
+        - Developer Experience
+        - Performance Improvement
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: packages
+    attributes:
+      label: Target Package(s)
+      description: Which tachUI packages would this affect?
+      multiple: true
+      options:
+        - @tachui/core
+        - @tachui/forms
+        - @tachui/navigation
+        - @tachui/symbols
+        - @tachui/mobile-patterns
+        - @tachui/cli
+        - New Package
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What's missing in the current implementation?
+      placeholder: Describe the problem or limitation you're facing
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your ideal solution
+      placeholder: How would you like this feature to work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: api-design
+    attributes:
+      label: API Design (if applicable)
+      description: How would this feature's API look?
+      render: typescript
+      placeholder: |
+        // Example API usage
+        Text("Hello")
+          .modifier
+          .newFeature({ option: 'value' })
+          .build()
+    validations:
+      required: false
+
+  - type: textarea
+    id: swiftui-equivalent
+    attributes:
+      label: SwiftUI Equivalent (if applicable)
+      description: Does this feature exist in SwiftUI? How does it work there?
+      render: swift
+      placeholder: |
+        // SwiftUI equivalent
+        Text("Hello")
+          .newModifier(option: .value)
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: What other approaches have you considered?
+    validations:
+      required: false
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Provide specific examples of how this feature would be used
+      placeholder: |
+        1. Building responsive navigation...
+        2. Creating animated transitions...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: implementation
+    attributes:
+      label: Implementation
+      description: Are you willing to help implement this feature?
+      options:
+        - label: I'd like to work on implementing this feature
+          required: false
+        - label: I can help with testing once implemented
+          required: false
+        - label: I can help with documentation
+          required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context, mockups, or references that would help understand this feature
+    validations:
+      required: false

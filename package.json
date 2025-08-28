@@ -40,18 +40,34 @@
     "dev:core": "pnpm --filter @tachui/core dev",
     "dev:cli": "pnpm --filter @tachui/cli dev",
     "dev:navigation": "pnpm --filter @tachui/navigation dev",
-    "dev:symbols": "pnpm --filter @tachui/symbols dev"
+    "dev:symbols": "pnpm --filter @tachui/symbols dev",
+    "prepare": "simple-git-hooks"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "jsdom": "^23.2.0",
+    "lint-staged": "^15.2.0",
     "oxlint": "^1.12.0",
+    "prettier": "^3.2.0",
+    "simple-git-hooks": "^2.9.0",
     "tsx": "^4.19.1",
     "typedoc": "^0.28.10",
     "typedoc-plugin-markdown": "^4.8.1",
     "typescript": "^5.8.0",
     "vite": "^7.1.1",
     "vitest": "^3.2.4"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged",
+    "pre-push": "pnpm type-check && pnpm test"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "oxlint --fix"
+    ],
+    "*.{js,ts,tsx,json,md}": [
+      "prettier --write"
+    ]
   },
   "engines": {
     "node": ">=20.0.0",

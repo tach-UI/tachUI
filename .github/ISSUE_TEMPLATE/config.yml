@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🗺 Documentation
+    url: https://github.com/tach-UI/tachUI/tree/main/docs/guide
+    about: Complete guides and API documentation
+  
+  - name: 💬 GitHub Discussions
+    url: https://github.com/tach-UI/tachUI/discussions
+    about: Ask questions and discuss ideas with the community
+  
+  - name: 🎉 Examples & Demos
+    url: https://github.com/tach-UI/tachUI/tree/main/apps/examples
+    about: Working examples and demo applications
+  
+  - name: 🚀 Quick Start Guide
+    url: https://github.com/tach-UI/tachUI/blob/main/docs/guide/getting-started.md
+    about: Get started with tachUI in minutes
