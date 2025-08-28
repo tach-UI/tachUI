@@ -61,12 +61,6 @@ packages/
 ├── symbols/           # Icon system (@tachui/symbols)
 ├── mobile-patterns/   # Mobile UI patterns (@tachui/mobile-patterns)
 └── cli/              # Developer tooling (@tachui/cli)
-
-apps/
-├── calculator/        # Demo calculator app
-├── intro/            # Marketing site
-├── examples/         # Component examples
-└── docs/            # Documentation
 ```
 
 ### Available Scripts
@@ -96,21 +90,21 @@ pnpm docs:api          # Generate API documentation
 
 ### What We're Looking For
 
-#### 🐟 High Priority
+#### High Priority
 
 - **Bug fixes** in core functionality
 - **SwiftUI component parity** - missing components or modifiers
 - **Performance optimizations** - bundle size, runtime performance
 - **Documentation improvements** - guides, examples, API docs
 
-#### 🌱 Medium Priority
+#### Medium Priority
 
 - **New SwiftUI-compatible features** that enhance developer experience
 - **Developer tooling** improvements
 - **Test coverage** improvements
 - **Accessibility** enhancements
 
-#### 🔮 Nice to Have
+#### Nice to Have
 
 - **Advanced animations** and transitions
 - **Design system integration** tools
@@ -377,4 +371,4 @@ Don't hesitate to ask questions! We're here to help:
 - **Start a discussion** for questions or ideas
 - **Check existing documentation** first
 
-Thank you for contributing to tachUI! 🚀
+Thank you for contributing to tachUI!

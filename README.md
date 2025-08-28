@@ -16,20 +16,20 @@ cssclasses:
 
 ---
 
-## 🎉 First Alpha Release - Welcome!
+## First Alpha Release - Welcome!
 
 **tachUI 0.7.0-alpha1** marks our debut as a public framework! After extensive development, we're excited to share a SwiftUI-inspired web framework that prioritizes developer experience without compromising performance.
 
-### ✅ What's Ready in Alpha 1
+### What's Ready in Alpha 1
 
-- **🏗️ Complete Component Library**: 55+ SwiftUI-compatible components
-- **⚡ Fine-grained Reactivity**: SolidJS-inspired signals with automatic cleanup
-- **🎨 SwiftUI Modifiers**: Chainable modifiers for layout, styling, and interactions
-- **📦 Plugin Architecture**: Modular design with forms, navigation, symbols packages
-- **🎯 Production Apps**: Working Calculator and Marketing site included
-- **📘 TypeScript-first**: Complete type safety with excellent IntelliSense
+- **Complete Component Library**: 55+ SwiftUI-compatible components
+- **Fine-grained Reactivity**: SolidJS-inspired signals with automatic cleanup
+- **SwiftUI Modifiers**: Chainable modifiers for layout, styling, and interactions
+- **Plugin Architecture**: Modular design with forms, navigation, symbols packages
+- **Production Apps**: Working Calculator and Marketing site included
+- **TypeScript-first**: Complete type safety with excellent IntelliSense
 
-### 🎯 Perfect for Alpha Testing
+### Perfect for Alpha Testing
 
 This alpha is ideal for:
 
@@ -40,7 +40,7 @@ This alpha is ideal for:
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -81,7 +81,7 @@ const counterApp = VStack({
 
 ---
 
-## 🧩 Framework Architecture
+## Framework Architecture
 
 ### SwiftUI-Inspired Components
 
@@ -142,16 +142,16 @@ Text('Hello tachUI')
 
 ---
 
-## 📊 Performance & Bundle Sizes
+### Demonstration Applications
 
-### Production Applications _(Ready to deploy)_
+These applications are coming and will be available in a separate repository
 
-- **Calculator App**: Feature-complete calculator (~1.1MB bundled)
-- **Marketing Site**: Responsive intro application (~59KB bundled)
+- **Calculator App**: Feature-complete calculator
+- **Marketing Site**: Responsive intro application
 
-### Framework Bundles _(Current Alpha Sizes)_
+### Framework Packages
 
-- **@tachui/core**: ~1.1MB gzipped _(includes development validation)_
+- **@tachui/core**
 - **@tachui/forms**: Additional form components
 - **@tachui/navigation**: Navigation system enhancements
 - **@tachui/symbols**: Icon system _(tree-shakeable)_
@@ -170,7 +170,7 @@ tachUI's fine-grained reactivity provides:
 
 ---
 
-## 🛠️ Development & Contribution
+## Development & Contribution
 
 ### Getting Started as a Contributor
 
@@ -184,8 +184,6 @@ pnpm install
 
 # Start development
 pnpm dev:core           # Core framework development
-pnpm calculator:dev     # Calculator app development
-pnpm intro:dev         # Intro app development
 
 # Build everything
 pnpm build
@@ -197,44 +195,42 @@ pnpm test
 ### Project Structure
 
 ```
+├── docs/
+│   ├── api/               # Placeholder for typedoc doc generation destination
+│   ├── guide/             # Current Vitepress documentation
+│   ├── reference/         # Placeholder for additional Vitepress site TBD
 ├── packages/
 │   ├── core/              # Core framework with reactivity & components
 │   ├── forms/             # Advanced form components
 │   ├── navigation/        # Navigation system enhancements
 │   ├── symbols/           # Icon system with Lucide integration
 │   ├── mobile-patterns/   # Alert, ActionSheet, mobile UI
-│   └── cli/              # Developer tooling (future)
-├── apps/
-│   ├── calculator/        # Production calculator demo
-│   ├── intro/            # Marketing site
-│   ├── docs/             # Framework documentation
-│   └── examples/         # Component examples & tutorials
-└── design/               # Technical specifications & planning
+│   └── cli/               # Developer tooling (future)
 ```
 
-### 🤝 Contributing Areas
+### Contributing Areas
 
 We welcome contributions in:
 
-#### **🧩 Component Development** (Beginner-friendly)
+#### **Component Development** (Beginner-friendly)
 
 - Expand SwiftUI component library
 - Add missing SwiftUI modifiers
 - Improve accessibility and keyboard navigation
 
-#### **⚡ Performance & Bundle Optimization** (Intermediate)
+#### **Performance & Bundle Optimization** (Intermediate)
 
 - Reduce bundle sizes through better tree-shaking
 - Implement code-splitting for validation layers
 - Optimize reactive system performance
 
-#### **📚 Documentation & Examples** (All levels)
+#### **Documentation & Examples** (All levels)
 
 - Interactive component examples
 - Migration guides from React/Vue
 - Video tutorials and walkthroughs
 
-#### **🔧 Advanced Features** (Advanced)
+#### **Advanced Features** (Advanced)
 
 - Animation system integration
 - Advanced state management patterns
@@ -242,30 +238,32 @@ We welcome contributions in:
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
-### ✅ **Alpha 1 - Current Release**
+Much of this is obviously TBD based on community feedback and reception.
+
+### **Alpha 1 - Current Release**
 
 - **55+ SwiftUI components** across core + plugin packages
 - **Plugin architecture** with modular design (forms, navigation, symbols, mobile)
 - **Production demonstration applications** (Calculator + Marketing site)
 - **TypeScript-first developer experience** with complete type safety
 
-### 🎯 **Alpha 2 - Next Release** _(~4-6 weeks)_
+### **Alpha 2 - Next Release**
 
 - **Bundle size optimization** - Production-ready bundle sizes
 - **Enhanced documentation** - Complete API documentation
 - **Performance benchmarks** - Comparative performance data
 - **Developer tooling** - Improved CLI and debugging tools
 
-### 🚀 **Beta Release** _(~3-4 months)_
+### **Beta Release**
 
 - **Animation system** - Web Animations API integration
 - **Advanced state management** - @Binding and @ObservedObject patterns
 - **Enterprise features** - Advanced testing and monitoring tools
 - **Community ecosystem** - Third-party plugins and components
 
-### 🌟 **1.0 Release** _(~6-8 months)_
+### **1.0 Release**
 
 - **Complete SwiftUI parity** - All common SwiftUI patterns
 - **Cross-platform capabilities** - Mobile app development patterns
@@ -274,7 +272,7 @@ We welcome contributions in:
 
 ---
 
-## 📚 Learning Resources
+## Learning Resources
 
 ### Documentation
 
@@ -291,7 +289,7 @@ We welcome contributions in:
 
 ---
 
-## 🤝 Community & Support
+## Community & Support
 
 ### Join the tachUI Community
 
@@ -309,7 +307,7 @@ We welcome contributions in:
 
 ---
 
-## 📄 License
+## License
 
 **Mozilla Public License 2.0** - see [LICENSE](./LICENSE) for details.
 
@@ -317,7 +315,7 @@ The MPL-2.0 license allows you to use tachUI in both open source and commercial 
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 tachUI is inspired by and builds upon:
 
@@ -330,7 +328,7 @@ Special thanks to the open source community for continuous inspiration and feedb
 
 ---
 
-## 🚀 Ready to Build with SwiftUI on the Web?
+## Ready to Build with SwiftUI on the Web?
 
 ```bash
 # Install tachUI Alpha 1

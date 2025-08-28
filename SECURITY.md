@@ -4,7 +4,7 @@
 
 We take the security of tachUI seriously. If you discover a security vulnerability, please follow these steps:
 
-### 🚨 Critical Security Issues
+### Critical Security Issues
 
 For critical security vulnerabilities that could affect users in production:
 
