@@ -2,6 +2,7 @@
   "name": "@tachui/advanced-forms",
   "version": "0.1.0",
   "description": "Advanced form components plugin for TachUI - DatePicker, Stepper, Slider",
+  "homepage": "https://tachui.dev/",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

@@ -2,6 +2,7 @@
   "name": "@tachui/mobile-patterns",
   "version": "0.1.0",
   "description": "Mobile UI patterns plugin for TachUI - ActionSheet, Alert, mobile navigation",
+  "homepage": "https://tachui.dev/",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

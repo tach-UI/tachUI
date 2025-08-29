@@ -2,6 +2,7 @@
   "name": "@tachui/forms",
   "version": "0.1.0",
   "description": "Form components and validation system for tachUI framework",
+  "homepage": "https://tachui.dev/",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

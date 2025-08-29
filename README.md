@@ -7,7 +7,7 @@ cssclasses:
 
 > **SwiftUI-inspired web framework with fine-grained reactivity**
 
-[![Version](https://img.shields.io/badge/Version-0.7.0--alpha1-orange)](https://github.com/tach-UI/tachUI/releases)
+[![Version](https://img.shields.io/badge/Version-0.7.1--alpha-orange)](https://github.com/tach-UI/tachUI/releases)
 [![License](https://img.shields.io/badge/License-MPL--2.0-blue)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-20+-green)](https://nodejs.org/)
@@ -16,18 +16,26 @@ cssclasses:
 
 ---
 
-## First Alpha Release - Welcome!
+## Alpha Release - Welcome!
 
-**tachUI 0.7.0-alpha1** marks our debut as a public framework! After extensive development, we're excited to share a SwiftUI-inspired web framework that prioritizes developer experience without compromising performance.
+**tachUI 0.7.1-alpha** marks our debut as a public framework! After extensive development, we're excited to share a SwiftUI-inspired web framework that prioritizes developer experience without compromising performance.
 
-### What's Ready in Alpha 1
+### What's Ready in 0.7.1 Alpha
 
-- **Complete Component Library**: 55+ SwiftUI-compatible components
-- **Fine-grained Reactivity**: SolidJS-inspired signals with automatic cleanup
-- **SwiftUI Modifiers**: Chainable modifiers for layout, styling, and interactions
-- **Plugin Architecture**: Modular design with forms, navigation, symbols packages
-- **Production Apps**: Working Calculator and Marketing site included
-- **TypeScript-first**: Complete type safety with excellent IntelliSense
+- **Complete Component Library:** 55+ SwiftUI-compatible components
+- **Fine-grained Reactivity:** SolidJS-inspired signals with automatic cleanup
+- **SwiftUI Modifiers:** Chainable modifiers for layout, styling, and interactions
+- **Plugin Architecture:** Modular design with forms, navigation, symbols packages
+- **Production Apps:** Working Calculator and Marketing site included
+- **TypeScript-first:** Complete type safety with excellent IntelliSense
+
+### What to know about...
+
+- **Bundling:** Still a work in progress, core is a bit large now, we're working on optimizing
+- **Plugins:** Related to bundling we may be splitting functionality out of core into plugins (Grid, Responsive, Effect Modifiers...)
+- **Testing:** We're doing extensive dogfooding with tachUI now as we build out apps to test it from (hopefully) end to end
+- **Documentation:** Documentation is there and pretty extensive, but disheveled and somewhat inconsistent, we're working on that too!
+- **Impact:** All of this means you can have a great impact if you have feedback now!
 
 ### Perfect for Alpha Testing
 
@@ -45,9 +53,9 @@ This alpha is ideal for:
 ### Installation
 
 ```bash
-npm install @tachui/core@0.7.0-alpha1
+npm install @tachui/core@0.7.1-alpha
 # or
-pnpm add @tachui/core@0.7.0-alpha1
+pnpm add @tachui/core@0.7.1-alpha
 ```
 
 ### Your First Component
@@ -134,11 +142,11 @@ Text('Hello tachUI')
 
 **Available Modifiers:**
 
-- **Layout**: `.frame()`, `.padding()`, `.margin()`, `.position()`
-- **Appearance**: `.foregroundColor()`, `.backgroundColor()`, `.font()`, `.cornerRadius()`
-- **Visual Effects**: `.shadow()`, `.opacity()`, `.clipShape()`, `.backdrop()`
-- **Interactions**: `.onTap()`, `.onHover()`, `.disabled()`, `.cursor()`
-- **Responsive**: `.responsive()` - breakpoint-based styling
+- **Layout:** `.frame()`, `.padding()`, `.margin()`, `.position()`
+- **Appearance:** `.foregroundColor()`, `.backgroundColor()`, `.font()`, `.cornerRadius()`
+- **Visual Effects:** `.shadow()`, `.opacity()`, `.clipShape()`, `.backdrop()`
+- **Interactions:** `.onTap()`, `.onHover()`, `.disabled()`, `.cursor()`
+- **Responsive:** `.responsive()` - breakpoint-based styling
 
 ---
 
@@ -146,18 +154,18 @@ Text('Hello tachUI')
 
 These applications are coming and will be available in a separate repository
 
-- **Calculator App**: Feature-complete calculator
-- **Marketing Site**: Responsive intro application
+- **Calculator App:** Feature-complete calculator
+- **Marketing Site:** Responsive intro application
 
 ### Framework Packages
 
 - **@tachui/core**
-- **@tachui/forms**: Additional form components
-- **@tachui/navigation**: Navigation system enhancements
-- **@tachui/symbols**: Icon system _(tree-shakeable)_
-- **@tachui/mobile-patterns**: Mobile UI patterns
+- **@tachui/forms:** Additional form components
+- **@tachui/navigation:** Navigation system enhancements
+- **@tachui/symbols:** Icon system _(tree-shakeable)_
+- **@tachui/mobile-patterns:** Mobile UI patterns
 
-> **Alpha Note**: Bundle sizes include extensive development validation and debugging code. Production optimizations will significantly reduce these sizes in upcoming releases.
+> **Alpha Note:** Bundle sizes include extensive development validation and debugging code. Production optimizations will significantly reduce these sizes in upcoming releases.
 
 ### Reactivity Performance
 
@@ -293,10 +301,10 @@ Much of this is obviously TBD based on community feedback and reception.
 
 ### Join the tachUI Community
 
-- **GitHub Issues**: Report bugs and request features
-- **GitHub Discussions**: Ask questions and share ideas
-- **Pull Requests**: Contribute code and improvements
-- **Discord**: _Coming soon_ - Real-time community chat
+- **GitHub Issues:** Report bugs and request features
+- **GitHub Discussions:** Ask questions and share ideas
+- **Pull Requests:** Contribute code and improvements
+- **Discord:** _Coming soon_ - Real-time community chat
 
 ### Getting Help
 
@@ -332,7 +340,7 @@ Special thanks to the open source community for continuous inspiration and feedb
 
 ```bash
 # Install tachUI Alpha 1
-npm install @tachui/core@0.7.0-alpha1
+npm install @tachui/core@0.7.1-alpha
 
 # Create your first SwiftUI-style component
 import { Text, Button, VStack, createSignal } from '@tachui/core'
@@ -340,6 +348,6 @@ import { Text, Button, VStack, createSignal } from '@tachui/core'
 # Start building! 🎉
 ```
 
-**tachUI 0.7.0-alpha1** - The future of SwiftUI-inspired web development is here.
+**tachUI 0.7.1-alpha** - The future of SwiftUI-inspired web development is here.
 
 [![Get Started](https://img.shields.io/badge/Get%20Started-Documentation-blue?style=for-the-badge)](./apps/docs/guide/getting-started.md) [![View Examples](https://img.shields.io/badge/View%20Examples-Live%20Demos-green?style=for-the-badge)](./apps/examples/) [![Join Community](https://img.shields.io/badge/Contribute-GitHub-purple?style=for-the-badge)](https://github.com/tach-UI/tachUI)

@@ -3,14 +3,15 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'TachUI',
   description: 'SwiftUI-inspired web framework with SolidJS-style reactivity',
+  base: '/docs/',
 
   // Dead links are now handled with placeholder pages
   ignoreDeadLinks: false,
 
   markdown: {
     toc: {
-      level: [2, 3, 4]
-    }
+      level: [2, 3, 4],
+    },
   },
 
   themeConfig: {
@@ -22,7 +23,7 @@ export default defineConfig({
       { text: 'Symbols', link: '/symbols/' },
       { text: 'Cheatsheets', link: '/sheets/components-reference' },
       { text: 'Package Structure', link: '/structure/core' },
-      { text: 'GitHub', link: 'https://github.com/whoughton/TachUI' },
+      { text: 'GitHub', link: 'https://github.com/tach-ui/tachUI' },
     ],
 
     sidebar: {
@@ -31,7 +32,10 @@ export default defineConfig({
           text: 'Introduction',
           items: [
             { text: 'Getting Started', link: '/guide/getting-started' },
-            { text: 'Developer Quick Start', link: '/guide/developer-getting-started' },
+            {
+              text: 'Developer Quick Start',
+              link: '/guide/developer-getting-started',
+            },
             { text: 'Build Tooling & Setup', link: '/guide/build-tooling' },
             { text: 'Project Structure', link: '/guide/project-structure' },
             { text: 'Core Concepts', link: '/guide/concepts' },
@@ -50,25 +54,37 @@ export default defineConfig({
         {
           text: 'Components',
           items: [
-            { text: 'Complete Components Guide', link: '/guide/complete-components-guide' },
+            {
+              text: 'Complete Components Guide',
+              link: '/guide/complete-components-guide',
+            },
             { text: 'TachUI Components', link: '/guide/tachui-components' },
             { text: 'Basic Components', link: '/guide/components' },
             { text: 'Assets System', link: '/guide/assets-system' },
             { text: 'Font Assets', link: '/guide/font-assets' },
             { text: 'Gradients', link: '/guide/gradients' },
-            { text: 'CSS Framework Integration', link: '/guide/css-framework-integration' },
+            {
+              text: 'CSS Framework Integration',
+              link: '/guide/css-framework-integration',
+            },
             { text: 'Layout Containers', link: '/guide/layout' },
             { text: 'Navigation', link: '/guide/navigation' },
             { text: 'State Management', link: '/guide/state-management' },
             { text: 'State Reference', link: '/guide/state-reference' },
             { text: 'State vs Signals', link: '/guide/state-vs-signals' },
-            { text: 'Events & Signals Development', link: '/guide/events-and-signals-development' },
+            {
+              text: 'Events & Signals Development',
+              link: '/guide/events-and-signals-development',
+            },
           ],
         },
         {
           text: 'Performance & Optimization',
           items: [
-            { text: '🚀 Bundle Optimization Guide', link: '/guide/bundle-optimization' },
+            {
+              text: '🚀 Bundle Optimization Guide',
+              link: '/guide/bundle-optimization',
+            },
             { text: 'Performance & Benchmarks', link: '/guide/performance' },
             { text: 'Benchmarks', link: '/guide/benchmarks' },
             { text: 'Testing Guide', link: '/guide/testing' },
@@ -82,24 +98,42 @@ export default defineConfig({
             { text: 'Validation System', link: '/guide/validation' },
             { text: 'Modifiers System', link: '/guide/modifiers' },
             { text: 'New Modifiers', link: '/guide/new-modifiers' },
-            { text: 'Modifier Pipeline Internals', link: '/guide/modifier-pipeline-internals' },
+            {
+              text: 'Modifier Pipeline Internals',
+              link: '/guide/modifier-pipeline-internals',
+            },
             { text: 'Semantic HTML', link: '/guide/semantic-html' },
           ],
         },
         {
           text: 'Responsive Design',
           items: [
-            { text: 'Responsive Design Guide', link: '/guide/responsive-design' },
+            {
+              text: 'Responsive Design Guide',
+              link: '/guide/responsive-design',
+            },
             { text: 'Breakpoints', link: '/guide/breakpoints' },
-            { text: 'Responsive Debugging', link: '/guide/responsive-debugging' },
-            { text: 'Responsive Performance', link: '/guide/responsive-performance' },
-            { text: 'Responsive Migration', link: '/guide/responsive-migration' },
+            {
+              text: 'Responsive Debugging',
+              link: '/guide/responsive-debugging',
+            },
+            {
+              text: 'Responsive Performance',
+              link: '/guide/responsive-performance',
+            },
+            {
+              text: 'Responsive Migration',
+              link: '/guide/responsive-migration',
+            },
           ],
         },
         {
           text: 'Migration & Compatibility',
           items: [
-            { text: 'Enhanced Modifiers Migration', link: '/guide/enhanced-modifiers-migration' },
+            {
+              text: 'Enhanced Modifiers Migration',
+              link: '/guide/enhanced-modifiers-migration',
+            },
             { text: 'TextField Migration', link: '/guide/textfield-migration' },
             { text: 'Migration Tools', link: '/guide/migration' },
           ],
@@ -123,9 +157,7 @@ export default defineConfig({
       '/api/': [
         {
           text: 'API Overview',
-          items: [
-            { text: 'API Reference', link: '/api/' },
-          ],
+          items: [{ text: 'API Reference', link: '/api/' }],
         },
         {
           text: 'Reactive System',
@@ -172,9 +204,7 @@ export default defineConfig({
         },
         {
           text: 'Components Overview',
-          items: [
-            { text: 'All Components', link: '/components/' },
-          ],
+          items: [{ text: 'All Components', link: '/components/' }],
         },
         {
           text: 'Core Components',
@@ -237,7 +267,10 @@ export default defineConfig({
         {
           text: 'Getting Started',
           items: [
-            { text: 'Quick Start Example', link: '/examples/quick-start-example' },
+            {
+              text: 'Quick Start Example',
+              link: '/examples/quick-start-example',
+            },
             { text: 'Counter App', link: '/examples/counter' },
             { text: 'Todo List', link: '/examples/todo' },
             { text: 'Data Fetching', link: '/examples/data-fetching' },
@@ -246,8 +279,14 @@ export default defineConfig({
         {
           text: 'Component Examples',
           items: [
-            { text: 'Component Showcase', link: '/examples/component-examples' },
-            { text: 'Working Components', link: '/examples/working-component-examples' },
+            {
+              text: 'Component Showcase',
+              link: '/examples/component-examples',
+            },
+            {
+              text: 'Working Components',
+              link: '/examples/working-component-examples',
+            },
           ],
         },
         {
@@ -255,23 +294,38 @@ export default defineConfig({
           items: [
             { text: 'Modifier Usage', link: '/examples/modifier-examples' },
             { text: 'CSS Modifiers', link: '/examples/css-modifier-examples' },
-            { text: 'CSS Framework Examples', link: '/examples/css-framework-examples' },
+            {
+              text: 'CSS Framework Examples',
+              link: '/examples/css-framework-examples',
+            },
             { text: 'Gradient Examples', link: '/examples/gradient-examples' },
           ],
         },
         {
           text: 'Advanced Examples',
           items: [
-            { text: 'Validation Examples', link: '/examples/validation-examples' },
+            {
+              text: 'Validation Examples',
+              link: '/examples/validation-examples',
+            },
             { text: 'Viewport Management', link: '/examples/viewport-example' },
-            { text: 'Advanced Viewport', link: '/examples/advanced-viewport-example' },
+            {
+              text: 'Advanced Viewport',
+              link: '/examples/advanced-viewport-example',
+            },
           ],
         },
         {
           text: 'Responsive Examples',
           items: [
-            { text: 'Responsive Layouts', link: '/examples/responsive-layouts' },
-            { text: 'Real-world Responsive', link: '/examples/responsive-real-world' },
+            {
+              text: 'Responsive Layouts',
+              link: '/examples/responsive-layouts',
+            },
+            {
+              text: 'Real-world Responsive',
+              link: '/examples/responsive-real-world',
+            },
           ],
         },
       ],
@@ -302,16 +356,17 @@ export default defineConfig({
           items: [
             { text: 'Plugin Overview', link: '/plugins' },
             { text: 'Plugin Architecture', link: '/plugin-architecture' },
-            { text: 'Plugin Optimization', link: '/plugin-system-optimization' },
+            {
+              text: 'Plugin Optimization',
+              link: '/plugin-system-optimization',
+            },
             { text: 'Advanced Modifiers', link: '/advanced-modifiers' },
             { text: 'Padding Modifiers', link: '/padding-modifiers' },
           ],
         },
         {
           text: 'Available Plugins',
-          items: [
-            { text: 'Forms Plugin', link: '/plugins/forms' },
-          ],
+          items: [{ text: 'Forms Plugin', link: '/plugins/forms' }],
         },
       ],
       '/symbols/': [
@@ -327,31 +382,40 @@ export default defineConfig({
           text: 'Development History',
           items: [
             { text: 'Phase 2 Features', link: '/symbols/phase-2-features' },
-            { text: 'Phase 2 Summary', link: '/symbols/phase-2-completion-summary' },
+            {
+              text: 'Phase 2 Summary',
+              link: '/symbols/phase-2-completion-summary',
+            },
           ],
         },
       ],
       '/demos/': [
         {
           text: 'Demos',
-          items: [
-            { text: 'Running Demos', link: '/demos/running-demos' },
-          ],
+          items: [{ text: 'Running Demos', link: '/demos/running-demos' }],
         },
       ],
       '/developer-experience/': [
         {
           text: 'Developer Tools',
           items: [
-            { text: 'Experience Improvements', link: '/developer-experience-improvements' },
+            {
+              text: 'Experience Improvements',
+              link: '/developer-experience-improvements',
+            },
             { text: 'Testing Framework', link: '/testing-framework' },
-            { text: 'Testing Expectations', link: '/developer-testing-expectations' },
+            {
+              text: 'Testing Expectations',
+              link: '/developer-testing-expectations',
+            },
           ],
         },
-      ]
+      ],
     },
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/whoughton/TachUI' }],
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/tach-ui/tachUI' },
+    ],
 
     footer: {
       message: 'Released under the MPL-2.0 License.',
