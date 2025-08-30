@@ -11,14 +11,20 @@ import {
   createEffect,
   createSignal,
   getSignalImpl,
+  HStack,
   HTML,
   isBinding,
   isSignal,
-  Layout,
   Text,
+  VStack,
 } from '@tachui/core'
 import { useNavigationEnvironmentContext } from './navigation-environment'
-import type { NavigationComponent, TabCoordinator, TabItem, TabViewOptions } from './types'
+import type {
+  NavigationComponent,
+  TabCoordinator,
+  TabItem,
+  TabViewOptions,
+} from './types'
 
 /**
  * Internal tab coordinator implementation
@@ -39,7 +45,7 @@ class TabCoordinatorImpl implements TabCoordinator {
 
   addTab(tab: TabItem): void {
     // Allow duplicate IDs but warn (test expects both present)
-    if (this._tabs.some((t) => t.id === tab.id)) {
+    if (this._tabs.some(t => t.id === tab.id)) {
       console.warn(`Tab with ID "${tab.id}" already exists`)
     }
 
@@ -52,7 +58,7 @@ class TabCoordinatorImpl implements TabCoordinator {
   }
 
   removeTab(tabId: string): void {
-    const index = this._tabs.findIndex((t) => t.id === tabId)
+    const index = this._tabs.findIndex(t => t.id === tabId)
     if (index >= 0) {
       this._tabs.splice(index, 1)
 
@@ -70,7 +76,7 @@ class TabCoordinatorImpl implements TabCoordinator {
   }
 
   selectTab(tabId: string): void {
-    const tab = this._tabs.find((t) => t.id === tabId)
+    const tab = this._tabs.find(t => t.id === tabId)
     if (tab && !tab.disabled) {
       this._activeTabId = tabId
 
@@ -81,7 +87,9 @@ class TabCoordinatorImpl implements TabCoordinator {
   }
 
   updateTabBadge(tabId: string, badge?: string | number): void {
-    const tab = this._tabs.find((t) => t.id === tabId) as { badge?: string | number } | undefined
+    const tab = this._tabs.find(t => t.id === tabId) as
+      | { badge?: string | number }
+      | undefined
     if (tab) {
       tab.badge = badge
     }
@@ -91,14 +99,14 @@ class TabCoordinatorImpl implements TabCoordinator {
    * Get the currently active tab
    */
   getActiveTab(): TabItem | undefined {
-    return this._tabs.find((t) => t.id === this._activeTabId)
+    return this._tabs.find(t => t.id === this._activeTabId)
   }
 
   /**
    * Get tab by ID
    */
   getTab(tabId: string): TabItem | undefined {
-    return this._tabs.find((t) => t.id === tabId)
+    return this._tabs.find(t => t.id === tabId)
   }
 }
 
@@ -143,10 +151,13 @@ class TabCoordinatorImpl implements TabCoordinator {
  * })
  * ```
  */
-export function TabView(tabs: TabItem[], options: TabViewOptions = {}): NavigationComponent {
+export function TabView(
+  tabs: TabItem[],
+  options: TabViewOptions = {}
+): NavigationComponent {
   // Create tab state
   const [activeTabId, setActiveTabId] = createSignal(tabs[0]?.id || '')
-  const tabCoordinator = new TabCoordinatorImpl((newTabId) => {
+  const tabCoordinator = new TabCoordinatorImpl(newTabId => {
     setActiveTabId(newTabId)
 
     // Update external selection binding
@@ -154,7 +165,9 @@ export function TabView(tabs: TabItem[], options: TabViewOptions = {}): Navigati
       if (isBinding(options.selection)) {
         options.selection.set(newTabId)
       } else if (isSignal(options.selection)) {
-        getSignalImpl(options.selection as (() => string) & { peek: () => string })?.set(newTabId)
+        getSignalImpl(
+          options.selection as (() => string) & { peek: () => string }
+        )?.set(newTabId)
       }
     }
 
@@ -165,7 +178,7 @@ export function TabView(tabs: TabItem[], options: TabViewOptions = {}): Navigati
   })
 
   // Initialize tabs
-  tabs.forEach((tab) => tabCoordinator.addTab(tab))
+  tabs.forEach(tab => tabCoordinator.addTab(tab))
 
   // Handle external selection binding
   if (options.selection) {
@@ -195,7 +208,7 @@ export function TabView(tabs: TabItem[], options: TabViewOptions = {}): Navigati
     const backgroundColor = options.backgroundColor || '#f8f9fa'
     const accentColor = options.accentColor || '#007AFF'
 
-    const tabButtons = tabs.map((tab) => {
+    const tabButtons = tabs.map(tab => {
       const isDisabled = tab.disabled || false
 
       return Button(
@@ -219,7 +232,7 @@ export function TabView(tabs: TabItem[], options: TabViewOptions = {}): Navigati
       const tab = tabs[index]
       const isActive = activeTabId() === tab.id
 
-      const tabContent = Layout.VStack({
+      const tabContent = VStack({
         children: [
           // Icon
           ...(tab.icon
@@ -234,7 +247,7 @@ export function TabView(tabs: TabItem[], options: TabViewOptions = {}): Navigati
             : []),
 
           // Title with badge
-          Layout.HStack({
+          HStack({
             children: [
               Text(tab.title)
                 .modifier.fontSize(12)
@@ -273,7 +286,7 @@ export function TabView(tabs: TabItem[], options: TabViewOptions = {}): Navigati
       ;(button as any).children = [tabContent]
     })
 
-    return Layout.HStack({
+    return HStack({
       children: tabButtons,
       spacing: 0,
       alignment: 'center',
@@ -289,7 +302,10 @@ export function TabView(tabs: TabItem[], options: TabViewOptions = {}): Navigati
     const activeTab = tabCoordinator.getActiveTab()
 
     if (!activeTab) {
-      return Text('No tab selected').modifier.padding(20).foregroundColor('#999').build()
+      return Text('No tab selected')
+        .modifier.padding(20)
+        .foregroundColor('#999')
+        .build()
     }
 
     return HTML.div({
@@ -298,8 +314,11 @@ export function TabView(tabs: TabItem[], options: TabViewOptions = {}): Navigati
   }
 
   // Main tab view component
-  const tabViewComponent: NavigationComponent = Layout.VStack({
-    children: options.tabPlacement === 'top' ? [TabBar(), TabContent()] : [TabContent(), TabBar()],
+  const tabViewComponent: NavigationComponent = VStack({
+    children:
+      options.tabPlacement === 'top'
+        ? [TabBar(), TabContent()]
+        : [TabContent(), TabBar()],
     spacing: 0,
     alignment: 'leading',
   })
@@ -367,7 +386,7 @@ export function IconTabView(
   }>,
   options: TabViewOptions = {}
 ): NavigationComponent {
-  const tabItems: TabItem[] = tabs.map((tab) => ({
+  const tabItems: TabItem[] = tabs.map(tab => ({
     id: tab.id,
     title: tab.title,
     icon: tab.icon,
@@ -395,7 +414,7 @@ export function TextTabView(
   }>,
   options: TabViewOptions = {}
 ): NavigationComponent {
-  const tabItems: TabItem[] = tabs.map((tab) => ({
+  const tabItems: TabItem[] = tabs.map(tab => ({
     id: tab.id,
     title: tab.title,
     content: tab.content,
@@ -503,7 +522,7 @@ export function NestedTabView(
   }>,
   options: TabViewOptions = {}
 ): NavigationComponent {
-  const mainTabItems: TabItem[] = mainTabs.map((mainTab) => ({
+  const mainTabItems: TabItem[] = mainTabs.map(mainTab => ({
     id: mainTab.id,
     title: mainTab.title,
     icon: mainTab.icon,
@@ -517,7 +536,9 @@ export function NestedTabView(
  * Type guard for TabView components
  */
 export function isTabView(component: any): boolean {
-  return component && typeof component === 'object' && 'tabCoordinator' in component
+  return (
+    component && typeof component === 'object' && 'tabCoordinator' in component
+  )
 }
 
 /**
@@ -527,7 +548,10 @@ export function isTabView(component: any): boolean {
  * @param options - Tab view options
  * @returns A dynamic TabView with management methods
  */
-export function DynamicTabView(initialTabs: TabItem[] = [], options: TabViewOptions = {}) {
+export function DynamicTabView(
+  initialTabs: TabItem[] = [],
+  options: TabViewOptions = {}
+) {
   const [tabList, setTabList] = createSignal<TabItem[]>(initialTabs)
 
   const tabView = (() => {
@@ -543,7 +567,11 @@ export function DynamicTabView(initialTabs: TabItem[] = [], options: TabViewOpti
       setTabList(tabList().filter((t: TabItem) => t.id !== tabId))
     },
     updateTab: (tabId: string, updates: Partial<TabItem>) => {
-      setTabList(tabList().map((tab: TabItem) => (tab.id === tabId ? { ...tab, ...updates } : tab)))
+      setTabList(
+        tabList().map((tab: TabItem) =>
+          tab.id === tabId ? { ...tab, ...updates } : tab
+        )
+      )
     },
     getTabs: () => tabList(),
     getTabCount: () => tabList().length,

@@ -7,7 +7,7 @@ import {
   infinity,
   InfinityValue,
   Dimension,
-  SUI,
+  Layout,
   isInfinity,
   dimensionToCSS,
   infinityToFlexCSS,
@@ -27,15 +27,16 @@ describe('TachUI Layout Constants', () => {
       expect(infinity1).toBe(infinity2)
     })
 
-    it('should be available through SUI compatibility object', () => {
-      expect(SUI.infinity).toBe(infinity)
+    it('should be available through Layout namespace', () => {
+      expect(Layout.fullWidthButton.maxWidth).toBe(infinity)
+      expect(Layout.overlay.width).toBe('100vw')
     })
   })
 
   describe('isInfinity', () => {
     it('should correctly identify infinity symbol', () => {
       expect(isInfinity(infinity)).toBe(true)
-      expect(isInfinity(SUI.infinity)).toBe(true)
+      expect(isInfinity(Layout.fullWidthButton.maxWidth)).toBe(true)
     })
 
     it('should return false for non-infinity values', () => {

@@ -79,4 +79,4 @@ All reports will be handled with discretion and confidentiality.
 
 ---
 
-Thank you for helping make tachUI a welcoming, inclusive community for everyone! 🚀
+Thank you for helping make tachUI a welcoming, inclusive community for everyone!

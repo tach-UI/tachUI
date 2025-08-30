@@ -1,6 +1,6 @@
 /**
  * @fileoverview TachUI Production Minimal Bundle (~45KB)
- * 
+ *
  * Validation-free minimal bundle optimized for production.
  * No development tools or TypeScript dependencies.
  */
@@ -19,7 +19,7 @@ export * from '../runtime/props'
 
 // Basic components only
 export * from '../components/Text'
-export * from '../components/Button' 
+export * from '../components/Button'
 export * from '../components/Image'
 export * from '../components/BasicInput'
 export * from '../components/Spacer'
@@ -36,7 +36,7 @@ export * from '../modifiers/size'
 export * from '../modifiers/typography'
 export * from '../modifiers/background'
 
-// State management  
+// State management
 export { State, isState, unwrapValue } from '../state/state'
 export { createBinding, isBinding } from '../state/binding'
 
@@ -51,7 +51,7 @@ export {
   createColorAsset,
   createImageAsset,
   createFontAsset,
-  type AssetsInterface
+  type AssetsInterface,
 } from '../assets'
 
 // Gradients (needed by intro app)
@@ -62,6 +62,12 @@ export { Divider } from '../components/Divider'
 export { ScrollView } from '../components/ScrollView'
 
 // Constants (for dimensions)
-export { infinity, SUI, isInfinity, type Dimension, type InfinityValue } from '../constants'
+export {
+  infinity,
+  Layout,
+  isInfinity,
+  type Dimension,
+  type InfinityValue,
+} from '../constants'
 
 // No validation imports - completely excluded from production

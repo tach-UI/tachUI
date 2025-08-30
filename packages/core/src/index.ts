@@ -27,19 +27,19 @@ export {
   type FontWeightValue,
   type FontWidthValue,
   type AssetInfo,
-  type AssetsInterface
+  type AssetsInterface,
 } from './assets'
 
 // Constants system
 export {
   infinity,
-  SUI,
+  Layout,
   isInfinity,
   dimensionToCSS,
   infinityToFlexCSS,
   shouldExpandForInfinity,
   type Dimension,
-  type InfinityValue
+  type InfinityValue,
 } from './constants'
 
 // Concatenation system
@@ -57,7 +57,7 @@ export {
   CONCAT_SYMBOL,
   ConcatenatedComponent,
   Concatenated,
-  TextConcatenationOptimizer
+  TextConcatenationOptimizer,
 } from './concatenation'
 
 // Frame utilities and SUI compatibility
@@ -73,23 +73,16 @@ export {
   flexible,
   fullScreen,
   remainingSpace,
-  equalShare
+  equalShare,
 } from './constants/frame-utils'
 
-// SUI compatibility layer (SUI = SwiftUI-inspired)
-export {
-  Frame,
-  LayoutPatterns,
-  SuiMigration,
-  logSuiEquivalent
-} from './sui-compat'
 // Compiler system (Phase 2)
 export * from './compiler'
 
 // Component system (Phase 4-5)
 export * from './components'
 
-// Modifier system  
+// Modifier system
 export * from './modifiers'
 
 // Gradient system
@@ -117,14 +110,14 @@ export {
   OptimizedPluginErrorHandler,
   SimplifiedPluginErrorHandler,
   globalPluginErrorHandler,
-  ErrorRecoveryUtils
+  ErrorRecoveryUtils,
 } from './plugins'
 export type {
   TachUIPlugin,
   TachUIInstance,
   ComponentRegistrationOptions,
   ServiceRegistration,
-  ComponentRegistration
+  ComponentRegistration,
 } from './plugins'
 
 // Reactive system (Phase 1)
@@ -150,7 +143,7 @@ export * from './state'
 export * from './debug'
 
 // Validation system (Phase 1A - Epic: Greylock)
-export { 
+export {
   ValidationUtils as default,
   ValidationDevTools,
   ValidationSetup,
@@ -161,7 +154,7 @@ export {
   ProductionOptimizationUtils,
   ValidationDebugUtils,
   PerformanceOptimizationUtils,
-  LifecycleValidationUtils
+  LifecycleValidationUtils,
 } from './validation'
 
 // Version

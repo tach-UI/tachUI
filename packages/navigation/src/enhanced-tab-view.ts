@@ -15,12 +15,18 @@ import {
   createComputed,
   createEffect,
   createSignal,
+  HStack,
   HTML,
   isBinding,
-  Layout,
   Text,
+  VStack,
 } from '@tachui/core'
-import type { NavigationComponent, TabCoordinator, TabItem, TabViewOptions } from './types'
+import type {
+  NavigationComponent,
+  TabCoordinator,
+  TabItem,
+  TabViewOptions,
+} from './types'
 
 /**
  * Enhanced tab view options with modern SwiftUI features
@@ -69,7 +75,10 @@ class EnhancedTabCoordinatorImpl implements TabCoordinator {
   constructor(
     private onTabChange?: (activeTabId: string) => void,
     private onTabReorder?: (tabs: TabItem[]) => void,
-    private onCustomizationChange?: (visibleTabs: string[], hiddenTabs: string[]) => void
+    private onCustomizationChange?: (
+      visibleTabs: string[],
+      hiddenTabs: string[]
+    ) => void
   ) {}
 
   get activeTabId(): string {
@@ -88,19 +97,19 @@ class EnhancedTabCoordinatorImpl implements TabCoordinator {
     const orderedTabs =
       this._customTabOrder.length > 0
         ? (this._customTabOrder
-            .map((id) => this._tabs.find((t) => t.id === id))
+            .map(id => this._tabs.find(t => t.id === id))
             .filter(Boolean) as TabItem[])
         : this._tabs
 
-    return orderedTabs.filter((tab) => !this._hiddenTabIds.has(tab.id))
+    return orderedTabs.filter(tab => !this._hiddenTabIds.has(tab.id))
   }
 
   get hiddenTabs(): TabItem[] {
-    return this._tabs.filter((tab) => this._hiddenTabIds.has(tab.id))
+    return this._tabs.filter(tab => this._hiddenTabIds.has(tab.id))
   }
 
   addTab(tab: TabItem): void {
-    if (this._tabs.some((t) => t.id === tab.id)) {
+    if (this._tabs.some(t => t.id === tab.id)) {
       console.warn(`Tab with ID "${tab.id}" already exists`)
       return
     }
@@ -113,11 +122,11 @@ class EnhancedTabCoordinatorImpl implements TabCoordinator {
   }
 
   removeTab(tabId: string): void {
-    const index = this._tabs.findIndex((t) => t.id === tabId)
+    const index = this._tabs.findIndex(t => t.id === tabId)
     if (index >= 0) {
       this._tabs.splice(index, 1)
       this._hiddenTabIds.delete(tabId)
-      this._customTabOrder = this._customTabOrder.filter((id) => id !== tabId)
+      this._customTabOrder = this._customTabOrder.filter(id => id !== tabId)
 
       if (this._activeTabId === tabId) {
         if (this._tabs.length > 0) {
@@ -131,7 +140,7 @@ class EnhancedTabCoordinatorImpl implements TabCoordinator {
   }
 
   selectTab(tabId: string): void {
-    const tab = this._tabs.find((t) => t.id === tabId)
+    const tab = this._tabs.find(t => t.id === tabId)
     if (tab && !tab.disabled && !this._hiddenTabIds.has(tabId)) {
       this._activeTabId = tabId
 
@@ -142,7 +151,7 @@ class EnhancedTabCoordinatorImpl implements TabCoordinator {
   }
 
   updateTabBadge(tabId: string, badge?: string | number): void {
-    const tab = this._tabs.find((t) => t.id === tabId)
+    const tab = this._tabs.find(t => t.id === tabId)
     if (tab) {
       ;(tab as any).badge = badge
     }
@@ -150,7 +159,7 @@ class EnhancedTabCoordinatorImpl implements TabCoordinator {
 
   // New enhanced methods
   reorderTabs(newOrder: string[]): void {
-    const validOrder = newOrder.filter((id) => this._tabs.some((t) => t.id === id))
+    const validOrder = newOrder.filter(id => this._tabs.some(t => t.id === id))
     this._customTabOrder = validOrder
 
     if (this.onTabReorder) {
@@ -159,7 +168,7 @@ class EnhancedTabCoordinatorImpl implements TabCoordinator {
   }
 
   hideTab(tabId: string): void {
-    if (this._tabs.some((t) => t.id === tabId)) {
+    if (this._tabs.some(t => t.id === tabId)) {
       this._hiddenTabIds.add(tabId)
 
       // If hidden tab was active, select another visible tab
@@ -181,11 +190,11 @@ class EnhancedTabCoordinatorImpl implements TabCoordinator {
 
   addSection(section: TabSection): void {
     this._sections.push(section)
-    section.tabs.forEach((tab) => this.addTab(tab))
+    section.tabs.forEach(tab => this.addTab(tab))
   }
 
   toggleSection(sectionId: string): void {
-    const section = this._sections.find((s) => s.id === sectionId)
+    const section = this._sections.find(s => s.id === sectionId)
     if (section) {
       section.collapsed = !section.collapsed
     }
@@ -193,18 +202,18 @@ class EnhancedTabCoordinatorImpl implements TabCoordinator {
 
   private _notifyCustomizationChange(): void {
     if (this.onCustomizationChange) {
-      const visibleIds = this.visibleTabs.map((t) => t.id)
-      const hiddenIds = this.hiddenTabs.map((t) => t.id)
+      const visibleIds = this.visibleTabs.map(t => t.id)
+      const hiddenIds = this.hiddenTabs.map(t => t.id)
       this.onCustomizationChange(visibleIds, hiddenIds)
     }
   }
 
   getActiveTab(): TabItem | undefined {
-    return this._tabs.find((t) => t.id === this._activeTabId)
+    return this._tabs.find(t => t.id === this._activeTabId)
   }
 
   getTab(tabId: string): TabItem | undefined {
-    return this._tabs.find((t) => t.id === tabId)
+    return this._tabs.find(t => t.id === tabId)
   }
 }
 
@@ -217,12 +226,14 @@ export function EnhancedTabView(
 ): NavigationComponent {
   // Reactive state
   const [activeTabId, setActiveTabId] = createSignal(tabs[0]?.id || '')
-  const [currentBreakpoint, setCurrentBreakpoint] = createSignal(window.innerWidth)
+  const [currentBreakpoint, setCurrentBreakpoint] = createSignal(
+    window.innerWidth
+  )
   const [isCustomizing, setIsCustomizing] = createSignal(false)
 
   // Create enhanced coordinator
   const tabCoordinator = new EnhancedTabCoordinatorImpl(
-    (newTabId) => {
+    newTabId => {
       setActiveTabId(newTabId)
 
       if (options.selection && isBinding(options.selection)) {
@@ -238,7 +249,7 @@ export function EnhancedTabView(
   )
 
   // Initialize tabs
-  tabs.forEach((tab) => tabCoordinator.addTab(tab))
+  tabs.forEach(tab => tabCoordinator.addTab(tab))
 
   // Handle external selection binding
   if (options.selection && isBinding(options.selection)) {
@@ -275,7 +286,9 @@ export function EnhancedTabView(
     const visibleTabs = tabCoordinator.visibleTabs
     const maxTabs = options.maxFloatingTabs || 5
     const showOverflow = visibleTabs.length > maxTabs
-    const displayTabs = showOverflow ? visibleTabs.slice(0, maxTabs - 1) : visibleTabs
+    const displayTabs = showOverflow
+      ? visibleTabs.slice(0, maxTabs - 1)
+      : visibleTabs
 
     const backgroundColor =
       options.backgroundColor ||
@@ -309,12 +322,12 @@ export function EnhancedTabView(
     }
 
     // Create tab buttons with enhanced content
-    const tabButtons = displayTabs.map((tab) => {
+    const tabButtons = displayTabs.map(tab => {
       const button = createTabButton(tab)
       const isActive = activeTabId() === tab.id
 
       // Enhanced tab content with animations
-      const tabContent = Layout.VStack({
+      const tabContent = VStack({
         children: [
           // Icon
           ...(tab.icon
@@ -329,7 +342,7 @@ export function EnhancedTabView(
             : []),
 
           // Title and badge container
-          Layout.HStack({
+          HStack({
             children: [
               Text(tab.title)
                 .modifier.fontSize(style === 'sidebar' ? 14 : 12)
@@ -429,9 +442,11 @@ export function EnhancedTabView(
     }
 
     const currentStyles =
-      containerStyles[style as keyof typeof containerStyles] || containerStyles.floating
+      containerStyles[style as keyof typeof containerStyles] ||
+      containerStyles.floating
 
-    return Layout[style === 'sidebar' ? 'VStack' : 'HStack']({
+    const StackComponent = style === 'sidebar' ? VStack : HStack
+    return StackComponent({
       children: tabButtons,
       spacing: style === 'sidebar' ? 8 : 0,
       alignment: 'center',
@@ -460,7 +475,7 @@ export function EnhancedTabView(
           .build(),
 
         // Visible tabs (draggable)
-        ...visibleTabs.map((tab) =>
+        ...visibleTabs.map(tab =>
           HTML.div({
             children: [
               HTML.span({ children: tab.icon || '📄' }),
@@ -485,7 +500,7 @@ export function EnhancedTabView(
                 .padding({ top: 16, bottom: 8 })
                 .build(),
 
-              ...hiddenTabs.map((tab) =>
+              ...hiddenTabs.map(tab =>
                 HTML.div({
                   children: [
                     HTML.span({ children: tab.icon || '📄' }),
@@ -515,7 +530,10 @@ export function EnhancedTabView(
     const activeTab = tabCoordinator.getActiveTab()
 
     if (!activeTab) {
-      return Text('No tab selected').modifier.padding(20).foregroundColor('#999').build()
+      return Text('No tab selected')
+        .modifier.padding(20)
+        .foregroundColor('#999')
+        .build()
     }
 
     return HTML.div({
@@ -528,13 +546,13 @@ export function EnhancedTabView(
     const style = tabStyle()
 
     if (style === 'sidebar') {
-      return Layout.HStack({
+      return HStack({
         children: [EnhancedTabBar(), TabContent()],
         spacing: 0,
         alignment: 'center',
       })
     } else {
-      return Layout.VStack({
+      return VStack({
         children: [
           ...(style === 'floating'
             ? [TabContent(), EnhancedTabBar()]
@@ -568,8 +586,8 @@ export function HierarchicalTabView(
 ): NavigationComponent {
   const allTabs: TabItem[] = []
 
-  sections.forEach((section) => {
-    section.tabs.forEach((tab) => {
+  sections.forEach(section => {
+    section.tabs.forEach(tab => {
       allTabs.push({
         ...tab,
         // Add section info to tab metadata

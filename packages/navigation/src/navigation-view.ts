@@ -6,7 +6,7 @@
  */
 
 import type { ComponentInstance } from '@tachui/core'
-import { Button, createSignal, HTML, Layout, Text } from '@tachui/core'
+import { Button, createSignal, HStack, HTML, Text, VStack } from '@tachui/core'
 import { NavigationManager } from './navigation-manager'
 import { createNavigationRouter } from './navigation-router'
 import { _setNavigationEnvironmentContext } from './navigation-environment'
@@ -50,7 +50,8 @@ class NavigationContextImpl implements NavigationContext {
   }
 
   push(destination: NavigationDestination, path: string, title?: string): void {
-    const component = typeof destination === 'function' ? destination() : destination
+    const component =
+      typeof destination === 'function' ? destination() : destination
 
     const entry: NavigationStackEntry = {
       id: `nav-${Date.now()}-${Math.random()}`,
@@ -93,7 +94,7 @@ class NavigationContextImpl implements NavigationContext {
   }
 
   popTo(path: string): void {
-    const targetIndex = this._stack.findIndex((entry) => entry.path === path)
+    const targetIndex = this._stack.findIndex(entry => entry.path === path)
     if (targetIndex >= 0) {
       this._stack = this._stack.slice(0, targetIndex + 1)
       this._currentPath = path
@@ -104,9 +105,14 @@ class NavigationContextImpl implements NavigationContext {
     }
   }
 
-  replace(destination: NavigationDestination, path: string, title?: string): void {
+  replace(
+    destination: NavigationDestination,
+    path: string,
+    title?: string
+  ): void {
     if (this._stack.length > 0) {
-      const component = typeof destination === 'function' ? destination() : destination
+      const component =
+        typeof destination === 'function' ? destination() : destination
 
       const entry: NavigationStackEntry = {
         id: `nav-${Date.now()}-${Math.random()}`,
@@ -130,7 +136,11 @@ class NavigationContextImpl implements NavigationContext {
   /**
    * Set the root component
    */
-  setRoot(component: ComponentInstance, path: string = '/', title?: string): void {
+  setRoot(
+    component: ComponentInstance,
+    path: string = '/',
+    title?: string
+  ): void {
     const entry: NavigationStackEntry = {
       id: `nav-root-${Date.now()}`,
       path,
@@ -176,12 +186,16 @@ export function NavigationView(
   const navigationId = `nav-${Date.now()}-${Math.random()}`
 
   // Create navigation state
-  const [navigationStack, setNavigationStack] = createSignal<NavigationStackEntry[]>([])
+  const [navigationStack, setNavigationStack] = createSignal<
+    NavigationStackEntry[]
+  >([])
   const [isNavigating, setIsNavigating] = createSignal(false)
-  const [currentTitle, setCurrentTitle] = createSignal(options.navigationTitle || '')
+  const [currentTitle, setCurrentTitle] = createSignal(
+    options.navigationTitle || ''
+  )
 
   // Create navigation context
-  const navigationContext = new NavigationContextImpl(navigationId, (stack) => {
+  const navigationContext = new NavigationContextImpl(navigationId, stack => {
     setNavigationStack(stack)
 
     // Update current title
@@ -200,7 +214,9 @@ export function NavigationView(
   navigationContext.setRoot(
     rootView,
     '/',
-    typeof options.navigationTitle === 'string' ? options.navigationTitle : 'Home'
+    typeof options.navigationTitle === 'string'
+      ? options.navigationTitle
+      : 'Home'
   )
 
   // Create navigation router
@@ -219,7 +235,7 @@ export function NavigationView(
       return HTML.div().modifier.build()
     }
 
-    return Layout.HStack({
+    return HStack({
       children: [
         // Back button
         canGoBack
@@ -240,15 +256,15 @@ export function NavigationView(
 
         // Title
         Text(title)
-          .modifier.fontSize(options.navigationBarTitleDisplayMode === 'large' ? 24 : 18)
+          .modifier.fontSize(
+            options.navigationBarTitleDisplayMode === 'large' ? 24 : 18
+          )
           .fontWeight('bold')
           .foregroundColor('#1a1a1a')
           .build(),
 
         // Spacer for balance
-        HTML.div()
-          .modifier.frame({ width: 100 })
-          .build(),
+        HTML.div().modifier.frame({ width: 100 }).build(),
       ],
       alignment: 'center',
     })
@@ -265,7 +281,10 @@ export function NavigationView(
     const currentEntry = stack[stack.length - 1]
 
     if (!currentEntry) {
-      return Text('No content').modifier.padding(20).foregroundColor('#999').build()
+      return Text('No content')
+        .modifier.padding(20)
+        .foregroundColor('#999')
+        .build()
     }
 
     return HTML.div({
@@ -276,7 +295,7 @@ export function NavigationView(
   }
 
   // Main navigation view component
-  const navigationComponent: NavigationComponent = Layout.VStack({
+  const navigationComponent: NavigationComponent = VStack({
     children: [NavigationBar(), NavigationContent()],
     spacing: 0,
     alignment: 'leading',
@@ -316,7 +335,9 @@ let _currentNavigationContext: NavigationContext | null = null
  * Set the current navigation context (internal use)
  * @internal
  */
-export function _setCurrentNavigationContext(context: NavigationContext | null): void {
+export function _setCurrentNavigationContext(
+  context: NavigationContext | null
+): void {
   _currentNavigationContext = context
 }
 
@@ -341,7 +362,7 @@ export function useNavigationRouter(): NavigationRouter | null {
   // For now, create router from current context
   const context = useNavigationContext()
   if (!context) return null
-  
+
   return createNavigationRouter(context)
 }
 
@@ -366,7 +387,11 @@ export function useNavigation() {
   const router = useNavigationRouter()
 
   return {
-    push: (destination: NavigationDestination, path?: string, title?: string) => {
+    push: (
+      destination: NavigationDestination,
+      path?: string,
+      title?: string
+    ) => {
       if (context) {
         context.push(destination, path || '/unknown', title)
       }
@@ -381,7 +406,11 @@ export function useNavigation() {
         context.popToRoot()
       }
     },
-    replace: (destination: NavigationDestination, path?: string, title?: string) => {
+    replace: (
+      destination: NavigationDestination,
+      path?: string,
+      title?: string
+    ) => {
       if (context) {
         context.replace(destination, path || '/unknown', title)
       }
@@ -422,7 +451,8 @@ export const NavigationViewBuilder = {
    */
   navigationTitle(title: string) {
     return {
-      root: (content: ComponentInstance) => NavigationView(content, { navigationTitle: title }),
+      root: (content: ComponentInstance) =>
+        NavigationView(content, { navigationTitle: title }),
     }
   },
 
@@ -450,11 +480,13 @@ export const NavigationViewBuilder = {
 /**
  * Type guard for NavigationComponent
  */
-export function isNavigationComponent(component: unknown): component is NavigationComponent {
+export function isNavigationComponent(
+  component: unknown
+): component is NavigationComponent {
   return Boolean(
     component &&
-    typeof component === 'object' &&
-    'navigationContext' in component &&
-    'router' in component
+      typeof component === 'object' &&
+      'navigationContext' in component &&
+      'router' in component
   )
 }

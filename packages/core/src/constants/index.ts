@@ -1,7 +1,7 @@
 /**
  * TachUI Constants
  *
- * Exports all constants for easy access throughout the framework
+ * Unified constants system with SwiftUI-compatible layout utilities
  */
 
 export * from './layout'
