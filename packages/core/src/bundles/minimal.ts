@@ -60,7 +60,7 @@ export {
 } from '../assets'
 
 // Essential utilities
-export { infinity, SUI, isInfinity } from '../constants'
+export { infinity, Layout, isInfinity } from '../constants'
 
 // Basic gradients (needed for landing pages)
 export { LinearGradient } from '../gradients'

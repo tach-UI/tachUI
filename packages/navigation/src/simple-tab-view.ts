@@ -9,9 +9,10 @@ import type { ComponentInstance, Binding } from '@tachui/core'
 import {
   createEffect,
   createSignal,
+  HStack,
   HTML,
-  Layout,
   Text,
+  VStack,
   isBinding,
 } from '@tachui/core'
 import type { NavigationComponent } from './types'
@@ -68,28 +69,27 @@ export function SimpleTabView(
   options: SimpleTabViewOptions = {}
 ): NavigationComponent {
   // Extract tab items from children with .tabItem() modifiers
-  const tabItems: SimpleTabItem[] = children
-    .map((child, index) => {
-      const tabData = (child as any)._tabItem
-      if (tabData) {
-        return {
-          id: tabData.id,
-          label: tabData.label,
-          icon: tabData.icon,
-          badge: tabData.badge,
-          content: child,
-          disabled: tabData.disabled
-        }
-      }
-
-      // Fallback for components without .tabItem() modifier
+  const tabItems: SimpleTabItem[] = children.map((child, index) => {
+    const tabData = (child as any)._tabItem
+    if (tabData) {
       return {
-        id: `tab-${index}`,
-        label: `Tab ${index + 1}`,
+        id: tabData.id,
+        label: tabData.label,
+        icon: tabData.icon,
+        badge: tabData.badge,
         content: child,
-        disabled: false
+        disabled: tabData.disabled,
       }
-    })
+    }
+
+    // Fallback for components without .tabItem() modifier
+    return {
+      id: `tab-${index}`,
+      label: `Tab ${index + 1}`,
+      content: child,
+      disabled: false,
+    }
+  })
 
   // Tab selection state
   const initialSelection = options?.selection?.get() || tabItems[0]?.id || ''
@@ -129,22 +129,24 @@ export function SimpleTabView(
     const backgroundColor = options.backgroundColor || '#f8f9fa'
     const accentColor = options.accentColor || '#007AFF'
 
-    const tabButtons = tabItems.map((tab) => {
+    const tabButtons = tabItems.map(tab => {
       const isSelected = selectedTabId() === tab.id
       const isDisabled = tab.disabled || false
 
       // Tab button content
-      const buttonContent = Layout.VStack({
+      const buttonContent = VStack({
         children: [
           // Icon (if provided)
-          ...(tab.icon ? [
-            HTML.div({
-              children: tab.icon,
-            }).modifier
-              .fontSize(20)
-              .lineHeight('1')
-              .build()
-          ] : []),
+          ...(tab.icon
+            ? [
+                HTML.div({
+                  children: tab.icon,
+                })
+                  .modifier.fontSize(20)
+                  .lineHeight('1')
+                  .build(),
+              ]
+            : []),
 
           // Label
           Text(tab.label)
@@ -155,22 +157,24 @@ export function SimpleTabView(
             .build(),
 
           // Badge (if provided)
-          ...(tab.badge ? [
-            HTML.div({
-              children: String(tab.badge),
-            }).modifier
-              .backgroundColor('#ff3b30')
-              .foregroundColor('#ffffff')
-              .fontSize(10)
-              .fontWeight('bold')
-              .padding({ top: 2, bottom: 2, left: 6, right: 6 })
-              .cornerRadius(10)
-              .textAlign('center')
-              .build()
-          ] : [])
+          ...(tab.badge
+            ? [
+                HTML.div({
+                  children: String(tab.badge),
+                })
+                  .modifier.backgroundColor('#ff3b30')
+                  .foregroundColor('#ffffff')
+                  .fontSize(10)
+                  .fontWeight('bold')
+                  .padding({ top: 2, bottom: 2, left: 6, right: 6 })
+                  .cornerRadius(10)
+                  .textAlign('center')
+                  .build(),
+              ]
+            : []),
         ],
         spacing: 4,
-        alignment: 'center'
+        alignment: 'center',
       }).modifier.build()
 
       // Tab button
@@ -190,10 +194,10 @@ export function SimpleTabView(
       return button
     })
 
-    return Layout.HStack({
+    return HStack({
       children: tabButtons,
       spacing: 0,
-      alignment: 'center'
+      alignment: 'center',
     })
       .modifier.backgroundColor(backgroundColor)
       .padding({ top: 8, bottom: 8, left: 8, right: 8 })
@@ -218,12 +222,13 @@ export function SimpleTabView(
 
   // Main tab view component
   const placement = options.tabPlacement || 'bottom'
-  const tabViewComponent: NavigationComponent = Layout.VStack({
-    children: placement === 'bottom'
-      ? [TabContent(), TabBar()]
-      : [TabBar(), TabContent()],
+  const tabViewComponent: NavigationComponent = VStack({
+    children:
+      placement === 'bottom'
+        ? [TabContent(), TabBar()]
+        : [TabBar(), TabContent()],
     spacing: 0,
-    alignment: 'leading'
+    alignment: 'leading',
   })
     .modifier.frame({ minHeight: '100vh' })
     .backgroundColor('#ffffff')
@@ -271,7 +276,7 @@ export function tabItem(
     label,
     icon,
     badge,
-    disabled: disabled || false
+    disabled: disabled || false,
   }
 
   return component
@@ -283,13 +288,19 @@ export function tabItem(
  */
 declare module '@tachui/core' {
   interface ComponentInstance {
-    tabItem(id: string, label: string, icon?: string, badge?: string | number, disabled?: boolean): ComponentInstance
+    tabItem(
+      id: string,
+      label: string,
+      icon?: string,
+      badge?: string | number,
+      disabled?: boolean
+    ): ComponentInstance
   }
 }
 
 // Extend ComponentInstance prototype (if possible)
 if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
-  (window as any).ComponentInstance.prototype.tabItem = function(
+  ;(window as any).ComponentInstance.prototype.tabItem = function (
     id: string,
     label: string,
     icon?: string,
@@ -329,7 +340,9 @@ export function createSimpleTabView(
  * Check if a component is a SimpleTabView
  */
 export function isSimpleTabView(component: any): boolean {
-  return component && typeof component === 'object' && '_simpleTabView' in component
+  return (
+    component && typeof component === 'object' && '_simpleTabView' in component
+  )
 }
 
 /**

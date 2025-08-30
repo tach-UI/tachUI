@@ -9,10 +9,11 @@ import type { Binding, ComponentInstance } from '@tachui/core'
 import {
   createEffect,
   createSignal,
+  HStack,
   HTML,
-  Layout,
   Text,
   Button,
+  VStack,
   isBinding,
 } from '@tachui/core'
 import { _setCurrentNavigationContext } from './navigation-view'
@@ -64,7 +65,10 @@ class NavigationStackContext implements NavigationContext {
   /**
    * Register a navigation destination handler
    */
-  registerDestination<T>(type: string, handler: (value: T) => ComponentInstance): void {
+  registerDestination<T>(
+    type: string,
+    handler: (value: T) => ComponentInstance
+  ): void {
     this._destinationRegistry[type] = handler
   }
 
@@ -80,7 +84,8 @@ class NavigationStackContext implements NavigationContext {
   }
 
   push(destination: NavigationDestination, path: string, title?: string): void {
-    const component = typeof destination === 'function' ? destination() : destination
+    const component =
+      typeof destination === 'function' ? destination() : destination
 
     const entry: NavigationStackEntry = {
       id: `nav-${Date.now()}-${Math.random()}`,
@@ -123,7 +128,7 @@ class NavigationStackContext implements NavigationContext {
   }
 
   popTo(path: string): void {
-    const targetIndex = this._stack.findIndex((entry) => entry.path === path)
+    const targetIndex = this._stack.findIndex(entry => entry.path === path)
     if (targetIndex >= 0) {
       this._stack = this._stack.slice(0, targetIndex + 1)
       this._currentPath = path
@@ -134,9 +139,14 @@ class NavigationStackContext implements NavigationContext {
     }
   }
 
-  replace(destination: NavigationDestination, path: string, title?: string): void {
+  replace(
+    destination: NavigationDestination,
+    path: string,
+    title?: string
+  ): void {
     if (this._stack.length > 0) {
-      const component = typeof destination === 'function' ? destination() : destination
+      const component =
+        typeof destination === 'function' ? destination() : destination
 
       const entry: NavigationStackEntry = {
         id: `nav-${Date.now()}-${Math.random()}`,
@@ -160,7 +170,11 @@ class NavigationStackContext implements NavigationContext {
   /**
    * Set the root component
    */
-  setRoot(component: ComponentInstance, path: string = '/', title?: string): void {
+  setRoot(
+    component: ComponentInstance,
+    path: string = '/',
+    title?: string
+  ): void {
     const entry: NavigationStackEntry = {
       id: `nav-root-${Date.now()}`,
       path,
@@ -190,7 +204,7 @@ export interface NavigationStackOptions {
 
 /**
  * NavigationStack component factory
- * 
+ *
  * SwiftUI API: NavigationStack(path: Binding<NavigationPath>) { RootView() }
  *
  * @param rootView - The root view component
@@ -200,10 +214,10 @@ export interface NavigationStackOptions {
  * @example
  * ```typescript
  * const [navPath, setNavPath] = createSignal(createNavigationPath())
- * 
+ *
  * NavigationStack(
  *   HomeView(),
- *   { 
+ *   {
  *     path: createBinding(() => navPath(), setNavPath),
  *     navigationTitle: 'My App'
  *   }
@@ -217,16 +231,20 @@ export function NavigationStack(
   const navigationId = `nav-stack-${Date.now()}-${Math.random()}`
 
   // Navigation state
-  const [navigationStack, setNavigationStack] = createSignal<NavigationStackEntry[]>([])
+  const [navigationStack, setNavigationStack] = createSignal<
+    NavigationStackEntry[]
+  >([])
   const [isNavigating, setIsNavigating] = createSignal(false)
-  const [currentTitle, setCurrentTitle] = createSignal(options?.navigationTitle || '')
+  const [currentTitle, setCurrentTitle] = createSignal(
+    options?.navigationTitle || ''
+  )
 
   // Path management
   const pathBinding = options.path
   let internalPath = createNavigationPath()
 
   // Create navigation context
-  const navigationContext = new NavigationStackContext(navigationId, (stack) => {
+  const navigationContext = new NavigationStackContext(navigationId, stack => {
     setNavigationStack(stack)
 
     // Update current title
@@ -237,10 +255,13 @@ export function NavigationStack(
 
     // Update path if binding provided
     if (pathBinding && isBinding(pathBinding)) {
-      const newPathSegments = stack.slice(1).map(entry => 
-        entry.path.replace(/^\//, '') // Remove leading slash
-      ).filter(Boolean)
-      
+      const newPathSegments = stack
+        .slice(1)
+        .map(
+          entry => entry.path.replace(/^\//, '') // Remove leading slash
+        )
+        .filter(Boolean)
+
       internalPath = createNavigationPath(newPathSegments)
       pathBinding.set(internalPath)
     }
@@ -262,12 +283,12 @@ export function NavigationStack(
   if (pathBinding && isBinding(pathBinding)) {
     createEffect(() => {
       const newPath = pathBinding.get()
-      
+
       // Only update if path actually changed
       if (!newPath.equals(internalPath)) {
         // Clear current stack except root
         navigationContext.popToRoot()
-        
+
         // Navigate to each segment in the new path
         newPath.segments.forEach((segment, index) => {
           // Try to resolve using registered destinations
@@ -279,7 +300,7 @@ export function NavigationStack(
             segment
           )
         })
-        
+
         internalPath = newPath.copy()
       }
     })
@@ -295,7 +316,7 @@ export function NavigationStack(
       return HTML.div().modifier.build()
     }
 
-    return Layout.HStack({
+    return HStack({
       children: [
         // Back button
         canGoBack
@@ -353,7 +374,7 @@ export function NavigationStack(
   }
 
   // Main navigation stack component
-  const navigationComponent: NavigationComponent = Layout.VStack({
+  const navigationComponent: NavigationComponent = VStack({
     children: [NavigationBar(), NavigationContent()],
     spacing: 0,
     alignment: 'leading',
@@ -366,8 +387,10 @@ export function NavigationStack(
   ;(navigationComponent as any).navigationContext = navigationContext
   ;(navigationComponent as any)._navigationStack = {
     type: 'NavigationStack',
-    registerDestination: navigationContext.registerDestination.bind(navigationContext),
-    navigateToDestination: navigationContext.navigateToDestination.bind(navigationContext),
+    registerDestination:
+      navigationContext.registerDestination.bind(navigationContext),
+    navigateToDestination:
+      navigationContext.navigateToDestination.bind(navigationContext),
   }
 
   // Set up cleanup
@@ -387,7 +410,7 @@ export function NavigationStack(
 
 /**
  * NavigationDestination modifier for type-safe routing
- * 
+ *
  * SwiftUI API: view.navigationDestination(for: UserID.self) { userID in UserDetailView(userID) }
  *
  * @param component - The component to add the modifier to
@@ -400,7 +423,7 @@ export function NavigationStack(
  * const rootView = VStack([
  *   NavigationLink('View User', () => userNavigation('user-123')),
  *   NavigationLink('View Settings', () => settingsNavigation())
- * ]).navigationDestination('user', (userId: string) => 
+ * ]).navigationDestination('user', (userId: string) =>
  *   UserDetailView({ userId })
  * )
  * ```
@@ -414,7 +437,7 @@ export function navigationDestination<T>(
   // For now, store the destination registration on the component
   ;(component as any)._navigationDestinations = {
     ...(component as any)._navigationDestinations,
-    [type]: builder
+    [type]: builder,
   }
 
   return component
@@ -427,7 +450,7 @@ export function navigateToDestination(type: string, value: any): void {
   // This would be called from NavigationLink or programmatically
   // Implementation would find the current NavigationStack context
   // and call navigateToDestination on it
-  
+
   // For now, this is a placeholder that would be enhanced with proper context lookup
   console.log(`Navigate to ${type} with value:`, value)
 }
@@ -444,15 +467,19 @@ export function NavigationLinkForDestination<T>(
   // Import NavigationLink from navigation-link.ts
   // Create a simple navigation link without requiring the module
   const simpleNavLink = HTML.div({
-    children: [typeof label === 'string' ? HTML.span({ children: label }).modifier.build() : label]
+    children: [
+      typeof label === 'string'
+        ? HTML.span({ children: label }).modifier.build()
+        : label,
+    ],
   }).modifier.build()
-  
+
   // Add navigation metadata
   ;(simpleNavLink as any)._navigationLink = {
     destinationType,
     value,
-    options
+    options,
   }
-  
+
   return simpleNavLink
 }

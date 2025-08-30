@@ -12,6 +12,7 @@
     "unicorn/no-useless-spread": "off",
     "unicorn/no-empty-file": "off",
     "unicorn/require-post-message-target-origin": "off",
+    "unicorn/consistent-function-scoping": "off",
     "no-new": "off",
     "no-unused-vars": [
       "warn",

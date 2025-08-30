@@ -1,6 +1,6 @@
 /**
  * Phase 2.1: TachUI Component Memory Leak Testing
- * 
+ *
  * Comprehensive memory leak detection for TachUI components, focusing on:
  * - Event listener cleanup
  * - Reactive effect disposal
@@ -10,14 +10,18 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { memoryTestUtils, MemoryLeakTester } from '../../../../tools/testing/memory-leak-tester'
+import {
+  memoryTestUtils,
+  MemoryLeakTester,
+} from '../../../../tools/testing/memory-leak-tester'
 import { createSignal, createEffect } from '../../src/reactive'
 import { EnhancedButton } from '../../src/components/Button'
 import { ColorAsset } from '../../src/assets/ColorAsset'
 
 // Skip memory leak tests in CI environment unless explicitly forced
 // This allows them to run when called via `pnpm test:memory-leaks` but not in general CI
-const describeMemoryTests = (process.env.CI && !process.env.FORCE_MEMORY_TESTS) ? describe.skip : describe
+const describeMemoryTests =
+  process.env.CI && !process.env.FORCE_MEMORY_TESTS ? describe.skip : describe
 
 describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
   describe('Button Component Memory Leak Tests', () => {
@@ -38,7 +42,7 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
             backgroundColor,
             isPressed,
             variant: 'filled',
-            size: 'medium'
+            size: 'medium',
           })
 
           // Trigger various interactions to activate reactive systems
@@ -48,7 +52,7 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
 
           return { button, setEnabled, setBackgroundColor, setPressed }
         },
-        (data) => {
+        data => {
           // Clean up component
           if (data.button.cleanup) {
             data.button.cleanup.forEach(cleanup => cleanup())
@@ -72,7 +76,7 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
       for (let i = 0; i < 10; i++) {
         const button = new EnhancedButton({
           title: `Button ${i}`,
-          action: () => {}
+          action: () => {},
         })
 
         buttons.push(button)
@@ -110,9 +114,13 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
               const currentCount = count()
               const currentColor = color()
               const currentEnabled = enabled()
-              
+
               // Simulate complex computations
-              return currentCount * 2 + currentColor.length + (currentEnabled ? 1 : 0)
+              return (
+                currentCount * 2 +
+                currentColor.length +
+                (currentEnabled ? 1 : 0)
+              )
             })
             effects.push(effect)
           }
@@ -148,14 +156,14 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
             default: '#007AFF',
             light: '#007AFF',
             dark: '#0A84FF',
-            name: 'primaryColor'
+            name: 'primaryColor',
           })
 
           const backgroundColorAsset = ColorAsset.init({
             default: '#FFFFFF',
-            light: '#FFFFFF', 
+            light: '#FFFFFF',
             dark: '#1C1C1E',
-            name: 'backgroundColor'
+            name: 'backgroundColor',
           })
 
           // Create button with asset-based colors
@@ -163,7 +171,7 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
             title: 'Asset Button',
             tint: primaryColor,
             backgroundColor: backgroundColorAsset,
-            action: () => {}
+            action: () => {},
           })
 
           // Trigger asset resolution (simulates theme changes)
@@ -202,8 +210,13 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
           // Use the signals
           signals.forEach(([getter, setter]) => {
             const value = getter()
-            setter(typeof value === 'string' ? `updated-${value}` : 
-                   typeof value === 'number' ? value + 1 : !value)
+            setter(
+              typeof value === 'string'
+                ? `updated-${value}`
+                : typeof value === 'number'
+                  ? value + 1
+                  : !value
+            )
           })
 
           return signals.length
@@ -260,7 +273,7 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
       for (let i = 0; i < 5; i++) {
         const button = new EnhancedButton({
           title: `Quick Button ${i}`,
-          action: () => {}
+          action: () => {},
         })
 
         tester.trackComponent(button, 'QuickButton')
@@ -281,7 +294,7 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
 
       const button = new EnhancedButton({
         title: 'Double Cleanup Test',
-        action: () => {}
+        action: () => {},
       })
 
       tester.trackComponent(button, 'DoubleCleanupButton')
@@ -308,7 +321,7 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
             title: undefined,
             action: undefined,
             isEnabled: undefined,
-            backgroundColor: undefined
+            backgroundColor: undefined,
           })
 
           const components = [buttonMinimal, buttonWithUndefined]
@@ -345,7 +358,7 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
               setButtonTitle(`Clicked at ${Date.now()}`)
               setEnabled(!isEnabled())
             },
-            variant: 'filled'
+            variant: 'filled',
           })
 
           // Simulate user interactions
@@ -363,12 +376,12 @@ describeMemoryTests('Phase 2.1: TachUI Component Memory Leak Testing', () => {
         1500 // Run for 1.5 seconds
       )
 
-      expect(report.memoryGrowth).toBeGreaterThanOrEqual(0)
+      // Negative memory growth is good - indicates proper cleanup
+      expect(report.memoryGrowth).toBeLessThan(100000000) // Just check it's reasonable
     })
   })
 })
 
 describe('Phase 2.1: Component Memory Leak Testing Summary', () => {
-  it('should validate component memory management is working', () => {
-  })
+  it('should validate component memory management is working', () => {})
 })
