@@ -160,6 +160,34 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
+  packages/flow-control:
+    dependencies:
+      '@tachui/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/jsdom':
+        specifier: ^21.1.6
+        version: 21.1.7
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.11
+      '@vitest/coverage-v8':
+        specifier: ^1.0.0
+        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+      jsdom:
+        specifier: ^23.2.0
+        version: 23.2.0
+      typescript:
+        specifier: ^5.2.0
+        version: 5.9.2
+      vite:
+        specifier: ^7.1.1
+        version: 7.1.3(@types/node@20.19.11)(tsx@4.20.5)(yaml@2.8.1)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
+
   packages/forms:
     devDependencies:
       '@tachui/core':
@@ -199,6 +227,34 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
+  packages/modifiers:
+    dependencies:
+      '@tachui/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/jsdom':
+        specifier: ^21.1.6
+        version: 21.1.7
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.11
+      '@vitest/coverage-v8':
+        specifier: ^1.0.0
+        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+      jsdom:
+        specifier: ^23.2.0
+        version: 23.2.0
+      typescript:
+        specifier: ^5.2.0
+        version: 5.9.2
+      vite:
+        specifier: ^7.1.1
+        version: 7.1.3(@types/node@20.19.11)(tsx@4.20.5)(yaml@2.8.1)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
+
   packages/navigation:
     devDependencies:
       '@playwright/test':
@@ -219,6 +275,34 @@ importers:
       vitest:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.11)(jsdom@23.2.0)
+
+  packages/primitives:
+    dependencies:
+      '@tachui/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/jsdom':
+        specifier: ^21.1.6
+        version: 21.1.7
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.11
+      '@vitest/coverage-v8':
+        specifier: ^1.0.0
+        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+      jsdom:
+        specifier: ^23.2.0
+        version: 23.2.0
+      typescript:
+        specifier: ^5.2.0
+        version: 5.9.2
+      vite:
+        specifier: ^7.1.1
+        version: 7.1.3(@types/node@20.19.11)(tsx@4.20.5)(yaml@2.8.1)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/symbols:
     dependencies:

@@ -88,8 +88,8 @@ export * from './primitives-compat'
 // Flow control compatibility layer (will migrate to @tachui/flow-control)
 export * from './flow-control-compat'
 
-// Modifier system
-export * from './modifiers'
+// Modifier system compatibility layer (will migrate to @tachui/modifiers)
+export * from './modifiers-compat'
 
 // Gradient system
 export * from './gradients'
