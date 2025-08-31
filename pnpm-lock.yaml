@@ -206,6 +206,25 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.11)(jsdom@23.2.0)
 
+  packages/forms-unified:
+    dependencies:
+      '@tachui/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.11
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.2
+      vite:
+        specifier: ^7.1.1
+        version: 7.1.3(@types/node@20.19.11)(tsx@4.20.5)(yaml@2.8.1)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
+
   packages/mobile-patterns:
     devDependencies:
       '@tachui/core':
