@@ -82,6 +82,12 @@ export * from './compiler'
 // Component system (Phase 4-5)
 export * from './components'
 
+// Primitives compatibility layer (will migrate to @tachui/primitives)
+export * from './primitives-compat'
+
+// Flow control compatibility layer (will migrate to @tachui/flow-control)
+export * from './flow-control-compat'
+
 // Modifier system
 export * from './modifiers'
 

@@ -26,6 +26,7 @@
     "baseUrl": ".",
     "paths": {
       "@tachui/core": ["./packages/core/src"],
+      "@tachui/primitives": ["./packages/primitives/src"],
       "@tachui/forms": ["./packages/forms/src"],
       "@tachui/navigation": ["./packages/navigation/src"],
       "@tachui/symbols": ["./packages/symbols/src"],
@@ -35,6 +36,7 @@
   "include": [],
   "references": [
     { "path": "./packages/core" },
+    { "path": "./packages/primitives" },
     { "path": "./packages/forms" },
     { "path": "./packages/navigation" },
     { "path": "./packages/symbols" },
