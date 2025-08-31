@@ -4,14 +4,9 @@
  * Reactive implementation that works with TachUI's reactive architecture
  */
 
-import {
-  createEffect,
-  createRoot,
-  isComputed,
-  isSignal,
-} from '@tachui/core/reactive'
-import type { ComponentInstance, DOMNode } from '@tachui/core/runtime/types'
-import { DOMRenderer } from '@tachui/core/runtime/renderer'
+import { createEffect, createRoot, isComputed, isSignal } from '@tachui/core'
+import type { ComponentInstance, DOMNode } from '@tachui/core'
+import { DOMRenderer } from '@tachui/core'
 
 export interface ShowProps {
   /**

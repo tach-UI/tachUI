@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Section } from '../../src/components/Section'
+import { Section } from '../src/section'
 
 // Mock console.warn to suppress deprecation warnings in tests
 vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -15,7 +15,7 @@ vi.mock('../../runtime/renderer', () => ({
     props: props || {},
     children: children.flat().filter(Boolean),
   })),
-  text: vi.fn((content) => ({
+  text: vi.fn(content => ({
     type: 'text',
     content,
   })),

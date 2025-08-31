@@ -5,14 +5,32 @@
  * and high-performance rendering for large datasets.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '../modifiers/types'
-import { createEffect, createRoot, createSignal, isComputed, isSignal } from '../reactive'
-import type { Signal } from '../reactive/types'
-import { h } from '../runtime'
-import type { ComponentInstance, ComponentProps, ComponentRef, DOMNode } from '../runtime/types'
-import { DOMRenderer } from '../runtime/renderer'
-import { ScrollView, type ScrollViewProps } from './ScrollView'
-import { withModifiers } from './wrapper'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import {
+  createEffect,
+  createRoot,
+  createSignal,
+  isComputed,
+  isSignal,
+} from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h } from '@tachui/core'
+import type {
+  ComponentInstance,
+  ComponentProps,
+  ComponentRef,
+  DOMNode,
+} from '@tachui/core'
+import { DOMRenderer } from '@tachui/core'
+import { ScrollView, type ScrollViewProps } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
+import {
+  ForEach,
+  ForEachComponent,
+  For,
+  type ForEachProps,
+  type ForProps,
+} from '@tachui/flow-control'
 
 /**
  * List item selection mode
@@ -68,8 +86,14 @@ export interface ListProps<T = any> extends Omit<ScrollViewProps, 'children'> {
 
   // Rendering
   renderItem: (item: T, index: number) => ComponentInstance
-  renderSectionHeader?: (section: ListSection<T>, index: number) => ComponentInstance
-  renderSectionFooter?: (section: ListSection<T>, index: number) => ComponentInstance
+  renderSectionHeader?: (
+    section: ListSection<T>,
+    index: number
+  ) => ComponentInstance
+  renderSectionFooter?: (
+    section: ListSection<T>,
+    index: number
+  ) => ComponentInstance
 
   // Appearance
   style?: ListStyle
@@ -107,25 +131,7 @@ export interface ListProps<T = any> extends Omit<ScrollViewProps, 'children'> {
   hasMore?: boolean | Signal<boolean>
 }
 
-/**
- * ForEach component properties
- */
-export interface ForEachProps<T = any> {
-  data: T[] | Signal<T[]>
-  children: (item: T, index: number) => ComponentInstance | ComponentInstance[]
-  getItemId?: (item: T, index: number) => string | number
-  key?: string | number
-  ref?: ComponentRef
-}
-
-/**
- * ForEach component internal props that satisfy ComponentProps
- */
-interface ForEachInternalProps<T = any> extends ComponentProps {
-  data: T[] | Signal<T[]>
-  renderItem: (item: T, index: number) => ComponentInstance | ComponentInstance[]
-  getItemId?: (item: T, index: number) => string | number
-}
+// ForEach components imported from @tachui/flow-control
 
 /**
  * Virtual scroll item info
@@ -171,16 +177,21 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     this.dataSignal = dataSignal
     this.setData = setData
 
-    const [sectionsSignal, setSections] = createSignal<ListSection<T>[]>(this.resolveSections())
+    const [sectionsSignal, setSections] = createSignal<ListSection<T>[]>(
+      this.resolveSections()
+    )
     this.sectionsSignal = sectionsSignal
     this.setSections = setSections
 
     const initialSelection = new Set<string | number>()
-    const [selectedItemsSignal, setSelectedItems] = createSignal(initialSelection)
+    const [selectedItemsSignal, setSelectedItems] =
+      createSignal(initialSelection)
     this.selectedItemsSignal = selectedItemsSignal
     this.setSelectedItems = setSelectedItems
 
-    const [isLoadingSignal, setIsLoading] = createSignal(this.resolveIsLoading())
+    const [isLoadingSignal, setIsLoading] = createSignal(
+      this.resolveIsLoading()
+    )
     this.isLoadingSignal = isLoadingSignal
     this.setIsLoading = setIsLoading
 
@@ -339,7 +350,10 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     // Find last visible item
     let endIndex = this.virtualItems.length - 1
     for (let i = startIndex; i < this.virtualItems.length; i++) {
-      if (this.virtualItems[i].offset > this.scrollOffset + this.containerHeight + threshold) {
+      if (
+        this.virtualItems[i].offset >
+        this.scrollOffset + this.containerHeight + threshold
+      ) {
         endIndex = Math.min(this.virtualItems.length - 1, i + overscan)
         break
       }
@@ -381,7 +395,11 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
   /**
    * Create list item component
    */
-  private createListItem(item: T, index: number, isSelected: boolean): ComponentInstance {
+  private createListItem(
+    item: T,
+    index: number,
+    isSelected: boolean
+  ): ComponentInstance {
     const { renderItem, style, onItemTap, onItemLongPress } = this.props
 
     const itemContent = renderItem(item, index)
@@ -422,7 +440,10 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
             let longPressTimer: NodeJS.Timeout
 
             const startLongPress = () => {
-              longPressTimer = setTimeout(() => onItemLongPress(item, index), 500)
+              longPressTimer = setTimeout(
+                () => onItemLongPress(item, index),
+                500
+              )
             }
 
             const cancelLongPress = () => {
@@ -438,8 +459,12 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
 
           // Selection handling
           if (this.props.selectionMode !== 'none') {
-            element.addEventListener('click', (e) => {
-              if (e.metaKey || e.ctrlKey || this.props.selectionMode === 'multiple') {
+            element.addEventListener('click', e => {
+              if (
+                e.metaKey ||
+                e.ctrlKey ||
+                this.props.selectionMode === 'multiple'
+              ) {
                 e.preventDefault()
                 this.handleItemSelection(item, index)
               }
@@ -486,7 +511,10 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
   /**
    * Create section header
    */
-  private createSectionHeader(section: ListSection<T>, index: number): ComponentInstance | null {
+  private createSectionHeader(
+    section: ListSection<T>,
+    index: number
+  ): ComponentInstance | null {
     if (!section.header) return null
 
     if (typeof section.header === 'string') {
@@ -525,7 +553,10 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
   /**
    * Create section footer
    */
-  private createSectionFooter(section: ListSection<T>, index: number): ComponentInstance | null {
+  private createSectionFooter(
+    section: ListSection<T>,
+    index: number
+  ): ComponentInstance | null {
     if (!section.footer) return null
 
     if (typeof section.footer === 'string') {
@@ -645,7 +676,8 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
 
     // Add spacer for items before visible range
     if (this.visibleStartIndex > 0) {
-      const spacerHeight = this.virtualItems[this.visibleStartIndex]?.offset || 0
+      const spacerHeight =
+        this.virtualItems[this.visibleStartIndex]?.offset || 0
       visibleItems.push({
         type: 'component',
         id: `${this.id}-spacer-top`,
@@ -661,7 +693,11 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     }
 
     // Render visible items
-    for (let i = this.visibleStartIndex; i <= this.visibleEndIndex && i < data.length; i++) {
+    for (
+      let i = this.visibleStartIndex;
+      i <= this.visibleEndIndex && i < data.length;
+      i++
+    ) {
       const item = data[i]
       const itemId = this.props.getItemId ? this.props.getItemId(item, i) : i
       const isSelected = selectedItems.has(itemId)
@@ -676,7 +712,8 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     // Add spacer for items after visible range
     if (this.visibleEndIndex < data.length - 1) {
       const remainingHeight =
-        this.totalHeight - (this.virtualItems[this.visibleEndIndex + 1]?.offset || 0)
+        this.totalHeight -
+        (this.virtualItems[this.visibleEndIndex + 1]?.offset || 0)
       visibleItems.push({
         type: 'component',
         id: `${this.id}-spacer-bottom`,
@@ -734,7 +771,9 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     } else {
       // Render flat data
       data.forEach((item, index) => {
-        const itemId = this.props.getItemId ? this.props.getItemId(item, index) : index
+        const itemId = this.props.getItemId
+          ? this.props.getItemId(item, index)
+          : index
         const isSelected = selectedItems.has(itemId)
 
         content.push(this.createListItem(item, index, isSelected))
@@ -762,7 +801,9 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
 
     // Handle infinite scroll
     if (this.props.onLoadMore && scrollInfo.edges.bottom) {
-      const hasMore = isSignal(this.props.hasMore) ? this.props.hasMore() : this.props.hasMore
+      const hasMore = isSignal(this.props.hasMore)
+        ? this.props.hasMore()
+        : this.props.hasMore
       if (hasMore && !this.isLoadingSignal()) {
         this.setIsLoading(true)
         this.props.onLoadMore().finally(() => {
@@ -822,135 +863,7 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
   }
 }
 
-/**
- * ForEach component implementation with self-contained reactivity
- */
-export class ForEach<T = any> implements ComponentInstance<ForEachInternalProps<T>> {
-  public readonly type = 'component' as const
-  public readonly id: string
-  public mounted = false
-  public cleanup: (() => void)[] = []
-  public props: ForEachInternalProps<T>
-
-  private dataSignal: () => T[]
-
-  constructor(props: ForEachProps<T>) {
-    // Convert to internal props format
-    this.props = {
-      ...props,
-      renderItem: props.children,
-      children: undefined, // ComponentProps children
-    } as ForEachInternalProps<T>
-    this.id = `foreach-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-
-    // Set up reactive data
-    this.dataSignal = isSignal(props.data) ? props.data : () => props.data as T[]
-  }
-
-  /**
-   * Helper to flatten render results
-   */
-  private flattenRenderResult(result: any): any[] {
-    return Array.isArray(result) ? result : [result]
-  }
-
-  /**
-   * Render children for current data
-   */
-  private renderChildren(): DOMNode[] {
-    const data = this.dataSignal()
-
-    return data.flatMap((item, index) => {
-      const children = this.props.renderItem(item, index)
-      const childArray = Array.isArray(children) ? children : [children]
-      return childArray.flatMap((child) => this.flattenRenderResult(child.render()))
-    })
-  }
-
-  /**
-   * Render ForEach with reactive container pattern like Show component
-   */
-  render(): DOMNode[] {
-    // Check if data source is reactive
-    const isReactive = isSignal(this.props.data) || isComputed(this.props.data)
-    
-    if (!isReactive) {
-      // Static data - simple render
-      return this.renderChildren()
-    }
-
-    // Reactive data - create reactive container
-    const containerNode: DOMNode = {
-      type: 'element',
-      tag: 'div',
-      props: {
-        style: { display: 'contents' } // Make container invisible
-      },
-      children: [],
-      dispose: undefined,
-    }
-
-    // Create reactive effect that updates the container
-    const cleanup = createRoot(() => {
-      const effect = createEffect(() => {
-        const newChildren = this.renderChildren()
-        containerNode.children = newChildren
-        
-        // Update DOM if already rendered
-        if (containerNode.element && containerNode.element instanceof HTMLElement) {
-          this.updateContainerDOM(containerNode.element, newChildren)
-        }
-      })
-
-      return () => effect.dispose()
-    })
-
-    containerNode.dispose = cleanup
-
-    // Initialize with current children
-    const initialChildren = this.renderChildren()
-    containerNode.children = initialChildren
-
-    return [containerNode]
-  }
-
-  /**
-   * Update the container DOM element with new children using TachUI's renderer
-   */
-  private updateContainerDOM(container: HTMLElement, children: DOMNode[]): void {
-    // Clear existing content
-    container.innerHTML = ''
-    
-    // Use TachUI's renderer to properly handle modifiers and reactivity
-    const renderer = new DOMRenderer()
-    
-    // Render new content using TachUI's renderer which handles modifiers
-    children.forEach(child => {
-      try {
-        const element = renderer.render(child)
-        if (element) {
-          container.appendChild(element)
-        }
-      } catch (error) {
-        console.error('Error rendering ForEach component child:', error)
-      }
-    })
-  }
-
-  /**
-   * Cleanup resources
-   */
-  dispose(): void {
-    this.cleanup.forEach(fn => {
-      try {
-        fn()
-      } catch (error) {
-        console.error('ForEach component cleanup error:', error)
-      }
-    })
-    this.cleanup = []
-  }
-}
+// ForEach class implementation available from @tachui/flow-control
 
 /**
  * Create enhanced List component with modifier support
@@ -964,45 +877,7 @@ export function List<T = any>(
   return withModifiers(component)
 }
 
-/**
- * Create ForEach component
- */
-export function ForEachComponent<T = any>(
-  props: ForEachProps<T>
-): ComponentInstance<ForEachInternalProps<T>> {
-  return new ForEach(props)
-}
-
-/**
- * For component alias (SolidJS-style compatibility)
- *
- * @example
- * ```typescript
- * For({
- *   each: items,
- *   children: (item, index) => Text(item.name)
- * })
- * ```
- */
-export interface ForProps<T = any> {
-  each: T[] | Signal<T[]>
-  children: (item: T, index: number) => ComponentInstance | ComponentInstance[]
-  fallback?: ComponentInstance
-  key?: string | number
-  ref?: ComponentRef
-}
-
-export function For<T = any>(props: ForProps<T>): ComponentInstance<ForEachInternalProps<T>> {
-  // Convert SolidJS-style props to TachUI ForEach props
-  const forEachProps: ForEachProps<T> = {
-    data: props.each,
-    children: props.children,
-    key: props.key,
-    ref: props.ref,
-  }
-
-  return new ForEach(forEachProps)
-}
+// ForEach functions are imported from @tachui/flow-control
 
 /**
  * List utility functions
@@ -1069,7 +944,10 @@ export const ListUtils = {
     renderItem: (item: T, index: number) => ComponentInstance,
     onLoadMore: () => Promise<void>,
     hasMore: boolean | Signal<boolean>,
-    props: Omit<ListProps<T>, 'data' | 'renderItem' | 'onLoadMore' | 'hasMore'> = {}
+    props: Omit<
+      ListProps<T>,
+      'data' | 'renderItem' | 'onLoadMore' | 'hasMore'
+    > = {}
   ): ModifiableComponent<ListProps<T>> & {
     modifier: ModifierBuilder<ModifiableComponent<ListProps<T>>>
   } {

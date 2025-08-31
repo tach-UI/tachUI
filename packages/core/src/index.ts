@@ -85,11 +85,20 @@ export * from './components'
 // Primitives compatibility layer (will migrate to @tachui/primitives)
 export * from './primitives-compat'
 
-// Flow control compatibility layer (will migrate to @tachui/flow-control)
-export * from './flow-control-compat'
+// Flow control components imported from @tachui/flow-control
+export { Show, When, Unless, type ShowProps } from './components/Show'
+export {
+  ForEach,
+  ForEachComponent,
+  For,
+  type ForEachProps,
+  type ForProps,
+} from '@tachui/flow-control'
 
 // Modifier system compatibility layer (will migrate to @tachui/modifiers)
 export * from './modifiers-compat'
+
+// Data components (List, Menu, Section) are included in the main components export
 
 // Gradient system
 export * from './gradients'

@@ -1,7 +1,7 @@
 /**
  * Enhanced Section Component (Phase 6.4.2)
  *
- * @deprecated This component has been superseded by FormSection from @tachui/forms 
+ * @deprecated This component has been superseded by FormSection from @tachui/forms
  * for form contexts, which provides the same features with better semantic HTML.
  * For general layout grouping, use VStack or HStack with styling instead.
  *
@@ -14,12 +14,12 @@
  * with headers, footers, and automatic styling.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '../modifiers/types'
-import { isSignal } from '../reactive'
-import type { Signal } from '../reactive/types'
-import { h, text } from '../runtime'
-import type { ComponentInstance, ComponentProps, DOMNode } from '../runtime/types'
-import { withModifiers } from './wrapper'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { isSignal } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h, text } from '@tachui/core'
+import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
 
 /**
  * Section component properties
@@ -62,7 +62,12 @@ export class EnhancedSection implements ComponentInstance<SectionProps> {
    * Resolve dynamic content
    */
   private resolveContent(
-    content: string | (() => string) | Signal<string> | ComponentInstance | undefined
+    content:
+      | string
+      | (() => string)
+      | Signal<string>
+      | ComponentInstance
+      | undefined
   ): string | ComponentInstance | null {
     if (!content) return null
 
@@ -328,7 +333,7 @@ export class EnhancedSection implements ComponentInstance<SectionProps> {
       {
         style: this.getContentStyles(),
       },
-      ...children.flatMap((child) => {
+      ...children.flatMap(child => {
         const rendered = child.render()
         return Array.isArray(rendered) ? rendered : [rendered]
       })
@@ -363,9 +368,11 @@ export class EnhancedSection implements ComponentInstance<SectionProps> {
         'aria-label': accessibilityLabel,
         role: accessibilityRole,
       },
-      ...[this.renderHeader(), this.renderContent(), this.renderFooter()].filter(
-        (item): item is DOMNode => item !== null
-      )
+      ...[
+        this.renderHeader(),
+        this.renderContent(),
+        this.renderFooter(),
+      ].filter((item): item is DOMNode => item !== null)
     )
   }
 }
@@ -421,35 +428,50 @@ export const SectionStyles = {
   /**
    * Automatic section styling (default)
    */
-  Automatic(children: ComponentInstance[], props: Omit<SectionProps, 'children' | 'style'> = {}) {
+  Automatic(
+    children: ComponentInstance[],
+    props: Omit<SectionProps, 'children' | 'style'> = {}
+  ) {
     return Section(children, { ...props, style: 'automatic' })
   },
 
   /**
    * Grouped section with container styling
    */
-  Grouped(children: ComponentInstance[], props: Omit<SectionProps, 'children' | 'style'> = {}) {
+  Grouped(
+    children: ComponentInstance[],
+    props: Omit<SectionProps, 'children' | 'style'> = {}
+  ) {
     return Section(children, { ...props, style: 'grouped' })
   },
 
   /**
    * Inset section styling
    */
-  Inset(children: ComponentInstance[], props: Omit<SectionProps, 'children' | 'style'> = {}) {
+  Inset(
+    children: ComponentInstance[],
+    props: Omit<SectionProps, 'children' | 'style'> = {}
+  ) {
     return Section(children, { ...props, style: 'inset' })
   },
 
   /**
    * Sidebar-style section
    */
-  Sidebar(children: ComponentInstance[], props: Omit<SectionProps, 'children' | 'style'> = {}) {
+  Sidebar(
+    children: ComponentInstance[],
+    props: Omit<SectionProps, 'children' | 'style'> = {}
+  ) {
     return Section(children, { ...props, style: 'sidebar' })
   },
 
   /**
    * Plain section without styling
    */
-  Plain(children: ComponentInstance[], props: Omit<SectionProps, 'children' | 'style'> = {}) {
+  Plain(
+    children: ComponentInstance[],
+    props: Omit<SectionProps, 'children' | 'style'> = {}
+  ) {
     return Section(children, { ...props, style: 'plain' })
   },
 
@@ -460,7 +482,10 @@ export const SectionStyles = {
     header: string | (() => string) | Signal<string> | ComponentInstance,
     children: ComponentInstance[],
     collapsed: boolean | Signal<boolean> = false,
-    props: Omit<SectionProps, 'children' | 'header' | 'collapsible' | 'collapsed'> = {}
+    props: Omit<
+      SectionProps,
+      'children' | 'header' | 'collapsible' | 'collapsed'
+    > = {}
   ) {
     return Section(children, {
       ...props,

@@ -5,8 +5,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Menu, type MenuItem, MenuStyles, MenuUtils } from '../../src/components/Menu'
-import { createSignal } from '../../src/reactive'
+import { Menu, type MenuItem, MenuStyles, MenuUtils } from '../src/menu'
+import { createSignal } from '@tachui/core'
 
 // Mock DOM methods
 const mockElement = {
@@ -211,7 +211,9 @@ describe('Menu Component', () => {
     it('should handle reactive disabled state', () => {
       const [isDisabled, setIsDisabled] = createSignal(false)
 
-      const items: MenuItem[] = [{ title: 'Toggle Item', disabled: isDisabled, action: vi.fn() }]
+      const items: MenuItem[] = [
+        { title: 'Toggle Item', disabled: isDisabled, action: vi.fn() },
+      ]
 
       const menu = Menu({ items, trigger: mockTrigger })
 
@@ -439,7 +441,9 @@ describe('Menu Component', () => {
         placement: 'bottom-end',
       })
 
-      const modifiedMenu = originalMenu.modifier.backgroundColor('#FFFFFF').build()
+      const modifiedMenu = originalMenu.modifier
+        .backgroundColor('#FFFFFF')
+        .build()
 
       expect(modifiedMenu.props.items).toEqual(items)
       expect(modifiedMenu.props.placement).toBe('bottom-end')

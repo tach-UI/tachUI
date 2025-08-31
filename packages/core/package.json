@@ -89,7 +89,9 @@
     "migrate": "node scripts/migration-tool.js",
     "migrate:fix": "node scripts/migration-tool.js --fix"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@tachui/data": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/jsdom": "^21.1.6",

@@ -5,13 +5,18 @@
  * positioning, and keyboard navigation support.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '../modifiers/types'
-import { createEffect, createSignal, isSignal } from '../reactive'
-import type { Signal } from '../reactive/types'
-import { h } from '../runtime'
-import type { ComponentInstance, ComponentProps, DOMNode } from '../runtime/types'
-import { withModifiers } from './wrapper'
-import { useLifecycle, AnimationManager, FocusManager, setupPositioning } from '../lifecycle/hooks'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { createEffect, createSignal, isSignal } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h } from '@tachui/core'
+import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
+import {
+  useLifecycle,
+  AnimationManager,
+  FocusManager,
+  setupPositioning,
+} from '@tachui/core'
 
 /**
  * Menu item configuration
@@ -53,7 +58,10 @@ export interface MenuProps extends ComponentProps {
   items: MenuItem[]
 
   // Trigger
-  trigger: ComponentInstance | HTMLElement | (() => ComponentInstance | HTMLElement)
+  trigger:
+    | ComponentInstance
+    | HTMLElement
+    | (() => ComponentInstance | HTMLElement)
 
   // Visibility
   isOpen?: Signal<boolean>
@@ -169,7 +177,9 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
         ((value: boolean | ((prev: boolean) => boolean)) => {
           if (typeof this.props.isOpen === 'function') {
             ;(this.props.isOpen as any)(
-              typeof value === 'function' ? value((this.props.isOpen as any)()) : value
+              typeof value === 'function'
+                ? value((this.props.isOpen as any)())
+                : value
             )
           }
         }) as any,
@@ -182,11 +192,11 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
         if (primaryElement) {
           // Set up menu positioning when DOM is ready
           this.setupMenuPositioning(primaryElement)
-          
+
           // Set up animation and focus management
           this.setupMenuAnimations(primaryElement)
         }
-      }
+      },
     })
   }
 
@@ -201,13 +211,14 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
     // Positioning is now handled via onDOMReady hooks when menu elements are guaranteed to exist
     // No more setTimeout positioning hacks needed
     if (!this.cleanup) this.cleanup = []
-    
+
     // Set up positioning calculation that runs when both trigger and menu exist
     setupPositioning(
       this,
       `[data-menu-trigger="${this.id}"]`,
       `[data-menu-content="${this.id}"]`,
-      (trigger, menu) => this.calculatePosition(trigger as HTMLElement, menu as HTMLElement)
+      (trigger, menu) =>
+        this.calculatePosition(trigger as HTMLElement, menu as HTMLElement)
     )
   }
 
@@ -221,7 +232,7 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
   }
 
   private getVisibleItems(): MenuItem[] {
-    return this.props.items.filter((item) => item.title !== '---') // Exclude separators
+    return this.props.items.filter(item => item.title !== '---') // Exclude separators
   }
 
   private createMenuItem(item: MenuItem, index: number): DOMNode {
@@ -325,10 +336,12 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
     const titleElementDOM = titleElement.element as HTMLElement
     if (titleElementDOM) titleElementDOM.textContent = title
     const contentElement = content.element as HTMLElement
-    if (contentElement && titleElementDOM) contentElement.appendChild(titleElementDOM)
+    if (contentElement && titleElementDOM)
+      contentElement.appendChild(titleElementDOM)
 
     const menuItemElement = menuItem.element as HTMLElement
-    if (menuItemElement && contentElement) menuItemElement.appendChild(contentElement)
+    if (menuItemElement && contentElement)
+      menuItemElement.appendChild(contentElement)
 
     // Keyboard shortcut
     if (item.shortcut) {
@@ -341,7 +354,8 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
       })
       const shortcutElement = shortcut.element as HTMLElement
       if (shortcutElement) shortcutElement.textContent = item.shortcut
-      if (menuItemElement && shortcutElement) menuItemElement.appendChild(shortcutElement)
+      if (menuItemElement && shortcutElement)
+        menuItemElement.appendChild(shortcutElement)
     }
 
     // Submenu indicator
@@ -354,7 +368,8 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
       })
       const indicatorElement = indicator.element as HTMLElement
       if (indicatorElement) indicatorElement.textContent = '▶'
-      if (menuItemElement && indicatorElement) menuItemElement.appendChild(indicatorElement)
+      if (menuItemElement && indicatorElement)
+        menuItemElement.appendChild(indicatorElement)
     }
 
     return menuItem
@@ -390,7 +405,10 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
 
       case 'ArrowDown':
         e.preventDefault()
-        this.focusedIndex = Math.min(this.focusedIndex + 1, visibleItems.length - 1)
+        this.focusedIndex = Math.min(
+          this.focusedIndex + 1,
+          visibleItems.length - 1
+        )
         this.updateItemFocus()
         break
 
@@ -428,7 +446,10 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
     }
   }
 
-  private calculatePosition(trigger: HTMLElement, menu: HTMLElement): { x: number; y: number } {
+  private calculatePosition(
+    trigger: HTMLElement,
+    menu: HTMLElement
+  ): { x: number; y: number } {
     const triggerRect = trigger.getBoundingClientRect()
     const menuRect = menu.getBoundingClientRect()
     const viewport = {
@@ -495,10 +516,16 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
 
     // Handle flipping and shifting if enabled
     if (this.props.flip ?? true) {
-      if (y + menuRect.height > viewport.height && triggerRect.top > menuRect.height) {
+      if (
+        y + menuRect.height > viewport.height &&
+        triggerRect.top > menuRect.height
+      ) {
         y = triggerRect.top - menuRect.height - offset.y
       }
-      if (x + menuRect.width > viewport.width && triggerRect.left > menuRect.width) {
+      if (
+        x + menuRect.width > viewport.width &&
+        triggerRect.left > menuRect.width
+      ) {
         x = triggerRect.left - menuRect.width - offset.x
       }
     }
@@ -558,7 +585,10 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
         if (Array.isArray(rendered)) {
           trigger = rendered[0]?.element as HTMLElement
         } else {
-          trigger = rendered instanceof HTMLElement ? rendered : (rendered?.element as HTMLElement)
+          trigger =
+            rendered instanceof HTMLElement
+              ? rendered
+              : (rendered?.element as HTMLElement)
         }
       } else {
         trigger = result as HTMLElement
@@ -568,7 +598,10 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
       if (Array.isArray(rendered)) {
         trigger = rendered[0]?.element as HTMLElement
       } else {
-        trigger = rendered instanceof HTMLElement ? rendered : (rendered?.element as HTMLElement)
+        trigger =
+          rendered instanceof HTMLElement
+            ? rendered
+            : (rendered?.element as HTMLElement)
       }
     } else {
       trigger = this.props.trigger as HTMLElement
@@ -579,7 +612,7 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
     trigger.setAttribute('aria-expanded', String(this.isOpen()))
     trigger.setAttribute('data-menu-trigger', this.id) // ENHANCED: Add data attribute for lifecycle hooks
 
-    trigger.addEventListener('click', (e) => {
+    trigger.addEventListener('click', e => {
       e.preventDefault()
       e.stopPropagation()
       this.setIsOpenValue(!this.isOpen())
@@ -619,16 +652,27 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
         // ENHANCED: Position and animate menu using lifecycle hooks
         if (this.triggerElement && this.menuElement) {
           // Immediate positioning - no setTimeout needed
-          const position = this.calculatePosition(this.triggerElement, this.menuElement)
+          const position = this.calculatePosition(
+            this.triggerElement,
+            this.menuElement
+          )
           this.menuElement.style.left = `${position.x}px`
           this.menuElement.style.top = `${position.y}px`
-          
+
           // Use AnimationManager for smooth animation
-          AnimationManager.scaleIn(this, this.menuElement, this.props.animationDuration || 150)
-          
+          AnimationManager.scaleIn(
+            this,
+            this.menuElement,
+            this.props.animationDuration || 150
+          )
+
           // Use FocusManager for proper focus handling
           this.focusedIndex = 0
-          FocusManager.focusWhenReady(this, '[role="menuitem"]', this.menuElement)
+          FocusManager.focusWhenReady(
+            this,
+            '[role="menuitem"]',
+            this.menuElement
+          )
         }
 
         // Add event listeners
@@ -649,16 +693,25 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
               document.body.removeChild(this.menuElement)
               this.menuElement = null
             }
-            this.menuElement?.removeEventListener('transitionend', handleTransitionEnd)
+            this.menuElement?.removeEventListener(
+              'transitionend',
+              handleTransitionEnd
+            )
           }
-          this.menuElement.addEventListener('transitionend', handleTransitionEnd)
-          
+          this.menuElement.addEventListener(
+            'transitionend',
+            handleTransitionEnd
+          )
+
           // Fallback timeout in case transition doesn't fire (rare edge case)
           const fallbackTimeout = setTimeout(() => {
-            this.menuElement?.removeEventListener('transitionend', handleTransitionEnd)
+            this.menuElement?.removeEventListener(
+              'transitionend',
+              handleTransitionEnd
+            )
             handleTransitionEnd()
           }, this.props.animationDuration || 150)
-          
+
           // Store cleanup for fallback timeout
           if (!this.cleanup) this.cleanup = []
           this.cleanup.push(() => {
@@ -710,7 +763,9 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
  */
 export function Menu(
   props: MenuProps
-): ModifiableComponent<MenuProps> & { modifier: ModifierBuilder<ModifiableComponent<MenuProps>> } {
+): ModifiableComponent<MenuProps> & {
+  modifier: ModifierBuilder<ModifiableComponent<MenuProps>>
+} {
   return withModifiers(new MenuComponent(props))
 }
 
@@ -728,7 +783,11 @@ export const MenuUtils = {
   /**
    * Create a destructive menu item
    */
-  destructive(title: string, action: () => void, systemImage?: string): MenuItem {
+  destructive(
+    title: string,
+    action: () => void,
+    systemImage?: string
+  ): MenuItem {
     return {
       title,
       action,
@@ -761,7 +820,7 @@ export const MenuUtils = {
     const [isOpen, setIsOpen] = createSignal(false)
     const [position, setPosition] = createSignal({ x: 0, y: 0 })
 
-    target.addEventListener('contextmenu', (e) => {
+    target.addEventListener('contextmenu', e => {
       e.preventDefault()
       setPosition({ x: e.clientX, y: e.clientY })
       setIsOpen(true)
@@ -769,7 +828,11 @@ export const MenuUtils = {
 
     // Note: This is a stub implementation
     // Full context menu positioning would require additional DOM manipulation
-    console.log('Context menu requested', { items, position: position(), isOpen: isOpen() })
+    console.log('Context menu requested', {
+      items,
+      position: position(),
+      isOpen: isOpen(),
+    })
   },
 }
 

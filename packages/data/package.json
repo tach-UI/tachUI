@@ -1,0 +1,81 @@
+{
+  "name": "@tachui/data",
+  "version": "1.0.0",
+  "description": "Data display and organization components for tachUI framework",
+  "homepage": "https://tachui.dev/",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./list": {
+      "types": "./dist/list/index.d.ts",
+      "import": "./dist/list/index.js"
+    },
+    "./menu": {
+      "types": "./dist/menu/index.d.ts",
+      "import": "./dist/menu/index.js"
+    },
+    "./section": {
+      "types": "./dist/section/index.d.ts",
+      "import": "./dist/section/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && vite build && tsc --project tsconfig.build.json",
+    "dev": "vite build --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:ci": "npm run test:run",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "lint": "oxlint src"
+  },
+  "dependencies": {
+    "@tachui/core": "workspace:*",
+    "@tachui/flow-control": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/jsdom": "^21.1.6",
+    "@vitest/coverage-v8": "^1.0.0",
+    "jsdom": "^23.2.0",
+    "typescript": "^5.2.0",
+    "vite": "^7.1.1",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "ui",
+    "components",
+    "data",
+    "list",
+    "menu",
+    "section",
+    "tachui",
+    "typescript"
+  ],
+  "author": "tachUI Team",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tach-UI/tachUI",
+    "directory": "packages/data"
+  }
+}

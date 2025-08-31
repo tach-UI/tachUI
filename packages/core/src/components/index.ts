@@ -6,10 +6,7 @@
  */
 
 // Re-export useful types from other modules
-export type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '../modifiers/types'
+export type { ModifiableComponent, ModifierBuilder } from '../modifiers/types'
 export type {
   ComponentInstance,
   ComponentProps,
@@ -22,11 +19,7 @@ export type {
   BasicInputTheme,
   BasicInputType,
 } from './BasicInput'
-export {
-  BasicInput,
-  BasicInputStyles,
-  BasicInputUtils,
-} from './BasicInput'
+export { BasicInput, BasicInputStyles, BasicInputUtils } from './BasicInput'
 // Grid Layout System (Phase 1)
 export type {
   BaseGridProps,
@@ -67,10 +60,7 @@ export {
 } from './Button'
 // DatePicker component has been moved to @tachui/advanced-forms
 // Import it from @tachui/advanced-forms instead of @tachui/core
-export type {
-  DividerProps,
-  DividerTheme,
-} from './Divider'
+export type { DividerProps, DividerTheme } from './Divider'
 export {
   Divider,
   DividerStyles,
@@ -78,11 +68,7 @@ export {
   defaultDividerTheme,
 } from './Divider'
 // BasicForm component types (Phase 6.4)
-export type {
-  FormData,
-  BasicFormProps,
-  ValidationError,
-} from './Form'
+export type { FormData, BasicFormProps, ValidationError } from './Form'
 // BasicForm Components (Phase 6.4)
 export {
   BasicFormImplementation,
@@ -105,54 +91,26 @@ export {
   ImageUtils,
 } from './Image'
 // Enhanced Link (SwiftUI-compatible API) - Primary Link Component
-export type {
-  EnhancedLinkProps,
-  OpenURLAction,
-} from './EnhancedLink'
-export {
-  Link,
-  LinkUtils,
-} from './EnhancedLink'
-export type {
-  ForEachProps,
-  ForProps,
-  ListProps,
-  ListSection,
-  ListStyle,
-  SelectionMode,
-  SwipeAction,
-  VirtualScrollConfig,
-} from './List'
-export {
-  EnhancedList,
-  For,
-  ForEach,
-  ForEachComponent,
-  List,
-  ListUtils,
-} from './List'
-export type {
-  MenuItem,
-  MenuPlacement,
-  MenuProps,
-  MenuTheme,
-} from './Menu'
-export {
-  defaultMenuTheme,
-  Menu,
-  MenuStyles,
-  MenuUtils,
-} from './Menu'
-export type {
-  PickerOption,
-  PickerProps,
-} from './Picker'
-export {
-  EnhancedPicker,
-  Picker,
-  PickerStyles,
-  PickerUtils,
-} from './Picker'
+export type { EnhancedLinkProps, OpenURLAction } from './EnhancedLink'
+export { Link, LinkUtils } from './EnhancedLink'
+// Flow control components
+// ForEach and For components are temporarily commented out due to circular dependency
+// TODO: Either implement these in core or restructure to avoid circular dependency
+// export {
+//   ForEach,
+//   ForEachComponent,
+//   For,
+//   type ForEachProps,
+//   type ForProps,
+// } from '@tachui/flow-control'
+
+// Data components (List, Menu, Section) moved to @tachui/data
+// Import from @tachui/data instead of core for these components
+
+// Menu component moved to @tachui/data
+// Import from @tachui/data instead of core
+export type { PickerOption, PickerProps } from './Picker'
+export { EnhancedPicker, Picker, PickerStyles, PickerUtils } from './Picker'
 export type {
   ContentOffset,
   PullToRefreshState,
@@ -162,25 +120,11 @@ export type {
   ScrollEventInfo,
   ScrollViewProps,
 } from './ScrollView'
-export {
-  EnhancedScrollView,
-  ScrollView,
-  ScrollViewUtils,
-} from './ScrollView'
-export type { SectionProps } from './Section'
-export {
-  EnhancedSection,
-  Section,
-  SectionStyles,
-  SectionWithHeader,
-  SectionWithHeaderFooter,
-} from './Section'
+export { EnhancedScrollView, ScrollView, ScrollViewUtils } from './ScrollView'
+// Section component moved to @tachui/data
+// Import from @tachui/data instead of core
 export type { ShowProps } from './Show'
-export {
-  Show,
-  Unless,
-  When,
-} from './Show'
+export { Show, Unless, When } from './Show'
 
 // Slider component has been moved to @tachui/advanced-forms
 // Import it from @tachui/advanced-forms instead of @tachui/core
@@ -189,10 +133,7 @@ export { Spacer } from './Spacer'
 // Stepper component has been moved to @tachui/advanced-forms
 // Import it from @tachui/advanced-forms instead of @tachui/core
 // Enhanced component types
-export type {
-  TextFormatting,
-  TextProps,
-} from './Text'
+export type { TextFormatting, TextProps } from './Text'
 // Enhanced SwiftUI Components (Primary Exports)
 export {
   Text, // Enhanced Text is now the primary Text export

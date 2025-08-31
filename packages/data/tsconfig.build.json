@@ -3,7 +3,7 @@
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Node",
     "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -18,17 +18,6 @@
     "rootDir": "./src",
     "downlevelIteration": true
   },
-  "include": ["src/**/*", "src/globals.d.ts"],
-  "exclude": [
-    "dist",
-    "**/*.test.ts",
-    "**/*.bench.ts",
-    "tests",
-    "src/assets/example.ts",
-    "src/assets/test-*.ts",
-    "src/assets/usage-example.ts",
-    "src/modifiers/examples/",
-    "src/components/examples/",
-    "src/plugins/old-backup/"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["dist", "**/*.test.ts", "**/*.bench.ts", "tests"]
 }

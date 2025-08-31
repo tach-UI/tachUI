@@ -35,6 +35,10 @@ export default defineConfig({
         if (id === 'typescript' || id.includes('typescript')) {
           return true
         }
+        // Externalize @tachui packages to avoid circular dependencies
+        if (id.startsWith('@tachui/')) {
+          return true
+        }
         return false
       },
       output: {

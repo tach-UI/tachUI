@@ -3,15 +3,9 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  EnhancedList,
-  For,
-  ForEach,
-  ForEachComponent,
-  List,
-  ListUtils,
-} from '../../src/components/List'
-import { createSignal, flushSync } from '../../src/reactive'
+import { EnhancedList, List, ListUtils } from '../src/list'
+import { For, ForEach, ForEachComponent } from '@tachui/flow-control'
+import { createSignal, flushSync } from '@tachui/core'
 
 // Create a simple mock Text component for testing
 const Text = (content: string) => ({
@@ -23,7 +17,7 @@ const Text = (content: string) => ({
   render: () => [{ type: 'text', text: content }],
 })
 
-import type { ListProps, ListSection, VirtualScrollConfig } from '../../src/components/List'
+import type { ListProps, ListSection, VirtualScrollConfig } from '../src/list'
 
 // Mock DOM environment
 function createMockListElement(): HTMLElement {
@@ -791,7 +785,8 @@ describe('For Component (SolidJS-style compatibility)', () => {
 
       const forComponent = For<TestItem>({
         each: typedData,
-        children: (item: TestItem, _index: number) => Text(`${item.id}: ${item.name}`),
+        children: (item: TestItem, _index: number) =>
+          Text(`${item.id}: ${item.name}`),
       })
 
       expect(forComponent).toBeDefined()
@@ -885,17 +880,23 @@ describe('ForEachComponent Factory Function', () => {
 describe('ListUtils', () => {
   describe('simple', () => {
     it('should create simple list', () => {
-      const list = ListUtils.simple(sampleData, (item, _index) => Text(item.name))
+      const list = ListUtils.simple(sampleData, (item, _index) =>
+        Text(item.name)
+      )
 
       expect(list).toBeDefined()
       expect(typeof list.modifier).toBe('object')
     })
 
     it('should accept additional props', () => {
-      const list = ListUtils.simple(sampleData, (item, _index) => Text(item.name), {
-        separator: true,
-        style: 'grouped',
-      })
+      const list = ListUtils.simple(
+        sampleData,
+        (item, _index) => Text(item.name),
+        {
+          separator: true,
+          style: 'grouped',
+        }
+      )
 
       expect(list).toBeDefined()
     })
@@ -903,7 +904,9 @@ describe('ListUtils', () => {
 
   describe('sectioned', () => {
     it('should create sectioned list', () => {
-      const list = ListUtils.sectioned(sampleSections, (item, _index) => Text(item.name))
+      const list = ListUtils.sectioned(sampleSections, (item, _index) =>
+        Text(item.name)
+      )
 
       expect(list).toBeDefined()
     })
@@ -916,7 +919,11 @@ describe('ListUtils', () => {
         estimatedItemHeight: 50,
       }
 
-      const list = ListUtils.virtual(sampleData, (item, _index) => Text(item.name), virtualConfig)
+      const list = ListUtils.virtual(
+        sampleData,
+        (item, _index) => Text(item.name),
+        virtualConfig
+      )
 
       expect(list).toBeDefined()
     })
