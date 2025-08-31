@@ -4,82 +4,78 @@
  * Checkbox, radio, select, and other selection input components
  */
 
-// TODO: Migrate actual components from @tachui/forms
-// Placeholder implementations for unified package structure
+// Component implementations
+export { Checkbox, CheckboxGroup, Switch } from './Checkbox'
+export { Radio, RadioGroup } from './Radio'
+export { Combobox, MultiSelect, Select } from './Select'
 
-// Base interfaces
-export interface SelectionProps {
-  value?: any
+// Type aliases for convenience
+export type CheckboxGroupProps = {
+  name: string
+  label?: string
+  options: Array<{
+    value: any
+    label: string
+    disabled?: boolean
+  }>
+  value?: any[]
+  defaultValue?: any[]
+  onChange?: (name: string, value: any[], selected: any) => void
+  validation?: any
+  error?: string
+  helperText?: string
   disabled?: boolean
   required?: boolean
+  direction?: 'horizontal' | 'vertical'
+  id?: string
+  [key: string]: any
 }
 
-export interface SelectOption {
-  label: string
-  value: any
+export type RadioGroupProps = {
+  name: string
+  label?: string
+  options: Array<{
+    value: any
+    label: string
+    disabled?: boolean
+  }>
+  value?: any
+  defaultValue?: any
+  onChange?: (name: string, value: any) => void
+  validation?: any
+  error?: string
+  helperText?: string
+  disabled?: boolean
+  required?: boolean
+  direction?: 'horizontal' | 'vertical'
+  id?: string
+  [key: string]: any
 }
 
-// Component classes (stubs)
-export class Checkbox {
-  readonly type = 'checkbox'
-  constructor(public readonly properties: SelectionProps) {}
+// Additional component-specific props
+export interface SwitchProps {
+  name: string
+  label?: string
+  checked?: boolean
+  defaultChecked?: boolean
+  indeterminate?: boolean
+  disabled?: boolean
+  required?: boolean
+  validation?: any
+  onChange?: any
+  onBlur?: any
+  onFocus?: any
+  error?: string
+  helperText?: string
+  size?: 'small' | 'medium' | 'large'
+  [key: string]: any
 }
 
-export class CheckboxGroup {
-  readonly type = 'checkbox-group'
-  constructor(public readonly properties: SelectionProps) {}
-}
-
-export class Switch {
-  readonly type = 'switch'
-  constructor(public readonly properties: SelectionProps) {}
-}
-
-export class Radio {
-  readonly type = 'radio'
-  constructor(public readonly properties: SelectionProps) {}
-}
-
-export class RadioGroup {
-  readonly type = 'radio-group'
-  constructor(public readonly properties: SelectionProps) {}
-}
-
-export class Select {
-  readonly type = 'select'
-  constructor(public readonly properties: SelectionProps) {}
-}
-
-export class MultiSelect {
-  readonly type = 'multi-select'
-  constructor(public readonly properties: SelectionProps) {}
-}
-
-export class Combobox {
-  readonly type = 'combobox'
-  constructor(public readonly properties: SelectionProps) {}
-}
-
-// Convenience functions
-export function checkbox(props: SelectionProps): Checkbox {
-  return new Checkbox(props)
-}
-
-export function checkboxGroup(props: SelectionProps): CheckboxGroup {
-  return new CheckboxGroup(props)
-}
-
-export function switchComponent(props: SelectionProps): Switch {
-  return new Switch(props)
-}
-
-// Type aliases
-export type CheckboxProps = SelectionProps
-export type CheckboxGroupProps = SelectionProps
-export type SwitchProps = SelectionProps
-export type RadioProps = SelectionProps
-export type RadioGroupProps = SelectionProps
-export type SelectProps = SelectionProps
-export type MultiSelectProps = SelectionProps
-export type ComboboxProps = SelectionProps
+// Re-export types for convenience
+export type {
+  CheckboxProps,
+  RadioProps,
+  SelectProps,
+  SelectOption,
+} from '../../types'
 export type OptionValue = any

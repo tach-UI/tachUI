@@ -4,48 +4,17 @@
  * Stepper and Slider components from @tachui/advanced-forms
  */
 
-// TODO: Migrate actual components from @tachui/advanced-forms
-// Placeholder implementations for unified package structure
+// Import and re-export the complete implementations
+export { Stepper } from './Stepper'
+export { Slider } from './Slider'
 
-export interface StepperProps {
-  value?: number
-  min?: number
-  max?: number
-  step?: number
-  disabled?: boolean
-}
+// Export types
+export type { StepperProps, SliderProps } from '../../types'
 
-export interface SliderProps {
-  value?: number
-  min?: number
-  max?: number
-  step?: number
-  disabled?: boolean
-}
-
+// Legacy type aliases for backwards compatibility
+export type StepperValue = number
+export type SliderValue = number
 export interface SliderMark {
   value: number
   label?: string
 }
-
-export class Stepper {
-  readonly type = 'stepper'
-  constructor(public readonly properties: StepperProps) {}
-}
-
-export class Slider {
-  readonly type = 'slider'
-  constructor(public readonly properties: SliderProps) {}
-}
-
-export function stepper(props: StepperProps): Stepper {
-  return new Stepper(props)
-}
-
-export function slider(props: SliderProps): Slider {
-  return new Slider(props)
-}
-
-// Type aliases
-export type StepperValue = number
-export type SliderValue = number

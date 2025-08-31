@@ -14,11 +14,14 @@ export * from './components/text-input'
 // Selection Components (Checkbox, Radio, Select, etc.)
 export * from './components/selection'
 
-// Advanced Components (DatePicker, Stepper, Slider)
+// Advanced Components (Stepper, Slider)
 export * from './components/advanced'
 
 // Date Components (DatePicker with rich calendar interface)
 export * from './components/date-picker'
+
+// State Management
+export * from './state'
 
 // Validation System
 export * from './validation'
@@ -26,5 +29,20 @@ export * from './validation'
 // Utilities and Helpers
 export * from './utils'
 
-// TypeScript Types
-export * from './types'
+// Export specific types to avoid conflicts
+export type {
+  // Core form types
+  ValidationRule,
+  ValidationResult,
+  FieldValidation,
+  FieldState,
+
+  // Component prop types (using specific names to avoid conflicts)
+  TextFieldProps,
+  NumberFieldProps,
+  TextFieldFormatter,
+  TextFieldParser,
+  AutoCapitalization,
+  KeyboardType,
+  ReturnKeyType,
+} from './types'
