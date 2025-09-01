@@ -128,13 +128,6 @@ importers:
         version: 1.6.1(@types/node@20.19.11)(jsdom@23.2.0)
 
   packages/core:
-    dependencies:
-      '@tachui/data':
-        specifier: workspace:*
-        version: link:../data
-      '@tachui/flow-control':
-        specifier: workspace:*
-        version: link:../flow-control
     devDependencies:
       '@playwright/test':
         specifier: ^1.40.0

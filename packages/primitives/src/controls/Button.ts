@@ -8,27 +8,27 @@
 import type {
   ModifiableComponent,
   ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import { createSignal, isSignal, createEffect } from '@tachui/core/reactive'
-import type { Signal } from '@tachui/core/reactive/types'
-import type {
   ComponentInstance,
   ComponentProps,
-} from '@tachui/core/runtime/types'
-import { text, h } from '@tachui/core/runtime/renderer'
-import { withModifiers } from '@tachui/core/components/wrapper'
-import { useLifecycle } from '@tachui/core/lifecycle/hooks'
-import { ColorAsset } from '@tachui/core/assets/ColorAsset'
+  Signal,
+} from '@tachui/core'
+import {
+  createSignal,
+  isSignal,
+  createEffect,
+  text,
+  h,
+  withModifiers,
+  useLifecycle,
+  ColorAsset,
+} from '@tachui/core'
 import type {
   Concatenatable,
   ComponentSegment,
   ConcatenationMetadata,
-} from '@tachui/core/concatenation/types'
-import { ConcatenatedComponent } from '@tachui/core/concatenation/concatenated-component'
-import {
-  ComponentWithCSSClasses,
-  type CSSClassesProps,
-} from '@tachui/core/css-classes'
+} from '@tachui/core'
+import { ConcatenatedComponent } from '@tachui/core'
+import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
 
 /**
  * Button role types following SwiftUI patterns

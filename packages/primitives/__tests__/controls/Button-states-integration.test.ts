@@ -4,9 +4,9 @@
  */
 
 import { describe, expect, it, beforeEach } from 'vitest'
-import { EnhancedButton } from '../../src/components/Button'
-import { ColorAsset } from '../../src/assets/ColorAsset'
-import { createSignal } from '../../src/reactive'
+import { EnhancedButton } from '../../src/controls/Button'
+import { ColorAsset } from '@tachui/core'
+import { createSignal } from '@tachui/core'
 
 describe('Button States Integration', () => {
   let button: EnhancedButton
@@ -14,7 +14,7 @@ describe('Button States Integration', () => {
   beforeEach(() => {
     button = new EnhancedButton({
       title: 'Test Button',
-      variant: 'filled'
+      variant: 'filled',
     })
   })
 
@@ -38,7 +38,7 @@ describe('Button States Integration', () => {
     it('should have unique button IDs', () => {
       const button1 = new EnhancedButton({ title: 'Button 1' })
       const button2 = new EnhancedButton({ title: 'Button 2' })
-      
+
       expect(button1.id).not.toBe(button2.id)
       expect(button1.id).toMatch(/^button-\d+-[a-z0-9]+$/)
     })
@@ -49,11 +49,11 @@ describe('Button States Integration', () => {
       // Normal state
       button['setState']('normal')
       const normalStyles = button.getButtonStyles()
-      
+
       // Pressed state
       button['setState']('pressed')
       const pressedStyles = button.getButtonStyles()
-      
+
       // Focused state
       button['setState']('focused')
       const focusedStyles = button.getButtonStyles()
@@ -68,11 +68,11 @@ describe('Button States Integration', () => {
     it('should apply disabled styles correctly', () => {
       const disabledButton = new EnhancedButton({
         title: 'Disabled Button',
-        isEnabled: false
+        isEnabled: false,
       })
 
       const styles = disabledButton.getButtonStyles()
-      
+
       expect(styles.opacity).toBe('0.6')
       expect(styles.pointerEvents).toBe('none')
     })
@@ -80,11 +80,11 @@ describe('Button States Integration', () => {
     it('should apply loading styles correctly', () => {
       const loadingButton = new EnhancedButton({
         title: 'Loading Button',
-        isLoading: true
+        isLoading: true,
       })
 
       const styles = loadingButton.getButtonStyles()
-      
+
       expect(styles.opacity).toBe('0.6')
       expect(styles.pointerEvents).toBe('none')
     })
@@ -93,12 +93,12 @@ describe('Button States Integration', () => {
       // Disabled should override state
       const disabledButton = new EnhancedButton({
         title: 'Disabled Button',
-        isEnabled: false
+        isEnabled: false,
       })
 
       disabledButton['setState']('pressed')
       const styles = disabledButton.getButtonStyles()
-      
+
       // Should still be disabled styles, not pressed
       expect(styles.opacity).toBe('0.6')
       expect(styles.pointerEvents).toBe('none')
@@ -111,13 +111,13 @@ describe('Button States Integration', () => {
         default: '#FF0000',
         light: '#FF0000',
         dark: '#FF4444',
-        name: 'tintAsset'
+        name: 'tintAsset',
       })
 
       const assetButton = new EnhancedButton({
         title: 'Asset Button',
         tint: tintAsset,
-        variant: 'filled'
+        variant: 'filled',
       })
 
       const styles = assetButton.getButtonStyles()
@@ -129,13 +129,13 @@ describe('Button States Integration', () => {
         default: '#000000',
         light: '#000000',
         dark: '#111111',
-        name: 'bgAsset'
+        name: 'bgAsset',
       })
 
       const assetButton = new EnhancedButton({
         title: 'Asset Button',
         backgroundColor: bgAsset,
-        variant: 'plain' // Plain to not override with variant background
+        variant: 'plain', // Plain to not override with variant background
       })
 
       const styles = assetButton.getButtonStyles()
@@ -147,12 +147,12 @@ describe('Button States Integration', () => {
         default: '#FFFFFF',
         light: '#FFFFFF',
         dark: '#EEEEEE',
-        name: 'fgAsset'
+        name: 'fgAsset',
       })
 
       const assetButton = new EnhancedButton({
         title: 'Asset Button',
-        foregroundColor: fgAsset
+        foregroundColor: fgAsset,
       })
 
       const styles = assetButton.getButtonStyles()
@@ -161,11 +161,11 @@ describe('Button States Integration', () => {
 
     it('should handle reactive signal colors', () => {
       const [colorSignal, setColor] = createSignal('#00FF00')
-      
+
       const signalButton = new EnhancedButton({
         title: 'Signal Button',
         tint: colorSignal,
-        variant: 'filled'
+        variant: 'filled',
       })
 
       let styles = signalButton.getButtonStyles()
@@ -180,7 +180,7 @@ describe('Button States Integration', () => {
     it('should darken colors in pressed state', () => {
       const button = new EnhancedButton({
         title: 'Test Button',
-        variant: 'filled'
+        variant: 'filled',
       })
 
       // Normal state
@@ -213,7 +213,7 @@ describe('Button States Integration', () => {
     it('should resolve ColorAsset colors', () => {
       const asset = ColorAsset.init({
         default: '#654321',
-        name: 'testAsset'
+        name: 'testAsset',
       })
       const resolved = button['resolveColorValue'](asset)
       expect(resolved).toBe('#654321')
@@ -236,7 +236,7 @@ describe('Button States Integration', () => {
         ['minHeight', 'min-height'],
         ['borderRadius', 'border-radius'],
         ['boxShadow', 'box-shadow'],
-        ['pointerEvents', 'pointer-events']
+        ['pointerEvents', 'pointer-events'],
       ]
 
       conversions.forEach(([camelCase, kebabCase]) => {
@@ -251,18 +251,17 @@ describe('Button States Integration', () => {
     })
   })
 
-
   describe('Button Variants with Assets', () => {
     it('should combine variant styles with asset colors', () => {
       const customTint = ColorAsset.init({
         default: '#FF00FF',
-        name: 'customTint'
+        name: 'customTint',
       })
 
       const button = new EnhancedButton({
         title: 'Test',
         tint: customTint,
-        variant: 'outlined'
+        variant: 'outlined',
       })
 
       const styles = button.getButtonStyles()
@@ -274,13 +273,13 @@ describe('Button States Integration', () => {
     it('should prioritize custom colors over variant defaults', () => {
       const customBg = ColorAsset.init({
         default: '#123456',
-        name: 'customBg'
+        name: 'customBg',
       })
 
       const button = new EnhancedButton({
         title: 'Test',
         backgroundColor: customBg,
-        variant: 'filled' // Would normally set its own background
+        variant: 'filled', // Would normally set its own background
       })
 
       const styles = button.getButtonStyles()
@@ -294,13 +293,13 @@ describe('Button States Integration', () => {
         default: '#FF0000',
         light: '#FF0000',
         dark: '#FF4444',
-        name: 'themeAsset'
+        name: 'themeAsset',
       })
 
       const button = new EnhancedButton({
         title: 'Theme Button',
         tint: themeAsset,
-        variant: 'filled'
+        variant: 'filled',
       })
 
       // Mock light theme
@@ -328,7 +327,7 @@ describe('Button States Integration', () => {
   describe('Error Handling and Edge Cases', () => {
     it('should handle missing action gracefully', () => {
       const button = new EnhancedButton({
-        title: 'No Action Button'
+        title: 'No Action Button',
         // No action provided
       })
 
@@ -338,7 +337,7 @@ describe('Button States Integration', () => {
 
     it('should handle malformed ColorAssets gracefully', () => {
       const button = new EnhancedButton({
-        title: 'Test'
+        title: 'Test',
       })
 
       // Test with malformed inputs

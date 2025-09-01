@@ -3,9 +3,15 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { TextProps } from '../../src/components/Text'
-import { EnhancedText, Text, TextFormat, TextStyles, Typography } from '../../src/components/Text'
-import { createSignal } from '../../src/reactive'
+import type { TextProps } from '../../src/display/Text'
+import {
+  EnhancedText,
+  Text,
+  TextFormat,
+  TextStyles,
+  Typography,
+} from '../../src/display/Text'
+import { createSignal } from '@tachui/core'
 
 // Mock DOM environment
 function createMockTextElement(): HTMLElement {
@@ -212,7 +218,7 @@ describe('EnhancedText', () => {
         'justify',
       ]
 
-      alignments.forEach((align) => {
+      alignments.forEach(align => {
         const text = new EnhancedText({
           content: 'Test',
           textAlign: align,
@@ -224,14 +230,11 @@ describe('EnhancedText', () => {
     })
 
     it('should apply text decoration', () => {
-      const decorations: Array<'none' | 'underline' | 'line-through' | 'overline'> = [
-        'none',
-        'underline',
-        'line-through',
-        'overline',
-      ]
+      const decorations: Array<
+        'none' | 'underline' | 'line-through' | 'overline'
+      > = ['none', 'underline', 'line-through', 'overline']
 
-      decorations.forEach((decoration) => {
+      decorations.forEach(decoration => {
         const text = new EnhancedText({
           content: 'Test',
           textDecoration: decoration,
@@ -243,14 +246,11 @@ describe('EnhancedText', () => {
     })
 
     it('should apply text transform', () => {
-      const transforms: Array<'none' | 'uppercase' | 'lowercase' | 'capitalize'> = [
-        'none',
-        'uppercase',
-        'lowercase',
-        'capitalize',
-      ]
+      const transforms: Array<
+        'none' | 'uppercase' | 'lowercase' | 'capitalize'
+      > = ['none', 'uppercase', 'lowercase', 'capitalize']
 
-      transforms.forEach((transform) => {
+      transforms.forEach(transform => {
         const text = new EnhancedText({
           content: 'test',
           textTransform: transform,
@@ -437,11 +437,11 @@ describe('EnhancedText', () => {
     it('should update content when signal changes', () => {
       const [content, setContent] = createSignal('Initial')
       const text = new EnhancedText({ content })
-      
+
       const rendered = text.render()
       expect(rendered).toBeDefined()
       expect(rendered).toHaveLength(1)
-      
+
       // Test signal updates work
       setContent('Updated')
       expect(content()).toBe('Updated')
@@ -462,17 +462,61 @@ describe('EnhancedText', () => {
 
 describe('Typography Presets', () => {
   it('should have correct typography values', () => {
-    expect(Typography.largeTitle).toEqual({ size: 34, weight: '400', lineHeight: 1.2 })
-    expect(Typography.title).toEqual({ size: 28, weight: '400', lineHeight: 1.3 })
-    expect(Typography.title2).toEqual({ size: 22, weight: '400', lineHeight: 1.3 })
-    expect(Typography.title3).toEqual({ size: 20, weight: '400', lineHeight: 1.4 })
-    expect(Typography.headline).toEqual({ size: 17, weight: '600', lineHeight: 1.4 })
-    expect(Typography.body).toEqual({ size: 17, weight: '400', lineHeight: 1.5 })
-    expect(Typography.callout).toEqual({ size: 16, weight: '400', lineHeight: 1.4 })
-    expect(Typography.subheadline).toEqual({ size: 15, weight: '400', lineHeight: 1.4 })
-    expect(Typography.footnote).toEqual({ size: 13, weight: '400', lineHeight: 1.3 })
-    expect(Typography.caption).toEqual({ size: 12, weight: '400', lineHeight: 1.2 })
-    expect(Typography.caption2).toEqual({ size: 11, weight: '400', lineHeight: 1.1 })
+    expect(Typography.largeTitle).toEqual({
+      size: 34,
+      weight: '400',
+      lineHeight: 1.2,
+    })
+    expect(Typography.title).toEqual({
+      size: 28,
+      weight: '400',
+      lineHeight: 1.3,
+    })
+    expect(Typography.title2).toEqual({
+      size: 22,
+      weight: '400',
+      lineHeight: 1.3,
+    })
+    expect(Typography.title3).toEqual({
+      size: 20,
+      weight: '400',
+      lineHeight: 1.4,
+    })
+    expect(Typography.headline).toEqual({
+      size: 17,
+      weight: '600',
+      lineHeight: 1.4,
+    })
+    expect(Typography.body).toEqual({
+      size: 17,
+      weight: '400',
+      lineHeight: 1.5,
+    })
+    expect(Typography.callout).toEqual({
+      size: 16,
+      weight: '400',
+      lineHeight: 1.4,
+    })
+    expect(Typography.subheadline).toEqual({
+      size: 15,
+      weight: '400',
+      lineHeight: 1.4,
+    })
+    expect(Typography.footnote).toEqual({
+      size: 13,
+      weight: '400',
+      lineHeight: 1.3,
+    })
+    expect(Typography.caption).toEqual({
+      size: 12,
+      weight: '400',
+      lineHeight: 1.2,
+    })
+    expect(Typography.caption2).toEqual({
+      size: 11,
+      weight: '400',
+      lineHeight: 1.1,
+    })
   })
 })
 
@@ -581,7 +625,9 @@ describe('TextFormat Utilities', () => {
     })
 
     it('should apply strikethrough formatting', () => {
-      const text = TextFormat.formatted('Strikethrough', { strikethrough: true })
+      const text = TextFormat.formatted('Strikethrough', {
+        strikethrough: true,
+      })
       expect(text).toBeDefined()
     })
 
@@ -635,7 +681,10 @@ describe('TextFormat Utilities', () => {
 
 describe('Integration Tests', () => {
   it('should combine typography preset with formatting', () => {
-    const text = TextStyles.Headline('Important Notice').modifier.padding(16).margin(8).build()
+    const text = TextStyles.Headline('Important Notice')
+      .modifier.padding(16)
+      .margin(8)
+      .build()
 
     expect(text).toBeDefined()
   })

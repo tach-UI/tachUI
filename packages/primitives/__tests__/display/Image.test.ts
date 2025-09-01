@@ -3,15 +3,15 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ImageLoadingState, ImageProps } from '../../src/components/Image'
+import type { ImageLoadingState, ImageProps } from '../../src/display/Image'
 import {
   EnhancedImage,
   Image,
   ImageContentModes,
   ImageStates,
   ImageUtils,
-} from '../../src/components/Image'
-import { createSignal } from '../../src/reactive'
+} from '../../src/display/Image'
+import { createSignal } from '@tachui/core'
 
 // Mock DOM environment
 function createMockImage(): HTMLImageElement {
@@ -115,12 +115,13 @@ describe('EnhancedImage', () => {
     })
 
     it('should handle external loading state signal', () => {
-      const [loadingState, _setLoadingState] = createSignal<ImageLoadingState>('loading')
+      const [loadingState, _setLoadingState] =
+        createSignal<ImageLoadingState>('loading')
       const image = new EnhancedImage({
         src: 'test.jpg',
         loadingState,
       })
-      
+
       const elements = image.render()
       expect(elements).toBeDefined()
       expect(elements).toHaveLength(1)
@@ -451,7 +452,10 @@ describe('ImageUtils', () => {
 
   describe('progressive', () => {
     it('should create progressive loading image', () => {
-      const image = ImageUtils.progressive('low-quality.jpg', 'high-quality.jpg')
+      const image = ImageUtils.progressive(
+        'low-quality.jpg',
+        'high-quality.jpg'
+      )
 
       expect(image).toBeDefined()
       expect(typeof image.modifier).toBe('object')

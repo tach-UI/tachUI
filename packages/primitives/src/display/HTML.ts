@@ -6,13 +6,9 @@
  * use the main component exports (Button, Image, Text, etc.).
  */
 
-import type { ModifiableComponent } from '@tachui/core/modifiers/types'
-import { h, text } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-} from '@tachui/core/runtime/types'
-import { withModifiers } from '@tachui/core/components/wrapper'
+import { h, text } from '@tachui/core'
+import type { ComponentInstance, ComponentProps } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
 
 /**
  * Simple element component for basic HTML elements

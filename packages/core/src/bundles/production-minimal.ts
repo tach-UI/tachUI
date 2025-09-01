@@ -17,16 +17,9 @@ export * from '../runtime/dom-bridge'
 export * from '../runtime/component'
 export * from '../runtime/props'
 
-// Basic components only
-export * from '../components/Text'
-export * from '../components/Button'
-export * from '../components/Image'
-export * from '../components/BasicInput'
-export * from '../components/Spacer'
-export * from '../components/Show'
-
-// Layout containers (from wrapper)
-export { HStack, VStack, ZStack } from '../components/wrapper'
+// Basic components moved to @tachui/primitives
+// Import Text, Button, Image, BasicInput, Spacer, HStack, VStack, ZStack from @tachui/primitives
+// Show moved to @tachui/flow-control
 
 // Essential modifiers
 export * from '../modifiers/core'
@@ -58,7 +51,7 @@ export {
 export { LinearGradient } from '../gradients'
 
 // Additional components needed by intro
-export { Divider } from '../components/Divider'
+// Divider moved to @tachui/primitives
 export { ScrollView } from '../components/ScrollView'
 
 // Constants (for dimensions)

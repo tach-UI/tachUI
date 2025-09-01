@@ -17,16 +17,9 @@ export * from '../runtime/dom-bridge'
 export * from '../runtime/component'
 export * from '../runtime/props'
 
-// Basic components only
-export * from '../components/Text'
-export * from '../components/Button'
-export * from '../components/Image'
-export * from '../components/BasicInput'
-export * from '../components/Spacer'
-export * from '../components/Show'
-
-// Layout containers
-export { HStack, VStack, ZStack } from '../components/wrapper'
+// Basic components moved to @tachui/primitives
+// Import Text, Button, Image, BasicInput, Spacer, HStack, VStack, ZStack from @tachui/primitives
+// Show moved to @tachui/flow-control
 
 // Essential modifiers
 export * from '../modifiers/core'
@@ -89,7 +82,8 @@ export const BUNDLE_INFO = {
     'HStack',
     'VStack',
     'Spacer',
-    'Show',
+    // Basic components moved to @tachui/primitives
+    // 'Show', // moved to @tachui/flow-control
   ],
   useCase: 'Calculator-style apps, landing pages, simple UIs',
   treeShakingHints: {

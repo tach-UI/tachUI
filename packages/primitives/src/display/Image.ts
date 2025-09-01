@@ -5,36 +5,24 @@
  * responsive sizing, and advanced image handling capabilities.
  */
 
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import { createEffect, createSignal } from '@tachui/core/reactive'
-import type { Signal } from '@tachui/core/reactive/types'
-import { h } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-} from '@tachui/core/runtime/types'
-import { withModifiers } from '@tachui/core/components/wrapper'
-import { ImageAsset } from '@tachui/core/assets/ImageAsset'
-// import { getThemeSignal } from '@tachui/core/reactive/theme'
-import { useLifecycle } from '@tachui/core/lifecycle/hooks'
-import { registerComponentWithLifecycleHooks } from '@tachui/core/runtime/dom-bridge'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { createEffect, createSignal } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h } from '@tachui/core'
+import type { ComponentInstance, ComponentProps } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
+import { ImageAsset } from '@tachui/core'
+// import { getThemeSignal } from '@tachui/core'
+import { useLifecycle } from '@tachui/core'
+import { registerComponentWithLifecycleHooks } from '@tachui/core'
 import type {
   Concatenatable,
   ComponentSegment,
   ConcatenationMetadata,
-} from '@tachui/core/concatenation/types'
-import { ConcatenatedComponent } from '@tachui/core/concatenation/concatenated-component'
-import {
-  processElementOverride,
-  type ElementOverrideProps,
-} from '@tachui/core/runtime/element-override'
-import {
-  ComponentWithCSSClasses,
-  type CSSClassesProps,
-} from '@tachui/core/css-classes'
+} from '@tachui/core'
+import { ConcatenatedComponent } from '@tachui/core'
+import { processElementOverride, type ElementOverrideProps } from '@tachui/core'
+import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
 
 /**
  * Image loading state

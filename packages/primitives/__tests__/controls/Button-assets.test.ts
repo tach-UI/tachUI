@@ -4,9 +4,9 @@
  */
 
 import { describe, expect, it, beforeEach } from 'vitest'
-import { EnhancedButton } from '../../src/components/Button'
-import { ColorAsset } from '../../src/assets/ColorAsset'
-import { createSignal } from '../../src/reactive'
+import { EnhancedButton } from '../../src/controls/Button'
+import { ColorAsset } from '@tachui/core'
+import { createSignal } from '@tachui/core'
 
 describe('Button Asset Integration', () => {
   let testColorAsset: ColorAsset
@@ -18,14 +18,14 @@ describe('Button Asset Integration', () => {
       default: '#FF0000',
       light: '#FF0000',
       dark: '#FF4444',
-      name: 'testColor'
+      name: 'testColor',
     })
 
     brandColorAsset = ColorAsset.init({
       default: '#007AFF',
       light: '#007AFF',
       dark: '#0A84FF',
-      name: 'brandColor'
+      name: 'brandColor',
     })
   })
 
@@ -33,7 +33,7 @@ describe('Button Asset Integration', () => {
     it('should accept ColorAsset as tint color', () => {
       const button = new EnhancedButton({
         title: 'Test Button',
-        tint: testColorAsset
+        tint: testColorAsset,
       })
 
       expect(button.props.tint).toBe(testColorAsset)
@@ -42,7 +42,7 @@ describe('Button Asset Integration', () => {
     it('should resolve ColorAsset tint color correctly', () => {
       const button = new EnhancedButton({
         title: 'Test Button',
-        tint: testColorAsset
+        tint: testColorAsset,
       })
 
       const resolvedColor = button['resolveColorValue'](button.props.tint)
@@ -52,7 +52,7 @@ describe('Button Asset Integration', () => {
     it('should accept ColorAsset as background color', () => {
       const button = new EnhancedButton({
         title: 'Test Button',
-        backgroundColor: testColorAsset
+        backgroundColor: testColorAsset,
       })
 
       expect(button.props.backgroundColor).toBe(testColorAsset)
@@ -61,7 +61,7 @@ describe('Button Asset Integration', () => {
     it('should accept ColorAsset as foreground color', () => {
       const button = new EnhancedButton({
         title: 'Test Button',
-        foregroundColor: testColorAsset
+        foregroundColor: testColorAsset,
       })
 
       expect(button.props.foregroundColor).toBe(testColorAsset)
@@ -72,25 +72,29 @@ describe('Button Asset Integration', () => {
         default: '#000000',
         light: '#000000',
         dark: '#111111',
-        name: 'bg'
+        name: 'bg',
       })
 
       const fgAsset = ColorAsset.init({
         default: '#FFFFFF',
         light: '#FFFFFF',
         dark: '#EEEEEE',
-        name: 'fg'
+        name: 'fg',
       })
 
       const button = new EnhancedButton({
         title: 'Test Button',
         backgroundColor: bgAsset,
         foregroundColor: fgAsset,
-        tint: testColorAsset
+        tint: testColorAsset,
       })
 
-      expect(button['resolveColorValue'](button.props.backgroundColor)).toBe('#000000')
-      expect(button['resolveColorValue'](button.props.foregroundColor)).toBe('#FFFFFF')
+      expect(button['resolveColorValue'](button.props.backgroundColor)).toBe(
+        '#000000'
+      )
+      expect(button['resolveColorValue'](button.props.foregroundColor)).toBe(
+        '#FFFFFF'
+      )
       expect(button['resolveColorValue'](button.props.tint)).toBe('#FF0000')
     })
   })
@@ -98,14 +102,14 @@ describe('Button Asset Integration', () => {
   describe('Reactive Asset Updates', () => {
     it('should handle signal tint colors alongside ColorAssets', () => {
       const [colorSignal, setColorSignal] = createSignal('#00FF00')
-      
+
       const button = new EnhancedButton({
         title: 'Test Button',
-        tint: colorSignal
+        tint: colorSignal,
       })
 
       expect(button['resolveColorValue'](button.props.tint)).toBe('#00FF00')
-      
+
       setColorSignal('#FF00FF')
       expect(button['resolveColorValue'](button.props.tint)).toBe('#FF00FF')
     })
@@ -114,7 +118,7 @@ describe('Button Asset Integration', () => {
       const button = new EnhancedButton({
         title: 'Test Button',
         tint: testColorAsset,
-        variant: 'filled'
+        variant: 'filled',
       })
 
       const styles = button.getButtonStyles()
@@ -125,7 +129,7 @@ describe('Button Asset Integration', () => {
       const button = new EnhancedButton({
         title: 'Test Button',
         backgroundColor: testColorAsset,
-        variant: 'plain'
+        variant: 'plain',
       })
 
       const styles = button.getButtonStyles()
@@ -136,14 +140,13 @@ describe('Button Asset Integration', () => {
       const button = new EnhancedButton({
         title: 'Test Button',
         foregroundColor: testColorAsset,
-        variant: 'plain'
+        variant: 'plain',
       })
 
       const styles = button.getButtonStyles()
       expect(styles.color).toBe('#FF0000') // Custom foreground color
     })
   })
-
 
   describe('Color Resolution Method', () => {
     it('should resolve string colors', () => {
@@ -177,7 +180,7 @@ describe('Button Asset Integration', () => {
 
       const button = new EnhancedButton({
         title: 'Test Button',
-        tint: testColorAsset
+        tint: testColorAsset,
       })
 
       const resolvedColor = button['resolveColorValue'](button.props.tint)
@@ -192,7 +195,7 @@ describe('Button Asset Integration', () => {
         title: 'Test Button',
         tint: testColorAsset,
         backgroundColor: brandColorAsset,
-        variant: 'outlined'
+        variant: 'outlined',
       })
 
       const styles = button.getButtonStyles()

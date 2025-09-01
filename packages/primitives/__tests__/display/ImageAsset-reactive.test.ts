@@ -3,9 +3,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { EnhancedImage } from '../../src/components/Image'
-import { ImageAsset } from '../../src/assets/ImageAsset'
-import { setTheme } from '../../src/reactive/theme'
+import { EnhancedImage } from '../../src/display/Image'
+import { ImageAsset } from '@tachui/core'
+import { setTheme } from '@tachui/core'
 
 describe('Image Component - Reactive ImageAsset Behavior', () => {
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe('Image Component - Reactive ImageAsset Behavior', () => {
       default: 'logo-light.png',
       light: 'logo-light.png',
       dark: 'logo-dark.png',
-      name: 'testLogo'
+      name: 'testLogo',
     })
     const imageComponent = new EnhancedImage({ src: imageAsset })
 
@@ -47,7 +47,7 @@ describe('Image Component - Reactive ImageAsset Behavior', () => {
       default: 'logo-light.png',
       light: 'logo-light.png',
       dark: 'logo-dark.png',
-      name: 'testLogo'
+      name: 'testLogo',
     })
 
     // Test light theme
@@ -64,7 +64,7 @@ describe('Image Component - Reactive ImageAsset Behavior', () => {
       default: 'logo-light.png',
       light: 'logo-light.png',
       dark: 'logo-dark.png',
-      name: 'testLogo'
+      name: 'testLogo',
     })
     const imageComponent = new EnhancedImage({ src: imageAsset })
 
@@ -73,7 +73,7 @@ describe('Image Component - Reactive ImageAsset Behavior', () => {
 
     // After render, if using ImageAsset, cleanup should have handlers
     imageComponent.render()
-    
+
     // The setupImageAssetReactivity method should add cleanup handlers
     // (We can't easily test the exact cleanup without mocking DOM elements)
     expect(imageComponent.cleanup).toBeDefined()

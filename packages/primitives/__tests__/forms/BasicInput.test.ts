@@ -3,16 +3,23 @@
  */
 
 import { describe, expect, it, vi } from 'vitest'
-import type { BasicInputProps, BasicInputType } from '../../src/components/BasicInput'
-import { BasicInput, BasicInputStyles, BasicInputUtils } from '../../src/components/BasicInput'
-import { createSignal } from '../../src/reactive'
+import type {
+  BasicInputProps,
+  BasicInputType,
+} from '../../src/forms/BasicInput'
+import {
+  BasicInput,
+  BasicInputStyles,
+  BasicInputUtils,
+} from '../../src/forms/BasicInput'
+import { createSignal } from '@tachui/core'
 
 // Mock the reactive system for testing
-vi.mock('../../src/reactive', async () => {
-  const actual = await vi.importActual('../../src/reactive')
+vi.mock('@tachui/core', async () => {
+  const actual = await vi.importActual('@tachui/core')
   return {
     ...actual,
-    createEffect: vi.fn((fn) => fn()), // Immediately execute effects for testing
+    createEffect: vi.fn(fn => fn()), // Immediately execute effects for testing
   }
 })
 
@@ -129,9 +136,16 @@ describe('BasicInput Component', () => {
     })
 
     it('supports all input types', () => {
-      const inputTypes: BasicInputType[] = ['text', 'email', 'password', 'search', 'tel', 'url']
+      const inputTypes: BasicInputType[] = [
+        'text',
+        'email',
+        'password',
+        'search',
+        'tel',
+        'url',
+      ]
 
-      inputTypes.forEach((inputType) => {
+      inputTypes.forEach(inputType => {
         const [text] = createSignal('')
         const basicInput = BasicInput({ text, inputType })
 
@@ -339,7 +353,11 @@ describe('BasicInput Component', () => {
       const [searchText, setSearchText] = createSignal('')
       const onSearch = vi.fn()
 
-      const searchProps = BasicInputUtils.search(searchText, setSearchText, onSearch)
+      const searchProps = BasicInputUtils.search(
+        searchText,
+        setSearchText,
+        onSearch
+      )
 
       expect(searchProps.text).toBe(searchText)
       expect(searchProps.setText).toBe(setSearchText)
@@ -362,7 +380,10 @@ describe('BasicInput Component', () => {
     it('creates password input configuration', () => {
       const [passwordText, setPasswordText] = createSignal('')
 
-      const passwordProps = BasicInputUtils.password(passwordText, setPasswordText)
+      const passwordProps = BasicInputUtils.password(
+        passwordText,
+        setPasswordText
+      )
 
       expect(passwordProps.text).toBe(passwordText)
       expect(passwordProps.setText).toBe(setPasswordText)

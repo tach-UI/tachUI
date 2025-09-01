@@ -6,23 +6,13 @@
  * of the Forms plugin validation and formatting system.
  */
 
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import { createEffect, isSignal } from '@tachui/core/reactive'
-import type { Signal } from '@tachui/core/reactive/types'
-import { h } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-  DOMNode,
-} from '@tachui/core/runtime/types'
-import { withModifiers } from '@tachui/core/components/wrapper'
-import {
-  ComponentWithCSSClasses,
-  type CSSClassesProps,
-} from '@tachui/core/css-classes'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { createEffect, isSignal } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h } from '@tachui/core'
+import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
+import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
 
 /**
  * BasicInput supported input types

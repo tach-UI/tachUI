@@ -40,7 +40,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ci": "npm run test:run",
-    "type-check": "echo 'Type checking temporarily disabled during extraction - using runtime validation from @tachui/core'",
+    "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
     "lint": "oxlint src"
   },

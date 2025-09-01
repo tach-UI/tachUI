@@ -6,8 +6,8 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import type { SpacerProps } from '../../src/components/Spacer'
-import { Spacer, SpacerComponent } from '../../src/components/Spacer'
+import type { SpacerProps } from '../../src/layout/Spacer'
+import { Spacer, SpacerComponent } from '../../src/layout/Spacer'
 
 describe('SpacerComponent', () => {
   describe('Constructor and Properties', () => {
@@ -97,7 +97,9 @@ describe('SpacerComponent', () => {
 
       // Core flex properties should be the same
       expect(result1.props.style.flexGrow).toBe(result2.props.style.flexGrow)
-      expect(result1.props.style.flexShrink).toBe(result2.props.style.flexShrink)
+      expect(result1.props.style.flexShrink).toBe(
+        result2.props.style.flexShrink
+      )
       expect(result1.props.style.flexBasis).toBe(result2.props.style.flexBasis)
       expect(result1.props.style.alignSelf).toBe(result2.props.style.alignSelf)
     })
@@ -316,7 +318,7 @@ describe('Spacer Edge Cases', () => {
       }
 
       // All spacers should have unique IDs
-      const ids = spacers.map((s) => s.id)
+      const ids = spacers.map(s => s.id)
       const uniqueIds = [...new Set(ids)]
       expect(uniqueIds.length).toBe(100)
     })

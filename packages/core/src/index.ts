@@ -82,18 +82,7 @@ export * from './compiler'
 // Component system (Phase 4-5)
 export * from './components'
 
-// Primitives compatibility layer (will migrate to @tachui/primitives)
-export * from './primitives-compat'
-
-// Flow control components imported from @tachui/flow-control
-export { Show, When, Unless, type ShowProps } from './components/Show'
-export {
-  ForEach,
-  ForEachComponent,
-  For,
-  type ForEachProps,
-  type ForProps,
-} from '@tachui/flow-control'
+// Primitives moved to @tachui/primitives - import directly from that package
 
 // Modifier system compatibility layer (will migrate to @tachui/modifiers)
 export * from './modifiers-compat'
@@ -139,6 +128,7 @@ export type {
 export * from './reactive'
 // Runtime system (Phase 3)
 export * from './runtime'
+export { registerComponentWithLifecycleHooks } from './runtime/dom-bridge'
 
 // CSS Classes system
 export * from './css-classes'

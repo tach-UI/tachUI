@@ -3,14 +3,14 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ButtonProps, ButtonTheme } from '../../src/components/Button'
+import type { ButtonProps, ButtonTheme } from '../../src/controls/Button'
 import {
   Button,
   ButtonStyles,
   defaultButtonTheme,
   EnhancedButton,
-} from '../../src/components/Button'
-import { createSignal } from '../../src/reactive'
+} from '../../src/controls/Button'
+import { createSignal } from '@tachui/core'
 
 // Mock DOM environment
 function createMockButtonElement(): HTMLElement {
@@ -196,7 +196,10 @@ describe('EnhancedButton', () => {
     })
 
     it('should handle borderedProminent variant', () => {
-      const button = new EnhancedButton({ title: 'Test', variant: 'borderedProminent' })
+      const button = new EnhancedButton({
+        title: 'Test',
+        variant: 'borderedProminent',
+      })
       button.render()
 
       const styles = button.getButtonStyles()
@@ -255,7 +258,11 @@ describe('EnhancedButton', () => {
 
   describe('Button Roles', () => {
     it('should handle destructive role with filled variant', () => {
-      const button = new EnhancedButton({ title: 'Delete', role: 'destructive', variant: 'filled' })
+      const button = new EnhancedButton({
+        title: 'Delete',
+        role: 'destructive',
+        variant: 'filled',
+      })
       button.render()
 
       const styles = button.getButtonStyles()
@@ -263,7 +270,11 @@ describe('EnhancedButton', () => {
     })
 
     it('should handle cancel role with filled variant', () => {
-      const button = new EnhancedButton({ title: 'Cancel', role: 'cancel', variant: 'filled' })
+      const button = new EnhancedButton({
+        title: 'Cancel',
+        role: 'cancel',
+        variant: 'filled',
+      })
       button.render()
 
       const styles = button.getButtonStyles()
@@ -271,7 +282,11 @@ describe('EnhancedButton', () => {
     })
 
     it('should handle none role with filled variant', () => {
-      const button = new EnhancedButton({ title: 'Normal', role: 'none', variant: 'filled' })
+      const button = new EnhancedButton({
+        title: 'Normal',
+        role: 'none',
+        variant: 'filled',
+      })
       button.render()
 
       const styles = button.getButtonStyles()
@@ -291,7 +306,11 @@ describe('EnhancedButton', () => {
 
   describe('Button Tinting', () => {
     it('should apply static tint color with filled variant', () => {
-      const button = new EnhancedButton({ title: 'Test', tint: '#ff0000', variant: 'filled' })
+      const button = new EnhancedButton({
+        title: 'Test',
+        tint: '#ff0000',
+        variant: 'filled',
+      })
       button.render()
 
       const styles = button.getButtonStyles()
@@ -300,7 +319,11 @@ describe('EnhancedButton', () => {
 
     it('should apply signal tint color with filled variant', () => {
       const [tint] = createSignal('#00ff00')
-      const button = new EnhancedButton({ title: 'Test', tint, variant: 'filled' })
+      const button = new EnhancedButton({
+        title: 'Test',
+        tint,
+        variant: 'filled',
+      })
       button.render()
 
       const styles = button.getButtonStyles()
@@ -326,19 +349,28 @@ describe('EnhancedButton', () => {
     })
 
     it('should handle action errors gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
       const action = vi.fn().mockRejectedValue(new Error('Test error'))
       const button = new EnhancedButton({ title: 'Test', action })
 
       await button.handlePress()
-      expect(consoleError).toHaveBeenCalledWith('Button action failed:', expect.any(Error))
+      expect(consoleError).toHaveBeenCalledWith(
+        'Button action failed:',
+        expect.any(Error)
+      )
 
       consoleError.mockRestore()
     })
 
     it('should not call action when disabled', async () => {
       const action = vi.fn()
-      const button = new EnhancedButton({ title: 'Test', action, isEnabled: false })
+      const button = new EnhancedButton({
+        title: 'Test',
+        action,
+        isEnabled: false,
+      })
 
       await button.handlePress()
       expect(action).not.toHaveBeenCalled()
@@ -346,7 +378,11 @@ describe('EnhancedButton', () => {
 
     it('should not call action when loading', async () => {
       const action = vi.fn()
-      const button = new EnhancedButton({ title: 'Test', action, isLoading: true })
+      const button = new EnhancedButton({
+        title: 'Test',
+        action,
+        isLoading: true,
+      })
 
       await button.handlePress()
       expect(action).not.toHaveBeenCalled()
@@ -502,7 +538,10 @@ describe('EnhancedButton', () => {
         },
       }
 
-      const button = new EnhancedButton({ title: 'Test', variant: 'filled' }, customTheme)
+      const button = new EnhancedButton(
+        { title: 'Test', variant: 'filled' },
+        customTheme
+      )
       button.render()
 
       const styles = button.getButtonStyles()
@@ -519,7 +558,10 @@ describe('EnhancedButton', () => {
         },
       }
 
-      const button = new EnhancedButton({ title: 'Test', size: 'small' }, customTheme)
+      const button = new EnhancedButton(
+        { title: 'Test', size: 'small' },
+        customTheme
+      )
       button.render()
 
       const styles = button.getButtonStyles()
@@ -626,9 +668,18 @@ describe('Default Button Theme', () => {
   })
 
   it('should have correct typography values', () => {
-    expect(defaultButtonTheme.typography.small).toEqual({ size: 14, weight: '500' })
-    expect(defaultButtonTheme.typography.medium).toEqual({ size: 16, weight: '500' })
-    expect(defaultButtonTheme.typography.large).toEqual({ size: 18, weight: '600' })
+    expect(defaultButtonTheme.typography.small).toEqual({
+      size: 14,
+      weight: '500',
+    })
+    expect(defaultButtonTheme.typography.medium).toEqual({
+      size: 16,
+      weight: '500',
+    })
+    expect(defaultButtonTheme.typography.large).toEqual({
+      size: 18,
+      weight: '600',
+    })
   })
 })
 
@@ -665,8 +716,7 @@ describe('Integration Tests', () => {
 
   it('should support textCase modifiers', () => {
     const button = Button('hello world', vi.fn())
-      .modifier
-      .textCase('uppercase')
+      .modifier.textCase('uppercase')
       .build()
 
     expect(button).toBeDefined()
@@ -674,7 +724,9 @@ describe('Integration Tests', () => {
     expect(button.modifiers.length).toBeGreaterThan(0)
 
     // Check that typography modifier exists with correct transform
-    const typographyModifier = button.modifiers.find(m => m.type === 'typography')
+    const typographyModifier = button.modifiers.find(
+      m => m.type === 'typography'
+    )
     expect(typographyModifier).toBeDefined()
     expect(typographyModifier?.properties.transform).toBe('uppercase')
 
@@ -682,13 +734,14 @@ describe('Integration Tests', () => {
     const rendered = button.render()
     const buttonElement = rendered[0]
     expect(buttonElement.modifiers).toBeDefined()
-    expect(buttonElement.modifiers.some((m: any) => m.type === 'typography')).toBe(true)
+    expect(
+      buttonElement.modifiers.some((m: any) => m.type === 'typography')
+    ).toBe(true)
   })
 
   it('should support chaining typography modifiers with other modifiers', () => {
     const button = Button('styled button', vi.fn())
-      .modifier
-      .textCase('capitalize')
+      .modifier.textCase('capitalize')
       .fontSize(18)
       .padding(10)
       .backgroundColor('#007AFF')
@@ -697,13 +750,15 @@ describe('Integration Tests', () => {
     expect(button.modifiers.length).toBeGreaterThan(3)
 
     // Should have typography modifier for textCase
-    const typographyModifier = button.modifiers.find(m => m.type === 'typography')
+    const typographyModifier = button.modifiers.find(
+      m => m.type === 'typography'
+    )
     expect(typographyModifier).toBeDefined()
     expect(typographyModifier?.properties.transform).toBe('capitalize')
 
     // Should have appearance modifier for fontSize
-    const fontSizeModifier = button.modifiers.find(m => 
-      m.type === 'appearance' && m.properties.font?.size === 18
+    const fontSizeModifier = button.modifiers.find(
+      m => m.type === 'appearance' && m.properties.font?.size === 18
     )
     expect(fontSizeModifier).toBeDefined()
   })

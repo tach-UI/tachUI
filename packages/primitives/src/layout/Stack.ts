@@ -4,29 +4,13 @@
  * SwiftUI-inspired VStack, HStack, and ZStack components with modifier support
  */
 
-import type {
-  ComponentInstance,
-  ComponentProps,
-  DOMNode,
-} from '@tachui/core/runtime/types'
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import {
-  createModifiableComponent,
-  createModifierBuilder,
-} from '@tachui/core/modifiers'
-import {
-  ComponentWithCSSClasses,
-  type CSSClassesProps,
-} from '@tachui/core/css-classes'
-import {
-  processElementOverride,
-  type ElementOverrideProps,
-} from '@tachui/core/runtime/element-override'
-import { useLifecycle } from '@tachui/core/lifecycle/hooks'
-import { registerComponentWithLifecycleHooks } from '@tachui/core/runtime/dom-bridge'
+import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { createModifiableComponent, createModifierBuilder } from '@tachui/core'
+import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
+import { processElementOverride, type ElementOverrideProps } from '@tachui/core'
+import { useLifecycle } from '@tachui/core'
+import { registerComponentWithLifecycleHooks } from '@tachui/core'
 
 /**
  * VStack component props
@@ -126,7 +110,6 @@ export class LayoutComponent
   public mounted = false
   public cleanup: (() => void)[] = []
   private effectiveTag: string
-  private validationResult: any
 
   constructor(
     public props: ComponentProps & ElementOverrideProps & CSSClassesProps,
@@ -150,7 +133,6 @@ export class LayoutComponent
       this.props.element
     )
     this.effectiveTag = override.tag
-    this.validationResult = override.validation
 
     // Set up lifecycle hooks to process child components
     useLifecycle(this, {
@@ -320,12 +302,6 @@ export class LayoutComponent
           },
           children: vstackFlattened,
           // Add component metadata for semantic role processing
-          componentMetadata: {
-            originalType: 'VStack',
-            overriddenTo:
-              this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
-            validationResult: this.validationResult,
-          },
         }
 
         return [element]
@@ -361,12 +337,6 @@ export class LayoutComponent
             ...(debugLabel && { 'data-tachui-label': debugLabel }),
           },
           children: hstackFlattened,
-          componentMetadata: {
-            originalType: 'HStack',
-            overriddenTo:
-              this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
-            validationResult: this.validationResult,
-          },
         }
 
         return [element]
@@ -433,12 +403,6 @@ export class LayoutComponent
               },
             },
           })),
-          componentMetadata: {
-            originalType: 'ZStack',
-            overriddenTo:
-              this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
-            validationResult: this.validationResult,
-          },
         }
 
         return [element]
@@ -464,8 +428,8 @@ export class LayoutComponent
 
     // Cleanup children
     this.children.forEach(child => {
-      if (child.dispose) {
-        child.dispose()
+      if ((child as any).dispose) {
+        ;(child as any).dispose()
       }
     })
   }

@@ -21,6 +21,7 @@ export interface ForEachProps<T = any> {
   data: T[] | Signal<T[]>
   children: (item: T, index: number) => ComponentInstance | ComponentInstance[]
   getItemId?: (item: T, index: number) => string | number
+  fallback?: ComponentInstance
   key?: string | number
   ref?: ComponentRef
 }
@@ -35,6 +36,7 @@ interface ForEachInternalProps<T = any> extends ComponentProps {
     index: number
   ) => ComponentInstance | ComponentInstance[]
   getItemId?: (item: T, index: number) => string | number
+  fallback?: ComponentInstance
 }
 
 /**
@@ -51,7 +53,7 @@ export interface ForProps<T = any> {
 /**
  * ForEach component implementation with self-contained reactivity
  */
-export class ForEach<T = any>
+export class ForEachComponent<T = any>
   implements ComponentInstance<ForEachInternalProps<T>>
 {
   public readonly type = 'component' as const
@@ -89,6 +91,14 @@ export class ForEach<T = any>
    */
   private renderChildren(): DOMNode[] {
     const data = this.dataSignal()
+
+    // Handle empty data with fallback
+    if (!data || data.length === 0) {
+      if (this.props.fallback) {
+        return this.flattenRenderResult(this.props.fallback.render())
+      }
+      return []
+    }
 
     return data.flatMap((item, index) => {
       const children = this.props.renderItem(item, index)
@@ -191,12 +201,12 @@ export class ForEach<T = any>
 }
 
 /**
- * Create ForEach component
+ * Create ForEach component (factory function)
  */
-export function ForEachComponent<T = any>(
+export function ForEach<T = any>(
   props: ForEachProps<T>
 ): ComponentInstance<ForEachInternalProps<T>> {
-  return new ForEach(props)
+  return new ForEachComponent(props)
 }
 
 /**
@@ -217,9 +227,10 @@ export function For<T = any>(
   const forEachProps: ForEachProps<T> = {
     data: props.each,
     children: props.children,
+    fallback: props.fallback,
     key: props.key,
     ref: props.ref,
   }
 
-  return new ForEach(forEachProps)
+  return new ForEachComponent(forEachProps)
 }

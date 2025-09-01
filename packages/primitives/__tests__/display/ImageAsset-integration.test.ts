@@ -3,9 +3,9 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { Image } from '../../src/components/Image'
-import { ImageAsset } from '../../src/assets/ImageAsset'
-import { setTheme } from '../../src/reactive/theme'
+import { Image } from '../../src/display/Image'
+import { ImageAsset } from '@tachui/core'
+import { setTheme } from '@tachui/core'
 
 describe('Image Component - ImageAsset Integration', () => {
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe('Image Component - ImageAsset Integration', () => {
       default: 'logo-light.png',
       light: 'logo-light.png',
       dark: 'logo-dark.png',
-      name: 'testLogo'
+      name: 'testLogo',
     })
     const imageComponent = Image(imageAsset, { alt: 'Test Logo' })
 
@@ -31,12 +31,12 @@ describe('Image Component - ImageAsset Integration', () => {
       default: 'light.jpg',
       light: 'light.jpg',
       dark: 'dark.jpg',
-      name: 'testImage'
+      name: 'testImage',
     })
     const imageComponent = Image(imageAsset)
 
     // Access the underlying wrapped component to check src conversion
-    const wrappedComponent = (imageComponent as any)
+    const wrappedComponent = imageComponent as any
     expect(wrappedComponent).toBeDefined()
     // The ImageAsset should be converted to a reactive signal internally
     expect(imageAsset.resolve()).toBe('light.jpg') // Should resolve to light theme
@@ -47,7 +47,7 @@ describe('Image Component - ImageAsset Integration', () => {
       default: 'logo-light.png',
       light: 'logo-light.png',
       dark: 'logo-dark.png',
-      name: 'testLogo'
+      name: 'testLogo',
     })
     const imageComponent = Image(imageAsset)
 
@@ -64,7 +64,7 @@ describe('Image Component - ImageAsset Integration', () => {
 
   it('should work with string src normally', () => {
     const imageComponent = Image('static-image.jpg', { alt: 'Static Image' })
-    
+
     expect(imageComponent).toBeDefined()
     expect(imageComponent.type).toBe('component')
     // String sources should work as expected

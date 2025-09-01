@@ -5,10 +5,43 @@
  */
 
 import { beforeEach, describe, expect, test } from 'vitest'
-import { Show, ShowComponent, Unless, When } from '../../src/components/Show'
-import { Text } from '../../src/components/Text'
-import { createSignal } from '../../src/reactive'
-import type { ComponentInstance } from '../../src/runtime/types'
+import { Show, ShowComponent, Unless, When } from '../../src/conditional/Show'
+import { createSignal } from '@tachui/core'
+
+// Mock Text component for testing
+const Text = (content: string) => ({
+  type: 'component' as const,
+  render: () => [
+    {
+      type: 'element' as const,
+      tag: 'span',
+      props: {},
+      children: [{ type: 'text' as const, text: content }],
+    },
+  ],
+  props: { content },
+  children: [],
+  cleanup: [],
+  id: `text-${Date.now()}`,
+  modifier: {
+    build: () => ({
+      type: 'component' as const,
+      render: () => [
+        {
+          type: 'element' as const,
+          tag: 'span',
+          props: {},
+          children: [{ type: 'text' as const, text: content }],
+        },
+      ],
+      props: { content },
+      children: [],
+      cleanup: [],
+      id: `text-${Date.now()}`,
+    }),
+  },
+})
+import type { ComponentInstance } from '@tachui/core'
 
 describe('Show Component', () => {
   let mockText: ComponentInstance

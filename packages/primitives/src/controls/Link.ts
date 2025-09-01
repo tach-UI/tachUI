@@ -5,21 +5,17 @@
  * iOS 14.0+ equivalent for web applications.
  */
 
-import { isSignal, createComputed } from '@tachui/core/reactive'
-import type { Signal } from '@tachui/core/reactive/types'
-import { h } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-  DOMNode,
-} from '@tachui/core/runtime/types'
-import { withModifiers } from '@tachui/core/components/wrapper'
+import { isSignal, createComputed } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h } from '@tachui/core'
+import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
 import type {
   Concatenatable,
   ComponentSegment,
   ConcatenationMetadata,
-} from '@tachui/core/concatenation/types'
-import { ConcatenatedComponent } from '@tachui/core/concatenation/concatenated-component'
+} from '@tachui/core'
+import { ConcatenatedComponent } from '@tachui/core'
 import { Text } from '../display/Text'
 
 /**

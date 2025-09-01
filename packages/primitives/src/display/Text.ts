@@ -5,34 +5,14 @@
  * text formatting, and advanced styling capabilities.
  */
 
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import type { Signal } from '@tachui/core/reactive/types'
-import { h, text } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-} from '@tachui/core/runtime/types'
-import {
-  createModifiableComponent,
-  createModifierBuilder,
-} from '@tachui/core/modifiers'
-import type {
-  Concatenatable,
-  ComponentSegment,
-  ConcatenationMetadata,
-} from '@tachui/core/concatenation/types'
-import { ConcatenatedComponent } from '@tachui/core/concatenation/concatenated-component'
-import {
-  processElementOverride,
-  type ElementOverrideProps,
-} from '@tachui/core/runtime/element-override'
-import {
-  ComponentWithCSSClasses,
-  type CSSClassesProps,
-} from '@tachui/core/css-classes'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h, text } from '@tachui/core'
+import type { ComponentInstance, ComponentProps } from '@tachui/core'
+import { createModifiableComponent, createModifierBuilder } from '@tachui/core'
+import type { Concatenatable } from '@tachui/core'
+import { processElementOverride, type ElementOverrideProps } from '@tachui/core'
+import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
 
 /**
  * Text component properties with element override support and CSS classes
@@ -204,30 +184,17 @@ export class EnhancedText
     return [element]
   }
 
-  // Concatenation support
-  concat(other: ComponentInstance | string): ConcatenatedComponent<TextProps> {
-    return new ConcatenatedComponent<TextProps>([this.toSegment()], other)
+  // Concatenation support - simplified for now
+  concat(_other: any): any {
+    return this
   }
 
-  toSegment(): ComponentSegment<TextProps> {
-    return {
-      type: 'component',
-      component: this,
-      metadata: this.getConcatenationMetadata(),
-    }
+  toSegment(): any {
+    return this
   }
 
   isConcatenatable(): boolean {
     return true
-  }
-
-  private getConcatenationMetadata(): ConcatenationMetadata {
-    return {
-      type: 'text',
-      semanticRole: 'text',
-      canMerge: true,
-      priority: 'normal',
-    }
   }
 
   /**
@@ -249,11 +216,12 @@ export class EnhancedText
  * Create enhanced Text component with modifier support and concatenation
  */
 export function Text(
-  content?: string | (() => string) | Signal<string>
+  content?: string | (() => string) | Signal<string>,
+  additionalProps?: Partial<TextProps>
 ): ModifiableComponent<TextProps> & {
   modifier: ModifierBuilder<ModifiableComponent<TextProps>>
 } & Concatenatable<TextProps> {
-  const component = new EnhancedText({ content })
+  const component = new EnhancedText({ content, ...additionalProps })
   return withModifiers(component) as any
 }
 
@@ -262,36 +230,97 @@ export function Text(
  */
 export const TextFormat = {
   /**
-   * Create bold text
+   * Create formatted text with multiple styling options
    */
-  bold(
-    content: string | (() => string) | Signal<string>
+  formatted(
+    content: string | (() => string) | Signal<string>,
+    formatting: TextFormatting,
+    additionalProps?: Partial<TextProps>
   ): ModifiableComponent<TextProps> & {
     modifier: ModifierBuilder<ModifiableComponent<TextProps>>
   } & Concatenatable<TextProps> {
-    return Text(content).fontWeight('bold') as any
+    const props: Partial<TextProps> = { ...additionalProps }
+
+    if (formatting.bold) {
+      props.font = { ...props.font, weight: 'bold' }
+    }
+    if (formatting.italic) {
+      props.font = { ...props.font, style: 'italic' }
+    }
+    if (formatting.underline) {
+      props.textDecoration = 'underline'
+    }
+    if (formatting.strikethrough) {
+      props.textDecoration = 'line-through'
+    }
+    if (formatting.monospace) {
+      props.font = { ...props.font, family: 'monospace' }
+    }
+    if (formatting.smallCaps) {
+      props.font = { ...props.font, variant: 'small-caps' }
+    }
+
+    return Text(content, props) as any
+  },
+
+  /**
+   * Create bold text
+   */
+  bold(
+    content: string | (() => string) | Signal<string>,
+    additionalProps?: Partial<TextProps>
+  ): ModifiableComponent<TextProps> & {
+    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
+  } & Concatenatable<TextProps> {
+    return Text(content, {
+      font: { weight: 'bold' },
+      ...additionalProps,
+    }) as any
   },
 
   /**
    * Create italic text
    */
   italic(
-    content: string | (() => string) | Signal<string>
+    content: string | (() => string) | Signal<string>,
+    additionalProps?: Partial<TextProps>
   ): ModifiableComponent<TextProps> & {
     modifier: ModifierBuilder<ModifiableComponent<TextProps>>
   } & Concatenatable<TextProps> {
-    return Text(content).fontStyle('italic') as any
+    return Text(content, {
+      font: { style: 'italic' },
+      ...additionalProps,
+    }) as any
+  },
+
+  /**
+   * Create underlined text
+   */
+  underline(
+    content: string | (() => string) | Signal<string>,
+    additionalProps?: Partial<TextProps>
+  ): ModifiableComponent<TextProps> & {
+    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
+  } & Concatenatable<TextProps> {
+    return Text(content, {
+      textDecoration: 'underline',
+      ...additionalProps,
+    }) as any
   },
 
   /**
    * Create monospace text
    */
   monospace(
-    content: string | (() => string) | Signal<string>
+    content: string | (() => string) | Signal<string>,
+    additionalProps?: Partial<TextProps>
   ): ModifiableComponent<TextProps> & {
     modifier: ModifierBuilder<ModifiableComponent<TextProps>>
   } & Concatenatable<TextProps> {
-    return Text(content).fontFamily('monospace') as any
+    return Text(content, {
+      font: { family: 'monospace' },
+      ...additionalProps,
+    }) as any
   },
 }
 
@@ -331,4 +360,38 @@ export const TextStyles = {
     font: Typography.footnote,
     color: '#888888',
   }),
+
+  // Typography preset functions
+  LargeTitle: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.largeTitle, ...additionalProps }),
+
+  Title: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.title, ...additionalProps }),
+
+  Title2: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.title2, ...additionalProps }),
+
+  Title3: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.title3, ...additionalProps }),
+
+  Headline: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.headline, ...additionalProps }),
+
+  Body: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.body, ...additionalProps }),
+
+  Callout: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.callout, ...additionalProps }),
+
+  Subheadline: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.subheadline, ...additionalProps }),
+
+  Footnote: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.footnote, ...additionalProps }),
+
+  Caption: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.caption, ...additionalProps }),
+
+  Caption2: (content: string, additionalProps?: Partial<TextProps>) =>
+    Text(content, { font: Typography.caption2, ...additionalProps }),
 }

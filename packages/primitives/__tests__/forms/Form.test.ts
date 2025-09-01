@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { BasicForm } from '../../src/components/Form'
-import { createSignal } from '../../src/reactive'
+import { BasicForm } from '../../src/forms/BasicForm'
+import { createSignal } from '@tachui/core'
 
 // Mock console.warn to suppress any deprecation warnings in tests
 vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -27,7 +27,7 @@ vi.mock('../../runtime/renderer', () => ({
     props: props || {},
     children: children.flat().filter(Boolean),
   })),
-  text: vi.fn((content) => ({
+  text: vi.fn(content => ({
     type: 'text',
     content,
   })),

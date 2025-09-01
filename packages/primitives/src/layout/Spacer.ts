@@ -5,24 +5,11 @@
  * along the main axis of its container. Behaves like SwiftUI.Spacer.
  */
 
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import { h } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-  DOMNode,
-} from '@tachui/core/runtime/types'
-import {
-  createModifiableComponent,
-  createModifierBuilder,
-} from '@tachui/core/modifiers'
-import {
-  ComponentWithCSSClasses,
-  type CSSClassesProps,
-} from '@tachui/core/css-classes'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { h } from '@tachui/core'
+import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
+import { createModifiableComponent, createModifierBuilder } from '@tachui/core'
+import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
 
 /**
  * Spacer component properties with CSS classes support

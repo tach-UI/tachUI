@@ -5,22 +5,12 @@
  * Simple, clean line separator with customizable styling.
  */
 
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import { createEffect, isSignal } from '@tachui/core/reactive'
-import type { Signal } from '@tachui/core/reactive/types'
-import { h } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-  DOMNode,
-} from '@tachui/core/runtime/types'
-import {
-  createModifiableComponent,
-  createModifierBuilder,
-} from '@tachui/core/modifiers'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { createEffect, isSignal } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h } from '@tachui/core'
+import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
+import { createModifiableComponent, createModifierBuilder } from '@tachui/core'
 
 /**
  * Divider component properties
@@ -51,6 +41,10 @@ export interface DividerTheme {
     light: string
     medium: string
     heavy: string
+    primary: string
+    secondary: string
+    subtle: string
+    prominent: string
   }
   thickness: {
     thin: number
@@ -70,6 +64,10 @@ export const defaultDividerTheme: DividerTheme = {
     light: '#F0F0F0',
     medium: '#D1D1D1',
     heavy: '#A0A0A0',
+    primary: '#007AFF',
+    secondary: '#5AC8FA',
+    subtle: '#F2F2F7',
+    prominent: '#1C1C1E',
   },
   thickness: {
     thin: 1,
@@ -179,6 +177,8 @@ export class DividerComponent implements ComponentInstance<DividerProps> {
     const element = h('div', {
       className: `tachui-divider tachui-divider-${isVertical ? 'vertical' : 'horizontal'}`,
       style: this.getBaseStyles(),
+      role: 'separator',
+      'aria-orientation': isVertical ? 'vertical' : 'horizontal',
     })
 
     // Set up reactive updates if needed
@@ -244,11 +244,94 @@ export const DividerUtils = {
    * Create a vertical divider
    */
   vertical(
-    props: Omit<DividerProps, 'orientation'> = {}
+    lengthOrProps?: number | string | Omit<DividerProps, 'orientation'>,
+    thickness?: number
   ): ModifiableComponent<DividerProps> & {
     modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
   } {
-    return Divider({ ...props, orientation: 'vertical' })
+    if (typeof lengthOrProps === 'object') {
+      return Divider({ ...lengthOrProps, orientation: 'vertical' })
+    }
+    return Divider({
+      orientation: 'vertical',
+      length: lengthOrProps,
+      thickness,
+    })
+  },
+
+  /**
+   * Create a thin divider
+   */
+  thin(color?: string): ModifiableComponent<DividerProps> & {
+    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
+  } {
+    return Divider({ thickness: defaultDividerTheme.thickness.thin, color })
+  },
+
+  /**
+   * Create a medium divider
+   */
+  medium(color?: string): ModifiableComponent<DividerProps> & {
+    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
+  } {
+    return Divider({ thickness: defaultDividerTheme.thickness.medium, color })
+  },
+
+  /**
+   * Create a thick divider
+   */
+  thick(color?: string): ModifiableComponent<DividerProps> & {
+    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
+  } {
+    return Divider({ thickness: defaultDividerTheme.thickness.thick, color })
+  },
+
+  /**
+   * Create a dashed divider
+   */
+  dashed(
+    color?: string,
+    thickness?: number
+  ): ModifiableComponent<DividerProps> & {
+    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
+  } {
+    return Divider({ style: 'dashed', color, thickness })
+  },
+
+  /**
+   * Create a dotted divider
+   */
+  dotted(
+    color?: string,
+    thickness?: number
+  ): ModifiableComponent<DividerProps> & {
+    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
+  } {
+    return Divider({ style: 'dotted', color, thickness })
+  },
+
+  /**
+   * Create a subtle divider
+   */
+  subtle(color?: string): ModifiableComponent<DividerProps> & {
+    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
+  } {
+    return Divider({
+      color: color || defaultDividerTheme.colors.light,
+      opacity: 0.6,
+    })
+  },
+
+  /**
+   * Create a prominent divider
+   */
+  prominent(color?: string): ModifiableComponent<DividerProps> & {
+    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
+  } {
+    return Divider({
+      color: color || defaultDividerTheme.colors.heavy,
+      thickness: defaultDividerTheme.thickness.medium,
+    })
   },
 }
 
@@ -256,6 +339,15 @@ export const DividerUtils = {
  * Divider styles utility
  */
 export const DividerStyles = {
+  theme: defaultDividerTheme,
+
+  colors: {
+    primary: '#007AFF',
+    success: '#34C759',
+    warning: '#FF9500',
+    danger: '#FF3B30',
+  },
+
   thin: (color?: string) => ({
     thickness: defaultDividerTheme.thickness.thin,
     color,
@@ -268,4 +360,29 @@ export const DividerStyles = {
     thickness: defaultDividerTheme.thickness.thick,
     color,
   }),
+
+  createTheme: (overrides: Partial<DividerTheme>): DividerTheme => ({
+    colors: {
+      ...defaultDividerTheme.colors,
+      ...overrides.colors,
+    },
+    thickness: {
+      ...defaultDividerTheme.thickness,
+      ...overrides.thickness,
+    },
+    spacing: {
+      ...defaultDividerTheme.spacing,
+      ...overrides.spacing,
+    },
+  }),
+
+  // Color presets
+  primary: (color?: string) =>
+    Divider({ color: color || defaultDividerTheme.colors.primary }),
+  secondary: (color?: string) =>
+    Divider({ color: color || defaultDividerTheme.colors.secondary }),
+  subtle: (color?: string) =>
+    Divider({ color: color || defaultDividerTheme.colors.subtle }),
+  prominent: (color?: string) =>
+    Divider({ color: color || defaultDividerTheme.colors.prominent }),
 }

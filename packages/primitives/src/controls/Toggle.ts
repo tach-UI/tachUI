@@ -5,19 +5,12 @@
  * smooth animations, and multiple style variants.
  */
 
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import { createEffect, createSignal, isSignal } from '@tachui/core/reactive'
-import type { Signal } from '@tachui/core/reactive/types'
-import { h, text } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-  DOMNode,
-} from '@tachui/core/runtime/types'
-import { withModifiers } from '@tachui/core/components/wrapper'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { createEffect, createSignal, isSignal } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h, text } from '@tachui/core'
+import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
 
 /**
  * Toggle component properties

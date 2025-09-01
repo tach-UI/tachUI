@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Picker } from '../../src/components/Picker'
-import { createSignal } from '../../src/reactive'
+import { Picker } from '../../src/controls/Picker'
+import { createSignal } from '@tachui/core'
 
 vi.mock('../../runtime/renderer', () => ({
   DOMRenderer: vi.fn().mockImplementation(() => ({
@@ -13,7 +13,7 @@ vi.mock('../../runtime/renderer', () => ({
     props: props || {},
     children: children.flat().filter(Boolean),
   })),
-  text: vi.fn((content) => ({
+  text: vi.fn(content => ({
     type: 'text',
     content,
   })),

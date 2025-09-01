@@ -10,9 +10,9 @@ import {
   type DividerProps,
   DividerStyles,
   DividerUtils,
-} from '../../src/components/Divider'
-import { createSignal } from '../../src/reactive'
-import { DOMRenderer } from '../../src/runtime/renderer'
+} from '../../src/layout/Divider'
+import { createSignal } from '@tachui/core'
+import { DOMRenderer } from '@tachui/core'
 
 // Mock DOM element creation for testing styles
 const _createMockElement = () => ({
@@ -230,21 +230,27 @@ describe('Divider Component', () => {
     it('should create thin divider', () => {
       const thinDivider = DividerUtils.thin('#CCCCCC')
 
-      expect(thinDivider.props.thickness).toBe(DividerStyles.theme.thickness.thin)
+      expect(thinDivider.props.thickness).toBe(
+        DividerStyles.theme.thickness.thin
+      )
       expect(thinDivider.props.color).toBe('#CCCCCC')
     })
 
     it('should create medium divider', () => {
       const mediumDivider = DividerUtils.medium('#AAAAAA')
 
-      expect(mediumDivider.props.thickness).toBe(DividerStyles.theme.thickness.medium)
+      expect(mediumDivider.props.thickness).toBe(
+        DividerStyles.theme.thickness.medium
+      )
       expect(mediumDivider.props.color).toBe('#AAAAAA')
     })
 
     it('should create thick divider', () => {
       const thickDivider = DividerUtils.thick('#888888')
 
-      expect(thickDivider.props.thickness).toBe(DividerStyles.theme.thickness.thick)
+      expect(thickDivider.props.thickness).toBe(
+        DividerStyles.theme.thickness.thick
+      )
       expect(thickDivider.props.color).toBe('#888888')
     })
 
@@ -289,8 +295,12 @@ describe('Divider Component', () => {
     it('should create prominent divider', () => {
       const prominentDivider = DividerUtils.prominent()
 
-      expect(prominentDivider.props.color).toBe(DividerStyles.theme.colors.heavy)
-      expect(prominentDivider.props.thickness).toBe(DividerStyles.theme.thickness.medium)
+      expect(prominentDivider.props.color).toBe(
+        DividerStyles.theme.colors.heavy
+      )
+      expect(prominentDivider.props.thickness).toBe(
+        DividerStyles.theme.thickness.medium
+      )
     })
   })
 
@@ -335,7 +345,9 @@ describe('Divider Component', () => {
       expect(customTheme.thickness.thin).toBe(0.5)
       // Should preserve other default values
       expect(customTheme.colors.light).toBe(DividerStyles.theme.colors.light)
-      expect(customTheme.thickness.medium).toBe(DividerStyles.theme.thickness.medium)
+      expect(customTheme.thickness.medium).toBe(
+        DividerStyles.theme.thickness.medium
+      )
     })
 
     it('should provide color presets', () => {
@@ -348,7 +360,10 @@ describe('Divider Component', () => {
 
   describe('Integration with Modifier System', () => {
     it('should work with modifier system', () => {
-      const dividerWithModifiers = Divider().modifier.margin(20).opacity(0.8).build()
+      const dividerWithModifiers = Divider()
+        .modifier.margin(20)
+        .opacity(0.8)
+        .build()
 
       expect(dividerWithModifiers).toBeDefined()
       expect(dividerWithModifiers.modifiers).toBeDefined()
@@ -361,7 +376,9 @@ describe('Divider Component', () => {
         thickness: 2,
       })
 
-      const modifiedDivider = originalDivider.modifier.backgroundColor('#FFFFFF').build()
+      const modifiedDivider = originalDivider.modifier
+        .backgroundColor('#FFFFFF')
+        .build()
 
       expect(modifiedDivider.props.color).toBe('#FF0000')
       expect(modifiedDivider.props.thickness).toBe(2)

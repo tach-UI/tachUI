@@ -10,18 +10,12 @@
  * multi-step forms), use the Form component from @tachui/forms.
  */
 
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import { createEffect, createSignal } from '@tachui/core/reactive'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { createEffect, createSignal } from '@tachui/core'
 // Signal type import removed - using function signatures instead
-import { h, text } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-} from '@tachui/core/runtime/types'
-import { withModifiers } from '@tachui/core/components/wrapper'
+import { h, text } from '@tachui/core'
+import type { ComponentInstance, ComponentProps } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
 
 /**
  * BasicForm component properties

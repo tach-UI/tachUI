@@ -5,18 +5,12 @@
  * variants for selecting from a list of options.
  */
 
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-} from '@tachui/core/modifiers/types'
-import { createSignal, isSignal } from '@tachui/core/reactive'
-import type { Signal } from '@tachui/core/reactive/types'
-import { h, text } from '@tachui/core/runtime'
-import type {
-  ComponentInstance,
-  ComponentProps,
-} from '@tachui/core/runtime/types'
-import { withModifiers } from '@tachui/core/components/wrapper'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { createSignal, isSignal } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h, text } from '@tachui/core'
+import type { ComponentInstance, ComponentProps } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
 
 /**
  * Picker option structure
