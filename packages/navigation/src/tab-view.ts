@@ -7,17 +7,13 @@
 
 import type { ComponentInstance } from '@tachui/core'
 import {
-  Button,
   createEffect,
   createSignal,
   getSignalImpl,
-  HStack,
-  HTML,
   isBinding,
   isSignal,
-  Text,
-  VStack,
 } from '@tachui/core'
+import { Button, HStack, HTML, Text, VStack } from '@tachui/primitives'
 import { useNavigationEnvironmentContext } from './navigation-environment'
 import type {
   NavigationComponent,

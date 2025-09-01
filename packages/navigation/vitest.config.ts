@@ -14,7 +14,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@tachui/core': path.resolve(__dirname, '../../packages/core/src/index.ts'),
+      '@tachui/core': path.resolve(
+        __dirname,
+        '../../packages/core/src/index.ts'
+      ),
+      '@tachui/primitives': path.resolve(
+        __dirname,
+        '../../packages/primitives/src/index.ts'
+      ),
     },
   },
 })

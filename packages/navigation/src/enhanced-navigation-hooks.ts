@@ -6,13 +6,21 @@
  */
 
 // import type { ComponentInstance } from '@tachui/core'
-import { createSignal, createEffect, HTML } from '@tachui/core'
+import { createSignal, createEffect } from '@tachui/core'
+import { HTML } from '@tachui/primitives'
 import {
   useNavigationEnvironmentContext,
   useNavigationEnvironmentRouter,
 } from './navigation-environment'
-import { getCurrentNavigationModifiers, onNavigationModifierChange } from './navigation-modifiers'
-import type { NavigationContext, NavigationRouter, NavigationDestination } from './types'
+import {
+  getCurrentNavigationModifiers,
+  onNavigationModifierChange,
+} from './navigation-modifiers'
+import type {
+  NavigationContext,
+  NavigationRouter,
+  NavigationDestination,
+} from './types'
 
 /**
  * Enhanced navigation state interface
@@ -54,7 +62,9 @@ export interface NavigationActions {
  * const canGoBack = navigation.state.canGoBack
  * ```
  */
-export function useNavigation(): NavigationActions & { state: EnhancedNavigationState } {
+export function useNavigation(): NavigationActions & {
+  state: EnhancedNavigationState
+} {
   // Get navigation context from environment
   const context = useNavigationEnvironmentContext()
   // const router = useNavigationEnvironmentRouter()
@@ -70,7 +80,7 @@ export function useNavigation(): NavigationActions & { state: EnhancedNavigation
         canGoForward: false,
         currentPath: '/',
         stackSize: 0,
-        isNavigating: isNavigating()
+        isNavigating: isNavigating(),
       }
     }
 
@@ -79,11 +89,13 @@ export function useNavigation(): NavigationActions & { state: EnhancedNavigation
       canGoForward: context.canGoForward,
       currentPath: context.currentPath,
       stackSize: context.stack.length,
-      isNavigating: isNavigating()
+      isNavigating: isNavigating(),
     }
   }
 
-  const [navigationState, setNavigationState] = createSignal(createNavigationState())
+  const [navigationState, setNavigationState] = createSignal(
+    createNavigationState()
+  )
 
   // Update navigation state when context changes
   if (context) {
@@ -197,12 +209,12 @@ export function useNavigation(): NavigationActions & { state: EnhancedNavigation
       if (context && context.canGoBack) {
         context.pop()
       }
-    }
+    },
   }
 
   return {
     ...navigationActions,
-    state: navigationState()
+    state: navigationState(),
   }
 }
 
@@ -247,10 +259,12 @@ export function useNavigationBar(): {
   setBackButtonTitle: (title: string) => void
   setBarHidden: (hidden: boolean) => void
 } {
-  const [configuration, setConfiguration] = createSignal(getCurrentNavigationModifiers())
+  const [configuration, setConfiguration] = createSignal(
+    getCurrentNavigationModifiers()
+  )
 
   // Listen for navigation modifier changes
-  const _unsubscribe = onNavigationModifierChange((config) => {
+  const _unsubscribe = onNavigationModifierChange(config => {
     setConfiguration({ ...config })
   })
 
@@ -289,7 +303,7 @@ export function useNavigationBar(): {
       if (context) {
         ;(context as any).setBarHidden?.(hidden)
       }
-    }
+    },
   }
 }
 
@@ -322,7 +336,7 @@ export function useNavigationAnimation(): {
       } finally {
         setIsAnimating(false)
       }
-    }
+    },
   }
 }
 
@@ -346,7 +360,7 @@ export function useNavigationPath(): {
       push: () => console.warn('useNavigationPath: No navigation context'),
       pop: () => console.warn('useNavigationPath: No navigation context'),
       popTo: () => console.warn('useNavigationPath: No navigation context'),
-      clear: () => console.warn('useNavigationPath: No navigation context')
+      clear: () => console.warn('useNavigationPath: No navigation context'),
     }
   }
 
@@ -354,7 +368,8 @@ export function useNavigationPath(): {
     currentPath: context.currentPath,
     push: (segment: string) => {
       // This would use NavigationPath to manage segments
-      const destination = () => HTML.div({ children: `Segment: ${segment}` }).modifier.build()
+      const destination = () =>
+        HTML.div({ children: `Segment: ${segment}` }).modifier.build()
       context.push(destination, `${context.currentPath}/${segment}`)
     },
     pop: () => context.pop(),
@@ -363,7 +378,7 @@ export function useNavigationPath(): {
       const targetPath = `/${segment}`
       context.popTo(targetPath)
     },
-    clear: () => context.popToRoot()
+    clear: () => context.popToRoot(),
   }
 }
 
@@ -425,7 +440,7 @@ export const NavigationHookUtils = {
 
       action(...args)
     }
-  }
+  },
 }
 
 /**
@@ -450,6 +465,6 @@ export function useNavigationCleanup(): {
         }
       })
       cleanupCallbacks.length = 0
-    }
+    },
   }
 }

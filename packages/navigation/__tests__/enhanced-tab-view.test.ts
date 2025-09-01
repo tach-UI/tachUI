@@ -2,14 +2,23 @@
  * Enhanced TabView Tests
  */
 
-import { createSignal, Text } from '../../core/src'
+import { createSignal } from '@tachui/core'
+import { Text } from '@tachui/primitives'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   EnhancedTabView,
   HierarchicalTabView,
   isEnhancedTabView,
-  type TabSection,
-} from '../src/enhanced-tab-view'
+} from '../src/tab-view-compatibility'
+
+// Types for compatibility
+type TabSection = {
+  id: string
+  title: string
+  icon?: string
+  tabs: any[]
+  collapsed?: boolean
+}
 import { createTabItem } from '../src/tab-view'
 
 // Mock DOM environment
@@ -142,7 +151,9 @@ describe('Enhanced TabView', () => {
 
     it('should limit floating tabs with overflow', () => {
       const manyTabs = Array.from({ length: 8 }, (_, i) =>
-        createTabItem(`tab${i}`, `Tab ${i}`, Text(`Content ${i}`), { icon: '📄' })
+        createTabItem(`tab${i}`, `Tab ${i}`, Text(`Content ${i}`), {
+          icon: '📄',
+        })
       )
 
       const tabView = EnhancedTabView(manyTabs, {
@@ -206,7 +217,9 @@ describe('Enhanced TabView', () => {
 
       // Should select a different visible tab
       expect(coordinator.activeTabId).not.toBe('search')
-      expect(coordinator.visibleTabs.some((tab) => tab.id === coordinator.activeTabId)).toBe(true)
+      expect(
+        coordinator.visibleTabs.some(tab => tab.id === coordinator.activeTabId)
+      ).toBe(true)
     })
 
     it('should validate tab reordering with invalid IDs', () => {
@@ -218,7 +231,7 @@ describe('Enhanced TabView', () => {
 
       const visibleTabs = coordinator.visibleTabs
       expect(visibleTabs).toHaveLength(2) // Only valid IDs
-      expect(visibleTabs.map((tab) => tab.id)).toEqual(['search', 'home'])
+      expect(visibleTabs.map(tab => tab.id)).toEqual(['search', 'home'])
     })
   })
 
@@ -288,7 +301,9 @@ describe('Enhanced TabView', () => {
       // Try to add duplicate
       coordinator.addTab(createTabItem('home', 'Duplicate Home', HomeView()))
 
-      expect(consoleWarn).toHaveBeenCalledWith('Tab with ID "home" already exists')
+      expect(consoleWarn).toHaveBeenCalledWith(
+        'Tab with ID "home" already exists'
+      )
       expect(coordinator.tabs).toHaveLength(4) // Should not increase
 
       consoleWarn.mockRestore()
@@ -297,7 +312,9 @@ describe('Enhanced TabView', () => {
     it('should handle selecting disabled tab', () => {
       const disabledTabs = [
         ...sampleTabs,
-        createTabItem('disabled', 'Disabled', Text('Disabled'), { disabled: true }),
+        createTabItem('disabled', 'Disabled', Text('Disabled'), {
+          disabled: true,
+        }),
       ]
 
       const tabView = EnhancedTabView(disabledTabs)
@@ -341,7 +358,9 @@ describe('Hierarchical TabView', () => {
       icon: '⚙️',
       tabs: [
         createTabItem('profile', 'Profile', Text('Profile'), { icon: '👤' }),
-        createTabItem('preferences', 'Preferences', Text('Preferences'), { icon: '🔧' }),
+        createTabItem('preferences', 'Preferences', Text('Preferences'), {
+          icon: '🔧',
+        }),
       ],
       collapsed: false,
     },
@@ -359,7 +378,7 @@ describe('Hierarchical TabView', () => {
     const coordinator = (hierarchicalView as any).tabCoordinator
 
     expect(coordinator.tabs).toHaveLength(4)
-    expect(coordinator.tabs.map((tab) => tab.id)).toEqual([
+    expect(coordinator.tabs.map(tab => tab.id)).toEqual([
       'home',
       'search',
       'profile',
@@ -414,7 +433,9 @@ describe('CSS Integration', () => {
   })
 
   it('should not add duplicate styles', () => {
-    mockDOM.document.querySelector.mockReturnValue({ id: 'enhanced-tab-view-styles' })
+    mockDOM.document.querySelector.mockReturnValue({
+      id: 'enhanced-tab-view-styles',
+    })
     const appendChild = vi.spyOn(mockDOM.document.head, 'appendChild')
 
     EnhancedTabView(sampleTabs)
@@ -434,7 +455,10 @@ describe('Responsive Behavior', () => {
       style: 'sidebar-adaptable',
     })
 
-    expect(addEventListener).toHaveBeenCalledWith('resize', expect.any(Function))
+    expect(addEventListener).toHaveBeenCalledWith(
+      'resize',
+      expect.any(Function)
+    )
   })
 
   it('should clean up resize listeners', () => {
@@ -458,6 +482,9 @@ describe('Responsive Behavior', () => {
       cleanupFunction()
     }
 
-    expect(removeEventListener).toHaveBeenCalledWith('resize', expect.any(Function))
+    expect(removeEventListener).toHaveBeenCalledWith(
+      'resize',
+      expect.any(Function)
+    )
   })
 })

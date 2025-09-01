@@ -29,8 +29,9 @@ class NavigationEnvironmentStore {
     router: null,
     stackId: null,
   }
-  
-  private _listeners: Set<(state: NavigationEnvironmentState) => void> = new Set()
+
+  private _listeners: Set<(state: NavigationEnvironmentState) => void> =
+    new Set()
   private _contextStack: NavigationContext[] = []
 
   /**
@@ -53,8 +54,9 @@ class NavigationEnvironmentStore {
     }
 
     // Update current state to the top of the stack
-    const currentContext = this._contextStack[this._contextStack.length - 1] || null
-    
+    const currentContext =
+      this._contextStack[this._contextStack.length - 1] || null
+
     this._currentState = {
       context: currentContext,
       router: currentContext ? createNavigationRouter(currentContext) : null,
@@ -140,7 +142,9 @@ const navigationEnvironment = new NavigationEnvironmentStore()
  * Set the current navigation context (internal use)
  * @internal
  */
-export function _setNavigationEnvironmentContext(context: NavigationContext | null): void {
+export function _setNavigationEnvironmentContext(
+  context: NavigationContext | null
+): void {
   navigationEnvironment.setContext(context)
 }
 
@@ -163,12 +167,12 @@ export function useNavigationEnvironmentRouter(): NavigationRouter | null {
  */
 export function useNavigationEnvironmentState(): [
   () => NavigationEnvironmentState,
-  (listener: (state: NavigationEnvironmentState) => void) => () => void
+  (listener: (state: NavigationEnvironmentState) => void) => () => void,
 ] {
   const [state, setState] = createSignal(navigationEnvironment.currentState)
 
   const subscribe = (listener: (state: NavigationEnvironmentState) => void) => {
-    return navigationEnvironment.subscribe((newState) => {
+    return navigationEnvironment.subscribe(newState => {
       setState(newState)
       listener(newState)
     })
@@ -179,7 +183,7 @@ export function useNavigationEnvironmentState(): [
 
 /**
  * Navigation environment provider component
- * 
+ *
  * This would ideally integrate with TachUI's environment system,
  * but for now provides a wrapper that ensures child components
  * have access to the navigation context.
@@ -194,22 +198,22 @@ export function NavigationEnvironmentProvider(
   // Create a wrapper component that provides the environment
   const provider = {
     id: `nav-env-${Date.now()}`,
-    type: 'NavigationEnvironmentProvider',
+    type: 'component',
     props: {
       navigationContext: context,
       _environmentProvider: true,
     },
     children,
-    render: () => ({ 
+    render: () => ({
       type: 'div',
       props: { children },
-      children: []
+      children: [],
     }),
-    
+
     // Cleanup when provider is unmounted
     _cleanup: () => {
       _setNavigationEnvironmentContext(null)
-    }
+    },
   }
 
   return provider as any
@@ -217,7 +221,7 @@ export function NavigationEnvironmentProvider(
 
 /**
  * Navigation environment modifier
- * 
+ *
  * Adds navigation environment capabilities to any component
  */
 export function withNavigationEnvironment(
@@ -285,7 +289,7 @@ export const NavigationEnvironmentUtils = {
       }
       current = current.parent || current._parent
     }
-    
+
     // Fall back to global environment
     return useNavigationEnvironmentContext()
   },

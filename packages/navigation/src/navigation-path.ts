@@ -9,10 +9,10 @@ import type { NavigationPath as INavigationPath } from './types'
 
 /**
  * NavigationPath implementation for programmatic navigation
- * 
+ *
  * Provides a type-safe way to manage navigation stack programmatically,
  * matching SwiftUI's NavigationPath API.
- * 
+ *
  * @example
  * ```typescript
  * const path = new NavigationPath()
@@ -126,7 +126,7 @@ export class NavigationPath implements INavigationPath {
    * Convert the path to a URL-like string
    */
   toString(): string {
-    return '/' + this._segments.join('/')
+    return this._segments.join('/')
   }
 
   /**
@@ -134,9 +134,7 @@ export class NavigationPath implements INavigationPath {
    * @param pathString - The path string (e.g., "/user/123/settings")
    */
   static fromString(pathString: string): NavigationPath {
-    const segments = pathString
-      .split('/')
-      .filter(segment => segment.length > 0)
+    const segments = pathString.split('/').filter(segment => segment.length > 0)
     return new NavigationPath(segments)
   }
 
@@ -167,7 +165,9 @@ export class NavigationPath implements INavigationPath {
     if (this._segments.length !== other._segments.length) {
       return false
     }
-    return this._segments.every((segment, index) => segment === other._segments[index])
+    return this._segments.every(
+      (segment, index) => segment === other._segments[index]
+    )
   }
 
   /**
@@ -295,7 +295,9 @@ export class TypedNavigationPath {
 /**
  * Create a new NavigationPath instance
  */
-export function createNavigationPath(initialSegments?: string[]): NavigationPath {
+export function createNavigationPath(
+  initialSegments?: string[]
+): NavigationPath {
   return new NavigationPath(initialSegments)
 }
 

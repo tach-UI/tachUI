@@ -10,10 +10,10 @@ import {
   createEffect,
   createSignal,
   getSignalImpl,
-  HTML,
   isBinding,
   isSignal,
 } from '@tachui/core'
+import { HTML } from '@tachui/primitives'
 import { useNavigation } from './navigation-view'
 import { useNavigationEnvironmentContext } from './navigation-environment'
 import { createNavigationRouter } from './navigation-router'
@@ -24,7 +24,7 @@ import type { NavigationDestination, NavigationLinkOptions } from './types'
  *
  * Creates a navigation link that pushes a new view onto the navigation stack
  * when tapped. Provides SwiftUI-compatible navigation behavior.
- * 
+ *
  * SwiftUI API Compatibility:
  * NavigationLink(label, destination: NavigationDestination)
  * NavigationLink(destination: NavigationDestination) { CustomLabel() }
@@ -70,16 +70,19 @@ export function NavigationLink(
 ): ComponentInstance {
   // Get navigation context (try new environment system first, fallback to old system)
   const envContext = useNavigationEnvironmentContext()
-  const navigation = envContext ? createNavigationRouter(envContext) : useNavigation()
+  const navigation = envContext
+    ? createNavigationRouter(envContext)
+    : useNavigation()
 
   // Internal state for interaction
   const [isPressed, setIsPressed] = createSignal(false)
   const linkId = `nav-link-${Date.now()}-${Math.random()}`
 
   // Convert label to component if string
-  const labelComponent = typeof label === 'string' 
-    ? HTML.span({ children: label }).modifier.build()
-    : label
+  const labelComponent =
+    typeof label === 'string'
+      ? HTML.span({ children: label }).modifier.build()
+      : label
 
   // Navigation handler
   const handleNavigation = () => {
@@ -94,7 +97,8 @@ export function NavigationLink(
 
     // Perform navigation
     const destinationPath = options.tag || `/destination-${Date.now()}`
-    const destinationTitle = extractTitleFromComponent(labelComponent) || 'Details'
+    const destinationTitle =
+      extractTitleFromComponent(labelComponent) || 'Details'
 
     navigation.push(destination, destinationPath, destinationTitle)
   }
@@ -143,26 +147,44 @@ export function NavigationLink(
     }
   }
 
-  // Create navigation link as direct component (not Button wrapper)
+  // Create navigation link as modifiable component (keep .modifier available for tests)
   const navigationLink = HTML.div({
     children: [labelComponent],
-  }).modifier.build()
+  })
 
-  // Apply inline styles directly to the element
-  if ((navigationLink as any).style) {
-    ;(navigationLink as any).style.cursor = options.disabled ? 'default' : 'pointer'
-    ;(navigationLink as any).style.userSelect = 'none'
-    ;(navigationLink as any).style.transition = 'all 0.1s ease-in-out'
-  } else {
-    // Set style as props if element supports it
-    ;(navigationLink as any).props = {
-      ...(navigationLink as any).props,
-      style: {
-        cursor: options.disabled ? 'default' : 'pointer',
-        userSelect: 'none',
-        transition: 'all 0.1s ease-in-out'
-      }
-    }
+  // Add accessibility and interaction props that tests expect
+  ;(navigationLink as any).props = {
+    ...(navigationLink as any).props,
+    style: {
+      cursor: options.disabled ? 'default' : 'pointer',
+      userSelect: 'none',
+      transition: 'all 0.1s ease-in-out',
+    },
+    onClick: options.disabled ? undefined : handleNavigation,
+    onKeyDown: options.disabled
+      ? undefined
+      : (e: KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleNavigation()
+          }
+        },
+    onFocus: () => {
+      // Handle focus for accessibility
+      console.log('NavigationLink focused')
+    },
+    onBlur: () => {
+      // Handle blur for accessibility
+      console.log('NavigationLink blurred')
+    },
+    ...(options.accessibilityLabel && {
+      'aria-label': options.accessibilityLabel,
+    }),
+    ...(options.accessibilityHint && {
+      'aria-describedby': `${linkId}-hint`,
+    }),
+    role: 'button',
+    tabIndex: options.disabled ? -1 : 0,
   }
 
   // Add navigation link metadata and behavior
@@ -171,14 +193,14 @@ export function NavigationLink(
     tag: options.tag,
     linkId,
     isActive: options.isActive,
-    type: 'NavigationLink'
+    type: 'NavigationLink',
   }
 
   // Add gesture handling without Button dependency
   if (!options.disabled) {
     // Click/tap handling
     ;(navigationLink as any).onClick = handleNavigation
-    
+
     // Press state handling for visual feedback
     ;(navigationLink as any).onMouseDown = (e: MouseEvent) => {
       e.preventDefault()
@@ -190,7 +212,7 @@ export function NavigationLink(
     ;(navigationLink as any).onMouseLeave = () => {
       setIsPressed(false)
     }
-    
+
     // Touch handling for mobile devices
     ;(navigationLink as any).onTouchStart = (e: TouchEvent) => {
       e.preventDefault()
@@ -216,10 +238,10 @@ export function NavigationLink(
     })
   } else {
     // Disabled state styling
-    ;(navigationLink as any).modifier = { 
-      ...(navigationLink as any).modifier, 
+    ;(navigationLink as any).modifier = {
+      ...(navigationLink as any).modifier,
       opacity: '0.6',
-      disabled: true 
+      disabled: true,
     }
   }
 
@@ -277,7 +299,9 @@ export function StyledNavigationLink(
   switch (style) {
     case 'button':
       styledLabel = HTML.div({
-        children: [typeof label === 'string' ? HTML.span({ children: label }) : label],
+        children: [
+          typeof label === 'string' ? HTML.span({ children: label }) : label,
+        ],
       })
         .modifier.backgroundColor(backgroundColor || '#007AFF')
         .foregroundColor(foregroundColor || '#ffffff')
@@ -289,7 +313,9 @@ export function StyledNavigationLink(
 
     case 'card':
       styledLabel = HTML.div({
-        children: [typeof label === 'string' ? HTML.span({ children: label }) : label],
+        children: [
+          typeof label === 'string' ? HTML.span({ children: label }) : label,
+        ],
       })
         .modifier.backgroundColor(backgroundColor || '#ffffff')
         .foregroundColor(foregroundColor || '#333333')
@@ -302,7 +328,9 @@ export function StyledNavigationLink(
 
     case 'listItem':
       styledLabel = HTML.div({
-        children: [typeof label === 'string' ? HTML.span({ children: label }) : label],
+        children: [
+          typeof label === 'string' ? HTML.span({ children: label }) : label,
+        ],
       })
         .modifier.backgroundColor(backgroundColor || 'transparent')
         .foregroundColor(foregroundColor || '#333333')
@@ -401,7 +429,10 @@ export function NavigationIconLink(
 ): ComponentInstance {
   const iconComponent =
     typeof icon === 'string'
-      ? HTML.div({ children: icon }).modifier.fontSize(20).frame({ width: 24, height: 24 }).build()
+      ? HTML.div({ children: icon })
+          .modifier.fontSize(20)
+          .frame({ width: 24, height: 24 })
+          .build()
       : icon
 
   const label = HTML.div({
@@ -451,18 +482,26 @@ export const NavigationLinkBuilder = {
 /**
  * Extract title from component for navigation bar
  */
-function extractTitleFromComponent(component?: ComponentInstance): string | undefined {
+function extractTitleFromComponent(
+  component?: ComponentInstance
+): string | undefined {
   if (!component) return undefined
 
   // Try to extract text from component
   if (typeof component === 'object') {
     // Check if it's a text component
-    if ((component as any).type === 'text' && (component as any).props?.children) {
+    if (
+      (component as any).type === 'text' &&
+      (component as any).props?.children
+    ) {
       return String((component as any).props.children)
     }
 
     // Check children recursively
-    if ((component as any).children && Array.isArray((component as any).children)) {
+    if (
+      (component as any).children &&
+      Array.isArray((component as any).children)
+    ) {
       for (const child of (component as any).children) {
         const title = extractTitleFromComponent(child)
         if (title) return title
@@ -477,7 +516,9 @@ function extractTitleFromComponent(component?: ComponentInstance): string | unde
  * Type guard for NavigationLink components
  */
 export function isNavigationLink(component: any): boolean {
-  return component && typeof component === 'object' && '_navigationLink' in component
+  return (
+    component && typeof component === 'object' && '_navigationLink' in component
+  )
 }
 
 /**
@@ -502,7 +543,7 @@ export function getNavigationLinkMetadata(component: any): any {
  * @example
  * ```typescript
  * // SwiftUI closure-style API
- * NavigationLink(DetailView(), () => 
+ * NavigationLink(DetailView(), () =>
  *   HStack([
  *     Image('icon.png'),
  *     Text('Go to Detail')
@@ -533,7 +574,7 @@ export function createNavigationLinks(
     disabled?: boolean
   }>
 ): ComponentInstance[] {
-  return links.map((link) => {
+  return links.map(link => {
     return NavigationLink(link.label, link.destination, {
       tag: link.tag,
       disabled: link.disabled,

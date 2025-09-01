@@ -6,16 +6,8 @@
  */
 
 import type { Binding, ComponentInstance } from '@tachui/core'
-import {
-  createEffect,
-  createSignal,
-  HStack,
-  HTML,
-  Text,
-  Button,
-  VStack,
-  isBinding,
-} from '@tachui/core'
+import { createEffect, createSignal, isBinding } from '@tachui/core'
+import { HStack, HTML, Text, Button, VStack } from '@tachui/primitives'
 import { _setCurrentNavigationContext } from './navigation-view'
 import { _setNavigationEnvironmentContext } from './navigation-environment'
 import { NavigationPath, createNavigationPath } from './navigation-path'

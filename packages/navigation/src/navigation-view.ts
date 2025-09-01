@@ -6,7 +6,8 @@
  */
 
 import type { ComponentInstance } from '@tachui/core'
-import { Button, createSignal, HStack, HTML, Text, VStack } from '@tachui/core'
+import { createSignal } from '@tachui/core'
+import { Button, HStack, HTML, Text, VStack } from '@tachui/primitives'
 import { NavigationManager } from './navigation-manager'
 import { createNavigationRouter } from './navigation-router'
 import { _setNavigationEnvironmentContext } from './navigation-environment'

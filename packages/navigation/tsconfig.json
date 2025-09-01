@@ -19,11 +19,12 @@
     /* Advanced */
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    
+
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@tachui/core": ["../core/dist"]
+      "@tachui/core": ["../core/dist"],
+      "@tachui/primitives": ["../primitives/dist"]
     }
   },
   "include": ["src/**/*"],

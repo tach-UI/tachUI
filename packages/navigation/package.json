@@ -28,7 +28,8 @@
     "benchmark:quick": "vitest bench --config vitest.benchmark.config.ts benchmarks/quick.bench.ts",
     "benchmark:bundle": "vitest bench --config vitest.benchmark.config.ts benchmarks/bundle-size.bench.ts",
     "benchmark:browser": "playwright test benchmarks/browser.spec.ts",
-    "benchmark:all": "pnpm benchmark && pnpm benchmark:bundle && pnpm benchmark:browser"
+    "benchmark:all": "pnpm benchmark && pnpm benchmark:bundle && pnpm benchmark:browser",
+    "lint": "oxlint src"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@tachui/core": "workspace:*",
+    "@tachui/primitives": "workspace:*",
     "@types/node": "^20.0.0",
     "@playwright/test": "^1.40.0",
     "typescript": "^5.2.0",

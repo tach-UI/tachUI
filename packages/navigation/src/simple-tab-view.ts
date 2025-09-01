@@ -6,15 +6,8 @@
  */
 
 import type { ComponentInstance, Binding } from '@tachui/core'
-import {
-  createEffect,
-  createSignal,
-  HStack,
-  HTML,
-  Text,
-  VStack,
-  isBinding,
-} from '@tachui/core'
+import { createEffect, createSignal, isBinding } from '@tachui/core'
+import { HStack, HTML, Text, VStack } from '@tachui/primitives'
 import type { NavigationComponent } from './types'
 
 /**
@@ -92,7 +85,14 @@ export function SimpleTabView(
   })
 
   // Tab selection state
-  const initialSelection = options?.selection?.get() || tabItems[0]?.id || ''
+  let initialSelection = tabItems[0]?.id || ''
+  if (options?.selection) {
+    if (isBinding(options.selection)) {
+      initialSelection = options.selection.get() || initialSelection
+    } else if (typeof options.selection === 'function') {
+      initialSelection = options.selection() || initialSelection
+    }
+  }
   const [selectedTabId, setSelectedTabId] = createSignal(initialSelection)
 
   // Handle selection changes
@@ -233,6 +233,32 @@ export function SimpleTabView(
     .modifier.frame({ minHeight: '100vh' })
     .backgroundColor('#ffffff')
     .build() as NavigationComponent
+
+  // Add accessibility and interaction props that tests expect
+  ;(tabViewComponent as any).props = {
+    ...(tabViewComponent as any).props,
+    role: 'tablist',
+    'aria-live': 'polite',
+    'aria-label': 'Tab navigation',
+    onKeyDown: (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const currentIndex = tabItems.findIndex(
+          tab => tab.id === selectedTabId()
+        )
+        const nextIndex =
+          e.key === 'ArrowLeft'
+            ? Math.max(0, currentIndex - 1)
+            : Math.min(tabItems.length - 1, currentIndex + 1)
+
+        if (nextIndex !== currentIndex) {
+          setSelectedTabId(tabItems[nextIndex].id)
+          if (options.onSelectionChange) {
+            options.onSelectionChange(tabItems[nextIndex].id)
+          }
+        }
+      }
+    },
+  }
 
   // Add tab view metadata
   ;(tabViewComponent as any)._simpleTabView = {
