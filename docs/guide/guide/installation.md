@@ -35,30 +35,31 @@ npm install @tachui/core @tachui/navigation
 ### 2. Create Your First Component
 
 ```typescript
-import { Text, Button, VStack, createSignal } from '@tachui/core'
+import { Text, Button, VStack } from '@tachui/primitives'
+import { createSignal } from '@tachui/core'
 
 function App() {
   const [count, setCount] = createSignal(0)
-  
+
   return VStack({
     children: [
       Text(() => `Count: ${count()}`)
         .fontSize(24)
         .fontWeight('bold'),
-      
+
       Button('Increment', () => setCount(count() + 1))
         .backgroundColor('#007AFF')
         .foregroundColor('white')
         .padding(12)
-        .cornerRadius(8)
+        .cornerRadius(8),
     ],
-    spacing: 16
+    spacing: 16,
   })
-  .padding(32)
-  .backgroundColor('#f5f5f5')
-  .minHeight('100vh')
-  .justifyContent('center')
-  .alignItems('center')
+    .padding(32)
+    .backgroundColor('#f5f5f5')
+    .minHeight('100vh')
+    .justifyContent('center')
+    .alignItems('center')
 }
 
 export default App
@@ -95,6 +96,7 @@ tacho dev
 ```
 
 The Tacho CLI provides:
+
 - **Project templates** with best practices
 - **Development server** with hot reload
 - **Build optimization** for production
@@ -133,14 +135,14 @@ export default defineConfig({
       // Enable SwiftUI syntax transformation
       transformSyntax: true,
       // Enable development debugging
-      debug: true
-    })
+      debug: true,
+    }),
   ],
   resolve: {
     alias: {
-      '@': '/src'
-    }
-  }
+      '@': '/src',
+    },
+  },
 })
 ```
 
@@ -180,7 +182,7 @@ export default defineConfig({
   plugins: [
     tachui(),
     // ... your other plugins
-  ]
+  ],
 })
 ```
 
@@ -194,34 +196,36 @@ module.exports = {
   plugins: [
     new TachuiWebpackPlugin(),
     // ... your other plugins
-  ]
+  ],
 }
 ```
 
 #### 3. Start Using TachUI Components
 
 ```typescript
-import { Text, Button, VStack } from '@tachui/core'
+import { Text, Button, VStack } from '@tachui/primitives'
 import { NavigationView, NavigationLink } from '@tachui/navigation'
 
 // Use alongside your existing components
 function MyTachuiComponent() {
   return VStack({
     children: [
-      Text("TachUI component in existing app!"),
-      Button("Click me", () => alert("Hello from TachUI!"))
-    ]
+      Text('TachUI component in existing app!'),
+      Button('Click me', () => alert('Hello from TachUI!')),
+    ],
   })
 }
 
 // With navigation
 function MyNavigationComponent() {
-  return NavigationView(() => VStack({
-    children: [
-      Text("Home Screen"),
-      NavigationLink(() => Text("Detail View"), "Go to Detail")
-    ]
-  }))
+  return NavigationView(() =>
+    VStack({
+      children: [
+        Text('Home Screen'),
+        NavigationLink(() => Text('Detail View'), 'Go to Detail'),
+      ],
+    })
+  )
 }
 ```
 
@@ -262,6 +266,7 @@ tacho dev
 ```
 
 Features:
+
 - **Hot Module Replacement** with component state preservation
 - **Real-time error overlay** with source maps
 - **Performance monitoring** dashboard
@@ -274,6 +279,7 @@ npm run dev
 ```
 
 The TachUI Vite plugin provides:
+
 - **SwiftUI syntax transformation** in real-time
 - **Development debugging** tools
 - **Error reporting** with helpful suggestions
@@ -287,8 +293,9 @@ tacho build
 ```
 
 Optimizations:
+
 - **Tree shaking** for minimal bundle size
-- **Dead code elimination** 
+- **Dead code elimination**
 - **Component optimization**
 - **Asset optimization**
 
@@ -313,7 +320,7 @@ node --version  # Should be >= 18.0.0
 TachUI supports all modern browsers:
 
 - **Chrome**: 90+
-- **Firefox**: 88+  
+- **Firefox**: 88+
 - **Safari**: 14+
 - **Edge**: 90+
 
@@ -330,7 +337,7 @@ Understanding TachUI's package structure:
 ```
 @tachui/core
 ├── components/     # UI components (Text, Button, etc.)
-├── reactive/       # Signal system and reactivity  
+├── reactive/       # Signal system and reactivity
 ├── modifiers/      # SwiftUI-style modifiers
 ├── runtime/        # DOM rendering and lifecycle
 └── types/          # TypeScript definitions
@@ -346,18 +353,26 @@ Understanding TachUI's package structure:
 
 ```typescript
 // Core components and utilities
-import { 
-  Text, Button, TextField, Image,
-  VStack, HStack, ZStack,
-  createSignal, createMemo, createEffect,
-  renderComponent 
+import {
+  Text,
+  Button,
+  TextField,
+  Image,
+  VStack,
+  HStack,
+  ZStack,
+  createSignal,
+  createMemo,
+  createEffect,
+  renderComponent,
 } from '@tachui/core'
 
 // State management
 import { State, Binding } from '@tachui/core'
 
-// Form components  
-import { Form, Section, Picker, Toggle } from '@tachui/core'
+// Form components
+import { Picker, Toggle } from '@tachui/primitives'
+import { Form, Section } from '@tachui/advanced-forms'
 import { Slider } from '@tachui/advanced-forms'
 
 // Navigation components
@@ -370,7 +385,7 @@ TachUI supports full tree shaking - only import what you use:
 
 ```typescript
 // ✅ Good - Only imports what's needed
-import { Text, Button } from '@tachui/core'
+import { Text, Button } from '@tachui/primitives'
 
 // ❌ Avoid - Imports entire library
 import * as TachUI from '@tachui/core'
@@ -390,6 +405,7 @@ Once TachUI is installed:
 ### Common Installation Issues
 
 #### Node Version Error
+
 ```bash
 # Update Node.js
 nvm install 18
@@ -397,6 +413,7 @@ nvm use 18
 ```
 
 #### TypeScript Errors
+
 ```bash
 # Install TypeScript if needed
 npm install -D typescript
@@ -414,7 +431,7 @@ Check that the TachUI plugin is properly configured:
 import { tachui } from '@tachui/vite-plugin'
 
 export default defineConfig({
-  plugins: [tachui()]  // Must be included
+  plugins: [tachui()], // Must be included
 })
 ```
 

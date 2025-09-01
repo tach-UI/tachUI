@@ -18,7 +18,8 @@ export * from '../runtime/component'
 export * from '../runtime/props'
 
 // Basic components moved to @tachui/primitives
-// Import Text, Button, Image, BasicInput, Spacer, HStack, VStack, ZStack from @tachui/primitives
+// Components moved to @tachui/primitives - import from there:
+// import { Text, Button, Image, BasicInput, Spacer, HStack, VStack, ZStack } from '@tachui/primitives'
 // Show moved to @tachui/flow-control
 
 // Essential modifiers
@@ -76,13 +77,8 @@ export const BUNDLE_INFO = {
     'Minimal TachUI bundle for calculator-style apps and landing pages',
   targetSize: '~60KB',
   recommendedComponents: [
-    'Text',
-    'Button',
-    'Image',
-    'HStack',
-    'VStack',
-    'Spacer',
-    // Basic components moved to @tachui/primitives
+    // Components moved to @tachui/primitives - import from there:
+    // 'Text', 'Button', 'Image', 'HStack', 'VStack', 'ZStack', 'Spacer'
     // 'Show', // moved to @tachui/flow-control
   ],
   useCase: 'Calculator-style apps, landing pages, simple UIs',

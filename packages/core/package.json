@@ -60,6 +60,10 @@
       "types": "./dist/reactive/types.d.ts",
       "import": "./dist/reactive/types.js"
     },
+    "./css-classes": {
+      "types": "./dist/css-classes/index.d.ts",
+      "import": "./dist/css-classes/index.js"
+    },
     "./constants/layout": {
       "types": "./dist/constants/layout.d.ts",
       "import": "./dist/constants/layout.js"
@@ -118,7 +122,6 @@
     "@types/node": "^20.0.0",
     "@types/jsdom": "^21.1.6",
     "@vitest/coverage-v8": "^1.0.0",
-    "@playwright/test": "^1.40.0",
     "jsdom": "^23.2.0",
     "tsx": "^4.7.1",
     "typedoc": "^0.28.7",

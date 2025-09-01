@@ -7,12 +7,12 @@ Real, tested examples of all TachUI components using the actual verified API pat
 ### Basic Text Usage
 
 ```typescript
-import { Text, createSignal } from '@tachui/core'
+import { Text } from '@tachui/primitives'
+import { createSignal } from '@tachui/core'
 
 // Static text
-const welcomeTitle = Text("Welcome to TachUI")
-  .modifier
-  .fontSize(24)
+const welcomeTitle = Text('Welcome to TachUI')
+  .modifier.fontSize(24)
   .fontWeight('bold')
   .foregroundColor('#1a1a1a')
   .build()
@@ -20,16 +20,14 @@ const welcomeTitle = Text("Welcome to TachUI")
 // Dynamic text with signals
 const [count, setCount] = createSignal(0)
 const counterDisplay = Text(() => `Count: ${count()}`)
-  .modifier
-  .fontSize(18)
+  .modifier.fontSize(18)
   .foregroundColor('#007AFF')
   .fontWeight('500')
   .build()
 
 // Styled text with multiple modifiers
-const styledText = Text("This text demonstrates comprehensive styling")
-  .modifier
-  .fontSize(16)
+const styledText = Text('This text demonstrates comprehensive styling')
+  .modifier.fontSize(16)
   .lineHeight(1.5)
   .foregroundColor('#333333')
   .backgroundColor('#f8f9fa')
@@ -42,21 +40,19 @@ const styledText = Text("This text demonstrates comprehensive styling")
 
 ```typescript
 // Clickable text
-const linkText = Text("Click me for more info")
-  .modifier
-  .foregroundColor('#007AFF')
+const linkText = Text('Click me for more info')
+  .modifier.foregroundColor('#007AFF')
   .textDecoration('underline')
   .cursor('pointer')
   .onTap(() => console.log('Text clicked!'))
-  .onHover((isHovered) => {
+  .onHover(isHovered => {
     console.log('Hover state:', isHovered)
   })
   .build()
 
 // Selectable text
-const selectableText = Text("This text can be selected and copied")
-  .modifier
-  .userSelect('text')
+const selectableText = Text('This text can be selected and copied')
+  .modifier.userSelect('text')
   .padding(12)
   .backgroundColor('#f0f0f0')
   .build()
@@ -67,7 +63,8 @@ const selectableText = Text("This text can be selected and copied")
 ### Basic Button Usage
 
 ```typescript
-import { Button, createSignal } from '@tachui/core'
+import { Button } from '@tachui/primitives'
+import { createSignal } from '@tachui/core'
 
 // Simple button with action
 const basicButton = Button('Click Me', () => {
@@ -79,8 +76,7 @@ const primaryButton = Button('Save Changes', async () => {
   console.log('Saving changes...')
   await saveChanges()
 })
-  .modifier
-  .backgroundColor('#007AFF')
+  .modifier.backgroundColor('#007AFF')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
@@ -94,8 +90,7 @@ const primaryButton = Button('Save Changes', async () => {
 ```typescript
 // Primary button
 const primary = Button('Primary', () => {})
-  .modifier
-  .backgroundColor('#007AFF')
+  .modifier.backgroundColor('#007AFF')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
@@ -103,8 +98,7 @@ const primary = Button('Primary', () => {})
 
 // Secondary button
 const secondary = Button('Secondary', () => {})
-  .modifier
-  .backgroundColor('transparent')
+  .modifier.backgroundColor('transparent')
   .foregroundColor('#007AFF')
   .border(1, '#007AFF')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
@@ -113,8 +107,7 @@ const secondary = Button('Secondary', () => {})
 
 // Destructive button
 const destructive = Button('Delete', () => {})
-  .modifier
-  .backgroundColor('#FF3B30')
+  .modifier.backgroundColor('#FF3B30')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
@@ -122,8 +115,7 @@ const destructive = Button('Delete', () => {})
 
 // Text button
 const textButton = Button('Cancel', () => {})
-  .modifier
-  .backgroundColor('transparent')
+  .modifier.backgroundColor('transparent')
   .foregroundColor('#666666')
   .padding({ top: 8, bottom: 8, left: 16, right: 16 })
   .build()
@@ -135,17 +127,19 @@ const textButton = Button('Cancel', () => {})
 // Loading button
 const [isLoading, setIsLoading] = createSignal(false)
 
-const loadingButton = Button(() => isLoading() ? 'Loading...' : 'Submit', async () => {
-  setIsLoading(true)
-  try {
-    await submitForm()
-  } finally {
-    setIsLoading(false)
+const loadingButton = Button(
+  () => (isLoading() ? 'Loading...' : 'Submit'),
+  async () => {
+    setIsLoading(true)
+    try {
+      await submitForm()
+    } finally {
+      setIsLoading(false)
+    }
   }
-})
-  .modifier
-  .disabled(isLoading)
-  .opacity(() => isLoading() ? 0.7 : 1.0)
+)
+  .modifier.disabled(isLoading)
+  .opacity(() => (isLoading() ? 0.7 : 1.0))
   .backgroundColor('#007AFF')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
@@ -156,9 +150,8 @@ const loadingButton = Button(() => isLoading() ? 'Loading...' : 'Submit', async 
 const [hasUnsavedChanges, setHasUnsavedChanges] = createSignal(false)
 
 const saveButton = Button('Save', () => {})
-  .modifier
-  .disabled(() => !hasUnsavedChanges())
-  .backgroundColor(() => hasUnsavedChanges() ? '#007AFF' : '#cccccc')
+  .modifier.disabled(() => !hasUnsavedChanges())
+  .backgroundColor(() => (hasUnsavedChanges() ? '#007AFF' : '#cccccc'))
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
@@ -170,7 +163,8 @@ const saveButton = Button('Save', () => {})
 ### Picker Component
 
 ```typescript
-import { Picker, createSignal } from '@tachui/core'
+import { Picker } from '@tachui/primitives'
+import { createSignal } from '@tachui/core'
 
 const [selectedFruit, setSelectedFruit] = createSignal('apple')
 
@@ -178,17 +172,16 @@ const fruits = [
   { value: 'apple', label: 'Apple' },
   { value: 'banana', label: 'Banana' },
   { value: 'orange', label: 'Orange' },
-  { value: 'grape', label: 'Grape' }
+  { value: 'grape', label: 'Grape' },
 ]
 
 // Dropdown picker (default)
 const dropdownPicker = Picker(selectedFruit, fruits, {
   onSelectionChange: setSelectedFruit,
   variant: 'dropdown',
-  placeholder: 'Select a fruit'
+  placeholder: 'Select a fruit',
 })
-  .modifier
-  .padding(12)
+  .modifier.padding(12)
   .border(1, '#e0e0e0')
   .cornerRadius(6)
   .minWidth(200)
@@ -197,10 +190,9 @@ const dropdownPicker = Picker(selectedFruit, fruits, {
 // Segmented picker
 const segmentedPicker = Picker(selectedFruit, fruits, {
   onSelectionChange: setSelectedFruit,
-  variant: 'segmented'
+  variant: 'segmented',
 })
-  .modifier
-  .backgroundColor('#f3f4f6')
+  .modifier.backgroundColor('#f3f4f6')
   .cornerRadius(8)
   .padding(4)
   .build()
@@ -208,10 +200,9 @@ const segmentedPicker = Picker(selectedFruit, fruits, {
 // Wheel picker
 const wheelPicker = Picker(selectedFruit, fruits, {
   onSelectionChange: setSelectedFruit,
-  variant: 'wheel'
+  variant: 'wheel',
 })
-  .modifier
-  .padding(8)
+  .modifier.padding(8)
   .border(1, '#d1d5db')
   .cornerRadius(6)
   .build()
@@ -220,17 +211,17 @@ const wheelPicker = Picker(selectedFruit, fruits, {
 const searchablePicker = Picker(selectedFruit, fruits, {
   onSelectionChange: setSelectedFruit,
   searchable: true,
-  placeholder: 'Search fruits...'
+  placeholder: 'Search fruits...',
 })
-  .modifier
-  .minWidth(250)
+  .modifier.minWidth(250)
   .build()
 ```
 
 ### Toggle Component
 
 ```typescript
-import { Toggle, createSignal } from '@tachui/core'
+import { Toggle } from '@tachui/primitives'
+import { createSignal } from '@tachui/core'
 
 const [isEnabled, setIsEnabled] = createSignal(false)
 const [darkMode, setDarkMode] = createSignal(false)
@@ -240,23 +231,22 @@ const [agreeToTerms, setAgreeToTerms] = createSignal(false)
 const switchToggle = Toggle(isEnabled, {
   onToggle: setIsEnabled,
   label: 'Enable Notifications',
-  labelPosition: 'leading'
+  labelPosition: 'leading',
 })
 
 // Checkbox toggle
 const checkboxToggle = Toggle(agreeToTerms, {
   onToggle: setAgreeToTerms,
   label: 'I agree to the terms and conditions',
-  variant: 'checkbox'
+  variant: 'checkbox',
 })
 
 // Button toggle
 const buttonToggle = Toggle(darkMode, {
   onToggle: setDarkMode,
-  variant: 'button'
+  variant: 'button',
 })
-  .modifier
-  .cornerRadius(12)
+  .modifier.cornerRadius(12)
   .build()
 
 // Styled toggle
@@ -266,10 +256,9 @@ const customToggle = Toggle(isEnabled, {
   color: '#34C759',
   offColor: '#f0f0f0',
   variant: 'switch',
-  size: 'large'
+  size: 'large',
 })
-  .modifier
-  .padding(16)
+  .modifier.padding(16)
   .build()
 ```
 
@@ -287,10 +276,9 @@ const volumeSlider = Slider(volume, {
   onValueChange: setVolume,
   min: 0,
   max: 100,
-  step: 1
+  step: 1,
 })
-  .modifier
-  .width(300)
+  .modifier.width(300)
   .build()
 
 // Formatted slider with marks
@@ -299,17 +287,16 @@ const brightnessSlider = Slider(brightness, {
   min: 0,
   max: 100,
   step: 5,
-  formatter: (value) => `${value}%`,
+  formatter: value => `${value}%`,
   marks: [
     { value: 0, label: 'Off' },
     { value: 25, label: 'Low' },
     { value: 50, label: 'Medium' },
     { value: 75, label: 'High' },
-    { value: 100, label: 'Max' }
-  ]
+    { value: 100, label: 'Max' },
+  ],
 })
-  .modifier
-  .width('100%')
+  .modifier.width('100%')
   .maxWidth(400)
   .padding(20)
   .build()
@@ -321,10 +308,9 @@ const customSlider = Slider(volume, {
   max: 100,
   trackColor: '#e0e0e0',
   activeTrackColor: '#007AFF',
-  thumbColor: '#ffffff'
+  thumbColor: '#ffffff',
 })
-  .modifier
-  .width(250)
+  .modifier.width(250)
   .height(40)
   .build()
 ```
@@ -334,20 +320,15 @@ const customSlider = Slider(volume, {
 ### VStack Examples
 
 ```typescript
-import { VStack, Text, Button } from '@tachui/core'
+import { VStack, Text, Button } from '@tachui/primitives'
 
 // Basic vertical layout
 const basicVStack = VStack({
-  children: [
-    Text('First Item'),
-    Text('Second Item'),
-    Text('Third Item')
-  ],
+  children: [Text('First Item'), Text('Second Item'), Text('Third Item')],
   spacing: 16,
-  alignment: 'center'
+  alignment: 'center',
 })
-  .modifier
-  .padding(20)
+  .modifier.padding(20)
   .backgroundColor('#f8f9fa')
   .cornerRadius(12)
   .build()
@@ -355,39 +336,31 @@ const basicVStack = VStack({
 // Complex vertical layout
 const userProfileStack = VStack({
   children: [
-    Text('John Doe')
-      .modifier
-      .fontSize(24)
-      .fontWeight('bold')
-      .build(),
-    
+    Text('John Doe').modifier.fontSize(24).fontWeight('bold').build(),
+
     Text('Software Developer')
-      .modifier
-      .fontSize(16)
+      .modifier.fontSize(16)
       .foregroundColor('#666666')
       .build(),
-    
+
     Text('Passionate about creating great user experiences')
-      .modifier
-      .fontSize(14)
+      .modifier.fontSize(14)
       .foregroundColor('#888888')
       .textAlign('center')
       .lineHeight(1.4)
       .build(),
-    
+
     Button('Contact', () => console.log('Contact clicked'))
-      .modifier
-      .backgroundColor('#007AFF')
+      .modifier.backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding({ top: 10, bottom: 10, left: 20, right: 20 })
       .cornerRadius(8)
-      .build()
+      .build(),
   ],
   spacing: 12,
-  alignment: 'center'
+  alignment: 'center',
 })
-  .modifier
-  .padding(24)
+  .modifier.padding(24)
   .backgroundColor('#ffffff')
   .cornerRadius(16)
   .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
@@ -398,20 +371,15 @@ const userProfileStack = VStack({
 ### HStack Examples
 
 ```typescript
-import { HStack, Text, Button } from '@tachui/core'
+import { HStack, Text, Button } from '@tachui/primitives'
 
 // Basic horizontal layout
 const basicHStack = HStack({
-  children: [
-    Text('Left'),
-    Text('Center'),
-    Text('Right')
-  ],
+  children: [Text('Left'), Text('Center'), Text('Right')],
   spacing: 16,
-  alignment: 'center'
+  alignment: 'center',
 })
-  .modifier
-  .padding(16)
+  .modifier.padding(16)
   .backgroundColor('#f0f0f0')
   .cornerRadius(8)
   .build()
@@ -420,30 +388,26 @@ const basicHStack = HStack({
 const navigationBar = HStack({
   children: [
     Button('Back', () => console.log('Back'))
-      .modifier
-      .backgroundColor('transparent')
+      .modifier.backgroundColor('transparent')
       .foregroundColor('#007AFF')
       .build(),
-    
+
     Text('Page Title')
-      .modifier
-      .fontSize(18)
+      .modifier.fontSize(18)
       .fontWeight('600')
       .flexGrow(1)
       .textAlign('center')
       .build(),
-    
+
     Button('Menu', () => console.log('Menu'))
-      .modifier
-      .backgroundColor('transparent')
+      .modifier.backgroundColor('transparent')
       .foregroundColor('#007AFF')
-      .build()
+      .build(),
   ],
   spacing: 16,
-  alignment: 'center'
+  alignment: 'center',
 })
-  .modifier
-  .padding(16)
+  .modifier.padding(16)
   .backgroundColor('#ffffff')
   .borderBottom(1, '#e0e0e0')
   .build()
@@ -452,41 +416,38 @@ const navigationBar = HStack({
 ### ZStack Examples
 
 ```typescript
-import { ZStack, Text } from '@tachui/core'
+import { ZStack, Text } from '@tachui/primitives'
 
 // Layered layout
 const cardWithOverlay = ZStack({
   children: [
     // Background
     Text('')
-      .modifier
-      .backgroundColor('#007AFF')
+      .modifier.backgroundColor('#007AFF')
       .frame({ width: 200, height: 120 })
       .cornerRadius(12)
       .build(),
-    
+
     // Overlay content
     VStack({
       children: [
         Text('Card Title')
-          .modifier
-          .fontSize(18)
+          .modifier.fontSize(18)
           .fontWeight('bold')
           .foregroundColor('white')
           .build(),
-        
+
         Text('Card description text')
-          .modifier
-          .fontSize(14)
+          .modifier.fontSize(14)
           .foregroundColor('rgba(255,255,255,0.9)')
           .textAlign('center')
-          .build()
+          .build(),
       ],
       spacing: 8,
-      alignment: 'center'
-    })
+      alignment: 'center',
+    }),
   ],
-  alignment: 'center'
+  alignment: 'center',
 })
 ```
 
@@ -495,7 +456,8 @@ const cardWithOverlay = ZStack({
 ### Complete User Registration Form
 
 ```typescript
-import { Form, Section, Picker, Toggle, Button, VStack } from '@tachui/core'
+import { Picker, Toggle, Button, VStack } from '@tachui/primitives'
+import { Form, Section } from '@tachui/advanced-forms'
 import { Slider } from '@tachui/advanced-forms'
 
 function UserRegistrationForm() {
@@ -505,7 +467,7 @@ function UserRegistrationForm() {
     email: '',
     country: 'us',
     notifications: true,
-    experience: 3
+    experience: 3,
   })
 
   // Form options
@@ -513,7 +475,7 @@ function UserRegistrationForm() {
     { value: 'us', label: 'United States' },
     { value: 'ca', label: 'Canada' },
     { value: 'uk', label: 'United Kingdom' },
-    { value: 'au', label: 'Australia' }
+    { value: 'au', label: 'Australia' },
   ]
 
   const updateField = (field: string, value: any) => {
@@ -526,73 +488,71 @@ function UserRegistrationForm() {
 
   return VStack({
     children: [
-      Form([
-        // Personal Information Section
-        Section([], {
-          title: 'Personal Information',
-          footer: 'This information helps us personalize your experience'
-        }),
+      Form(
+        [
+          // Personal Information Section
+          Section([], {
+            title: 'Personal Information',
+            footer: 'This information helps us personalize your experience',
+          }),
 
-        // Country Selection
-        Picker(() => formData().country, countries, {
-          onSelectionChange: (value) => updateField('country', value),
-          placeholder: 'Select your country'
-        })
-          .modifier
-          .padding(12)
-          .border(1, '#e0e0e0')
-          .cornerRadius(6)
-          .marginBottom(16)
-          .build(),
+          // Country Selection
+          Picker(() => formData().country, countries, {
+            onSelectionChange: value => updateField('country', value),
+            placeholder: 'Select your country',
+          })
+            .modifier.padding(12)
+            .border(1, '#e0e0e0')
+            .cornerRadius(6)
+            .marginBottom(16)
+            .build(),
 
-        // Preferences Section
-        Section([], {
-          title: 'Preferences'
-        }),
+          // Preferences Section
+          Section([], {
+            title: 'Preferences',
+          }),
 
-        // Notifications Toggle
-        Toggle(() => formData().notifications, {
-          onToggle: (value) => updateField('notifications', value),
-          label: 'Enable email notifications',
-          labelPosition: 'leading'
-        })
-          .modifier
-          .marginBottom(16)
-          .build(),
+          // Notifications Toggle
+          Toggle(() => formData().notifications, {
+            onToggle: value => updateField('notifications', value),
+            label: 'Enable email notifications',
+            labelPosition: 'leading',
+          })
+            .modifier.marginBottom(16)
+            .build(),
 
-        // Experience Slider
-        VStack({
-          children: [
-            Text(() => `Experience Level: ${formData().experience} years`)
-              .modifier
-              .fontSize(14)
-              .fontWeight('500')
-              .marginBottom(8)
-              .build(),
+          // Experience Slider
+          VStack({
+            children: [
+              Text(() => `Experience Level: ${formData().experience} years`)
+                .modifier.fontSize(14)
+                .fontWeight('500')
+                .marginBottom(8)
+                .build(),
 
-            Slider(() => formData().experience, {
-              onValueChange: (value) => updateField('experience', value),
-              min: 0,
-              max: 10,
-              step: 1,
-              marks: [
-                { value: 0, label: 'Beginner' },
-                { value: 5, label: 'Intermediate' },
-                { value: 10, label: 'Expert' }
-              ]
-            })
-              .modifier
-              .width('100%')
-              .build()
-          ],
-          spacing: 8,
-          alignment: 'stretch'
-        })
-      ], {
-        onSubmit: handleSubmit
-      })
-        .modifier
-        .padding(20)
+              Slider(() => formData().experience, {
+                onValueChange: value => updateField('experience', value),
+                min: 0,
+                max: 10,
+                step: 1,
+                marks: [
+                  { value: 0, label: 'Beginner' },
+                  { value: 5, label: 'Intermediate' },
+                  { value: 10, label: 'Expert' },
+                ],
+              })
+                .modifier.width('100%')
+                .build(),
+            ],
+            spacing: 8,
+            alignment: 'stretch',
+          }),
+        ],
+        {
+          onSubmit: handleSubmit,
+        }
+      )
+        .modifier.padding(20)
         .backgroundColor('#ffffff')
         .cornerRadius(12)
         .border(1, '#e0e0e0')
@@ -600,21 +560,19 @@ function UserRegistrationForm() {
 
       // Submit Button
       Button('Create Account', handleSubmit)
-        .modifier
-        .backgroundColor('#007AFF')
+        .modifier.backgroundColor('#007AFF')
         .foregroundColor('white')
         .padding({ top: 16, bottom: 16, left: 32, right: 32 })
         .cornerRadius(8)
         .fontSize(16)
         .fontWeight('600')
         .marginTop(24)
-        .build()
+        .build(),
     ],
     spacing: 16,
-    alignment: 'stretch'
+    alignment: 'stretch',
   })
-    .modifier
-    .padding(20)
+    .modifier.padding(20)
     .maxWidth(500)
     .backgroundColor('#f8f9fa')
     .build()
@@ -629,47 +587,50 @@ function UserRegistrationForm() {
 import { EnhancedTabView } from '@tachui/core'
 
 // Create tab content components
-const HomeContent = () => VStack({
-  children: [
-    Text('Welcome to the Home tab')
-      .modifier
-      .fontSize(18)
-      .textAlign('center')
-      .build()
-  ],
-  spacing: 16,
-  alignment: 'center'
-})
+const HomeContent = () =>
+  VStack({
+    children: [
+      Text('Welcome to the Home tab')
+        .modifier.fontSize(18)
+        .textAlign('center')
+        .build(),
+    ],
+    spacing: 16,
+    alignment: 'center',
+  })
 
-const SearchContent = () => VStack({
-  children: [
-    Text('Search functionality here')
-      .modifier
-      .fontSize(18)
-      .textAlign('center')
-      .build()
-  ],
-  spacing: 16,
-  alignment: 'center'
-})
+const SearchContent = () =>
+  VStack({
+    children: [
+      Text('Search functionality here')
+        .modifier.fontSize(18)
+        .textAlign('center')
+        .build(),
+    ],
+    spacing: 16,
+    alignment: 'center',
+  })
 
-const ProfileContent = () => VStack({
-  children: [
-    Text('User profile information')
-      .modifier
-      .fontSize(18)
-      .textAlign('center')
-      .build()
-  ],
-  spacing: 16,
-  alignment: 'center'
-})
+const ProfileContent = () =>
+  VStack({
+    children: [
+      Text('User profile information')
+        .modifier.fontSize(18)
+        .textAlign('center')
+        .build(),
+    ],
+    spacing: 16,
+    alignment: 'center',
+  })
 
 // Create tabs
 const tabs = [
   createTabItem('home', 'Home', HomeContent(), { icon: '🏠' }),
-  createTabItem('search', 'Search', SearchContent(), { icon: '🔍', badge: '3' }),
-  createTabItem('profile', 'Profile', ProfileContent(), { icon: '👤' })
+  createTabItem('search', 'Search', SearchContent(), {
+    icon: '🔍',
+    badge: '3',
+  }),
+  createTabItem('profile', 'Profile', ProfileContent(), { icon: '👤' }),
 ]
 
 // Floating tab view (modern style)
@@ -678,9 +639,9 @@ const modernTabView = EnhancedTabView(tabs, {
   material: 'glass',
   customization: 'visible',
   allowReordering: true,
-  onSelectionChange: (tabId) => {
+  onSelectionChange: tabId => {
     console.log('Tab selected:', tabId)
-  }
+  },
 })
 
 // Sidebar adaptable (responsive)
@@ -688,7 +649,7 @@ const responsiveTabView = EnhancedTabView(tabs, {
   style: 'sidebar-adaptable',
   breakpoint: 768,
   material: 'blur',
-  prominence: 'increased'
+  prominence: 'increased',
 })
 ```
 
@@ -716,27 +677,26 @@ function InteractiveCard() {
       HStack({
         children: [
           Text('Interactive Card')
-            .modifier
-            .fontSize(18)
+            .modifier.fontSize(18)
             .fontWeight('600')
             .flexGrow(1)
             .build(),
-          
-          Button(() => isSelected() ? '✓' : '○', handleSelect)
-            .modifier
-            .backgroundColor('transparent')
-            .foregroundColor(() => isSelected() ? '#34C759' : '#666666')
+
+          Button(() => (isSelected() ? '✓' : '○'), handleSelect)
+            .modifier.backgroundColor('transparent')
+            .foregroundColor(() => (isSelected() ? '#34C759' : '#666666'))
             .fontSize(18)
-            .build()
+            .build(),
         ],
         spacing: 12,
-        alignment: 'center'
+        alignment: 'center',
       }),
 
       // Content
-      Text('This card demonstrates reactive state management with hover, selection, and interaction states.')
-        .modifier
-        .fontSize(14)
+      Text(
+        'This card demonstrates reactive state management with hover, selection, and interaction states.'
+      )
+        .modifier.fontSize(14)
         .lineHeight(1.4)
         .foregroundColor('#666666')
         .build(),
@@ -745,36 +705,34 @@ function InteractiveCard() {
       HStack({
         children: [
           Button(`❤️ ${likeCount()}`, handleLike)
-            .modifier
-            .backgroundColor('transparent')
+            .modifier.backgroundColor('transparent')
             .foregroundColor('#FF3B30')
             .fontSize(14)
             .build(),
-          
+
           Button('Share', () => console.log('Share'))
-            .modifier
-            .backgroundColor('#007AFF')
+            .modifier.backgroundColor('#007AFF')
             .foregroundColor('white')
             .padding({ top: 6, bottom: 6, left: 12, right: 12 })
             .cornerRadius(6)
             .fontSize(14)
-            .build()
+            .build(),
         ],
         spacing: 12,
-        alignment: 'center'
-      })
+        alignment: 'center',
+      }),
     ],
     spacing: 16,
-    alignment: 'stretch'
+    alignment: 'stretch',
   })
-    .modifier
-    .padding(20)
-    .backgroundColor(() => isHovered() ? '#f8f9fa' : '#ffffff')
-    .border(2, () => isSelected() ? '#007AFF' : '#e0e0e0')
+    .modifier.padding(20)
+    .backgroundColor(() => (isHovered() ? '#f8f9fa' : '#ffffff'))
+    .border(2, () => (isSelected() ? '#007AFF' : '#e0e0e0'))
     .cornerRadius(12)
-    .shadow(() => isHovered() ? 
-      { x: 0, y: 4, radius: 12, color: 'rgba(0,0,0,0.15)' } :
-      { x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' }
+    .shadow(() =>
+      isHovered()
+        ? { x: 0, y: 4, radius: 12, color: 'rgba(0,0,0,0.15)' }
+        : { x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' }
     )
     .onHover(setIsHovered)
     .cursor('pointer')
@@ -790,35 +748,37 @@ All these components can be tested using Vitest. Here's an example test pattern:
 ```typescript
 import { describe, it, expect } from 'vitest'
 import { createSignal } from '@tachui/core'
-import { Button } from '@tachui/core'
+import { Button } from '@tachui/primitives'
 
 describe('Button Component Examples', () => {
   it('should create a basic button', () => {
     const button = Button('Test Button', () => {})
-    
+
     expect(button).toBeDefined()
     expect(button.render).toBeDefined()
   })
 
   it('should handle reactive state', () => {
     const [clicked, setClicked] = createSignal(false)
-    
-    const button = Button(() => clicked() ? 'Clicked!' : 'Click Me', () => {
-      setClicked(true)
-    })
-    
+
+    const button = Button(
+      () => (clicked() ? 'Clicked!' : 'Click Me'),
+      () => {
+        setClicked(true)
+      }
+    )
+
     expect(button).toBeDefined()
   })
 
   it('should apply modifiers correctly', () => {
     const styledButton = Button('Styled', () => {})
-      .modifier
-      .backgroundColor('#007AFF')
+      .modifier.backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding({ top: 12, bottom: 12, left: 24, right: 24 })
       .cornerRadius(8)
       .build()
-    
+
     expect(styledButton).toBeDefined()
   })
 })

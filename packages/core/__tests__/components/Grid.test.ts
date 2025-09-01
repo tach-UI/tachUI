@@ -3,13 +3,13 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { 
-  GridProps, 
-  GridRowProps, 
-  LazyVGridProps, 
+import type {
+  GridProps,
+  GridRowProps,
+  LazyVGridProps,
   LazyHGridProps,
   GridItemConfig,
-  ResponsiveGridItemConfig
+  ResponsiveGridItemConfig,
 } from '../../src/components/Grid'
 import {
   Grid,
@@ -22,9 +22,9 @@ import {
   EnhancedGrid,
   EnhancedGridRow,
   EnhancedLazyVGrid,
-  EnhancedLazyHGrid
+  EnhancedLazyHGrid,
 } from '../../src/components/Grid'
-import { Text } from '../../src/components/Text'
+import { Text } from '../../primitives/src'
 
 // Mock DOM environment
 function createMockGridElement(): HTMLElement {
@@ -70,7 +70,7 @@ describe('GridItem', () => {
       expect(item).toEqual({
         type: 'fixed',
         size: 200,
-        spacing: undefined
+        spacing: undefined,
       })
     })
 
@@ -79,7 +79,7 @@ describe('GridItem', () => {
       expect(item).toEqual({
         type: 'fixed',
         size: 150,
-        spacing: 10
+        spacing: 10,
       })
     })
 
@@ -88,7 +88,7 @@ describe('GridItem', () => {
       expect(item).toEqual({
         type: 'flexible',
         minimum: 0,
-        maximum: undefined
+        maximum: undefined,
       })
     })
 
@@ -97,7 +97,7 @@ describe('GridItem', () => {
       expect(item).toEqual({
         type: 'flexible',
         minimum: 100,
-        maximum: 300
+        maximum: 300,
       })
     })
 
@@ -106,7 +106,7 @@ describe('GridItem', () => {
       expect(item).toEqual({
         type: 'adaptive',
         minimum: 120,
-        maximum: undefined
+        maximum: undefined,
       })
     })
 
@@ -115,7 +115,7 @@ describe('GridItem', () => {
       expect(item).toEqual({
         type: 'adaptive',
         minimum: 100,
-        maximum: 250
+        maximum: 250,
       })
     })
   })
@@ -124,10 +124,7 @@ describe('GridItem', () => {
 describe('GridCSSGenerator', () => {
   describe('generateColumns', () => {
     it('should generate CSS for fixed columns', () => {
-      const items: GridItemConfig[] = [
-        GridItem.fixed(200),
-        GridItem.fixed(150)
-      ]
+      const items: GridItemConfig[] = [GridItem.fixed(200), GridItem.fixed(150)]
       const result = GridCSSGenerator.generateColumns(items)
       expect(result).toBe('200px 150px')
     })
@@ -135,7 +132,7 @@ describe('GridCSSGenerator', () => {
     it('should generate CSS for flexible columns', () => {
       const items: GridItemConfig[] = [
         GridItem.flexible(),
-        GridItem.flexible(100, 300)
+        GridItem.flexible(100, 300),
       ]
       const result = GridCSSGenerator.generateColumns(items)
       expect(result).toBe('1fr minmax(100px, 300px)')
@@ -144,7 +141,7 @@ describe('GridCSSGenerator', () => {
     it('should generate CSS for adaptive columns', () => {
       const items: GridItemConfig[] = [
         GridItem.adaptive(120),
-        GridItem.adaptive(100, 200)
+        GridItem.adaptive(100, 200),
       ]
       const result = GridCSSGenerator.generateColumns(items)
       expect(result).toBe('minmax(120px, 1fr) minmax(100px, 200px)')
@@ -154,7 +151,7 @@ describe('GridCSSGenerator', () => {
       const items: GridItemConfig[] = [
         GridItem.fixed(100),
         GridItem.flexible(50, 200),
-        GridItem.adaptive(120)
+        GridItem.adaptive(120),
       ]
       const result = GridCSSGenerator.generateColumns(items)
       expect(result).toBe('100px minmax(50px, 200px) minmax(120px, 1fr)')
@@ -168,9 +165,9 @@ describe('GridCSSGenerator', () => {
     })
 
     it('should handle object spacing', () => {
-      const result = GridCSSGenerator.generateSpacing({ 
-        horizontal: 20, 
-        vertical: 12 
+      const result = GridCSSGenerator.generateSpacing({
+        horizontal: 20,
+        vertical: 12,
       })
       expect(result).toBe('12px 20px')
     })
@@ -191,7 +188,7 @@ describe('GridCSSGenerator', () => {
       const result = GridCSSGenerator.generateAlignment('center')
       expect(result).toEqual({
         justifyItems: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
       })
     })
 
@@ -199,7 +196,7 @@ describe('GridCSSGenerator', () => {
       const result = GridCSSGenerator.generateAlignment('topLeading')
       expect(result).toEqual({
         justifyItems: 'start',
-        alignItems: 'start'
+        alignItems: 'start',
       })
     })
 
@@ -207,7 +204,7 @@ describe('GridCSSGenerator', () => {
       const result = GridCSSGenerator.generateAlignment('bottomTrailing')
       expect(result).toEqual({
         justifyItems: 'end',
-        alignItems: 'end'
+        alignItems: 'end',
       })
     })
   })
@@ -229,7 +226,9 @@ describe('Grid', () => {
 
     it('should render grid element with CSS Grid display', () => {
       const textChild = Text('Test').modifier.build() // Get the component instance
-      const gridComponent = new EnhancedGrid({ children: [textChild] }, [textChild])
+      const gridComponent = new EnhancedGrid({ children: [textChild] }, [
+        textChild,
+      ])
       const elements = gridComponent.render()
 
       expect(elements).toHaveLength(1)
@@ -265,8 +264,14 @@ describe('GridRow', () => {
     })
 
     it('should render with display contents for transparent grid row', () => {
-      const textChildren = [Text('A').modifier.build(), Text('B').modifier.build()]
-      const gridRowComponent = new EnhancedGridRow({ children: textChildren }, textChildren)
+      const textChildren = [
+        Text('A').modifier.build(),
+        Text('B').modifier.build(),
+      ]
+      const gridRowComponent = new EnhancedGridRow(
+        { children: textChildren },
+        textChildren
+      )
       const elements = gridRowComponent.render()
 
       expect(elements).toHaveLength(1)
@@ -283,7 +288,7 @@ describe('LazyVGrid', () => {
       const columns = [GridItem.flexible(), GridItem.flexible()]
       const textChildren = [Text('1'), Text('2'), Text('3'), Text('4')]
       const vgrid = LazyVGrid({ columns, children: textChildren })
-      
+
       expect(vgrid).toBeDefined()
       expect(vgrid.modifier).toBeDefined()
     })
@@ -291,7 +296,10 @@ describe('LazyVGrid', () => {
     it('should render with grid-template-columns', () => {
       const columns = [GridItem.fixed(100), GridItem.flexible()]
       const textChildren = [Text('Test').modifier.build()]
-      const vgridComponent = new EnhancedLazyVGrid({ columns, children: textChildren }, textChildren)
+      const vgridComponent = new EnhancedLazyVGrid(
+        { columns, children: textChildren },
+        textChildren
+      )
       const elements = vgridComponent.render()
 
       expect(elements).toHaveLength(1)
@@ -303,10 +311,13 @@ describe('LazyVGrid', () => {
     it('should handle responsive columns configuration', () => {
       const responsiveColumns: ResponsiveGridItemConfig = {
         base: [GridItem.flexible()],
-        md: [GridItem.flexible(), GridItem.flexible()]
+        md: [GridItem.flexible(), GridItem.flexible()],
       }
       const textChildren = [Text('Test').modifier.build()]
-      const vgridComponent = new EnhancedLazyVGrid({ columns: responsiveColumns, children: textChildren }, textChildren)
+      const vgridComponent = new EnhancedLazyVGrid(
+        { columns: responsiveColumns, children: textChildren },
+        textChildren
+      )
       const elements = vgridComponent.render()
 
       // Should use base configuration by default
@@ -321,7 +332,7 @@ describe('LazyHGrid', () => {
       const rows = [GridItem.adaptive(100)]
       const textChildren = [Text('1'), Text('2'), Text('3')]
       const hgrid = LazyHGrid({ rows, children: textChildren })
-      
+
       expect(hgrid).toBeDefined()
       expect(hgrid.modifier).toBeDefined()
     })
@@ -329,7 +340,10 @@ describe('LazyHGrid', () => {
     it('should render with grid-template-rows and horizontal flow', () => {
       const rows = [GridItem.fixed(80), GridItem.flexible()]
       const textChildren = [Text('Test').modifier.build()]
-      const hgridComponent = new EnhancedLazyHGrid({ rows, children: textChildren }, textChildren)
+      const hgridComponent = new EnhancedLazyHGrid(
+        { rows, children: textChildren },
+        textChildren
+      )
       const elements = hgridComponent.render()
 
       expect(elements).toHaveLength(1)
@@ -344,19 +358,36 @@ describe('LazyHGrid', () => {
 
 describe('Integration Tests', () => {
   it('should create complex grid layout with Grid and GridRow', () => {
-    const gridRowChildren1 = [Text('A1').modifier.build(), Text('B1').modifier.build(), Text('C1').modifier.build()]
-    const gridRowChildren2 = [Text('A2').modifier.build(), Text('B2').modifier.build(), Text('C2').modifier.build()]
-    const gridRow1 = new EnhancedGridRow({ children: gridRowChildren1 }, gridRowChildren1)
-    const gridRow2 = new EnhancedGridRow({ children: gridRowChildren2 }, gridRowChildren2)
-    
-    const gridComponent = new EnhancedGrid({ 
-      spacing: 16,
-      alignment: 'center',
-      children: [gridRow1, gridRow2]
-    }, [gridRow1, gridRow2])
-    
+    const gridRowChildren1 = [
+      Text('A1').modifier.build(),
+      Text('B1').modifier.build(),
+      Text('C1').modifier.build(),
+    ]
+    const gridRowChildren2 = [
+      Text('A2').modifier.build(),
+      Text('B2').modifier.build(),
+      Text('C2').modifier.build(),
+    ]
+    const gridRow1 = new EnhancedGridRow(
+      { children: gridRowChildren1 },
+      gridRowChildren1
+    )
+    const gridRow2 = new EnhancedGridRow(
+      { children: gridRowChildren2 },
+      gridRowChildren2
+    )
+
+    const gridComponent = new EnhancedGrid(
+      {
+        spacing: 16,
+        alignment: 'center',
+        children: [gridRow1, gridRow2],
+      },
+      [gridRow1, gridRow2]
+    )
+
     const elements = gridComponent.render()
-    
+
     expect(elements[0].props?.style?.display).toBe('grid')
     expect(elements[0].props?.style?.gap).toBe('16px')
     expect(elements[0].children).toHaveLength(2) // Two GridRow children
@@ -366,19 +397,24 @@ describe('Integration Tests', () => {
     const responsiveColumns: ResponsiveGridItemConfig = {
       base: [GridItem.flexible()],
       sm: [GridItem.flexible(), GridItem.flexible()],
-      lg: Array(3).fill(GridItem.flexible())
+      lg: Array(3).fill(GridItem.flexible()),
     }
-    
-    const items = Array.from({ length: 6 }, (_, i) => Text(`Item ${i + 1}`).modifier.build())
-    const vgridComponent = new EnhancedLazyVGrid({ 
-      columns: responsiveColumns, 
-      spacing: { horizontal: 16, vertical: 12 },
-      alignment: 'topLeading',
-      children: items 
-    }, items)
-    
+
+    const items = Array.from({ length: 6 }, (_, i) =>
+      Text(`Item ${i + 1}`).modifier.build()
+    )
+    const vgridComponent = new EnhancedLazyVGrid(
+      {
+        columns: responsiveColumns,
+        spacing: { horizontal: 16, vertical: 12 },
+        alignment: 'topLeading',
+        children: items,
+      },
+      items
+    )
+
     const elements = vgridComponent.render()
-    
+
     expect(elements[0].props?.style?.gap).toBe('12px 16px')
     expect(elements[0].props?.style?.justifyItems).toBe('start')
     expect(elements[0].props?.style?.alignItems).toBe('start')

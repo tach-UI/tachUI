@@ -6,7 +6,7 @@
  */
 
 import { bench } from 'vitest'
-import { EnhancedText, Text } from '../src/components/Text'
+import { Text, EnhancedText } from '../../primitives/src'
 import { createSignal } from '../src/reactive'
 
 describe('Static Content Performance Benchmarks', () => {
@@ -118,7 +118,7 @@ describe('Static Content Performance Benchmarks', () => {
 
     // Cleanup reactive components
     for (const component of components) {
-      component.cleanup.forEach((cleanup) => cleanup())
+      component.cleanup.forEach(cleanup => cleanup())
     }
     components.length = 0
   })

@@ -1,16 +1,15 @@
 /**
  * CSS Classes Enhancement - Edge Cases and Error Handling Tests
- * 
+ *
  * Tests for unusual inputs, error conditions, and boundary cases
  */
 
 import { describe, it, expect } from 'vitest'
-import { createSignal, createComputed } from '../../src/reactive'
-import { CSSClassManager } from '../../src/css-classes/css-class-manager'
-import { ComponentWithCSSClasses } from '../../src/css-classes/component-base'
-import { Text } from '../../src/components/Text'
-import { Button } from '../../src/components/Button'
-import type { CSSClassesProps } from '../../src/css-classes/types'
+import { createSignal, createComputed } from '@tachui/core'
+import { CSSClassManager } from '@tachui/core/css-classes'
+import { ComponentWithCSSClasses } from '@tachui/core/css-classes'
+import { Text, Button } from '../../src'
+import type { CSSClassesProps } from '@tachui/core/css-classes'
 
 // Test component for edge case testing
 class EdgeCaseComponent extends ComponentWithCSSClasses {
@@ -23,7 +22,7 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
   describe('Invalid Input Handling', () => {
     it('should handle null and undefined inputs gracefully', () => {
       const manager = new CSSClassManager()
-      
+
       expect(manager.processClasses(null)).toEqual([])
       expect(manager.processClasses(undefined)).toEqual([])
       expect(manager.processClasses(null as any)).toEqual([])
@@ -31,7 +30,7 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
 
     it('should handle non-string, non-array inputs', () => {
       const manager = new CSSClassManager()
-      
+
       expect(manager.processClasses(123 as any)).toEqual(['cls-123']) // Numbers get sanitized with cls- prefix
       expect(manager.processClasses(true as any)).toEqual(['true'])
       expect(manager.processClasses({} as any)).toEqual(['[object-Object]']) // Spaces converted to hyphens, brackets preserved for CSS framework compatibility
@@ -48,11 +47,17 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
         {},
         '',
         '  ',
-        'another-valid'
+        'another-valid',
       ] as any[]
-      
+
       const result = manager.processClasses(mixedArray)
-      expect(result).toEqual(['valid', 'cls-123', 'true', '[object-Object]', 'another-valid'])
+      expect(result).toEqual([
+        'valid',
+        'cls-123',
+        'true',
+        '[object-Object]',
+        'another-valid',
+      ])
     })
   })
 
@@ -60,7 +65,7 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
     it('should handle extremely long class names', () => {
       const manager = new CSSClassManager()
       const longClassName = 'a'.repeat(10000)
-      
+
       const result = manager.processClasses(longClassName)
       expect(result).toEqual([longClassName])
       expect(result[0]).toHaveLength(10000)
@@ -69,19 +74,20 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
     it('should handle very large arrays of classes', () => {
       const manager = new CSSClassManager()
       const largeArray = Array.from({ length: 10000 }, (_, i) => `class-${i}`)
-      
+
       const start = performance.now()
       const result = manager.processClasses(largeArray)
       const end = performance.now()
-      
+
       expect(result).toHaveLength(10000)
       expect(end - start).toBeLessThan(1000) // Should complete within 1 second
     })
 
     it('should handle strings with many spaces and special characters', () => {
       const manager = new CSSClassManager()
-      const complexString = '  btn\t\tprimary\n\nlarge  \r\n  active\f\vspecial  '
-      
+      const complexString =
+        '  btn\t\tprimary\n\nlarge  \r\n  active\f\vspecial  '
+
       const result = manager.processClasses(complexString)
       expect(result).toEqual(['btn', 'primary', 'large', 'active', 'special'])
     })
@@ -97,13 +103,13 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
         'btn~sibling',
         'btn+adjacent',
         'btn>child',
-        'btn space',  // Space should split this
+        'btn space', // Space should split this
         'btn-with-dashes',
         'btn_with_underscores',
         'btn123numbers',
-        '123startswithnum'
+        '123startswithnum',
       ]
-      
+
       const result = manager.processClasses(specialClasses.join(' '))
       // Space in 'btn space' should cause it to split
       expect(result).toContain('btn:hover')
@@ -120,9 +126,9 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
       const [throwSignal] = createSignal(() => {
         throw new Error('Signal error')
       })
-      
+
       const manager = new CSSClassManager()
-      
+
       // Should not throw, but may return empty array or handle gracefully
       expect(() => {
         manager.processClasses(throwSignal)
@@ -132,7 +138,7 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
     it('should handle rapidly changing signals', () => {
       const [signal, setSignal] = createSignal('initial')
       const component = new EdgeCaseComponent({ css: signal })
-      
+
       // Rapid changes
       const start = performance.now()
       for (let i = 0; i < 1000; i++) {
@@ -140,19 +146,19 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
         component.processComponentClasses(component.props, ['base'])
       }
       const end = performance.now()
-      
+
       expect(end - start).toBeLessThan(200) // Should handle rapid updates efficiently
     })
 
     it('should handle circular signal dependencies gracefully', () => {
       const [signal1, setSignal1] = createSignal('class1')
       const [signal2, setSignal2] = createSignal('class2')
-      
+
       const computed1 = createComputed(() => `${signal1()} ${signal2()}`)
       const computed2 = createComputed(() => `${computed1()} extra`)
-      
+
       const component = new EdgeCaseComponent({ css: computed2 })
-      
+
       expect(() => {
         component.processComponentClasses(component.props, ['base'])
       }).not.toThrow()
@@ -165,7 +171,7 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
         css: undefined,
         someOtherProp: null,
       } as any
-      
+
       expect(() => {
         const text = Text('Test', corruptedProps)
         text.render()
@@ -185,10 +191,10 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
     it('should handle modification of cssClasses prop after component creation', () => {
       const props = { css: 'initial' }
       const text = Text('Test', props)
-      
+
       // Modify props after creation
       props.cssClasses = 'modified'
-      
+
       const elements = text.render()
       // Should still work, though behavior may vary
       expect(elements).toHaveLength(1)
@@ -199,22 +205,22 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
   describe('Memory and Resource Management', () => {
     it('should not leak memory with many temporary components', () => {
       const initialMemory = performance.memory?.usedJSHeapSize || 0
-      
+
       // Create and discard many components
       for (let i = 0; i < 1000; i++) {
         const text = Text(`Temp ${i}`, { css: `temp-${i} disposable` })
         text.render()
         // Let component go out of scope
       }
-      
+
       // Force garbage collection if available
       if (global.gc) {
         global.gc()
       }
-      
+
       const finalMemory = performance.memory?.usedJSHeapSize || 0
       const memoryGrowth = finalMemory - initialMemory
-      
+
       // Memory should not grow excessively (allowing for normal variance)
       expect(memoryGrowth).toBeLessThan(50 * 1024 * 1024) // 50MB threshold
     })
@@ -222,12 +228,12 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
     it('should handle cache overflow gracefully', () => {
       const manager = new CSSClassManager()
       manager.updateConfig({ maxCacheSize: 5 })
-      
+
       // Fill cache beyond limit
       for (let i = 0; i < 20; i++) {
         manager.processClasses(`class-${i}`)
       }
-      
+
       // Should still work
       const result = manager.processClasses('test-class')
       expect(result).toEqual(['test-class'])
@@ -237,15 +243,15 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
   describe('Concurrency and Race Conditions', () => {
     it('should handle concurrent CSS class processing', async () => {
       const manager = new CSSClassManager()
-      
-      const promises = Array.from({ length: 100 }, (_, i) => 
-        Promise.resolve().then(() => 
+
+      const promises = Array.from({ length: 100 }, (_, i) =>
+        Promise.resolve().then(() =>
           manager.processClasses(`concurrent-${i} shared-class`)
         )
       )
-      
+
       const results = await Promise.all(promises)
-      
+
       // All should complete successfully
       expect(results).toHaveLength(100)
       results.forEach((result, i) => {
@@ -256,16 +262,16 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
     it('should handle concurrent signal updates', async () => {
       const [signal, setSignal] = createSignal('initial')
       const component = new EdgeCaseComponent({ css: signal })
-      
-      const promises = Array.from({ length: 50 }, (_, i) => 
+
+      const promises = Array.from({ length: 50 }, (_, i) =>
         Promise.resolve().then(() => {
           setSignal(`concurrent-${i}`)
           return component.processComponentClasses(component.props, ['base'])
         })
       )
-      
+
       const results = await Promise.all(promises)
-      
+
       // All should complete without errors
       expect(results).toHaveLength(50)
       results.forEach(result => {
@@ -278,27 +284,27 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
   describe('Browser Compatibility Edge Cases', () => {
     it('should handle missing Performance API gracefully', () => {
       const originalPerformance = global.performance
-      
+
       // Temporarily remove performance API
       delete (global as any).performance
-      
+
       const manager = new CSSClassManager()
-      
+
       expect(() => {
         manager.processClasses('test-class')
       }).not.toThrow()
-      
+
       // Restore performance API
       global.performance = originalPerformance
     })
 
     it('should handle environments without Map support', () => {
       const originalMap = global.Map
-      
+
       try {
         // Test with Map undefined (simulating very old browsers)
         delete (global as any).Map
-        
+
         expect(() => {
           const manager = new CSSClassManager()
           manager.processClasses('test-class')
@@ -314,18 +320,18 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
     it('should handle conflicting framework classes gracefully', () => {
       const conflictingClasses = [
         // Tailwind vs Bootstrap conflicts
-        'flex',     // Tailwind
-        'd-flex',   // Bootstrap  
+        'flex', // Tailwind
+        'd-flex', // Bootstrap
         'text-center', // Both
         'justify-content-center', // Bootstrap
-        'justify-center',         // Tailwind
-        'btn',      // Both but different meanings
-        'button'    // Custom
+        'justify-center', // Tailwind
+        'btn', // Both but different meanings
+        'button', // Custom
       ]
-      
+
       const manager = new CSSClassManager()
       const result = manager.processClasses(conflictingClasses)
-      
+
       // Should include all classes without errors
       expect(result).toEqual(conflictingClasses)
     })
@@ -333,11 +339,11 @@ describe('CSS Classes Enhancement - Edge Cases and Error Handling', () => {
     it('should handle CSS-in-JS style objects as strings', () => {
       const cssInJsLike = JSON.stringify({
         backgroundColor: 'blue',
-        fontSize: '16px'
+        fontSize: '16px',
       })
-      
+
       const manager = new CSSClassManager()
-      
+
       expect(() => {
         const result = manager.processClasses(cssInJsLike)
         expect(Array.isArray(result)).toBe(true)

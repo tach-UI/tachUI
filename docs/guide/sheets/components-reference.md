@@ -24,8 +24,7 @@ Text(() => `Count: ${count()}`)
 
 // Styled text
 Text('Styled Text')
-  .modifier
-  .fontSize(24)
+  .modifier.fontSize(24)
   .fontWeight('bold')
   .foregroundColor('#007AFF')
   .textAlign('center')
@@ -40,8 +39,7 @@ Button('Click Me', () => console.log('Clicked!'))
 
 // Styled button
 Button('Primary Action', handleAction)
-  .modifier
-  .backgroundColor('#007AFF')
+  .modifier.backgroundColor('#007AFF')
   .foregroundColor('white')
   .padding(16)
   .cornerRadius(8)
@@ -49,8 +47,7 @@ Button('Primary Action', handleAction)
 
 // Reactive button state
 Button('Submit', handleSubmit)
-  .modifier
-  .disabled(() => !isFormValid())
+  .modifier.disabled(() => !isFormValid())
   .build()
 ```
 
@@ -65,8 +62,7 @@ Image(Assets.logo)
 
 // Styled image
 Image('/hero-image.jpg')
-  .modifier
-  .frame({ width: 300, height: 200 })
+  .modifier.frame({ width: 300, height: 200 })
   .cornerRadius(12)
   .contentMode('cover')
   .build()
@@ -75,7 +71,7 @@ Image('/hero-image.jpg')
 Image('/image.jpg', {
   placeholder: '/loading.gif',
   errorPlaceholder: '/error.svg',
-  onLoadingStateChange: (state) => console.log(state)
+  onLoadingStateChange: state => console.log(state),
 })
 ```
 
@@ -86,17 +82,16 @@ Image('/image.jpg', {
 BasicInput({
   placeholder: 'Enter your name',
   value: name,
-  onInput: (value) => setName(value)
+  onInput: value => setName(value),
 })
 
 // Styled input
 BasicInput({
   placeholder: 'Search...',
   value: searchTerm,
-  onInput: setSearchTerm
+  onInput: setSearchTerm,
 })
-  .modifier
-  .padding(12)
+  .modifier.padding(12)
   .border(1, '#E5E5E7')
   .cornerRadius(8)
   .build()
@@ -114,7 +109,7 @@ Toggle(isEnabled, setIsEnabled, { label: 'Enable notifications' })
 // Reactive toggle
 Toggle(
   () => settings().darkMode,
-  (value) => updateSettings({ darkMode: value }),
+  value => updateSettings({ darkMode: value }),
   { label: 'Dark mode' }
 )
 ```
@@ -128,7 +123,7 @@ Slider({
   value: volume,
   onChange: setVolume,
   range: { min: 0, max: 100 },
-  step: 1
+  step: 1,
 })
 
 // Styled slider with marks
@@ -137,10 +132,9 @@ Slider({
   onChange: setBrightness,
   range: { min: 0, max: 100 },
   marks: [0, 25, 50, 75, 100],
-  label: 'Brightness'
+  label: 'Brightness',
 })
-  .modifier
-  .frame({ width: 300 })
+  .modifier.frame({ width: 300 })
   .build()
 ```
 
@@ -156,8 +150,8 @@ Picker({
   options: [
     { label: 'Option 1', value: 'option1' },
     { label: 'Option 2', value: 'option2' },
-    { label: 'Option 3', value: 'option3' }
-  ]
+    { label: 'Option 3', value: 'option3' },
+  ],
 })
 
 // Segmented picker
@@ -167,8 +161,8 @@ Picker({
   style: 'segmented',
   options: [
     { label: 'List', value: 'list' },
-    { label: 'Grid', value: 'grid' }
-  ]
+    { label: 'Grid', value: 'grid' },
+  ],
 })
 ```
 
@@ -182,7 +176,7 @@ Stepper({
   onChange: setQuantity,
   range: { min: 1, max: 10 },
   step: 1,
-  label: 'Quantity'
+  label: 'Quantity',
 })
 
 // Decimal stepper
@@ -191,7 +185,7 @@ Stepper({
   onChange: setPrice,
   range: { min: 0, max: 1000 },
   step: 0.01,
-  format: (value) => `$${value.toFixed(2)}`
+  format: value => `$${value.toFixed(2)}`,
 })
 ```
 
@@ -203,7 +197,7 @@ const [selectedDate, setSelectedDate] = createSignal(new Date())
 DatePicker({
   selection: selectedDate,
   onChange: setSelectedDate,
-  displayedComponents: ['date']
+  displayedComponents: ['date'],
 })
 
 // Date and time picker
@@ -211,7 +205,7 @@ DatePicker({
   selection: appointment,
   onChange: setAppointment,
   displayedComponents: ['date', 'hourAndMinute'],
-  in: { start: new Date(), end: futureDate }
+  in: { start: new Date(), end: futureDate },
 })
 
 // Compact style
@@ -219,7 +213,7 @@ DatePicker({
   selection: date,
   onChange: setDate,
   style: 'compact',
-  label: 'Event Date'
+  label: 'Event Date',
 })
 ```
 
@@ -238,12 +232,11 @@ Link('External Site', 'https://example.com')
 Link({
   destination: 'https://example.com',
   target: '_blank',
-  children: [Text('External Site')]
+  children: [Text('External Site')],
 })
-  .modifier
-  .foregroundColor('#007AFF')
+  .modifier.foregroundColor('#007AFF')
   .textDecoration('none')
-  .onHover((hovered) => setHovered(hovered))
+  .onHover(hovered => setHovered(hovered))
   .build()
 ```
 
@@ -259,19 +252,19 @@ Alert({
   primaryButton: {
     title: 'Delete',
     role: 'destructive',
-    action: () => deleteItem()
+    action: () => deleteItem(),
   },
   secondaryButton: {
     title: 'Cancel',
-    role: 'cancel'
-  }
+    role: 'cancel',
+  },
 })
 
 // Simple alert
 Alert({
   title: 'Success',
   message: 'Item saved successfully!',
-  dismissButton: { title: 'OK' }
+  dismissButton: { title: 'OK' },
 })
 ```
 
@@ -285,22 +278,22 @@ ActionSheet({
   buttons: [
     {
       title: 'Edit',
-      action: () => editItem()
+      action: () => editItem(),
     },
     {
       title: 'Share',
-      action: () => shareItem()
+      action: () => shareItem(),
     },
     {
       title: 'Delete',
       role: 'destructive',
-      action: () => deleteItem()
+      action: () => deleteItem(),
     },
     {
       title: 'Cancel',
-      role: 'cancel'
-    }
-  ]
+      role: 'cancel',
+    },
+  ],
 })
 ```
 
@@ -363,12 +356,7 @@ VStack({
 // Basic horizontal stack
 HStack({
   spacing: 12,
-  children: [
-    Image('/icon.svg'),
-    Text('Menu Item'),
-    Spacer(),
-    Text('⌘K')
-  ]
+  children: [Image('/icon.svg'), Text('Menu Item'), Spacer(), Text('⌘K')],
 })
 
 // Justified layout
@@ -376,8 +364,8 @@ HStack({
   children: [
     Button('Cancel', handleCancel),
     Spacer(),
-    Button('Save', handleSave)
-  ]
+    Button('Save', handleSave),
+  ],
 })
 ```
 
@@ -388,21 +376,16 @@ HStack({
 ```typescript
 // Basic scroll view
 ScrollView({
-  children: [
-    ...longListOfComponents
-  ]
+  children: [...longListOfComponents],
 })
 
 // Horizontal scroll
 ScrollView({
   axis: 'horizontal',
   showsIndicators: false,
-  children: [
-    ...horizontalItems
-  ]
+  children: [...horizontalItems],
 })
-  .modifier
-  .frame({ height: 200 })
+  .modifier.frame({ height: 200 })
   .build()
 
 // With pull-to-refresh
@@ -410,8 +393,8 @@ ScrollView({
   children: content,
   refreshable: {
     onRefresh: async () => await refreshData(),
-    isRefreshing: isRefreshing
-  }
+    isRefreshing: isRefreshing,
+  },
 })
 ```
 
@@ -420,11 +403,7 @@ ScrollView({
 ```typescript
 // Basic spacer in HStack
 HStack({
-  children: [
-    Text('Left'),
-    Spacer(),
-    Text('Right')
-  ]
+  children: [Text('Left'), Spacer(), Text('Right')],
 })
 
 // Fixed minimum space
@@ -432,11 +411,7 @@ Spacer({ minLength: 50 })
 
 // In VStack for vertical spacing
 VStack({
-  children: [
-    Text('Top'),
-    Spacer(),
-    Button('Bottom', handleAction)
-  ]
+  children: [Text('Top'), Spacer(), Button('Bottom', handleAction)],
 })
 ```
 
@@ -448,13 +423,9 @@ Grid({
   alignment: 'center',
   spacing: 16,
   children: [
-    GridRow([
-      Text('A1'), Text('B1'), Text('C1')
-    ]),
-    GridRow([
-      Text('A2'), Text('B2'), Text('C2')
-    ])
-  ]
+    GridRow([Text('A1'), Text('B1'), Text('C1')]),
+    GridRow([Text('A2'), Text('B2'), Text('C2')]),
+  ],
 })
 
 // With spanning items
@@ -462,16 +433,13 @@ Grid({
   children: [
     GridRow([
       Text('Header')
-        .modifier
-        .gridColumnSpan(3)
+        .modifier.gridColumnSpan(3)
         .backgroundColor('#007AFF')
         .foregroundColor('white')
-        .build()
+        .build(),
     ]),
-    GridRow([
-      Text('A1'), Text('B1'), Text('C1')
-    ])
-  ]
+    GridRow([Text('A1'), Text('B1'), Text('C1')]),
+  ],
 })
 ```
 
@@ -482,20 +450,14 @@ Grid({
 LazyVGrid({
   columns: [GridItem.adaptive(250, 350)],
   spacing: 16,
-  children: products.map(product => 
-    ProductCard(product)
-  )
+  children: products.map(product => ProductCard(product)),
 })
 
 // Multi-column grid
 LazyVGrid({
-  columns: [
-    GridItem.flexible(),
-    GridItem.flexible(),
-    GridItem.flexible()
-  ],
+  columns: [GridItem.flexible(), GridItem.flexible(), GridItem.flexible()],
   spacing: 12,
-  children: items
+  children: items,
 })
 
 // With sections
@@ -505,9 +467,9 @@ LazyVGrid({
     createGridSection({
       id: 'featured',
       header: Text('Featured Items'),
-      items: featuredItems
-    })
-  ]
+      items: featuredItems,
+    }),
+  ],
 })
 ```
 
@@ -518,20 +480,19 @@ LazyVGrid({
 LazyHGrid({
   rows: [GridItem.fixed(200)],
   spacing: 12,
-  children: images.map(image => 
+  children: images.map(image =>
     Image({ src: image.url, alt: image.title })
-      .modifier
-      .frame(150, 200)
+      .modifier.frame(150, 200)
       .cornerRadius(8)
       .build()
-  )
+  ),
 })
 
 // Timeline layout
 LazyHGrid({
   rows: [GridItem.flexible(100, 150)],
   spacing: 20,
-  children: events.map(event => EventCard(event))
+  children: events.map(event => EventCard(event)),
 })
 ```
 
@@ -539,14 +500,14 @@ LazyHGrid({
 
 ```typescript
 // Fixed size
-GridItem.fixed(200)         // Exactly 200px
+GridItem.fixed(200) // Exactly 200px
 
 // Flexible sizing
-GridItem.flexible()         // Expands to fill space
+GridItem.flexible() // Expands to fill space
 GridItem.flexible(100, 300) // Min 100px, max 300px
 
 // Adaptive sizing
-GridItem.adaptive(250)      // Fit as many 250px+ columns as possible
+GridItem.adaptive(250) // Fit as many 250px+ columns as possible
 GridItem.adaptive(200, 400) // Min 200px, max 400px per column
 ```
 
@@ -559,29 +520,27 @@ GridItem.adaptive(200, 400) // Min 200px, max 400px per column
 Symbol('heart')
 
 // With animation and styling
-Symbol('star', { 
-  effect: 'glow', 
-  effectValue: 0.8 
+Symbol('star', {
+  effect: 'glow',
+  effectValue: 0.8,
 })
-  .modifier
-  .foregroundColor('#FFD700')
+  .modifier.foregroundColor('#FFD700')
   .scaleLarge()
   .build()
 
 // Advanced rendering modes
 Symbol('star', {
   renderingMode: 'hierarchical',
-  primaryColor: '#007AFF'
+  primaryColor: '#007AFF',
 })
 
 // Reactive symbol
 const [isFavorited, setIsFavorited] = createSignal(false)
 Symbol('heart', {
-  variant: () => isFavorited() ? 'filled' : 'none',
-  effect: 'heartbeat'
+  variant: () => (isFavorited() ? 'filled' : 'none'),
+  effect: 'heartbeat',
 })
-  .modifier
-  .foregroundColor(() => isFavorited() ? '#ff0000' : '#999')
+  .modifier.foregroundColor(() => (isFavorited() ? '#ff0000' : '#999'))
   .onTap(() => setIsFavorited(!isFavorited()))
   .build()
 ```
@@ -593,17 +552,10 @@ Symbol('heart', {
 Divider()
 
 // Vertical divider
-Divider({ orientation: 'vertical' })
-  .modifier
-  .frame({ height: 40 })
-  .build()
+Divider({ orientation: 'vertical' }).modifier.frame({ height: 40 }).build()
 
 // Styled divider
-Divider()
-  .modifier
-  .backgroundColor('#E5E5E7')
-  .frame({ height: 2 })
-  .build()
+Divider().modifier.backgroundColor('#E5E5E7').frame({ height: 2 }).build()
 ```
 
 ### List & Data Components
@@ -614,10 +566,10 @@ Divider()
 // Basic list
 List({
   data: items,
-  children: (item) => [
+  children: item => [
     Text(item.title),
-    Text(item.subtitle).modifier.foregroundColor('#666').build()
-  ]
+    Text(item.subtitle).modifier.foregroundColor('#666').build(),
+  ],
 })
 
 // List with sections
@@ -626,14 +578,14 @@ List({
     {
       header: 'Recent',
       items: recentItems,
-      children: (item) => ListRow(item)
+      children: item => ListRow(item),
     },
     {
       header: 'All Items',
       items: allItems,
-      children: (item) => ListRow(item)
-    }
-  ]
+      children: item => ListRow(item),
+    },
+  ],
 })
 ```
 
@@ -641,11 +593,7 @@ List({
 
 ```typescript
 // Basic conditional rendering
-Show(
-  () => isLoggedIn(),
-  Text('Welcome back!'),
-  Text('Please log in')
-)
+Show(() => isLoggedIn(), Text('Welcome back!'), Text('Please log in'))
 
 // With reactive condition
 Show(
@@ -670,8 +618,8 @@ ForEach(
 // With key for efficient updates
 ForEach(
   () => users(),
-  (user) => UserCard(user),
-  (user) => user.id // key function
+  user => UserCard(user),
+  user => user.id // key function
 )
 ```
 
@@ -682,22 +630,20 @@ ForEach(
 ```typescript
 // Basic form
 Form({
-  onSubmit: (data) => console.log('Form data:', data),
+  onSubmit: data => console.log('Form data:', data),
   children: [
     Section({
       header: 'Personal Information',
       children: [
         BasicInput({ placeholder: 'Name', name: 'name' }),
-        BasicInput({ placeholder: 'Email', name: 'email', type: 'email' })
-      ]
+        BasicInput({ placeholder: 'Email', name: 'email', type: 'email' }),
+      ],
     }),
 
     Section({
-      children: [
-        Button('Submit', null, { type: 'submit' })
-      ]
-    })
-  ]
+      children: [Button('Submit', null, { type: 'submit' })],
+    }),
+  ],
 })
 ```
 
@@ -709,8 +655,8 @@ Section({
   header: 'Account Settings',
   children: [
     Toggle(darkMode, setDarkMode, { label: 'Dark Mode' }),
-    Toggle(notifications, setNotifications, { label: 'Notifications' })
-  ]
+    Toggle(notifications, setNotifications, { label: 'Notifications' }),
+  ],
 })
 
 // Section with header and footer
@@ -719,8 +665,8 @@ Section({
   footer: 'Your data is encrypted and secure.',
   children: [
     Toggle(analytics, setAnalytics, { label: 'Analytics' }),
-    Toggle(tracking, setTracking, { label: 'Ad Tracking' })
-  ]
+    Toggle(tracking, setTracking, { label: 'Ad Tracking' }),
+  ],
 })
 ```
 
@@ -739,17 +685,12 @@ Section({
 ```typescript
 // Semantic headings with modifiers
 H1('Main Title')
-  .modifier
-  .fontSize(32)
+  .modifier.fontSize(32)
   .fontWeight('bold')
   .marginBottom(16)
   .build()
 
-H2('Section Title')
-  .modifier
-  .fontSize(24)
-  .foregroundColor('#333')
-  .build()
+H2('Section Title').modifier.fontSize(24).foregroundColor('#333').build()
 ```
 
 ## 🧭 Navigation Components (@tachui/navigation)
@@ -765,18 +706,17 @@ NavigationView({
     VStack({
       children: [
         Text('Home Screen'),
-        NavigationLink('Go to Settings', () => SettingsView())
-      ]
-    })
-  ]
+        NavigationLink('Go to Settings', () => SettingsView()),
+      ],
+    }),
+  ],
 })
 
 // With navigation bar styling
 NavigationView({
-  children: [HomeView()]
+  children: [HomeView()],
 })
-  .modifier
-  .navigationTitle('My App')
+  .modifier.navigationTitle('My App')
   .navigationBarTitleDisplayMode('large')
   .build()
 ```
@@ -789,28 +729,22 @@ const [navigationPath, setNavigationPath] = createSignal<string[]>([])
 
 NavigationStack({
   path: navigationPath,
-  children: [
-    HomeView()
-  ]
+  children: [HomeView()],
 })
-  .modifier
-  .navigationDestination('settings', () => SettingsView())
+  .modifier.navigationDestination('settings', () => SettingsView())
   .navigationDestination('profile', () => ProfileView())
   .build()
 
 // Programmatic navigation
-setNavigationPath(['settings'])  // Navigate to settings
-setNavigationPath([])           // Pop to root
+setNavigationPath(['settings']) // Navigate to settings
+setNavigationPath([]) // Pop to root
 ```
 
 **NavigationLink** - Declarative navigation links for pushing views onto the navigation stack when activated.
 
 ```typescript
 // Basic navigation link
-NavigationLink(
-  'Settings',
-  () => SettingsView()
-)
+NavigationLink('Settings', () => SettingsView())
 
 // Navigation link with custom styling
 NavigationLink(
@@ -819,20 +753,21 @@ NavigationLink(
       Image('/settings-icon.svg'),
       Text('Settings'),
       Spacer(),
-      Text('>')
-    ]
+      Text('>'),
+    ],
   }),
   () => SettingsView()
 )
-  .modifier
-  .padding(16)
+  .modifier.padding(16)
   .backgroundColor('#F8F9FA')
   .cornerRadius(8)
   .build()
 
 // Variants
 NavigationIconLink('/settings', 'Settings', '/settings-icon.svg')
-NavigationListLink('Profile', () => ProfileView(), { subtitle: 'Manage your account' })
+NavigationListLink('Profile', () => ProfileView(), {
+  subtitle: 'Manage your account',
+})
 ```
 
 ### Tab Navigation
@@ -848,15 +783,13 @@ SimpleTabView({
   onChange: setSelectedTab,
   children: [
     VStack({ children: [Text('Home Content')] })
-      .modifier
-      .tabItem('Home', '/home-icon.svg')
+      .modifier.tabItem('Home', '/home-icon.svg')
       .build(),
 
     VStack({ children: [Text('Settings Content')] })
-      .modifier
-      .tabItem('Settings', '/settings-icon.svg')
-      .build()
-  ]
+      .modifier.tabItem('Settings', '/settings-icon.svg')
+      .build(),
+  ],
 })
 ```
 
@@ -873,24 +806,23 @@ TabView({
       title: 'Home',
       icon: '/home-icon.svg',
       badge: () => unreadCount(),
-      content: () => HomeView()
+      content: () => HomeView(),
     },
     {
       id: 'search',
       title: 'Search',
       icon: '/search-icon.svg',
-      content: () => SearchView()
+      content: () => SearchView(),
     },
     {
       id: 'profile',
       title: 'Profile',
       icon: '/profile-icon.svg',
-      content: () => ProfileView()
-    }
-  ]
+      content: () => ProfileView(),
+    },
+  ],
 })
-  .modifier
-  .tabViewStyle('page')  // Optional: page-style tabs
+  .modifier.tabViewStyle('page') // Optional: page-style tabs
   .build()
 ```
 
@@ -907,17 +839,17 @@ EnhancedTabView({
       title: 'Main',
       tabs: [
         { id: 'home', title: 'Home', content: () => HomeView() },
-        { id: 'browse', title: 'Browse', content: () => BrowseView() }
-      ]
+        { id: 'browse', title: 'Browse', content: () => BrowseView() },
+      ],
     },
     {
       title: 'Tools',
       tabs: [
         { id: 'settings', title: 'Settings', content: () => SettingsView() },
-        { id: 'help', title: 'Help', content: () => HelpView() }
-      ]
-    }
-  ]
+        { id: 'help', title: 'Help', content: () => HelpView() },
+      ],
+    },
+  ],
 })
 ```
 
@@ -931,11 +863,11 @@ AdvancedTabView({
   showsCloseButtons: true,
   tabs: dynamicTabs(),
   onTabReorder: (oldIndex, newIndex) => reorderTabs(oldIndex, newIndex),
-  onTabClose: (tabId) => closeTab(tabId),
+  onTabClose: tabId => closeTab(tabId),
   contextMenuActions: [
-    { title: 'Duplicate Tab', action: (tabId) => duplicateTab(tabId) },
-    { title: 'Close Others', action: (tabId) => closeOtherTabs(tabId) }
-  ]
+    { title: 'Duplicate Tab', action: tabId => duplicateTab(tabId) },
+    { title: 'Close Others', action: tabId => closeOtherTabs(tabId) },
+  ],
 })
 ```
 
@@ -955,7 +887,7 @@ navigationPath.popToRoot()
 // Path-based navigation
 NavigationStack({
   path: navigationPath.path,
-  children: [HomeView()]
+  children: [HomeView()],
 })
 ```
 
@@ -964,13 +896,12 @@ NavigationStack({
 ```typescript
 // Navigation bar modifiers
 SomeView()
-  .modifier
-  .navigationTitle('Page Title')
+  .modifier.navigationTitle('Page Title')
   .navigationBarTitleDisplayMode('inline')
   .navigationBarHidden(false)
   .navigationBarItems({
     leading: Button('Cancel', handleCancel),
-    trailing: Button('Save', handleSave)
+    trailing: Button('Save', handleSave),
   })
   .toolbarBackground('#FFFFFF')
   .toolbarForegroundColor('#000000')
@@ -1038,12 +969,14 @@ SomeView()
 ## 🏷️ Component Categories
 
 ### By Complexity
+
 - **Simple**: Text, Spacer, Divider, Show
 - **Interactive**: Button, Toggle, Slider, Stepper
 - **Complex**: List, ScrollView, DatePicker, Menu
 - **Advanced**: Alert, ActionSheet, NavigationView, Form
 
 ### By Use Case
+
 - **Content Display**: Text, Image, Symbol, Divider
 - **User Input**: BasicInput, TextField variants, Toggle, Slider, Picker
 - **Navigation**: NavigationView, NavigationLink, TabView, Link
@@ -1053,6 +986,7 @@ SomeView()
 - **Desktop**: Window, WindowGroup, App
 
 ### Bundle Impact
+
 - **Core Only** (~60KB): All @tachui/core components
 - **Core + Forms** (~95KB): Core + enhanced form components
 - **Core + Navigation** (~85KB): Core + navigation system
@@ -1061,6 +995,7 @@ SomeView()
 ## 📊 Component Count Summary
 
 ### Core Package (@tachui/core)
+
 - **Primary UI**: 4 components
 - **Interactive Controls**: 5 components
 - **Navigation & Links**: 1 component
@@ -1074,12 +1009,14 @@ SomeView()
 - **Total Core**: 34 components
 
 ### Navigation Package (@tachui/navigation)
+
 - **Stack Navigation**: 3 components (NavigationView, NavigationStack, NavigationLink)
 - **Tab Navigation**: 4 components (SimpleTabView, TabView, EnhancedTabView, AdvancedTabView)
 - **Navigation Infrastructure**: 2 components (NavigationPath, Navigation Modifiers)
 - **Total Navigation**: 9 components
 
 ### Forms Package (@tachui/forms)
+
 - **Enhanced Infrastructure**: 2 components
 - **Core Input**: 4 components
 - **Boolean Input**: 5 components
@@ -1093,7 +1030,7 @@ SomeView()
 ### Basic Usage Example
 
 ```typescript
-import { VStack, Text, Button, createSignal } from '@tachui/core'
+import { VStack, Text, Button, createSignal } from '@tachui/primitives'
 
 const CounterApp = () => {
   const [count, setCount] = createSignal(0)
@@ -1101,8 +1038,8 @@ const CounterApp = () => {
   return VStack({
     children: [
       Text(() => `Count: ${count()}`),
-      Button('Increment', () => setCount(count() + 1))
-    ]
+      Button('Increment', () => setCount(count() + 1)),
+    ],
   })
 }
 ```
@@ -1114,19 +1051,19 @@ import { Form, TextField, EmailField, PasswordField } from '@tachui/forms'
 
 const LoginForm = () => {
   return Form({
-    onSubmit: (data) => console.log('Form data:', data),
+    onSubmit: data => console.log('Form data:', data),
     children: [
       EmailField({
         label: 'Email',
         name: 'email',
-        required: true
+        required: true,
       }),
       PasswordField({
         label: 'Password',
         name: 'password',
-        minLength: 8
-      })
-    ]
+        minLength: 8,
+      }),
+    ],
   })
 }
 ```
@@ -1134,7 +1071,7 @@ const LoginForm = () => {
 ### With Navigation
 
 ```typescript
-import { VStack, Text } from '@tachui/core'
+import { VStack, Text } from '@tachui/primitives'
 import { NavigationStack, NavigationLink } from '@tachui/navigation'
 
 const AppNavigation = () => {
@@ -1144,13 +1081,12 @@ const AppNavigation = () => {
         children: [
           Text('Home Screen'),
           NavigationLink('Go to Settings', () => SettingsView()),
-          NavigationLink('View Profile', () => ProfileView())
-        ]
-      })
-    ]
+          NavigationLink('View Profile', () => ProfileView()),
+        ],
+      }),
+    ],
   })
-    .modifier
-    .navigationDestination('settings', () => SettingsView())
+    .modifier.navigationDestination('settings', () => SettingsView())
     .navigationDestination('profile', () => ProfileView())
     .build()
 }
