@@ -107,9 +107,6 @@ importers:
 
   packages/core:
     devDependencies:
-      '@tachui/primitives':
-        specifier: workspace:*
-        version: link:../primitives
       '@types/jsdom':
         specifier: ^21.1.6
         version: 21.1.7
@@ -273,6 +270,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
+      '@tachui/primitives':
+        specifier: workspace:*
+        version: link:../primitives
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.11

@@ -12,7 +12,7 @@ import type { ModifierContext, ReactiveModifierProps } from './types'
 export interface UtilityOptions {
   cursor?:
     | 'auto'
-    | 'default' 
+    | 'default'
     | 'pointer'
     | 'text'
     | 'wait'
@@ -36,7 +36,14 @@ export interface UtilityOptions {
   bottom?: number | string
   left?: number | string
   zIndex?: number
-  display?: 'block' | 'inline' | 'inline-block' | 'flex' | 'inline-flex' | 'grid' | 'none'
+  display?:
+    | 'block'
+    | 'inline'
+    | 'inline-block'
+    | 'flex'
+    | 'inline-flex'
+    | 'grid'
+    | 'none'
   visibility?: 'visible' | 'hidden' | 'collapse'
   pointerEvents?: 'auto' | 'none'
   userSelect?: 'auto' | 'none' | 'text' | 'all'
@@ -72,7 +79,7 @@ export class UtilityModifier extends BaseModifier<UtilityOptions> {
 
     const styles = this.computeUtilityStyles(this.properties)
     this.applyStyles(context.element, styles)
-    
+
     return undefined
   }
 
@@ -149,12 +156,27 @@ export class UtilityModifier extends BaseModifier<UtilityOptions> {
 
   private validateCursorValue(value: string): void {
     const validCursors = [
-      'auto', 'default', 'pointer', 'text', 'wait', 'help', 'not-allowed', 'none',
-      'grab', 'grabbing', 'zoom-in', 'zoom-out', 'alias', 'cell', 'copy'
+      'auto',
+      'default',
+      'pointer',
+      'text',
+      'wait',
+      'help',
+      'not-allowed',
+      'none',
+      'grab',
+      'grabbing',
+      'zoom-in',
+      'zoom-out',
+      'alias',
+      'cell',
+      'copy',
     ]
-    
+
     if (!validCursors.includes(value) && !value.includes('url(')) {
-      console.warn(`Unknown cursor value: "${value}". See documentation for valid cursor values.`)
+      console.warn(
+        `Unknown cursor value: "${value}". See documentation for valid cursor values.`
+      )
     }
   }
 }
@@ -206,4 +228,18 @@ export function zIndex(value: number): UtilityModifier {
  */
 export function display(value: UtilityOptions['display']): UtilityModifier {
   return new UtilityModifier({ display: value })
+}
+
+/**
+ * Convenience function for outline
+ */
+export function outline(value: string): UtilityModifier {
+  return new UtilityModifier({ outline: value })
+}
+
+/**
+ * Convenience function for outline-offset
+ */
+export function outlineOffset(value: number | string): UtilityModifier {
+  return new UtilityModifier({ outlineOffset: value })
 }

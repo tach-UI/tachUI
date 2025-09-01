@@ -6,13 +6,24 @@
  */
 
 import type { Signal } from '../reactive/types'
-import type { ComponentInstance, ComponentProps, DOMNode } from '../runtime/types'
+import type {
+  ComponentInstance,
+  ComponentProps,
+  DOMNode,
+} from '../runtime/types'
 import type { FontWeight } from './typography'
 import type { Dimension } from '../constants/layout'
 import type { StatefulBackgroundValue } from '../gradients/types'
-import type { ResponsiveModifierBuilder, ResponsiveBreakpointBuilder } from './responsive/responsive-builder'
+import type {
+  ResponsiveModifierBuilder,
+  ResponsiveBreakpointBuilder,
+} from './responsive/responsive-builder'
 import type { Asset } from '../assets/Asset'
-import type { ColorAssetProxy, ImageAssetProxy, FontAssetProxy } from '../assets/types'
+import type {
+  ColorAssetProxy,
+  ImageAssetProxy,
+  FontAssetProxy,
+} from '../assets/types'
 
 /**
  * Valid color value types for modifiers
@@ -22,7 +33,11 @@ export type ColorValue = string | Asset | ColorAssetProxy | Signal<string>
 /**
  * Valid asset types for modifiers
  */
-export type AssetValue = Asset | ColorAssetProxy | ImageAssetProxy | FontAssetProxy
+export type AssetValue =
+  | Asset
+  | ColorAssetProxy
+  | ImageAssetProxy
+  | FontAssetProxy
 
 /**
  * Text component interface for type safety with asHTML modifier
@@ -76,7 +91,7 @@ export type ReactiveModifierProps<T> = {
  */
 export interface TextShadowConfig {
   readonly x: number
-  readonly y: number  
+  readonly y: number
   readonly blur: number
   readonly color: string
 }
@@ -108,7 +123,8 @@ export interface LayoutModifierProps {
         bottom?: number | string
         left?: number | string
       }
-    | number | string
+    | number
+    | string
   alignment?: 'leading' | 'center' | 'trailing' | 'top' | 'bottom'
   layoutPriority?: number
   offset?: {
@@ -190,7 +206,7 @@ export interface AppearanceModifierProps {
   // Visual Effects (Phase 2 - Epic: Butternut)
   blur?: number // CSS filter: blur(Npx)
   brightness?: number // CSS filter: brightness(N) - 1.0 is normal
-  contrast?: number // CSS filter: contrast(N) - 1.0 is normal  
+  contrast?: number // CSS filter: contrast(N) - 1.0 is normal
   saturation?: number // CSS filter: saturate(N) - 1.0 is normal
   hueRotation?: number // CSS filter: hue-rotate(Ndeg)
   grayscale?: number // CSS filter: grayscale(N) - 0.0 to 1.0
@@ -210,38 +226,44 @@ export interface InteractionModifierProps {
   onMouseUp?: (event: MouseEvent) => void
   onDoubleClick?: (event: MouseEvent) => void
   onContextMenu?: (event: MouseEvent) => void
-  
+
   // Existing drag events
   onDragStart?: (event: DragEvent) => void
   onDragOver?: (event: DragEvent) => void
   onDragLeave?: (event: DragEvent) => void
   onDrop?: (event: DragEvent) => void
-  
+
   // Focus events (onFocus exists, adding onBlur)
   onFocus?: (isFocused: boolean) => void
   onBlur?: (isFocused: boolean) => void
-  
+
   // Keyboard events
   onKeyPress?: (event: KeyboardEvent) => void
   onKeyDown?: (event: KeyboardEvent) => void
   onKeyUp?: (event: KeyboardEvent) => void
-  
+
   // Scroll and wheel events
   onScroll?: (event: Event) => void
   onWheel?: (event: WheelEvent) => void
-  
+
   // Input events
   onInput?: (event: InputEvent) => void
   onChange?: (value: any, event?: Event) => void
-  
+
   // Clipboard events
   onCopy?: (event: ClipboardEvent) => void
   onCut?: (event: ClipboardEvent) => void
   onPaste?: (event: ClipboardEvent) => void
-  
+
+  // Touch events
+  onTouchStart?: (event: TouchEvent) => void
+  onTouchMove?: (event: TouchEvent) => void
+  onTouchEnd?: (event: TouchEvent) => void
+  onTouchCancel?: (event: TouchEvent) => void
+
   // Other events
   onSelect?: (event: Event) => void
-  
+
   // Advanced Gesture Modifiers (Phase 4 - Epic: Butternut)
   onLongPressGesture?: {
     minimumDuration?: number // ms, default 500
@@ -249,27 +271,27 @@ export interface InteractionModifierProps {
     perform: () => void
     onPressingChanged?: (isPressing: boolean) => void
   }
-  
+
   // Keyboard Shortcuts (Phase 4 - Epic: Butternut)
   keyboardShortcut?: {
     key: string
     modifiers?: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[]
     action: () => void
   }
-  
-  // Focus Management (Phase 4 - Epic: Butternut) 
+
+  // Focus Management (Phase 4 - Epic: Butternut)
   focused?: boolean | Signal<boolean>
   focusable?: {
     isFocusable?: boolean
     interactions?: ('activate' | 'edit')[]
   }
-  
+
   // Enhanced Hover Tracking (Phase 4 - Epic: Butternut)
   onContinuousHover?: {
     coordinateSpace?: 'local' | 'global'
     perform: (location: { x: number; y: number } | null) => void
   }
-  
+
   // Gesture Priority System (Phase 4 - Epic: Butternut)
   highPriorityGesture?: {
     gesture: any // Will define gesture types later
@@ -279,10 +301,10 @@ export interface InteractionModifierProps {
     gesture: any
     including?: ('all' | 'subviews' | 'none')[]
   }
-  
+
   // Hit Testing Control (Phase 4 - Epic: Butternut)
   allowsHitTesting?: boolean
-  
+
   // Existing state properties
   disabled?: boolean
   draggable?: boolean
@@ -363,7 +385,9 @@ export type ModifierFactory<TProps = {}> = (
 /**
  * Modifier builder interface for creating chainable modifiers
  */
-export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance> {
+export interface ModifierBuilder<
+  T extends ComponentInstance = ComponentInstance,
+> {
   // Layout modifiers
   frame(width?: Dimension, height?: Dimension): ModifierBuilder<T>
   frame(options: LayoutModifierProps['frame']): ModifierBuilder<T>
@@ -406,8 +430,12 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
     style?: string
     color?: string
   }): ModifierBuilder<T>
-  textAlign(value: 'left' | 'center' | 'right' | 'justify' | 'start' | 'end'): ModifierBuilder<T>
-  textTransform(value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'): ModifierBuilder<T>
+  textAlign(
+    value: 'left' | 'center' | 'right' | 'justify' | 'start' | 'end'
+  ): ModifierBuilder<T>
+  textTransform(
+    value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
+  ): ModifierBuilder<T>
   letterSpacing(value: number | string): ModifierBuilder<T>
   lineHeight(value: number | string): ModifierBuilder<T>
   gradientText(gradient: string): ModifierBuilder<T>
@@ -416,35 +444,75 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   borderTop(
     width: number | Signal<number>,
     color: ColorValue,
-    style?: 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset'
+    style?:
+      | 'solid'
+      | 'dashed'
+      | 'dotted'
+      | 'double'
+      | 'groove'
+      | 'ridge'
+      | 'inset'
+      | 'outset'
   ): ModifierBuilder<T>
   borderRight(
     width: number | Signal<number>,
     color: ColorValue,
-    style?: 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset'
+    style?:
+      | 'solid'
+      | 'dashed'
+      | 'dotted'
+      | 'double'
+      | 'groove'
+      | 'ridge'
+      | 'inset'
+      | 'outset'
   ): ModifierBuilder<T>
   borderBottom(
     width: number | Signal<number>,
     color: ColorValue,
-    style?: 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset'
+    style?:
+      | 'solid'
+      | 'dashed'
+      | 'dotted'
+      | 'double'
+      | 'groove'
+      | 'ridge'
+      | 'inset'
+      | 'outset'
   ): ModifierBuilder<T>
   borderLeft(
     width: number | Signal<number>,
     color: ColorValue,
-    style?: 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset'
+    style?:
+      | 'solid'
+      | 'dashed'
+      | 'dotted'
+      | 'double'
+      | 'groove'
+      | 'ridge'
+      | 'inset'
+      | 'outset'
   ): ModifierBuilder<T>
 
   // Flexbox modifiers
   flexGrow(value: number): ModifierBuilder<T>
   flexShrink(value: number): ModifierBuilder<T>
   justifyContent(
-    value: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly'
+    value:
+      | 'flex-start'
+      | 'flex-end'
+      | 'center'
+      | 'space-between'
+      | 'space-around'
+      | 'space-evenly'
   ): ModifierBuilder<T>
   alignItems(
     value: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'
   ): ModifierBuilder<T>
   gap(value: number | string): ModifierBuilder<T>
-  flexDirection(value: 'row' | 'row-reverse' | 'column' | 'column-reverse'): ModifierBuilder<T>
+  flexDirection(
+    value: 'row' | 'row-reverse' | 'column' | 'column-reverse'
+  ): ModifierBuilder<T>
   flexWrap(value: 'nowrap' | 'wrap' | 'wrap-reverse'): ModifierBuilder<T>
 
   // Utility modifiers
@@ -462,20 +530,34 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   ): ModifierBuilder<T>
   overflowY(value: 'visible' | 'hidden' | 'scroll' | 'auto'): ModifierBuilder<T>
   overflowX(value: 'visible' | 'hidden' | 'scroll' | 'auto'): ModifierBuilder<T>
-  position(value: 'static' | 'relative' | 'absolute' | 'fixed' | 'sticky'): ModifierBuilder<T>
+  position(
+    value: 'static' | 'relative' | 'absolute' | 'fixed' | 'sticky'
+  ): ModifierBuilder<T>
   zIndex(value: number): ModifierBuilder<T>
   display(
-    value: 'block' | 'inline' | 'inline-block' | 'flex' | 'inline-flex' | 'grid' | 'none'
+    value:
+      | 'block'
+      | 'inline'
+      | 'inline-block'
+      | 'flex'
+      | 'inline-flex'
+      | 'grid'
+      | 'none'
   ): ModifierBuilder<T>
   transform(value: string | Signal<string>): ModifierBuilder<T>
 
   // Raw CSS modifiers
-  css(properties: { [property: string]: string | number | undefined }): ModifierBuilder<T>
+  css(properties: {
+    [property: string]: string | number | undefined
+  }): ModifierBuilder<T>
   cssProperty(property: string, value: string | number): ModifierBuilder<T>
   cssVariable(name: string, value: string | number): ModifierBuilder<T>
 
   // Phase 1 SwiftUI modifiers
-  offset(x: number | Signal<number>, y?: number | Signal<number>): ModifierBuilder<T>
+  offset(
+    x: number | Signal<number>,
+    y?: number | Signal<number>
+  ): ModifierBuilder<T>
   clipped(): ModifierBuilder<T>
   rotationEffect(
     angle: number | Signal<number>,
@@ -492,7 +574,10 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   ): ModifierBuilder<T>
 
   // Phase 2 SwiftUI modifiers
-  aspectRatio(ratio?: number | Signal<number>, contentMode?: 'fit' | 'fill'): ModifierBuilder<T>
+  aspectRatio(
+    ratio?: number | Signal<number>,
+    contentMode?: 'fit' | 'fill'
+  ): ModifierBuilder<T>
   fixedSize(horizontal?: boolean, vertical?: boolean): ModifierBuilder<T>
   clipShape(
     shape: 'circle' | 'ellipse' | 'rect' | 'polygon',
@@ -527,26 +612,51 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
       | 'leading'
       | 'trailing'
   ): ModifierBuilder<T>
-  
+
   // Note: SwiftUI-style position for absolute positioning (different from CSS position)
-  absolutePosition(x: number | Signal<number>, y: number | Signal<number>): ModifierBuilder<T>
+  absolutePosition(
+    x: number | Signal<number>,
+    y: number | Signal<number>
+  ): ModifierBuilder<T>
 
   // Appearance modifiers
   foregroundColor(color: ColorValue): ModifierBuilder<T>
   backgroundColor(color: ColorValue): ModifierBuilder<T>
-  background(value: StatefulBackgroundValue | Signal<string>): ModifierBuilder<T>
+  background(
+    value: StatefulBackgroundValue | Signal<string>
+  ): ModifierBuilder<T>
   font(options: AppearanceModifierProps['font']): ModifierBuilder<T>
   font(size: number | string): ModifierBuilder<T>
-  fontWeight(weight: NonNullable<AppearanceModifierProps['font']>['weight']): ModifierBuilder<T>
-  fontSize(size: number | string | Signal<number> | Signal<string>): ModifierBuilder<T>
+  fontWeight(
+    weight: NonNullable<AppearanceModifierProps['font']>['weight']
+  ): ModifierBuilder<T>
+  fontSize(
+    size: number | string | Signal<number> | Signal<string>
+  ): ModifierBuilder<T>
   opacity(value: number | Signal<number>): ModifierBuilder<T>
   cornerRadius(radius: number | Signal<number>): ModifierBuilder<T>
   border(width: number | Signal<number>, color?: ColorValue): ModifierBuilder<T>
   border(options: AppearanceModifierProps['border']): ModifierBuilder<T>
   borderWidth(width: number | Signal<number>): ModifierBuilder<T>
   shadow(options: AppearanceModifierProps['shadow']): ModifierBuilder<T>
-  shadow(config: { x: number; y: number; blur: number; color: string; spread?: number; inset?: boolean }): ModifierBuilder<T>
-  shadows(configs: Array<{ x: number; y: number; blur: number; color: string; spread?: number; inset?: boolean }>): ModifierBuilder<T>
+  shadow(config: {
+    x: number
+    y: number
+    blur: number
+    color: string
+    spread?: number
+    inset?: boolean
+  }): ModifierBuilder<T>
+  shadows(
+    configs: Array<{
+      x: number
+      y: number
+      blur: number
+      color: string
+      spread?: number
+      inset?: boolean
+    }>
+  ): ModifierBuilder<T>
   textShadow(config: TextShadowConfig): ModifierBuilder<T>
   shadowPreset(presetName: string): ModifierBuilder<T>
 
@@ -559,22 +669,41 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   grayscale(amount: number | Signal<number>): ModifierBuilder<T>
   colorInvert(amount?: number | Signal<number>): ModifierBuilder<T>
   dropShadow(shadow: string): ModifierBuilder<T>
-  
+
   // Additional filter methods
-  filter(config: { blur?: number; brightness?: number; contrast?: number; saturate?: number; [key: string]: any } | string): ModifierBuilder<T>
+  filter(
+    config:
+      | {
+          blur?: number
+          brightness?: number
+          contrast?: number
+          saturate?: number
+          [key: string]: any
+        }
+      | string
+  ): ModifierBuilder<T>
   saturate(value: number): ModifierBuilder<T>
   sepia(value: number): ModifierBuilder<T>
   hueRotate(angle: string): ModifierBuilder<T>
   invert(value: number): ModifierBuilder<T>
-  
+
   // Filter presets
-  vintagePhoto(sepiaAmount?: number, contrastAmount?: number): ModifierBuilder<T>
+  vintagePhoto(
+    sepiaAmount?: number,
+    contrastAmount?: number
+  ): ModifierBuilder<T>
   blackAndWhite(contrastAmount?: number): ModifierBuilder<T>
-  vibrant(saturationAmount?: number, contrastAmount?: number): ModifierBuilder<T>
+  vibrant(
+    saturationAmount?: number,
+    contrastAmount?: number
+  ): ModifierBuilder<T>
   warmTone(hueShift?: string): ModifierBuilder<T>
   coolTone(hueShift?: string): ModifierBuilder<T>
   faded(contrastAmount?: number, saturationAmount?: number): ModifierBuilder<T>
-  highKey(brightnessAmount?: number, contrastAmount?: number): ModifierBuilder<T>
+  highKey(
+    brightnessAmount?: number,
+    contrastAmount?: number
+  ): ModifierBuilder<T>
   lowKey(brightnessAmount?: number, contrastAmount?: number): ModifierBuilder<T>
   softFocus(blurAmount?: number): ModifierBuilder<T>
   highContrastMode(): ModifierBuilder<T>
@@ -584,14 +713,23 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   // Transform modifiers (SwiftUI-style)
   scale(value: number | { x?: number; y?: number }): ModifierBuilder<T>
   rotate(angle: string): ModifierBuilder<T>
-  translate(offset: { x?: number | string; y?: number | string }): ModifierBuilder<T>
+  translate(offset: {
+    x?: number | string
+    y?: number | string
+  }): ModifierBuilder<T>
   perspective(value: number): ModifierBuilder<T>
 
   // Hover and cursor effect modifiers
   hover(styles: any, transition?: string | number): ModifierBuilder<T>
-  hoverEffect(effect: 'automatic' | 'highlight' | 'lift' | 'scale', isEnabled?: boolean): ModifierBuilder<T>
+  hoverEffect(
+    effect: 'automatic' | 'highlight' | 'lift' | 'scale',
+    isEnabled?: boolean
+  ): ModifierBuilder<T>
   hoverWithTransition(styles: any, duration?: number): ModifierBuilder<T>
-  conditionalHover(effect: 'automatic' | 'highlight' | 'lift' | 'scale', isEnabled: boolean): ModifierBuilder<T>
+  conditionalHover(
+    effect: 'automatic' | 'highlight' | 'lift' | 'scale',
+    isEnabled: boolean
+  ): ModifierBuilder<T>
 
   // Cursor preset methods
   interactiveCursor(): ModifierBuilder<T>
@@ -621,62 +759,60 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   onDragOver(handler: (event: DragEvent) => void): ModifierBuilder<T>
   onDragLeave(handler: (event: DragEvent) => void): ModifierBuilder<T>
   onDrop(handler: (event: DragEvent) => void): ModifierBuilder<T>
-  
+
   // Focus events
   onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T>
   onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T>
-  
+
   // Keyboard events
   onKeyPress(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
   onKeyDown(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
   onKeyUp(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
-  
+
   // Scroll and wheel events
   onScroll(handler: (event: Event) => void): ModifierBuilder<T>
   onWheel(handler: (event: WheelEvent) => void): ModifierBuilder<T>
-  
+
   // Input events
   onInput(handler: (event: InputEvent) => void): ModifierBuilder<T>
   onChange(handler: (value: any, event?: Event) => void): ModifierBuilder<T>
-  
+
   // Clipboard events
   onCopy(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
   onCut(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
   onPaste(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
-  
+
   // Other events
   onSelect(handler: (event: Event) => void): ModifierBuilder<T>
-  
+
   // Advanced Gesture Modifiers (Phase 4 - Epic: Butternut)
-  onLongPressGesture(
-    options: {
-      minimumDuration?: number
-      maximumDistance?: number
-      perform: () => void
-      onPressingChanged?: (isPressing: boolean) => void
-    }
-  ): ModifierBuilder<T>
-  
+  onLongPressGesture(options: {
+    minimumDuration?: number
+    maximumDistance?: number
+    perform: () => void
+    onPressingChanged?: (isPressing: boolean) => void
+  }): ModifierBuilder<T>
+
   // Keyboard Shortcuts (Phase 4 - Epic: Butternut)
   keyboardShortcut(
     key: string,
     modifiers: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[],
     action: () => void
   ): ModifierBuilder<T>
-  
+
   // Focus Management (Phase 4 - Epic: Butternut)
   focused(binding: boolean | Signal<boolean>): ModifierBuilder<T>
   focusable(
     isFocusable?: boolean,
     interactions?: ('activate' | 'edit')[]
   ): ModifierBuilder<T>
-  
+
   // Enhanced Hover Tracking (Phase 4 - Epic: Butternut)
   onContinuousHover(
     coordinateSpace: 'local' | 'global',
     perform: (location: { x: number; y: number } | null) => void
   ): ModifierBuilder<T>
-  
+
   // Gesture Priority System (Phase 4 - Epic: Butternut)
   highPriorityGesture(
     gesture: any,
@@ -686,30 +822,59 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
     gesture: any,
     including?: ('all' | 'subviews' | 'none')[]
   ): ModifierBuilder<T>
-  
+
   // Hit Testing Control (Phase 4 - Epic: Butternut)
   allowsHitTesting(enabled: boolean): ModifierBuilder<T>
-  
+
   // HTML and ARIA Attributes
   id(value: string): ModifierBuilder<T>
-  data(attributes: { [key: string]: string | number | boolean }): ModifierBuilder<T>
-  aria(attributes: { [key: string]: string | number | boolean | undefined }): ModifierBuilder<T>
+  data(attributes: {
+    [key: string]: string | number | boolean
+  }): ModifierBuilder<T>
+  aria(attributes: {
+    [key: string]: string | number | boolean | undefined
+  }): ModifierBuilder<T>
   tabIndex(value: number): ModifierBuilder<T>
 
   // Text Modifiers
   lineClamp(lines: number): ModifierBuilder<T>
-  wordBreak(value: 'normal' | 'break-all' | 'keep-all' | 'break-word'): ModifierBuilder<T>
+  wordBreak(
+    value: 'normal' | 'break-all' | 'keep-all' | 'break-word'
+  ): ModifierBuilder<T>
   overflowWrap(value: 'normal' | 'break-word' | 'anywhere'): ModifierBuilder<T>
   hyphens(value: 'none' | 'manual' | 'auto'): ModifierBuilder<T>
 
   // Backdrop Filter Modifiers (Unified Implementation)
-  backdropFilter(config: { blur?: number; brightness?: number; contrast?: number; saturate?: number; [key: string]: any }, fallbackColor?: ColorValue): ModifierBuilder<T>
-  backdropFilter(cssValue: string, fallbackColor?: ColorValue): ModifierBuilder<T>
-  glassmorphism(intensity?: 'subtle' | 'light' | 'medium' | 'heavy', customFallback?: ColorValue): ModifierBuilder<T>
+  backdropFilter(
+    config: {
+      blur?: number
+      brightness?: number
+      contrast?: number
+      saturate?: number
+      [key: string]: any
+    },
+    fallbackColor?: ColorValue
+  ): ModifierBuilder<T>
+  backdropFilter(
+    cssValue: string,
+    fallbackColor?: ColorValue
+  ): ModifierBuilder<T>
+  glassmorphism(
+    intensity?: 'subtle' | 'light' | 'medium' | 'heavy',
+    customFallback?: ColorValue
+  ): ModifierBuilder<T>
 
   // Pseudo-element modifiers
-  before(styles: { content: string; color?: string; [key: string]: any }): ModifierBuilder<T>
-  after(styles: { content: string; color?: string; [key: string]: any }): ModifierBuilder<T>
+  before(styles: {
+    content: string
+    color?: string
+    [key: string]: any
+  }): ModifierBuilder<T>
+  after(styles: {
+    content: string
+    color?: string
+    [key: string]: any
+  }): ModifierBuilder<T>
 
   // State modifiers
   disabled(isDisabled?: boolean | Signal<boolean>): ModifierBuilder<T>
@@ -718,7 +883,12 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   accessibilityLabel(label: string): ModifierBuilder<T>
 
   // Animation modifiers
-  transition(property?: string, duration?: number, easing?: string, delay?: number): ModifierBuilder<T>
+  transition(
+    property?: string,
+    duration?: number,
+    easing?: string,
+    delay?: number
+  ): ModifierBuilder<T>
   transitions(config: any): ModifierBuilder<T>
   animation(options: AnimationModifierProps['animation']): ModifierBuilder<T>
 
@@ -740,10 +910,37 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   overscrollBehavior(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T>
   overscrollBehaviorX(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T>
   overscrollBehaviorY(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T>
-  scrollMargin(margin: number | string | { top?: number | string, right?: number | string, bottom?: number | string, left?: number | string }): ModifierBuilder<T>
-  scrollPadding(padding: number | string | { top?: number | string, right?: number | string, bottom?: number | string, left?: number | string }): ModifierBuilder<T>
+  scrollMargin(
+    margin:
+      | number
+      | string
+      | {
+          top?: number | string
+          right?: number | string
+          bottom?: number | string
+          left?: number | string
+        }
+  ): ModifierBuilder<T>
+  scrollPadding(
+    padding:
+      | number
+      | string
+      | {
+          top?: number | string
+          right?: number | string
+          bottom?: number | string
+          left?: number | string
+        }
+  ): ModifierBuilder<T>
   scrollSnap(
-    type: 'none' | 'x mandatory' | 'y mandatory' | 'x proximity' | 'y proximity' | 'both mandatory' | 'both proximity',
+    type:
+      | 'none'
+      | 'x mandatory'
+      | 'y mandatory'
+      | 'x proximity'
+      | 'y proximity'
+      | 'both mandatory'
+      | 'both proximity',
     align?: 'start' | 'end' | 'center',
     stop?: 'normal' | 'always'
   ): ModifierBuilder<T>
@@ -753,7 +950,10 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   onDisappear(handler: () => void): ModifierBuilder<T>
   task(
     operation: () => Promise<void> | void,
-    options?: { id?: string; priority?: 'background' | 'userInitiated' | 'utility' | 'default' }
+    options?: {
+      id?: string
+      priority?: 'background' | 'userInitiated' | 'utility' | 'default'
+    }
   ): ModifierBuilder<T>
   refreshable(
     onRefresh: () => Promise<void>,
@@ -767,29 +967,31 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   resizable(): ModifierBuilder<T>
 
   // Text case alias for textTransform
-  textCase(value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'): ModifierBuilder<T>
+  textCase(
+    value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
+  ): ModifierBuilder<T>
 
   // HTML Content Rendering (Text components only)
   /**
    * Render component content as HTML instead of plain text
-   * 
+   *
    * ⚠️ **RESTRICTION**: Only available on Text components for security
    * ⚠️ **SECURITY NOTICE**: This modifier treats content as HTML.
    * - Default: Basic sanitization removes common XSS vectors
    * - Use skipSanitizer: true only with fully trusted content
    * - Consider DOMPurify for comprehensive sanitization
    * - Non-reactive for performance (content is processed once)
-   * 
+   *
    * @param options - Configuration options
-   * 
+   *
    * @example
    * ```typescript
    * // ✅ Allowed: Text components only
    * Text('<p>Hello <strong>world</strong></p>').modifier.asHTML().build()
-   * 
+   *
    * // ❌ Compile Error: Not a Text component
    * VStack({}).modifier.asHTML() // TypeScript error
-   * 
+   *
    * // ✅ Dangerous: Skip sanitization
    * Text(serverTemplate).modifier.asHTML({ skipSanitizer: true }).build()
    * ```
@@ -798,7 +1000,7 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
 
   // Responsive Design Methods
   responsive(): ResponsiveModifierBuilder<T>
-  
+
   // Responsive Breakpoint Shorthand Properties
   readonly base: ResponsiveBreakpointBuilder<T>
   readonly sm: ResponsiveBreakpointBuilder<T>
@@ -806,7 +1008,7 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
   readonly lg: ResponsiveBreakpointBuilder<T>
   readonly xl: ResponsiveBreakpointBuilder<T>
   readonly '2xl': ResponsiveBreakpointBuilder<T>
-  
+
   addModifier(modifier: Modifier): void
 
   // Build the final component with all modifiers applied
@@ -826,7 +1028,12 @@ export interface ModifiableComponent<P extends ComponentProps = ComponentProps>
  * CSS style properties that can be generated by modifiers
  */
 export interface CSSStyleProperties {
-  [property: string]: string | number | Signal<string> | Signal<number> | undefined
+  [property: string]:
+    | string
+    | number
+    | Signal<string>
+    | Signal<number>
+    | undefined
 }
 
 /**

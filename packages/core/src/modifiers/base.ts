@@ -16,7 +16,11 @@ import type {
   StyleComputationContext,
 } from './types'
 import { ModifierPriority } from './types'
-import { isInfinity, dimensionToCSS, shouldExpandForInfinity } from '../constants/layout'
+import {
+  isInfinity,
+  dimensionToCSS,
+  shouldExpandForInfinity,
+} from '../constants/layout'
 
 /**
  * Abstract base modifier class
@@ -60,7 +64,11 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
   /**
    * Apply a single style change to an element with reactive support
    */
-  protected applyStyleChange(element: Element, property: string, value: any): void {
+  protected applyStyleChange(
+    element: Element,
+    property: string,
+    value: any
+  ): void {
     if (element instanceof HTMLElement) {
       const cssProperty = this.toCSSProperty(property)
 
@@ -139,7 +147,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
     const passthroughProperties = [
       'filter', // CSS filter strings should not be processed
       'transform', // CSS transform strings
-      'clip-path' // CSS clip-path strings
+      'clip-path', // CSS clip-path strings
     ]
 
     if (passthroughProperties.includes(property)) {
@@ -155,7 +163,8 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
   protected applyStyles(element: Element, styles: CSSStyleProperties): void {
     // Check if element has a style property (for testing and real elements)
     if (element instanceof HTMLElement || (element as any).style) {
-      const styleTarget = element instanceof HTMLElement ? element.style : (element as any).style
+      const styleTarget =
+        element instanceof HTMLElement ? element.style : (element as any).style
 
       for (const [property, value] of Object.entries(styles)) {
         if (value !== undefined) {
@@ -166,12 +175,20 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
             // Create reactive effect for this style property
             createEffect(() => {
               const currentValue = value()
-              const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
+              const cssValue = this.toCSSValueForProperty(
+                cssProperty,
+                currentValue
+              )
 
               if (styleTarget.setProperty) {
                 // Check if value contains !important and handle it properly
-                if (typeof cssValue === 'string' && cssValue.includes('!important')) {
-                  const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
+                if (
+                  typeof cssValue === 'string' &&
+                  cssValue.includes('!important')
+                ) {
+                  const actualValue = cssValue
+                    .replace(/\s*!important\s*$/, '')
+                    .trim()
                   styleTarget.setProperty(cssProperty, actualValue, 'important')
                 } else {
                   styleTarget.setProperty(cssProperty, cssValue)
@@ -186,8 +203,13 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
 
             if (styleTarget.setProperty) {
               // Check if value contains !important and handle it properly
-              if (typeof cssValue === 'string' && cssValue.includes('!important')) {
-                const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
+              if (
+                typeof cssValue === 'string' &&
+                cssValue.includes('!important')
+              ) {
+                const actualValue = cssValue
+                  .replace(/\s*!important\s*$/, '')
+                  .trim()
                 styleTarget.setProperty(cssProperty, actualValue, 'important')
               } else {
                 styleTarget.setProperty(cssProperty, cssValue)
@@ -247,9 +269,16 @@ export class LayoutModifier extends BaseModifier {
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!node.element || !context.element) return
 
-    const styleContext = this.createStyleContext(context.componentId, context.element, [])
+    const styleContext = this.createStyleContext(
+      context.componentId,
+      context.element,
+      []
+    )
 
-    const styles = this.computeLayoutStyles(this.properties as any, styleContext)
+    const styles = this.computeLayoutStyles(
+      this.properties as any,
+      styleContext
+    )
 
     this.applyStyles(context.element, styles)
 
@@ -282,7 +311,10 @@ export class LayoutModifier extends BaseModifier {
     return undefined
   }
 
-  private applyOffsetTransform(element: HTMLElement, offset: { x?: any; y?: any }): void {
+  private applyOffsetTransform(
+    element: HTMLElement,
+    offset: { x?: any; y?: any }
+  ): void {
     const { x, y } = offset
 
     // Handle reactive values
@@ -299,7 +331,7 @@ export class LayoutModifier extends BaseModifier {
         const existingTransform = element.style.transform || ''
         const existingTransforms = existingTransform
           .split(' ')
-          .filter((t) => t && !t.startsWith('translate('))
+          .filter(t => t && !t.startsWith('translate('))
           .join(' ')
 
         const newTransform = existingTransforms
@@ -321,7 +353,7 @@ export class LayoutModifier extends BaseModifier {
       const existingTransform = element.style.transform || ''
       const existingTransforms = existingTransform
         .split(' ')
-        .filter((t) => t && !t.startsWith('translate('))
+        .filter(t => t && !t.startsWith('translate('))
         .join(' ')
 
       const newTransform = existingTransforms
@@ -369,15 +401,24 @@ export class LayoutModifier extends BaseModifier {
     const scaleY = y ?? scaleX // Default to uniform scaling if y not provided
 
     // Handle reactive values
-    if (isSignal(scaleX) || isComputed(scaleX) || isSignal(scaleY) || isComputed(scaleY)) {
+    if (
+      isSignal(scaleX) ||
+      isComputed(scaleX) ||
+      isSignal(scaleY) ||
+      isComputed(scaleY)
+    ) {
       createEffect(() => {
-        const currentX = isSignal(scaleX) || isComputed(scaleX) ? scaleX() : scaleX
-        const currentY = isSignal(scaleY) || isComputed(scaleY) ? scaleY() : scaleY
+        const currentX =
+          isSignal(scaleX) || isComputed(scaleX) ? scaleX() : scaleX
+        const currentY =
+          isSignal(scaleY) || isComputed(scaleY) ? scaleY() : scaleY
 
         const scaleValue = `scale(${currentX}, ${currentY})`
 
         // Set transform-origin based on anchor
-        element.style.transformOrigin = this.getTransformOrigin(anchor || 'center')
+        element.style.transformOrigin = this.getTransformOrigin(
+          anchor || 'center'
+        )
 
         // Preserve existing transforms but replace any existing scale
         const existingTransform = element.style.transform || ''
@@ -397,7 +438,9 @@ export class LayoutModifier extends BaseModifier {
       const scaleValue = `scale(${scaleX}, ${scaleY})`
 
       // Set transform-origin based on anchor
-      element.style.transformOrigin = this.getTransformOrigin(anchor || 'center')
+      element.style.transformOrigin = this.getTransformOrigin(
+        anchor || 'center'
+      )
 
       // Preserve existing transforms but replace any existing scale
       const existingTransform = element.style.transform || ''
@@ -414,7 +457,10 @@ export class LayoutModifier extends BaseModifier {
     }
   }
 
-  private applyAbsolutePosition(element: HTMLElement, position: { x?: any; y?: any }): void {
+  private applyAbsolutePosition(
+    element: HTMLElement,
+    position: { x?: any; y?: any }
+  ): void {
     const { x, y } = position
 
     // Set position to absolute for SwiftUI-style absolute positioning
@@ -468,7 +514,10 @@ export class LayoutModifier extends BaseModifier {
     return anchorMap[anchor] || 'center center'
   }
 
-  private computeLayoutStyles(props: any, _context: StyleComputationContext): CSSStyleProperties {
+  private computeLayoutStyles(
+    props: any,
+    _context: StyleComputationContext
+  ): CSSStyleProperties {
     const styles: CSSStyleProperties = {}
 
     // Frame properties - handle infinity values properly
@@ -483,14 +532,22 @@ export class LayoutModifier extends BaseModifier {
       // Don't apply explicit width/height if infinity expansion is happening
       if (frame.width !== undefined) {
         const cssValue = dimensionToCSS(frame.width)
-        if (cssValue !== undefined && !isInfinity(frame.width) && !infinityResult.expandWidth) {
+        if (
+          cssValue !== undefined &&
+          !isInfinity(frame.width) &&
+          !infinityResult.expandWidth
+        ) {
           styles.width = cssValue
         }
       }
 
       if (frame.height !== undefined) {
         const cssValue = dimensionToCSS(frame.height)
-        if (cssValue !== undefined && !isInfinity(frame.height) && !infinityResult.expandHeight) {
+        if (
+          cssValue !== undefined &&
+          !isInfinity(frame.height) &&
+          !infinityResult.expandHeight
+        ) {
           styles.height = cssValue
         }
       }
@@ -547,8 +604,10 @@ export class LayoutModifier extends BaseModifier {
       } else {
         const p = props.padding
         if (p.top !== undefined) styles.paddingTop = this.toCSSValue(p.top)
-        if (p.right !== undefined) styles.paddingRight = this.toCSSValue(p.right)
-        if (p.bottom !== undefined) styles.paddingBottom = this.toCSSValue(p.bottom)
+        if (p.right !== undefined)
+          styles.paddingRight = this.toCSSValue(p.right)
+        if (p.bottom !== undefined)
+          styles.paddingBottom = this.toCSSValue(p.bottom)
         if (p.left !== undefined) styles.paddingLeft = this.toCSSValue(p.left)
       }
     }
@@ -561,7 +620,8 @@ export class LayoutModifier extends BaseModifier {
         const m = props.margin
         if (m.top !== undefined) styles.marginTop = this.toCSSValue(m.top)
         if (m.right !== undefined) styles.marginRight = this.toCSSValue(m.right)
-        if (m.bottom !== undefined) styles.marginBottom = this.toCSSValue(m.bottom)
+        if (m.bottom !== undefined)
+          styles.marginBottom = this.toCSSValue(m.bottom)
         if (m.left !== undefined) styles.marginLeft = this.toCSSValue(m.left)
       }
     }
@@ -684,9 +744,16 @@ export class AppearanceModifier extends BaseModifier {
       return
     }
 
-    const styleContext = this.createStyleContext(context.componentId, context.element, [])
+    const styleContext = this.createStyleContext(
+      context.componentId,
+      context.element,
+      []
+    )
 
-    const resolved = this.resolveReactiveProps(this.properties as any, styleContext)
+    const resolved = this.resolveReactiveProps(
+      this.properties as any,
+      styleContext
+    )
 
     // Handle Assets separately with theme reactivity
     this.applyAssetBasedStyles(context.element, resolved)
@@ -769,7 +836,11 @@ export class AppearanceModifier extends BaseModifier {
       const font = props.font
       if (font.family) {
         // Handle FontAsset objects that need to be resolved
-        if (typeof font.family === 'object' && font.family !== null && 'resolve' in font.family) {
+        if (
+          typeof font.family === 'object' &&
+          font.family !== null &&
+          'resolve' in font.family
+        ) {
           styles.fontFamily = (font.family as any).resolve()
         } else {
           styles.fontFamily = font.family as string
@@ -788,7 +859,8 @@ export class AppearanceModifier extends BaseModifier {
     // Border
     if (props.border) {
       const border = props.border
-      if (border.width !== undefined) styles.borderWidth = this.toCSSValue(border.width)
+      if (border.width !== undefined)
+        styles.borderWidth = this.toCSSValue(border.width)
       if (border.color && !this.isAsset(border.color)) {
         styles.borderColor = border.color as string
       }
@@ -830,7 +902,8 @@ export class AppearanceModifier extends BaseModifier {
           break
         }
         case 'polygon': {
-          const points = parameters?.points || '0% 0%, 100% 0%, 100% 100%, 0% 100%'
+          const points =
+            parameters?.points || '0% 0%, 100% 0%, 100% 100%, 0% 100%'
           styles.clipPath = `polygon(${points})`
           break
         }
@@ -956,13 +1029,42 @@ export class InteractionModifier extends BaseModifier {
       context.element.addEventListener('keyup', props.onKeyUp)
     }
 
+    // Touch events
+    if (props.onTouchStart) {
+      context.element.addEventListener('touchstart', props.onTouchStart, {
+        passive: true,
+      })
+    }
+
+    if (props.onTouchMove) {
+      context.element.addEventListener('touchmove', props.onTouchMove, {
+        passive: true,
+      })
+    }
+
+    if (props.onTouchEnd) {
+      context.element.addEventListener('touchend', props.onTouchEnd, {
+        passive: true,
+      })
+    }
+
+    if (props.onTouchCancel) {
+      context.element.addEventListener('touchcancel', props.onTouchCancel, {
+        passive: true,
+      })
+    }
+
     // Scroll and wheel events
     if (props.onScroll) {
-      context.element.addEventListener('scroll', props.onScroll, { passive: true })
+      context.element.addEventListener('scroll', props.onScroll, {
+        passive: true,
+      })
     }
 
     if (props.onWheel) {
-      context.element.addEventListener('wheel', props.onWheel, { passive: false })
+      context.element.addEventListener('wheel', props.onWheel, {
+        passive: false,
+      })
     }
 
     // Input events
@@ -971,7 +1073,7 @@ export class InteractionModifier extends BaseModifier {
     }
 
     if (props.onChange) {
-      context.element.addEventListener('change', (event) => {
+      context.element.addEventListener('change', event => {
         const target = event.target as HTMLInputElement
         const value = target.value || target.textContent || ''
         props.onChange(value, event)
@@ -1111,7 +1213,7 @@ export class InteractionModifier extends BaseModifier {
 
       const distance = Math.sqrt(
         Math.pow(pointerEvent.clientX - startPoint.x, 2) +
-        Math.pow(pointerEvent.clientY - startPoint.y, 2)
+          Math.pow(pointerEvent.clientY - startPoint.y, 2)
       )
 
       if (distance > maximumDistance) {
@@ -1131,7 +1233,10 @@ export class InteractionModifier extends BaseModifier {
     element.addEventListener('pointerdown', handlePointerDown as EventListener)
     element.addEventListener('pointermove', handlePointerMove as EventListener)
     element.addEventListener('pointerup', handlePointerUp as EventListener)
-    element.addEventListener('pointercancel', handlePointerCancel as EventListener)
+    element.addEventListener(
+      'pointercancel',
+      handlePointerCancel as EventListener
+    )
 
     // Store cleanup function for later removal
     ;(element as any)._longPressCleanup = cleanup
@@ -1156,14 +1261,14 @@ export class InteractionModifier extends BaseModifier {
         cmd: modifiers.includes('cmd') || modifiers.includes('meta'),
         ctrl: modifiers.includes('ctrl'),
         shift: modifiers.includes('shift'),
-        alt: modifiers.includes('alt')
+        alt: modifiers.includes('alt'),
       }
 
       const actualModifiers = {
         cmd: event.metaKey || event.ctrlKey, // Handle both Mac (meta) and PC (ctrl)
         ctrl: event.ctrlKey,
         shift: event.shiftKey,
-        alt: event.altKey
+        alt: event.altKey,
       }
 
       // Check key match (case insensitive)
@@ -1171,7 +1276,8 @@ export class InteractionModifier extends BaseModifier {
 
       // Check modifier requirements
       const modifiersMatch = Object.entries(requiredModifiers).every(
-        ([mod, required]) => required === actualModifiers[mod as keyof typeof actualModifiers]
+        ([mod, required]) =>
+          required === actualModifiers[mod as keyof typeof actualModifiers]
       )
 
       if (keyMatches && modifiersMatch) {
@@ -1192,7 +1298,10 @@ export class InteractionModifier extends BaseModifier {
   /**
    * Setup focus management with reactive binding
    */
-  private setupFocusManagement(element: Element, focused: boolean | Signal<boolean>): void {
+  private setupFocusManagement(
+    element: Element,
+    focused: boolean | Signal<boolean>
+  ): void {
     if (!(element instanceof HTMLElement)) return
 
     const htmlElement = element as HTMLElement
@@ -1244,7 +1353,7 @@ export class InteractionModifier extends BaseModifier {
 
     // Setup interaction behaviors
     if (options.interactions?.includes('activate')) {
-      htmlElement.addEventListener('keydown', (event) => {
+      htmlElement.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           htmlElement.click()
@@ -1296,7 +1405,10 @@ export class InteractionModifier extends BaseModifier {
     // Store cleanup
     ;(element as any)._continuousHoverCleanup = () => {
       element.removeEventListener('mousemove', handleMouseMove as EventListener)
-      element.removeEventListener('mouseleave', handleMouseLeave as EventListener)
+      element.removeEventListener(
+        'mouseleave',
+        handleMouseLeave as EventListener
+      )
     }
   }
 
@@ -1342,7 +1454,10 @@ export class AnimationModifier extends BaseModifier {
       if (anim.keyframes) {
         // Create keyframes
         const keyframeName = `tachui-animation-${context.componentId}-${Date.now()}`
-        const keyframeRule = this.createKeyframeRule(keyframeName, anim.keyframes)
+        const keyframeRule = this.createKeyframeRule(
+          keyframeName,
+          anim.keyframes
+        )
 
         // Add keyframes to stylesheet
         this.addKeyframesToStylesheet(keyframeRule)
@@ -1407,7 +1522,7 @@ export class AnimationModifier extends BaseModifier {
             const existingTransform = context.element.style.transform || ''
             const existingTransforms = existingTransform
               .split(' ')
-              .filter((t) => t && !t.startsWith('rotate('))
+              .filter(t => t && !t.startsWith('rotate('))
               .join(' ')
 
             const newTransform = existingTransforms
@@ -1426,7 +1541,7 @@ export class AnimationModifier extends BaseModifier {
           const existingTransform = context.element.style.transform || ''
           const existingTransforms = existingTransform
             .split(' ')
-            .filter((t) => t && !t.startsWith('rotate('))
+            .filter(t => t && !t.startsWith('rotate('))
             .join(' ')
 
           const newTransform = existingTransforms
@@ -1560,7 +1675,9 @@ export class AnimationModifier extends BaseModifier {
   }
 
   private addKeyframesToStylesheet(rule: string): void {
-    let stylesheet = document.querySelector('#tachui-animations') as HTMLStyleElement
+    let stylesheet = document.querySelector(
+      '#tachui-animations'
+    ) as HTMLStyleElement
 
     if (!stylesheet) {
       stylesheet = document.createElement('style')
@@ -1609,10 +1726,13 @@ export class LifecycleModifier extends BaseModifier {
     return undefined
   }
 
-  private setupLifecycleObserver(element: Element, props: LifecycleModifierProps): void {
+  private setupLifecycleObserver(
+    element: Element,
+    props: LifecycleModifierProps
+  ): void {
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting && props.onAppear) {
             // Element has appeared in viewport
             props.onAppear()
@@ -1636,7 +1756,10 @@ export class LifecycleModifier extends BaseModifier {
     })
   }
 
-  private setupTask(_context: ModifierContext, task: LifecycleModifierProps['task']): void {
+  private setupTask(
+    _context: ModifierContext,
+    task: LifecycleModifierProps['task']
+  ): void {
     if (!task) return
 
     // Create abort controller for task cancellation
@@ -1768,13 +1891,20 @@ export class LifecycleModifier extends BaseModifier {
     }
 
     // Add event listeners with proper typing
-    element.addEventListener('touchstart', handleTouchStart as EventListener, { passive: false })
-    element.addEventListener('touchmove', handleTouchMove as EventListener, { passive: false })
+    element.addEventListener('touchstart', handleTouchStart as EventListener, {
+      passive: false,
+    })
+    element.addEventListener('touchmove', handleTouchMove as EventListener, {
+      passive: false,
+    })
     element.addEventListener('touchend', handleTouchEnd as EventListener)
 
     // Cleanup
     this.addCleanup(() => {
-      element.removeEventListener('touchstart', handleTouchStart as EventListener)
+      element.removeEventListener(
+        'touchstart',
+        handleTouchStart as EventListener
+      )
       element.removeEventListener('touchmove', handleTouchMove as EventListener)
       element.removeEventListener('touchend', handleTouchEnd as EventListener)
 
