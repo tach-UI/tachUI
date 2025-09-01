@@ -5,7 +5,11 @@
  * Provides SwiftUI-inspired form APIs with modern web development patterns.
  */
 
-import type { ComponentChildren, ComponentInstance, ComponentProps } from '@tachui/core'
+import type {
+  ComponentChildren,
+  ComponentInstance,
+  ComponentProps,
+} from '@tachui/core'
 
 /**
  * Form validation rule types
@@ -108,7 +112,11 @@ export type FormSubmitHandler<T = Record<string, any>> = (
 /**
  * Form change handler
  */
-export type FormChangeHandler<T = any> = (name: string, value: T, field: FieldState<T>) => void
+export type FormChangeHandler<T = any> = (
+  name: string,
+  value: T,
+  field: FieldState<T>
+) => void
 
 /**
  * Base form field props
@@ -155,7 +163,13 @@ export type AutoCapitalization = 'none' | 'sentences' | 'words' | 'characters'
 /**
  * Keyboard type for mobile devices
  */
-export type KeyboardType = 'default' | 'numeric' | 'email' | 'phone' | 'url' | 'search'
+export type KeyboardType =
+  | 'default'
+  | 'numeric'
+  | 'email'
+  | 'phone'
+  | 'url'
+  | 'search'
 
 /**
  * Return key type for mobile keyboards
@@ -397,7 +411,15 @@ export interface FormStep {
  * Form builder field configuration
  */
 export interface FormFieldConfig {
-  type: 'text' | 'number' | 'email' | 'select' | 'checkbox' | 'radio' | 'date' | 'slider'
+  type:
+    | 'text'
+    | 'number'
+    | 'email'
+    | 'select'
+    | 'checkbox'
+    | 'radio'
+    | 'date'
+    | 'slider'
   name: string
   label: string
   placeholder?: string

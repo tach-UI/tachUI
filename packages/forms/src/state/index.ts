@@ -83,7 +83,9 @@ function createFieldState<T = any>(
 /**
  * Create a form state manager
  */
-export function createFormState(initialValues: Record<string, any> = {}): UseFormReturn {
+export function createFormState(
+  initialValues: Record<string, any> = {}
+): UseFormReturn {
   const fields = new Map<string, ReturnType<typeof createFieldState>>()
   const validations = new Map<string, FieldValidation>()
 
@@ -91,7 +93,7 @@ export function createFormState(initialValues: Record<string, any> = {}): UseFor
   const [submitted, setSubmitted] = createSignal(false)
 
   // Auto-register fields from initial values
-  Object.keys(initialValues).forEach((name) => {
+  Object.keys(initialValues).forEach(name => {
     const fieldManager = createFieldState(initialValues[name])
     fields.set(name, fieldManager)
   })
@@ -231,7 +233,7 @@ export function createFormState(initialValues: Record<string, any> = {}): UseFor
   const validateForm = async (): Promise<boolean> => {
     const validationPromises = Array.from(fields.keys()).map(validateField)
     const results = await Promise.all(validationPromises)
-    return results.every((result) => result)
+    return results.every(result => result)
   }
 
   // Reset form to initial state
@@ -289,7 +291,7 @@ export function createFormState(initialValues: Record<string, any> = {}): UseFor
     const fieldsToValidate = fieldNames || Array.from(fields.keys())
     const validationPromises = fieldsToValidate.map(validateField)
     const results = await Promise.all(validationPromises)
-    return results.every((result) => result)
+    return results.every(result => result)
   }
 
   return {
@@ -322,9 +324,12 @@ async function validateFieldAsync(
 
   // Use debounced validation if specified
   if (validation.debounceMs) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(async () => {
-        const result = await validateValueAsync(fieldState.value, validation.rules!)
+        const result = await validateValueAsync(
+          fieldState.value,
+          validation.rules!
+        )
         resolve(result)
       }, validation.debounceMs)
 
@@ -365,7 +370,8 @@ export function createField<T = any>(
     createEffect(async () => {
       const state = fieldState()
       const shouldValidate =
-        validation.validateOn === 'change' || (validation.validateOn === 'blur' && state.touched)
+        validation.validateOn === 'change' ||
+        (validation.validateOn === 'blur' && state.touched)
 
       if (shouldValidate && (state.dirty || state.touched)) {
         fieldManager.setValidating(true)
@@ -430,15 +436,20 @@ export function createField<T = any>(
 /**
  * Multi-step form state manager
  */
-export function createMultiStepFormState(steps: string[], initialValues: Record<string, any> = {}) {
+export function createMultiStepFormState(
+  steps: string[],
+  initialValues: Record<string, any> = {}
+) {
   const [currentStep, setCurrentStep] = createSignal(0)
-  const [completedSteps, setCompletedSteps] = createSignal<Set<number>>(new Set())
+  const [completedSteps, setCompletedSteps] = createSignal<Set<number>>(
+    new Set()
+  )
   const stepForms = new Map<number, UseFormReturn>()
 
   // Create form state for each step
   steps.forEach((_, index) => {
     const stepValues = Object.keys(initialValues)
-      .filter((key) => key.startsWith(`step_${index}_`))
+      .filter(key => key.startsWith(`step_${index}_`))
       .reduce(
         (acc, key) => {
           const fieldName = key.replace(`step_${index}_`, '')
@@ -463,7 +474,7 @@ export function createMultiStepFormState(steps: string[], initialValues: Record<
     }
 
     if (current < steps.length - 1) {
-      setCompletedSteps((prev) => new Set([...prev, current]))
+      setCompletedSteps(prev => new Set([...prev, current]))
       setCurrentStep(current + 1)
       return true
     }
@@ -497,7 +508,7 @@ export function createMultiStepFormState(steps: string[], initialValues: Record<
 
     stepForms.forEach((form, stepIndex) => {
       const stepValues = form.watch()
-      Object.keys(stepValues).forEach((fieldName) => {
+      Object.keys(stepValues).forEach(fieldName => {
         allValues[`step_${stepIndex}_${fieldName}`] = stepValues[fieldName]
       })
     })
@@ -506,9 +517,11 @@ export function createMultiStepFormState(steps: string[], initialValues: Record<
   }
 
   const validateAllSteps = async (): Promise<boolean> => {
-    const validationPromises = Array.from(stepForms.values()).map((form) => form.validateForm())
+    const validationPromises = Array.from(stepForms.values()).map(form =>
+      form.validateForm()
+    )
     const results = await Promise.all(validationPromises)
-    return results.every((result) => result)
+    return results.every(result => result)
   }
 
   return {

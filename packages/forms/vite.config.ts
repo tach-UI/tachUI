@@ -1,35 +1,53 @@
-import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
+import { resolve } from 'path'
 
 export default defineConfig({
   build: {
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
-        'components/index': resolve(__dirname, 'src/components/index.ts'),
+        'components/text-input/index': resolve(
+          __dirname,
+          'src/components/text-input/index.ts'
+        ),
+        'components/selection/index': resolve(
+          __dirname,
+          'src/components/selection/index.ts'
+        ),
+        'components/date-picker/index': resolve(
+          __dirname,
+          'src/components/date-picker/index.ts'
+        ),
+        'components/advanced/index': resolve(
+          __dirname,
+          'src/components/advanced/index.ts'
+        ),
         'validation/index': resolve(__dirname, 'src/validation/index.ts'),
-        'state/index': resolve(__dirname, 'src/state/index.ts'),
       },
       name: 'TachUIForms',
       formats: ['es'],
     },
     rollupOptions: {
-      external: ['@tachui/core', '@tachui/core/validation'],
+      external: [
+        '@tachui/core',
+        '@tachui/primitives',
+        /^@tachui\/core\/.*/,
+        /^@tachui\/primitives\/.*/,
+      ],
       output: {
         globals: {
           '@tachui/core': 'TachUICore',
+          '@tachui/primitives': 'TachUIPrimitives',
         },
-        exports: 'named',
-        manualChunks: undefined,
       },
     },
-    sourcemap: false,
+    sourcemap: true,
     minify: 'esbuild',
-    target: 'es2020',
+    target: 'esnext',
   },
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['../core/test/setup.ts'],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
   },
 })

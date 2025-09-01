@@ -1,65 +1,74 @@
 {
   "name": "@tachui/forms",
-  "version": "0.1.0",
-  "description": "Form components and validation system for tachUI framework",
-  "homepage": "https://tachui.dev/",
+  "version": "2.0.0",
+  "description": "Unified form components and validation system for tachUI (formerly @tachui/forms + @tachui/advanced-forms)",
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./text-input": {
+      "types": "./dist/components/text-input/index.d.ts",
+      "import": "./dist/components/text-input/index.js"
+    },
+    "./selection": {
+      "types": "./dist/components/selection/index.d.ts",
+      "import": "./dist/components/selection/index.js"
+    },
+    "./date-picker": {
+      "types": "./dist/components/date-picker/index.d.ts",
+      "import": "./dist/components/date-picker/index.js"
+    },
+    "./advanced": {
+      "types": "./dist/components/advanced/index.d.ts",
+      "import": "./dist/components/advanced/index.js"
+    },
+    "./validation": {
+      "types": "./dist/validation/index.d.ts",
+      "import": "./dist/validation/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@tachui/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.1.1",
+    "vitest": "^3.2.4"
+  },
   "scripts": {
-    "build": "vite build && tsc --emitDeclarationOnly",
-    "dev": "vite build --watch",
-    "test": "vitest",
-    "test:ci": "vitest run",
+    "dev": "vite build --watch --mode development",
+    "build": "vite build && pnpm build:types",
+    "build:types": "tsc --emitDeclarationOnly --declaration",
+    "test": "vitest --run",
+    "test:watch": "vitest",
     "type-check": "tsc --noEmit",
     "lint": "oxlint src",
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "tachui",
     "forms",
     "validation",
-    "ui",
     "components",
-    "plugin"
+    "ui",
+    "tachui",
+    "swiftui"
   ],
   "author": "tachUI Team",
-  "license": "MPL-2.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tach-UI/tachUI",
+    "url": "https://github.com/tachui/tachui.git",
     "directory": "packages/forms"
-  },
-  "peerDependencies": {
-    "@tachui/core": "^0.1.0"
-  },
-  "devDependencies": {
-    "@tachui/core": "workspace:*",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.2.0",
-    "vite": "^5.0.0",
-    "vitest": "^1.6.0"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./components": {
-      "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.js"
-    },
-    "./validation": {
-      "types": "./dist/validation/index.d.ts",
-      "import": "./dist/validation/index.js"
-    },
-    "./state": {
-      "types": "./dist/state/index.d.ts",
-      "import": "./dist/state/index.js"
-    }
-  },
-  "sideEffects": false
+  }
 }

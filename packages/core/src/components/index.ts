@@ -39,9 +39,9 @@ export {
   LazyHGrid,
   LazyVGrid,
 } from './Grid'
-// Button moved to @tachui/primitives
-// DatePicker component has been moved to @tachui/advanced-forms
-// Import it from @tachui/advanced-forms instead of @tachui/core
+
+// DatePicker component has been moved to @tachui/forms
+// Import it from @tachui/forms instead of @tachui/core
 // Divider moved to @tachui/primitives
 // BasicForm component types (Phase 6.4)
 // BasicForm moved to @tachui/primitives
@@ -68,22 +68,18 @@ export { EnhancedScrollView, ScrollView, ScrollViewUtils } from './ScrollView'
 // Import from @tachui/data instead of core
 // Show, When, Unless moved to @tachui/flow-control
 
-// Slider component has been moved to @tachui/advanced-forms
-// Import it from @tachui/advanced-forms instead of @tachui/core
+// Slider component has been moved to @tachui/forms
+// Import it from @tachui/forms instead of @tachui/core
 // Spacer moved to @tachui/primitives
-// Stepper component has been moved to @tachui/advanced-forms
-// Import it from @tachui/advanced-forms instead of @tachui/core
-// Text moved to @tachui/primitives
-// Toggle moved to @tachui/primitives
+// Stepper component has been moved to @tachui/forms
+// Import it from @tachui/forms instead of @tachui/core
+
 export type { WrapperOptions } from './wrapper'
 // Component wrapper system
 export {
   createModifiableComponentFactory,
   createReactiveWrapper,
-  // Layout components (HStack, VStack, ZStack, HTML, H1-H6) moved to @tachui/primitives
   withModifierSupport,
   withModifiers,
-  // Removed Text export to avoid conflict - use enhanced Text as primary
   wrapComponent,
-  // ZStack moved to @tachui/primitives
 } from './wrapper'
