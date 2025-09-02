@@ -1244,17 +1244,17 @@ export class ModifierBuilderImpl<
 
   // Transition modifiers
   transition(
-    property: string = 'all',
-    duration: number = 300,
-    easing: string = 'ease',
-    delay: number = 0
+    property: string,
+    duration: number,
+    easing: string,
+    delay: number
   ): ModifierBuilder<T>
   transition(cssValue: string): ModifierBuilder<T>
   transition(
     propertyOrCssValue: string = 'all',
-    duration?: number,
-    easing?: string,
-    delay?: number
+    duration: number = 300,
+    easing: string = 'ease',
+    delay: number = 0
   ): ModifierBuilder<T> {
     // If only one parameter and it looks like a CSS value, treat as raw CSS
     if (
@@ -2212,7 +2212,7 @@ export class ModifierBuilderImpl<
         component.props.tabIndex = tabIndexModifier.properties.tabIndex
       } else if (modifier.type === 'appearance') {
         const appearanceModifier = modifier as AppearanceModifier
-        const props = appearanceModifier.properties
+        const props = appearanceModifier.properties as AppearanceModifierProps
         // Copy appearance styles to component props.style
         if (!component.props.style) {
           component.props.style = {}

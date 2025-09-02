@@ -8,8 +8,7 @@
 import type { ComponentInstance } from '@tachui/core'
 import { createSignal } from '@tachui/core'
 import { HTML } from '@tachui/primitives'
-import { TabView, createTabItem, TabViewBuilder } from './tab-view'
-import type { TabItem } from './types'
+import { TabView, TabViewBuilder } from './tab-view'
 
 /**
  * Enhanced TabView with AdvancedTabView metadata compatibility
@@ -81,11 +80,72 @@ export function EnhancedTabView(
   // Enhance the tabCoordinator with missing methods
   const originalCoordinator = (tabView as any).tabCoordinator
   if (originalCoordinator) {
+    // Store the original selectTab method
+    const originalSelectTab =
+      originalCoordinator.selectTab.bind(originalCoordinator)
+
+    // Override selectTab to respect hidden tabs
+    originalCoordinator.selectTab = (tabId: string) => {
+      // Don't allow selecting hidden tabs
+      if (hiddenTabIds().has(tabId)) {
+        return
+      }
+      originalSelectTab(tabId)
+    }
+
+    // Store the original addTab method
+    const originalAddTab = originalCoordinator.addTab.bind(originalCoordinator)
+
+    // Override addTab to properly prevent duplicates
+    originalCoordinator.addTab = (tab: any) => {
+      if (originalCoordinator.tabs.some((t: any) => t.id === tab.id)) {
+        console.warn(`Tab with ID "${tab.id}" already exists`)
+        return // Don't add duplicate
+      }
+      originalAddTab(tab)
+    }
     // Add enhanced methods
     originalCoordinator.reorderTabs = (newOrder: string[]) => {
       console.log('Reordering tabs:', newOrder)
+
+      // Filter to only valid tab IDs that exist
+      const validOrder = newOrder.filter(id =>
+        originalCoordinator.tabs.some((t: any) => t.id === id)
+      )
+      const newHidden = new Set(hiddenTabIds())
+
+      // Hide all tabs that weren't specified in the reorder
+      originalCoordinator.tabs.forEach((tab: any) => {
+        if (!validOrder.includes(tab.id)) {
+          newHidden.add(tab.id)
+        }
+      })
+
+      setHiddenTabIds(newHidden)
+
+      // Reorder the actual tabs array to match the specified order
+      const reorderedTabs: any[] = []
+
+      // Add tabs in the specified order
+      validOrder.forEach(id => {
+        const tab = originalCoordinator.tabs.find((t: any) => t.id === id)
+        if (tab) {
+          reorderedTabs.push(tab)
+        }
+      })
+
+      // Add hidden tabs at the end (maintaining them in the tabs array but hidden)
+      originalCoordinator.tabs.forEach((tab: any) => {
+        if (newHidden.has(tab.id)) {
+          reorderedTabs.push(tab)
+        }
+      })
+
+      // Update the tabs array by accessing the private property
+      ;(originalCoordinator as any)._tabs = reorderedTabs
+
       options.onTabReorder?.(
-        originalCoordinator.tabs.filter((t: any) => !hiddenTabIds().has(t.id))
+        originalCoordinator.tabs.filter((t: any) => !newHidden.has(t.id))
       )
     }
 

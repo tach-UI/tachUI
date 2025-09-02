@@ -236,7 +236,6 @@ class NavigationRouterImpl implements NavigationRouter {
     this._history.clear()
     this._history.pushState('/', 'Home')
     this._setCurrentPath('/')
-    this.navigationContext.currentPath = '/'
     if (this.onRouteChange) {
       this.onRouteChange('/')
     }

@@ -89,8 +89,6 @@ export function SimpleTabView(
   if (options?.selection) {
     if (isBinding(options.selection)) {
       initialSelection = options.selection.get() || initialSelection
-    } else if (typeof options.selection === 'function') {
-      initialSelection = options.selection() || initialSelection
     }
   }
   const [selectedTabId, setSelectedTabId] = createSignal(initialSelection)

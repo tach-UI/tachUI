@@ -13,19 +13,8 @@ import {
   isBinding,
 } from '@tachui/core'
 import { Button, HStack, HTML, Text, VStack } from '@tachui/primitives'
-import {
-  SimpleTabView,
-  type SimpleTabItem,
-  type SimpleTabViewOptions,
-} from './simple-tab-view'
-import { useNavigationEnvironmentContext } from './navigation-environment'
-import type {
-  NavigationComponent,
-  NavigationDestination,
-  TabCoordinator,
-  TabItem,
-  TabViewOptions,
-} from './types'
+import { type SimpleTabViewOptions } from './simple-tab-view'
+import type { NavigationComponent, TabItem } from './types'
 
 /**
  * Unified tab view style options
@@ -147,7 +136,7 @@ export interface UnifiedTabViewOptions
 /**
  * Unified tab coordinator with all features
  */
-class UnifiedTabCoordinatorImpl implements TabCoordinator {
+class UnifiedTabCoordinatorImpl {
   private _tabs: UnifiedTabItem[] = []
   private _sections: TabSection[] = []
   private _activeTabId: string = ''
@@ -156,7 +145,7 @@ class UnifiedTabCoordinatorImpl implements TabCoordinator {
 
   constructor(
     private onTabChange?: (activeTabId: string) => void,
-    private onTabReorder?: (tabs: TabItem[]) => void,
+    private onTabReorder?: (tabs: UnifiedTabItem[]) => void,
     private onCustomizationChange?: (
       visibleTabs: string[],
       hiddenTabs: string[]
@@ -168,7 +157,7 @@ class UnifiedTabCoordinatorImpl implements TabCoordinator {
   }
 
   get tabs(): TabItem[] {
-    return [...this._tabs]
+    return [...this._tabs] as TabItem[]
   }
 
   get sections(): TabSection[] {
@@ -242,6 +231,27 @@ class UnifiedTabCoordinatorImpl implements TabCoordinator {
   // Enhanced methods
   reorderTabs(newOrder: string[]): void {
     const validOrder = newOrder.filter(id => this._tabs.some(t => t.id === id))
+
+    // Actually reorder the internal tabs array to match the new order
+    const reorderedTabs: UnifiedTabItem[] = []
+
+    // Add tabs in the specified order
+    for (const id of validOrder) {
+      const tab = this._tabs.find(t => t.id === id)
+      if (tab) {
+        reorderedTabs.push(tab)
+      }
+    }
+
+    // Hide tabs that weren't specified in the reorder (they become hidden, not removed)
+    for (const tab of this._tabs) {
+      if (!validOrder.includes(tab.id)) {
+        this._hiddenTabIds.add(tab.id)
+        reorderedTabs.push(tab) // Keep them but mark as hidden
+      }
+    }
+
+    this._tabs = reorderedTabs
     this._customTabOrder = validOrder
 
     if (this.onTabReorder) {
@@ -271,7 +281,15 @@ class UnifiedTabCoordinatorImpl implements TabCoordinator {
 
   addSection(section: TabSection): void {
     this._sections.push(section)
-    section.tabs.forEach(tab => this.addTab(tab as UnifiedTabItem))
+    section.tabs.forEach(tab => {
+      // Convert TabItem to UnifiedTabItem
+      const unifiedTab: UnifiedTabItem = {
+        ...tab,
+        label: tab.title, // Map title to label
+        content: tab.content,
+      }
+      this.addTab(unifiedTab)
+    })
   }
 
   toggleSection(sectionId: string): void {
@@ -318,23 +336,23 @@ export function UnifiedTabView(
     customization = 'none',
     breakpoint = 768,
     maxVisibleTabs = 8,
-    tabPlacement = 'bottom',
+    _tabPlacement = 'bottom',
     material = 'none',
-    prominence = 'standard',
+    _prominence = 'standard',
     appearance = {},
-    animationDuration = 300,
-    allowReordering = false,
+    _animationDuration = 300,
+    _allowReordering = false,
     allowHiding = false,
-    allowsClosing = false,
-    overflowBehavior = 'scroll',
-    isScrollEnabled = true,
+    _allowsClosing = false,
+    _overflowBehavior = 'scroll',
+    _isScrollEnabled = true,
     indexDisplayMode = 'automatic',
-    backgroundStyle = 'automatic',
+    _backgroundStyle = 'automatic',
     onTabSelect,
     onTabReorder,
-    onTabClose,
+    _onTabClose,
     onCustomizationChange,
-    ...simpleOptions
+    ..._simpleOptions
   } = normalizedOptions
 
   // Reactive state
@@ -344,7 +362,7 @@ export function UnifiedTabView(
   )
   const [isCustomizing, setIsCustomizing] = createSignal(false)
   const [tabItems, setTabItems] = createSignal(tabs)
-  const [visibleTabs, setVisibleTabs] = createSignal<UnifiedTabItem[]>([])
+  const [_visibleTabs, _setVisibleTabs] = createSignal<UnifiedTabItem[]>([])
   const [overflowTabs, setOverflowTabs] = createSignal<UnifiedTabItem[]>([])
 
   // Create unified coordinator
@@ -361,7 +379,18 @@ export function UnifiedTabView(
         options.onSelectionChange(newTabId)
       }
     },
-    onTabReorder,
+    onTabReorder
+      ? (tabs: UnifiedTabItem[]) => {
+          // Convert to TabReorderEvent format for compatibility
+          if (tabs.length > 0) {
+            onTabReorder({
+              fromIndex: 0,
+              toIndex: tabs.length - 1,
+              tab: tabs[0],
+            })
+          }
+        }
+      : undefined,
     onCustomizationChange
   )
 
@@ -447,9 +476,9 @@ export function UnifiedTabView(
   function createTabButton(
     tab: UnifiedTabItem,
     currentStyle: string,
-    accentColor: string
+    _accentColor: string
   ): ComponentInstance {
-    const isActive = activeTabId() === tab.id
+    const _isActive = activeTabId() === tab.id
     const isDisabled = tab.disabled || false
 
     const button = Button('', () => {
@@ -479,7 +508,9 @@ export function UnifiedTabView(
     // Overflow button
     if (overflowTabs().length > 0) {
       buttons.push(
-        Button('···', () => setIsCustomizing(!isCustomizing()))
+        Button('···', () => {
+          setIsCustomizing(!isCustomizing())
+        })
           .modifier.backgroundColor('transparent')
           .border(0)
           .padding({ top: 8, bottom: 8, left: 12, right: 12 })
@@ -490,7 +521,9 @@ export function UnifiedTabView(
     // Customization button
     if (customization === 'visible') {
       buttons.push(
-        Button('⚙️', () => setIsCustomizing(!isCustomizing()))
+        Button('⚙️', () => {
+          setIsCustomizing(!isCustomizing())
+        })
           .modifier.backgroundColor('transparent')
           .border(0)
           .padding({ top: 8, bottom: 8, left: 12, right: 12 })
@@ -738,7 +771,7 @@ export function PageTabView(
     selection,
     onSelectionChange,
     indexDisplayMode = 'automatic',
-    backgroundStyle = 'automatic',
+    _backgroundStyle = 'automatic',
   } = options
 
   const [currentIndex, setCurrentIndex] = createSignal(selection?.() || 0)

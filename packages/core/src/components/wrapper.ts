@@ -7,7 +7,7 @@
 
 import { createModifiableComponent, createModifierBuilder } from '../modifiers'
 import type { ModifiableComponent, ModifierBuilder } from '../modifiers/types'
-import { h, text } from '../runtime'
+import { h } from '../runtime'
 import type {
   ComponentInstance,
   ComponentProps,
@@ -126,31 +126,6 @@ export function createReactiveWrapper<P extends ComponentProps>(
 
     // Return basic component with minimal wrapper
     return withModifiers(component)
-  }
-}
-
-/**
- * Simple element component class
- */
-class ElementComponent implements ComponentInstance<ComponentProps> {
-  public readonly type = 'component' as const
-  public readonly id: string
-  public mounted = false
-  public cleanup: (() => void)[] = []
-
-  constructor(
-    public props: ComponentProps,
-    private tag: string,
-    private content?: string,
-    private attributes: Record<string, any> = {}
-  ) {
-    this.id = `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-  }
-
-  render() {
-    return [
-      h(this.tag, this.attributes, this.content ? text(this.content) : ''),
-    ]
   }
 }
 

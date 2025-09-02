@@ -22,6 +22,8 @@ import type {
  */
 class NavigationCoordinatorImpl implements NavigationCoordinator {
   private _routes = new Map<string, DeepLinkConfig>()
+  private _navigations = new Map<string, any>()
+  private _strategy: string = 'default'
 
   constructor(public readonly id: string) {}
 
@@ -94,7 +96,10 @@ class NavigationCoordinatorImpl implements NavigationCoordinator {
   /**
    * Navigate to a specific route configuration
    */
-  private navigateToRoute(config: DeepLinkConfig, urlComponents: URLComponents): void {
+  private navigateToRoute(
+    config: DeepLinkConfig,
+    urlComponents: URLComponents
+  ): void {
     // This would integrate with the actual navigation system
     // For now, just emit an event
     NavigationManagerImpl.getInstance().emitEvent('willNavigate', {
@@ -125,6 +130,73 @@ class NavigationCoordinatorImpl implements NavigationCoordinator {
     const regex = new RegExp(`^${regexPattern}$`)
     return regex.test(path)
   }
+
+  /**
+   * Coordinate navigation between multiple instances
+   */
+  coordinateNavigation(event: any): void {
+    // Handle navigation coordination based on strategy
+    if (event && event.navigationId) {
+      const navigation = this._navigations.get(event.navigationId)
+      if (navigation) {
+        if (event.type === 'push' && event.path) {
+          navigation.push(null, event.path)
+        } else if (event.type === 'pop') {
+          navigation.pop()
+        } else if (event.type === 'replace' && event.path) {
+          navigation.replace(null, event.path)
+        }
+      }
+    }
+  }
+
+  /**
+   * Add navigation to coordination
+   */
+  addNavigation(navigation: any): void {
+    if (navigation && navigation.navigationId) {
+      this._navigations.set(navigation.navigationId, navigation)
+    }
+  }
+
+  /**
+   * Remove navigation from coordination
+   */
+  removeNavigation(navigationId: string): void {
+    this._navigations.delete(navigationId)
+  }
+
+  /**
+   * Get all coordinated navigations
+   */
+  getAllNavigations(): any[] {
+    return Array.from(this._navigations.values())
+  }
+
+  /**
+   * Set coordination strategy
+   */
+  setCoordinationStrategy(strategy: string): void {
+    this._strategy = strategy
+  }
+
+  /**
+   * Get coordination strategy
+   */
+  getCoordinationStrategy(): string {
+    return this._strategy
+  }
+
+  /**
+   * Get navigations by priority
+   */
+  getNavigationsByPriority(): any[] {
+    return Array.from(this._navigations.values()).sort((a, b) => {
+      const priorityA = a.priority || 0
+      const priorityB = b.priority || 0
+      return priorityB - priorityA // Higher priority first
+    })
+  }
 }
 
 /**
@@ -135,7 +207,11 @@ class NavigationManagerImpl implements INavigationManager {
 
   public _routers = new Map<string, NavigationRouter>()
   public _coordinators = new Map<string, NavigationCoordinator>()
-  public _eventListeners = new Map<NavigationEvent, Set<NavigationEventListener>>()
+  public _eventListeners = new Map<
+    NavigationEvent,
+    Set<NavigationEventListener>
+  >()
+  public _navigations = new Map<string, any>()
 
   private constructor() {
     // Set up global navigation event handling
@@ -170,7 +246,9 @@ class NavigationManagerImpl implements INavigationManager {
     }
 
     // This would create a router - for now return a placeholder
-    throw new Error('createRouter not implemented - use createNavigationRouter directly')
+    throw new Error(
+      'createRouter not implemented - use createNavigationRouter directly'
+    )
   }
 
   destroyRouter(id: string): void {
@@ -214,14 +292,20 @@ class NavigationManagerImpl implements INavigationManager {
     return this._coordinators.get(id)
   }
 
-  addEventListener(event: NavigationEvent, listener: NavigationEventListener): void {
+  addEventListener(
+    event: NavigationEvent,
+    listener: NavigationEventListener
+  ): void {
     if (!this._eventListeners.has(event)) {
       this._eventListeners.set(event, new Set())
     }
     this._eventListeners.get(event)!.add(listener)
   }
 
-  removeEventListener(event: NavigationEvent, listener: NavigationEventListener): void {
+  removeEventListener(
+    event: NavigationEvent,
+    listener: NavigationEventListener
+  ): void {
     const listeners = this._eventListeners.get(event)
     if (listeners) {
       listeners.delete(listener)
@@ -247,16 +331,47 @@ class NavigationManagerImpl implements INavigationManager {
   }
 
   /**
+   * Register a navigation context
+   */
+  registerNavigation(id: string, navigation: any): void {
+    this._navigations.set(id, navigation)
+  }
+
+  /**
+   * Unregister a navigation context
+   */
+  unregisterNavigation(id: string): void {
+    this._navigations.delete(id)
+  }
+
+  /**
+   * Get a navigation context by ID
+   */
+  getNavigation(id: string): any {
+    return this._navigations.get(id)
+  }
+
+  /**
+   * Get all navigation IDs
+   */
+  getAllNavigationIds(): string[] {
+    return Array.from(this._navigations.keys())
+  }
+
+  /**
    * Emit a navigation event
    */
   emitEvent(event: NavigationEvent, data: any): void {
     const listeners = this._eventListeners.get(event)
     if (listeners) {
-      listeners.forEach((listener) => {
+      listeners.forEach(listener => {
         try {
           listener(event, data)
         } catch (error) {
-          console.error(`Error in navigation event listener for ${event}:`, error)
+          console.error(
+            `Error in navigation event listener for ${event}:`,
+            error
+          )
         }
       })
     }
@@ -320,9 +435,32 @@ class NavigationManagerImpl implements INavigationManager {
 }
 
 /**
+ * Navigation Manager class for direct instantiation
+ */
+export class NavigationManager {
+  private _navigations = new Map<string, any>()
+
+  registerNavigation(id: string, navigation: any): void {
+    this._navigations.set(id, navigation)
+  }
+
+  unregisterNavigation(id: string): void {
+    this._navigations.delete(id)
+  }
+
+  getNavigation(id: string): any {
+    return this._navigations.get(id)
+  }
+
+  getAllNavigationIds(): string[] {
+    return Array.from(this._navigations.keys())
+  }
+}
+
+/**
  * Global navigation manager instance
  */
-export const NavigationManager = NavigationManagerImpl
+export const NavigationManagerSingleton = NavigationManagerImpl
 
 /**
  * Create a navigation coordinator
@@ -330,19 +468,27 @@ export const NavigationManager = NavigationManagerImpl
  * @param id - Unique identifier for the coordinator
  * @returns A NavigationCoordinator instance
  */
-export function createNavigationCoordinator(id: string): NavigationCoordinator {
-  return NavigationManager.getInstance().createCoordinator(id)
+export function createNavigationCoordinator(
+  id?: string
+): NavigationCoordinator {
+  const coordinatorId = id || `coordinator-${Date.now()}`
+  return NavigationManagerSingleton.getInstance().createCoordinator(
+    coordinatorId
+  )
 }
 
 /**
  * Global navigation utilities
  */
+const globalNavigationManager = new NavigationManager()
+const globalNavigationEventListeners = new Set<(event: any) => void>()
+
 export const GlobalNavigation = {
   /**
    * Navigate to a URL globally
    */
   navigateToURL(url: string): boolean {
-    return NavigationManager.getInstance().handleURL(url)
+    return NavigationManagerSingleton.getInstance().handleURL(url)
   },
 
   /**
@@ -350,18 +496,29 @@ export const GlobalNavigation = {
    */
   registerGlobalRoute(path: string, config: DeepLinkConfig): void {
     const globalCoordinator =
-      NavigationManager.getInstance().getCoordinator('global') ||
-      NavigationManager.getInstance().createCoordinator('global')
+      NavigationManagerSingleton.getInstance().getCoordinator('global') ||
+      NavigationManagerSingleton.getInstance().createCoordinator('global')
     globalCoordinator.registerRoute(path, config)
   },
 
   /**
    * Get all registered routes across all coordinators
    */
-  getAllRoutes(): Array<{ coordinatorId: string; path: string; config: DeepLinkConfig }> {
-    const routes: Array<{ coordinatorId: string; path: string; config: DeepLinkConfig }> = []
+  getAllRoutes(): Array<{
+    coordinatorId: string
+    path: string
+    config: DeepLinkConfig
+  }> {
+    const routes: Array<{
+      coordinatorId: string
+      path: string
+      config: DeepLinkConfig
+    }> = []
 
-    for (const [coordinatorId, coordinator] of NavigationManager.getInstance().coordinators) {
+    for (const [
+      coordinatorId,
+      coordinator,
+    ] of NavigationManagerSingleton.getInstance().coordinators) {
       for (const [path, config] of coordinator.routes) {
         routes.push({ coordinatorId, path, config })
       }
@@ -374,7 +531,7 @@ export const GlobalNavigation = {
    * Clear all navigation state (useful for testing)
    */
   clearAll(): void {
-    const manager = NavigationManager.getInstance()
+    const manager = NavigationManagerSingleton.getInstance()
 
     // Destroy all routers
     for (const routerId of manager.routers.keys()) {
@@ -386,6 +543,86 @@ export const GlobalNavigation = {
       manager.destroyCoordinator(coordinatorId)
     }
   },
+
+  /**
+   * Register a navigation context
+   */
+  registerNavigation(id: string, navigation: any): void {
+    globalNavigationManager.registerNavigation(id, navigation)
+  },
+
+  /**
+   * Unregister a navigation context
+   */
+  unregisterNavigation(id: string): void {
+    globalNavigationManager.unregisterNavigation(id)
+  },
+
+  /**
+   * Get a navigation context by ID
+   */
+  getNavigation(id: string): any {
+    return globalNavigationManager.getNavigation(id)
+  },
+
+  /**
+   * Get all navigation IDs
+   */
+  getAllNavigationIds(): string[] {
+    return globalNavigationManager.getAllNavigationIds()
+  },
+
+  /**
+   * Find navigation by path
+   */
+  findNavigationByPath(path: string): any {
+    for (const navigation of globalNavigationManager
+      .getAllNavigationIds()
+      .map(id => globalNavigationManager.getNavigation(id))) {
+      if (navigation && navigation.currentPath === path) {
+        return navigation
+      }
+    }
+    return undefined
+  },
+
+  /**
+   * Get active navigation
+   */
+  getActiveNavigation(): any {
+    // Return the first registered navigation as active
+    const ids = globalNavigationManager.getAllNavigationIds()
+    return ids.length > 0
+      ? globalNavigationManager.getNavigation(ids[0])
+      : undefined
+  },
+
+  /**
+   * Broadcast navigation event
+   */
+  broadcastNavigationEvent(event: any): void {
+    globalNavigationEventListeners.forEach(listener => {
+      try {
+        listener(event)
+      } catch (error) {
+        console.error('Error in global navigation listener:', error)
+      }
+    })
+  },
+
+  /**
+   * Add navigation listener
+   */
+  addNavigationListener(listener: (event: any) => void): void {
+    globalNavigationEventListeners.add(listener)
+  },
+
+  /**
+   * Remove navigation listener
+   */
+  removeNavigationListener(listener: (event: any) => void): void {
+    globalNavigationEventListeners.delete(listener)
+  },
 }
 
 /**
@@ -396,7 +633,7 @@ export const NavigationDebug = {
    * Get comprehensive navigation state
    */
   getState(): any {
-    return NavigationManager.getInstance().getDebugInfo()
+    return NavigationManagerSingleton.getInstance().getDebugInfo()
   },
 
   /**
@@ -412,10 +649,13 @@ export const NavigationDebug = {
       'routeNotFound',
     ]
 
-    events.forEach((event) => {
-      NavigationManager.getInstance().addEventListener(event, (eventName, data) => {
-        console.log(`[NavigationDebug] ${eventName}:`, data)
-      })
+    events.forEach(event => {
+      NavigationManagerSingleton.getInstance().addEventListener(
+        event,
+        (eventName: NavigationEvent, data: any) => {
+          console.log(`[NavigationDebug] ${eventName}:`, data)
+        }
+      )
     })
   },
 
@@ -424,7 +664,7 @@ export const NavigationDebug = {
    */
   testURL(url: string): boolean {
     console.log(`[NavigationDebug] Testing URL: ${url}`)
-    const result = NavigationManager.getInstance().handleURL(url)
+    const result = NavigationManagerSingleton.getInstance().handleURL(url)
     console.log(`[NavigationDebug] URL handled: ${result}`)
     return result
   },
@@ -435,7 +675,7 @@ export const NavigationDebug = {
   listRoutes(): void {
     const routes = GlobalNavigation.getAllRoutes()
     console.log('[NavigationDebug] Registered routes:')
-    routes.forEach((route) => {
+    routes.forEach(route => {
       console.log(`  ${route.coordinatorId}: ${route.path}`)
     })
   },
@@ -444,16 +684,24 @@ export const NavigationDebug = {
    * Monitor navigation performance
    */
   enablePerformanceMonitoring(): void {
-    NavigationManager.getInstance().addEventListener('willNavigate', (_, data) => {
-      ;(data as any)._startTime = performance.now()
-    })
-
-    NavigationManager.getInstance().addEventListener('didNavigate', (_, data) => {
-      if ((data as any)._startTime) {
-        const duration = performance.now() - (data as any)._startTime
-        console.log(`[NavigationDebug] Navigation took ${duration.toFixed(2)}ms`)
+    NavigationManagerSingleton.getInstance().addEventListener(
+      'willNavigate',
+      (_: NavigationEvent, data: any) => {
+        ;(data as any)._startTime = performance.now()
       }
-    })
+    )
+
+    NavigationManagerSingleton.getInstance().addEventListener(
+      'didNavigate',
+      (_: NavigationEvent, data: any) => {
+        if ((data as any)._startTime) {
+          const duration = performance.now() - (data as any)._startTime
+          console.log(
+            `[NavigationDebug] Navigation took ${duration.toFixed(2)}ms`
+          )
+        }
+      }
+    )
   },
 }
 
@@ -465,16 +713,17 @@ export function initializeNavigationDebugging(): void {
     const globalDebug = (window as any).__TACHUI_DEBUG__ || {}
 
     globalDebug.navigation = {
-      manager: NavigationManager.getInstance(),
+      manager: NavigationManagerSingleton.getInstance(),
       global: GlobalNavigation,
       debug: NavigationDebug,
       getState: () => NavigationDebug.getState(),
       testURL: (url: string) => NavigationDebug.testURL(url),
     }
-
     ;(window as any).__TACHUI_DEBUG__ = globalDebug
 
-    console.log('TachUI Navigation debugging enabled. Use window.__TACHUI_DEBUG__.navigation')
+    console.log(
+      'TachUI Navigation debugging enabled. Use window.__TACHUI_DEBUG__.navigation'
+    )
   }
 }
 
@@ -482,19 +731,28 @@ export function initializeNavigationDebugging(): void {
  * Navigation event emitter for custom events
  */
 export class NavigationEventEmitter {
-  private listeners = new Map<string, Set<(data: any) => void>>()
+  private listeners = new Map<
+    string,
+    Set<{ listener: (data: any) => void; filter?: (data: any) => boolean }>
+  >()
+  private eventHistory: any[] = []
 
   on(event: string, listener: (data: any) => void): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set())
     }
-    this.listeners.get(event)!.add(listener)
+    this.listeners.get(event)!.add({ listener })
   }
 
   off(event: string, listener: (data: any) => void): void {
     const eventListeners = this.listeners.get(event)
     if (eventListeners) {
-      eventListeners.delete(listener)
+      for (const item of eventListeners) {
+        if (item.listener === listener) {
+          eventListeners.delete(item)
+          break
+        }
+      }
       if (eventListeners.size === 0) {
         this.listeners.delete(event)
       }
@@ -502,20 +760,130 @@ export class NavigationEventEmitter {
   }
 
   emit(event: string, data: any): void {
+    // Add to history - merge event and data for simpler structure
+    this.eventHistory.push({ ...data, event })
+
+    // Emit to specific event listeners
     const eventListeners = this.listeners.get(event)
     if (eventListeners) {
-      eventListeners.forEach((listener) => {
+      eventListeners.forEach(({ listener, filter }) => {
         try {
-          listener(data)
+          if (!filter || filter(data)) {
+            listener(data)
+          }
         } catch (error) {
-          console.error(`Error in navigation event listener for ${event}:`, error)
+          console.error(
+            `Error in navigation event listener for ${event}:`,
+            error
+          )
+        }
+      })
+    }
+
+    // Also emit to general navigation listeners only for namespaced events like 'navigation:push'
+    if (event.includes(':')) {
+      const baseEvent = event.split(':')[0]
+      const baseListeners = this.listeners.get(baseEvent)
+      if (baseListeners) {
+        baseListeners.forEach(({ listener, filter }) => {
+          try {
+            if (!filter || filter(data)) {
+              listener(data)
+            }
+          } catch (error) {
+            console.error(
+              `Error in navigation event listener for ${baseEvent}:`,
+              error
+            )
+          }
+        })
+      }
+    }
+  }
+
+  /**
+   * Emit event with class interface (bypasses double emission)
+   */
+  emitEvent(event: string, data: any): void {
+    // Add to history - merge event and data for simpler structure
+    this.eventHistory.push({ ...data, event })
+
+    // Only emit to specific event listeners (avoid double emission)
+    const eventListeners = this.listeners.get(event)
+    if (eventListeners) {
+      eventListeners.forEach(({ listener, filter }) => {
+        try {
+          if (!filter || filter(data)) {
+            listener(data)
+          }
+        } catch (error) {
+          console.error(
+            `Error in navigation event listener for ${event}:`,
+            error
+          )
         }
       })
     }
   }
 
+  /**
+   * Add listener with class interface
+   */
+  addListener(
+    event: string,
+    listener: (data: any) => void,
+    filter?: (data: any) => boolean,
+    bufferPrevious?: boolean
+  ): { unsubscribe: () => void } {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set())
+    }
+
+    const listenerItem = { listener, filter }
+    this.listeners.get(event)!.add(listenerItem)
+
+    // If buffering is enabled, replay previous events
+    if (bufferPrevious) {
+      const previousEvents = this.eventHistory.filter(
+        item => item.event === event
+      )
+      previousEvents.forEach(item => {
+        if (!filter || filter(item)) {
+          listener(item)
+        }
+      })
+    }
+
+    return {
+      unsubscribe: () => {
+        const eventListeners = this.listeners.get(event)
+        if (eventListeners) {
+          eventListeners.delete(listenerItem)
+          if (eventListeners.size === 0) {
+            this.listeners.delete(event)
+          }
+        }
+      },
+    }
+  }
+
+  /**
+   * Remove listener with class interface
+   */
+  removeListener(event: string, listener: (data: any) => void): void {
+    this.off(event, listener)
+  }
+
+  /**
+   * Get event history
+   */
+  getEventHistory(): any[] {
+    return [...this.eventHistory]
+  }
+
   clear(): void {
     this.listeners.clear()
+    this.eventHistory = []
   }
 }
 

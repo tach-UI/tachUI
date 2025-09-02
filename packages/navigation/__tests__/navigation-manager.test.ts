@@ -389,7 +389,11 @@ describe('Navigation Manager - Global Navigation Coordination', () => {
       // Add listener with buffering
       emitter.addListener('navigation', listener, undefined, true)
 
-      expect(listener).toHaveBeenCalledWith({ type: 'push', path: '/early' })
+      expect(listener).toHaveBeenCalledWith({
+        type: 'push',
+        path: '/early',
+        event: 'navigation',
+      })
     })
   })
 

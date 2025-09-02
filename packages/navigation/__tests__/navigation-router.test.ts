@@ -52,8 +52,8 @@ class MockNavigationContext implements NavigationContext {
   }
 
   popToRoot(): void {
-    this._stack = this._stack.slice(0, 1)
-    this._path = this._stack[0]?.path || '/'
+    this._stack = []
+    this._path = '/'
   }
 
   replace(
@@ -101,7 +101,7 @@ describe('Navigation Router - SwiftUI Compatible Router System', () => {
     it('initializes with current path from context', () => {
       const router = createNavigationRouter(mockContext)
 
-      expect(router.currentPath()).toBe('/')
+      expect(router.currentPath).toBe('/')
     })
   })
 
@@ -152,9 +152,9 @@ describe('Navigation Router - SwiftUI Compatible Router System', () => {
     })
 
     it('provides navigation state information', () => {
-      expect(router.canGoBack()).toBe(false)
-      expect(router.canGoForward()).toBe(false)
-      expect(router.currentPath()).toBe('/')
+      expect(router.canGoBack).toBe(false)
+      expect(router.canGoForward).toBe(false)
+      expect(router.currentPath).toBe('/')
     })
   })
 
