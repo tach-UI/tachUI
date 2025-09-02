@@ -5,9 +5,12 @@
  * scale, rotate, translate, skew, perspective, and matrix transforms.
  */
 
-import type { DOMNode } from '../runtime/types'
-import { BaseModifier } from './base'
-import type { ModifierContext, ReactiveModifierProps } from './types'
+import type { DOMNode } from '@tachui/core/runtime/types'
+import { BaseModifier } from '@tachui/core/modifiers/base'
+import type {
+  ModifierContext,
+  ReactiveModifierProps,
+} from '@tachui/core/modifiers/types'
 
 export interface TransformConfig {
   scale?: number | { x?: number; y?: number }
@@ -33,7 +36,8 @@ export interface ModifierTransformOptions {
   transformStyle?: 'flat' | 'preserve-3d'
 }
 
-export type ReactiveTransformOptions = ReactiveModifierProps<ModifierTransformOptions>
+export type ReactiveTransformOptions =
+  ReactiveModifierProps<ModifierTransformOptions>
 
 export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
   readonly type = 'transform'
@@ -82,7 +86,9 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
     return styles
   }
 
-  private generateTransformCSS(config: TransformConfig | Transform3DConfig): string {
+  private generateTransformCSS(
+    config: TransformConfig | Transform3DConfig
+  ): string {
     const transforms: string[] = []
 
     // Handle perspective first (for 3D transforms)
@@ -168,17 +174,33 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
 export interface MatrixTransformConfig {
   matrix?: [number, number, number, number, number, number]
   matrix3d?: [
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
   ]
 }
 
 export interface Advanced3DTransformConfig {
   rotate3d?: { x: number; y: number; z: number; angle: string }
   scale3d?: { x: number; y: number; z: number }
-  translate3d?: { x?: number | string; y?: number | string; z?: number | string }
+  translate3d?: {
+    x?: number | string
+    y?: number | string
+    z?: number | string
+  }
   scaleX?: number
   scaleY?: number
   scaleZ?: number
@@ -188,14 +210,19 @@ export interface Advanced3DTransformConfig {
 }
 
 export interface ModifierAdvancedTransformOptions {
-  transform?: TransformConfig | Transform3DConfig | MatrixTransformConfig | Advanced3DTransformConfig
+  transform?:
+    | TransformConfig
+    | Transform3DConfig
+    | MatrixTransformConfig
+    | Advanced3DTransformConfig
   transformOrigin?: string
   perspectiveOrigin?: string
   transformStyle?: 'flat' | 'preserve-3d'
   backfaceVisibility?: 'visible' | 'hidden'
 }
 
-export type ReactiveAdvancedTransformOptions = ReactiveModifierProps<ModifierAdvancedTransformOptions>
+export type ReactiveAdvancedTransformOptions =
+  ReactiveModifierProps<ModifierAdvancedTransformOptions>
 
 export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTransformOptions> {
   readonly type = 'advancedTransform'
@@ -222,7 +249,9 @@ export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTran
     return undefined
   }
 
-  private computeAdvancedTransformStyles(props: ModifierAdvancedTransformOptions) {
+  private computeAdvancedTransformStyles(
+    props: ModifierAdvancedTransformOptions
+  ) {
     const styles: Record<string, string> = {}
 
     if (props.transform) {
@@ -305,7 +334,9 @@ export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTran
     return transforms.join(' ')
   }
 
-  private generateTransformCSS(config: TransformConfig | Transform3DConfig): string {
+  private generateTransformCSS(
+    config: TransformConfig | Transform3DConfig
+  ): string {
     // Reuse the basic transform generation logic
     const transformModifier = new TransformModifier({ transform: config })
     return (transformModifier as any).generateTransformCSS(config)
@@ -335,7 +366,9 @@ export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTran
  * })
  * ```
  */
-export function transform(config: TransformConfig | Transform3DConfig): TransformModifier {
+export function transform(
+  config: TransformConfig | Transform3DConfig
+): TransformModifier {
   return new TransformModifier({ transform: config })
 }
 
@@ -348,7 +381,9 @@ export function transform(config: TransformConfig | Transform3DConfig): Transfor
  * .scale({ x: 1.5, y: 0.8 })     // Non-uniform scale
  * ```
  */
-export function scale(value: number | { x?: number; y?: number }): TransformModifier {
+export function scale(
+  value: number | { x?: number; y?: number }
+): TransformModifier {
   return new TransformModifier({ transform: { scale: value } })
 }
 
@@ -375,7 +410,10 @@ export function rotate(angle: string): TransformModifier {
  * .translate({ x: '50%', y: '-10px' })
  * ```
  */
-export function translate(offset: { x?: number | string; y?: number | string }): TransformModifier {
+export function translate(offset: {
+  x?: number | string
+  y?: number | string
+}): TransformModifier {
   return new TransformModifier({ transform: { translate: offset } })
 }
 
@@ -463,7 +501,9 @@ export function perspective(value: number): TransformModifier {
  * })
  * ```
  */
-export function advancedTransform(config: Advanced3DTransformConfig | MatrixTransformConfig): AdvancedTransformModifier {
+export function advancedTransform(
+  config: Advanced3DTransformConfig | MatrixTransformConfig
+): AdvancedTransformModifier {
   return new AdvancedTransformModifier({ transform: config })
 }
 
@@ -475,7 +515,9 @@ export function advancedTransform(config: Advanced3DTransformConfig | MatrixTran
  * .matrix([1, 0, 0, 1, 50, 100])  // Translate(50, 100)
  * ```
  */
-export function matrix(values: [number, number, number, number, number, number]): AdvancedTransformModifier {
+export function matrix(
+  values: [number, number, number, number, number, number]
+): AdvancedTransformModifier {
   return new AdvancedTransformModifier({ transform: { matrix: values } })
 }
 
@@ -487,12 +529,26 @@ export function matrix(values: [number, number, number, number, number, number])
  * .matrix3d([1,0,0,0, 0,1,0,0, 0,0,1,0, 50,100,0,1])
  * ```
  */
-export function matrix3d(values: [
-  number, number, number, number,
-  number, number, number, number,
-  number, number, number, number,
-  number, number, number, number
-]): AdvancedTransformModifier {
+export function matrix3d(
+  values: [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ]
+): AdvancedTransformModifier {
   return new AdvancedTransformModifier({ transform: { matrix3d: values } })
 }
 
@@ -504,8 +560,15 @@ export function matrix3d(values: [
  * .rotate3d(1, 1, 0, '45deg')  // Rotate around X and Y axis
  * ```
  */
-export function rotate3d(x: number, y: number, z: number, angle: string): AdvancedTransformModifier {
-  return new AdvancedTransformModifier({ transform: { rotate3d: { x, y, z, angle } } })
+export function rotate3d(
+  x: number,
+  y: number,
+  z: number,
+  angle: string
+): AdvancedTransformModifier {
+  return new AdvancedTransformModifier({
+    transform: { rotate3d: { x, y, z, angle } },
+  })
 }
 
 /**
@@ -516,7 +579,11 @@ export function rotate3d(x: number, y: number, z: number, angle: string): Advanc
  * .scale3d(1.2, 1.2, 0.8)  // Scale XY up, Z down
  * ```
  */
-export function scale3d(x: number, y: number, z: number): AdvancedTransformModifier {
+export function scale3d(
+  x: number,
+  y: number,
+  z: number
+): AdvancedTransformModifier {
   return new AdvancedTransformModifier({ transform: { scale3d: { x, y, z } } })
 }
 
@@ -529,8 +596,14 @@ export function scale3d(x: number, y: number, z: number): AdvancedTransformModif
  * .translate3d('50%', 0, 0)     // Percentage values
  * ```
  */
-export function translate3d(x?: number | string, y?: number | string, z?: number | string): AdvancedTransformModifier {
-  return new AdvancedTransformModifier({ transform: { translate3d: { x, y, z } } })
+export function translate3d(
+  x?: number | string,
+  y?: number | string,
+  z?: number | string
+): AdvancedTransformModifier {
+  return new AdvancedTransformModifier({
+    transform: { translate3d: { x, y, z } },
+  })
 }
 
 // Individual axis scale functions
@@ -564,11 +637,15 @@ export function perspectiveOrigin(value: string): AdvancedTransformModifier {
   return new AdvancedTransformModifier({ perspectiveOrigin: value })
 }
 
-export function transformStyle(value: 'flat' | 'preserve-3d'): AdvancedTransformModifier {
+export function transformStyle(
+  value: 'flat' | 'preserve-3d'
+): AdvancedTransformModifier {
   return new AdvancedTransformModifier({ transformStyle: value })
 }
 
-export function backfaceVisibility(value: 'visible' | 'hidden'): AdvancedTransformModifier {
+export function backfaceVisibility(
+  value: 'visible' | 'hidden'
+): AdvancedTransformModifier {
   return new AdvancedTransformModifier({ backfaceVisibility: value })
 }
 
@@ -576,16 +653,24 @@ export function backfaceVisibility(value: 'visible' | 'hidden'): AdvancedTransfo
 // SwiftUI Compatibility Functions
 // ============================================================================
 
-type AnchorPoint = 'center' | 'top' | 'bottom' | 'leading' | 'trailing' | 
-                   'topLeading' | 'topTrailing' | 'bottomLeading' | 'bottomTrailing'
+type AnchorPoint =
+  | 'center'
+  | 'top'
+  | 'bottom'
+  | 'leading'
+  | 'trailing'
+  | 'topLeading'
+  | 'topTrailing'
+  | 'bottomLeading'
+  | 'bottomTrailing'
 
 /**
  * SwiftUI-compatible scaleEffect modifier
- * 
+ *
  * @example
  * ```typescript
  * .scaleEffect(1.5)                    // Uniform scale
- * .scaleEffect(1.5, 2.0)               // Non-uniform scale  
+ * .scaleEffect(1.5, 2.0)               // Non-uniform scale
  * .scaleEffect(1.2, undefined, 'topLeading')  // Scale from top-leading corner
  * ```
  */
@@ -597,19 +682,19 @@ export function scaleEffect(
   const scaleX = x
   const scaleY = y ?? x
   const transformOrigin = getTransformOrigin(anchor)
-  
-  return new AdvancedTransformModifier({ 
+
+  return new AdvancedTransformModifier({
     transform: { scaleX, scaleY },
-    transformOrigin 
+    transformOrigin,
   })
 }
 
 /**
  * SwiftUI-compatible offset modifier (relative positioning via transform)
- * 
+ *
  * Note: SwiftUI's .position() sets absolute coordinates, but in web context
  * we use .offset() for relative positioning which is more common.
- * 
+ *
  * @example
  * ```typescript
  * .offset(100, 50)   // Offset by x=100, y=50 relative to current position
@@ -617,7 +702,7 @@ export function scaleEffect(
  */
 export function offset(x: number, y: number): AdvancedTransformModifier {
   return new AdvancedTransformModifier({
-    transform: { translateX: x, translateY: y }
+    transform: { translateX: x, translateY: y },
   })
 }
 
@@ -626,15 +711,25 @@ export function offset(x: number, y: number): AdvancedTransformModifier {
  */
 function getTransformOrigin(anchor: AnchorPoint): string {
   switch (anchor) {
-    case 'center': return 'center center'
-    case 'top': return 'center top'
-    case 'bottom': return 'center bottom'
-    case 'leading': return 'left center'
-    case 'trailing': return 'right center'
-    case 'topLeading': return 'left top'
-    case 'topTrailing': return 'right top'
-    case 'bottomLeading': return 'left bottom'
-    case 'bottomTrailing': return 'right bottom'
-    default: return 'center center'
+    case 'center':
+      return 'center center'
+    case 'top':
+      return 'center top'
+    case 'bottom':
+      return 'center bottom'
+    case 'leading':
+      return 'left center'
+    case 'trailing':
+      return 'right center'
+    case 'topLeading':
+      return 'left top'
+    case 'topTrailing':
+      return 'right top'
+    case 'bottomLeading':
+      return 'left bottom'
+    case 'bottomTrailing':
+      return 'right bottom'
+    default:
+      return 'center center'
   }
 }

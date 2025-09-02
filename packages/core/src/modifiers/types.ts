@@ -658,129 +658,18 @@ export interface ModifierBuilder<
   shadowPreset(presetName: string): ModifierBuilder<T>
 
   // Visual Effects Modifiers (Phase 2 - Epic: Butternut)
-  blur(radius: number | Signal<number>): ModifierBuilder<T>
-  brightness(amount: number | Signal<number>): ModifierBuilder<T>
-  contrast(amount: number | Signal<number>): ModifierBuilder<T>
-  saturation(amount: number | Signal<number>): ModifierBuilder<T>
-  hueRotation(angle: number | Signal<number>): ModifierBuilder<T>
-  grayscale(amount: number | Signal<number>): ModifierBuilder<T>
-  colorInvert(amount?: number | Signal<number>): ModifierBuilder<T>
-  dropShadow(shadow: string): ModifierBuilder<T>
 
-  // Additional filter methods
-  filter(
-    config:
-      | {
-          blur?: number
-          brightness?: number
-          contrast?: number
-          saturate?: number
-          [key: string]: any
-        }
-      | string
-  ): ModifierBuilder<T>
-  saturate(value: number): ModifierBuilder<T>
-  sepia(value: number): ModifierBuilder<T>
-  hueRotate(angle: string): ModifierBuilder<T>
-  invert(value: number): ModifierBuilder<T>
-
-  // Filter presets
-  vintagePhoto(
-    sepiaAmount?: number,
-    contrastAmount?: number
-  ): ModifierBuilder<T>
-  blackAndWhite(contrastAmount?: number): ModifierBuilder<T>
-  vibrant(
-    saturationAmount?: number,
-    contrastAmount?: number
-  ): ModifierBuilder<T>
-  warmTone(hueShift?: string): ModifierBuilder<T>
-  coolTone(hueShift?: string): ModifierBuilder<T>
-  faded(contrastAmount?: number, saturationAmount?: number): ModifierBuilder<T>
-  highKey(
-    brightnessAmount?: number,
-    contrastAmount?: number
-  ): ModifierBuilder<T>
-  lowKey(brightnessAmount?: number, contrastAmount?: number): ModifierBuilder<T>
-  softFocus(blurAmount?: number): ModifierBuilder<T>
-  highContrastMode(): ModifierBuilder<T>
-  subtleBlur(): ModifierBuilder<T>
-  darkModeInvert(): ModifierBuilder<T>
-
-  // Transform modifiers (SwiftUI-style)
-  scale(value: number | { x?: number; y?: number }): ModifierBuilder<T>
-  rotate(angle: string): ModifierBuilder<T>
-  translate(offset: {
-    x?: number | string
-    y?: number | string
-  }): ModifierBuilder<T>
-  perspective(value: number): ModifierBuilder<T>
-
-  // Hover and cursor effect modifiers
-  hover(styles: any, transition?: string | number): ModifierBuilder<T>
-  hoverEffect(
-    effect: 'automatic' | 'highlight' | 'lift' | 'scale',
-    isEnabled?: boolean
-  ): ModifierBuilder<T>
-  hoverWithTransition(styles: any, duration?: number): ModifierBuilder<T>
-  conditionalHover(
-    effect: 'automatic' | 'highlight' | 'lift' | 'scale',
-    isEnabled: boolean
-  ): ModifierBuilder<T>
-
-  // Cursor preset methods
-  interactiveCursor(): ModifierBuilder<T>
-  draggableCursor(): ModifierBuilder<T>
-  textCursor(): ModifierBuilder<T>
-  disabledCursor(): ModifierBuilder<T>
-  loadingCursor(): ModifierBuilder<T>
-  helpCursor(): ModifierBuilder<T>
-  zoomCursor(mode?: 'in' | 'out'): ModifierBuilder<T>
-
-  // Hover effect presets
-  buttonHover(): ModifierBuilder<T>
-  cardHover(): ModifierBuilder<T>
-  linkHover(): ModifierBuilder<T>
-  imageHover(): ModifierBuilder<T>
-
-  // Interaction modifiers
-  onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onHover(handler: (isHovered: boolean) => void): ModifierBuilder<T>
-  onMouseEnter(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onMouseLeave(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onMouseDown(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onMouseUp(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onDoubleClick(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onContextMenu(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onDragStart(handler: (event: DragEvent) => void): ModifierBuilder<T>
-  onDragOver(handler: (event: DragEvent) => void): ModifierBuilder<T>
-  onDragLeave(handler: (event: DragEvent) => void): ModifierBuilder<T>
-  onDrop(handler: (event: DragEvent) => void): ModifierBuilder<T>
-
-  // Focus events
-  onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T>
-  onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T>
-
-  // Keyboard events
-  onKeyPress(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
-  onKeyDown(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
-  onKeyUp(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
-
-  // Scroll and wheel events
-  onScroll(handler: (event: Event) => void): ModifierBuilder<T>
-  onWheel(handler: (event: WheelEvent) => void): ModifierBuilder<T>
-
-  // Input events
-  onInput(handler: (event: InputEvent) => void): ModifierBuilder<T>
-  onChange(handler: (value: any, event?: Event) => void): ModifierBuilder<T>
-
-  // Clipboard events
-  onCopy(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
-  onCut(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
-  onPaste(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
-
-  // Other events
-  onSelect(handler: (event: Event) => void): ModifierBuilder<T>
+  // ============================================================================
+  // VISUAL EFFECTS METHODS MOVED TO @tachui/effects
+  // ============================================================================
+  // Visual effects methods (filters, transforms, backdrop, hover) have been
+  // moved to @tachui/effects package. Import and use with .apply():
+  //
+  //   import { blur, scale, glassmorphism, hoverEffect } from '@tachui/effects'
+  //   VStack().apply(blur(5)).apply(scale(1.1))
+  //
+  // This provides better tree-shaking and cleaner plugin boundaries.
+  // ============================================================================
 
   // Advanced Gesture Modifiers (Phase 4 - Epic: Butternut)
   onLongPressGesture(options: {
@@ -875,9 +764,6 @@ export interface ModifierBuilder<
 
   // State modifiers
   disabled(isDisabled?: boolean | Signal<boolean>): ModifierBuilder<T>
-  draggable(isDraggable?: boolean): ModifierBuilder<T>
-  setAttribute(name: string, value: string): ModifierBuilder<T>
-  accessibilityLabel(label: string): ModifierBuilder<T>
 
   // Animation modifiers
   transition(
@@ -996,6 +882,32 @@ export interface ModifierBuilder<
   asHTML(options?: import('./as-html').AsHTMLOptions): ModifierBuilder<T>
 
   // Responsive functionality moved to @tachui/responsive package
+
+  // Interaction modifiers
+  onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T>
+  onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T>
+  onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T>
+  onKeyDown(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
+  onScroll(handler: (event: Event) => void): ModifierBuilder<T>
+  onKeyPress(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
+  onKeyUp(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
+  onDoubleClick(handler: (event: MouseEvent) => void): ModifierBuilder<T>
+  onContextMenu(handler: (event: MouseEvent) => void): ModifierBuilder<T>
+  onWheel(handler: (event: WheelEvent) => void): ModifierBuilder<T>
+  onInput(handler: (event: InputEvent) => void): ModifierBuilder<T>
+  onChange(handler: (value: any, event?: Event) => void): ModifierBuilder<T>
+  onCopy(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
+  onCut(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
+  onPaste(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
+  onSelect(handler: (event: Event) => void): ModifierBuilder<T>
+
+  // Transition modifiers
+  transition(
+    property?: string,
+    duration?: number,
+    easing?: string,
+    delay?: number
+  ): ModifierBuilder<T>
 
   addModifier(modifier: Modifier): void
 

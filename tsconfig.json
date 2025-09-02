@@ -31,6 +31,7 @@
       "@tachui/navigation": ["./packages/navigation/src"],
       "@tachui/symbols": ["./packages/symbols/src"],
       "@tachui/mobile": ["./packages/mobile/src"],
+      "@tachui/effects": ["./packages/effects/src"],
       "@tachui/cli": ["./packages/cli/src"]
     }
   },
@@ -41,6 +42,8 @@
     { "path": "./packages/forms" },
     { "path": "./packages/navigation" },
     { "path": "./packages/symbols" },
+    { "path": "./packages/mobile" },
+    { "path": "./packages/effects" },
     { "path": "./packages/cli" }
   ]
 }

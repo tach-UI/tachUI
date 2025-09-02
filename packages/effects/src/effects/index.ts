@@ -5,22 +5,38 @@
  * and enhanced cursor styling with complete CSS cursor support.
  */
 
-import type { Signal } from '../reactive/types'
-import type { DOMNode } from '../runtime/types'
-import { BaseModifier } from './base'
-import type { ModifierContext, ReactiveModifierProps } from './types'
+import type { Signal } from '@tachui/core/reactive/types'
+import type { DOMNode } from '@tachui/core/runtime/types'
+import { BaseModifier } from '@tachui/core/modifiers/base'
+import type {
+  ModifierContext,
+  ReactiveModifierProps,
+} from '@tachui/core/modifiers/types'
 
 // ============================================================================
 // Cursor System
 // ============================================================================
 
-export type CSSCursorValue = 
+export type CSSCursorValue =
   // Existing values (8 values) - no breaking changes
-  | 'auto' | 'default' | 'pointer' | 'text' | 'wait' | 'help' | 'not-allowed' | 'none'
-  
+  | 'auto'
+  | 'default'
+  | 'pointer'
+  | 'text'
+  | 'wait'
+  | 'help'
+  | 'not-allowed'
+  | 'none'
+
   // New additions (7 values) - additive enhancement
-  | 'grab' | 'grabbing' | 'zoom-in' | 'zoom-out' | 'alias' | 'cell' | 'copy'
-  
+  | 'grab'
+  | 'grabbing'
+  | 'zoom-in'
+  | 'zoom-out'
+  | 'alias'
+  | 'cell'
+  | 'copy'
+
   // Custom cursor support
   | string // CSS cursor syntax: 'url(...), fallback'
 
@@ -55,18 +71,33 @@ export class CursorModifier extends BaseModifier<CursorOptions> {
     }
 
     this.applyStyles(context.element, { cursor: this.properties.cursor })
-    
+
     return undefined
   }
 
   private validateCursorValue(value: string): void {
     const validCursors = [
-      'auto', 'default', 'pointer', 'text', 'wait', 'help', 'not-allowed', 'none',
-      'grab', 'grabbing', 'zoom-in', 'zoom-out', 'alias', 'cell', 'copy'
+      'auto',
+      'default',
+      'pointer',
+      'text',
+      'wait',
+      'help',
+      'not-allowed',
+      'none',
+      'grab',
+      'grabbing',
+      'zoom-in',
+      'zoom-out',
+      'alias',
+      'cell',
+      'copy',
     ]
-    
+
     if (!validCursors.includes(value) && !value.includes('url(')) {
-      console.warn(`Unknown cursor value: "${value}". See documentation for valid cursor values.`)
+      console.warn(
+        `Unknown cursor value: "${value}". See documentation for valid cursor values.`
+      )
     }
   }
 }
@@ -75,11 +106,11 @@ export class CursorModifier extends BaseModifier<CursorOptions> {
 // Hover Effects System
 // ============================================================================
 
-export type SwiftUIHoverEffect = 
-  | 'automatic'     // SwiftUI default - subtle scaling and shadow
-  | 'highlight'     // Subtle background change
-  | 'lift'          // Elevation effect with shadow
-  | 'scale'         // Scale transform on hover
+export type SwiftUIHoverEffect =
+  | 'automatic' // SwiftUI default - subtle scaling and shadow
+  | 'highlight' // Subtle background change
+  | 'lift' // Elevation effect with shadow
+  | 'scale' // Scale transform on hover
 
 export interface HoverStyles {
   backgroundColor?: string
@@ -89,13 +120,13 @@ export interface HoverStyles {
   boxShadow?: string
   borderColor?: string
   filter?: string
-  [key: string]: any  // Allow any CSS property
+  [key: string]: any // Allow any CSS property
 }
 
 export interface HoverOptions {
   effect?: SwiftUIHoverEffect
   hoverStyles?: HoverStyles
-  transition?: string | number  
+  transition?: string | number
   isEnabled?: boolean
 }
 
@@ -131,13 +162,13 @@ export class HoverModifier extends BaseModifier<HoverOptions> {
 
     // Add hover styles to stylesheet
     this.addHoverStyles(hoverClass, this.properties)
-    
+
     return undefined
   }
 
   private addHoverStyles(className: string, props: HoverOptions): void {
     const styleSheet = this.getOrCreateStyleSheet()
-    
+
     // Base transition styles
     const transition = this.formatTransition(props.transition)
     if (transition) {
@@ -158,13 +189,18 @@ export class HoverModifier extends BaseModifier<HoverOptions> {
           const cssProperty = this.toCSSProperty(prop)
           // Add !important to properties commonly overridden by inline styles
           // Note: Exclude 'transform' to prevent conflicts with button press states
-          const needsImportant = ['background-color', 'background', 'border-color', 'color'].includes(cssProperty)
+          const needsImportant = [
+            'background-color',
+            'background',
+            'border-color',
+            'color',
+          ].includes(cssProperty)
           return `${cssProperty}: ${value}${needsImportant ? ' !important' : ''}`
         })
         .join('; ')
-      
+
       const hoverRule = `.${className}:hover { ${cssPropertiesWithImportant} }`
-      
+
       try {
         styleSheet.insertRule(hoverRule)
       } catch (e) {
@@ -194,26 +230,26 @@ export class HoverModifier extends BaseModifier<HoverOptions> {
       case 'automatic':
         return {
           transform: 'scale(1.02)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
         }
-      
+
       case 'highlight':
         return {
           backgroundColor: 'rgba(0, 0, 0, 0.05)',
-          filter: 'brightness(0.95)'
+          filter: 'brightness(0.95)',
         }
-      
+
       case 'lift':
         return {
           transform: 'translateY(-2px)',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
         }
-      
+
       case 'scale':
         return {
-          transform: 'scale(1.05)'
+          transform: 'scale(1.05)',
         }
-      
+
       default:
         return {}
     }
@@ -223,17 +259,17 @@ export class HoverModifier extends BaseModifier<HoverOptions> {
     if (transition === undefined) {
       return 'all 200ms ease' // Default transition
     }
-    
+
     if (typeof transition === 'number') {
       return `all ${transition}ms ease`
     }
-    
+
     return transition
   }
 
   private getOrCreateStyleSheet(): CSSStyleSheet {
     const existingStyle = document.getElementById('tachui-hover-styles')
-    
+
     if (existingStyle && existingStyle instanceof HTMLStyleElement) {
       return existingStyle.sheet!
     }
@@ -275,7 +311,10 @@ export function cursor(value: CSSCursorValue): CursorModifier {
  * .hoverEffect('scale')         // Scale transform only
  * ```
  */
-export function hoverEffect(effect: SwiftUIHoverEffect, isEnabled?: boolean | Signal<boolean>): HoverModifier {
+export function hoverEffect(
+  effect: SwiftUIHoverEffect,
+  isEnabled?: boolean | Signal<boolean>
+): HoverModifier {
   return new HoverModifier({ effect, isEnabled })
 }
 
@@ -284,17 +323,20 @@ export function hoverEffect(effect: SwiftUIHoverEffect, isEnabled?: boolean | Si
  *
  * @example
  * ```typescript
- * .hover({ 
- *   backgroundColor: '#f0f0f0', 
- *   transform: 'scale(1.05)' 
+ * .hover({
+ *   backgroundColor: '#f0f0f0',
+ *   transform: 'scale(1.05)'
  * })
- * .hover({ 
- *   opacity: 0.8, 
- *   filter: 'blur(2px)' 
+ * .hover({
+ *   opacity: 0.8,
+ *   filter: 'blur(2px)'
  * }, 300)
  * ```
  */
-export function hover(styles: HoverStyles, transition?: string | number): HoverModifier {
+export function hover(
+  styles: HoverStyles,
+  transition?: string | number
+): HoverModifier {
   return new HoverModifier({ hoverStyles: styles, transition })
 }
 
@@ -303,13 +345,16 @@ export function hover(styles: HoverStyles, transition?: string | number): HoverM
  *
  * @example
  * ```typescript
- * .hoverWithTransition({ 
- *   transform: 'rotate(5deg)', 
- *   color: '#007AFF' 
+ * .hoverWithTransition({
+ *   transform: 'rotate(5deg)',
+ *   color: '#007AFF'
  * }, 250)
  * ```
  */
-export function hoverWithTransition(styles: HoverStyles, duration: number = 200): HoverModifier {
+export function hoverWithTransition(
+  styles: HoverStyles,
+  duration: number = 200
+): HoverModifier {
   return new HoverModifier({ hoverStyles: styles, transition: duration })
 }
 
@@ -322,7 +367,10 @@ export function hoverWithTransition(styles: HoverStyles, duration: number = 200)
  * .conditionalHover('highlight', false)     // Disabled
  * ```
  */
-export function conditionalHover(effect: SwiftUIHoverEffect, isEnabled: boolean | Signal<boolean>): HoverModifier {
+export function conditionalHover(
+  effect: SwiftUIHoverEffect,
+  isEnabled: boolean | Signal<boolean>
+): HoverModifier {
   return new HoverModifier({ effect, isEnabled })
 }
 

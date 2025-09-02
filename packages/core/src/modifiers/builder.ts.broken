@@ -91,13 +91,6 @@ import {
   whiteSpace,
 } from './typography'
 import {
-  gradientText,
-  lineClamp,
-  wordBreak,
-  overflowWrap,
-  hyphens,
-} from './text'
-import {
   cursor,
   display,
   overflowX,
@@ -107,7 +100,19 @@ import {
   outline,
   outlineOffset,
 } from './utility'
-import { AriaModifier, TabIndexModifier } from './attributes'
+import {
+  IdModifier,
+  DataModifier,
+  AriaModifier,
+  TabIndexModifier,
+} from './attributes'
+import {
+  LineClampModifier,
+  WordBreakModifier,
+  OverflowWrapModifier,
+  HyphensModifier,
+  BackgroundClipModifier,
+} from './text'
 // BackdropFilterModifier moved to @tachui/effects
 import { before as beforeModifier, after as afterModifier } from './elements'
 // Filter modifiers moved to @tachui/effects
@@ -121,6 +126,7 @@ import {
 // Interactive effects moved to @tachui/effects
 import {
   transition as transitionModifier,
+  transitions,
   fadeTransition,
   transformTransition,
   colorTransition,
@@ -142,11 +148,8 @@ import {
   scrollPadding,
   scrollSnap,
 } from './scroll'
-
 import { asHTML } from './as-html'
 import type { AsHTMLOptions } from './as-html'
-import { interactionModifiers } from './core'
-import { id, data, aria, tabIndex } from './attributes'
 
 /**
  * Concrete modifier builder implementation
@@ -387,78 +390,6 @@ export class ModifierBuilderImpl<
   ): ModifierBuilder<T> {
     this.modifiers.push(textTransform(value))
     return this
-  }
-
-  gradientText(gradient: string): ModifierBuilder<T> {
-    this.modifiers.push(gradientText(gradient))
-    return this
-  }
-
-  // Text Modifiers
-  lineClamp(lines: number): ModifierBuilder<T> {
-    this.modifiers.push(lineClamp(lines))
-    return this
-  }
-
-  wordBreak(
-    value: 'normal' | 'break-all' | 'keep-all' | 'break-word'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(wordBreak(value))
-    return this
-  }
-
-  overflowWrap(
-    value: 'normal' | 'break-word' | 'anywhere'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(overflowWrap(value))
-    return this
-  }
-
-  hyphens(value: 'none' | 'manual' | 'auto'): ModifierBuilder<T> {
-    this.modifiers.push(hyphens(value))
-    return this
-  }
-
-  // Pseudo-element modifiers
-  before(styles: {
-    content: string
-    color?: string
-    [key: string]: any
-  }): ModifierBuilder<T> {
-    this.modifiers.push(beforeModifier(styles))
-    return this
-  }
-
-  after(styles: {
-    content: string
-    color?: string
-    [key: string]: any
-  }): ModifierBuilder<T> {
-    this.modifiers.push(afterModifier(styles))
-    return this
-  }
-
-  // Backdrop filter modifiers - moved to @tachui/effects but keeping stubs for compatibility
-  backdropFilter(): ModifierBuilder<T> {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        'backdropFilter has been moved to @tachui/effects. Install @tachui/effects and use .apply(backdropFilter(...)) instead.'
-      )
-    }
-    throw new Error(
-      'backdropFilter is no longer available in @tachui/core. Please install @tachui/effects.'
-    )
-  }
-
-  glassmorphism(): ModifierBuilder<T> {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        'glassmorphism has been moved to @tachui/effects. Install @tachui/effects and use .apply(glassmorphism(...)) instead.'
-      )
-    }
-    throw new Error(
-      'glassmorphism is no longer available in @tachui/core. Please install @tachui/effects.'
-    )
   }
 
   letterSpacing(value: number | string): ModifierBuilder<T> {
@@ -1037,13 +968,868 @@ export class ModifierBuilderImpl<
     return this
   }
 
-  // ============================================================================
-  // VISUAL EFFECTS MOVED TO @tachui/effects PACKAGE
-  // ============================================================================
-  //
-  // Visual effects have been extracted to @tachui/effects for better tree-shaking
+  dropShadow(shadow: string): ModifierBuilder<T> {
+    this.modifiers.push(new FilterModifier({ filter: { dropShadow: shadow } }))
+    return this
+  }
 
-  // Visual effects methods removed - use @tachui/effects package
+  // Additional filter methods
+  filter(
+    config:
+      | {
+          blur?: number
+          brightness?: number
+          contrast?: number
+          saturate?: number
+          [key: string]: any
+        }
+      | string
+  ): ModifierBuilder<T> {
+    this.modifiers.push(filter(config))
+    return this
+  }
+
+  saturate(value: number): ModifierBuilder<T> {
+    this.modifiers.push(saturate(value))
+    return this
+  }
+
+  sepia(value: number): ModifierBuilder<T> {
+    this.modifiers.push(sepia(value))
+    return this
+  }
+
+  hueRotate(angle: string): ModifierBuilder<T> {
+    this.modifiers.push(hueRotate(angle))
+    return this
+  }
+
+  invert(value: number): ModifierBuilder<T> {
+    this.modifiers.push(invert(value))
+    return this
+  }
+
+  // Filter presets
+  vintagePhoto(
+    sepiaAmount?: number,
+    contrastAmount?: number
+  ): ModifierBuilder<T> {
+    this.modifiers.push(vintagePhoto(sepiaAmount, contrastAmount))
+    return this
+  }
+
+  blackAndWhite(contrastAmount?: number): ModifierBuilder<T> {
+    this.modifiers.push(blackAndWhite(contrastAmount))
+    return this
+  }
+
+  vibrant(
+    saturationAmount?: number,
+    contrastAmount?: number
+  ): ModifierBuilder<T> {
+    this.modifiers.push(vibrant(saturationAmount, contrastAmount))
+    return this
+  }
+
+  warmTone(hueShift?: string): ModifierBuilder<T> {
+    this.modifiers.push(warmTone(hueShift))
+    return this
+  }
+
+  coolTone(hueShift?: string): ModifierBuilder<T> {
+    this.modifiers.push(coolTone(hueShift))
+    return this
+  }
+
+  faded(
+    contrastAmount?: number,
+    saturationAmount?: number
+  ): ModifierBuilder<T> {
+    this.modifiers.push(faded(contrastAmount, saturationAmount))
+    return this
+  }
+
+  highKey(
+    brightnessAmount?: number,
+    contrastAmount?: number
+  ): ModifierBuilder<T> {
+    this.modifiers.push(highKey(brightnessAmount, contrastAmount))
+    return this
+  }
+
+  lowKey(
+    brightnessAmount?: number,
+    contrastAmount?: number
+  ): ModifierBuilder<T> {
+    this.modifiers.push(lowKey(brightnessAmount, contrastAmount))
+    return this
+  }
+
+  softFocus(blurAmount?: number): ModifierBuilder<T> {
+    this.modifiers.push(softFocus(blurAmount))
+    return this
+  }
+
+  highContrastMode(): ModifierBuilder<T> {
+    this.modifiers.push(highContrastMode())
+    return this
+  }
+
+  subtleBlur(): ModifierBuilder<T> {
+    this.modifiers.push(subtleBlur())
+    return this
+  }
+
+  darkModeInvert(): ModifierBuilder<T> {
+    this.modifiers.push(darkModeInvert())
+    return this
+  }
+
+  // Transform modifiers
+  scale(value: number | { x?: number; y?: number }): ModifierBuilder<T> {
+    this.modifiers.push(scale(value))
+    return this
+  }
+
+  rotate(angle: string): ModifierBuilder<T> {
+    this.modifiers.push(rotate(angle))
+    return this
+  }
+
+  translate(offset: {
+    x?: number | string
+    y?: number | string
+  }): ModifierBuilder<T> {
+    this.modifiers.push(translate(offset))
+    return this
+  }
+
+  perspective(value: number): ModifierBuilder<T> {
+    this.modifiers.push(perspective(value))
+    return this
+  }
+
+  // Hover and cursor effect modifiers
+  hover(styles: any, transition?: string | number): ModifierBuilder<T> {
+    this.modifiers.push(hoverModifier(styles, transition))
+    return this
+  }
+
+  hoverEffect(
+    effect: 'automatic' | 'highlight' | 'lift' | 'scale',
+    isEnabled?: boolean
+  ): ModifierBuilder<T> {
+    this.modifiers.push(hoverEffect(effect, isEnabled))
+    return this
+  }
+
+  hoverWithTransition(styles: any, duration: number = 200): ModifierBuilder<T> {
+    this.modifiers.push(hoverWithTransition(styles, duration))
+    return this
+  }
+
+  conditionalHover(
+    effect: 'automatic' | 'highlight' | 'lift' | 'scale',
+    isEnabled: boolean
+  ): ModifierBuilder<T> {
+    this.modifiers.push(conditionalHover(effect, isEnabled))
+    return this
+  }
+
+  // Cursor preset methods
+  interactiveCursor(): ModifierBuilder<T> {
+    this.modifiers.push(interactiveCursor())
+    return this
+  }
+
+  draggableCursor(): ModifierBuilder<T> {
+    this.modifiers.push(draggableCursor())
+    return this
+  }
+
+  textCursor(): ModifierBuilder<T> {
+    this.modifiers.push(textCursor())
+    return this
+  }
+
+  disabledCursor(): ModifierBuilder<T> {
+    this.modifiers.push(disabledCursor())
+    return this
+  }
+
+  loadingCursor(): ModifierBuilder<T> {
+    this.modifiers.push(loadingCursor())
+    return this
+  }
+
+  helpCursor(): ModifierBuilder<T> {
+    this.modifiers.push(helpCursor())
+    return this
+  }
+
+  zoomCursor(mode: 'in' | 'out' = 'in'): ModifierBuilder<T> {
+    this.modifiers.push(zoomCursor(mode))
+    return this
+  }
+
+  // Hover effect presets
+  buttonHover(): ModifierBuilder<T> {
+    this.modifiers.push(buttonHover())
+    return this
+  }
+
+  cardHover(): ModifierBuilder<T> {
+    this.modifiers.push(cardHover())
+    return this
+  }
+
+  linkHover(): ModifierBuilder<T> {
+    this.modifiers.push(linkHover())
+    return this
+  }
+
+  imageHover(): ModifierBuilder<T> {
+    this.modifiers.push(imageHover())
+    return this
+  }
+
+  // Transition modifiers
+  transition(
+    property: string,
+    duration: number,
+    easing: string,
+    delay: number
+  ): ModifierBuilder<T>
+  transition(cssValue: string): ModifierBuilder<T>
+  transition(
+    propertyOrCssValue: string = 'all',
+    duration: number = 300,
+    easing: string = 'ease',
+    delay: number = 0
+  ): ModifierBuilder<T> {
+    // If only one parameter and it looks like a CSS value, treat as raw CSS
+    if (
+      arguments.length === 1 &&
+      (propertyOrCssValue.includes(' ') || propertyOrCssValue === 'none')
+    ) {
+      this.modifiers.push(css({ transition: propertyOrCssValue }))
+    } else {
+      // Use the structured transition modifier
+      this.modifiers.push(
+        transitionModifier(
+          propertyOrCssValue,
+          duration || 300,
+          easing || 'ease',
+          delay || 0
+        )
+      )
+    }
+    return this
+  }
+
+  transitions(config: any): ModifierBuilder<T> {
+    this.modifiers.push(transitions(config))
+    return this
+  }
+
+  // Transition presets
+  fadeTransition(duration: number = 200): ModifierBuilder<T> {
+    this.modifiers.push(fadeTransition(duration))
+    return this
+  }
+
+  transformTransition(duration: number = 300): ModifierBuilder<T> {
+    this.modifiers.push(transformTransition(duration))
+    return this
+  }
+
+  colorTransition(duration: number = 150): ModifierBuilder<T> {
+    this.modifiers.push(colorTransition(duration))
+    return this
+  }
+
+  layoutTransition(duration: number = 250): ModifierBuilder<T> {
+    this.modifiers.push(layoutTransition(duration))
+    return this
+  }
+
+  buttonTransition(): ModifierBuilder<T> {
+    this.modifiers.push(buttonTransition())
+    return this
+  }
+
+  cardTransition(): ModifierBuilder<T> {
+    this.modifiers.push(cardTransition())
+    return this
+  }
+
+  modalTransition(): ModifierBuilder<T> {
+    this.modifiers.push(modalTransition())
+    return this
+  }
+
+  smoothTransition(duration: number = 300): ModifierBuilder<T> {
+    this.modifiers.push(smoothTransition(duration))
+    return this
+  }
+
+  quickTransition(duration: number = 150): ModifierBuilder<T> {
+    this.modifiers.push(quickTransition(duration))
+    return this
+  }
+
+  slowTransition(duration: number = 500): ModifierBuilder<T> {
+    this.modifiers.push(slowTransition(duration))
+    return this
+  }
+
+  // Scroll modifiers
+  scroll(config: any): ModifierBuilder<T> {
+    this.modifiers.push(scrollModifier(config))
+    return this
+  }
+
+  scrollBehavior(value: 'auto' | 'smooth'): ModifierBuilder<T> {
+    this.modifiers.push(scrollBehavior(value))
+    return this
+  }
+
+  overscrollBehavior(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T> {
+    this.modifiers.push(overscrollBehavior(value))
+    return this
+  }
+
+  overscrollBehaviorX(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T> {
+    this.modifiers.push(overscrollBehaviorX(value))
+    return this
+  }
+
+  overscrollBehaviorY(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T> {
+    this.modifiers.push(overscrollBehaviorY(value))
+    return this
+  }
+
+  scrollMargin(
+    margin:
+      | number
+      | string
+      | {
+          top?: number | string
+          right?: number | string
+          bottom?: number | string
+          left?: number | string
+        }
+  ): ModifierBuilder<T> {
+    this.modifiers.push(scrollMargin(margin))
+    return this
+  }
+
+  scrollPadding(
+    padding:
+      | number
+      | string
+      | {
+          top?: number | string
+          right?: number | string
+          bottom?: number | string
+          left?: number | string
+        }
+  ): ModifierBuilder<T> {
+    this.modifiers.push(scrollPadding(padding))
+    return this
+  }
+
+  scrollSnap(
+    type:
+      | 'none'
+      | 'x mandatory'
+      | 'y mandatory'
+      | 'x proximity'
+      | 'y proximity'
+      | 'both mandatory'
+      | 'both proximity',
+    align?: 'start' | 'end' | 'center',
+    stop?: 'normal' | 'always'
+  ): ModifierBuilder<T> {
+    this.modifiers.push(scrollSnap(type, align, stop))
+    return this
+  }
+
+  // Interaction modifiers
+  onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onTap: handler }))
+    return this
+  }
+
+  onHover(handler: (isHovered: boolean) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onHover: handler }))
+    return this
+  }
+
+  onMouseEnter(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onMouseEnter: handler }))
+    return this
+  }
+
+  onMouseLeave(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onMouseLeave: handler }))
+    return this
+  }
+
+  onMouseDown(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onMouseDown: handler }))
+    return this
+  }
+
+  onMouseUp(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onMouseUp: handler }))
+    return this
+  }
+
+  onDragStart(handler: (event: DragEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onDragStart: handler }))
+    return this
+  }
+
+  onDragOver(handler: (event: DragEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onDragOver: handler }))
+    return this
+  }
+
+  onDragLeave(handler: (event: DragEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onDragLeave: handler }))
+    return this
+  }
+
+  onDrop(handler: (event: DragEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onDrop: handler }))
+    return this
+  }
+
+  // Additional mouse events
+  onDoubleClick(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onDoubleClick: handler }))
+    return this
+  }
+
+  onContextMenu(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onContextMenu: handler }))
+    return this
+  }
+
+  // Focus events
+  onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onFocus: handler }))
+    return this
+  }
+
+  onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onBlur: handler }))
+    return this
+  }
+
+  // Keyboard events
+  onKeyPress(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onKeyPress: handler }))
+    return this
+  }
+
+  onKeyDown(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onKeyDown: handler }))
+    return this
+  }
+
+  onKeyUp(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onKeyUp: handler }))
+    return this
+  }
+
+  // Touch events
+  onTouchStart(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onTouchStart: handler }))
+    return this
+  }
+
+  onTouchMove(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onTouchMove: handler }))
+    return this
+  }
+
+  onTouchEnd(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onTouchEnd: handler }))
+    return this
+  }
+
+  onTouchCancel(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onTouchCancel: handler }))
+    return this
+  }
+
+  // Gesture events (simplified swipe detection)
+  onSwipeLeft(handler: () => void): ModifierBuilder<T> {
+    let startX = 0
+    let startY = 0
+
+    this.modifiers.push(
+      new InteractionModifier({
+        onTouchStart: (e: TouchEvent) => {
+          startX = e.touches[0].clientX
+          startY = e.touches[0].clientY
+        },
+        onTouchEnd: (e: TouchEvent) => {
+          const endX = e.changedTouches[0].clientX
+          const endY = e.changedTouches[0].clientY
+          const deltaX = endX - startX
+          const deltaY = endY - startY
+
+          // Detect left swipe (right to left movement)
+          if (deltaX < -50 && Math.abs(deltaY) < 100) {
+            handler()
+          }
+        },
+      })
+    )
+    return this
+  }
+
+  onSwipeRight(handler: () => void): ModifierBuilder<T> {
+    let startX = 0
+    let startY = 0
+
+    this.modifiers.push(
+      new InteractionModifier({
+        onTouchStart: (e: TouchEvent) => {
+          startX = e.touches[0].clientX
+          startY = e.touches[0].clientY
+        },
+        onTouchEnd: (e: TouchEvent) => {
+          const endX = e.changedTouches[0].clientX
+          const endY = e.changedTouches[0].clientY
+          const deltaX = endX - startX
+          const deltaY = endY - startY
+
+          // Detect right swipe (left to right movement)
+          if (deltaX > 50 && Math.abs(deltaY) < 100) {
+            handler()
+          }
+        },
+      })
+    )
+    return this
+  }
+
+  // Scroll and wheel events
+  onScroll(handler: (event: Event) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onScroll: handler }))
+    return this
+  }
+
+  onWheel(handler: (event: WheelEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onWheel: handler }))
+    return this
+  }
+
+  // Input events
+  onInput(handler: (event: InputEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onInput: handler }))
+    return this
+  }
+
+  onChange(handler: (value: any, event?: Event) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onChange: handler }))
+    return this
+  }
+
+  // Clipboard events
+  onCopy(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onCopy: handler }))
+    return this
+  }
+
+  onCut(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onCut: handler }))
+    return this
+  }
+
+  onPaste(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onPaste: handler }))
+    return this
+  }
+
+  // Selection events
+  onSelect(handler: (event: Event) => void): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ onSelect: handler }))
+    return this
+  }
+
+  // HTML and ARIA Attributes
+  id(value: string): ModifierBuilder<T> {
+    this.modifiers.push(new IdModifier({ id: value }))
+    return this
+  }
+
+  data(attributes: {
+    [key: string]: string | number | boolean
+  }): ModifierBuilder<T> {
+    this.modifiers.push(new DataModifier({ data: attributes }))
+    return this
+  }
+
+  aria(attributes: {
+    [key: string]: string | number | boolean | undefined
+  }): ModifierBuilder<T> {
+    this.modifiers.push(new AriaModifier({ aria: attributes }))
+    return this
+  }
+
+  // Convenience methods for common ARIA attributes
+  role(value: string): ModifierBuilder<T> {
+    this.modifiers.push(new AriaModifier({ aria: { role: value } }))
+    return this
+  }
+
+  ariaLabel(value: string): ModifierBuilder<T> {
+    this.modifiers.push(new AriaModifier({ aria: { label: value } }))
+    return this
+  }
+
+  ariaLabelledBy(value: string): ModifierBuilder<T> {
+    this.modifiers.push(new AriaModifier({ aria: { labelledby: value } }))
+    return this
+  }
+
+  ariaDescribedBy(value: string): ModifierBuilder<T> {
+    this.modifiers.push(new AriaModifier({ aria: { describedby: value } }))
+    return this
+  }
+
+  ariaLive(value: 'off' | 'polite' | 'assertive'): ModifierBuilder<T> {
+    this.modifiers.push(new AriaModifier({ aria: { live: value } }))
+    return this
+  }
+
+  ariaModal(value: boolean): ModifierBuilder<T> {
+    this.modifiers.push(new AriaModifier({ aria: { modal: value } }))
+    return this
+  }
+
+  ariaExpanded(value: boolean): ModifierBuilder<T> {
+    this.modifiers.push(new AriaModifier({ aria: { expanded: value } }))
+    return this
+  }
+
+  ariaHidden(value: boolean): ModifierBuilder<T> {
+    this.modifiers.push(new AriaModifier({ aria: { hidden: value } }))
+    return this
+  }
+
+  tabIndex(value: number): ModifierBuilder<T> {
+    this.modifiers.push(new TabIndexModifier({ tabIndex: value }))
+    return this
+  }
+
+  // Navigation Modifiers (for @tachui/navigation plugin)
+  navigationTitle(title: string): ModifierBuilder<T> {
+    // Store as component metadata for navigation system
+    ;(this.component as any)._navigationModifiers = {
+      ...(this.component as any)._navigationModifiers,
+      title,
+    }
+    // Also set appropriate ARIA attributes for accessibility
+    this.modifiers.push(
+      new AriaModifier({ aria: { role: 'heading', label: title } })
+    )
+    return this
+  }
+
+  navigationBarHidden(hidden: boolean = true): ModifierBuilder<T> {
+    ;(this.component as any)._navigationModifiers = {
+      ...(this.component as any)._navigationModifiers,
+      barHidden: hidden,
+    }
+    // Also add aria-hidden for accessibility
+    this.modifiers.push(new AriaModifier({ aria: { hidden } }))
+    return this
+  }
+
+  navigationBarItems(options: {
+    leading?: ComponentInstance | ComponentInstance[]
+    trailing?: ComponentInstance | ComponentInstance[]
+  }): ModifierBuilder<T> {
+    const leadingItems = Array.isArray(options.leading)
+      ? options.leading
+      : options.leading
+        ? [options.leading]
+        : []
+    const trailingItems = Array.isArray(options.trailing)
+      ? options.trailing
+      : options.trailing
+        ? [options.trailing]
+        : []
+
+    ;(this.component as any)._navigationModifiers = {
+      ...(this.component as any)._navigationModifiers,
+      leadingItems,
+      trailingItems,
+    }
+    return this
+  }
+
+  // Text Modifiers
+  lineClamp(lines: number): ModifierBuilder<T> {
+    this.modifiers.push(new LineClampModifier({ lines }))
+    return this
+  }
+
+  wordBreak(
+    value: 'normal' | 'break-all' | 'keep-all' | 'break-word'
+  ): ModifierBuilder<T> {
+    this.modifiers.push(new WordBreakModifier({ wordBreak: value }))
+    return this
+  }
+
+  overflowWrap(
+    value: 'normal' | 'break-word' | 'anywhere'
+  ): ModifierBuilder<T> {
+    this.modifiers.push(new OverflowWrapModifier({ overflowWrap: value }))
+    return this
+  }
+
+  hyphens(value: 'none' | 'manual' | 'auto'): ModifierBuilder<T> {
+    this.modifiers.push(new HyphensModifier({ hyphens: value }))
+    return this
+  }
+
+  // Gradient Text Modifier
+  gradientText(gradient: string): ModifierBuilder<T> {
+    this.modifiers.push(
+      new BackgroundClipModifier({
+        backgroundImage: gradient,
+        backgroundClip: 'text',
+        color: 'transparent',
+        webkitBackgroundClip: 'text',
+        webkitTextFillColor: 'transparent',
+      })
+    )
+    return this
+  }
+
+  // Backdrop Filter Modifiers (Unified Implementation)
+  backdropFilter(
+    config: {
+      blur?: number
+      brightness?: number
+      contrast?: number
+      saturate?: number
+      [key: string]: any
+    },
+    fallbackColor?: ColorValue
+  ): ModifierBuilder<T>
+  backdropFilter(
+    cssValue: string,
+    fallbackColor?: ColorValue
+  ): ModifierBuilder<T>
+  backdropFilter(
+    value:
+      | {
+          blur?: number
+          brightness?: number
+          contrast?: number
+          saturate?: number
+          [key: string]: any
+        }
+      | string,
+    fallbackColor?: ColorValue
+  ): ModifierBuilder<T> {
+    this.modifiers.push(
+      new BackdropFilterModifier({
+        backdropFilter: value,
+        ...(fallbackColor && { fallbackColor }),
+      })
+    )
+    return this
+  }
+
+  glassmorphism(
+    intensity: 'subtle' | 'light' | 'medium' | 'heavy' = 'medium',
+    customFallback?: ColorValue
+  ): ModifierBuilder<T> {
+    const presets = {
+      subtle: {
+        config: { blur: 3, saturate: 1.05, brightness: 1.05 },
+        fallbackColor: 'rgba(255, 255, 255, 0.05)',
+      },
+      light: {
+        config: { blur: 8, saturate: 1.15, brightness: 1.1 },
+        fallbackColor: 'rgba(255, 255, 255, 0.1)',
+      },
+      medium: {
+        config: { blur: 16, saturate: 1.3, brightness: 1.15 },
+        fallbackColor: 'rgba(255, 255, 255, 0.15)',
+      },
+      heavy: {
+        config: { blur: 24, saturate: 1.5, brightness: 1.2 },
+        fallbackColor: 'rgba(255, 255, 255, 0.2)',
+      },
+    }
+    const preset = presets[intensity]
+    this.modifiers.push(
+      new BackdropFilterModifier({
+        backdropFilter: preset.config,
+        fallbackColor: customFallback || preset.fallbackColor,
+      })
+    )
+    return this
+  }
+
+  before(styles: {
+    content: string
+    color?: string
+    [key: string]: any
+  }): ModifierBuilder<T> {
+    this.modifiers.push(beforeModifier(styles))
+    return this
+  }
+
+  after(styles: {
+    content: string
+    color?: string
+    [key: string]: any
+  }): ModifierBuilder<T> {
+    this.modifiers.push(afterModifier(styles))
+    return this
+  }
+
+  disabled(isDisabled: boolean | Signal<boolean> = true): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ disabled: isDisabled }))
+    return this
+  }
+
+  draggable(isDraggable: boolean = true): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ draggable: isDraggable }))
+    return this
+  }
+
+  setAttribute(name: string, value: string): ModifierBuilder<T> {
+    // Create a custom modifier for setting arbitrary attributes
+    this.modifiers.push({
+      type: 'attribute',
+      priority: 50,
+      properties: { name, value },
+      apply: (_node, context) => {
+        if (context.element) {
+          context.element.setAttribute(name, value)
+        }
+        return undefined
+      },
+    })
+    return this
+  }
+
+  accessibilityLabel(label: string): ModifierBuilder<T> {
+    this.modifiers.push(new InteractionModifier({ accessibilityLabel: label }))
+    return this
+  }
 
   // Phase 4 Advanced Gesture Modifiers (Epic: Butternut)
 
@@ -1221,132 +2007,10 @@ export class ModifierBuilderImpl<
 
   // Responsive functionality moved to @tachui/responsive package
 
-  // Interaction modifiers
-  onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(interactionModifiers.onTap(handler))
-    return this
-  }
-
-  onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
-    this.modifiers.push(interactionModifiers.onFocus(handler))
-    return this
-  }
-
-  onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onBlur: handler }))
-    return this
-  }
-
-  onKeyDown(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onKeyDown: handler }))
-    return this
-  }
-
-  onScroll(handler: (event: Event) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onScroll: handler }))
-    return this
-  }
-
-  onKeyPress(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onKeyPress: handler }))
-    return this
-  }
-
-  onKeyUp(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onKeyUp: handler }))
-    return this
-  }
-
-  onDoubleClick(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onDoubleClick: handler }))
-    return this
-  }
-
-  onContextMenu(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onContextMenu: handler }))
-    return this
-  }
-
-  onWheel(handler: (event: WheelEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onWheel: handler }))
-    return this
-  }
-
-  onInput(handler: (event: InputEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onInput: handler }))
-    return this
-  }
-
-  onChange(handler: (value: any, event?: Event) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onChange: handler }))
-    return this
-  }
-
-  onCopy(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onCopy: handler }))
-    return this
-  }
-
-  onCut(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onCut: handler }))
-    return this
-  }
-
-  onPaste(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onPaste: handler }))
-    return this
-  }
-
-  onSelect(handler: (event: Event) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onSelect: handler }))
-    return this
-  }
-
-  // Transition modifiers
-  transition(
-    property: string = 'all',
-    duration: number = 300,
-    easing: string = 'ease',
-    delay: number = 0
-  ): ModifierBuilder<T> {
-    this.modifiers.push(transitionModifier(property, duration, easing, delay))
-    return this
-  }
-
-  // HTML and ARIA Attributes
-  id(value: string): ModifierBuilder<T> {
-    this.modifiers.push(id(value))
-    return this
-  }
-
-  data(attributes: {
-    [key: string]: string | number | boolean
-  }): ModifierBuilder<T> {
-    this.modifiers.push(data(attributes))
-    return this
-  }
-
-  aria(attributes: {
-    [key: string]: string | number | boolean | undefined
-  }): ModifierBuilder<T> {
-    this.modifiers.push(aria(attributes))
-    return this
-  }
-
-  tabIndex(value: number): ModifierBuilder<T> {
-    this.modifiers.push(tabIndex(value))
-    return this
-  }
-
-  // State modifiers
-  disabled(isDisabled: boolean | Signal<boolean> = true): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ disabled: isDisabled }))
-    return this
-  }
-
   // HTML Content Rendering (Text components only)
   asHTML(options?: AsHTMLOptions): ModifierBuilder<T> {
-    this.modifiers.push(asHTML(options))
+    const modifier = asHTML(options)
+    this.modifiers.push(modifier)
     return this
   }
 
@@ -1428,19 +2092,13 @@ export class ModifierBuilderImpl<
         })
       } else if (modifier.type === 'interaction') {
         const interactionModifier = modifier as InteractionModifier
-        const props = interactionModifier.properties as any // Extended properties for swipe gestures
+        const props = interactionModifier.properties
         // Copy interaction handlers to component props
         Object.entries(props).forEach(([key, value]) => {
           if (typeof value === 'function') {
             component.props[key] = value
           }
         })
-
-        // For swipe gestures, also add onTouchStart for test compatibility
-        // since swipe handling creates internal touch event handlers
-        if (props.onSwipeLeft || props.onSwipeRight) {
-          component.props.onTouchStart = () => {} // Placeholder for test compatibility
-        }
       } else if (modifier.type === 'utility') {
         const utilityModifier = modifier as any // UtilityModifier
         const props = utilityModifier.properties
@@ -1458,8 +2116,7 @@ export class ModifierBuilderImpl<
         component.props.tabIndex = tabIndexModifier.properties.tabIndex
       } else if (modifier.type === 'appearance') {
         const appearanceModifier = modifier as AppearanceModifier
-        const props = appearanceModifier.properties as any // Extended for ARIA attributes
-
+        const props = appearanceModifier.properties as AppearanceModifierProps
         // Copy appearance styles to component props.style
         if (!component.props.style) {
           component.props.style = {}
@@ -1472,42 +2129,6 @@ export class ModifierBuilderImpl<
         }
         if (props.opacity !== undefined) {
           component.props.style.opacity = props.opacity
-        }
-
-        // Handle ARIA attributes and HTML attributes that may be on appearance modifiers
-        if (props.role !== undefined) {
-          component.props.role = String(props.role)
-        }
-        if (props['aria-label'] !== undefined) {
-          component.props['aria-label'] = String(props['aria-label'])
-        }
-        if (props['aria-live'] !== undefined) {
-          component.props['aria-live'] = String(props['aria-live'])
-        }
-        if (props['aria-describedby'] !== undefined) {
-          component.props['aria-describedby'] = String(
-            props['aria-describedby']
-          )
-        }
-        if (props['aria-modal'] !== undefined) {
-          component.props['aria-modal'] =
-            props['aria-modal'] === 'true' || props['aria-modal'] === true
-        }
-        if (props['aria-hidden'] !== undefined) {
-          component.props['aria-hidden'] = String(props['aria-hidden'])
-        }
-        if (props.navigationTitle !== undefined) {
-          component.props.navigationTitle = String(props.navigationTitle)
-        }
-        if (props.navigationBarHidden !== undefined) {
-          component.props.navigationBarHidden = props.navigationBarHidden
-          // Also set aria-hidden for navigationBarHidden
-          if (props.navigationBarHidden) {
-            component.props['aria-hidden'] = 'true'
-          }
-        }
-        if (props.navigationBarItems !== undefined) {
-          component.props.navigationBarItems = props.navigationBarItems
         }
       } else if (modifier.type === 'transition') {
         const transitionModifier = modifier as any // TransitionModifier
@@ -1556,221 +2177,6 @@ export class ModifierBuilderImpl<
         })
       }
     })
-  }
-
-  // ============================================================================
-  // MISSING MODIFIER METHODS - ACCESSIBILITY & NAVIGATION
-  // ============================================================================
-
-  // Individual ARIA methods for better developer experience
-  role(value: string): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ role: value }))
-    return this
-  }
-
-  ariaLabel(value: string): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ 'aria-label': value }))
-    return this
-  }
-
-  ariaLive(value: 'off' | 'polite' | 'assertive'): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ 'aria-live': value }))
-    return this
-  }
-
-  ariaDescribedBy(value: string): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ 'aria-describedby': value }))
-    return this
-  }
-
-  ariaModal(value: boolean): ModifierBuilder<T> {
-    this.modifiers.push(
-      new AppearanceModifier({ 'aria-modal': value.toString() })
-    )
-    return this
-  }
-
-  // Touch and gesture events
-  onTouchStart(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onTouchStart: handler }))
-    return this
-  }
-
-  onTouchMove(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onTouchMove: handler }))
-    return this
-  }
-
-  onTouchEnd(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onTouchEnd: handler }))
-    return this
-  }
-
-  // Swipe gestures (simplified implementations)
-  onSwipeLeft(handler: () => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onSwipeLeft: handler }))
-    return this
-  }
-
-  onSwipeRight(handler: () => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onSwipeRight: handler }))
-    return this
-  }
-
-  // Navigation methods - these delegate to the navigation package functions
-  navigationTitle(title: string): ModifierBuilder<T> {
-    // Add a modifier that will be handled by the navigation system
-    // navigationTitle should provide heading semantics
-    this.modifiers.push(
-      new AppearanceModifier({
-        navigationTitle: title,
-        role: 'heading',
-      })
-    )
-    return this
-  }
-
-  navigationBarHidden(hidden: boolean = true): ModifierBuilder<T> {
-    // navigationBarHidden should hide from screen readers
-    this.modifiers.push(
-      new AppearanceModifier({
-        navigationBarHidden: hidden,
-        'aria-hidden': hidden.toString(),
-      })
-    )
-    return this
-  }
-
-  navigationBarItems(options: {
-    leading?: ComponentInstance | ComponentInstance[]
-    trailing?: ComponentInstance | ComponentInstance[]
-  }): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ navigationBarItems: options }))
-    return this
-  }
-
-  // ============================================================================
-  // MISSING TRANSITION METHODS
-  // ============================================================================
-
-  transitions(config: any): ModifierBuilder<T> {
-    // Placeholder - implement with proper transition system
-    this.modifiers.push(new AnimationModifier({ transitions: config }))
-    return this
-  }
-
-  fadeTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(fadeTransition(duration))
-    return this
-  }
-
-  transformTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(transformTransition(duration))
-    return this
-  }
-
-  colorTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(colorTransition(duration))
-    return this
-  }
-
-  layoutTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(layoutTransition(duration))
-    return this
-  }
-
-  buttonTransition(): ModifierBuilder<T> {
-    this.modifiers.push(buttonTransition())
-    return this
-  }
-
-  cardTransition(): ModifierBuilder<T> {
-    this.modifiers.push(cardTransition())
-    return this
-  }
-
-  modalTransition(): ModifierBuilder<T> {
-    this.modifiers.push(modalTransition())
-    return this
-  }
-
-  smoothTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(smoothTransition(duration))
-    return this
-  }
-
-  quickTransition(duration: number = 150): ModifierBuilder<T> {
-    this.modifiers.push(quickTransition(duration))
-    return this
-  }
-
-  slowTransition(duration: number = 500): ModifierBuilder<T> {
-    this.modifiers.push(slowTransition(duration))
-    return this
-  }
-
-  // ============================================================================
-  // SCROLL METHODS
-  // ============================================================================
-
-  scroll(config: any): ModifierBuilder<T> {
-    this.modifiers.push(scrollModifier(config))
-    return this
-  }
-
-  scrollBehavior(value: 'auto' | 'smooth'): ModifierBuilder<T> {
-    this.modifiers.push(scrollBehavior(value))
-    return this
-  }
-
-  overscrollBehavior(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T> {
-    this.modifiers.push(overscrollBehavior(value))
-    return this
-  }
-
-  overscrollBehaviorX(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T> {
-    this.modifiers.push(overscrollBehaviorX(value))
-    return this
-  }
-
-  overscrollBehaviorY(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T> {
-    this.modifiers.push(overscrollBehaviorY(value))
-    return this
-  }
-
-  scrollMargin(
-    margin:
-      | number
-      | string
-      | {
-          top?: number | string
-          right?: number | string
-          bottom?: number | string
-          left?: number | string
-        }
-  ): ModifierBuilder<T> {
-    this.modifiers.push(scrollMargin(margin))
-    return this
-  }
-
-  scrollPadding(
-    padding:
-      | number
-      | string
-      | {
-          top?: number | string
-          right?: number | string
-          bottom?: number | string
-          left?: number | string
-        }
-  ): ModifierBuilder<T> {
-    this.modifiers.push(scrollPadding(padding))
-    return this
-  }
-
-  scrollSnap(config: any): ModifierBuilder<T> {
-    this.modifiers.push(scrollSnap(config))
-    return this
   }
 }
 

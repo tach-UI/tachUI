@@ -25,7 +25,8 @@ export interface ModifierTransitionOptions {
   transitions?: TransitionsConfig
 }
 
-export type ReactiveTransitionOptions = ReactiveModifierProps<ModifierTransitionOptions>
+export type ReactiveTransitionOptions =
+  ReactiveModifierProps<ModifierTransitionOptions>
 
 export class TransitionModifier extends BaseModifier<ModifierTransitionOptions> {
   readonly type = 'transition'
@@ -48,7 +49,7 @@ export class TransitionModifier extends BaseModifier<ModifierTransitionOptions> 
 
     const styles = this.computeTransitionStyles(this.properties)
     this.applyStyles(context.element, styles)
-    
+
     return undefined
   }
 
@@ -74,7 +75,7 @@ export class TransitionModifier extends BaseModifier<ModifierTransitionOptions> 
         const duration = settings.duration || 300
         const easing = settings.easing || 'ease'
         const delay = settings.delay || 0
-        
+
         return `${prop} ${duration}ms ${easing}${delay > 0 ? ` ${delay}ms` : ''}`
       })
       .join(', ')
@@ -98,11 +99,16 @@ export class TransitionModifier extends BaseModifier<ModifierTransitionOptions> 
  * ```
  */
 export function transition(
-  property: string = 'all', 
-  duration: number = 300, 
-  easing: string = 'ease', 
+  property: string = 'all',
+  duration: number = 300,
+  easing: string = 'ease',
   delay: number = 0
 ): TransitionModifier {
+  // Special case: if property is 'none', disable transitions entirely
+  if (property === 'none') {
+    return new TransitionModifier({ transition: 'none' })
+  }
+
   const transitionValue = `${property} ${duration}ms ${easing}${delay > 0 ? ` ${delay}ms` : ''}`
   return new TransitionModifier({ transition: transitionValue })
 }
@@ -137,7 +143,9 @@ export function fadeTransition(duration: number = 200): TransitionModifier {
 /**
  * Smooth transform transition
  */
-export function transformTransition(duration: number = 300): TransitionModifier {
+export function transformTransition(
+  duration: number = 300
+): TransitionModifier {
   return transition('transform', duration, 'ease-out')
 }
 
@@ -148,7 +156,7 @@ export function colorTransition(duration: number = 150): TransitionModifier {
   return transitions({
     color: { duration, easing: 'ease-out' },
     backgroundColor: { duration, easing: 'ease-out' },
-    borderColor: { duration, easing: 'ease-out' }
+    borderColor: { duration, easing: 'ease-out' },
   })
 }
 
@@ -160,7 +168,7 @@ export function layoutTransition(duration: number = 250): TransitionModifier {
     width: { duration, easing: 'ease-out' },
     height: { duration, easing: 'ease-out' },
     margin: { duration, easing: 'ease-out' },
-    padding: { duration, easing: 'ease-out' }
+    padding: { duration, easing: 'ease-out' },
   })
 }
 
@@ -171,7 +179,7 @@ export function buttonTransition(): TransitionModifier {
   return transitions({
     backgroundColor: { duration: 150, easing: 'ease-out' },
     transform: { duration: 200, easing: 'ease-out' },
-    boxShadow: { duration: 200, easing: 'ease-out' }
+    boxShadow: { duration: 200, easing: 'ease-out' },
   })
 }
 
@@ -182,7 +190,7 @@ export function cardTransition(): TransitionModifier {
   return transitions({
     transform: { duration: 200, easing: 'ease-out' },
     boxShadow: { duration: 300, easing: 'ease-out' },
-    borderColor: { duration: 150, easing: 'ease-out' }
+    borderColor: { duration: 150, easing: 'ease-out' },
   })
 }
 
@@ -192,7 +200,7 @@ export function cardTransition(): TransitionModifier {
 export function modalTransition(): TransitionModifier {
   return transitions({
     opacity: { duration: 200, easing: 'ease-out' },
-    transform: { duration: 300, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }
+    transform: { duration: 300, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' },
   })
 }
 

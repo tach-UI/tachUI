@@ -206,8 +206,19 @@ export {
   scrollSnap,
 } from './scroll'
 
-// Effects System moved to @tachui/effects - Import compatibility layer for migration warnings
+// Effects System (Hover & Cursor)
+export type {
+  CSSCursorValue,
+  CursorOptions,
+  ReactiveCursorOptions,
+  SwiftUIHoverEffect,
+  HoverStyles,
+  HoverOptions,
+  ReactiveHoverOptions,
+} from './effects'
 export {
+  CursorModifier,
+  HoverModifier,
   cursor,
   hoverEffect,
   hover,
@@ -224,10 +235,22 @@ export {
   cardHover,
   linkHover,
   imageHover,
-} from './effects-compat'
+} from './effects'
 
-// Transform System moved to @tachui/effects - Import compatibility layer for migration warnings
+// Transform System
+export type {
+  TransformConfig,
+  Transform3DConfig,
+  ModifierTransformOptions,
+  ReactiveTransformOptions,
+  MatrixTransformConfig,
+  Advanced3DTransformConfig,
+  ModifierAdvancedTransformOptions,
+  ReactiveAdvancedTransformOptions,
+} from './transformations'
 export {
+  TransformModifier,
+  AdvancedTransformModifier,
   transform,
   scale,
   rotate,
@@ -254,7 +277,7 @@ export {
   backfaceVisibility,
   scaleEffect,
   offset,
-} from './effects-compat'
+} from './transformations'
 
 // Transition System
 export type {
@@ -279,8 +302,14 @@ export {
   slowTransition,
 } from './transitions'
 
-// Filter System moved to @tachui/effects - Import compatibility layer for migration warnings
+// Filter System
+export type {
+  FilterConfig,
+  FilterOptions,
+  ReactiveFilterOptions,
+} from './filters'
 export {
+  FilterModifier,
   filter,
   blur,
   brightness,
@@ -306,7 +335,7 @@ export {
   colorInvert,
   saturation,
   hueRotation,
-} from './effects-compat'
+} from './filters'
 
 // Pseudo-element System
 export type {
@@ -394,12 +423,18 @@ export {
   silverGradientText,
 } from './text'
 
-// Backdrop Filter System moved to @tachui/effects - Import compatibility layer for migration warnings
+// Backdrop Filter Modifiers (Unified Implementation)
+export type {
+  BackdropFilterConfig,
+  BackdropFilterOptions,
+  GlassmorphismIntensity,
+} from './backdrop'
 export {
+  BackdropFilterModifier,
   backdropFilter,
   glassmorphism,
   customGlassmorphism,
-} from './effects-compat'
+} from './backdrop'
 
 // Grid Layout Modifiers have been moved to @tachui/grid package
 

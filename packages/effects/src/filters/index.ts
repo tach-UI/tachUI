@@ -5,21 +5,24 @@
  * contrast, saturation, and other visual effects for enhanced styling.
  */
 
-import type { DOMNode } from '../runtime/types'
-import { BaseModifier } from './base'
-import type { ModifierContext, ReactiveModifierProps } from './types'
+import type { DOMNode } from '@tachui/core/runtime/types'
+import { BaseModifier } from '@tachui/core/modifiers/base'
+import type {
+  ModifierContext,
+  ReactiveModifierProps,
+} from '@tachui/core/modifiers/types'
 
 export interface FilterConfig {
-  blur?: number            // Blur radius in pixels
-  brightness?: number      // Brightness multiplier (1 = normal, >1 brighter, <1 darker)
-  contrast?: number        // Contrast multiplier (1 = normal, >1 more contrast, <1 less contrast)
-  saturate?: number        // Saturation multiplier (1 = normal, >1 more saturated, 0 = grayscale)
-  sepia?: number          // Sepia effect (0-1, where 1 is full sepia)
-  hueRotate?: string      // Hue rotation (e.g., '90deg', '0.25turn')
-  invert?: number         // Invert colors (0-1, where 1 is full invert)
-  opacity?: number        // Opacity filter (0-1, alternative to CSS opacity)
-  dropShadow?: string     // Drop shadow filter (e.g., '2px 2px 4px rgba(0,0,0,0.5)')
-  grayscale?: number      // Grayscale effect (0-1, where 1 is full grayscale)
+  blur?: number // Blur radius in pixels
+  brightness?: number // Brightness multiplier (1 = normal, >1 brighter, <1 darker)
+  contrast?: number // Contrast multiplier (1 = normal, >1 more contrast, <1 less contrast)
+  saturate?: number // Saturation multiplier (1 = normal, >1 more saturated, 0 = grayscale)
+  sepia?: number // Sepia effect (0-1, where 1 is full sepia)
+  hueRotate?: string // Hue rotation (e.g., '90deg', '0.25turn')
+  invert?: number // Invert colors (0-1, where 1 is full invert)
+  opacity?: number // Opacity filter (0-1, alternative to CSS opacity)
+  dropShadow?: string // Drop shadow filter (e.g., '2px 2px 4px rgba(0,0,0,0.5)')
+  grayscale?: number // Grayscale effect (0-1, where 1 is full grayscale)
 }
 
 export interface FilterOptions {
@@ -49,7 +52,7 @@ export class FilterModifier extends BaseModifier<FilterOptions> {
 
     const styles = this.computeFilterStyles(this.properties)
     this.applyStyles(context.element, styles)
-    
+
     return undefined
   }
 
@@ -57,10 +60,11 @@ export class FilterModifier extends BaseModifier<FilterOptions> {
     const styles: Record<string, string> = {}
 
     if (props.filter) {
-      const filterValue = typeof props.filter === 'string'
-        ? props.filter
-        : this.generateFilterCSS(props.filter)
-      
+      const filterValue =
+        typeof props.filter === 'string'
+          ? props.filter
+          : this.generateFilterCSS(props.filter)
+
       styles.filter = filterValue
     }
 
@@ -174,7 +178,7 @@ export function contrast(value: number): FilterModifier {
  * @example
  * ```typescript
  * .saturate(1.5)     // 50% more saturated
- * .saturate(0.5)     // 50% less saturated  
+ * .saturate(0.5)     // 50% less saturated
  * .saturate(0)       // Completely desaturated (grayscale)
  * .saturate(2.0)     // Double saturation
  * ```
@@ -203,7 +207,7 @@ export function grayscale(value: number): FilterModifier {
  * @example
  * ```typescript
  * .sepia(1)        // Full sepia effect
- * .sepia(0.6)      // 60% sepia effect  
+ * .sepia(0.6)      // 60% sepia effect
  * .sepia(0)        // No sepia effect
  * ```
  */
@@ -266,13 +270,16 @@ export function dropShadow(shadow: string): FilterModifier {
  * .vintagePhoto(0.8, 1.2)   // Custom sepia and contrast
  * ```
  */
-export function vintagePhoto(sepiaAmount: number = 0.7, contrastAmount: number = 1.1): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
-      sepia: sepiaAmount, 
+export function vintagePhoto(
+  sepiaAmount: number = 0.7,
+  contrastAmount: number = 1.1
+): FilterModifier {
+  return new FilterModifier({
+    filter: {
+      sepia: sepiaAmount,
       contrast: contrastAmount,
-      blur: 0.3
-    } 
+      blur: 0.3,
+    },
   })
 }
 
@@ -286,11 +293,11 @@ export function vintagePhoto(sepiaAmount: number = 0.7, contrastAmount: number =
  * ```
  */
 export function blackAndWhite(contrastAmount: number = 1.3): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
-      grayscale: 1, 
-      contrast: contrastAmount 
-    } 
+  return new FilterModifier({
+    filter: {
+      grayscale: 1,
+      contrast: contrastAmount,
+    },
   })
 }
 
@@ -303,12 +310,15 @@ export function blackAndWhite(contrastAmount: number = 1.3): FilterModifier {
  * .vibrant(1.4, 1.1)       // Custom saturation and contrast
  * ```
  */
-export function vibrant(saturationAmount: number = 1.3, contrastAmount: number = 1.05): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
-      saturate: saturationAmount, 
-      contrast: contrastAmount 
-    } 
+export function vibrant(
+  saturationAmount: number = 1.3,
+  contrastAmount: number = 1.05
+): FilterModifier {
+  return new FilterModifier({
+    filter: {
+      saturate: saturationAmount,
+      contrast: contrastAmount,
+    },
   })
 }
 
@@ -322,12 +332,12 @@ export function vibrant(saturationAmount: number = 1.3, contrastAmount: number =
  * ```
  */
 export function warmTone(hueShift: string = '10deg'): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
-      hueRotate: hueShift, 
+  return new FilterModifier({
+    filter: {
+      hueRotate: hueShift,
       brightness: 1.05,
-      saturate: 1.1
-    } 
+      saturate: 1.1,
+    },
   })
 }
 
@@ -341,12 +351,12 @@ export function warmTone(hueShift: string = '10deg'): FilterModifier {
  * ```
  */
 export function coolTone(hueShift: string = '-15deg'): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
-      hueRotate: hueShift, 
+  return new FilterModifier({
+    filter: {
+      hueRotate: hueShift,
       brightness: 0.98,
-      saturate: 1.05
-    } 
+      saturate: 1.05,
+    },
   })
 }
 
@@ -359,13 +369,16 @@ export function coolTone(hueShift: string = '-15deg'): FilterModifier {
  * .faded(0.8, 0.7)         // Custom contrast and saturation
  * ```
  */
-export function faded(contrastAmount: number = 0.85, saturationAmount: number = 0.75): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
-      contrast: contrastAmount, 
+export function faded(
+  contrastAmount: number = 0.85,
+  saturationAmount: number = 0.75
+): FilterModifier {
+  return new FilterModifier({
+    filter: {
+      contrast: contrastAmount,
       saturate: saturationAmount,
-      brightness: 1.1
-    } 
+      brightness: 1.1,
+    },
   })
 }
 
@@ -378,12 +391,15 @@ export function faded(contrastAmount: number = 0.85, saturationAmount: number = 
  * .highKey(1.3, 0.9)       // Custom brightness and contrast
  * ```
  */
-export function highKey(brightnessAmount: number = 1.2, contrastAmount: number = 0.85): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
-      brightness: brightnessAmount, 
-      contrast: contrastAmount 
-    } 
+export function highKey(
+  brightnessAmount: number = 1.2,
+  contrastAmount: number = 0.85
+): FilterModifier {
+  return new FilterModifier({
+    filter: {
+      brightness: brightnessAmount,
+      contrast: contrastAmount,
+    },
   })
 }
 
@@ -392,16 +408,19 @@ export function highKey(brightnessAmount: number = 1.2, contrastAmount: number =
  *
  * @example
  * ```typescript
- * .lowKey()                // Dark, moody effect  
+ * .lowKey()                // Dark, moody effect
  * .lowKey(0.8, 1.4)        // Custom brightness and contrast
  * ```
  */
-export function lowKey(brightnessAmount: number = 0.85, contrastAmount: number = 1.3): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
-      brightness: brightnessAmount, 
-      contrast: contrastAmount 
-    } 
+export function lowKey(
+  brightnessAmount: number = 0.85,
+  contrastAmount: number = 1.3
+): FilterModifier {
+  return new FilterModifier({
+    filter: {
+      brightness: brightnessAmount,
+      contrast: contrastAmount,
+    },
   })
 }
 
@@ -415,11 +434,11 @@ export function lowKey(brightnessAmount: number = 0.85, contrastAmount: number =
  * ```
  */
 export function softFocus(blurAmount: number = 1): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
-      blur: blurAmount, 
-      brightness: 1.05 
-    } 
+  return new FilterModifier({
+    filter: {
+      blur: blurAmount,
+      brightness: 1.05,
+    },
   })
 }
 
@@ -431,11 +450,11 @@ export function softFocus(blurAmount: number = 1): FilterModifier {
  * High contrast mode for accessibility
  */
 export function highContrastMode(): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
+  return new FilterModifier({
+    filter: {
       contrast: 2.0,
-      brightness: 1.1
-    } 
+      brightness: 1.1,
+    },
   })
 }
 
@@ -450,11 +469,11 @@ export function subtleBlur(): FilterModifier {
  * Dark mode invert filter
  */
 export function darkModeInvert(): FilterModifier {
-  return new FilterModifier({ 
-    filter: { 
+  return new FilterModifier({
+    filter: {
       invert: 1,
-      hueRotate: '180deg'
-    } 
+      hueRotate: '180deg',
+    },
   })
 }
 
@@ -464,7 +483,7 @@ export function darkModeInvert(): FilterModifier {
 
 /**
  * SwiftUI-compatible colorInvert modifier (full color inversion)
- * 
+ *
  * @example
  * ```typescript
  * .colorInvert()   // Full color inversion (equivalent to .invert(1))
@@ -476,7 +495,7 @@ export function colorInvert(): FilterModifier {
 
 /**
  * SwiftUI-compatible saturation modifier (alias for saturate)
- * 
+ *
  * @example
  * ```typescript
  * .saturation(1.5)   // 50% more saturated
@@ -489,7 +508,7 @@ export function saturation(amount: number): FilterModifier {
 
 /**
  * SwiftUI-compatible hueRotation modifier (alias for hueRotate)
- * 
+ *
  * @example
  * ```typescript
  * .hueRotation('90deg')     // Rotate hue by 90 degrees
