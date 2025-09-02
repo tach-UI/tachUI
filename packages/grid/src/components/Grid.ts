@@ -13,7 +13,7 @@ import { processElementOverride, type ElementOverrideProps } from '@tachui/core'
 import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
 import { useLifecycle } from '@tachui/core'
 import { registerComponentWithLifecycleHooks } from '@tachui/core'
-import type { ResponsiveValue } from '@tachui/core'
+import type { ResponsiveValue } from '@tachui/responsive'
 import {
   GridResponsiveUtils,
   createResponsiveGridModifier,
@@ -2498,9 +2498,7 @@ class LazyHGridComponent extends BaseGridComponent {
 /**
  * Grid component factory function with modifier support
  */
-export function Grid(
-  props: GridProps = {}
-): ModifiableComponent<GridProps> & {
+export function Grid(props: GridProps = {}): ModifiableComponent<GridProps> & {
   modifier: ModifierBuilder<ModifiableComponent<GridProps>>
 } {
   const { children = [], ...gridProps } = props

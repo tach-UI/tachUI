@@ -1,14 +1,21 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmit": false,
     "baseUrl": ".",
     "paths": {
       "@tachui/core": ["../core/src"],
       "@tachui/core/*": ["../core/src/*"]
     }
   },
-  "include": ["src/**/*", "__tests__/**/*"],
-  "exclude": ["node_modules", "dist"],
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules", "__tests__"],
   "references": [
     {
       "path": "../core"

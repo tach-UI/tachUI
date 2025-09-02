@@ -1,20 +1,13 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "preserve",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmit": false,
     "baseUrl": ".",
     "paths": {
       "@tachui/core": ["../core/src"],
@@ -25,6 +18,7 @@
       "@tachui/cli": ["../cli/src"]
     }
   },
-  "include": ["src/**/*", "../core/src/globals.d.ts"],
-  "exclude": ["node_modules", "dist", "__tests__"]
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules", "__tests__"],
+  "references": [{ "path": "../core" }, { "path": "../primitives" }]
 }

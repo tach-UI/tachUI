@@ -15,6 +15,13 @@ import { ResponsiveCSSGenerator } from '@tachui/responsive'
 import { createResponsiveModifier } from '@tachui/responsive'
 import type { GridItemConfig, ResponsiveGridItemConfig } from './Grid'
 
+// Temporary type augmentation until @tachui/responsive declarations are properly generated
+declare global {
+  interface ResponsiveGridCSSGenerator {
+    generateResponsiveCSS?: (config: any) => string
+  }
+}
+
 /**
  * Enhanced responsive grid configuration with full modifier integration
  */
@@ -401,10 +408,12 @@ export class GridResponsiveUtils {
         > = {}
 
         Object.entries(options.alignment).forEach(([breakpoint, alignment]) => {
-          const { alignItems: ai, justifyItems: ji } =
-            this.convertAlignment(alignment)
-          alignItems[breakpoint as BreakpointKey] = ai
-          justifyItems[breakpoint as BreakpointKey] = ji
+          if (typeof alignment === 'string') {
+            const { alignItems: ai, justifyItems: ji } =
+              this.convertAlignment(alignment)
+            alignItems[breakpoint as BreakpointKey] = ai
+            justifyItems[breakpoint as BreakpointKey] = ji
+          }
         })
 
         config.alignItems = alignItems
