@@ -3,7 +3,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Text } from '../../primitives/src'
+import { Text } from '@tachui/primitives'
 import { createComputed, createSignal } from '../../src/reactive'
 
 // Mock DOM for testing

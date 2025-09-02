@@ -1,19 +1,22 @@
 /**
  * Grid Layout Modifiers (Phase 3)
- * 
+ *
  * SwiftUI-equivalent grid modifiers for spanning, positioning, and alignment.
  * Provides comprehensive grid item control with CSS Grid integration.
  */
 
-import { BaseModifier } from './base'
-import type { ModifierContext } from './types'
-import type { DOMNode } from '../runtime/types'
+import { BaseModifier } from '@tachui/core'
+import type { ModifierContext } from '@tachui/core'
+import type { DOMNode } from '@tachui/core'
 import type { GridSpanConfig } from '../components/Grid'
 
 /**
  * Grid column span modifier (equivalent to SwiftUI's gridCellColumns)
  */
-export class GridColumnSpanModifier extends BaseModifier<{ span: number; start?: number }> {
+export class GridColumnSpanModifier extends BaseModifier<{
+  span: number
+  start?: number
+}> {
   readonly type = 'grid-column-span'
   readonly priority = 200
 
@@ -28,11 +31,11 @@ export class GridColumnSpanModifier extends BaseModifier<{ span: number; start?:
     }
 
     const { span, start } = this.properties
-    
+
     if (start !== undefined) {
-      (element as any).style.gridColumn = `${start} / span ${span}`
+      ;(element as any).style.gridColumn = `${start} / span ${span}`
     } else {
-      (element as any).style.gridColumn = `span ${span}`
+      ;(element as any).style.gridColumn = `span ${span}`
     }
 
     return undefined
@@ -42,7 +45,10 @@ export class GridColumnSpanModifier extends BaseModifier<{ span: number; start?:
 /**
  * Grid row span modifier (equivalent to SwiftUI's gridCellRows)
  */
-export class GridRowSpanModifier extends BaseModifier<{ span: number; start?: number }> {
+export class GridRowSpanModifier extends BaseModifier<{
+  span: number
+  start?: number
+}> {
   readonly type = 'grid-row-span'
   readonly priority = 200
 
@@ -57,11 +63,11 @@ export class GridRowSpanModifier extends BaseModifier<{ span: number; start?: nu
     }
 
     const { span, start } = this.properties
-    
+
     if (start !== undefined) {
-      (element as any).style.gridRow = `${start} / span ${span}`
+      ;(element as any).style.gridRow = `${start} / span ${span}`
     } else {
-      (element as any).style.gridRow = `span ${span}`
+      ;(element as any).style.gridRow = `span ${span}`
     }
 
     return undefined
@@ -85,7 +91,7 @@ export class GridAreaModifier extends BaseModifier<{ area: string }> {
       return undefined
     }
 
-    (element as any).style.gridArea = this.properties.area
+    ;(element as any).style.gridArea = this.properties.area
 
     return undefined
   }
@@ -94,26 +100,29 @@ export class GridAreaModifier extends BaseModifier<{ area: string }> {
 /**
  * Grid cell alignment modifier (equivalent to SwiftUI's gridCellAnchor)
  */
-export class GridCellAlignmentModifier extends BaseModifier<{ 
+export class GridCellAlignmentModifier extends BaseModifier<{
   justifySelf?: 'start' | 'center' | 'end' | 'stretch'
-  alignSelf?: 'start' | 'center' | 'end' | 'stretch' 
+  alignSelf?: 'start' | 'center' | 'end' | 'stretch'
 }> {
   readonly type = 'grid-cell-alignment'
   readonly priority = 200
 
-  constructor(alignment: 'start' | 'center' | 'end' | 'stretch', axis?: 'horizontal' | 'vertical' | 'both') {
-    const config: { 
+  constructor(
+    alignment: 'start' | 'center' | 'end' | 'stretch',
+    axis?: 'horizontal' | 'vertical' | 'both'
+  ) {
+    const config: {
       justifySelf?: 'start' | 'center' | 'end' | 'stretch'
       alignSelf?: 'start' | 'center' | 'end' | 'stretch'
     } = {}
-    
+
     if (axis === 'horizontal' || axis === 'both' || axis === undefined) {
       config.justifySelf = alignment
     }
     if (axis === 'vertical' || axis === 'both' || axis === undefined) {
       config.alignSelf = alignment
     }
-    
+
     super(config)
   }
 
@@ -124,12 +133,12 @@ export class GridCellAlignmentModifier extends BaseModifier<{
     }
 
     const { justifySelf, alignSelf } = this.properties
-    
+
     if (justifySelf) {
-      (element as any).style.justifySelf = justifySelf
+      ;(element as any).style.justifySelf = justifySelf
     }
     if (alignSelf) {
-      (element as any).style.alignSelf = alignSelf
+      ;(element as any).style.alignSelf = alignSelf
     }
 
     return undefined
@@ -143,14 +152,14 @@ export class GridItemConfigModifier extends BaseModifier<GridSpanConfig> {
   readonly type = 'grid-item-config'
   readonly priority = 200
 
-
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
     const element = context.element || node.element
     if (!element) {
       return undefined
     }
 
-    const { columnSpan, rowSpan, columnStart, rowStart, area, alignment } = this.properties
+    const { columnSpan, rowSpan, columnStart, rowStart, area, alignment } =
+      this.properties
     const elementStyle = (element as any).style
 
     // Apply column spanning
@@ -197,7 +206,10 @@ export class GridItemConfigModifier extends BaseModifier<GridSpanConfig> {
 /**
  * Span multiple columns (.gridCellColumns equivalent)
  */
-export function gridColumnSpan(span: number, start?: number): GridColumnSpanModifier {
+export function gridColumnSpan(
+  span: number,
+  start?: number
+): GridColumnSpanModifier {
   return new GridColumnSpanModifier(span, start)
 }
 

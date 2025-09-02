@@ -16,10 +16,10 @@ import {
   gridItemConfig,
   gridCellColumns,
   gridCellRows,
-  gridCellAnchor
+  gridCellAnchor,
 } from '../../src/modifiers/grid'
 import type { GridSpanConfig } from '../../src/components/Grid'
-import { setupModifierTest } from './test-utils'
+import { setupModifierTest } from '../../../core/__tests__/modifiers/test-utils'
 
 describe('GridColumnSpanModifier', () => {
   let mockElement: HTMLElement
@@ -65,7 +65,7 @@ describe('GridColumnSpanModifier', () => {
     it('should handle missing element gracefully', () => {
       const modifier = new GridColumnSpanModifier(3)
       const invalidNode = { type: 'element', element: null } as any
-      
+
       const result = modifier.apply(invalidNode, mockContext)
       expect(result).toBeUndefined()
     })
@@ -116,7 +116,7 @@ describe('GridRowSpanModifier', () => {
     it('should handle invalid element gracefully', () => {
       const modifier = new GridRowSpanModifier(2)
       const textNode = { type: 'text', content: 'test' } as any
-      
+
       const result = modifier.apply(textNode, mockContext)
       expect(result).toBeUndefined()
     })
@@ -179,7 +179,7 @@ describe('GridCellAlignmentModifier', () => {
       expect(modifier.type).toBe('grid-cell-alignment')
       expect(modifier.properties).toEqual({
         justifySelf: 'center',
-        alignSelf: 'center'
+        alignSelf: 'center',
       })
     })
 
@@ -187,7 +187,7 @@ describe('GridCellAlignmentModifier', () => {
       const modifier = new GridCellAlignmentModifier('start', 'horizontal')
       expect(modifier.properties).toEqual({
         justifySelf: 'start',
-        alignSelf: undefined
+        alignSelf: undefined,
       })
     })
 
@@ -195,7 +195,7 @@ describe('GridCellAlignmentModifier', () => {
       const modifier = new GridCellAlignmentModifier('end', 'vertical')
       expect(modifier.properties).toEqual({
         justifySelf: undefined,
-        alignSelf: 'end'
+        alignSelf: 'end',
       })
     })
 
@@ -203,7 +203,7 @@ describe('GridCellAlignmentModifier', () => {
       const modifier = new GridCellAlignmentModifier('stretch', 'both')
       expect(modifier.properties).toEqual({
         justifySelf: 'stretch',
-        alignSelf: 'stretch'
+        alignSelf: 'stretch',
       })
     })
   })
@@ -255,7 +255,7 @@ describe('GridItemConfigModifier', () => {
         columnStart: 1,
         rowStart: 2,
         area: 'main',
-        alignment: 'center'
+        alignment: 'center',
       }
       const modifier = new GridItemConfigModifier(config)
       expect(modifier.type).toBe('grid-item-config')
@@ -265,7 +265,7 @@ describe('GridItemConfigModifier', () => {
     it('should create modifier with partial configuration', () => {
       const config: GridSpanConfig = {
         columnSpan: 3,
-        alignment: 'stretch'
+        alignment: 'stretch',
       }
       const modifier = new GridItemConfigModifier(config)
       expect(modifier.properties).toEqual(config)
@@ -280,7 +280,7 @@ describe('GridItemConfigModifier', () => {
         columnStart: 1,
         rowStart: 2,
         area: 'main',
-        alignment: 'center'
+        alignment: 'center',
       }
       const modifier = new GridItemConfigModifier(config)
       modifier.apply(mockNode, mockContext)
@@ -313,7 +313,7 @@ describe('GridItemConfigModifier', () => {
     it('should apply start positions without spans', () => {
       const config: GridSpanConfig = {
         columnStart: 3,
-        rowStart: 2
+        rowStart: 2,
       }
       const modifier = new GridItemConfigModifier(config)
       modifier.apply(mockNode, mockContext)
@@ -384,7 +384,7 @@ describe('Factory Functions', () => {
       expect(modifier).toBeInstanceOf(GridCellAlignmentModifier)
       expect(modifier.properties).toEqual({
         justifySelf: 'center',
-        alignSelf: 'center'
+        alignSelf: 'center',
       })
     })
 
@@ -392,7 +392,7 @@ describe('Factory Functions', () => {
       const modifier = gridCellAlignment('start', 'horizontal')
       expect(modifier.properties).toEqual({
         justifySelf: 'start',
-        alignSelf: undefined
+        alignSelf: undefined,
       })
     })
   })
@@ -401,7 +401,7 @@ describe('Factory Functions', () => {
     it('should create GridItemConfigModifier', () => {
       const config: GridSpanConfig = {
         columnSpan: 2,
-        alignment: 'center'
+        alignment: 'center',
       }
       const modifier = gridItemConfig(config)
       expect(modifier).toBeInstanceOf(GridItemConfigModifier)
@@ -459,7 +459,7 @@ describe('Integration Tests', () => {
       rowSpan: 2,
       columnStart: 2,
       rowStart: 1,
-      alignment: 'stretch'
+      alignment: 'stretch',
     }
     const modifier = gridItemConfig(config)
     modifier.apply(mockNode, mockContext)
@@ -489,7 +489,12 @@ describe('Integration Tests', () => {
   })
 
   it('should handle all alignment values correctly', () => {
-    const alignments: Array<'start' | 'center' | 'end' | 'stretch'> = ['start', 'center', 'end', 'stretch']
+    const alignments: Array<'start' | 'center' | 'end' | 'stretch'> = [
+      'start',
+      'center',
+      'end',
+      'stretch',
+    ]
 
     alignments.forEach(alignment => {
       // Reset element

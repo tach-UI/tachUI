@@ -24,7 +24,7 @@ import {
   EnhancedLazyVGrid,
   EnhancedLazyHGrid,
 } from '../../src/components/Grid'
-import { Text } from '../../primitives/src'
+import { Text } from '@tachui/primitives'
 
 // Mock DOM environment
 function createMockGridElement(): HTMLElement {

@@ -26,4 +26,9 @@
     "src/modifiers/examples/",
     "src/components/examples/"
   ]
+  // "references": [
+  //   {
+  //     "path": "../grid"
+  //   }
+  // ] // Temporarily disabled to avoid circular dependency
 }

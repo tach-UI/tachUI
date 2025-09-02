@@ -466,23 +466,23 @@ export {
   customGlassmorphism,
 } from './modifiers/backdrop'
 
-// Grid Layout Modifiers (Phase 3)
-export type { GridSpanConfig } from './components/Grid'
-export {
-  GridColumnSpanModifier,
-  GridRowSpanModifier,
-  GridAreaModifier,
-  GridCellAlignmentModifier,
-  GridItemConfigModifier,
-  gridColumnSpan,
-  gridRowSpan,
-  gridArea,
-  gridCellAlignment,
-  gridItemConfig,
-  gridCellColumns,
-  gridCellRows,
-  gridCellAnchor,
-} from './modifiers/grid'
+// Grid Layout Modifiers - Re-export from @tachui/grid
+// export type { GridSpanConfig } from '@tachui/grid' // Temporarily commented out to break circular dependency
+// export {
+//   GridColumnSpanModifier,
+//   GridRowSpanModifier,
+//   GridAreaModifier,
+//   GridCellAlignmentModifier,
+//   GridItemConfigModifier,
+//   gridColumnSpan,
+//   gridRowSpan,
+//   gridArea,
+//   gridCellAlignment,
+//   gridItemConfig,
+//   gridCellColumns,
+//   gridCellRows,
+//   gridCellAnchor,
+// } from '@tachui/grid' // Temporarily commented out to break circular dependency
 
 // HTML Rendering Modifiers
 export type { AsHTMLOptions, TextComponent } from './modifiers/as-html'

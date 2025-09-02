@@ -14,7 +14,7 @@ import {
   type GridAccessibilityConfig,
   type GridStylingConfig,
 } from '../../src/components/Grid'
-import { Text } from '../../primitives/src'
+import { Text } from '@tachui/primitives'
 
 describe('Grid Accessibility Features', () => {
   describe('GridAccessibilityConfig Interface', () => {

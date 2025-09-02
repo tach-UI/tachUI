@@ -132,7 +132,7 @@ export class TypographyModifier extends BaseModifier<TypographyOptions> {
         props.color !== null &&
         'resolve' in props.color
       ) {
-        styles.color = props.color.resolve()
+        styles.color = (props.color as any).resolve()
       } else {
         styles.color = props.color as string
       }
@@ -150,7 +150,7 @@ export class TypographyModifier extends BaseModifier<TypographyOptions> {
     return styles
   }
 
-  private toCSSValue(value: number | string): string {
+  protected toCSSValue(value: number | string): string {
     return typeof value === 'number' ? `${value}px` : value
   }
 }

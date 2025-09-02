@@ -16,15 +16,15 @@ export {
   ResizableModifier,
 } from './base'
 export { BackgroundModifier } from './background'
-export type { 
-  BorderOptions, 
-  BorderSide, 
-  BorderStyle, 
+export type {
+  BorderOptions,
+  BorderSide,
+  BorderStyle,
   ReactiveBorderOptions,
   CornerRadiusValue,
   CornerRadiusConfig,
   CornerRadiusOptions,
-  ReactiveCornerRadiusOptions
+  ReactiveCornerRadiusOptions,
 } from './border'
 export {
   BorderModifier,
@@ -57,13 +57,7 @@ export {
   presetModifiers,
 } from './core'
 export type { CSSOptions, ReactiveCSSOptions } from './css'
-export {
-  CSSModifier,
-  css,
-  cssProperty,
-  cssVariable,
-  cssVendor,
-} from './css'
+export { CSSModifier, css, cssProperty, cssVariable, cssVendor } from './css'
 export type { FlexboxOptions, ReactiveFlexboxOptions } from './flexbox'
 export {
   alignItems,
@@ -443,25 +437,7 @@ export {
   customGlassmorphism,
 } from './backdrop'
 
-// Grid Layout Modifiers (Phase 3)
-export type {
-  GridSpanConfig,
-} from '../components/Grid'
-export {
-  GridColumnSpanModifier,
-  GridRowSpanModifier,
-  GridAreaModifier,
-  GridCellAlignmentModifier,
-  GridItemConfigModifier,
-  gridColumnSpan,
-  gridRowSpan,
-  gridArea,
-  gridCellAlignment,
-  gridItemConfig,
-  gridCellColumns,
-  gridCellRows,
-  gridCellAnchor,
-} from './grid'
+// Grid Layout Modifiers have been moved to @tachui/grid package
 
 // HTML Rendering Modifiers
 export type { AsHTMLOptions, TextComponent } from './as-html'

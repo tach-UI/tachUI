@@ -87,6 +87,17 @@ export * from './components'
 // Modifier system compatibility layer (will migrate to @tachui/modifiers)
 export * from './modifiers-compat'
 
+// Responsive system
+export {
+  ResponsiveCSSGenerator,
+  CSSInjector,
+  createResponsiveModifier,
+  type ResponsiveValue,
+  type BreakpointKey,
+  type ResponsiveStyleConfig,
+  type ResponsiveModifierResult,
+} from './modifiers/responsive'
+
 // Data components (List, Menu, Section) are included in the main components export
 
 // Gradient system

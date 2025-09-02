@@ -12,7 +12,7 @@ import {
   type GridAnimationConfig,
   GridCSSGenerator,
 } from '../../src/components/Grid'
-import { Text } from '../../primitives/src'
+import { Text } from '@tachui/primitives'
 
 describe('Grid Animation System', () => {
   describe('GridAnimationConfig Interface', () => {

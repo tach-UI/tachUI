@@ -5,14 +5,14 @@
  * with tachUI's responsive modifier system for optimal performance and capabilities.
  */
 
-import type { 
-  ResponsiveValue, 
-  BreakpointKey, 
+import type {
+  ResponsiveValue,
+  BreakpointKey,
   ResponsiveStyleConfig,
-  ResponsiveModifierResult
-} from '../modifiers/responsive/types'
-import { ResponsiveCSSGenerator } from '../modifiers/responsive/css-generator'
-import { createResponsiveModifier } from '../modifiers/responsive/responsive-modifier'
+  ResponsiveModifierResult,
+} from '@tachui/core'
+import { ResponsiveCSSGenerator } from '@tachui/core'
+import { createResponsiveModifier } from '@tachui/core'
 import type { GridItemConfig, ResponsiveGridItemConfig } from './Grid'
 
 /**
@@ -28,10 +28,28 @@ export interface EnhancedResponsiveGridConfig {
   autoRows?: ResponsiveValue<string>
   autoColumns?: ResponsiveValue<string>
   templateAreas?: ResponsiveValue<string>
-  alignItems?: ResponsiveValue<'start' | 'end' | 'center' | 'stretch' | 'baseline'>
+  alignItems?: ResponsiveValue<
+    'start' | 'end' | 'center' | 'stretch' | 'baseline'
+  >
   justifyItems?: ResponsiveValue<'start' | 'end' | 'center' | 'stretch'>
-  alignContent?: ResponsiveValue<'start' | 'end' | 'center' | 'stretch' | 'space-between' | 'space-around' | 'space-evenly'>
-  justifyContent?: ResponsiveValue<'start' | 'end' | 'center' | 'stretch' | 'space-between' | 'space-around' | 'space-evenly'>
+  alignContent?: ResponsiveValue<
+    | 'start'
+    | 'end'
+    | 'center'
+    | 'stretch'
+    | 'space-between'
+    | 'space-around'
+    | 'space-evenly'
+  >
+  justifyContent?: ResponsiveValue<
+    | 'start'
+    | 'end'
+    | 'center'
+    | 'stretch'
+    | 'space-between'
+    | 'space-around'
+    | 'space-evenly'
+  >
 }
 
 /**
@@ -44,16 +62,18 @@ export class ResponsiveGridCSSGenerator extends ResponsiveCSSGenerator {
       mobileFirst: true,
       optimizeOutput: true,
       includeComments: false,
-      generateMinified: true
+      generateMinified: true,
     })
   }
 
   /**
    * Generate responsive grid CSS that integrates with tachUI's modifier system
    */
-  generateGridCSS(config: EnhancedResponsiveGridConfig): ResponsiveModifierResult {
+  generateGridCSS(
+    config: EnhancedResponsiveGridConfig
+  ): ResponsiveModifierResult {
     const responsiveStyles: ResponsiveStyleConfig = {}
-    
+
     // Process each responsive property
     Object.entries(config).forEach(([property, value]) => {
       if (this.isResponsiveValue(value)) {
@@ -62,10 +82,16 @@ export class ResponsiveGridCSSGenerator extends ResponsiveCSSGenerator {
           if (!responsiveStyles[breakpoint as BreakpointKey]) {
             responsiveStyles[breakpoint as BreakpointKey] = {}
           }
-          
-          const cssProperty = this.mapGridPropertyToCSS(property, breakpointValue)
+
+          const cssProperty = this.mapGridPropertyToCSS(
+            property,
+            breakpointValue
+          )
           if (cssProperty) {
-            Object.assign(responsiveStyles[breakpoint as BreakpointKey]!, cssProperty)
+            Object.assign(
+              responsiveStyles[breakpoint as BreakpointKey]!,
+              cssProperty
+            )
           }
         })
       } else {
@@ -73,7 +99,7 @@ export class ResponsiveGridCSSGenerator extends ResponsiveCSSGenerator {
         if (!responsiveStyles.base) {
           responsiveStyles.base = {}
         }
-        
+
         const cssProperty = this.mapGridPropertyToCSS(property, value)
         if (cssProperty) {
           Object.assign(responsiveStyles.base, cssProperty)
@@ -87,14 +113,17 @@ export class ResponsiveGridCSSGenerator extends ResponsiveCSSGenerator {
   /**
    * Map grid property names to CSS properties with appropriate value processing
    */
-  private mapGridPropertyToCSS(property: string, value: any): Record<string, string> | null {
+  private mapGridPropertyToCSS(
+    property: string,
+    value: any
+  ): Record<string, string> | null {
     switch (property) {
       case 'columns':
         return { 'grid-template-columns': this.generateGridColumns(value) }
       case 'rows':
         return { 'grid-template-rows': this.generateGridRows(value) }
       case 'gap':
-        return { 'gap': this.normalizeSpacing(value) }
+        return { gap: this.normalizeSpacing(value) }
       case 'columnGap':
         return { 'column-gap': this.normalizeSpacing(value) }
       case 'rowGap':
@@ -124,22 +153,24 @@ export class ResponsiveGridCSSGenerator extends ResponsiveCSSGenerator {
    * Generate CSS grid-template-columns from GridItem configurations
    */
   private generateGridColumns(items: GridItemConfig[]): string {
-    return items.map(item => {
-      switch (item.type) {
-        case 'fixed':
-          return `${item.size}px`
-        case 'flexible':
-          const minSize = item.minimum || 0
-          const maxSize = item.maximum ? `${item.maximum}px` : '1fr'
-          return minSize > 0 ? `minmax(${minSize}px, ${maxSize})` : '1fr'
-        case 'adaptive':
-          const adaptiveMin = item.minimum
-          const adaptiveMax = item.maximum ? `${item.maximum}px` : '1fr'
-          return `minmax(${adaptiveMin}px, ${adaptiveMax})`
-        default:
-          return '1fr'
-      }
-    }).join(' ')
+    return items
+      .map(item => {
+        switch (item.type) {
+          case 'fixed':
+            return `${item.size}px`
+          case 'flexible':
+            const minSize = item.minimum || 0
+            const maxSize = item.maximum ? `${item.maximum}px` : '1fr'
+            return minSize > 0 ? `minmax(${minSize}px, ${maxSize})` : '1fr'
+          case 'adaptive':
+            const adaptiveMin = item.minimum
+            const adaptiveMax = item.maximum ? `${item.maximum}px` : '1fr'
+            return `minmax(${adaptiveMin}px, ${adaptiveMax})`
+          default:
+            return '1fr'
+        }
+      })
+      .join(' ')
   }
 
   /**
@@ -163,15 +194,23 @@ export class ResponsiveGridCSSGenerator extends ResponsiveCSSGenerator {
    * Check if a value is responsive (has breakpoint keys)
    */
   private isResponsiveValue(value: any): value is ResponsiveValue<any> {
-    return value && typeof value === 'object' && !Array.isArray(value) &&
-           Object.keys(value).some(key => ['base', 'sm', 'md', 'lg', 'xl', 'xxl'].includes(key))
+    return (
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.keys(value).some(key =>
+        ['base', 'sm', 'md', 'lg', 'xl', 'xxl'].includes(key)
+      )
+    )
   }
 }
 
 /**
  * Create responsive grid modifier for LazyVGrid components with caching
  */
-export function createResponsiveGridModifier(config: EnhancedResponsiveGridConfig) {
+export function createResponsiveGridModifier(
+  config: EnhancedResponsiveGridConfig
+) {
   return createResponsiveModifier((elementId: string) => {
     const selector = `#${elementId}`
     // Use cached CSS generation for improved performance
@@ -191,7 +230,9 @@ class GridCSSCache {
   /**
    * Generate cache key from configuration
    */
-  private static generateCacheKey(config: EnhancedResponsiveGridConfig): string {
+  private static generateCacheKey(
+    config: EnhancedResponsiveGridConfig
+  ): string {
     return JSON.stringify(config, (_key, value) => {
       // Normalize function references and ensure consistent ordering
       if (typeof value === 'function') {
@@ -209,36 +250,36 @@ class GridCSSCache {
     selector: string
   ): ResponsiveModifierResult {
     const cacheKey = this.generateCacheKey(config)
-    
+
     if (this.cache.has(cacheKey)) {
       this.hitCount++
       const cachedResult = this.cache.get(cacheKey)!
-      
+
       // Update selector in cached result (selectors may differ between instances)
       return {
         ...cachedResult,
         mediaQueries: cachedResult.mediaQueries.map(mq => ({
           ...mq,
-          selector
-        }))
+          selector,
+        })),
       }
     }
 
     this.missCount++
-    
+
     // Generate new CSS
     const generator = new ResponsiveGridCSSGenerator(selector)
     const result = generator.generateGridCSS(config)
-    
+
     // Cache the result (with generic selector that will be replaced)
     const cacheableResult = {
       ...result,
       mediaQueries: result.mediaQueries.map(mq => ({
         ...mq,
-        selector: '.cached-selector' // Placeholder selector for caching
-      }))
+        selector: '.cached-selector', // Placeholder selector for caching
+      })),
     }
-    
+
     // Implement LRU cache eviction
     if (this.cache.size >= this.maxCacheSize) {
       const firstKey = this.cache.keys().next().value
@@ -246,7 +287,7 @@ class GridCSSCache {
         this.cache.delete(firstKey)
       }
     }
-    
+
     this.cache.set(cacheKey, cacheableResult)
     return result
   }
@@ -259,7 +300,7 @@ class GridCSSCache {
       cacheSize: this.cache.size,
       hitCount: this.hitCount,
       missCount: this.missCount,
-      hitRate: this.hitCount / (this.hitCount + this.missCount) || 0
+      hitRate: this.hitCount / (this.hitCount + this.missCount) || 0,
     }
   }
 
@@ -284,13 +325,13 @@ export class GridResponsiveUtils {
     legacyConfig: ResponsiveGridItemConfig
   ): ResponsiveValue<GridItemConfig[]> {
     const responsiveValue: ResponsiveValue<GridItemConfig[]> = {}
-    
+
     Object.entries(legacyConfig).forEach(([breakpoint, items]) => {
       if (items) {
         responsiveValue[breakpoint as BreakpointKey] = items
       }
     })
-    
+
     return responsiveValue
   }
 
@@ -300,8 +341,20 @@ export class GridResponsiveUtils {
   static createResponsiveGridConfig(options: {
     columns?: ResponsiveValue<GridItemConfig[]> | ResponsiveGridItemConfig
     rows?: ResponsiveValue<GridItemConfig[]> | ResponsiveGridItemConfig
-    spacing?: ResponsiveValue<string | number | { horizontal?: number; vertical?: number }>
-    alignment?: ResponsiveValue<'topLeading' | 'top' | 'topTrailing' | 'leading' | 'center' | 'trailing' | 'bottomLeading' | 'bottom' | 'bottomTrailing'>
+    spacing?: ResponsiveValue<
+      string | number | { horizontal?: number; vertical?: number }
+    >
+    alignment?: ResponsiveValue<
+      | 'topLeading'
+      | 'top'
+      | 'topTrailing'
+      | 'leading'
+      | 'center'
+      | 'trailing'
+      | 'bottomLeading'
+      | 'bottom'
+      | 'bottomTrailing'
+    >
   }): EnhancedResponsiveGridConfig {
     const config: EnhancedResponsiveGridConfig = {}
 
@@ -328,7 +381,8 @@ export class GridResponsiveUtils {
       if (this.isResponsiveValue(options.spacing)) {
         const processedSpacing: ResponsiveValue<string> = {}
         Object.entries(options.spacing).forEach(([breakpoint, value]) => {
-          processedSpacing[breakpoint as BreakpointKey] = this.normalizeSpacing(value)
+          processedSpacing[breakpoint as BreakpointKey] =
+            this.normalizeSpacing(value)
         })
         config.gap = processedSpacing
       } else {
@@ -339,19 +393,26 @@ export class GridResponsiveUtils {
     // Handle alignment
     if (options.alignment) {
       if (this.isResponsiveValue(options.alignment)) {
-        const alignItems: ResponsiveValue<'start' | 'end' | 'center' | 'stretch'> = {}
-        const justifyItems: ResponsiveValue<'start' | 'end' | 'center' | 'stretch'> = {}
-        
+        const alignItems: ResponsiveValue<
+          'start' | 'end' | 'center' | 'stretch'
+        > = {}
+        const justifyItems: ResponsiveValue<
+          'start' | 'end' | 'center' | 'stretch'
+        > = {}
+
         Object.entries(options.alignment).forEach(([breakpoint, alignment]) => {
-          const { alignItems: ai, justifyItems: ji } = this.convertAlignment(alignment)
+          const { alignItems: ai, justifyItems: ji } =
+            this.convertAlignment(alignment)
           alignItems[breakpoint as BreakpointKey] = ai
           justifyItems[breakpoint as BreakpointKey] = ji
         })
-        
+
         config.alignItems = alignItems
         config.justifyItems = justifyItems
       } else {
-        const { alignItems, justifyItems } = this.convertAlignment(options.alignment)
+        const { alignItems, justifyItems } = this.convertAlignment(
+          options.alignment
+        )
         config.alignItems = { base: alignItems }
         config.justifyItems = { base: justifyItems }
       }
@@ -363,26 +424,37 @@ export class GridResponsiveUtils {
   /**
    * Convert GridAlignment to CSS alignment properties
    */
-  private static convertAlignment(alignment: string): { alignItems: 'start' | 'end' | 'center' | 'stretch'; justifyItems: 'start' | 'end' | 'center' | 'stretch' } {
-    const alignmentMap: Record<string, { alignItems: 'start' | 'end' | 'center' | 'stretch'; justifyItems: 'start' | 'end' | 'center' | 'stretch' }> = {
-      'topLeading': { alignItems: 'start', justifyItems: 'start' },
-      'top': { alignItems: 'start', justifyItems: 'center' },
-      'topTrailing': { alignItems: 'start', justifyItems: 'end' },
-      'leading': { alignItems: 'center', justifyItems: 'start' },
-      'center': { alignItems: 'center', justifyItems: 'center' },
-      'trailing': { alignItems: 'center', justifyItems: 'end' },
-      'bottomLeading': { alignItems: 'end', justifyItems: 'start' },
-      'bottom': { alignItems: 'end', justifyItems: 'center' },
-      'bottomTrailing': { alignItems: 'end', justifyItems: 'end' }
+  private static convertAlignment(alignment: string): {
+    alignItems: 'start' | 'end' | 'center' | 'stretch'
+    justifyItems: 'start' | 'end' | 'center' | 'stretch'
+  } {
+    const alignmentMap: Record<
+      string,
+      {
+        alignItems: 'start' | 'end' | 'center' | 'stretch'
+        justifyItems: 'start' | 'end' | 'center' | 'stretch'
+      }
+    > = {
+      topLeading: { alignItems: 'start', justifyItems: 'start' },
+      top: { alignItems: 'start', justifyItems: 'center' },
+      topTrailing: { alignItems: 'start', justifyItems: 'end' },
+      leading: { alignItems: 'center', justifyItems: 'start' },
+      center: { alignItems: 'center', justifyItems: 'center' },
+      trailing: { alignItems: 'center', justifyItems: 'end' },
+      bottomLeading: { alignItems: 'end', justifyItems: 'start' },
+      bottom: { alignItems: 'end', justifyItems: 'center' },
+      bottomTrailing: { alignItems: 'end', justifyItems: 'end' },
     }
-    
+
     return alignmentMap[alignment] || alignmentMap.center
   }
 
   /**
    * Normalize spacing values to CSS
    */
-  private static normalizeSpacing(value: string | number | { horizontal?: number; vertical?: number }): string {
+  private static normalizeSpacing(
+    value: string | number | { horizontal?: number; vertical?: number }
+  ): string {
     if (typeof value === 'number') {
       return `${value}px`
     }
@@ -401,17 +473,31 @@ export class GridResponsiveUtils {
    * Check if value is a responsive value
    */
   private static isResponsiveValue(value: any): value is ResponsiveValue<any> {
-    return value && typeof value === 'object' && !Array.isArray(value) &&
-           Object.keys(value).some(key => ['base', 'sm', 'md', 'lg', 'xl', 'xxl'].includes(key))
+    return (
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.keys(value).some(key =>
+        ['base', 'sm', 'md', 'lg', 'xl', 'xxl'].includes(key)
+      )
+    )
   }
 
   /**
    * Check if value is legacy ResponsiveGridItemConfig
    */
-  private static isLegacyResponsiveGridConfig(value: any): value is ResponsiveGridItemConfig {
-    return value && typeof value === 'object' && !Array.isArray(value) &&
-           Object.keys(value).some(key => ['base', 'sm', 'md', 'lg', 'xl', 'xxl'].includes(key)) &&
-           Object.values(value).every(v => Array.isArray(v))
+  private static isLegacyResponsiveGridConfig(
+    value: any
+  ): value is ResponsiveGridItemConfig {
+    return (
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.keys(value).some(key =>
+        ['base', 'sm', 'md', 'lg', 'xl', 'xxl'].includes(key)
+      ) &&
+      Object.values(value).every(v => Array.isArray(v))
+    )
   }
 }
 
@@ -420,11 +506,14 @@ export class GridResponsiveUtils {
  */
 export class GridDebugger {
   private static debugMode = false
-  private static instances = new Map<string, {
-    config: EnhancedResponsiveGridConfig
-    selector: string
-    timestamp: number
-  }>()
+  private static instances = new Map<
+    string,
+    {
+      config: EnhancedResponsiveGridConfig
+      selector: string
+      timestamp: number
+    }
+  >()
 
   /**
    * Enable/disable grid debugging
@@ -439,13 +528,17 @@ export class GridDebugger {
   /**
    * Register a grid instance for debugging
    */
-  static registerGrid(elementId: string, config: EnhancedResponsiveGridConfig, selector: string) {
+  static registerGrid(
+    elementId: string,
+    config: EnhancedResponsiveGridConfig,
+    selector: string
+  ) {
     if (!this.debugMode) return
 
     this.instances.set(elementId, {
       config,
       selector,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
 
     console.group(`🏗️ Grid registered: ${elementId}`)
@@ -462,12 +555,14 @@ export class GridDebugger {
     if (!this.debugMode) return
 
     console.group('📊 Grid Performance Metrics')
-    
+
     const cacheStats = GridCSSCache.getStats()
     console.log(`Cache efficiency: ${(cacheStats.hitRate * 100).toFixed(1)}%`)
     console.log(`Cache size: ${cacheStats.cacheSize}/${100}`)
-    console.log(`Cache hits: ${cacheStats.hitCount}, misses: ${cacheStats.missCount}`)
-    
+    console.log(
+      `Cache hits: ${cacheStats.hitCount}, misses: ${cacheStats.missCount}`
+    )
+
     console.log(`Active grid instances: ${this.instances.size}`)
     console.groupEnd()
   }
@@ -479,24 +574,26 @@ export class GridDebugger {
     if (!this.debugMode) return
 
     console.group('📱 Responsive Grid Breakpoints')
-    
+
     if (config.columns) {
       console.log('Column configuration:')
       Object.entries(config.columns).forEach(([breakpoint, cols]) => {
-        const description = Array.isArray(cols) 
-          ? cols.map(c => `${c.type}(${c.size || c.minimum || 'auto'})`).join(' ')
+        const description = Array.isArray(cols)
+          ? cols
+              .map(c => `${c.type}(${c.size || c.minimum || 'auto'})`)
+              .join(' ')
           : String(cols || 'auto')
         console.log(`  ${breakpoint}: ${description}`)
       })
     }
-    
+
     if (config.gap) {
       console.log('Gap configuration:')
       Object.entries(config.gap).forEach(([breakpoint, gap]) => {
         console.log(`  ${breakpoint}: ${gap}`)
       })
     }
-    
+
     console.groupEnd()
   }
 
@@ -509,9 +606,9 @@ export class GridDebugger {
       instances: Array.from(this.instances.entries()).map(([id, info]) => ({
         id,
         ...info,
-        age: Date.now() - info.timestamp
+        age: Date.now() - info.timestamp,
       })),
-      cacheStats: GridCSSCache.getStats()
+      cacheStats: GridCSSCache.getStats(),
     }
   }
 
@@ -556,19 +653,21 @@ export class GridPerformanceMonitor {
     if (!this.enabled) return () => {}
 
     const startTime = performance.now()
-    
+
     return () => {
       const duration = performance.now() - startTime
-      
+
       if (!this.measurements.has(operation)) {
         this.measurements.set(operation, [])
       }
-      
+
       this.measurements.get(operation)!.push(duration)
-      
+
       // Log slow operations (>10ms)
       if (duration > 10) {
-        console.warn(`🐌 Slow grid operation: ${operation} took ${duration.toFixed(2)}ms`)
+        console.warn(
+          `🐌 Slow grid operation: ${operation} took ${duration.toFixed(2)}ms`
+        )
       }
     }
   }
@@ -577,13 +676,16 @@ export class GridPerformanceMonitor {
    * Get performance statistics
    */
   static getStats() {
-    const stats: Record<string, {
-      count: number
-      averageTime: number
-      minTime: number
-      maxTime: number
-      totalTime: number
-    }> = {}
+    const stats: Record<
+      string,
+      {
+        count: number
+        averageTime: number
+        minTime: number
+        maxTime: number
+        totalTime: number
+      }
+    > = {}
 
     for (const [operation, times] of this.measurements) {
       const count = times.length
@@ -597,7 +699,7 @@ export class GridPerformanceMonitor {
         averageTime: Number(averageTime.toFixed(2)),
         minTime: Number(minTime.toFixed(2)),
         maxTime: Number(maxTime.toFixed(2)),
-        totalTime: Number(totalTime.toFixed(2))
+        totalTime: Number(totalTime.toFixed(2)),
       }
     }
 
@@ -612,11 +714,11 @@ export class GridPerformanceMonitor {
 
     console.group('📈 Grid Performance Report')
     const stats = this.getStats()
-    
+
     for (const [operation, data] of Object.entries(stats)) {
       console.log(`${operation}:`, data)
     }
-    
+
     console.groupEnd()
   }
 

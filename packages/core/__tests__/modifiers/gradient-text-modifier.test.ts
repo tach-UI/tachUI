@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { Text } from '../../primitives/src'
+import { Text } from '@tachui/primitives'
 
 describe('Gradient Text Modifier', () => {
   it('should apply gradient text modifier correctly', () => {

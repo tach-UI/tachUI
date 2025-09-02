@@ -6,30 +6,22 @@
  * that mirror SwiftUI's grid system while leveraging modern CSS Grid capabilities.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '../modifiers/types'
-import type { ComponentInstance, ComponentProps } from '../runtime/types'
-import { withModifiers } from './wrapper'
-import { 
-  processElementOverride, 
-  type ElementOverrideProps 
-} from '../runtime/element-override'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ComponentInstance, ComponentProps } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
+import { processElementOverride, type ElementOverrideProps } from '@tachui/core'
+import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
+import { useLifecycle } from '@tachui/core'
+import { registerComponentWithLifecycleHooks } from '@tachui/core'
+import type { ResponsiveValue } from '@tachui/core'
 import {
-  ComponentWithCSSClasses,
-  type CSSClassesProps
-} from '../css-classes'
-import { useLifecycle } from '../lifecycle/hooks'
-import { registerComponentWithLifecycleHooks } from '../runtime/dom-bridge'
-import type { ResponsiveValue } from '../modifiers/responsive/types'
-import { 
   GridResponsiveUtils,
   createResponsiveGridModifier,
   GridDebugger,
   GridPerformanceMonitor,
-  type EnhancedResponsiveGridConfig
+  type EnhancedResponsiveGridConfig,
 } from './GridResponsive'
-import { 
-  transition
-} from '../modifiers/transitions'
+import { transition } from '@tachui/core'
 
 // Lazy import debug manager to avoid circular dependencies
 let debugManager: any = null
@@ -90,7 +82,7 @@ export class GridItem {
     return {
       type: 'fixed',
       size,
-      spacing
+      spacing,
     }
   }
 
@@ -101,7 +93,7 @@ export class GridItem {
     return {
       type: 'flexible',
       minimum,
-      maximum
+      maximum,
     }
   }
 
@@ -112,7 +104,7 @@ export class GridItem {
     return {
       type: 'adaptive',
       minimum,
-      maximum
+      maximum,
     }
   }
 
@@ -126,10 +118,13 @@ export class GridItem {
   /**
    * Create enhanced grid item with spanning support (Phase 3)
    */
-  static withSpan(baseConfig: GridItemConfig, spanConfig: GridSpanConfig): EnhancedGridItemConfig {
+  static withSpan(
+    baseConfig: GridItemConfig,
+    spanConfig: GridSpanConfig
+  ): EnhancedGridItemConfig {
     return {
       ...baseConfig,
-      span: spanConfig
+      span: spanConfig,
     }
   }
 }
@@ -149,15 +144,24 @@ export type ResponsiveGridItemConfig = {
 /**
  * Grid alignment options (SwiftUI-equivalent)
  */
-export type GridAlignment = 
-  | 'topLeading' | 'top' | 'topTrailing'
-  | 'leading' | 'center' | 'trailing'
-  | 'bottomLeading' | 'bottom' | 'bottomTrailing'
+export type GridAlignment =
+  | 'topLeading'
+  | 'top'
+  | 'topTrailing'
+  | 'leading'
+  | 'center'
+  | 'trailing'
+  | 'bottomLeading'
+  | 'bottom'
+  | 'bottomTrailing'
 
 /**
  * Base Grid component properties
  */
-export interface BaseGridProps extends ComponentProps, ElementOverrideProps, CSSClassesProps {
+export interface BaseGridProps
+  extends ComponentProps,
+    ElementOverrideProps,
+    CSSClassesProps {
   children?: ComponentInstance[]
   alignment?: GridAlignment
   spacing?: number | { horizontal?: number; vertical?: number }
@@ -181,7 +185,10 @@ export interface GridProps extends BaseGridProps {
  * LazyVGrid component properties (vertical scrolling with flexible columns)
  */
 export interface LazyVGridProps extends BaseGridProps {
-  columns: GridItemConfig[] | ResponsiveGridItemConfig | ResponsiveValue<GridItemConfig[]>
+  columns:
+    | GridItemConfig[]
+    | ResponsiveGridItemConfig
+    | ResponsiveValue<GridItemConfig[]>
   pinnedViews?: ('sectionHeaders' | 'sectionFooters')[]
   /** Enhanced responsive configuration (Phase 2) */
   responsive?: EnhancedResponsiveGridConfig
@@ -193,7 +200,10 @@ export interface LazyVGridProps extends BaseGridProps {
  * LazyHGrid component properties (horizontal scrolling with flexible rows)
  */
 export interface LazyHGridProps extends BaseGridProps {
-  rows: GridItemConfig[] | ResponsiveGridItemConfig | ResponsiveValue<GridItemConfig[]>
+  rows:
+    | GridItemConfig[]
+    | ResponsiveGridItemConfig
+    | ResponsiveValue<GridItemConfig[]>
   pinnedViews?: ('sectionHeaders' | 'sectionFooters')[]
   /** Enhanced responsive configuration (Phase 2) */
   responsive?: EnhancedResponsiveGridConfig
@@ -206,38 +216,58 @@ export interface LazyHGridProps extends BaseGridProps {
  */
 export interface GridAnimationConfig {
   /** Enable layout animations when grid structure changes */
-  layoutChanges?: boolean | {
-    duration?: number
-    easing?: string
-    delay?: number
-  }
+  layoutChanges?:
+    | boolean
+    | {
+        duration?: number
+        easing?: string
+        delay?: number
+      }
   /** Enable animations when items are added/removed */
-  itemChanges?: boolean | {
-    enter?: {
-      duration?: number
-      easing?: string
-      delay?: number
-      from?: 'fade' | 'scale' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right'
-    }
-    exit?: {
-      duration?: number
-      easing?: string
-      delay?: number
-      to?: 'fade' | 'scale' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right'
-    }
-  }
+  itemChanges?:
+    | boolean
+    | {
+        enter?: {
+          duration?: number
+          easing?: string
+          delay?: number
+          from?:
+            | 'fade'
+            | 'scale'
+            | 'slide-up'
+            | 'slide-down'
+            | 'slide-left'
+            | 'slide-right'
+        }
+        exit?: {
+          duration?: number
+          easing?: string
+          delay?: number
+          to?:
+            | 'fade'
+            | 'scale'
+            | 'slide-up'
+            | 'slide-down'
+            | 'slide-left'
+            | 'slide-right'
+        }
+      }
   /** Enable animations for responsive breakpoint changes */
-  responsive?: boolean | {
-    duration?: number
-    easing?: string
-    delay?: number
-  }
+  responsive?:
+    | boolean
+    | {
+        duration?: number
+        easing?: string
+        delay?: number
+      }
   /** Enable animations for section header/footer changes */
-  sections?: boolean | {
-    duration?: number
-    easing?: string
-    delay?: number
-  }
+  sections?:
+    | boolean
+    | {
+        duration?: number
+        easing?: string
+        delay?: number
+      }
 }
 
 /**
@@ -251,40 +281,48 @@ export interface GridAccessibilityConfig {
   /** ARIA role override (defaults to 'grid' for data grids, 'group' for layout grids) */
   role?: 'grid' | 'group' | 'list' | 'region'
   /** Enable keyboard navigation between grid items */
-  keyboardNavigation?: boolean | {
-    enabled?: boolean
-    /** Arrow key behavior: 'grid' for 2D navigation, 'list' for linear navigation */
-    mode?: 'grid' | 'list'
-    /** Enable page up/down navigation */
-    pageNavigation?: boolean
-    /** Enable home/end navigation */
-    homeEndNavigation?: boolean
-  }
+  keyboardNavigation?:
+    | boolean
+    | {
+        enabled?: boolean
+        /** Arrow key behavior: 'grid' for 2D navigation, 'list' for linear navigation */
+        mode?: 'grid' | 'list'
+        /** Enable page up/down navigation */
+        pageNavigation?: boolean
+        /** Enable home/end navigation */
+        homeEndNavigation?: boolean
+      }
   /** Enable focus management */
-  focusManagement?: boolean | {
-    enabled?: boolean
-    /** Focus trap within grid */
-    trapFocus?: boolean
-    /** Restore focus when grid is unmounted */
-    restoreFocus?: boolean
-    /** Skip links for screen readers */
-    skipLinks?: boolean
-  }
+  focusManagement?:
+    | boolean
+    | {
+        enabled?: boolean
+        /** Focus trap within grid */
+        trapFocus?: boolean
+        /** Restore focus when grid is unmounted */
+        restoreFocus?: boolean
+        /** Skip links for screen readers */
+        skipLinks?: boolean
+      }
   /** Screen reader optimizations */
-  screenReader?: boolean | {
-    enabled?: boolean
-    /** Announce grid structure changes */
-    announceChanges?: boolean
-    /** Provide row/column count information */
-    announceStructure?: boolean
-    /** Announce item positions */
-    announcePositions?: boolean
-  }
+  screenReader?:
+    | boolean
+    | {
+        enabled?: boolean
+        /** Announce grid structure changes */
+        announceChanges?: boolean
+        /** Provide row/column count information */
+        announceStructure?: boolean
+        /** Announce item positions */
+        announcePositions?: boolean
+      }
   /** Reduced motion support */
-  reducedMotion?: boolean | {
-    respectPreference?: boolean
-    fallbackBehavior?: 'disable' | 'reduce' | 'instant'
-  }
+  reducedMotion?:
+    | boolean
+    | {
+        respectPreference?: boolean
+        fallbackBehavior?: 'disable' | 'reduce' | 'instant'
+      }
 }
 
 /**
@@ -299,19 +337,21 @@ export interface GridStylingConfig {
     column?: number | string | { [breakpoint: string]: number | string }
   }
   /** Grid debugging and overlay styles */
-  debug?: boolean | {
-    enabled?: boolean
-    /** Show grid lines */
-    showLines?: boolean
-    /** Show grid areas */
-    showAreas?: boolean
-    /** Grid line color */
-    lineColor?: string
-    /** Grid line style */
-    lineStyle?: 'solid' | 'dashed' | 'dotted'
-    /** Show item numbers */
-    showItemNumbers?: boolean
-  }
+  debug?:
+    | boolean
+    | {
+        enabled?: boolean
+        /** Show grid lines */
+        showLines?: boolean
+        /** Show grid areas */
+        showAreas?: boolean
+        /** Grid line color */
+        lineColor?: string
+        /** Grid line style */
+        lineStyle?: 'solid' | 'dashed' | 'dotted'
+        /** Show item numbers */
+        showItemNumbers?: boolean
+      }
   /** Theme integration */
   theme?: {
     /** Use theme-based grid colors */
@@ -347,22 +387,27 @@ export interface GridStylingConfig {
   /** Grid container styling */
   container?: {
     /** Background patterns or overlays */
-    background?: string | {
-      pattern?: 'dots' | 'lines' | 'grid' | 'none'
-      color?: string
-      opacity?: number
-    }
+    background?:
+      | string
+      | {
+          pattern?: 'dots' | 'lines' | 'grid' | 'none'
+          color?: string
+          opacity?: number
+        }
     /** Container border and shadow */
     border?: string
     borderRadius?: number | string
     boxShadow?: string
     /** Container padding */
-    padding?: number | string | {
-      top?: number | string
-      right?: number | string
-      bottom?: number | string
-      left?: number | string
-    }
+    padding?:
+      | number
+      | string
+      | {
+          top?: number | string
+          right?: number | string
+          bottom?: number | string
+          left?: number | string
+        }
   }
 }
 
@@ -381,7 +426,10 @@ export interface GridSection {
 /**
  * Grid section header/footer properties (Phase 3)
  */
-export interface GridSectionHeaderProps extends ComponentProps, ElementOverrideProps, CSSClassesProps {
+export interface GridSectionHeaderProps
+  extends ComponentProps,
+    ElementOverrideProps,
+    CSSClassesProps {
   content: ComponentInstance | string
   sectionId: string
   type: 'header' | 'footer'
@@ -392,7 +440,10 @@ export interface GridSectionHeaderProps extends ComponentProps, ElementOverrideP
 /**
  * GridRow component properties
  */
-export interface GridRowProps extends ComponentProps, ElementOverrideProps, CSSClassesProps {
+export interface GridRowProps
+  extends ComponentProps,
+    ElementOverrideProps,
+    CSSClassesProps {
   children?: ComponentInstance[]
   alignment?: 'leading' | 'center' | 'trailing'
   debugLabel?: string
@@ -406,22 +457,24 @@ class GridCSSGenerator {
    * Generate CSS grid-template-columns from GridItem configurations
    */
   static generateColumns(items: GridItemConfig[]): string {
-    return items.map(item => {
-      switch (item.type) {
-        case 'fixed':
-          return `${item.size}px`
-        case 'flexible':
-          const minSize = item.minimum || 0
-          const maxSize = item.maximum ? `${item.maximum}px` : '1fr'
-          return minSize > 0 ? `minmax(${minSize}px, ${maxSize})` : '1fr'
-        case 'adaptive':
-          const adaptiveMin = item.minimum
-          const adaptiveMax = item.maximum ? `${item.maximum}px` : '1fr'
-          return `minmax(${adaptiveMin}px, ${adaptiveMax})`
-        default:
-          return '1fr'
-      }
-    }).join(' ')
+    return items
+      .map(item => {
+        switch (item.type) {
+          case 'fixed':
+            return `${item.size}px`
+          case 'flexible':
+            const minSize = item.minimum || 0
+            const maxSize = item.maximum ? `${item.maximum}px` : '1fr'
+            return minSize > 0 ? `minmax(${minSize}px, ${maxSize})` : '1fr'
+          case 'adaptive':
+            const adaptiveMin = item.minimum
+            const adaptiveMax = item.maximum ? `${item.maximum}px` : '1fr'
+            return `minmax(${adaptiveMin}px, ${adaptiveMax})`
+          default:
+            return '1fr'
+        }
+      })
+      .join(' ')
   }
 
   /**
@@ -434,39 +487,45 @@ class GridCSSGenerator {
   /**
    * Generate responsive CSS for grid layouts
    */
-  static generateResponsiveGridCSS(config: ResponsiveGridItemConfig, property: 'grid-template-columns' | 'grid-template-rows'): Record<string, string | Record<string, string>> {
+  static generateResponsiveGridCSS(
+    config: ResponsiveGridItemConfig,
+    property: 'grid-template-columns' | 'grid-template-rows'
+  ): Record<string, string | Record<string, string>> {
     const responsiveCSS: Record<string, string | Record<string, string>> = {}
-    
+
     if (config.base) {
-      responsiveCSS[property] = property === 'grid-template-columns' 
-        ? this.generateColumns(config.base)
-        : this.generateRows(config.base)
+      responsiveCSS[property] =
+        property === 'grid-template-columns'
+          ? this.generateColumns(config.base)
+          : this.generateRows(config.base)
     }
 
     // Generate media queries for other breakpoints
     const breakpoints = {
       sm: '640px',
-      md: '768px', 
+      md: '768px',
       lg: '1024px',
       xl: '1280px',
-      xxl: '1536px'
+      xxl: '1536px',
     }
 
     Object.entries(breakpoints).forEach(([breakpoint, minWidth]) => {
-      const breakpointConfig = config[breakpoint as keyof ResponsiveGridItemConfig]
+      const breakpointConfig =
+        config[breakpoint as keyof ResponsiveGridItemConfig]
       if (breakpointConfig) {
         const mediaQuery = `@media (min-width: ${minWidth})`
-        const gridValue = property === 'grid-template-columns'
-          ? this.generateColumns(breakpointConfig)
-          : this.generateRows(breakpointConfig)
-        
+        const gridValue =
+          property === 'grid-template-columns'
+            ? this.generateColumns(breakpointConfig)
+            : this.generateRows(breakpointConfig)
+
         if (!responsiveCSS[mediaQuery]) {
           responsiveCSS[mediaQuery] = {}
         }
         const existing = responsiveCSS[mediaQuery] as Record<string, string>
         responsiveCSS[mediaQuery] = {
           ...existing,
-          [property]: gridValue
+          [property]: gridValue,
         }
       }
     })
@@ -477,7 +536,9 @@ class GridCSSGenerator {
   /**
    * Convert spacing configuration to CSS gap values
    */
-  static generateSpacing(spacing?: number | { horizontal?: number; vertical?: number }): string {
+  static generateSpacing(
+    spacing?: number | { horizontal?: number; vertical?: number }
+  ): string {
     if (typeof spacing === 'number') {
       return `${spacing}px`
     }
@@ -492,30 +553,40 @@ class GridCSSGenerator {
   /**
    * Convert GridAlignment to CSS grid alignment properties
    */
-  static generateAlignment(alignment: GridAlignment): { justifyItems?: string; alignItems?: string } {
-    const alignmentMap: Record<GridAlignment, { justifyItems: string; alignItems: string }> = {
-      'topLeading': { justifyItems: 'start', alignItems: 'start' },
-      'top': { justifyItems: 'center', alignItems: 'start' },
-      'topTrailing': { justifyItems: 'end', alignItems: 'start' },
-      'leading': { justifyItems: 'start', alignItems: 'center' },
-      'center': { justifyItems: 'center', alignItems: 'center' },
-      'trailing': { justifyItems: 'end', alignItems: 'center' },
-      'bottomLeading': { justifyItems: 'start', alignItems: 'end' },
-      'bottom': { justifyItems: 'center', alignItems: 'end' },
-      'bottomTrailing': { justifyItems: 'end', alignItems: 'end' }
+  static generateAlignment(alignment: GridAlignment): {
+    justifyItems?: string
+    alignItems?: string
+  } {
+    const alignmentMap: Record<
+      GridAlignment,
+      { justifyItems: string; alignItems: string }
+    > = {
+      topLeading: { justifyItems: 'start', alignItems: 'start' },
+      top: { justifyItems: 'center', alignItems: 'start' },
+      topTrailing: { justifyItems: 'end', alignItems: 'start' },
+      leading: { justifyItems: 'start', alignItems: 'center' },
+      center: { justifyItems: 'center', alignItems: 'center' },
+      trailing: { justifyItems: 'end', alignItems: 'center' },
+      bottomLeading: { justifyItems: 'start', alignItems: 'end' },
+      bottom: { justifyItems: 'center', alignItems: 'end' },
+      bottomTrailing: { justifyItems: 'end', alignItems: 'end' },
     }
-    
+
     return alignmentMap[alignment] || alignmentMap.center
   }
 
   /**
    * Generate CSS for section header/footer styling (Phase 3)
    */
-  static generateSectionHeaderCSS(style: 'automatic' | 'grouped' | 'plain' | 'sticky', type: 'header' | 'footer', columnSpan: number): Record<string, string> {
+  static generateSectionHeaderCSS(
+    style: 'automatic' | 'grouped' | 'plain' | 'sticky',
+    type: 'header' | 'footer',
+    columnSpan: number
+  ): Record<string, string> {
     const baseStyles: Record<string, string> = {
       gridColumn: `1 / span ${columnSpan}`,
       display: 'flex',
-      alignItems: 'center'
+      alignItems: 'center',
     }
 
     switch (style) {
@@ -529,7 +600,8 @@ class GridCSSGenerator {
       case 'grouped':
         baseStyles.padding = '12px 16px'
         baseStyles.backgroundColor = 'var(--section-bg, #f8f9fa)'
-        baseStyles.borderRadius = type === 'header' ? '8px 8px 0 0' : '0 0 8px 8px'
+        baseStyles.borderRadius =
+          type === 'header' ? '8px 8px 0 0' : '0 0 8px 8px'
         break
       case 'plain':
         baseStyles.padding = '8px 0'
@@ -553,12 +625,17 @@ class GridCSSGenerator {
   /**
    * Generate CSS animations for grid layout changes (Phase 3)
    */
-  static generateGridAnimationCSS(animations: GridAnimationConfig): Record<string, string> {
+  static generateGridAnimationCSS(
+    animations: GridAnimationConfig
+  ): Record<string, string> {
     const animationStyles: Record<string, string> = {}
 
     // Layout change animations
     if (animations.layoutChanges) {
-      const config = typeof animations.layoutChanges === 'boolean' ? {} : animations.layoutChanges
+      const config =
+        typeof animations.layoutChanges === 'boolean'
+          ? {}
+          : animations.layoutChanges
       const duration = config.duration || 300
       const easing = config.easing || 'ease-out'
       const delay = config.delay || 0
@@ -568,13 +645,14 @@ class GridCSSGenerator {
 
     // Responsive breakpoint change animations
     if (animations.responsive) {
-      const config = typeof animations.responsive === 'boolean' ? {} : animations.responsive
+      const config =
+        typeof animations.responsive === 'boolean' ? {} : animations.responsive
       const duration = config.duration || 250
       const easing = config.easing || 'ease-out'
       const delay = config.delay || 0
 
       const responsiveTransition = `grid-template-columns ${duration}ms ${easing}${delay > 0 ? ` ${delay}ms` : ''}, grid-template-rows ${duration}ms ${easing}${delay > 0 ? ` ${delay}ms` : ''}, gap ${duration}ms ${easing}${delay > 0 ? ` ${delay}ms` : ''}`
-      
+
       if (animationStyles.transition) {
         animationStyles.transition += `, ${responsiveTransition}`
       } else {
@@ -588,46 +666,61 @@ class GridCSSGenerator {
   /**
    * Generate item entrance/exit animation keyframes (Phase 3)
    */
-  static generateItemAnimationKeyframes(type: 'enter' | 'exit', animation: 'fade' | 'scale' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right'): Record<string, string> {
+  static generateItemAnimationKeyframes(
+    type: 'enter' | 'exit',
+    animation:
+      | 'fade'
+      | 'scale'
+      | 'slide-up'
+      | 'slide-down'
+      | 'slide-left'
+      | 'slide-right'
+  ): Record<string, string> {
     const keyframeName = `grid-item-${type}-${animation}`
-    
+
     let keyframeContent = ''
     switch (animation) {
       case 'fade':
-        keyframeContent = type === 'enter' 
-          ? 'from { opacity: 0; } to { opacity: 1; }'
-          : 'from { opacity: 1; } to { opacity: 0; }'
+        keyframeContent =
+          type === 'enter'
+            ? 'from { opacity: 0; } to { opacity: 1; }'
+            : 'from { opacity: 1; } to { opacity: 0; }'
         break
       case 'scale':
-        keyframeContent = type === 'enter'
-          ? 'from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); }'
-          : 'from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.8); }'
+        keyframeContent =
+          type === 'enter'
+            ? 'from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); }'
+            : 'from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.8); }'
         break
       case 'slide-up':
-        keyframeContent = type === 'enter'
-          ? 'from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); }'
-          : 'from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); }'
+        keyframeContent =
+          type === 'enter'
+            ? 'from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); }'
+            : 'from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); }'
         break
       case 'slide-down':
-        keyframeContent = type === 'enter'
-          ? 'from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); }'
-          : 'from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); }'
+        keyframeContent =
+          type === 'enter'
+            ? 'from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); }'
+            : 'from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); }'
         break
       case 'slide-left':
-        keyframeContent = type === 'enter'
-          ? 'from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); }'
-          : 'from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-20px); }'
+        keyframeContent =
+          type === 'enter'
+            ? 'from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); }'
+            : 'from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-20px); }'
         break
       case 'slide-right':
-        keyframeContent = type === 'enter'
-          ? 'from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); }'
-          : 'from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); }'
+        keyframeContent =
+          type === 'enter'
+            ? 'from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); }'
+            : 'from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); }'
         break
     }
 
     return {
       [`@keyframes ${keyframeName}`]: `{ ${keyframeContent} }`,
-      [`--${keyframeName}-keyframes`]: keyframeName
+      [`--${keyframeName}-keyframes`]: keyframeName,
     }
   }
 
@@ -635,7 +728,7 @@ class GridCSSGenerator {
    * Generate accessibility attributes for grid elements (Phase 3)
    */
   static generateAccessibilityAttributes(
-    accessibility: GridAccessibilityConfig, 
+    accessibility: GridAccessibilityConfig,
     gridType: 'grid' | 'lazy-vgrid' | 'lazy-hgrid',
     columnCount?: number,
     rowCount?: number
@@ -657,24 +750,36 @@ class GridCSSGenerator {
 
     // Grid structure information for screen readers
     if (accessibility.screenReader !== false) {
-      const screenReaderConfig = typeof accessibility.screenReader === 'boolean' ? {} : accessibility.screenReader || {}
-      
-      if (screenReaderConfig.announceStructure !== false && columnCount !== undefined) {
+      const screenReaderConfig =
+        typeof accessibility.screenReader === 'boolean'
+          ? {}
+          : accessibility.screenReader || {}
+
+      if (
+        screenReaderConfig.announceStructure !== false &&
+        columnCount !== undefined
+      ) {
         attributes['aria-colcount'] = columnCount
       }
-      if (screenReaderConfig.announceStructure !== false && rowCount !== undefined) {
+      if (
+        screenReaderConfig.announceStructure !== false &&
+        rowCount !== undefined
+      ) {
         attributes['aria-rowcount'] = rowCount
       }
     }
 
     // Keyboard navigation attributes
     if (accessibility.keyboardNavigation !== false) {
-      const keyboardConfig = typeof accessibility.keyboardNavigation === 'boolean' ? {} : accessibility.keyboardNavigation || {}
-      
+      const keyboardConfig =
+        typeof accessibility.keyboardNavigation === 'boolean'
+          ? {}
+          : accessibility.keyboardNavigation || {}
+
       if (keyboardConfig.enabled !== false) {
         attributes.tabIndex = 0
         attributes['data-keyboard-navigation'] = keyboardConfig.mode || 'grid'
-        
+
         if (keyboardConfig.pageNavigation) {
           attributes['data-page-navigation'] = true
         }
@@ -686,8 +791,11 @@ class GridCSSGenerator {
 
     // Focus management attributes
     if (accessibility.focusManagement !== false) {
-      const focusConfig = typeof accessibility.focusManagement === 'boolean' ? {} : accessibility.focusManagement || {}
-      
+      const focusConfig =
+        typeof accessibility.focusManagement === 'boolean'
+          ? {}
+          : accessibility.focusManagement || {}
+
       if (focusConfig.trapFocus) {
         attributes['data-focus-trap'] = true
       }
@@ -698,11 +806,15 @@ class GridCSSGenerator {
 
     // Reduced motion attributes
     if (accessibility.reducedMotion !== false) {
-      const motionConfig = typeof accessibility.reducedMotion === 'boolean' ? {} : accessibility.reducedMotion || {}
-      
+      const motionConfig =
+        typeof accessibility.reducedMotion === 'boolean'
+          ? {}
+          : accessibility.reducedMotion || {}
+
       if (motionConfig.respectPreference !== false) {
         attributes['data-respect-reduced-motion'] = true
-        attributes['data-reduced-motion-fallback'] = motionConfig.fallbackBehavior || 'disable'
+        attributes['data-reduced-motion-fallback'] =
+          motionConfig.fallbackBehavior || 'disable'
       }
     }
 
@@ -712,23 +824,31 @@ class GridCSSGenerator {
   /**
    * Generate reduced motion CSS based on user preferences (Phase 3)
    */
-  static generateReducedMotionCSS(accessibility?: GridAccessibilityConfig): Record<string, string> {
+  static generateReducedMotionCSS(
+    accessibility?: GridAccessibilityConfig
+  ): Record<string, string> {
     if (!accessibility?.reducedMotion) return {}
 
-    const motionConfig = typeof accessibility.reducedMotion === 'boolean' ? {} : accessibility.reducedMotion
+    const motionConfig =
+      typeof accessibility.reducedMotion === 'boolean'
+        ? {}
+        : accessibility.reducedMotion
     const fallback = motionConfig.fallbackBehavior || 'disable'
 
     const reducedMotionCSS: Record<string, string> = {}
 
     switch (fallback) {
       case 'disable':
-        reducedMotionCSS['@media (prefers-reduced-motion: reduce)'] = '{ transition: none !important; animation: none !important; }'
+        reducedMotionCSS['@media (prefers-reduced-motion: reduce)'] =
+          '{ transition: none !important; animation: none !important; }'
         break
       case 'reduce':
-        reducedMotionCSS['@media (prefers-reduced-motion: reduce)'] = '{ transition-duration: 0.1s !important; animation-duration: 0.1s !important; }'
+        reducedMotionCSS['@media (prefers-reduced-motion: reduce)'] =
+          '{ transition-duration: 0.1s !important; animation-duration: 0.1s !important; }'
         break
       case 'instant':
-        reducedMotionCSS['@media (prefers-reduced-motion: reduce)'] = '{ transition-duration: 0s !important; animation-duration: 0s !important; }'
+        reducedMotionCSS['@media (prefers-reduced-motion: reduce)'] =
+          '{ transition-duration: 0s !important; animation-duration: 0s !important; }'
         break
     }
 
@@ -738,7 +858,9 @@ class GridCSSGenerator {
   /**
    * Generate advanced styling CSS for grid components (Phase 3)
    */
-  static generateAdvancedStylingCSS(styling: GridStylingConfig): Record<string, string> {
+  static generateAdvancedStylingCSS(
+    styling: GridStylingConfig
+  ): Record<string, string> {
     const styles: Record<string, string> = {}
 
     // Grid template areas
@@ -752,34 +874,46 @@ class GridCSSGenerator {
       if (styling.advancedGap.row) {
         if (typeof styling.advancedGap.row === 'object') {
           // Responsive row gap - would need media queries
-          Object.entries(styling.advancedGap.row).forEach(([breakpoint, value]) => {
-            const mediaQuery = this.getMediaQueryForBreakpoint(breakpoint)
-            if (mediaQuery) {
-              styles[mediaQuery] = styles[mediaQuery] || '{}'
-              styles[mediaQuery] = styles[mediaQuery].replace('}', ` row-gap: ${value}px; }`)
+          Object.entries(styling.advancedGap.row).forEach(
+            ([breakpoint, value]) => {
+              const mediaQuery = this.getMediaQueryForBreakpoint(breakpoint)
+              if (mediaQuery) {
+                styles[mediaQuery] = styles[mediaQuery] || '{}'
+                styles[mediaQuery] = styles[mediaQuery].replace(
+                  '}',
+                  ` row-gap: ${value}px; }`
+                )
+              }
             }
-          })
+          )
         } else {
-          styles.rowGap = typeof styling.advancedGap.row === 'number' 
-            ? `${styling.advancedGap.row}px` 
-            : styling.advancedGap.row
+          styles.rowGap =
+            typeof styling.advancedGap.row === 'number'
+              ? `${styling.advancedGap.row}px`
+              : styling.advancedGap.row
         }
       }
-      
+
       if (styling.advancedGap.column) {
         if (typeof styling.advancedGap.column === 'object') {
           // Responsive column gap
-          Object.entries(styling.advancedGap.column).forEach(([breakpoint, value]) => {
-            const mediaQuery = this.getMediaQueryForBreakpoint(breakpoint)
-            if (mediaQuery) {
-              styles[mediaQuery] = styles[mediaQuery] || '{}'
-              styles[mediaQuery] = styles[mediaQuery].replace('}', ` column-gap: ${value}px; }`)
+          Object.entries(styling.advancedGap.column).forEach(
+            ([breakpoint, value]) => {
+              const mediaQuery = this.getMediaQueryForBreakpoint(breakpoint)
+              if (mediaQuery) {
+                styles[mediaQuery] = styles[mediaQuery] || '{}'
+                styles[mediaQuery] = styles[mediaQuery].replace(
+                  '}',
+                  ` column-gap: ${value}px; }`
+                )
+              }
             }
-          })
+          )
         } else {
-          styles.columnGap = typeof styling.advancedGap.column === 'number'
-            ? `${styling.advancedGap.column}px`
-            : styling.advancedGap.column
+          styles.columnGap =
+            typeof styling.advancedGap.column === 'number'
+              ? `${styling.advancedGap.column}px`
+              : styling.advancedGap.column
         }
       }
     }
@@ -815,9 +949,10 @@ class GridCSSGenerator {
         styles.border = styling.container.border
       }
       if (styling.container.borderRadius) {
-        styles.borderRadius = typeof styling.container.borderRadius === 'number'
-          ? `${styling.container.borderRadius}px`
-          : styling.container.borderRadius
+        styles.borderRadius =
+          typeof styling.container.borderRadius === 'number'
+            ? `${styling.container.borderRadius}px`
+            : styling.container.borderRadius
       }
       if (styling.container.boxShadow) {
         styles.boxShadow = styling.container.boxShadow
@@ -827,33 +962,40 @@ class GridCSSGenerator {
           const p = styling.container.padding
           styles.padding = `${p.top || 0} ${p.right || 0} ${p.bottom || 0} ${p.left || 0}`
         } else {
-          styles.padding = typeof styling.container.padding === 'number'
-            ? `${styling.container.padding}px`
-            : styling.container.padding
+          styles.padding =
+            typeof styling.container.padding === 'number'
+              ? `${styling.container.padding}px`
+              : styling.container.padding
         }
       }
     }
 
     // Debug visualization (applies after container background to combine properly)
     if (styling.debug && (styling.debug === true || styling.debug.enabled)) {
-      const debugConfig = typeof styling.debug === 'boolean' ? {} : styling.debug
+      const debugConfig =
+        typeof styling.debug === 'boolean' ? {} : styling.debug
       const lineColor = debugConfig.lineColor || '#ff0000'
 
       if (debugConfig.showLines !== false) {
         const debugGradient = `linear-gradient(to right, ${lineColor} 1px, transparent 1px), linear-gradient(to bottom, ${lineColor} 1px, transparent 1px)`
-        
+
         // Combine with existing background if present
-        if (styles.background && !styles.background.includes('linear-gradient')) {
+        if (
+          styles.background &&
+          !styles.background.includes('linear-gradient')
+        ) {
           styles.background = `${debugGradient}, ${styles.background}`
         } else {
           styles.background = debugGradient
         }
-        styles.backgroundSize = 'var(--grid-debug-size, 20px) var(--grid-debug-size, 20px)'
+        styles.backgroundSize =
+          'var(--grid-debug-size, 20px) var(--grid-debug-size, 20px)'
       }
 
       if (debugConfig.showAreas) {
         styles.position = 'relative'
-        styles['&::after'] = `{ content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(45deg, transparent, transparent 10px, ${lineColor}22 10px, ${lineColor}22 20px); pointer-events: none; }`
+        styles['&::after'] =
+          `{ content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(45deg, transparent, transparent 10px, ${lineColor}22 10px, ${lineColor}22 20px); pointer-events: none; }`
       }
     }
 
@@ -863,7 +1005,9 @@ class GridCSSGenerator {
   /**
    * Generate item state CSS (hover, focus, active) (Phase 3)
    */
-  static generateItemStateCSS(itemStates: NonNullable<GridStylingConfig['itemStates']>): Record<string, string> {
+  static generateItemStateCSS(
+    itemStates: NonNullable<GridStylingConfig['itemStates']>
+  ): Record<string, string> {
     const styles: Record<string, string> = {}
 
     // Hover effects
@@ -876,7 +1020,10 @@ class GridCSSGenerator {
           hoverStyles.push('transform: scale(1.05)')
           break
         case 'lift':
-          hoverStyles.push('transform: translateY(-2px)', 'box-shadow: 0 4px 8px rgba(0,0,0,0.12)')
+          hoverStyles.push(
+            'transform: translateY(-2px)',
+            'box-shadow: 0 4px 8px rgba(0,0,0,0.12)'
+          )
           break
         case 'glow':
           hoverStyles.push('box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4)')
@@ -908,16 +1055,25 @@ class GridCSSGenerator {
 
       switch (focusConfig.style) {
         case 'ring':
-          focusStyles.push(`box-shadow: 0 0 0 2px ${focusConfig.color || '#3b82f6'}`)
+          focusStyles.push(
+            `box-shadow: 0 0 0 2px ${focusConfig.color || '#3b82f6'}`
+          )
           break
         case 'outline':
-          focusStyles.push(`outline: 2px solid ${focusConfig.color || '#3b82f6'}`, 'outline-offset: 2px')
+          focusStyles.push(
+            `outline: 2px solid ${focusConfig.color || '#3b82f6'}`,
+            'outline-offset: 2px'
+          )
           break
         case 'background':
-          focusStyles.push(`background-color: ${focusConfig.color || 'rgba(59, 130, 246, 0.1)'}`)
+          focusStyles.push(
+            `background-color: ${focusConfig.color || 'rgba(59, 130, 246, 0.1)'}`
+          )
           break
         case 'border':
-          focusStyles.push(`border: 2px solid ${focusConfig.color || '#3b82f6'}`)
+          focusStyles.push(
+            `border: 2px solid ${focusConfig.color || '#3b82f6'}`
+          )
           break
       }
 
@@ -968,7 +1124,7 @@ class GridCSSGenerator {
       md: '@media (min-width: 768px)',
       lg: '@media (min-width: 1024px)',
       xl: '@media (min-width: 1280px)',
-      xxl: '@media (min-width: 1536px)'
+      xxl: '@media (min-width: 1536px)',
     }
     return breakpoints[breakpoint] || null
   }
@@ -977,7 +1133,10 @@ class GridCSSGenerator {
 /**
  * Grid Section Header/Footer component (Phase 3)
  */
-class GridSectionHeaderComponent extends ComponentWithCSSClasses implements ComponentInstance<GridSectionHeaderProps> {
+class GridSectionHeaderComponent
+  extends ComponentWithCSSClasses
+  implements ComponentInstance<GridSectionHeaderProps>
+{
   public readonly type = 'component' as const
   public readonly id: string
   public mounted = false
@@ -988,45 +1147,60 @@ class GridSectionHeaderComponent extends ComponentWithCSSClasses implements Comp
   constructor(public props: GridSectionHeaderProps) {
     super()
     this.id = `grid-section-${props.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    
+
     // Process element override
     const componentType = `GridSection${props.type === 'header' ? 'Header' : 'Footer'}`
-    const override = processElementOverride(componentType, 'div', this.props.element)
+    const override = processElementOverride(
+      componentType,
+      'div',
+      this.props.element
+    )
     this.effectiveTag = override.tag
     this.validationResult = override.validation
   }
 
   render() {
     const { content, sectionId, type, style, debugLabel } = this.props
-    
+
     // Log component for debugging
     const debug = getDebugManager()
     debug.logComponent(`GRID_SECTION_${type.toUpperCase()}`, debugLabel)
-    
+
     // Process CSS classes for this component
-    const baseClasses = [`tachui-grid-section-${type}`, ...(debug.isEnabled() ? ['tachui-debug'] : [])]
+    const baseClasses = [
+      `tachui-grid-section-${type}`,
+      ...(debug.isEnabled() ? ['tachui-debug'] : []),
+    ]
     const classString = this.createClassString(this.props, baseClasses)
 
     // Determine column span (will be set by parent grid)
     const columnSpan = 12 // Default, should be overridden by parent
-    
+
     // Generate section header styles
-    const sectionStyles = GridCSSGenerator.generateSectionHeaderCSS(style, type, columnSpan)
-    
+    const sectionStyles = GridCSSGenerator.generateSectionHeaderCSS(
+      style,
+      type,
+      columnSpan
+    )
+
     // Render content
     let renderedContent: any
     if (typeof content === 'string') {
-      renderedContent = [{
-        type: 'element' as const,
-        tag: 'span',
-        props: { 
-          className: `tachui-grid-section-${type}-text`,
-          children: [{ type: 'text' as const, text: content }]
-        }
-      }]
+      renderedContent = [
+        {
+          type: 'element' as const,
+          tag: 'span',
+          props: {
+            className: `tachui-grid-section-${type}-text`,
+            children: [{ type: 'text' as const, text: content }],
+          },
+        },
+      ]
     } else {
       const contentResult = content.render()
-      renderedContent = Array.isArray(contentResult) ? contentResult : [contentResult]
+      renderedContent = Array.isArray(contentResult)
+        ? contentResult
+        : [contentResult]
     }
 
     const element = {
@@ -1040,16 +1214,17 @@ class GridSectionHeaderComponent extends ComponentWithCSSClasses implements Comp
         // Add debug attributes
         ...(debug.isEnabled() && {
           'data-tachui-component': `GridSection${type === 'header' ? 'Header' : 'Footer'}`,
-          ...(debugLabel && { 'data-tachui-label': debugLabel })
-        })
+          ...(debugLabel && { 'data-tachui-label': debugLabel }),
+        }),
       },
       children: renderedContent,
       // Add component metadata
       componentMetadata: {
         originalType: `GridSection${type === 'header' ? 'Header' : 'Footer'}`,
-        overriddenTo: this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
-        validationResult: this.validationResult
-      }
+        overriddenTo:
+          this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
+        validationResult: this.validationResult,
+      },
     }
 
     return [element]
@@ -1059,7 +1234,10 @@ class GridSectionHeaderComponent extends ComponentWithCSSClasses implements Comp
 /**
  * Base Grid component class with CSS Grid layout
  */
-class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInstance<BaseGridProps> {
+class BaseGridComponent
+  extends ComponentWithCSSClasses
+  implements ComponentInstance<BaseGridProps>
+{
   public readonly type = 'component' as const
   public readonly id: string
   public mounted = false
@@ -1074,11 +1252,19 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
   ) {
     super()
     this.id = `${gridType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    
+
     // Process element override for tag specification enhancement
-    const componentType = gridType === 'grid' ? 'Grid' : 
-                         gridType === 'lazy-vgrid' ? 'LazyVGrid' : 'LazyHGrid'
-    const override = processElementOverride(componentType, 'div', this.props.element)
+    const componentType =
+      gridType === 'grid'
+        ? 'Grid'
+        : gridType === 'lazy-vgrid'
+          ? 'LazyVGrid'
+          : 'LazyHGrid'
+    const override = processElementOverride(
+      componentType,
+      'div',
+      this.props.element
+    )
     this.effectiveTag = override.tag
     this.validationResult = override.validation
 
@@ -1092,20 +1278,26 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
   /**
    * Generate animation styles for grid layout (Phase 3)
    */
-  protected generateAnimationStyles(animations?: GridAnimationConfig): Record<string, string> {
+  protected generateAnimationStyles(
+    animations?: GridAnimationConfig
+  ): Record<string, string> {
     if (!animations) return {}
-    
+
     return GridCSSGenerator.generateGridAnimationCSS(animations)
   }
 
   /**
    * Apply item animations to child elements (Phase 3)
    */
-  protected applyItemAnimations(children: ComponentInstance[], animations?: GridAnimationConfig): ComponentInstance[] {
+  protected applyItemAnimations(
+    children: ComponentInstance[],
+    animations?: GridAnimationConfig
+  ): ComponentInstance[] {
     if (!animations?.itemChanges) return children
 
-    const itemConfig = typeof animations.itemChanges === 'boolean' ? {} : animations.itemChanges
-    
+    const itemConfig =
+      typeof animations.itemChanges === 'boolean' ? {} : animations.itemChanges
+
     // Apply enter animations to new items
     if (itemConfig.enter) {
       const enterConfig = itemConfig.enter
@@ -1117,8 +1309,13 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
       return children.map((child, index) => {
         // Add animation modifier to child (if child supports modifiers)
         if ('modifiers' in child && Array.isArray((child as any).modifiers)) {
-          const animationDelay = delay + (index * 50) // Stagger animations
-          const animationModifier = transition('all', duration, easing, animationDelay)
+          const animationDelay = delay + index * 50 // Stagger animations
+          const animationModifier = transition(
+            'all',
+            duration,
+            easing,
+            animationDelay
+          )
           ;(child as any).modifiers.push(animationModifier)
         }
         return child
@@ -1131,40 +1328,59 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
   /**
    * Generate accessibility attributes for grid (Phase 3)
    */
-  protected generateAccessibilityAttributes(accessibility?: GridAccessibilityConfig, columnCount?: number, rowCount?: number): Record<string, any> {
+  protected generateAccessibilityAttributes(
+    accessibility?: GridAccessibilityConfig,
+    columnCount?: number,
+    rowCount?: number
+  ): Record<string, any> {
     if (!accessibility) return {}
-    
-    return GridCSSGenerator.generateAccessibilityAttributes(accessibility, this.gridType, columnCount, rowCount)
+
+    return GridCSSGenerator.generateAccessibilityAttributes(
+      accessibility,
+      this.gridType,
+      columnCount,
+      rowCount
+    )
   }
 
   /**
    * Generate advanced styling CSS for grid (Phase 3)
    */
-  protected generateStylingCSS(styling?: GridStylingConfig): Record<string, string> {
+  protected generateStylingCSS(
+    styling?: GridStylingConfig
+  ): Record<string, string> {
     if (!styling) return {}
-    
+
     const stylingCSS = GridCSSGenerator.generateAdvancedStylingCSS(styling)
-    
+
     // Add item state CSS if configured
     if (styling.itemStates) {
-      const itemStateCSS = GridCSSGenerator.generateItemStateCSS(styling.itemStates)
+      const itemStateCSS = GridCSSGenerator.generateItemStateCSS(
+        styling.itemStates
+      )
       Object.assign(stylingCSS, itemStateCSS)
     }
-    
+
     return stylingCSS
   }
 
   /**
    * Handle keyboard navigation events (Phase 3)
    */
-  protected setupKeyboardNavigation(element: HTMLElement, accessibility?: GridAccessibilityConfig) {
+  protected setupKeyboardNavigation(
+    element: HTMLElement,
+    accessibility?: GridAccessibilityConfig
+  ) {
     if (!accessibility?.keyboardNavigation) return
 
-    const keyboardConfig = typeof accessibility.keyboardNavigation === 'boolean' ? {} : accessibility.keyboardNavigation
+    const keyboardConfig =
+      typeof accessibility.keyboardNavigation === 'boolean'
+        ? {}
+        : accessibility.keyboardNavigation
     if (keyboardConfig.enabled === false) return
 
     const mode = keyboardConfig.mode || 'grid'
-    
+
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement
       if (!element.contains(target)) return
@@ -1228,7 +1444,7 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
     }
 
     element.addEventListener('keydown', handleKeyDown)
-    
+
     // Store cleanup function
     this.cleanup.push(() => {
       element.removeEventListener('keydown', handleKeyDown)
@@ -1238,24 +1454,34 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
   /**
    * Navigate within grid structure (Phase 3)
    */
-  private navigateGrid(container: HTMLElement, direction: 'up' | 'down' | 'left' | 'right') {
-    const focusableElements = container.querySelectorAll('[tabindex="0"], button, input, select, textarea, [contenteditable]')
-    const currentIndex = Array.from(focusableElements).indexOf(document.activeElement as HTMLElement)
-    
+  private navigateGrid(
+    container: HTMLElement,
+    direction: 'up' | 'down' | 'left' | 'right'
+  ) {
+    const focusableElements = container.querySelectorAll(
+      '[tabindex="0"], button, input, select, textarea, [contenteditable]'
+    )
+    const currentIndex = Array.from(focusableElements).indexOf(
+      document.activeElement as HTMLElement
+    )
+
     if (currentIndex === -1) return
 
     // Get grid dimensions (simplified - assumes regular grid)
     const computedStyle = getComputedStyle(container)
     const columns = computedStyle.gridTemplateColumns.split(' ').length
-    
+
     let targetIndex = currentIndex
-    
+
     switch (direction) {
       case 'up':
         targetIndex = Math.max(0, currentIndex - columns)
         break
       case 'down':
-        targetIndex = Math.min(focusableElements.length - 1, currentIndex + columns)
+        targetIndex = Math.min(
+          focusableElements.length - 1,
+          currentIndex + columns
+        )
         break
       case 'left':
         targetIndex = Math.max(0, currentIndex - 1)
@@ -1266,7 +1492,7 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
     }
 
     if (targetIndex !== currentIndex) {
-      (focusableElements[targetIndex] as HTMLElement).focus()
+      ;(focusableElements[targetIndex] as HTMLElement).focus()
     }
   }
 
@@ -1274,17 +1500,22 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
    * Navigate in list mode (Phase 3)
    */
   private navigateList(container: HTMLElement, direction: 'previous' | 'next') {
-    const focusableElements = container.querySelectorAll('[tabindex="0"], button, input, select, textarea, [contenteditable]')
-    const currentIndex = Array.from(focusableElements).indexOf(document.activeElement as HTMLElement)
-    
+    const focusableElements = container.querySelectorAll(
+      '[tabindex="0"], button, input, select, textarea, [contenteditable]'
+    )
+    const currentIndex = Array.from(focusableElements).indexOf(
+      document.activeElement as HTMLElement
+    )
+
     if (currentIndex === -1) return
 
-    const targetIndex = direction === 'next' 
-      ? Math.min(focusableElements.length - 1, currentIndex + 1)
-      : Math.max(0, currentIndex - 1)
+    const targetIndex =
+      direction === 'next'
+        ? Math.min(focusableElements.length - 1, currentIndex + 1)
+        : Math.max(0, currentIndex - 1)
 
     if (targetIndex !== currentIndex) {
-      (focusableElements[targetIndex] as HTMLElement).focus()
+      ;(focusableElements[targetIndex] as HTMLElement).focus()
     }
   }
 
@@ -1292,16 +1523,20 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
    * Navigate to first/last elements (Phase 3)
    */
   private navigateToFirst(container: HTMLElement) {
-    const focusableElements = container.querySelectorAll('[tabindex="0"], button, input, select, textarea, [contenteditable]')
+    const focusableElements = container.querySelectorAll(
+      '[tabindex="0"], button, input, select, textarea, [contenteditable]'
+    )
     if (focusableElements.length > 0) {
-      (focusableElements[0] as HTMLElement).focus()
+      ;(focusableElements[0] as HTMLElement).focus()
     }
   }
 
   private navigateToLast(container: HTMLElement) {
-    const focusableElements = container.querySelectorAll('[tabindex="0"], button, input, select, textarea, [contenteditable]')
+    const focusableElements = container.querySelectorAll(
+      '[tabindex="0"], button, input, select, textarea, [contenteditable]'
+    )
     if (focusableElements.length > 0) {
-      (focusableElements[focusableElements.length - 1] as HTMLElement).focus()
+      ;(focusableElements[focusableElements.length - 1] as HTMLElement).focus()
     }
   }
 
@@ -1309,19 +1544,24 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
    * Navigate by page (Phase 3)
    */
   private navigatePage(container: HTMLElement, direction: 'up' | 'down') {
-    const focusableElements = container.querySelectorAll('[tabindex="0"], button, input, select, textarea, [contenteditable]')
-    const currentIndex = Array.from(focusableElements).indexOf(document.activeElement as HTMLElement)
-    
+    const focusableElements = container.querySelectorAll(
+      '[tabindex="0"], button, input, select, textarea, [contenteditable]'
+    )
+    const currentIndex = Array.from(focusableElements).indexOf(
+      document.activeElement as HTMLElement
+    )
+
     if (currentIndex === -1) return
 
     // Page navigation jumps by ~10 items or to start/end
     const pageSize = 10
-    const targetIndex = direction === 'down'
-      ? Math.min(focusableElements.length - 1, currentIndex + pageSize)
-      : Math.max(0, currentIndex - pageSize)
+    const targetIndex =
+      direction === 'down'
+        ? Math.min(focusableElements.length - 1, currentIndex + pageSize)
+        : Math.max(0, currentIndex - pageSize)
 
     if (targetIndex !== currentIndex) {
-      (focusableElements[targetIndex] as HTMLElement).focus()
+      ;(focusableElements[targetIndex] as HTMLElement).focus()
     }
   }
 
@@ -1331,12 +1571,20 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
         // Process lifecycle hooks for child components that have them
         this.children.forEach((child, index) => {
           const enhancedLifecycle = (child as any)._enhancedLifecycle
-          
-          if (enhancedLifecycle && enhancedLifecycle.onDOMReady && !child.domReady) {
+
+          if (
+            enhancedLifecycle &&
+            enhancedLifecycle.onDOMReady &&
+            !child.domReady
+          ) {
             try {
               if (primaryElement) {
-                const childElements = this.findChildDOMElements(child, primaryElement, index)
-                
+                const childElements = this.findChildDOMElements(
+                  child,
+                  primaryElement,
+                  index
+                )
+
                 if (childElements.length > 0) {
                   child.domElements = new Map()
                   childElements.forEach((element, idx) => {
@@ -1370,18 +1618,25 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
                 }
               }
             } catch (error) {
-              console.error(`Error processing lifecycle hooks for child ${child.id}:`, error)
+              console.error(
+                `Error processing lifecycle hooks for child ${child.id}:`,
+                error
+              )
             }
           }
         })
-      }
+      },
     })
   }
 
   /**
    * Find DOM elements for child components (reusing pattern from LayoutComponent)
    */
-  private findChildDOMElements(child: ComponentInstance, container: Element, childIndex: number): Element[] {
+  private findChildDOMElements(
+    child: ComponentInstance,
+    container: Element,
+    childIndex: number
+  ): Element[] {
     // For Image components, look for img elements with the tachui-image class
     if (child.id.startsWith('image-')) {
       const images = container.querySelectorAll('img.tachui-image')
@@ -1402,7 +1657,9 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
 
     // For Text components, look for span elements with the tachui-text class
     if (child.id.startsWith('text-')) {
-      const textElements = container.querySelectorAll('span.tachui-text, .tachui-text')
+      const textElements = container.querySelectorAll(
+        'span.tachui-text, .tachui-text'
+      )
       if (textElements[childIndex]) {
         return [textElements[childIndex]]
       }
@@ -1420,7 +1677,9 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
 
   render(): any[] {
     // To be implemented by specific grid component subclasses
-    throw new Error('BaseGridComponent.render() must be implemented by subclass')
+    throw new Error(
+      'BaseGridComponent.render() must be implemented by subclass'
+    )
   }
 }
 
@@ -1428,29 +1687,44 @@ class BaseGridComponent extends ComponentWithCSSClasses implements ComponentInst
  * Grid component class (explicit row/column control)
  */
 class GridComponent extends BaseGridComponent {
-  constructor(public props: GridProps, children: ComponentInstance[] = []) {
+  constructor(
+    public props: GridProps,
+    children: ComponentInstance[] = []
+  ) {
     super(props, 'grid', children)
   }
 
   render() {
-    const { alignment = 'center', spacing, debugLabel, animations, accessibility, styling } = this.props
-    
+    const {
+      alignment = 'center',
+      spacing,
+      debugLabel,
+      animations,
+      accessibility,
+      styling,
+    } = this.props
+
     // Log component for debugging
     const debug = getDebugManager()
     debug.logComponent('GRID', debugLabel)
-    
+
     // Process CSS classes for this component
-    const baseClasses = ['tachui-grid', ...(debug.isEnabled() ? ['tachui-debug'] : [])]
+    const baseClasses = [
+      'tachui-grid',
+      ...(debug.isEnabled() ? ['tachui-debug'] : []),
+    ]
     const classString = this.createClassString(this.props, baseClasses)
 
     // Apply item animations to children before rendering (Phase 3)
     const animatedChildren = this.applyItemAnimations(this.children, animations)
 
     // Render children - Grid expects GridRow children for explicit layout
-    const renderedChildren = animatedChildren.map((child) => {
-      const childResult = child.render()
-      return Array.isArray(childResult) ? childResult : [childResult]
-    }).flat()
+    const renderedChildren = animatedChildren
+      .map(child => {
+        const childResult = child.render()
+        return Array.isArray(childResult) ? childResult : [childResult]
+      })
+      .flat()
 
     // Generate base CSS Grid styles
     const alignmentStyles = GridCSSGenerator.generateAlignment(alignment)
@@ -1460,21 +1734,23 @@ class GridComponent extends BaseGridComponent {
     const animationStyles = this.generateAnimationStyles(animations)
 
     // Phase 3: Generate accessibility attributes
-    const accessibilityAttrs = this.generateAccessibilityAttributes(accessibility)
-    
+    const accessibilityAttrs =
+      this.generateAccessibilityAttributes(accessibility)
+
     // Phase 3: Generate reduced motion CSS
-    const reducedMotionCSS = GridCSSGenerator.generateReducedMotionCSS(accessibility)
-    
+    const reducedMotionCSS =
+      GridCSSGenerator.generateReducedMotionCSS(accessibility)
+
     // Phase 3: Generate advanced styling CSS
     const advancedStylingCSS = this.generateStylingCSS(styling)
-    
+
     const finalStyles = {
       display: 'grid',
       gap: gapValue,
       ...alignmentStyles,
       ...animationStyles,
       ...reducedMotionCSS,
-      ...advancedStylingCSS
+      ...advancedStylingCSS,
     }
 
     const element = {
@@ -1487,16 +1763,17 @@ class GridComponent extends BaseGridComponent {
         // Add debug attributes
         ...(debug.isEnabled() && {
           'data-tachui-component': 'Grid',
-          ...(debugLabel && { 'data-tachui-label': debugLabel })
-        })
+          ...(debugLabel && { 'data-tachui-label': debugLabel }),
+        }),
       },
       children: renderedChildren,
       // Add component metadata for semantic role processing
       componentMetadata: {
         originalType: 'Grid',
-        overriddenTo: this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
-        validationResult: this.validationResult
-      }
+        overriddenTo:
+          this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
+        validationResult: this.validationResult,
+      },
     }
 
     return [element]
@@ -1506,7 +1783,10 @@ class GridComponent extends BaseGridComponent {
 /**
  * GridRow component class
  */
-class GridRowComponent extends ComponentWithCSSClasses implements ComponentInstance<GridRowProps> {
+class GridRowComponent
+  extends ComponentWithCSSClasses
+  implements ComponentInstance<GridRowProps>
+{
   public readonly type = 'component' as const
   public readonly id: string
   public mounted = false
@@ -1514,32 +1794,44 @@ class GridRowComponent extends ComponentWithCSSClasses implements ComponentInsta
   private effectiveTag: string
   private validationResult: any
 
-  constructor(public props: GridRowProps, public children: ComponentInstance[] = []) {
+  constructor(
+    public props: GridRowProps,
+    public children: ComponentInstance[] = []
+  ) {
     super()
     this.id = `gridrow-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    
+
     // Process element override for tag specification enhancement
-    const override = processElementOverride('GridRow', 'div', this.props.element)
+    const override = processElementOverride(
+      'GridRow',
+      'div',
+      this.props.element
+    )
     this.effectiveTag = override.tag
     this.validationResult = override.validation
   }
 
   render() {
     const { debugLabel } = this.props
-    
+
     // Log component for debugging
     const debug = getDebugManager()
     debug.logComponent('GRIDROW', debugLabel)
-    
+
     // Process CSS classes for this component
-    const baseClasses = ['tachui-gridrow', ...(debug.isEnabled() ? ['tachui-debug'] : [])]
+    const baseClasses = [
+      'tachui-gridrow',
+      ...(debug.isEnabled() ? ['tachui-debug'] : []),
+    ]
     const classString = this.createClassString(this.props, baseClasses)
 
     // Render children
-    const renderedChildren = this.children.map((child) => {
-      const childResult = child.render()
-      return Array.isArray(childResult) ? childResult : [childResult]
-    }).flat()
+    const renderedChildren = this.children
+      .map(child => {
+        const childResult = child.render()
+        return Array.isArray(childResult) ? childResult : [childResult]
+      })
+      .flat()
 
     // GridRow creates a row within the parent Grid - contents are positioned within the grid row
     const element = {
@@ -1553,16 +1845,17 @@ class GridRowComponent extends ComponentWithCSSClasses implements ComponentInsta
         // Add debug attributes
         ...(debug.isEnabled() && {
           'data-tachui-component': 'GridRow',
-          ...(debugLabel && { 'data-tachui-label': debugLabel })
-        })
+          ...(debugLabel && { 'data-tachui-label': debugLabel }),
+        }),
       },
       children: renderedChildren,
       // Add component metadata
       componentMetadata: {
         originalType: 'GridRow',
-        overriddenTo: this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
-        validationResult: this.validationResult
-      }
+        overriddenTo:
+          this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
+        validationResult: this.validationResult,
+      },
     }
 
     return [element]
@@ -1573,19 +1866,36 @@ class GridRowComponent extends ComponentWithCSSClasses implements ComponentInsta
  * LazyVGrid component class (vertical scrolling with flexible columns)
  */
 class LazyVGridComponent extends BaseGridComponent {
-  constructor(public props: LazyVGridProps, children: ComponentInstance[] = []) {
+  constructor(
+    public props: LazyVGridProps,
+    children: ComponentInstance[] = []
+  ) {
     super(props, 'lazy-vgrid', children)
   }
 
   render() {
-    const { columns, alignment = 'center', spacing, debugLabel, responsive, sections, pinnedViews, animations, accessibility, styling } = this.props
-    
+    const {
+      columns,
+      alignment = 'center',
+      spacing,
+      debugLabel,
+      responsive,
+      sections,
+      pinnedViews,
+      animations,
+      accessibility,
+      styling,
+    } = this.props
+
     // Log component for debugging
     const debug = getDebugManager()
     debug.logComponent('LAZYVGRID', debugLabel)
-    
+
     // Process CSS classes for this component
-    const baseClasses = ['tachui-lazy-vgrid', ...(debug.isEnabled() ? ['tachui-debug'] : [])]
+    const baseClasses = [
+      'tachui-lazy-vgrid',
+      ...(debug.isEnabled() ? ['tachui-debug'] : []),
+    ]
     const classString = this.createClassString(this.props, baseClasses)
 
     // Phase 3: Handle sectioned data with headers and footers
@@ -1594,13 +1904,18 @@ class LazyVGridComponent extends BaseGridComponent {
       renderedChildren = this.renderSections(sections, pinnedViews)
     } else {
       // Apply item animations to children before rendering (Phase 3)
-      const animatedChildren = this.applyItemAnimations(this.children, animations)
-      
+      const animatedChildren = this.applyItemAnimations(
+        this.children,
+        animations
+      )
+
       // Render regular children (backward compatibility)
-      renderedChildren = animatedChildren.map((child) => {
-        const childResult = child.render()
-        return Array.isArray(childResult) ? childResult : [childResult]
-      }).flat()
+      renderedChildren = animatedChildren
+        .map(child => {
+          const childResult = child.render()
+          return Array.isArray(childResult) ? childResult : [childResult]
+        })
+        .flat()
     }
 
     // Generate CSS Grid styles
@@ -1612,35 +1927,46 @@ class LazyVGridComponent extends BaseGridComponent {
     // Phase 2: Enhanced responsive integration
     if (responsive) {
       // Performance monitoring for responsive CSS generation
-      const endMeasurement = GridPerformanceMonitor.startMeasurement('responsive-css-generation')
-      
+      const endMeasurement = GridPerformanceMonitor.startMeasurement(
+        'responsive-css-generation'
+      )
+
       try {
         // Use enhanced responsive configuration
-        const responsiveConfig = GridResponsiveUtils.createResponsiveGridConfig({
-          columns: columns as any,
-          spacing,
-          alignment
-        })
-        
+        const responsiveConfig = GridResponsiveUtils.createResponsiveGridConfig(
+          {
+            columns: columns as any,
+            spacing,
+            alignment,
+          }
+        )
+
         // Merge with provided responsive config
         const finalConfig = { ...responsiveConfig, ...responsive }
-        
+
         // Debug: Register grid instance and visualize breakpoints
         GridDebugger.registerGrid(this.id, finalConfig, `#${this.id}`)
         GridDebugger.visualizeBreakpoints(finalConfig)
-        
+
         // Generate responsive modifier (would be applied by modifier system)
         const responsiveModifier = createResponsiveGridModifier(finalConfig)
-        
+
         // For Phase 2, we'll apply base styles and let the modifier system handle responsive styles
-        if (finalConfig.columns && typeof finalConfig.columns === 'object' && 'base' in finalConfig.columns && finalConfig.columns.base) {
-          gridTemplateColumns = this.generateColumnsFromConfig(finalConfig.columns.base)
+        if (
+          finalConfig.columns &&
+          typeof finalConfig.columns === 'object' &&
+          'base' in finalConfig.columns &&
+          finalConfig.columns.base
+        ) {
+          gridTemplateColumns = this.generateColumnsFromConfig(
+            finalConfig.columns.base
+          )
         } else if (Array.isArray(columns)) {
           gridTemplateColumns = GridCSSGenerator.generateColumns(columns)
         } else {
           gridTemplateColumns = '1fr'
         }
-        
+
         // Add responsive modifier to component metadata for processing
         baseStyles._responsiveModifier = responsiveModifier
       } finally {
@@ -1656,11 +1982,15 @@ class LazyVGridComponent extends BaseGridComponent {
         gridTemplateColumns = GridCSSGenerator.generateColumns(columns)
       } else {
         // Responsive column configuration (legacy)
-        const responsiveCSS = GridCSSGenerator.generateResponsiveGridCSS(columns, 'grid-template-columns')
+        const responsiveCSS = GridCSSGenerator.generateResponsiveGridCSS(
+          columns,
+          'grid-template-columns'
+        )
         const templateValue = responsiveCSS['grid-template-columns']
-        gridTemplateColumns = (typeof templateValue === 'string' ? templateValue : '1fr')
+        gridTemplateColumns =
+          typeof templateValue === 'string' ? templateValue : '1fr'
       }
-      
+
       baseStyles = {
         ...baseStyles,
         gap: gapValue,
@@ -1676,12 +2006,16 @@ class LazyVGridComponent extends BaseGridComponent {
 
     // Phase 3: Generate accessibility attributes
     const columnCount = this.getColumnCount()
-    const accessibilityAttrs = this.generateAccessibilityAttributes(accessibility, columnCount)
-    
+    const accessibilityAttrs = this.generateAccessibilityAttributes(
+      accessibility,
+      columnCount
+    )
+
     // Phase 3: Generate reduced motion CSS
-    const reducedMotionCSS = GridCSSGenerator.generateReducedMotionCSS(accessibility)
+    const reducedMotionCSS =
+      GridCSSGenerator.generateReducedMotionCSS(accessibility)
     Object.assign(baseStyles, reducedMotionCSS)
-    
+
     // Phase 3: Generate advanced styling CSS
     const advancedStylingCSS = this.generateStylingCSS(styling)
     Object.assign(baseStyles, advancedStylingCSS)
@@ -1696,20 +2030,22 @@ class LazyVGridComponent extends BaseGridComponent {
         // Add debug attributes
         ...(debug.isEnabled() && {
           'data-tachui-component': 'LazyVGrid',
-          ...(debugLabel && { 'data-tachui-label': debugLabel })
-        })
+          ...(debugLabel && { 'data-tachui-label': debugLabel }),
+        }),
       },
       children: renderedChildren,
       // Add component metadata
       componentMetadata: {
         originalType: 'LazyVGrid',
-        overriddenTo: this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
+        overriddenTo:
+          this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
         validationResult: this.validationResult,
         // Phase 2: Include responsive modifier for processing
-        ...(responsive && baseStyles._responsiveModifier && {
-          responsiveModifier: baseStyles._responsiveModifier
-        })
-      }
+        ...(responsive &&
+          baseStyles._responsiveModifier && {
+            responsiveModifier: baseStyles._responsiveModifier,
+          }),
+      },
     }
 
     // Clean up internal responsive modifier from styles
@@ -1723,23 +2059,27 @@ class LazyVGridComponent extends BaseGridComponent {
   /**
    * Render sectioned data with headers and footers (Phase 3)
    */
-  private renderSections(sections: GridSection[], pinnedViews?: ('sectionHeaders' | 'sectionFooters')[]): any[] {
+  private renderSections(
+    sections: GridSection[],
+    pinnedViews?: ('sectionHeaders' | 'sectionFooters')[]
+  ): any[] {
     const renderedElements: any[] = []
     const columnCount = this.getColumnCount()
     const isPinnedHeaders = pinnedViews?.includes('sectionHeaders')
     const isPinnedFooters = pinnedViews?.includes('sectionFooters')
 
-    sections.forEach((section) => {
+    sections.forEach(section => {
       // Render section header
       if (section.header) {
-        const headerStyle = section.headerStyle || (isPinnedHeaders ? 'sticky' : 'automatic')
+        const headerStyle =
+          section.headerStyle || (isPinnedHeaders ? 'sticky' : 'automatic')
         const headerComponent = new GridSectionHeaderComponent({
           content: section.header,
           sectionId: section.id,
           type: 'header',
-          style: headerStyle
+          style: headerStyle,
         })
-        
+
         const headerResult = headerComponent.render()
         if (Array.isArray(headerResult)) {
           // Update grid-column style to span all columns
@@ -1753,7 +2093,7 @@ class LazyVGridComponent extends BaseGridComponent {
       }
 
       // Render section items
-      section.items.forEach((item) => {
+      section.items.forEach(item => {
         const itemResult = item.render()
         const flatResult = Array.isArray(itemResult) ? itemResult : [itemResult]
         renderedElements.push(...flatResult)
@@ -1761,14 +2101,15 @@ class LazyVGridComponent extends BaseGridComponent {
 
       // Render section footer
       if (section.footer) {
-        const footerStyle = section.footerStyle || (isPinnedFooters ? 'sticky' : 'automatic')
+        const footerStyle =
+          section.footerStyle || (isPinnedFooters ? 'sticky' : 'automatic')
         const footerComponent = new GridSectionHeaderComponent({
           content: section.footer,
           sectionId: section.id,
           type: 'footer',
-          style: footerStyle
+          style: footerStyle,
         })
-        
+
         const footerResult = footerComponent.render()
         if (Array.isArray(footerResult)) {
           // Update grid-column style to span all columns
@@ -1790,18 +2131,24 @@ class LazyVGridComponent extends BaseGridComponent {
    */
   private getColumnCount(): number {
     const { columns } = this.props
-    
+
     if (Array.isArray(columns)) {
       return columns.length
     }
-    
+
     // For responsive configurations, use the base or first available
     if (typeof columns === 'object' && columns !== null) {
       const responsiveConfig = columns as any
-      const baseColumns = responsiveConfig.base || responsiveConfig.sm || responsiveConfig.md || responsiveConfig.lg || responsiveConfig.xl || responsiveConfig.xxl
+      const baseColumns =
+        responsiveConfig.base ||
+        responsiveConfig.sm ||
+        responsiveConfig.md ||
+        responsiveConfig.lg ||
+        responsiveConfig.xl ||
+        responsiveConfig.xxl
       return Array.isArray(baseColumns) ? baseColumns.length : 1
     }
-    
+
     return 1
   }
 
@@ -1809,22 +2156,24 @@ class LazyVGridComponent extends BaseGridComponent {
    * Generate columns from GridItemConfig array (Phase 2 helper)
    */
   private generateColumnsFromConfig(items: GridItemConfig[]): string {
-    return items.map(item => {
-      switch (item.type) {
-        case 'fixed':
-          return `${item.size}px`
-        case 'flexible':
-          const minSize = item.minimum || 0
-          const maxSize = item.maximum ? `${item.maximum}px` : '1fr'
-          return minSize > 0 ? `minmax(${minSize}px, ${maxSize})` : '1fr'
-        case 'adaptive':
-          const adaptiveMin = item.minimum
-          const adaptiveMax = item.maximum ? `${item.maximum}px` : '1fr'
-          return `minmax(${adaptiveMin}px, ${adaptiveMax})`
-        default:
-          return '1fr'
-      }
-    }).join(' ')
+    return items
+      .map(item => {
+        switch (item.type) {
+          case 'fixed':
+            return `${item.size}px`
+          case 'flexible':
+            const minSize = item.minimum || 0
+            const maxSize = item.maximum ? `${item.maximum}px` : '1fr'
+            return minSize > 0 ? `minmax(${minSize}px, ${maxSize})` : '1fr'
+          case 'adaptive':
+            const adaptiveMin = item.minimum
+            const adaptiveMax = item.maximum ? `${item.maximum}px` : '1fr'
+            return `minmax(${adaptiveMin}px, ${adaptiveMax})`
+          default:
+            return '1fr'
+        }
+      })
+      .join(' ')
   }
 }
 
@@ -1832,19 +2181,36 @@ class LazyVGridComponent extends BaseGridComponent {
  * LazyHGrid component class (horizontal scrolling with flexible rows)
  */
 class LazyHGridComponent extends BaseGridComponent {
-  constructor(public props: LazyHGridProps, children: ComponentInstance[] = []) {
+  constructor(
+    public props: LazyHGridProps,
+    children: ComponentInstance[] = []
+  ) {
     super(props, 'lazy-hgrid', children)
   }
 
   render() {
-    const { rows, alignment = 'center', spacing, debugLabel, responsive, sections, pinnedViews, animations, accessibility, styling } = this.props
-    
+    const {
+      rows,
+      alignment = 'center',
+      spacing,
+      debugLabel,
+      responsive,
+      sections,
+      pinnedViews,
+      animations,
+      accessibility,
+      styling,
+    } = this.props
+
     // Log component for debugging
     const debug = getDebugManager()
     debug.logComponent('LAZYHGRID', debugLabel)
-    
+
     // Process CSS classes for this component
-    const baseClasses = ['tachui-lazy-hgrid', ...(debug.isEnabled() ? ['tachui-debug'] : [])]
+    const baseClasses = [
+      'tachui-lazy-hgrid',
+      ...(debug.isEnabled() ? ['tachui-debug'] : []),
+    ]
     const classString = this.createClassString(this.props, baseClasses)
 
     // Phase 3: Handle sectioned data with headers and footers
@@ -1853,13 +2219,18 @@ class LazyHGridComponent extends BaseGridComponent {
       renderedChildren = this.renderSections(sections, pinnedViews)
     } else {
       // Apply item animations to children before rendering (Phase 3)
-      const animatedChildren = this.applyItemAnimations(this.children, animations)
-      
+      const animatedChildren = this.applyItemAnimations(
+        this.children,
+        animations
+      )
+
       // Render regular children (backward compatibility)
-      renderedChildren = animatedChildren.map((child) => {
-        const childResult = child.render()
-        return Array.isArray(childResult) ? childResult : [childResult]
-      }).flat()
+      renderedChildren = animatedChildren
+        .map(child => {
+          const childResult = child.render()
+          return Array.isArray(childResult) ? childResult : [childResult]
+        })
+        .flat()
     }
 
     // Generate CSS Grid styles
@@ -1873,35 +2244,44 @@ class LazyHGridComponent extends BaseGridComponent {
     // Phase 2: Enhanced responsive integration
     if (responsive) {
       // Performance monitoring for responsive CSS generation
-      const endMeasurement = GridPerformanceMonitor.startMeasurement('responsive-css-generation')
-      
+      const endMeasurement = GridPerformanceMonitor.startMeasurement(
+        'responsive-css-generation'
+      )
+
       try {
         // Use enhanced responsive configuration
-        const responsiveConfig = GridResponsiveUtils.createResponsiveGridConfig({
-          rows: rows as any,
-          spacing,
-          alignment
-        })
-        
+        const responsiveConfig = GridResponsiveUtils.createResponsiveGridConfig(
+          {
+            rows: rows as any,
+            spacing,
+            alignment,
+          }
+        )
+
         // Merge with provided responsive config
         const finalConfig = { ...responsiveConfig, ...responsive }
-        
+
         // Debug: Register grid instance and visualize breakpoints
         GridDebugger.registerGrid(this.id, finalConfig, `#${this.id}`)
         GridDebugger.visualizeBreakpoints(finalConfig)
-        
+
         // Generate responsive modifier (would be applied by modifier system)
         const responsiveModifier = createResponsiveGridModifier(finalConfig)
-        
+
         // For Phase 2, we'll apply base styles and let the modifier system handle responsive styles
-        if (finalConfig.rows && typeof finalConfig.rows === 'object' && 'base' in finalConfig.rows && finalConfig.rows.base) {
+        if (
+          finalConfig.rows &&
+          typeof finalConfig.rows === 'object' &&
+          'base' in finalConfig.rows &&
+          finalConfig.rows.base
+        ) {
           gridTemplateRows = this.generateRowsFromConfig(finalConfig.rows.base)
         } else if (Array.isArray(rows)) {
           gridTemplateRows = GridCSSGenerator.generateRows(rows)
         } else {
           gridTemplateRows = 'auto'
         }
-        
+
         // Add responsive modifier to component metadata for processing
         baseStyles._responsiveModifier = responsiveModifier
       } finally {
@@ -1917,11 +2297,15 @@ class LazyHGridComponent extends BaseGridComponent {
         gridTemplateRows = GridCSSGenerator.generateRows(rows)
       } else {
         // Responsive row configuration (legacy)
-        const responsiveCSS = GridCSSGenerator.generateResponsiveGridCSS(rows, 'grid-template-rows')
+        const responsiveCSS = GridCSSGenerator.generateResponsiveGridCSS(
+          rows,
+          'grid-template-rows'
+        )
         const templateValue = responsiveCSS['grid-template-rows']
-        gridTemplateRows = (typeof templateValue === 'string' ? templateValue : 'auto')
+        gridTemplateRows =
+          typeof templateValue === 'string' ? templateValue : 'auto'
       }
-      
+
       baseStyles = {
         ...baseStyles,
         gap: gapValue,
@@ -1937,12 +2321,17 @@ class LazyHGridComponent extends BaseGridComponent {
 
     // Phase 3: Generate accessibility attributes
     const rowCount = this.getRowCount()
-    const accessibilityAttrs = this.generateAccessibilityAttributes(accessibility, undefined, rowCount)
-    
+    const accessibilityAttrs = this.generateAccessibilityAttributes(
+      accessibility,
+      undefined,
+      rowCount
+    )
+
     // Phase 3: Generate reduced motion CSS
-    const reducedMotionCSS = GridCSSGenerator.generateReducedMotionCSS(accessibility)
+    const reducedMotionCSS =
+      GridCSSGenerator.generateReducedMotionCSS(accessibility)
     Object.assign(baseStyles, reducedMotionCSS)
-    
+
     // Phase 3: Generate advanced styling CSS
     const advancedStylingCSS = this.generateStylingCSS(styling)
     Object.assign(baseStyles, advancedStylingCSS)
@@ -1957,20 +2346,22 @@ class LazyHGridComponent extends BaseGridComponent {
         // Add debug attributes
         ...(debug.isEnabled() && {
           'data-tachui-component': 'LazyHGrid',
-          ...(debugLabel && { 'data-tachui-label': debugLabel })
-        })
+          ...(debugLabel && { 'data-tachui-label': debugLabel }),
+        }),
       },
       children: renderedChildren,
       // Add component metadata
       componentMetadata: {
         originalType: 'LazyHGrid',
-        overriddenTo: this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
+        overriddenTo:
+          this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
         validationResult: this.validationResult,
         // Phase 2: Include responsive modifier for processing
-        ...(responsive && baseStyles._responsiveModifier && {
-          responsiveModifier: baseStyles._responsiveModifier
-        })
-      }
+        ...(responsive &&
+          baseStyles._responsiveModifier && {
+            responsiveModifier: baseStyles._responsiveModifier,
+          }),
+      },
     }
 
     // Clean up internal responsive modifier from styles
@@ -1984,23 +2375,27 @@ class LazyHGridComponent extends BaseGridComponent {
   /**
    * Render sectioned data with headers and footers (Phase 3)
    */
-  private renderSections(sections: GridSection[], pinnedViews?: ('sectionHeaders' | 'sectionFooters')[]): any[] {
+  private renderSections(
+    sections: GridSection[],
+    pinnedViews?: ('sectionHeaders' | 'sectionFooters')[]
+  ): any[] {
     const renderedElements: any[] = []
     const rowCount = this.getRowCount()
     const isPinnedHeaders = pinnedViews?.includes('sectionHeaders')
     const isPinnedFooters = pinnedViews?.includes('sectionFooters')
 
-    sections.forEach((section) => {
+    sections.forEach(section => {
       // Render section header
       if (section.header) {
-        const headerStyle = section.headerStyle || (isPinnedHeaders ? 'sticky' : 'automatic')
+        const headerStyle =
+          section.headerStyle || (isPinnedHeaders ? 'sticky' : 'automatic')
         const headerComponent = new GridSectionHeaderComponent({
           content: section.header,
           sectionId: section.id,
           type: 'header',
-          style: headerStyle
+          style: headerStyle,
         })
-        
+
         const headerResult = headerComponent.render()
         if (Array.isArray(headerResult)) {
           // Update grid-row style to span all rows for horizontal grid
@@ -2015,7 +2410,7 @@ class LazyHGridComponent extends BaseGridComponent {
       }
 
       // Render section items
-      section.items.forEach((item) => {
+      section.items.forEach(item => {
         const itemResult = item.render()
         const flatResult = Array.isArray(itemResult) ? itemResult : [itemResult]
         renderedElements.push(...flatResult)
@@ -2023,14 +2418,15 @@ class LazyHGridComponent extends BaseGridComponent {
 
       // Render section footer
       if (section.footer) {
-        const footerStyle = section.footerStyle || (isPinnedFooters ? 'sticky' : 'automatic')
+        const footerStyle =
+          section.footerStyle || (isPinnedFooters ? 'sticky' : 'automatic')
         const footerComponent = new GridSectionHeaderComponent({
           content: section.footer,
           sectionId: section.id,
           type: 'footer',
-          style: footerStyle
+          style: footerStyle,
         })
-        
+
         const footerResult = footerComponent.render()
         if (Array.isArray(footerResult)) {
           // Update grid-row style to span all rows for horizontal grid
@@ -2053,18 +2449,24 @@ class LazyHGridComponent extends BaseGridComponent {
    */
   private getRowCount(): number {
     const { rows } = this.props
-    
+
     if (Array.isArray(rows)) {
       return rows.length
     }
-    
+
     // For responsive configurations, use the base or first available
     if (typeof rows === 'object' && rows !== null) {
       const responsiveConfig = rows as any
-      const baseRows = responsiveConfig.base || responsiveConfig.sm || responsiveConfig.md || responsiveConfig.lg || responsiveConfig.xl || responsiveConfig.xxl
+      const baseRows =
+        responsiveConfig.base ||
+        responsiveConfig.sm ||
+        responsiveConfig.md ||
+        responsiveConfig.lg ||
+        responsiveConfig.xl ||
+        responsiveConfig.xxl
       return Array.isArray(baseRows) ? baseRows.length : 1
     }
-    
+
     return 1
   }
 
@@ -2072,29 +2474,35 @@ class LazyHGridComponent extends BaseGridComponent {
    * Generate rows from GridItemConfig array (Phase 2 helper)
    */
   private generateRowsFromConfig(items: GridItemConfig[]): string {
-    return items.map(item => {
-      switch (item.type) {
-        case 'fixed':
-          return `${item.size}px`
-        case 'flexible':
-          const minSize = item.minimum || 0
-          const maxSize = item.maximum ? `${item.maximum}px` : '1fr'
-          return minSize > 0 ? `minmax(${minSize}px, ${maxSize})` : '1fr'
-        case 'adaptive':
-          const adaptiveMin = item.minimum
-          const adaptiveMax = item.maximum ? `${item.maximum}px` : '1fr'
-          return `minmax(${adaptiveMin}px, ${adaptiveMax})`
-        default:
-          return 'auto'
-      }
-    }).join(' ')
+    return items
+      .map(item => {
+        switch (item.type) {
+          case 'fixed':
+            return `${item.size}px`
+          case 'flexible':
+            const minSize = item.minimum || 0
+            const maxSize = item.maximum ? `${item.maximum}px` : '1fr'
+            return minSize > 0 ? `minmax(${minSize}px, ${maxSize})` : '1fr'
+          case 'adaptive':
+            const adaptiveMin = item.minimum
+            const adaptiveMax = item.maximum ? `${item.maximum}px` : '1fr'
+            return `minmax(${adaptiveMin}px, ${adaptiveMax})`
+          default:
+            return 'auto'
+        }
+      })
+      .join(' ')
   }
 }
 
 /**
  * Grid component factory function with modifier support
  */
-export function Grid(props: GridProps = {}): ModifiableComponent<GridProps> & { modifier: ModifierBuilder<ModifiableComponent<GridProps>> } {
+export function Grid(
+  props: GridProps = {}
+): ModifiableComponent<GridProps> & {
+  modifier: ModifierBuilder<ModifiableComponent<GridProps>>
+} {
   const { children = [], ...gridProps } = props
   const component = new GridComponent(gridProps, children)
   return withModifiers(component)
@@ -2103,7 +2511,12 @@ export function Grid(props: GridProps = {}): ModifiableComponent<GridProps> & { 
 /**
  * GridRow component factory function with modifier support
  */
-export function GridRow(children: ComponentInstance[] = [], props: Omit<GridRowProps, 'children'> = {}): ModifiableComponent<GridRowProps> & { modifier: ModifierBuilder<ModifiableComponent<GridRowProps>> } {
+export function GridRow(
+  children: ComponentInstance[] = [],
+  props: Omit<GridRowProps, 'children'> = {}
+): ModifiableComponent<GridRowProps> & {
+  modifier: ModifierBuilder<ModifiableComponent<GridRowProps>>
+} {
   const gridRowProps: GridRowProps = { ...props, children }
   const component = new GridRowComponent(gridRowProps, children)
   return withModifiers(component)
@@ -2112,18 +2525,32 @@ export function GridRow(children: ComponentInstance[] = [], props: Omit<GridRowP
 /**
  * LazyVGrid component factory function with modifier support
  */
-export function LazyVGrid(props: LazyVGridProps): ModifiableComponent<LazyVGridProps> & { modifier: ModifierBuilder<ModifiableComponent<LazyVGridProps>> } {
+export function LazyVGrid(
+  props: LazyVGridProps
+): ModifiableComponent<LazyVGridProps> & {
+  modifier: ModifierBuilder<ModifiableComponent<LazyVGridProps>>
+} {
   const { children = [], ...vgridProps } = props
-  const component = new LazyVGridComponent({ ...vgridProps, children }, children)
+  const component = new LazyVGridComponent(
+    { ...vgridProps, children },
+    children
+  )
   return withModifiers(component)
 }
 
 /**
  * LazyHGrid component factory function with modifier support
  */
-export function LazyHGrid(props: LazyHGridProps): ModifiableComponent<LazyHGridProps> & { modifier: ModifierBuilder<ModifiableComponent<LazyHGridProps>> } {
+export function LazyHGrid(
+  props: LazyHGridProps
+): ModifiableComponent<LazyHGridProps> & {
+  modifier: ModifierBuilder<ModifiableComponent<LazyHGridProps>>
+} {
   const { children = [], ...hgridProps } = props
-  const component = new LazyHGridComponent({ ...hgridProps, children }, children)
+  const component = new LazyHGridComponent(
+    { ...hgridProps, children },
+    children
+  )
   return withModifiers(component)
 }
 
@@ -2144,14 +2571,18 @@ export function createGridSection(config: {
     footer: config.footer,
     items: config.items,
     headerStyle: config.headerStyle || 'automatic',
-    footerStyle: config.footerStyle || 'automatic'
+    footerStyle: config.footerStyle || 'automatic',
   }
 }
 
 /**
  * Grid section header factory (Phase 3)
  */
-export function GridSectionHeader(props: GridSectionHeaderProps): ModifiableComponent<GridSectionHeaderProps> & { modifier: ModifierBuilder<ModifiableComponent<GridSectionHeaderProps>> } {
+export function GridSectionHeader(
+  props: GridSectionHeaderProps
+): ModifiableComponent<GridSectionHeaderProps> & {
+  modifier: ModifierBuilder<ModifiableComponent<GridSectionHeaderProps>>
+} {
   const component = new GridSectionHeaderComponent(props)
   return withModifiers(component)
 }
@@ -2170,9 +2601,9 @@ export const GridAnimations = {
           duration,
           delay,
           easing: 'ease-out',
-          from: 'fade'
-        }
-      }
+          from: 'fade',
+        },
+      },
     }
   },
 
@@ -2186,24 +2617,27 @@ export const GridAnimations = {
           duration,
           delay,
           easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-          from: 'scale'
-        }
-      }
+          from: 'scale',
+        },
+      },
     }
   },
 
   /**
    * Slide animation for new items
    */
-  slideIn(direction: 'up' | 'down' | 'left' | 'right' = 'up', duration: number = 250): GridAnimationConfig {
+  slideIn(
+    direction: 'up' | 'down' | 'left' | 'right' = 'up',
+    duration: number = 250
+  ): GridAnimationConfig {
     return {
       itemChanges: {
         enter: {
           duration,
           easing: 'ease-out',
-          from: `slide-${direction}` as any
-        }
-      }
+          from: `slide-${direction}` as any,
+        },
+      },
     }
   },
 
@@ -2214,8 +2648,8 @@ export const GridAnimations = {
     return {
       layoutChanges: {
         duration,
-        easing: 'ease-out'
-      }
+        easing: 'ease-out',
+      },
     }
   },
 
@@ -2226,35 +2660,38 @@ export const GridAnimations = {
     return {
       responsive: {
         duration,
-        easing: 'ease-out'
-      }
+        easing: 'ease-out',
+      },
     }
   },
 
   /**
    * Comprehensive animation configuration
    */
-  comprehensive(itemDuration: number = 250, layoutDuration: number = 300): GridAnimationConfig {
+  comprehensive(
+    itemDuration: number = 250,
+    layoutDuration: number = 300
+  ): GridAnimationConfig {
     return {
       itemChanges: {
         enter: {
           duration: itemDuration,
           easing: 'ease-out',
-          from: 'fade'
-        }
+          from: 'fade',
+        },
       },
       layoutChanges: {
         duration: layoutDuration,
-        easing: 'ease-out'
+        easing: 'ease-out',
       },
       responsive: {
         duration: layoutDuration,
-        easing: 'ease-out'
+        easing: 'ease-out',
       },
       sections: {
         duration: itemDuration,
-        easing: 'ease-out'
-      }
+        easing: 'ease-out',
+      },
     }
   },
 
@@ -2268,11 +2705,11 @@ export const GridAnimations = {
           duration: itemDuration,
           delay: 0, // Stagger delay is calculated per-item in applyItemAnimations
           easing: 'ease-out',
-          from: 'fade'
-        }
-      }
+          from: 'fade',
+        },
+      },
     }
-  }
+  },
 }
 
 /**
@@ -2290,22 +2727,22 @@ export const GridAccessibility = {
         enabled: true,
         mode: 'grid',
         pageNavigation: true,
-        homeEndNavigation: true
+        homeEndNavigation: true,
       },
       focusManagement: {
         enabled: true,
-        skipLinks: true
+        skipLinks: true,
       },
       screenReader: {
         enabled: true,
         announceChanges: true,
         announceStructure: true,
-        announcePositions: true
+        announcePositions: true,
       },
       reducedMotion: {
         respectPreference: true,
-        fallbackBehavior: 'disable'
-      }
+        fallbackBehavior: 'disable',
+      },
     }
   },
 
@@ -2316,7 +2753,7 @@ export const GridAccessibility = {
     return {
       label,
       keyboardNavigation: true,
-      reducedMotion: true
+      reducedMotion: true,
     }
   },
 
@@ -2331,9 +2768,9 @@ export const GridAccessibility = {
       screenReader: {
         enabled: true,
         announceStructure: true,
-        announceChanges: true
+        announceChanges: true,
       },
-      reducedMotion: true
+      reducedMotion: true,
     }
   },
 
@@ -2347,13 +2784,13 @@ export const GridAccessibility = {
         enabled: true,
         mode: 'grid',
         pageNavigation: true,
-        homeEndNavigation: true
+        homeEndNavigation: true,
       },
       focusManagement: {
-        enabled: true
-      }
+        enabled: true,
+      },
     }
-  }
+  },
 }
 
 /**
@@ -2363,60 +2800,69 @@ export const GridStyling = {
   /**
    * Debug grid with visible lines and areas
    */
-  debug(options?: { lineColor?: string; showAreas?: boolean }): GridStylingConfig {
+  debug(options?: {
+    lineColor?: string
+    showAreas?: boolean
+  }): GridStylingConfig {
     return {
       debug: {
         enabled: true,
         showLines: true,
         showAreas: options?.showAreas || false,
         lineColor: options?.lineColor || '#ff0000',
-        lineStyle: 'dashed'
-      }
+        lineStyle: 'dashed',
+      },
     }
   },
 
   /**
    * Interactive grid with hover and focus effects
    */
-  interactive(hoverTransform: 'scale' | 'lift' | 'glow' | 'highlight' = 'scale'): GridStylingConfig {
+  interactive(
+    hoverTransform: 'scale' | 'lift' | 'glow' | 'highlight' = 'scale'
+  ): GridStylingConfig {
     return {
       itemStates: {
         hover: {
           enabled: true,
           transform: hoverTransform,
-          transition: 'all 0.2s ease'
+          transition: 'all 0.2s ease',
         },
         focus: {
           enabled: true,
           style: 'ring',
-          color: '#3b82f6'
+          color: '#3b82f6',
         },
         active: {
           enabled: true,
-          transform: 'scale'
-        }
-      }
+          transform: 'scale',
+        },
+      },
     }
   },
 
   /**
    * Card-style grid with background and borders
    */
-  card(options?: { shadow?: string; borderRadius?: number; padding?: number }): GridStylingConfig {
+  card(options?: {
+    shadow?: string
+    borderRadius?: number
+    padding?: number
+  }): GridStylingConfig {
     return {
       container: {
         background: '#ffffff',
         border: '1px solid #e0e0e0',
         borderRadius: options?.borderRadius || 8,
         boxShadow: options?.shadow || '0 2px 4px rgba(0,0,0,0.1)',
-        padding: options?.padding || 16
+        padding: options?.padding || 16,
       },
       itemStates: {
         hover: {
           enabled: true,
-          transform: 'lift'
-        }
-      }
+          transform: 'lift',
+        },
+      },
     }
   },
 
@@ -2425,22 +2871,26 @@ export const GridStyling = {
    */
   templateAreas(areas: string[]): GridStylingConfig {
     return {
-      templateAreas: areas
+      templateAreas: areas,
     }
   },
 
   /**
    * Grid with background pattern
    */
-  backgroundPattern(pattern: 'dots' | 'lines' | 'grid', color?: string, opacity?: number): GridStylingConfig {
+  backgroundPattern(
+    pattern: 'dots' | 'lines' | 'grid',
+    color?: string,
+    opacity?: number
+  ): GridStylingConfig {
     return {
       container: {
         background: {
           pattern,
           color: color || '#e0e0e0',
-          opacity: opacity || 0.5
-        }
-      }
+          opacity: opacity || 0.5,
+        },
+      },
     }
   },
 
@@ -2463,7 +2913,7 @@ export const GridStyling = {
       config.itemStates = {
         hover: { enabled: true, transform: 'scale' },
         focus: { enabled: true, style: 'ring' },
-        active: { enabled: true, transform: 'scale' }
+        active: { enabled: true, transform: 'scale' },
       }
     }
 
@@ -2473,7 +2923,7 @@ export const GridStyling = {
         border: '1px solid #e0e0e0',
         borderRadius: 8,
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        padding: 16
+        padding: 16,
       }
     }
 
@@ -2483,17 +2933,17 @@ export const GridStyling = {
         background: {
           pattern: options.pattern,
           color: '#e0e0e0',
-          opacity: 0.3
-        }
+          opacity: 0.3,
+        },
       }
     }
 
     return config
-  }
+  },
 }
 
 // Export all the types and components (including component classes for testing)
-export { 
+export {
   BaseGridComponent,
   GridComponent as EnhancedGrid,
   GridRowComponent as EnhancedGridRow,
@@ -2503,5 +2953,5 @@ export {
   GridSectionHeaderComponent,
   // Phase 2: Enhanced debugging and performance utilities
   GridDebugger,
-  GridPerformanceMonitor
+  GridPerformanceMonitor,
 }

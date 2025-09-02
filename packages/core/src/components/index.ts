@@ -15,30 +15,32 @@ export type {
 // Alert and ActionSheet components have been moved to @tachui/mobile-patterns
 // Import them from @tachui/mobile-patterns instead of @tachui/core
 // BasicInput moved to @tachui/primitives
-// Grid Layout System (Phase 1)
-export type {
-  BaseGridProps,
-  GridAlignment,
-  GridItemConfig,
-  GridProps,
-  GridRowProps,
-  LazyHGridProps,
-  LazyVGridProps,
-  ResponsiveGridItemConfig,
-} from './Grid'
-export {
-  BaseGridComponent,
-  EnhancedGrid,
-  EnhancedGridRow,
-  EnhancedLazyHGrid,
-  EnhancedLazyVGrid,
-  Grid,
-  GridCSSGenerator,
-  GridItem,
-  GridRow,
-  LazyHGrid,
-  LazyVGrid,
-} from './Grid'
+// Grid Layout System - Temporarily commented out to avoid circular dependency
+// TODO: Re-enable once circular dependency is resolved
+// export type {
+//   BaseGridProps,
+//   GridAlignment,
+//   GridItemConfig,
+//   GridProps,
+//   GridRowProps,
+//   LazyHGridProps,
+//   LazyVGridProps,
+//   ResponsiveGridItemConfig,
+//   GridSpanConfig
+// } from '@tachui/grid'
+// export {
+//   BaseGridComponent,
+//   EnhancedGrid,
+//   EnhancedGridRow,
+//   EnhancedLazyHGrid,
+//   EnhancedLazyVGrid,
+//   Grid,
+//   GridCSSGenerator,
+//   GridItem,
+//   GridRow,
+//   LazyHGrid,
+//   LazyVGrid,
+// } from '@tachui/grid'
 
 // DatePicker component has been moved to @tachui/forms
 // Import it from @tachui/forms instead of @tachui/core
