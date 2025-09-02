@@ -10,7 +10,13 @@
  * - Nested modifier chains
  */
 
-import type { ASTNode, ComponentNode, Expression, LiteralExpression, ModifierNode } from './types'
+import type {
+  ASTNode,
+  ComponentNode,
+  Expression,
+  LiteralExpression,
+  ModifierNode,
+} from './types'
 
 // Extended AST node types for advanced features
 export interface ConditionalNode extends ASTNode {
@@ -199,7 +205,11 @@ export class AdvancedSwiftUIParser {
   /**
    * Parse ForEach loops for list rendering
    */
-  private parseForEach(start: { line: number; column: number; offset: number }): ForEachNode {
+  private parseForEach(start: {
+    line: number
+    column: number
+    offset: number
+  }): ForEachNode {
     // 'ForEach' already consumed by match()
     this.skipWhitespace()
 
@@ -212,7 +222,9 @@ export class AdvancedSwiftUIParser {
     // Parse iterable expression
     const iterable = this.parseComplexExpression()
     if (!iterable) {
-      throw new Error(`Expected iterable expression in ForEach at line ${this.line}`)
+      throw new Error(
+        `Expected iterable expression in ForEach at line ${this.line}`
+      )
     }
 
     this.skipWhitespace()
@@ -290,8 +302,13 @@ export class AdvancedSwiftUIParser {
     this.advance() // consume '@'
 
     const wrapperName = this.parseIdentifier()
-    if (!wrapperName || !['State', 'Computed', 'Effect'].includes(wrapperName)) {
-      throw new Error(`Unknown property wrapper @${wrapperName} at line ${this.line}`)
+    if (
+      !wrapperName ||
+      !['State', 'Computed', 'Effect'].includes(wrapperName)
+    ) {
+      throw new Error(
+        `Unknown property wrapper @${wrapperName} at line ${this.line}`
+      )
     }
 
     this.skipWhitespace()
@@ -299,7 +316,9 @@ export class AdvancedSwiftUIParser {
     // Parse variable declaration
     const identifier = this.parseIdentifier()
     if (!identifier) {
-      throw new Error(`Expected identifier after @${wrapperName} at line ${this.line}`)
+      throw new Error(
+        `Expected identifier after @${wrapperName} at line ${this.line}`
+      )
     }
 
     // Parse optional initial value
@@ -624,7 +643,11 @@ export class AdvancedSwiftUIParser {
   /**
    * Parse array literals [1, 2, 3]
    */
-  private parseArrayLiteral(start: { line: number; column: number; offset: number }): Expression {
+  private parseArrayLiteral(start: {
+    line: number
+    column: number
+    offset: number
+  }): Expression {
     this.advance() // consume '['
     this.skipWhitespace()
 
@@ -726,12 +749,17 @@ export class AdvancedSwiftUIParser {
   }): LiteralExpression {
     let numStr = ''
 
-    while (!this.isAtEnd() && (this.isDigit(this.peek()) || this.peek() === '.')) {
+    while (
+      !this.isAtEnd() &&
+      (this.isDigit(this.peek()) || this.peek() === '.')
+    ) {
       numStr += this.peek()
       this.advance()
     }
 
-    const value = numStr.includes('.') ? parseFloat(numStr) : parseInt(numStr, 10)
+    const value = numStr.includes('.')
+      ? parseFloat(numStr)
+      : parseInt(numStr, 10)
 
     return {
       type: 'Literal',
@@ -752,7 +780,10 @@ export class AdvancedSwiftUIParser {
 
     let identifier = ''
 
-    while (!this.isAtEnd() && (this.isAlphaNumeric(this.peek()) || this.peek() === '_')) {
+    while (
+      !this.isAtEnd() &&
+      (this.isAlphaNumeric(this.peek()) || this.peek() === '_')
+    ) {
       identifier += this.peek()
       this.advance()
     }
@@ -786,7 +817,7 @@ export class AdvancedSwiftUIParser {
       'TextField',
       'Toggle',
       'Slider',
-      'ScrollView',
+      // ScrollView moved to @tachui/mobile
       'LazyVStack',
       'LazyHStack',
     ]
@@ -795,7 +826,10 @@ export class AdvancedSwiftUIParser {
   }
 
   private match(expected: string): boolean {
-    if (this.code.slice(this.position, this.position + expected.length) === expected) {
+    if (
+      this.code.slice(this.position, this.position + expected.length) ===
+      expected
+    ) {
       this.position += expected.length
       this.column += expected.length
       return true
@@ -865,7 +899,10 @@ export class AdvancedSwiftUIParser {
 /**
  * Enhanced parsing function using the advanced parser
  */
-export function parseAdvancedSwiftUISyntax(code: string, filename: string): ASTNode[] {
+export function parseAdvancedSwiftUISyntax(
+  code: string,
+  filename: string
+): ASTNode[] {
   const parser = new AdvancedSwiftUIParser(code, filename)
   return parser.parse()
 }

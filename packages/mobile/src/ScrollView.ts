@@ -5,12 +5,12 @@
  * smooth scrolling, pull-to-refresh, and advanced scroll handling.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '../modifiers/types'
-import { createEffect, createSignal, isSignal } from '../reactive'
-import type { Signal } from '../reactive/types'
-import { h } from '../runtime'
-import type { ComponentInstance, ComponentProps } from '../runtime/types'
-import { withModifiers } from './wrapper'
+import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import { createEffect, createSignal, isSignal } from '@tachui/core'
+import type { Signal } from '@tachui/core'
+import { h } from '@tachui/core'
+import type { ComponentInstance, ComponentProps } from '@tachui/core'
+import { withModifiers } from '@tachui/core'
 
 /**
  * Scroll direction
@@ -149,11 +149,16 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
     this.scrollEventThrottle = props.scrollEventThrottle || 16 // 60fps default
 
     // Create reactive signals
-    const [contentOffsetSignal, setContentOffset] = createSignal<ContentOffset>({ x: 0, y: 0 })
+    const [contentOffsetSignal, setContentOffset] = createSignal<ContentOffset>(
+      { x: 0, y: 0 }
+    )
     this.contentOffsetSignal = contentOffsetSignal
     this.setContentOffset = setContentOffset
 
-    const [contentSizeSignal, setContentSize] = createSignal({ width: 0, height: 0 })
+    const [contentSizeSignal, setContentSize] = createSignal({
+      width: 0,
+      height: 0,
+    })
     this.contentSizeSignal = contentSizeSignal
     this.setContentSize = setContentSize
 
@@ -195,7 +200,10 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
   /**
    * Calculate scroll velocity
    */
-  private calculateVelocity(currentOffset: ContentOffset, deltaTime: number): ContentOffset {
+  private calculateVelocity(
+    currentOffset: ContentOffset,
+    deltaTime: number
+  ): ContentOffset {
     const deltaX = currentOffset.x - this.lastScrollOffset.x
     const deltaY = currentOffset.y - this.lastScrollOffset.y
 
@@ -213,8 +221,14 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
       return { top: false, bottom: false, left: false, right: false }
     }
 
-    const { scrollTop, scrollLeft, scrollHeight, scrollWidth, clientHeight, clientWidth } =
-      this.scrollElement
+    const {
+      scrollTop,
+      scrollLeft,
+      scrollHeight,
+      scrollWidth,
+      clientHeight,
+      clientWidth,
+    } = this.scrollElement
 
     return {
       top: scrollTop <= 0,
@@ -387,8 +401,12 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
     }
 
     element.addEventListener('scroll', scrollHandler, { passive: true })
-    element.addEventListener('touchstart', this.handleTouchStart, { passive: true })
-    element.addEventListener('touchmove', this.handleTouchMove, { passive: false })
+    element.addEventListener('touchstart', this.handleTouchStart, {
+      passive: true,
+    })
+    element.addEventListener('touchmove', this.handleTouchMove, {
+      passive: false,
+    })
     element.addEventListener('touchend', this.handleTouchEnd, { passive: true })
 
     this.cleanup.push(() => {
@@ -403,7 +421,9 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
   /**
    * Get overflow styles based on direction
    */
-  private getOverflowStyles(direction: ScrollDirection): Record<string, string> {
+  private getOverflowStyles(
+    direction: ScrollDirection
+  ): Record<string, string> {
     switch (direction) {
       case 'vertical':
         return {
@@ -537,7 +557,10 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
   /**
    * Scroll to specific position
    */
-  public scrollTo(offset: Partial<ContentOffset>, behavior: ScrollBehavior = 'smooth'): void {
+  public scrollTo(
+    offset: Partial<ContentOffset>,
+    behavior: ScrollBehavior = 'smooth'
+  ): void {
     if (!this.scrollElement) return
 
     const scrollOptions: ScrollToOptions = { behavior }
@@ -585,7 +608,7 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
           minWidth: '100%',
         },
       },
-      ...children.flatMap((child) => child.render())
+      ...children.flatMap(child => child.render())
     )
 
     // Create pull to refresh indicator
@@ -606,10 +629,10 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
 
     // Create scroll container with default overflow styles
     const { direction = 'vertical' } = this.props
-    
+
     // Determine overflow styles based on direction
     const overflowStyles = this.getOverflowStyles(direction)
-    
+
     const scrollContainer = h(
       'div',
       {
@@ -640,7 +663,9 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
 
       // Handle scroll enabled state
       const updateScrollEnabled = () => {
-        const enabled = isSignal(scrollEnabled) ? scrollEnabled() : scrollEnabled
+        const enabled = isSignal(scrollEnabled)
+          ? scrollEnabled()
+          : scrollEnabled
         element.style.overflow = enabled ? 'auto' : 'hidden'
         element.style.pointerEvents = enabled ? 'auto' : 'none'
       }
@@ -660,7 +685,9 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
 /**
  * Create enhanced ScrollView component with modifier support
  */
-export function ScrollView(props: ScrollViewProps = {}): ModifiableComponent<ScrollViewProps> & {
+export function ScrollView(
+  props: ScrollViewProps = {}
+): ModifiableComponent<ScrollViewProps> & {
   modifier: ModifierBuilder<ModifiableComponent<ScrollViewProps>>
 } {
   const component = new EnhancedScrollView(props)

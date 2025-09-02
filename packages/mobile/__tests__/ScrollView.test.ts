@@ -3,8 +3,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { EnhancedScrollView, ScrollView, ScrollViewUtils } from '../../src/components/ScrollView'
-import { createSignal } from '../../src/reactive'
+import {
+  EnhancedScrollView,
+  ScrollView,
+  ScrollViewUtils,
+} from '../src/ScrollView'
+import { createSignal } from '@tachui/core'
 
 // Create a simple mock Text component for testing
 const Text = (content: string) => ({
@@ -93,7 +97,11 @@ describe('EnhancedScrollView', () => {
     })
 
     it('should handle children components', () => {
-      const children = [Text('First item'), Text('Second item'), Text('Third item')]
+      const children = [
+        Text('First item'),
+        Text('Second item'),
+        Text('Third item'),
+      ]
 
       const scrollView = new EnhancedScrollView({ children })
       const elements = scrollView.render()
@@ -166,7 +174,10 @@ describe('EnhancedScrollView', () => {
 
   describe('Content Offset', () => {
     it('should handle external content offset signal', () => {
-      const [contentOffset, _setContentOffset] = createSignal<ContentOffset>({ x: 100, y: 200 })
+      const [contentOffset, _setContentOffset] = createSignal<ContentOffset>({
+        x: 100,
+        y: 200,
+      })
 
       const scrollView = new EnhancedScrollView({
         contentOffset,
@@ -187,14 +198,20 @@ describe('EnhancedScrollView', () => {
 
   describe('Content Size', () => {
     it('should handle external content size signal', () => {
-      const [contentSize, _setContentSize] = createSignal({ width: 800, height: 1200 })
+      const [contentSize, _setContentSize] = createSignal({
+        width: 800,
+        height: 1200,
+      })
 
       const scrollView = new EnhancedScrollView({
         contentSize,
         children: [Text('Content')],
       })
 
-      expect(scrollView.contentSizeSignal()).toEqual({ width: 800, height: 1200 })
+      expect(scrollView.contentSizeSignal()).toEqual({
+        width: 800,
+        height: 1200,
+      })
     })
 
     it('should initialize with zero size by default', () => {

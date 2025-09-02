@@ -53,7 +53,7 @@ export { LinearGradient } from '../gradients'
 
 // Additional components needed by intro
 // Divider moved to @tachui/primitives
-export { ScrollView } from '../components/ScrollView'
+// ScrollView moved to @tachui/mobile package
 
 // Constants (for dimensions)
 export {

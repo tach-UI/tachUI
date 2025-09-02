@@ -56,16 +56,8 @@ export type {
 // Menu component moved to @tachui/data
 // Import from @tachui/data instead of core
 // Picker moved to @tachui/primitives
-export type {
-  ContentOffset,
-  PullToRefreshState,
-  ScrollBehavior,
-  ScrollDirection,
-  ScrollEdges,
-  ScrollEventInfo,
-  ScrollViewProps,
-} from './ScrollView'
-export { EnhancedScrollView, ScrollView, ScrollViewUtils } from './ScrollView'
+// ScrollView moved to @tachui/mobile
+// Import ScrollView from @tachui/mobile instead of @tachui/core
 // Section component moved to @tachui/data
 // Import from @tachui/data instead of core
 // Show, When, Unless moved to @tachui/flow-control
