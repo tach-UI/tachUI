@@ -1,7 +1,7 @@
 {
-  "name": "@tachui/grid",
+  "name": "@tachui/responsive",
   "version": "1.0.0",
-  "description": "CSS Grid layout components and modifiers for tachUI framework",
+  "description": "Advanced responsive design patterns and utilities for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,10 +11,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./components": {
-      "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.js"
     },
     "./modifiers": {
       "types": "./dist/modifiers/index.d.ts",
@@ -37,8 +33,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "workspace:*",
-    "@tachui/responsive": "workspace:*"
+    "@tachui/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -59,11 +54,11 @@
   },
   "keywords": [
     "ui",
-    "components",
-    "grid",
-    "layout",
-    "css-grid",
     "responsive",
+    "breakpoints",
+    "media-queries",
+    "container-queries",
+    "responsive-design",
     "tachui",
     "typescript"
   ],
@@ -72,6 +67,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/tach-UI/tachUI",
-    "directory": "packages/grid"
+    "directory": "packages/responsive"
   }
 }

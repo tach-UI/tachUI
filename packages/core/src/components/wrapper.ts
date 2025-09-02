@@ -21,22 +21,12 @@ import {
 } from '../runtime/element-override'
 import { ComponentWithCSSClasses, type CSSClassesProps } from '../css-classes'
 import type { Concatenatable } from '../concatenation/types'
-// Lazy import debug manager to avoid circular dependencies
-let debugManager: any = null
-const getDebugManager = () => {
-  if (!debugManager) {
-    try {
-      const debugModule = require('../debug')
-      debugManager = debugModule.debugManager
-    } catch {
-      // Debug module not available, create a mock
-      debugManager = {
-        isEnabled: () => false,
-        logComponent: () => {},
-      }
-    }
-  }
-  return debugManager
+// Debug functionality moved to @tachui/devtools package
+// Create a simple mock for backward compatibility
+const debugManager = {
+  isEnabled: () => false,
+  logComponent: () => {},
+  addDebugAttributes: () => {},
 }
 
 /**

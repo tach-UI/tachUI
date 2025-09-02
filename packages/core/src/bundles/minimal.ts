@@ -30,11 +30,8 @@ export * from '../modifiers/size'
 export * from '../modifiers/typography'
 export * from '../modifiers/background'
 
-// Responsive system (needed for landing pages)
-export {
-  initializeResponsiveSystem,
-  configureBreakpoints,
-} from '../modifiers/responsive'
+// Responsive system moved to @tachui/responsive package
+// Import from @tachui/responsive if responsive functionality is needed
 
 // State management
 export { State, isState, unwrapValue } from '../state/state'
@@ -59,13 +56,8 @@ export { infinity, Layout, isInfinity } from '../constants'
 // Basic gradients (needed for landing pages)
 export { LinearGradient } from '../gradients'
 
-// Debug system
-export {
-  enableDebug,
-  disableDebug,
-  debugManager,
-  isDebugEnabled,
-} from '../debug'
+// Debug system moved to @tachui/devtools package
+// Import from @tachui/devtools if needed
 
 /**
  * Minimal Bundle Metadata
@@ -76,11 +68,7 @@ export const BUNDLE_INFO = {
   description:
     'Minimal TachUI bundle for calculator-style apps and landing pages',
   targetSize: '~60KB',
-  recommendedComponents: [
-    // Components moved to @tachui/primitives - import from there:
-    // 'Text', 'Button', 'Image', 'HStack', 'VStack', 'ZStack', 'Spacer'
-    // 'Show', // moved to @tachui/flow-control
-  ],
+  recommendedComponents: ['Text', 'Button', 'HStack', 'VStack'],
   useCase: 'Calculator-style apps, landing pages, simple UIs',
   treeShakingHints: {
     include: ['reactive', 'runtime', 'components/basic', 'modifiers/basic'],

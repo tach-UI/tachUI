@@ -10,9 +10,9 @@ import type {
   BreakpointKey,
   ResponsiveStyleConfig,
   ResponsiveModifierResult,
-} from '@tachui/core'
-import { ResponsiveCSSGenerator } from '@tachui/core'
-import { createResponsiveModifier } from '@tachui/core'
+} from '@tachui/responsive'
+import { ResponsiveCSSGenerator } from '@tachui/responsive'
+import { createResponsiveModifier } from '@tachui/responsive'
 import type { GridItemConfig, ResponsiveGridItemConfig } from './Grid'
 
 /**

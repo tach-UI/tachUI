@@ -87,16 +87,7 @@ export * from './components'
 // Modifier system compatibility layer (will migrate to @tachui/modifiers)
 export * from './modifiers-compat'
 
-// Responsive system
-export {
-  ResponsiveCSSGenerator,
-  CSSInjector,
-  createResponsiveModifier,
-  type ResponsiveValue,
-  type BreakpointKey,
-  type ResponsiveStyleConfig,
-  type ResponsiveModifierResult,
-} from './modifiers/responsive'
+// Responsive system moved to @tachui/responsive - import directly from that package
 
 // Data components (List, Menu, Section) are included in the main components export
 
@@ -156,7 +147,8 @@ export {
 export * from './state'
 
 // Debug system
-export * from './debug'
+// Debug system moved to @tachui/devtools
+// Import from @tachui/devtools instead
 
 // Validation system (Phase 1A - Epic: Greylock)
 export {

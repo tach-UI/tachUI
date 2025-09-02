@@ -107,9 +107,9 @@ importers:
 
   packages/core:
     dependencies:
-      '@tachui/grid':
+      '@tachui/devtools':
         specifier: workspace:*
-        version: link:../grid
+        version: link:../devtools
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -170,6 +170,37 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
+  packages/devtools:
+    dependencies:
+      '@tachui/core':
+        specifier: workspace:*
+        version: link:../core
+      '@tachui/primitives':
+        specifier: workspace:*
+        version: link:../primitives
+    devDependencies:
+      '@types/jsdom':
+        specifier: ^21.1.6
+        version: 21.1.7
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.11
+      '@vitest/coverage-v8':
+        specifier: ^1.0.0
+        version: 1.6.1(vitest@1.6.1(@types/node@20.19.11)(jsdom@23.2.0))
+      jsdom:
+        specifier: ^23.2.0
+        version: 23.2.0
+      typescript:
+        specifier: ^5.2.0
+        version: 5.9.2
+      vite:
+        specifier: ^5.0.0
+        version: 5.4.19(@types/node@20.19.11)
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@20.19.11)(jsdom@23.2.0)
+
   packages/flow-control:
     dependencies:
       '@tachui/core':
@@ -222,12 +253,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
-      '@tachui/modifiers':
+      '@tachui/responsive':
         specifier: workspace:*
-        version: link:../modifiers
-      '@tachui/primitives':
-        specifier: workspace:*
-        version: link:../primitives
+        version: link:../responsive
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -325,6 +353,34 @@ importers:
         version: 1.6.1(@types/node@20.19.11)(jsdom@23.2.0)
 
   packages/primitives:
+    dependencies:
+      '@tachui/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/jsdom':
+        specifier: ^21.1.6
+        version: 21.1.7
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.11
+      '@vitest/coverage-v8':
+        specifier: ^1.0.0
+        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+      jsdom:
+        specifier: ^23.2.0
+        version: 23.2.0
+      typescript:
+        specifier: ^5.2.0
+        version: 5.9.2
+      vite:
+        specifier: ^7.1.1
+        version: 7.1.3(@types/node@20.19.11)(tsx@4.20.5)(yaml@2.8.1)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
+
+  packages/responsive:
     dependencies:
       '@tachui/core':
         specifier: workspace:*
@@ -3511,6 +3567,25 @@ snapshots:
     dependencies:
       vite: 5.4.19(@types/node@20.19.11)
       vue: 3.5.20(typescript@5.9.2)
+
+  '@vitest/coverage-v8@1.6.1(vitest@1.6.1(@types/node@20.19.11)(jsdom@23.2.0))':
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@bcoe/v8-coverage': 0.2.3
+      debug: 4.4.1
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6
+      istanbul-reports: 3.2.0
+      magic-string: 0.30.18
+      magicast: 0.3.5
+      picocolors: 1.1.1
+      std-env: 3.9.0
+      strip-literal: 2.1.1
+      test-exclude: 6.0.0
+      vitest: 1.6.1(@types/node@20.19.11)(jsdom@23.2.0)
+    transitivePeerDependencies:
+      - supports-color
 
   '@vitest/coverage-v8@1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:

@@ -1,14 +1,14 @@
 /**
  * Responsive Layout Utility Patterns
- * 
+ *
  * Provides common responsive layout patterns and utilities that make it easy
  * to create responsive designs without writing custom CSS for every use case.
  */
 
-import { 
-  ResponsiveValue, 
-  BreakpointKey, 
-  ResponsiveSpacingConfig
+import {
+  ResponsiveValue,
+  BreakpointKey,
+  ResponsiveSpacingConfig,
 } from './types'
 import { createResponsiveModifier } from './responsive-modifier'
 
@@ -31,11 +31,29 @@ export interface ResponsiveGridConfig {
  * Configuration for responsive flexbox layout
  */
 export interface ResponsiveFlexConfig {
-  direction?: ResponsiveValue<'row' | 'row-reverse' | 'column' | 'column-reverse'>
+  direction?: ResponsiveValue<
+    'row' | 'row-reverse' | 'column' | 'column-reverse'
+  >
   wrap?: ResponsiveValue<'nowrap' | 'wrap' | 'wrap-reverse'>
-  justify?: ResponsiveValue<'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly'>
-  align?: ResponsiveValue<'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'>
-  alignContent?: ResponsiveValue<'flex-start' | 'flex-end' | 'center' | 'stretch' | 'space-between' | 'space-around'>
+  justify?: ResponsiveValue<
+    | 'flex-start'
+    | 'flex-end'
+    | 'center'
+    | 'space-between'
+    | 'space-around'
+    | 'space-evenly'
+  >
+  align?: ResponsiveValue<
+    'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'
+  >
+  alignContent?: ResponsiveValue<
+    | 'flex-start'
+    | 'flex-end'
+    | 'center'
+    | 'stretch'
+    | 'space-between'
+    | 'space-around'
+  >
   gap?: ResponsiveValue<string | number>
   columnGap?: ResponsiveValue<string | number>
   rowGap?: ResponsiveValue<string | number>
@@ -52,7 +70,6 @@ export interface ResponsiveContainerConfig {
   centerContent?: ResponsiveValue<boolean>
 }
 
-
 /**
  * Responsive Grid Layout Utilities
  */
@@ -66,61 +83,74 @@ export class ResponsiveGridPatterns {
     maxColumns?: ResponsiveValue<number>
   }) {
     const gridConfig: any = {}
-    
+
     if (typeof config.minColumnWidth === 'object') {
       // Handle responsive minColumnWidth
       gridConfig.gridTemplateColumns = {}
       for (const [breakpoint, width] of Object.entries(config.minColumnWidth)) {
         const widthValue = typeof width === 'number' ? `${width}px` : width
-        const maxCols = config.maxColumns && typeof config.maxColumns === 'object' 
-          ? config.maxColumns[breakpoint as BreakpointKey] || 'auto'
-          : config.maxColumns || 'auto'
-        
-        gridConfig.gridTemplateColumns[breakpoint] = maxCols === 'auto' 
-          ? `repeat(auto-fit, minmax(${widthValue}, 1fr))`
-          : `repeat(${maxCols}, minmax(${widthValue}, 1fr))`
+        const maxCols =
+          config.maxColumns && typeof config.maxColumns === 'object'
+            ? config.maxColumns[breakpoint as BreakpointKey] || 'auto'
+            : config.maxColumns || 'auto'
+
+        gridConfig.gridTemplateColumns[breakpoint] =
+          maxCols === 'auto'
+            ? `repeat(auto-fit, minmax(${widthValue}, 1fr))`
+            : `repeat(${maxCols}, minmax(${widthValue}, 1fr))`
       }
     } else {
-      const widthValue = typeof config.minColumnWidth === 'number' ? `${config.minColumnWidth}px` : config.minColumnWidth
+      const widthValue =
+        typeof config.minColumnWidth === 'number'
+          ? `${config.minColumnWidth}px`
+          : config.minColumnWidth
       const maxCols = config.maxColumns || 'auto'
-      gridConfig.gridTemplateColumns = maxCols === 'auto'
-        ? `repeat(auto-fit, minmax(${widthValue}, 1fr))`
-        : `repeat(${maxCols}, minmax(${widthValue}, 1fr))`
+      gridConfig.gridTemplateColumns =
+        maxCols === 'auto'
+          ? `repeat(auto-fit, minmax(${widthValue}, 1fr))`
+          : `repeat(${maxCols}, minmax(${widthValue}, 1fr))`
     }
-    
+
     if (config.gap) {
       gridConfig.gap = config.gap
     }
-    
+
     gridConfig.display = 'grid'
-    
+
     return createResponsiveModifier(gridConfig)
   }
-  
+
   /**
    * Create a responsive grid with explicit column counts
    */
-  static columns(columns: ResponsiveValue<number>, config?: {
-    gap?: ResponsiveValue<string | number>
-    rowGap?: ResponsiveValue<string | number>
-    autoRows?: ResponsiveValue<string>
-  }) {
+  static columns(
+    columns: ResponsiveValue<number>,
+    config?: {
+      gap?: ResponsiveValue<string | number>
+      rowGap?: ResponsiveValue<string | number>
+      autoRows?: ResponsiveValue<string>
+    }
+  ) {
     const gridConfig: any = {
       display: 'grid',
-      gridTemplateColumns: typeof columns === 'object' 
-        ? Object.fromEntries(
-            Object.entries(columns).map(([bp, cols]) => [bp, `repeat(${cols}, 1fr)`])
-          )
-        : `repeat(${columns}, 1fr)`
+      gridTemplateColumns:
+        typeof columns === 'object'
+          ? Object.fromEntries(
+              Object.entries(columns).map(([bp, cols]) => [
+                bp,
+                `repeat(${cols}, 1fr)`,
+              ])
+            )
+          : `repeat(${columns}, 1fr)`,
     }
-    
+
     if (config?.gap) gridConfig.gap = config.gap
     if (config?.rowGap) gridConfig.rowGap = config.rowGap
     if (config?.autoRows) gridConfig.gridAutoRows = config.autoRows
-    
+
     return createResponsiveModifier(gridConfig)
   }
-  
+
   /**
    * Create responsive masonry-style grid
    */
@@ -130,16 +160,20 @@ export class ResponsiveGridPatterns {
   }) {
     const gridConfig: any = {
       display: 'grid',
-      gridTemplateColumns: typeof config.columns === 'object'
-        ? Object.fromEntries(
-            Object.entries(config.columns).map(([bp, cols]) => [bp, `repeat(${cols}, 1fr)`])
-          )
-        : `repeat(${config.columns}, 1fr)`,
-      gridAutoRows: 'max-content'
+      gridTemplateColumns:
+        typeof config.columns === 'object'
+          ? Object.fromEntries(
+              Object.entries(config.columns).map(([bp, cols]) => [
+                bp,
+                `repeat(${cols}, 1fr)`,
+              ])
+            )
+          : `repeat(${config.columns}, 1fr)`,
+      gridAutoRows: 'max-content',
     }
-    
+
     if (config.gap) gridConfig.gap = config.gap
-    
+
     return createResponsiveModifier(gridConfig)
   }
 }
@@ -154,26 +188,35 @@ export class ResponsiveFlexPatterns {
   static stackToRow(config?: {
     stackBreakpoint?: BreakpointKey
     gap?: ResponsiveValue<string | number>
-    align?: ResponsiveValue<'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'>
-    justify?: ResponsiveValue<'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly'>
+    align?: ResponsiveValue<
+      'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'
+    >
+    justify?: ResponsiveValue<
+      | 'flex-start'
+      | 'flex-end'
+      | 'center'
+      | 'space-between'
+      | 'space-around'
+      | 'space-evenly'
+    >
   }) {
     const stackBreakpoint = config?.stackBreakpoint || 'md'
-    
+
     const flexConfig: any = {
       display: 'flex',
       flexDirection: {
         base: 'column',
-        [stackBreakpoint]: 'row'
-      }
+        [stackBreakpoint]: 'row',
+      },
     }
-    
+
     if (config?.gap) flexConfig.gap = config.gap
     if (config?.align) flexConfig.alignItems = config.align
     if (config?.justify) flexConfig.justifyContent = config.justify
-    
+
     return createResponsiveModifier(flexConfig)
   }
-  
+
   /**
    * Create a responsive flex container with wrapping behavior
    */
@@ -181,12 +224,12 @@ export class ResponsiveFlexPatterns {
     const flexConfig: any = {
       display: 'flex',
       flexWrap: 'wrap',
-      ...config
+      ...config,
     }
-    
+
     return createResponsiveModifier(flexConfig)
   }
-  
+
   /**
    * Create centered flex layout
    */
@@ -195,12 +238,12 @@ export class ResponsiveFlexPatterns {
       display: 'flex',
       flexDirection: direction,
       justifyContent: 'center',
-      alignItems: 'center'
+      alignItems: 'center',
     }
-    
+
     return createResponsiveModifier(flexConfig)
   }
-  
+
   /**
    * Create space-between flex layout
    */
@@ -209,9 +252,9 @@ export class ResponsiveFlexPatterns {
       display: 'flex',
       flexDirection: direction,
       justifyContent: 'space-between',
-      alignItems: 'center'
+      alignItems: 'center',
     }
-    
+
     return createResponsiveModifier(flexConfig)
   }
 }
@@ -227,9 +270,9 @@ export class ResponsiveContainerPatterns {
     const containerConfig: any = {
       width: '100%',
       marginLeft: 'auto',
-      marginRight: 'auto'
+      marginRight: 'auto',
     }
-    
+
     if (config?.maxWidth) {
       containerConfig.maxWidth = config.maxWidth
     } else {
@@ -239,23 +282,23 @@ export class ResponsiveContainerPatterns {
         md: '768px',
         lg: '1024px',
         xl: '1280px',
-        '2xl': '1536px'
+        '2xl': '1536px',
       }
     }
-    
+
     if (config?.padding) {
       containerConfig.paddingLeft = config.padding
       containerConfig.paddingRight = config.padding
     }
-    
+
     if (config?.margin) {
       containerConfig.marginTop = config.margin
       containerConfig.marginBottom = config.margin
     }
-    
+
     return createResponsiveModifier(containerConfig)
   }
-  
+
   /**
    * Create a full-width container that breaks out of constraints
    */
@@ -263,10 +306,10 @@ export class ResponsiveContainerPatterns {
     return createResponsiveModifier({
       width: '100vw',
       marginLeft: 'calc(-50vw + 50%)',
-      marginRight: 'calc(-50vw + 50%)'
+      marginRight: 'calc(-50vw + 50%)',
     })
   }
-  
+
   /**
    * Create a section container with responsive padding
    */
@@ -276,23 +319,23 @@ export class ResponsiveContainerPatterns {
     maxWidth?: ResponsiveValue<string | number>
   }) {
     const sectionConfig: any = {}
-    
+
     if (config?.paddingY) {
       sectionConfig.paddingTop = config.paddingY
       sectionConfig.paddingBottom = config.paddingY
     }
-    
+
     if (config?.paddingX) {
       sectionConfig.paddingLeft = config.paddingX
       sectionConfig.paddingRight = config.paddingX
     }
-    
+
     if (config?.maxWidth) {
       sectionConfig.maxWidth = config.maxWidth
       sectionConfig.marginLeft = 'auto'
       sectionConfig.marginRight = 'auto'
     }
-    
+
     return createResponsiveModifier(sectionConfig)
   }
 }
@@ -306,33 +349,33 @@ export class ResponsiveVisibilityPatterns {
    */
   static showOn(breakpoints: BreakpointKey[]) {
     const displayConfig: any = {
-      display: {} // Start with empty object
+      display: {}, // Start with empty object
     }
-    
+
     // Show on specified breakpoints
     for (const breakpoint of breakpoints) {
       displayConfig.display[breakpoint] = 'block'
     }
-    
+
     return createResponsiveModifier(displayConfig)
   }
-  
+
   /**
    * Hide element only on specific breakpoints
    */
   static hideOn(breakpoints: BreakpointKey[]) {
     const displayConfig: any = {
-      display: {} // Start with empty object
+      display: {}, // Start with empty object
     }
-    
+
     // Hide on specified breakpoints
     for (const breakpoint of breakpoints) {
       displayConfig.display[breakpoint] = 'none'
     }
-    
+
     return createResponsiveModifier(displayConfig)
   }
-  
+
   /**
    * Show on mobile, hide on desktop
    */
@@ -340,11 +383,11 @@ export class ResponsiveVisibilityPatterns {
     return createResponsiveModifier({
       display: {
         base: 'block',
-        md: 'none'
-      }
+        md: 'none',
+      },
     })
   }
-  
+
   /**
    * Hide on mobile, show on desktop
    */
@@ -352,11 +395,11 @@ export class ResponsiveVisibilityPatterns {
     return createResponsiveModifier({
       display: {
         base: 'none',
-        md: 'block'
-      }
+        md: 'block',
+      },
     })
   }
-  
+
   /**
    * Show only on tablet breakpoint
    */
@@ -365,8 +408,8 @@ export class ResponsiveVisibilityPatterns {
       display: {
         base: 'none',
         md: 'block',
-        lg: 'none'
-      }
+        lg: 'none',
+      },
     })
   }
 }
@@ -380,7 +423,7 @@ export class ResponsiveSpacingPatterns {
    */
   static padding(config: ResponsiveSpacingConfig) {
     const paddingConfig: any = {}
-    
+
     if (config.all) paddingConfig.padding = config.all
     if (config.horizontal) {
       paddingConfig.paddingLeft = config.horizontal
@@ -394,16 +437,16 @@ export class ResponsiveSpacingPatterns {
     if (config.right) paddingConfig.paddingRight = config.right
     if (config.bottom) paddingConfig.paddingBottom = config.bottom
     if (config.left) paddingConfig.paddingLeft = config.left
-    
+
     return createResponsiveModifier(paddingConfig)
   }
-  
+
   /**
    * Create responsive margin
    */
   static margin(config: ResponsiveSpacingConfig) {
     const marginConfig: any = {}
-    
+
     if (config.all) marginConfig.margin = config.all
     if (config.horizontal) {
       marginConfig.marginLeft = config.horizontal
@@ -417,10 +460,10 @@ export class ResponsiveSpacingPatterns {
     if (config.right) marginConfig.marginRight = config.right
     if (config.bottom) marginConfig.marginBottom = config.bottom
     if (config.left) marginConfig.marginLeft = config.left
-    
+
     return createResponsiveModifier(marginConfig)
   }
-  
+
   /**
    * Create responsive gap (for flexbox and grid)
    */
@@ -430,11 +473,11 @@ export class ResponsiveSpacingPatterns {
     row?: ResponsiveValue<string | number>
   }) {
     const gapConfig: any = {}
-    
+
     if (config.all) gapConfig.gap = config.all
     if (config.column) gapConfig.columnGap = config.column
     if (config.row) gapConfig.rowGap = config.row
-    
+
     return createResponsiveModifier(gapConfig)
   }
 }
@@ -452,24 +495,27 @@ export class ResponsiveTypographyPatterns {
     lineHeight?: ResponsiveValue<number | string>
   }) {
     const typographyConfig: any = {
-      fontSize: config.base
+      fontSize: config.base,
     }
-    
+
     if (config.scale && typeof config.scale === 'object') {
       typographyConfig.fontSize = {}
       for (const [breakpoint, scaleValue] of Object.entries(config.scale)) {
-        const baseSize = typeof config.base === 'number' ? config.base : parseFloat(config.base)
+        const baseSize =
+          typeof config.base === 'number'
+            ? config.base
+            : parseFloat(config.base)
         typographyConfig.fontSize[breakpoint] = `${baseSize * scaleValue}px`
       }
     }
-    
+
     if (config.lineHeight) {
       typographyConfig.lineHeight = config.lineHeight
     }
-    
+
     return createResponsiveModifier(typographyConfig)
   }
-  
+
   /**
    * Create fluid typography that scales smoothly
    */
@@ -481,11 +527,17 @@ export class ResponsiveTypographyPatterns {
   }) {
     const minBp = config.minBreakpoint || '320px'
     const maxBp = config.maxBreakpoint || '1200px'
-    const minSize = typeof config.minSize === 'number' ? `${config.minSize}px` : config.minSize
-    const maxSize = typeof config.maxSize === 'number' ? `${config.maxSize}px` : config.maxSize
-    
+    const minSize =
+      typeof config.minSize === 'number'
+        ? `${config.minSize}px`
+        : config.minSize
+    const maxSize =
+      typeof config.maxSize === 'number'
+        ? `${config.maxSize}px`
+        : config.maxSize
+
     return createResponsiveModifier({
-      fontSize: `clamp(${minSize}, calc(${minSize} + (${maxSize} - ${minSize}) * ((100vw - ${minBp}) / (${maxBp} - ${minBp}))), ${maxSize})`
+      fontSize: `clamp(${minSize}, calc(${minSize} + (${maxSize} - ${minSize}) * ((100vw - ${minBp}) / (${maxBp} - ${minBp}))), ${maxSize})`,
     })
   }
 }
@@ -504,17 +556,17 @@ export const LayoutPatterns = {
   }) => {
     const collapseBreakpoint = config?.collapseBreakpoint || 'md'
     const sidebarWidth = config?.sidebarWidth || '250px'
-    
+
     return createResponsiveModifier({
       display: 'grid',
       gridTemplateColumns: {
         base: '1fr',
-        [collapseBreakpoint]: `${sidebarWidth} 1fr`
+        [collapseBreakpoint]: `${sidebarWidth} 1fr`,
       },
-      gap: config?.gap || '1rem'
+      gap: config?.gap || '1rem',
     })
   },
-  
+
   /**
    * Holy grail layout (header, footer, sidebar, main content)
    */
@@ -525,25 +577,25 @@ export const LayoutPatterns = {
     collapseBreakpoint?: BreakpointKey
   }) => {
     const collapseBreakpoint = config?.collapseBreakpoint || 'lg'
-    
+
     return createResponsiveModifier({
       display: 'grid',
       gridTemplateAreas: {
         base: '"header" "main" "footer"',
-        [collapseBreakpoint]: '"header header" "sidebar main" "footer footer"'
+        [collapseBreakpoint]: '"header header" "sidebar main" "footer footer"',
       },
       gridTemplateRows: {
         base: `${config?.headerHeight || 'auto'} 1fr ${config?.footerHeight || 'auto'}`,
-        [collapseBreakpoint]: `${config?.headerHeight || 'auto'} 1fr ${config?.footerHeight || 'auto'}`
+        [collapseBreakpoint]: `${config?.headerHeight || 'auto'} 1fr ${config?.footerHeight || 'auto'}`,
       },
       gridTemplateColumns: {
         base: '1fr',
-        [collapseBreakpoint]: `${config?.sidebarWidth || '250px'} 1fr`
+        [collapseBreakpoint]: `${config?.sidebarWidth || '250px'} 1fr`,
       },
-      minHeight: '100vh'
+      minHeight: '100vh',
     })
   },
-  
+
   /**
    * Card grid layout
    */
@@ -555,10 +607,10 @@ export const LayoutPatterns = {
     return ResponsiveGridPatterns.autoFit({
       minColumnWidth: config?.minCardWidth || '300px',
       gap: config?.gap || '1rem',
-      maxColumns: config?.maxColumns
+      maxColumns: config?.maxColumns,
     })
   },
-  
+
   /**
    * Hero section layout
    */
@@ -574,9 +626,9 @@ export const LayoutPatterns = {
       alignItems: 'center',
       textAlign: config?.textAlign || 'center',
       minHeight: config?.minHeight || '50vh',
-      padding: config?.padding || '2rem'
+      padding: config?.padding || '2rem',
     })
-  }
+  },
 }
 
 /**
@@ -588,5 +640,5 @@ export {
   ResponsiveContainerPatterns as Container,
   ResponsiveVisibilityPatterns as Visibility,
   ResponsiveSpacingPatterns as Spacing,
-  ResponsiveTypographyPatterns as ResponsiveTypography
+  ResponsiveTypographyPatterns as ResponsiveTypography,
 }

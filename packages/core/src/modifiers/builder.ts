@@ -69,13 +69,7 @@ import type {
   Modifier,
   ModifierBuilder,
 } from './types'
-import type {
-  ResponsiveModifierBuilder,
-  ResponsiveBreakpointBuilder,
-} from './responsive/responsive-builder'
-import { ResponsiveModifierBuilderImpl } from './responsive/responsive-builder'
-import type { ResponsiveStyleConfig } from './responsive/types'
-import { createResponsiveModifier } from './responsive/responsive-modifier'
+// Responsive functionality moved to @tachui/responsive package
 import { createModifiableComponent } from './registry'
 import type {
   FontStyle,
@@ -2054,54 +2048,7 @@ export class ModifierBuilderImpl<
     }
   }
 
-  /**
-   * Get responsive builder interface for this builder
-   */
-  responsive(): ResponsiveModifierBuilder<T>
-
-  /**
-   * Apply responsive styles with configuration object
-   */
-  responsive(config: ResponsiveStyleConfig): ModifierBuilder<T>
-
-  responsive(
-    config?: ResponsiveStyleConfig
-  ): ResponsiveModifierBuilder<T> | ModifierBuilder<T> {
-    if (config) {
-      // Apply the responsive modifier directly and return this builder
-      const modifier = createResponsiveModifier(config)
-      this.modifiers.push(modifier)
-      return this
-    } else {
-      // Return responsive builder for chaining
-      return new ResponsiveModifierBuilderImpl(this)
-    }
-  }
-
-  // Responsive Breakpoint Shorthand Properties
-  get base(): ResponsiveBreakpointBuilder<T> {
-    return new ResponsiveModifierBuilderImpl(this).base
-  }
-
-  get sm(): ResponsiveBreakpointBuilder<T> {
-    return new ResponsiveModifierBuilderImpl(this).sm
-  }
-
-  get md(): ResponsiveBreakpointBuilder<T> {
-    return new ResponsiveModifierBuilderImpl(this).md
-  }
-
-  get lg(): ResponsiveBreakpointBuilder<T> {
-    return new ResponsiveModifierBuilderImpl(this).lg
-  }
-
-  get xl(): ResponsiveBreakpointBuilder<T> {
-    return new ResponsiveModifierBuilderImpl(this).xl
-  }
-
-  get '2xl'(): ResponsiveBreakpointBuilder<T> {
-    return new ResponsiveModifierBuilderImpl(this)['2xl']
-  }
+  // Responsive functionality moved to @tachui/responsive package
 
   // HTML Content Rendering (Text components only)
   asHTML(options?: AsHTMLOptions): ModifierBuilder<T> {

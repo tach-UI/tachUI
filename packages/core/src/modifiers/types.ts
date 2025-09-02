@@ -14,10 +14,7 @@ import type {
 import type { FontWeight } from './typography'
 import type { Dimension } from '../constants/layout'
 import type { StatefulBackgroundValue } from '../gradients/types'
-import type {
-  ResponsiveModifierBuilder,
-  ResponsiveBreakpointBuilder,
-} from './responsive/responsive-builder'
+// Responsive types moved to @tachui/responsive package
 import type { Asset } from '../assets/Asset'
 import type {
   ColorAssetProxy,
@@ -998,16 +995,7 @@ export interface ModifierBuilder<
    */
   asHTML(options?: import('./as-html').AsHTMLOptions): ModifierBuilder<T>
 
-  // Responsive Design Methods
-  responsive(): ResponsiveModifierBuilder<T>
-
-  // Responsive Breakpoint Shorthand Properties
-  readonly base: ResponsiveBreakpointBuilder<T>
-  readonly sm: ResponsiveBreakpointBuilder<T>
-  readonly md: ResponsiveBreakpointBuilder<T>
-  readonly lg: ResponsiveBreakpointBuilder<T>
-  readonly xl: ResponsiveBreakpointBuilder<T>
-  readonly '2xl': ResponsiveBreakpointBuilder<T>
+  // Responsive functionality moved to @tachui/responsive package
 
   addModifier(modifier: Modifier): void
 

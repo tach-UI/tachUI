@@ -167,8 +167,7 @@ export {
   utility,
   zIndex,
 } from './utility'
-// Responsive Design System
-export * from './responsive'
+// Responsive Design System moved to @tachui/responsive - import directly from that package
 
 // Shadow System
 export type {

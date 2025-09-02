@@ -5,17 +5,17 @@
  * for the responsive design system.
  */
 
-import { createComputed, Signal } from '../../reactive'
+import { createComputed, Signal } from '@tachui/core'
 import {
   ResponsiveValue,
   BreakpointKey,
   BreakpointContext,
-  isResponsiveValue
+  isResponsiveValue,
 } from './types'
 import {
   getCurrentBreakpoint,
   createBreakpointContext,
-  getCurrentBreakpointConfig
+  getCurrentBreakpointConfig,
 } from './breakpoints'
 import { ResponsivePerformanceMonitor, cssRuleCache } from './performance'
 import { MediaQueries } from './utilities'
@@ -31,14 +31,16 @@ export class ResponsiveDevTools {
   /**
    * Enable responsive development tools
    */
-  static enable(options: {
-    showOverlay?: boolean
-    showBreakpoints?: boolean
-    showPerformance?: boolean
-    logLevel?: 'error' | 'warn' | 'info' | 'debug'
-    highlightResponsiveElements?: boolean
-    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
-  } = {}): void {
+  static enable(
+    options: {
+      showOverlay?: boolean
+      showBreakpoints?: boolean
+      showPerformance?: boolean
+      logLevel?: 'error' | 'warn' | 'info' | 'debug'
+      highlightResponsiveElements?: boolean
+      position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+    } = {}
+  ): void {
     if (process.env.NODE_ENV === 'production') {
       console.warn('ResponsiveDevTools: Not enabling in production mode')
       return
@@ -90,7 +92,10 @@ export class ResponsiveDevTools {
   /**
    * Log responsive information
    */
-  private static log(level: 'error' | 'warn' | 'info' | 'debug', ...args: any[]): void {
+  private static log(
+    level: 'error' | 'warn' | 'info' | 'debug',
+    ...args: any[]
+  ): void {
     if (!this.enabled) return
 
     const levels = ['error', 'warn', 'info', 'debug']
@@ -233,10 +238,10 @@ export class ResponsiveDevTools {
     content += `<div style="margin: 8px 0; font-weight: bold; color: #ba68c8;">Media Queries:</div>`
 
     const testQueries = {
-      'Touch': MediaQueries.touchDevice,
-      'Dark': MediaQueries.darkMode,
+      Touch: MediaQueries.touchDevice,
+      Dark: MediaQueries.darkMode,
       'Reduced Motion': MediaQueries.reducedMotion,
-      'High Contrast': MediaQueries.highContrast
+      'High Contrast': MediaQueries.highContrast,
     }
 
     for (const [name, query] of Object.entries(testQueries)) {
@@ -249,7 +254,9 @@ export class ResponsiveDevTools {
       `
     }
 
-    this.debugOverlay.innerHTML = content + this.debugOverlay.querySelector('div:last-child')?.outerHTML || ''
+    this.debugOverlay.innerHTML =
+      content + this.debugOverlay.querySelector('div:last-child')?.outerHTML ||
+      ''
   }
 
   /**
@@ -298,7 +305,7 @@ export class ResponsiveDevTools {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class']
+      attributeFilter: ['class'],
     })
 
     // Initial highlighting
@@ -330,7 +337,7 @@ export class ResponsiveDevTools {
     // Find elements with tachui responsive classes
     const responsiveSelectors = [
       '[class*="tachui-responsive-"]',
-      '[class*="tachui-mq-"]'
+      '[class*="tachui-mq-"]',
     ]
 
     responsiveSelectors.forEach(selector => {
@@ -355,7 +362,7 @@ export class ResponsiveDevTools {
 
       this.log('debug', 'Performance Stats:', {
         cache: cacheStats,
-        performance: perfStats
+        performance: perfStats,
       })
     }, 5000)
   }
@@ -377,12 +384,12 @@ export class ResponsiveDevTools {
     // Test media queries only in browser environment
     if (typeof window !== 'undefined' && window.matchMedia) {
       const queries = {
-        'Mobile': MediaQueries.mobile,
-        'Tablet': MediaQueries.tablet,
-        'Desktop': MediaQueries.desktop,
+        Mobile: MediaQueries.mobile,
+        Tablet: MediaQueries.tablet,
+        Desktop: MediaQueries.desktop,
         'Touch Device': MediaQueries.touchDevice,
         'Dark Mode': MediaQueries.darkMode,
-        'Reduced Motion': MediaQueries.reducedMotion
+        'Reduced Motion': MediaQueries.reducedMotion,
       }
 
       console.log('Media Query Results:')
@@ -416,7 +423,14 @@ export class ResponsiveDevTools {
       console.log('Responsive object:', responsiveObj)
 
       // Show resolved value for current breakpoint
-      const breakpointOrder: BreakpointKey[] = ['base', 'sm', 'md', 'lg', 'xl', '2xl']
+      const breakpointOrder: BreakpointKey[] = [
+        'base',
+        'sm',
+        'md',
+        'lg',
+        'xl',
+        '2xl',
+      ]
       const currentIndex = breakpointOrder.indexOf(currentBreakpoint())
 
       let resolvedValue: T | undefined
@@ -497,9 +511,9 @@ export class ResponsiveDevTools {
       currentContext: context,
       performance: {
         cache: cacheStats,
-        timings: perfStats
+        timings: perfStats,
       },
-      mediaQueries: mediaQueryResults
+      mediaQueries: mediaQueryResults,
     }
   }
 }
@@ -530,7 +544,14 @@ export function useResponsiveInspector<T>(
       allValues = responsiveObj
 
       // Resolve value for current breakpoint
-      const breakpointOrder: BreakpointKey[] = ['base', 'sm', 'md', 'lg', 'xl', '2xl']
+      const breakpointOrder: BreakpointKey[] = [
+        'base',
+        'sm',
+        'md',
+        'lg',
+        'xl',
+        '2xl',
+      ]
       const currentIndex = breakpointOrder.indexOf(breakpoint)
 
       for (let i = currentIndex; i >= 0; i--) {
@@ -554,7 +575,7 @@ export function useResponsiveInspector<T>(
       resolvedValue,
       activeBreakpoint: breakpoint,
       allValues,
-      isResponsive
+      isResponsive,
     }
   }) as Signal<{
     resolvedValue: T | undefined
@@ -572,7 +593,11 @@ export class BrowserCompatibility {
    * Test CSS features support
    */
   static testCSSFeatures(): Record<string, boolean> {
-    if (typeof window === 'undefined' || typeof CSS === 'undefined' || !CSS.supports) {
+    if (
+      typeof window === 'undefined' ||
+      typeof CSS === 'undefined' ||
+      !CSS.supports
+    ) {
       return {}
     }
 
@@ -620,7 +645,7 @@ export class BrowserCompatibility {
       { width: 768, height: 1024, name: 'iPad Portrait' },
       { width: 1024, height: 768, name: 'iPad Landscape' },
       { width: 1280, height: 720, name: 'Desktop Small' },
-      { width: 1920, height: 1080, name: 'Desktop Large' }
+      { width: 1920, height: 1080, name: 'Desktop Large' },
     ]
 
     // This would require a testing environment or dev tools integration
@@ -645,6 +670,6 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
     inspector: useResponsiveInspector,
     compatibility: BrowserCompatibility,
     logState: () => ResponsiveDevTools.logResponsiveState(),
-    export: () => ResponsiveDevTools.exportConfiguration()
+    export: () => ResponsiveDevTools.exportConfiguration(),
   }
 }

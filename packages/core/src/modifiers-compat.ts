@@ -196,8 +196,8 @@ export {
   zIndex,
 } from './modifiers/utility'
 
-// Responsive Design System
-export * from './modifiers/responsive'
+// Responsive Design System moved to @tachui/responsive package
+// For backwards compatibility, responsive functionality moved to @tachui/responsive
 
 // Shadow System
 export type {
