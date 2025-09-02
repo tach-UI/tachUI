@@ -8,7 +8,6 @@ export default defineConfig({
         index: resolve(__dirname, 'src/index.ts'),
         'list/index': resolve(__dirname, 'src/list/index.ts'),
         'menu/index': resolve(__dirname, 'src/menu/index.ts'),
-        'section/index': resolve(__dirname, 'src/section/index.ts'),
       },
       formats: ['es'],
     },

@@ -723,7 +723,7 @@ describe('For Component (SolidJS-style compatibility)', () => {
         children: (item: any, _index: number) => Text(item.name),
       })
 
-      const forEachComponent = ForEachComponent({
+      const forEachComponent = new ForEachComponent({
         data: sampleData,
         children: (item: any, _index: number) => Text(item.name),
       })
@@ -802,9 +802,11 @@ describe('For Component (SolidJS-style compatibility)', () => {
       })
 
       expect(forComponent).toBeDefined()
-      // Note: The underlying ForEach component doesn't handle null gracefully
-      // This test documents current behavior - null throws an error
-      expect(() => forComponent.render()).toThrow()
+      // The ForEach component should handle null/undefined data gracefully
+      // by rendering empty content rather than throwing
+      const rendered = forComponent.render()
+      expect(rendered).toBeDefined()
+      expect(Array.isArray(rendered)).toBe(true)
     })
 
     it('should handle undefined children gracefully', () => {
@@ -867,7 +869,7 @@ describe('List Factory Function', () => {
 
 describe('ForEachComponent Factory Function', () => {
   it('should create ForEach component', () => {
-    const forEach = ForEachComponent({
+    const forEach = new ForEachComponent({
       data: sampleData,
       children: (item, _index) => Text(item.name),
     })

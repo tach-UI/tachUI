@@ -19,10 +19,6 @@
     "./menu": {
       "types": "./dist/menu/index.d.ts",
       "import": "./dist/menu/index.js"
-    },
-    "./section": {
-      "types": "./dist/section/index.d.ts",
-      "import": "./dist/section/index.js"
     }
   },
   "files": [
@@ -67,7 +63,6 @@
     "data",
     "list",
     "menu",
-    "section",
     "tachui",
     "typescript"
   ],
