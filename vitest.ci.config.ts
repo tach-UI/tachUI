@@ -67,7 +67,7 @@ export default defineConfig({
       },
       {
         find: '@tachui/devtools',
-        replacement: path.resolve(__dirname, 'packages/devtools/dist'),
+        replacement: path.resolve(__dirname, 'packages/devtools/src'),
       },
 
       // Plugin packages
