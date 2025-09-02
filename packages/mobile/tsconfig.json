@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@tachui/core": ["../core/src"],
+      "@tachui/primitives": ["../primitives/src"],
+      "@tachui/forms": ["../forms/src"],
+      "@tachui/navigation": ["../navigation/src"],
+      "@tachui/symbols": ["../symbols/src"],
+      "@tachui/cli": ["../cli/src"]
+    }
+  },
+  "include": ["src/**/*", "../core/src/globals.d.ts"],
+  "exclude": ["node_modules", "dist", "__tests__"]
+}

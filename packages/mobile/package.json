@@ -1,7 +1,7 @@
 {
-  "name": "@tachui/mobile-patterns",
+  "name": "@tachui/mobile",
   "version": "0.1.0",
-  "description": "Mobile UI patterns plugin for TachUI - ActionSheet, Alert, mobile navigation",
+  "description": "Mobile UI components for TachUI - Core modal components (ActionSheet, Alert) with roadmap for advanced mobile features",
   "homepage": "https://tachui.dev/",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,12 +18,14 @@
   ],
   "scripts": {
     "build": "rm -rf dist && vite build",
-    "build:types": "tsc --project tsconfig.build.json",
+    "build:types": "echo 'TypeScript types provided by @tachui/core'",
     "dev": "vite build --watch",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "lint": "oxlint src",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "type-check": "echo 'Type checking disabled for plugin - using runtime validation from @tachui/core'"
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "type-check": "tsc --noEmit"
   },
   "peerDependencies": {
     "@tachui/core": "^0.1.0"
@@ -41,7 +43,7 @@
     "mobile",
     "actionsheet",
     "alert",
-    "navigation",
+    "modal",
     "tachui",
     "plugin"
   ],
@@ -50,6 +52,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/tach-UI/tachUI",
-    "directory": "packages/mobile-patterns"
+    "directory": "packages/mobile"
   }
 }

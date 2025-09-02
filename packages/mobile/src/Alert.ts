@@ -114,18 +114,18 @@ export class AlertComponent implements ComponentInstance<AlertProps> {
   constructor(props: AlertProps) {
     this.props = props
     this.id = `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    
+
     // ENHANCED: Set up lifecycle hooks for animation and focus management
     useLifecycle(this, {
       onDOMReady: (_elements, primaryElement) => {
         if (primaryElement) {
           // Replace setTimeout animation delays with proper animation coordination
           this.setupAlertAnimations(primaryElement)
-          
+
           // Replace setTimeout focus hack with proper focus management
           this.setupFocusManagement(primaryElement)
         }
-      }
+      },
     })
   }
 
@@ -134,15 +134,27 @@ export class AlertComponent implements ComponentInstance<AlertProps> {
    */
   private setupAlertAnimations(containerElement: Element): void {
     // Find content and backdrop elements and set up animations
-    const contentElement = containerElement.querySelector('[data-alert-content]') as HTMLElement
-    const backdropElement = containerElement.querySelector('[data-alert-backdrop]') as HTMLElement
-    
+    const contentElement = containerElement.querySelector(
+      '[data-alert-content]'
+    ) as HTMLElement
+    const backdropElement = containerElement.querySelector(
+      '[data-alert-backdrop]'
+    ) as HTMLElement
+
     if (contentElement) {
-      AnimationManager.scaleIn(this, contentElement, this.props.animationDuration || 300)
+      AnimationManager.scaleIn(
+        this,
+        contentElement,
+        this.props.animationDuration || 300
+      )
     }
-    
+
     if (backdropElement) {
-      AnimationManager.fadeIn(this, backdropElement, this.props.animationDuration || 300)
+      AnimationManager.fadeIn(
+        this,
+        backdropElement,
+        this.props.animationDuration || 300
+      )
     }
   }
 
@@ -152,14 +164,14 @@ export class AlertComponent implements ComponentInstance<AlertProps> {
   private setupFocusManagement(_containerElement: Element): void {
     // Focus first button for accessibility - no more setTimeout needed
     FocusManager.focusFirstFocusable(this)
-    
+
     // Set up keyboard navigation
     const handleKeyDown = (e: KeyboardEvent) => {
       this.handleKeyDown(e)
     }
-    
+
     document.addEventListener('keydown', handleKeyDown)
-    
+
     // Add cleanup
     if (!this.cleanup) this.cleanup = []
     this.cleanup.push(() => {
@@ -316,7 +328,9 @@ export class AlertComponent implements ComponentInstance<AlertProps> {
       if (messageElementDOM) {
         if (isSignal(this.props.message)) {
           createEffect(() => {
-            messageElementDOM.textContent = (this.props.message as Signal<string>)()
+            messageElementDOM.textContent = (
+              this.props.message as Signal<string>
+            )()
           })
         } else {
           messageElementDOM.textContent = this.props.message
@@ -379,7 +393,10 @@ export class AlertComponent implements ComponentInstance<AlertProps> {
         padding: '20px',
       },
       onclick: (e: Event) => {
-        if (e.target === backdrop.element && (this.props.dismissOnBackdrop ?? true)) {
+        if (
+          e.target === backdrop.element &&
+          (this.props.dismissOnBackdrop ?? true)
+        ) {
           if (typeof this.props.isPresented === 'function') {
             // biome-ignore lint/suspicious/noExplicitAny: Signal setter requires dynamic typing
             ;(this.props.isPresented as any)(false)
@@ -495,14 +512,14 @@ export class AlertComponent implements ComponentInstance<AlertProps> {
               containerDOM.innerHTML = ''
               containerDOM.style.display = 'none'
               backdrop.removeEventListener('transitionend', handleTransitionEnd)
-              
+
               // Clear fallback timeout if it exists
               if (fallbackTimeout) {
                 clearTimeout(fallbackTimeout)
               }
             }
             backdrop.addEventListener('transitionend', handleTransitionEnd)
-            
+
             // Fallback timeout in case transition doesn't fire (rare edge case)
             const fallbackTimeout = setTimeout(() => {
               backdrop.removeEventListener('transitionend', handleTransitionEnd)

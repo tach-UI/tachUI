@@ -45,7 +45,9 @@ export interface ActionSheetProps extends ComponentProps {
 
   // Presentation
   isPresented: boolean | Signal<boolean>
-  presentationStyle?: ActionSheetPresentationStyle | Signal<ActionSheetPresentationStyle>
+  presentationStyle?:
+    | ActionSheetPresentationStyle
+    | Signal<ActionSheetPresentationStyle>
 
   // Behavior
   allowsBackdropDismissal?: boolean | Signal<boolean>
@@ -121,7 +123,8 @@ const defaultActionSheetTheme: ActionSheetTheme = {
     buttonSize: 17,
     titleWeight: '600',
     buttonWeight: '400',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   animation: {
     duration: 250,
@@ -132,7 +135,9 @@ const defaultActionSheetTheme: ActionSheetTheme = {
 /**
  * ActionSheet component implementation
  */
-export class ActionSheetComponent implements ComponentInstance<ActionSheetProps> {
+export class ActionSheetComponent
+  implements ComponentInstance<ActionSheetProps>
+{
   public readonly type = 'component' as const
   public readonly id: string
   public readonly props: ActionSheetProps
@@ -153,7 +158,7 @@ export class ActionSheetComponent implements ComponentInstance<ActionSheetProps>
           // Set up animation coordination
           this.setupActionSheetAnimations(primaryElement)
         }
-      }
+      },
     })
   }
 
@@ -209,7 +214,9 @@ export class ActionSheetComponent implements ComponentInstance<ActionSheetProps>
   }
 
   public createButton(button: ActionSheetButton, index: number): DOMNode {
-    const isDisabled = button.disabled ? this.resolveValue(button.disabled) : false
+    const isDisabled = button.disabled
+      ? this.resolveValue(button.disabled)
+      : false
 
     const buttonElement = h('button', {
       id: button.id || `${this.id}-button-${index}`,
@@ -221,7 +228,8 @@ export class ActionSheetComponent implements ComponentInstance<ActionSheetProps>
         backgroundColor: this.theme.colors.buttonBackground,
         color: this.getButtonTextColor(button.role, isDisabled),
         fontSize: `${this.theme.typography.buttonSize}px`,
-        fontWeight: button.role === 'cancel' ? '600' : this.theme.typography.buttonWeight,
+        fontWeight:
+          button.role === 'cancel' ? '600' : this.theme.typography.buttonWeight,
         fontFamily: this.theme.typography.fontFamily,
         textAlign: 'center',
         cursor: isDisabled ? 'not-allowed' : 'pointer',
@@ -279,14 +287,20 @@ export class ActionSheetComponent implements ComponentInstance<ActionSheetProps>
       buttonDOM.setAttribute('tabindex', '0')
 
       if (button.role === 'destructive') {
-        buttonDOM.setAttribute('aria-label', `${button.label} (destructive action)`)
+        buttonDOM.setAttribute(
+          'aria-label',
+          `${button.label} (destructive action)`
+        )
       }
     }
 
     return buttonElement
   }
 
-  private getButtonTextColor(role?: ActionSheetButtonRole, isDisabled?: boolean): string {
+  private getButtonTextColor(
+    role?: ActionSheetButtonRole,
+    isDisabled?: boolean
+  ): string {
     if (isDisabled) return this.theme.colors.disabledText
 
     switch (role) {
@@ -416,7 +430,10 @@ export class ActionSheetComponent implements ComponentInstance<ActionSheetProps>
         display: 'flex',
         alignItems: presentationStyle === 'sheet' ? 'flex-end' : 'center',
         justifyContent: 'center',
-        padding: presentationStyle === 'sheet' ? '0' : `${this.theme.spacing.padding}px`,
+        padding:
+          presentationStyle === 'sheet'
+            ? '0'
+            : `${this.theme.spacing.padding}px`,
         zIndex: '1000',
       },
     })
@@ -475,22 +492,28 @@ export class ActionSheetComponent implements ComponentInstance<ActionSheetProps>
       if (this.props.onDismiss) {
         this.props.onDismiss()
       }
-      
+
       // Clean up event listener
       if (this.sheetElement) {
-        this.sheetElement.removeEventListener('transitionend', handleTransitionEnd)
+        this.sheetElement.removeEventListener(
+          'transitionend',
+          handleTransitionEnd
+        )
       }
     }
-    
+
     if (this.sheetElement) {
       this.sheetElement.addEventListener('transitionend', handleTransitionEnd)
-      
+
       // Fallback timeout in case transition doesn't fire
       const fallbackTimeout = setTimeout(() => {
-        this.sheetElement?.removeEventListener('transitionend', handleTransitionEnd)
+        this.sheetElement?.removeEventListener(
+          'transitionend',
+          handleTransitionEnd
+        )
         handleTransitionEnd()
       }, this.theme.animation.duration)
-      
+
       // Store cleanup
       if (!this.cleanup) this.cleanup = []
       this.cleanup.push(() => {
@@ -521,18 +544,27 @@ export class ActionSheetComponent implements ComponentInstance<ActionSheetProps>
             this.sheetElement.style.transform = 'scale(1)'
             this.sheetElement.style.opacity = '1'
           }
-          
+
           // Use transition event listener for completion
           const handleTransitionEnd = () => {
             this.isAnimating = false
-            this.sheetElement?.removeEventListener('transitionend', handleTransitionEnd)
+            this.sheetElement?.removeEventListener(
+              'transitionend',
+              handleTransitionEnd
+            )
           }
-          
-          this.sheetElement.addEventListener('transitionend', handleTransitionEnd)
-          
+
+          this.sheetElement.addEventListener(
+            'transitionend',
+            handleTransitionEnd
+          )
+
           // Fallback timeout
-          const fallbackTimeout = setTimeout(handleTransitionEnd, this.theme.animation.duration)
-          
+          const fallbackTimeout = setTimeout(
+            handleTransitionEnd,
+            this.theme.animation.duration
+          )
+
           // Store cleanup
           if (!this.cleanup) this.cleanup = []
           this.cleanup.push(() => {
@@ -598,7 +630,11 @@ export class ActionSheetComponent implements ComponentInstance<ActionSheetProps>
     // Set up keyboard navigation
     createEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape' && this.allowsBackdropDismissal() && !this.isAnimating) {
+        if (
+          e.key === 'Escape' &&
+          this.allowsBackdropDismissal() &&
+          !this.isAnimating
+        ) {
           this.dismiss()
         }
       }
@@ -620,7 +656,9 @@ export class ActionSheetComponent implements ComponentInstance<ActionSheetProps>
 /**
  * Create an ActionSheet component
  */
-export function ActionSheet(props: ActionSheetProps): ModifiableComponent<ActionSheetProps> & {
+export function ActionSheet(
+  props: ActionSheetProps
+): ModifiableComponent<ActionSheetProps> & {
   modifier: ModifierBuilder<ModifiableComponent<ActionSheetProps>>
 } {
   return withModifiers(new ActionSheetComponent(props))
@@ -695,7 +733,7 @@ export const ActionSheetUtils = {
     return {
       title: 'Share',
       buttons: [
-        ...actions.map((action) => ({
+        ...actions.map(action => ({
           label: action.label,
           role: 'default' as ActionSheetButtonRole,
           onPress: action.onPress,

@@ -1,22 +1,30 @@
-# @tachui/mobile-patterns
+# @tachui/mobile
 
-> Mobile UI patterns and components for tachUI framework
+> Mobile UI components for tachUI framework
 
-[![npm version](https://img.shields.io/npm/v/@tachui/mobile-patterns.svg)](https://www.npmjs.com/package/@tachui/mobile-patterns)
+[![npm version](https://img.shields.io/npm/v/@tachui/mobile.svg)](https://www.npmjs.com/package/@tachui/mobile)
 [![License: MPL-2.0](https://img.shields.io/badge/License-MPL--2.0-blue.svg)](https://opensource.org/licenses/MPL-2.0)
 
 ## Overview
 
-The tachUI mobile-patterns package provides essential mobile UI components and interaction patterns including ActionSheet, Alert, pull-to-refresh, swipe actions, and mobile-optimized navigation components.
+The tachUI mobile package provides essential mobile UI components and interaction patterns. Currently focused on core modal components with plans for expanded mobile functionality in future releases.
 
-## Features
+## Current Features (v0.1.0)
 
-- 📱 **Mobile-first Components** - ActionSheet, Alert, and modal presentations
-- 👆 **Touch Interactions** - Swipe actions, pull-to-refresh, and gesture handling
+- 📱 **Core Modal Components** - ActionSheet and Alert with full modal system
 - 🎨 **Native Feel** - iOS and Android design system compatibility
 - 🔄 **Smooth Animations** - 60fps transitions and micro-interactions
 - 📐 **Responsive Design** - Adapts to different screen sizes and orientations
 - 🔧 **TypeScript-first** - Complete type safety for mobile patterns
+- ♿ **Accessibility** - Full ARIA support and keyboard navigation
+
+## Roadmap (Future Releases)
+
+- 👆 **Touch Interactions** - Swipe actions, pull-to-refresh, and gesture handling
+- 📱 **Advanced Components** - Modal presentations, SafeArea support
+- 🎯 **Platform Adaptations** - iOS/Android specific variants
+- 📳 **Haptic Feedback** - Native-like touch feedback
+- 🎭 **Gesture System** - Advanced gesture recognition
 
 ## Installation
 
@@ -104,9 +112,9 @@ const MyComponent = () => {
 }
 ```
 
-## Components
+## Implemented Components (v0.1.0)
 
-### ActionSheet
+### ✅ ActionSheet
 
 Bottom sheet with multiple action options:
 
@@ -117,15 +125,15 @@ ActionSheet({
   title: 'Photo Options',
   message: 'Choose how to add a photo',
   actions: [
-    { title: 'Camera', icon: 'camera', action: () => openCamera() },
-    { title: 'Photo Library', icon: 'photo', action: () => openLibrary() },
-    { title: 'Cancel', style: 'cancel' },
+    { title: 'Camera', role: 'default', onPress: () => openCamera() },
+    { title: 'Photo Library', role: 'default', onPress: () => openLibrary() },
+    { title: 'Cancel', role: 'cancel' },
   ],
-  presentationStyle: 'sheet', // 'sheet' | 'popover' | 'fullscreen'
+  presentationStyle: 'sheet', // 'sheet' | 'popover' | 'adaptive'
 }).build()
 ```
 
-### Alert
+### ✅ Alert
 
 Modal alerts with customizable buttons:
 
@@ -135,19 +143,22 @@ import { Alert } from '@tachui/mobile-patterns'
 Alert({
   title: 'Network Error',
   message: 'Unable to connect to the server. Please check your connection.',
-  actions: [
-    { title: 'Retry', action: () => retryConnection() },
-    { title: 'Cancel', style: 'cancel' },
+  buttons: [
+    { title: 'Retry', role: 'default', action: () => retryConnection() },
+    { title: 'Cancel', role: 'cancel' },
   ],
-  icon: 'wifi.slash',
+  isPresented: createSignal(true),
 }).build()
 ```
 
-### SwipeActions
+## Planned Components (Future Releases)
+
+### 🚧 SwipeActions
 
 Swipe-to-reveal action buttons:
 
 ```typescript
+// Planned for v0.2.0
 import { SwipeActions, SwipeAction } from '@tachui/mobile-patterns'
 
 SwipeActions({
@@ -177,11 +188,12 @@ SwipeActions({
 }).build()
 ```
 
-### PullToRefresh
+### 🚧 PullToRefresh
 
 Pull-down-to-refresh functionality:
 
 ```typescript
+// Planned for v0.2.0
 import { PullToRefresh } from '@tachui/mobile-patterns'
 import { ScrollView } from '@tachui/core'
 
@@ -197,11 +209,45 @@ PullToRefresh({
 }).build()
 ```
 
-## Advanced Patterns
+## Advanced Patterns (Implemented)
 
-### Modal Presentation
+### ✅ Modal System
+
+Both ActionSheet and Alert provide full modal systems with:
+
+- Backdrop dismissal
+- Keyboard navigation
+- Focus management
+- Animation coordination
+- Accessibility support
+
+### ✅ Utility Functions
 
 ```typescript
+import { ActionSheetUtils, AlertUtils } from '@tachui/mobile-patterns'
+
+// Pre-configured action sheets
+const deleteConfirmation = ActionSheetUtils.deleteConfirmation(
+  'Delete Item',
+  () => deleteItem(),
+  () => console.log('Cancelled')
+)
+
+// Pre-configured alerts
+const confirmAlert = AlertUtils.confirm(
+  'Confirm Action',
+  'Are you sure?',
+  () => performAction(),
+  () => console.log('Cancelled')
+)
+```
+
+## Advanced Patterns (Planned for Future Releases)
+
+### 🚧 Modal Presentation System
+
+```typescript
+// Planned for v0.2.0
 import { presentModal, dismissModal } from '@tachui/mobile-patterns'
 
 const presentSettings = () => {
@@ -213,15 +259,12 @@ const presentSettings = () => {
     onDismiss: () => console.log('Modal dismissed')
   })
 }
-
-const closeModal = () => {
-  dismissModal()
-}
 ```
 
-### Haptic Feedback
+### 🚧 Haptic Feedback
 
 ```typescript
+// Planned for v0.2.0
 import { hapticFeedback } from '@tachui/mobile-patterns'
 
 Button('Success Action', () => {
@@ -230,9 +273,10 @@ Button('Success Action', () => {
 })
 ```
 
-### SafeArea Support
+### 🚧 SafeArea Support
 
 ```typescript
+// Planned for v0.2.0
 import { SafeAreaView } from '@tachui/mobile-patterns'
 
 const app = SafeAreaView({
@@ -244,9 +288,10 @@ const app = SafeAreaView({
   .build()
 ```
 
-### Gesture Handling
+### 🚧 Gesture Handling
 
 ```typescript
+// Planned for v0.2.0
 import { GestureRecognizer } from '@tachui/mobile-patterns'
 
 GestureRecognizer({
@@ -268,11 +313,12 @@ GestureRecognizer({
 }).build()
 ```
 
-## Platform Adaptations
+## Platform Adaptations (Planned for Future Releases)
 
-### iOS-style Components
+### 🚧 iOS-style Components
 
 ```typescript
+// Planned for v0.3.0
 import { IOSActionSheet, IOSAlert } from '@tachui/mobile-patterns'
 
 // iOS-specific styling and behavior
@@ -284,9 +330,10 @@ IOSActionSheet({
   .build()
 ```
 
-### Android-style Components
+### 🚧 Android-style Components
 
 ```typescript
+// Planned for v0.3.0
 import { MaterialActionSheet, MaterialAlert } from '@tachui/mobile-patterns'
 
 // Material Design styling
@@ -348,6 +395,14 @@ Check out complete examples:
 - **[ActionSheet API](https://github.com/tach-UI/tachUI/blob/main/docs/api/mobile-patterns/src/classes/ActionSheet.md)**
 - **[Alert API](https://github.com/tach-UI/tachUI/blob/main/docs/api/mobile-patterns/src/classes/Alert.md)**
 - **[SwipeActions API](https://github.com/tach-UI/tachUI/blob/main/docs/api/mobile-patterns/src/classes/SwipeActions.md)**
+
+## Current Status
+
+**Version 0.1.0** - Core modal components (ActionSheet, Alert)
+
+- ✅ **ActionSheet**: Full implementation with animations, accessibility, responsive design
+- ✅ **Alert**: Complete modal system with reactive support and keyboard navigation
+- 🚧 **Future Releases**: SwipeActions, PullToRefresh, Modal system, Haptic feedback, Gesture handling
 
 ## Requirements
 

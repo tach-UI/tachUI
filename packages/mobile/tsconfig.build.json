@@ -5,11 +5,9 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "outDir": "./dist",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "rootDir": "./src"
   },
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.bench.ts",
-    "node_modules"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["**/*.test.ts", "**/*.bench.ts", "node_modules", "dist"]
 }

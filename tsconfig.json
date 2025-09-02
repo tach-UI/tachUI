@@ -30,6 +30,7 @@
       "@tachui/forms": ["./packages/forms/src"],
       "@tachui/navigation": ["./packages/navigation/src"],
       "@tachui/symbols": ["./packages/symbols/src"],
+      "@tachui/mobile": ["./packages/mobile/src"],
       "@tachui/cli": ["./packages/cli/src"]
     }
   },
