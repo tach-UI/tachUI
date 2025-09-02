@@ -8,6 +8,11 @@ import {
   ScrollView,
   ScrollViewUtils,
 } from '../src/ScrollView'
+import type {
+  ContentOffset,
+  ScrollEventInfo,
+  ScrollViewProps,
+} from '../src/ScrollView'
 import { createSignal } from '@tachui/core'
 
 // Create a simple mock Text component for testing
@@ -19,12 +24,6 @@ const Text = (content: string) => ({
   props: { content },
   render: () => [{ type: 'text', text: content }],
 })
-
-import type {
-  ContentOffset,
-  ScrollEventInfo,
-  ScrollViewProps,
-} from '../../src/components/ScrollView'
 
 // Mock DOM environment
 function createMockScrollElement(): HTMLElement {

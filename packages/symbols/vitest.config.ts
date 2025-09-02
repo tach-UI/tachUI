@@ -1,24 +1,17 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, mergeConfig } from 'vitest/config'
+import sharedConfig from '../../vitest.shared.config'
 
-export default defineConfig({
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./__tests__/setup.ts'],
-    // Suppress stderr output for cleaner test results
-    silent: false,
-    reporter: 'verbose',
-    // Completely silent for errors to prevent stderr
-    logLevel: 'silent',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        '__tests__/',
-        'dist/',
-        '*.config.*',
-      ],
+export default mergeConfig(
+  sharedConfig,
+  defineConfig({
+    test: {
+      setupFiles: ['./__tests__/setup.ts'],
+      logLevel: 'silent',
     },
-  },
-})
+    resolve: {
+      alias: {
+        '@tachui/symbols': './src',
+      },
+    },
+  })
+)

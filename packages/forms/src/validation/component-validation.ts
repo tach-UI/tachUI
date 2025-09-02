@@ -6,7 +6,16 @@
  */
 
 // Import from core to register with the validation system
-import type { ComponentValidator } from '@tachui/core/validation'
+// ComponentValidator type is defined locally since it's not exported from core
+
+/**
+ * Component validator interface (matches core's internal interface)
+ */
+interface ComponentValidator {
+  packageName: string
+  componentName: string
+  validate: (args: unknown[]) => void
+}
 
 /**
  * TachUI Forms validation error class

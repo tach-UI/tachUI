@@ -87,7 +87,10 @@ const mockDocument = {
   createTextNode: vi.fn(() => ({ ...mockElement })),
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn(),
+  dispatchEvent: vi.fn(event => {
+    // Mock successful event dispatch
+    return true
+  }),
   querySelector: vi.fn(),
   querySelectorAll: vi.fn(() => []),
   getElementById: vi.fn(),
@@ -135,6 +138,10 @@ beforeAll(() => {
         textContent: text,
         nodeType: 3, // TEXT_NODE
       })),
+      dispatchEvent: vi.fn(event => {
+        // Mock successful event dispatch with proper return value
+        return true
+      }),
       querySelector: vi.fn(),
       querySelectorAll: vi.fn(() => []),
       body: { ...mockElement },

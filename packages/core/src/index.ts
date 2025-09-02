@@ -132,6 +132,14 @@ export * from './reactive'
 export * from './runtime'
 export { registerComponentWithLifecycleHooks } from './runtime/dom-bridge'
 
+// Essential runtime types - explicitly exported for plugin packages
+export type {
+  ComponentProps,
+  ComponentInstance,
+  ComponentChildren,
+  DOMNode,
+} from './runtime/types'
+
 // CSS Classes system
 export * from './css-classes'
 // Lazy loading system

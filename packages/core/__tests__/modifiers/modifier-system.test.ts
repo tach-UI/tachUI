@@ -7,10 +7,9 @@
 
 import { JSDOM } from 'jsdom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { HTML, Text } from '@tachui/primitives'
 import {
-  HTML,
   Layout,
-  Text,
   // Component wrappers
   withModifiers,
 } from '../../src/components'
@@ -124,7 +123,10 @@ describe('Modifier System', () => {
 
     it('should create appearance modifiers through functions', () => {
       const colorModifier = appearanceModifiers.foregroundColor('#ff0000')
-      const fontModifier = appearanceModifiers.font({ size: 16, weight: 'bold' })
+      const fontModifier = appearanceModifiers.font({
+        size: 16,
+        weight: 'bold',
+      })
 
       expect(colorModifier.type).toBe('appearance')
       expect(fontModifier.type).toBe('appearance')
@@ -163,7 +165,11 @@ describe('Modifier System', () => {
       const component = createComponent(() => [h('div')], {})
       const builder = createModifierBuilder(component)
 
-      const result = builder.padding(16).foregroundColor('#ff0000').cornerRadius(8).build()
+      const result = builder
+        .padding(16)
+        .foregroundColor('#ff0000')
+        .cornerRadius(8)
+        .build()
 
       expect(result.modifiers).toHaveLength(3)
       expect(result.modifiers[0].type).toBe('padding')
@@ -177,11 +183,19 @@ describe('Modifier System', () => {
 
       // Test width/height signature
       const result1 = builder.frame(100, 200).build()
-      expect(result1.modifiers[0].properties.frame).toEqual({ width: 100, height: 200 })
+      expect(result1.modifiers[0].properties.frame).toEqual({
+        width: 100,
+        height: 200,
+      })
 
       // Test options signature
-      const result2 = createModifierBuilder(component).frame({ width: 150, minHeight: 50 }).build()
-      expect(result2.modifiers[0].properties.frame).toEqual({ width: 150, minHeight: 50 })
+      const result2 = createModifierBuilder(component)
+        .frame({ width: 150, minHeight: 50 })
+        .build()
+      expect(result2.modifiers[0].properties.frame).toEqual({
+        width: 150,
+        minHeight: 50,
+      })
     })
   })
 
@@ -269,7 +283,7 @@ describe('Modifier System', () => {
       })
 
       // Wait for reactive effects to be applied
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
 
       // Initial values - check that styles were applied
       // Note: JSDOM may not perfectly mimic browser color value normalization
@@ -412,7 +426,10 @@ describe('Modifier System', () => {
       expect(textComponent.modifiers).toEqual([])
       expect(textComponent.modifier).toBeDefined()
 
-      const withColor = textComponent.modifier.foregroundColor('#ff0000').fontSize(18).build()
+      const withColor = textComponent.modifier
+        .foregroundColor('#ff0000')
+        .fontSize(18)
+        .build()
 
       expect(withColor.modifiers).toHaveLength(2)
     })
@@ -422,7 +439,10 @@ describe('Modifier System', () => {
 
       expect(vstack.modifier).toBeDefined()
 
-      const withPadding = vstack.modifier.padding(20).backgroundColor('#f0f0f0').build()
+      const withPadding = vstack.modifier
+        .padding(20)
+        .backgroundColor('#f0f0f0')
+        .build()
 
       expect(withPadding.modifiers).toHaveLength(2)
     })
@@ -474,10 +494,14 @@ describe('Modifier System', () => {
     })
 
     it('should convert CSS property names', () => {
-      expect(modifierHelpers.toCamelCase('background-color')).toBe('backgroundColor')
+      expect(modifierHelpers.toCamelCase('background-color')).toBe(
+        'backgroundColor'
+      )
       expect(modifierHelpers.toCamelCase('font-size')).toBe('fontSize')
 
-      expect(modifierHelpers.toKebabCase('backgroundColor')).toBe('background-color')
+      expect(modifierHelpers.toKebabCase('backgroundColor')).toBe(
+        'background-color'
+      )
       expect(modifierHelpers.toKebabCase('fontSize')).toBe('font-size')
     })
 
@@ -506,22 +530,34 @@ describe('Modifier System', () => {
       }
 
       const modifiers = [
-        createCustomModifier('test-modifier-1', 1, (node, _context, _props: any) => {
-          // Mock modifier application that returns the same node
-          return node
-        })({
+        createCustomModifier(
+          'test-modifier-1',
+          1,
+          (node, _context, _props: any) => {
+            // Mock modifier application that returns the same node
+            return node
+          }
+        )({
           width: '100px',
           height: '50px',
         }),
-        createCustomModifier('test-modifier-2', 2, (node, _context, _props: any) => {
-          return node
-        })({
+        createCustomModifier(
+          'test-modifier-2',
+          2,
+          (node, _context, _props: any) => {
+            return node
+          }
+        )({
           backgroundColor: 'blue',
           color: 'white',
         }),
-        createCustomModifier('test-modifier-3', 3, (node, _context, _props: any) => {
-          return node
-        })({
+        createCustomModifier(
+          'test-modifier-3',
+          3,
+          (node, _context, _props: any) => {
+            return node
+          }
+        )({
           margin: '10px',
           padding: '5px',
         }),
@@ -582,12 +618,27 @@ describe('Modifier System', () => {
 
       // Create modifiers of different types
       const sizeModifiers = [
-        { type: 'layout', priority: 1, properties: { width: '100px' }, apply: vi.fn() },
-        { type: 'layout', priority: 2, properties: { height: '50px' }, apply: vi.fn() },
+        {
+          type: 'layout',
+          priority: 1,
+          properties: { width: '100px' },
+          apply: vi.fn(),
+        },
+        {
+          type: 'layout',
+          priority: 2,
+          properties: { height: '50px' },
+          apply: vi.fn(),
+        },
       ]
 
       const colorModifiers = [
-        { type: 'appearance', priority: 1, properties: { color: 'red' }, apply: vi.fn() },
+        {
+          type: 'appearance',
+          priority: 1,
+          properties: { color: 'red' },
+          apply: vi.fn(),
+        },
         {
           type: 'appearance',
           priority: 2,
@@ -684,9 +735,13 @@ describe('Modifier System', () => {
         },
       }
 
-      const validModifier = createCustomModifier('valid', 1, (node, _context, _props: any) => {
-        return node
-      })({ width: '100px' })
+      const validModifier = createCustomModifier(
+        'valid',
+        1,
+        (node, _context, _props: any) => {
+          return node
+        }
+      )({ width: '100px' })
 
       // Should not throw when one modifier fails in batch mode
       expect(() => {
@@ -738,7 +793,11 @@ describe('Modifier System', () => {
       )({ backgroundColor: 'yellow' })
 
       // Apply in random order to test sorting
-      const modifiers = [mediumPriorityModifier, highPriorityModifier, lowPriorityModifier]
+      const modifiers = [
+        mediumPriorityModifier,
+        highPriorityModifier,
+        lowPriorityModifier,
+      ]
 
       applyModifiersToNode(
         node,

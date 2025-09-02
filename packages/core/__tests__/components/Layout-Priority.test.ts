@@ -6,7 +6,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { HTML, Layout } from '../../src/components'
+import { HTML } from '@tachui/primitives'
+import { Layout } from '../../src/components'
 import { Text } from '@tachui/primitives'
 import { layoutModifiers } from '../../src/modifiers/core'
 import { createSignal } from '../../src/reactive'

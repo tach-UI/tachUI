@@ -17,10 +17,9 @@ export * from '../runtime/dom-bridge'
 export * from '../runtime/component'
 export * from '../runtime/props'
 
-// Basic components moved to @tachui/primitives
-// Components moved to @tachui/primitives - import from there:
-// import { Text, Button, Image, BasicInput, Spacer, HStack, VStack, ZStack } from '@tachui/primitives'
-// Show moved to @tachui/flow-control
+// Components are in separate packages:
+// @tachui/primitives - Text, Button, Image, BasicInput, Spacer, HStack, VStack, ZStack
+// @tachui/flow-control - Show, When, Unless
 
 // Essential modifiers
 export * from '../modifiers/core'
@@ -30,8 +29,7 @@ export * from '../modifiers/size'
 export * from '../modifiers/typography'
 export * from '../modifiers/background'
 
-// Responsive system moved to @tachui/responsive package
-// Import from @tachui/responsive if responsive functionality is needed
+// Responsive system: @tachui/responsive
 
 // State management
 export { State, isState, unwrapValue } from '../state/state'
@@ -56,8 +54,7 @@ export { infinity, Layout, isInfinity } from '../constants'
 // Basic gradients (needed for landing pages)
 export { LinearGradient } from '../gradients'
 
-// Debug system moved to @tachui/devtools package
-// Import from @tachui/devtools if needed
+// Debug system: @tachui/devtools
 
 /**
  * Minimal Bundle Metadata

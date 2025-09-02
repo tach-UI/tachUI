@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { HTML, Text } from '../../src/components'
+import { HTML, Text } from '@tachui/primitives'
 import { LifecycleModifier } from '../../src/modifiers/base'
 import { lifecycleModifiers } from '../../src/modifiers/core'
 import { createSignal } from '../../src/reactive'
@@ -68,7 +68,7 @@ let mockObserver: MockIntersectionObserver
 
 beforeEach(() => {
   // Mock IntersectionObserver
-  global.IntersectionObserver = vi.fn().mockImplementation((callback) => {
+  global.IntersectionObserver = vi.fn().mockImplementation(callback => {
     mockObserver = new MockIntersectionObserver(callback)
     return mockObserver
   }) as any
@@ -122,9 +122,14 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
 
     it('should integrate with modifier builder', () => {
       const handler = vi.fn()
-      const component = Text('Appearing text').modifier.onAppear(handler).fontSize(16).build()
+      const component = Text('Appearing text')
+        .modifier.onAppear(handler)
+        .fontSize(16)
+        .build()
 
-      const lifecycleModifier = component.modifiers.find((m) => m.type === 'lifecycle')
+      const lifecycleModifier = component.modifiers.find(
+        m => m.type === 'lifecycle'
+      )
       expect(lifecycleModifier).toBeDefined()
       expect(lifecycleModifier?.properties.onAppear).toBe(handler)
     })
@@ -166,7 +171,9 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
         .backgroundColor('#f0f0f0')
         .build()
 
-      const lifecycleModifier = component.modifiers.find((m) => m.type === 'lifecycle')
+      const lifecycleModifier = component.modifiers.find(
+        m => m.type === 'lifecycle'
+      )
       expect(lifecycleModifier).toBeDefined()
       expect(lifecycleModifier?.properties.onDisappear).toBe(handler)
     })
@@ -210,7 +217,7 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       )
 
       // Allow async operation to complete
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
       expect(operation).toHaveBeenCalled()
     })
 
@@ -221,7 +228,9 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
         .padding(16)
         .build()
 
-      const lifecycleModifier = component.modifiers.find((m) => m.type === 'lifecycle')
+      const lifecycleModifier = component.modifiers.find(
+        m => m.type === 'lifecycle'
+      )
       expect(lifecycleModifier).toBeDefined()
       expect(lifecycleModifier?.properties.task?.operation).toBe(operation)
       expect(lifecycleModifier?.properties.task?.id).toBe('test-task')
@@ -229,9 +238,14 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
     })
 
     it('should handle task priorities', () => {
-      const priorities = ['background', 'userInitiated', 'utility', 'default'] as const
+      const priorities = [
+        'background',
+        'userInitiated',
+        'utility',
+        'default',
+      ] as const
 
-      priorities.forEach((priority) => {
+      priorities.forEach(priority => {
         const operation = vi.fn()
         const modifier = lifecycleModifiers.task(operation, { priority })
 
@@ -270,10 +284,16 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
         .padding(20)
         .build()
 
-      const lifecycleModifier = component.modifiers.find((m) => m.type === 'lifecycle')
+      const lifecycleModifier = component.modifiers.find(
+        m => m.type === 'lifecycle'
+      )
       expect(lifecycleModifier).toBeDefined()
-      expect(lifecycleModifier?.properties.refreshable?.onRefresh).toBe(onRefresh)
-      expect(lifecycleModifier?.properties.refreshable?.isRefreshing).toBe(isRefreshing)
+      expect(lifecycleModifier?.properties.refreshable?.onRefresh).toBe(
+        onRefresh
+      )
+      expect(lifecycleModifier?.properties.refreshable?.isRefreshing).toBe(
+        isRefreshing
+      )
     })
 
     it('should set up touch event listeners when applied', () => {
@@ -292,13 +312,24 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       )
 
       // Verify touch event listeners were added
-      expect(element.addEventListener).toHaveBeenCalledWith('touchstart', expect.any(Function), {
-        passive: false,
-      })
-      expect(element.addEventListener).toHaveBeenCalledWith('touchmove', expect.any(Function), {
-        passive: false,
-      })
-      expect(element.addEventListener).toHaveBeenCalledWith('touchend', expect.any(Function))
+      expect(element.addEventListener).toHaveBeenCalledWith(
+        'touchstart',
+        expect.any(Function),
+        {
+          passive: false,
+        }
+      )
+      expect(element.addEventListener).toHaveBeenCalledWith(
+        'touchmove',
+        expect.any(Function),
+        {
+          passive: false,
+        }
+      )
+      expect(element.addEventListener).toHaveBeenCalledWith(
+        'touchend',
+        expect.any(Function)
+      )
     })
   })
 
@@ -318,19 +349,27 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
         .padding(16)
         .build()
 
-      const lifecycleModifiers = component.modifiers.filter((m) => m.type === 'lifecycle')
+      const lifecycleModifiers = component.modifiers.filter(
+        m => m.type === 'lifecycle'
+      )
       expect(lifecycleModifiers).toHaveLength(4)
 
       // Verify each modifier has correct properties
-      const appearModifier = lifecycleModifiers.find((m) => m.properties.onAppear)
-      const disappearModifier = lifecycleModifiers.find((m) => m.properties.onDisappear)
-      const taskModifier = lifecycleModifiers.find((m) => m.properties.task)
-      const refreshableModifier = lifecycleModifiers.find((m) => m.properties.refreshable)
+      const appearModifier = lifecycleModifiers.find(m => m.properties.onAppear)
+      const disappearModifier = lifecycleModifiers.find(
+        m => m.properties.onDisappear
+      )
+      const taskModifier = lifecycleModifiers.find(m => m.properties.task)
+      const refreshableModifier = lifecycleModifiers.find(
+        m => m.properties.refreshable
+      )
 
       expect(appearModifier?.properties.onAppear).toBe(onAppearHandler)
       expect(disappearModifier?.properties.onDisappear).toBe(onDisappearHandler)
       expect(taskModifier?.properties.task?.operation).toBe(taskOperation)
-      expect(refreshableModifier?.properties.refreshable?.onRefresh).toBe(onRefresh)
+      expect(refreshableModifier?.properties.refreshable?.onRefresh).toBe(
+        onRefresh
+      )
     })
 
     it('should work with other modifier types', () => {
@@ -348,7 +387,7 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
         .transition('all', 200)
         .build()
 
-      const modifierTypes = component.modifiers.map((m) => m.type)
+      const modifierTypes = component.modifiers.map(m => m.type)
       expect(modifierTypes).toContain('lifecycle')
       expect(modifierTypes).toContain('appearance')
       expect(modifierTypes).toContain('padding')
@@ -362,9 +401,13 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       // SwiftUI: .onAppear { /* action */ }
       const onAppearAction = vi.fn()
 
-      const component = Text('SwiftUI-style onAppear').modifier.onAppear(onAppearAction).build()
+      const component = Text('SwiftUI-style onAppear')
+        .modifier.onAppear(onAppearAction)
+        .build()
 
-      const lifecycleModifier = component.modifiers.find((m) => m.type === 'lifecycle')
+      const lifecycleModifier = component.modifiers.find(
+        m => m.type === 'lifecycle'
+      )
       expect(lifecycleModifier?.properties.onAppear).toBe(onAppearAction)
     })
 
@@ -376,7 +419,9 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
         .modifier.task(asyncOperation, { priority: 'userInitiated' })
         .build()
 
-      const lifecycleModifier = component.modifiers.find((m) => m.type === 'lifecycle')
+      const lifecycleModifier = component.modifiers.find(
+        m => m.type === 'lifecycle'
+      )
       expect(lifecycleModifier?.properties.task?.operation).toBe(asyncOperation)
       expect(lifecycleModifier?.properties.task?.priority).toBe('userInitiated')
     })
@@ -389,8 +434,12 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
         .modifier.refreshable(refreshOperation)
         .build()
 
-      const lifecycleModifier = component.modifiers.find((m) => m.type === 'lifecycle')
-      expect(lifecycleModifier?.properties.refreshable?.onRefresh).toBe(refreshOperation)
+      const lifecycleModifier = component.modifiers.find(
+        m => m.type === 'lifecycle'
+      )
+      expect(lifecycleModifier?.properties.refreshable?.onRefresh).toBe(
+        refreshOperation
+      )
     })
   })
 
@@ -429,16 +478,21 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       )
 
       // Allow async operation to complete
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
 
       expect(errorOperation).toHaveBeenCalled()
-      expect(consoleSpy).toHaveBeenCalledWith('TachUI Task Error:', expect.any(Error))
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'TachUI Task Error:',
+        expect.any(Error)
+      )
 
       consoleSpy.mockRestore()
     })
 
     it('should handle refresh errors gracefully', async () => {
-      const errorRefresh = vi.fn().mockRejectedValue(new Error('Refresh failed'))
+      const errorRefresh = vi
+        .fn()
+        .mockRejectedValue(new Error('Refresh failed'))
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const element = createMockElement()

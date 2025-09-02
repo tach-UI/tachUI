@@ -1,6 +1,6 @@
 /**
  * Phase 4.1: Simple Real-World Scenario Test
- * 
+ *
  * Basic validation that our real-world testing framework works
  * before building complex e-commerce scenarios.
  */
@@ -8,10 +8,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
   RealWorldScenarioTester,
-  type RealWorldScenario
+  type RealWorldScenario,
 } from '../../../../tools/testing/real-world-scenario-tester'
 import { createSignal } from '../../src/reactive'
-import { VStack, Text, Button } from '../../src/components'
+import { VStack, Text, Button } from '@tachui/primitives'
 import { DOMRenderer } from '../../src/runtime/renderer'
 
 describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
@@ -20,11 +20,11 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
   beforeEach(() => {
     // Clear DOM and set up test root
     document.body.innerHTML = '<div id="test-app-root"></div>'
-    
+
     tester = new RealWorldScenarioTester({
       enableMemoryTracking: true,
       enablePerformanceTracking: true,
-      defaultTimeout: 5000
+      defaultTimeout: 5000,
     })
   })
 
@@ -51,7 +51,9 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
         // Simple counter app using basic DOM creation
         const testRoot = document.querySelector('#test-app-root')
         if (!testRoot) {
-          throw new Error('Test root element not found. Expected #test-app-root to exist.')
+          throw new Error(
+            'Test root element not found. Expected #test-app-root to exist.'
+          )
         }
         testRoot.innerHTML = `
           <div class="counter-app">
@@ -63,10 +65,18 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
         `
 
         // Attach event listeners
-        const incrementBtn = testRoot.querySelector('.increment-btn') as HTMLButtonElement
-        const decrementBtn = testRoot.querySelector('.decrement-btn') as HTMLButtonElement
-        const resetBtn = testRoot.querySelector('.reset-btn') as HTMLButtonElement
-        const countDisplay = testRoot.querySelector('.count-display') as HTMLDivElement
+        const incrementBtn = testRoot.querySelector(
+          '.increment-btn'
+        ) as HTMLButtonElement
+        const decrementBtn = testRoot.querySelector(
+          '.decrement-btn'
+        ) as HTMLButtonElement
+        const resetBtn = testRoot.querySelector(
+          '.reset-btn'
+        ) as HTMLButtonElement
+        const countDisplay = testRoot.querySelector(
+          '.count-display'
+        ) as HTMLDivElement
 
         incrementBtn.addEventListener('click', () => {
           setCount(count() + 1)
@@ -90,13 +100,15 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
         {
           name: 'Check Initial State',
           description: 'Verify the counter starts at 0',
-          actions: [
-            { type: 'wait', value: 100 }
-          ],
+          actions: [{ type: 'wait', value: 100 }],
           assertions: [
             { type: 'element-exists', selector: '.counter-app' },
-            { type: 'element-contains', selector: '.count-display', expected: 'Count: 0' }
-          ]
+            {
+              type: 'element-contains',
+              selector: '.count-display',
+              expected: 'Count: 0',
+            },
+          ],
         },
 
         {
@@ -104,11 +116,15 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
           description: 'Click increment button and verify count increases',
           actions: [
             { type: 'click', target: '.increment-btn' },
-            { type: 'wait', value: 100 }
+            { type: 'wait', value: 100 },
           ],
           assertions: [
-            { type: 'element-contains', selector: '.count-display', expected: 'Count: 1' }
-          ]
+            {
+              type: 'element-contains',
+              selector: '.count-display',
+              expected: 'Count: 1',
+            },
+          ],
         },
 
         {
@@ -120,11 +136,15 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
             { type: 'click', target: '.increment-btn' },
             { type: 'wait', value: 50 },
             { type: 'click', target: '.increment-btn' },
-            { type: 'wait', value: 100 }
+            { type: 'wait', value: 100 },
           ],
           assertions: [
-            { type: 'element-contains', selector: '.count-display', expected: 'Count: 4' }
-          ]
+            {
+              type: 'element-contains',
+              selector: '.count-display',
+              expected: 'Count: 4',
+            },
+          ],
         },
 
         {
@@ -132,11 +152,15 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
           description: 'Click decrement button',
           actions: [
             { type: 'click', target: '.decrement-btn' },
-            { type: 'wait', value: 100 }
+            { type: 'wait', value: 100 },
           ],
           assertions: [
-            { type: 'element-contains', selector: '.count-display', expected: 'Count: 3' }
-          ]
+            {
+              type: 'element-contains',
+              selector: '.count-display',
+              expected: 'Count: 3',
+            },
+          ],
         },
 
         {
@@ -144,21 +168,25 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
           description: 'Click reset button to return to 0',
           actions: [
             { type: 'click', target: '.reset-btn' },
-            { type: 'wait', value: 100 }
+            { type: 'wait', value: 100 },
           ],
           assertions: [
-            { type: 'element-contains', selector: '.count-display', expected: 'Count: 0' }
-          ]
-        }
+            {
+              type: 'element-contains',
+              selector: '.count-display',
+              expected: 'Count: 0',
+            },
+          ],
+        },
       ],
 
       successCriteria: [
         'Counter starts at 0',
         'Increment button increases count',
-        'Decrement button decreases count', 
+        'Decrement button decreases count',
         'Reset button returns count to 0',
-        'UI updates reflect state changes'
-      ]
+        'UI updates reflect state changes',
+      ],
     }
 
     const result = await tester.executeScenario(basicClickScenario)
@@ -168,8 +196,11 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
       success: result.success,
       completedSteps: result.completedSteps,
       totalSteps: result.totalSteps,
-      errors: result.errors.map(e => ({ step: e.step, message: e.error.message })),
-      duration: result.duration
+      errors: result.errors.map(e => ({
+        step: e.step,
+        message: e.error.message,
+      })),
+      duration: result.duration,
     })
 
     // Assertions
@@ -207,19 +238,30 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
         `
 
         const form = testRoot.querySelector('.test-form') as HTMLFormElement
-        const messageDiv = testRoot.querySelector('.form-message') as HTMLDivElement
+        const messageDiv = testRoot.querySelector(
+          '.form-message'
+        ) as HTMLDivElement
 
         // Add click handler to submit button instead of submit event
-        const submitBtn = testRoot.querySelector('.submit-btn') as HTMLButtonElement
-        
-        submitBtn.addEventListener('click', (e) => {
+        const submitBtn = testRoot.querySelector(
+          '.submit-btn'
+        ) as HTMLButtonElement
+
+        submitBtn.addEventListener('click', e => {
           e.preventDefault()
-          
-          const nameInput = form.querySelector('.name-input') as HTMLInputElement
-          const emailInput = form.querySelector('.email-input') as HTMLInputElement
-          
-          
-          if (nameInput.value && emailInput.value && emailInput.value.includes('@')) {
+
+          const nameInput = form.querySelector(
+            '.name-input'
+          ) as HTMLInputElement
+          const emailInput = form.querySelector(
+            '.email-input'
+          ) as HTMLInputElement
+
+          if (
+            nameInput.value &&
+            emailInput.value &&
+            emailInput.value.includes('@')
+          ) {
             messageDiv.textContent = 'Form submitted successfully!'
             messageDiv.style.display = 'block'
             messageDiv.className = 'form-message success'
@@ -235,14 +277,12 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
         {
           name: 'Check Initial Form',
           description: 'Verify form elements are present',
-          actions: [
-            { type: 'wait', value: 100 }
-          ],
+          actions: [{ type: 'wait', value: 100 }],
           assertions: [
             { type: 'element-exists', selector: '.test-form' },
             { type: 'element-exists', selector: '.name-input' },
-            { type: 'element-exists', selector: '.email-input' }
-          ]
+            { type: 'element-exists', selector: '.email-input' },
+          ],
         },
 
         {
@@ -250,11 +290,15 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
           description: 'Try to submit form without data',
           actions: [
             { type: 'click', target: '.submit-btn' },
-            { type: 'wait', value: 200 }
+            { type: 'wait', value: 200 },
           ],
           assertions: [
-            { type: 'element-contains', selector: '.form-message', expected: 'Please fill in all fields correctly.' }
-          ]
+            {
+              type: 'element-contains',
+              selector: '.form-message',
+              expected: 'Please fill in all fields correctly.',
+            },
+          ],
         },
 
         {
@@ -262,21 +306,29 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
           description: 'Fill form with valid data and submit',
           actions: [
             { type: 'input', target: '.name-input', value: 'John Doe' },
-            { type: 'input', target: '.email-input', value: 'john@example.com' },
+            {
+              type: 'input',
+              target: '.email-input',
+              value: 'john@example.com',
+            },
             { type: 'click', target: '.submit-btn' },
-            { type: 'wait', value: 200 }
+            { type: 'wait', value: 200 },
           ],
           assertions: [
-            { type: 'element-contains', selector: '.form-message', expected: 'Form submitted successfully!' }
-          ]
-        }
+            {
+              type: 'element-contains',
+              selector: '.form-message',
+              expected: 'Form submitted successfully!',
+            },
+          ],
+        },
       ],
 
       successCriteria: [
         'Form validates empty fields',
         'Form accepts valid input',
-        'Success message appears on valid submission'
-      ]
+        'Success message appears on valid submission',
+      ],
     }
 
     const result = await tester.executeScenario(formInputScenario)
@@ -286,7 +338,10 @@ describe('Phase 4.1: Simple Real-World Scenario Validation', () => {
       success: result.success,
       completedSteps: result.completedSteps,
       totalSteps: result.totalSteps,
-      errors: result.errors.map(e => ({ step: e.step, message: e.error.message }))
+      errors: result.errors.map(e => ({
+        step: e.step,
+        message: e.error.message,
+      })),
     })
 
     expect(result.success).toBe(true)

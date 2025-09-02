@@ -237,6 +237,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
+      '@tachui/primitives':
+        specifier: workspace:*
+        version: link:../primitives
     devDependencies:
       '@types/node':
         specifier: ^20.10.0

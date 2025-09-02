@@ -1,13 +1,13 @@
 /**
  * Advanced Gesture Modifiers Test Suite
- * 
+ *
  * Tests for Phase 4 Epic: Butternut - Advanced Input/Gesture Modifiers
  * Long press gestures, keyboard shortcuts, focus management, and hover tracking
  */
 
 import { JSDOM } from 'jsdom'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { Text, VStack, Button } from '../../src/components'
+import { Text, VStack, Button } from '@tachui/primitives'
 import { InteractionModifier } from '../../src/modifiers/base'
 import { createSignal } from '../../src/reactive'
 
@@ -25,7 +25,7 @@ global.KeyboardEvent = dom.window.KeyboardEvent
 // Mock setTimeout/clearTimeout for long press timing tests
 vi.mock('global', () => ({
   setTimeout: vi.fn(),
-  clearTimeout: vi.fn()
+  clearTimeout: vi.fn(),
 }))
 
 // Test utilities
@@ -46,12 +46,12 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
     beforeEach(() => {
       element = createTestElement()
       mockNode = {
-        element
+        element,
       }
       mockContext = {
         element,
         componentId: 'test-component',
-        phase: 'creation'
+        phase: 'creation',
       }
     })
 
@@ -63,17 +63,29 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         const modifier = new InteractionModifier({
           onLongPressGesture: {
             perform: mockPerform,
-            onPressingChanged: mockPressingChanged
-          }
+            onPressingChanged: mockPressingChanged,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
         // Verify event listeners are added
-        expect(element.addEventListener).toHaveBeenCalledWith('pointerdown', expect.any(Function))
-        expect(element.addEventListener).toHaveBeenCalledWith('pointermove', expect.any(Function))
-        expect(element.addEventListener).toHaveBeenCalledWith('pointerup', expect.any(Function))
-        expect(element.addEventListener).toHaveBeenCalledWith('pointercancel', expect.any(Function))
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'pointerdown',
+          expect.any(Function)
+        )
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'pointermove',
+          expect.any(Function)
+        )
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'pointerup',
+          expect.any(Function)
+        )
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'pointercancel',
+          expect.any(Function)
+        )
       })
 
       it('should handle custom timing and distance options', () => {
@@ -82,15 +94,18 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         const modifier = new InteractionModifier({
           onLongPressGesture: {
             minimumDuration: 1000, // Custom 1 second
-            maximumDistance: 20,    // Custom 20px
-            perform: mockPerform
-          }
+            maximumDistance: 20, // Custom 20px
+            perform: mockPerform,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
         // Test would verify timing logic, but requires complex pointer event simulation
-        expect(element.addEventListener).toHaveBeenCalledWith('pointerdown', expect.any(Function))
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'pointerdown',
+          expect.any(Function)
+        )
       })
 
       it('should call onPressingChanged when pressing starts and stops', () => {
@@ -100,8 +115,8 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         const modifier = new InteractionModifier({
           onLongPressGesture: {
             perform: mockPerform,
-            onPressingChanged: mockPressingChanged
-          }
+            onPressingChanged: mockPressingChanged,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
@@ -115,8 +130,8 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
 
         const modifier = new InteractionModifier({
           onLongPressGesture: {
-            perform: mockPerform
-          }
+            perform: mockPerform,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
@@ -135,14 +150,17 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
           keyboardShortcut: {
             key: 'Enter',
             modifiers: [],
-            action: mockAction
-          }
+            action: mockAction,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
         // Verify global keyboard event listener is added
-        expect(document.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function))
+        expect(document.addEventListener).toHaveBeenCalledWith(
+          'keydown',
+          expect.any(Function)
+        )
       })
 
       it('should setup keyboard shortcut with modifiers', () => {
@@ -152,13 +170,16 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
           keyboardShortcut: {
             key: 's',
             modifiers: ['cmd', 'shift'],
-            action: mockAction
-          }
+            action: mockAction,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
-        expect(document.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function))
+        expect(document.addEventListener).toHaveBeenCalledWith(
+          'keydown',
+          expect.any(Function)
+        )
       })
 
       it('should store cleanup function for keyboard shortcut', () => {
@@ -168,21 +189,23 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
           keyboardShortcut: {
             key: 'z',
             modifiers: ['ctrl'],
-            action: mockAction
-          }
+            action: mockAction,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
         expect((element as any)._keyboardShortcutCleanup).toBeDefined()
-        expect(typeof (element as any)._keyboardShortcutCleanup).toBe('function')
+        expect(typeof (element as any)._keyboardShortcutCleanup).toBe(
+          'function'
+        )
       })
     })
 
     describe('Focus Management', () => {
       it('should setup static focus management', () => {
         const modifier = new InteractionModifier({
-          focused: true
+          focused: true,
         })
 
         modifier.apply(mockNode, mockContext)
@@ -195,27 +218,30 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         const [focused, setFocused] = createSignal(false)
 
         const modifier = new InteractionModifier({
-          focused: focused
+          focused: focused,
         })
 
         modifier.apply(mockNode, mockContext)
 
         expect(element.setAttribute).toHaveBeenCalledWith('tabindex', '0')
-        
+
         // Test reactive focus would require more complex setup with createEffect
         expect(focused()).toBe(false)
       })
 
       it('should handle focus management for non-HTMLElement', () => {
-        const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+        const svgElement = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'svg'
+        )
         const svgContext = {
           ...mockContext,
-          element: svgElement
+          element: svgElement,
         }
         const svgNode = { element: svgElement }
 
         const modifier = new InteractionModifier({
-          focused: true
+          focused: true,
         })
 
         // Should not throw error for non-HTML elements
@@ -227,8 +253,8 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       it('should setup focusable with default options', () => {
         const modifier = new InteractionModifier({
           focusable: {
-            isFocusable: true
-          }
+            isFocusable: true,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
@@ -239,8 +265,8 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       it('should setup non-focusable element', () => {
         const modifier = new InteractionModifier({
           focusable: {
-            isFocusable: false
-          }
+            isFocusable: false,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
@@ -252,28 +278,34 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         const modifier = new InteractionModifier({
           focusable: {
             isFocusable: true,
-            interactions: ['activate']
-          }
+            interactions: ['activate'],
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
         // Verify keyboard activation listener is added
-        expect(element.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function))
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'keydown',
+          expect.any(Function)
+        )
       })
 
       it('should setup edit interaction', () => {
         const modifier = new InteractionModifier({
           focusable: {
             isFocusable: true,
-            interactions: ['edit']
-          }
+            interactions: ['edit'],
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
         expect(element.setAttribute).toHaveBeenCalledWith('role', 'textbox')
-        expect(element.setAttribute).toHaveBeenCalledWith('contenteditable', 'true')
+        expect(element.setAttribute).toHaveBeenCalledWith(
+          'contenteditable',
+          'true'
+        )
       })
     })
 
@@ -284,14 +316,20 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         const modifier = new InteractionModifier({
           onContinuousHover: {
             coordinateSpace: 'local',
-            perform: mockPerform
-          }
+            perform: mockPerform,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
-        expect(element.addEventListener).toHaveBeenCalledWith('mousemove', expect.any(Function))
-        expect(element.addEventListener).toHaveBeenCalledWith('mouseleave', expect.any(Function))
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'mousemove',
+          expect.any(Function)
+        )
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'mouseleave',
+          expect.any(Function)
+        )
       })
 
       it('should setup continuous hover with global coordinates', () => {
@@ -300,14 +338,20 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         const modifier = new InteractionModifier({
           onContinuousHover: {
             coordinateSpace: 'global',
-            perform: mockPerform
-          }
+            perform: mockPerform,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
-        expect(element.addEventListener).toHaveBeenCalledWith('mousemove', expect.any(Function))
-        expect(element.addEventListener).toHaveBeenCalledWith('mouseleave', expect.any(Function))
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'mousemove',
+          expect.any(Function)
+        )
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'mouseleave',
+          expect.any(Function)
+        )
       })
 
       it('should default to local coordinate space', () => {
@@ -315,14 +359,17 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
 
         const modifier = new InteractionModifier({
           onContinuousHover: {
-            perform: mockPerform
-          }
+            perform: mockPerform,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
 
         // Default behavior should be local coordinates
-        expect(element.addEventListener).toHaveBeenCalledWith('mousemove', expect.any(Function))
+        expect(element.addEventListener).toHaveBeenCalledWith(
+          'mousemove',
+          expect.any(Function)
+        )
       })
 
       it('should store cleanup function for continuous hover', () => {
@@ -330,8 +377,8 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
 
         const modifier = new InteractionModifier({
           onContinuousHover: {
-            perform: mockPerform
-          }
+            perform: mockPerform,
+          },
         })
 
         modifier.apply(mockNode, mockContext)
@@ -344,7 +391,7 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
     describe('Hit Testing Control', () => {
       it('should enable hit testing by default', () => {
         const modifier = new InteractionModifier({
-          allowsHitTesting: true
+          allowsHitTesting: true,
         })
 
         modifier.apply(mockNode, mockContext)
@@ -354,7 +401,7 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
 
       it('should disable hit testing', () => {
         const modifier = new InteractionModifier({
-          allowsHitTesting: false
+          allowsHitTesting: false,
         })
 
         modifier.apply(mockNode, mockContext)
@@ -363,15 +410,18 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       })
 
       it('should handle non-HTML elements gracefully', () => {
-        const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+        const svgElement = document.createElementNS(
+          'http://www.w3.org/2000/svg',
+          'svg'
+        )
         const svgContext = {
           ...mockContext,
-          element: svgElement
+          element: svgElement,
         }
         const svgNode = { element: svgElement }
 
         const modifier = new InteractionModifier({
-          allowsHitTesting: false
+          allowsHitTesting: false,
         })
 
         expect(() => modifier.apply(svgNode, svgContext)).not.toThrow()
@@ -383,8 +433,8 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         const modifier = new InteractionModifier({
           highPriorityGesture: {
             gesture: 'tap',
-            including: ['subviews']
-          }
+            including: ['subviews'],
+          },
         })
 
         modifier.apply(mockNode, mockContext)
@@ -397,8 +447,8 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         const modifier = new InteractionModifier({
           simultaneousGesture: {
             gesture: 'pan',
-            including: ['all']
-          }
+            including: ['all'],
+          },
         })
 
         modifier.apply(mockNode, mockContext)
@@ -414,12 +464,11 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       const mockPerform = vi.fn()
 
       const component = Button('Long Press Test', () => {})
-        .modifier
-        .onLongPressGesture({
+        .modifier.onLongPressGesture({
           minimumDuration: 750,
           maximumDistance: 15,
           perform: mockPerform,
-          onPressingChanged: (pressing) => console.log('Pressing:', pressing)
+          onPressingChanged: pressing => console.log('Pressing:', pressing),
         })
         .build()
 
@@ -431,8 +480,7 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       const mockAction = vi.fn()
 
       const component = Text('Shortcut Test')
-        .modifier
-        .keyboardShortcut('s', ['cmd', 'shift'], mockAction)
+        .modifier.keyboardShortcut('s', ['cmd', 'shift'], mockAction)
         .build()
 
       expect(component.modifiers).toHaveLength(1)
@@ -443,8 +491,7 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       const [focused, setFocused] = createSignal(false)
 
       const component = VStack({ children: [] })
-        .modifier
-        .focused(focused)
+        .modifier.focused(focused)
         .build()
 
       expect(component.modifiers).toHaveLength(1)
@@ -453,8 +500,7 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
 
     it('should create InteractionModifier for focusable behavior', () => {
       const component = Text('Focusable Test')
-        .modifier
-        .focusable(true, ['activate', 'edit'])
+        .modifier.focusable(true, ['activate', 'edit'])
         .build()
 
       expect(component.modifiers).toHaveLength(1)
@@ -465,8 +511,7 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       const mockPerform = vi.fn()
 
       const component = VStack({ children: [] })
-        .modifier
-        .onContinuousHover('local', mockPerform)
+        .modifier.onContinuousHover('local', mockPerform)
         .build()
 
       expect(component.modifiers).toHaveLength(1)
@@ -475,8 +520,7 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
 
     it('should create InteractionModifier for hit testing control', () => {
       const component = Button('Hit Test', () => {})
-        .modifier
-        .allowsHitTesting(false)
+        .modifier.allowsHitTesting(false)
         .build()
 
       expect(component.modifiers).toHaveLength(1)
@@ -490,10 +534,9 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       const mockShortcut = vi.fn()
 
       const component = Button('Advanced Gesture Test', () => {})
-        .modifier
-        .onLongPressGesture({
+        .modifier.onLongPressGesture({
           minimumDuration: 500,
-          perform: mockLongPress
+          perform: mockLongPress,
         })
         .keyboardShortcut('Enter', [], mockShortcut)
         .focused(focused)
@@ -510,20 +553,20 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
 
     it('should support TypeScript for all advanced gesture modifiers', () => {
       const [isFocused] = createSignal(true)
-      
+
       // This test ensures TypeScript compilation works
       const component = Text('TypeScript Test')
-        .modifier
-        .onLongPressGesture({
+        .modifier.onLongPressGesture({
           minimumDuration: 800,
           maximumDistance: 25,
           perform: () => console.log('Long press performed'),
-          onPressingChanged: (pressing) => console.log('Pressing changed:', pressing)
+          onPressingChanged: pressing =>
+            console.log('Pressing changed:', pressing),
         })
         .keyboardShortcut('z', ['cmd'], () => console.log('Undo'))
         .focused(isFocused)
         .focusable(true, ['activate'])
-        .onContinuousHover('local', (location) => {
+        .onContinuousHover('local', location => {
           if (location) {
             console.log('Hover at:', location.x, location.y)
           }
@@ -543,12 +586,12 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
     beforeEach(() => {
       element = createTestElement()
       mockNode = {
-        element
+        element,
       }
       mockContext = {
         element,
         componentId: 'test-component',
-        phase: 'creation'
+        phase: 'creation',
       }
     })
 
@@ -556,13 +599,13 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       const mockPerform = vi.fn()
       const modifier = new InteractionModifier({
         onLongPressGesture: {
-          perform: mockPerform
-        }
+          perform: mockPerform,
+        },
       })
 
       const emptyContext = {
         ...mockContext,
-        element: undefined
+        element: undefined,
       }
       const emptyNode = { element: undefined }
 
@@ -573,9 +616,9 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       const mockPerform = vi.fn()
       const modifier = new InteractionModifier({
         onLongPressGesture: {
-          perform: mockPerform
+          perform: mockPerform,
           // No optional parameters
-        }
+        },
       })
 
       expect(() => modifier.apply(mockNode, mockContext)).not.toThrow()
@@ -586,9 +629,9 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       const modifier = new InteractionModifier({
         keyboardShortcut: {
           key: 'Space',
-          action: mockAction
+          action: mockAction,
           // No modifiers array
-        }
+        },
       })
 
       expect(() => modifier.apply(mockNode, mockContext)).not.toThrow()
@@ -599,8 +642,8 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
       const modifier = new InteractionModifier({
         onContinuousHover: {
           coordinateSpace: 'local',
-          perform: mockPerform
-        }
+          perform: mockPerform,
+        },
       })
 
       // Mock getBoundingClientRect
@@ -613,17 +656,17 @@ describe('Advanced Gesture Modifiers - Epic: Butternut Phase 4', () => {
         height: 180,
         x: 10,
         y: 20,
-        toJSON: vi.fn()
+        toJSON: vi.fn(),
       }))
 
       expect(() => modifier.apply(mockNode, mockContext)).not.toThrow()
     })
 
     it('should handle focus management with existing tabindex', () => {
-      element.hasAttribute = vi.fn((attr) => attr === 'tabindex')
-      
+      element.hasAttribute = vi.fn(attr => attr === 'tabindex')
+
       const modifier = new InteractionModifier({
-        focused: true
+        focused: true,
       })
 
       modifier.apply(mockNode, mockContext)
@@ -639,42 +682,42 @@ beforeEach(() => {
   // Mock element methods
   Object.defineProperty(HTMLElement.prototype, 'addEventListener', {
     value: vi.fn(),
-    writable: true
+    writable: true,
   })
 
   Object.defineProperty(HTMLElement.prototype, 'removeEventListener', {
     value: vi.fn(),
-    writable: true
+    writable: true,
   })
 
   Object.defineProperty(HTMLElement.prototype, 'setAttribute', {
     value: vi.fn(),
-    writable: true
+    writable: true,
   })
 
   Object.defineProperty(HTMLElement.prototype, 'removeAttribute', {
     value: vi.fn(),
-    writable: true
+    writable: true,
   })
 
   Object.defineProperty(HTMLElement.prototype, 'hasAttribute', {
     value: vi.fn(() => false),
-    writable: true
+    writable: true,
   })
 
   Object.defineProperty(HTMLElement.prototype, 'focus', {
     value: vi.fn(),
-    writable: true
+    writable: true,
   })
 
   Object.defineProperty(HTMLElement.prototype, 'blur', {
     value: vi.fn(),
-    writable: true
+    writable: true,
   })
 
   Object.defineProperty(HTMLElement.prototype, 'click', {
     value: vi.fn(),
-    writable: true
+    writable: true,
   })
 
   Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
@@ -687,19 +730,19 @@ beforeEach(() => {
       height: 100,
       x: 0,
       y: 0,
-      toJSON: vi.fn()
+      toJSON: vi.fn(),
     })),
-    writable: true
+    writable: true,
   })
 
   // Mock document methods
   Object.defineProperty(document, 'addEventListener', {
     value: vi.fn(),
-    writable: true
+    writable: true,
   })
 
   Object.defineProperty(document, 'removeEventListener', {
     value: vi.fn(),
-    writable: true
+    writable: true,
   })
 })

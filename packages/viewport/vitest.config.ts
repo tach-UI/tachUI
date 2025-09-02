@@ -1,19 +1,16 @@
-import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import { defineConfig, mergeConfig } from 'vitest/config'
+import sharedConfig from '../../vitest.shared.config'
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['__tests__/setup.ts'],
-    coverage: {
-      reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', '__tests__/', 'dist/', '**/*.d.ts'],
+export default mergeConfig(
+  sharedConfig,
+  defineConfig({
+    test: {
+      setupFiles: ['__tests__/setup.ts'],
     },
-  },
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
+    resolve: {
+      alias: {
+        '@tachui/viewport': './src',
+      },
     },
-  },
-})
+  })
+)
