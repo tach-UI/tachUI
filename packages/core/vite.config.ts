@@ -31,7 +31,7 @@ export default defineConfig({
         'constants/layout': resolve(__dirname, 'src/constants/layout.ts'),
         debug: resolve(__dirname, 'src/debug/index.ts'),
         'validation/index': resolve(__dirname, 'src/validation/index.ts'),
-        'viewport/index': resolve(__dirname, 'src/viewport/index.ts'),
+
         'css-classes/index': resolve(__dirname, 'src/css-classes/index.ts'),
       },
       name: 'TachUICore',
