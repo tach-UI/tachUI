@@ -4,8 +4,6 @@
  * A SwiftUI-inspired web framework with SolidJS-style reactivity,
  * compile-time optimization, and TypeScript-first design.
  */
-
-// Assets system
 export {
   Assets,
   Asset,
@@ -29,8 +27,6 @@ export {
   type AssetInfo,
   type AssetsInterface,
 } from './assets'
-
-// Constants system
 export {
   infinity,
   Layout,
@@ -41,8 +37,6 @@ export {
   type Dimension,
   type InfinityValue,
 } from './constants'
-
-// Concatenation system
 export {
   type ComponentSegment,
   type ConcatenationMetadata,
@@ -59,8 +53,6 @@ export {
   Concatenated,
   TextConcatenationOptimizer,
 } from './concatenation'
-
-// Frame utilities and SUI compatibility
 export {
   fillMaxWidth,
   fillMaxHeight,
@@ -75,25 +67,10 @@ export {
   remainingSpace,
   equalShare,
 } from './constants/frame-utils'
-
-// Compiler system (Phase 2)
 export * from './compiler'
-
-// Component system (Phase 4-5)
 export * from './components'
-
-// Primitives moved to @tachui/primitives - import directly from that package
-
-// Modifier system compatibility layer (will migrate to @tachui/modifiers)
 export * from './modifiers-compat'
-
-// Responsive system moved to @tachui/responsive - import directly from that package
-
-// Data components (List, Menu, Section) are included in the main components export
-
-// Gradient system
 export * from './gradients'
-// Simplified Plugin System (Phase 1)
 export {
   SimplifiedPluginManager,
   SimplifiedComponentRegistry,
@@ -113,7 +90,6 @@ export {
   validatePluginName,
   normalizePluginName,
   PluginDevUtils,
-  // Plugin error handling moved to @tachui/devtools - import from that package
 } from './plugins'
 export type {
   TachUIPlugin,
@@ -122,24 +98,16 @@ export type {
   ServiceRegistration,
   ComponentRegistration,
 } from './plugins'
-
-// Reactive system (Phase 1)
 export * from './reactive'
-// Runtime system (Phase 3)
 export * from './runtime'
 export { registerComponentWithLifecycleHooks } from './runtime/dom-bridge'
-
-// Essential runtime types - explicitly exported for plugin packages
 export type {
   ComponentProps,
   ComponentInstance,
   ComponentChildren,
   DOMNode,
 } from './runtime/types'
-
-// CSS Classes system
 export * from './css-classes'
-// Lazy loading system
 export {
   createLazyComponentGroup,
   createVisibilityLazyComponent,
@@ -148,15 +116,7 @@ export {
   preloadComponentGroup,
   Suspense,
 } from './runtime/lazy-component'
-// State management system
 export * from './state'
-
-// Debug system
-// Debug system moved to @tachui/devtools
-// Import from @tachui/devtools instead
-
-// Validation system (Phase 1A - Epic: Greylock)
-// Enhanced validation moved to @tachui/devtools - import from that package
 export {
   ValidationDevTools,
   ValidationSetup,
@@ -164,6 +124,5 @@ export {
   getComponentValidator,
   ProductionUtils,
 } from './validation'
-
-// Version
-export const VERSION = '0.1.0'
+export declare const VERSION = '0.1.0'
+//# sourceMappingURL=index.d.ts.map

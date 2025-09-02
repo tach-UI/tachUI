@@ -19,6 +19,7 @@ export default defineConfig({
         '@tachui/core/runtime/types',
         '@tachui/core/modifiers/types',
         '@tachui/core/constants/layout',
+        '@tachui/mobile',
       ],
       output: {
         entryFileNames: '[name].js',

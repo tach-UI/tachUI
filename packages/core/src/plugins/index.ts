@@ -1,6 +1,6 @@
 /**
  * Simplified Plugin System - Phase 1 Implementation
- * 
+ *
  * Main exports for the streamlined plugin system.
  * Removes over-engineered security, performance monitoring, and complex preloading.
  */
@@ -8,12 +8,12 @@
 // Core simplified plugin system
 export { SimplifiedPluginManager } from './simplified-plugin-manager'
 export { SimplifiedComponentRegistry } from './simplified-component-registry'
-export { 
+export {
   SimplifiedTachUIInstance,
   globalTachUIInstance,
   installPlugin,
   registerComponent,
-  registerService
+  registerService,
 } from './simplified-tachui-instance'
 
 // Simplified types
@@ -21,7 +21,7 @@ export type {
   TachUIPlugin,
   TachUIInstance,
   ComponentRegistrationOptions,
-  ServiceRegistration
+  ServiceRegistration,
 } from './simplified-types'
 export { PluginError } from './simplified-types'
 
@@ -34,28 +34,22 @@ export {
   compareSemver,
   validatePluginName,
   normalizePluginName,
-  PluginDevUtils
+  PluginDevUtils,
 } from './simplified-utils'
 
 // Optimized lazy loading (Week 3 performance enhancement)
-export { 
+export {
   OptimizedLazyPluginLoader,
   createLazyPlugin,
   // Backward compatibility alias
-  OptimizedLazyPluginLoader as SimplifiedLazyPluginLoader
+  OptimizedLazyPluginLoader as SimplifiedLazyPluginLoader,
 } from './simplified-lazy-loader'
 
-// Optimized error handling (Week 3 performance enhancement)
-export {
-  OptimizedPluginErrorHandler,
-  SimplifiedPluginErrorHandler,
-  globalPluginErrorHandler,
-  ErrorRecoveryUtils
-} from './simplified-error-handler'
+// Plugin error handling moved to @tachui/devtools - import from that package
 
 // Legacy adapter for backward compatibility
-export { 
+export {
   createLegacyPluginAdapter,
   isLegacyPlugin,
-  adaptPlugin
+  adaptPlugin,
 } from './legacy-adapter'

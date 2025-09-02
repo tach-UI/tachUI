@@ -5,8 +5,12 @@
  * Provides helper functions, debugging aids, and error analysis tools.
  */
 
-import { createComputed, createSignal } from '../reactive'
-import type { ErrorCategory, ErrorSeverity, TachUIError } from './error-boundary'
+import { createComputed, createSignal } from '@tachui/core'
+import type {
+  ErrorCategory,
+  ErrorSeverity,
+  TachUIError,
+} from './error-boundary'
 import { globalErrorManager } from './error-boundary'
 import type { ErrorAggregation, LogEntry } from './error-reporting'
 import { globalErrorAggregator, globalLogger } from './error-reporting'
@@ -65,7 +69,11 @@ export class ErrorPatternDetector {
    * Analyze error patterns
    */
   analyzePatterns(errors: TachUIError[]): {
-    patterns: { pattern: string; count: number; severity: 'low' | 'medium' | 'high' }[]
+    patterns: {
+      pattern: string
+      count: number
+      severity: 'low' | 'medium' | 'high'
+    }[]
     cascadingErrors: TachUIError[][]
     correlations: { error1: string; error2: string; correlation: number }[]
   } {
@@ -107,7 +115,10 @@ export class ErrorPatternDetector {
       .map(([pattern, count]) => ({
         pattern,
         count,
-        severity: (count > 10 ? 'high' : count > 5 ? 'medium' : 'low') as 'low' | 'medium' | 'high',
+        severity: (count > 10 ? 'high' : count > 5 ? 'medium' : 'low') as
+          | 'low'
+          | 'medium'
+          | 'high',
       }))
       .sort((a, b) => b.count - a.count)
   }
@@ -158,8 +169,12 @@ export class ErrorPatternDetector {
     error2: string
     correlation: number
   }[] {
-    const correlations: { error1: string; error2: string; correlation: number }[] = []
-    const errorTypes = new Set(errors.map((e) => e.message))
+    const correlations: {
+      error1: string
+      error2: string
+      correlation: number
+    }[] = []
+    const errorTypes = new Set(errors.map(e => e.message))
 
     for (const type1 of errorTypes) {
       for (const type2 of errorTypes) {
@@ -178,7 +193,11 @@ export class ErrorPatternDetector {
   /**
    * Calculate correlation between two error types
    */
-  private calculateCorrelation(errors: TachUIError[], type1: string, type2: string): number {
+  private calculateCorrelation(
+    errors: TachUIError[],
+    type1: string,
+    type2: string
+  ): number {
     const windows = 5000 // 5 second windows
     const timeSlots = new Map<number, { type1: boolean; type2: boolean }>()
 
@@ -193,8 +212,8 @@ export class ErrorPatternDetector {
     }
 
     const slots = Array.from(timeSlots.values())
-    const both = slots.filter((s) => s.type1 && s.type2).length
-    const either = slots.filter((s) => s.type1 || s.type2).length
+    const both = slots.filter(s => s.type1 && s.type2).length
+    const either = slots.filter(s => s.type1 || s.type2).length
 
     return either > 0 ? both / either : 0
   }
@@ -238,7 +257,8 @@ export class StackTraceAnalyzer {
 
     for (const line of lines) {
       const match =
-        line.match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/) || line.match(/at\s+(.+?):(\d+):(\d+)/)
+        line.match(/at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/) ||
+        line.match(/at\s+(.+?):(\d+):(\d+)/)
 
       if (match) {
         if (match.length === 5) {
@@ -271,7 +291,7 @@ export class StackTraceAnalyzer {
   ): string | undefined {
     // Look for TachUI-specific frames
     const tachUIFrames = frames.filter(
-      (f) =>
+      f =>
         f.file.includes('tachui') ||
         f.function.includes('Component') ||
         f.function.includes('render')
@@ -294,7 +314,9 @@ export class StackTraceAnalyzer {
   /**
    * Extract affected components from stack trace
    */
-  private extractAffectedComponents(frames: StackTraceAnalysis['frames']): string[] {
+  private extractAffectedComponents(
+    frames: StackTraceAnalysis['frames']
+  ): string[] {
     const components = new Set<string>()
 
     for (const frame of frames) {
@@ -322,7 +344,7 @@ export class StackTraceAnalyzer {
       case 'component_error':
         fixes.push('Check component props and state')
         fixes.push('Verify component lifecycle methods')
-        if (frames.some((f) => f.function.includes('render'))) {
+        if (frames.some(f => f.function.includes('render'))) {
           fixes.push('Review render method for potential null/undefined values')
         }
         break
@@ -371,10 +393,13 @@ export class PerformanceImpactAnalyzer {
    */
   analyzePerformanceImpact(errors: TachUIError[]): PerformanceImpact {
     const errorCount = errors.length
-    const affectedComponents = [...new Set(errors.map((e) => e.componentId).filter(Boolean))]
+    const affectedComponents = [
+      ...new Set(errors.map(e => e.componentId).filter(Boolean)),
+    ]
 
     // This would integrate with performance monitoring in a real implementation
-    const averageRenderTime = this.calculateAverageRenderTime(affectedComponents)
+    const averageRenderTime =
+      this.calculateAverageRenderTime(affectedComponents)
     const memoryUsage = this.calculateMemoryUsage(affectedComponents)
     const performanceDegradation = this.calculatePerformanceDegradation(errors)
 
@@ -390,7 +415,9 @@ export class PerformanceImpactAnalyzer {
   /**
    * Calculate average render time for affected components
    */
-  private calculateAverageRenderTime(componentIds: (string | undefined)[]): number {
+  private calculateAverageRenderTime(
+    componentIds: (string | undefined)[]
+  ): number {
     // Simplified calculation - would integrate with performance monitor
     return componentIds.length * 2.5 // Estimated overhead per component
   }
@@ -408,7 +435,10 @@ export class PerformanceImpactAnalyzer {
    */
   private calculatePerformanceDegradation(errors: TachUIError[]): number {
     const severityWeights = { low: 1, medium: 3, high: 5, critical: 10 }
-    const totalWeight = errors.reduce((sum, error) => sum + severityWeights[error.severity], 0)
+    const totalWeight = errors.reduce(
+      (sum, error) => sum + severityWeights[error.severity],
+      0
+    )
 
     // Convert to percentage degradation (capped at 100%)
     return Math.min(totalWeight * 2, 100)
@@ -431,14 +461,20 @@ export const errorDebugUtils = {
     const patterns = patternDetector.analyzePatterns(errors)
 
     // Calculate trends (simplified)
-    const errorTrends = Object.entries(statistics.errorsByCategory).map(([category, _count]) => ({
-      category: category as ErrorCategory,
-      trend: 'stable' as const, // Would calculate from historical data
-      change: 0,
-    }))
+    const errorTrends = Object.entries(statistics.errorsByCategory).map(
+      ([category, _count]) => ({
+        category: category as ErrorCategory,
+        trend: 'stable' as const, // Would calculate from historical data
+        change: 0,
+      })
+    )
 
     // Generate recommendations
-    const recommendations = this.generateRecommendations(errors, aggregations, patterns)
+    const recommendations = this.generateRecommendations(
+      errors,
+      aggregations,
+      patterns
+    )
 
     return {
       totalErrors: statistics.totalErrors,
@@ -463,19 +499,23 @@ export const errorDebugUtils = {
 
     // High error count recommendations
     if (errors.length > 50) {
-      recommendations.push('Consider implementing error boundaries to contain errors')
+      recommendations.push(
+        'Consider implementing error boundaries to contain errors'
+      )
       recommendations.push('Review error handling strategies across components')
     }
 
     // Component-specific recommendations
-    const componentErrors = errors.filter((e) => e.category === 'component_error')
+    const componentErrors = errors.filter(e => e.category === 'component_error')
     if (componentErrors.length > 10) {
-      recommendations.push('Review component lifecycle methods and state management')
+      recommendations.push(
+        'Review component lifecycle methods and state management'
+      )
       recommendations.push('Add prop validation to prevent runtime errors')
     }
 
     // Network error recommendations
-    const networkErrors = errors.filter((e) => e.category === 'network_error')
+    const networkErrors = errors.filter(e => e.category === 'network_error')
     if (networkErrors.length > 5) {
       recommendations.push('Implement retry logic for network requests')
       recommendations.push('Add proper error handling for API calls')
@@ -483,7 +523,9 @@ export const errorDebugUtils = {
 
     // Performance recommendations
     if (patterns.cascadingErrors.length > 0) {
-      recommendations.push('Investigate cascading errors that may indicate systemic issues')
+      recommendations.push(
+        'Investigate cascading errors that may indicate systemic issues'
+      )
     }
 
     return recommendations
@@ -499,7 +541,7 @@ export const errorDebugUtils = {
     performanceImpact: PerformanceImpact
     suggestions: string[]
   } | null {
-    const error = globalErrorManager.getErrors().find((e) => e.id === errorId)
+    const error = globalErrorManager.getErrors().find(e => e.id === errorId)
     if (!error) return null
 
     const stackTraceAnalyzer = new StackTraceAnalyzer()
@@ -511,7 +553,11 @@ export const errorDebugUtils = {
       error,
       ...relatedErrors,
     ])
-    const suggestions = this.generateErrorSuggestions(error, stackTrace, relatedErrors)
+    const suggestions = this.generateErrorSuggestions(
+      error,
+      stackTrace,
+      relatedErrors
+    )
 
     return {
       error,
@@ -530,7 +576,7 @@ export const errorDebugUtils = {
     const timeWindow = 5000 // 5 seconds
 
     return allErrors.filter(
-      (e) =>
+      e =>
         e.id !== error.id &&
         Math.abs(e.timestamp - error.timestamp) <= timeWindow &&
         (e.componentId === error.componentId || e.category === error.category)
@@ -548,11 +594,15 @@ export const errorDebugUtils = {
     const suggestions = [...stackTrace.suggestedFixes]
 
     if (relatedErrors.length > 0) {
-      suggestions.push('Multiple related errors detected - check for common root cause')
+      suggestions.push(
+        'Multiple related errors detected - check for common root cause'
+      )
     }
 
     if (error.retryCount > 0) {
-      suggestions.push('Error has been retried - consider implementing circuit breaker')
+      suggestions.push(
+        'Error has been retried - consider implementing circuit breaker'
+      )
     }
 
     return suggestions
@@ -571,7 +621,7 @@ export const errorDebugUtils = {
 
     if (analysis.topErrors.length > 0) {
       console.group('Top Errors')
-      analysis.topErrors.forEach((error) => {
+      analysis.topErrors.forEach(error => {
         console.log(`${error.message} (${error.count} times)`)
       })
       console.groupEnd()
@@ -579,7 +629,7 @@ export const errorDebugUtils = {
 
     if (analysis.recommendations.length > 0) {
       console.group('Recommendations')
-      analysis.recommendations.forEach((rec) => console.log(`• ${rec}`))
+      analysis.recommendations.forEach(rec => console.log(`• ${rec}`))
       console.groupEnd()
     }
 
@@ -653,9 +703,13 @@ export const devErrorUtils = {
     globalLogger.addDestination({
       name: 'enhanced-console',
       async send(data): Promise<void> {
-        data.forEach((entry) => {
+        data.forEach(entry => {
           if ('level' in entry && ['error', 'fatal'].includes(entry.level)) {
-            console.error(`🚨 [${entry.level.toUpperCase()}]`, entry.message, entry.context)
+            console.error(
+              `🚨 [${entry.level.toUpperCase()}]`,
+              entry.message,
+              entry.context
+            )
           }
         })
       },
@@ -675,7 +729,7 @@ export const devErrorUtils = {
     const [recentErrors, setRecentErrors] = recentErrorsSignal
 
     // Update dashboard when errors change
-    globalErrorManager.addHandler((_error) => {
+    globalErrorManager.addHandler(_error => {
       const errors = globalErrorManager.getErrors()
       setErrorCount(errors.length)
       setRecentErrors(errors.slice(-5))
@@ -688,7 +742,7 @@ export const devErrorUtils = {
 
       if (count > 0) {
         console.group(`📊 Error Dashboard (${count} total errors)`)
-        recent.forEach((error) => {
+        recent.forEach(error => {
           console.log(`${error.category}: ${error.message}`)
         })
         console.groupEnd()

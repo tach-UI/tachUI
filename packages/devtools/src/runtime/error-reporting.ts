@@ -5,7 +5,7 @@
  * Provides structured logging, error aggregation, and reporting pipelines.
  */
 
-import { createSignal } from '../reactive'
+import { createSignal } from '@tachui/core'
 import {
   type ErrorCategory,
   type ErrorSeverity,
@@ -183,7 +183,8 @@ export class StructuredLogger implements Logger {
       level,
       message,
       context: this.sanitizeContext(context),
-      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : undefined,
+      userAgent:
+        typeof window !== 'undefined' ? window.navigator.userAgent : undefined,
       url: typeof window !== 'undefined' ? window.location.href : undefined,
       userId: this.userId,
       sessionId: this.sessionId,
@@ -228,7 +229,9 @@ export class StructuredLogger implements Logger {
   /**
    * Sanitize context to remove sensitive data
    */
-  private sanitizeContext(context?: Record<string, any>): Record<string, any> | undefined {
+  private sanitizeContext(
+    context?: Record<string, any>
+  ): Record<string, any> | undefined {
     if (!context || !this.config.enableContextCapture) return undefined
 
     const sanitized = { ...context }
@@ -273,7 +276,10 @@ export class StructuredLogger implements Logger {
   /**
    * Send data with retry logic
    */
-  private async sendWithRetry(destination: ReportDestination, data: LogEntry[]): Promise<void> {
+  private async sendWithRetry(
+    destination: ReportDestination,
+    data: LogEntry[]
+  ): Promise<void> {
     let lastError: Error
 
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
@@ -296,7 +302,7 @@ export class StructuredLogger implements Logger {
    * Sleep for specified duration
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+    return new Promise(resolve => setTimeout(resolve, ms))
   }
 
   /**
@@ -347,7 +353,9 @@ export class StructuredLogger implements Logger {
    * Remove destination
    */
   removeDestination(name: string): void {
-    this.config.destinations = this.config.destinations.filter((d) => d.name !== name)
+    this.config.destinations = this.config.destinations.filter(
+      d => d.name !== name
+    )
   }
 
   /**
@@ -389,7 +397,9 @@ export class ErrorAggregator {
     }
 
     // Initialize reactive state
-    const [aggregationsSignal, setAggregations] = createSignal<ErrorAggregation[]>([])
+    const [aggregationsSignal, setAggregations] = createSignal<
+      ErrorAggregation[]
+    >([])
     this.aggregationsSignal = aggregationsSignal
     this.setAggregations = setAggregations
 
@@ -413,7 +423,10 @@ export class ErrorAggregator {
         existing.samples = existing.samples.slice(-5)
       }
 
-      if (error.componentId && !existing.affectedComponents.includes(error.componentId)) {
+      if (
+        error.componentId &&
+        !existing.affectedComponents.includes(error.componentId)
+      ) {
         existing.affectedComponents.push(error.componentId)
       }
     } else {
@@ -517,7 +530,7 @@ export const reportDestinations = {
     name: 'console',
     async send(data: LogEntry[] | ErrorAggregation[]): Promise<void> {
       console.group('TachUI Report')
-      data.forEach((entry) => {
+      data.forEach(entry => {
         if ('level' in entry) {
           console.log(`[${entry.level}] ${entry.message}`, entry.context || '')
         } else {
@@ -538,7 +551,8 @@ export const reportDestinations = {
     name: 'localStorage',
     async send(data: LogEntry[] | ErrorAggregation[]): Promise<void> {
       try {
-        const key = 'level' in data[0] ? 'tachui_logs' : 'tachui_error_aggregations'
+        const key =
+          'level' in data[0] ? 'tachui_logs' : 'tachui_error_aggregations'
         const existing = JSON.parse(localStorage.getItem(key) || '[]')
         const combined = [...existing, ...data]
 
@@ -603,7 +617,7 @@ export const reportDestinations = {
     } = {}
   ): ReportDestination {
     const formatForSlack = (data: (LogEntry | ErrorAggregation)[]): any => {
-      const blocks = data.slice(0, 5).map((entry) => {
+      const blocks = data.slice(0, 5).map(entry => {
         if ('level' in entry) {
           return {
             type: 'section',
@@ -629,7 +643,7 @@ export const reportDestinations = {
     const formatForDiscord = (data: (LogEntry | ErrorAggregation)[]): any => {
       const description = data
         .slice(0, 5)
-        .map((entry) => {
+        .map(entry => {
           if ('level' in entry) {
             return `**${entry.level.toUpperCase()}**: ${entry.message}`
           } else {
@@ -654,8 +668,10 @@ export const reportDestinations = {
       async send(data: LogEntry[] | ErrorAggregation[]): Promise<void> {
         const filteredData = options.onlyErrors
           ? data.filter(
-              (entry) =>
-                ('level' in entry && ['error', 'fatal'].includes(entry.level)) || 'count' in entry
+              entry =>
+                ('level' in entry &&
+                  ['error', 'fatal'].includes(entry.level)) ||
+                'count' in entry
             )
           : data
 
@@ -707,11 +723,13 @@ export const globalErrorAggregator = new ErrorAggregator()
 /**
  * Setup error reporting integration
  */
-export function setupErrorReporting(config: Partial<ReportingConfig> = {}): void {
+export function setupErrorReporting(
+  config: Partial<ReportingConfig> = {}
+): void {
   // Configure logger by creating a new instance with merged config
   // Note: This assumes globalLogger has a way to get current config or we need to refactor
   // For now, we'll skip the config merge since there's no public API for it
-  
+
   // TODO: Implement config usage once StructuredLogger has a public configure method
   void config // Silence unused parameter warning
 
@@ -740,7 +758,10 @@ export const reportingUtils = {
       logLevel: 'debug',
       enableStackTrace: true,
       enableContextCapture: true,
-      destinations: [reportDestinations.console, reportDestinations.localStorage],
+      destinations: [
+        reportDestinations.console,
+        reportDestinations.localStorage,
+      ],
     })
   },
 
@@ -756,7 +777,9 @@ export const reportingUtils = {
     const destinations: ReportDestination[] = []
 
     if (config.endpoint) {
-      destinations.push(reportDestinations.createHttpDestination(config.endpoint, config.apiKey))
+      destinations.push(
+        reportDestinations.createHttpDestination(config.endpoint, config.apiKey)
+      )
     }
 
     if (config.webhookUrl) {
@@ -784,7 +807,11 @@ export const reportingUtils = {
 
     // Wrap methods to include logger name
     const originalLog = logger.log.bind(logger)
-    logger.log = (level: LogLevel, message: string, context?: Record<string, any>) => {
+    logger.log = (
+      level: LogLevel,
+      message: string,
+      context?: Record<string, any>
+    ) => {
       originalLog(level, `[${name}] ${message}`, context)
     }
 

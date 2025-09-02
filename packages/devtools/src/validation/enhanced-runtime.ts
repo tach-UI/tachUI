@@ -5,7 +5,7 @@
  * and component lifecycle validation for production-ready validation.
  */
 
-import type { ComponentInstance } from '../runtime/types'
+import type { ComponentInstance } from '@tachui/core'
 // TachUIValidationError moved to primitives package - creating local version
 export class TachUIValidationError extends Error {
   constructor(

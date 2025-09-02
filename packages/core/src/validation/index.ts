@@ -10,11 +10,9 @@
 export * from './plugin-registration'
 export * from './production-bypass-core'
 
-// Phase 1C: Enhanced Runtime Validation Features
-export * from './enhanced-runtime'
-export * from './error-reporting'
+// Enhanced validation system moved to @tachui/devtools - import from that package
+// Phase 1C: Core validation only
 export * from './lifecycle-validation'
-export * from './performance-optimizer-stub'
 
 // Phase 1D: Developer Experience Integration moved to @tachui/devtools
 // Import from @tachui/devtools instead
@@ -87,9 +85,10 @@ export const ValidationDevTools = {
         'ℹ️ Component validation moved to @tachui/primitives package'
       )
 
-      // Test Phase 1C enhancements
-      const { EnhancedValidationUtils } = await import('./enhanced-runtime')
-      EnhancedValidationUtils.test()
+      // Test Phase 1C enhancements - moved to @tachui/devtools
+      console.info(
+        'ℹ️ Enhanced validation testing moved to @tachui/devtools package'
+      )
 
       // Note: Performance optimization testing moved to @tachui/devtools package
       // const { PerformanceOptimizationUtils } = await import('./performance-optimizer-stub')
@@ -147,9 +146,10 @@ export const ValidationDevTools = {
         note: 'Component validation moved to @tachui/primitives',
       }
 
-      // Enhanced runtime stats (Phase 1C)
-      const { EnhancedValidationUtils } = await import('./enhanced-runtime')
-      const enhancedStats = EnhancedValidationUtils.getPerformanceStats()
+      // Enhanced runtime stats - moved to @tachui/devtools
+      const enhancedStats = {
+        note: 'Enhanced validation moved to @tachui/devtools',
+      }
 
       // Performance stats (Phase 1C) - using lightweight stub
       const { PerformanceOptimizationUtils } = await import(
@@ -224,30 +224,34 @@ export const ValidationSetup = {
    */
   async development() {
     try {
-      const { EnhancedValidationUtils } = await import('./enhanced-runtime')
+      // const { EnhancedValidationUtils } = await import('./enhanced-runtime') // Moved to @tachui/devtools
       const { PerformanceOptimizationUtils } = await import(
         './performance-optimizer-stub'
       )
 
-      // Configure for development
-      EnhancedValidationUtils.configure({
-        enabled: true,
-        recovery: {
-          enableRecovery: true,
-          defaultStrategy: 'fallback',
-          maxRecoveryAttempts: 3,
-        },
-        lifecycle: {
-          validateOnMount: true,
-          validateOnUpdate: false,
-          validateOnUnmount: false,
-        },
-        reporting: {
-          enhancedMessages: true,
-          includeStackTrace: true,
-          reportToConsole: true,
-        },
-      })
+      // Enhanced validation moved to @tachui/devtools
+      console.info(
+        'ℹ️ Enhanced validation configuration moved to @tachui/devtools package'
+      )
+
+      // EnhancedValidationUtils.configure({
+      //   enabled: true,
+      //   recovery: {
+      //     enableRecovery: true,
+      //     defaultStrategy: 'fallback',
+      //     maxRecoveryAttempts: 3,
+      //   },
+      //   lifecycle: {
+      //     validateOnMount: true,
+      //     validateOnUpdate: false,
+      //     validateOnUnmount: false,
+      //   },
+      //   reporting: {
+      //     enhancedMessages: true,
+      //     includeStackTrace: true,
+      //     reportToConsole: true,
+      //   },
+      // })
 
       // Enable performance optimization
       PerformanceOptimizationUtils.configure({
@@ -296,27 +300,31 @@ export const ValidationSetup = {
    */
   async testing() {
     try {
-      const { EnhancedValidationUtils } = await import('./enhanced-runtime')
+      // const { EnhancedValidationUtils } = await import('./enhanced-runtime') // Moved to @tachui/devtools
 
-      // Configure for testing
-      EnhancedValidationUtils.configure({
-        enabled: true,
-        recovery: {
-          enableRecovery: false,
-          defaultStrategy: 'throw',
-          maxRecoveryAttempts: 0,
-        },
-        lifecycle: {
-          validateOnMount: true,
-          validateOnUpdate: true,
-          validateOnUnmount: true,
-        },
-        reporting: {
-          enhancedMessages: true,
-          includeStackTrace: true,
-          reportToConsole: false,
-        },
-      })
+      // Enhanced validation configuration moved to @tachui/devtools
+      console.info(
+        'ℹ️ Enhanced validation testing configuration moved to @tachui/devtools package'
+      )
+
+      // EnhancedValidationUtils.configure({
+      //   enabled: true,
+      //   recovery: {
+      //     enableRecovery: false,
+      //     defaultStrategy: 'throw',
+      //     maxRecoveryAttempts: 0,
+      //   },
+      //   lifecycle: {
+      //     validateOnMount: true,
+      //     validateOnUpdate: true,
+      //     validateOnUnmount: true,
+      //   },
+      //   reporting: {
+      //     enhancedMessages: true,
+      //     includeStackTrace: true,
+      //     reportToConsole: false,
+      //   },
+      // })
 
       console.info('🧪 TachUI Validation: Testing mode active')
 

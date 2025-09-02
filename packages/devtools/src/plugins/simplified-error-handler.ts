@@ -1,6 +1,6 @@
 /**
  * Simplified Plugin Error Handler - Week 3 Performance Enhancement
- * 
+ *
  * Enhanced error handling with performance optimizations:
  * - Error rate limiting and circuit breaker patterns
  * - Error aggregation and batch reporting
@@ -8,8 +8,17 @@
  * - Memory-efficient error tracking
  */
 
-import type { TachUIPlugin } from './simplified-types'
-import { PluginError } from './simplified-types'
+import type { TachUIPlugin } from '@tachui/core'
+// PluginError type definition
+class PluginError extends Error {
+  constructor(
+    message: string,
+    public code?: string
+  ) {
+    super(message)
+    this.name = 'PluginError'
+  }
+}
 
 interface ErrorMetrics {
   count: number
@@ -31,7 +40,7 @@ export class OptimizedPluginErrorHandler {
   private circuitBreakers = new Map<string, CircuitBreakerState>()
   private errorQueue: Array<{ type: string; data: any; timestamp: number }> = []
   private batchTimer?: number
-  
+
   // Configuration
   private maxFailuresBeforeCircuitBreak = 3
   private circuitBreakerResetTime = 30000 // 30 seconds
@@ -41,14 +50,16 @@ export class OptimizedPluginErrorHandler {
 
   handleInstallError(plugin: TachUIPlugin, error: Error): void {
     const errorKey = `install:${plugin.name}`
-    
+
     // Update error metrics
     this.recordError(errorKey, error)
-    
+
     // Check circuit breaker
     if (this.isCircuitOpen(errorKey)) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`🚫 Circuit breaker open for plugin ${plugin.name}, skipping detailed error handling`)
+        console.warn(
+          `🚫 Circuit breaker open for plugin ${plugin.name}, skipping detailed error handling`
+        )
       }
       return
     }
@@ -56,32 +67,37 @@ export class OptimizedPluginErrorHandler {
     if (process.env.NODE_ENV === 'development') {
       console.error(`❌ Failed to install plugin ${plugin.name}:`, error)
     }
-    
+
     // Simple fallback strategies with performance considerations
     if (error instanceof PluginError) {
       this.recordErrorType(errorKey, `plugin-error-${error.code}`)
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`Plugin ${plugin.name} installation failed with code: ${error.code}`)
+        console.warn(
+          `Plugin ${plugin.name} installation failed with code: ${error.code}`
+        )
       }
     }
-    
+
     if (error.message.includes('dependencies')) {
       this.recordErrorType(errorKey, 'dependency-error')
       if (process.env.NODE_ENV === 'development') {
         console.warn(`Plugin ${plugin.name} has unmet dependencies`)
       }
     }
-    
+
     // Queue error for batch emission
-    this.queueError('plugin-install-failed', { plugin: { name: plugin.name, version: plugin.version }, error: error.message })
+    this.queueError('plugin-install-failed', {
+      plugin: { name: plugin.name, version: plugin.version },
+      error: error.message,
+    })
   }
 
   handleRuntimeError(pluginName: string, error: Error): void {
     const errorKey = `runtime:${pluginName}`
-    
+
     // Update error metrics
     this.recordError(errorKey, error)
-    
+
     // Check circuit breaker
     if (this.isCircuitOpen(errorKey)) {
       return
@@ -90,23 +106,29 @@ export class OptimizedPluginErrorHandler {
     if (process.env.NODE_ENV === 'development') {
       console.error(`❌ Runtime error in plugin ${pluginName}:`, error)
     }
-    
+
     // Simple recovery - log error and continue
     if (error instanceof PluginError && error.code === 'CRITICAL') {
       this.recordErrorType(errorKey, 'critical-error')
       if (process.env.NODE_ENV === 'development') {
         console.warn(`Plugin ${pluginName} encountered a critical error`)
       }
-      this.queueError('plugin-critical-error', { pluginName, error: error.message })
+      this.queueError('plugin-critical-error', {
+        pluginName,
+        error: error.message,
+      })
     } else {
       this.recordErrorType(errorKey, 'runtime-error')
-      this.queueError('plugin-runtime-error', { pluginName, error: error.message })
+      this.queueError('plugin-runtime-error', {
+        pluginName,
+        error: error.message,
+      })
     }
   }
 
   handleUninstallError(pluginName: string, error: Error): void {
     const errorKey = `uninstall:${pluginName}`
-    
+
     // Update error metrics
     this.recordError(errorKey, error)
 
@@ -114,28 +136,42 @@ export class OptimizedPluginErrorHandler {
       console.error(`❌ Failed to uninstall plugin ${pluginName}:`, error)
       console.warn(`Plugin ${pluginName} may not have cleaned up properly`)
     }
-    
-    this.queueError('plugin-uninstall-error', { pluginName, error: error.message })
+
+    this.queueError('plugin-uninstall-error', {
+      pluginName,
+      error: error.message,
+    })
   }
 
-  private recordError(errorKey: string, _error: Error): void {
+  private recordError(errorKey: string, error: Error): void {
     const now = performance.now()
-    
+
     if (!this.errorMetrics.has(errorKey)) {
       this.errorMetrics.set(errorKey, {
         count: 0,
         lastOccurrence: now,
         firstOccurrence: now,
         errorTypes: new Map(),
-        resolved: false
+        resolved: false,
       })
     }
-    
+
     const metrics = this.errorMetrics.get(errorKey)!
     metrics.count++
     metrics.lastOccurrence = now
     metrics.resolved = false
-    
+
+    // Record error type for metrics
+    const errorType =
+      error.name === 'PluginError' || error.constructor.name === 'PluginError'
+        ? `plugin-error-${(error as any).code || 'UNKNOWN'}`
+        : errorKey.includes('runtime')
+          ? 'runtime-error'
+          : errorKey.includes('install')
+            ? 'install-error'
+            : 'generic-error'
+    this.recordErrorType(errorKey, errorType)
+
     // Update circuit breaker
     this.updateCircuitBreaker(errorKey)
   }
@@ -153,22 +189,27 @@ export class OptimizedPluginErrorHandler {
       this.circuitBreakers.set(errorKey, {
         isOpen: false,
         failureCount: 0,
-        lastFailureTime: 0
+        lastFailureTime: 0,
       })
     }
-    
+
     const breaker = this.circuitBreakers.get(errorKey)!
     breaker.failureCount++
     breaker.lastFailureTime = performance.now()
-    
+
     // Open circuit if too many failures
-    if (breaker.failureCount >= this.maxFailuresBeforeCircuitBreak && !breaker.isOpen) {
+    if (
+      breaker.failureCount >= this.maxFailuresBeforeCircuitBreak &&
+      !breaker.isOpen
+    ) {
       breaker.isOpen = true
-      
+
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`🚫 Circuit breaker opened for ${errorKey} after ${breaker.failureCount} failures`)
+        console.warn(
+          `🚫 Circuit breaker opened for ${errorKey} after ${breaker.failureCount} failures`
+        )
       }
-      
+
       // Schedule circuit reset
       breaker.resetTimeout = window.setTimeout(() => {
         this.resetCircuitBreaker(errorKey)
@@ -186,12 +227,12 @@ export class OptimizedPluginErrorHandler {
     if (breaker) {
       breaker.isOpen = false
       breaker.failureCount = 0
-      
+
       if (breaker.resetTimeout) {
         clearTimeout(breaker.resetTimeout)
         breaker.resetTimeout = undefined
       }
-      
+
       if (process.env.NODE_ENV === 'development') {
         console.log(`🔄 Circuit breaker reset for ${errorKey}`)
       }
@@ -203,14 +244,14 @@ export class OptimizedPluginErrorHandler {
     this.errorQueue.push({
       type,
       data,
-      timestamp: performance.now()
+      timestamp: performance.now(),
     })
-    
+
     // Limit queue size
     if (this.errorQueue.length > this.maxErrorHistory) {
       this.errorQueue = this.errorQueue.slice(-this.maxErrorHistory)
     }
-    
+
     // Batch process errors
     if (this.errorQueue.length >= this.errorBatchSize) {
       this.flushErrorQueue()
@@ -223,21 +264,21 @@ export class OptimizedPluginErrorHandler {
 
   private flushErrorQueue(): void {
     if (this.errorQueue.length === 0) return
-    
+
     // Process batched errors
     const errors = [...this.errorQueue]
     this.errorQueue = []
-    
+
     if (this.batchTimer) {
       clearTimeout(this.batchTimer)
       this.batchTimer = undefined
     }
-    
+
     // Emit batched errors
     for (const error of errors) {
       this.emitError(error.type, error.data)
     }
-    
+
     if (process.env.NODE_ENV === 'development' && errors.length > 1) {
       console.log(`📦 Processed ${errors.length} batched errors`)
     }
@@ -253,43 +294,54 @@ export class OptimizedPluginErrorHandler {
   }
 
   // Performance monitoring methods
-  
+
   getErrorMetrics(errorKey?: string): ErrorMetrics | Map<string, ErrorMetrics> {
     if (errorKey) {
-      return this.errorMetrics.get(errorKey) || {
-        count: 0,
-        lastOccurrence: 0,
-        firstOccurrence: 0,
-        errorTypes: new Map(),
-        resolved: true
-      }
+      return (
+        this.errorMetrics.get(errorKey) || {
+          count: 0,
+          lastOccurrence: 0,
+          firstOccurrence: 0,
+          errorTypes: new Map(),
+          resolved: true,
+        }
+      )
     }
     return new Map(this.errorMetrics)
   }
 
-  getCircuitBreakerStatus(errorKey?: string): CircuitBreakerState | Map<string, CircuitBreakerState> {
+  getCircuitBreakerStatus(
+    errorKey?: string
+  ): CircuitBreakerState | Map<string, CircuitBreakerState> {
     if (errorKey) {
-      return this.circuitBreakers.get(errorKey) || {
-        isOpen: false,
-        failureCount: 0,
-        lastFailureTime: 0
-      }
+      return (
+        this.circuitBreakers.get(errorKey) || {
+          isOpen: false,
+          failureCount: 0,
+          lastFailureTime: 0,
+        }
+      )
     }
     return new Map(this.circuitBreakers)
   }
 
   getPerformanceStats() {
     const allErrors = Array.from(this.errorMetrics.entries())
-    const totalErrors = allErrors.reduce((sum, [, metrics]) => sum + metrics.count, 0)
-    const activeCircuits = Array.from(this.circuitBreakers.values()).filter(cb => cb.isOpen).length
-    
+    const totalErrors = allErrors.reduce(
+      (sum, [, metrics]) => sum + metrics.count,
+      0
+    )
+    const activeCircuits = Array.from(this.circuitBreakers.values()).filter(
+      cb => cb.isOpen
+    ).length
+
     const errorsByType = new Map<string, number>()
     for (const [, metrics] of allErrors) {
       for (const [type, count] of metrics.errorTypes) {
         errorsByType.set(type, (errorsByType.get(type) || 0) + count)
       }
     }
-    
+
     return {
       totalErrors,
       uniqueErrorKeys: this.errorMetrics.size,
@@ -300,8 +352,11 @@ export class OptimizedPluginErrorHandler {
         errorMetrics: this.errorMetrics.size,
         circuitBreakers: this.circuitBreakers.size,
         queuedErrors: this.errorQueue.length,
-        estimatedMemoryKB: (this.errorMetrics.size * 2) + (this.circuitBreakers.size * 1) + (this.errorQueue.length * 0.5)
-      }
+        estimatedMemoryKB:
+          this.errorMetrics.size * 2 +
+          this.circuitBreakers.size * 1 +
+          this.errorQueue.length * 0.5,
+      },
     }
   }
 
@@ -309,7 +364,7 @@ export class OptimizedPluginErrorHandler {
     const metrics = this.errorMetrics.get(errorKey)
     if (metrics) {
       metrics.resolved = true
-      
+
       // Reset circuit breaker if error is resolved
       this.resetCircuitBreaker(errorKey)
     }
@@ -323,7 +378,7 @@ export class OptimizedPluginErrorHandler {
       this.errorMetrics.clear()
       this.circuitBreakers.clear()
       this.errorQueue = []
-      
+
       if (this.batchTimer) {
         clearTimeout(this.batchTimer)
         this.batchTimer = undefined
@@ -366,7 +421,7 @@ export const ErrorRecoveryUtils = {
     return {
       async exec<T>(fn: () => Promise<T> | T): Promise<T | undefined> {
         return ErrorRecoveryUtils.safeExecute(pluginName, 'operation', fn)
-      }
+      },
     }
-  }
+  },
 }

@@ -5,8 +5,7 @@
  * validation system, following proper plugin architecture.
  */
 
-// Import from core to register with the validation system
-import { getComponentValidator } from '@tachui/core'
+// Note: Core validation imports are done dynamically to avoid circular dependencies
 
 /**
  * TachUI Navigation validation error class

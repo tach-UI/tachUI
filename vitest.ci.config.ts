@@ -48,19 +48,29 @@ export default defineConfig({
     testTimeout: 15000, // 15 seconds instead of default 5 seconds
   },
   resolve: {
+    // Essential for ES module resolution in TypeScript
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+
     alias: [
+      // Core packages - use built dist for proper type resolution
       {
         find: '@tachui/core/plugins',
-        replacement: path.resolve(__dirname, 'packages/core/src/plugins'),
+        replacement: path.resolve(__dirname, 'packages/core/dist/plugins'),
       },
       {
         find: '@tachui/core',
-        replacement: path.resolve(__dirname, 'packages/core/src'),
+        replacement: path.resolve(__dirname, 'packages/core/dist'),
       },
       {
-        find: '@tachui/cli',
-        replacement: path.resolve(__dirname, 'packages/cli/src'),
+        find: '@tachui/primitives',
+        replacement: path.resolve(__dirname, 'packages/primitives/dist'),
       },
+      {
+        find: '@tachui/devtools',
+        replacement: path.resolve(__dirname, 'packages/devtools/dist'),
+      },
+
+      // Plugin packages
       {
         find: '@tachui/forms',
         replacement: path.resolve(__dirname, 'packages/forms/src'),
@@ -68,6 +78,42 @@ export default defineConfig({
       {
         find: '@tachui/navigation',
         replacement: path.resolve(__dirname, 'packages/navigation/src'),
+      },
+      {
+        find: '@tachui/mobile',
+        replacement: path.resolve(__dirname, 'packages/mobile/src'),
+      },
+      {
+        find: '@tachui/symbols',
+        replacement: path.resolve(__dirname, 'packages/symbols/src'),
+      },
+      {
+        find: '@tachui/data',
+        replacement: path.resolve(__dirname, 'packages/data/src'),
+      },
+      {
+        find: '@tachui/grid',
+        replacement: path.resolve(__dirname, 'packages/grid/src'),
+      },
+      {
+        find: '@tachui/responsive',
+        replacement: path.resolve(__dirname, 'packages/responsive/src'),
+      },
+      {
+        find: '@tachui/viewport',
+        replacement: path.resolve(__dirname, 'packages/viewport/src'),
+      },
+      {
+        find: '@tachui/modifiers',
+        replacement: path.resolve(__dirname, 'packages/modifiers/src'),
+      },
+      {
+        find: '@tachui/flow-control',
+        replacement: path.resolve(__dirname, 'packages/flow-control/src'),
+      },
+      {
+        find: '@tachui/cli',
+        replacement: path.resolve(__dirname, 'packages/cli/src'),
       },
     ],
   },

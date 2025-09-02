@@ -5,10 +5,10 @@
  * Provides error boundaries, recovery mechanisms, and error reporting.
  */
 
-import { createEffect, createSignal } from '../reactive'
+import { createEffect, createSignal } from '@tachui/core'
 // import { globalDevTools } from './dev-tools'
 import { globalPerformanceMonitor } from './performance'
-import type { ComponentInstance, ComponentProps, DOMNode } from './types'
+import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
 
 /**
  * Error severity levels

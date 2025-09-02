@@ -6,7 +6,7 @@
  * and provides detailed debugging information.
  */
 
-import { createSignal } from '../reactive'
+import { createSignal } from '@tachui/core'
 
 /**
  * Performance metric types
@@ -235,7 +235,7 @@ export class PerformanceMonitor {
     this.setMetrics([...this.metrics])
 
     // Notify listeners
-    this.listeners.forEach((listener) => listener(metric))
+    this.listeners.forEach(listener => listener(metric))
   }
 
   /**
@@ -362,7 +362,8 @@ export class PerformanceMonitor {
         break
       case 'computed':
         if (operation === 'create') this.reactiveMetrics.computedCount++
-        if (operation === 'execute') this.reactiveMetrics.computedRecalculations++
+        if (operation === 'execute')
+          this.reactiveMetrics.computedRecalculations++
         break
       case 'effect':
         if (operation === 'create') this.reactiveMetrics.effectCount++
@@ -456,22 +457,24 @@ export class PerformanceMonitor {
   /**
    * Get metrics by category
    */
-  getMetricsByCategory(category: PerformanceMetric['category']): PerformanceMetric[] {
-    return this.metrics.filter((metric) => metric.category === category)
+  getMetricsByCategory(
+    category: PerformanceMetric['category']
+  ): PerformanceMetric[] {
+    return this.metrics.filter(metric => metric.category === category)
   }
 
   /**
    * Get metrics by component
    */
   getMetricsByComponent(componentId: string): PerformanceMetric[] {
-    return this.metrics.filter((metric) => metric.componentId === componentId)
+    return this.metrics.filter(metric => metric.componentId === componentId)
   }
 
   /**
    * Get average metric value
    */
   getAverageMetric(name: string): number {
-    const metrics = this.metrics.filter((metric) => metric.name === name)
+    const metrics = this.metrics.filter(metric => metric.name === name)
     if (metrics.length === 0) return 0
 
     const sum = metrics.reduce((acc, metric) => acc + metric.value, 0)
@@ -494,17 +497,19 @@ export class PerformanceMonitor {
 
     const averageRenderTime =
       renderMetrics.length > 0
-        ? renderMetrics.reduce((sum, m) => sum + m.value, 0) / renderMetrics.length
+        ? renderMetrics.reduce((sum, m) => sum + m.value, 0) /
+          renderMetrics.length
         : 0
 
     const averageMemoryUsage =
       memoryMetrics.length > 0
-        ? memoryMetrics.reduce((sum, m) => sum + m.value, 0) / memoryMetrics.length
+        ? memoryMetrics.reduce((sum, m) => sum + m.value, 0) /
+          memoryMetrics.length
         : 0
 
     // Find most active component
     const componentActivity = new Map<string, number>()
-    this.metrics.forEach((metric) => {
+    this.metrics.forEach(metric => {
       if (metric.componentId) {
         componentActivity.set(
           metric.componentId,
@@ -633,7 +638,11 @@ export const performanceUtils = {
   /**
    * Measure function execution time
    */
-  measure<T>(name: string, fn: () => T, category: PerformanceMetric['category'] = 'component'): T {
+  measure<T>(
+    name: string,
+    fn: () => T,
+    category: PerformanceMetric['category'] = 'component'
+  ): T {
     const monitor = PerformanceMonitor.getInstance()
     monitor.startTimer(name)
 

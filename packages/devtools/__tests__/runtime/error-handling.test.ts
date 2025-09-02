@@ -15,8 +15,15 @@ import {
   globalErrorManager,
   type TachUIError,
 } from '../../src/runtime/error-boundary'
-import { CircuitBreaker, RetryPolicy, recoveryUtils } from '../../src/runtime/error-recovery'
-import { ErrorAggregator, StructuredLogger } from '../../src/runtime/error-reporting'
+import {
+  CircuitBreaker,
+  RetryPolicy,
+  recoveryUtils,
+} from '../../src/runtime/error-recovery'
+import {
+  ErrorAggregator,
+  StructuredLogger,
+} from '../../src/runtime/error-reporting'
 import {
   ErrorPatternDetector,
   errorDebugUtils,
@@ -142,25 +149,35 @@ describe('ErrorManager', () => {
     })
 
     it('should get errors by category', () => {
-      const componentError = errorManager.createTachUIError(new Error('Component error'), {
-        category: 'component_error',
-      })
-      const networkError = errorManager.createTachUIError(new Error('Network error'), {
-        category: 'network_error',
-      })
+      const componentError = errorManager.createTachUIError(
+        new Error('Component error'),
+        {
+          category: 'component_error',
+        }
+      )
+      const networkError = errorManager.createTachUIError(
+        new Error('Network error'),
+        {
+          category: 'network_error',
+        }
+      )
 
       errorManager.reportError(componentError)
       errorManager.reportError(networkError)
 
-      const componentErrors = errorManager.getErrorsByCategory('component_error')
+      const componentErrors =
+        errorManager.getErrorsByCategory('component_error')
       expect(componentErrors).toHaveLength(1)
       expect(componentErrors[0].category).toBe('component_error')
     })
 
     it('should get errors by severity', () => {
-      const highError = errorManager.createTachUIError(new Error('High error'), {
-        severity: 'high',
-      })
+      const highError = errorManager.createTachUIError(
+        new Error('High error'),
+        {
+          severity: 'high',
+        }
+      )
       const lowError = errorManager.createTachUIError(new Error('Low error'), {
         severity: 'low',
       })
@@ -333,7 +350,9 @@ describe('ErrorBoundary', () => {
     it('should render custom fallback when provided', () => {
       const fallback = (error: TachUIError, _retry: () => void) => ({
         type: 'component' as const,
-        render: () => [{ type: 'text', content: `Custom error: ${error.message}` }],
+        render: () => [
+          { type: 'text', content: `Custom error: ${error.message}` },
+        ],
       })
 
       const boundary = createErrorBoundary({ fallback }, [])
@@ -344,7 +363,10 @@ describe('ErrorBoundary', () => {
       const result = boundary.render()
 
       expect(result).toHaveLength(1)
-      expect(result[0]).toEqual({ type: 'text', content: 'Custom error: Custom test error' })
+      expect(result[0]).toEqual({
+        type: 'text',
+        content: 'Custom error: Custom test error',
+      })
     })
   })
 })
@@ -428,7 +450,9 @@ describe('CircuitBreaker', () => {
       }
 
       // Should reject immediately
-      await expect(circuitBreaker.execute(failingFn)).rejects.toThrow('Circuit breaker is open')
+      await expect(circuitBreaker.execute(failingFn)).rejects.toThrow(
+        'Circuit breaker is open'
+      )
     })
   })
 
@@ -485,7 +509,9 @@ describe('RetryPolicy', () => {
     it('should respect max attempts', async () => {
       const failingFn = () => Promise.reject(new Error('Always fails'))
 
-      await expect(retryPolicy.execute(failingFn)).rejects.toThrow('Always fails')
+      await expect(retryPolicy.execute(failingFn)).rejects.toThrow(
+        'Always fails'
+      )
     })
 
     it('should not retry non-retryable errors', async () => {
@@ -501,7 +527,8 @@ describe('RetryPolicy', () => {
         }
       }
 
-      const failingFn = () => Promise.reject(new ValidationError('Invalid input'))
+      const failingFn = () =>
+        Promise.reject(new ValidationError('Invalid input'))
 
       await expect(policy.execute(failingFn)).rejects.toThrow('Invalid input')
     })
@@ -556,7 +583,13 @@ describe('StructuredLogger', () => {
 
       const entries = logger.getEntries()
       expect(entries).toHaveLength(5)
-      expect(entries.map((e) => e.level)).toEqual(['debug', 'info', 'warn', 'error', 'fatal'])
+      expect(entries.map(e => e.level)).toEqual([
+        'debug',
+        'info',
+        'warn',
+        'error',
+        'fatal',
+      ])
     })
 
     it('should respect log level threshold', () => {
@@ -569,7 +602,7 @@ describe('StructuredLogger', () => {
 
       const entries = logger.getEntries()
       expect(entries).toHaveLength(2)
-      expect(entries.map((e) => e.level)).toEqual(['warn', 'error'])
+      expect(entries.map(e => e.level)).toEqual(['warn', 'error'])
     })
 
     it('should include context in log entries', () => {
@@ -624,8 +657,12 @@ describe('ErrorAggregator', () => {
 
   describe('Error Aggregation', () => {
     it('should aggregate similar errors', () => {
-      const error1 = globalErrorManager.createTachUIError(new Error('Same error'))
-      const error2 = globalErrorManager.createTachUIError(new Error('Same error'))
+      const error1 = globalErrorManager.createTachUIError(
+        new Error('Same error')
+      )
+      const error2 = globalErrorManager.createTachUIError(
+        new Error('Same error')
+      )
 
       aggregator.aggregateError(error1)
       aggregator.aggregateError(error2)
@@ -637,29 +674,42 @@ describe('ErrorAggregator', () => {
     })
 
     it('should track affected components', () => {
-      const error1 = globalErrorManager.createTachUIError(new Error('Test error'), {
-        componentId: 'component1',
-      })
-      const error2 = globalErrorManager.createTachUIError(new Error('Test error'), {
-        componentId: 'component2',
-      })
+      const error1 = globalErrorManager.createTachUIError(
+        new Error('Test error'),
+        {
+          componentId: 'component1',
+        }
+      )
+      const error2 = globalErrorManager.createTachUIError(
+        new Error('Test error'),
+        {
+          componentId: 'component2',
+        }
+      )
 
       aggregator.aggregateError(error1)
       aggregator.aggregateError(error2)
 
       const aggregations = aggregator.getAggregations()
-      expect(aggregations[0].affectedComponents).toEqual(['component1', 'component2'])
+      expect(aggregations[0].affectedComponents).toEqual([
+        'component1',
+        'component2',
+      ])
     })
 
     it('should get top errors by count', () => {
       // Create errors with different frequencies
       for (let i = 0; i < 5; i++) {
-        const error = globalErrorManager.createTachUIError(new Error('Frequent error'))
+        const error = globalErrorManager.createTachUIError(
+          new Error('Frequent error')
+        )
         aggregator.aggregateError(error)
       }
 
       for (let i = 0; i < 2; i++) {
-        const error = globalErrorManager.createTachUIError(new Error('Less frequent error'))
+        const error = globalErrorManager.createTachUIError(
+          new Error('Less frequent error')
+        )
         aggregator.aggregateError(error)
       }
 
@@ -700,7 +750,9 @@ describe('Error Pattern Detection', () => {
       expect(analysis.patterns.length).toBeGreaterThanOrEqual(2)
 
       // Find the network error pattern
-      const networkPattern = analysis.patterns.find((p) => p.pattern.includes('network_error'))
+      const networkPattern = analysis.patterns.find(p =>
+        p.pattern.includes('network_error')
+      )
       expect(networkPattern).toBeDefined()
       expect(networkPattern!.count).toBe(2)
     })
@@ -708,12 +760,18 @@ describe('Error Pattern Detection', () => {
     it('should detect cascading errors', () => {
       const now = Date.now()
       const errors = [
-        { ...globalErrorManager.createTachUIError(new Error('First error')), timestamp: now },
+        {
+          ...globalErrorManager.createTachUIError(new Error('First error')),
+          timestamp: now,
+        },
         {
           ...globalErrorManager.createTachUIError(new Error('Second error')),
           timestamp: now + 500,
         },
-        { ...globalErrorManager.createTachUIError(new Error('Third error')), timestamp: now + 800 },
+        {
+          ...globalErrorManager.createTachUIError(new Error('Third error')),
+          timestamp: now + 800,
+        },
       ]
 
       const analysis = detector.analyzePatterns(errors)
@@ -733,9 +791,12 @@ describe('Stack Trace Analysis', () => {
 
   describe('Stack Trace Parsing', () => {
     it('should analyze stack trace', () => {
-      const error = globalErrorManager.createTachUIError(new Error('Test error'), {
-        category: 'component_error',
-      })
+      const error = globalErrorManager.createTachUIError(
+        new Error('Test error'),
+        {
+          category: 'component_error',
+        }
+      )
 
       error.stack = `Error: Test error
     at TestComponent.render (test-component.js:15:10)
@@ -748,18 +809,25 @@ describe('Stack Trace Analysis', () => {
       expect(analysis.frames[0].function).toBe('TestComponent.render')
       expect(analysis.frames[0].file).toBe('test-component.js')
       expect(analysis.frames[0].line).toBe(15)
-      expect(analysis.suggestedFixes).toContain('Check component props and state')
+      expect(analysis.suggestedFixes).toContain(
+        'Check component props and state'
+      )
     })
 
     it('should generate category-specific suggestions', () => {
-      const networkError = globalErrorManager.createTachUIError(new Error('Network error'), {
-        category: 'network_error',
-      })
+      const networkError = globalErrorManager.createTachUIError(
+        new Error('Network error'),
+        {
+          category: 'network_error',
+        }
+      )
 
       const analysis = analyzer.analyzeStackTrace(networkError)
 
       expect(analysis.suggestedFixes).toContain('Check network connectivity')
-      expect(analysis.suggestedFixes).toContain('Verify API endpoints and request format')
+      expect(analysis.suggestedFixes).toContain(
+        'Verify API endpoints and request format'
+      )
     })
   })
 })
@@ -787,10 +855,13 @@ describe('Error Debug Utils', () => {
       ]
 
       errors.forEach(({ category, severity }) => {
-        const error = globalErrorManager.createTachUIError(new Error('Test error'), {
-          category: category as any,
-          severity: severity as any,
-        })
+        const error = globalErrorManager.createTachUIError(
+          new Error('Test error'),
+          {
+            category: category as any,
+            severity: severity as any,
+          }
+        )
         globalErrorManager.reportError(error)
       })
 
@@ -803,9 +874,12 @@ describe('Error Debug Utils', () => {
     })
 
     it('should debug specific errors', () => {
-      const error = globalErrorManager.createTachUIError(new Error('Test error'), {
-        componentId: 'test-component',
-      })
+      const error = globalErrorManager.createTachUIError(
+        new Error('Test error'),
+        {
+          componentId: 'test-component',
+        }
+      )
       globalErrorManager.reportError(error)
 
       const debugInfo = errorDebugUtils.debugError(error.id)
@@ -817,7 +891,9 @@ describe('Error Debug Utils', () => {
     })
 
     it('should export error data', () => {
-      const error = globalErrorManager.createTachUIError(new Error('Test error'))
+      const error = globalErrorManager.createTachUIError(
+        new Error('Test error')
+      )
       globalErrorManager.reportError(error)
 
       const exportData = errorDebugUtils.exportErrorData()
@@ -830,7 +906,11 @@ describe('Error Debug Utils', () => {
 
   describe('Error Simulation', () => {
     it('should simulate errors for testing', () => {
-      errorDebugUtils.simulateError('component_error', 'high', 'Simulated error')
+      errorDebugUtils.simulateError(
+        'component_error',
+        'high',
+        'Simulated error'
+      )
 
       const errors = globalErrorManager.getErrors()
       expect(errors).toHaveLength(1)
@@ -897,9 +977,12 @@ describe('Recovery Utils', () => {
     })
 
     it('should create circuit breaker wrapper', async () => {
-      const circuitBreakerFn = recoveryUtils.withCircuitBreaker(async () => 'success', {
-        failureThreshold: 2,
-      })
+      const circuitBreakerFn = recoveryUtils.withCircuitBreaker(
+        async () => 'success',
+        {
+          failureThreshold: 2,
+        }
+      )
 
       const result = await circuitBreakerFn()
       expect(result).toBe('success')

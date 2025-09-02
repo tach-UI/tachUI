@@ -5,7 +5,7 @@
  * Provides intelligent error handling, circuit breakers, and recovery patterns.
  */
 
-import { createSignal } from '../reactive'
+import { createSignal } from '@tachui/core'
 import { globalErrorManager, type TachUIError } from './error-boundary'
 
 /**
@@ -144,14 +144,17 @@ export class CircuitBreaker {
     this.setState('open')
 
     globalErrorManager.reportError(
-      globalErrorManager.createTachUIError(new Error('Circuit breaker tripped'), {
-        category: 'component_error',
-        severity: 'medium',
-        context: {
-          failureCount: this.failureCount,
-          requestCount: this.requestCount,
-        },
-      })
+      globalErrorManager.createTachUIError(
+        new Error('Circuit breaker tripped'),
+        {
+          category: 'component_error',
+          severity: 'medium',
+          context: {
+            failureCount: this.failureCount,
+            requestCount: this.requestCount,
+          },
+        }
+      )
     )
   }
 
@@ -215,7 +218,8 @@ export class CircuitBreaker {
       failureCount: this.failureCount,
       successCount: this.successCount,
       requestCount: this.requestCount,
-      failureRate: this.requestCount > 0 ? this.failureCount / this.requestCount : 0,
+      failureRate:
+        this.requestCount > 0 ? this.failureCount / this.requestCount : 0,
     }
   }
 }
@@ -299,14 +303,19 @@ export class RetryPolicy {
     }
 
     // Default: retry most errors except validation/auth
-    return !['ValidationError', 'AuthenticationError', 'AuthorizationError'].includes(errorName)
+    return ![
+      'ValidationError',
+      'AuthenticationError',
+      'AuthorizationError',
+    ].includes(errorName)
   }
 
   /**
    * Calculate delay for next retry
    */
   private calculateDelay(attempt: number): number {
-    const exponentialDelay = this.config.baseDelay * this.config.backoffMultiplier ** (attempt - 1)
+    const exponentialDelay =
+      this.config.baseDelay * this.config.backoffMultiplier ** (attempt - 1)
     let delay = Math.min(exponentialDelay, this.config.maxDelay)
 
     // Add jitter to prevent thundering herd
@@ -321,7 +330,7 @@ export class RetryPolicy {
    * Sleep for specified duration
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+    return new Promise(resolve => setTimeout(resolve, ms))
   }
 
   /**
@@ -360,10 +369,16 @@ export class FallbackManager<T> {
   /**
    * Get fallback value
    */
-  private async getFallbackValue<R>(config: FallbackConfig<R>, error: Error): Promise<R> {
+  private async getFallbackValue<R>(
+    config: FallbackConfig<R>,
+    error: Error
+  ): Promise<R> {
     // Check cache first
     if (config.cache && config.cacheKey) {
-      const cached = this.getCachedValue<R>(config.cacheKey, config.cacheTimeout || 300000)
+      const cached = this.getCachedValue<R>(
+        config.cacheKey,
+        config.cacheTimeout || 300000
+      )
       if (cached !== null) {
         return cached
       }
@@ -458,7 +473,10 @@ export class RecoveryOrchestrator {
   /**
    * Execute with all recovery mechanisms
    */
-  async execute<T>(fn: () => Promise<T>, fallbackConfig?: FallbackConfig<T>): Promise<T> {
+  async execute<T>(
+    fn: () => Promise<T>,
+    fallbackConfig?: FallbackConfig<T>
+  ): Promise<T> {
     const wrappedFn = this.wrapWithRecovery(fn)
 
     if (fallbackConfig) {
@@ -520,16 +538,22 @@ export const recoveryUtils = {
       onError?: (error: TachUIError) => void
     } = {}
   ): T {
-    const orchestrator = new RecoveryOrchestrator(options.circuitBreaker, options.retryPolicy)
+    const orchestrator = new RecoveryOrchestrator(
+      options.circuitBreaker,
+      options.retryPolicy
+    )
 
     return (async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
       try {
         return await orchestrator.execute(() => fn(...args), options.fallback)
       } catch (error) {
         if (options.onError) {
-          const tachUIError = globalErrorManager.createTachUIError(error as Error, {
-            category: 'network_error',
-          })
+          const tachUIError = globalErrorManager.createTachUIError(
+            error as Error,
+            {
+              category: 'network_error',
+            }
+          )
           options.onError(tachUIError)
         }
         throw error

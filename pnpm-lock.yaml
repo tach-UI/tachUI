@@ -150,6 +150,9 @@ importers:
       '@tachui/flow-control':
         specifier: workspace:*
         version: link:../flow-control
+      '@tachui/mobile':
+        specifier: workspace:*
+        version: link:../mobile
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
