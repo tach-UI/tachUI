@@ -118,7 +118,8 @@
     "migrate:fix": "node scripts/migration-tool.js --fix"
   },
   "dependencies": {
-    "@tachui/devtools": "workspace:*"
+    "@tachui/devtools": "workspace:*",
+    "@tachui/primitives": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

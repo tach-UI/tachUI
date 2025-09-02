@@ -107,11 +107,7 @@ export function withProductionOptimization<T extends (...args: any[]) => any>(
   // Development mode - run validation if provided
   return function optimizedComponent(this: any, ...args: unknown[]): T {
     if (validator) {
-      try {
-        validator(args)
-      } catch (error) {
-        throw error
-      }
+      validator(args)
     }
 
     return originalConstructor.apply(this, args as any)
@@ -132,11 +128,7 @@ export function withProductionOptimizedModifier<
   // Development mode with validation
   return function optimizedModifier(this: any, ...args: unknown[]): T {
     if (validator) {
-      try {
-        validator(args)
-      } catch (error) {
-        throw error
-      }
+      validator(args)
     }
 
     return originalModifier.apply(this, args as any)

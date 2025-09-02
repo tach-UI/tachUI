@@ -110,6 +110,9 @@ importers:
       '@tachui/devtools':
         specifier: workspace:*
         version: link:../devtools
+      '@tachui/primitives':
+        specifier: workspace:*
+        version: link:../primitives
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6

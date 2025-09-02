@@ -73,7 +73,36 @@ export type { WrapperOptions } from './wrapper'
 export {
   createModifiableComponentFactory,
   createReactiveWrapper,
+  Layout,
   withModifierSupport,
   withModifiers,
   wrapComponent,
 } from './wrapper'
+
+// Re-export primitives for backward compatibility and core tests
+export {
+  // Layout components
+  VStack,
+  HStack,
+  ZStack,
+  Spacer,
+  Divider,
+  // Display components
+  Text,
+  Image,
+  HTML,
+  H1,
+  H2,
+  H3,
+  H4,
+  H5,
+  H6,
+  // Control components
+  Button,
+  Link,
+  Toggle,
+  Picker,
+  // Form components
+  BasicForm,
+  BasicInput,
+} from '@tachui/primitives'
