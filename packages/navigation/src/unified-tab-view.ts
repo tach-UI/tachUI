@@ -336,21 +336,12 @@ export function UnifiedTabView(
     customization = 'none',
     breakpoint = 768,
     maxVisibleTabs = 8,
-    _tabPlacement = 'bottom',
     material = 'none',
-    _prominence = 'standard',
     appearance = {},
-    _animationDuration = 300,
-    _allowReordering = false,
     allowHiding = false,
-    _allowsClosing = false,
-    _overflowBehavior = 'scroll',
-    _isScrollEnabled = true,
     indexDisplayMode = 'automatic',
-    _backgroundStyle = 'automatic',
     onTabSelect,
     onTabReorder,
-    _onTabClose,
     onCustomizationChange,
     ..._simpleOptions
   } = normalizedOptions
@@ -411,10 +402,10 @@ export function UnifiedTabView(
   createEffect(() => {
     const currentTabs = tabItems()
     if (currentTabs.length <= maxVisibleTabs) {
-      setVisibleTabs(currentTabs)
+      _setVisibleTabs(currentTabs)
       setOverflowTabs([])
     } else {
-      setVisibleTabs(currentTabs.slice(0, maxVisibleTabs - 1))
+      _setVisibleTabs(currentTabs.slice(0, maxVisibleTabs - 1))
       setOverflowTabs(currentTabs.slice(maxVisibleTabs - 1))
     }
   })
@@ -771,7 +762,6 @@ export function PageTabView(
     selection,
     onSelectionChange,
     indexDisplayMode = 'automatic',
-    _backgroundStyle = 'automatic',
   } = options
 
   const [currentIndex, setCurrentIndex] = createSignal(selection?.() || 0)
