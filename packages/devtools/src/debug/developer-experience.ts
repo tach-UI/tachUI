@@ -1,12 +1,51 @@
 /**
  * Developer Experience Integration - Phase 1D
- * 
+ *
  * Enhanced error message templates, intelligent fix suggestions,
  * and comprehensive developer guidance system.
  */
 
-import type { ValidationErrorCategory, ValidationErrorSeverity } from './error-reporting'
-import { EnhancedValidationError } from './enhanced-runtime'
+// Define types locally since they don't exist in devtools package
+export type ValidationErrorCategory =
+  | 'component'
+  | 'modifier'
+  | 'runtime'
+  | 'reactive'
+  | 'validation'
+  | 'component-construction'
+  | 'modifier-usage'
+  | 'performance'
+export type ValidationErrorSeverity = 'error' | 'warning' | 'info' | 'critical'
+
+export interface EnhancedValidationError {
+  message: string
+  context: {
+    component: string
+    property?: string
+    suggestion?: string
+    documentation?: string
+    package?: string
+  }
+  getFormattedMessage(): string
+}
+
+// Add a constructor function for EnhancedValidationError
+export function createEnhancedValidationError(
+  message: string,
+  context: {
+    component: string
+    property?: string
+    suggestion?: string
+    documentation?: string
+    package?: string
+  }
+): EnhancedValidationError {
+  return {
+    message,
+    context,
+    getFormattedMessage: () => `${context.component}: ${message}`,
+  }
+}
 
 /**
  * Intelligent fix suggestion with automated repair capability
@@ -17,23 +56,28 @@ export interface IntelligentFixSuggestion {
   description: string
   difficulty: 'easy' | 'medium' | 'hard'
   confidence: number // 0-1 confidence score
-  category: 'syntax' | 'logic' | 'performance' | 'accessibility' | 'best-practice'
-  
+  category:
+    | 'syntax'
+    | 'logic'
+    | 'performance'
+    | 'accessibility'
+    | 'best-practice'
+
   // Code examples
   before: string
   after: string
-  
+
   // Automated fix capability
   canAutoFix: boolean
   autoFix?: () => string
-  
+
   // Learning resources
   learnMore?: {
     documentation: string
     examples: string[]
     videoTutorial?: string
   }
-  
+
   // Related suggestions
   relatedFixes: string[]
 }
@@ -47,30 +91,30 @@ export interface DeveloperErrorMessageTemplate {
   description: string
   severity: ValidationErrorSeverity
   category: ValidationErrorCategory
-  
+
   // Rich formatting
   emoji: string
   color: string
-  
+
   // Developer guidance
   quickFix: string
   explanation: string
   prevention: string
-  
+
   // Interactive elements
   suggestions: IntelligentFixSuggestion[]
   examples: {
     wrong: CodeExample[]
     correct: CodeExample[]
   }
-  
+
   // Documentation links
   documentation: {
     primary: string
     related: string[]
     apiReference?: string
   }
-  
+
   // Contextual information
   context: {
     component?: string
@@ -105,17 +149,17 @@ export interface DeveloperExperienceConfig {
   showColors: boolean
   showCodeExamples: boolean
   showDocumentationLinks: boolean
-  
+
   // Fix suggestions
   enableAutoFix: boolean
   suggestionCount: number
   minConfidenceScore: number
-  
+
   // IDE integration
   enableInlineHelp: boolean
   enableHoverInfo: boolean
   enableQuickActions: boolean
-  
+
   // Learning features
   showLearningTips: boolean
   trackProgress: boolean
@@ -139,29 +183,36 @@ let devExperienceConfig: DeveloperExperienceConfig = {
   enableQuickActions: true,
   showLearningTips: true,
   trackProgress: false,
-  personalization: false
+  personalization: false,
 }
 
 /**
  * Comprehensive error message templates database
  */
-export const errorMessageTemplates: Record<string, DeveloperErrorMessageTemplate> = {
+export const errorMessageTemplates: Record<
+  string,
+  DeveloperErrorMessageTemplate
+> = {
   'missing-required-prop': {
     id: 'missing-required-prop',
     title: 'Missing Required Property',
-    description: 'Component is missing a required property that is necessary for proper functionality.',
+    description:
+      'Component is missing a required property that is necessary for proper functionality.',
     severity: 'error',
     category: 'component-construction',
     emoji: '❌',
     color: '#ff4444',
     quickFix: 'Add the required property to the component',
-    explanation: 'This component requires specific properties to function correctly. Missing required properties can cause runtime errors or unexpected behavior.',
-    prevention: 'Always check component documentation for required properties and use TypeScript for compile-time validation.',
+    explanation:
+      'This component requires specific properties to function correctly. Missing required properties can cause runtime errors or unexpected behavior.',
+    prevention:
+      'Always check component documentation for required properties and use TypeScript for compile-time validation.',
     suggestions: [
       {
         id: 'add-required-prop',
         title: 'Add Required Property',
-        description: 'Add the missing required property with an appropriate value',
+        description:
+          'Add the missing required property with an appropriate value',
         difficulty: 'easy',
         confidence: 0.95,
         category: 'syntax',
@@ -171,63 +222,85 @@ export const errorMessageTemplates: Record<string, DeveloperErrorMessageTemplate
         autoFix: () => 'Text("Hello World")',
         learnMore: {
           documentation: '/docs/components/text#required-properties',
-          examples: ['/examples/text-basic-usage', '/examples/text-with-signals']
+          examples: [
+            '/examples/text-basic-usage',
+            '/examples/text-with-signals',
+          ],
         },
-        relatedFixes: ['use-signal-content', 'add-type-annotation']
-      }
+        relatedFixes: ['use-signal-content', 'add-type-annotation'],
+      },
     ],
     examples: {
-      wrong: [{
-        code: 'Text()',
-        language: 'typescript',
-        title: 'Missing content parameter',
-        description: 'Text component requires content to display',
-        highlights: [{
-          line: 1,
-          type: 'error',
-          message: 'Missing required "content" parameter'
-        }]
-      }],
-      correct: [{
-        code: 'Text("Hello World")',
-        language: 'typescript',
-        title: 'Correct usage with content',
-        description: 'Text component with required content parameter'
-      }, {
-        code: 'Text(() => dynamicContent.value)',
-        language: 'typescript',
-        title: 'Using reactive content',
-        description: 'Text component with reactive content function'
-      }]
+      wrong: [
+        {
+          code: 'Text()',
+          language: 'typescript',
+          title: 'Missing content parameter',
+          description: 'Text component requires content to display',
+          highlights: [
+            {
+              line: 1,
+              type: 'error',
+              message: 'Missing required "content" parameter',
+            },
+          ],
+        },
+      ],
+      correct: [
+        {
+          code: 'Text("Hello World")',
+          language: 'typescript',
+          title: 'Correct usage with content',
+          description: 'Text component with required content parameter',
+        },
+        {
+          code: 'Text(() => dynamicContent.value)',
+          language: 'typescript',
+          title: 'Using reactive content',
+          description: 'Text component with reactive content function',
+        },
+      ],
     },
     documentation: {
       primary: '/docs/components/text',
-      related: ['/docs/concepts/required-properties', '/docs/guides/component-construction'],
-      apiReference: '/api/components/text'
+      related: [
+        '/docs/concepts/required-properties',
+        '/docs/guides/component-construction',
+      ],
+      apiReference: '/api/components/text',
     },
     context: {
       component: 'Text',
       package: 'core',
-      commonCause: ['Forgot to pass content parameter', 'Copy-paste error', 'Incomplete refactoring']
-    }
+      commonCause: [
+        'Forgot to pass content parameter',
+        'Copy-paste error',
+        'Incomplete refactoring',
+      ],
+    },
   },
 
   'invalid-modifier-usage': {
     id: 'invalid-modifier-usage',
     title: 'Invalid Modifier Usage',
-    description: 'Modifier is not compatible with this component type or is being used incorrectly.',
+    description:
+      'Modifier is not compatible with this component type or is being used incorrectly.',
     severity: 'error',
     category: 'modifier-usage',
     emoji: '🔧',
     color: '#ff8800',
-    quickFix: 'Remove the incompatible modifier or use it on a compatible component',
-    explanation: 'Components have specific modifiers that are compatible with their functionality. Using incompatible modifiers can cause rendering issues.',
-    prevention: 'Check component documentation for supported modifiers and use IDE autocomplete for guidance.',
+    quickFix:
+      'Remove the incompatible modifier or use it on a compatible component',
+    explanation:
+      'Components have specific modifiers that are compatible with their functionality. Using incompatible modifiers can cause rendering issues.',
+    prevention:
+      'Check component documentation for supported modifiers and use IDE autocomplete for guidance.',
     suggestions: [
       {
         id: 'remove-incompatible-modifier',
         title: 'Remove Incompatible Modifier',
-        description: 'Remove the modifier that is not supported by this component',
+        description:
+          'Remove the modifier that is not supported by this component',
         difficulty: 'easy',
         confidence: 0.9,
         category: 'syntax',
@@ -237,107 +310,142 @@ export const errorMessageTemplates: Record<string, DeveloperErrorMessageTemplate
         autoFix: () => 'VStack({ children: [] })',
         learnMore: {
           documentation: '/docs/modifiers/compatibility',
-          examples: ['/examples/modifier-usage', '/examples/component-styling']
+          examples: ['/examples/modifier-usage', '/examples/component-styling'],
         },
-        relatedFixes: ['use-compatible-modifier', 'wrap-in-container']
-      }
+        relatedFixes: ['use-compatible-modifier', 'wrap-in-container'],
+      },
     ],
     examples: {
-      wrong: [{
-        code: 'VStack({ children: [] }).fontSize(16)',
-        language: 'typescript',
-        title: 'Text modifier on layout component',
-        description: 'fontSize is only applicable to text components',
-        highlights: [{
-          line: 1,
-          type: 'error',
-          message: 'fontSize modifier not compatible with VStack'
-        }]
-      }],
-      correct: [{
-        code: 'Text("Hello").fontSize(16)',
-        language: 'typescript',
-        title: 'Correct fontSize usage',
-        description: 'fontSize modifier used on Text component'
-      }, {
-        code: 'VStack({ children: [] }).padding(16)',
-        language: 'typescript',
-        title: 'Compatible VStack modifier',
-        description: 'padding modifier is compatible with VStack'
-      }]
+      wrong: [
+        {
+          code: 'VStack({ children: [] }).fontSize(16)',
+          language: 'typescript',
+          title: 'Text modifier on layout component',
+          description: 'fontSize is only applicable to text components',
+          highlights: [
+            {
+              line: 1,
+              type: 'error',
+              message: 'fontSize modifier not compatible with VStack',
+            },
+          ],
+        },
+      ],
+      correct: [
+        {
+          code: 'Text("Hello").fontSize(16)',
+          language: 'typescript',
+          title: 'Correct fontSize usage',
+          description: 'fontSize modifier used on Text component',
+        },
+        {
+          code: 'VStack({ children: [] }).padding(16)',
+          language: 'typescript',
+          title: 'Compatible VStack modifier',
+          description: 'padding modifier is compatible with VStack',
+        },
+      ],
     },
     documentation: {
       primary: '/docs/modifiers/overview',
-      related: ['/docs/modifiers/compatibility', '/docs/components/modifier-support'],
-      apiReference: '/api/modifiers'
+      related: [
+        '/docs/modifiers/compatibility',
+        '/docs/components/modifier-support',
+      ],
+      apiReference: '/api/modifiers',
     },
     context: {
       modifier: 'fontSize',
       component: 'VStack',
       package: 'core',
-      commonCause: ['Confusion about modifier compatibility', 'Copy-paste from different component', 'Misunderstanding of component types']
-    }
+      commonCause: [
+        'Confusion about modifier compatibility',
+        'Copy-paste from different component',
+        'Misunderstanding of component types',
+      ],
+    },
   },
 
   'performance-warning': {
     id: 'performance-warning',
     title: 'Performance Optimization Available',
-    description: 'Code pattern detected that could impact performance with optimization suggestions.',
+    description:
+      'Code pattern detected that could impact performance with optimization suggestions.',
     severity: 'warning',
     category: 'performance',
     emoji: '⚡',
     color: '#ffaa00',
     quickFix: 'Apply performance optimization suggestions',
-    explanation: 'This pattern works correctly but may impact performance in certain scenarios. Consider the suggested optimizations for better user experience.',
-    prevention: 'Follow performance best practices and use the TachUI performance monitoring tools during development.',
+    explanation:
+      'This pattern works correctly but may impact performance in certain scenarios. Consider the suggested optimizations for better user experience.',
+    prevention:
+      'Follow performance best practices and use the TachUI performance monitoring tools during development.',
     suggestions: [
       {
         id: 'optimize-list-rendering',
         title: 'Use Virtual Scrolling',
-        description: 'For large lists, consider using virtual scrolling to improve performance',
+        description:
+          'For large lists, consider using virtual scrolling to improve performance',
         difficulty: 'medium',
         confidence: 0.8,
         category: 'performance',
         before: 'List({ children: largeDataset.map(item => ListItem(item)) })',
-        after: 'VirtualList({ data: largeDataset, renderItem: item => ListItem(item) })',
+        after:
+          'VirtualList({ data: largeDataset, renderItem: item => ListItem(item) })',
         canAutoFix: false,
         learnMore: {
           documentation: '/docs/performance/virtual-scrolling',
-          examples: ['/examples/virtual-list', '/examples/performance-optimization'],
-          videoTutorial: '/videos/optimizing-large-lists'
+          examples: [
+            '/examples/virtual-list',
+            '/examples/performance-optimization',
+          ],
+          videoTutorial: '/videos/optimizing-large-lists',
         },
-        relatedFixes: ['add-key-prop', 'memo-optimization']
-      }
+        relatedFixes: ['add-key-prop', 'memo-optimization'],
+      },
     ],
     examples: {
-      wrong: [{
-        code: 'List({ children: items.map(item => Item(item)) })',
-        language: 'typescript',
-        title: 'Large list without optimization',
-        description: 'Rendering all items at once can impact performance',
-        highlights: [{
-          line: 1,
-          type: 'warning',
-          message: 'Consider virtual scrolling for large datasets'
-        }]
-      }],
-      correct: [{
-        code: 'VirtualList({ data: items, renderItem: item => Item(item) })',
-        language: 'typescript',
-        title: 'Optimized virtual list',
-        description: 'Virtual scrolling only renders visible items'
-      }]
+      wrong: [
+        {
+          code: 'List({ children: items.map(item => Item(item)) })',
+          language: 'typescript',
+          title: 'Large list without optimization',
+          description: 'Rendering all items at once can impact performance',
+          highlights: [
+            {
+              line: 1,
+              type: 'warning',
+              message: 'Consider virtual scrolling for large datasets',
+            },
+          ],
+        },
+      ],
+      correct: [
+        {
+          code: 'VirtualList({ data: items, renderItem: item => Item(item) })',
+          language: 'typescript',
+          title: 'Optimized virtual list',
+          description: 'Virtual scrolling only renders visible items',
+        },
+      ],
     },
     documentation: {
       primary: '/docs/performance/optimization',
-      related: ['/docs/components/virtual-list', '/docs/guides/performance-best-practices']
+      related: [
+        '/docs/components/virtual-list',
+        '/docs/guides/performance-best-practices',
+      ],
     },
     context: {
       component: 'List',
       package: 'core',
-      commonCause: ['Large datasets', 'Unaware of optimization options', 'Premature optimization concerns']
-    }
-  }
+      commonCause: [
+        'Large datasets',
+        'Unaware of optimization options',
+        'Premature optimization concerns',
+      ],
+    },
+  },
 }
 
 /**
@@ -364,10 +472,11 @@ export class FixSuggestionEngine {
     }
   ): IntelligentFixSuggestion[] {
     const baseSuggestions = this.suggestionDatabase.get(errorType) || []
-    
+
     // Filter by confidence score
     const filteredSuggestions = baseSuggestions.filter(
-      suggestion => suggestion.confidence >= devExperienceConfig.minConfidenceScore
+      suggestion =>
+        suggestion.confidence >= devExperienceConfig.minConfidenceScore
     )
 
     // Sort by relevance and confidence
@@ -426,8 +535,8 @@ export class FixSuggestionEngine {
         after: '.background("blue")',
         canAutoFix: true,
         autoFix: () => '.background("blue")',
-        relatedFixes: []
-      }
+        relatedFixes: [],
+      },
     ])
   }
 
@@ -436,11 +545,17 @@ export class FixSuggestionEngine {
    */
   getStatistics() {
     return {
-      totalSuggestions: Array.from(this.suggestionDatabase.values()).reduce((acc, arr) => acc + arr.length, 0),
-      totalUsages: Array.from(this.usageTracker.values()).reduce((acc, count) => acc + count, 0),
+      totalSuggestions: Array.from(this.suggestionDatabase.values()).reduce(
+        (acc, arr) => acc + arr.length,
+        0
+      ),
+      totalUsages: Array.from(this.usageTracker.values()).reduce(
+        (acc, count) => acc + count,
+        0
+      ),
       topSuggestions: Array.from(this.usageTracker.entries())
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
+        .slice(0, 5),
     }
   }
 }
@@ -458,15 +573,17 @@ export class EnhancedErrorFormatter {
     error: EnhancedValidationError,
     templateId?: string
   ): FormattedErrorMessage {
-    const template = templateId ? errorMessageTemplates[templateId] : this.findBestTemplate(error)
-    
+    const template = templateId
+      ? errorMessageTemplates[templateId]
+      : this.findBestTemplate(error)
+
     if (!template) {
       return this.formatBasicError(error)
     }
 
     const suggestions = this.fixEngine.getSuggestions(template.id, {
       component: error.context.component,
-      severity: template.severity
+      severity: template.severity,
     })
 
     return {
@@ -478,15 +595,17 @@ export class EnhancedErrorFormatter {
       interactive: {
         canAutoFix: suggestions.some(s => s.canAutoFix),
         quickActions: this.generateQuickActions(suggestions),
-        learnMore: template.documentation
-      }
+        learnMore: template.documentation,
+      },
     }
   }
 
   /**
    * Find the best template for an error
    */
-  private findBestTemplate(error: EnhancedValidationError): DeveloperErrorMessageTemplate | null {
+  private findBestTemplate(
+    error: EnhancedValidationError
+  ): DeveloperErrorMessageTemplate | null {
     // Simple heuristic matching - could be made more sophisticated
     if (error.message.includes('required')) {
       return errorMessageTemplates['missing-required-prop']
@@ -524,7 +643,11 @@ export class EnhancedErrorFormatter {
     }
 
     // Quick fix
-    if (verbosity === 'standard' || verbosity === 'detailed' || verbosity === 'comprehensive') {
+    if (
+      verbosity === 'standard' ||
+      verbosity === 'detailed' ||
+      verbosity === 'comprehensive'
+    ) {
       message += `\n💡 Quick Fix: ${template.quickFix}\n`
     }
 
@@ -543,7 +666,10 @@ export class EnhancedErrorFormatter {
     }
 
     // Documentation links
-    if (devExperienceConfig.showDocumentationLinks && template.documentation.primary) {
+    if (
+      devExperienceConfig.showDocumentationLinks &&
+      template.documentation.primary
+    ) {
       message += `\n📚 Documentation: ${template.documentation.primary}\n`
     }
 
@@ -553,7 +679,9 @@ export class EnhancedErrorFormatter {
   /**
    * Format basic error without template
    */
-  private formatBasicError(error: EnhancedValidationError): FormattedErrorMessage {
+  private formatBasicError(
+    error: EnhancedValidationError
+  ): FormattedErrorMessage {
     return {
       id: `basic-error-${Date.now()}`,
       template: null,
@@ -563,15 +691,17 @@ export class EnhancedErrorFormatter {
       interactive: {
         canAutoFix: false,
         quickActions: [],
-        learnMore: { primary: '/docs/troubleshooting', related: [] }
-      }
+        learnMore: { primary: '/docs/troubleshooting', related: [] },
+      },
     }
   }
 
   /**
    * Generate quick actions for IDE integration
    */
-  private generateQuickActions(suggestions: IntelligentFixSuggestion[]): QuickAction[] {
+  private generateQuickActions(
+    suggestions: IntelligentFixSuggestion[]
+  ): QuickAction[] {
     return suggestions
       .filter(s => s.canAutoFix)
       .map(suggestion => ({
@@ -579,7 +709,7 @@ export class EnhancedErrorFormatter {
         title: `Fix: ${suggestion.title}`,
         description: suggestion.description,
         command: 'tachui.applyFix',
-        arguments: [suggestion.id]
+        arguments: [suggestion.id],
       }))
   }
 }
@@ -617,7 +747,9 @@ export interface QuickAction {
 /**
  * Configure developer experience
  */
-export function configureDeveloperExperience(config: Partial<DeveloperExperienceConfig>): void {
+export function configureDeveloperExperience(
+  config: Partial<DeveloperExperienceConfig>
+): void {
   devExperienceConfig = { ...devExperienceConfig, ...config }
 }
 
@@ -639,19 +771,19 @@ export const DeveloperExperienceUtils = {
   /**
    * Format error with enhanced template
    */
-  formatError: (error: EnhancedValidationError, templateId?: string) => 
+  formatError: (error: EnhancedValidationError, templateId?: string) =>
     enhancedFormatter.formatError(error, templateId),
 
   /**
    * Get fix suggestions
    */
-  getSuggestions: (errorType: string, context: any) => 
+  getSuggestions: (errorType: string, context: any) =>
     fixEngine.getSuggestions(errorType, context),
 
   /**
    * Apply automatic fix
    */
-  applyAutoFix: (suggestionId: string, code: string) => 
+  applyAutoFix: (suggestionId: string, code: string) =>
     fixEngine.applyAutoFix(suggestionId, code),
 
   /**
@@ -669,10 +801,10 @@ export const DeveloperExperienceUtils = {
    */
   getStatistics: () => ({
     formatter: {
-      templatesAvailable: Object.keys(errorMessageTemplates).length
+      templatesAvailable: Object.keys(errorMessageTemplates).length,
     },
     fixEngine: fixEngine.getStatistics(),
-    config: devExperienceConfig
+    config: devExperienceConfig,
   }),
 
   /**
@@ -680,32 +812,41 @@ export const DeveloperExperienceUtils = {
    */
   test: () => {
     console.group('🎨 Developer Experience System Test')
-    
+
     try {
       // Test error formatting
-      const testError = new EnhancedValidationError('Test missing required property', {
-        component: 'Text',
-        property: 'content',
-        recoveryStrategy: 'fallback'
-      })
-      
-      const formatted = enhancedFormatter.formatError(testError, 'missing-required-prop')
+      const testError = createEnhancedValidationError(
+        'Test missing required property',
+        {
+          component: 'Text',
+          property: 'content',
+        }
+      )
+
+      const formatted = enhancedFormatter.formatError(
+        testError,
+        'missing-required-prop'
+      )
       console.info('✅ Error formatting:', formatted.template?.title)
       console.info('✅ Suggestions count:', formatted.suggestions.length)
-      console.info('✅ Quick actions:', formatted.interactive.quickActions.length)
-      
+      console.info(
+        '✅ Quick actions:',
+        formatted.interactive.quickActions.length
+      )
+
       // Test fix engine
-      const suggestions = fixEngine.getSuggestions('missing-required-prop', { component: 'Text' })
+      const suggestions = fixEngine.getSuggestions('missing-required-prop', {
+        component: 'Text',
+      })
       console.info('✅ Fix suggestions:', suggestions.length)
-      
+
       console.info('✅ Developer experience system is working correctly')
-      
     } catch (error) {
       console.error('❌ Developer experience test failed:', error)
     }
-    
+
     console.groupEnd()
-  }
+  },
 }
 
 // Export global instances

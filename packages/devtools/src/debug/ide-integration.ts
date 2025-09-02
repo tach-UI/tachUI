@@ -1,11 +1,11 @@
 /**
  * IDE Integration Foundation - Phase 1D
- * 
+ *
  * VS Code extension foundation, language server protocol implementation,
  * and real-time validation feedback system.
  */
 
-import { DeveloperExperienceUtils } from './developer-experience'
+import { DeveloperExperienceUtils } from './enhanced-errors'
 
 /**
  * Language Server Protocol message types
@@ -40,13 +40,16 @@ export interface LSPCodeAction {
   kind: string
   diagnostics?: LSPDiagnostic[]
   edit?: {
-    changes?: Record<string, {
-      range: {
-        start: { line: number; character: number }
-        end: { line: number; character: number }
-      }
-      newText: string
-    }[]>
+    changes?: Record<
+      string,
+      {
+        range: {
+          start: { line: number; character: number }
+          end: { line: number; character: number }
+        }
+        newText: string
+      }[]
+    >
   }
   command?: {
     title: string
@@ -110,22 +113,22 @@ export interface IDEIntegrationConfig {
   // Language server
   enableLanguageServer: boolean
   serverPort: number
-  
+
   // Diagnostics
   enableRealTimeDiagnostics: boolean
   diagnosticDelay: number
   maxDiagnostics: number
-  
+
   // IntelliSense
   enableHoverInfo: boolean
   enableAutoComplete: boolean
   enableSignatureHelp: boolean
-  
+
   // Quick fixes
   enableQuickFixes: boolean
   enableCodeActions: boolean
   enableRefactoring: boolean
-  
+
   // VS Code specific
   enableStatusBar: boolean
   enableOutputChannel: boolean
@@ -149,7 +152,7 @@ let ideConfig: IDEIntegrationConfig = {
   enableRefactoring: true,
   enableStatusBar: true,
   enableOutputChannel: true,
-  enableWebview: false
+  enableWebview: false,
 }
 
 /**
@@ -157,7 +160,9 @@ let ideConfig: IDEIntegrationConfig = {
  */
 export class ValidationDiagnosticsProvider {
   private diagnostics = new Map<string, LSPDiagnostic[]>()
-  private listeners = new Set<(uri: string, diagnostics: LSPDiagnostic[]) => void>()
+  private listeners = new Set<
+    (uri: string, diagnostics: LSPDiagnostic[]) => void
+  >()
 
   /**
    * Validate document and return diagnostics
@@ -174,7 +179,7 @@ export class ValidationDiagnosticsProvider {
     // In a real implementation, this would use the full validation system
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
       const line = lines[lineIndex]
-      
+
       // Check for common TachUI patterns
       const commonErrors = this.detectCommonErrors(line, lineIndex)
       diagnostics.push(...commonErrors)
@@ -182,13 +187,13 @@ export class ValidationDiagnosticsProvider {
 
     // Limit diagnostics count
     const limitedDiagnostics = diagnostics.slice(0, ideConfig.maxDiagnostics)
-    
+
     // Cache diagnostics
     this.diagnostics.set(uri, limitedDiagnostics)
-    
+
     // Notify listeners
     this.notifyListeners(uri, limitedDiagnostics)
-    
+
     return limitedDiagnostics
   }
 
@@ -197,13 +202,13 @@ export class ValidationDiagnosticsProvider {
    */
   private detectCommonErrors(line: string, lineIndex: number): LSPDiagnostic[] {
     const diagnostics: LSPDiagnostic[] = []
-    
+
     // Missing required parameters
     if (line.includes('Text()') && !line.includes('//')) {
       diagnostics.push({
         range: {
           start: { line: lineIndex, character: line.indexOf('Text()') },
-          end: { line: lineIndex, character: line.indexOf('Text()') + 6 }
+          end: { line: lineIndex, character: line.indexOf('Text()') + 6 },
         },
         severity: 1, // Error
         code: 'missing-required-prop',
@@ -212,29 +217,37 @@ export class ValidationDiagnosticsProvider {
         data: {
           template: 'missing-required-prop',
           component: 'Text',
-          suggestions: ['add-required-prop']
-        }
+          suggestions: ['add-required-prop'],
+        },
       })
     }
 
     // Button without action
-    if (line.includes('Button(') && !line.includes(',') && !line.includes('//')) {
+    if (
+      line.includes('Button(') &&
+      !line.includes(',') &&
+      !line.includes('//')
+    ) {
       const match = line.match(/Button\s*\(\s*"[^"]*"\s*\)/)
       if (match) {
         diagnostics.push({
           range: {
             start: { line: lineIndex, character: line.indexOf(match[0]) },
-            end: { line: lineIndex, character: line.indexOf(match[0]) + match[0].length }
+            end: {
+              line: lineIndex,
+              character: line.indexOf(match[0]) + match[0].length,
+            },
           },
           severity: 2, // Warning
           code: 'missing-button-action',
           source: 'tachui',
-          message: 'Button should have an action handler for better user experience',
+          message:
+            'Button should have an action handler for better user experience',
           data: {
             template: 'missing-required-prop',
             component: 'Button',
-            suggestions: ['add-button-action']
-          }
+            suggestions: ['add-button-action'],
+          },
         })
       }
     }
@@ -244,7 +257,7 @@ export class ValidationDiagnosticsProvider {
       diagnostics.push({
         range: {
           start: { line: lineIndex, character: line.indexOf('.fontSize(') },
-          end: { line: lineIndex, character: line.indexOf('.fontSize(') + 10 }
+          end: { line: lineIndex, character: line.indexOf('.fontSize(') + 10 },
         },
         severity: 1, // Error
         code: 'invalid-modifier-usage',
@@ -254,8 +267,8 @@ export class ValidationDiagnosticsProvider {
           template: 'invalid-modifier-usage',
           component: 'VStack',
           modifier: 'fontSize',
-          suggestions: ['remove-incompatible-modifier']
-        }
+          suggestions: ['remove-incompatible-modifier'],
+        },
       })
     }
 
@@ -280,7 +293,9 @@ export class ValidationDiagnosticsProvider {
   /**
    * Add diagnostic listener
    */
-  onDiagnosticsChanged(listener: (uri: string, diagnostics: LSPDiagnostic[]) => void): void {
+  onDiagnosticsChanged(
+    listener: (uri: string, diagnostics: LSPDiagnostic[]) => void
+  ): void {
     this.listeners.add(listener)
   }
 
@@ -299,7 +314,11 @@ export class CodeActionsProvider {
   /**
    * Get code actions for a diagnostic
    */
-  getCodeActions(diagnostic: LSPDiagnostic, uri: string, _text: string): LSPCodeAction[] {
+  getCodeActions(
+    diagnostic: LSPDiagnostic,
+    uri: string,
+    _text: string
+  ): LSPCodeAction[] {
     const actions: LSPCodeAction[] = []
 
     if (!ideConfig.enableCodeActions) {
@@ -321,12 +340,14 @@ export class CodeActionsProvider {
           diagnostics: [diagnostic],
           edit: {
             changes: {
-              [uri]: [{
-                range: diagnostic.range,
-                newText: suggestion.after
-              }]
-            }
-          }
+              [uri]: [
+                {
+                  range: diagnostic.range,
+                  newText: suggestion.after,
+                },
+              ],
+            },
+          },
         })
       }
     }
@@ -339,8 +360,8 @@ export class CodeActionsProvider {
         command: {
           title: 'Open Documentation',
           command: 'tachui.openDocumentation',
-          arguments: [diagnostic.data.template]
-        }
+          arguments: [diagnostic.data.template],
+        },
       })
     }
 
@@ -355,14 +376,19 @@ export class HoverProvider {
   /**
    * Get hover information for a position
    */
-  getHover(_uri: string, text: string, line: number, character: number): LSPHover | null {
+  getHover(
+    _uri: string,
+    text: string,
+    line: number,
+    character: number
+  ): LSPHover | null {
     if (!ideConfig.enableHoverInfo) {
       return null
     }
 
     const lines = text.split('\n')
     const currentLine = lines[line]
-    
+
     // Detect TachUI component or modifier at position
     const componentInfo = this.detectComponentAtPosition(currentLine, character)
     if (componentInfo) {
@@ -380,28 +406,55 @@ export class HoverProvider {
   /**
    * Detect component at cursor position
    */
-  private detectComponentAtPosition(line: string, character: number): { name: string; range: { start: number; end: number } } | null {
-    const components = ['Text', 'Button', 'VStack', 'HStack', 'ZStack', 'Image', 'List', 'Toggle']
-    
+  private detectComponentAtPosition(
+    line: string,
+    character: number
+  ): { name: string; range: { start: number; end: number } } | null {
+    const components = [
+      'Text',
+      'Button',
+      'VStack',
+      'HStack',
+      'ZStack',
+      'Image',
+      'List',
+      'Toggle',
+    ]
+
     for (const component of components) {
       const index = line.indexOf(component)
-      if (index !== -1 && character >= index && character <= index + component.length) {
+      if (
+        index !== -1 &&
+        character >= index &&
+        character <= index + component.length
+      ) {
         return {
           name: component,
-          range: { start: index, end: index + component.length }
+          range: { start: index, end: index + component.length },
         }
       }
     }
-    
+
     return null
   }
 
   /**
    * Detect modifier at cursor position
    */
-  private detectModifierAtPosition(line: string, character: number): { name: string; range: { start: number; end: number } } | null {
-    const modifiers = ['padding', 'margin', 'background', 'foregroundColor', 'fontSize', 'frame', 'clipped']
-    
+  private detectModifierAtPosition(
+    line: string,
+    character: number
+  ): { name: string; range: { start: number; end: number } } | null {
+    const modifiers = [
+      'padding',
+      'margin',
+      'background',
+      'foregroundColor',
+      'fontSize',
+      'frame',
+      'clipped',
+    ]
+
     for (const modifier of modifiers) {
       const pattern = new RegExp(`\\.(${modifier})\\s*\\(`, 'g')
       let match
@@ -411,48 +464,54 @@ export class HoverProvider {
         if (character >= start && character <= end) {
           return {
             name: modifier,
-            range: { start, end }
+            range: { start, end },
           }
         }
       }
     }
-    
+
     return null
   }
 
   /**
    * Create hover information for component
    */
-  private createComponentHover(componentInfo: { name: string; range: { start: number; end: number } }): LSPHover {
+  private createComponentHover(componentInfo: {
+    name: string
+    range: { start: number; end: number }
+  }): LSPHover {
     const componentDocs = this.getComponentDocumentation(componentInfo.name)
-    
+
     return {
       contents: {
         kind: 'markdown',
-        value: componentDocs
+        value: componentDocs,
       },
       range: {
         start: { line: 0, character: componentInfo.range.start },
-        end: { line: 0, character: componentInfo.range.end }
-      }
+        end: { line: 0, character: componentInfo.range.end },
+      },
     }
   }
 
   /**
    * Create hover information for modifier
    */
-  private createModifierHover(modifierInfo: { name: string; range: { start: number; end: number } }): LSPHover {
+  private createModifierHover(modifierInfo: {
+    name: string
+    range: { start: number; end: number }
+  }): LSPHover {
     const modifierDocs = this.getModifierDocumentation(modifierInfo.name)
-    
+
     return {
       contents: {
         kind: 'markdown',
-        value: modifierDocs
+        value: modifierDocs,
       },
       range: {
         start: { line: 0, character: modifierInfo.range.start },
-        end: { line: 0, character: modifierInfo.range.end }
-      }
+        end: { line: 0, character: modifierInfo.range.end },
+      },
     }
   }
 
@@ -501,10 +560,13 @@ Button("Submit").background("blue")
 - frame, position, cursor
 
 [📚 Full Documentation](/docs/components/button)
-      `
+      `,
     }
 
-    return docs[componentName] || `# ${componentName} Component\n\nTachUI component for building user interfaces.\n\n[📚 Documentation](/docs/components/${componentName.toLowerCase()})`
+    return (
+      docs[componentName] ||
+      `# ${componentName} Component\n\nTachUI component for building user interfaces.\n\n[📚 Documentation](/docs/components/${componentName.toLowerCase()})`
+    )
   }
 
   /**
@@ -542,10 +604,13 @@ Set the font size for text content.
 - Text, Button (text components only)
 
 [📚 Full Documentation](/docs/modifiers/fontSize)
-      `
+      `,
     }
 
-    return docs[modifierName] || `# .${modifierName}() Modifier\n\nTachUI modifier for styling components.\n\n[📚 Documentation](/docs/modifiers/${modifierName})`
+    return (
+      docs[modifierName] ||
+      `# .${modifierName}() Modifier\n\nTachUI modifier for styling components.\n\n[📚 Documentation](/docs/modifiers/${modifierName})`
+    )
   }
 }
 
@@ -556,7 +621,12 @@ export class CompletionProvider {
   /**
    * Get completion items for a position
    */
-  getCompletions(_uri: string, text: string, line: number, character: number): LSPCompletionItem[] {
+  getCompletions(
+    _uri: string,
+    text: string,
+    line: number,
+    character: number
+  ): LSPCompletionItem[] {
     if (!ideConfig.enableAutoComplete) {
       return []
     }
@@ -604,10 +674,10 @@ export class CompletionProvider {
         detail: 'Text Component',
         documentation: {
           kind: 'markdown',
-          value: 'Display text content with optional reactive updates.'
+          value: 'Display text content with optional reactive updates.',
         },
         insertText: 'Text("$1")',
-        insertTextFormat: 2 // Snippet
+        insertTextFormat: 2, // Snippet
       },
       {
         label: 'Button',
@@ -615,10 +685,10 @@ export class CompletionProvider {
         detail: 'Button Component',
         documentation: {
           kind: 'markdown',
-          value: 'Interactive button with customizable appearance and actions.'
+          value: 'Interactive button with customizable appearance and actions.',
         },
         insertText: 'Button("$1", $2)',
-        insertTextFormat: 2 // Snippet
+        insertTextFormat: 2, // Snippet
       },
       {
         label: 'VStack',
@@ -626,11 +696,11 @@ export class CompletionProvider {
         detail: 'VStack Component',
         documentation: {
           kind: 'markdown',
-          value: 'Vertical stack layout container.'
+          value: 'Vertical stack layout container.',
         },
         insertText: 'VStack({ children: [$1] })',
-        insertTextFormat: 2 // Snippet
-      }
+        insertTextFormat: 2, // Snippet
+      },
     ]
   }
 
@@ -649,7 +719,7 @@ export class CompletionProvider {
         detail: 'Add internal spacing',
         insertText: 'padding($1)',
         insertTextFormat: 2,
-        compatible: ['*']
+        compatible: ['*'],
       },
       {
         label: 'fontSize',
@@ -657,7 +727,7 @@ export class CompletionProvider {
         detail: 'Set font size',
         insertText: 'fontSize($1)',
         insertTextFormat: 2,
-        compatible: ['Text', 'Button']
+        compatible: ['Text', 'Button'],
       },
       {
         label: 'background',
@@ -665,22 +735,23 @@ export class CompletionProvider {
         detail: 'Set background color',
         insertText: 'background("$1")',
         insertTextFormat: 2,
-        compatible: ['*']
-      }
+        compatible: ['*'],
+      },
     ]
 
     // Filter by compatibility
     return allModifiers
-      .filter(modifier => 
-        modifier.compatible.includes('*') || 
-        (componentName && modifier.compatible.includes(componentName))
+      .filter(
+        modifier =>
+          modifier.compatible.includes('*') ||
+          (componentName && modifier.compatible.includes(componentName))
       )
       .map(modifier => ({
         label: modifier.label,
         kind: modifier.kind,
         detail: modifier.detail,
         insertText: modifier.insertText,
-        insertTextFormat: modifier.insertTextFormat as 1 | 2
+        insertTextFormat: modifier.insertTextFormat as 1 | 2,
       }))
   }
 }
@@ -705,7 +776,7 @@ export class VSCodeIntegration {
         codeActions: this.codeActionsProvider,
         hover: this.hoverProvider,
         completion: this.completionProvider,
-        config: ideConfig
+        config: ideConfig,
       }
     }
   }
@@ -720,21 +791,35 @@ export class VSCodeIntegration {
   /**
    * Get code actions for diagnostics
    */
-  getCodeActions(diagnostic: LSPDiagnostic, uri: string, text: string): LSPCodeAction[] {
+  getCodeActions(
+    diagnostic: LSPDiagnostic,
+    uri: string,
+    text: string
+  ): LSPCodeAction[] {
     return this.codeActionsProvider.getCodeActions(diagnostic, uri, text)
   }
 
   /**
    * Get hover information
    */
-  getHover(uri: string, text: string, line: number, character: number): LSPHover | null {
+  getHover(
+    uri: string,
+    text: string,
+    line: number,
+    character: number
+  ): LSPHover | null {
     return this.hoverProvider.getHover(uri, text, line, character)
   }
 
   /**
    * Get completion items
    */
-  getCompletions(uri: string, text: string, line: number, character: number): LSPCompletionItem[] {
+  getCompletions(
+    uri: string,
+    text: string,
+    line: number,
+    character: number
+  ): LSPCompletionItem[] {
     return this.completionProvider.getCompletions(uri, text, line, character)
   }
 }
@@ -742,7 +827,9 @@ export class VSCodeIntegration {
 /**
  * Configure IDE integration
  */
-export function configureIDEIntegration(config: Partial<IDEIntegrationConfig>): void {
+export function configureIDEIntegration(
+  config: Partial<IDEIntegrationConfig>
+): void {
   ideConfig = { ...ideConfig, ...config }
 }
 
@@ -768,25 +855,30 @@ export const IDEIntegrationUtils = {
   /**
    * Validate document
    */
-  validateDocument: (uri: string, text: string) => vsCodeIntegration.validateDocument(uri, text),
+  validateDocument: (uri: string, text: string) =>
+    vsCodeIntegration.validateDocument(uri, text),
 
   /**
    * Get code actions
    */
-  getCodeActions: (diagnostic: LSPDiagnostic, uri: string, text: string) => 
+  getCodeActions: (diagnostic: LSPDiagnostic, uri: string, text: string) =>
     vsCodeIntegration.getCodeActions(diagnostic, uri, text),
 
   /**
    * Get hover information
    */
-  getHover: (uri: string, text: string, line: number, character: number) => 
+  getHover: (uri: string, text: string, line: number, character: number) =>
     vsCodeIntegration.getHover(uri, text, line, character),
 
   /**
    * Get completions
    */
-  getCompletions: (uri: string, text: string, line: number, character: number) => 
-    vsCodeIntegration.getCompletions(uri, text, line, character),
+  getCompletions: (
+    uri: string,
+    text: string,
+    line: number,
+    character: number
+  ) => vsCodeIntegration.getCompletions(uri, text, line, character),
 
   /**
    * Configure integration
@@ -803,7 +895,7 @@ export const IDEIntegrationUtils = {
    */
   test: async () => {
     console.group('🎯 IDE Integration System Test')
-    
+
     try {
       // Test diagnostics
       const testCode = `
@@ -811,31 +903,37 @@ export const IDEIntegrationUtils = {
         Button("Click me")
         VStack({ children: [] }).fontSize(16)
       `
-      
-      const diagnostics = await vsCodeIntegration.validateDocument('test.ts', testCode)
+
+      const diagnostics = await vsCodeIntegration.validateDocument(
+        'test.ts',
+        testCode
+      )
       console.info('✅ Diagnostics found:', diagnostics.length)
-      
+
       // Test hover
       const hover = vsCodeIntegration.getHover('test.ts', 'Text("hello")', 0, 2)
       console.info('✅ Hover info available:', !!hover)
-      
+
       // Test completions
       const completions = vsCodeIntegration.getCompletions('test.ts', 'T', 0, 1)
       console.info('✅ Completions available:', completions.length)
-      
+
       if (diagnostics.length > 0) {
-        const actions = vsCodeIntegration.getCodeActions(diagnostics[0], 'test.ts', testCode)
+        const actions = vsCodeIntegration.getCodeActions(
+          diagnostics[0],
+          'test.ts',
+          testCode
+        )
         console.info('✅ Code actions available:', actions.length)
       }
-      
+
       console.info('✅ IDE integration system is working correctly')
-      
     } catch (error) {
       console.error('❌ IDE integration test failed:', error)
     }
-    
+
     console.groupEnd()
-  }
+  },
 }
 
 // Auto-initialize on import

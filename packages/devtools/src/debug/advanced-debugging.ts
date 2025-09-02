@@ -1,12 +1,31 @@
 /**
  * Advanced Developer Debugging Tools - Phase 1D
- * 
+ *
  * Enhanced validation state inspection, visual debugging tools,
  * and comprehensive developer diagnostics.
  */
 
-import type { ValidationDebugEventType, DebugEvent } from './debug-tools'
-import type { FormattedErrorMessage } from './developer-experience'
+// Advanced debugging tools for @tachui/devtools package
+import type { FormattedErrorMessage } from './enhanced-errors'
+
+// Define missing types
+export type ValidationDebugEventType =
+  | 'validation-start'
+  | 'validation-complete'
+  | 'validation-error'
+  | 'validation-warning'
+  | 'validation-end'
+  | 'component-validation'
+  | 'modifier-validation'
+
+export interface DebugEvent {
+  type: string
+  timestamp: number
+  componentId?: string
+  componentName?: string
+  data: any
+  stack?: string
+}
 
 /**
  * Advanced debugging configuration
@@ -17,25 +36,25 @@ export interface AdvancedDebuggingConfig {
   highlightValidationErrors: boolean
   showComponentBoundaries: boolean
   showModifierEffects: boolean
-  
+
   // State inspection
   enableStateInspection: boolean
   trackStateChanges: boolean
   showStateHistory: boolean
   maxHistorySize: number
-  
+
   // Performance debugging
   enablePerformanceDebugging: boolean
   trackRenderTimes: boolean
   showMemoryUsage: boolean
   enableFrameProfiler: boolean
-  
+
   // Interactive debugging
   enableInteractiveMode: boolean
   showDebugPanel: boolean
   enableBreakpoints: boolean
   enableStepThrough: boolean
-  
+
   // Export and sharing
   enableDebugExport: boolean
   exportFormat: 'json' | 'csv' | 'html'
@@ -49,22 +68,22 @@ export interface ComponentStateSnapshot {
   id: string
   componentType: string
   timestamp: number
-  
+
   // Component data
   props: Record<string, any>
   state: Record<string, any>
   modifiers: string[]
-  
+
   // Validation state
   validationErrors: FormattedErrorMessage[]
   validationWarnings: FormattedErrorMessage[]
   isValid: boolean
-  
+
   // Performance data
   renderTime: number
   memoryUsage: number
   updateCount: number
-  
+
   // DOM information
   domNode?: {
     tagName: string
@@ -72,7 +91,7 @@ export interface ComponentStateSnapshot {
     attributes: Record<string, string>
     computedStyles: Record<string, string>
   }
-  
+
   // Parent/child relationships
   parent?: string
   children: string[]
@@ -85,15 +104,15 @@ export interface ValidationStateInspector {
   id: string
   target: 'component' | 'modifier' | 'global'
   targetId?: string
-  
+
   // Inspection configuration
   watchProperties: string[]
   watchEvents: ValidationDebugEventType[]
-  
+
   // Collected data
   snapshots: ComponentStateSnapshot[]
   events: DebugEvent[]
-  
+
   // Analysis
   trends: {
     errorFrequency: number
@@ -101,7 +120,7 @@ export interface ValidationStateInspector {
     memoryLeaks: boolean
     stateInconsistencies: boolean
   }
-  
+
   // Status
   isActive: boolean
   startTime: number
@@ -113,14 +132,18 @@ export interface ValidationStateInspector {
  */
 export interface VisualDebuggingOverlay {
   id: string
-  type: 'error-highlight' | 'component-boundary' | 'modifier-effect' | 'performance-heatmap'
-  
+  type:
+    | 'error-highlight'
+    | 'component-boundary'
+    | 'modifier-effect'
+    | 'performance-heatmap'
+
   // Visual properties
   color: string
   opacity: number
   strokeWidth: number
   animation?: 'pulse' | 'fade' | 'shake'
-  
+
   // Positioning
   bounds: {
     x: number
@@ -128,12 +151,12 @@ export interface VisualDebuggingOverlay {
     width: number
     height: number
   }
-  
+
   // Content
   label?: string
   tooltip?: string
   additionalInfo?: Record<string, any>
-  
+
   // Lifecycle
   duration: number // milliseconds, -1 for persistent
   createdAt: number
@@ -147,18 +170,18 @@ export interface AdvancedDebuggingSession {
   id: string
   name: string
   description: string
-  
+
   // Session metadata
   startTime: number
   endTime?: number
   duration?: number
-  
+
   // Captured data
   components: Map<string, ComponentStateSnapshot[]>
   validators: ValidationStateInspector[]
   overlays: VisualDebuggingOverlay[]
   events: DebugEvent[]
-  
+
   // Analysis results
   summary: {
     totalErrors: number
@@ -167,7 +190,7 @@ export interface AdvancedDebuggingSession {
     performanceIssues: string[]
     recommendations: string[]
   }
-  
+
   // Export metadata
   exported: boolean
   exportFormat?: string
@@ -196,7 +219,7 @@ let advancedDebugConfig: AdvancedDebuggingConfig = {
   enableStepThrough: false,
   enableDebugExport: true,
   exportFormat: 'json',
-  includeSourceMaps: false
+  includeSourceMaps: false,
 }
 
 /**
@@ -220,24 +243,28 @@ export class AdvancedValidationInspector {
     } = {}
   ): string {
     const inspectorId = `inspector-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
-    
+
     const inspector: ValidationStateInspector = {
       id: inspectorId,
       target,
       targetId,
       watchProperties: options.watchProperties || ['*'],
-      watchEvents: options.watchEvents || ['validation-error', 'validation-end', 'validation-start'],
+      watchEvents: options.watchEvents || [
+        'validation-error',
+        'validation-end',
+        'validation-start',
+      ],
       snapshots: [],
       events: [],
       trends: {
         errorFrequency: 0,
         performanceRegression: false,
         memoryLeaks: false,
-        stateInconsistencies: false
+        stateInconsistencies: false,
       },
       isActive: true,
       startTime: Date.now(),
-      lastUpdate: Date.now()
+      lastUpdate: Date.now(),
     }
 
     this.inspectors.set(inspectorId, inspector)
@@ -247,15 +274,18 @@ export class AdvancedValidationInspector {
   /**
    * Take a component state snapshot
    */
-  takeSnapshot(componentId: string, componentData: {
-    type: string
-    props: Record<string, any>
-    state: Record<string, any>
-    modifiers: string[]
-    domElement?: HTMLElement
-  }): string {
+  takeSnapshot(
+    componentId: string,
+    componentData: {
+      type: string
+      props: Record<string, any>
+      state: Record<string, any>
+      modifiers: string[]
+      domElement?: HTMLElement
+    }
+  ): string {
     const snapshotId = `snapshot-${Date.now()}-${componentId}`
-    
+
     const snapshot: ComponentStateSnapshot = {
       id: snapshotId,
       componentType: componentData.type,
@@ -270,7 +300,9 @@ export class AdvancedValidationInspector {
       memoryUsage: this.getMemoryUsage(),
       updateCount: 0,
       children: [],
-      domNode: componentData.domElement ? this.extractDOMInfo(componentData.domElement) : undefined
+      domNode: componentData.domElement
+        ? this.extractDOMInfo(componentData.domElement)
+        : undefined,
     }
 
     // Get existing snapshots for this component
@@ -324,7 +356,7 @@ export class AdvancedValidationInspector {
       tooltip: options.tooltip,
       duration,
       createdAt: now,
-      expiresAt: duration > 0 ? now + duration : -1
+      expiresAt: duration > 0 ? now + duration : -1,
     }
 
     this.overlays.set(overlayId, overlay)
@@ -344,7 +376,7 @@ export class AdvancedValidationInspector {
    */
   startSession(name: string, description: string = ''): string {
     const sessionId = `session-${Date.now()}`
-    
+
     this.activeSession = {
       id: sessionId,
       name,
@@ -359,9 +391,9 @@ export class AdvancedValidationInspector {
         totalWarnings: 0,
         criticalIssues: [],
         performanceIssues: [],
-        recommendations: []
+        recommendations: [],
       },
-      exported: false
+      exported: false,
     }
 
     return sessionId
@@ -376,7 +408,8 @@ export class AdvancedValidationInspector {
     }
 
     this.activeSession.endTime = Date.now()
-    this.activeSession.duration = this.activeSession.endTime - this.activeSession.startTime
+    this.activeSession.duration =
+      this.activeSession.endTime - this.activeSession.startTime
 
     // Analyze collected data
     this.analyzeSession(this.activeSession)
@@ -404,7 +437,7 @@ export class AdvancedValidationInspector {
     memoryTrend: 'increasing' | 'stable' | 'decreasing'
     recommendations: string[]
   } {
-    const snapshots = componentId 
+    const snapshots = componentId
       ? this.snapshots.get(componentId) || []
       : Array.from(this.snapshots.values()).flat()
 
@@ -414,29 +447,39 @@ export class AdvancedValidationInspector {
         warningRate: 0,
         performanceRegression: false,
         memoryTrend: 'stable',
-        recommendations: []
+        recommendations: [],
       }
     }
 
-    const errorRate = snapshots.filter(s => s.validationErrors.length > 0).length / snapshots.length
-    const warningRate = snapshots.filter(s => s.validationWarnings.length > 0).length / snapshots.length
+    const errorRate =
+      snapshots.filter(s => s.validationErrors.length > 0).length /
+      snapshots.length
+    const warningRate =
+      snapshots.filter(s => s.validationWarnings.length > 0).length /
+      snapshots.length
 
     // Performance analysis
     const renderTimes = snapshots.map(s => s.renderTime).filter(t => t > 0)
-    const avgRenderTime = renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length
-    const performanceRegression = renderTimes.length > 5 && 
+    const avgRenderTime =
+      renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length
+    const performanceRegression =
+      renderTimes.length > 5 &&
       renderTimes.slice(-3).every(t => t > avgRenderTime * 1.2)
 
     // Memory analysis
     const memoryUsages = snapshots.map(s => s.memoryUsage).filter(m => m > 0)
     let memoryTrend: 'increasing' | 'stable' | 'decreasing' = 'stable'
-    
+
     if (memoryUsages.length > 5) {
-      const firstHalf = memoryUsages.slice(0, Math.floor(memoryUsages.length / 2))
+      const firstHalf = memoryUsages.slice(
+        0,
+        Math.floor(memoryUsages.length / 2)
+      )
       const secondHalf = memoryUsages.slice(Math.floor(memoryUsages.length / 2))
       const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
-      const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
-      
+      const secondAvg =
+        secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
+
       if (secondAvg > firstAvg * 1.1) {
         memoryTrend = 'increasing'
       } else if (secondAvg < firstAvg * 0.9) {
@@ -447,10 +490,14 @@ export class AdvancedValidationInspector {
     // Generate recommendations
     const recommendations: string[] = []
     if (errorRate > 0.1) {
-      recommendations.push('High error rate detected - review component validation')
+      recommendations.push(
+        'High error rate detected - review component validation'
+      )
     }
     if (performanceRegression) {
-      recommendations.push('Performance regression detected - optimize render methods')
+      recommendations.push(
+        'Performance regression detected - optimize render methods'
+      )
     }
     if (memoryTrend === 'increasing') {
       recommendations.push('Memory usage increasing - check for memory leaks')
@@ -461,14 +508,17 @@ export class AdvancedValidationInspector {
       warningRate,
       performanceRegression,
       memoryTrend,
-      recommendations
+      recommendations,
     }
   }
 
   /**
    * Export debugging session data
    */
-  exportSessionData(session: AdvancedDebuggingSession, format: 'json' | 'csv' | 'html' = 'json'): string {
+  exportSessionData(
+    session: AdvancedDebuggingSession,
+    format: 'json' | 'csv' | 'html' = 'json'
+  ): string {
     switch (format) {
       case 'json':
         return this.exportAsJSON(session)
@@ -484,15 +534,20 @@ export class AdvancedValidationInspector {
   /**
    * Extract DOM information from element
    */
-  private extractDOMInfo(element: HTMLElement): ComponentStateSnapshot['domNode'] {
+  private extractDOMInfo(
+    element: HTMLElement
+  ): ComponentStateSnapshot['domNode'] {
     return {
       tagName: element.tagName.toLowerCase(),
       className: element.className,
-      attributes: Array.from(element.attributes).reduce((acc, attr) => {
-        acc[attr.name] = attr.value
-        return acc
-      }, {} as Record<string, string>),
-      computedStyles: this.getComputedStyles(element)
+      attributes: Array.from(element.attributes).reduce(
+        (acc, attr) => {
+          acc[attr.name] = attr.value
+          return acc
+        },
+        {} as Record<string, string>
+      ),
+      computedStyles: this.getComputedStyles(element),
     }
   }
 
@@ -506,15 +561,28 @@ export class AdvancedValidationInspector {
 
     const styles = window.getComputedStyle(element)
     const importantStyles = [
-      'width', 'height', 'padding', 'margin', 'border',
-      'background-color', 'color', 'font-size', 'font-weight',
-      'display', 'position', 'z-index', 'opacity'
+      'width',
+      'height',
+      'padding',
+      'margin',
+      'border',
+      'background-color',
+      'color',
+      'font-size',
+      'font-weight',
+      'display',
+      'position',
+      'z-index',
+      'opacity',
     ]
 
-    return importantStyles.reduce((acc, prop) => {
-      acc[prop] = styles.getPropertyValue(prop)
-      return acc
-    }, {} as Record<string, string>)
+    return importantStyles.reduce(
+      (acc, prop) => {
+        acc[prop] = styles.getPropertyValue(prop)
+        return acc
+      },
+      {} as Record<string, string>
+    )
   }
 
   /**
@@ -535,7 +603,7 @@ export class AdvancedValidationInspector {
       'error-highlight': '#ff4444',
       'component-boundary': '#0088ff',
       'modifier-effect': '#ffaa00',
-      'performance-heatmap': '#ff6600'
+      'performance-heatmap': '#ff6600',
     }
     return colors[type] || '#888888'
   }
@@ -543,12 +611,16 @@ export class AdvancedValidationInspector {
   /**
    * Update active inspectors with new snapshot
    */
-  private updateInspectors(componentId: string, snapshot: ComponentStateSnapshot): void {
+  private updateInspectors(
+    componentId: string,
+    snapshot: ComponentStateSnapshot
+  ): void {
     for (const inspector of this.inspectors.values()) {
       if (!inspector.isActive) continue
 
       // Check if this inspector should track this component
-      const shouldTrack = inspector.target === 'global' || 
+      const shouldTrack =
+        inspector.target === 'global' ||
         (inspector.target === 'component' && inspector.targetId === componentId)
 
       if (shouldTrack) {
@@ -570,24 +642,32 @@ export class AdvancedValidationInspector {
 
     // Calculate error frequency
     const recentSnapshots = snapshots.slice(-10)
-    const errorsInRecent = recentSnapshots.filter(s => s.validationErrors.length > 0).length
+    const errorsInRecent = recentSnapshots.filter(
+      s => s.validationErrors.length > 0
+    ).length
     inspector.trends.errorFrequency = errorsInRecent / recentSnapshots.length
 
     // Check for performance regression
-    const renderTimes = recentSnapshots.map(s => s.renderTime).filter(t => t > 0)
+    const renderTimes = recentSnapshots
+      .map(s => s.renderTime)
+      .filter(t => t > 0)
     if (renderTimes.length > 3) {
-      const avgTime = renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length
+      const avgTime =
+        renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length
       const recentAvg = renderTimes.slice(-3).reduce((a, b) => a + b, 0) / 3
       inspector.trends.performanceRegression = recentAvg > avgTime * 1.5
     }
 
     // Check for memory leaks
-    const memoryUsages = recentSnapshots.map(s => s.memoryUsage).filter(m => m > 0)
+    const memoryUsages = recentSnapshots
+      .map(s => s.memoryUsage)
+      .filter(m => m > 0)
     if (memoryUsages.length > 5) {
-      const isIncreasing = memoryUsages.every((usage, index) => 
-        index === 0 || usage >= memoryUsages[index - 1]
+      const isIncreasing = memoryUsages.every(
+        (usage, index) => index === 0 || usage >= memoryUsages[index - 1]
       )
-      inspector.trends.memoryLeaks = isIncreasing && 
+      inspector.trends.memoryLeaks =
+        isIncreasing &&
         memoryUsages[memoryUsages.length - 1] > memoryUsages[0] * 1.2
     }
   }
@@ -597,14 +677,25 @@ export class AdvancedValidationInspector {
    */
   private analyzeSession(session: AdvancedDebuggingSession): void {
     const allSnapshots = Array.from(session.components.values()).flat()
-    
-    session.summary.totalErrors = allSnapshots.reduce((sum, s) => sum + s.validationErrors.length, 0)
-    session.summary.totalWarnings = allSnapshots.reduce((sum, s) => sum + s.validationWarnings.length, 0)
+
+    session.summary.totalErrors = allSnapshots.reduce(
+      (sum, s) => sum + s.validationErrors.length,
+      0
+    )
+    session.summary.totalWarnings = allSnapshots.reduce(
+      (sum, s) => sum + s.validationWarnings.length,
+      0
+    )
 
     // Find critical issues
     session.summary.criticalIssues = allSnapshots
-      .filter(s => s.validationErrors.some(e => e.template?.severity === 'error'))
-      .map(s => `${s.componentType}: ${s.validationErrors[0]?.error.message}`)
+      .filter(s =>
+        s.validationErrors.some(e => e.template?.severity === 'error')
+      )
+      .map(
+        s =>
+          `${s.componentType}: ${s.validationErrors[0]?.error?.message || 'Unknown error'}`
+      )
       .slice(0, 5)
 
     // Find performance issues
@@ -612,7 +703,7 @@ export class AdvancedValidationInspector {
       .filter(s => s.renderTime > 16) // Slower than 60fps
       .map(s => `${s.componentType}: ${s.renderTime.toFixed(2)}ms render time`)
       .slice(0, 5)
-    
+
     session.summary.performanceIssues = slowComponents
 
     // Generate recommendations
@@ -642,10 +733,16 @@ export class AdvancedValidationInspector {
    */
   private exportAsCSV(session: AdvancedDebuggingSession): string {
     const allSnapshots = Array.from(session.components.values()).flat()
-    
+
     const headers = [
-      'timestamp', 'componentType', 'componentId', 'isValid',
-      'errorCount', 'warningCount', 'renderTime', 'memoryUsage'
+      'timestamp',
+      'componentType',
+      'componentId',
+      'isValid',
+      'errorCount',
+      'warningCount',
+      'renderTime',
+      'memoryUsage',
     ]
 
     const rows = allSnapshots.map(snapshot => [
@@ -656,7 +753,7 @@ export class AdvancedValidationInspector {
       snapshot.validationErrors.length,
       snapshot.validationWarnings.length,
       snapshot.renderTime,
-      snapshot.memoryUsage
+      snapshot.memoryUsage,
     ])
 
     return [headers, ...rows].map(row => row.join(',')).join('\n')
@@ -715,11 +812,16 @@ export class AdvancedValidationInspector {
    */
   getStatistics() {
     return {
-      activeInspectors: Array.from(this.inspectors.values()).filter(i => i.isActive).length,
-      totalSnapshots: Array.from(this.snapshots.values()).reduce((sum, snapshots) => sum + snapshots.length, 0),
+      activeInspectors: Array.from(this.inspectors.values()).filter(
+        i => i.isActive
+      ).length,
+      totalSnapshots: Array.from(this.snapshots.values()).reduce(
+        (sum, snapshots) => sum + snapshots.length,
+        0
+      ),
       activeOverlays: this.overlays.size,
       sessionActive: !!this.activeSession,
-      memoryUsage: this.getMemoryUsage()
+      memoryUsage: this.getMemoryUsage(),
     }
   }
 }
@@ -727,7 +829,9 @@ export class AdvancedValidationInspector {
 /**
  * Configure advanced debugging
  */
-export function configureAdvancedDebugging(config: Partial<AdvancedDebuggingConfig>): void {
+export function configureAdvancedDebugging(
+  config: Partial<AdvancedDebuggingConfig>
+): void {
   advancedDebugConfig = { ...advancedDebugConfig, ...config }
 }
 
@@ -748,8 +852,11 @@ export const AdvancedDebuggingUtils = {
   /**
    * Create new inspector
    */
-  createInspector: (target: 'component' | 'modifier' | 'global', targetId?: string, options?: any) =>
-    advancedInspector.createInspector(target, targetId, options),
+  createInspector: (
+    target: 'component' | 'modifier' | 'global',
+    targetId?: string,
+    options?: any
+  ) => advancedInspector.createInspector(target, targetId, options),
 
   /**
    * Take component snapshot
@@ -760,8 +867,11 @@ export const AdvancedDebuggingUtils = {
   /**
    * Add visual overlay
    */
-  addVisualOverlay: (type: VisualDebuggingOverlay['type'], bounds: any, options?: any) =>
-    advancedInspector.addVisualOverlay(type, bounds, options),
+  addVisualOverlay: (
+    type: VisualDebuggingOverlay['type'],
+    bounds: any,
+    options?: any
+  ) => advancedInspector.addVisualOverlay(type, bounds, options),
 
   /**
    * Start debugging session
@@ -789,8 +899,10 @@ export const AdvancedDebuggingUtils = {
   /**
    * Export session data
    */
-  exportSessionData: (session: AdvancedDebuggingSession, format?: 'json' | 'csv' | 'html') =>
-    advancedInspector.exportSessionData(session, format),
+  exportSessionData: (
+    session: AdvancedDebuggingSession,
+    format?: 'json' | 'csv' | 'html'
+  ) => advancedInspector.exportSessionData(session, format),
 
   /**
    * Configure debugging
@@ -812,14 +924,20 @@ export const AdvancedDebuggingUtils = {
    */
   test: () => {
     console.group('🔍 Advanced Debugging System Test')
-    
+
     try {
       // Test session management
-      const sessionId = advancedInspector.startSession('Test Session', 'Testing advanced debugging features')
+      const sessionId = advancedInspector.startSession(
+        'Test Session',
+        'Testing advanced debugging features'
+      )
       console.info('✅ Session started:', sessionId)
 
       // Test inspector creation
-      const inspectorId = advancedInspector.createInspector('component', 'test-component')
+      const inspectorId = advancedInspector.createInspector(
+        'component',
+        'test-component'
+      )
       console.info('✅ Inspector created:', inspectorId)
 
       // Test snapshot taking
@@ -827,12 +945,13 @@ export const AdvancedDebuggingUtils = {
         type: 'Text',
         props: { content: 'Hello' },
         state: {},
-        modifiers: ['fontSize', 'foregroundColor']
+        modifiers: ['fontSize', 'foregroundColor'],
       })
       console.info('✅ Snapshot taken:', snapshotId)
 
       // Test visual overlay
-      const overlayId = advancedInspector.addVisualOverlay('error-highlight', 
+      const overlayId = advancedInspector.addVisualOverlay(
+        'error-highlight',
         { x: 0, y: 0, width: 100, height: 50 },
         { label: 'Test Error', duration: 1000 }
       )
@@ -840,20 +959,23 @@ export const AdvancedDebuggingUtils = {
 
       // Test trends analysis
       const trends = advancedInspector.getValidationTrends('test-component')
-      console.info('✅ Trends analysis:', trends.recommendations.length, 'recommendations')
+      console.info(
+        '✅ Trends analysis:',
+        trends.recommendations.length,
+        'recommendations'
+      )
 
       // Test session stop
       const session = advancedInspector.stopSession()
       console.info('✅ Session stopped:', session?.summary.totalErrors)
 
       console.info('✅ Advanced debugging system is working correctly')
-      
     } catch (error) {
       console.error('❌ Advanced debugging test failed:', error)
     }
-    
+
     console.groupEnd()
-  }
+  },
 }
 
 // Export inspector instance

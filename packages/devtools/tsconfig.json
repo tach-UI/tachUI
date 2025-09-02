@@ -1,0 +1,38 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": false,
+    "moduleResolution": "bundler",
+
+    /* Linting */
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+
+    /* Build */
+    "outDir": "./dist",
+    "rootDir": "./src",
+
+    /* Advanced */
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+
+    /* Path mapping */
+    "baseUrl": ".",
+    "paths": {
+      "@tachui/core": ["../core/dist"],
+      "@tachui/primitives": ["../primitives/dist"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__/**/*"
+  ]
+}

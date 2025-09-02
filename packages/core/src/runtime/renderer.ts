@@ -9,7 +9,13 @@ import { applyModifiersToNode } from '../modifiers/registry'
 import { createEffect, createRoot, isComputed, isSignal } from '../reactive'
 import type { ComponentInstance, DOMNode } from './types'
 import { semanticRoleManager } from './semantic-role-manager'
-import { debugManager } from '../debug'
+// Debug functionality moved to @tachui/devtools package
+// Create a simple mock for backward compatibility
+const debugManager = {
+  isEnabled: () => false,
+  logComponent: (..._args: any[]) => {},
+  addDebugAttributes: (..._args: any[]) => {},
+}
 
 /**
  * Direct DOM renderer for efficient DOM manipulation
@@ -36,7 +42,10 @@ export class DOMRenderer {
   /**
    * Render a single DOM node
    */
-  private renderSingle(node: DOMNode, container?: Element): Element | Text | Comment {
+  private renderSingle(
+    node: DOMNode,
+    container?: Element
+  ): Element | Text | Comment {
     // Track rendered nodes for cleanup
     this.renderedNodes.add(node)
 
@@ -63,7 +72,7 @@ export class DOMRenderer {
     // Apply modifiers if present (only for Element nodes, not Text/Comment)
     if (element instanceof Element) {
       let modifiers: any[] = []
-      
+
       // Check for modifiers directly on the node
       if (
         'modifiers' in node &&
@@ -72,7 +81,7 @@ export class DOMRenderer {
       ) {
         modifiers = (node as any).modifiers
       }
-      
+
       // Check for modifiers in component metadata
       if (
         'componentMetadata' in node &&
@@ -82,7 +91,7 @@ export class DOMRenderer {
       ) {
         modifiers = (node as any).componentMetadata.modifiers
       }
-      
+
       if (modifiers.length > 0) {
         this.applyModifiersToElement(element, modifiers, node)
       }
@@ -104,10 +113,13 @@ export class DOMRenderer {
   /**
    * Render multiple nodes as a document fragment
    */
-  private renderFragment(nodes: DOMNode[], container?: Element): DocumentFragment {
+  private renderFragment(
+    nodes: DOMNode[],
+    container?: Element
+  ): DocumentFragment {
     const fragment = document.createDocumentFragment()
 
-    nodes.forEach((node) => {
+    nodes.forEach(node => {
       const element = this.renderSingle(node)
       fragment.appendChild(element)
     })
@@ -158,7 +170,7 @@ export class DOMRenderer {
 
     // Render children
     if (node.children && node.children.length > 0) {
-      node.children.forEach((child) => {
+      node.children.forEach(child => {
         const childElement = this.renderSingle(child)
         element.appendChild(childElement)
       })
@@ -198,7 +210,11 @@ export class DOMRenderer {
     }
 
     // Apply debug attributes using the debug manager
-    debugManager.addDebugAttributes(element as HTMLElement, componentType, debugLabel)
+    debugManager.addDebugAttributes(
+      element as HTMLElement,
+      componentType,
+      debugLabel
+    )
   }
 
   /**
@@ -365,7 +381,7 @@ export class DOMRenderer {
               element.style.removeProperty(property)
             } else {
               element.style.setProperty(
-                property.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`),
+                property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`),
                 String(currentValue)
               )
             }
@@ -381,7 +397,7 @@ export class DOMRenderer {
             element.style.removeProperty(property)
           } else {
             element.style.setProperty(
-              property.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`),
+              property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`),
               String(value)
             )
           }
@@ -393,7 +409,11 @@ export class DOMRenderer {
   /**
    * Apply event listener
    */
-  private applyEventListener(element: Element, eventName: string, handler: Function): void {
+  private applyEventListener(
+    element: Element,
+    eventName: string,
+    handler: Function
+  ): void {
     const event = eventName.slice(2).toLowerCase() // Remove 'on' prefix
 
     const listener = (e: Event) => {
@@ -415,7 +435,10 @@ export class DOMRenderer {
   /**
    * Add cleanup function for an element
    */
-  private addCleanup(element: Element | Text | Comment, cleanup: () => void): void {
+  private addCleanup(
+    element: Element | Text | Comment,
+    cleanup: () => void
+  ): void {
     const existing = this.cleanupMap.get(element) || []
     existing.push(cleanup)
     this.cleanupMap.set(element, existing)
@@ -446,7 +469,7 @@ export class DOMRenderer {
     // Run cleanup functions
     const cleanupFunctions = this.cleanupMap.get(element)
     if (cleanupFunctions) {
-      cleanupFunctions.forEach((cleanup) => {
+      cleanupFunctions.forEach(cleanup => {
         try {
           cleanup()
         } catch (error) {
@@ -499,7 +522,7 @@ export class DOMRenderer {
 
     // Add children
     if (children) {
-      children.forEach((child) => {
+      children.forEach(child => {
         const childElement = this.renderSingle(child)
         element.appendChild(childElement)
       })
@@ -511,14 +534,18 @@ export class DOMRenderer {
   /**
    * Apply modifiers to a DOM element
    */
-  private applyModifiersToElement(element: Element, modifiers: any[], node: any): void {
-    
+  private applyModifiersToElement(
+    element: Element,
+    modifiers: any[],
+    node: any
+  ): void {
     try {
       // Extract component instance from node if available
-      const componentInstance = node.componentInstance || 
-                               (node.componentMetadata && node.componentMetadata.componentInstance) ||
-                               node
-      
+      const componentInstance =
+        node.componentInstance ||
+        (node.componentMetadata && node.componentMetadata.componentInstance) ||
+        node
+
       // Apply modifiers with batching enabled for better performance
       applyModifiersToNode(
         node,
@@ -568,23 +595,26 @@ const globalRenderer = new DOMRenderer()
 /**
  * Render a component instance to DOM
  */
-export function renderComponent(instance: ComponentInstance, container: Element): () => void {
+export function renderComponent(
+  instance: ComponentInstance,
+  container: Element
+): () => void {
   return createRoot(() => {
     let currentNodes: DOMNode[] = []
-    
+
     // Create reactive effect for component re-rendering
     const effect = createEffect(() => {
       // Clear previous nodes
-      currentNodes.forEach((node) => {
+      currentNodes.forEach(node => {
         globalRenderer.removeNode(node)
       })
-      
+
       // Render new nodes
       const renderResult = instance.render()
       const nodes = Array.isArray(renderResult) ? renderResult : [renderResult]
       currentNodes = nodes
 
-      nodes.forEach((node) => {
+      nodes.forEach(node => {
         globalRenderer.render(node, container)
       })
     })
@@ -592,7 +622,7 @@ export function renderComponent(instance: ComponentInstance, container: Element)
     // Return cleanup function
     return () => {
       effect.dispose()
-      currentNodes.forEach((node) => {
+      currentNodes.forEach(node => {
         globalRenderer.removeNode(node)
       })
     }
@@ -610,8 +640,8 @@ export function h(
   // Normalize children
   const normalizedChildren: DOMNode[] = children
     .flat()
-    .filter((child) => child != null)
-    .map((child) => {
+    .filter(child => child != null)
+    .map(child => {
       if (typeof child === 'string' || typeof child === 'number') {
         return { type: 'text', text: String(child) } as DOMNode
       }
@@ -632,7 +662,11 @@ export function h(
  * Create a text node helper
  */
 export function text(content: string | (() => string)): DOMNode {
-  if (isSignal(content) || isComputed(content) || typeof content === 'function') {
+  if (
+    isSignal(content) ||
+    isComputed(content) ||
+    typeof content === 'function'
+  ) {
     // Reactive text content
     const textNode: DOMNode = {
       type: 'text',

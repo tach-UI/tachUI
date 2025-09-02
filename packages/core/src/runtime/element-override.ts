@@ -1,11 +1,11 @@
 /**
  * Element Override System - Tag Specification Enhancement
- * 
+ *
  * Enables components to override their default HTML tags for semantic markup,
  * improving SEO and accessibility while preserving all styling and functionality.
  */
 
-import { DevelopmentWarnings } from './development-warnings'
+// import { DevelopmentWarnings } from './development-warnings'
 
 export interface ElementOverrideProps {
   element?: string
@@ -32,11 +32,11 @@ export interface SemanticRoleInfo {
 export interface ElementOverrideConfig {
   // Accessibility
   autoApplySemanticRoles: boolean
-  
+
   // Development warnings
   warnOnOverrides: boolean
   warnOnSemanticIssues: boolean
-  
+
   // Validation
   validateTags: boolean
   allowInvalidTags: boolean
@@ -45,31 +45,113 @@ export interface ElementOverrideConfig {
 // Valid HTML tag validation
 export const VALID_HTML_TAGS = new Set([
   // Container tags
-  'div', 'section', 'article', 'aside', 'nav', 'main', 'header', 'footer',
-  // Heading tags  
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'div',
+  'section',
+  'article',
+  'aside',
+  'nav',
+  'main',
+  'header',
+  'footer',
+  // Heading tags
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
   // Content tags
-  'p', 'span', 'strong', 'em', 'code', 'pre', 'blockquote', 'address',
+  'p',
+  'span',
+  'strong',
+  'em',
+  'code',
+  'pre',
+  'blockquote',
+  'address',
   // List tags
-  'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+  'ul',
+  'ol',
+  'li',
+  'dl',
+  'dt',
+  'dd',
   // Interactive tags (with warnings)
-  'button', 'a', 'input', 'textarea', 'select', 'form', 'label',
+  'button',
+  'a',
+  'input',
+  'textarea',
+  'select',
+  'form',
+  'label',
   // Media tags
-  'img', 'video', 'audio', 'canvas', 'svg', 'picture', 'source',
+  'img',
+  'video',
+  'audio',
+  'canvas',
+  'svg',
+  'picture',
+  'source',
   // Table tags
-  'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col',
+  'table',
+  'thead',
+  'tbody',
+  'tfoot',
+  'tr',
+  'th',
+  'td',
+  'caption',
+  'colgroup',
+  'col',
   // Form tags
-  'fieldset', 'legend', 'optgroup', 'option', 'datalist', 'output', 'progress', 'meter',
+  'fieldset',
+  'legend',
+  'optgroup',
+  'option',
+  'datalist',
+  'output',
+  'progress',
+  'meter',
   // Interactive content
-  'details', 'summary', 'dialog',
+  'details',
+  'summary',
+  'dialog',
   // Text semantics
-  'abbr', 'cite', 'dfn', 'kbd', 'mark', 'q', 's', 'samp', 'small', 'sub', 'sup', 'time', 'u', 'var',
+  'abbr',
+  'cite',
+  'dfn',
+  'kbd',
+  'mark',
+  'q',
+  's',
+  'samp',
+  'small',
+  'sub',
+  'sup',
+  'time',
+  'u',
+  'var',
   // Document sections
-  'body', 'head', 'title', 'base', 'link', 'meta', 'style', 'script', 'noscript',
+  'body',
+  'head',
+  'title',
+  'base',
+  'link',
+  'meta',
+  'style',
+  'script',
+  'noscript',
   // Embedded content
-  'embed', 'iframe', 'object', 'param', 'track', 'map', 'area',
+  'embed',
+  'iframe',
+  'object',
+  'param',
+  'track',
+  'map',
+  'area',
   // Interactive elements
-  'menu', 'menuitem'
+  'menu',
+  'menuitem',
 ])
 
 export const SEMANTIC_TAG_ROLES = new Map<string, SemanticRoleInfo>([
@@ -91,28 +173,96 @@ export const SEMANTIC_TAG_ROLES = new Map<string, SemanticRoleInfo>([
  * Component Eligibility Matrix - Warning Levels
  * Based on design/Enh-TagSpecification.md Component Eligibility Matrix
  */
-export const COMPONENT_ELIGIBILITY = new Map<string, { warningLevel: 'none' | 'info' | 'warning', idealTags?: string[], problematicTags?: string[] }>([
+export const COMPONENT_ELIGIBILITY = new Map<
+  string,
+  {
+    warningLevel: 'none' | 'info' | 'warning'
+    idealTags?: string[]
+    problematicTags?: string[]
+  }
+>([
   // Layout Components - Ideal for semantic containers (Warning Level: None)
-  ['HStack', { warningLevel: 'none', idealTags: ['nav', 'header', 'footer', 'section', 'article', 'aside', 'main', 'div'] }],
-  ['VStack', { warningLevel: 'none', idealTags: ['main', 'section', 'article', 'aside', 'header', 'footer', 'div'] }],
-  ['ZStack', { warningLevel: 'none', idealTags: ['article', 'aside', 'section', 'div'] }],
-  
+  [
+    'HStack',
+    {
+      warningLevel: 'none',
+      idealTags: [
+        'nav',
+        'header',
+        'footer',
+        'section',
+        'article',
+        'aside',
+        'main',
+        'div',
+      ],
+    },
+  ],
+  [
+    'VStack',
+    {
+      warningLevel: 'none',
+      idealTags: [
+        'main',
+        'section',
+        'article',
+        'aside',
+        'header',
+        'footer',
+        'div',
+      ],
+    },
+  ],
+  [
+    'ZStack',
+    { warningLevel: 'none', idealTags: ['article', 'aside', 'section', 'div'] },
+  ],
+
   // Content Components - Common for specific overrides (Warning Level: None for appropriate tags)
-  ['Text', { warningLevel: 'none', idealTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'strong', 'em'] }],
-  ['Image', { warningLevel: 'warning', problematicTags: ['figure', 'picture'] }], // May break functionality
+  [
+    'Text',
+    {
+      warningLevel: 'none',
+      idealTags: [
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'p',
+        'span',
+        'strong',
+        'em',
+      ],
+    },
+  ],
+  [
+    'Image',
+    { warningLevel: 'warning', problematicTags: ['figure', 'picture'] },
+  ], // May break functionality
   ['Spacer', { warningLevel: 'none' }],
-  
+
   // Interactive Components - Use with warnings
-  ['Button', { warningLevel: 'warning', problematicTags: ['div', 'span', 'a'] }], // May break accessibility
-  ['Link', { warningLevel: 'warning', problematicTags: ['div', 'span', 'button'] }], // May break navigation
+  [
+    'Button',
+    { warningLevel: 'warning', problematicTags: ['div', 'span', 'a'] },
+  ], // May break accessibility
+  [
+    'Link',
+    { warningLevel: 'warning', problematicTags: ['div', 'span', 'button'] },
+  ], // May break navigation
 ])
 
 /**
  * Check if an element override should show a warning based on component eligibility matrix
  */
-export function shouldWarnOnOverride(componentType: string, tag: string): boolean {
+export function shouldWarnOnOverride(
+  componentType: string,
+  tag: string
+): boolean {
   const eligibility = COMPONENT_ELIGIBILITY.get(componentType)
-  
+
   if (!eligibility) {
     // Unknown component - always warn for safety
     return true
@@ -138,18 +288,18 @@ export function shouldWarnOnOverride(componentType: string, tag: string): boolea
 }
 
 /**
- * The applyARIA flag controls whether the framework automatically adds 
+ * The applyARIA flag controls whether the framework automatically adds
  * the corresponding ARIA role attribute to elements with semantic tags.
- * 
+ *
  * applyARIA: true  - Always add the ARIA role (e.g., <nav> gets role="navigation")
  * applyARIA: false - Don't automatically add ARIA role due to context sensitivity
- * 
+ *
  * Examples:
  * - <nav> always represents navigation → applyARIA: true
- * - <header> could be page banner OR section header → applyARIA: false  
+ * - <header> could be page banner OR section header → applyARIA: false
  * - <footer> could be page footer OR article footer → applyARIA: false
- * 
- * When applyARIA is false, developers should manually specify appropriate 
+ *
+ * When applyARIA is false, developers should manually specify appropriate
  * ARIA roles using the .aria() modifier when semantic meaning is ambiguous.
  */
 
@@ -157,26 +307,33 @@ export class ElementTagValidator {
   static validate(tag: string, componentType: string): ValidationResult {
     if (!VALID_HTML_TAGS.has(tag)) {
       // Show development warning for invalid tags
-      DevelopmentWarnings.errorInvalidTag(tag, componentType)
-      
+      if (process.env.NODE_ENV !== 'production') {
+        console.error(
+          `Invalid tag '${tag}' for component type '${componentType}'`
+        )
+      }
+
       return {
         valid: false,
         warning: `Invalid HTML tag '${tag}' specified for ${componentType}. Tag will be used as-is.`,
-        severity: 'error'
+        severity: 'error',
       }
     }
 
     // Check for potentially problematic combinations
     const warnings = this.checkSemanticWarnings(tag, componentType)
-    
+
     return {
       valid: true,
       warnings,
-      semanticRole: SEMANTIC_TAG_ROLES.get(tag)
+      semanticRole: SEMANTIC_TAG_ROLES.get(tag),
     }
   }
 
-  private static checkSemanticWarnings(tag: string, componentType: string): Warning[] {
+  private static checkSemanticWarnings(
+    tag: string,
+    componentType: string
+  ): Warning[] {
     const warnings: Warning[] = []
 
     // Warn about interactive tags on layout components
@@ -184,7 +341,11 @@ export class ElementTagValidator {
       if (['HStack', 'VStack', 'ZStack'].includes(componentType)) {
         const message = `Using interactive tag '${tag}' on layout component ${componentType} may cause accessibility issues.`
         warnings.push({ message, severity: 'warning' })
-        DevelopmentWarnings.warnAccessibility(componentType, tag, 'Interactive tag on layout component may cause unexpected behavior')
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            `Interactive tag '${tag}' on layout component '${componentType}' may cause unexpected behavior`
+          )
+        }
       }
     }
 
@@ -192,7 +353,11 @@ export class ElementTagValidator {
     if (tag === 'li' && !['VStack', 'HStack'].includes(componentType)) {
       const message = `<li> tags should typically be used within list structures.`
       warnings.push({ message, severity: 'info' })
-      DevelopmentWarnings.warnProblematicCombination(componentType, tag, 'Consider using within <ul> or <ol> structure', 'info')
+      if (process.env.NODE_ENV !== 'production') {
+        console.info(
+          `Consider using '${tag}' within <ul> or <ol> structure for component '${componentType}'`
+        )
+      }
     }
 
     // Warn about heading tags on layout components
@@ -200,7 +365,11 @@ export class ElementTagValidator {
       if (['HStack', 'VStack', 'ZStack'].includes(componentType)) {
         const message = `Using heading tag '${tag}' on layout component ${componentType}. Consider using Text component instead.`
         warnings.push({ message, severity: 'info' })
-        DevelopmentWarnings.warnProblematicCombination(componentType, tag, 'Heading tags are better suited for Text components', 'info')
+        if (process.env.NODE_ENV !== 'production') {
+          console.info(
+            `Heading tag '${tag}' is better suited for Text components than '${componentType}'`
+          )
+        }
       }
     }
 
@@ -209,7 +378,11 @@ export class ElementTagValidator {
       if (!['VStack', 'HStack', 'Form'].includes(componentType)) {
         const message = `Form tag '${tag}' used on ${componentType}. Ensure proper form semantics.`
         warnings.push({ message, severity: 'info' })
-        DevelopmentWarnings.warnProblematicCombination(componentType, tag, 'Form tags require proper semantic context', 'info')
+        if (process.env.NODE_ENV !== 'production') {
+          console.info(
+            `Form tag '${tag}' requires proper semantic context for component '${componentType}'`
+          )
+        }
       }
     }
 
@@ -223,10 +396,12 @@ let globalConfig: ElementOverrideConfig = {
   warnOnOverrides: process.env.NODE_ENV !== 'production',
   warnOnSemanticIssues: process.env.NODE_ENV !== 'production',
   validateTags: true,
-  allowInvalidTags: true
+  allowInvalidTags: true,
 }
 
-export function configureElementOverrides(config: Partial<ElementOverrideConfig>): void {
+export function configureElementOverrides(
+  config: Partial<ElementOverrideConfig>
+): void {
   globalConfig = { ...globalConfig, ...config }
 }
 
@@ -247,25 +422,31 @@ export function processElementOverride(
 
   // Always validate in development, even when validation is disabled
   let validation: ValidationResult = { valid: true }
-  
+
   if (overrideTag) {
     // Show override warning if enabled and appropriate per component eligibility matrix
-    if (config.warnOnOverrides && shouldWarnOnOverride(componentType, overrideTag)) {
-      DevelopmentWarnings.warnElementOverride(componentType, defaultTag, overrideTag)
+    if (
+      config.warnOnOverrides &&
+      shouldWarnOnOverride(componentType, overrideTag)
+    ) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          `Element override: ${componentType} changed from '${defaultTag}' to '${overrideTag}'`
+        )
+      }
     }
 
     // Validate tag if enabled
     if (config.validateTags) {
       validation = ElementTagValidator.validate(overrideTag, componentType)
-      
+
       // If validation fails and we don't allow invalid tags, use default
       if (!validation.valid && !config.allowInvalidTags) {
-        DevelopmentWarnings.warnProblematicCombination(
-          componentType, 
-          overrideTag, 
-          `Invalid tag rejected, using default '${defaultTag}' instead`, 
-          'warning'
-        )
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            `Invalid tag '${overrideTag}' rejected for '${componentType}', using default '${defaultTag}' instead`
+          )
+        }
         return { tag: defaultTag, validation }
       }
     }
@@ -277,6 +458,10 @@ export function processElementOverride(
 /**
  * Create element override validation helper for components
  */
-export function createElementOverrideValidator(componentType: string, defaultTag: string) {
-  return (overrideTag?: string) => processElementOverride(componentType, defaultTag, overrideTag)
+export function createElementOverrideValidator(
+  componentType: string,
+  defaultTag: string
+) {
+  return (overrideTag?: string) =>
+    processElementOverride(componentType, defaultTag, overrideTag)
 }

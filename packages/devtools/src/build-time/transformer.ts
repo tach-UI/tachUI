@@ -1,6 +1,6 @@
 /**
  * TypeScript Transformer for Build-Time Validation
- * 
+ *
  * Analyzes TypeScript AST to validate TachUI component usage
  * at compile time and provide detailed error messages.
  */
@@ -15,16 +15,18 @@ function getTypeScript() {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('TypeScript transformer should not be used in production')
   }
-  
+
   // Check if we're in a browser environment
   if (typeof window !== 'undefined') {
     throw new Error('TypeScript transformer cannot run in browser environment')
   }
-  
+
   try {
     return require('typescript')
   } catch (_error) {
-    throw new Error('TypeScript is required for build-time validation. Install with: npm install -D typescript')
+    throw new Error(
+      'TypeScript is required for build-time validation. Install with: npm install -D typescript'
+    )
   }
 }
 
@@ -34,7 +36,7 @@ import type {
   ValidationResult,
   BuildTimeValidationError,
   ComponentValidationPattern,
-  ModifierValidationPattern
+  ModifierValidationPattern,
 } from './types'
 import { componentPatterns, modifierPatterns } from './rules'
 
@@ -44,9 +46,10 @@ import { componentPatterns, modifierPatterns } from './rules'
 export function createTachUITransformer(
   program: any, // ts.Program when TypeScript is available
   options: { strict?: boolean } = {}
-): any { // ts.TransformerFactory<ts.SourceFile> when TypeScript is available
+): any {
+  // ts.TransformerFactory<ts.SourceFile> when TypeScript is available
   const ts = getTypeScript()
-  
+
   return (context: any) => {
     return (sourceFile: any): any => {
       const checker = program.getTypeChecker()
@@ -62,18 +65,18 @@ export function createTachUITransformer(
           excludeFiles: [],
           includeFiles: [],
           customRules: [],
-          configFile: ''
-        }
+          configFile: '',
+        },
       }
 
       const diagnostics: any[] = []
-      
+
       function visit(node: any): any {
         // Check for TachUI component calls
         if (ts.isCallExpression(node)) {
           validateComponentCall(node, validationContext, diagnostics)
         }
-        
+
         // Check for TachUI modifier chains
         if (ts.isPropertyAccessExpression(node)) {
           validateModifierAccess(node, validationContext, diagnostics)
@@ -116,7 +119,7 @@ function validateComponentCall(
   if (!componentPattern) return
 
   const errors = validateComponent(node, componentPattern, context)
-  
+
   for (const error of errors) {
     diagnostics.push(createDiagnostic(error, sourceFile))
   }
@@ -134,7 +137,7 @@ function validateModifierAccess(
 
   const modifierName = node.name.text
   const modifierPattern = modifierPatterns[modifierName]
-  
+
   if (!modifierPattern) return
 
   // Get the component type this modifier is being applied to
@@ -142,7 +145,7 @@ function validateModifierAccess(
   if (!componentType) return
 
   const errors = validateModifier(node, modifierPattern, componentType, context)
-  
+
   for (const error of errors) {
     diagnostics.push(createDiagnostic(error, sourceFile))
   }
@@ -163,7 +166,7 @@ function validateComponent(
   // Check argument count
   const args = node.arguments
   const requiredCount = pattern.requiredProps.length
-  
+
   if (args.length < requiredCount) {
     const pos = getPosition(node, sourceFile)
     errors.push({
@@ -176,7 +179,7 @@ function validateComponent(
       category: 'component',
       component: pattern.componentName,
       suggestion: `Add missing required properties: ${pattern.requiredProps.slice(args.length).join(', ')}`,
-      documentationLink: `https://docs.tachui.dev/components/${pattern.componentName.toLowerCase()}`
+      documentationLink: `https://docs.tachui.dev/components/${pattern.componentName.toLowerCase()}`,
     })
   }
 
@@ -184,7 +187,7 @@ function validateComponent(
   for (let i = 0; i < args.length && i < pattern.requiredProps.length; i++) {
     const arg = args[i]
     const propName = pattern.requiredProps[i]
-    
+
     // Check for null/undefined
     if (ts.isLiteralExpression(arg) && arg.text === 'null') {
       const pos = getPosition(arg, sourceFile)
@@ -197,7 +200,7 @@ function validateComponent(
         length: arg.getText().length,
         category: 'component',
         component: pattern.componentName,
-        suggestion: `Provide a valid value for ${propName}`
+        suggestion: `Provide a valid value for ${propName}`,
       })
     }
   }
@@ -218,7 +221,10 @@ function validateModifier(
   const { sourceFile } = context
 
   // Check if modifier is valid for this component type
-  if (!pattern.validComponents.includes(componentType) && !pattern.validComponents.includes('*')) {
+  if (
+    !pattern.validComponents.includes(componentType) &&
+    !pattern.validComponents.includes('*')
+  ) {
     const pos = getPosition(node, sourceFile)
     errors.push({
       message: `${pattern.modifierName} modifier is not valid for ${componentType} components`,
@@ -230,7 +236,7 @@ function validateModifier(
       category: 'modifier',
       component: componentType,
       suggestion: `Use ${pattern.modifierName} with: ${pattern.validComponents.join(', ')}`,
-      documentationLink: `https://docs.tachui.dev/modifiers/${pattern.modifierName}`
+      documentationLink: `https://docs.tachui.dev/modifiers/${pattern.modifierName}`,
     })
   }
 
@@ -242,11 +248,11 @@ function validateModifier(
  */
 function getSymbolName(expression: any, checker: any): string | null {
   const ts = getTypeScript()
-  
+
   if (ts.isIdentifier(expression)) {
     return expression.text
   }
-  
+
   if (ts.isPropertyAccessExpression(expression)) {
     return expression.name.text
   }
@@ -258,14 +264,17 @@ function getSymbolName(expression: any, checker: any): string | null {
 /**
  * Get component type from modifier expression
  */
-function getComponentTypeFromExpression(expression: any, checker: any): string | null {
+function getComponentTypeFromExpression(
+  expression: any,
+  checker: any
+): string | null {
   // This is a simplified implementation
   // In practice, we'd need to trace back through the modifier chain
   // to find the original component constructor
-  
+
   const type = checker.getTypeAtLocation(expression)
   const typeString = checker.typeToString(type)
-  
+
   // Look for TachUI component types
   const componentMatch = typeString.match(/(\w+)Instance/)
   return componentMatch ? componentMatch[1] : null
@@ -274,21 +283,30 @@ function getComponentTypeFromExpression(expression: any, checker: any): string |
 /**
  * Get line and column position from node
  */
-function getPosition(node: any, sourceFile: any): { line: number; column: number } {
+function getPosition(
+  node: any,
+  sourceFile: any
+): { line: number; column: number } {
   const pos = sourceFile.getLineAndCharacterOfPosition(node.getStart())
   return {
     line: pos.line + 1, // 1-based line numbers
-    column: pos.character + 1 // 1-based column numbers
+    column: pos.character + 1, // 1-based column numbers
   }
 }
 
 /**
  * Create TypeScript diagnostic from validation error
  */
-function createDiagnostic(error: BuildTimeValidationError, sourceFile: any): any {
+function createDiagnostic(
+  error: BuildTimeValidationError,
+  sourceFile: any
+): any {
   const ts = getTypeScript()
-  const start = sourceFile.getPositionOfLineAndCharacter(error.line - 1, error.column - 1)
-  
+  const start = sourceFile.getPositionOfLineAndCharacter(
+    error.line - 1,
+    error.column - 1
+  )
+
   return {
     file: sourceFile,
     start,
@@ -296,7 +314,7 @@ function createDiagnostic(error: BuildTimeValidationError, sourceFile: any): any
     messageText: error.message,
     category: ts.DiagnosticCategory.Error,
     code: error.code as any,
-    source: 'tachui'
+    source: 'tachui',
   }
 }
 
@@ -305,20 +323,26 @@ function createDiagnostic(error: BuildTimeValidationError, sourceFile: any): any
  */
 function reportDiagnostics(diagnostics: any[], fileName: string): void {
   if (process.env.NODE_ENV === 'production') return
-  
+
   const ts = getTypeScript()
 
   console.group(`🔍 TachUI Validation Issues in ${fileName}`)
-  
+
   for (const diagnostic of diagnostics) {
-    const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-    const position = diagnostic.file && diagnostic.start !== undefined
-      ? diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start)
-      : { line: 0, character: 0 }
-    
-    console.error(`❌ Line ${position.line + 1}, Column ${position.character + 1}: ${message}`)
+    const message = ts.flattenDiagnosticMessageText(
+      diagnostic.messageText,
+      '\n'
+    )
+    const position =
+      diagnostic.file && diagnostic.start !== undefined
+        ? diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start)
+        : { line: 0, character: 0 }
+
+    console.error(
+      `❌ Line ${position.line + 1}, Column ${position.character + 1}: ${message}`
+    )
   }
-  
+
   console.groupEnd()
 }
 
@@ -327,15 +351,19 @@ function reportDiagnostics(diagnostics: any[], fileName: string): void {
  */
 export function createValidationRule(
   name: string,
-  validate: (node: any, checker: any, context: ValidationContext) => ValidationResult
+  validate: (
+    node: any,
+    checker: any,
+    context: ValidationContext
+  ) => ValidationResult
 ): BuildTimeValidationRule {
   return {
     name,
     severity: 'error',
     description: `Custom validation rule: ${name}`,
     validate,
-    generateMessage: (error) => error.message,
-    suggestFix: () => []
+    generateMessage: error => error.message,
+    suggestFix: () => [],
   }
 }
 
@@ -349,24 +377,27 @@ export function runValidationRules(
 ): ValidationResult {
   const allErrors: BuildTimeValidationError[] = []
   const allWarnings: BuildTimeValidationError[] = []
-  
+
   for (const rule of rules) {
     const result = rule.validate(node, context.checker, context)
-    
+
     if (result.errors) {
       allErrors.push(...result.errors)
     }
-    
+
     if (result.warnings) {
       // Convert ValidationWarning to BuildTimeValidationError for consistency
-      const warningErrors = result.warnings.map(w => ({ ...w, severity: 'warning' as const }))
+      const warningErrors = result.warnings.map(w => ({
+        ...w,
+        severity: 'warning' as const,
+      }))
       allWarnings.push(...warningErrors)
     }
   }
-  
+
   return {
     valid: allErrors.length === 0,
     errors: allErrors,
-    warnings: allWarnings as any[] // Type assertion for compatibility
+    warnings: allWarnings as any[], // Type assertion for compatibility
   }
 }

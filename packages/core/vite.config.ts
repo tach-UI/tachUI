@@ -29,7 +29,6 @@ export default defineConfig({
         'runtime/types': resolve(__dirname, 'src/runtime/types.ts'),
         'reactive/types': resolve(__dirname, 'src/reactive/types.ts'),
         'constants/layout': resolve(__dirname, 'src/constants/layout.ts'),
-        debug: resolve(__dirname, 'src/debug/index.ts'),
         'validation/index': resolve(__dirname, 'src/validation/index.ts'),
 
         'css-classes/index': resolve(__dirname, 'src/css-classes/index.ts'),

@@ -1,6 +1,6 @@
 /**
  * Build Tool Detection System
- * 
+ *
  * Automatically detects the build environment and provides appropriate
  * integration strategies for different build tools.
  */
@@ -22,7 +22,9 @@ import type { BuildToolInfo } from './types'
 /**
  * Detect the current build environment
  */
-export function detectBuildEnvironment(projectRoot: string = typeof process !== 'undefined' ? process.cwd() : '.'): BuildToolInfo[] {
+export function detectBuildEnvironment(
+  projectRoot: string = typeof process !== 'undefined' ? process.cwd() : '.'
+): BuildToolInfo[] {
   // Return empty array if not in Node.js environment
   if (!fs || !path) {
     return []
@@ -71,7 +73,7 @@ function detectVite(projectRoot: string): BuildToolInfo {
     'vite.config.js',
     'vite.config.ts',
     'vite.config.mjs',
-    'vite.config.mts'
+    'vite.config.mts',
   ]
 
   for (const configFile of viteConfigFiles) {
@@ -83,7 +85,7 @@ function detectVite(projectRoot: string): BuildToolInfo {
         version,
         configFile: configPath,
         detected: true,
-        supported: true
+        supported: true,
       }
     }
   }
@@ -95,14 +97,14 @@ function detectVite(projectRoot: string): BuildToolInfo {
       name: 'vite',
       version,
       detected: true,
-      supported: true
+      supported: true,
     }
   }
 
   return {
     name: 'vite',
     detected: false,
-    supported: true
+    supported: true,
   }
 }
 
@@ -114,7 +116,7 @@ function detectWebpack(projectRoot: string): BuildToolInfo {
     'webpack.config.js',
     'webpack.config.ts',
     'webpack.config.mjs',
-    'webpack.config.babel.js'
+    'webpack.config.babel.js',
   ]
 
   for (const configFile of webpackConfigFiles) {
@@ -126,7 +128,7 @@ function detectWebpack(projectRoot: string): BuildToolInfo {
         version,
         configFile: configPath,
         detected: true,
-        supported: true
+        supported: true,
       }
     }
   }
@@ -138,14 +140,14 @@ function detectWebpack(projectRoot: string): BuildToolInfo {
       name: 'webpack',
       version,
       detected: true,
-      supported: true
+      supported: true,
     }
   }
 
   return {
     name: 'webpack',
     detected: false,
-    supported: true
+    supported: true,
   }
 }
 
@@ -156,7 +158,7 @@ function detectNextJS(projectRoot: string): BuildToolInfo {
   const nextConfigFiles = [
     'next.config.js',
     'next.config.ts',
-    'next.config.mjs'
+    'next.config.mjs',
   ]
 
   for (const configFile of nextConfigFiles) {
@@ -168,7 +170,7 @@ function detectNextJS(projectRoot: string): BuildToolInfo {
         version,
         configFile: configPath,
         detected: true,
-        supported: true
+        supported: true,
       }
     }
   }
@@ -180,14 +182,14 @@ function detectNextJS(projectRoot: string): BuildToolInfo {
       name: 'nextjs',
       version,
       detected: true,
-      supported: true
+      supported: true,
     }
   }
 
   return {
     name: 'nextjs',
     detected: false,
-    supported: true
+    supported: true,
   }
 }
 
@@ -202,14 +204,14 @@ function detectCRA(projectRoot: string): BuildToolInfo {
       name: 'create-react-app',
       version,
       detected: true,
-      supported: true
+      supported: true,
     }
   }
 
   return {
     name: 'create-react-app',
     detected: false,
-    supported: true
+    supported: true,
   }
 }
 
@@ -217,11 +219,7 @@ function detectCRA(projectRoot: string): BuildToolInfo {
  * Detect Parcel build tool
  */
 function detectParcel(projectRoot: string): BuildToolInfo {
-  const parcelConfigFiles = [
-    '.parcelrc',
-    '.parcelrc.json',
-    'parcel.config.js'
-  ]
+  const parcelConfigFiles = ['.parcelrc', '.parcelrc.json', 'parcel.config.js']
 
   for (const configFile of parcelConfigFiles) {
     const configPath = path.join(projectRoot, configFile)
@@ -232,7 +230,7 @@ function detectParcel(projectRoot: string): BuildToolInfo {
         version,
         configFile: configPath,
         detected: true,
-        supported: true
+        supported: true,
       }
     }
   }
@@ -244,21 +242,24 @@ function detectParcel(projectRoot: string): BuildToolInfo {
       name: 'parcel',
       version,
       detected: true,
-      supported: true
+      supported: true,
     }
   }
 
   return {
     name: 'parcel',
     detected: false,
-    supported: false // Limited support for Parcel
+    supported: false, // Limited support for Parcel
   }
 }
 
 /**
  * Get package version from package.json
  */
-function getPackageVersion(projectRoot: string, packageName: string): string | undefined {
+function getPackageVersion(
+  projectRoot: string,
+  packageName: string
+): string | undefined {
   try {
     const packageJsonPath = path.join(projectRoot, 'package.json')
     if (!fs.existsSync(packageJsonPath)) {
@@ -266,11 +267,11 @@ function getPackageVersion(projectRoot: string, packageName: string): string | u
     }
 
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'))
-    
+
     // Check dependencies and devDependencies
     const dependencies = packageJson.dependencies || {}
     const devDependencies = packageJson.devDependencies || {}
-    
+
     return dependencies[packageName] || devDependencies[packageName]
   } catch (_error) {
     return undefined
@@ -301,14 +302,22 @@ export function isCIEnvironment(): boolean {
 /**
  * Get the primary build tool (highest priority detected tool)
  */
-export function getPrimaryBuildTool(buildTools: BuildToolInfo[]): BuildToolInfo | null {
+export function getPrimaryBuildTool(
+  buildTools: BuildToolInfo[]
+): BuildToolInfo | null {
   if (buildTools.length === 0) {
     return null
   }
 
   // Priority order: Next.js > Vite > Webpack > CRA > Parcel
-  const priorityOrder = ['nextjs', 'vite', 'webpack', 'create-react-app', 'parcel']
-  
+  const priorityOrder = [
+    'nextjs',
+    'vite',
+    'webpack',
+    'create-react-app',
+    'parcel',
+  ]
+
   for (const toolName of priorityOrder) {
     const tool = buildTools.find(t => t.name === toolName)
     if (tool && tool.detected && tool.supported) {
@@ -345,7 +354,9 @@ export function shouldEnableValidation(): boolean {
 /**
  * Get validation configuration from environment
  */
-export function getEnvironmentConfig(): Partial<import('./types').ValidationOptions> {
+export function getEnvironmentConfig(): Partial<
+  import('./types').ValidationOptions
+> {
   const config: Partial<import('./types').ValidationOptions> = {}
 
   // Check enabled state
@@ -366,7 +377,9 @@ export function getEnvironmentConfig(): Partial<import('./types').ValidationOpti
 
   // Check excluded files
   if (process.env.TACHUI_VALIDATION_EXCLUDE) {
-    config.excludeFiles = process.env.TACHUI_VALIDATION_EXCLUDE.split(',').map(f => f.trim())
+    config.excludeFiles = process.env.TACHUI_VALIDATION_EXCLUDE.split(',').map(
+      f => f.trim()
+    )
   }
 
   return config

@@ -152,17 +152,14 @@ export * from './state'
 
 // Validation system (Phase 1A - Epic: Greylock)
 export {
-  ValidationUtils as default,
   ValidationDevTools,
   ValidationSetup,
-  CoreComponentValidation,
-  ModifierValidation,
-  PluginComponentValidation,
   EnhancedValidationUtils,
-  ProductionOptimizationUtils,
   ValidationDebugUtils,
   PerformanceOptimizationUtils,
   LifecycleValidationUtils,
+  getComponentValidator,
+  ProductionUtils,
 } from './validation'
 
 // Version

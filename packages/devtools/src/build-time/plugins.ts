@@ -8,13 +8,13 @@
 import type {
   BuildIntegrationResult,
   BuildToolInfo,
-  ValidationOptions
+  ValidationOptions,
 } from './types'
 import {
   detectBuildEnvironment,
   getPrimaryBuildTool,
   shouldEnableValidation,
-  getEnvironmentConfig
+  getEnvironmentConfig,
 } from './detection'
 import { createTachUITransformer } from './transformer'
 import { globalRuleRegistry } from './rules'
@@ -38,7 +38,9 @@ export async function autoIntegrateValidation(
         message: 'No supported build tool detected',
         pluginRegistered: false,
         configurationApplied: false,
-        errors: ['No Vite, Webpack, Next.js, Create React App, or Parcel detected']
+        errors: [
+          'No Vite, Webpack, Next.js, Create React App, or Parcel detected',
+        ],
       }
     }
 
@@ -49,7 +51,7 @@ export async function autoIntegrateValidation(
         buildTool: primaryTool.name,
         message: 'Validation disabled for production environment',
         pluginRegistered: false,
-        configurationApplied: false
+        configurationApplied: false,
       }
     }
 
@@ -63,21 +65,30 @@ export async function autoIntegrateValidation(
       includeFiles: [],
       customRules: globalRuleRegistry.getAllRules(),
       ...envConfig,
-      ...config
+      ...config,
     }
 
     // Integrate with specific build tool
-    const result = await integrateBuildTool(primaryTool, finalConfig, _projectRoot)
+    const result = await integrateBuildTool(
+      primaryTool,
+      finalConfig,
+      _projectRoot
+    )
 
     if (result.success && process.env.NODE_ENV !== 'production') {
-      console.info(`🔍 TachUI validation integrated with ${primaryTool.name} v${primaryTool.version}`)
-      console.info(`✅ Build-time validation: ${finalConfig.enabled ? 'enabled' : 'disabled'}`)
+      console.info(
+        `🔍 TachUI validation integrated with ${primaryTool.name} v${primaryTool.version}`
+      )
+      console.info(
+        `✅ Build-time validation: ${finalConfig.enabled ? 'enabled' : 'disabled'}`
+      )
       console.info(`✅ Error level: ${finalConfig.errorLevel}`)
-      console.info(`✅ Strict mode: ${finalConfig.strictMode ? 'enabled' : 'disabled'}`)
+      console.info(
+        `✅ Strict mode: ${finalConfig.strictMode ? 'enabled' : 'disabled'}`
+      )
     }
 
     return result
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     return {
@@ -86,7 +97,7 @@ export async function autoIntegrateValidation(
       message: `Integration failed: ${errorMessage}`,
       pluginRegistered: false,
       configurationApplied: false,
-      errors: [errorMessage]
+      errors: [errorMessage],
     }
   }
 }
@@ -122,7 +133,7 @@ async function integrateBuildTool(
         message: `Build tool ${_buildTool.name} not supported`,
         pluginRegistered: false,
         configurationApplied: false,
-        errors: [`Unsupported build tool: ${_buildTool.name}`]
+        errors: [`Unsupported build tool: ${_buildTool.name}`],
       }
   }
 }
@@ -150,9 +161,8 @@ async function integrateVite(
       buildTool: 'vite',
       message: 'Vite plugin created and registered',
       pluginRegistered: true,
-      configurationApplied: true
+      configurationApplied: true,
     }
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     return {
@@ -161,7 +171,7 @@ async function integrateVite(
       message: `Vite integration failed: ${errorMessage}`,
       pluginRegistered: false,
       configurationApplied: false,
-      errors: [errorMessage]
+      errors: [errorMessage],
     }
   }
 }
@@ -189,9 +199,8 @@ async function integrateWebpack(
       buildTool: 'webpack',
       message: 'Webpack plugin created and registered',
       pluginRegistered: true,
-      configurationApplied: true
+      configurationApplied: true,
     }
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     return {
@@ -200,7 +209,7 @@ async function integrateWebpack(
       message: `Webpack integration failed: ${errorMessage}`,
       pluginRegistered: false,
       configurationApplied: false,
-      errors: [errorMessage]
+      errors: [errorMessage],
     }
   }
 }
@@ -229,9 +238,8 @@ async function integrateNextJS(
       buildTool: 'nextjs',
       message: 'Next.js plugin created and registered',
       pluginRegistered: true,
-      configurationApplied: true
+      configurationApplied: true,
     }
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     return {
@@ -240,7 +248,7 @@ async function integrateNextJS(
       message: `Next.js integration failed: ${errorMessage}`,
       pluginRegistered: false,
       configurationApplied: false,
-      errors: [errorMessage]
+      errors: [errorMessage],
     }
   }
 }
@@ -258,7 +266,9 @@ async function integrateCRA(
   // Note: _buildTool and _projectRoot available for future enhancements
 
   try {
-    const transformer = createTachUITransformer({} as any, { strict: config.strictMode })
+    const transformer = createTachUITransformer({} as any, {
+      strict: config.strictMode,
+    })
 
     // Register transformer for auto-detection
     if (typeof globalThis !== 'undefined') {
@@ -270,9 +280,8 @@ async function integrateCRA(
       buildTool: 'create-react-app',
       message: 'TypeScript transformer registered (limited CRA support)',
       pluginRegistered: true,
-      configurationApplied: false // Can't modify webpack config
+      configurationApplied: false, // Can't modify webpack config
     }
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     return {
@@ -281,7 +290,7 @@ async function integrateCRA(
       message: `CRA integration failed: ${errorMessage}`,
       pluginRegistered: false,
       configurationApplied: false,
-      errors: [errorMessage]
+      errors: [errorMessage],
     }
   }
 }
@@ -301,7 +310,7 @@ async function integrateParcel(
     message: 'Parcel integration not yet supported',
     pluginRegistered: false,
     configurationApplied: false,
-    errors: ['Parcel support is limited - consider using Vite or Webpack']
+    errors: ['Parcel support is limited - consider using Vite or Webpack'],
   }
 }
 
@@ -329,13 +338,16 @@ export function createVitePlugin(config: ValidationOptions) {
       }
 
       // Skip node_modules unless specifically included
-      if (id.includes('node_modules') && !config.includeFiles?.some(pattern => id.includes(pattern))) {
+      if (
+        id.includes('node_modules') &&
+        !config.includeFiles?.some(pattern => id.includes(pattern))
+      ) {
         return null
       }
 
       // Apply validation transformer
       return applyValidationTransform(code, id, config)
-    }
+    },
   }
 }
 
@@ -347,17 +359,23 @@ export function createWebpackPlugin(config: ValidationOptions) {
     apply(compiler: any) {
       if (!config.enabled) return
 
-      compiler.hooks.compilation.tap('TachUIValidationPlugin', (compilation: any) => {
-        compilation.hooks.buildModule.tap('TachUIValidationPlugin', (module: any) => {
-          if (!module.resource) return
+      compiler.hooks.compilation.tap(
+        'TachUIValidationPlugin',
+        (compilation: any) => {
+          compilation.hooks.buildModule.tap(
+            'TachUIValidationPlugin',
+            (module: any) => {
+              if (!module.resource) return
 
-          // Only process TypeScript/JavaScript files
-          if (!/\.(ts|tsx|js|jsx)$/.test(module.resource)) return
+              // Only process TypeScript/JavaScript files
+              if (!/\.(ts|tsx|js|jsx)$/.test(module.resource)) return
 
-          // Apply validation
-          this.validateModule(module, config)
-        })
-      })
+              // Apply validation
+              this.validateModule(module, config)
+            }
+          )
+        }
+      )
     }
 
     validateModule(_module: any, _config: ValidationOptions) {
@@ -370,7 +388,10 @@ export function createWebpackPlugin(config: ValidationOptions) {
 /**
  * Create Next.js plugin
  */
-export function createNextJSPlugin(_config: ValidationOptions, webpackPlugin: any) {
+export function createNextJSPlugin(
+  _config: ValidationOptions,
+  webpackPlugin: any
+) {
   // Note: _config available for future enhancements
   return (nextConfig: any = {}) => {
     return {
@@ -386,7 +407,7 @@ export function createNextJSPlugin(_config: ValidationOptions, webpackPlugin: an
         }
 
         return webpackConfig
-      }
+      },
     }
   }
 }
@@ -407,9 +428,12 @@ function applyValidationTransform(
     const validationImport = `import { ValidationDevTools } from '@tachui/core';\n`
 
     // Only add if not already imported
-    if (!code.includes('ValidationDevTools') && !code.includes('@tachui/core')) {
+    if (
+      !code.includes('ValidationDevTools') &&
+      !code.includes('@tachui/core')
+    ) {
       return {
-        code: validationImport + code
+        code: validationImport + code,
       }
     }
   }
@@ -451,7 +475,7 @@ export const PluginHelpers = {
       includeFiles: [],
       customRules: [],
       ...getEnvironmentConfig(),
-      ...options
+      ...options,
     }
 
     return createVitePlugin(config)
@@ -469,7 +493,7 @@ export const PluginHelpers = {
       includeFiles: [],
       customRules: [],
       ...getEnvironmentConfig(),
-      ...options
+      ...options,
     }
 
     return createWebpackPlugin(config)
@@ -487,12 +511,12 @@ export const PluginHelpers = {
       includeFiles: [],
       customRules: [],
       ...getEnvironmentConfig(),
-      ...options
+      ...options,
     }
 
     const webpackPlugin = createWebpackPlugin(config)
     return createNextJSPlugin(config, webpackPlugin)
-  }
+  },
 }
 
 /**

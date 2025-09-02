@@ -1,6 +1,6 @@
 /**
  * Build-Time Validation Types
- * 
+ *
  * Type definitions for the build-time validation system that integrates
  * with various build tools and provides TypeScript transformer capabilities.
  */
@@ -14,7 +14,11 @@ export interface BuildTimeValidationRule {
   name: string
   severity: 'error' | 'warning' | 'info'
   description: string
-  validate(node: ts.Node, checker: ts.TypeChecker, context: ValidationContext): ValidationResult
+  validate(
+    node: ts.Node,
+    checker: ts.TypeChecker,
+    context: ValidationContext
+  ): ValidationResult
   generateMessage?(error: BuildTimeValidationError): string
   suggestFix?(error: BuildTimeValidationError): CodeFix[]
 }
@@ -60,7 +64,8 @@ export interface BuildTimeValidationError {
 /**
  * Build-time validation warning details
  */
-export interface BuildTimeValidationWarning extends Omit<BuildTimeValidationError, 'severity'> {
+export interface BuildTimeValidationWarning
+  extends Omit<BuildTimeValidationError, 'severity'> {
   severity: 'warning'
 }
 

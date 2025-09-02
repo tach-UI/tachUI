@@ -1,28 +1,38 @@
 /**
  * Documentation Integration System - Phase 1D
- * 
+ *
  * Context-aware help, intelligent documentation links,
  * and comprehensive learning resource management.
  */
 
-import type { ValidationErrorCategory } from './error-reporting'
+// Define type locally
+export type ValidationErrorCategory =
+  | 'component'
+  | 'modifier'
+  | 'runtime'
+  | 'reactive'
+  | 'validation'
 
 /**
  * Documentation resource types
  */
-export type DocumentationType = 
-  | 'guide' 
-  | 'api-reference' 
-  | 'tutorial' 
-  | 'example' 
-  | 'video' 
+export type DocumentationType =
+  | 'guide'
+  | 'api-reference'
+  | 'tutorial'
+  | 'example'
+  | 'video'
   | 'troubleshooting'
   | 'best-practices'
 
 /**
  * Learning difficulty levels
  */
-export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert'
+export type DifficultyLevel =
+  | 'beginner'
+  | 'intermediate'
+  | 'advanced'
+  | 'expert'
 
 /**
  * Documentation resource
@@ -33,33 +43,33 @@ export interface DocumentationResource {
   description: string
   type: DocumentationType
   difficulty: DifficultyLevel
-  
+
   // Content metadata
   url: string
   estimatedReadTime: number // minutes
   lastUpdated: string
   version: string
-  
+
   // Categorization
   tags: string[]
   categories: string[]
   relatedComponents: string[]
   relatedModifiers: string[]
-  
+
   // Learning path
   prerequisites: string[]
   nextSteps: string[]
-  
+
   // Quality metrics
   rating: number // 1-5
   completionRate: number // 0-1
   helpfulnessScore: number // 0-1
-  
+
   // Interactive features
   hasInteractiveExample: boolean
   hasVideoContent: boolean
   hasCodeSandbox: boolean
-  
+
   // Accessibility
   isAccessible: boolean
   hasTranscript: boolean
@@ -102,13 +112,13 @@ export interface UserLearningProfile {
   learningGoals: string[]
   weakAreas: string[]
   strongAreas: string[]
-  
+
   // Behavior tracking
   averageReadTime: number
   preferredDocumentationTypes: DocumentationType[]
   mostUsedComponents: string[]
   mostUsedModifiers: string[]
-  
+
   // Preferences
   enablePersonalization: boolean
   enableProgressTracking: boolean
@@ -123,23 +133,23 @@ export interface DocumentationConfig {
   defaultDifficulty: DifficultyLevel
   preferredTypes: DocumentationType[]
   maxRelatedItems: number
-  
+
   // Personalization
   enableLearningProfile: boolean
   enableRecommendations: boolean
   enableProgressTracking: boolean
-  
+
   // Display options
   showEstimatedTime: boolean
   showRatings: boolean
   showPrerequisites: boolean
   groupByDifficulty: boolean
-  
+
   // Integration features
   enableInlineHelp: boolean
   enableContextualSuggestions: boolean
   enableLearningPaths: boolean
-  
+
   // Offline support
   enableOfflineMode: boolean
   cacheDocumentation: boolean
@@ -165,7 +175,7 @@ let docConfig: DocumentationConfig = {
   enableLearningPaths: true,
   enableOfflineMode: false,
   cacheDocumentation: true,
-  offlineStorageLimit: 50
+  offlineStorageLimit: 50,
 }
 
 /**
@@ -175,7 +185,8 @@ export const documentationDatabase: Record<string, DocumentationResource> = {
   'text-component-guide': {
     id: 'text-component-guide',
     title: 'Text Component Guide',
-    description: 'Complete guide to using the Text component for displaying content',
+    description:
+      'Complete guide to using the Text component for displaying content',
     type: 'guide',
     difficulty: 'beginner',
     url: '/docs/components/text',
@@ -196,7 +207,7 @@ export const documentationDatabase: Record<string, DocumentationResource> = {
     hasCodeSandbox: true,
     isAccessible: true,
     hasTranscript: false,
-    supportedLanguages: ['en', 'es', 'fr']
+    supportedLanguages: ['en', 'es', 'fr'],
   },
 
   'button-component-guide': {
@@ -223,13 +234,14 @@ export const documentationDatabase: Record<string, DocumentationResource> = {
     hasCodeSandbox: true,
     isAccessible: true,
     hasTranscript: true,
-    supportedLanguages: ['en']
+    supportedLanguages: ['en'],
   },
 
   'modifier-compatibility': {
     id: 'modifier-compatibility',
     title: 'Modifier Compatibility Reference',
-    description: 'Complete reference for which modifiers work with which components',
+    description:
+      'Complete reference for which modifiers work with which components',
     type: 'api-reference',
     difficulty: 'intermediate',
     url: '/docs/modifiers/compatibility',
@@ -250,7 +262,7 @@ export const documentationDatabase: Record<string, DocumentationResource> = {
     hasCodeSandbox: false,
     isAccessible: true,
     hasTranscript: false,
-    supportedLanguages: ['en']
+    supportedLanguages: ['en'],
   },
 
   'troubleshooting-errors': {
@@ -277,7 +289,7 @@ export const documentationDatabase: Record<string, DocumentationResource> = {
     hasCodeSandbox: false,
     isAccessible: true,
     hasTranscript: true,
-    supportedLanguages: ['en', 'es']
+    supportedLanguages: ['en', 'es'],
   },
 
   'performance-optimization': {
@@ -304,8 +316,8 @@ export const documentationDatabase: Record<string, DocumentationResource> = {
     hasCodeSandbox: true,
     isAccessible: true,
     hasTranscript: true,
-    supportedLanguages: ['en']
-  }
+    supportedLanguages: ['en'],
+  },
 }
 
 /**
@@ -326,21 +338,21 @@ export class DocumentationProvider {
     userLevel?: DifficultyLevel
   }): ContextualDocumentation | null {
     const relevantResources = this.findRelevantResources(context)
-    
+
     if (relevantResources.length === 0) {
       return null
     }
 
     const primary = this.selectPrimaryResource(relevantResources, context)
     const related = this.selectRelatedResources(relevantResources, primary)
-    
+
     return {
       primary,
       related,
       quickHelp: this.generateQuickHelp(primary, context),
       codeExamples: this.generateCodeExamples(primary, context),
       commonPitfalls: this.getCommonPitfalls(primary, context),
-      learningPath: this.generateLearningPath(primary)
+      learningPath: this.generateLearningPath(primary),
     }
   }
 
@@ -355,28 +367,34 @@ export class DocumentationProvider {
     userLevel?: DifficultyLevel
   }): DocumentationResource[] {
     const resources = Object.values(documentationDatabase)
-    
+
     return resources.filter(resource => {
       // Component relevance
       if (context.component) {
-        if (!resource.relatedComponents.includes(context.component) && 
-            !resource.relatedComponents.includes('*')) {
+        if (
+          !resource.relatedComponents.includes(context.component) &&
+          !resource.relatedComponents.includes('*')
+        ) {
           return false
         }
       }
 
       // Modifier relevance
       if (context.modifier) {
-        if (!resource.relatedModifiers.includes(context.modifier) && 
-            !resource.relatedModifiers.includes('*')) {
+        if (
+          !resource.relatedModifiers.includes(context.modifier) &&
+          !resource.relatedModifiers.includes('*')
+        ) {
           return false
         }
       }
 
       // Error type relevance
       if (context.errorType) {
-        if (resource.type === 'troubleshooting' || 
-            resource.tags.includes(context.errorType)) {
+        if (
+          resource.type === 'troubleshooting' ||
+          resource.tags.includes(context.errorType)
+        ) {
           return true
         }
       }
@@ -386,7 +404,7 @@ export class DocumentationProvider {
         const levelOrder = ['beginner', 'intermediate', 'advanced', 'expert']
         const userLevelIndex = levelOrder.indexOf(context.userLevel)
         const resourceLevelIndex = levelOrder.indexOf(resource.difficulty)
-        
+
         // Show resources at or slightly above user level
         if (resourceLevelIndex > userLevelIndex + 1) {
           return false
@@ -401,13 +419,13 @@ export class DocumentationProvider {
    * Select primary documentation resource
    */
   private selectPrimaryResource(
-    resources: DocumentationResource[], 
+    resources: DocumentationResource[],
     context: any
   ): DocumentationResource {
     // Sort by relevance score
     const scored = resources.map(resource => ({
       resource,
-      score: this.calculateRelevanceScore(resource, context)
+      score: this.calculateRelevanceScore(resource, context),
     }))
 
     scored.sort((a, b) => b.score - a.score)
@@ -417,7 +435,10 @@ export class DocumentationProvider {
   /**
    * Calculate relevance score for a resource
    */
-  private calculateRelevanceScore(resource: DocumentationResource, context: any): number {
+  private calculateRelevanceScore(
+    resource: DocumentationResource,
+    context: any
+  ): number {
     let score = 0
 
     // Base quality score
@@ -426,10 +447,16 @@ export class DocumentationProvider {
     score += resource.completionRate * 0.1
 
     // Context relevance
-    if (context.component && resource.relatedComponents.includes(context.component)) {
+    if (
+      context.component &&
+      resource.relatedComponents.includes(context.component)
+    ) {
       score += 0.4
     }
-    if (context.modifier && resource.relatedModifiers.includes(context.modifier)) {
+    if (
+      context.modifier &&
+      resource.relatedModifiers.includes(context.modifier)
+    ) {
       score += 0.3
     }
     if (context.errorType && resource.tags.includes(context.errorType)) {
@@ -438,7 +465,9 @@ export class DocumentationProvider {
 
     // User preference bonus
     if (this.userProfile) {
-      if (this.userProfile.preferredDocumentationTypes.includes(resource.type)) {
+      if (
+        this.userProfile.preferredDocumentationTypes.includes(resource.type)
+      ) {
         score += 0.2
       }
       if (this.userProfile.completedResources.includes(resource.id)) {
@@ -457,7 +486,7 @@ export class DocumentationProvider {
    * Select related resources
    */
   private selectRelatedResources(
-    allResources: DocumentationResource[], 
+    allResources: DocumentationResource[],
     primary: DocumentationResource
   ): DocumentationResource[] {
     const related = allResources
@@ -478,11 +507,17 @@ export class DocumentationProvider {
   /**
    * Generate quick help text
    */
-  private generateQuickHelp(primary: DocumentationResource, context: any): string {
+  private generateQuickHelp(
+    primary: DocumentationResource,
+    context: any
+  ): string {
     const contextualHelpers: Record<string, string> = {
-      'missing-required-prop': 'Components require specific properties to function. Check the component documentation for required parameters.',
-      'invalid-modifier-usage': 'Modifiers have compatibility restrictions. Use the modifier compatibility reference to find valid combinations.',
-      'performance-warning': 'Performance optimizations can improve user experience. Consider the suggested improvements for better performance.'
+      'missing-required-prop':
+        'Components require specific properties to function. Check the component documentation for required parameters.',
+      'invalid-modifier-usage':
+        'Modifiers have compatibility restrictions. Use the modifier compatibility reference to find valid combinations.',
+      'performance-warning':
+        'Performance optimizations can improve user experience. Consider the suggested improvements for better performance.',
     }
 
     return contextualHelpers[context.errorType] || primary.description
@@ -491,7 +526,10 @@ export class DocumentationProvider {
   /**
    * Generate contextual code examples
    */
-  private generateCodeExamples(_primary: DocumentationResource, context: any): {
+  private generateCodeExamples(
+    _primary: DocumentationResource,
+    context: any
+  ): {
     basic: string
     advanced: string
     realWorld: string
@@ -499,18 +537,22 @@ export class DocumentationProvider {
     const examples = {
       basic: '// Basic usage example\n// See documentation for details',
       advanced: '// Advanced usage example\n// See documentation for details',
-      realWorld: '// Real-world example\n// See documentation for details'
+      realWorld: '// Real-world example\n// See documentation for details',
     }
 
     // Customize based on context
     if (context.component === 'Text') {
       examples.basic = 'Text("Hello World")'
-      examples.advanced = 'Text(() => dynamicContent.value).fontSize(16).foregroundColor("blue")'
-      examples.realWorld = 'Text(userProfile.name).fontSize(18).fontWeight("bold").padding(8)'
+      examples.advanced =
+        'Text(() => dynamicContent.value).fontSize(16).foregroundColor("blue")'
+      examples.realWorld =
+        'Text(userProfile.name).fontSize(18).fontWeight("bold").padding(8)'
     } else if (context.component === 'Button') {
       examples.basic = 'Button("Click me", handleClick)'
-      examples.advanced = 'Button("Submit", handleSubmit).background("blue").foregroundColor("white").disabled(isLoading)'
-      examples.realWorld = 'Button("Save Changes", saveUserProfile).background(theme.primary).padding({ horizontal: 16, vertical: 8 })'
+      examples.advanced =
+        'Button("Submit", handleSubmit).background("blue").foregroundColor("white").disabled(isLoading)'
+      examples.realWorld =
+        'Button("Save Changes", saveUserProfile).background(theme.primary).padding({ horizontal: 16, vertical: 8 })'
     }
 
     return examples
@@ -519,7 +561,10 @@ export class DocumentationProvider {
   /**
    * Get common pitfalls for a resource
    */
-  private getCommonPitfalls(_primary: DocumentationResource, _context: any): {
+  private getCommonPitfalls(
+    _primary: DocumentationResource,
+    _context: any
+  ): {
     issue: string
     solution: string
     example: string
@@ -527,14 +572,16 @@ export class DocumentationProvider {
     const pitfalls = [
       {
         issue: 'Forgetting required parameters',
-        solution: 'Always check component documentation for required properties',
-        example: 'Text() // Wrong\nText("content") // Correct'
+        solution:
+          'Always check component documentation for required properties',
+        example: 'Text() // Wrong\nText("content") // Correct',
       },
       {
         issue: 'Using incompatible modifiers',
         solution: 'Check modifier compatibility before applying',
-        example: 'VStack().fontSize(16) // Wrong\nText("hello").fontSize(16) // Correct'
-      }
+        example:
+          'VStack().fontSize(16) // Wrong\nText("hello").fontSize(16) // Correct',
+      },
     ]
 
     return pitfalls
@@ -555,11 +602,12 @@ export class DocumentationProvider {
 
     let progress = 0
     if (this.userProfile) {
-      const totalRecommended = primary.nextSteps.length + primary.prerequisites.length + 1
+      const totalRecommended =
+        primary.nextSteps.length + primary.prerequisites.length + 1
       const completed = [
         ...primary.prerequisites,
         primary.id,
-        ...primary.nextSteps
+        ...primary.nextSteps,
       ].filter(id => this.userProfile!.completedResources.includes(id)).length
 
       progress = completed / totalRecommended
@@ -568,7 +616,7 @@ export class DocumentationProvider {
     return {
       current: primary,
       next: nextResources,
-      progress
+      progress,
     }
   }
 
@@ -596,7 +644,7 @@ export class DocumentationProvider {
     }
 
     const allResources = Object.values(documentationDatabase)
-    
+
     // Filter out completed resources
     const uncompletedResources = allResources.filter(
       resource => !this.userProfile!.completedResources.includes(resource.id)
@@ -605,7 +653,7 @@ export class DocumentationProvider {
     // Score based on user profile
     const scored = uncompletedResources.map(resource => ({
       resource,
-      score: this.calculatePersonalizationScore(resource)
+      score: this.calculatePersonalizationScore(resource),
     }))
 
     scored.sort((a, b) => b.score - a.score)
@@ -615,7 +663,9 @@ export class DocumentationProvider {
   /**
    * Calculate personalization score
    */
-  private calculatePersonalizationScore(resource: DocumentationResource): number {
+  private calculatePersonalizationScore(
+    resource: DocumentationResource
+  ): number {
     if (!this.userProfile) return 0
 
     let score = 0
@@ -624,7 +674,7 @@ export class DocumentationProvider {
     const levelOrder = ['beginner', 'intermediate', 'advanced', 'expert']
     const userLevelIndex = levelOrder.indexOf(this.userProfile.skillLevel)
     const resourceLevelIndex = levelOrder.indexOf(resource.difficulty)
-    
+
     if (resourceLevelIndex === userLevelIndex) {
       score += 0.4 // Perfect match
     } else if (resourceLevelIndex === userLevelIndex + 1) {
@@ -641,11 +691,13 @@ export class DocumentationProvider {
     // Component/modifier usage
     const userComponents = this.userProfile.mostUsedComponents
     const userModifiers = this.userProfile.mostUsedModifiers
-    
-    if (resource.relatedComponents.some(comp => userComponents.includes(comp))) {
+
+    if (
+      resource.relatedComponents.some(comp => userComponents.includes(comp))
+    ) {
       score += 0.2
     }
-    
+
     if (resource.relatedModifiers.some(mod => userModifiers.includes(mod))) {
       score += 0.1
     }
@@ -661,9 +713,12 @@ export class DocumentationProvider {
       totalResources: Object.keys(documentationDatabase).length,
       resourcesByType: this.groupResourcesByType(),
       resourcesByDifficulty: this.groupResourcesByDifficulty(),
-      totalUsages: Array.from(this.usageStats.values()).reduce((a, b) => a + b, 0),
+      totalUsages: Array.from(this.usageStats.values()).reduce(
+        (a, b) => a + b,
+        0
+      ),
       averageRating: this.calculateAverageRating(),
-      completionRates: this.getCompletionRates()
+      completionRates: this.getCompletionRates(),
     }
   }
 
@@ -672,7 +727,7 @@ export class DocumentationProvider {
    */
   private groupResourcesByType(): Record<DocumentationType, number> {
     const grouped: Record<string, number> = {}
-    
+
     Object.values(documentationDatabase).forEach(resource => {
       grouped[resource.type] = (grouped[resource.type] || 0) + 1
     })
@@ -685,7 +740,7 @@ export class DocumentationProvider {
    */
   private groupResourcesByDifficulty(): Record<DifficultyLevel, number> {
     const grouped: Record<string, number> = {}
-    
+
     Object.values(documentationDatabase).forEach(resource => {
       grouped[resource.difficulty] = (grouped[resource.difficulty] || 0) + 1
     })
@@ -698,30 +753,45 @@ export class DocumentationProvider {
    */
   private calculateAverageRating(): number {
     const resources = Object.values(documentationDatabase)
-    const totalRating = resources.reduce((sum, resource) => sum + resource.rating, 0)
+    const totalRating = resources.reduce(
+      (sum, resource) => sum + resource.rating,
+      0
+    )
     return totalRating / resources.length
   }
 
   /**
    * Get completion rates
    */
-  private getCompletionRates(): { average: number; byDifficulty: Record<DifficultyLevel, number> } {
+  private getCompletionRates(): {
+    average: number
+    byDifficulty: Record<DifficultyLevel, number>
+  } {
     const resources = Object.values(documentationDatabase)
-    const totalCompletion = resources.reduce((sum, resource) => sum + resource.completionRate, 0)
+    const totalCompletion = resources.reduce(
+      (sum, resource) => sum + resource.completionRate,
+      0
+    )
     const average = totalCompletion / resources.length
 
     const byDifficulty: Record<string, number> = {}
     const difficultyGroups = this.groupResourcesByDifficulty()
-    
+
     Object.keys(difficultyGroups).forEach(difficulty => {
-      const difficultyResources = resources.filter(r => r.difficulty === difficulty)
-      const difficultyCompletion = difficultyResources.reduce((sum, r) => sum + r.completionRate, 0)
-      byDifficulty[difficulty] = difficultyCompletion / difficultyResources.length
+      const difficultyResources = resources.filter(
+        r => r.difficulty === difficulty
+      )
+      const difficultyCompletion = difficultyResources.reduce(
+        (sum, r) => sum + r.completionRate,
+        0
+      )
+      byDifficulty[difficulty] =
+        difficultyCompletion / difficultyResources.length
     })
 
     return {
       average,
-      byDifficulty: byDifficulty as Record<DifficultyLevel, number>
+      byDifficulty: byDifficulty as Record<DifficultyLevel, number>,
     }
   }
 }
@@ -729,7 +799,9 @@ export class DocumentationProvider {
 /**
  * Configure documentation integration
  */
-export function configureDocumentationIntegration(config: Partial<DocumentationConfig>): void {
+export function configureDocumentationIntegration(
+  config: Partial<DocumentationConfig>
+): void {
   docConfig = { ...docConfig, ...config }
 }
 
@@ -750,25 +822,25 @@ export const DocumentationIntegrationUtils = {
   /**
    * Get contextual documentation
    */
-  getContextualDocumentation: (context: any) => 
+  getContextualDocumentation: (context: any) =>
     documentationProvider.getContextualDocumentation(context),
 
   /**
    * Get personalized recommendations
    */
-  getRecommendations: (limit?: number) => 
+  getRecommendations: (limit?: number) =>
     documentationProvider.getPersonalizedRecommendations(limit),
 
   /**
    * Set user profile
    */
-  setUserProfile: (profile: UserLearningProfile) => 
+  setUserProfile: (profile: UserLearningProfile) =>
     documentationProvider.setUserProfile(profile),
 
   /**
    * Track resource usage
    */
-  trackUsage: (resourceId: string) => 
+  trackUsage: (resourceId: string) =>
     documentationProvider.trackResourceUsage(resourceId),
 
   /**
@@ -796,15 +868,15 @@ export const DocumentationIntegrationUtils = {
    */
   test: () => {
     console.group('📚 Documentation Integration System Test')
-    
+
     try {
       // Test contextual documentation
       const contextualDocs = documentationProvider.getContextualDocumentation({
         component: 'Text',
         errorType: 'missing-required-prop',
-        userLevel: 'beginner'
+        userLevel: 'beginner',
       })
-      
+
       console.info('✅ Contextual documentation:', !!contextualDocs)
       if (contextualDocs) {
         console.info('✅ Primary resource:', contextualDocs.primary.title)
@@ -813,7 +885,8 @@ export const DocumentationIntegrationUtils = {
       }
 
       // Test recommendations
-      const recommendations = documentationProvider.getPersonalizedRecommendations(3)
+      const recommendations =
+        documentationProvider.getPersonalizedRecommendations(3)
       console.info('✅ Recommendations available:', recommendations.length)
 
       // Test statistics
@@ -822,13 +895,12 @@ export const DocumentationIntegrationUtils = {
       console.info('✅ Average rating:', stats.averageRating.toFixed(1))
 
       console.info('✅ Documentation integration system is working correctly')
-      
     } catch (error) {
       console.error('❌ Documentation integration test failed:', error)
     }
-    
+
     console.groupEnd()
-  }
+  },
 }
 
 // Export provider instance

@@ -25,8 +25,8 @@ import type { Concatenatable } from '../concatenation/types'
 // Create a simple mock for backward compatibility
 const debugManager = {
   isEnabled: () => false,
-  logComponent: () => {},
-  addDebugAttributes: () => {},
+  logComponent: (..._args: any[]) => {},
+  addDebugAttributes: (..._args: any[]) => {},
 }
 
 /**
@@ -290,13 +290,12 @@ class LayoutComponent
         : 'center'
 
     // Log component for debugging
-    const debug = getDebugManager()
-    debug.logComponent(this.layoutType.toUpperCase(), debugLabel)
+    debugManager.logComponent(this.layoutType.toUpperCase(), debugLabel)
 
     // Process CSS classes for this component
     const baseClasses = [
       `tachui-${this.layoutType}`,
-      ...(debug.isEnabled() ? ['tachui-debug'] : []),
+      ...(debugManager.isEnabled() ? ['tachui-debug'] : []),
     ]
     const classString = this.createClassString(this.props, baseClasses)
 
@@ -329,7 +328,7 @@ class LayoutComponent
                     : 'center',
             },
             // Add debug attributes
-            ...(debug.isEnabled() && {
+            ...(debugManager.isEnabled() && {
               'data-tachui-component': 'VStack',
               ...(debugLabel && { 'data-tachui-label': debugLabel }),
             }),
@@ -374,7 +373,7 @@ class LayoutComponent
                     : 'center',
             },
             // Add debug attributes
-            ...(debug.isEnabled() && {
+            ...(debugManager.isEnabled() && {
               'data-tachui-component': 'HStack',
               ...(debugLabel && { 'data-tachui-label': debugLabel }),
             }),
@@ -440,7 +439,7 @@ class LayoutComponent
               : {}),
           },
           // Add debug attributes
-          ...(debug.isEnabled() && {
+          ...(debugManager.isEnabled() && {
             'data-tachui-component': 'ZStack',
             ...(debugLabel && { 'data-tachui-label': debugLabel }),
           }),

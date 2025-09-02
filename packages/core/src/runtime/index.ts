@@ -46,20 +46,8 @@ export {
   useContext,
   withProvider,
 } from './context'
-// Development tools
-export {
-  type ComponentTreeNode,
-  type DebugEvent,
-  type DevState,
-  DevTools,
-  type DevToolsConfig,
-  devUtils,
-  enableDevelopmentMode,
-  enablePerformanceTracking,
-  getComponentTree,
-  getDevTools,
-  globalDevTools,
-} from './dev-tools'
+// Development tools moved to @tachui/devtools
+// Import from @tachui/devtools instead
 // DOM Bridge - Component mounting system
 export {
   mountRoot,
@@ -159,7 +147,8 @@ export { DOMRenderer, h, renderComponent, text } from './renderer'
 // Element override system (Tag Specification Enhancement)
 export * from './element-override'
 export * from './semantic-role-manager'
-export * from './development-warnings'
+// Development warnings moved to @tachui/devtools
+// Import from @tachui/devtools instead
 // Enhanced lifecycle hooks (Phase 1)
 export {
   AnimationManager,

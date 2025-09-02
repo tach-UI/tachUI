@@ -6,7 +6,7 @@
  */
 
 import { createEffect, createSignal } from '../reactive'
-import { globalDevTools } from './dev-tools'
+// import { globalDevTools } from './dev-tools'
 import { globalPerformanceMonitor } from './performance'
 import type { ComponentInstance, ComponentProps, DOMNode } from './types'
 
@@ -88,8 +88,13 @@ export interface ErrorRecoveryConfig {
  * Error boundary props
  */
 export interface ErrorBoundaryProps extends ComponentProps {
-  fallback?: ComponentInstance | ((error: TachUIError, retry: () => void) => ComponentInstance)
-  onError?: (error: TachUIError, errorInfo: ErrorBoundaryState['errorInfo']) => void
+  fallback?:
+    | ComponentInstance
+    | ((error: TachUIError, retry: () => void) => ComponentInstance)
+  onError?: (
+    error: TachUIError,
+    errorInfo: ErrorBoundaryState['errorInfo']
+  ) => void
   recovery?: ErrorRecoveryConfig[]
   isolate?: boolean // Prevent error propagation to parent boundaries
   resetOnPropsChange?: boolean
@@ -210,10 +215,10 @@ export class ErrorBoundary {
     this.attemptRecovery(error)
 
     // Add to dev tools if enabled
-    if (globalDevTools.isEnabled()) {
+    if (process.env.NODE_ENV !== 'production') {
       const errorObj = new Error(error.message)
       errorObj.stack = error.stack
-      globalDevTools.addError(error.componentId || 'unknown', errorObj)
+      console.error('TachUI Error:', error.componentId || 'unknown', errorObj)
     }
   }
 
@@ -262,7 +267,9 @@ export class ErrorBoundary {
     const retryDelay = config.retryDelay || 1000
 
     if (this.state.errorInfo.retryAttempts >= maxRetries) {
-      console.warn(`Max retry attempts (${maxRetries}) reached for error boundary`)
+      console.warn(
+        `Max retry attempts (${maxRetries}) reached for error boundary`
+      )
       return
     }
 
@@ -325,7 +332,8 @@ export class ErrorBoundary {
 
     // This is simplified - in real implementation would track previous props
     return this.props.resetKeys.some(
-      (key) => key in props && props[key as keyof ErrorBoundaryProps] !== undefined
+      key =>
+        key in props && props[key as keyof ErrorBoundaryProps] !== undefined
     )
   }
 
@@ -337,11 +345,17 @@ export class ErrorBoundary {
       // Render fallback UI
       if (this.props.fallback) {
         if (typeof this.props.fallback === 'function') {
-          const fallbackInstance = this.props.fallback(this.state.error, () => this.retry())
-          const result = fallbackInstance.render ? fallbackInstance.render() : []
+          const fallbackInstance = this.props.fallback(this.state.error, () =>
+            this.retry()
+          )
+          const result = fallbackInstance.render
+            ? fallbackInstance.render()
+            : []
           return Array.isArray(result) ? result : [result]
         } else {
-          const result = this.props.fallback.render ? this.props.fallback.render() : []
+          const result = this.props.fallback.render
+            ? this.props.fallback.render()
+            : []
           return Array.isArray(result) ? result : [result]
         }
       }
@@ -352,12 +366,14 @@ export class ErrorBoundary {
 
     // Render children normally
     try {
-      return this.children.flatMap((child) => {
+      return this.children.flatMap(child => {
         const result = child.render()
         return Array.isArray(result) ? result : [result]
       })
     } catch (error) {
-      this.componentDidCatch(error as Error, { componentStack: 'children rendering' })
+      this.componentDidCatch(error as Error, {
+        componentStack: 'children rendering',
+      })
       return this.renderDefaultErrorUI()
     }
   }
@@ -499,7 +515,7 @@ export class ErrorManager {
     this.config = { ...this.config, ...config }
 
     if (config.development !== undefined) {
-      globalDevTools.configure({ enableErrors: config.development })
+      // globalDevTools.configure({ enableErrors: config.development })
     }
   }
 
@@ -510,28 +526,33 @@ export class ErrorManager {
     if (typeof window === 'undefined') return
 
     // Capture unhandled errors
-    window.addEventListener('error', (event) => {
+    window.addEventListener('error', event => {
       if (!this.config.captureConsoleErrors) return
 
-      const error = this.createTachUIError(event.error || new Error(event.message), {
-        category: 'unknown_error',
-        severity: 'medium',
-        context: {
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
-        },
-      })
+      const error = this.createTachUIError(
+        event.error || new Error(event.message),
+        {
+          category: 'unknown_error',
+          severity: 'medium',
+          context: {
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+          },
+        }
+      )
 
       this.reportError(error)
     })
 
     // Capture unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
+    window.addEventListener('unhandledrejection', event => {
       if (!this.config.captureUnhandledPromises) return
 
       const error = this.createTachUIError(
-        event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+        event.reason instanceof Error
+          ? event.reason
+          : new Error(String(event.reason)),
         {
           category: 'network_error',
           severity: 'medium',
@@ -569,7 +590,8 @@ export class ErrorManager {
       componentName: options.componentName,
       phase: options.phase,
       context: options.context,
-      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : undefined,
+      userAgent:
+        typeof window !== 'undefined' ? window.navigator.userAgent : undefined,
       url: typeof window !== 'undefined' ? window.location.href : undefined,
       retryCount: 0,
       recovered: false,
@@ -620,7 +642,7 @@ export class ErrorManager {
     }
 
     // Call reporters
-    this.reporters.forEach((reporter) => {
+    this.reporters.forEach(reporter => {
       try {
         reporter.report(error)
       } catch (reporterError) {
@@ -629,7 +651,7 @@ export class ErrorManager {
     })
 
     // Call handlers
-    this.handlers.forEach((handler) => {
+    this.handlers.forEach(handler => {
       try {
         handler(error)
       } catch (handlerError) {
@@ -652,7 +674,7 @@ export class ErrorManager {
    */
   private cleanOldErrors(): void {
     const cutoff = Date.now() - this.config.maxErrorAge
-    this.errors = this.errors.filter((error) => error.timestamp > cutoff)
+    this.errors = this.errors.filter(error => error.timestamp > cutoff)
   }
 
   /**
@@ -701,28 +723,28 @@ export class ErrorManager {
    * Get errors by category
    */
   getErrorsByCategory(category: ErrorCategory): TachUIError[] {
-    return this.errors.filter((error) => error.category === category)
+    return this.errors.filter(error => error.category === category)
   }
 
   /**
    * Get errors by severity
    */
   getErrorsBySeverity(severity: ErrorSeverity): TachUIError[] {
-    return this.errors.filter((error) => error.severity === severity)
+    return this.errors.filter(error => error.severity === severity)
   }
 
   /**
    * Get errors by component
    */
   getErrorsByComponent(componentId: string): TachUIError[] {
-    return this.errors.filter((error) => error.componentId === componentId)
+    return this.errors.filter(error => error.componentId === componentId)
   }
 
   /**
    * Mark error as recovered
    */
   markErrorRecovered(errorId: string): void {
-    const error = this.errors.find((e) => e.id === errorId)
+    const error = this.errors.find(e => e.id === errorId)
     if (error) {
       error.recovered = true
       this.setErrors([...this.errors])
@@ -752,13 +774,15 @@ export class ErrorManager {
     const errorsBySeverity = {} as Record<ErrorSeverity, number>
 
     for (const error of this.errors) {
-      errorsByCategory[error.category] = (errorsByCategory[error.category] || 0) + 1
-      errorsBySeverity[error.severity] = (errorsBySeverity[error.severity] || 0) + 1
+      errorsByCategory[error.category] =
+        (errorsByCategory[error.category] || 0) + 1
+      errorsBySeverity[error.severity] =
+        (errorsBySeverity[error.severity] || 0) + 1
     }
 
-    const recoveredErrors = this.errors.filter((e) => e.recovered).length
+    const recoveredErrors = this.errors.filter(e => e.recovered).length
     const recentErrors = this.errors.filter(
-      (e) => Date.now() - e.timestamp < 5 * 60 * 1000 // Last 5 minutes
+      e => Date.now() - e.timestamp < 5 * 60 * 1000 // Last 5 minutes
     ).length
 
     return {
@@ -867,9 +891,12 @@ export const errorUtils = {
       try {
         return fn(...args)
       } catch (error) {
-        const tachUIError = globalErrorManager.createTachUIError(error as Error, {
-          category: options.category || 'unknown_error',
-        })
+        const tachUIError = globalErrorManager.createTachUIError(
+          error as Error,
+          {
+            category: options.category || 'unknown_error',
+          }
+        )
 
         globalErrorManager.reportError(tachUIError)
 
@@ -901,9 +928,12 @@ export const errorUtils = {
       try {
         return await fn(...args)
       } catch (error) {
-        const tachUIError = globalErrorManager.createTachUIError(error as Error, {
-          category: options.category || 'network_error',
-        })
+        const tachUIError = globalErrorManager.createTachUIError(
+          error as Error,
+          {
+            category: options.category || 'network_error',
+          }
+        )
 
         globalErrorManager.reportError(tachUIError)
 

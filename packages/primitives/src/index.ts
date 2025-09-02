@@ -15,3 +15,6 @@ export * from './controls'
 
 // Forms components
 export * from './forms'
+
+// Validation system for primitive components
+export * from './validation'
