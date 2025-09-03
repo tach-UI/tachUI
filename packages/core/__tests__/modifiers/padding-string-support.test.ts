@@ -9,7 +9,7 @@ import {
   paddingVertical,
   paddingTop,
   paddingBottom,
-} from '../../src/modifiers/padding'
+} from '@tachui/modifiers/basic/padding'
 
 describe('Padding Modifier - String Value Support', () => {
   it('should accept string values for horizontal/vertical', () => {

@@ -119,7 +119,8 @@
   },
   "dependencies": {
     "@tachui/devtools": "workspace:*",
-    "@tachui/primitives": "workspace:*"
+    "@tachui/primitives": "workspace:*",
+    "@tachui/modifiers": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -84,8 +84,8 @@ export * from './components'
 
 // Primitives moved to @tachui/primitives - import directly from that package
 
-// Modifier system compatibility layer (will migrate to @tachui/modifiers)
-export * from './modifiers-compat'
+// Modifier system infrastructure (concrete modifiers in @tachui/modifiers)
+export * from './modifiers'
 
 // Responsive system moved to @tachui/responsive - import directly from that package
 

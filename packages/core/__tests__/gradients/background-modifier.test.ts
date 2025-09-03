@@ -62,7 +62,7 @@ describe('BackgroundModifier', () => {
       background: '#FF0000',
     })
 
-    expect(modifier.priority).toBe(95)
+    expect(modifier.priority).toBe(200) // ModifierPriority.APPEARANCE
     expect(modifier.type).toBe('background')
   })
 

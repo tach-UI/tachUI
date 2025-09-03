@@ -5,9 +5,12 @@
  * individual property transitions and complex multi-property animations.
  */
 
-import type { DOMNode } from '../runtime/types'
-import { BaseModifier } from './base'
-import type { ModifierContext, ReactiveModifierProps } from './types'
+import type { DOMNode } from '@tachui/core/runtime/types'
+import { BaseModifier } from '../basic/base'
+import type {
+  ModifierContext,
+  ReactiveModifierProps,
+} from '@tachui/core/modifiers/types'
 
 export interface TransitionConfig {
   property?: string

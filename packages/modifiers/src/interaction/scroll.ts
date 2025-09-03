@@ -5,33 +5,49 @@
  * scroll margin, and scroll padding capabilities.
  */
 
-import type { DOMNode } from '../runtime/types'
-import { BaseModifier } from './base'
-import type { ModifierContext, ReactiveModifierProps } from './types'
+import type { DOMNode } from '@tachui/core/runtime/types'
+import { BaseModifier } from '../basic/base'
+import type {
+  ModifierContext,
+  ReactiveModifierProps,
+} from '@tachui/core/modifiers/types'
 
 export interface ScrollConfig {
   // Scroll behavior
   behavior?: 'auto' | 'smooth'
-  
-  // Scroll margin (spacing around scroll targets)  
-  margin?: number | string | {
-    top?: number | string
-    right?: number | string
-    bottom?: number | string
-    left?: number | string
-  }
-  
+
+  // Scroll margin (spacing around scroll targets)
+  margin?:
+    | number
+    | string
+    | {
+        top?: number | string
+        right?: number | string
+        bottom?: number | string
+        left?: number | string
+      }
+
   // Scroll padding (inner spacing for scroll containers)
-  padding?: number | string | {
-    top?: number | string
-    right?: number | string  
-    bottom?: number | string
-    left?: number | string
-  }
-  
+  padding?:
+    | number
+    | string
+    | {
+        top?: number | string
+        right?: number | string
+        bottom?: number | string
+        left?: number | string
+      }
+
   // Scroll snap behavior
   snap?: {
-    type?: 'none' | 'x mandatory' | 'y mandatory' | 'x proximity' | 'y proximity' | 'both mandatory' | 'both proximity'
+    type?:
+      | 'none'
+      | 'x mandatory'
+      | 'y mandatory'
+      | 'x proximity'
+      | 'y proximity'
+      | 'both mandatory'
+      | 'both proximity'
     align?: 'start' | 'end' | 'center'
     stop?: 'normal' | 'always'
   }
@@ -70,7 +86,7 @@ export class ScrollModifier extends BaseModifier<ScrollOptions> {
 
     const styles = this.computeScrollStyles(this.properties)
     this.applyStyles(context.element, styles)
-    
+
     return undefined
   }
 
@@ -104,73 +120,87 @@ export class ScrollModifier extends BaseModifier<ScrollOptions> {
 
   private generateScrollCSS(config: ScrollConfig): Record<string, string> {
     const styles: Record<string, string> = {}
-    
+
     // Scroll behavior
     if (config.behavior) {
       styles.scrollBehavior = config.behavior
     }
-    
+
     // Scroll margin
     if (config.margin) {
       Object.assign(styles, this.generateScrollMarginCSS(config.margin))
     }
-    
-    // Scroll padding  
+
+    // Scroll padding
     if (config.padding) {
       Object.assign(styles, this.generateScrollPaddingCSS(config.padding))
     }
-    
+
     // Scroll snap
     if (config.snap) {
       Object.assign(styles, this.generateScrollSnapCSS(config.snap))
     }
-    
+
     return styles
   }
 
-  private generateScrollMarginCSS(margin: number | string | Record<string, number | string>): Record<string, string> {
+  private generateScrollMarginCSS(
+    margin: number | string | Record<string, number | string>
+  ): Record<string, string> {
     if (typeof margin === 'number' || typeof margin === 'string') {
       return { scrollMargin: this.formatSpacing(margin) }
     }
-    
+
     const styles: Record<string, string> = {}
-    if (margin.top !== undefined) styles.scrollMarginTop = this.formatSpacing(margin.top)
-    if (margin.right !== undefined) styles.scrollMarginRight = this.formatSpacing(margin.right)
-    if (margin.bottom !== undefined) styles.scrollMarginBottom = this.formatSpacing(margin.bottom)
-    if (margin.left !== undefined) styles.scrollMarginLeft = this.formatSpacing(margin.left)
-    
+    if (margin.top !== undefined)
+      styles.scrollMarginTop = this.formatSpacing(margin.top)
+    if (margin.right !== undefined)
+      styles.scrollMarginRight = this.formatSpacing(margin.right)
+    if (margin.bottom !== undefined)
+      styles.scrollMarginBottom = this.formatSpacing(margin.bottom)
+    if (margin.left !== undefined)
+      styles.scrollMarginLeft = this.formatSpacing(margin.left)
+
     return styles
   }
 
-  private generateScrollPaddingCSS(padding: number | string | Record<string, number | string>): Record<string, string> {
+  private generateScrollPaddingCSS(
+    padding: number | string | Record<string, number | string>
+  ): Record<string, string> {
     if (typeof padding === 'number' || typeof padding === 'string') {
       return { scrollPadding: this.formatSpacing(padding) }
     }
-    
+
     const styles: Record<string, string> = {}
-    if (padding.top !== undefined) styles.scrollPaddingTop = this.formatSpacing(padding.top)
-    if (padding.right !== undefined) styles.scrollPaddingRight = this.formatSpacing(padding.right)
-    if (padding.bottom !== undefined) styles.scrollPaddingBottom = this.formatSpacing(padding.bottom)
-    if (padding.left !== undefined) styles.scrollPaddingLeft = this.formatSpacing(padding.left)
-    
+    if (padding.top !== undefined)
+      styles.scrollPaddingTop = this.formatSpacing(padding.top)
+    if (padding.right !== undefined)
+      styles.scrollPaddingRight = this.formatSpacing(padding.right)
+    if (padding.bottom !== undefined)
+      styles.scrollPaddingBottom = this.formatSpacing(padding.bottom)
+    if (padding.left !== undefined)
+      styles.scrollPaddingLeft = this.formatSpacing(padding.left)
+
     return styles
   }
 
-  private generateScrollSnapCSS(snap: ScrollConfig['snap']): Record<string, string> {
+  private generateScrollSnapCSS(
+    snap: ScrollConfig['snap']
+  ): Record<string, string> {
     const styles: Record<string, string> = {}
-    
+
     if (snap?.type) {
       styles.scrollSnapType = snap.type
     }
-    
+
     if (snap?.align) {
       styles.scrollSnapAlign = snap.align
     }
-    
+
     if (snap?.stop) {
       styles.scrollSnapStop = snap.stop
     }
-    
+
     return styles
   }
 
@@ -221,7 +251,9 @@ export function scrollBehavior(value: 'auto' | 'smooth'): ScrollModifier {
  * .overscrollBehavior('auto')     // Default behavior
  * ```
  */
-export function overscrollBehavior(value: OverscrollBehaviorValue): ScrollModifier {
+export function overscrollBehavior(
+  value: OverscrollBehaviorValue
+): ScrollModifier {
   return new ScrollModifier({ overscrollBehavior: value })
 }
 
@@ -233,7 +265,9 @@ export function overscrollBehavior(value: OverscrollBehaviorValue): ScrollModifi
  * .overscrollBehaviorX('contain')  // Prevent horizontal overscroll
  * ```
  */
-export function overscrollBehaviorX(value: OverscrollBehaviorValue): ScrollModifier {
+export function overscrollBehaviorX(
+  value: OverscrollBehaviorValue
+): ScrollModifier {
   return new ScrollModifier({ overscrollBehaviorX: value })
 }
 
@@ -245,7 +279,9 @@ export function overscrollBehaviorX(value: OverscrollBehaviorValue): ScrollModif
  * .overscrollBehaviorY('none')  // Disable vertical rubber band effect
  * ```
  */
-export function overscrollBehaviorY(value: OverscrollBehaviorValue): ScrollModifier {
+export function overscrollBehaviorY(
+  value: OverscrollBehaviorValue
+): ScrollModifier {
   return new ScrollModifier({ overscrollBehaviorY: value })
 }
 
@@ -258,7 +294,17 @@ export function overscrollBehaviorY(value: OverscrollBehaviorValue): ScrollModif
  * .scrollMargin({ top: 80, bottom: 20 })  // Navigation offset
  * ```
  */
-export function scrollMargin(margin: number | string | { top?: number | string, right?: number | string, bottom?: number | string, left?: number | string }): ScrollModifier {
+export function scrollMargin(
+  margin:
+    | number
+    | string
+    | {
+        top?: number | string
+        right?: number | string
+        bottom?: number | string
+        left?: number | string
+      }
+): ScrollModifier {
   return new ScrollModifier({ scroll: { margin } })
 }
 
@@ -271,7 +317,17 @@ export function scrollMargin(margin: number | string | { top?: number | string, 
  * .scrollPadding({ top: 60, bottom: 20 })  // Header/footer padding
  * ```
  */
-export function scrollPadding(padding: number | string | { top?: number | string, right?: number | string, bottom?: number | string, left?: number | string }): ScrollModifier {
+export function scrollPadding(
+  padding:
+    | number
+    | string
+    | {
+        top?: number | string
+        right?: number | string
+        bottom?: number | string
+        left?: number | string
+      }
+): ScrollModifier {
   return new ScrollModifier({ scroll: { padding } })
 }
 
@@ -285,13 +341,20 @@ export function scrollPadding(padding: number | string | { top?: number | string
  * ```
  */
 export function scrollSnap(
-  type: 'none' | 'x mandatory' | 'y mandatory' | 'x proximity' | 'y proximity' | 'both mandatory' | 'both proximity',
+  type:
+    | 'none'
+    | 'x mandatory'
+    | 'y mandatory'
+    | 'x proximity'
+    | 'y proximity'
+    | 'both mandatory'
+    | 'both proximity',
   align?: 'start' | 'end' | 'center',
   stop?: 'normal' | 'always'
 ): ScrollModifier {
-  return new ScrollModifier({ 
-    scroll: { 
-      snap: { type, align, stop } 
-    } 
+  return new ScrollModifier({
+    scroll: {
+      snap: { type, align, stop },
+    },
   })
 }

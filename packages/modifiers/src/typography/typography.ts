@@ -4,31 +4,12 @@
  * Comprehensive text styling modifiers
  */
 
-import { BaseModifier } from '@tachui/core/modifiers/base'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
+import { BaseModifier } from '../basic/base'
+import type { ModifierContext, FontWeight } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 
-export type FontWeight =
-  | 'normal'
-  | 'bold'
-  | '100'
-  | '200'
-  | '300'
-  | '400'
-  | '500'
-  | '600'
-  | '700'
-  | '800'
-  | '900'
-  | 100
-  | 200
-  | 300
-  | 400
-  | 500
-  | 600
-  | 700
-  | 800
-  | 900
+// Re-export FontWeight for convenience
+export type { FontWeight }
 
 export type TextAlign =
   | 'left'

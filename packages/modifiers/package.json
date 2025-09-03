@@ -12,6 +12,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./base": {
+      "types": "./dist/base.d.ts",
+      "import": "./dist/base.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./basic/padding": {
+      "types": "./dist/basic/padding.d.ts",
+      "import": "./dist/basic/padding.js"
+    },
     "./layout": {
       "types": "./dist/layout/index.d.ts",
       "import": "./dist/layout/index.js"
@@ -37,14 +49,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && vite build && tsc --project tsconfig.build.json",
+    "build": "rm -rf dist && tsc --project tsconfig.build.json && vite build --mode production",
     "dev": "vite build --watch",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ci": "npm run test:run",
-    "type-check": "echo 'Type checking temporarily disabled during extraction - using runtime validation from @tachui/core'",
+    "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
     "lint": "oxlint src"
   },

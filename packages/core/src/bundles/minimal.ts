@@ -21,13 +21,11 @@ export * from '../runtime/props'
 // @tachui/primitives - Text, Button, Image, BasicInput, Spacer, HStack, VStack, ZStack
 // @tachui/flow-control - Show, When, Unless
 
-// Essential modifiers
+// Essential modifiers infrastructure only
 export * from '../modifiers/core'
-export * from '../modifiers/padding'
-export * from '../modifiers/margin'
-export * from '../modifiers/size'
-export * from '../modifiers/typography'
-export * from '../modifiers/background'
+
+// Concrete modifiers are available in @tachui/modifiers:
+// import { padding, margin, size, typography } from '@tachui/modifiers'
 
 // Responsive system: @tachui/responsive
 

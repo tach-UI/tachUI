@@ -17,7 +17,7 @@ import {
   paddingTop,
   paddingTrailing,
   paddingVertical,
-} from '../../src/modifiers/padding'
+} from '@tachui/modifiers/basic/padding'
 import type { ModifierContext } from '../../src/modifiers/types'
 import type { DOMNode } from '../../src/runtime/types'
 

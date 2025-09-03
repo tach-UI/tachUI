@@ -6,13 +6,13 @@
  */
 
 import type { DOMNode } from '@tachui/core/runtime/types'
-import { BaseModifier } from '@tachui/core/modifiers/base'
+import { BaseModifier } from '@tachui/modifiers/base'
 import type {
   ModifierContext,
   ReactiveModifierProps,
   ColorValue,
-} from '@tachui/core/modifiers/types'
-import { ModifierPriority } from '@tachui/core/modifiers/types'
+} from '@tachui/modifiers/types'
+import { ModifierPriority } from '@tachui/modifiers/types'
 
 // ============================================================================
 // Enhanced Backdrop Filter Configuration

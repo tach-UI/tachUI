@@ -413,6 +413,32 @@ describe('Image Factory Function', () => {
 
     expect(image).toBeDefined()
   })
+
+  describe('SwiftUI-style shorthands', () => {
+    it('should support scaledToFit shorthand', () => {
+      const image = Image('test.jpg').scaledToFit()
+
+      expect(image).toBeDefined()
+      expect(typeof image.modifier).toBe('object')
+    })
+
+    it('should support scaledToFill shorthand', () => {
+      const image = Image('test.jpg').scaledToFill()
+
+      expect(image).toBeDefined()
+      expect(typeof image.modifier).toBe('object')
+    })
+
+    it('should support chaining shorthands with other modifiers', () => {
+      const image = Image('test.jpg')
+        .scaledToFit()
+        .modifier.frame(200, 200)
+        .cornerRadius(8)
+        .build()
+
+      expect(image).toBeDefined()
+    })
+  })
 })
 
 describe('ImageStates', () => {

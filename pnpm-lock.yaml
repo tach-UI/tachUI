@@ -110,6 +110,9 @@ importers:
       '@tachui/devtools':
         specifier: workspace:*
         version: link:../devtools
+      '@tachui/modifiers':
+        specifier: workspace:*
+        version: link:../modifiers
       '@tachui/primitives':
         specifier: workspace:*
         version: link:../primitives
@@ -212,6 +215,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
+      '@tachui/modifiers':
+        specifier: workspace:*
+        version: link:../modifiers
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -290,6 +296,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
+      '@tachui/modifiers':
+        specifier: workspace:*
+        version: link:../modifiers
       '@tachui/responsive':
         specifier: workspace:*
         version: link:../responsive
@@ -422,6 +431,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
+      '@tachui/modifiers':
+        specifier: workspace:*
+        version: link:../modifiers
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6

@@ -10,7 +10,7 @@ import {
   marginHorizontal,
   marginTop,
   marginVertical,
-} from '../../src/modifiers/margin'
+} from '@tachui/modifiers/basic/margin'
 import { createSignal } from '../../src/reactive'
 
 describe('MarginModifier', () => {
@@ -22,7 +22,7 @@ describe('MarginModifier', () => {
       setProperty: (property: string, value: string) => {
         ;(mockStyle as any)[property] = value
         // Also set camelCase properties for backward compatibility
-        const camelCase = property.replace(/-([a-z])/g, (g) => g[1].toUpperCase())
+        const camelCase = property.replace(/-([a-z])/g, g => g[1].toUpperCase())
         if (camelCase !== property) {
           ;(mockStyle as any)[camelCase] = value
         }

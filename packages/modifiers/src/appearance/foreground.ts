@@ -4,7 +4,7 @@
  * Text color and foreground styling modifiers
  */
 
-import { BaseModifier } from '@tachui/core/modifiers/base'
+import { BaseModifier } from '../basic/base'
 import type { ModifierContext } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 

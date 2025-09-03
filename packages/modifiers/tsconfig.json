@@ -8,6 +8,6 @@
     "rootDir": "./src"
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "__tests__", "node_modules", "src/basic/base.ts"],
+  "exclude": ["dist", "__tests__", "node_modules"],
   "references": [{ "path": "../core" }]
 }

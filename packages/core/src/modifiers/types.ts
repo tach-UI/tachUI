@@ -11,7 +11,30 @@ import type {
   ComponentProps,
   DOMNode,
 } from '../runtime/types'
-import type { FontWeight } from './typography'
+// Typography types
+export type FontWeight =
+  | 'normal'
+  | 'bold'
+  | '100'
+  | '200'
+  | '300'
+  | '400'
+  | '500'
+  | '600'
+  | '700'
+  | '800'
+  | '900'
+export type FontStyle = 'normal' | 'italic' | 'oblique'
+export type FontVariant = 'normal' | 'small-caps'
+export type TextAlign =
+  | 'left'
+  | 'center'
+  | 'right'
+  | 'justify'
+  | 'start'
+  | 'end'
+export type TextDecoration = 'none' | 'underline' | 'overline' | 'line-through'
+export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize'
 import type { Dimension } from '../constants/layout'
 import type { StatefulBackgroundValue } from '../gradients/types'
 // Responsive types moved to @tachui/responsive package
@@ -414,19 +437,6 @@ export interface ModifierBuilder<
   marginVertical(value: number | string): ModifierBuilder<T>
 
   // Typography modifiers
-  typography(options: {
-    size?: number | string
-    weight?: FontWeight | number
-    family?: string
-    lineHeight?: number | string
-    letterSpacing?: number | string
-    align?: string
-    transform?: string
-    decoration?: string
-    variant?: string
-    style?: string
-    color?: string
-  }): ModifierBuilder<T>
   textAlign(
     value: 'left' | 'center' | 'right' | 'justify' | 'start' | 'end'
   ): ModifierBuilder<T>
@@ -750,18 +760,6 @@ export interface ModifierBuilder<
     customFallback?: ColorValue
   ): ModifierBuilder<T>
 
-  // Pseudo-element modifiers
-  before(styles: {
-    content: string
-    color?: string
-    [key: string]: any
-  }): ModifierBuilder<T>
-  after(styles: {
-    content: string
-    color?: string
-    [key: string]: any
-  }): ModifierBuilder<T>
-
   // State modifiers
   disabled(isDisabled?: boolean | Signal<boolean>): ModifierBuilder<T>
 
@@ -879,7 +877,6 @@ export interface ModifierBuilder<
    * Text(serverTemplate).modifier.asHTML({ skipSanitizer: true }).build()
    * ```
    */
-  asHTML(options?: import('./as-html').AsHTMLOptions): ModifierBuilder<T>
 
   // Responsive functionality moved to @tachui/responsive package
 

@@ -22,11 +22,6 @@ export * from '../runtime/props'
 
 // Essential modifiers
 export * from '../modifiers/core'
-export * from '../modifiers/padding'
-export * from '../modifiers/margin'
-export * from '../modifiers/size'
-export * from '../modifiers/typography'
-export * from '../modifiers/background'
 
 // State management
 export { State, isState, unwrapValue } from '../state/state'

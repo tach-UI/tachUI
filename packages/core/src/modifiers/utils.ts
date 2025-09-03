@@ -8,9 +8,14 @@
 import { createEffect } from '../reactive'
 import { isSignal } from '../reactive/signal'
 import type { Signal } from '../reactive/types'
-import type { DOMNode } from '../runtime/types'
+import type { DOMNode, ComponentInstance } from '../runtime/types'
 import { BaseModifier } from './base'
-import type { Modifier, ModifierContext, ModifierFactory, ReactiveModifierProps } from './types'
+import type {
+  Modifier,
+  ModifierContext,
+  ModifierFactory,
+  ReactiveModifierProps,
+} from './types'
 
 /**
  * Helper functions for working with modifiers
@@ -50,7 +55,10 @@ export const modifierHelpers = {
   /**
    * Merge modifier properties
    */
-  mergeProperties<T extends Record<string, any>>(base: T, override: Partial<T>): T {
+  mergeProperties<T extends Record<string, any>>(
+    base: T,
+    override: Partial<T>
+  ): T {
     const result = { ...base }
 
     for (const [key, value] of Object.entries(override)) {
@@ -66,7 +74,9 @@ export const modifierHelpers = {
    * Convert a CSS property name to camelCase
    */
   toCamelCase(cssProperty: string): string {
-    return cssProperty.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase())
+    return cssProperty.replace(/-([a-z])/g, (_match, letter) =>
+      letter.toUpperCase()
+    )
   },
 
   /**
@@ -96,7 +106,11 @@ export const modifierHelpers = {
 export function createCustomModifier<TProps extends Record<string, any>>(
   type: string,
   priority: number,
-  applyFn: (node: DOMNode, context: ModifierContext, props: TProps) => DOMNode | undefined
+  applyFn: (
+    node: DOMNode,
+    context: ModifierContext,
+    props: TProps
+  ) => DOMNode | undefined
 ): ModifierFactory<TProps> {
   class CustomModifier extends BaseModifier<TProps> {
     readonly type = type
@@ -107,7 +121,55 @@ export function createCustomModifier<TProps extends Record<string, any>>(
     }
   }
 
-  return (props: ReactiveModifierProps<TProps>) => new CustomModifier(props as TProps)
+  return (props: ReactiveModifierProps<TProps>) =>
+    new CustomModifier(props as TProps)
+}
+
+/**
+ * Create a simple style modifier (convenience wrapper)
+ */
+export function createStyleModifier<TProps extends Record<string, any>>(
+  type: string,
+  styles: (props: TProps) => Record<string, any>,
+  priority: number = 100
+): ModifierFactory<TProps> {
+  return createCustomModifier(type, priority, (node, context, props) => {
+    if (context.element instanceof HTMLElement) {
+      const styleObject = styles(props)
+      Object.assign(context.element.style, styleObject)
+    }
+    return node
+  })
+}
+
+/**
+ * Create a preset modifier (no props, just applies fixed styles)
+ */
+export function createPresetModifier(
+  type: string,
+  styles: Record<string, any>,
+  priority: number = 100
+): () => Modifier {
+  return () =>
+    createCustomModifier(type, priority, (node, context) => {
+      if (context.element instanceof HTMLElement) {
+        Object.assign(context.element.style, styles)
+      }
+      return node
+    })({})
+}
+
+/**
+ * Create a component variant (wrapped component with preset modifiers)
+ */
+export function createComponentVariant<T extends ComponentInstance>(
+  baseComponent: T,
+  ...modifiers: Modifier[]
+): T {
+  // This function needs to be implemented properly
+  // For now, return the base component as-is
+  console.warn('createComponentVariant is not yet implemented')
+  return baseComponent
 }
 
 /**
@@ -283,7 +345,9 @@ export function responsiveModifier(
 /**
  * Create a modifier that applies CSS classes
  */
-export function classModifier(classes: string | string[] | Signal<string | string[]>): Modifier {
+export function classModifier(
+  classes: string | string[] | Signal<string | string[]>
+): Modifier {
   return createCustomModifier('class', 50, (node, context, _props) => {
     if (!context.element) return node
 
@@ -339,7 +403,9 @@ export function classModifier(classes: string | string[] | Signal<string | strin
  * Create a modifier that applies inline styles
  */
 export function styleModifier(
-  styles: Record<string, string | number> | Signal<Record<string, string | number>>
+  styles:
+    | Record<string, string | number>
+    | Signal<Record<string, string | number>>
 ): Modifier {
   return createCustomModifier('style', 200, (node, context, _props) => {
     if (!context.element) return node
@@ -397,7 +463,7 @@ export function eventModifier(events: Record<string, EventListener>): Modifier {
     }
 
     // Store cleanup
-    const cleanup = () => cleanupFunctions.forEach((fn) => fn())
+    const cleanup = () => cleanupFunctions.forEach(fn => fn())
     if (!node.dispose) {
       node.dispose = cleanup
     } else {

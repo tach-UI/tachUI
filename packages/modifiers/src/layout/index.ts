@@ -1,6 +1,5 @@
 /**
- * Layout Modifiers (placeholder)
+ * Layout Modifiers
  */
 
-// TODO: Extract layout modifiers from core
-export const layoutPlaceholder = true
+export * from './flexbox'

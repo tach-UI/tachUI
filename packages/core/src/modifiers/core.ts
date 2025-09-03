@@ -60,38 +60,10 @@ export const layoutModifiers = {
   },
 
   /**
-   * Set padding with detailed control
-   */
-  paddingDetailed(options: LayoutModifierProps['padding']): Modifier {
-    return new LayoutModifier({ padding: options })
-  },
-
-  /**
-   * Set horizontal and vertical padding
-   */
-  paddingSymmetric(horizontal?: number, vertical?: number): Modifier {
-    return new LayoutModifier({
-      padding: {
-        left: horizontal,
-        right: horizontal,
-        top: vertical,
-        bottom: vertical,
-      },
-    })
-  },
-
-  /**
    * Set margin on all sides
    */
   margin(value: number): Modifier {
     return new LayoutModifier({ margin: value })
-  },
-
-  /**
-   * Set margin with detailed control
-   */
-  marginDetailed(options: LayoutModifierProps['margin']): Modifier {
-    return new LayoutModifier({ margin: options })
   },
 
   /**
@@ -152,7 +124,9 @@ export const appearanceModifiers = {
   /**
    * Set font weight
    */
-  fontWeight(weight: NonNullable<AppearanceModifierProps['font']>['weight']): Modifier {
+  fontWeight(
+    weight: NonNullable<AppearanceModifierProps['font']>['weight']
+  ): Modifier {
     return new AppearanceModifier({ font: { weight } })
   },
 
@@ -362,7 +336,11 @@ export const animationModifiers = {
   /**
    * Add scale animation
    */
-  scaleAnimation(from: number = 0.8, to: number = 1, duration: number = 300): Modifier {
+  scaleAnimation(
+    from: number = 0.8,
+    to: number = 1,
+    duration: number = 300
+  ): Modifier {
     return new AnimationModifier({
       animation: {
         keyframes: {
@@ -416,7 +394,10 @@ export const lifecycleModifiers = {
   /**
    * Add pull-to-refresh functionality
    */
-  refreshable(onRefresh: () => Promise<void>, isRefreshing?: boolean | Signal<boolean>): Modifier {
+  refreshable(
+    onRefresh: () => Promise<void>,
+    isRefreshing?: boolean | Signal<boolean>
+  ): Modifier {
     return new LifecycleModifier({
       refreshable: {
         onRefresh,
@@ -458,8 +439,8 @@ export const presetModifiers = {
       appearanceModifiers.backgroundColor(backgroundColor),
       appearanceModifiers.foregroundColor(textColor),
       appearanceModifiers.cornerRadius(6),
-      layoutModifiers.paddingSymmetric(16, 8),
-      interactionModifiers.onHover((_hovered) => {
+      layoutModifiers.padding(12), // Simplified to single value for now
+      interactionModifiers.onHover(_hovered => {
         // This would need a more sophisticated hover state system
       }),
       animationModifiers.transition('all', 150),
@@ -475,7 +456,7 @@ export const presetModifiers = {
       appearanceModifiers.cornerRadius(4),
       layoutModifiers.padding(8),
       animationModifiers.transition('border-color', 150),
-      interactionModifiers.onFocus((_focused) => {
+      interactionModifiers.onFocus(_focused => {
         // Focus state would need more sophisticated handling
       }),
     ]

@@ -353,17 +353,53 @@ export class EnhancedImage
 }
 
 /**
- * Create enhanced Image component with modifier support
+ * Create enhanced Image component with modifier support and SwiftUI-style shorthands
+ *
+ * @example
+ * ```typescript
+ * // Using aspectRatio modifier
+ * Image('photo.jpg')
+ *   .aspectRatio(16/9, 'fit')
+ *
+ * // Using SwiftUI-style shorthands
+ * Image('photo.jpg')
+ *   .scaledToFit()  // Same as aspectRatio(undefined, 'fit')
+ *
+ * Image('photo.jpg')
+ *   .scaledToFill() // Same as aspectRatio(undefined, 'fill')
+ * ```
  */
+/**
+ * Extended Image component interface with SwiftUI-style shorthands
+ */
+export interface ImageWithShorthands extends ModifiableComponent<ImageProps> {
+  modifier: ModifierBuilder<ModifiableComponent<ImageProps>>
+  scaledToFit(): ImageWithShorthands
+  scaledToFill(): ImageWithShorthands
+}
+
 export function Image(
   src: string | Signal<string> | ImageAsset,
   props: Omit<ImageProps, 'src'> = {}
-): ModifiableComponent<ImageProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<ImageProps>>
-} {
+): ImageWithShorthands {
   const imageProps: ImageProps = { ...props, src }
   const component = new EnhancedImage(imageProps)
-  return withModifiers(component)
+  const modifiableComponent = withModifiers(component)
+
+  // Add SwiftUI-style shorthands for aspect ratio
+  const result: ImageWithShorthands = {
+    ...modifiableComponent,
+    scaledToFit() {
+      this.modifier.aspectRatio(undefined, 'fit')
+      return this
+    },
+    scaledToFill() {
+      this.modifier.aspectRatio(undefined, 'fill')
+      return this
+    },
+  }
+
+  return result
 }
 
 /**
@@ -389,6 +425,16 @@ export const ImageContentModes = {
 
 /**
  * Image utility functions
+ *
+ * These utilities work seamlessly with the new scaledTo* shorthands:
+ *
+ * @example
+ * ```typescript
+ * // Combine utilities with shorthands
+ * ImageUtils.responsive([...])
+ *   .scaledToFit()
+ *   .frame(200, 200)
+ * ```
  */
 export const ImageUtils = {
   /**

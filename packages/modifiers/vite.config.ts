@@ -9,6 +9,7 @@ export default defineConfig({
       fileName: 'index',
       formats: ['es'],
     },
+    emptyOutDir: false, // Don't clean the dist directory to preserve .d.ts files
     rollupOptions: {
       external: [
         '@tachui/core',

@@ -1,165 +1,83 @@
-import { BaseModifier } from './base'
-import type { ModifierContext } from './types'
+/**
+ * Background Modifier - Background styling and rendering
+ *
+ * Provides comprehensive background support including colors, gradients,
+ * images, and complex background compositions.
+ */
+
 import type { DOMNode } from '../runtime/types'
-import type { Asset } from '../assets/types'
-import type { 
-  GradientDefinition, 
-  StatefulBackgroundValue, 
-  StateGradientOptions 
-} from '../gradients/types'
+import { BaseModifier } from './base'
+import type { ModifierContext, ReactiveModifierProps } from './types'
+import { ModifierPriority } from './types'
 import { gradientToCSS } from '../gradients/css-generator'
-import { StateGradientAsset } from '../gradients/state-gradient-asset'
+import type { GradientDefinition } from '../gradients/types'
+import type { Asset } from '../assets/Asset'
 
 export interface BackgroundOptions {
-  background: StatefulBackgroundValue
+  background?: string | GradientDefinition | Asset // Support strings, gradients, and assets
 }
+
+export type ReactiveBackgroundOptions = ReactiveModifierProps<BackgroundOptions>
 
 export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
   readonly type = 'background'
-  readonly priority = 95
-  private stateGradientAsset?: StateGradientAsset
+  readonly priority = ModifierPriority.APPEARANCE // Appearance modifier priority
+
+  constructor(options: ReactiveBackgroundOptions) {
+    super(options as unknown as BackgroundOptions)
+  }
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
-    const background = this.properties.background
-    const element = context.element as HTMLElement
-
-    if (this.isStateGradientOptions(background)) {
-      this.setupStateGradient(element, background)
-    } else {
-      const cssValue = this.resolveBackground(background)
-      if (cssValue) {
-        element.style.background = cssValue
-      }
-    }
+    const styles = this.computeBackgroundStyles(this.properties)
+    this.applyStyles(context.element, styles)
 
     return undefined
   }
 
-  private setupStateGradient(element: HTMLElement, stateOptions: StateGradientOptions): void {
-    // Create or update the state gradient asset
-    this.stateGradientAsset = new StateGradientAsset('background-state', stateOptions)
-    
-    // Set initial background
-    element.style.background = this.stateGradientAsset.resolve()
-    
-    // Add animation styles
-    const animationCSS = this.stateGradientAsset.getAnimationCSS()
-    element.style.cssText += animationCSS
+  private computeBackgroundStyles(props: BackgroundOptions) {
+    const styles: Record<string, string> = {}
 
-    // Set up event listeners for state changes
-    this.setupStateEventListeners(element)
-  }
-
-  private setupStateEventListeners(element: HTMLElement): void {
-    if (!this.stateGradientAsset) return
-
-    // Hover state
-    if (this.stateGradientAsset.hasState('hover')) {
-      element.addEventListener('mouseenter', () => {
-        this.stateGradientAsset!.setState('hover')
-        element.style.background = this.stateGradientAsset!.resolve()
-      })
-
-      element.addEventListener('mouseleave', () => {
-        // Return to appropriate state (active, focus, or default)
-        const currentState = this.getCurrentElementState(element)
-        this.stateGradientAsset!.setState(currentState)
-        element.style.background = this.stateGradientAsset!.resolve()
-      })
+    if (props.background !== undefined) {
+      // Check if background is a gradient definition
+      if (
+        typeof props.background === 'object' &&
+        'type' in props.background &&
+        'options' in props.background
+      ) {
+        styles.background = gradientToCSS(
+          props.background as GradientDefinition
+        )
+      }
+      // Check if background is an Asset
+      else if (
+        typeof props.background === 'object' &&
+        'resolve' in props.background
+      ) {
+        styles.background = (props.background as Asset).resolve() as string
+      } else {
+        styles.background = String(props.background)
+      }
     }
 
-    // Active/pressed state
-    if (this.stateGradientAsset.hasState('active')) {
-      element.addEventListener('mousedown', () => {
-        this.stateGradientAsset!.setState('active')
-        element.style.background = this.stateGradientAsset!.resolve()
-      })
-
-      element.addEventListener('mouseup', () => {
-        // Return to hover if still hovering, otherwise default
-        const isHovering = element.matches(':hover')
-        const nextState = isHovering && this.stateGradientAsset!.hasState('hover') ? 'hover' : 'default'
-        this.stateGradientAsset!.setState(nextState)
-        element.style.background = this.stateGradientAsset!.resolve()
-      })
-    }
-
-    // Focus state
-    if (this.stateGradientAsset.hasState('focus')) {
-      element.addEventListener('focus', () => {
-        this.stateGradientAsset!.setState('focus')
-        element.style.background = this.stateGradientAsset!.resolve()
-      })
-
-      element.addEventListener('blur', () => {
-        this.stateGradientAsset!.setState('default')
-        element.style.background = this.stateGradientAsset!.resolve()
-      })
-    }
-
-    // Disabled state (handled via attribute observation)
-    if (this.stateGradientAsset.hasState('disabled')) {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
-            const isDisabled = element.hasAttribute('disabled')
-            const state = isDisabled ? 'disabled' : 'default'
-            this.stateGradientAsset!.setState(state)
-            element.style.background = this.stateGradientAsset!.resolve()
-          }
-        })
-      })
-
-      observer.observe(element, { attributes: true, attributeFilter: ['disabled'] })
-    }
-  }
-
-  private getCurrentElementState(element: HTMLElement): keyof StateGradientOptions {
-    if (!this.stateGradientAsset) return 'default'
-
-    if (element.hasAttribute('disabled') && this.stateGradientAsset.hasState('disabled')) {
-      return 'disabled'
-    }
-
-    if (element.matches(':focus') && this.stateGradientAsset.hasState('focus')) {
-      return 'focus'
-    }
-
-    return 'default'
-  }
-
-  private resolveBackground(background: StatefulBackgroundValue): string {
-    if (typeof background === 'string') {
-      return background
-    }
-
-    if (this.isAsset(background)) {
-      return background.resolve() as string
-    }
-
-    if (this.isGradientDefinition(background)) {
-      return gradientToCSS(background)
-    }
-
-    if (this.isStateGradientOptions(background)) {
-      // This should be handled by setupStateGradient
-      return this.resolveBackground(background.default)
-    }
-
-    return ''
-  }
-
-  private isAsset(value: any): value is Asset {
-    return value && typeof value === 'object' && typeof value.resolve === 'function'
-  }
-
-  private isGradientDefinition(value: any): value is GradientDefinition {
-    return value && typeof value === 'object' && 'type' in value && 'options' in value
-  }
-
-  private isStateGradientOptions(value: any): value is StateGradientOptions {
-    return value && typeof value === 'object' && 'default' in value
+    return styles
   }
 }
+
+/**
+ * Create a background modifier
+ *
+ * @example
+ * ```typescript
+ * .background('#ff0000')
+ * .background('linear-gradient(45deg, red, blue)')
+ * ```
+ */
+export function background(
+  value: string | GradientDefinition | Asset
+): BackgroundModifier {
+  return new BackgroundModifier({ background: value })
+}
+
+// Types are exported through compat.ts re-export from @tachui/modifiers

@@ -1,6 +1,5 @@
 /**
- * Interaction Modifiers (placeholder)
+ * Interaction Modifiers
  */
 
-// TODO: Extract interaction modifiers from core
-export const interactionPlaceholder = true
+export * from './scroll'

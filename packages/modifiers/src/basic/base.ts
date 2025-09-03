@@ -1902,24 +1902,3 @@ export class LifecycleModifier extends BaseModifier {
     ;(this.properties as any)._cleanupFunctions.push(cleanup)
   }
 }
-
-/**
- * Resizable modifier for making images resizable
- * In SwiftUI, .resizable() allows images to be scaled to fit their container
- */
-export class ResizableModifier extends BaseModifier {
-  readonly type = 'resizable'
-  readonly priority = ModifierPriority.APPEARANCE
-
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
-    if (!context.element) return
-
-    // For images, resizable means they can be scaled to fit their container
-    // This is typically achieved with object-fit: fill in CSS
-    if (context.element instanceof HTMLImageElement) {
-      context.element.style.objectFit = 'fill'
-    }
-
-    return undefined
-  }
-}
