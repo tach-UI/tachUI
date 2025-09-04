@@ -129,6 +129,10 @@ export default defineConfig({
         replacement: path.resolve(__dirname, 'packages/modifiers/src'),
       },
       {
+        find: '@tachui/effects',
+        replacement: path.resolve(__dirname, 'packages/effects/src'),
+      },
+      {
         find: '@tachui/flow-control',
         replacement: path.resolve(__dirname, 'packages/flow-control/src'),
       },

@@ -1,10 +1,11 @@
 {
   "name": "@tachui/cli",
-  "version": "0.1.0",
+  "version": "0.7.1-alpha",
   "description": "Tacho CLI - Comprehensive developer tooling for tachUI",
   "homepage": "https://tachui.dev/",
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
     "tacho": "./bin/tacho.js"
@@ -17,6 +18,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
+    "valid": "clear && vitest run && tsc --noEmit && pnpm lint && pnpm build",
     "test": "vitest",
     "test:ci": "vitest run",
     "type-check": "tsc --noEmit",
@@ -36,8 +38,8 @@
     "@types/fs-extra": "^11.0.0",
     "@types/prompts": "^2.4.0",
     "@types/node": "^20.0.0",
-    "typescript": "^5.2.0",
-    "vitest": "^1.0.0"
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.4"
   },
   "keywords": [
     "cli",
@@ -54,5 +56,13 @@
     "type": "git",
     "url": "https://github.com/tach-UI/tachUI",
     "directory": "packages/cli"
+  },
+  "bugs": "https://github.com/tach-UI/tachUI/issues",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
   }
 }

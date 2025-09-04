@@ -2,21 +2,15 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "declarationDir": "./dist", 
+    "declarationDir": "./dist",
     "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "emitDeclarationOnly": false,
     "skipLibCheck": true,
     "composite": true
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "__tests__"
-  ],
-  "references": [
-    { "path": "../core" }
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "__tests__"],
+  "references": [{ "path": "../core" }, { "path": "../modifiers" }]
 }

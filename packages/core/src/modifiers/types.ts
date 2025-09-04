@@ -212,12 +212,7 @@ export interface AppearanceModifierProps {
     color?: ColorValue
     style?: 'solid' | 'dashed' | 'dotted'
   }
-  shadow?: {
-    color?: string
-    radius?: number
-    x?: number
-    y?: number
-  }
+  // shadow moved to @tachui/effects package
   clipped?: boolean
   clipShape?: {
     shape: 'circle' | 'ellipse' | 'rect' | 'polygon'
@@ -376,22 +371,30 @@ export interface AnimationModifierProps {
       | 'bottomLeading'
       | 'bottomTrailing'
   }
+  scaleEffect?: {
+    x: number
+    y?: number
+    anchor?:
+      | 'center'
+      | 'top'
+      | 'bottom'
+      | 'leading'
+      | 'trailing'
+      | 'topLeading'
+      | 'topTrailing'
+      | 'bottomLeading'
+      | 'bottomTrailing'
+  }
 }
 
 /**
  * Lifecycle modifier properties
  */
 export interface LifecycleModifierProps {
-  onAppear?: () => void
-  onDisappear?: () => void
   task?: {
     operation: () => Promise<void> | void
     id?: string
     priority?: 'background' | 'userInitiated' | 'utility' | 'default'
-  }
-  refreshable?: {
-    onRefresh: () => Promise<void>
-    isRefreshing?: boolean | Signal<boolean>
   }
 }
 
@@ -537,10 +540,6 @@ export interface ModifierBuilder<
   ): ModifierBuilder<T>
   overflowY(value: 'visible' | 'hidden' | 'scroll' | 'auto'): ModifierBuilder<T>
   overflowX(value: 'visible' | 'hidden' | 'scroll' | 'auto'): ModifierBuilder<T>
-  position(
-    value: 'static' | 'relative' | 'absolute' | 'fixed' | 'sticky'
-  ): ModifierBuilder<T>
-  zIndex(value: number): ModifierBuilder<T>
   display(
     value:
       | 'block'
@@ -561,10 +560,6 @@ export interface ModifierBuilder<
   cssVariable(name: string, value: string | number): ModifierBuilder<T>
 
   // Phase 1 SwiftUI modifiers
-  offset(
-    x: number | Signal<number>,
-    y?: number | Signal<number>
-  ): ModifierBuilder<T>
   clipped(): ModifierBuilder<T>
   rotationEffect(
     angle: number | Signal<number>,
@@ -581,11 +576,6 @@ export interface ModifierBuilder<
   ): ModifierBuilder<T>
 
   // Phase 2 SwiftUI modifiers
-  aspectRatio(
-    ratio?: number | Signal<number>,
-    contentMode?: 'fit' | 'fill'
-  ): ModifierBuilder<T>
-  fixedSize(horizontal?: boolean, vertical?: boolean): ModifierBuilder<T>
   clipShape(
     shape: 'circle' | 'ellipse' | 'rect' | 'polygon',
     parameters?: Record<string, any>
@@ -605,20 +595,6 @@ export interface ModifierBuilder<
   ): ModifierBuilder<T>
 
   // Phase 3 SwiftUI modifiers - Critical Transform Modifiers
-  scaleEffect(
-    x: number | Signal<number>,
-    y?: number | Signal<number>,
-    anchor?:
-      | 'center'
-      | 'top'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottom'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-      | 'leading'
-      | 'trailing'
-  ): ModifierBuilder<T>
 
   // Note: SwiftUI-style position for absolute positioning (different from CSS position)
   absolutePosition(
@@ -645,27 +621,7 @@ export interface ModifierBuilder<
   border(width: number | Signal<number>, color?: ColorValue): ModifierBuilder<T>
   border(options: AppearanceModifierProps['border']): ModifierBuilder<T>
   borderWidth(width: number | Signal<number>): ModifierBuilder<T>
-  shadow(options: AppearanceModifierProps['shadow']): ModifierBuilder<T>
-  shadow(config: {
-    x: number
-    y: number
-    blur: number
-    color: string
-    spread?: number
-    inset?: boolean
-  }): ModifierBuilder<T>
-  shadows(
-    configs: Array<{
-      x: number
-      y: number
-      blur: number
-      color: string
-      spread?: number
-      inset?: boolean
-    }>
-  ): ModifierBuilder<T>
-  textShadow(config: TextShadowConfig): ModifierBuilder<T>
-  shadowPreset(presetName: string): ModifierBuilder<T>
+  // shadow, shadows, textShadow, shadowPreset moved to @tachui/effects package
 
   // Visual Effects Modifiers (Phase 2 - Epic: Butternut)
 
@@ -827,18 +783,14 @@ export interface ModifierBuilder<
   ): ModifierBuilder<T>
 
   // Lifecycle modifiers
-  onAppear(handler: () => void): ModifierBuilder<T>
-  onDisappear(handler: () => void): ModifierBuilder<T>
+  // onAppear and onDisappear have been moved to @tachui/viewport/modifiers
+  // to fix architectural dependency issues
   task(
     operation: () => Promise<void> | void,
     options?: {
       id?: string
       priority?: 'background' | 'userInitiated' | 'utility' | 'default'
     }
-  ): ModifierBuilder<T>
-  refreshable(
-    onRefresh: () => Promise<void>,
-    isRefreshing?: boolean | Signal<boolean>
   ): ModifierBuilder<T>
 
   // Custom modifier application
@@ -877,6 +829,18 @@ export interface ModifierBuilder<
    * Text(serverTemplate).modifier.asHTML({ skipSanitizer: true }).build()
    * ```
    */
+
+  // Raw CSS modifiers
+  css(properties: {
+    [property: string]: string | number | undefined
+  }): ModifierBuilder<T>
+  cssProperty(property: string, value: string | number): ModifierBuilder<T>
+  cssVariable(name: string, value: string | number): ModifierBuilder<T>
+  cssVendor(
+    prefix: 'webkit' | 'moz' | 'ms' | 'o',
+    property: string,
+    value: string | number
+  ): ModifierBuilder<T>
 
   // Responsive functionality moved to @tachui/responsive package
 

@@ -10,5 +10,12 @@
 // This provides backward compatibility while keeping clean separation
 // export * from '@tachui/modifiers'
 
-// Temporary empty export to avoid build errors
+// Re-export migrated modifiers from their new locations for backward compatibility
+// Note: These imports may cause circular dependencies during build
+// Consider using direct imports from the respective packages instead
+
+// export { onAppear, onDisappear } from '@tachui/viewport/modifiers'
+// export { refreshable } from '@tachui/mobile/modifiers'
+
+// For now, keeping this empty to avoid build issues
 export {}

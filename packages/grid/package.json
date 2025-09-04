@@ -1,6 +1,6 @@
 {
   "name": "@tachui/grid",
-  "version": "1.0.0",
+  "version": "0.7.1-alpha",
   "description": "CSS Grid layout components and modifiers for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -27,12 +27,13 @@
   "scripts": {
     "build": "rm -rf dist && vite build",
     "dev": "vite build --watch",
+    "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ci": "npm run test:run",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --project tsconfig.type-check.json",
     "clean": "rm -rf dist",
     "lint": "oxlint src"
   },

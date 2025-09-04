@@ -7,12 +7,13 @@ import { Symbol } from '../../src/components/Symbol.js'
 import { createSignal, createComputed } from '@tachui/core'
 import { IconSetRegistry } from '../../src/icon-sets/registry.js'
 import { LucideIconSet } from '../../src/icon-sets/lucide.js'
+import { scaleEffect } from '@tachui/modifiers'
 
 // Mock the Lucide heart icon
 vi.mock('lucide/dist/esm/icons/heart.js', () => ({
   default: {
     body: '<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>',
-  }
+  },
 }))
 
 describe('Symbol Reactive Modifier Tests', () => {
@@ -25,13 +26,10 @@ describe('Symbol Reactive Modifier Tests', () => {
   describe('Basic Reactive Modifiers', () => {
     test('should accept signals in foregroundColor modifier', () => {
       const [color, setColor] = createSignal('#ff0000')
-      
+
       expect(() => {
-        const symbol = Symbol('heart')
-          .modifier
-          .foregroundColor(color)
-          .build()
-        
+        const symbol = Symbol('heart').modifier.foregroundColor(color).build()
+
         expect(symbol).toBeDefined()
         expect(symbol.modifiers).toBeDefined()
         expect(symbol.modifiers.length).toBeGreaterThan(0)
@@ -44,13 +42,10 @@ describe('Symbol Reactive Modifier Tests', () => {
 
     test('should accept signals in padding modifier', () => {
       const [padding, setPadding] = createSignal(16)
-      
+
       expect(() => {
-        const symbol = Symbol('heart')
-          .modifier
-          .padding(padding)
-          .build()
-        
+        const symbol = Symbol('heart').modifier.padding(padding).build()
+
         expect(symbol).toBeDefined()
         expect(symbol.modifiers).toBeDefined()
       }).not.toThrow()
@@ -64,15 +59,14 @@ describe('Symbol Reactive Modifier Tests', () => {
       const [color, setColor] = createSignal('#ff0000')
       const [size, setSize] = createSignal(32)
       const [opacity, setOpacity] = createSignal(1.0)
-      
+
       expect(() => {
         const symbol = Symbol('heart')
-          .modifier
-          .foregroundColor(color)
+          .modifier.foregroundColor(color)
           .frame(size, size)
           .opacity(opacity)
           .build()
-        
+
         expect(symbol).toBeDefined()
         expect(symbol.modifiers.length).toBeGreaterThan(2)
       }).not.toThrow()
@@ -81,7 +75,7 @@ describe('Symbol Reactive Modifier Tests', () => {
       setColor('#00ff00')
       setSize(48)
       setOpacity(0.8)
-      
+
       expect(color()).toBe('#00ff00')
       expect(size()).toBe(48)
       expect(opacity()).toBe(0.8)
@@ -91,14 +85,13 @@ describe('Symbol Reactive Modifier Tests', () => {
   describe('Computed Signal Modifiers', () => {
     test('should accept computed signals in foregroundColor modifier', () => {
       const [isDark, setIsDark] = createSignal(false)
-      const textColor = createComputed(() => isDark() ? '#ffffff' : '#000000')
+      const textColor = createComputed(() => (isDark() ? '#ffffff' : '#000000'))
 
       expect(() => {
         const symbol = Symbol('heart')
-          .modifier
-          .foregroundColor(textColor)
+          .modifier.foregroundColor(textColor)
           .build()
-        
+
         expect(symbol).toBeDefined()
       }).not.toThrow()
 
@@ -108,17 +101,22 @@ describe('Symbol Reactive Modifier Tests', () => {
     })
 
     test('should accept computed signals for responsive sizing', () => {
-      const [screenSize, setScreenSize] = createSignal<'mobile' | 'desktop'>('mobile')
-      const symbolSize = createComputed(() => screenSize() === 'desktop' ? 48 : 24)
-      const symbolPadding = createComputed(() => screenSize() === 'desktop' ? 20 : 12)
+      const [screenSize, setScreenSize] = createSignal<'mobile' | 'desktop'>(
+        'mobile'
+      )
+      const symbolSize = createComputed(() =>
+        screenSize() === 'desktop' ? 48 : 24
+      )
+      const symbolPadding = createComputed(() =>
+        screenSize() === 'desktop' ? 20 : 12
+      )
 
       expect(() => {
         const symbol = Symbol('heart')
-          .modifier
-          .frame(symbolSize, symbolSize)
+          .modifier.frame(symbolSize, symbolSize)
           .padding(symbolPadding)
           .build()
-        
+
         expect(symbol).toBeDefined()
       }).not.toThrow()
 
@@ -138,11 +136,10 @@ describe('Symbol Reactive Modifier Tests', () => {
 
       expect(() => {
         const symbol = Symbol(iconName, { variant })
-          .modifier
-          .foregroundColor(color)
+          .modifier.foregroundColor(color)
           .padding(padding)
           .build()
-        
+
         expect(symbol).toBeDefined()
         expect(symbol.props.name).toBe(iconName)
         expect(symbol.props.variant).toBe(variant)
@@ -153,7 +150,7 @@ describe('Symbol Reactive Modifier Tests', () => {
       setVariant('filled')
       setColor('#00ff00')
       setPadding(24)
-      
+
       expect(iconName()).toBe('star')
       expect(variant()).toBe('filled')
       expect(color()).toBe('#00ff00')
@@ -162,27 +159,28 @@ describe('Symbol Reactive Modifier Tests', () => {
 
     test('should handle reactive state management pattern', () => {
       const [isActive, setIsActive] = createSignal(false)
-      
+
       // Computed values based on state
-      const iconVariant = createComputed(() => isActive() ? 'filled' : 'none')
-      const iconColor = createComputed(() => isActive() ? '#ff0000' : '#666666')
-      const iconScale = createComputed(() => isActive() ? 1.2 : 1.0)
-      
+      const iconVariant = createComputed(() => (isActive() ? 'filled' : 'none'))
+      const iconColor = createComputed(() =>
+        isActive() ? '#ff0000' : '#666666'
+      )
+      const iconScale = createComputed(() => (isActive() ? 1.2 : 1.0))
+
       expect(() => {
-        const symbol = Symbol('heart', { 
+        const symbol = Symbol('heart', {
           variant: iconVariant,
-          primaryColor: iconColor 
+          primaryColor: iconColor,
         })
-          .modifier
-          .scaleEffect(iconScale)
+          .modifier.scaleEffect(iconScale)
           .build()
-        
+
         expect(symbol).toBeDefined()
       }).not.toThrow()
 
       // Simulate state change (like user interaction)
       setIsActive(true)
-      
+
       expect(iconVariant()).toBe('filled')
       expect(iconColor()).toBe('#ff0000')
       expect(iconScale()).toBe(1.2)
@@ -193,18 +191,17 @@ describe('Symbol Reactive Modifier Tests', () => {
     test('should support complex modifier chains with mixed static and reactive values', () => {
       const [dynamicColor, setDynamicColor] = createSignal('#ff0000')
       const [isVisible, setIsVisible] = createSignal(true)
-      
-      const opacity = createComputed(() => isVisible() ? 1.0 : 0.3)
-      
+
+      const opacity = createComputed(() => (isVisible() ? 1.0 : 0.3))
+
       expect(() => {
         const symbol = Symbol('heart')
-          .modifier
-          .foregroundColor(dynamicColor)  // reactive
-          .padding(16)                    // static
-          .opacity(opacity)               // computed reactive
-          .frame(32, 32)                  // static
+          .modifier.foregroundColor(dynamicColor) // reactive
+          .padding(16) // static
+          .opacity(opacity) // computed reactive
+          .frame(32, 32) // static
           .build()
-        
+
         expect(symbol).toBeDefined()
         expect(symbol.modifiers.length).toBe(4)
       }).not.toThrow()
@@ -212,7 +209,7 @@ describe('Symbol Reactive Modifier Tests', () => {
       // Test reactive updates
       setDynamicColor('#00ff00')
       setIsVisible(false)
-      
+
       expect(dynamicColor()).toBe('#00ff00')
       expect(opacity()).toBe(0.3)
     })
@@ -221,20 +218,22 @@ describe('Symbol Reactive Modifier Tests', () => {
   describe('Symbol-Specific Reactive Modifiers', () => {
     test('should support Symbol-specific modifier shortcuts with signals', () => {
       const [variant, setVariant] = createSignal<'none' | 'filled'>('none')
-      const [scale, setScale] = createSignal<'small' | 'medium' | 'large'>('medium')
-      
+      const [scale, setScale] = createSignal<'small' | 'medium' | 'large'>(
+        'medium'
+      )
+
       // Note: These would be custom Symbol modifiers if implemented
       // For now, test that the basic structure works
       const symbol = Symbol('heart', { variant, scale })
-      
+
       expect(symbol).toBeDefined()
       expect(symbol.props.variant).toBe(variant)
       expect(symbol.props.scale).toBe(scale)
-      
+
       // Test updates
       setVariant('filled')
       setScale('large')
-      
+
       expect(variant()).toBe('filled')
       expect(scale()).toBe('large')
     })

@@ -19,7 +19,7 @@ import type {
   ModifierContext,
   ReactiveModifierProps,
   StyleComputationContext,
-} from '@tachui/core/modifiers/types'
+} from './types'
 import { ModifierPriority } from '@tachui/core/modifiers/types'
 import {
   isInfinity,

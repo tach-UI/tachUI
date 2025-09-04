@@ -5,7 +5,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AnimationModifier, AppearanceModifier, LayoutModifier } from '../../src/modifiers/base'
+import {
+  AnimationModifier,
+  AppearanceModifier,
+  LayoutModifier,
+} from '../../src/modifiers/base'
 import { ModifierBuilderImpl } from '../../src/modifiers/builder'
 import type { ModifierContext } from '../../src/modifiers/types'
 import { createSignal } from '../../src/reactive'
@@ -58,33 +62,23 @@ describe('Phase 2 SwiftUI Modifiers', () => {
   })
 
   describe('.aspectRatio(ratio, contentMode) modifier', () => {
-    it('should add aspect ratio modifier with default fit mode', () => {
-      const component = builder.aspectRatio(16 / 9).build()
-
-      expect(component.modifiers).toHaveLength(1)
-      expect(component.modifiers[0]).toBeInstanceOf(LayoutModifier)
-      expect((component.modifiers[0] as LayoutModifier).properties).toEqual({
-        aspectRatio: { ratio: 16 / 9, contentMode: 'fit' },
-      })
+    it('should throw migration error for aspectRatio with default fit mode', () => {
+      expect(() => builder.aspectRatio(16 / 9)).toThrow(
+        'Layout modifiers have been moved to @tachui/modifiers. Please import { aspectRatio } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
+      )
     })
 
-    it('should add aspect ratio modifier with fill mode', () => {
-      const component = builder.aspectRatio(1, 'fill').build()
-
-      expect(component.modifiers).toHaveLength(1)
-      expect((component.modifiers[0] as LayoutModifier).properties).toEqual({
-        aspectRatio: { ratio: 1, contentMode: 'fill' },
-      })
+    it('should throw migration error for aspectRatio with fill mode', () => {
+      expect(() => builder.aspectRatio(1, 'fill')).toThrow(
+        'Layout modifiers have been moved to @tachui/modifiers. Please import { aspectRatio } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
+      )
     })
 
-    it('should add aspect ratio modifier with reactive ratio', () => {
+    it('should throw migration error for aspectRatio with reactive ratio', () => {
       const [ratioSignal] = createSignal(16 / 9)
-      const component = builder.aspectRatio(ratioSignal, 'fit').build()
-
-      expect(component.modifiers).toHaveLength(1)
-      expect((component.modifiers[0] as LayoutModifier).properties).toEqual({
-        aspectRatio: { ratio: ratioSignal, contentMode: 'fit' },
-      })
+      expect(() => builder.aspectRatio(ratioSignal, 'fit')).toThrow(
+        'Layout modifiers have been moved to @tachui/modifiers. Please import { aspectRatio } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
+      )
     })
 
     it('should apply CSS aspect-ratio and object-fit when modifier is applied', () => {
@@ -92,7 +86,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         aspectRatio: { ratio: 16 / 9, contentMode: 'fit' },
       })
 
-      aspectRatioModifier.apply({ element: mockElement, children: [] }, mockContext)
+      aspectRatioModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.aspectRatio).toBe('1.7777777777777777')
       expect(mockElement.style.objectFit).toBe('contain')
@@ -103,7 +100,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         aspectRatio: { ratio: 1, contentMode: 'fill' },
       })
 
-      aspectRatioModifier.apply({ element: mockElement, children: [] }, mockContext)
+      aspectRatioModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.aspectRatio).toBe('1')
       expect(mockElement.style.objectFit).toBe('cover')
@@ -114,7 +114,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         aspectRatio: { contentMode: 'fit' },
       })
 
-      aspectRatioModifier.apply({ element: mockElement, children: [] }, mockContext)
+      aspectRatioModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       // Should not set aspect-ratio if ratio is undefined
       expect(mockElement.style.aspectRatio).toBe('')
@@ -155,7 +158,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         fixedSize: { horizontal: true, vertical: false },
       })
 
-      fixedSizeModifier.apply({ element: mockElement, children: [] }, mockContext)
+      fixedSizeModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.flexShrink).toBe('0')
       expect(mockElement.style.width).toBe('max-content')
@@ -167,7 +173,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         fixedSize: { horizontal: false, vertical: true },
       })
 
-      fixedSizeModifier.apply({ element: mockElement, children: [] }, mockContext)
+      fixedSizeModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.height).toBe('max-content')
     })
@@ -177,7 +186,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         fixedSize: { horizontal: true, vertical: true },
       })
 
-      fixedSizeModifier.apply({ element: mockElement, children: [] }, mockContext)
+      fixedSizeModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.flexShrink).toBe('0')
       expect(mockElement.style.width).toBe('max-content')
@@ -191,21 +203,27 @@ describe('Phase 2 SwiftUI Modifiers', () => {
 
       expect(component.modifiers).toHaveLength(1)
       expect(component.modifiers[0]).toBeInstanceOf(AppearanceModifier)
-      expect((component.modifiers[0] as AppearanceModifier).properties).toEqual({
-        clipShape: { shape: 'circle', parameters: {} },
-      })
+      expect((component.modifiers[0] as AppearanceModifier).properties).toEqual(
+        {
+          clipShape: { shape: 'circle', parameters: {} },
+        }
+      )
     })
 
     it('should add clip shape modifier for ellipse with parameters', () => {
-      const component = builder.clipShape('ellipse', { radiusX: '60%', radiusY: '40%' }).build()
+      const component = builder
+        .clipShape('ellipse', { radiusX: '60%', radiusY: '40%' })
+        .build()
 
       expect(component.modifiers).toHaveLength(1)
-      expect((component.modifiers[0] as AppearanceModifier).properties).toEqual({
-        clipShape: {
-          shape: 'ellipse',
-          parameters: { radiusX: '60%', radiusY: '40%' },
-        },
-      })
+      expect((component.modifiers[0] as AppearanceModifier).properties).toEqual(
+        {
+          clipShape: {
+            shape: 'ellipse',
+            parameters: { radiusX: '60%', radiusY: '40%' },
+          },
+        }
+      )
     })
 
     it('should add clip shape modifier for polygon', () => {
@@ -213,12 +231,14 @@ describe('Phase 2 SwiftUI Modifiers', () => {
       const component = builder.clipShape('polygon', { points }).build()
 
       expect(component.modifiers).toHaveLength(1)
-      expect((component.modifiers[0] as AppearanceModifier).properties).toEqual({
-        clipShape: {
-          shape: 'polygon',
-          parameters: { points },
-        },
-      })
+      expect((component.modifiers[0] as AppearanceModifier).properties).toEqual(
+        {
+          clipShape: {
+            shape: 'polygon',
+            parameters: { points },
+          },
+        }
+      )
     })
 
     it('should apply CSS clip-path for circle', () => {
@@ -226,7 +246,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         clipShape: { shape: 'circle', parameters: {} },
       })
 
-      clipShapeModifier.apply({ element: mockElement, children: [] }, mockContext)
+      clipShapeModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.clipPath).toBe('circle(50%)')
     })
@@ -239,7 +262,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         },
       })
 
-      clipShapeModifier.apply({ element: mockElement, children: [] }, mockContext)
+      clipShapeModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.clipPath).toBe('ellipse(60% 40% at center)')
     })
@@ -252,7 +278,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         },
       })
 
-      clipShapeModifier.apply({ element: mockElement, children: [] }, mockContext)
+      clipShapeModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.clipPath).toBe('inset(10px)')
     })
@@ -266,7 +295,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         },
       })
 
-      clipShapeModifier.apply({ element: mockElement, children: [] }, mockContext)
+      clipShapeModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.clipPath).toBe(`polygon(${points})`)
     })
@@ -276,7 +308,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         clipShape: { shape: 'ellipse', parameters: {} },
       })
 
-      clipShapeModifier.apply({ element: mockElement, children: [] }, mockContext)
+      clipShapeModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       expect(mockElement.style.clipPath).toBe('ellipse(50% 50% at center)')
     })
@@ -294,7 +329,9 @@ describe('Phase 2 SwiftUI Modifiers', () => {
     })
 
     it('should add overlay modifier with custom alignment', () => {
-      const component = builder.overlay(mockOverlayComponent, 'topTrailing').build()
+      const component = builder
+        .overlay(mockOverlayComponent, 'topTrailing')
+        .build()
 
       expect(component.modifiers).toHaveLength(1)
       expect((component.modifiers[0] as AnimationModifier).properties).toEqual({
@@ -332,24 +369,52 @@ describe('Phase 2 SwiftUI Modifiers', () => {
       const alignments = [
         {
           alignment: 'top',
-          expectedStyles: { top: '0px', left: '50%', transform: 'translateX(-50%)' },
+          expectedStyles: {
+            top: '0px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          },
         },
         {
           alignment: 'bottom',
-          expectedStyles: { bottom: '0px', left: '50%', transform: 'translateX(-50%)' },
+          expectedStyles: {
+            bottom: '0px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          },
         },
         {
           alignment: 'leading',
-          expectedStyles: { top: '50%', left: '0px', transform: 'translateY(-50%)' },
+          expectedStyles: {
+            top: '50%',
+            left: '0px',
+            transform: 'translateY(-50%)',
+          },
         },
         {
           alignment: 'trailing',
-          expectedStyles: { top: '50%', right: '0px', transform: 'translateY(-50%)' },
+          expectedStyles: {
+            top: '50%',
+            right: '0px',
+            transform: 'translateY(-50%)',
+          },
         },
-        { alignment: 'topLeading', expectedStyles: { top: '0px', left: '0px' } },
-        { alignment: 'topTrailing', expectedStyles: { top: '0px', right: '0px' } },
-        { alignment: 'bottomLeading', expectedStyles: { bottom: '0px', left: '0px' } },
-        { alignment: 'bottomTrailing', expectedStyles: { bottom: '0px', right: '0px' } },
+        {
+          alignment: 'topLeading',
+          expectedStyles: { top: '0px', left: '0px' },
+        },
+        {
+          alignment: 'topTrailing',
+          expectedStyles: { top: '0px', right: '0px' },
+        },
+        {
+          alignment: 'bottomLeading',
+          expectedStyles: { bottom: '0px', left: '0px' },
+        },
+        {
+          alignment: 'bottomTrailing',
+          expectedStyles: { bottom: '0px', right: '0px' },
+        },
       ] as const
 
       alignments.forEach(({ alignment, expectedStyles }) => {
@@ -363,7 +428,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
           children: [],
         })
 
-        overlayModifier.apply({ element, children: [] }, { ...mockContext, element })
+        overlayModifier.apply(
+          { element, children: [] },
+          { ...mockContext, element }
+        )
 
         const overlayContainer = element.children[0] as HTMLElement
 
@@ -411,80 +479,125 @@ describe('Phase 2 SwiftUI Modifiers', () => {
   })
 
   describe('Modifier combinations', () => {
-    it('should combine multiple Phase 2 modifiers', () => {
+    it('should throw error when trying to chain aspectRatio with other modifiers', () => {
+      expect(() => {
+        builder
+          .aspectRatio(16 / 9, 'fit')
+          .fixedSize(true, false)
+          .clipShape('circle')
+          .overlay(mockOverlayComponent, 'topTrailing')
+          .build()
+      }).toThrow(
+        'Layout modifiers have been moved to @tachui/modifiers. Please import { aspectRatio } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
+      )
+    })
+
+    it('should combine multiple Phase 2 modifiers without aspectRatio', () => {
       const component = builder
-        .aspectRatio(16 / 9, 'fit')
         .fixedSize(true, false)
         .clipShape('circle')
         .overlay(mockOverlayComponent, 'topTrailing')
         .build()
 
-      expect(component.modifiers).toHaveLength(4)
+      expect(component.modifiers).toHaveLength(3)
 
       // Verify all modifiers are added correctly
-      const layoutModifiers = component.modifiers.filter((m) => m instanceof LayoutModifier)
-      const appearanceModifiers = component.modifiers.filter((m) => m instanceof AppearanceModifier)
-      const animationModifiers = component.modifiers.filter((m) => m instanceof AnimationModifier)
+      const layoutModifiers = component.modifiers.filter(
+        m => m instanceof LayoutModifier
+      )
+      const appearanceModifiers = component.modifiers.filter(
+        m => m instanceof AppearanceModifier
+      )
+      const animationModifiers = component.modifiers.filter(
+        m => m instanceof AnimationModifier
+      )
 
-      expect(layoutModifiers).toHaveLength(2) // aspectRatio + fixedSize
+      expect(layoutModifiers).toHaveLength(1) // fixedSize only
       expect(appearanceModifiers).toHaveLength(1) // clipShape
       expect(animationModifiers).toHaveLength(1) // overlay
     })
 
-    it('should combine Phase 2 with Phase 1 modifiers', () => {
+    it('should throw error when combining aspectRatio with other modifiers', () => {
+      expect(() => {
+        builder
+          .offset(10, 20) // Phase 1
+          .aspectRatio(1) // Phase 2 - will throw
+          .clipped() // Phase 1
+          .clipShape('circle') // Phase 2
+          .rotationEffect(45) // Phase 1
+          .overlay(mockOverlayComponent) // Phase 2
+          .build()
+      }).toThrow(
+        'Layout modifiers have been moved to @tachui/modifiers. Please import { aspectRatio } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
+      )
+    })
+
+    it('should combine Phase 2 with Phase 1 modifiers without aspectRatio', () => {
       const component = builder
         .offset(10, 20) // Phase 1
-        .aspectRatio(1) // Phase 2
         .clipped() // Phase 1
         .clipShape('circle') // Phase 2
         .rotationEffect(45) // Phase 1
         .overlay(mockOverlayComponent) // Phase 2
         .build()
 
-      expect(component.modifiers).toHaveLength(6)
+      expect(component.modifiers).toHaveLength(5)
 
       // Apply all modifiers to verify they work together
-      component.modifiers.forEach((modifier) => {
+      component.modifiers.forEach(modifier => {
         modifier.apply({ element: mockElement, children: [] }, mockContext)
       })
 
-      // Check combined effects
-      expect(mockElement.style.aspectRatio).toBe('1')
+      // Check combined effects (no aspect-ratio check since it's removed)
       expect(mockElement.style.overflow).toBe('hidden')
       expect(mockElement.style.clipPath).toBe('circle(50%)')
       expect(mockElement.style.position).toBe('relative')
       expect(mockElement.children.length).toBe(1) // Overlay container
     })
 
-    it('should handle reactive values in combinations', () => {
+    it('should throw error for reactive aspectRatio in combinations', () => {
       const [ratioSignal] = createSignal(16 / 9)
       const [angleSignal] = createSignal(45)
 
+      expect(() => {
+        builder
+          .aspectRatio(ratioSignal, 'fill')
+          .fixedSize()
+          .rotationEffect(angleSignal)
+          .overlay(mockOverlayComponent)
+          .build()
+      }).toThrow(
+        'Layout modifiers have been moved to @tachui/modifiers. Please import { aspectRatio } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
+      )
+    })
+
+    it('should handle reactive values in combinations without aspectRatio', () => {
+      const [angleSignal] = createSignal(45)
+
       const component = builder
-        .aspectRatio(ratioSignal, 'fill')
         .fixedSize()
         .rotationEffect(angleSignal)
         .overlay(mockOverlayComponent)
         .build()
 
-      expect(component.modifiers).toHaveLength(4)
+      expect(component.modifiers).toHaveLength(3)
 
       // Verify reactive properties are stored correctly
-      const aspectRatioModifier = component.modifiers.find(
-        (m) => m instanceof LayoutModifier && (m as any).properties.aspectRatio
-      )
-      expect((aspectRatioModifier as any).properties.aspectRatio.ratio).toBe(ratioSignal)
-
       const rotationModifier = component.modifiers.find(
-        (m) => m instanceof AnimationModifier && (m as any).properties.rotationEffect
+        m =>
+          m instanceof AnimationModifier && (m as any).properties.rotationEffect
       )
-      expect((rotationModifier as any).properties.rotationEffect.angle).toBe(angleSignal)
+      expect((rotationModifier as any).properties.rotationEffect.angle).toBe(
+        angleSignal
+      )
     })
   })
 
   describe('Error handling', () => {
     it('should handle missing element gracefully', () => {
-      const aspectRatioModifier = new LayoutModifier({ aspectRatio: { ratio: 1 } })
+      const aspectRatioModifier = new LayoutModifier({
+        aspectRatio: { ratio: 1 },
+      })
 
       expect(() => {
         aspectRatioModifier.apply(
@@ -499,7 +612,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
         clipShape: { shape: 'invalid' as any, parameters: {} },
       })
 
-      clipShapeModifier.apply({ element: mockElement, children: [] }, mockContext)
+      clipShapeModifier.apply(
+        { element: mockElement, children: [] },
+        mockContext
+      )
 
       // Should not set clipPath for invalid shape
       expect(mockElement.style.clipPath).toBe('')
@@ -511,7 +627,10 @@ describe('Phase 2 SwiftUI Modifiers', () => {
       })
 
       expect(() => {
-        overlayModifier.apply({ element: mockElement, children: [] }, mockContext)
+        overlayModifier.apply(
+          { element: mockElement, children: [] },
+          mockContext
+        )
       }).not.toThrow()
 
       // Should still create overlay container

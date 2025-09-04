@@ -7,6 +7,7 @@
 import { describe, test, expect, beforeEach } from 'vitest'
 import { ForEach, Show } from '../src'
 import { createSignal, createComputed } from '@tachui/core'
+import type { Signal } from '@tachui/core'
 
 // Mock components for testing
 const Text = (content: string) => ({
@@ -24,7 +25,7 @@ const Text = (content: string) => ({
   cleanup: [],
   id: `text-${Date.now()}`,
   modifier: {
-    fontSize: () => ({
+    fontSize: (size?: number) => ({
       build: () => ({
         type: 'component' as const,
         render: () => [
@@ -41,7 +42,7 @@ const Text = (content: string) => ({
         id: `text-${Date.now()}`,
       }),
     }),
-    padding: () => ({
+    padding: (value?: number | string) => ({
       build: () => ({
         type: 'component' as const,
         render: () => [
@@ -58,7 +59,7 @@ const Text = (content: string) => ({
         id: `text-${Date.now()}`,
       }),
     }),
-    fontWeight: () => ({
+    fontWeight: (weight?: string | number) => ({
       build: () => ({
         type: 'component' as const,
         render: () => [
@@ -75,7 +76,7 @@ const Text = (content: string) => ({
         id: `text-${Date.now()}`,
       }),
     }),
-    color: () => ({
+    color: (colorValue?: string) => ({
       build: () => ({
         type: 'component' as const,
         render: () => [
@@ -200,10 +201,10 @@ describe('Flow-Control Integration', () => {
     })
 
     test('should handle reactive updates with core components', () => {
-      const [items, setItems] = createSignal(['Initial'])
+      const [items, setItems] = createSignal<string[]>(['Initial'])
 
       const list = ForEach({
-        data: items,
+        data: items as Signal<string[]>,
         children: item =>
           VStack([
             Text(item).modifier.build(),
@@ -303,7 +304,7 @@ describe('Flow-Control Integration', () => {
 
       const complexList = VStack([
         ForEach({
-          data: items,
+          data: items as Signal<string[]>,
           children: item =>
             VStack([
               Text(item).modifier.fontWeight('bold').build(),
@@ -372,7 +373,7 @@ describe('Flow-Control Integration', () => {
       )
 
       const listComponent = ForEach({
-        data: items,
+        data: items(),
         children: item => Text(item).modifier.build(),
       })
 
@@ -444,7 +445,7 @@ describe('Flow-Control Integration', () => {
       const [items, setItems] = createSignal(['item1', 'item2'])
 
       const listComponent = ForEach({
-        data: items,
+        data: items(),
         children: item => Text(item).modifier.build(),
       })
 

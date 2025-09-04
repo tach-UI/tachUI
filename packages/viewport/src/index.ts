@@ -89,6 +89,9 @@ export {
   withViewportEnvironment,
 } from './environment'
 
+// Viewport modifiers
+export * from './modifiers'
+
 /**
  * Convenience re-exports for common usage patterns
  */

@@ -321,7 +321,7 @@ export function StyledNavigationLink(
         .foregroundColor(foregroundColor || '#333333')
         .padding(16)
         .cornerRadius(cornerRadius || 12)
-        .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
+        .cssProperty('boxShadow', '0 2px 8px rgba(0,0,0,0.1)')
         .border(1, '#e0e0e0')
         .build()
       break

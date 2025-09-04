@@ -282,36 +282,21 @@ export class LayoutModifier extends BaseModifier {
 
     this.applyStyles(context.element, styles)
 
-    // Handle offset separately for proper transform combining
-    const props = this.properties as any
-    if (props.offset && context.element instanceof HTMLElement) {
-      this.applyOffsetTransform(context.element, props.offset)
-    }
-
-    // Handle aspectRatio separately for reactive support
-    if (props.aspectRatio && context.element instanceof HTMLElement) {
-      this.applyAspectRatio(context.element, props.aspectRatio)
-    }
-
-    // Handle scaleEffect separately for proper transform combining (Phase 3 - Epic: Butternut)
-    if (props.scaleEffect && context.element instanceof HTMLElement) {
-      this.applyScaleTransform(context.element, props.scaleEffect)
-    }
+    // Layout modifiers (offset, aspectRatio, scaleEffect, zIndex) have been
+    // migrated to @tachui/modifiers/layout for enhanced functionality
 
     // Handle absolutePosition separately for proper positioning (Phase 3 - Epic: Butternut)
+    const props = this.properties as any
     if (props.position && context.element instanceof HTMLElement) {
       this.applyAbsolutePosition(context.element, props.position)
-    }
-
-    // Handle zIndex separately for proper layering (Phase 3 - Epic: Butternut)
-    if (props.zIndex !== undefined && context.element instanceof HTMLElement) {
-      this.applyZIndex(context.element, props.zIndex)
     }
 
     return undefined
   }
 
-  private applyOffsetTransform(
+  // Layout modifier implementations have been migrated to @tachui/modifiers/layout
+
+  private applyOffsetTransform_DEPRECATED(
     element: HTMLElement,
     offset: { x?: any; y?: any }
   ): void {
@@ -870,15 +855,7 @@ export class AppearanceModifier extends BaseModifier {
       if (border.style) styles.borderStyle = border.style
     }
 
-    // Shadow
-    if (props.shadow) {
-      const shadow = props.shadow
-      const x = shadow.x || 0
-      const y = shadow.y || 0
-      const radius = shadow.radius || 0
-      const color = shadow.color || 'rgba(0,0,0,0.25)'
-      styles.boxShadow = `${x}px ${y}px ${radius}px ${color}`
-    }
+    // Shadow functionality moved to @tachui/effects package
 
     // Clipped modifier (SwiftUI .clipped())
     if (props.clipped) {
@@ -1634,6 +1611,44 @@ export class AnimationModifier extends BaseModifier {
       }
     }
 
+    // Scale Effect (SwiftUI .scaleEffect(x, y, anchor))
+    if (props.scaleEffect && context.element instanceof HTMLElement) {
+      const { x, y, anchor } = props.scaleEffect
+      const scaleY = y ?? x // Default to uniform scaling if y not provided
+
+      // Convert anchor to CSS transform-origin
+      const anchorOrigins: Record<string, string> = {
+        center: '50% 50%',
+        top: '50% 0%',
+        topLeading: '0% 0%',
+        topTrailing: '100% 0%',
+        bottom: '50% 100%',
+        bottomLeading: '0% 100%',
+        bottomTrailing: '100% 100%',
+        leading: '0% 50%',
+        trailing: '100% 50%',
+      }
+
+      const transformOrigin = anchorOrigins[anchor || 'center'] || '50% 50%'
+      context.element.style.transformOrigin = transformOrigin
+
+      // Create scale transform
+      const scaleTransform = `scale(${x}, ${scaleY})`
+
+      // Preserve existing transforms but replace any existing scale functions
+      const existingTransform = context.element.style.transform || ''
+      const existingTransforms = existingTransform
+        .replace(/\s*scale[XYZ3d]*\([^)]*\)\s*/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      const newTransform = existingTransforms
+        ? `${existingTransforms} ${scaleTransform}`.trim()
+        : scaleTransform
+
+      context.element.style.transform = newTransform
+    }
+
     // Rotation Effect (SwiftUI .rotationEffect(angle))
     if (props.rotationEffect && context.element instanceof HTMLElement) {
       const { angle, anchor } = props.rotationEffect
@@ -1855,52 +1870,12 @@ export class LifecycleModifier extends BaseModifier {
       this.activeAbortController.abort()
     }
 
-    // Set up intersection observer for onAppear/onDisappear
-    if (props.onAppear || props.onDisappear) {
-      this.setupLifecycleObserver(context.element, props)
-    }
-
     // Set up async task with cancellation
     if (props.task) {
       this.setupTask(context, props.task)
     }
 
-    // Set up refreshable behavior
-    if (props.refreshable) {
-      this.setupRefreshable(context.element, props.refreshable)
-    }
-
     return undefined
-  }
-
-  private setupLifecycleObserver(
-    element: Element,
-    props: LifecycleModifierProps
-  ): void {
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting && props.onAppear) {
-            // Element has appeared in viewport
-            props.onAppear()
-          } else if (!entry.isIntersecting && props.onDisappear) {
-            // Element has disappeared from viewport
-            props.onDisappear()
-          }
-        })
-      },
-      {
-        threshold: 0.1, // Trigger when 10% of element is visible
-        rootMargin: '10px', // Add some margin for better UX
-      }
-    )
-
-    observer.observe(element)
-
-    // Store cleanup function
-    this.addCleanup(() => {
-      observer.disconnect()
-    })
   }
 
   private setupTask(
@@ -1937,126 +1912,6 @@ export class LifecycleModifier extends BaseModifier {
     this.addCleanup(() => {
       if (this.activeAbortController) {
         this.activeAbortController.abort()
-      }
-    })
-  }
-
-  private setupRefreshable(
-    element: Element,
-    refreshable: LifecycleModifierProps['refreshable']
-  ): void {
-    if (!refreshable) return
-
-    let isRefreshing = false
-    let pullDistance = 0
-    let startY = 0
-
-    const threshold = 70 // Pull threshold in pixels
-
-    // Create refresh indicator element
-    const refreshIndicator = document.createElement('div')
-    refreshIndicator.style.cssText = `
-      position: absolute;
-      top: -50px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 30px;
-      height: 30px;
-      border: 2px solid #ccc;
-      border-top: 2px solid #007AFF;
-      border-radius: 50%;
-      animation: tachui-spin 1s linear infinite;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 1000;
-    `
-
-    // Add spinner animation
-    if (!document.querySelector('#tachui-refresh-styles')) {
-      const style = document.createElement('style')
-      style.id = 'tachui-refresh-styles'
-      style.textContent = `
-        @keyframes tachui-spin {
-          0% { transform: translateX(-50%) rotate(0deg); }
-          100% { transform: translateX(-50%) rotate(360deg); }
-        }
-      `
-      document.head.appendChild(style)
-    }
-
-    const container = element.parentElement || element
-    if (container instanceof HTMLElement) {
-      container.style.position = 'relative'
-      container.appendChild(refreshIndicator)
-    }
-
-    // Touch event handlers
-    const handleTouchStart = (e: TouchEvent) => {
-      if (isRefreshing) return
-      startY = e.touches[0].clientY
-    }
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isRefreshing) return
-
-      const currentY = e.touches[0].clientY
-      pullDistance = Math.max(0, currentY - startY)
-
-      if (pullDistance > 20) {
-        e.preventDefault() // Prevent default scrolling
-
-        const progress = Math.min(pullDistance / threshold, 1)
-        refreshIndicator.style.opacity = String(progress * 0.8)
-        refreshIndicator.style.top = `${-50 + progress * 20}px`
-      }
-    }
-
-    const handleTouchEnd = async () => {
-      if (isRefreshing || pullDistance < threshold) {
-        // Reset if threshold not met
-        refreshIndicator.style.opacity = '0'
-        refreshIndicator.style.top = '-50px'
-        pullDistance = 0
-        return
-      }
-
-      // Trigger refresh
-      isRefreshing = true
-      refreshIndicator.style.opacity = '1'
-      refreshIndicator.style.top = '10px'
-
-      try {
-        await refreshable.onRefresh()
-      } catch (error) {
-        console.error('TachUI Refresh Error:', error)
-      } finally {
-        isRefreshing = false
-        refreshIndicator.style.opacity = '0'
-        refreshIndicator.style.top = '-50px'
-        pullDistance = 0
-      }
-    }
-
-    // Add event listeners with proper typing
-    element.addEventListener('touchstart', handleTouchStart as EventListener, {
-      passive: false,
-    })
-    element.addEventListener('touchmove', handleTouchMove as EventListener, {
-      passive: false,
-    })
-    element.addEventListener('touchend', handleTouchEnd as EventListener)
-
-    // Cleanup
-    this.addCleanup(() => {
-      element.removeEventListener(
-        'touchstart',
-        handleTouchStart as EventListener
-      )
-      element.removeEventListener('touchmove', handleTouchMove as EventListener)
-      element.removeEventListener('touchend', handleTouchEnd as EventListener)
-
-      if (refreshIndicator.parentElement) {
-        refreshIndicator.parentElement.removeChild(refreshIndicator)
       }
     })
   }

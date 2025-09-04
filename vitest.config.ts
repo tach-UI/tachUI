@@ -72,6 +72,18 @@ export default defineConfig({
         replacement: path.resolve(__dirname, 'packages/grid/src'),
       },
       {
+        find: '@tachui/modifiers',
+        replacement: path.resolve(__dirname, 'packages/modifiers/dist'),
+      },
+      {
+        find: '@tachui/effects',
+        replacement: path.resolve(__dirname, 'packages/effects/dist'),
+      },
+      {
+        find: '@tachui/responsive',
+        replacement: path.resolve(__dirname, 'packages/responsive/src'),
+      },
+      {
         find: '@tachui/devtools',
         replacement: path.resolve(__dirname, 'packages/devtools/src'),
       },

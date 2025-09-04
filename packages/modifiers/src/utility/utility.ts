@@ -212,19 +212,8 @@ export function overflowX(value: UtilityOptions['overflowX']): UtilityModifier {
   return new UtilityModifier({ overflowX: value })
 }
 
-/**
- * Convenience function for position
- */
-export function position(value: UtilityOptions['position']): UtilityModifier {
-  return new UtilityModifier({ position: value })
-}
-
-/**
- * Convenience function for z-index
- */
-export function zIndex(value: number): UtilityModifier {
-  return new UtilityModifier({ zIndex: value })
-}
+// NOTE: position and zIndex functions are now provided by @tachui/modifiers/layout
+// with enhanced functionality. Use those instead of the utility versions.
 
 /**
  * Convenience function for display

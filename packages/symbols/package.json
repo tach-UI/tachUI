@@ -1,10 +1,11 @@
 {
   "name": "@tachui/symbols",
-  "version": "0.1.0",
+  "version": "0.7.1-alpha",
   "description": "SwiftUI-inspired symbol/icon system for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
     "dist"
@@ -12,10 +13,11 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "test": "vitest",
+    "valid": "clear && vitest run && tsc --project tsconfig.type-check.json && pnpm lint && pnpm build",
+    "test": "vitest run",
     "test:ci": "vitest run 2>/dev/null",
     "test:quiet": "vitest run 2>/dev/null",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --project tsconfig.type-check.json",
     "lint": "oxlint src",
     "clean": "rm -rf dist"
   },
@@ -39,6 +41,7 @@
     "@tachui/core": "^0.1.0"
   },
   "dependencies": {
+    "@tachui/modifiers": "workspace:*",
     "lucide": "^0.447.0"
   },
   "devDependencies": {
@@ -74,5 +77,12 @@
   "sideEffects": [
     "./dist/index.js",
     "./src/index.ts"
-  ]
+  ],
+  "bugs": "https://github.com/tach-UI/tachUI/issues",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

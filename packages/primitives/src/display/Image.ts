@@ -23,6 +23,7 @@ import type {
 import { ConcatenatedComponent } from '@tachui/core'
 import { processElementOverride, type ElementOverrideProps } from '@tachui/core'
 import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
+import { aspectRatio } from '@tachui/modifiers'
 
 /**
  * Image loading state
@@ -384,22 +385,48 @@ export function Image(
 ): ImageWithShorthands {
   const imageProps: ImageProps = { ...props, src }
   const component = new EnhancedImage(imageProps)
-  const modifiableComponent = withModifiers(component)
+  const modifiableComponent = withModifiers(component) as any
 
   // Add SwiftUI-style shorthands for aspect ratio
-  const result: ImageWithShorthands = {
-    ...modifiableComponent,
-    scaledToFit() {
-      this.modifier.aspectRatio(undefined, 'fit')
-      return this
-    },
-    scaledToFill() {
-      this.modifier.aspectRatio(undefined, 'fill')
-      return this
-    },
+  modifiableComponent.scaledToFit = function (): ImageWithShorthands {
+    // Create a new Image component with the same props but with aspectRatio modifier applied
+    const newComponent = new EnhancedImage({
+      ...imageProps,
+      aspectRatio: undefined,
+      contentMode: 'fit',
+    })
+    const newModifiableComponent = withModifiers(newComponent) as any
+
+    // Add the shorthand methods to the new component
+    newModifiableComponent.scaledToFit = modifiableComponent.scaledToFit
+    newModifiableComponent.scaledToFill = modifiableComponent.scaledToFill
+
+    // Apply aspectRatio modifier using the real implementation from @tachui/modifiers
+    newModifiableComponent.modifiers.push(aspectRatio(undefined, 'fit'))
+
+    return newModifiableComponent
   }
 
-  return result
+  modifiableComponent.scaledToFill = function (): ImageWithShorthands {
+    // Create a new Image component with the same props but with aspectRatio modifier applied
+    const newComponent = new EnhancedImage({
+      ...imageProps,
+      aspectRatio: undefined,
+      contentMode: 'fill',
+    })
+    const newModifiableComponent = withModifiers(newComponent) as any
+
+    // Add the shorthand methods to the new component
+    newModifiableComponent.scaledToFit = modifiableComponent.scaledToFit
+    newModifiableComponent.scaledToFill = modifiableComponent.scaledToFill
+
+    // Apply aspectRatio modifier using the real implementation from @tachui/modifiers
+    newModifiableComponent.modifiers.push(aspectRatio(undefined, 'fill'))
+
+    return newModifiableComponent
+  }
+
+  return modifiableComponent
 }
 
 /**

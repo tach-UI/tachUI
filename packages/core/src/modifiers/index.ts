@@ -6,7 +6,7 @@
  */
 
 // Base modifier classes and infrastructure
-export { ResizableModifier } from './base'
+export { BaseModifier, ResizableModifier } from './base'
 
 // Modifier system types
 export type {

@@ -6,11 +6,8 @@
  */
 
 import type { DOMNode } from '@tachui/core/runtime/types'
-import { BaseModifier } from '@tachui/modifiers/base'
-import type {
-  ModifierContext,
-  ReactiveModifierProps,
-} from '@tachui/modifiers/types'
+import { BaseModifier } from '@tachui/modifiers'
+import type { ModifierContext, ReactiveModifierProps } from '@tachui/modifiers'
 
 export interface FilterConfig {
   blur?: number // Blur radius in pixels

@@ -15,7 +15,8 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "downlevelIteration": true
   },
   "include": ["src/**/*"],
   "exclude": ["**/*.test.ts", "**/*.bench.ts", "node_modules", "dist"]

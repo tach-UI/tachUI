@@ -89,7 +89,14 @@ describe('Iteration Components Exports', () => {
     const items = ['test1', 'test2']
     const component = For({
       each: items,
-      children: item => ({ type: 'text', text: item }),
+      children: item => ({
+        type: 'component' as const,
+        render: () => [{ type: 'text' as const, text: item }],
+        props: { text: item },
+        children: [],
+        cleanup: [],
+        id: `mock-${item}`,
+      }),
     })
 
     expect(component).toBeDefined()

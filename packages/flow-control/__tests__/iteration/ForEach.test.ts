@@ -12,6 +12,7 @@ import {
   type ForEachProps,
 } from '../../src/iteration/ForEach'
 import { createSignal } from '@tachui/core'
+import type { Signal, DOMNode } from '@tachui/core'
 
 // Mock Text component for testing
 const Text = (content: string) => ({
@@ -72,7 +73,7 @@ describe('ForEach Component', () => {
     test('should create ForEach component with reactive signal', () => {
       const [items, setItems] = createSignal(mockItems)
       const forEach = ForEach({
-        data: items,
+        data: items as Signal<string[]>,
         children: item => Text(item),
       })
 
@@ -88,7 +89,7 @@ describe('ForEach Component', () => {
       const rendered = forEach.render()
       expect(Array.isArray(rendered)).toBe(true)
       // Should render container + items
-      expect(rendered.length).toBeGreaterThan(0)
+      expect((rendered as DOMNode[]).length).toBeGreaterThan(0)
     })
 
     test('should handle empty arrays', () => {
@@ -106,7 +107,7 @@ describe('ForEach Component', () => {
     test('should handle reactive data changes', () => {
       const [items, setItems] = createSignal(mockItems)
       const forEach = ForEach({
-        data: items,
+        data: items as Signal<string[]>,
         children: item => Text(item),
       })
 
@@ -124,7 +125,7 @@ describe('ForEach Component', () => {
     test('should handle dynamic array changes', () => {
       const [items, setItems] = createSignal(['initial'])
       const forEach = ForEach({
-        data: items,
+        data: items as Signal<string[]>,
         children: item => Text(item),
       })
 
@@ -288,7 +289,7 @@ describe('For Component (SolidJS Compatibility)', () => {
     const [items, setItems] = createSignal(['item1'])
 
     const forComponent = For({
-      each: items,
+      each: items as Signal<string[]>,
       children: item => Text(item),
     })
 
@@ -313,7 +314,7 @@ describe('For Component (SolidJS Compatibility)', () => {
 
   test('should support ref prop', () => {
     const items = ['item1', 'item2']
-    const mockRef = vi.fn()
+    const mockRef = { current: null }
 
     const forComponent = For({
       each: items,

@@ -5,8 +5,8 @@
  * Provides comprehensive grid item control with CSS Grid integration.
  */
 
-import { BaseModifier } from '@tachui/modifiers/base'
-import type { ModifierContext } from '@tachui/modifiers/types'
+import { BaseModifier } from '@tachui/modifiers'
+import type { ModifierContext } from '@tachui/modifiers'
 import type { DOMNode } from '@tachui/core/runtime/types'
 import type { GridSpanConfig } from '../components/Grid'
 

@@ -36,6 +36,7 @@ export default defineConfig({
       name: 'TachUICore',
       formats: ['es'],
     },
+    emptyOutDir: false, // Don't clean the dist directory to preserve .d.ts files
     rollupOptions: {
       // External dependencies (not bundled)
       external: id => {

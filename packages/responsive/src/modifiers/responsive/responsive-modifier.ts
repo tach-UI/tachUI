@@ -5,9 +5,9 @@
  * Provides CSS-native media query generation with backward compatibility.
  */
 
-import { BaseModifier } from '@tachui/modifiers/base'
-import type { ModifierContext } from '@tachui/modifiers/types'
-import type { DOMNode } from '@tachui/core/runtime/types'
+import { BaseModifier } from '@tachui/modifiers'
+import type { ModifierContext } from '@tachui/modifiers'
+import type { DOMNode } from '@tachui/core'
 import {
   ResponsiveValue,
   ResponsiveStyleConfig,

@@ -1,6 +1,6 @@
 {
   "name": "@tachui/mobile",
-  "version": "0.1.0",
+  "version": "0.7.1-alpha",
   "description": "Mobile UI components for TachUI - Modal components (ActionSheet, Alert) and enhanced scrolling (ScrollView) with mobile optimizations",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -11,6 +11,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./modifiers": {
+      "types": "./dist/modifiers/index.d.ts",
+      "import": "./dist/modifiers/index.js"
     }
   },
   "files": [
@@ -19,13 +23,14 @@
   "scripts": {
     "build": "rm -rf dist && vite build && tsc -p tsconfig.build.json",
     "build:types": "tsc -p tsconfig.build.json",
+    "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "dev": "vite build --watch",
     "lint": "oxlint src",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --project tsconfig.type-check.json"
   },
   "peerDependencies": {
     "@tachui/core": "^0.1.0"

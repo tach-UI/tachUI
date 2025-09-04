@@ -1,6 +1,6 @@
 {
   "name": "@tachui/forms",
-  "version": "2.0.0",
+  "version": "0.7.1-alpha",
   "description": "Unified form components and validation system for tachUI (formerly @tachui/forms + @tachui/advanced-forms)",
   "type": "module",
   "main": "./dist/index.js",
@@ -49,10 +49,11 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build && pnpm build:types",
-    "build:types": "tsc --emitDeclarationOnly --declaration",
+    "build:types": "tsc --project tsconfig.build.json",
+    "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --project tsconfig.type-check.json",
     "lint": "oxlint src",
     "clean": "rm -rf dist"
   },
@@ -65,10 +66,10 @@
     "swiftui"
   ],
   "author": "tachUI Team",
-  "license": "MIT",
+  "license": "MPL-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tachui/tachui.git",
+    "url": "https://github.com/tach-UI/tachUI",
     "directory": "packages/forms"
   },
   "dependencies": {

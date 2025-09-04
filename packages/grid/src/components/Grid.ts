@@ -21,7 +21,26 @@ import {
   GridPerformanceMonitor,
   type EnhancedResponsiveGridConfig,
 } from './GridResponsive'
-import { transition } from '@tachui/core'
+// Local transition function to avoid dependency on effects package
+function transition(
+  property: string = 'all',
+  duration: number = 300,
+  easing: string = 'ease',
+  delay: number = 0
+) {
+  // Create a simple modifier that sets the transition CSS property
+  return {
+    type: 'transition',
+    priority: 25,
+    properties: { property, duration, easing, delay },
+    apply: (_node: any, context: any) => {
+      if (context.element && context.element.style) {
+        context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
+      }
+      return undefined
+    },
+  }
+}
 
 // Lazy import debug manager to avoid circular dependencies
 let debugManager: any = null

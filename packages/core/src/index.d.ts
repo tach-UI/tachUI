@@ -69,7 +69,7 @@ export {
 } from './constants/frame-utils'
 export * from './compiler'
 export * from './components'
-export * from './modifiers-compat'
+export * from './modifiers'
 export * from './gradients'
 export {
   SimplifiedPluginManager,

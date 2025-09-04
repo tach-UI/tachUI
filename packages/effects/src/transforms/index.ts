@@ -6,11 +6,8 @@
  */
 
 import type { DOMNode } from '@tachui/core/runtime/types'
-import { BaseModifier } from '@tachui/modifiers/base'
-import type {
-  ModifierContext,
-  ReactiveModifierProps,
-} from '@tachui/modifiers/types'
+import { BaseModifier } from '@tachui/modifiers'
+import type { ModifierContext, ReactiveModifierProps } from '@tachui/modifiers'
 
 export interface TransformConfig {
   scale?: number | { x?: number; y?: number }
@@ -653,42 +650,6 @@ export function backfaceVisibility(
 // SwiftUI Compatibility Functions
 // ============================================================================
 
-type AnchorPoint =
-  | 'center'
-  | 'top'
-  | 'bottom'
-  | 'leading'
-  | 'trailing'
-  | 'topLeading'
-  | 'topTrailing'
-  | 'bottomLeading'
-  | 'bottomTrailing'
-
-/**
- * SwiftUI-compatible scaleEffect modifier
- *
- * @example
- * ```typescript
- * .scaleEffect(1.5)                    // Uniform scale
- * .scaleEffect(1.5, 2.0)               // Non-uniform scale
- * .scaleEffect(1.2, undefined, 'topLeading')  // Scale from top-leading corner
- * ```
- */
-export function scaleEffect(
-  x: number,
-  y?: number,
-  anchor: AnchorPoint = 'center'
-): AdvancedTransformModifier {
-  const scaleX = x
-  const scaleY = y ?? x
-  const transformOrigin = getTransformOrigin(anchor)
-
-  return new AdvancedTransformModifier({
-    transform: { scaleX, scaleY },
-    transformOrigin,
-  })
-}
-
 /**
  * SwiftUI-compatible offset modifier (relative positioning via transform)
  *
@@ -704,32 +665,4 @@ export function offset(x: number, y: number): AdvancedTransformModifier {
   return new AdvancedTransformModifier({
     transform: { translateX: x, translateY: y },
   })
-}
-
-/**
- * Convert SwiftUI anchor point to CSS transform-origin
- */
-function getTransformOrigin(anchor: AnchorPoint): string {
-  switch (anchor) {
-    case 'center':
-      return 'center center'
-    case 'top':
-      return 'center top'
-    case 'bottom':
-      return 'center bottom'
-    case 'leading':
-      return 'left center'
-    case 'trailing':
-      return 'right center'
-    case 'topLeading':
-      return 'left top'
-    case 'topTrailing':
-      return 'right top'
-    case 'bottomLeading':
-      return 'left bottom'
-    case 'bottomTrailing':
-      return 'right bottom'
-    default:
-      return 'center center'
-  }
 }

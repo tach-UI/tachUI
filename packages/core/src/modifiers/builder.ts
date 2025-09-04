@@ -19,6 +19,9 @@ import {
   ResizableModifier,
 } from './base'
 import { BackgroundModifier } from './background'
+
+// Dynamic imports for effects and modifiers to avoid circular dependencies
+// (Removed lazy loading functions - using direct modifier classes instead)
 // Temporarily commented out to resolve circular dependency during build
 // import type { BorderStyle } from '@tachui/modifiers'
 // import { borderBottom, borderLeft, borderRight, borderTop } from '@tachui/modifiers'
@@ -64,9 +67,6 @@ const borderBottom = (...args: any[]) => createStubModifier('borderBottom')
 const borderLeft = (...args: any[]) => createStubModifier('borderLeft')
 const borderRight = (...args: any[]) => createStubModifier('borderRight')
 const borderTop = (...args: any[]) => createStubModifier('borderTop')
-const css = (...args: any[]) => createStubModifier('css')
-const cssProperty = (...args: any[]) => createStubModifier('cssProperty')
-const cssVariable = (...args: any[]) => createStubModifier('cssVariable')
 const alignItems = (...args: any[]) => createStubModifier('alignItems')
 const flexDirection = (...args: any[]) => createStubModifier('flexDirection')
 const flexGrow = (...args: any[]) => createStubModifier('flexGrow')
@@ -110,8 +110,18 @@ const paddingVertical = (...args: any[]) =>
 const height = (...args: any[]) => createStubModifier('height')
 const maxHeight = (...args: any[]) => createStubModifier('maxHeight')
 const maxWidth = (...args: any[]) => createStubModifier('maxWidth')
-const minHeight = (...args: any[]) => createStubModifier('minHeight')
-const minWidth = (...args: any[]) => createStubModifier('minWidth')
+const minHeight = (value: number | string) => ({
+  type: 'size',
+  priority: 50,
+  properties: { minHeight: value },
+  apply: () => undefined,
+})
+const minWidth = (value: number | string) => ({
+  type: 'size',
+  priority: 50,
+  properties: { minWidth: value },
+  apply: () => undefined,
+})
 const size = (...args: any[]) => createStubModifier('size')
 const width = (...args: any[]) => createStubModifier('width')
 import type {
@@ -158,7 +168,12 @@ const overflow = (...args: any[]) => createStubModifier('overflow')
 const textAlign = (...args: any[]) => createStubModifier('textAlign')
 const textDecoration = (...args: any[]) => createStubModifier('textDecoration')
 const textOverflow = (...args: any[]) => createStubModifier('textOverflow')
-const textTransform = (...args: any[]) => createStubModifier('textTransform')
+const textTransform = (value: string) => ({
+  type: 'typography',
+  priority: 50,
+  properties: { transform: value },
+  apply: () => undefined,
+})
 const typography = (...args: any[]) => createStubModifier('typography')
 const whiteSpace = (...args: any[]) => createStubModifier('whiteSpace')
 const gradientText = (...args: any[]) => createStubModifier('gradientText')
@@ -171,11 +186,10 @@ import {
   display,
   overflowX,
   overflowY,
-  position,
-  zIndex,
   outline,
   outlineOffset,
 } from './utility'
+// position and zIndex have been migrated to @tachui/modifiers/layout
 // AriaModifier and TabIndexModifier have been moved to @tachui/modifiers
 // import { AriaModifier, TabIndexModifier } from './attributes'
 // BackdropFilterModifier moved to @tachui/effects
@@ -199,14 +213,28 @@ import {
 //   buttonTransition,
 //   cardTransition,
 
-// Temporary implementations to avoid build errors
-const textShadow = (...args: any[]) => createStubModifier('textShadow')
-const shadowModifier = (...args: any[]) => createStubModifier('shadowModifier')
-const shadowsModifier = (...args: any[]) =>
-  createStubModifier('shadowsModifier')
-const shadowPreset = (...args: any[]) => createStubModifier('shadowPreset')
-const transitionModifier = (...args: any[]) =>
-  createStubModifier('transitionModifier')
+// Shadow modifiers moved to @tachui/effects package
+const transitionModifier = (
+  property: string = 'all',
+  duration: number = 300,
+  easing: string = 'ease',
+  delay: number = 0
+) => {
+  // Create transition string from parameters
+  let transitionValue: string
+  if (property === 'none') {
+    transitionValue = 'none'
+  } else {
+    transitionValue = `${property} ${duration}ms ${easing} ${delay}ms`
+  }
+
+  return {
+    type: 'transition',
+    priority: 60,
+    properties: { transition: transitionValue },
+    apply: () => undefined,
+  }
+}
 const fadeTransition = (...args: any[]) => createStubModifier('fadeTransition')
 const transformTransition = (...args: any[]) =>
   createStubModifier('transformTransition')
@@ -236,6 +264,14 @@ const slowTransition = (...args: any[]) => createStubModifier('slowTransition')
 //   scrollPadding,
 //   scrollSnap,
 // } from '@tachui/modifiers'
+
+// Import CSS modifier functions with aliases to avoid naming conflicts
+import {
+  css as cssModifier,
+  cssProperty as cssPropertyModifier,
+  cssVariable as cssVariableModifier,
+  cssVendor as cssVendorModifier,
+} from './css'
 
 // Temporary implementations to avoid build errors
 const scrollModifier = (...args: any[]) => createStubModifier('scrollModifier')
@@ -527,6 +563,9 @@ export class ModifierBuilderImpl<
     return this
   }
 
+  // position() and zIndex() methods have been migrated to @tachui/modifiers/layout
+  // for enhanced SwiftUI-compatible functionality
+
   // Backdrop filter modifiers - moved to @tachui/effects but keeping stubs for compatibility
   backdropFilter(): ModifierBuilder<T> {
     if (process.env.NODE_ENV === 'development') {
@@ -704,18 +743,6 @@ export class ModifierBuilderImpl<
     return this
   }
 
-  position(
-    value: 'static' | 'relative' | 'absolute' | 'fixed' | 'sticky'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(position(value))
-    return this
-  }
-
-  zIndex(value: number): ModifierBuilder<T> {
-    this.modifiers.push(zIndex(value))
-    return this
-  }
-
   outline(value: string): ModifierBuilder<T> {
     this.modifiers.push(outline(value))
     return this
@@ -740,21 +767,30 @@ export class ModifierBuilderImpl<
     return this
   }
 
-  // Raw CSS modifiers
+  // Raw CSS modifiers - using imported functions from ./css
   css(properties: {
     [property: string]: string | number | undefined
   }): ModifierBuilder<T> {
-    this.modifiers.push(css(properties))
+    this.modifiers.push(cssModifier(properties))
     return this
   }
 
   cssProperty(property: string, value: string | number): ModifierBuilder<T> {
-    this.modifiers.push(cssProperty(property, value))
+    this.modifiers.push(cssPropertyModifier(property, value))
     return this
   }
 
   cssVariable(name: string, value: string | number): ModifierBuilder<T> {
-    this.modifiers.push(cssVariable(name, value))
+    this.modifiers.push(cssVariableModifier(name, value))
+    return this
+  }
+
+  cssVendor(
+    prefix: 'webkit' | 'moz' | 'ms' | 'o',
+    property: string,
+    value: string | number
+  ): ModifierBuilder<T> {
+    this.modifiers.push(cssVendorModifier(prefix, property, value))
     return this
   }
 
@@ -765,6 +801,15 @@ export class ModifierBuilderImpl<
     return this
   }
 
+  aspectRatio(
+    ratio?: number,
+    contentMode: 'fit' | 'fill' = 'fit'
+  ): ModifierBuilder<T> {
+    throw new Error(
+      'Layout modifiers have been moved to @tachui/modifiers. Please import { aspectRatio } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
+    )
+  }
+
   textDecoration(
     value: 'none' | 'underline' | 'overline' | 'line-through'
   ): ModifierBuilder<T> {
@@ -773,20 +818,6 @@ export class ModifierBuilderImpl<
   }
 
   // Phase 1 SwiftUI modifiers
-  offset(
-    x: number | Signal<number>,
-    y?: number | Signal<number>
-  ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new LayoutModifier({
-        offset: {
-          x: typeof x === 'number' ? x : x,
-          y: typeof y === 'number' ? (y ?? 0) : (y ?? 0),
-        },
-      })
-    )
-    return this
-  }
 
   clipped(): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ clipped: true }))
@@ -818,35 +849,6 @@ export class ModifierBuilderImpl<
   }
 
   // Phase 2 SwiftUI modifiers
-  aspectRatio(
-    ratio?: number | Signal<number>,
-    contentMode: 'fit' | 'fill' = 'fit'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new LayoutModifier({
-        aspectRatio: {
-          ratio: typeof ratio === 'number' ? ratio : ratio,
-          contentMode,
-        },
-      })
-    )
-    return this
-  }
-
-  fixedSize(
-    horizontal: boolean = true,
-    vertical: boolean = true
-  ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new LayoutModifier({
-        fixedSize: {
-          horizontal,
-          vertical,
-        },
-      })
-    )
-    return this
-  }
 
   clipShape(
     shape: 'circle' | 'ellipse' | 'rect' | 'polygon',
@@ -888,31 +890,6 @@ export class ModifierBuilderImpl<
   }
 
   // Phase 3 SwiftUI modifiers - Critical Transform Modifiers
-  scaleEffect(
-    x: number | Signal<number>,
-    y?: number | Signal<number>,
-    anchor:
-      | 'center'
-      | 'top'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottom'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-      | 'leading'
-      | 'trailing' = 'center'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new LayoutModifier({
-        scaleEffect: {
-          x,
-          y,
-          anchor,
-        },
-      })
-    )
-    return this
-  }
 
   absolutePosition(
     x: number | Signal<number>,
@@ -1022,71 +999,7 @@ export class ModifierBuilderImpl<
     return this
   }
 
-  shadow(options: AppearanceModifierProps['shadow']): ModifierBuilder<T>
-  shadow(config: {
-    x: number
-    y: number
-    blur: number
-    color: string
-    spread?: number
-    inset?: boolean
-  }): ModifierBuilder<T>
-  shadow(
-    optionsOrConfig:
-      | AppearanceModifierProps['shadow']
-      | {
-          x: number
-          y: number
-          blur: number
-          color: string
-          spread?: number
-          inset?: boolean
-        }
-  ): ModifierBuilder<T> {
-    // Check if it's the new ShadowConfig format (has x, y, blur properties)
-    if (
-      optionsOrConfig &&
-      typeof optionsOrConfig === 'object' &&
-      'x' in optionsOrConfig &&
-      'y' in optionsOrConfig &&
-      'blur' in optionsOrConfig
-    ) {
-      this.modifiers.push(shadowModifier(optionsOrConfig as any))
-    } else {
-      // Use the old AppearanceModifier format
-      this.modifiers.push(
-        new AppearanceModifier({
-          shadow: optionsOrConfig as AppearanceModifierProps['shadow'],
-        })
-      )
-    }
-    return this
-  }
-
-  textShadow(config: TextShadowConfig): ModifierBuilder<T> {
-    this.modifiers.push(textShadow(config))
-    return this
-  }
-
-  // Additional shadow methods
-  shadows(
-    configs: Array<{
-      x: number
-      y: number
-      blur: number
-      color: string
-      spread?: number
-      inset?: boolean
-    }>
-  ): ModifierBuilder<T> {
-    this.modifiers.push(shadowsModifier(configs))
-    return this
-  }
-
-  shadowPreset(presetName: string): ModifierBuilder<T> {
-    this.modifiers.push(shadowPreset(presetName))
-    return this
-  }
+  // Shadow functionality moved to @tachui/effects package
 
   // Visual Effects Modifiers (Phase 2 - Epic: Butternut)
   blur(radius: number | Signal<number>): ModifierBuilder<T> {
@@ -1229,16 +1142,6 @@ export class ModifierBuilderImpl<
   }
 
   // Lifecycle modifiers
-  onAppear(handler: () => void): ModifierBuilder<T> {
-    this.modifiers.push(new LifecycleModifier({ onAppear: handler }))
-    return this
-  }
-
-  onDisappear(handler: () => void): ModifierBuilder<T> {
-    this.modifiers.push(new LifecycleModifier({ onDisappear: handler }))
-    return this
-  }
-
   task(
     operation: () => Promise<void> | void,
     options?: {
@@ -1252,21 +1155,6 @@ export class ModifierBuilderImpl<
           operation,
           id: options?.id,
           priority: options?.priority || 'default',
-        },
-      })
-    )
-    return this
-  }
-
-  refreshable(
-    onRefresh: () => Promise<void>,
-    isRefreshing?: boolean | Signal<boolean>
-  ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new LifecycleModifier({
-        refreshable: {
-          onRefresh,
-          isRefreshing,
         },
       })
     )
@@ -1899,6 +1787,65 @@ export class ModifierBuilderImpl<
     this.modifiers.push(scrollSnap(config))
     return this
   }
+
+  // ============================================================================
+  // MIGRATED MODIFIERS - NOW IN SPECIALIZED PACKAGES
+  // ============================================================================
+
+  // Viewport lifecycle modifiers - moved to @tachui/viewport
+  onAppear(handler: () => void): ModifierBuilder<T> {
+    throw new Error(
+      'onAppear modifier has been moved to @tachui/viewport. Please import { onAppear } from "@tachui/viewport/modifiers" and use it directly instead of chaining it on components.'
+    )
+  }
+
+  onDisappear(handler: () => void): ModifierBuilder<T> {
+    throw new Error(
+      'onDisappear modifier has been moved to @tachui/viewport. Please import { onDisappear } from "@tachui/viewport/modifiers" and use it directly instead of chaining it on components.'
+    )
+  }
+
+  // Mobile gesture modifiers - moved to @tachui/mobile
+  refreshable(
+    onRefresh: () => Promise<void>,
+    isRefreshing?: boolean | Signal<boolean>
+  ): ModifierBuilder<T> {
+    throw new Error(
+      'refreshable modifier has been moved to @tachui/mobile. Please import { refreshable } from "@tachui/mobile/modifiers" and use it directly instead of chaining it on components.'
+    )
+  }
+
+  // onAppear and onDisappear have been moved to @tachui/viewport/modifiers
+  // to maintain proper architectural boundaries
+
+  // Transform modifiers
+  scaleEffect(
+    x: number,
+    y?: number,
+    anchor?:
+      | 'center'
+      | 'top'
+      | 'bottom'
+      | 'leading'
+      | 'trailing'
+      | 'topLeading'
+      | 'topTrailing'
+      | 'bottomLeading'
+      | 'bottomTrailing'
+  ): ModifierBuilder<T> {
+    // Use AnimationModifier for transform effects to maintain compatibility
+    // The actual transform will be handled by the modifier's apply method
+    this.modifiers.push(
+      new AnimationModifier({
+        scaleEffect: {
+          x,
+          y: y ?? x, // Default to uniform scaling
+          anchor: anchor ?? 'center',
+        },
+      })
+    )
+    return this
+  }
 }
 
 /**
@@ -1956,18 +1903,7 @@ export const modifierUtils = {
     return new AppearanceModifier({ font: presets[preset] })
   },
 
-  /**
-   * Create a shadow modifier with common presets
-   */
-  shadowPreset(preset: 'small' | 'medium' | 'large'): Modifier {
-    const presets = {
-      small: { x: 0, y: 1, radius: 3, color: 'rgba(0,0,0,0.12)' },
-      medium: { x: 0, y: 4, radius: 6, color: 'rgba(0,0,0,0.15)' },
-      large: { x: 0, y: 10, radius: 25, color: 'rgba(0,0,0,0.15)' },
-    }
-
-    return new AppearanceModifier({ shadow: presets[preset] })
-  },
+  // shadowPreset moved to @tachui/effects package
 
   /**
    * Create a transition modifier with common presets

@@ -32,12 +32,6 @@ export * from './appearance'
 // Typography modifiers - implemented
 export * from './typography'
 
-// Transform modifiers - implemented
-export * from './transform'
-
-// Effects modifiers - implemented
-export * from './effects'
-
 // Interaction modifiers - implemented
 export * from './interaction'
 

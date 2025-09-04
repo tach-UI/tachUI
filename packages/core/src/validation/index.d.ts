@@ -51,7 +51,7 @@ export declare const ValidationDevTools: {
         }
         production: {
           isProduction: boolean
-          mode: 'development' | 'production' | 'test'
+          mode: 'test' | 'development' | 'production'
           validationDisabled: boolean
         }
         lifecycle: {

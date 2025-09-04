@@ -171,26 +171,7 @@ export const appearanceModifiers = {
     return new AppearanceModifier({ border: options })
   },
 
-  /**
-   * Add shadow
-   */
-  shadow(options: AppearanceModifierProps['shadow']): Modifier {
-    return new AppearanceModifier({ shadow: options })
-  },
-
-  /**
-   * Add drop shadow with common settings
-   */
-  dropShadow(
-    x: number = 0,
-    y: number = 2,
-    radius: number = 4,
-    color: string = 'rgba(0,0,0,0.25)'
-  ): Modifier {
-    return new AppearanceModifier({
-      shadow: { x, y, radius, color },
-    })
-  },
+  // Shadow functionality moved to @tachui/effects package
 }
 
 /**
@@ -418,12 +399,7 @@ export const presetModifiers = {
     return [
       appearanceModifiers.backgroundColor('#ffffff'),
       appearanceModifiers.cornerRadius(8),
-      appearanceModifiers.shadow({
-        x: 0,
-        y: 2,
-        radius: 8,
-        color: 'rgba(0,0,0,0.1)',
-      }),
+      // shadow moved to @tachui/effects package
       layoutModifiers.padding(padding),
     ]
   },

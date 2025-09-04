@@ -1,6 +1,6 @@
 {
   "name": "@tachui/flow-control",
-  "version": "1.0.0",
+  "version": "0.7.1-alpha",
   "description": "Control flow components for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -27,6 +27,7 @@
   "scripts": {
     "build": "rm -rf dist && vite build && tsc --project tsconfig.build.json",
     "dev": "vite build --watch",
+    "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",

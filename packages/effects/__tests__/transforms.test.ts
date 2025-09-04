@@ -16,7 +16,6 @@ import {
   rotateZ,
   perspective,
   matrix3d,
-  scaleEffect,
   offset,
 } from '../src/transforms'
 
@@ -105,13 +104,6 @@ describe('Transform Effects', () => {
   })
 
   describe('SwiftUI Compatibility Functions', () => {
-    it('should create scaleEffect transform', () => {
-      const modifier = scaleEffect(1.2)
-
-      expect(modifier).toBeDefined()
-      expect(modifier.type).toBe('advancedTransform')
-    })
-
     it('should create offset transform', () => {
       const modifier = offset(10, 20)
 
