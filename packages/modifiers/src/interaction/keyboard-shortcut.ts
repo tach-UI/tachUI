@@ -19,6 +19,15 @@ export class KeyboardShortcutModifier extends BaseModifier<KeyboardShortcutOptio
   readonly type = 'keyboardShortcut'
   readonly priority = 80
 
+  constructor(options: KeyboardShortcutOptions) {
+    // Ensure modifiers defaults to empty array
+    const normalizedOptions = {
+      ...options,
+      modifiers: options.modifiers || [],
+    }
+    super(normalizedOptions)
+  }
+
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
@@ -30,7 +39,7 @@ export class KeyboardShortcutModifier extends BaseModifier<KeyboardShortcutOptio
     element: Element,
     shortcut: KeyboardShortcutOptions
   ): void {
-    const modifiers = shortcut.modifiers ?? []
+    const modifiers = shortcut.modifiers || []
 
     const handleKeyDown = (event: Event) => {
       const keyboardEvent = event as KeyboardEvent
@@ -82,9 +91,13 @@ export class KeyboardShortcutModifier extends BaseModifier<KeyboardShortcutOptio
       const allowedModifiers = new Set([...requiredModifiers])
       if (requiredModifiers.has('cmd')) {
         allowedModifiers.add('meta') // cmd and meta are equivalent
+        allowedModifiers.add('ctrl') // ctrl can act as cmd on non-Mac platforms
       }
       if (requiredModifiers.has('meta')) {
         allowedModifiers.add('cmd') // cmd and meta are equivalent
+      }
+      if (requiredModifiers.has('ctrl')) {
+        allowedModifiers.add('cmd') // cmd can map to ctrl on non-Mac platforms
       }
 
       const hasExtraModifiers = Array.from(activeModifiers).some(

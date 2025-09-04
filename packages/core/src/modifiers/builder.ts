@@ -178,7 +178,18 @@ const textTransform = (value: string) => ({
 })
 const typography = (...args: any[]) => createStubModifier('typography')
 const whiteSpace = (...args: any[]) => createStubModifier('whiteSpace')
-const gradientText = (...args: any[]) => createStubModifier('gradientText')
+const gradientText = (gradient: string) => ({
+  type: 'backgroundClip',
+  priority: 50,
+  properties: {
+    backgroundImage: gradient,
+    backgroundClip: 'text',
+    webkitBackgroundClip: 'text',
+    color: 'transparent',
+    webkitTextFillColor: 'transparent',
+  },
+  apply: () => undefined,
+})
 const lineClamp = (...args: any[]) => createStubModifier('lineClamp')
 const wordBreak = (...args: any[]) => createStubModifier('wordBreak')
 const overflowWrap = (...args: any[]) => createStubModifier('overflowWrap')
@@ -1794,6 +1805,32 @@ export class ModifierBuilderImpl<
         },
       })
     )
+    return this
+  }
+
+  // Shadow modifiers - registry-based lookup
+  shadow(config: {
+    x?: number
+    y?: number
+    radius?: number
+    color?: string
+  }): ModifierBuilder<T> {
+    this.modifiers.push(createRegistryModifier('shadow', config))
+    return this
+  }
+
+  textShadow(config: TextShadowConfig): ModifierBuilder<T> {
+    this.modifiers.push(createRegistryModifier('textShadow', config))
+    return this
+  }
+
+  shadows(shadows: any[]): ModifierBuilder<T> {
+    this.modifiers.push(createRegistryModifier('shadows', shadows))
+    return this
+  }
+
+  shadowPreset(preset: string): ModifierBuilder<T> {
+    this.modifiers.push(createRegistryModifier('shadowPreset', preset))
     return this
   }
 }

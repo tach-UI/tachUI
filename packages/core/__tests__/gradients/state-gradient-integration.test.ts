@@ -94,11 +94,11 @@ describe('State Gradient Integration Tests', () => {
 
       expect(modifiedComponent.modifiers).toHaveLength(3)
 
-      // Background should have high priority (95)
+      // Background should have appearance priority (200)
       const backgroundModifier = modifiedComponent.modifiers.find(
         m => m.type === 'background'
       )
-      expect(backgroundModifier?.priority).toBe(95)
+      expect(backgroundModifier?.priority).toBe(200)
     })
   })
 

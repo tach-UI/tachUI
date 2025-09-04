@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['../../tools/testing/setup.ts'],
+    setupFiles: ['./__tests__/setup.ts'],
     include: ['benchmarks/**/*.bench.ts'],
     benchmark: {
       // Enable benchmark reporting
@@ -14,7 +14,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@tachui/core': path.resolve(__dirname, '../../packages/core/src/index.ts'),
+      '@tachui/core': path.resolve(
+        __dirname,
+        '../../packages/core/src/index.ts'
+      ),
     },
   },
 })

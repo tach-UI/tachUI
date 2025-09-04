@@ -5,7 +5,7 @@ export default mergeConfig(
   sharedConfig,
   defineConfig({
     test: {
-      setupFiles: ['../../tools/testing/setup.ts', './__tests__/setup.ts'],
+      setupFiles: ['./__tests__/setup.ts'],
     },
     resolve: {
       alias: {

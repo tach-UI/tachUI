@@ -1,26 +1,23 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, mergeConfig } from 'vitest/config'
 import path from 'path'
+import sharedConfig from '../../vitest.shared.config'
 
-export default defineConfig({
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./__tests__/setup.ts'],
-    globals: true,
-  },
-  resolve: {
-    alias: {
-      '@tachui/core/modifiers/base': path.resolve(
-        __dirname,
-        '__tests__/mocks/base.ts'
-      ),
-      '@tachui/core/modifiers/types': path.resolve(
-        __dirname,
-        '__tests__/mocks/types.ts'
-      ),
-      '@tachui/core/runtime/types': path.resolve(
-        __dirname,
-        '__tests__/mocks/runtime-types.ts'
-      ),
+export default mergeConfig(
+  sharedConfig,
+  defineConfig({
+    test: {
+      // Use enhanced setup with better mocks
+      setupFiles: ['./__tests__/setup-enhanced.ts'],
+      // Mark as isolated test environment
+      env: {
+        TEST_ISOLATION: 'true',
+      },
     },
-  },
-})
+    resolve: {
+      alias: {
+        // Self-reference for imports
+        '@tachui/modifiers': './src',
+      },
+    },
+  })
+)

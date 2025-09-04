@@ -31,7 +31,10 @@ export const ValidationDevTools = {
    * Log all validation rules including all phase enhancements
    */
   logValidationRules(): void {
-    if (process.env.NODE_ENV !== 'production') {
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      process.env.NODE_ENV !== 'test'
+    ) {
       console.group('🔍 TachUI Complete Validation System')
 
       console.info('Runtime Component Rules:')
@@ -342,8 +345,17 @@ export const ValidationSetup = {
 // Auto-initialize with complete validation system
 let validationSystemInitialized = false
 
-if (typeof window !== 'undefined' || typeof global !== 'undefined') {
-  if (process.env.NODE_ENV !== 'production' && !validationSystemInitialized) {
+/**
+ * Lazy initialization function that checks environment at runtime
+ */
+function initializeValidationSystem(): void {
+  if (validationSystemInitialized) return
+
+  // Check environment at runtime, not import time
+  const isProduction = process.env.NODE_ENV === 'production'
+  const isTest = process.env.NODE_ENV === 'test'
+
+  if (!isProduction && !isTest) {
     validationSystemInitialized = true
     console.info(
       '🔍 TachUI Complete Validation System (Phases 1A-1D) initialized'
@@ -363,14 +375,8 @@ if (typeof window !== 'undefined' || typeof global !== 'undefined') {
       '✅ Advanced debugging: visual overlays, state inspection, trend analysis'
     )
     console.info('ℹ️ Use ValidationSetup.development() for full features')
-  } else {
-    // Auto-enable production optimizations
-    try {
-      ValidationSetup.production().catch(() => {
-        // Fallback gracefully
-      })
-    } catch {
-      // Fallback gracefully
-    }
   }
 }
+
+// Remove auto-initialization - only initialize when explicitly called
+// This prevents the validation system from initializing during module import

@@ -7,7 +7,7 @@
  * Auto-registers all effects with the global registry when imported.
  */
 
-import { globalModifierRegistry } from '@tachui/core'
+import { globalModifierRegistry } from '@tachui/core/modifiers/registry'
 
 // Re-export all filters
 export * from './filters'

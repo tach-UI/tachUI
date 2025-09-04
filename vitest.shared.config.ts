@@ -20,11 +20,13 @@ import { defineConfig } from 'vitest/config'
  * }))
  * ```
  */
+
+//     setupFiles: ['./tools/testing/setup.ts'],
+
 export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['../../tools/testing/setup.ts'],
 
     // Standard exclusions
     exclude: [
@@ -73,25 +75,29 @@ export default defineConfig({
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
 
     alias: [
-      // Core packages - point to built dist for proper type resolution
+      // Core packages - use src for consistent testing across root and packages
       {
         find: '@tachui/core/plugins',
-        replacement: path.resolve(__dirname, 'packages/core/dist/plugins'),
+        replacement: path.resolve(__dirname, 'packages/core/src/plugins'),
       },
       {
         find: '@tachui/core',
-        replacement: path.resolve(__dirname, 'packages/core/dist'),
+        replacement: path.resolve(__dirname, 'packages/core/src'),
       },
       {
         find: '@tachui/primitives',
-        replacement: path.resolve(__dirname, 'packages/primitives/dist'),
+        replacement: path.resolve(__dirname, 'packages/primitives/src'),
       },
       {
         find: '@tachui/devtools',
-        replacement: path.resolve(__dirname, 'packages/devtools/dist'),
+        replacement: path.resolve(__dirname, 'packages/devtools/src'),
+      },
+      {
+        find: '@tachui/cli',
+        replacement: path.resolve(__dirname, 'packages/cli/src'),
       },
 
-      // Plugin packages
+      // Plugin packages - all use src for consistency
       {
         find: '@tachui/forms',
         replacement: path.resolve(__dirname, 'packages/forms/src'),

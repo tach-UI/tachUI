@@ -74,7 +74,10 @@ export function unregisterComponentValidator(
     }
   }
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.NODE_ENV !== 'test'
+  ) {
     console.info(`🔍 Unregistered validator: ${key}`)
   }
 }
@@ -107,7 +110,10 @@ export function registerPluginValidation(config: PluginValidationConfig): void {
     registerComponentValidator(validator)
   }
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.NODE_ENV !== 'test'
+  ) {
     console.info(
       `🔍 Registered ${components.length} validators for package: ${packageName}`
     )
@@ -246,7 +252,10 @@ export function clearAllValidators(): void {
   pluginValidators.clear()
   packageValidators.clear()
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.NODE_ENV !== 'test'
+  ) {
     console.info('🔍 Cleared all plugin validators')
   }
 }

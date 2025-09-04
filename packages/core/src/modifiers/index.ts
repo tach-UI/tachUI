@@ -6,7 +6,15 @@
  */
 
 // Base modifier classes and infrastructure
-export { BaseModifier, ResizableModifier } from './base'
+export {
+  AnimationModifier,
+  AppearanceModifier,
+  BaseModifier,
+  InteractionModifier,
+  LayoutModifier,
+  LifecycleModifier,
+  ResizableModifier,
+} from './base'
 
 // Modifier system types
 export type {
@@ -56,3 +64,17 @@ export {
   layoutModifiers,
   presetModifiers,
 } from './core'
+
+// Modifier factory functions and utilities
+export {
+  classModifier,
+  combineModifiers,
+  conditionalModifier,
+  createCustomModifier,
+  createStyleModifier,
+  eventModifier,
+  modifierHelpers,
+  responsiveModifier,
+  stateModifier,
+  styleModifier,
+} from './factories'

@@ -6,7 +6,7 @@
  * Auto-registers all modifiers with the global registry when imported.
  */
 
-import { globalModifierRegistry } from '@tachui/core'
+import { globalModifierRegistry } from '@tachui/core/modifiers/registry'
 
 // Core base classes and types
 export * from './basic/base'

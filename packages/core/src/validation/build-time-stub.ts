@@ -9,7 +9,9 @@
  * Lightweight build-time detection stub
  */
 export function isDevelopmentEnvironment(): boolean {
-  return process.env.NODE_ENV !== 'production'
+  return (
+    process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test'
+  )
 }
 
 export function isCIEnvironment(): boolean {

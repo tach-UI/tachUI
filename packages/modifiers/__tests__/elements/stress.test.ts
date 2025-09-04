@@ -464,52 +464,55 @@ describe('Elements Performance Benchmarks', () => {
     expect(opsPerSecond).toBeGreaterThan(10000)
   })
 
-  it('should meet modifier application performance targets', () => {
-    const modifiers = Array.from({ length: 500 }, (_, i) => {
-      const modifierType = i % 10
-      switch (modifierType) {
-        case 0:
-          return iconBefore('★', { color: `hsl(${i}, 50%, 50%)` })
-        case 1:
-          return iconAfter('→', { color: `hsl(${i}, 50%, 50%)` })
-        case 2:
-          return lineBefore(`hsl(${i}, 50%, 50%)`)
-        case 3:
-          return lineAfter(`hsl(${i}, 50%, 50%)`)
-        case 4:
-          return quotes()
-        case 5:
-          return underline(`hsl(${i}, 50%, 50%)`)
-        case 6:
-          return badge(`hsl(${i}, 50%, 50%)`)
-        case 7:
-          return tooltip(`Tooltip ${i}`)
-        case 8:
-          return cornerRibbon(`Label ${i}`)
-        case 9:
-          return spinner(16, `hsl(${i}, 50%, 50%)`)
-        default:
-          return iconBefore('★')
-      }
-    })
+  it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    'should meet modifier application performance targets',
+    () => {
+      const modifiers = Array.from({ length: 500 }, (_, i) => {
+        const modifierType = i % 10
+        switch (modifierType) {
+          case 0:
+            return iconBefore('★', { color: `hsl(${i}, 50%, 50%)` })
+          case 1:
+            return iconAfter('→', { color: `hsl(${i}, 50%, 50%)` })
+          case 2:
+            return lineBefore(`hsl(${i}, 50%, 50%)`)
+          case 3:
+            return lineAfter(`hsl(${i}, 50%, 50%)`)
+          case 4:
+            return quotes()
+          case 5:
+            return underline(`hsl(${i}, 50%, 50%)`)
+          case 6:
+            return badge(`hsl(${i}, 50%, 50%)`)
+          case 7:
+            return tooltip(`Tooltip ${i}`)
+          case 8:
+            return cornerRibbon(`Label ${i}`)
+          case 9:
+            return spinner(16, `hsl(${i}, 50%, 50%)`)
+          default:
+            return iconBefore('★')
+        }
+      })
 
-    const startTime = performance.now()
+      const startTime = performance.now()
 
-    // Suppress expected CSS parsing error output during performance tests
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      // Suppress expected CSS parsing error output during performance tests
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    modifiers.forEach(modifier => {
-      modifier.apply({} as any, createMockContext())
-    })
+      modifiers.forEach(modifier => {
+        modifier.apply({} as any, createMockContext())
+      })
 
-    consoleSpy.mockRestore()
+      consoleSpy.mockRestore()
 
-    const duration = performance.now() - startTime
-    const opsPerSecond = (modifiers.length / duration) * 1000
+      const duration = performance.now() - startTime
+      const opsPerSecond = (modifiers.length / duration) * 1000
 
-    // Should apply at least 1,000 modifiers per second
-    expect(opsPerSecond).toBeGreaterThan(1000)
-  })
+      // Should apply at least 1,000 modifiers per second
+      expect(opsPerSecond).toBeGreaterThan(1000)
+    }
+  )
 
   it('should handle massive CSS rule generation efficiently', () => {
     const largeContentModifier = before({

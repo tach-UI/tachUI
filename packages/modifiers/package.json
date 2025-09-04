@@ -24,6 +24,18 @@
       "types": "./dist/basic/padding.d.ts",
       "import": "./dist/basic/padding.js"
     },
+    "./basic/margin": {
+      "types": "./dist/basic/margin.d.ts",
+      "import": "./dist/basic/margin.js"
+    },
+    "./basic/size": {
+      "types": "./dist/basic/size.d.ts",
+      "import": "./dist/basic/size.js"
+    },
+    "./typography/text": {
+      "types": "./dist/typography/text.d.ts",
+      "import": "./dist/typography/text.js"
+    },
     "./layout": {
       "types": "./dist/layout/index.d.ts",
       "import": "./dist/layout/index.js"

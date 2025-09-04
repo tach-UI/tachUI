@@ -15,6 +15,9 @@ import {
   navigationBarHidden,
 } from '../src/navigation-modifiers'
 
+// Import modifiers package to trigger auto-registration
+import '@tachui/modifiers'
+
 describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
   let mockDestination: any
 

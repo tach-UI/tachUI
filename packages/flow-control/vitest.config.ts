@@ -4,15 +4,9 @@ import sharedConfig from '../../vitest.shared.config'
 export default mergeConfig(
   sharedConfig,
   defineConfig({
-    test: {
-      // Package-specific test configuration
-      setupFiles: ['./__tests__/setup.ts'],
-    },
-
     resolve: {
       alias: {
-        // Package-specific aliases
-        '@tachui/forms': './src',
+        '@tachui/flow-control': './src',
       },
     },
   })

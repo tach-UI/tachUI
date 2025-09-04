@@ -87,10 +87,16 @@ export class MockBaseModifier<T = any> {
 // Mock Document and global DOM APIs
 global.document = {
   createElement: vi.fn(() => new (global.HTMLElement as any)()),
+  getElementById: vi.fn(() => null),
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
   activeElement: null,
   body: new (global.HTMLElement as any)(),
+  head: {
+    appendChild: vi.fn(),
+    insertBefore: vi.fn(),
+    innerHTML: '',
+  } as any,
 } as any
 
 // Store original timers to avoid recursion
@@ -122,7 +128,17 @@ global.window = {
 beforeAll(() => {
   // Set NODE_ENV to test to suppress console warnings
   process.env.NODE_ENV = 'test'
+})
 
+beforeEach(() => {
   // Reset all mocks before each test
   vi.clearAllMocks()
+
+  // Reset document state
+  if (document.head) {
+    document.head.innerHTML = ''
+  }
+  if (document.body) {
+    document.body.innerHTML = ''
+  }
 })

@@ -7,6 +7,16 @@ import { IconSetRegistry } from '../src/icon-sets/registry'
 import { LucideIconSet } from '../src/icon-sets/lucide'
 import { stderrSuppressor } from './utils/stderr-suppressor'
 
+// Import modifiers package to ensure modifier registration before tests run
+// Using dynamic import to avoid build-time resolution issues
+if (typeof require !== 'undefined') {
+  try {
+    require('@tachui/modifiers')
+  } catch (error) {
+    // Silently fail if modifiers package is not available during testing
+  }
+}
+
 // Suppress expected error messages during testing
 const originalConsoleError = console.error
 const originalConsoleWarn = console.warn
@@ -49,14 +59,19 @@ const expectedErrorPatterns = [
   /cause\]/,
   /\{$/,
   /code: 'ERR_MODULE_NOT_FOUND'/,
-  /\[cause\]: Error: Failed to load url/
+  /\[cause\]: Error: Failed to load url/,
+  // Suppress modifier registration messages (should no longer appear after fix)
+  /Modifier .* not found in registry, using stub/,
+  /@tachui\/modifiers: Registered .* modifiers/,
 ]
 
 // Override console.error and console.warn to filter out expected test errors
 console.error = (...args) => {
   const message = args.join(' ')
-  const isExpectedError = expectedErrorPatterns.some(pattern => pattern.test(message))
-  
+  const isExpectedError = expectedErrorPatterns.some(pattern =>
+    pattern.test(message)
+  )
+
   if (!isExpectedError) {
     originalConsoleError.apply(console, args)
   }
@@ -64,8 +79,10 @@ console.error = (...args) => {
 
 console.warn = (...args) => {
   const message = args.join(' ')
-  const isExpectedError = expectedErrorPatterns.some(pattern => pattern.test(message))
-  
+  const isExpectedError = expectedErrorPatterns.some(pattern =>
+    pattern.test(message)
+  )
+
   if (!isExpectedError) {
     originalConsoleWarn.apply(console, args)
   }
@@ -74,9 +91,9 @@ console.warn = (...args) => {
 // Override stderr to suppress expected error patterns and test-related output
 process.stderr.write = ((chunk: any, encoding?: any, callback?: any) => {
   const message = chunk.toString()
-  
+
   // More aggressive suppression - check for any test-related patterns
-  const shouldSuppress = 
+  const shouldSuppress =
     // Direct stderr markers
     message.includes('stderr |') ||
     // File path patterns
@@ -99,11 +116,11 @@ process.stderr.write = ((chunk: any, encoding?: any, callback?: any) => {
     message.includes('node_modules') ||
     // Check against all patterns
     expectedErrorPatterns.some(pattern => pattern.test(message))
-  
+
   if (!shouldSuppress) {
     return originalStderrWrite.call(process.stderr, chunk, encoding, callback)
   }
-  
+
   // Return true to indicate success for suppressed messages
   if (typeof callback === 'function') {
     callback()
@@ -147,7 +164,7 @@ global.document = {
         },
         get(target, property) {
           return target[property]
-        }
+        },
       }),
       setAttribute: vi.fn(),
       getAttribute: vi.fn(),
@@ -156,7 +173,7 @@ global.document = {
       innerHTML: '',
       textContent: '',
     }
-    
+
     // Mock cssText property
     Object.defineProperty(element.style, 'cssText', {
       set(value) {
@@ -166,30 +183,36 @@ global.document = {
             delete element.style[key]
           }
         })
-        
+
         const rules = value.split(';').filter(rule => rule.trim())
         rules.forEach(rule => {
           const colonIndex = rule.indexOf(':')
           if (colonIndex === -1) return
-          
+
           const property = rule.slice(0, colonIndex).trim()
           const val = rule.slice(colonIndex + 1).trim()
-          
+
           if (property && val) {
             // Convert kebab-case CSS properties to camelCase
-            const camelProperty = property.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase())
+            const camelProperty = property.replace(
+              /-([a-z])/g,
+              (match, letter) => letter.toUpperCase()
+            )
             element.style[camelProperty] = val
           }
         })
       },
       get() {
         return Object.entries(element.style)
-          .filter(([key]) => key !== 'cssText' && typeof element.style[key] !== 'function')
+          .filter(
+            ([key]) =>
+              key !== 'cssText' && typeof element.style[key] !== 'function'
+          )
           .map(([key, value]) => `${key}: ${value}`)
           .join('; ')
-      }
+      },
     })
-    
+
     return element
   }),
   getElementById: vi.fn(),

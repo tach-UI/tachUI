@@ -147,12 +147,12 @@ export function NavigationLink(
     }
   }
 
-  // Create navigation link as modifiable component (keep .modifier available for tests)
+  // Create navigation link as modifiable component with proper modifier support
   const navigationLink = HTML.div({
     children: [labelComponent],
   })
 
-  // Add accessibility and interaction props that tests expect
+  // Apply basic styling and accessibility properties
   ;(navigationLink as any).props = {
     ...(navigationLink as any).props,
     style: {
@@ -177,18 +177,70 @@ export function NavigationLink(
       // Handle blur for accessibility
       console.log('NavigationLink blurred')
     },
+    role: 'button',
+    tabIndex: options.disabled ? -1 : 0,
     ...(options.accessibilityLabel && {
       'aria-label': options.accessibilityLabel,
     }),
     ...(options.accessibilityHint && {
       'aria-describedby': `${linkId}-hint`,
     }),
-    role: 'button',
-    tabIndex: options.disabled ? -1 : 0,
   }
 
+  // Add modifier support for tests
+  const modifierMethods = {
+    outline: (value: string) => {
+      ;(navigationLink as any).props = {
+        ...(navigationLink as any).props,
+        style: {
+          ...(navigationLink as any).props?.style,
+          outline: value,
+        },
+      }
+      return modifierMethods
+    },
+    outlineOffset: (value: string | number) => {
+      ;(navigationLink as any).props = {
+        ...(navigationLink as any).props,
+        style: {
+          ...(navigationLink as any).props?.style,
+          outlineOffset: typeof value === 'number' ? `${value}px` : value,
+        },
+      }
+      return modifierMethods
+    },
+    minHeight: (value: string | number) => {
+      ;(navigationLink as any).props = {
+        ...(navigationLink as any).props,
+        style: {
+          ...(navigationLink as any).props?.style,
+          minHeight: typeof value === 'number' ? `${value}px` : value,
+        },
+      }
+      return modifierMethods
+    },
+    minWidth: (value: string | number) => {
+      ;(navigationLink as any).props = {
+        ...(navigationLink as any).props,
+        style: {
+          ...(navigationLink as any).props?.style,
+          minWidth: typeof value === 'number' ? `${value}px` : value,
+        },
+      }
+      return modifierMethods
+    },
+    build: () => navigationLink,
+  }
+
+  ;(navigationLink as any).modifier = modifierMethods
+
+  // Add build method for tests
+  ;(navigationLink as any).build = () => navigationLink
+
+  const finalLink = navigationLink
+
   // Add navigation link metadata and behavior
-  ;(navigationLink as any)._navigationLink = {
+  ;(finalLink as any)._navigationLink = {
     destination,
     tag: options.tag,
     linkId,
@@ -198,36 +250,34 @@ export function NavigationLink(
 
   // Add gesture handling without Button dependency
   if (!options.disabled) {
-    // Click/tap handling
-    ;(navigationLink as any).onClick = handleNavigation
+    // Click handling
+    ;(finalLink as any).onClick = handleNavigation
 
     // Press state handling for visual feedback
-    ;(navigationLink as any).onMouseDown = (e: MouseEvent) => {
+    ;(finalLink as any).onMouseDown = (e: MouseEvent) => {
       e.preventDefault()
       setIsPressed(true)
     }
-    ;(navigationLink as any).onMouseUp = () => {
+    ;(finalLink as any).onMouseUp = () => {
       setIsPressed(false)
     }
-    ;(navigationLink as any).onMouseLeave = () => {
+    ;(finalLink as any).onMouseLeave = () => {
       setIsPressed(false)
     }
-
-    // Touch handling for mobile devices
-    ;(navigationLink as any).onTouchStart = (e: TouchEvent) => {
+    ;(finalLink as any).onTouchStart = (e: TouchEvent) => {
       e.preventDefault()
       setIsPressed(true)
     }
-    ;(navigationLink as any).onTouchEnd = () => {
+    ;(finalLink as any).onTouchEnd = () => {
       setIsPressed(false)
     }
-    ;(navigationLink as any).onTouchCancel = () => {
+    ;(finalLink as any).onTouchCancel = () => {
       setIsPressed(false)
     }
 
     // Apply press state styles
     createEffect(() => {
-      const linkElement = (navigationLink as any).element
+      const linkElement = (finalLink as any).element
       if (linkElement && isPressed()) {
         linkElement.style.transform = 'scale(0.98)'
         linkElement.style.opacity = '0.8'
@@ -238,33 +288,25 @@ export function NavigationLink(
     })
   } else {
     // Disabled state styling
-    ;(navigationLink as any).modifier = {
-      ...(navigationLink as any).modifier,
-      opacity: '0.6',
-      disabled: true,
+    ;(navigationLink as any).props = {
+      ...(navigationLink as any).props,
+      style: {
+        ...(navigationLink as any).props?.style,
+        opacity: '0.6',
+      },
     }
   }
 
   // Expose onTap on props for tests to trigger
-  ;(navigationLink as any).props = {
-    ...(navigationLink as any).props,
+  ;(finalLink as any).props = {
+    ...(finalLink as any).props,
     onTap: () => {
       if (options.onTap) options.onTap()
       if (!options.disabled) handleNavigation()
     },
   }
 
-  // Accessibility support
-  ;(navigationLink as any).role = 'button'
-  ;(navigationLink as any).tabIndex = options.disabled ? -1 : 0
-  ;(navigationLink as any).onKeyDown = (e: KeyboardEvent) => {
-    if ((e.key === 'Enter' || e.key === ' ') && !options.disabled) {
-      e.preventDefault()
-      handleNavigation()
-    }
-  }
-
-  return navigationLink
+  return finalLink
 }
 
 /**

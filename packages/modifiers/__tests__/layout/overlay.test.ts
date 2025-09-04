@@ -11,7 +11,7 @@ import {
   overlay,
   type OverlayAlignment,
 } from '../../src/layout/overlay'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
+import type { ModifierContext } from '../../src/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 
 // Mock DOM element that matches HTMLElement interface
@@ -88,6 +88,13 @@ describe('Overlay Modifier', () => {
     }
     console.warn = mockConsole.warn
     console.error = mockConsole.error
+
+    // Mock document.createElement to return MockElement
+    vi.spyOn(document, 'createElement').mockImplementation(
+      (tagName: string) => {
+        return new MockElement() as any
+      }
+    )
   })
 
   afterEach(() => {
@@ -96,6 +103,7 @@ describe('Overlay Modifier', () => {
     console.error = originalConsole.error
 
     vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('Constructor and Factory Function', () => {

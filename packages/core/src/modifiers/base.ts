@@ -1391,6 +1391,11 @@ export class LifecycleModifier extends BaseModifier {
       this.setupTask(context, props.task)
     }
 
+    // Set up onAppear/onDisappear with IntersectionObserver
+    if (props.onAppear || props.onDisappear) {
+      this.setupViewportObserver(context, props)
+    }
+
     return undefined
   }
 
@@ -1429,6 +1434,30 @@ export class LifecycleModifier extends BaseModifier {
       if (this.activeAbortController) {
         this.activeAbortController.abort()
       }
+    })
+  }
+
+  private setupViewportObserver(
+    context: ModifierContext,
+    props: LifecycleModifierProps
+  ): void {
+    if (!context.element) return
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && props.onAppear) {
+          props.onAppear()
+        } else if (!entry.isIntersecting && props.onDisappear) {
+          props.onDisappear()
+        }
+      })
+    })
+
+    observer.observe(context.element)
+
+    // Add cleanup to disconnect observer
+    this.addCleanup(() => {
+      observer.disconnect()
     })
   }
 

@@ -18,6 +18,15 @@ export class FocusableModifier extends BaseModifier<FocusableOptions> {
   readonly type = 'focusable'
   readonly priority = 75
 
+  constructor(options: FocusableOptions = {}) {
+    // Ensure interactions defaults to empty array
+    const normalizedOptions = {
+      ...options,
+      interactions: options.interactions || [],
+    }
+    super(normalizedOptions)
+  }
+
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
@@ -39,18 +48,32 @@ export class FocusableModifier extends BaseModifier<FocusableOptions> {
         htmlElement.tabIndex = 0
       }
 
-      // Set appropriate ARIA attributes
-      if (interactions.includes('activate')) {
-        // Element can be activated (like a button)
-        if (!htmlElement.getAttribute('role')) {
+      // Handle role assignment - edit takes precedence over activate, but don't override existing roles
+      const existingRole = htmlElement.getAttribute('role')
+
+      if (interactions.includes('edit')) {
+        // Element can be edited - this takes precedence (but only if no existing role)
+        if (!existingRole) {
+          htmlElement.setAttribute('role', 'textbox')
+        }
+        htmlElement.setAttribute('contenteditable', 'true')
+        htmlElement.setAttribute(
+          'aria-label',
+          htmlElement.getAttribute('aria-label') || 'Editable content'
+        )
+      } else if (interactions.includes('activate')) {
+        // Element can be activated (like a button) - only if no role set
+        if (!existingRole) {
           htmlElement.setAttribute('role', 'button')
         }
         htmlElement.setAttribute(
           'aria-label',
           htmlElement.getAttribute('aria-label') || 'Activatable element'
         )
+      }
 
-        // Add keyboard activation support
+      // Add keyboard activation support if activate interaction is present
+      if (interactions.includes('activate')) {
         const handleKeyDown = (event: KeyboardEvent) => {
           if (event.key === ' ' || event.key === 'Enter') {
             event.preventDefault()
@@ -68,18 +91,6 @@ export class FocusableModifier extends BaseModifier<FocusableOptions> {
           existingCleanup()
           htmlElement.removeEventListener('keydown', handleKeyDown)
         }
-      }
-
-      if (interactions.includes('edit')) {
-        // Element can be edited
-        if (!htmlElement.getAttribute('role')) {
-          htmlElement.setAttribute('role', 'textbox')
-        }
-        htmlElement.setAttribute('contenteditable', 'true')
-        htmlElement.setAttribute(
-          'aria-label',
-          htmlElement.getAttribute('aria-label') || 'Editable content'
-        )
       }
 
       // Ensure element appears focusable to screen readers

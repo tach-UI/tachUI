@@ -52,6 +52,10 @@
       "types": "./dist/modifiers/types.d.ts",
       "import": "./dist/modifiers/types.js"
     },
+    "./modifiers/registry": {
+      "types": "./dist/modifiers/registry.d.ts",
+      "import": "./dist/modifiers/registry.js"
+    },
     "./runtime/types": {
       "types": "./dist/runtime/types.d.ts",
       "import": "./dist/runtime/types.js"

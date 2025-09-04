@@ -11,6 +11,7 @@ import type {
   ModifierContext,
   ReactiveModifierProps,
 } from '@tachui/core/modifiers/types'
+import { isSignal, isComputed } from '@tachui/core/reactive'
 
 // Comprehensive CSS-compatible padding values including modern CSS units
 export type PaddingValue =
@@ -97,7 +98,13 @@ export class PaddingModifier extends BaseModifier<PaddingOptions> {
     const styles: Record<string, any> = {}
 
     // Enhanced value formatter with comprehensive CSS unit support
-    const formatValue = (value: PaddingValue): string => {
+    // Now handles reactive signals properly by passing them through unchanged
+    const formatValue = (value: PaddingValue): any => {
+      // Pass reactive signals through directly to applyStyles
+      if (isSignal(value) || isComputed(value)) {
+        return value
+      }
+
       if (typeof value === 'number') {
         return `${value}px`
       }

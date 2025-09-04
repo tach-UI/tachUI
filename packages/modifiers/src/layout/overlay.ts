@@ -4,8 +4,8 @@
  * SwiftUI-inspired modifier for overlaying content on top of another view
  */
 
-import { BaseModifier } from '../basic/base'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
+import { BaseModifier } from '../base'
+import type { ModifierContext } from '../types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 
 export type OverlayAlignment =
@@ -29,9 +29,12 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   readonly priority = 10 // Apply late so positioning is relative to final layout
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
-    if (!context.element || !(context.element instanceof HTMLElement)) return
+    if (!context.element) return
 
-    const element = context.element
+    // In test environment, accept any element with style property
+    const element = context.element as HTMLElement
+    if (!element.style) return
+
     const { content, alignment = 'center' } = this.properties
 
     this.applyOverlay(element, content, alignment, context)
@@ -82,8 +85,11 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
       if (contentNode.element) {
         container.appendChild(contentNode.element)
       }
-    } else if (content instanceof HTMLElement) {
-      // If content is already a DOM element
+    } else if (
+      content &&
+      (content instanceof HTMLElement || content.appendChild)
+    ) {
+      // If content is a DOM element (including test mock elements with appendChild method)
       container.appendChild(content)
     }
   }

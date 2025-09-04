@@ -72,6 +72,7 @@ import type {
   ModifierContext,
   ReactiveModifierProps,
 } from '@tachui/core/modifiers/types'
+import { isSignal, isComputed } from '@tachui/core/reactive'
 
 export type ReactiveMarginOptions = ReactiveModifierProps<MarginOptions>
 
@@ -97,7 +98,13 @@ export class MarginModifier extends BaseModifier<MarginOptions> {
     const styles: Record<string, any> = {}
 
     // Enhanced value formatter with comprehensive CSS unit support
-    const formatValue = (value: MarginValue): string => {
+    // Now handles reactive signals properly by passing them through unchanged
+    const formatValue = (value: MarginValue): any => {
+      // Pass reactive signals through directly to applyStyles
+      if (isSignal(value) || isComputed(value)) {
+        return value
+      }
+
       if (typeof value === 'number') {
         return `${value}px`
       }

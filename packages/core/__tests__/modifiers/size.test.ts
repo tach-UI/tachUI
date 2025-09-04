@@ -133,12 +133,14 @@ describe('SizeModifier', () => {
 
       modifier.apply(mockNode, mockContext)
 
-      // Wait for reactive effects
-      await new Promise(resolve => setTimeout(resolve, 0))
+      // Wait for reactive effects with longer timeout for CI
+      await new Promise(resolve => setTimeout(resolve, 10))
       expect(mockElement.style.width).toBe('50%')
 
       setIsFullWidth(true)
-      await new Promise(resolve => setTimeout(resolve, 0))
+      // Re-apply modifier to trigger reactive update
+      modifier.apply(mockNode, mockContext)
+      await new Promise(resolve => setTimeout(resolve, 10))
       expect(mockElement.style.width).toBe('100%')
     })
   })

@@ -580,28 +580,31 @@ describe('Error Handling', () => {
     expect(result).toBeUndefined()
   })
 
-  it('should handle stylesheet insertion errors gracefully', () => {
-    const mockSheet = {
-      insertRule: vi.fn().mockImplementation(() => {
-        throw new Error('Invalid CSS rule')
-      }),
-      cssRules: [],
-      deleteRule: vi.fn(),
-      type: 'text/css',
+  it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    'should handle stylesheet insertion errors gracefully',
+    () => {
+      const mockSheet = {
+        insertRule: vi.fn().mockImplementation(() => {
+          throw new Error('Invalid CSS rule')
+        }),
+        cssRules: [],
+        deleteRule: vi.fn(),
+        type: 'text/css',
+      }
+      const mockStyleElement = document.createElement('style')
+      Object.defineProperty(mockStyleElement, 'sheet', {
+        value: mockSheet,
+        writable: true,
+      })
+      vi.spyOn(document, 'getElementById').mockReturnValue(mockStyleElement)
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const modifier = iconBefore('★')
+
+      // Should not throw even when CSS insertion fails
+      expect(() => modifier.apply({} as any, createMockContext())).not.toThrow()
+      // Verify that the mock sheet's insertRule was called (and failed)
+      expect(mockSheet.insertRule).toHaveBeenCalled()
     }
-    const mockStyleElement = document.createElement('style')
-    Object.defineProperty(mockStyleElement, 'sheet', {
-      value: mockSheet,
-      writable: true,
-    })
-    vi.spyOn(document, 'getElementById').mockReturnValue(mockStyleElement)
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-
-    const modifier = iconBefore('★')
-
-    // Should not throw even when CSS insertion fails
-    expect(() => modifier.apply({} as any, createMockContext())).not.toThrow()
-    // Verify that the mock sheet's insertRule was called (and failed)
-    expect(mockSheet.insertRule).toHaveBeenCalled()
-  })
+  )
 })

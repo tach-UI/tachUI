@@ -337,6 +337,8 @@ export interface LifecycleModifierProps {
     id?: string
     priority?: 'background' | 'userInitiated' | 'utility' | 'default'
   }
+  onAppear?: () => void
+  onDisappear?: () => void
 }
 
 /**

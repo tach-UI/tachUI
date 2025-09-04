@@ -58,7 +58,8 @@ export interface LifecycleValidationConfig {
  * Default lifecycle validation configuration
  */
 const defaultConfig: LifecycleValidationConfig = {
-  enabled: process.env.NODE_ENV !== 'production',
+  enabled:
+    process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test',
   phases: {
     construct: true,
     mount: true,

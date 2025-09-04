@@ -12,6 +12,10 @@ import { Text } from '@tachui/primitives'
 import { layoutModifiers } from '../../src/modifiers/presets'
 import { createSignal } from '../../src/reactive'
 
+// Import plugin packages to trigger auto-registration
+import '@tachui/effects'
+import '@tachui/modifiers'
+
 // Mock DOM environment
 function createMockElement(tagName: string = 'div'): HTMLElement {
   const element = {
