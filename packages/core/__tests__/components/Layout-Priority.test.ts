@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { HTML } from '@tachui/primitives'
 import { Layout } from '../../src/components'
 import { Text } from '@tachui/primitives'
-import { layoutModifiers } from '../../src/modifiers/core'
+import { layoutModifiers } from '../../src/modifiers/presets'
 import { createSignal } from '../../src/reactive'
 
 // Mock DOM environment

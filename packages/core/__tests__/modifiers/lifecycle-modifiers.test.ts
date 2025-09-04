@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HTML, Text } from '@tachui/primitives'
 import { LifecycleModifier } from '../../src/modifiers/base'
-import { lifecycleModifiers } from '../../src/modifiers/core'
+import { lifecycleModifiers } from '../../src/modifiers/presets'
 import { createSignal } from '../../src/reactive'
 
 // Mock IntersectionObserver

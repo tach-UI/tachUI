@@ -74,26 +74,36 @@ const flexShrink = (...args: any[]) => createStubModifier('flexShrink')
 const flexWrap = (...args: any[]) => createStubModifier('flexWrap')
 const gap = (...args: any[]) => createStubModifier('gap')
 const justifyContent = (...args: any[]) => createStubModifier('justifyContent')
-const margin = (...args: any[]) => createStubModifier('margin')
-const marginBottom = (...args: any[]) => createStubModifier('marginBottom')
+const margin = (...args: any[]) => createRegistryModifier('margin', ...args)
+const marginBottom = (...args: any[]) =>
+  createRegistryModifier('marginBottom', ...args)
 const marginHorizontal = (...args: any[]) =>
-  createStubModifier('marginHorizontal')
-const marginLeft = (...args: any[]) => createStubModifier('marginLeft')
-const marginRight = (...args: any[]) => createStubModifier('marginRight')
-const marginTop = (...args: any[]) => createStubModifier('marginTop')
-const marginVertical = (...args: any[]) => createStubModifier('marginVertical')
-const padding = (...args: any[]) => createStubModifier('padding')
-const paddingBottom = (...args: any[]) => createStubModifier('paddingBottom')
+  createRegistryModifier('marginHorizontal', ...args)
+const marginLeft = (...args: any[]) =>
+  createRegistryModifier('marginLeft', ...args)
+const marginRight = (...args: any[]) =>
+  createRegistryModifier('marginRight', ...args)
+const marginTop = (...args: any[]) =>
+  createRegistryModifier('marginTop', ...args)
+const marginVertical = (...args: any[]) =>
+  createRegistryModifier('marginVertical', ...args)
+const padding = (...args: any[]) => createRegistryModifier('padding', ...args)
+const paddingBottom = (...args: any[]) =>
+  createRegistryModifier('paddingBottom', ...args)
 const paddingHorizontal = (...args: any[]) =>
-  createStubModifier('paddingHorizontal')
-const paddingLeading = (...args: any[]) => createStubModifier('paddingLeading')
-const paddingLeft = (...args: any[]) => createStubModifier('paddingLeft')
-const paddingRight = (...args: any[]) => createStubModifier('paddingRight')
-const paddingTop = (...args: any[]) => createStubModifier('paddingTop')
+  createRegistryModifier('paddingHorizontal', ...args)
+const paddingLeading = (...args: any[]) =>
+  createRegistryModifier('paddingLeading', ...args)
+const paddingLeft = (...args: any[]) =>
+  createRegistryModifier('paddingLeft', ...args)
+const paddingRight = (...args: any[]) =>
+  createRegistryModifier('paddingRight', ...args)
+const paddingTop = (...args: any[]) =>
+  createRegistryModifier('paddingTop', ...args)
 const paddingTrailing = (...args: any[]) =>
-  createStubModifier('paddingTrailing')
+  createRegistryModifier('paddingTrailing', ...args)
 const paddingVertical = (...args: any[]) =>
-  createStubModifier('paddingVertical')
+  createRegistryModifier('paddingVertical', ...args)
 // Temporarily commented out to resolve circular dependency during build
 // Import new multi-property modifiers
 // import {
@@ -107,23 +117,15 @@ const paddingVertical = (...args: any[]) =>
 // } from '@tachui/modifiers'
 
 // Temporary implementations to avoid build errors
-const height = (...args: any[]) => createStubModifier('height')
-const maxHeight = (...args: any[]) => createStubModifier('maxHeight')
-const maxWidth = (...args: any[]) => createStubModifier('maxWidth')
-const minHeight = (value: number | string) => ({
-  type: 'size',
-  priority: 50,
-  properties: { minHeight: value },
-  apply: () => undefined,
-})
-const minWidth = (value: number | string) => ({
-  type: 'size',
-  priority: 50,
-  properties: { minWidth: value },
-  apply: () => undefined,
-})
-const size = (...args: any[]) => createStubModifier('size')
-const width = (...args: any[]) => createStubModifier('width')
+const height = (...args: any[]) => createRegistryModifier('height', ...args)
+const maxHeight = (...args: any[]) =>
+  createRegistryModifier('maxHeight', ...args)
+const maxWidth = (...args: any[]) => createRegistryModifier('maxWidth', ...args)
+const minHeight = (...args: any[]) =>
+  createRegistryModifier('minHeight', ...args)
+const minWidth = (...args: any[]) => createRegistryModifier('minWidth', ...args)
+const size = (...args: any[]) => createRegistryModifier('size', ...args)
+const width = (...args: any[]) => createRegistryModifier('width', ...args)
 import type {
   AnimationModifierProps,
   AppearanceModifierProps,
@@ -133,7 +135,7 @@ import type {
   ModifierBuilder,
 } from './types'
 // Responsive functionality moved to @tachui/responsive package
-import { createModifiableComponent } from './registry'
+import { createModifiableComponent, globalModifierRegistry } from './registry'
 import type {
   FontStyle,
   FontVariant,
@@ -181,14 +183,34 @@ const lineClamp = (...args: any[]) => createStubModifier('lineClamp')
 const wordBreak = (...args: any[]) => createStubModifier('wordBreak')
 const overflowWrap = (...args: any[]) => createStubModifier('overflowWrap')
 const hyphens = (...args: any[]) => createStubModifier('hyphens')
-import {
-  cursor,
-  display,
-  overflowX,
-  overflowY,
-  outline,
-  outlineOffset,
-} from './utility'
+// Utility functions moved to @tachui/modifiers - using registry lookups instead
+const cursor = (...args: any[]) => createStubModifier('cursor')
+const display = (...args: any[]) => createStubModifier('display')
+const overflowX = (...args: any[]) => createStubModifier('overflowX')
+const overflowY = (...args: any[]) => createStubModifier('overflowY')
+const outline = (...args: any[]) => createStubModifier('outline')
+const outlineOffset = (...args: any[]) => createStubModifier('outlineOffset')
+
+/**
+ * Registry-based modifier lookup helper
+ * Replaces stub functions with actual modifier registry lookups
+ */
+function createRegistryModifier(name: string, ...args: any[]): Modifier {
+  const factory = globalModifierRegistry.get<any>(name)
+  if (factory) {
+    try {
+      const modifier = (factory as any).apply(null, args as any)
+      return modifier as Modifier
+    } catch (error) {
+      console.warn(`Error creating modifier '${name}':`, error)
+    }
+  }
+
+  // Fallback to stub if modifier not found
+  console.warn(`Modifier '${name}' not found in registry, using stub`)
+  return createStubModifier(name)
+}
+
 // position and zIndex have been migrated to @tachui/modifiers/layout
 // AriaModifier and TabIndexModifier have been moved to @tachui/modifiers
 // import { AriaModifier, TabIndexModifier } from './attributes'

@@ -29,3 +29,32 @@ export {
   useResponsiveValue,
   DEFAULT_BREAKPOINTS,
 } from './modifiers/responsive'
+
+// Registry integration for responsive modifiers
+import { globalModifierRegistry } from '@tachui/core'
+import {
+  createResponsiveModifier,
+  createMediaQueryModifier,
+  createResponsivePropertyModifier,
+  createResponsiveLayoutModifier,
+} from './modifiers/responsive'
+
+const responsiveModifierRegistrations: Array<
+  [string, (...args: any[]) => any]
+> = [
+  ['responsive', createResponsiveModifier],
+  ['mediaQuery', createMediaQueryModifier],
+  ['responsiveProperty', createResponsivePropertyModifier],
+  ['responsiveLayout', createResponsiveLayoutModifier],
+]
+
+// Auto-register responsive modifiers on import
+responsiveModifierRegistrations.forEach(([name, factory]) => {
+  globalModifierRegistry.register(name, factory)
+})
+
+if (process.env.NODE_ENV !== 'production') {
+  console.info(
+    `🔍 [@tachui/responsive] Registered ${responsiveModifierRegistrations.length} responsive modifiers with global registry`
+  )
+}

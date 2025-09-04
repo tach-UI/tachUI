@@ -48,3 +48,38 @@ export {
   gridCellRows,
   gridCellAnchor,
 } from './modifiers/grid'
+
+// Registry integration for grid modifiers
+import { globalModifierRegistry } from '@tachui/core'
+import {
+  gridColumnSpan,
+  gridRowSpan,
+  gridArea,
+  gridCellAlignment,
+  gridItemConfig,
+  gridCellColumns,
+  gridCellRows,
+  gridCellAnchor,
+} from './modifiers/grid'
+
+const gridModifierRegistrations: Array<[string, (...args: any[]) => any]> = [
+  ['gridColumnSpan', gridColumnSpan],
+  ['gridRowSpan', gridRowSpan],
+  ['gridArea', gridArea],
+  ['gridCellAlignment', gridCellAlignment],
+  ['gridItemConfig', gridItemConfig],
+  ['gridCellColumns', gridCellColumns],
+  ['gridCellRows', gridCellRows],
+  ['gridCellAnchor', gridCellAnchor],
+]
+
+// Auto-register grid modifiers on import
+gridModifierRegistrations.forEach(([name, factory]) => {
+  globalModifierRegistry.register(name, factory)
+})
+
+if (process.env.NODE_ENV !== 'production') {
+  console.info(
+    `🔍 [@tachui/grid] Registered ${gridModifierRegistrations.length} grid modifiers with global registry`
+  )
+}

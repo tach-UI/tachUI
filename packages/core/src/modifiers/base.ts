@@ -5,7 +5,6 @@
  */
 
 import { createEffect, isComputed, isSignal, getThemeSignal } from '../reactive'
-import type { Signal } from '../reactive/types'
 import type { DOMNode } from '../runtime/types'
 import type {
   CSSStyleProperties,
@@ -1222,48 +1221,8 @@ export class InteractionModifier extends BaseModifier {
       context.element.setAttribute('aria-describedby', props.accessibilityHint)
     }
 
-    // Advanced Gesture Modifiers moved to @tachui/modifiers package
-    if (props.onLongPressGesture) {
-      console.warn(
-        'onLongPressGesture has been moved to @tachui/modifiers. Please import { onLongPressGesture } from "@tachui/modifiers" and use it directly.'
-      )
-    }
-
-    if (props.keyboardShortcut) {
-      console.warn(
-        'keyboardShortcut has been moved to @tachui/modifiers. Please import { keyboardShortcut } from "@tachui/modifiers" and use it directly.'
-      )
-    }
-
-    if (props.focused !== undefined) {
-      console.warn(
-        'focused has been moved to @tachui/modifiers. Please import { focused } from "@tachui/modifiers" and use it directly.'
-      )
-    }
-
-    if (props.focusable) {
-      console.warn(
-        'focusable has been moved to @tachui/modifiers. Please import { focusable } from "@tachui/modifiers" and use it directly.'
-      )
-    }
-
-    if (props.onContinuousHover) {
-      console.warn(
-        'onContinuousHover has been moved to @tachui/modifiers. Please import { onContinuousHover } from "@tachui/modifiers" and use it directly.'
-      )
-    }
-
-    if (props.allowsHitTesting !== undefined) {
-      console.warn(
-        'allowsHitTesting has been moved to @tachui/modifiers. Please import { allowsHitTesting } from "@tachui/modifiers" and use it directly.'
-      )
-    }
-
     return undefined
   }
-
-  // Phase 4 Advanced Gesture Methods - Moved to @tachui/modifiers package
-  // These implementations have been moved to specialized modifier classes
 }
 
 /**

@@ -276,9 +276,6 @@ export interface InteractionModifierProps {
   // Other events
   onSelect?: (event: Event) => void
 
-  // Advanced Gesture Modifiers moved to @tachui/modifiers package
-  // Import: onLongPressGesture, keyboardShortcut, focused, focusable, onContinuousHover
-
   // Gesture Priority System (Phase 4 - Epic: Butternut)
   highPriorityGesture?: {
     gesture: any // Will define gesture types later
@@ -288,9 +285,6 @@ export interface InteractionModifierProps {
     gesture: any
     including?: ('all' | 'subviews' | 'none')[]
   }
-
-  // Hit Testing Control moved to @tachui/modifiers package
-  // Import: allowsHitTesting
 
   // Existing state properties
   disabled?: boolean
@@ -556,9 +550,6 @@ export interface ModifierBuilder<
   // This provides better tree-shaking and cleaner plugin boundaries.
   // ============================================================================
 
-  // Advanced Gesture Modifiers moved to @tachui/modifiers package
-  // Use: import { onLongPressGesture, keyboardShortcut, focused, focusable, onContinuousHover } from '@tachui/modifiers'
-
   // Gesture Priority System (Phase 4 - Epic: Butternut)
   highPriorityGesture(
     gesture: any,
@@ -568,9 +559,6 @@ export interface ModifierBuilder<
     gesture: any,
     including?: ('all' | 'subviews' | 'none')[]
   ): ModifierBuilder<T>
-
-  // Hit Testing Control moved to @tachui/modifiers package
-  // Use: import { allowsHitTesting } from '@tachui/modifiers'
 
   // HTML and ARIA Attributes
   id(value: string): ModifierBuilder<T>

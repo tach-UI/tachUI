@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { applyModifiersToNode } from '../../src/modifiers/registry'
-import { createCustomModifier } from '../../src/modifiers/utils'
+import { createCustomModifier } from '../../src/modifiers/factories'
 
 describe('Batched Modifier Application', () => {
   it('should have batch mode available in applyModifiersToNode', () => {
@@ -19,8 +19,8 @@ describe('Batched Modifier Application', () => {
 
     // Create test modifiers
     const modifiers = [
-      createCustomModifier('test-1', 1, (node) => node)({ width: '100px' }),
-      createCustomModifier('test-2', 2, (node) => node)({ height: '50px' }),
+      createCustomModifier('test-1', 1, node => node)({ width: '100px' }),
+      createCustomModifier('test-2', 2, node => node)({ height: '50px' }),
     ]
 
     // Test that batch mode works without throwing
@@ -93,7 +93,7 @@ describe('Batched Modifier Application', () => {
       createCustomModifier(
         `perf-${i}`,
         i,
-        (node) => node
+        node => node
       )({
         [`prop${i}`]: `value${i}`,
       })

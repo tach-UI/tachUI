@@ -1,8 +1,9 @@
 /**
- * Modifier Utilities and Helper Functions
+ * Modifier Factory Functions
  *
- * Utility functions for creating custom modifiers, combining modifiers,
- * and working with the modifier system.
+ * Factory functions for creating custom modifiers, combining modifiers,
+ * and building advanced modifier behaviors. These are the building blocks
+ * for creating your own modifier implementations.
  */
 
 import { createEffect } from '../reactive'

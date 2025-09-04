@@ -56,10 +56,3 @@ export {
   layoutModifiers,
   presetModifiers,
 } from './core'
-
-// Concrete modifier implementations (re-exported from @tachui/modifiers for compatibility)
-export * from './compat'
-
-// Note: Modifiers are now implemented in @tachui/modifiers but re-exported here
-// for backward compatibility. You can also import directly:
-// import { padding, margin, flexbox, css } from '@tachui/modifiers'
