@@ -11,6 +11,9 @@ import type {
   ComponentProps,
   DOMNode,
 } from '@tachui/core/runtime/types'
+
+// Re-export for convenience
+export type { DOMNode } from '@tachui/core/runtime/types'
 // Temporary type definitions until we migrate all types
 export type Dimension = number | string | 'infinity'
 export interface StatefulBackgroundValue {

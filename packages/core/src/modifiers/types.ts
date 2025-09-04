@@ -213,11 +213,8 @@ export interface AppearanceModifierProps {
     style?: 'solid' | 'dashed' | 'dotted'
   }
   // shadow moved to @tachui/effects package
-  clipped?: boolean
-  clipShape?: {
-    shape: 'circle' | 'ellipse' | 'rect' | 'polygon'
-    parameters?: Record<string, any>
-  }
+  // clipped moved to @tachui/modifiers package
+  // clipShape moved to @tachui/modifiers package
   // Visual Effects (Phase 2 - Epic: Butternut)
   blur?: number // CSS filter: blur(Npx)
   brightness?: number // CSS filter: brightness(N) - 1.0 is normal
@@ -279,33 +276,8 @@ export interface InteractionModifierProps {
   // Other events
   onSelect?: (event: Event) => void
 
-  // Advanced Gesture Modifiers (Phase 4 - Epic: Butternut)
-  onLongPressGesture?: {
-    minimumDuration?: number // ms, default 500
-    maximumDistance?: number // px, default 10
-    perform: () => void
-    onPressingChanged?: (isPressing: boolean) => void
-  }
-
-  // Keyboard Shortcuts (Phase 4 - Epic: Butternut)
-  keyboardShortcut?: {
-    key: string
-    modifiers?: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[]
-    action: () => void
-  }
-
-  // Focus Management (Phase 4 - Epic: Butternut)
-  focused?: boolean | Signal<boolean>
-  focusable?: {
-    isFocusable?: boolean
-    interactions?: ('activate' | 'edit')[]
-  }
-
-  // Enhanced Hover Tracking (Phase 4 - Epic: Butternut)
-  onContinuousHover?: {
-    coordinateSpace?: 'local' | 'global'
-    perform: (location: { x: number; y: number } | null) => void
-  }
+  // Advanced Gesture Modifiers moved to @tachui/modifiers package
+  // Import: onLongPressGesture, keyboardShortcut, focused, focusable, onContinuousHover
 
   // Gesture Priority System (Phase 4 - Epic: Butternut)
   highPriorityGesture?: {
@@ -317,8 +289,8 @@ export interface InteractionModifierProps {
     including?: ('all' | 'subviews' | 'none')[]
   }
 
-  // Hit Testing Control (Phase 4 - Epic: Butternut)
-  allowsHitTesting?: boolean
+  // Hit Testing Control moved to @tachui/modifiers package
+  // Import: allowsHitTesting
 
   // Existing state properties
   disabled?: boolean
@@ -345,32 +317,7 @@ export interface AnimationModifierProps {
     direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse'
   }
   transform?: string | Signal<string>
-  rotationEffect?: {
-    angle: number
-    anchor?:
-      | 'center'
-      | 'top'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottom'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-      | 'leading'
-      | 'trailing'
-  }
-  overlay?: {
-    content: any // ComponentInstance or function that returns ComponentInstance
-    alignment?:
-      | 'center'
-      | 'top'
-      | 'bottom'
-      | 'leading'
-      | 'trailing'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-  }
+  // overlay moved to @tachui/modifiers package
   scaleEffect?: {
     x: number
     y?: number
@@ -560,39 +507,11 @@ export interface ModifierBuilder<
   cssVariable(name: string, value: string | number): ModifierBuilder<T>
 
   // Phase 1 SwiftUI modifiers
-  clipped(): ModifierBuilder<T>
-  rotationEffect(
-    angle: number | Signal<number>,
-    anchor?:
-      | 'center'
-      | 'top'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottom'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-      | 'leading'
-      | 'trailing'
-  ): ModifierBuilder<T>
+  // clipped() moved to @tachui/modifiers
 
   // Phase 2 SwiftUI modifiers
-  clipShape(
-    shape: 'circle' | 'ellipse' | 'rect' | 'polygon',
-    parameters?: Record<string, any>
-  ): ModifierBuilder<T>
-  overlay(
-    content: any,
-    alignment?:
-      | 'center'
-      | 'top'
-      | 'bottom'
-      | 'leading'
-      | 'trailing'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-  ): ModifierBuilder<T>
+  // clipShape() moved to @tachui/modifiers
+  // overlay() moved to @tachui/modifiers
 
   // Phase 3 SwiftUI modifiers - Critical Transform Modifiers
 
@@ -637,33 +556,8 @@ export interface ModifierBuilder<
   // This provides better tree-shaking and cleaner plugin boundaries.
   // ============================================================================
 
-  // Advanced Gesture Modifiers (Phase 4 - Epic: Butternut)
-  onLongPressGesture(options: {
-    minimumDuration?: number
-    maximumDistance?: number
-    perform: () => void
-    onPressingChanged?: (isPressing: boolean) => void
-  }): ModifierBuilder<T>
-
-  // Keyboard Shortcuts (Phase 4 - Epic: Butternut)
-  keyboardShortcut(
-    key: string,
-    modifiers: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[],
-    action: () => void
-  ): ModifierBuilder<T>
-
-  // Focus Management (Phase 4 - Epic: Butternut)
-  focused(binding: boolean | Signal<boolean>): ModifierBuilder<T>
-  focusable(
-    isFocusable?: boolean,
-    interactions?: ('activate' | 'edit')[]
-  ): ModifierBuilder<T>
-
-  // Enhanced Hover Tracking (Phase 4 - Epic: Butternut)
-  onContinuousHover(
-    coordinateSpace: 'local' | 'global',
-    perform: (location: { x: number; y: number } | null) => void
-  ): ModifierBuilder<T>
+  // Advanced Gesture Modifiers moved to @tachui/modifiers package
+  // Use: import { onLongPressGesture, keyboardShortcut, focused, focusable, onContinuousHover } from '@tachui/modifiers'
 
   // Gesture Priority System (Phase 4 - Epic: Butternut)
   highPriorityGesture(
@@ -675,8 +569,8 @@ export interface ModifierBuilder<
     including?: ('all' | 'subviews' | 'none')[]
   ): ModifierBuilder<T>
 
-  // Hit Testing Control (Phase 4 - Epic: Butternut)
-  allowsHitTesting(enabled: boolean): ModifierBuilder<T>
+  // Hit Testing Control moved to @tachui/modifiers package
+  // Use: import { allowsHitTesting } from '@tachui/modifiers'
 
   // HTML and ARIA Attributes
   id(value: string): ModifierBuilder<T>

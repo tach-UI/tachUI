@@ -819,75 +819,11 @@ export class ModifierBuilderImpl<
 
   // Phase 1 SwiftUI modifiers
 
-  clipped(): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ clipped: true }))
-    return this
-  }
-
-  rotationEffect(
-    angle: number | Signal<number>,
-    anchor:
-      | 'center'
-      | 'top'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottom'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-      | 'leading'
-      | 'trailing' = 'center'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new AnimationModifier({
-        rotationEffect: {
-          angle: typeof angle === 'number' ? angle : angle,
-          anchor,
-        },
-      })
-    )
-    return this
-  }
+  // Note: clipped() has been moved to @tachui/modifiers
 
   // Phase 2 SwiftUI modifiers
 
-  clipShape(
-    shape: 'circle' | 'ellipse' | 'rect' | 'polygon',
-    parameters?: Record<string, any>
-  ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new AppearanceModifier({
-        clipShape: {
-          shape,
-          parameters: parameters || {},
-        },
-      })
-    )
-    return this
-  }
-
-  overlay(
-    content: any,
-    alignment:
-      | 'center'
-      | 'top'
-      | 'bottom'
-      | 'leading'
-      | 'trailing'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottomLeading'
-      | 'bottomTrailing' = 'center'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new AnimationModifier({
-        overlay: {
-          content,
-          alignment,
-        },
-      })
-    )
-    return this
-  }
+  // Note: clipShape() and overlay() have been moved to @tachui/modifiers
 
   // Phase 3 SwiftUI modifiers - Critical Transform Modifiers
 
@@ -1045,18 +981,17 @@ export class ModifierBuilderImpl<
 
   // Visual effects methods removed - use @tachui/effects package
 
-  // Phase 4 Advanced Gesture Modifiers (Epic: Butternut)
-
+  // Phase 4 Advanced Gesture Modifiers moved to @tachui/modifiers
+  // Use: import { onLongPressGesture } from '@tachui/modifiers'
   onLongPressGesture(options: {
     minimumDuration?: number
     maximumDistance?: number
     perform: () => void
     onPressingChanged?: (isPressing: boolean) => void
   }): ModifierBuilder<T> {
-    this.modifiers.push(
-      new InteractionModifier({ onLongPressGesture: options })
+    throw new Error(
+      'onLongPressGesture has been moved to @tachui/modifiers. Please import { onLongPressGesture } from "@tachui/modifiers" and use .apply(onLongPressGesture(...)) instead.'
     )
-    return this
   }
 
   keyboardShortcut(
@@ -1064,41 +999,33 @@ export class ModifierBuilderImpl<
     modifiers: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[],
     action: () => void
   ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new InteractionModifier({
-        keyboardShortcut: { key, modifiers, action },
-      })
+    throw new Error(
+      'keyboardShortcut has been moved to @tachui/modifiers. Please import { keyboardShortcut } from "@tachui/modifiers" and use .apply(keyboardShortcut(...)) instead.'
     )
-    return this
   }
 
   focused(binding: boolean | Signal<boolean>): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ focused: binding }))
-    return this
+    throw new Error(
+      'focused has been moved to @tachui/modifiers. Please import { focused } from "@tachui/modifiers" and use .apply(focused(...)) instead.'
+    )
   }
 
   focusable(
     isFocusable: boolean = true,
     interactions?: ('activate' | 'edit')[]
   ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new InteractionModifier({
-        focusable: { isFocusable, interactions },
-      })
+    throw new Error(
+      'focusable has been moved to @tachui/modifiers. Please import { focusable } from "@tachui/modifiers" and use .apply(focusable(...)) instead.'
     )
-    return this
   }
 
   onContinuousHover(
     coordinateSpace: 'local' | 'global',
     perform: (location: { x: number; y: number } | null) => void
   ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new InteractionModifier({
-        onContinuousHover: { coordinateSpace, perform },
-      })
+    throw new Error(
+      'onContinuousHover has been moved to @tachui/modifiers. Please import { onContinuousHover } from "@tachui/modifiers" and use .apply(onContinuousHover(...)) instead.'
     )
-    return this
   }
 
   highPriorityGesture(
@@ -1126,8 +1053,9 @@ export class ModifierBuilderImpl<
   }
 
   allowsHitTesting(enabled: boolean): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ allowsHitTesting: enabled }))
-    return this
+    throw new Error(
+      'allowsHitTesting has been moved to @tachui/modifiers. Please import { allowsHitTesting } from "@tachui/modifiers" and use .apply(allowsHitTesting(...)) instead.'
+    )
   }
 
   // Animation modifiers

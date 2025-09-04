@@ -20,7 +20,11 @@ export * from './fixed-size'
 export * from './position'
 export * from './z-index'
 
+// Overlay modifiers
+export * from './overlay'
+
 // Re-export common types for convenience
 export type { ScaleAnchor } from './scale-effect'
 export type { ContentMode } from './aspect-ratio'
 export type { PositionValue } from './position'
+export type { OverlayAlignment } from './overlay'

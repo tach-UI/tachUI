@@ -857,38 +857,7 @@ export class AppearanceModifier extends BaseModifier {
 
     // Shadow functionality moved to @tachui/effects package
 
-    // Clipped modifier (SwiftUI .clipped())
-    if (props.clipped) {
-      styles.overflow = 'hidden'
-    }
-
-    // Clip Shape modifier (SwiftUI .clipShape())
-    if (props.clipShape) {
-      const { shape, parameters } = props.clipShape
-
-      switch (shape) {
-        case 'circle':
-          styles.clipPath = 'circle(50%)'
-          break
-        case 'ellipse': {
-          const radiusX = parameters?.radiusX || '50%'
-          const radiusY = parameters?.radiusY || '50%'
-          styles.clipPath = `ellipse(${radiusX} ${radiusY} at center)`
-          break
-        }
-        case 'rect': {
-          const inset = parameters?.inset || 0
-          styles.clipPath = `inset(${inset}px)`
-          break
-        }
-        case 'polygon': {
-          const points =
-            parameters?.points || '0% 0%, 100% 0%, 100% 100%, 0% 100%'
-          styles.clipPath = `polygon(${points})`
-          break
-        }
-      }
-    }
+    // Clipped and Clip Shape modifiers moved to @tachui/modifiers package
 
     // Visual Effects (Phase 2 - Epic: Butternut)
     const filters: string[] = []
@@ -1253,297 +1222,48 @@ export class InteractionModifier extends BaseModifier {
       context.element.setAttribute('aria-describedby', props.accessibilityHint)
     }
 
-    // Advanced Gesture Modifiers (Phase 4 - Epic: Butternut)
+    // Advanced Gesture Modifiers moved to @tachui/modifiers package
     if (props.onLongPressGesture) {
-      this.setupLongPressGesture(context.element, props.onLongPressGesture)
+      console.warn(
+        'onLongPressGesture has been moved to @tachui/modifiers. Please import { onLongPressGesture } from "@tachui/modifiers" and use it directly.'
+      )
     }
 
     if (props.keyboardShortcut) {
-      this.setupKeyboardShortcut(context.element, props.keyboardShortcut)
+      console.warn(
+        'keyboardShortcut has been moved to @tachui/modifiers. Please import { keyboardShortcut } from "@tachui/modifiers" and use it directly.'
+      )
     }
 
     if (props.focused !== undefined) {
-      this.setupFocusManagement(context.element, props.focused)
+      console.warn(
+        'focused has been moved to @tachui/modifiers. Please import { focused } from "@tachui/modifiers" and use it directly.'
+      )
     }
 
     if (props.focusable) {
-      this.setupFocusable(context.element, props.focusable)
+      console.warn(
+        'focusable has been moved to @tachui/modifiers. Please import { focusable } from "@tachui/modifiers" and use it directly.'
+      )
     }
 
     if (props.onContinuousHover) {
-      this.setupContinuousHover(context.element, props.onContinuousHover)
+      console.warn(
+        'onContinuousHover has been moved to @tachui/modifiers. Please import { onContinuousHover } from "@tachui/modifiers" and use it directly.'
+      )
     }
 
     if (props.allowsHitTesting !== undefined) {
-      this.setupHitTesting(context.element, props.allowsHitTesting)
+      console.warn(
+        'allowsHitTesting has been moved to @tachui/modifiers. Please import { allowsHitTesting } from "@tachui/modifiers" and use it directly.'
+      )
     }
 
     return undefined
   }
 
-  // Phase 4 Advanced Gesture Methods
-
-  /**
-   * Setup long press gesture with timing and distance constraints
-   */
-  private setupLongPressGesture(
-    element: Element,
-    options: {
-      minimumDuration?: number
-      maximumDistance?: number
-      perform: () => void
-      onPressingChanged?: (isPressing: boolean) => void
-    }
-  ): void {
-    const minimumDuration = options.minimumDuration ?? 500 // ms
-    const maximumDistance = options.maximumDistance ?? 10 // px
-
-    let timeoutId: number | undefined
-    let startPoint: { x: number; y: number } | null = null
-    let isPressing = false
-
-    const cleanup = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-        timeoutId = undefined
-      }
-      if (isPressing && options.onPressingChanged) {
-        options.onPressingChanged(false)
-      }
-      isPressing = false
-      startPoint = null
-    }
-
-    const handlePointerDown = (event: Event) => {
-      const pointerEvent = event as PointerEvent
-      startPoint = { x: pointerEvent.clientX, y: pointerEvent.clientY }
-      isPressing = true
-
-      if (options.onPressingChanged) {
-        options.onPressingChanged(true)
-      }
-
-      timeoutId = window.setTimeout(() => {
-        if (isPressing && startPoint) {
-          options.perform()
-          cleanup()
-        }
-      }, minimumDuration)
-    }
-
-    const handlePointerMove = (event: Event) => {
-      const pointerEvent = event as PointerEvent
-      if (!startPoint || !isPressing) return
-
-      const distance = Math.sqrt(
-        Math.pow(pointerEvent.clientX - startPoint.x, 2) +
-          Math.pow(pointerEvent.clientY - startPoint.y, 2)
-      )
-
-      if (distance > maximumDistance) {
-        cleanup()
-      }
-    }
-
-    const handlePointerUp = () => {
-      cleanup()
-    }
-
-    const handlePointerCancel = () => {
-      cleanup()
-    }
-
-    // Use pointer events for better touch/mouse compatibility
-    element.addEventListener('pointerdown', handlePointerDown as EventListener)
-    element.addEventListener('pointermove', handlePointerMove as EventListener)
-    element.addEventListener('pointerup', handlePointerUp as EventListener)
-    element.addEventListener(
-      'pointercancel',
-      handlePointerCancel as EventListener
-    )
-
-    // Store cleanup function for later removal
-    ;(element as any)._longPressCleanup = cleanup
-  }
-
-  /**
-   * Setup keyboard shortcut handling
-   */
-  private setupKeyboardShortcut(
-    element: Element,
-    shortcut: {
-      key: string
-      modifiers?: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[]
-      action: () => void
-    }
-  ): void {
-    const modifiers = shortcut.modifiers ?? []
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Check if all required modifiers are pressed
-      const requiredModifiers = {
-        cmd: modifiers.includes('cmd') || modifiers.includes('meta'),
-        ctrl: modifiers.includes('ctrl'),
-        shift: modifiers.includes('shift'),
-        alt: modifiers.includes('alt'),
-      }
-
-      const actualModifiers = {
-        cmd: event.metaKey || event.ctrlKey, // Handle both Mac (meta) and PC (ctrl)
-        ctrl: event.ctrlKey,
-        shift: event.shiftKey,
-        alt: event.altKey,
-      }
-
-      // Check key match (case insensitive)
-      const keyMatches = event.key.toLowerCase() === shortcut.key.toLowerCase()
-
-      // Check modifier requirements
-      const modifiersMatch = Object.entries(requiredModifiers).every(
-        ([mod, required]) =>
-          required === actualModifiers[mod as keyof typeof actualModifiers]
-      )
-
-      if (keyMatches && modifiersMatch) {
-        event.preventDefault()
-        shortcut.action()
-      }
-    }
-
-    // Add keyboard event listener to document for global shortcuts
-    document.addEventListener('keydown', handleKeyDown)
-
-    // Store cleanup function
-    ;(element as any)._keyboardShortcutCleanup = () => {
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }
-
-  /**
-   * Setup focus management with reactive binding
-   */
-  private setupFocusManagement(
-    element: Element,
-    focused: boolean | Signal<boolean>
-  ): void {
-    if (!(element instanceof HTMLElement)) return
-
-    const htmlElement = element as HTMLElement
-
-    // Make element focusable if it's not naturally focusable
-    if (!htmlElement.hasAttribute('tabindex')) {
-      htmlElement.setAttribute('tabindex', '0')
-    }
-
-    if (isSignal(focused) || isComputed(focused)) {
-      // Reactive focus management
-      createEffect(() => {
-        const shouldFocus = focused()
-        if (shouldFocus) {
-          htmlElement.focus()
-        } else {
-          htmlElement.blur()
-        }
-      })
-    } else {
-      // Static focus management
-      if (focused) {
-        htmlElement.focus()
-      }
-    }
-  }
-
-  /**
-   * Setup focusable behavior
-   */
-  private setupFocusable(
-    element: Element,
-    options: {
-      isFocusable?: boolean
-      interactions?: ('activate' | 'edit')[]
-    }
-  ): void {
-    if (!(element instanceof HTMLElement)) return
-
-    const htmlElement = element as HTMLElement
-
-    if (options.isFocusable === false) {
-      htmlElement.setAttribute('tabindex', '-1')
-    } else {
-      if (!htmlElement.hasAttribute('tabindex')) {
-        htmlElement.setAttribute('tabindex', '0')
-      }
-    }
-
-    // Setup interaction behaviors
-    if (options.interactions?.includes('activate')) {
-      htmlElement.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          htmlElement.click()
-        }
-      })
-    }
-
-    if (options.interactions?.includes('edit')) {
-      htmlElement.setAttribute('role', 'textbox')
-      htmlElement.setAttribute('contenteditable', 'true')
-    }
-  }
-
-  /**
-   * Setup continuous hover tracking with coordinates
-   */
-  private setupContinuousHover(
-    element: Element,
-    options: {
-      coordinateSpace?: 'local' | 'global'
-      perform: (location: { x: number; y: number } | null) => void
-    }
-  ): void {
-    const coordinateSpace = options.coordinateSpace ?? 'local'
-
-    const handleMouseMove = (event: Event) => {
-      const mouseEvent = event as MouseEvent
-      let x: number, y: number
-
-      if (coordinateSpace === 'local') {
-        const rect = element.getBoundingClientRect()
-        x = mouseEvent.clientX - rect.left
-        y = mouseEvent.clientY - rect.top
-      } else {
-        x = mouseEvent.clientX
-        y = mouseEvent.clientY
-      }
-
-      options.perform({ x, y })
-    }
-
-    const handleMouseLeave = () => {
-      options.perform(null)
-    }
-
-    element.addEventListener('mousemove', handleMouseMove as EventListener)
-    element.addEventListener('mouseleave', handleMouseLeave as EventListener)
-
-    // Store cleanup
-    ;(element as any)._continuousHoverCleanup = () => {
-      element.removeEventListener('mousemove', handleMouseMove as EventListener)
-      element.removeEventListener(
-        'mouseleave',
-        handleMouseLeave as EventListener
-      )
-    }
-  }
-
-  /**
-   * Setup hit testing control
-   */
-  private setupHitTesting(element: Element, enabled: boolean): void {
-    if (element instanceof HTMLElement) {
-      element.style.pointerEvents = enabled ? '' : 'none'
-    }
-  }
+  // Phase 4 Advanced Gesture Methods - Moved to @tachui/modifiers package
+  // These implementations have been moved to specialized modifier classes
 }
 
 /**
@@ -1649,172 +1369,9 @@ export class AnimationModifier extends BaseModifier {
       context.element.style.transform = newTransform
     }
 
-    // Rotation Effect (SwiftUI .rotationEffect(angle))
-    if (props.rotationEffect && context.element instanceof HTMLElement) {
-      const { angle, anchor } = props.rotationEffect
-
-      // Convert anchor to CSS transform-origin
-      const anchorOrigins: Record<string, string> = {
-        center: '50% 50%',
-        top: '50% 0%',
-        topLeading: '0% 0%',
-        topTrailing: '100% 0%',
-        bottom: '50% 100%',
-        bottomLeading: '0% 100%',
-        bottomTrailing: '100% 100%',
-        leading: '0% 50%',
-        trailing: '100% 50%',
-      }
-
-      const transformOrigin = anchorOrigins[anchor || 'center'] || '50% 50%'
-
-      // Create rotation transform
-      const rotationTransform = `rotate(${angle}deg)`
-
-      if (isSignal(angle) || isComputed(angle)) {
-        // Reactive rotation
-        createEffect(() => {
-          const currentAngle = typeof angle === 'function' ? angle() : angle
-          const currentRotation = `rotate(${currentAngle}deg)`
-
-          if (context.element instanceof HTMLElement) {
-            context.element.style.transformOrigin = transformOrigin
-
-            // Combine with existing transforms if any
-            const existingTransform = context.element.style.transform || ''
-            const existingTransforms = existingTransform
-              .split(' ')
-              .filter(t => t && !t.startsWith('rotate('))
-              .join(' ')
-
-            const newTransform = existingTransforms
-              ? `${existingTransforms} ${currentRotation}`
-              : currentRotation
-
-            context.element.style.transform = newTransform
-          }
-        })
-      } else {
-        // Static rotation
-        if (context.element instanceof HTMLElement) {
-          context.element.style.transformOrigin = transformOrigin
-
-          // Combine with existing transforms if any
-          const existingTransform = context.element.style.transform || ''
-          const existingTransforms = existingTransform
-            .split(' ')
-            .filter(t => t && !t.startsWith('rotate('))
-            .join(' ')
-
-          const newTransform = existingTransforms
-            ? `${existingTransforms} ${rotationTransform}`
-            : rotationTransform
-
-          context.element.style.transform = newTransform
-        }
-      }
-    }
-
-    // Overlay modifier (SwiftUI .overlay())
-    if (props.overlay && context.element instanceof HTMLElement) {
-      this.applyOverlay(context.element, props.overlay, context)
-    }
+    // Overlay modifier moved to @tachui/modifiers package
 
     return undefined
-  }
-
-  private applyOverlay(
-    element: HTMLElement,
-    overlay: { content: any; alignment?: string },
-    _context: ModifierContext
-  ): void {
-    const { content, alignment = 'center' } = overlay
-
-    // Make the element a positioned container
-    if (element.style.position === '' || element.style.position === 'static') {
-      element.style.position = 'relative'
-    }
-
-    // Create overlay container
-    const overlayContainer = document.createElement('div')
-    overlayContainer.style.position = 'absolute'
-    overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
-
-    // Apply alignment positioning
-    const alignmentStyles = this.getOverlayAlignment(alignment)
-    Object.assign(overlayContainer.style, alignmentStyles)
-
-    // Render content
-    if (typeof content === 'function') {
-      // If content is a function, call it to get component
-      const contentComponent = content()
-      if (contentComponent && typeof contentComponent.render === 'function') {
-        const contentNode = contentComponent.render()
-        if (contentNode.element) {
-          overlayContainer.appendChild(contentNode.element)
-        }
-      }
-    } else if (content && typeof content.render === 'function') {
-      // If content is a component instance
-      const contentNode = content.render()
-      if (contentNode.element) {
-        overlayContainer.appendChild(contentNode.element)
-      }
-    } else if (content instanceof HTMLElement) {
-      // If content is already a DOM element
-      overlayContainer.appendChild(content)
-    }
-
-    // Add overlay to the element
-    element.appendChild(overlayContainer)
-  }
-
-  private getOverlayAlignment(alignment: string): Record<string, string> {
-    const alignments: Record<string, Record<string, string>> = {
-      center: {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      },
-      top: {
-        top: '0',
-        left: '50%',
-        transform: 'translateX(-50%)',
-      },
-      bottom: {
-        bottom: '0',
-        left: '50%',
-        transform: 'translateX(-50%)',
-      },
-      leading: {
-        top: '50%',
-        left: '0',
-        transform: 'translateY(-50%)',
-      },
-      trailing: {
-        top: '50%',
-        right: '0',
-        transform: 'translateY(-50%)',
-      },
-      topLeading: {
-        top: '0',
-        left: '0',
-      },
-      topTrailing: {
-        top: '0',
-        right: '0',
-      },
-      bottomLeading: {
-        bottom: '0',
-        left: '0',
-      },
-      bottomTrailing: {
-        bottom: '0',
-        right: '0',
-      },
-    }
-
-    return alignments[alignment] || alignments.center
   }
 
   private createKeyframeRule(

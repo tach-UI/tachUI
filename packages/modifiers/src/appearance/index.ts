@@ -12,3 +12,7 @@ export * from './border'
 
 // Foreground modifiers
 export * from './foreground'
+
+// Clipping modifiers
+export * from './clip-shape'
+export * from './clipped'

@@ -25,14 +25,14 @@
 
     "baseUrl": ".",
     "paths": {
-      "@tachui/core": ["./packages/core/src"],
-      "@tachui/primitives": ["./packages/primitives/src"],
-      "@tachui/forms": ["./packages/forms/src"],
-      "@tachui/navigation": ["./packages/navigation/src"],
-      "@tachui/symbols": ["./packages/symbols/src"],
-      "@tachui/mobile": ["./packages/mobile/src"],
-      "@tachui/effects": ["./packages/effects/src"],
-      "@tachui/cli": ["./packages/cli/src"]
+      "@tachui/core": ["./packages/core/dist"],
+      "@tachui/primitives": ["./packages/primitives/dist"],
+      "@tachui/forms": ["./packages/forms/dist"],
+      "@tachui/navigation": ["./packages/navigation/dist"],
+      "@tachui/symbols": ["./packages/symbols/dist"],
+      "@tachui/mobile": ["./packages/mobile/dist"],
+      "@tachui/effects": ["./packages/effects/dist"],
+      "@tachui/cli": ["./packages/cli/dist"]
     }
   },
   "include": [],
