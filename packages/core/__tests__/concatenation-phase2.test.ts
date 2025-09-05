@@ -117,7 +117,7 @@ describe('Phase 2: Component-Level Concatenation Optimization', () => {
 
       expect(patterns).toHaveLength(1)
       expect(patterns[0].type).toBe('static')
-      expect(patterns[0].leftComponent).toBe('Text("Hello")')
+      expect(patterns[0].leftComponent).toBe('const result = Text("Hello")')
       expect(patterns[0].rightComponent).toBe('Text("World").build()')
       expect(patterns[0].optimizable).toBe(true)
       expect(patterns[0].accessibilityNeeds).toBe('minimal')

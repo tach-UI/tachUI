@@ -4,8 +4,13 @@
  * Fallback for complex cases that can't be statically optimized
  */
 
-import type { ComponentInstance } from './types'
-import { ConcatenatedComponent } from '../concatenation/concatenated-component'
+import type {
+  ComponentInstance,
+  RenderFunction,
+  LifecycleCleanup,
+  DOMNode,
+} from './types'
+// ConcatenatedComponent import removed - using direct implementation
 import type {
   ConcatenationMetadata,
   ComponentSegment,
@@ -24,7 +29,7 @@ export interface FullConcatenationResult extends ComponentInstance {
 export function createOptimizedConcatenation(
   left: ComponentInstance,
   right: ComponentInstance,
-  level: 'full'
+  _level: 'full'
 ): FullConcatenationResult {
   // Create segments for the existing concatenation system
   const leftSegment: ComponentSegment = {
@@ -50,16 +55,41 @@ export function createOptimizedConcatenation(
   // Analyze the concatenation for optimal metadata
   const metadata: ConcatenationMetadata = analyzeOptimalMetadata(left, right)
 
-  // Use existing ConcatenatedComponent but mark as optimized
-  const concatenatedComponent = new ConcatenatedComponent(
-    [leftSegment, rightSegment],
-    metadata
-  )
-
+  // Create a proper ComponentInstance with required render function
   return {
-    ...concatenatedComponent,
+    type: 'component',
+    id: `concat_full_${left.id}_${right.id}`,
+    mounted: false,
     optimized: true,
     concatenationType: 'full',
+    render: (() => {
+      const leftElement = left.render()
+      const rightElement = right.render()
+
+      const domNode: DOMNode = {
+        type: 'element',
+        tag: 'div',
+        props: { className: 'tachui-concat-full' },
+        children: [
+          ...(Array.isArray(leftElement) ? leftElement : [leftElement]),
+          ...(Array.isArray(rightElement) ? rightElement : [rightElement]),
+        ],
+      }
+
+      return domNode
+    }) as RenderFunction,
+    props: {
+      ...left.props,
+      ...right.props,
+    },
+    cleanup: [
+      () => {
+        left.cleanup?.forEach(fn => fn())
+        right.cleanup?.forEach(fn => fn())
+      },
+    ] as LifecycleCleanup[],
+    segments: [leftSegment, rightSegment],
+    metadata,
   } as FullConcatenationResult
 }
 

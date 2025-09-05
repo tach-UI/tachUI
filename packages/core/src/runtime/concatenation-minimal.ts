@@ -4,7 +4,12 @@
  * No ARIA support, no complex accessibility - just DOM manipulation
  */
 
-import type { ComponentInstance } from './types'
+import type {
+  ComponentInstance,
+  DOMNode,
+  RenderFunction,
+  LifecycleCleanup,
+} from './types'
 
 export interface MinimalConcatenationResult extends ComponentInstance {
   type: 'component'
@@ -19,7 +24,7 @@ export interface MinimalConcatenationResult extends ComponentInstance {
 export function createOptimizedConcatenation(
   left: ComponentInstance,
   right: ComponentInstance,
-  level: 'minimal'
+  _level: 'minimal'
 ): MinimalConcatenationResult {
   const concatenatedId = `concat_${left.id}_${right.id}`
 
@@ -29,30 +34,35 @@ export function createOptimizedConcatenation(
     concatenationType: 'minimal',
     id: concatenatedId,
 
-    render: () => {
+    render: (() => {
       // Create a single container element
-      const container = document.createElement('span')
-      container.className = 'tachui-concat-minimal'
+      const domNode: DOMNode = {
+        type: 'element',
+        tag: 'span',
+        props: { className: 'tachui-concat-minimal' },
+        children: [],
+      }
 
-      // Render both components directly into the container
+      // Render both components and add to children
       const leftElement = left.render()
       const rightElement = right.render()
 
-      // Append both elements - no wrapper divs, no accessibility overhead
+      const children: DOMNode[] = []
       if (Array.isArray(leftElement)) {
-        leftElement.forEach(el => container.appendChild(el))
+        children.push(...leftElement)
       } else {
-        container.appendChild(leftElement)
+        children.push(leftElement)
       }
 
       if (Array.isArray(rightElement)) {
-        rightElement.forEach(el => container.appendChild(el))
+        children.push(...rightElement)
       } else {
-        container.appendChild(rightElement)
+        children.push(rightElement)
       }
 
-      return container
-    },
+      domNode.children = children
+      return domNode
+    }) as RenderFunction,
 
     props: {
       // Merge props from both components (simplified)
@@ -60,11 +70,13 @@ export function createOptimizedConcatenation(
       ...right.props,
     },
 
-    cleanup: () => {
-      // Cleanup both components
-      left.cleanup?.forEach(fn => fn())
-      right.cleanup?.forEach(fn => fn())
-    },
+    cleanup: [
+      () => {
+        // Cleanup both components
+        left.cleanup?.forEach(fn => fn())
+        right.cleanup?.forEach(fn => fn())
+      },
+    ] as LifecycleCleanup[],
   }
 }
 

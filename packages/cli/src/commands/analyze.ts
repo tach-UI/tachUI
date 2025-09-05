@@ -6,10 +6,36 @@
 
 import { readFileSync, statSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import * as ts from 'typescript'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import { glob } from 'glob'
 import ora from 'ora'
+
+// Import concatenation analysis from core compiler
+// Note: In real implementation, these would be properly exported from @tachui/core/compiler
+interface ConcatenationPattern {
+  type: 'static' | 'dynamic'
+  location: { start: number; end: number }
+  leftComponent: string
+  rightComponent: string
+  optimizable: boolean
+  accessibilityNeeds: 'minimal' | 'aria' | 'full'
+}
+
+interface ConcatenationAnalysis {
+  totalPatterns: number
+  optimizedPatterns: number
+  staticPatterns: number
+  dynamicPatterns: number
+  bundleSavingsKB: number
+  accessibilityBreakdown: {
+    minimal: number
+    aria: number
+    full: number
+  }
+  recommendations: string[]
+}
 
 interface FileAnalysis {
   file: string
@@ -28,6 +54,7 @@ interface FileAnalysis {
   lifecycleUsage: string[]
   navigationUsage: string[]
   complexity: number
+  concatenationPatterns: ConcatenationPattern[]
 }
 
 interface AnalysisResult {
@@ -51,12 +78,187 @@ interface AnalysisResult {
     lifecycleUsage: string[]
     navigationUsage: string[]
   }
+  concatenation: ConcatenationAnalysis
   performance: {
     largeComponents: Array<{ file: string; lines: number; size: number }>
     complexComponents: Array<{ file: string; complexity: number }>
     unusedImports: string[]
   }
   suggestions: string[]
+}
+
+/**
+ * CLI-specific concatenation pattern analysis using TypeScript AST
+ * Replaces regex-based approach with proper AST analysis
+ */
+function analyzeConcatenationPatterns(
+  content: string,
+  filename: string = 'temp.ts'
+): ConcatenationPattern[] {
+  const patterns: ConcatenationPattern[] = []
+
+  try {
+    // Parse the code into a TypeScript AST
+    const sourceFile = ts.createSourceFile(
+      filename,
+      content,
+      ts.ScriptTarget.Latest,
+      true,
+      filename.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+    )
+
+    // Walk the AST to find .concat() calls
+    function visit(node: ts.Node): void {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        node.expression.name.text === 'concat'
+      ) {
+        // Check if this is a .build().concat() pattern
+        const leftExpression = node.expression.expression
+        if (
+          ts.isCallExpression(leftExpression) &&
+          ts.isPropertyAccessExpression(leftExpression.expression) &&
+          leftExpression.expression.name.text === 'build'
+        ) {
+          // Extract left component (everything before .build())
+          const componentChain = leftExpression.expression.expression
+          const leftComponent = extractComponentExpression(
+            componentChain,
+            content
+          )
+
+          // Extract right component (first argument to .concat())
+          const rightComponent =
+            node.arguments.length > 0
+              ? extractComponentExpression(node.arguments[0], content)
+              : ''
+
+          if (leftComponent && rightComponent) {
+            // Get source location
+            const start = node.getStart(sourceFile)
+            const end = node.getEnd()
+
+            // Simple static analysis
+            const hasVariable =
+              /\$\{[^}]+\}|[a-zA-Z_$][a-zA-Z0-9_$]*\[[^\]]*\]|entry\[/.test(
+                leftComponent + rightComponent
+              )
+            const isStatic = !hasVariable
+
+            // Accessibility analysis
+            const hasInteractive = /\bButton\b|\bLink\b/i.test(
+              leftComponent + rightComponent
+            )
+            const hasComplexLayout = /\bVStack\b|\bHStack\b|\bZStack\b/i.test(
+              content
+            )
+
+            let accessibilityNeeds: 'minimal' | 'aria' | 'full'
+            if (hasComplexLayout) {
+              accessibilityNeeds = 'full'
+            } else if (hasInteractive) {
+              accessibilityNeeds = 'aria'
+            } else {
+              accessibilityNeeds = 'minimal'
+            }
+
+            patterns.push({
+              type: isStatic ? 'static' : 'dynamic',
+              location: { start, end },
+              leftComponent: leftComponent.trim(),
+              rightComponent: rightComponent.trim(),
+              optimizable: isStatic,
+              accessibilityNeeds,
+            })
+          }
+        }
+      }
+
+      // Continue traversing child nodes
+      ts.forEachChild(node, visit)
+    }
+
+    visit(sourceFile)
+  } catch (error) {
+    // If AST parsing fails, return empty patterns (graceful fallback)
+    console.warn(`Failed to parse for concatenation analysis:`, error)
+  }
+
+  return patterns
+}
+
+/**
+ * Helper function to extract component expression text from AST node
+ */
+function extractComponentExpression(node: ts.Node, sourceCode: string): string {
+  const start = node.getStart()
+  const end = node.getEnd()
+  return sourceCode.substring(start, end)
+}
+
+/**
+ * Generate comprehensive concatenation analysis for CLI reporting
+ */
+function generateConcatenationAnalysis(
+  allPatterns: ConcatenationPattern[]
+): ConcatenationAnalysis {
+  const staticPatterns = allPatterns.filter(p => p.type === 'static').length
+  const dynamicPatterns = allPatterns.filter(p => p.type === 'dynamic').length
+  const optimizedPatterns = allPatterns.filter(p => p.optimizable).length
+
+  // Calculate bundle savings
+  const baseConcatenationSize = 87.76 // KB
+  const selectedRuntimes = new Set(allPatterns.map(p => p.accessibilityNeeds))
+  const optimizedSize = selectedRuntimes.size * 5 // 5KB per runtime
+  const bundleSavingsKB = Math.max(0, baseConcatenationSize - optimizedSize)
+
+  // Accessibility breakdown
+  const accessibilityBreakdown = {
+    minimal: allPatterns.filter(p => p.accessibilityNeeds === 'minimal').length,
+    aria: allPatterns.filter(p => p.accessibilityNeeds === 'aria').length,
+    full: allPatterns.filter(p => p.accessibilityNeeds === 'full').length,
+  }
+
+  // Generate recommendations
+  const recommendations: string[] = []
+
+  if (dynamicPatterns > staticPatterns) {
+    recommendations.push(
+      'Consider extracting variables from concatenation patterns to enable static optimization'
+    )
+  }
+
+  if (
+    accessibilityBreakdown.full >
+    accessibilityBreakdown.minimal + accessibilityBreakdown.aria
+  ) {
+    recommendations.push(
+      'Many concatenations require full accessibility - consider simplifying component structures'
+    )
+  }
+
+  if (allPatterns.length > 10 && optimizedPatterns / allPatterns.length < 0.5) {
+    recommendations.push(
+      'Low optimization rate - review concatenation patterns for static optimization opportunities'
+    )
+  }
+
+  if (bundleSavingsKB > 50) {
+    recommendations.push(
+      `High bundle savings potential: ${bundleSavingsKB.toFixed(1)}KB - implement concatenation optimization`
+    )
+  }
+
+  return {
+    totalPatterns: allPatterns.length,
+    optimizedPatterns,
+    staticPatterns,
+    dynamicPatterns,
+    bundleSavingsKB,
+    accessibilityBreakdown,
+    recommendations,
+  }
 }
 
 function analyzeFile(filePath: string, content: string): FileAnalysis {
@@ -78,10 +280,12 @@ function analyzeFile(filePath: string, content: string): FileAnalysis {
     lifecycleUsage: [] as string[],
     navigationUsage: [] as string[],
     complexity: 0,
+    concatenationPatterns: [] as ConcatenationPattern[],
   }
 
   // Analyze imports
-  const importMatches = content.match(/import.*from ['"]@tachui\/core['"]/g) || []
+  const importMatches =
+    content.match(/import.*from ['"]@tachui\/core['"]/g) || []
   analysis.imports = importMatches
 
   // Analyze state usage
@@ -101,10 +305,15 @@ function analyzeFile(filePath: string, content: string): FileAnalysis {
     analysis.hasModifiers = true
 
     const modifierChains = content.match(/\.modifier[\s\S]*?\.build\(\)/g) || []
-    analysis.modifierUsage = modifierChains.map((chain) =>
+    analysis.modifierUsage = modifierChains.map(chain =>
       chain
         .split('.')
-        .filter((part) => part.trim() && !part.includes('modifier') && !part.includes('build()'))
+        .filter(
+          part =>
+            part.trim() &&
+            !part.includes('modifier') &&
+            !part.includes('build()')
+        )
         .join('.')
     )
   }
@@ -119,7 +328,7 @@ function analyzeFile(filePath: string, content: string): FileAnalysis {
 
   // Analyze lifecycle usage
   const lifecycleModifiers = ['onAppear', 'onDisappear', 'task', 'refreshable']
-  lifecycleModifiers.forEach((modifier) => {
+  lifecycleModifiers.forEach(modifier => {
     if (content.includes(`.${modifier}(`)) {
       analysis.hasLifecycle = true
       analysis.lifecycleUsage.push(modifier)
@@ -127,8 +336,13 @@ function analyzeFile(filePath: string, content: string): FileAnalysis {
   })
 
   // Analyze navigation usage
-  const navigationComponents = ['NavigationView', 'NavigationLink', 'TabView', 'useNavigation']
-  navigationComponents.forEach((component) => {
+  const navigationComponents = [
+    'NavigationView',
+    'NavigationLink',
+    'TabView',
+    'useNavigation',
+  ]
+  navigationComponents.forEach(component => {
     if (content.includes(component)) {
       analysis.hasNavigation = true
       analysis.navigationUsage.push(component)
@@ -137,7 +351,7 @@ function analyzeFile(filePath: string, content: string): FileAnalysis {
 
   // Find component definitions
   const componentMatches = content.match(/export function (\w+)\(/g) || []
-  analysis.components = componentMatches.map((match) =>
+  analysis.components = componentMatches.map(match =>
     match.replace('export function ', '').replace('(', '')
   )
 
@@ -149,6 +363,12 @@ function analyzeFile(filePath: string, content: string): FileAnalysis {
   analysis.complexity += (content.match(/\.map\(/g) || []).length
   analysis.complexity += (content.match(/\.filter\(/g) || []).length
   analysis.complexity += analysis.modifierUsage.length * 0.5
+
+  // Analyze concatenation patterns
+  analysis.concatenationPatterns = analyzeConcatenationPatterns(
+    content,
+    filePath
+  )
 
   return analysis
 }
@@ -197,7 +417,9 @@ function generateSuggestions(results: AnalysisResult): string[] {
   }
 
   // Layout suggestions
-  const layoutTypes = new Set(results.patterns.layoutUsage.map((usage) => usage.split('.')[1]))
+  const layoutTypes = new Set(
+    results.patterns.layoutUsage.map(usage => usage.split('.')[1])
+  )
   if (layoutTypes.size === 1 && layoutTypes.has('VStack')) {
     suggestions.push('Consider using HStack or ZStack for more dynamic layouts')
   }
@@ -207,12 +429,21 @@ function generateSuggestions(results: AnalysisResult): string[] {
 
 export const analyzeCommand = new Command('analyze')
   .description('Analyze TachUI codebase for patterns and performance')
-  .option('-p, --pattern <pattern>', 'File pattern to analyze', 'src/**/*.{js,jsx,ts,tsx}')
+  .option(
+    '-p, --pattern <pattern>',
+    'File pattern to analyze',
+    'src/**/*.{js,jsx,ts,tsx}'
+  )
   .option('-o, --output <file>', 'Output report to file')
   .option('--performance', 'Include performance analysis', true)
   .option('--suggestions', 'Include improvement suggestions', true)
   .option('--detailed', 'Show detailed component analysis', false)
-  .action(async (options) => {
+  .option(
+    '--concatenation',
+    'Focus on concatenation optimization analysis',
+    false
+  )
+  .action(async options => {
     try {
       console.log(
         chalk.cyan(`
@@ -258,6 +489,19 @@ export const analyzeCommand = new Command('analyze')
           layoutUsage: [],
           lifecycleUsage: [],
           navigationUsage: [],
+        },
+        concatenation: {
+          totalPatterns: 0,
+          optimizedPatterns: 0,
+          staticPatterns: 0,
+          dynamicPatterns: 0,
+          bundleSavingsKB: 0,
+          accessibilityBreakdown: {
+            minimal: 0,
+            aria: 0,
+            full: 0,
+          },
+          recommendations: [],
         },
         performance: {
           largeComponents: [],
@@ -318,6 +562,14 @@ export const analyzeCommand = new Command('analyze')
 
       results.files.averageSize = results.files.totalSize / results.files.total
 
+      // Generate concatenation analysis
+      const allConcatenationPatterns = fileAnalyses.flatMap(
+        f => f.concatenationPatterns
+      )
+      results.concatenation = generateConcatenationAnalysis(
+        allConcatenationPatterns
+      )
+
       // Generate suggestions
       if (options.suggestions) {
         results.suggestions = generateSuggestions(results)
@@ -332,7 +584,9 @@ export const analyzeCommand = new Command('analyze')
       // File statistics
       console.log(`\n${chalk.yellow('📁 File Statistics:')}`)
       console.log(`${chalk.gray('Total files:')} ${results.files.total}`)
-      console.log(`${chalk.gray('Total size:')} ${(results.files.totalSize / 1024).toFixed(1)} KB`)
+      console.log(
+        `${chalk.gray('Total size:')} ${(results.files.totalSize / 1024).toFixed(1)} KB`
+      )
       console.log(
         `${chalk.gray('Average size:')} ${(results.files.averageSize / 1024).toFixed(1)} KB`
       )
@@ -344,7 +598,9 @@ export const analyzeCommand = new Command('analyze')
 
       // Component statistics
       console.log(`\n${chalk.yellow('🧩 Component Statistics:')}`)
-      console.log(`${chalk.gray('Total components:')} ${results.components.total}`)
+      console.log(
+        `${chalk.gray('Total components:')} ${results.components.total}`
+      )
       console.log(
         `${chalk.gray('With @State:')} ${results.components.withState} (${((results.components.withState / results.files.total) * 100).toFixed(1)}%)`
       )
@@ -361,9 +617,13 @@ export const analyzeCommand = new Command('analyze')
       // Pattern usage
       console.log(`\n${chalk.yellow('🎨 Pattern Usage:')}`)
 
-      const topModifiers = [...new Set(results.patterns.modifierUsage.flat())].slice(0, 5)
+      const topModifiers = [
+        ...new Set(results.patterns.modifierUsage.flat()),
+      ].slice(0, 5)
       if (topModifiers.length > 0) {
-        console.log(`${chalk.gray('Top modifiers:')} ${topModifiers.join(', ')}`)
+        console.log(
+          `${chalk.gray('Top modifiers:')} ${topModifiers.join(', ')}`
+        )
       }
 
       const layoutTypes = [...new Set(results.patterns.layoutUsage)]
@@ -373,7 +633,112 @@ export const analyzeCommand = new Command('analyze')
 
       const lifecycleTypes = [...new Set(results.patterns.lifecycleUsage)]
       if (lifecycleTypes.length > 0) {
-        console.log(`${chalk.gray('Lifecycle modifiers:')} ${lifecycleTypes.join(', ')}`)
+        console.log(
+          `${chalk.gray('Lifecycle modifiers:')} ${lifecycleTypes.join(', ')}`
+        )
+      }
+
+      // Concatenation Analysis (Enhanced when --concatenation flag is used)
+      if (results.concatenation.totalPatterns > 0) {
+        console.log(`\n${chalk.yellow('🔗 Concatenation Analysis:')}`)
+        console.log(
+          `${chalk.gray('Total patterns:')} ${results.concatenation.totalPatterns}`
+        )
+        console.log(
+          `${chalk.gray('✅ Static/Optimizable:')} ${results.concatenation.optimizedPatterns} (${Math.round((results.concatenation.optimizedPatterns / results.concatenation.totalPatterns) * 100)}%)`
+        )
+        console.log(
+          `${chalk.gray('🔄 Dynamic/Runtime:')} ${results.concatenation.dynamicPatterns}`
+        )
+        console.log(
+          `${chalk.gray('💾 Bundle savings:')} ${results.concatenation.bundleSavingsKB.toFixed(1)}KB`
+        )
+
+        const { accessibilityBreakdown } = results.concatenation
+        console.log(
+          `${chalk.gray('♿ Accessibility breakdown:')} Minimal: ${accessibilityBreakdown.minimal}, ARIA: ${accessibilityBreakdown.aria}, Full: ${accessibilityBreakdown.full}`
+        )
+
+        if (results.concatenation.recommendations.length > 0) {
+          console.log(`${chalk.gray('💡 Recommendations:')}`)
+          const maxRecs = options.concatenation
+            ? results.concatenation.recommendations.length
+            : 3
+          results.concatenation.recommendations
+            .slice(0, maxRecs)
+            .forEach((rec, index) => {
+              console.log(`  ${index + 1}. ${rec}`)
+            })
+        }
+
+        // Enhanced concatenation analysis when --concatenation flag is used
+        if (options.concatenation && allConcatenationPatterns.length > 0) {
+          console.log(`\n${chalk.cyan('📋 Detailed Concatenation Report:')}`)
+
+          // Group patterns by file for detailed analysis
+          const patternsByFile = new Map<string, ConcatenationPattern[]>()
+          fileAnalyses.forEach(analysis => {
+            if (analysis.concatenationPatterns.length > 0) {
+              const shortFilename =
+                analysis.file.split('/').pop() || analysis.file
+              patternsByFile.set(shortFilename, analysis.concatenationPatterns)
+            }
+          })
+
+          patternsByFile.forEach((patterns, filename) => {
+            console.log(`\n${chalk.green(filename)}:`)
+            patterns.forEach((pattern, index) => {
+              const optimizationIcon = pattern.optimizable ? '✅' : '🔄'
+              const accessibilityColor =
+                pattern.accessibilityNeeds === 'minimal'
+                  ? chalk.green
+                  : pattern.accessibilityNeeds === 'aria'
+                    ? chalk.yellow
+                    : chalk.red
+              console.log(
+                `  ${optimizationIcon} Pattern ${index + 1}: ${pattern.type} (${accessibilityColor(pattern.accessibilityNeeds)})`
+              )
+              console.log(
+                `     Left: ${pattern.leftComponent.substring(0, 50)}${pattern.leftComponent.length > 50 ? '...' : ''}`
+              )
+              console.log(
+                `     Right: ${pattern.rightComponent.substring(0, 50)}${pattern.rightComponent.length > 50 ? '...' : ''}`
+              )
+            })
+          })
+
+          // Optimization opportunities
+          const optimizablePatterns = allConcatenationPatterns.filter(
+            p => !p.optimizable
+          )
+          if (optimizablePatterns.length > 0) {
+            console.log(`\n${chalk.yellow('🚀 Optimization Opportunities:')}`)
+            optimizablePatterns.slice(0, 5).forEach((pattern, index) => {
+              console.log(
+                `  ${index + 1}. Convert dynamic pattern to static in ${pattern.leftComponent}`
+              )
+            })
+          }
+
+          console.log(`\n${chalk.cyan('💾 Bundle Impact Projection:')}`)
+          console.log(`  Current concatenation system: 87.76KB`)
+          console.log(
+            `  Optimized system: ${(87.76 - results.concatenation.bundleSavingsKB).toFixed(1)}KB`
+          )
+          console.log(
+            `  ${chalk.green(`Savings: ${results.concatenation.bundleSavingsKB.toFixed(1)}KB (${Math.round((results.concatenation.bundleSavingsKB / 87.76) * 100)}%)`)}`
+          )
+        }
+      } else if (options.concatenation) {
+        console.log(`\n${chalk.yellow('🔗 Concatenation Analysis:')}`)
+        console.log(
+          chalk.gray('No concatenation patterns found in analyzed files')
+        )
+        console.log(
+          chalk.gray(
+            '💡 Concatenation optimization is available when you use .build().concat() patterns'
+          )
+        )
       }
 
       // Performance insights
@@ -384,7 +749,7 @@ export const analyzeCommand = new Command('analyze')
           console.log(
             `${chalk.red('Large components:')} ${results.performance.largeComponents.length}`
           )
-          results.performance.largeComponents.slice(0, 3).forEach((comp) => {
+          results.performance.largeComponents.slice(0, 3).forEach(comp => {
             console.log(`  ${comp.file}: ${comp.lines} lines`)
           })
         }
@@ -393,7 +758,7 @@ export const analyzeCommand = new Command('analyze')
           console.log(
             `${chalk.red('Complex components:')} ${results.performance.complexComponents.length}`
           )
-          results.performance.complexComponents.slice(0, 3).forEach((comp) => {
+          results.performance.complexComponents.slice(0, 3).forEach(comp => {
             console.log(`  ${comp.file}: complexity ${comp.complexity}`)
           })
         }
@@ -419,16 +784,18 @@ export const analyzeCommand = new Command('analyze')
         console.log(`\n${chalk.yellow('🔍 Detailed Component Analysis:')}`)
 
         fileAnalyses
-          .filter((analysis) => analysis.components.length > 0)
+          .filter(analysis => analysis.components.length > 0)
           .slice(0, 5)
-          .forEach((analysis) => {
+          .forEach(analysis => {
             const fileName = analysis.file.split('/').pop()
             console.log(`\n${chalk.cyan(fileName)}:`)
             console.log(`  Components: ${analysis.components.join(', ')}`)
             console.log(`  Lines: ${analysis.lines}`)
             console.log(`  Complexity: ${analysis.complexity}`)
             if (analysis.stateUsage.length > 0) {
-              console.log(`  State usage: ${analysis.stateUsage.length} instances`)
+              console.log(
+                `  State usage: ${analysis.stateUsage.length} instances`
+              )
             }
             if (analysis.modifierUsage.length > 0) {
               console.log(`  Modifier chains: ${analysis.modifierUsage.length}`)
@@ -437,9 +804,12 @@ export const analyzeCommand = new Command('analyze')
       }
 
       // TachUI health score
-      const stateScore = (results.components.withState / results.files.total) * 25
-      const modifierScore = (results.components.withModifiers / results.files.total) * 25
-      const lifecycleScore = (results.components.withLifecycle / results.files.total) * 25
+      const stateScore =
+        (results.components.withState / results.files.total) * 25
+      const modifierScore =
+        (results.components.withModifiers / results.files.total) * 25
+      const lifecycleScore =
+        (results.components.withLifecycle / results.files.total) * 25
       const performanceScore = Math.max(
         0,
         25 -
@@ -448,9 +818,13 @@ export const analyzeCommand = new Command('analyze')
             5
       )
 
-      const healthScore = Math.round(stateScore + modifierScore + lifecycleScore + performanceScore)
+      const healthScore = Math.round(
+        stateScore + modifierScore + lifecycleScore + performanceScore
+      )
 
-      console.log(`\n${chalk.yellow('🏥 TachUI Health Score:')} ${healthScore}/100`)
+      console.log(
+        `\n${chalk.yellow('🏥 TachUI Health Score:')} ${healthScore}/100`
+      )
 
       let healthColor = chalk.red
       if (healthScore >= 80) healthColor = chalk.green

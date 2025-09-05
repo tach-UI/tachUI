@@ -4,7 +4,12 @@
  * Includes ARIA labels and roles, but not full semantic analysis
  */
 
-import type { ComponentInstance } from './types'
+import type {
+  ComponentInstance,
+  DOMNode,
+  RenderFunction,
+  LifecycleCleanup,
+} from './types'
 
 export interface ARIAConcatenationResult extends ComponentInstance {
   type: 'component'
@@ -18,7 +23,7 @@ export interface ARIAConcatenationResult extends ComponentInstance {
 export function createOptimizedConcatenation(
   left: ComponentInstance,
   right: ComponentInstance,
-  level: 'aria'
+  _level: 'aria'
 ): ARIAConcatenationResult {
   const concatenatedId = `concat_aria_${left.id}_${right.id}`
 
@@ -28,28 +33,39 @@ export function createOptimizedConcatenation(
     concatenationType: 'aria',
     id: concatenatedId,
 
-    render: () => {
+    render: (() => {
       // Create container with basic ARIA support
-      const container = document.createElement('span')
-      container.className = 'tachui-concat-aria'
-
-      // Add basic ARIA attributes
-      container.setAttribute('role', 'group')
-      container.setAttribute('aria-label', 'Combined content')
+      const domNode: DOMNode = {
+        type: 'element',
+        tag: 'span',
+        props: {
+          className: 'tachui-concat-aria',
+          role: 'group',
+          'aria-label': 'Combined content',
+        },
+        children: [],
+      }
 
       // Render components with accessibility context
       const leftElement = left.render()
       const rightElement = right.render()
 
-      // Wrap each component if it needs individual ARIA context
-      const leftWrapper = wrapWithARIAIfNeeded(leftElement, left)
-      const rightWrapper = wrapWithARIAIfNeeded(rightElement, right)
+      const children: DOMNode[] = []
+      if (Array.isArray(leftElement)) {
+        children.push(...leftElement)
+      } else {
+        children.push(leftElement)
+      }
 
-      container.appendChild(leftWrapper)
-      container.appendChild(rightWrapper)
+      if (Array.isArray(rightElement)) {
+        children.push(...rightElement)
+      } else {
+        children.push(rightElement)
+      }
 
-      return container
-    },
+      domNode.children = children
+      return domNode
+    }) as RenderFunction,
 
     props: {
       // Merge props with ARIA considerations
@@ -59,38 +75,16 @@ export function createOptimizedConcatenation(
       'aria-selected': undefined,
     },
 
-    cleanup: () => {
-      left.cleanup?.forEach(fn => fn())
-      right.cleanup?.forEach(fn => fn())
-    },
+    cleanup: [
+      () => {
+        left.cleanup?.forEach(fn => fn())
+        right.cleanup?.forEach(fn => fn())
+      },
+    ] as LifecycleCleanup[],
   }
 }
 
-/**
- * Wraps an element with ARIA context if the component needs it
- */
-function wrapWithARIAIfNeeded(
-  element: Element | Element[],
-  component: ComponentInstance
-): Element {
-  const needsWrapper = hasInteractiveProps(component.props)
-
-  if (!needsWrapper) {
-    return Array.isArray(element) ? element[0] : element
-  }
-
-  // Create wrapper with appropriate ARIA role
-  const wrapper = document.createElement('div')
-  wrapper.setAttribute('role', getARIARoleForComponent(component))
-
-  if (Array.isArray(element)) {
-    element.forEach(el => wrapper.appendChild(el))
-  } else {
-    wrapper.appendChild(element)
-  }
-
-  return wrapper
-}
+// NOTE: wrapWithARIAIfNeeded function removed - ARIA wrapping now handled in render function
 
 /**
  * Determines if component props suggest interactive behavior

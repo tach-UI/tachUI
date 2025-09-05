@@ -6,6 +6,7 @@
  */
 
 import type { Plugin, TransformResult } from 'vite'
+import * as ts from 'typescript'
 import { generateDOMCode } from './codegen'
 import { parseSwiftUISyntax } from './parser'
 import type { TachUIPluginOptions } from './types'
@@ -67,16 +68,14 @@ export function createTachUIPlugin(options: TachUIPluginOptions = {}): Plugin {
         const concatenationPatterns = analyzeConcatenationPatterns(code, id)
 
         if (concatenationPatterns.length > 0) {
-          if (dev) {
-            console.log(
-              `🔗 Found ${concatenationPatterns.length} concatenation pattern(s) in: ${id}`
-            )
-            concatenationPatterns.forEach((pattern, index) => {
-              console.log(
-                `  Pattern ${index + 1}: ${pattern.type} (optimizable: ${pattern.optimizable}, accessibility: ${pattern.accessibilityNeeds})`
-              )
-            })
-          }
+          // Phase 3: Generate comprehensive optimization report
+          const optimizationReport = generateOptimizationReport(
+            concatenationPatterns,
+            id
+          )
+
+          // Enhanced development reporting
+          reportOptimizationResults(optimizationReport, id, dev)
 
           // Transform concatenation patterns
           transformedCode = transformConcatenationPatterns(
@@ -84,11 +83,23 @@ export function createTachUIPlugin(options: TachUIPluginOptions = {}): Plugin {
             concatenationPatterns
           )
           hasTransformations = true
+
+          // Store optimization data for potential CLI integration
+          if (dev) {
+            ;(global as any).__tachui_optimization_data =
+              (global as any).__tachui_optimization_data || []
+            ;(global as any).__tachui_optimization_data.push({
+              filename: id,
+              patterns: concatenationPatterns,
+              report: optimizationReport,
+              timestamp: Date.now(),
+            })
+          }
         }
 
         // Phase 1: Check if the file contains SwiftUI syntax for traditional compilation
         if (containsTachUISyntax(transformedCode)) {
-          if (dev) {
+          if (dev && concatenationPatterns.length === 0) {
             console.log(`🔄 Transforming SwiftUI syntax: ${id}`)
           }
 
@@ -152,7 +163,8 @@ interface ConcatenationPattern {
 }
 
 /**
- * Analyzes JavaScript/TypeScript code for concatenation patterns
+ * Analyzes JavaScript/TypeScript code for concatenation patterns using AST
+ * Replaces regex-based approach with proper TypeScript AST analysis
  */
 function analyzeConcatenationPatterns(
   code: string,
@@ -160,77 +172,304 @@ function analyzeConcatenationPatterns(
 ): ConcatenationPattern[] {
   const patterns: ConcatenationPattern[] = []
 
-  // Regex pattern to detect .build().concat( patterns
-  // Matches: someComponent.build().concat(otherComponent.build())
-  const concatRegex =
-    /(?:^|\s|=\s*)([a-zA-Z_$][^.]*(?:\.[^.]*)*?)\.build\(\)\s*\.concat\(/gs
-
-  let match: RegExpExecArray | null
-  while ((match = concatRegex.exec(code)) !== null) {
-    const [partialMatch, leftComponent] = match
-    const start = match.index
-
-    // Find the balanced right component after .concat(
-    const afterConcat = match.index + partialMatch.length
-    const rightComponent = extractBalancedContent(code, afterConcat)
-
-    if (!rightComponent) continue // Skip if we can't parse the right component
-
-    const fullMatch = partialMatch + rightComponent + ')'
-    const end = start + fullMatch.length
-
-    // Determine if this is a static concatenation pattern
-    const isStatic = isStaticConcatenation(leftComponent, rightComponent)
-
-    // Analyze accessibility requirements
-    const accessibilityNeeds = analyzeAccessibilityNeeds(
-      leftComponent,
-      rightComponent,
-      code
+  try {
+    // Parse the code into a TypeScript AST
+    const sourceFile = ts.createSourceFile(
+      filename,
+      code,
+      ts.ScriptTarget.Latest,
+      true,
+      filename.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
     )
 
-    patterns.push({
-      type: isStatic ? 'static' : 'dynamic',
-      location: { start, end },
-      leftComponent: leftComponent.trim(),
-      rightComponent: rightComponent.trim(),
-      optimizable: isStatic,
-      accessibilityNeeds,
-    })
+    // Walk the AST to find .concat() calls
+    function visit(node: ts.Node): void {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        node.expression.name.text === 'concat'
+      ) {
+        // Check if this is a .build().concat() pattern
+        const leftExpression = node.expression.expression
+        if (
+          ts.isCallExpression(leftExpression) &&
+          ts.isPropertyAccessExpression(leftExpression.expression) &&
+          leftExpression.expression.name.text === 'build'
+        ) {
+          // The leftExpression.expression.expression contains the component call chain
+          // We need to extract just the component without the variable assignment
+          const componentChain = leftExpression.expression.expression
+          const leftComponent = extractComponentExpression(componentChain, code)
+
+          // Extract right component (first argument to .concat())
+          const rightComponent =
+            node.arguments.length > 0
+              ? extractComponentExpression(node.arguments[0], code)
+              : ''
+
+          if (leftComponent && rightComponent) {
+            // Get source location
+            const start = node.getStart(sourceFile)
+            const end = node.getEnd()
+
+            // Determine if this is a static concatenation pattern
+            const isStatic = isStaticConcatenation(
+              leftComponent,
+              rightComponent
+            )
+
+            // Analyze accessibility requirements
+            const accessibilityNeeds = analyzeAccessibilityNeeds(
+              leftComponent,
+              rightComponent,
+              code
+            )
+
+            patterns.push({
+              type: isStatic ? 'static' : 'dynamic',
+              location: { start, end },
+              leftComponent: leftComponent.trim(),
+              rightComponent: rightComponent.trim(),
+              optimizable: isStatic,
+              accessibilityNeeds,
+            })
+          }
+        }
+      }
+
+      // Continue traversing child nodes
+      ts.forEachChild(node, visit)
+    }
+
+    visit(sourceFile)
+  } catch (error) {
+    // If AST parsing fails, return empty patterns (graceful fallback)
+    console.warn(
+      `Failed to parse ${filename} for concatenation analysis:`,
+      error
+    )
   }
 
   return patterns
 }
 
 /**
- * Helper function to extract balanced content within parentheses
+ * Helper function to extract component expression text from AST node
+ * Replaces regex-based string manipulation with AST-aware text extraction
  */
-function extractBalancedContent(
-  text: string,
-  startIndex: number
-): string | null {
-  let depth = 0
-  let i = startIndex
-  let content = ''
+function extractComponentExpression(node: ts.Node, sourceCode: string): string {
+  const start = node.getStart()
+  const end = node.getEnd()
+  return sourceCode.substring(start, end)
+}
 
-  while (i < text.length) {
-    const char = text[i]
+/**
+ * Phase 3: Enhanced Developer Experience
+ * Comprehensive reporting and analysis for concatenation optimizations
+ */
 
-    if (char === '(') {
-      depth++
-    } else if (char === ')') {
-      if (depth === 0) {
-        // Found the matching closing parenthesis
-        return content
-      }
-      depth--
-    }
+interface OptimizationReport {
+  totalPatterns: number
+  optimizedPatterns: number
+  runtimePatterns: number
+  bundleImpact: BundleImpact
+  accessibilityBreakdown: AccessibilityBreakdown
+  recommendations: OptimizationRecommendation[]
+}
 
-    content += char
-    i++
+interface BundleImpact {
+  estimatedSavingsKB: number
+  runtimeReduction: string
+  selectedRuntimes: Set<string>
+}
+
+interface AccessibilityBreakdown {
+  minimal: number
+  aria: number
+  full: number
+}
+
+interface OptimizationRecommendation {
+  type: 'static' | 'accessibility' | 'performance'
+  pattern: ConcatenationPattern
+  suggestion: string
+  impact: 'low' | 'medium' | 'high'
+}
+
+/**
+ * Enhanced reporting system for concatenation optimizations
+ */
+function generateOptimizationReport(
+  patterns: ConcatenationPattern[],
+  _filename: string
+): OptimizationReport {
+  const optimizedPatterns = patterns.filter(p => p.optimizable)
+  const runtimePatterns = patterns.filter(p => !p.optimizable)
+
+  // Calculate bundle impact
+  const selectedRuntimes = new Set<string>()
+  patterns.forEach(pattern => {
+    selectedRuntimes.add(`concatenation-${pattern.accessibilityNeeds}`)
+  })
+
+  // Estimate bundle size savings
+  const baseConcatenationSize = 87.76 // KB - current runtime system size
+  const optimizedSize = selectedRuntimes.size * 5 // Estimated 5KB per runtime
+  const estimatedSavingsKB = Math.max(0, baseConcatenationSize - optimizedSize)
+
+  // Accessibility breakdown
+  const accessibilityBreakdown: AccessibilityBreakdown = {
+    minimal: patterns.filter(p => p.accessibilityNeeds === 'minimal').length,
+    aria: patterns.filter(p => p.accessibilityNeeds === 'aria').length,
+    full: patterns.filter(p => p.accessibilityNeeds === 'full').length,
   }
 
-  return null // Unbalanced parentheses
+  // Generate recommendations
+  const recommendations = generateOptimizationRecommendations(patterns)
+
+  return {
+    totalPatterns: patterns.length,
+    optimizedPatterns: optimizedPatterns.length,
+    runtimePatterns: runtimePatterns.length,
+    bundleImpact: {
+      estimatedSavingsKB,
+      runtimeReduction: `${Math.round((estimatedSavingsKB / baseConcatenationSize) * 100)}%`,
+      selectedRuntimes,
+    },
+    accessibilityBreakdown,
+    recommendations,
+  }
+}
+
+/**
+ * Generates optimization recommendations based on pattern analysis
+ */
+function generateOptimizationRecommendations(
+  patterns: ConcatenationPattern[]
+): OptimizationRecommendation[] {
+  const recommendations: OptimizationRecommendation[] = []
+
+  patterns.forEach(pattern => {
+    // Static optimization recommendations
+    if (!pattern.optimizable) {
+      if (
+        containsOnlyStringLiterals(
+          pattern.leftComponent,
+          pattern.rightComponent
+        )
+      ) {
+        recommendations.push({
+          type: 'static',
+          pattern,
+          suggestion:
+            'Consider extracting variable interpolation to enable static concatenation',
+          impact: 'medium',
+        })
+      }
+    }
+
+    // Accessibility optimization recommendations
+    if (
+      pattern.accessibilityNeeds === 'full' &&
+      couldUseSimpleAccessibility(pattern)
+    ) {
+      recommendations.push({
+        type: 'accessibility',
+        pattern,
+        suggestion:
+          'This concatenation could use minimal ARIA - consider simplifying accessibility requirements',
+        impact: 'low',
+      })
+    }
+
+    // Performance recommendations
+    if (pattern.type === 'dynamic' && hasHighFrequencyUsage(pattern)) {
+      recommendations.push({
+        type: 'performance',
+        pattern,
+        suggestion:
+          'High-frequency dynamic concatenation - consider memoization or caching',
+        impact: 'high',
+      })
+    }
+  })
+
+  return recommendations
+}
+
+/**
+ * Enhanced console reporting with detailed analysis
+ */
+function reportOptimizationResults(
+  report: OptimizationReport,
+  filename: string,
+  dev: boolean
+): void {
+  if (!dev || report.totalPatterns === 0) return
+
+  const shortFilename = filename.split('/').pop() || filename
+
+  console.log(`\n🔗 TachUI Concatenation Analysis - ${shortFilename}`)
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+
+  // Pattern summary
+  console.log(`📊 Pattern Summary:`)
+  console.log(`   Total patterns: ${report.totalPatterns}`)
+  console.log(`   ✅ Optimized: ${report.optimizedPatterns} (static)`)
+  console.log(`   🔄 Runtime: ${report.runtimePatterns} (dynamic)`)
+
+  // Bundle impact
+  console.log(`\n📦 Bundle Impact:`)
+  console.log(
+    `   Estimated savings: ${report.bundleImpact.estimatedSavingsKB.toFixed(1)}KB`
+  )
+  console.log(`   Runtime reduction: ${report.bundleImpact.runtimeReduction}`)
+  console.log(
+    `   Selected runtimes: ${Array.from(report.bundleImpact.selectedRuntimes).join(', ')}`
+  )
+
+  // Accessibility breakdown
+  console.log(`\n♿ Accessibility Breakdown:`)
+  console.log(`   Minimal: ${report.accessibilityBreakdown.minimal}`)
+  console.log(`   ARIA: ${report.accessibilityBreakdown.aria}`)
+  console.log(`   Full: ${report.accessibilityBreakdown.full}`)
+
+  // Recommendations
+  if (report.recommendations.length > 0) {
+    console.log(`\n💡 Optimization Recommendations:`)
+    report.recommendations.forEach(rec => {
+      const impactIcon =
+        rec.impact === 'high' ? '🔴' : rec.impact === 'medium' ? '🟡' : '🔵'
+      console.log(`   ${impactIcon} ${rec.suggestion}`)
+    })
+  }
+
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`)
+}
+
+// Helper functions for recommendations
+function containsOnlyStringLiterals(left: string, right: string): boolean {
+  const stringLiteralPattern = /Text\s*\(\s*["'][^"']*["']\s*\)/
+  return stringLiteralPattern.test(left) || stringLiteralPattern.test(right)
+}
+
+function couldUseSimpleAccessibility(pattern: ConcatenationPattern): boolean {
+  return (
+    !pattern.leftComponent.includes('Button') &&
+    !pattern.rightComponent.includes('Button') &&
+    !pattern.leftComponent.includes('Link') &&
+    !pattern.rightComponent.includes('Link')
+  )
+}
+
+function hasHighFrequencyUsage(pattern: ConcatenationPattern): boolean {
+  // Heuristic: if pattern is in a loop-like structure
+  return (
+    pattern.leftComponent.includes('entry[') ||
+    pattern.rightComponent.includes('entry[') ||
+    pattern.leftComponent.includes('.map') ||
+    pattern.rightComponent.includes('.map')
+  )
 }
 
 /**
