@@ -63,47 +63,47 @@ const createStubModifier = (type: string) => ({
   apply: () => undefined,
 })
 
-const borderBottom = (...args: any[]) => createStubModifier('borderBottom')
-const borderLeft = (...args: any[]) => createStubModifier('borderLeft')
-const borderRight = (...args: any[]) => createStubModifier('borderRight')
-const borderTop = (...args: any[]) => createStubModifier('borderTop')
-const alignItems = (...args: any[]) => createStubModifier('alignItems')
-const flexDirection = (...args: any[]) => createStubModifier('flexDirection')
-const flexGrow = (...args: any[]) => createStubModifier('flexGrow')
-const flexShrink = (...args: any[]) => createStubModifier('flexShrink')
-const flexWrap = (...args: any[]) => createStubModifier('flexWrap')
-const gap = (...args: any[]) => createStubModifier('gap')
-const justifyContent = (...args: any[]) => createStubModifier('justifyContent')
-const margin = (...args: any[]) => createRegistryModifier('margin', ...args)
-const marginBottom = (...args: any[]) =>
-  createRegistryModifier('marginBottom', ...args)
-const marginHorizontal = (...args: any[]) =>
-  createRegistryModifier('marginHorizontal', ...args)
-const marginLeft = (...args: any[]) =>
-  createRegistryModifier('marginLeft', ...args)
-const marginRight = (...args: any[]) =>
-  createRegistryModifier('marginRight', ...args)
-const marginTop = (...args: any[]) =>
-  createRegistryModifier('marginTop', ...args)
-const marginVertical = (...args: any[]) =>
-  createRegistryModifier('marginVertical', ...args)
-const padding = (...args: any[]) => createRegistryModifier('padding', ...args)
-const paddingBottom = (...args: any[]) =>
-  createRegistryModifier('paddingBottom', ...args)
-const paddingHorizontal = (...args: any[]) =>
-  createRegistryModifier('paddingHorizontal', ...args)
-const paddingLeading = (...args: any[]) =>
-  createRegistryModifier('paddingLeading', ...args)
-const paddingLeft = (...args: any[]) =>
-  createRegistryModifier('paddingLeft', ...args)
-const paddingRight = (...args: any[]) =>
-  createRegistryModifier('paddingRight', ...args)
-const paddingTop = (...args: any[]) =>
-  createRegistryModifier('paddingTop', ...args)
-const paddingTrailing = (...args: any[]) =>
-  createRegistryModifier('paddingTrailing', ...args)
-const paddingVertical = (...args: any[]) =>
-  createRegistryModifier('paddingVertical', ...args)
+const borderBottom = (..._args: any[]) => createStubModifier('borderBottom')
+const borderLeft = (..._args: any[]) => createStubModifier('borderLeft')
+const borderRight = (..._args: any[]) => createStubModifier('borderRight')
+const borderTop = (..._args: any[]) => createStubModifier('borderTop')
+const alignItems = (..._args: any[]) => createStubModifier('alignItems')
+const flexDirection = (..._args: any[]) => createStubModifier('flexDirection')
+const flexGrow = (..._args: any[]) => createStubModifier('flexGrow')
+const flexShrink = (..._args: any[]) => createStubModifier('flexShrink')
+const flexWrap = (..._args: any[]) => createStubModifier('flexWrap')
+const gap = (..._args: any[]) => createStubModifier('gap')
+const justifyContent = (..._args: any[]) => createStubModifier('justifyContent')
+const margin = (..._args: any[]) => createRegistryModifier('margin', ..._args)
+const marginBottom = (..._args: any[]) =>
+  createRegistryModifier('marginBottom', ..._args)
+const marginHorizontal = (..._args: any[]) =>
+  createRegistryModifier('marginHorizontal', ..._args)
+const marginLeft = (..._args: any[]) =>
+  createRegistryModifier('marginLeft', ..._args)
+const marginRight = (..._args: any[]) =>
+  createRegistryModifier('marginRight', ..._args)
+const marginTop = (..._args: any[]) =>
+  createRegistryModifier('marginTop', ..._args)
+const marginVertical = (..._args: any[]) =>
+  createRegistryModifier('marginVertical', ..._args)
+const padding = (..._args: any[]) => createRegistryModifier('padding', ..._args)
+const paddingBottom = (..._args: any[]) =>
+  createRegistryModifier('paddingBottom', ..._args)
+const paddingHorizontal = (..._args: any[]) =>
+  createRegistryModifier('paddingHorizontal', ..._args)
+const paddingLeading = (..._args: any[]) =>
+  createRegistryModifier('paddingLeading', ..._args)
+const paddingLeft = (..._args: any[]) =>
+  createRegistryModifier('paddingLeft', ..._args)
+const paddingRight = (..._args: any[]) =>
+  createRegistryModifier('paddingRight', ..._args)
+const paddingTop = (..._args: any[]) =>
+  createRegistryModifier('paddingTop', ..._args)
+const paddingTrailing = (..._args: any[]) =>
+  createRegistryModifier('paddingTrailing', ..._args)
+const paddingVertical = (..._args: any[]) =>
+  createRegistryModifier('paddingVertical', ..._args)
 // Temporarily commented out to resolve circular dependency during build
 // Import new multi-property modifiers
 // import {
@@ -117,15 +117,17 @@ const paddingVertical = (...args: any[]) =>
 // } from '@tachui/modifiers'
 
 // Temporary implementations to avoid build errors
-const height = (...args: any[]) => createRegistryModifier('height', ...args)
-const maxHeight = (...args: any[]) =>
-  createRegistryModifier('maxHeight', ...args)
-const maxWidth = (...args: any[]) => createRegistryModifier('maxWidth', ...args)
-const minHeight = (...args: any[]) =>
-  createRegistryModifier('minHeight', ...args)
-const minWidth = (...args: any[]) => createRegistryModifier('minWidth', ...args)
-const size = (...args: any[]) => createRegistryModifier('size', ...args)
-const width = (...args: any[]) => createRegistryModifier('width', ...args)
+const height = (..._args: any[]) => createRegistryModifier('height', ..._args)
+const maxHeight = (..._args: any[]) =>
+  createRegistryModifier('maxHeight', ..._args)
+const maxWidth = (..._args: any[]) =>
+  createRegistryModifier('maxWidth', ..._args)
+const minHeight = (..._args: any[]) =>
+  createRegistryModifier('minHeight', ..._args)
+const minWidth = (..._args: any[]) =>
+  createRegistryModifier('minWidth', ..._args)
+const size = (..._args: any[]) => createRegistryModifier('size', ..._args)
+const width = (..._args: any[]) => createRegistryModifier('width', ..._args)
 import type {
   AnimationModifierProps,
   AppearanceModifierProps,
@@ -164,20 +166,20 @@ import type {
 // } from '@tachui/modifiers'
 
 // Temporary implementations to avoid build errors
-const letterSpacing = (...args: any[]) => createStubModifier('letterSpacing')
-const lineHeight = (...args: any[]) => createStubModifier('lineHeight')
-const overflow = (...args: any[]) => createStubModifier('overflow')
-const textAlign = (...args: any[]) => createStubModifier('textAlign')
-const textDecoration = (...args: any[]) => createStubModifier('textDecoration')
-const textOverflow = (...args: any[]) => createStubModifier('textOverflow')
+const letterSpacing = (..._args: any[]) => createStubModifier('letterSpacing')
+const lineHeight = (..._args: any[]) => createStubModifier('lineHeight')
+const overflow = (..._args: any[]) => createStubModifier('overflow')
+const textAlign = (..._args: any[]) => createStubModifier('textAlign')
+const textDecoration = (..._args: any[]) => createStubModifier('textDecoration')
+const textOverflow = (..._args: any[]) => createStubModifier('textOverflow')
 const textTransform = (value: string) => ({
   type: 'typography',
   priority: 50,
   properties: { transform: value },
   apply: () => undefined,
 })
-const typography = (...args: any[]) => createStubModifier('typography')
-const whiteSpace = (...args: any[]) => createStubModifier('whiteSpace')
+const typography = (..._args: any[]) => createStubModifier('typography')
+const whiteSpace = (..._args: any[]) => createStubModifier('whiteSpace')
 const gradientText = (gradient: string) => ({
   type: 'backgroundClip',
   priority: 50,
@@ -190,27 +192,27 @@ const gradientText = (gradient: string) => ({
   },
   apply: () => undefined,
 })
-const lineClamp = (...args: any[]) => createStubModifier('lineClamp')
-const wordBreak = (...args: any[]) => createStubModifier('wordBreak')
-const overflowWrap = (...args: any[]) => createStubModifier('overflowWrap')
-const hyphens = (...args: any[]) => createStubModifier('hyphens')
+const lineClamp = (..._args: any[]) => createStubModifier('lineClamp')
+const wordBreak = (..._args: any[]) => createStubModifier('wordBreak')
+const overflowWrap = (..._args: any[]) => createStubModifier('overflowWrap')
+const hyphens = (..._args: any[]) => createStubModifier('hyphens')
 // Utility functions moved to @tachui/modifiers - using registry lookups instead
-const cursor = (...args: any[]) => createStubModifier('cursor')
-const display = (...args: any[]) => createStubModifier('display')
-const overflowX = (...args: any[]) => createStubModifier('overflowX')
-const overflowY = (...args: any[]) => createStubModifier('overflowY')
-const outline = (...args: any[]) => createStubModifier('outline')
-const outlineOffset = (...args: any[]) => createStubModifier('outlineOffset')
+const cursor = (..._args: any[]) => createStubModifier('cursor')
+const display = (..._args: any[]) => createStubModifier('display')
+const overflowX = (..._args: any[]) => createStubModifier('overflowX')
+const overflowY = (..._args: any[]) => createStubModifier('overflowY')
+const outline = (..._args: any[]) => createStubModifier('outline')
+const outlineOffset = (..._args: any[]) => createStubModifier('outlineOffset')
 
 /**
  * Registry-based modifier lookup helper
  * Replaces stub functions with actual modifier registry lookups
  */
-function createRegistryModifier(name: string, ...args: any[]): Modifier {
+function createRegistryModifier(name: string, ..._args: any[]): Modifier {
   const factory = globalModifierRegistry.get<any>(name)
   if (factory) {
     try {
-      const modifier = (factory as any).apply(null, args as any)
+      const modifier = (factory as any).apply(null, _args as any)
       return modifier as Modifier
     } catch (error) {
       console.warn(`Error creating modifier '${name}':`, error)
@@ -268,23 +270,23 @@ const transitionModifier = (
     apply: () => undefined,
   }
 }
-const fadeTransition = (...args: any[]) => createStubModifier('fadeTransition')
-const transformTransition = (...args: any[]) =>
+const fadeTransition = (..._args: any[]) => createStubModifier('fadeTransition')
+const transformTransition = (..._args: any[]) =>
   createStubModifier('transformTransition')
-const colorTransition = (...args: any[]) =>
+const colorTransition = (..._args: any[]) =>
   createStubModifier('colorTransition')
-const layoutTransition = (...args: any[]) =>
+const layoutTransition = (..._args: any[]) =>
   createStubModifier('layoutTransition')
-const buttonTransition = (...args: any[]) =>
+const buttonTransition = (..._args: any[]) =>
   createStubModifier('buttonTransition')
-const cardTransition = (...args: any[]) => createStubModifier('cardTransition')
-const modalTransition = (...args: any[]) =>
+const cardTransition = (..._args: any[]) => createStubModifier('cardTransition')
+const modalTransition = (..._args: any[]) =>
   createStubModifier('modalTransition')
-const smoothTransition = (...args: any[]) =>
+const smoothTransition = (..._args: any[]) =>
   createStubModifier('smoothTransition')
-const quickTransition = (...args: any[]) =>
+const quickTransition = (..._args: any[]) =>
   createStubModifier('quickTransition')
-const slowTransition = (...args: any[]) => createStubModifier('slowTransition')
+const slowTransition = (..._args: any[]) => createStubModifier('slowTransition')
 // } from '@tachui/modifiers'
 // Temporarily commented out to resolve circular dependency during build
 // import {
@@ -307,17 +309,17 @@ import {
 } from './css'
 
 // Temporary implementations to avoid build errors
-const scrollModifier = (...args: any[]) => createStubModifier('scrollModifier')
-const scrollBehavior = (...args: any[]) => createStubModifier('scrollBehavior')
-const overscrollBehavior = (...args: any[]) =>
+const scrollModifier = (..._args: any[]) => createStubModifier('scrollModifier')
+const scrollBehavior = (..._args: any[]) => createStubModifier('scrollBehavior')
+const overscrollBehavior = (..._args: any[]) =>
   createStubModifier('overscrollBehavior')
-const overscrollBehaviorX = (...args: any[]) =>
+const overscrollBehaviorX = (..._args: any[]) =>
   createStubModifier('overscrollBehaviorX')
-const overscrollBehaviorY = (...args: any[]) =>
+const overscrollBehaviorY = (..._args: any[]) =>
   createStubModifier('overscrollBehaviorY')
-const scrollMargin = (...args: any[]) => createStubModifier('scrollMargin')
-const scrollPadding = (...args: any[]) => createStubModifier('scrollPadding')
-const scrollSnap = (...args: any[]) => createStubModifier('scrollSnap')
+const scrollMargin = (..._args: any[]) => createStubModifier('scrollMargin')
+const scrollPadding = (..._args: any[]) => createStubModifier('scrollPadding')
+const scrollSnap = (..._args: any[]) => createStubModifier('scrollSnap')
 
 import { asHTML } from './as-html'
 import type { AsHTMLOptions } from './as-html'
@@ -835,8 +837,8 @@ export class ModifierBuilderImpl<
   }
 
   aspectRatio(
-    ratio?: number,
-    contentMode: 'fit' | 'fill' = 'fit'
+    _ratio?: number,
+    _contentMode: 'fit' | 'fill' = 'fit'
   ): ModifierBuilder<T> {
     throw new Error(
       'Layout modifiers have been moved to @tachui/modifiers. Please import { aspectRatio } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
@@ -1016,7 +1018,7 @@ export class ModifierBuilderImpl<
 
   // Phase 4 Advanced Gesture Modifiers moved to @tachui/modifiers
   // Use: import { onLongPressGesture } from '@tachui/modifiers'
-  onLongPressGesture(options: {
+  onLongPressGesture(_options: {
     minimumDuration?: number
     maximumDistance?: number
     perform: () => void
@@ -1028,24 +1030,24 @@ export class ModifierBuilderImpl<
   }
 
   keyboardShortcut(
-    key: string,
-    modifiers: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[],
-    action: () => void
+    _key: string,
+    _modifiers: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[],
+    _action: () => void
   ): ModifierBuilder<T> {
     throw new Error(
       'keyboardShortcut has been moved to @tachui/modifiers. Please import { keyboardShortcut } from "@tachui/modifiers" and use .apply(keyboardShortcut(...)) instead.'
     )
   }
 
-  focused(binding: boolean | Signal<boolean>): ModifierBuilder<T> {
+  focused(_binding: boolean | Signal<boolean>): ModifierBuilder<T> {
     throw new Error(
       'focused has been moved to @tachui/modifiers. Please import { focused } from "@tachui/modifiers" and use .apply(focused(...)) instead.'
     )
   }
 
   focusable(
-    isFocusable: boolean = true,
-    interactions?: ('activate' | 'edit')[]
+    _isFocusable: boolean = true,
+    _interactions?: ('activate' | 'edit')[]
   ): ModifierBuilder<T> {
     throw new Error(
       'focusable has been moved to @tachui/modifiers. Please import { focusable } from "@tachui/modifiers" and use .apply(focusable(...)) instead.'
@@ -1053,8 +1055,8 @@ export class ModifierBuilderImpl<
   }
 
   onContinuousHover(
-    coordinateSpace: 'local' | 'global',
-    perform: (location: { x: number; y: number } | null) => void
+    _coordinateSpace: 'local' | 'global',
+    _perform: (location: { x: number; y: number } | null) => void
   ): ModifierBuilder<T> {
     throw new Error(
       'onContinuousHover has been moved to @tachui/modifiers. Please import { onContinuousHover } from "@tachui/modifiers" and use .apply(onContinuousHover(...)) instead.'
@@ -1085,7 +1087,7 @@ export class ModifierBuilderImpl<
     return this
   }
 
-  allowsHitTesting(enabled: boolean): ModifierBuilder<T> {
+  allowsHitTesting(_enabled: boolean): ModifierBuilder<T> {
     throw new Error(
       'allowsHitTesting has been moved to @tachui/modifiers. Please import { allowsHitTesting } from "@tachui/modifiers" and use .apply(allowsHitTesting(...)) instead.'
     )
@@ -1250,13 +1252,13 @@ export class ModifierBuilderImpl<
   }
 
   // HTML and ARIA Attributes - MIGRATED TO @tachui/modifiers
-  id(value: string): ModifierBuilder<T> {
+  id(_value: string): ModifierBuilder<T> {
     throw new Error(
       'Attribute modifiers have been moved to @tachui/modifiers. Please import { id } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
     )
   }
 
-  data(attributes: {
+  data(_attributes: {
     [key: string]: string | number | boolean
   }): ModifierBuilder<T> {
     throw new Error(
@@ -1264,7 +1266,7 @@ export class ModifierBuilderImpl<
     )
   }
 
-  aria(attributes: {
+  aria(_attributes: {
     [key: string]: string | number | boolean | undefined
   }): ModifierBuilder<T> {
     throw new Error(
@@ -1272,13 +1274,13 @@ export class ModifierBuilderImpl<
     )
   }
 
-  tabIndex(value: number): ModifierBuilder<T> {
+  tabIndex(_value: number): ModifierBuilder<T> {
     throw new Error(
       'Attribute modifiers have been moved to @tachui/modifiers. Please import { tabIndex } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
     )
   }
 
-  customProperties(options: {
+  customProperties(_options: {
     properties: Record<string, string | number>
   }): ModifierBuilder<T> {
     throw new Error(
@@ -1286,25 +1288,27 @@ export class ModifierBuilderImpl<
     )
   }
 
-  customProperty(name: string, value: string | number): ModifierBuilder<T> {
+  customProperty(_name: string, _value: string | number): ModifierBuilder<T> {
     throw new Error(
       'CSS property modifiers have been moved to @tachui/modifiers. Please import { customProperty } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
     )
   }
 
-  cssVariables(variables: Record<string, string | number>): ModifierBuilder<T> {
+  cssVariables(
+    _variables: Record<string, string | number>
+  ): ModifierBuilder<T> {
     throw new Error(
       'CSS property modifiers have been moved to @tachui/modifiers. Please import { cssVariables } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
     )
   }
 
-  themeColors(colors: Record<string, string>): ModifierBuilder<T> {
+  themeColors(_colors: Record<string, string>): ModifierBuilder<T> {
     throw new Error(
       'Theme modifiers have been moved to @tachui/modifiers. Please import { themeColors } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
     )
   }
 
-  designTokens(tokens: Record<string, string | number>): ModifierBuilder<T> {
+  designTokens(_tokens: Record<string, string | number>): ModifierBuilder<T> {
     throw new Error(
       'Design token modifiers have been moved to @tachui/modifiers. Please import { designTokens } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
     )
@@ -1754,13 +1758,13 @@ export class ModifierBuilderImpl<
   // ============================================================================
 
   // Viewport lifecycle modifiers - moved to @tachui/viewport
-  onAppear(handler: () => void): ModifierBuilder<T> {
+  onAppear(_handler: () => void): ModifierBuilder<T> {
     throw new Error(
       'onAppear modifier has been moved to @tachui/viewport. Please import { onAppear } from "@tachui/viewport/modifiers" and use it directly instead of chaining it on components.'
     )
   }
 
-  onDisappear(handler: () => void): ModifierBuilder<T> {
+  onDisappear(_handler: () => void): ModifierBuilder<T> {
     throw new Error(
       'onDisappear modifier has been moved to @tachui/viewport. Please import { onDisappear } from "@tachui/viewport/modifiers" and use it directly instead of chaining it on components.'
     )
@@ -1768,8 +1772,8 @@ export class ModifierBuilderImpl<
 
   // Mobile gesture modifiers - moved to @tachui/mobile
   refreshable(
-    onRefresh: () => Promise<void>,
-    isRefreshing?: boolean | Signal<boolean>
+    _onRefresh: () => Promise<void>,
+    _isRefreshing?: boolean | Signal<boolean>
   ): ModifierBuilder<T> {
     throw new Error(
       'refreshable modifier has been moved to @tachui/mobile. Please import { refreshable } from "@tachui/mobile/modifiers" and use it directly instead of chaining it on components.'

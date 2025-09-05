@@ -165,7 +165,7 @@ export function createPresetModifier(
  */
 export function createComponentVariant<T extends ComponentInstance>(
   baseComponent: T,
-  ...modifiers: Modifier[]
+  ..._modifiers: Modifier[]
 ): T {
   // This function needs to be implemented properly
   // For now, return the base component as-is

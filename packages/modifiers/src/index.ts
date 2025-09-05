@@ -52,10 +52,9 @@ export * from './attributes'
 // AUTO-REGISTRATION SYSTEM
 // ============================================================================
 
-// Import all modifier classes and factory functions
+// Import all modifier factory functions for auto-registration
 import {
   // Basic modifiers
-  PaddingModifier,
   padding,
   paddingTop,
   paddingBottom,
@@ -65,7 +64,6 @@ import {
   paddingTrailing,
   paddingHorizontal,
   paddingVertical,
-  MarginModifier,
   margin,
   marginTop,
   marginBottom,
@@ -75,7 +73,6 @@ import {
   marginTrailing,
   marginHorizontal,
   marginVertical,
-  SizeModifier,
   size,
   width,
   height,
@@ -86,67 +83,44 @@ import {
 } from './basic'
 
 import {
-  // Layout modifiers - only import what definitely exists
-  AspectRatioModifier,
+  // Layout modifiers - only import factory functions
   aspectRatio,
-  FixedSizeModifier,
   fixedSize,
-  FlexboxModifier,
-  OffsetModifier,
   offset,
-  OverlayModifier,
   overlay,
-  PositionModifier,
   position,
-  ScaleEffectModifier,
   scaleEffect,
-  ZIndexModifier,
   zIndex,
 } from './layout'
 
 import {
   // Appearance modifiers - core functions only
-  BackgroundModifier,
   backgroundColor,
-  BorderModifier,
   border,
-  ClipShapeModifier,
   clipShape,
-  ClippedModifier,
   clipped,
-  ForegroundModifier,
   foregroundColor,
 } from './appearance'
 
 import {
   // Typography modifiers - core functions only
-  TypographyModifier,
   typography,
   textAlign,
   font,
-  LineClampModifier,
   lineClamp,
-  WordBreakModifier,
   wordBreak,
 } from './typography'
 
 import {
   // Interaction modifiers
-  AllowsHitTestingModifier,
   allowsHitTesting,
-  FocusableModifier,
   focusable,
   activatable,
   editable,
-  FocusedModifier,
   focused,
-  KeyboardShortcutModifier,
   keyboardShortcut,
-  OnContinuousHoverModifier,
   onContinuousHover,
-  OnLongPressGestureModifier,
   onLongPressGesture,
-  ScrollModifier,
   scroll,
   scrollBehavior,
   overscrollBehavior,
@@ -159,33 +133,25 @@ import {
 
 import {
   // Utility modifiers
-  CSSModifier,
   css,
   cssProperty,
   cssVariable,
-  UtilityModifier,
   utility,
 } from './utility'
 
 import {
   // Attribute modifiers
-  AriaModifier,
   aria,
-  CustomPropertiesModifier,
   customProperties,
   customProperty,
   cssVariables,
-  IdModifier,
   id,
-  DataModifier,
   data,
-  TabIndexModifier,
   tabIndex,
 } from './attributes'
 
 import {
   // Element modifiers
-  PseudoElementModifier,
   before,
   after,
   pseudoElements,

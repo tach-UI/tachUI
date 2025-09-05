@@ -1,5 +1,4 @@
 import { defineConfig, mergeConfig } from 'vitest/config'
-import path from 'path'
 import sharedConfig from '../../vitest.shared.config'
 
 export default mergeConfig(

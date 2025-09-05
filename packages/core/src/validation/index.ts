@@ -343,12 +343,14 @@ export const ValidationSetup = {
 }
 
 // Auto-initialize with complete validation system
-let validationSystemInitialized = false
+// DEPRECATED - commented out to fix TypeScript unused warning
+// let validationSystemInitialized = false
 
 /**
  * Lazy initialization function that checks environment at runtime
+ * DEPRECATED - commented out to fix TypeScript unused warning
  */
-function initializeValidationSystem(): void {
+/* function _initializeValidationSystem(): void {
   if (validationSystemInitialized) return
 
   // Check environment at runtime, not import time
@@ -376,7 +378,7 @@ function initializeValidationSystem(): void {
     )
     console.info('ℹ️ Use ValidationSetup.development() for full features')
   }
-}
+} */
 
 // Remove auto-initialization - only initialize when explicitly called
 // This prevents the validation system from initializing during module import
