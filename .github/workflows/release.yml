@@ -53,11 +53,13 @@ jobs:
       
       - name: Update package versions
         run: |
-          pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
-          # Update all workspace packages with new structure
+          # Update root package version (skip if same version)
+          pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version || echo "Root package version unchanged"
+          
+          # Update all workspace packages with new structure (skip if same version)
           for pkg in packages/*/package.json; do
             if [ -f "$pkg" ]; then
-              cd "$(dirname "$pkg")" && pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version && cd - > /dev/null
+              cd "$(dirname "$pkg")" && (pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version || echo "Package $(basename $(pwd)) version unchanged") && cd - > /dev/null
             fi
           done
       
