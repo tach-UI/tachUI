@@ -62,6 +62,10 @@ benchmarks/results/
 # Markdown editor
 .obsidian
 
+# AI-related tools
+.serena
+.claude
+
 # VitePress cache and temporary files
 **/.vitepress/cache/
 **/.vitepress/dist/

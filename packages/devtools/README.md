@@ -35,7 +35,7 @@ Development & debugging tools for the tachUI framework. Provides runtime inspect
 ## Installation
 
 ```bash
-pnpm add @tachui/devtools@0.8.0-alpha
+pnpm add @tachui/devtools@0.8.1-alpha
 ```
 
 ## Usage
@@ -174,6 +174,15 @@ pnpm lint
 - **Profiler**: ~10KB
 - **Debug**: ~5KB
 - **Testing**: ~5KB
+
+### Bundle Optimization (New in 0.8.1-alpha)
+
+Enhanced production bundling with environment-specific exports:
+
+- **Development Mode**: Full debugging and profiling capabilities (~35KB)
+- **Production Mode**: Minimal stubs that tree-shake to near 0KB
+- **Smart Exports**: Conditional loading based on `NODE_ENV` and `import.meta.env.DEV`
+- **Build Integration**: Automatic exclusion from production bundles via Vite/Webpack plugins
 
 ## Dependencies
 

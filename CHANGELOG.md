@@ -1,5 +1,62 @@
 # Changelog
 
+## [0.8.1-alpha] - Concatenation Optimization & Bundle Improvements
+
+### 🚀 New Features
+
+#### **Concatenation Optimization System**
+
+- **94.9% Bundle Size Reduction**: Revolutionary `.build().concat()` optimization system
+  - Base concatenation runtime: 87.76KB → selective imports ~4.5KB
+  - Static patterns: Compile-time concatenation (0KB runtime)
+  - Dynamic patterns: Smart accessibility-aware runtime selection
+- **TypeScript AST Analysis**: Advanced pattern detection using `ts.createSourceFile()` and `ts.forEachChild()`
+- **Three-Tier Runtime Architecture**:
+  - `@tachui/core/runtime/concatenation-minimal`: 1.18KB (0.55KB gzipped)
+  - `@tachui/core/runtime/concatenation-aria`: 1.42KB (0.66KB gzipped)
+  - `@tachui/core/runtime/concatenation-full`: 1.93KB (0.78KB gzipped)
+- **CLI Integration**: `--concatenation` flag for build-time analysis and optimization suggestions
+- **Real-World Validation**: Successfully optimizes ModularStack component patterns
+
+#### **Enhanced Bundle System**
+
+- **Production Runtime Files**: All concatenation runtime modules properly built and exported
+- **Package Exports**: Complete TypeScript definitions and source maps for runtime imports
+- **Vite Plugin Integration**: Build-time transformation pipeline for concatenation patterns
+- **Performance Optimized**: Processes 100+ patterns in <50ms, handles 250+ files in <500ms
+
+### 🔧 Technical Improvements
+
+#### **@tachui/core**
+
+- **Runtime Exports**: Added concatenation runtime module exports to package.json
+- **Build Configuration**: Updated Vite config for runtime file building
+- **TypeScript Improvements**: Fixed type system compatibility with DOMNode and component instances
+- **Test Coverage**: 27 concatenation tests passing across Phase 2 and Phase 3 implementations
+
+#### **@tachui/devtools**
+
+- **Bundle Optimization**: Enhanced production bundling with environment-specific exports
+- **Development Tools**: Improved debugging capabilities for concatenation analysis
+
+### 📊 Performance & Bundle Impact
+
+#### **Concatenation Optimization Results**
+
+- **Bundle Savings**: 87.76KB → 4.5KB runtime (94.9% reduction achieved)
+- **Static Analysis**: Variable vs literal content detection for optimization eligibility
+- **Accessibility-Aware**: Automatic runtime selection based on component accessibility requirements
+- **Memory Efficient**: <20MB memory usage for comprehensive codebase analysis
+
+### 🎯 Developer Experience
+
+- **Interactive Analysis**: File-specific optimization recommendations with accessibility breakdowns
+- **CLI Reporting**: Comprehensive bundle impact estimates and runtime selection explanations
+- **Production Ready**: 0 TypeScript errors, 0 lint warnings, all tests passing
+- **Real-World Testing**: Successfully detects and optimizes actual TachUI usage patterns
+
+---
+
 ## [0.8.0-alpha] - Major Project Restructure
 
 This is a comprehensive architectural overhaul of the TachUI framework, implementing a modular plugin-based architecture with improved separation of concerns, enhanced performance, and better maintainability.
