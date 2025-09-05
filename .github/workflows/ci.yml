@@ -54,8 +54,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Build core package (needed for type checking)
-        run: pnpm build:core
+      - name: Build dependencies (needed for type checking)
+        run: |
+          pnpm build:core
+          pnpm build:mobile
+          pnpm build:primitives
       
       - name: Run type checking
         run: pnpm type-check
@@ -80,8 +83,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Build core package (needed for tests)
-        run: pnpm build:core
+      - name: Build dependencies (needed for tests)
+        run: |
+          pnpm build:core
+          pnpm build:primitives
       
       - name: Run tests
         run: pnpm test:ci
