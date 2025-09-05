@@ -12,10 +12,27 @@ export * from '../reactive/effect'
 export { onCleanup, dispose, createCleanupGroup } from '../reactive/cleanup'
 export * from '../reactive/context'
 
+// Theme system (commonly needed)
+export { setTheme, detectSystemTheme, getCurrentTheme } from '../reactive/theme'
+
 // Essential runtime
 export * from '../runtime/dom-bridge'
 export * from '../runtime/component'
 export * from '../runtime/props'
+
+// Context system (commonly needed for apps)
+export {
+  EnvironmentObject,
+  createEnvironmentKey,
+  provideEnvironmentObject,
+} from '../state/environment'
+
+export {
+  withComponentContext,
+  getCurrentComponentContext,
+  createComponentContext,
+  setCurrentComponentContext,
+} from '../runtime/component-context'
 
 // Components are in separate packages:
 // @tachui/primitives - Text, Button, Image, BasicInput, Spacer, HStack, VStack, ZStack
@@ -32,6 +49,7 @@ export * from '../modifiers/core'
 // State management
 export { State, isState, unwrapValue } from '../state/state'
 export { createBinding, isBinding } from '../state/binding'
+export { ObservableObjectBase } from '../state/observed-object'
 
 // Assets system
 export {
@@ -44,13 +62,15 @@ export {
   createColorAsset,
   createImageAsset,
   createFontAsset,
+  // Add commonly needed font functions
+  createGoogleFont,
 } from '../assets'
 
 // Essential utilities
 export { infinity, Layout, isInfinity } from '../constants'
 
 // Basic gradients (needed for landing pages)
-export { LinearGradient } from '../gradients'
+export { LinearGradient, StateGradient } from '../gradients'
 
 // Debug system: @tachui/devtools
 

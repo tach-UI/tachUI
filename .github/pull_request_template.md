@@ -26,11 +26,20 @@
 <!-- Check all packages that are modified -->
 
 - [ ] @tachui/core
-- [ ] @tachui/forms
-- [ ] @tachui/navigation
-- [ ] @tachui/symbols
-- [ ] @tachui/mobile-patterns
 - [ ] @tachui/cli
+- [ ] @tachui/data
+- [ ] @tachui/devtools
+- [ ] @tachui/effects
+- [ ] @tachui/flow-control
+- [ ] @tachui/forms
+- [ ] @tachui/grid
+- [ ] @tachui/mobile
+- [ ] @tachui/modifiers
+- [ ] @tachui/navigation
+- [ ] @tachui/primitives
+- [ ] @tachui/responsive
+- [ ] @tachui/symbols
+- [ ] @tachui/viewport
 - [ ] Documentation
 - [ ] Build/CI
 

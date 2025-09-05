@@ -9,6 +9,14 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "development": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "production": {
+        "types": "./dist/index.prod.d.ts",
+        "import": "./dist/index.prod.js"
+      },
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },

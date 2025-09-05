@@ -6,6 +6,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
+        'index.prod': resolve(__dirname, 'src/index.prod.ts'),
         inspector: resolve(__dirname, 'src/inspector/index.ts'),
         profiler: resolve(__dirname, 'src/profiler/index.ts'),
         debug: resolve(__dirname, 'src/debug/index.ts'),
@@ -14,6 +15,7 @@ export default defineConfig({
       formats: ['es'],
       fileName: (format, entryName) => {
         if (entryName === 'index') return 'index.js'
+        if (entryName === 'index.prod') return 'index.prod.js'
         return `${entryName}/index.js`
       },
     },
