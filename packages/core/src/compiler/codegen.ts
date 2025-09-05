@@ -14,6 +14,8 @@ import type {
   LiteralExpression,
   ModifierNode,
   TransformOptions,
+  ConcatenationNode,
+  ConcatenatedSegment,
 } from './types'
 
 export interface CodegenResult {
@@ -28,7 +30,10 @@ export interface CodegenOptions extends TransformOptions {
 /**
  * Generate reactive DOM code from SwiftUI AST
  */
-export function generateDOMCode(nodes: ASTNode[], options: CodegenOptions = {}): CodegenResult {
+export function generateDOMCode(
+  nodes: ASTNode[],
+  options: CodegenOptions = {}
+): CodegenResult {
   const generator = new DOMCodeGenerator(options)
   return generator.generate(nodes)
 }
@@ -59,7 +64,7 @@ class DOMCodeGenerator {
     this.addImport('createComputed', '@tachui/core/reactive')
 
     // Generate code for each node
-    nodes.forEach((node) => this.generateNode(node))
+    nodes.forEach(node => this.generateNode(node))
 
     // Combine everything
     const generatedCode = this.buildFinalCode()
@@ -77,6 +82,9 @@ class DOMCodeGenerator {
     switch (node.type) {
       case 'Component':
         this.generateComponent(node as ComponentNode)
+        break
+      case 'Concatenation':
+        this.generateConcatenationNode(node as ConcatenationNode)
         break
       default:
         // Handle other node types as needed
@@ -129,13 +137,13 @@ class DOMCodeGenerator {
     if (styles.length > 0) {
       this.addLine(`Object.assign(${elementVar}.style, {`)
       this.indent()
-      styles.forEach((style) => this.addLine(`${style},`))
+      styles.forEach(style => this.addLine(`${style},`))
       this.dedent()
       this.addLine(`})`)
     }
 
     // Generate children
-    node.children.forEach((child) => {
+    node.children.forEach(child => {
       this.generateNode(child)
       const childVar = this.getLastVariable()
       if (childVar) {
@@ -173,7 +181,7 @@ class DOMCodeGenerator {
     if (styles.length > 0) {
       this.addLine(`Object.assign(${elementVar}.style, {`)
       this.indent()
-      styles.forEach((style) => this.addLine(`${style},`))
+      styles.forEach(style => this.addLine(`${style},`))
       this.dedent()
       this.addLine(`})`)
     }
@@ -200,12 +208,12 @@ class DOMCodeGenerator {
     if (styles.length > 0) {
       this.addLine(`Object.assign(${elementVar}.style, {`)
       this.indent()
-      styles.forEach((style) => this.addLine(`${style},`))
+      styles.forEach(style => this.addLine(`${style},`))
       this.dedent()
       this.addLine(`})`)
     }
 
-    handlers.forEach((handler) => this.addLine(handler))
+    handlers.forEach(handler => this.addLine(handler))
 
     this.addEmptyLine()
   }
@@ -221,7 +229,7 @@ class DOMCodeGenerator {
     this.addLine(`${elementVar}.className = 'tachui-list'`)
 
     // Generate list items
-    node.children.forEach((child) => {
+    node.children.forEach(child => {
       this.generateNode(child)
       const childVar = this.getLastVariable()
       if (childVar) {
@@ -240,19 +248,200 @@ class DOMCodeGenerator {
 
     this.addLine(`// ${node.name} component`)
     this.addLine(`const ${elementVar} = document.createElement('div')`)
-    this.addLine(`${elementVar}.className = 'tachui-${node.name.toLowerCase()}'`)
+    this.addLine(
+      `${elementVar}.className = 'tachui-${node.name.toLowerCase()}'`
+    )
 
     // Apply modifiers
     const styles = this.generateModifierStyles(node.modifiers)
     if (styles.length > 0) {
       this.addLine(`Object.assign(${elementVar}.style, {`)
       this.indent()
-      styles.forEach((style) => this.addLine(`${style},`))
+      styles.forEach(style => this.addLine(`${style},`))
       this.dedent()
       this.addLine(`})`)
     }
 
     this.addEmptyLine()
+  }
+
+  /**
+   * Generate code for a concatenation node
+   */
+  private generateConcatenationNode(node: ConcatenationNode): void {
+    if (node.optimizable && node.staticContent) {
+      // Generate optimized static concatenation (no runtime needed)
+      this.generateOptimizedConcatenation(node)
+    } else {
+      // Generate runtime concatenation fallback
+      this.generateRuntimeConcatenation(node)
+    }
+  }
+
+  /**
+   * Generate optimized static concatenation code
+   */
+  private generateOptimizedConcatenation(node: ConcatenationNode): void {
+    const elementVar = this.createVariable('optimizedConcat')
+
+    this.addLine(`// Optimized static concatenation`)
+    this.addLine(`const ${elementVar} = document.createElement('span')`)
+    this.addLine(`${elementVar}.className = 'tachui-concatenated-optimized'`)
+
+    if (node.staticContent) {
+      // Generate static content directly
+      const textContent = node.staticContent.segments
+        .map(segment => segment.content || '')
+        .join('')
+
+      if (textContent) {
+        this.addLine(`${elementVar}.textContent = "${textContent}"`)
+      }
+
+      // Apply combined styles
+      const combinedStyles = this.mergeConcatenationStyles(
+        node.staticContent.segments
+      )
+      if (Object.keys(combinedStyles).length > 0) {
+        this.addLine(`Object.assign(${elementVar}.style, {`)
+        this.indent()
+        Object.entries(combinedStyles).forEach(([prop, value]) => {
+          this.addLine(`${prop}: "${value}",`)
+        })
+        this.dedent()
+        this.addLine(`})`)
+      }
+
+      // Add accessibility attributes
+      if (node.staticContent.aria.label) {
+        this.addLine(
+          `${elementVar}.setAttribute('aria-label', "${node.staticContent.aria.label}")`
+        )
+      }
+      if (
+        node.staticContent.aria.role &&
+        node.staticContent.aria.role !== 'text'
+      ) {
+        this.addLine(
+          `${elementVar}.setAttribute('role', "${node.staticContent.aria.role}")`
+        )
+      }
+    }
+
+    this.addEmptyLine()
+  }
+
+  /**
+   * Generate runtime concatenation fallback
+   */
+  private generateRuntimeConcatenation(node: ConcatenationNode): void {
+    const elementVar = this.createVariable('runtimeConcat')
+
+    // Determine which runtime to use (minimal vs full ARIA)
+    const needsARIA = this.determineARIARequirement(node)
+    const RuntimeComponent = needsARIA
+      ? 'SmartARIAConcatenatedComponent'
+      : 'MinimalConcatenatedComponent'
+    const runtimePath = needsARIA
+      ? '@tachui/core/concatenation/smart-aria'
+      : '@tachui/core/concatenation/minimal'
+
+    // Add appropriate import
+    this.addImport(RuntimeComponent, runtimePath)
+
+    this.addLine(
+      `// Dynamic concatenation - using ${needsARIA ? 'Smart ARIA' : 'minimal'} runtime`
+    )
+    this.addLine(`const ${elementVar} = new ${RuntimeComponent}([`)
+    this.indent()
+
+    // Generate left component
+    this.generateComponentInline(node.left)
+    const leftVar = this.getLastVariable()
+    this.addLine(
+      `{ id: '${node.left.name}-left', component: ${leftVar}, modifiers: [], render: () => ${leftVar} },`
+    )
+
+    // Generate right component
+    if (node.right.type === 'Component') {
+      this.generateComponentInline(node.right)
+      const rightVar = this.getLastVariable()
+      this.addLine(
+        `{ id: '${node.right.name}-right', component: ${rightVar}, modifiers: [], render: () => ${rightVar} }`
+      )
+    } else {
+      // Nested concatenation - recursively generate
+      this.generateConcatenationNode(node.right)
+      const rightVar = this.getLastVariable()
+      this.addLine(`${rightVar}.toSegment()`)
+    }
+
+    this.dedent()
+    this.addLine(`])`)
+    this.addEmptyLine()
+  }
+
+  /**
+   * Generate a component inline without creating separate variable
+   */
+  private generateComponentInline(component: ComponentNode): void {
+    switch (component.name) {
+      case 'Text':
+        this.generateTextComponent(component)
+        break
+      case 'Button':
+        this.generateButtonComponent(component)
+        break
+      default:
+        this.generateGenericComponent(component)
+        break
+    }
+  }
+
+  /**
+   * Determine if concatenation needs ARIA runtime
+   */
+  private determineARIARequirement(node: ConcatenationNode): boolean {
+    // Check if concatenation contains interactive components
+    return (
+      this.hasInteractiveComponents(node.left) ||
+      (node.right.type === 'Component'
+        ? this.hasInteractiveComponents(node.right)
+        : node.right.optimizable === false)
+    )
+  }
+
+  /**
+   * Check if component is interactive (Button, Link, etc.)
+   */
+  private hasInteractiveComponents(component: ComponentNode): boolean {
+    return (
+      component.name === 'Button' ||
+      component.name === 'Link' ||
+      component.children.some(
+        child =>
+          child.type === 'Component' &&
+          this.hasInteractiveComponents(child as ComponentNode)
+      )
+    )
+  }
+
+  /**
+   * Merge styles from multiple concatenated segments
+   */
+  private mergeConcatenationStyles(
+    segments: ConcatenatedSegment[]
+  ): Record<string, any> {
+    const merged: Record<string, any> = {}
+
+    segments.forEach(segment => {
+      if (segment.styles) {
+        // For conflicting styles, last segment wins
+        Object.assign(merged, segment.styles)
+      }
+    })
+
+    return merged
   }
 
   /**
@@ -277,7 +466,7 @@ class DOMCodeGenerator {
   private generateModifierStyles(modifiers: ModifierNode[]): string[] {
     const styles: string[] = []
 
-    modifiers.forEach((modifier) => {
+    modifiers.forEach(modifier => {
       const style = this.convertModifierToStyle(modifier)
       if (style) {
         styles.push(style)
@@ -293,10 +482,12 @@ class DOMCodeGenerator {
   private generateEventHandlers(modifiers: ModifierNode[]): string[] {
     const handlers: string[] = []
 
-    modifiers.forEach((modifier) => {
+    modifiers.forEach(modifier => {
       if (modifier.name === 'onTapGesture' && modifier.arguments.length > 0) {
         const handler = this.expressionToString(modifier.arguments[0])
-        handlers.push(`${this.getLastVariable()}.addEventListener('click', ${handler})`)
+        handlers.push(
+          `${this.getLastVariable()}.addEventListener('click', ${handler})`
+        )
       }
     })
 
@@ -311,7 +502,8 @@ class DOMCodeGenerator {
 
     switch (modifier.name) {
       case 'padding': {
-        const padding = args.length > 0 ? this.expressionToString(args[0]) : '"8px"'
+        const padding =
+          args.length > 0 ? this.expressionToString(args[0]) : '"8px"'
         return `padding: ${padding}`
       }
 
@@ -381,7 +573,9 @@ class DOMCodeGenerator {
     switch (expr.type) {
       case 'Literal': {
         const literal = expr as LiteralExpression
-        return typeof literal.value === 'string' ? `"${literal.value}"` : String(literal.value)
+        return typeof literal.value === 'string'
+          ? `"${literal.value}"`
+          : String(literal.value)
       }
       case 'Identifier': {
         const identifier = expr as IdentifierExpression
@@ -394,7 +588,9 @@ class DOMCodeGenerator {
 
   private isReactiveExpression(expr: string): boolean {
     // Simple heuristic - check if it looks like a function call or variable access
-    return expr.includes('()') || (!expr.startsWith('"') && !expr.match(/^\d+$/))
+    return (
+      expr.includes('()') || (!expr.startsWith('"') && !expr.match(/^\d+$/))
+    )
   }
 
   private createVariable(prefix: string): string {
@@ -404,7 +600,9 @@ class DOMCodeGenerator {
   }
 
   private getLastVariable(): string | null {
-    return this.variables.length > 0 ? this.variables[this.variables.length - 1] : null
+    return this.variables.length > 0
+      ? this.variables[this.variables.length - 1]
+      : null
   }
 
   private addImport(name: string, from: string): void {

@@ -60,6 +60,18 @@
       "types": "./dist/runtime/types.d.ts",
       "import": "./dist/runtime/types.js"
     },
+    "./runtime/concatenation-minimal": {
+      "types": "./dist/runtime/concatenation-minimal.d.ts",
+      "import": "./dist/runtime/concatenation-minimal.js"
+    },
+    "./runtime/concatenation-aria": {
+      "types": "./dist/runtime/concatenation-aria.d.ts",
+      "import": "./dist/runtime/concatenation-aria.js"
+    },
+    "./runtime/concatenation-full": {
+      "types": "./dist/runtime/concatenation-full.d.ts",
+      "import": "./dist/runtime/concatenation-full.js"
+    },
     "./reactive/types": {
       "types": "./dist/reactive/types.d.ts",
       "import": "./dist/reactive/types.js"

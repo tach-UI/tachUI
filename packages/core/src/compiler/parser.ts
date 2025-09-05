@@ -5,14 +5,24 @@
  * for transformation into reactive DOM code.
  */
 
-import type { ASTNode, ComponentNode, Expression, LiteralExpression, ModifierNode } from './types'
+import type {
+  ASTNode,
+  ComponentNode,
+  Expression,
+  LiteralExpression,
+  ModifierNode,
+} from './types'
 
 /**
- * Parse SwiftUI syntax code into an AST
+ * Parse SwiftUI syntax code into an AST with concatenation optimization
  */
 export function parseSwiftUISyntax(code: string, filename: string): ASTNode[] {
   const parser = new SwiftUIParser(code, filename)
-  return parser.parse()
+  const rawAST = parser.parse() // Existing parser (unchanged)
+
+  // For now, return raw AST - concatenation optimization will be implemented
+  // at the component build level rather than syntax parsing level
+  return rawAST
 }
 
 /**
@@ -59,7 +69,10 @@ class SwiftUIParser {
 
     // Try to parse a component
     if (this.isComponentStart()) {
-      return this.parseComponent(start)
+      const component = this.parseComponent(start)
+      // TEMPORARILY DISABLED: Check for concatenation after parsing component
+      // return this.parseConcatenation(component)
+      return component
     }
 
     // Skip non-TachUI code
@@ -70,7 +83,11 @@ class SwiftUIParser {
   /**
    * Parse a SwiftUI component (VStack, Text, Button, etc.)
    */
-  private parseComponent(start: { line: number; column: number; offset: number }): ComponentNode {
+  private parseComponent(start: {
+    line: number
+    column: number
+    offset: number
+  }): ComponentNode {
     const name = this.parseIdentifier()
 
     if (!name) {
@@ -140,6 +157,8 @@ class SwiftUIParser {
       },
     }
   }
+
+  // Concatenation optimization methods moved to post-processing functions
 
   /**
    * Parse a modifier (.padding(), .background(), etc.)
@@ -319,12 +338,17 @@ class SwiftUIParser {
   }): LiteralExpression {
     let numStr = ''
 
-    while (!this.isAtEnd() && (this.isDigit(this.peek()) || this.peek() === '.')) {
+    while (
+      !this.isAtEnd() &&
+      (this.isDigit(this.peek()) || this.peek() === '.')
+    ) {
       numStr += this.peek()
       this.advance()
     }
 
-    const value = numStr.includes('.') ? parseFloat(numStr) : parseInt(numStr, 10)
+    const value = numStr.includes('.')
+      ? parseFloat(numStr)
+      : parseInt(numStr, 10)
 
     return {
       type: 'Literal',
@@ -348,7 +372,10 @@ class SwiftUIParser {
 
     let identifier = ''
 
-    while (!this.isAtEnd() && (this.isAlphaNumeric(this.peek()) || this.peek() === '_')) {
+    while (
+      !this.isAtEnd() &&
+      (this.isAlphaNumeric(this.peek()) || this.peek() === '_')
+    ) {
       identifier += this.peek()
       this.advance()
     }
@@ -404,7 +431,10 @@ class SwiftUIParser {
   }
 
   private match(expected: string): boolean {
-    if (this.code.slice(this.position, this.position + expected.length) === expected) {
+    if (
+      this.code.slice(this.position, this.position + expected.length) ===
+      expected
+    ) {
       this.position += expected.length
       this.column += expected.length
       return true
@@ -459,3 +489,11 @@ class SwiftUIParser {
     }
   }
 }
+
+// ======================================================================
+// Concatenation Optimization - AST Post-Processing
+// ======================================================================
+
+// NOTE: Concatenation pattern detection and AST transformations are now handled
+// by TypeScript AST analysis in plugin.ts for better accuracy and maintainability.
+// All concatenation-related functions have been moved to plugin.ts.
