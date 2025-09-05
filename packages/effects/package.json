@@ -1,6 +1,6 @@
 {
   "name": "@tachui/effects",
-  "version": "0.7.1-alpha",
+  "version": "0.8.0-alpha",
   "description": "Visual effects and advanced modifiers for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",

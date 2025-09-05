@@ -1,6 +1,6 @@
 {
   "name": "@tachui/flow-control",
-  "version": "0.7.1-alpha",
+  "version": "0.8.0-alpha",
   "description": "Control flow components for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",

@@ -54,13 +54,12 @@ jobs:
       - name: Update package versions
         run: |
           pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
-          cd packages/core && pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
-          cd ../forms && pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
-          cd ../advanced-forms && pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
-          cd ../navigation && pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
-          cd ../symbols && pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
-          cd ../mobile-patterns && pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
-          cd ../cli && pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version
+          # Update all workspace packages with new structure
+          for pkg in packages/*/package.json; do
+            if [ -f "$pkg" ]; then
+              cd "$(dirname "$pkg")" && pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version && cd - > /dev/null
+            fi
+          done
       
       - name: Publish to npm
         run: pnpm -r publish --access public --no-git-checks

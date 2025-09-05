@@ -34,7 +34,7 @@ describe('TachUI CLI - Main Entry Point', () => {
       const version = await cliTester.testVersionCommand()
 
       // Should contain semantic version (may include banner)
-      expect(version).toContain('0.7.1-alpha')
+      expect(version).toContain('0.8.0-alpha')
       expect(version).toMatch(/\d+\.\d+\.\d+/)
     })
 

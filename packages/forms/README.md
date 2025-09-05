@@ -1,4 +1,4 @@
-# @tachui/forms v2.0
+# @tachui/forms
 
 Comprehensive form components and validation system for tachUI - unified package combining all form functionality.
 

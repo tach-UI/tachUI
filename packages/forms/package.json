@@ -1,6 +1,6 @@
 {
   "name": "@tachui/forms",
-  "version": "0.7.1-alpha",
+  "version": "0.8.0-alpha",
   "description": "Unified form components and validation system for tachUI (formerly @tachui/forms + @tachui/advanced-forms)",
   "type": "module",
   "main": "./dist/index.js",
