@@ -139,6 +139,38 @@ export interface ArrayExpressionNode extends Expression {
   elements: Expression[]
 }
 
+/**
+ * Concatenation AST Node (Compile-time Optimization)
+ */
+export interface ConcatenationNode extends ASTNode {
+  type: 'Concatenation'
+  left: ComponentNode
+  right: ComponentNode | ConcatenationNode
+  optimizable: boolean
+  staticContent?: PrecomputedContent
+}
+
+export interface PrecomputedContent {
+  segments: ConcatenatedSegment[]
+  aria: AccessibilityStructure
+  totalSegments: number
+}
+
+export interface ConcatenatedSegment {
+  componentType: string
+  content?: string
+  styles?: Record<string, any>
+  href?: string
+  accessibility?: Record<string, any>
+}
+
+export interface AccessibilityStructure {
+  label?: string
+  role?: string
+  description?: string
+  flowTargets?: string[]
+}
+
 export interface LiteralExpression extends Expression {
   type: 'Literal'
   value: string | number | boolean

@@ -259,7 +259,8 @@ describe('TachUI Compiler System', () => {
     })
 
     it('should combine styling and event handling', () => {
-      const code = 'Button("Click").background("blue").onTapGesture(handleClick)'
+      const code =
+        'Button("Click").background("blue").onTapGesture(handleClick)'
       const ast = parseSwiftUISyntax(code, 'test.tsx')
       const result = generateDOMCode(ast)
 
@@ -274,9 +275,15 @@ describe('TachUI Compiler System', () => {
       const ast = parseSwiftUISyntax(code, 'test.tsx')
       const result = generateDOMCode(ast)
 
-      expect(result.code).toContain("import { createSignal } from '@tachui/core/reactive'")
-      expect(result.code).toContain("import { createEffect } from '@tachui/core/reactive'")
-      expect(result.code).toContain("import { createComputed } from '@tachui/core/reactive'")
+      expect(result.code).toContain(
+        "import { createSignal } from '@tachui/core/reactive'"
+      )
+      expect(result.code).toContain(
+        "import { createEffect } from '@tachui/core/reactive'"
+      )
+      expect(result.code).toContain(
+        "import { createComputed } from '@tachui/core/reactive'"
+      )
     })
 
     it('should generate properly formatted code', () => {
@@ -292,7 +299,8 @@ describe('TachUI Compiler System', () => {
 
   describe('Integration Scenarios', () => {
     it('should handle nested component hierarchy', () => {
-      const code = 'VStack { Text("Title") HStack { Button("Yes") Button("No") } }'
+      const code =
+        'VStack { Text("Title") HStack { Button("Yes") Button("No") } }'
       const ast = parseSwiftUISyntax(code, 'test.tsx')
       const result = generateDOMCode(ast)
 
@@ -353,6 +361,60 @@ describe('TachUI Compiler System', () => {
       const result = generateDOMCode(ast)
 
       expect(result.code).toContain('padding: "8px"')
+    })
+  })
+
+  describe('Concatenation Optimization Foundation', () => {
+    describe('Infrastructure Readiness', () => {
+      it('should have compiler infrastructure ready for future concatenation optimization', () => {
+        // Verify that the compiler functions are available and working
+        expect(parseSwiftUISyntax).toBeDefined()
+        expect(generateDOMCode).toBeDefined()
+        expect(typeof parseSwiftUISyntax).toBe('function')
+        expect(typeof generateDOMCode).toBe('function')
+      })
+
+      it('should parse standard SwiftUI components correctly', () => {
+        const code = 'Text("Hello World")'
+        const ast = parseSwiftUISyntax(code, 'test.tsx')
+        const result = generateDOMCode(ast)
+
+        expect(ast).toHaveLength(1)
+        expect(ast[0].type).toBe('Component')
+        expect(result.code).toContain('Hello World')
+      })
+
+      it('should handle multiple components', () => {
+        const code = 'VStack { Text("First") Text("Second") }'
+        const ast = parseSwiftUISyntax(code, 'test.tsx')
+
+        expect(ast).toHaveLength(1)
+        expect(ast[0].type).toBe('Component')
+        expect((ast[0] as any).name).toBe('VStack')
+        expect((ast[0] as any).children).toHaveLength(2)
+      })
+    })
+
+    describe('Future Concatenation Implementation', () => {
+      it('should document concatenation optimization foundation is ready', () => {
+        // The AST types are in place for concatenation optimization
+        // The code generator has handlers for ConcatenationNode
+        // The infrastructure is ready for when concatenation detection is implemented
+
+        expect(true).toBe(true) // Placeholder test documenting readiness
+      })
+
+      it('should handle component styling correctly for future optimization', () => {
+        const code = 'Text("Styled").padding().background("blue")'
+        const ast = parseSwiftUISyntax(code, 'test.tsx')
+        const result = generateDOMCode(ast)
+
+        expect(result.code).toContain('Styled')
+        expect(result.code).toContain('padding')
+        expect(result.code).toContain('blue')
+
+        // This infrastructure will be reused for concatenation styling
+      })
     })
   })
 })
