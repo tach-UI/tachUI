@@ -23,17 +23,17 @@ The tachUI CLI (`tacho`) provides comprehensive developer tooling including proj
 ### Global Installation
 
 ```bash
-npm install -g @tachui/cli
+npm install -g @tachui/cli@0.8.0-alpha
 # or
-pnpm add -g @tachui/cli
+pnpm add -g @tachui/cli@0.8.0-alpha
 ```
 
 ### Local Project Installation
 
 ```bash
-npm install --save-dev @tachui/cli
+npm install --save-dev @tachui/cli@0.8.0-alpha
 # or
-pnpm add -D @tachui/cli
+pnpm add -D @tachui/cli@0.8.0-alpha
 ```
 
 ## Quick Start
@@ -273,7 +273,8 @@ struct ContentView: View {
 **After (tachUI):**
 
 ```typescript
-import { VStack, Text, Button, createSignal } from '@tachui/core'
+import { createSignal } from '@tachui/core'
+import { VStack, Text, Button } from '@tachui/primitives'
 
 const ContentView = () => {
   const [count, setCount] = createSignal(0)
@@ -426,7 +427,7 @@ Check out generated project examples:
 ## Requirements
 
 - **Node.js** 20.0+
-- **@tachui/core** ^0.1.0 or later
+- **@tachui/core** ^0.8.0-alpha or later
 - **TypeScript** 5.0+ (recommended)
 
 ## Contributing

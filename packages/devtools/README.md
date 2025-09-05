@@ -35,7 +35,7 @@ Development & debugging tools for the tachUI framework. Provides runtime inspect
 ## Installation
 
 ```bash
-pnpm add @tachui/devtools
+pnpm add @tachui/devtools@0.8.0-alpha
 ```
 
 ## Usage

@@ -9,7 +9,7 @@
 
 The tachUI mobile package provides essential mobile UI components and interaction patterns. Currently focused on core modal components with plans for expanded mobile functionality in future releases.
 
-## Current Features (v0.1.0)
+## Current Features (v0.8.0-alpha)
 
 - 📱 **Core Modal Components** - ActionSheet and Alert with full modal system
 - 🎨 **Native Feel** - iOS and Android design system compatibility
@@ -29,9 +29,9 @@ The tachUI mobile package provides essential mobile UI components and interactio
 ## Installation
 
 ```bash
-npm install @tachui/core @tachui/mobile-patterns
+npm install @tachui/core@0.8.0-alpha @tachui/mobile@0.8.0-alpha
 # or
-pnpm add @tachui/core @tachui/mobile-patterns
+pnpm add @tachui/core@0.8.0-alpha @tachui/mobile@0.8.0-alpha
 ```
 
 ## Quick Start
@@ -39,8 +39,8 @@ pnpm add @tachui/core @tachui/mobile-patterns
 ### ActionSheet
 
 ```typescript
-import { VStack, Button } from '@tachui/core'
-import { ActionSheet, useActionSheet } from '@tachui/mobile-patterns'
+import { VStack, Button } from '@tachui/primitives'
+import { ActionSheet, useActionSheet } from '@tachui/mobile'
 
 const MyComponent = () => {
   const actionSheet = useActionSheet()

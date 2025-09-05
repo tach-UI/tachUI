@@ -9,9 +9,9 @@ The `@tachui/primitives` package provides essential UI components that serve as 
 ## Installation
 
 ```bash
-npm install @tachui/primitives
+npm install @tachui/primitives@0.8.0-alpha
 # or
-pnpm add @tachui/primitives
+pnpm add @tachui/primitives@0.8.0-alpha
 ```
 
 ## Core Components

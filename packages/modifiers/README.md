@@ -9,9 +9,9 @@ The `@tachui/modifiers` package is the heart of tachUI's declarative styling sys
 ## Installation
 
 ```bash
-npm install @tachui/modifiers
+npm install @tachui/modifiers@0.8.0-alpha
 # or
-pnpm add @tachui/modifiers
+pnpm add @tachui/modifiers@0.8.0-alpha
 ```
 
 The modifiers package is automatically imported when you use `@tachui/core` and registers all modifiers globally.

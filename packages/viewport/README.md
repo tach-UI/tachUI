@@ -22,9 +22,9 @@ The tachUI viewport package provides comprehensive viewport and window managemen
 ## Installation
 
 ```bash
-npm install @tachui/core @tachui/viewport
+npm install @tachui/core@0.8.0-alpha @tachui/viewport@0.8.0-alpha
 # or
-pnpm add @tachui/core @tachui/viewport
+pnpm add @tachui/core@0.8.0-alpha @tachui/viewport@0.8.0-alpha
 ```
 
 ## Quick Start
@@ -37,7 +37,7 @@ import {
   useOpenWindow,
   useDismissWindow,
 } from '@tachui/viewport'
-import { VStack, Button, Text } from '@tachui/core'
+import { VStack, Button, Text } from '@tachui/primitives'
 
 // Initialize the viewport system
 const viewportManager = initializeViewportSystem()

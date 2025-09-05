@@ -21,9 +21,9 @@ The tachUI data package provides essential components for displaying and organiz
 ## Installation
 
 ```bash
-npm install @tachui/core @tachui/data
+npm install @tachui/core@0.8.0-alpha @tachui/data@0.8.0-alpha
 # or
-pnpm add @tachui/core @tachui/data
+pnpm add @tachui/core@0.8.0-alpha @tachui/data@0.8.0-alpha
 ```
 
 ## Quick Start
@@ -31,7 +31,7 @@ pnpm add @tachui/core @tachui/data
 ### Basic List
 
 ```typescript
-import { VStack, Text } from '@tachui/core'
+import { VStack, Text } from '@tachui/primitives'
 import { List } from '@tachui/data'
 
 const items = [

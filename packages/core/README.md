@@ -24,9 +24,9 @@ tachUI core provides a SwiftUI-inspired declarative framework for building web a
 ### Installation
 
 ```bash
-npm install @tachui/core
+npm install @tachui/core@0.8.0-alpha
 # or
-pnpm add @tachui/core
+pnpm add @tachui/core@0.8.0-alpha
 ```
 
 ### Basic Example

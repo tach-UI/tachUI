@@ -14,7 +14,7 @@ This package provides comprehensive visual effects including:
 ## Installation
 
 ```bash
-npm install @tachui/effects
+npm install @tachui/effects@0.8.0-alpha
 ```
 
 ## Usage

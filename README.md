@@ -18,23 +18,23 @@ cssclasses:
 
 ## Alpha Release - Welcome!
 
-**tachUI 0.8.0-alpha** represents a major architectural milestone with our new modular plugin system! This release delivers enhanced performance, improved developer experience, and a robust foundation for the upcoming 1.0 release.
+**tachUI 0.8.0-alpha** represents a major architectural milestone! This release features complete modular restructuring with 15+ specialized packages and improved performance across the entire framework.
 
 ### What's New in 0.8.0 Alpha
 
-- **Complete Component Library:** 55+ SwiftUI-compatible components
-- **Fine-grained Reactivity:** SolidJS-inspired signals with automatic cleanup
-- **SwiftUI Modifiers:** Chainable modifiers for layout, styling, and interactions
-- **Plugin Architecture:** Modular design with forms, navigation, symbols packages
-- **Production Apps:** Working Calculator and Marketing site included
+- **Modular Architecture:** 15+ specialized packages (@tachui/primitives, @tachui/modifiers, etc.)
+- **200+ SwiftUI Modifiers:** Complete modifier system with chainable API
+- **Foundation Packages:** Primitives, modifiers, effects, grid, responsive design
+- **Advanced Features:** Flow control, navigation, forms, mobile patterns, symbols
+- **Build Performance:** Optimized dependency chain and tree-shaking
 - **TypeScript-first:** Complete type safety with excellent IntelliSense
 
 ### What to know about...
 
-- **Bundling:** Still a work in progress, core is a bit large now, we're working on optimizing
-- **Plugins:** Related to bundling we may be splitting functionality out of core into plugins (Grid, Responsive, Effect Modifiers...)
+- **Modular Extraction:** We have revamped the entire framework structure for better separation and tree-shaking which should lead to smaller output. This is undergoing real-world integration testing now.
+- **Package Ecosystem:** 15 packages including @tachui/grid, @tachui/responsive, @tachui/effects
 - **Testing:** We're doing extensive dogfooding with tachUI now as we build out apps to test it from (hopefully) end to end
-- **Documentation:** Documentation is there and pretty extensive, but disheveled and somewhat inconsistent, we're working on that too!
+- **Documentation:** Documentation is there and pretty extensive, but disheveled and somewhat inconsistent, as the restructure winds down, this is our next major task.
 - **Impact:** All of this means you can have a great impact if you have feedback now!
 
 ### Perfect for Alpha Testing
@@ -159,13 +159,29 @@ These applications are coming and will be available in a separate repository
 
 ### Framework Packages
 
-- **@tachui/core**
-- **@tachui/forms:** Additional form components
-- **@tachui/navigation:** Navigation system enhancements
-- **@tachui/symbols:** Icon system _(tree-shakeable)_
-- **@tachui/mobile-patterns:** Mobile UI patterns
+**Foundation:**
 
-> **Alpha Note:** Bundle sizes include extensive development validation and debugging code. Production optimizations will significantly reduce these sizes in upcoming releases.
+- **@tachui/core** - Reactive system, modifiers, validation
+- **@tachui/primitives** - VStack, HStack, Text, Button, Image, etc.
+- **@tachui/modifiers** - 150+ chainable modifiers
+- **@tachui/flow-control** - Show, ForEach, conditional rendering
+
+**Advanced Features:**
+
+- **@tachui/forms** - Advanced form components and validation
+- **@tachui/navigation** - NavigationView, TabView, routing
+- **@tachui/grid** - CSS Grid integration with responsive design
+- **@tachui/responsive** - Breakpoint system and responsive utilities
+- **@tachui/effects** - Visual effects and filters
+- **@tachui/symbols** - Icon system with Lucide integration
+- **@tachui/mobile** - Mobile UI patterns (ActionSheet, Alert, ScrollView)
+- **@tachui/viewport** - Window and viewport management
+- **@tachui/data** - Data display and organization components
+
+**Developer Tools:**
+
+- **@tachui/devtools** - Development utilities and debugging
+- **@tachui/cli** - Developer tooling and scaffolding
 
 ### Reactivity Performance
 
@@ -204,16 +220,25 @@ pnpm test
 
 ```
 ├── docs/
-│   ├── api/               # Placeholder for typedoc doc generation destination
-│   ├── guide/             # Current Vitepress documentation
-│   ├── reference/         # Placeholder for additional Vitepress site TBD
+│   ├── api/               # TypeDoc API documentation destination
+│   ├── guide/             # VitePress documentation site
+│   └── reference/         # Additional reference documentation
 ├── packages/
-│   ├── core/              # Core framework with reactivity & components
-│   ├── forms/             # Advanced form components
-│   ├── navigation/        # Navigation system enhancements
+│   ├── core/              # Core framework (reactivity, state management, validation)
+│   ├── primitives/        # Foundation UI components (VStack, HStack, Text, Button, Image)
+│   ├── modifiers/         # 150+ chainable SwiftUI-style modifiers
+│   ├── flow-control/      # Conditional rendering (Show, ForEach, Unless, When)
+│   ├── effects/           # Visual effects and filters
+│   ├── forms/             # Advanced form components and validation
+│   ├── navigation/        # NavigationView, TabView, and routing utilities
+│   ├── grid/              # CSS Grid integration with responsive design
+│   ├── responsive/        # Breakpoint system and responsive utilities
 │   ├── symbols/           # Icon system with Lucide integration
-│   ├── mobile-patterns/   # Alert, ActionSheet, mobile UI
-│   └── cli/               # Developer tooling (future)
+│   ├── mobile/            # Mobile UI patterns (ActionSheet, Alert, ScrollView)
+│   ├── viewport/          # Window and viewport management
+│   ├── data/              # Data display and organization components
+│   ├── devtools/          # Development utilities and debugging
+│   └── cli/               # Developer tooling and scaffolding
 ```
 
 ### Contributing Areas
@@ -250,31 +275,33 @@ We welcome contributions in:
 
 Much of this is obviously TBD based on community feedback and reception.
 
-### **Alpha 1 - Current Release**
+### **Previous Release: 0.7.\*-alpha**
 
 - **55+ SwiftUI components** across core + plugin packages
 - **Plugin architecture** with modular design (forms, navigation, symbols, mobile)
 - **Production demonstration applications** (Calculator + Marketing site)
 - **TypeScript-first developer experience** with complete type safety
 
-### **Alpha 2 - Next Release**
+### **Current Release: 0.8.\*-alpha**
 
-- **Bundle size optimization** - Production-ready bundle sizes
+- ☑️ **Bundle size optimization** - Production-ready bundle sizes
+- ☑️ **Advanced state management** - Complete @State, @Binding, @ObservedObject, and @EnvironmentObject patterns
 - **Enhanced documentation** - Complete API documentation
-- **Performance benchmarks** - Comparative performance data
-- **Developer tooling** - Improved CLI and debugging tools
+- **Compile-time Concatenation** - Moving concatenation code to compile time for bundle optimizing
+- ☑️ **Developer tooling** - CLI Improvement coming, but devtools are now split out for a more useful design
 
 ### **Beta Release**
 
 - **Animation system** - Web Animations API integration
-- **Advanced state management** - @Binding and @ObservedObject patterns
 - **Enterprise features** - Advanced testing and monitoring tools
 - **Community ecosystem** - Third-party plugins and components
+- **Performance benchmarks** - Comparative performance data
 
 ### **1.0 Release**
 
-- **Complete SwiftUI parity** - All common SwiftUI patterns
-- **Cross-platform capabilities** - Mobile app development patterns
+- **Primary SwiftUI parity** - All common SwiftUI patterns
+- **Swift ↔️ tachUI** - Augmented conversion tooling allowing for easy transition
+- **Cross-platform capabilities** - Mobile app development patterns (if wanted)
 - **Design tools integration** - Visual component builders
 - **Stable public API** - Production-ready for large applications
 
@@ -339,15 +366,16 @@ Special thanks to the open source community for continuous inspiration and feedb
 ## Ready to Build with SwiftUI on the Web?
 
 ```bash
-# Install tachUI Alpha 1
+# Install tachUI Alpha
 npm install @tachui/core@0.8.0-alpha
 
 # Create your first SwiftUI-style component
-import { Text, Button, VStack, createSignal } from '@tachui/core'
+import { createSignal } from '@tachui/core'
+import { VStack, Text, Button } from '@tachui/primitives'
 
 # Start building! 🎉
 ```
 
-**tachUI 0.8.0-alpha** - The future of SwiftUI-inspired web development is here.
+**tachUI 0.8.0-alpha** - Modular architecture meets SwiftUI-inspired web development.
 
 [![Get Started](https://img.shields.io/badge/Get%20Started-Documentation-blue?style=for-the-badge)](./apps/docs/guide/getting-started.md) [![View Examples](https://img.shields.io/badge/View%20Examples-Live%20Demos-green?style=for-the-badge)](./apps/examples/) [![Join Community](https://img.shields.io/badge/Contribute-GitHub-purple?style=for-the-badge)](https://github.com/tach-UI/tachUI)
