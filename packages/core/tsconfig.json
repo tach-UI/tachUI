@@ -9,7 +9,7 @@
     "sourceMap": true,
     "noEmit": false,
     "allowImportingTsExtensions": false,
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "downlevelIteration": true,
@@ -26,4 +26,9 @@
     "src/modifiers/examples/",
     "src/components/examples/"
   ]
+  // "references": [
+  //   {
+  //     "path": "../grid"
+  //   }
+  // ] // Temporarily disabled to avoid circular dependency
 }

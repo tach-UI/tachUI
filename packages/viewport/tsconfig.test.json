@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals"],
+    "skipLibCheck": true,
+    "noUnusedLocals": false
+  },
+  "include": ["__tests__/**/*"]
+}

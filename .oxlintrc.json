@@ -70,5 +70,18 @@
       }
     }
   ],
-  "ignorePatterns": ["node_modules", "dist", "build", ".next", "coverage"]
+  "ignorePatterns": ["node_modules", "dist", "build", ".next", "coverage"],
+  "settings": {
+    "typescript": {
+      "paths": {
+        "@tachui/core": ["packages/core/src"],
+        "@tachui/primitives": ["packages/primitives/src"],
+        "@tachui/navigation": ["packages/navigation/src"],
+        "@tachui/forms": ["packages/forms/src"],
+        "@tachui/data": ["packages/data/src"],
+        "@tachui/mobile-patterns": ["packages/mobile-patterns/src"],
+        "@tachui/symbols": ["packages/symbols/src"]
+      }
+    }
+  }
 }

@@ -17,30 +17,17 @@ export * from '../runtime/dom-bridge'
 export * from '../runtime/component'
 export * from '../runtime/props'
 
-// Basic components only
-export * from '../components/Text'
-export * from '../components/Button'
-export * from '../components/Image'
-export * from '../components/BasicInput'
-export * from '../components/Spacer'
-export * from '../components/Show'
+// Components are in separate packages:
+// @tachui/primitives - Text, Button, Image, BasicInput, Spacer, HStack, VStack, ZStack
+// @tachui/flow-control - Show, When, Unless
 
-// Layout containers
-export { HStack, VStack, ZStack } from '../components/wrapper'
-
-// Essential modifiers
+// Essential modifiers infrastructure only
 export * from '../modifiers/core'
-export * from '../modifiers/padding'
-export * from '../modifiers/margin'
-export * from '../modifiers/size'
-export * from '../modifiers/typography'
-export * from '../modifiers/background'
 
-// Responsive system (needed for landing pages)
-export {
-  initializeResponsiveSystem,
-  configureBreakpoints,
-} from '../modifiers/responsive'
+// Concrete modifiers are available in @tachui/modifiers:
+// import { padding, margin, size, typography } from '@tachui/modifiers'
+
+// Responsive system: @tachui/responsive
 
 // State management
 export { State, isState, unwrapValue } from '../state/state'
@@ -65,13 +52,7 @@ export { infinity, Layout, isInfinity } from '../constants'
 // Basic gradients (needed for landing pages)
 export { LinearGradient } from '../gradients'
 
-// Debug system
-export {
-  enableDebug,
-  disableDebug,
-  debugManager,
-  isDebugEnabled,
-} from '../debug'
+// Debug system: @tachui/devtools
 
 /**
  * Minimal Bundle Metadata
@@ -82,15 +63,7 @@ export const BUNDLE_INFO = {
   description:
     'Minimal TachUI bundle for calculator-style apps and landing pages',
   targetSize: '~60KB',
-  recommendedComponents: [
-    'Text',
-    'Button',
-    'Image',
-    'HStack',
-    'VStack',
-    'Spacer',
-    'Show',
-  ],
+  recommendedComponents: ['Text', 'Button', 'HStack', 'VStack'],
   useCase: 'Calculator-style apps, landing pages, simple UIs',
   treeShakingHints: {
     include: ['reactive', 'runtime', 'components/basic', 'modifiers/basic'],

@@ -16,7 +16,10 @@ import type {
 /**
  * Built-in validation rules
  */
-const VALIDATION_RULES: Record<string, (value: any, options?: any) => ValidationResult> = {
+const VALIDATION_RULES: Record<
+  string,
+  (value: any, options?: any) => ValidationResult
+> = {
   required: (value: any): ValidationResult => ({
     valid: value !== null && value !== undefined && value !== '',
     message: 'This field is required',
@@ -61,7 +64,8 @@ const VALIDATION_RULES: Record<string, (value: any, options?: any) => Validation
     if (!value) return { valid: true }
     const num = Number(value)
     return {
-      valid: !Number.isNaN(num) && Number.isFinite(num) && Number.isInteger(num),
+      valid:
+        !Number.isNaN(num) && Number.isFinite(num) && Number.isInteger(num),
       message: 'Please enter a valid integer',
       code: 'INVALID_INTEGER',
     }
@@ -91,7 +95,10 @@ const VALIDATION_RULES: Record<string, (value: any, options?: any) => Validation
     }
   },
 
-  minLength: (value: string, options: { minLength: number }): ValidationResult => {
+  minLength: (
+    value: string,
+    options: { minLength: number }
+  ): ValidationResult => {
     if (!value) return { valid: true }
     return {
       valid: value.length >= options.minLength,
@@ -100,7 +107,10 @@ const VALIDATION_RULES: Record<string, (value: any, options?: any) => Validation
     }
   },
 
-  maxLength: (value: string, options: { maxLength: number }): ValidationResult => {
+  maxLength: (
+    value: string,
+    options: { maxLength: number }
+  ): ValidationResult => {
     if (!value) return { valid: true }
     return {
       valid: value.length <= options.maxLength,
@@ -115,7 +125,9 @@ const VALIDATION_RULES: Record<string, (value: any, options?: any) => Validation
   ): ValidationResult => {
     if (!value) return { valid: true }
     const regex =
-      typeof options.pattern === 'string' ? new RegExp(options.pattern) : options.pattern
+      typeof options.pattern === 'string'
+        ? new RegExp(options.pattern)
+        : options.pattern
     return {
       valid: regex.test(value),
       message: options.message || 'Value does not match required pattern',
@@ -204,7 +216,8 @@ const VALIDATION_RULES: Record<string, (value: any, options?: any) => Validation
     if (!value) return { valid: true }
     const date = new Date(value)
     return {
-      valid: !Number.isNaN(date.getTime()) && !!value.match(/^\d{4}-\d{2}-\d{2}$/),
+      valid:
+        !Number.isNaN(date.getTime()) && !!value.match(/^\d{4}-\d{2}-\d{2}$/),
       message: 'Please enter a valid date (YYYY-MM-DD)',
       code: 'INVALID_DATE',
     }
@@ -227,7 +240,8 @@ const VALIDATION_RULES: Record<string, (value: any, options?: any) => Validation
     const hasNonalphas = /\W/.test(value)
     const isLongEnough = value.length >= 8
 
-    const valid = hasUpperCase && hasLowerCase && hasNumbers && hasNonalphas && isLongEnough
+    const valid =
+      hasUpperCase && hasLowerCase && hasNumbers && hasNonalphas && isLongEnough
     return {
       valid,
       message: valid
@@ -315,7 +329,10 @@ export function validateValue(
 /**
  * Validate a field state
  */
-export function validateField(field: FieldState, validation?: FieldValidation): ValidationResult {
+export function validateField(
+  field: FieldState,
+  validation?: FieldValidation
+): ValidationResult {
   if (!validation?.rules || validation.rules.length === 0) {
     return { valid: true }
   }
@@ -382,7 +399,7 @@ export function createDebouncedValidator(
   let lastResult: ValidationResult | Promise<ValidationResult>
 
   return (value: any): Promise<ValidationResult> => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       // If value hasn't changed, return cached result
       if (value === lastValue && lastResult) {
         Promise.resolve(lastResult).then(resolve)
@@ -439,7 +456,7 @@ export const CrossFieldValidators = {
   requireOneOf:
     (fields: string[], message = 'At least one field is required') =>
     (values: Record<string, any>): ValidationResult => {
-      const hasValue = fields.some((field) => {
+      const hasValue = fields.some(field => {
         const value = values[field]
         return value !== null && value !== undefined && value !== ''
       })
@@ -467,7 +484,10 @@ export const CrossFieldValidators = {
     (values: Record<string, any>): ValidationResult => {
       if (values[conditionalField] === conditionalValue) {
         const targetValue = values[targetField]
-        const isValid = targetValue !== null && targetValue !== undefined && targetValue !== ''
+        const isValid =
+          targetValue !== null &&
+          targetValue !== undefined &&
+          targetValue !== ''
         if (isValid) {
           return { valid: true }
         }
@@ -484,7 +504,11 @@ export const CrossFieldValidators = {
    * Validate date range (start date before end date)
    */
   dateRange:
-    (startField: string, endField: string, message = 'End date must be after start date') =>
+    (
+      startField: string,
+      endField: string,
+      message = 'End date must be after start date'
+    ) =>
     (values: Record<string, any>): ValidationResult => {
       const startDate = values[startField]
       const endDate = values[endField]
@@ -514,7 +538,10 @@ export const ValidationPresets = {
   password: ['required', { name: 'minLength', options: { minLength: 8 } }],
   phone: [
     'required',
-    { name: 'pattern', options: { pattern: /^\+?[\d\s-()]+$/, message: 'Invalid phone number' } },
+    {
+      name: 'pattern',
+      options: { pattern: /^\+?[\d\s-()]+$/, message: 'Invalid phone number' },
+    },
   ],
   url: ['required', 'url'],
   positiveNumber: ['required', 'number', { name: 'min', options: { min: 0 } }],
@@ -546,7 +573,10 @@ export class ValidationMessageFormatter {
 
   format(result: ValidationResult, fieldName?: string): string {
     if (result.code && this.messages[result.code]) {
-      return this.messages[result.code].replace(`\${field}`, fieldName || 'field')
+      return this.messages[result.code].replace(
+        `\${field}`,
+        fieldName || 'field'
+      )
     }
     return result.message || 'Validation failed'
   }
@@ -575,14 +605,14 @@ export const ValidationUtils = {
    * Combine multiple validation results
    */
   combineResults: (results: ValidationResult[]): ValidationResult => {
-    const errors = results.filter((r) => !r.valid)
+    const errors = results.filter(r => !r.valid)
     if (errors.length === 0) {
       return { valid: true }
     }
 
     return {
       valid: false,
-      message: errors.map((e) => e.message).join(', '),
+      message: errors.map(e => e.message).join(', '),
       code: 'MULTIPLE_ERRORS',
     }
   },

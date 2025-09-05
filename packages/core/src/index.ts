@@ -82,8 +82,14 @@ export * from './compiler'
 // Component system (Phase 4-5)
 export * from './components'
 
-// Modifier system
+// Primitives moved to @tachui/primitives - import directly from that package
+
+// Modifier system infrastructure (concrete modifiers in @tachui/modifiers)
 export * from './modifiers'
+
+// Responsive system moved to @tachui/responsive - import directly from that package
+
+// Data components (List, Menu, Section) are included in the main components export
 
 // Gradient system
 export * from './gradients'
@@ -107,10 +113,7 @@ export {
   validatePluginName,
   normalizePluginName,
   PluginDevUtils,
-  OptimizedPluginErrorHandler,
-  SimplifiedPluginErrorHandler,
-  globalPluginErrorHandler,
-  ErrorRecoveryUtils,
+  // Plugin error handling moved to @tachui/devtools - import from that package
 } from './plugins'
 export type {
   TachUIPlugin,
@@ -124,6 +127,15 @@ export type {
 export * from './reactive'
 // Runtime system (Phase 3)
 export * from './runtime'
+export { registerComponentWithLifecycleHooks } from './runtime/dom-bridge'
+
+// Essential runtime types - explicitly exported for plugin packages
+export type {
+  ComponentProps,
+  ComponentInstance,
+  ComponentChildren,
+  DOMNode,
+} from './runtime/types'
 
 // CSS Classes system
 export * from './css-classes'
@@ -140,21 +152,17 @@ export {
 export * from './state'
 
 // Debug system
-export * from './debug'
+// Debug system moved to @tachui/devtools
+// Import from @tachui/devtools instead
 
 // Validation system (Phase 1A - Epic: Greylock)
+// Enhanced validation moved to @tachui/devtools - import from that package
 export {
-  ValidationUtils as default,
   ValidationDevTools,
   ValidationSetup,
-  CoreComponentValidation,
-  ModifierValidation,
-  PluginComponentValidation,
-  EnhancedValidationUtils,
-  ProductionOptimizationUtils,
-  ValidationDebugUtils,
-  PerformanceOptimizationUtils,
   LifecycleValidationUtils,
+  getComponentValidator,
+  ProductionUtils,
 } from './validation'
 
 // Version

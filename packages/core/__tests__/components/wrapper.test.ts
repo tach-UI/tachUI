@@ -7,21 +7,102 @@ import type { WrapperOptions } from '../../src/components/wrapper'
 import {
   createModifiableComponentFactory,
   createReactiveWrapper,
-  H1,
-  H2,
-  H3,
-  H4,
-  H5,
-  H6,
-  HTML,
   Layout,
-  Text,
   withModifierSupport,
   withModifiers,
   wrapComponent,
 } from '../../src/components/wrapper'
 import { h, text } from '../../src/runtime'
 import type { ComponentInstance, ComponentProps } from '../../src/runtime/types'
+
+// Create simple test components for testing the wrapper system
+const Text = createReactiveWrapper(
+  (props: { children?: string | (() => string) }) => {
+    const content =
+      typeof props.children === 'function'
+        ? props.children()
+        : props.children || ''
+    return h('span', { class: 'tachui-text' }, text(content))
+  }
+)
+
+const Button = createReactiveWrapper(
+  (props: { children?: string; onClick?: () => void }) =>
+    h(
+      'button',
+      {
+        class: 'tachui-button',
+        onclick: props.onClick,
+      },
+      text(props.children || '')
+    )
+)
+
+// HTML element factories
+const HTML = {
+  div: (props: any = {}) => {
+    const component = createReactiveWrapper(() =>
+      h('div', props, props.children ? text(props.children) : undefined)
+    )({})
+    // Preserve props on the component for testing
+    component.props = props
+    return component
+  },
+  span: (props: any = {}) => {
+    const component = createReactiveWrapper(() =>
+      h('span', props, props.children ? text(props.children) : undefined)
+    )({})
+    component.props = props
+    return component
+  },
+  p: (props: any = {}) => {
+    const component = createReactiveWrapper(() =>
+      h('p', props, props.children ? text(props.children) : undefined)
+    )({})
+    component.props = props
+    return component
+  },
+  button: (props: any = {}) => {
+    const component = createReactiveWrapper(() =>
+      h(
+        'button',
+        { ...props, onclick: props.onClick },
+        props.children ? text(props.children) : undefined
+      )
+    )({})
+    component.props = props
+    return component
+  },
+  input: (props: any = {}) => {
+    const component = createReactiveWrapper(() =>
+      h('input', { type: 'text', ...props })
+    )({})
+    component.props = props
+    return component
+  },
+  img: (props: any = {}) => {
+    const component = createReactiveWrapper(() => h('img', props))({})
+    component.props = props
+    return component
+  },
+  heading:
+    (level: 1 | 2 | 3 | 4 | 5 | 6) =>
+    (props: any = {}) => {
+      const component = createReactiveWrapper(() =>
+        h(`h${level}`, props, props.children ? text(props.children) : undefined)
+      )({})
+      component.props = props
+      return component
+    },
+}
+
+// Heading shortcuts
+const H1 = (props: any = {}) => HTML.heading(1)(props)
+const H2 = (props: any = {}) => HTML.heading(2)(props)
+const H3 = (props: any = {}) => HTML.heading(3)(props)
+const H4 = (props: any = {}) => HTML.heading(4)(props)
+const H5 = (props: any = {}) => HTML.heading(5)(props)
+const H6 = (props: any = {}) => HTML.heading(6)(props)
 
 // Mock simple component for testing
 class TestComponent implements ComponentInstance<ComponentProps> {
@@ -88,14 +169,16 @@ describe('withModifiers', () => {
 
 describe('createReactiveWrapper', () => {
   it('should create reactive wrapper function', () => {
-    const renderFn = (props: { content: string }) => h('div', {}, text(props.content))
+    const renderFn = (props: { content: string }) =>
+      h('div', {}, text(props.content))
     const wrapper = createReactiveWrapper(renderFn)
 
     expect(typeof wrapper).toBe('function')
   })
 
   it('should create modifiable component from wrapper', () => {
-    const renderFn = (props: { content: string }) => h('div', {}, text(props.content))
+    const renderFn = (props: { content: string }) =>
+      h('div', {}, text(props.content))
     const wrapper = createReactiveWrapper(renderFn)
     const component = wrapper({ content: 'Test' })
 
@@ -104,7 +187,8 @@ describe('createReactiveWrapper', () => {
   })
 
   it('should handle wrapper options', () => {
-    const renderFn = (props: { content: string }) => h('div', {}, text(props.content))
+    const renderFn = (props: { content: string }) =>
+      h('div', {}, text(props.content))
     const options: WrapperOptions = {
       enableModifiers: true,
       enableReactivity: true,
@@ -116,7 +200,7 @@ describe('createReactiveWrapper', () => {
 
   it('should handle array return from render function', () => {
     const renderFn = (props: { items: string[] }) =>
-      props.items.map((item) => h('div', {}, text(item)))
+      props.items.map(item => h('div', {}, text(item)))
 
     const wrapper = createReactiveWrapper(renderFn)
     const component = wrapper({ items: ['a', 'b', 'c'] })
@@ -142,7 +226,10 @@ describe('HTML', () => {
     })
 
     it('should support modifier chaining', () => {
-      const div = HTML.div().modifier.padding(16).backgroundColor('#f0f0f0').build()
+      const div = HTML.div()
+        .modifier.padding(16)
+        .backgroundColor('#f0f0f0')
+        .build()
 
       expect(div).toBeDefined()
     })
@@ -299,7 +386,10 @@ describe('Heading Shortcuts', () => {
 describe('Layout Components', () => {
   describe('VStack', () => {
     it('should create vertical stack layout', () => {
-      const children = [new TestComponent({ id: '1' }), new TestComponent({ id: '2' })]
+      const children = [
+        new TestComponent({ id: '1' }),
+        new TestComponent({ id: '2' }),
+      ]
 
       const vstack = Layout.VStack({ children })
 
@@ -326,7 +416,10 @@ describe('Layout Components', () => {
 
   describe('HStack', () => {
     it('should create horizontal stack layout', () => {
-      const children = [new TestComponent({ id: '1' }), new TestComponent({ id: '2' })]
+      const children = [
+        new TestComponent({ id: '1' }),
+        new TestComponent({ id: '2' }),
+      ]
 
       const hstack = Layout.HStack({ children })
 
@@ -347,7 +440,10 @@ describe('Layout Components', () => {
 
   describe('ZStack', () => {
     it('should create z-index stack layout', () => {
-      const children = [new TestComponent({ id: '1' }), new TestComponent({ id: '2' })]
+      const children = [
+        new TestComponent({ id: '1' }),
+        new TestComponent({ id: '2' }),
+      ]
 
       const zstack = Layout.ZStack({ children })
 
@@ -435,14 +531,16 @@ describe('withModifierSupport', () => {
 
 describe('createModifiableComponentFactory', () => {
   it('should create factory function for modifiable components', () => {
-    const renderFn = (props: { content: string }) => h('div', {}, text(props.content))
+    const renderFn = (props: { content: string }) =>
+      h('div', {}, text(props.content))
     const factory = createModifiableComponentFactory(renderFn)
 
     expect(typeof factory).toBe('function')
   })
 
   it('should create component with modifier support from factory', () => {
-    const renderFn = (props: { content: string }) => h('div', {}, text(props.content))
+    const renderFn = (props: { content: string }) =>
+      h('div', {}, text(props.content))
     const factory = createModifiableComponentFactory(renderFn)
     const component = factory({ content: 'Test Content' })
 
@@ -453,7 +551,7 @@ describe('createModifiableComponentFactory', () => {
 
   it('should handle array return from render function', () => {
     const renderFn = (props: { items: string[] }) =>
-      props.items.map((item) => h('span', {}, text(item)))
+      props.items.map(item => h('span', {}, text(item)))
 
     const factory = createModifiableComponentFactory(renderFn)
     const component = factory({ items: ['a', 'b'] })
@@ -462,7 +560,8 @@ describe('createModifiableComponentFactory', () => {
   })
 
   it('should support modifier chaining on factory components', () => {
-    const renderFn = (props: { content: string }) => h('div', {}, text(props.content))
+    const renderFn = (props: { content: string }) =>
+      h('div', {}, text(props.content))
     const factory = createModifiableComponentFactory(renderFn)
     const component = factory({ content: 'Test' })
       .modifier.padding(10)
@@ -497,7 +596,11 @@ describe('Integration Tests', () => {
     })
 
     const content = Layout.VStack({
-      children: [header, Text('Content goes here'), HTML.div({ children: 'Footer' })],
+      children: [
+        header,
+        Text('Content goes here'),
+        HTML.div({ children: 'Footer' }),
+      ],
       spacing: 24,
     })
       .modifier.padding(20)

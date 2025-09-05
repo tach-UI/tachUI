@@ -9,7 +9,7 @@ import {
   marginVertical,
   marginTop,
   marginBottom,
-} from '../../src/modifiers/margin'
+} from '@tachui/modifiers/basic/margin'
 
 describe('Margin Modifier - String Value Support', () => {
   it('should accept string values for horizontal/vertical', () => {

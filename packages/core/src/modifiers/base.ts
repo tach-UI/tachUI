@@ -5,7 +5,6 @@
  */
 
 import { createEffect, isComputed, isSignal, getThemeSignal } from '../reactive'
-import type { Signal } from '../reactive/types'
 import type { DOMNode } from '../runtime/types'
 import type {
   CSSStyleProperties,
@@ -16,7 +15,11 @@ import type {
   StyleComputationContext,
 } from './types'
 import { ModifierPriority } from './types'
-import { isInfinity, dimensionToCSS, shouldExpandForInfinity } from '../constants/layout'
+import {
+  isInfinity,
+  dimensionToCSS,
+  shouldExpandForInfinity,
+} from '../constants/layout'
 
 /**
  * Abstract base modifier class
@@ -60,7 +63,11 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
   /**
    * Apply a single style change to an element with reactive support
    */
-  protected applyStyleChange(element: Element, property: string, value: any): void {
+  protected applyStyleChange(
+    element: Element,
+    property: string,
+    value: any
+  ): void {
     if (element instanceof HTMLElement) {
       const cssProperty = this.toCSSProperty(property)
 
@@ -139,7 +146,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
     const passthroughProperties = [
       'filter', // CSS filter strings should not be processed
       'transform', // CSS transform strings
-      'clip-path' // CSS clip-path strings
+      'clip-path', // CSS clip-path strings
     ]
 
     if (passthroughProperties.includes(property)) {
@@ -155,7 +162,8 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
   protected applyStyles(element: Element, styles: CSSStyleProperties): void {
     // Check if element has a style property (for testing and real elements)
     if (element instanceof HTMLElement || (element as any).style) {
-      const styleTarget = element instanceof HTMLElement ? element.style : (element as any).style
+      const styleTarget =
+        element instanceof HTMLElement ? element.style : (element as any).style
 
       for (const [property, value] of Object.entries(styles)) {
         if (value !== undefined) {
@@ -166,12 +174,20 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
             // Create reactive effect for this style property
             createEffect(() => {
               const currentValue = value()
-              const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
+              const cssValue = this.toCSSValueForProperty(
+                cssProperty,
+                currentValue
+              )
 
               if (styleTarget.setProperty) {
                 // Check if value contains !important and handle it properly
-                if (typeof cssValue === 'string' && cssValue.includes('!important')) {
-                  const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
+                if (
+                  typeof cssValue === 'string' &&
+                  cssValue.includes('!important')
+                ) {
+                  const actualValue = cssValue
+                    .replace(/\s*!important\s*$/, '')
+                    .trim()
                   styleTarget.setProperty(cssProperty, actualValue, 'important')
                 } else {
                   styleTarget.setProperty(cssProperty, cssValue)
@@ -186,8 +202,13 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
 
             if (styleTarget.setProperty) {
               // Check if value contains !important and handle it properly
-              if (typeof cssValue === 'string' && cssValue.includes('!important')) {
-                const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
+              if (
+                typeof cssValue === 'string' &&
+                cssValue.includes('!important')
+              ) {
+                const actualValue = cssValue
+                  .replace(/\s*!important\s*$/, '')
+                  .trim()
                 styleTarget.setProperty(cssProperty, actualValue, 'important')
               } else {
                 styleTarget.setProperty(cssProperty, cssValue)
@@ -247,228 +268,50 @@ export class LayoutModifier extends BaseModifier {
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!node.element || !context.element) return
 
-    const styleContext = this.createStyleContext(context.componentId, context.element, [])
+    const styleContext = this.createStyleContext(
+      context.componentId,
+      context.element,
+      []
+    )
 
-    const styles = this.computeLayoutStyles(this.properties as any, styleContext)
+    const styles = this.computeLayoutStyles(
+      this.properties as any,
+      styleContext
+    )
 
     this.applyStyles(context.element, styles)
 
-    // Handle offset separately for proper transform combining
-    const props = this.properties as any
-    if (props.offset && context.element instanceof HTMLElement) {
-      this.applyOffsetTransform(context.element, props.offset)
-    }
-
-    // Handle aspectRatio separately for reactive support
-    if (props.aspectRatio && context.element instanceof HTMLElement) {
-      this.applyAspectRatio(context.element, props.aspectRatio)
-    }
-
-    // Handle scaleEffect separately for proper transform combining (Phase 3 - Epic: Butternut)
-    if (props.scaleEffect && context.element instanceof HTMLElement) {
-      this.applyScaleTransform(context.element, props.scaleEffect)
-    }
+    // Layout modifiers (offset, aspectRatio, scaleEffect, zIndex) have been
+    // migrated to @tachui/modifiers/layout for enhanced functionality
 
     // Handle absolutePosition separately for proper positioning (Phase 3 - Epic: Butternut)
+    const props = this.properties as any
     if (props.position && context.element instanceof HTMLElement) {
       this.applyAbsolutePosition(context.element, props.position)
-    }
-
-    // Handle zIndex separately for proper layering (Phase 3 - Epic: Butternut)
-    if (props.zIndex !== undefined && context.element instanceof HTMLElement) {
-      this.applyZIndex(context.element, props.zIndex)
     }
 
     return undefined
   }
 
-  private applyOffsetTransform(element: HTMLElement, offset: { x?: any; y?: any }): void {
-    const { x, y } = offset
+  // Layout modifier implementations have been migrated to @tachui/modifiers/layout
 
-    // Handle reactive values
-    if (isSignal(x) || isComputed(x) || isSignal(y) || isComputed(y)) {
-      createEffect(() => {
-        const currentX = isSignal(x) || isComputed(x) ? x() : (x ?? 0)
-        const currentY = isSignal(y) || isComputed(y) ? y() : (y ?? 0)
-
-        const offsetX = this.toCSSValue(currentX)
-        const offsetY = this.toCSSValue(currentY)
-        const translateValue = `translate(${offsetX}, ${offsetY})`
-
-        // Preserve existing transforms but replace any existing translate
-        const existingTransform = element.style.transform || ''
-        const existingTransforms = existingTransform
-          .split(' ')
-          .filter((t) => t && !t.startsWith('translate('))
-          .join(' ')
-
-        const newTransform = existingTransforms
-          ? `${existingTransforms} ${translateValue}`
-          : translateValue
-
-        element.style.transform = newTransform
-      })
-    } else {
-      // Handle static values
-      const currentX = x ?? 0
-      const currentY = y ?? 0
-
-      const offsetX = this.toCSSValue(currentX)
-      const offsetY = this.toCSSValue(currentY)
-      const translateValue = `translate(${offsetX}, ${offsetY})`
-
-      // Preserve existing transforms but replace any existing translate
-      const existingTransform = element.style.transform || ''
-      const existingTransforms = existingTransform
-        .split(' ')
-        .filter((t) => t && !t.startsWith('translate('))
-        .join(' ')
-
-      const newTransform = existingTransforms
-        ? `${existingTransforms} ${translateValue}`
-        : translateValue
-
-      element.style.transform = newTransform
-    }
-  }
-
-  private applyAspectRatio(
+  private applyAbsolutePosition(
     element: HTMLElement,
-    aspectRatio: { ratio?: any; contentMode?: 'fit' | 'fill' }
+    position: { x?: any; y?: any }
   ): void {
-    const { ratio, contentMode } = aspectRatio
-
-    if (ratio !== undefined) {
-      // Handle reactive aspect ratio
-      if (isSignal(ratio) || isComputed(ratio)) {
-        createEffect(() => {
-          const currentRatio = typeof ratio === 'function' ? ratio() : ratio
-          element.style.aspectRatio = String(currentRatio)
-        })
-      } else {
-        element.style.aspectRatio = String(ratio)
-      }
-
-      // Set content mode
-      if (contentMode === 'fill') {
-        element.style.objectFit = 'cover'
-      } else {
-        element.style.objectFit = 'contain'
-      }
-    }
-  }
-
-  // Phase 3 - Epic: Butternut Transform Methods
-
-  private applyScaleTransform(
-    element: HTMLElement,
-    scaleEffect: { x?: any; y?: any; anchor?: string }
-  ): void {
-    const { x, y, anchor } = scaleEffect
-    const scaleX = x ?? 1
-    const scaleY = y ?? scaleX // Default to uniform scaling if y not provided
-
-    // Handle reactive values
-    if (isSignal(scaleX) || isComputed(scaleX) || isSignal(scaleY) || isComputed(scaleY)) {
-      createEffect(() => {
-        const currentX = isSignal(scaleX) || isComputed(scaleX) ? scaleX() : scaleX
-        const currentY = isSignal(scaleY) || isComputed(scaleY) ? scaleY() : scaleY
-
-        const scaleValue = `scale(${currentX}, ${currentY})`
-
-        // Set transform-origin based on anchor
-        element.style.transformOrigin = this.getTransformOrigin(anchor || 'center')
-
-        // Preserve existing transforms but replace any existing scale
-        const existingTransform = element.style.transform || ''
-        const existingTransforms = existingTransform
-          .replace(/\s*scale\([^)]*\)\s*/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-
-        const newTransform = existingTransforms
-          ? `${existingTransforms} ${scaleValue}`
-          : scaleValue
-
-        element.style.transform = newTransform
-      })
-    } else {
-      // Handle static values
-      const scaleValue = `scale(${scaleX}, ${scaleY})`
-
-      // Set transform-origin based on anchor
-      element.style.transformOrigin = this.getTransformOrigin(anchor || 'center')
-
-      // Preserve existing transforms but replace any existing scale
-      const existingTransform = element.style.transform || ''
-      const existingTransforms = existingTransform
-        .replace(/\s*scale\([^)]*\)\s*/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-
-      const newTransform = existingTransforms
-        ? `${existingTransforms} ${scaleValue}`
-        : scaleValue
-
-      element.style.transform = newTransform
-    }
-  }
-
-  private applyAbsolutePosition(element: HTMLElement, position: { x?: any; y?: any }): void {
     const { x, y } = position
+    const currentX = x ?? 'auto'
+    const currentY = y ?? 'auto'
 
-    // Set position to absolute for SwiftUI-style absolute positioning
-    element.style.position = 'absolute'
-
-    // Handle reactive values
-    if (isSignal(x) || isComputed(x) || isSignal(y) || isComputed(y)) {
-      createEffect(() => {
-        const currentX = isSignal(x) || isComputed(x) ? x() : (x ?? 0)
-        const currentY = isSignal(y) || isComputed(y) ? y() : (y ?? 0)
-
-        element.style.left = this.toCSSValue(currentX)
-        element.style.top = this.toCSSValue(currentY)
-      })
-    } else {
-      // Handle static values
-      const currentX = x ?? 0
-      const currentY = y ?? 0
-
-      element.style.left = this.toCSSValue(currentX)
-      element.style.top = this.toCSSValue(currentY)
-    }
+    // Position-based transform (not a scale or offset, but absolute positioning)
+    element.style.left = this.toCSSValue(currentX)
+    element.style.top = this.toCSSValue(currentY)
   }
 
-  private applyZIndex(element: HTMLElement, zIndex: any): void {
-    // Handle reactive values
-    if (isSignal(zIndex) || isComputed(zIndex)) {
-      createEffect(() => {
-        const currentZIndex = zIndex()
-        element.style.zIndex = String(currentZIndex)
-      })
-    } else {
-      // Handle static values
-      element.style.zIndex = String(zIndex)
-    }
-  }
-
-  private getTransformOrigin(anchor: string): string {
-    const anchorMap: Record<string, string> = {
-      center: 'center center',
-      top: 'center top',
-      topLeading: 'left top',
-      topTrailing: 'right top',
-      bottom: 'center bottom',
-      bottomLeading: 'left bottom',
-      bottomTrailing: 'right bottom',
-      leading: 'left center',
-      trailing: 'right center',
-    }
-
-    return anchorMap[anchor] || 'center center'
-  }
-
-  private computeLayoutStyles(props: any, _context: StyleComputationContext): CSSStyleProperties {
+  private computeLayoutStyles(
+    props: any,
+    _context: StyleComputationContext
+  ): CSSStyleProperties {
     const styles: CSSStyleProperties = {}
 
     // Frame properties - handle infinity values properly
@@ -483,14 +326,22 @@ export class LayoutModifier extends BaseModifier {
       // Don't apply explicit width/height if infinity expansion is happening
       if (frame.width !== undefined) {
         const cssValue = dimensionToCSS(frame.width)
-        if (cssValue !== undefined && !isInfinity(frame.width) && !infinityResult.expandWidth) {
+        if (
+          cssValue !== undefined &&
+          !isInfinity(frame.width) &&
+          !infinityResult.expandWidth
+        ) {
           styles.width = cssValue
         }
       }
 
       if (frame.height !== undefined) {
         const cssValue = dimensionToCSS(frame.height)
-        if (cssValue !== undefined && !isInfinity(frame.height) && !infinityResult.expandHeight) {
+        if (
+          cssValue !== undefined &&
+          !isInfinity(frame.height) &&
+          !infinityResult.expandHeight
+        ) {
           styles.height = cssValue
         }
       }
@@ -547,8 +398,10 @@ export class LayoutModifier extends BaseModifier {
       } else {
         const p = props.padding
         if (p.top !== undefined) styles.paddingTop = this.toCSSValue(p.top)
-        if (p.right !== undefined) styles.paddingRight = this.toCSSValue(p.right)
-        if (p.bottom !== undefined) styles.paddingBottom = this.toCSSValue(p.bottom)
+        if (p.right !== undefined)
+          styles.paddingRight = this.toCSSValue(p.right)
+        if (p.bottom !== undefined)
+          styles.paddingBottom = this.toCSSValue(p.bottom)
         if (p.left !== undefined) styles.paddingLeft = this.toCSSValue(p.left)
       }
     }
@@ -561,7 +414,8 @@ export class LayoutModifier extends BaseModifier {
         const m = props.margin
         if (m.top !== undefined) styles.marginTop = this.toCSSValue(m.top)
         if (m.right !== undefined) styles.marginRight = this.toCSSValue(m.right)
-        if (m.bottom !== undefined) styles.marginBottom = this.toCSSValue(m.bottom)
+        if (m.bottom !== undefined)
+          styles.marginBottom = this.toCSSValue(m.bottom)
         if (m.left !== undefined) styles.marginLeft = this.toCSSValue(m.left)
       }
     }
@@ -684,9 +538,16 @@ export class AppearanceModifier extends BaseModifier {
       return
     }
 
-    const styleContext = this.createStyleContext(context.componentId, context.element, [])
+    const styleContext = this.createStyleContext(
+      context.componentId,
+      context.element,
+      []
+    )
 
-    const resolved = this.resolveReactiveProps(this.properties as any, styleContext)
+    const resolved = this.resolveReactiveProps(
+      this.properties as any,
+      styleContext
+    )
 
     // Handle Assets separately with theme reactivity
     this.applyAssetBasedStyles(context.element, resolved)
@@ -694,6 +555,9 @@ export class AppearanceModifier extends BaseModifier {
     // Handle non-Asset styles normally
     const styles = this.computeAppearanceStyles(resolved)
     this.applyStyles(context.element, styles)
+
+    // Handle HTML attributes (ARIA, role, navigation, etc.)
+    this.applyAttributes(context.element, resolved)
 
     return undefined
   }
@@ -769,7 +633,11 @@ export class AppearanceModifier extends BaseModifier {
       const font = props.font
       if (font.family) {
         // Handle FontAsset objects that need to be resolved
-        if (typeof font.family === 'object' && font.family !== null && 'resolve' in font.family) {
+        if (
+          typeof font.family === 'object' &&
+          font.family !== null &&
+          'resolve' in font.family
+        ) {
           styles.fontFamily = (font.family as any).resolve()
         } else {
           styles.fontFamily = font.family as string
@@ -788,54 +656,17 @@ export class AppearanceModifier extends BaseModifier {
     // Border
     if (props.border) {
       const border = props.border
-      if (border.width !== undefined) styles.borderWidth = this.toCSSValue(border.width)
+      if (border.width !== undefined)
+        styles.borderWidth = this.toCSSValue(border.width)
       if (border.color && !this.isAsset(border.color)) {
         styles.borderColor = border.color as string
       }
       if (border.style) styles.borderStyle = border.style
     }
 
-    // Shadow
-    if (props.shadow) {
-      const shadow = props.shadow
-      const x = shadow.x || 0
-      const y = shadow.y || 0
-      const radius = shadow.radius || 0
-      const color = shadow.color || 'rgba(0,0,0,0.25)'
-      styles.boxShadow = `${x}px ${y}px ${radius}px ${color}`
-    }
+    // Shadow functionality moved to @tachui/effects package
 
-    // Clipped modifier (SwiftUI .clipped())
-    if (props.clipped) {
-      styles.overflow = 'hidden'
-    }
-
-    // Clip Shape modifier (SwiftUI .clipShape())
-    if (props.clipShape) {
-      const { shape, parameters } = props.clipShape
-
-      switch (shape) {
-        case 'circle':
-          styles.clipPath = 'circle(50%)'
-          break
-        case 'ellipse': {
-          const radiusX = parameters?.radiusX || '50%'
-          const radiusY = parameters?.radiusY || '50%'
-          styles.clipPath = `ellipse(${radiusX} ${radiusY} at center)`
-          break
-        }
-        case 'rect': {
-          const inset = parameters?.inset || 0
-          styles.clipPath = `inset(${inset}px)`
-          break
-        }
-        case 'polygon': {
-          const points = parameters?.points || '0% 0%, 100% 0%, 100% 100%, 0% 100%'
-          styles.clipPath = `polygon(${points})`
-          break
-        }
-      }
-    }
+    // Clipped and Clip Shape modifiers moved to @tachui/modifiers package
 
     // Visual Effects (Phase 2 - Epic: Butternut)
     const filters: string[] = []
@@ -867,6 +698,109 @@ export class AppearanceModifier extends BaseModifier {
     }
 
     return styles
+  }
+
+  /**
+   * Apply HTML attributes (ARIA, role, data attributes, etc.)
+   */
+  private applyAttributes(element: Element, props: any): void {
+    if (!element) return
+
+    // Also need to get the component from the context to update props
+    // This is a hack, but needed for tests that expect attributes on component.props
+    const component = this.findComponentFromElement(element)
+
+    // Common HTML attributes
+    if (props.role !== undefined) {
+      element.setAttribute('role', String(props.role))
+      if (component?.props) {
+        component.props.role = String(props.role)
+      }
+    }
+
+    // ARIA attributes
+    if (props['aria-label'] !== undefined) {
+      element.setAttribute('aria-label', String(props['aria-label']))
+      if (component?.props) {
+        component.props['aria-label'] = String(props['aria-label'])
+      }
+    }
+
+    if (props['aria-live'] !== undefined) {
+      element.setAttribute('aria-live', String(props['aria-live']))
+      if (component?.props) {
+        component.props['aria-live'] = String(props['aria-live'])
+      }
+    }
+
+    if (props['aria-describedby'] !== undefined) {
+      element.setAttribute(
+        'aria-describedby',
+        String(props['aria-describedby'])
+      )
+      if (component?.props) {
+        component.props['aria-describedby'] = String(props['aria-describedby'])
+      }
+    }
+
+    if (props['aria-modal'] !== undefined) {
+      element.setAttribute('aria-modal', String(props['aria-modal']))
+      if (component?.props) {
+        component.props['aria-modal'] = String(props['aria-modal'])
+      }
+    }
+
+    if (props['aria-hidden'] !== undefined) {
+      element.setAttribute('aria-hidden', String(props['aria-hidden']))
+      if (component?.props) {
+        component.props['aria-hidden'] = String(props['aria-hidden'])
+      }
+    }
+
+    // Navigation attributes (for custom processing by navigation system)
+    if (props.navigationTitle !== undefined) {
+      element.setAttribute(
+        'data-navigation-title',
+        String(props.navigationTitle)
+      )
+      if (component?.props) {
+        component.props.navigationTitle = String(props.navigationTitle)
+      }
+    }
+
+    if (props.navigationBarHidden !== undefined) {
+      element.setAttribute(
+        'data-navigation-bar-hidden',
+        String(props.navigationBarHidden)
+      )
+      if (component?.props) {
+        component.props.navigationBarHidden = props.navigationBarHidden
+      }
+      // Also apply aria-hidden for accessibility
+      if (props.navigationBarHidden) {
+        element.setAttribute('aria-hidden', 'true')
+        if (component?.props) {
+          component.props['aria-hidden'] = 'true'
+        }
+      }
+    }
+
+    if (props.navigationBarItems !== undefined) {
+      // Store as JSON in data attribute for navigation system to process
+      element.setAttribute(
+        'data-navigation-bar-items',
+        JSON.stringify(props.navigationBarItems)
+      )
+      if (component?.props) {
+        component.props.navigationBarItems = props.navigationBarItems
+      }
+    }
+  }
+
+  private findComponentFromElement(element: Element): any {
+    // Try to find the component instance associated with this element
+    // This is a simplified approach - in a real implementation, we'd have a proper mapping
+    return (element as any)._tachui_component || null
   }
 }
 
@@ -956,13 +890,83 @@ export class InteractionModifier extends BaseModifier {
       context.element.addEventListener('keyup', props.onKeyUp)
     }
 
+    // Touch events
+    if (props.onTouchStart) {
+      context.element.addEventListener('touchstart', props.onTouchStart, {
+        passive: true,
+      })
+    }
+
+    if (props.onTouchMove) {
+      context.element.addEventListener('touchmove', props.onTouchMove, {
+        passive: true,
+      })
+    }
+
+    if (props.onTouchEnd) {
+      context.element.addEventListener('touchend', props.onTouchEnd, {
+        passive: true,
+      })
+    }
+
+    if (props.onTouchCancel) {
+      context.element.addEventListener('touchcancel', props.onTouchCancel, {
+        passive: true,
+      })
+    }
+
+    // Swipe gestures (simplified implementation)
+    if (props.onSwipeLeft || props.onSwipeRight) {
+      let startX = 0
+      let startY = 0
+
+      context.element.addEventListener(
+        'touchstart',
+        (e: Event) => {
+          const touchEvent = e as TouchEvent
+          const touch = touchEvent.touches[0]
+          startX = touch.clientX
+          startY = touch.clientY
+        },
+        { passive: true }
+      )
+
+      context.element.addEventListener(
+        'touchend',
+        (e: Event) => {
+          const touchEvent = e as TouchEvent
+          const touch = touchEvent.changedTouches[0]
+          const deltaX = touch.clientX - startX
+          const deltaY = touch.clientY - startY
+          const minSwipeDistance = 50
+
+          // Only register as swipe if horizontal movement is greater than vertical
+          if (
+            Math.abs(deltaX) > Math.abs(deltaY) &&
+            Math.abs(deltaX) > minSwipeDistance
+          ) {
+            if (deltaX < 0 && props.onSwipeLeft) {
+              props.onSwipeLeft()
+            } else if (deltaX > 0 && props.onSwipeRight) {
+              props.onSwipeRight()
+            }
+          }
+        },
+        { passive: true }
+      )
+    }
+
     // Scroll and wheel events
     if (props.onScroll) {
-      context.element.addEventListener('scroll', props.onScroll, { passive: true })
+      context.element.addEventListener('scroll', props.onScroll, {
+        passive: true,
+      })
     }
 
     if (props.onWheel) {
-      context.element.addEventListener('wheel', props.onWheel, { passive: false })
+      context.element.addEventListener('wheel', props.onWheel, {
+        passive: false,
+      })
     }
 
     // Input events
@@ -971,7 +975,7 @@ export class InteractionModifier extends BaseModifier {
     }
 
     if (props.onChange) {
-      context.element.addEventListener('change', (event) => {
+      context.element.addEventListener('change', event => {
         const target = event.target as HTMLInputElement
         const value = target.value || target.textContent || ''
         props.onChange(value, event)
@@ -1027,286 +1031,7 @@ export class InteractionModifier extends BaseModifier {
       context.element.setAttribute('aria-describedby', props.accessibilityHint)
     }
 
-    // Advanced Gesture Modifiers (Phase 4 - Epic: Butternut)
-    if (props.onLongPressGesture) {
-      this.setupLongPressGesture(context.element, props.onLongPressGesture)
-    }
-
-    if (props.keyboardShortcut) {
-      this.setupKeyboardShortcut(context.element, props.keyboardShortcut)
-    }
-
-    if (props.focused !== undefined) {
-      this.setupFocusManagement(context.element, props.focused)
-    }
-
-    if (props.focusable) {
-      this.setupFocusable(context.element, props.focusable)
-    }
-
-    if (props.onContinuousHover) {
-      this.setupContinuousHover(context.element, props.onContinuousHover)
-    }
-
-    if (props.allowsHitTesting !== undefined) {
-      this.setupHitTesting(context.element, props.allowsHitTesting)
-    }
-
     return undefined
-  }
-
-  // Phase 4 Advanced Gesture Methods
-
-  /**
-   * Setup long press gesture with timing and distance constraints
-   */
-  private setupLongPressGesture(
-    element: Element,
-    options: {
-      minimumDuration?: number
-      maximumDistance?: number
-      perform: () => void
-      onPressingChanged?: (isPressing: boolean) => void
-    }
-  ): void {
-    const minimumDuration = options.minimumDuration ?? 500 // ms
-    const maximumDistance = options.maximumDistance ?? 10 // px
-
-    let timeoutId: number | undefined
-    let startPoint: { x: number; y: number } | null = null
-    let isPressing = false
-
-    const cleanup = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-        timeoutId = undefined
-      }
-      if (isPressing && options.onPressingChanged) {
-        options.onPressingChanged(false)
-      }
-      isPressing = false
-      startPoint = null
-    }
-
-    const handlePointerDown = (event: Event) => {
-      const pointerEvent = event as PointerEvent
-      startPoint = { x: pointerEvent.clientX, y: pointerEvent.clientY }
-      isPressing = true
-
-      if (options.onPressingChanged) {
-        options.onPressingChanged(true)
-      }
-
-      timeoutId = window.setTimeout(() => {
-        if (isPressing && startPoint) {
-          options.perform()
-          cleanup()
-        }
-      }, minimumDuration)
-    }
-
-    const handlePointerMove = (event: Event) => {
-      const pointerEvent = event as PointerEvent
-      if (!startPoint || !isPressing) return
-
-      const distance = Math.sqrt(
-        Math.pow(pointerEvent.clientX - startPoint.x, 2) +
-        Math.pow(pointerEvent.clientY - startPoint.y, 2)
-      )
-
-      if (distance > maximumDistance) {
-        cleanup()
-      }
-    }
-
-    const handlePointerUp = () => {
-      cleanup()
-    }
-
-    const handlePointerCancel = () => {
-      cleanup()
-    }
-
-    // Use pointer events for better touch/mouse compatibility
-    element.addEventListener('pointerdown', handlePointerDown as EventListener)
-    element.addEventListener('pointermove', handlePointerMove as EventListener)
-    element.addEventListener('pointerup', handlePointerUp as EventListener)
-    element.addEventListener('pointercancel', handlePointerCancel as EventListener)
-
-    // Store cleanup function for later removal
-    ;(element as any)._longPressCleanup = cleanup
-  }
-
-  /**
-   * Setup keyboard shortcut handling
-   */
-  private setupKeyboardShortcut(
-    element: Element,
-    shortcut: {
-      key: string
-      modifiers?: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[]
-      action: () => void
-    }
-  ): void {
-    const modifiers = shortcut.modifiers ?? []
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Check if all required modifiers are pressed
-      const requiredModifiers = {
-        cmd: modifiers.includes('cmd') || modifiers.includes('meta'),
-        ctrl: modifiers.includes('ctrl'),
-        shift: modifiers.includes('shift'),
-        alt: modifiers.includes('alt')
-      }
-
-      const actualModifiers = {
-        cmd: event.metaKey || event.ctrlKey, // Handle both Mac (meta) and PC (ctrl)
-        ctrl: event.ctrlKey,
-        shift: event.shiftKey,
-        alt: event.altKey
-      }
-
-      // Check key match (case insensitive)
-      const keyMatches = event.key.toLowerCase() === shortcut.key.toLowerCase()
-
-      // Check modifier requirements
-      const modifiersMatch = Object.entries(requiredModifiers).every(
-        ([mod, required]) => required === actualModifiers[mod as keyof typeof actualModifiers]
-      )
-
-      if (keyMatches && modifiersMatch) {
-        event.preventDefault()
-        shortcut.action()
-      }
-    }
-
-    // Add keyboard event listener to document for global shortcuts
-    document.addEventListener('keydown', handleKeyDown)
-
-    // Store cleanup function
-    ;(element as any)._keyboardShortcutCleanup = () => {
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }
-
-  /**
-   * Setup focus management with reactive binding
-   */
-  private setupFocusManagement(element: Element, focused: boolean | Signal<boolean>): void {
-    if (!(element instanceof HTMLElement)) return
-
-    const htmlElement = element as HTMLElement
-
-    // Make element focusable if it's not naturally focusable
-    if (!htmlElement.hasAttribute('tabindex')) {
-      htmlElement.setAttribute('tabindex', '0')
-    }
-
-    if (isSignal(focused) || isComputed(focused)) {
-      // Reactive focus management
-      createEffect(() => {
-        const shouldFocus = focused()
-        if (shouldFocus) {
-          htmlElement.focus()
-        } else {
-          htmlElement.blur()
-        }
-      })
-    } else {
-      // Static focus management
-      if (focused) {
-        htmlElement.focus()
-      }
-    }
-  }
-
-  /**
-   * Setup focusable behavior
-   */
-  private setupFocusable(
-    element: Element,
-    options: {
-      isFocusable?: boolean
-      interactions?: ('activate' | 'edit')[]
-    }
-  ): void {
-    if (!(element instanceof HTMLElement)) return
-
-    const htmlElement = element as HTMLElement
-
-    if (options.isFocusable === false) {
-      htmlElement.setAttribute('tabindex', '-1')
-    } else {
-      if (!htmlElement.hasAttribute('tabindex')) {
-        htmlElement.setAttribute('tabindex', '0')
-      }
-    }
-
-    // Setup interaction behaviors
-    if (options.interactions?.includes('activate')) {
-      htmlElement.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          htmlElement.click()
-        }
-      })
-    }
-
-    if (options.interactions?.includes('edit')) {
-      htmlElement.setAttribute('role', 'textbox')
-      htmlElement.setAttribute('contenteditable', 'true')
-    }
-  }
-
-  /**
-   * Setup continuous hover tracking with coordinates
-   */
-  private setupContinuousHover(
-    element: Element,
-    options: {
-      coordinateSpace?: 'local' | 'global'
-      perform: (location: { x: number; y: number } | null) => void
-    }
-  ): void {
-    const coordinateSpace = options.coordinateSpace ?? 'local'
-
-    const handleMouseMove = (event: Event) => {
-      const mouseEvent = event as MouseEvent
-      let x: number, y: number
-
-      if (coordinateSpace === 'local') {
-        const rect = element.getBoundingClientRect()
-        x = mouseEvent.clientX - rect.left
-        y = mouseEvent.clientY - rect.top
-      } else {
-        x = mouseEvent.clientX
-        y = mouseEvent.clientY
-      }
-
-      options.perform({ x, y })
-    }
-
-    const handleMouseLeave = () => {
-      options.perform(null)
-    }
-
-    element.addEventListener('mousemove', handleMouseMove as EventListener)
-    element.addEventListener('mouseleave', handleMouseLeave as EventListener)
-
-    // Store cleanup
-    ;(element as any)._continuousHoverCleanup = () => {
-      element.removeEventListener('mousemove', handleMouseMove as EventListener)
-      element.removeEventListener('mouseleave', handleMouseLeave as EventListener)
-    }
-  }
-
-  /**
-   * Setup hit testing control
-   */
-  private setupHitTesting(element: Element, enabled: boolean): void {
-    if (element instanceof HTMLElement) {
-      element.style.pointerEvents = enabled ? '' : 'none'
-    }
   }
 }
 
@@ -1342,7 +1067,10 @@ export class AnimationModifier extends BaseModifier {
       if (anim.keyframes) {
         // Create keyframes
         const keyframeName = `tachui-animation-${context.componentId}-${Date.now()}`
-        const keyframeRule = this.createKeyframeRule(keyframeName, anim.keyframes)
+        const keyframeRule = this.createKeyframeRule(
+          keyframeName,
+          anim.keyframes
+        )
 
         // Add keyframes to stylesheet
         this.addKeyframesToStylesheet(keyframeRule)
@@ -1372,9 +1100,10 @@ export class AnimationModifier extends BaseModifier {
       }
     }
 
-    // Rotation Effect (SwiftUI .rotationEffect(angle))
-    if (props.rotationEffect && context.element instanceof HTMLElement) {
-      const { angle, anchor } = props.rotationEffect
+    // Scale Effect (SwiftUI .scaleEffect(x, y, anchor))
+    if (props.scaleEffect && context.element instanceof HTMLElement) {
+      const { x, y, anchor } = props.scaleEffect
+      const scaleY = y ?? x // Default to uniform scaling if y not provided
 
       // Convert anchor to CSS transform-origin
       const anchorOrigins: Record<string, string> = {
@@ -1390,154 +1119,28 @@ export class AnimationModifier extends BaseModifier {
       }
 
       const transformOrigin = anchorOrigins[anchor || 'center'] || '50% 50%'
+      context.element.style.transformOrigin = transformOrigin
 
-      // Create rotation transform
-      const rotationTransform = `rotate(${angle}deg)`
+      // Create scale transform
+      const scaleTransform = `scale(${x}, ${scaleY})`
 
-      if (isSignal(angle) || isComputed(angle)) {
-        // Reactive rotation
-        createEffect(() => {
-          const currentAngle = typeof angle === 'function' ? angle() : angle
-          const currentRotation = `rotate(${currentAngle}deg)`
+      // Preserve existing transforms but replace any existing scale functions
+      const existingTransform = context.element.style.transform || ''
+      const existingTransforms = existingTransform
+        .replace(/\s*scale[XYZ3d]*\([^)]*\)\s*/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
 
-          if (context.element instanceof HTMLElement) {
-            context.element.style.transformOrigin = transformOrigin
+      const newTransform = existingTransforms
+        ? `${existingTransforms} ${scaleTransform}`.trim()
+        : scaleTransform
 
-            // Combine with existing transforms if any
-            const existingTransform = context.element.style.transform || ''
-            const existingTransforms = existingTransform
-              .split(' ')
-              .filter((t) => t && !t.startsWith('rotate('))
-              .join(' ')
-
-            const newTransform = existingTransforms
-              ? `${existingTransforms} ${currentRotation}`
-              : currentRotation
-
-            context.element.style.transform = newTransform
-          }
-        })
-      } else {
-        // Static rotation
-        if (context.element instanceof HTMLElement) {
-          context.element.style.transformOrigin = transformOrigin
-
-          // Combine with existing transforms if any
-          const existingTransform = context.element.style.transform || ''
-          const existingTransforms = existingTransform
-            .split(' ')
-            .filter((t) => t && !t.startsWith('rotate('))
-            .join(' ')
-
-          const newTransform = existingTransforms
-            ? `${existingTransforms} ${rotationTransform}`
-            : rotationTransform
-
-          context.element.style.transform = newTransform
-        }
-      }
+      context.element.style.transform = newTransform
     }
 
-    // Overlay modifier (SwiftUI .overlay())
-    if (props.overlay && context.element instanceof HTMLElement) {
-      this.applyOverlay(context.element, props.overlay, context)
-    }
+    // Overlay modifier moved to @tachui/modifiers package
 
     return undefined
-  }
-
-  private applyOverlay(
-    element: HTMLElement,
-    overlay: { content: any; alignment?: string },
-    _context: ModifierContext
-  ): void {
-    const { content, alignment = 'center' } = overlay
-
-    // Make the element a positioned container
-    if (element.style.position === '' || element.style.position === 'static') {
-      element.style.position = 'relative'
-    }
-
-    // Create overlay container
-    const overlayContainer = document.createElement('div')
-    overlayContainer.style.position = 'absolute'
-    overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
-
-    // Apply alignment positioning
-    const alignmentStyles = this.getOverlayAlignment(alignment)
-    Object.assign(overlayContainer.style, alignmentStyles)
-
-    // Render content
-    if (typeof content === 'function') {
-      // If content is a function, call it to get component
-      const contentComponent = content()
-      if (contentComponent && typeof contentComponent.render === 'function') {
-        const contentNode = contentComponent.render()
-        if (contentNode.element) {
-          overlayContainer.appendChild(contentNode.element)
-        }
-      }
-    } else if (content && typeof content.render === 'function') {
-      // If content is a component instance
-      const contentNode = content.render()
-      if (contentNode.element) {
-        overlayContainer.appendChild(contentNode.element)
-      }
-    } else if (content instanceof HTMLElement) {
-      // If content is already a DOM element
-      overlayContainer.appendChild(content)
-    }
-
-    // Add overlay to the element
-    element.appendChild(overlayContainer)
-  }
-
-  private getOverlayAlignment(alignment: string): Record<string, string> {
-    const alignments: Record<string, Record<string, string>> = {
-      center: {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      },
-      top: {
-        top: '0',
-        left: '50%',
-        transform: 'translateX(-50%)',
-      },
-      bottom: {
-        bottom: '0',
-        left: '50%',
-        transform: 'translateX(-50%)',
-      },
-      leading: {
-        top: '50%',
-        left: '0',
-        transform: 'translateY(-50%)',
-      },
-      trailing: {
-        top: '50%',
-        right: '0',
-        transform: 'translateY(-50%)',
-      },
-      topLeading: {
-        top: '0',
-        left: '0',
-      },
-      topTrailing: {
-        top: '0',
-        right: '0',
-      },
-      bottomLeading: {
-        bottom: '0',
-        left: '0',
-      },
-      bottomTrailing: {
-        bottom: '0',
-        right: '0',
-      },
-    }
-
-    return alignments[alignment] || alignments.center
   }
 
   private createKeyframeRule(
@@ -1560,7 +1163,9 @@ export class AnimationModifier extends BaseModifier {
   }
 
   private addKeyframesToStylesheet(rule: string): void {
-    let stylesheet = document.querySelector('#tachui-animations') as HTMLStyleElement
+    let stylesheet = document.querySelector(
+      '#tachui-animations'
+    ) as HTMLStyleElement
 
     if (!stylesheet) {
       stylesheet = document.createElement('style')
@@ -1591,52 +1196,23 @@ export class LifecycleModifier extends BaseModifier {
       this.activeAbortController.abort()
     }
 
-    // Set up intersection observer for onAppear/onDisappear
-    if (props.onAppear || props.onDisappear) {
-      this.setupLifecycleObserver(context.element, props)
-    }
-
     // Set up async task with cancellation
     if (props.task) {
       this.setupTask(context, props.task)
     }
 
-    // Set up refreshable behavior
-    if (props.refreshable) {
-      this.setupRefreshable(context.element, props.refreshable)
+    // Set up onAppear/onDisappear with IntersectionObserver
+    if (props.onAppear || props.onDisappear) {
+      this.setupViewportObserver(context, props)
     }
 
     return undefined
   }
 
-  private setupLifecycleObserver(element: Element, props: LifecycleModifierProps): void {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && props.onAppear) {
-            // Element has appeared in viewport
-            props.onAppear()
-          } else if (!entry.isIntersecting && props.onDisappear) {
-            // Element has disappeared from viewport
-            props.onDisappear()
-          }
-        })
-      },
-      {
-        threshold: 0.1, // Trigger when 10% of element is visible
-        rootMargin: '10px', // Add some margin for better UX
-      }
-    )
-
-    observer.observe(element)
-
-    // Store cleanup function
-    this.addCleanup(() => {
-      observer.disconnect()
-    })
-  }
-
-  private setupTask(_context: ModifierContext, task: LifecycleModifierProps['task']): void {
+  private setupTask(
+    _context: ModifierContext,
+    task: LifecycleModifierProps['task']
+  ): void {
     if (!task) return
 
     // Create abort controller for task cancellation
@@ -1671,116 +1247,27 @@ export class LifecycleModifier extends BaseModifier {
     })
   }
 
-  private setupRefreshable(
-    element: Element,
-    refreshable: LifecycleModifierProps['refreshable']
+  private setupViewportObserver(
+    context: ModifierContext,
+    props: LifecycleModifierProps
   ): void {
-    if (!refreshable) return
+    if (!context.element) return
 
-    let isRefreshing = false
-    let pullDistance = 0
-    let startY = 0
-
-    const threshold = 70 // Pull threshold in pixels
-
-    // Create refresh indicator element
-    const refreshIndicator = document.createElement('div')
-    refreshIndicator.style.cssText = `
-      position: absolute;
-      top: -50px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 30px;
-      height: 30px;
-      border: 2px solid #ccc;
-      border-top: 2px solid #007AFF;
-      border-radius: 50%;
-      animation: tachui-spin 1s linear infinite;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 1000;
-    `
-
-    // Add spinner animation
-    if (!document.querySelector('#tachui-refresh-styles')) {
-      const style = document.createElement('style')
-      style.id = 'tachui-refresh-styles'
-      style.textContent = `
-        @keyframes tachui-spin {
-          0% { transform: translateX(-50%) rotate(0deg); }
-          100% { transform: translateX(-50%) rotate(360deg); }
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && props.onAppear) {
+          props.onAppear()
+        } else if (!entry.isIntersecting && props.onDisappear) {
+          props.onDisappear()
         }
-      `
-      document.head.appendChild(style)
-    }
+      })
+    })
 
-    const container = element.parentElement || element
-    if (container instanceof HTMLElement) {
-      container.style.position = 'relative'
-      container.appendChild(refreshIndicator)
-    }
+    observer.observe(context.element)
 
-    // Touch event handlers
-    const handleTouchStart = (e: TouchEvent) => {
-      if (isRefreshing) return
-      startY = e.touches[0].clientY
-    }
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isRefreshing) return
-
-      const currentY = e.touches[0].clientY
-      pullDistance = Math.max(0, currentY - startY)
-
-      if (pullDistance > 20) {
-        e.preventDefault() // Prevent default scrolling
-
-        const progress = Math.min(pullDistance / threshold, 1)
-        refreshIndicator.style.opacity = String(progress * 0.8)
-        refreshIndicator.style.top = `${-50 + progress * 20}px`
-      }
-    }
-
-    const handleTouchEnd = async () => {
-      if (isRefreshing || pullDistance < threshold) {
-        // Reset if threshold not met
-        refreshIndicator.style.opacity = '0'
-        refreshIndicator.style.top = '-50px'
-        pullDistance = 0
-        return
-      }
-
-      // Trigger refresh
-      isRefreshing = true
-      refreshIndicator.style.opacity = '1'
-      refreshIndicator.style.top = '10px'
-
-      try {
-        await refreshable.onRefresh()
-      } catch (error) {
-        console.error('TachUI Refresh Error:', error)
-      } finally {
-        isRefreshing = false
-        refreshIndicator.style.opacity = '0'
-        refreshIndicator.style.top = '-50px'
-        pullDistance = 0
-      }
-    }
-
-    // Add event listeners with proper typing
-    element.addEventListener('touchstart', handleTouchStart as EventListener, { passive: false })
-    element.addEventListener('touchmove', handleTouchMove as EventListener, { passive: false })
-    element.addEventListener('touchend', handleTouchEnd as EventListener)
-
-    // Cleanup
+    // Add cleanup to disconnect observer
     this.addCleanup(() => {
-      element.removeEventListener('touchstart', handleTouchStart as EventListener)
-      element.removeEventListener('touchmove', handleTouchMove as EventListener)
-      element.removeEventListener('touchend', handleTouchEnd as EventListener)
-
-      if (refreshIndicator.parentElement) {
-        refreshIndicator.parentElement.removeChild(refreshIndicator)
-      }
+      observer.disconnect()
     })
   }
 

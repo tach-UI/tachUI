@@ -6,7 +6,6 @@
  */
 
 import type { ComponentInstance } from '@tachui/core'
-import { createSignal } from '@tachui/core'
 import type { NavigationContext, NavigationRouter } from './types'
 import { createNavigationRouter } from './navigation-router'
 
@@ -29,8 +28,9 @@ class NavigationEnvironmentStore {
     router: null,
     stackId: null,
   }
-  
-  private _listeners: Set<(state: NavigationEnvironmentState) => void> = new Set()
+
+  private _listeners: Set<(state: NavigationEnvironmentState) => void> =
+    new Set()
   private _contextStack: NavigationContext[] = []
 
   /**
@@ -53,8 +53,9 @@ class NavigationEnvironmentStore {
     }
 
     // Update current state to the top of the stack
-    const currentContext = this._contextStack[this._contextStack.length - 1] || null
-    
+    const currentContext =
+      this._contextStack[this._contextStack.length - 1] || null
+
     this._currentState = {
       context: currentContext,
       router: currentContext ? createNavigationRouter(currentContext) : null,
@@ -140,7 +141,9 @@ const navigationEnvironment = new NavigationEnvironmentStore()
  * Set the current navigation context (internal use)
  * @internal
  */
-export function _setNavigationEnvironmentContext(context: NavigationContext | null): void {
+export function _setNavigationEnvironmentContext(
+  context: NavigationContext | null
+): void {
   navigationEnvironment.setContext(context)
 }
 
@@ -148,68 +151,84 @@ export function _setNavigationEnvironmentContext(context: NavigationContext | nu
  * Get the current navigation context from environment
  */
 export function useNavigationEnvironmentContext(): NavigationContext | null {
-  return navigationEnvironment.getContext()
+  const env = (globalThis as any).__navigationEnvironment
+  return env?.context || null
 }
 
 /**
  * Get the current navigation router from environment
  */
 export function useNavigationEnvironmentRouter(): NavigationRouter | null {
-  return navigationEnvironment.getRouter()
+  const env = (globalThis as any).__navigationEnvironment
+  return env?.router || null
 }
 
 /**
  * Subscribe to navigation environment changes
  */
-export function useNavigationEnvironmentState(): [
-  () => NavigationEnvironmentState,
-  (listener: (state: NavigationEnvironmentState) => void) => () => void
-] {
-  const [state, setState] = createSignal(navigationEnvironment.currentState)
-
-  const subscribe = (listener: (state: NavigationEnvironmentState) => void) => {
-    return navigationEnvironment.subscribe((newState) => {
-      setState(newState)
-      listener(newState)
-    })
+export function useNavigationEnvironmentState():
+  | {
+      canGoBack: boolean
+      canGoForward: boolean
+      currentPath: string
+    }
+  | undefined {
+  const env = (globalThis as any).__navigationEnvironment
+  if (!env || !env.context) {
+    return undefined
   }
 
-  return [state, subscribe]
+  return {
+    canGoBack: env.context.canGoBack || false,
+    canGoForward: env.context.canGoForward || false,
+    currentPath: env.context.currentPath || '/',
+  }
 }
 
 /**
  * Navigation environment provider component
- * 
+ *
  * This would ideally integrate with TachUI's environment system,
  * but for now provides a wrapper that ensures child components
  * have access to the navigation context.
  */
-export function NavigationEnvironmentProvider(
-  children: ComponentInstance[],
-  context: NavigationContext
-): ComponentInstance {
-  // Set the context when this provider is active
-  _setNavigationEnvironmentContext(context)
+export function NavigationEnvironmentProvider({
+  children,
+  context,
+  router,
+}: {
+  children?: ComponentInstance[]
+  context?: NavigationContext
+  router?: NavigationRouter
+}): ComponentInstance {
+  // Set the environment when this provider is active
+  if (context || router) {
+    ;(globalThis as any).__navigationEnvironment = {
+      context: context || null,
+      router: router || null,
+    }
+  }
 
   // Create a wrapper component that provides the environment
   const provider = {
     id: `nav-env-${Date.now()}`,
-    type: 'NavigationEnvironmentProvider',
+    type: 'component',
     props: {
       navigationContext: context,
+      navigationRouter: router,
       _environmentProvider: true,
     },
-    children,
-    render: () => ({ 
+    children: children || [],
+    render: () => ({
       type: 'div',
-      props: { children },
-      children: []
+      props: { children: children || [] },
+      children: [],
     }),
-    
+
     // Cleanup when provider is unmounted
     _cleanup: () => {
-      _setNavigationEnvironmentContext(null)
-    }
+      delete (globalThis as any).__navigationEnvironment
+    },
   }
 
   return provider as any
@@ -217,42 +236,52 @@ export function NavigationEnvironmentProvider(
 
 /**
  * Navigation environment modifier
- * 
+ *
  * Adds navigation environment capabilities to any component
  */
 export function withNavigationEnvironment(
   component: ComponentInstance,
-  context: NavigationContext
+  environment: {
+    context?: NavigationContext
+    router?: NavigationRouter
+  }
 ): ComponentInstance {
-  // Store the navigation context on the component
+  if (!component) {
+    return component
+  }
+
+  // Store the navigation environment on the component
   ;(component as any)._navigationEnvironment = {
-    context,
-    router: createNavigationRouter(context),
+    context: environment.context || null,
+    router: environment.router || null,
     provided: true,
   }
 
-  // Set as current context when this component is active
-  _setNavigationEnvironmentContext(context)
+  // Set as current global environment
+  ;(globalThis as any).__navigationEnvironment = {
+    context: environment.context || null,
+    router: environment.router || null,
+  }
 
   return component
 }
 
 /**
- * Check if a component provides navigation environment
+ * Check if navigation environment exists
  */
-export function hasNavigationEnvironment(component: any): boolean {
-  return !!(component && component._navigationEnvironment?.provided)
+export function hasNavigationEnvironment(): boolean {
+  return !!(globalThis as any).__navigationEnvironment
 }
 
 /**
- * Get navigation environment from a component
+ * Get navigation environment
  */
-export function getNavigationEnvironment(component: any): {
-  context: NavigationContext
-  router: NavigationRouter
+export function getNavigationEnvironment(): {
+  context: NavigationContext | null
+  router: NavigationRouter | null
 } | null {
-  const env = component?._navigationEnvironment
-  return env?.provided ? { context: env.context, router: env.router } : null
+  const env = (globalThis as any).__navigationEnvironment
+  return env || null
 }
 
 /**
@@ -260,6 +289,7 @@ export function getNavigationEnvironment(component: any): {
  */
 export function clearNavigationEnvironment(): void {
   navigationEnvironment.clear()
+  delete (globalThis as any).__navigationEnvironment
 }
 
 /**
@@ -280,12 +310,12 @@ export const NavigationEnvironmentUtils = {
     // Walk up the component tree looking for navigation environment
     let current = component
     while (current) {
-      if (hasNavigationEnvironment(current)) {
-        return getNavigationEnvironment(current)?.context || null
+      if (current && current._navigationEnvironment) {
+        return current._navigationEnvironment.context || null
       }
       current = current.parent || current._parent
     }
-    
+
     // Fall back to global environment
     return useNavigationEnvironmentContext()
   },

@@ -10,7 +10,9 @@ import type { Accessor, Binding, ComponentInstance } from '@tachui/core'
 /**
  * Navigation destination type
  */
-export type NavigationDestination = ComponentInstance | (() => ComponentInstance)
+export type NavigationDestination =
+  | ComponentInstance
+  | (() => ComponentInstance)
 
 /**
  * Navigation path for programmatic navigation
@@ -56,7 +58,11 @@ export interface NavigationContext {
   pop(): void
   popToRoot(): void
   popTo(path: string): void
-  replace(destination: NavigationDestination, path: string, title?: string): void
+  replace(
+    destination: NavigationDestination,
+    path: string,
+    title?: string
+  ): void
   canGoBack: boolean
   canGoForward: boolean
 }
@@ -81,6 +87,8 @@ export interface NavigationLinkOptions {
   tag?: string
   onTap?: () => void
   disabled?: boolean
+  accessibilityLabel?: string
+  accessibilityHint?: string
 }
 
 /**
@@ -144,7 +152,13 @@ export interface NavigationGestureConfig {
 /**
  * Navigation animation types
  */
-export type NavigationAnimation = 'slide' | 'fade' | 'scale' | 'push' | 'present' | 'none'
+export type NavigationAnimation =
+  | 'slide'
+  | 'fade'
+  | 'scale'
+  | 'push'
+  | 'present'
+  | 'none'
 
 /**
  * Navigation transition configuration
@@ -163,7 +177,10 @@ export interface NavigationRouter {
   readonly currentPath: string
   readonly canGoBack: boolean
   readonly canGoForward: boolean
-  navigate(path: string, options?: { replace?: boolean; animate?: boolean }): void
+  navigate(
+    path: string,
+    options?: { replace?: boolean; animate?: boolean }
+  ): void
   goBack(): void
   goForward(): void
   push(destination: NavigationDestination, path?: string): void
@@ -249,7 +266,10 @@ export type NavigationEvent =
 /**
  * Navigation event listener
  */
-export type NavigationEventListener = (event: NavigationEvent, data: unknown) => void
+export type NavigationEventListener = (
+  event: NavigationEvent,
+  data: unknown
+) => void
 
 /**
  * Navigation manager interface
@@ -263,8 +283,14 @@ export interface NavigationManager {
   createCoordinator(id: string): NavigationCoordinator
   destroyCoordinator(id: string): void
   getCoordinator(id: string): NavigationCoordinator | undefined
-  addEventListener(event: NavigationEvent, listener: NavigationEventListener): void
-  removeEventListener(event: NavigationEvent, listener: NavigationEventListener): void
+  addEventListener(
+    event: NavigationEvent,
+    listener: NavigationEventListener
+  ): void
+  removeEventListener(
+    event: NavigationEvent,
+    listener: NavigationEventListener
+  ): void
 }
 
 /**
@@ -298,7 +324,11 @@ export interface NavigationHistory {
   readonly canGoBack: boolean
   readonly canGoForward: boolean
   pushState(path: string, title?: string, state?: Record<string, unknown>): void
-  replaceState(path: string, title?: string, state?: Record<string, unknown>): void
+  replaceState(
+    path: string,
+    title?: string,
+    state?: Record<string, unknown>
+  ): void
   go(delta: number): void
   back(): void
   forward(): void

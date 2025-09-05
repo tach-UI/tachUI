@@ -1,16 +1,16 @@
 /**
  * Semantic Role Manager - Automatic ARIA Role Application
- * 
+ *
  * Manages automatic application of ARIA roles for semantic HTML tags
  * while respecting explicit developer choices and context sensitivity.
  */
 
-import { 
-  SEMANTIC_TAG_ROLES, 
+import {
+  SEMANTIC_TAG_ROLES,
   getElementOverrideConfig,
-  type SemanticRoleInfo
+  type SemanticRoleInfo,
 } from './element-override'
-import { DevelopmentWarnings } from './development-warnings'
+// import { DevelopmentWarnings } from './development-warnings'
 
 export class SemanticRoleManager {
   private static instance: SemanticRoleManager
@@ -26,28 +26,28 @@ export class SemanticRoleManager {
    * Apply semantic ARIA attributes to an element based on its tag
    */
   applySemanticAttributes(
-    element: HTMLElement, 
-    tag: string, 
+    element: HTMLElement,
+    tag: string,
     existingAria?: Record<string, string>
   ): void {
     const config = getElementOverrideConfig()
-    
+
     // Global config: can disable all automatic ARIA role application
     if (!config.autoApplySemanticRoles) return
 
     const semanticInfo = SEMANTIC_TAG_ROLES.get(tag)
-    
+
     // Per-tag config: only apply if applyARIA is true for this specific tag
     if (!semanticInfo || !semanticInfo.applyARIA) return
 
     // Always respect explicit ARIA attributes from .aria() modifier
     if (existingAria?.role) {
-      if (config.warnOnSemanticIssues) {
-        DevelopmentWarnings.warnProblematicCombination(
-          'SemanticRole', 
-          tag, 
-          `ARIA role '${existingAria.role}' overrides semantic role '${semanticInfo.role}'`, 
-          'info'
+      if (
+        config.warnOnSemanticIssues &&
+        process.env.NODE_ENV !== 'production'
+      ) {
+        console.warn(
+          `ARIA role '${existingAria.role}' overrides semantic role '${semanticInfo.role}' for tag '${tag}'`
         )
       }
       return
@@ -55,12 +55,12 @@ export class SemanticRoleManager {
 
     // Don't override existing role attribute
     if (element.hasAttribute('role')) {
-      if (config.warnOnSemanticIssues) {
-        DevelopmentWarnings.warnProblematicCombination(
-          'SemanticRole', 
-          tag, 
-          `Existing role attribute overrides semantic role '${semanticInfo.role}'`, 
-          'info'
+      if (
+        config.warnOnSemanticIssues &&
+        process.env.NODE_ENV !== 'production'
+      ) {
+        console.warn(
+          `Existing role attribute overrides semantic role '${semanticInfo.role}' for tag '${tag}'`
         )
       }
       return
@@ -68,9 +68,11 @@ export class SemanticRoleManager {
 
     // Safe to auto-apply the semantic role
     element.setAttribute('role', semanticInfo.role)
-    
-    if (config.warnOnSemanticIssues) {
-      DevelopmentWarnings.infoSemanticRole(tag, semanticInfo.role)
+
+    if (config.warnOnSemanticIssues && process.env.NODE_ENV !== 'production') {
+      console.info(
+        `Applied semantic role '${semanticInfo.role}' to tag '${tag}'`
+      )
     }
   }
 
@@ -115,12 +117,15 @@ export class SemanticRoleManager {
     if (componentMetadata && process.env.NODE_ENV !== 'production') {
       const semanticInfo = this.getSemanticRole(tag)
       if (semanticInfo) {
-        element.setAttribute('data-tachui-semantic', JSON.stringify({
-          originalComponent: componentMetadata.originalType,
-          overriddenTo: tag,
-          semanticRole: semanticInfo.role,
-          autoApplied: semanticInfo.applyARIA
-        }))
+        element.setAttribute(
+          'data-tachui-semantic',
+          JSON.stringify({
+            originalComponent: componentMetadata.originalType,
+            overriddenTo: tag,
+            semanticRole: semanticInfo.role,
+            autoApplied: semanticInfo.applyARIA,
+          })
+        )
       }
     }
   }
@@ -131,10 +136,11 @@ export const semanticRoleManager = SemanticRoleManager.getInstance()
 
 // Convenience functions
 export const applySemanticAttributes = (
-  element: HTMLElement, 
-  tag: string, 
+  element: HTMLElement,
+  tag: string,
   existingAria?: Record<string, string>
 ) => semanticRoleManager.applySemanticAttributes(element, tag, existingAria)
 
-export const getSemanticRole = (tag: string) => semanticRoleManager.getSemanticRole(tag)
+export const getSemanticRole = (tag: string) =>
+  semanticRoleManager.getSemanticRole(tag)
 export const hasAutoARIA = (tag: string) => semanticRoleManager.hasAutoARIA(tag)

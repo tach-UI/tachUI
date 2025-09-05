@@ -1,15 +1,19 @@
-import path from 'node:path'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, mergeConfig } from 'vitest/config'
+import sharedConfig from '../../vitest.shared.config'
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    include: ['src/**/*.test.ts', 'src/**/__tests__/**/*.ts'],
-  },
-  resolve: {
-    alias: {
-      '@tachui/core': path.resolve(__dirname, '../core/src'),
+export default mergeConfig(
+  sharedConfig,
+  defineConfig({
+    test: {
+      // Package-specific test configuration
+      setupFiles: ['./__tests__/setup.ts'],
     },
-  },
-})
+
+    resolve: {
+      alias: {
+        // Package-specific aliases
+        '@tachui/forms': './src',
+      },
+    },
+  })
+)

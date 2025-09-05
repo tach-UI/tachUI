@@ -3,7 +3,7 @@
  *
  * Core navigation components for building SwiftUI-style navigation interfaces:
  * - NavigationStack: Modern stack-based navigation
- * - NavigationLink: Declarative navigation links  
+ * - NavigationLink: Declarative navigation links
  * - SimpleTabView: SwiftUI-compatible tab navigation
  * - Navigation Modifiers: SwiftUI-style navigation bar customization
  */
@@ -19,7 +19,7 @@ export {
 export {
   NavigationLink,
   NavigationIconLink,
-  NavigationListLink, 
+  NavigationListLink,
   StyledNavigationLink,
   NavigationLinkBuilder,
   NavigationLinkWithClosure,
@@ -80,16 +80,15 @@ export type {
   TypedNavigationPath,
 } from './navigation-path'
 
-// Enhanced Components (Optional)
+// Enhanced TabView - Using existing tab-view.ts with enhanced features
 export {
-  EnhancedTabView,
-  HierarchicalTabView,
-  isEnhancedTabView,
-} from './enhanced-tab-view'
-export type {
-  EnhancedTabViewOptions,
-  TabSection,
-} from './enhanced-tab-view'
+  TabView as EnhancedTabView,
+  createTabItem,
+  isTabView as isEnhancedTabView,
+  TabViewBuilder,
+  useTabCoordination,
+  getTabCoordinator,
+} from './tab-view'
 
 // Legacy Components (Backwards Compatibility)
 import { NavigationView } from './navigation-view'
@@ -106,14 +105,7 @@ export {
   NavigationViewBuilder,
 } from './navigation-view'
 
-export {
-  TabView,
-  createTabItem,
-  isTabView,
-  TabViewBuilder,
-  useTabCoordination,
-  getTabCoordinator,
-} from './tab-view'
+// TabView exports are already included above - no duplicates needed
 
 // Router and Navigation Management
 export {

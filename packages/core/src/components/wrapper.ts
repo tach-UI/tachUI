@@ -7,35 +7,26 @@
 
 import { createModifiableComponent, createModifierBuilder } from '../modifiers'
 import type { ModifiableComponent, ModifierBuilder } from '../modifiers/types'
-import { h, text } from '../runtime'
-import type { ComponentInstance, ComponentProps, DOMNode } from '../runtime/types'
+import { h } from '../runtime'
+import type {
+  ComponentInstance,
+  ComponentProps,
+  DOMNode,
+} from '../runtime/types'
 import { useLifecycle } from '../lifecycle/hooks'
 import { registerComponentWithLifecycleHooks } from '../runtime/dom-bridge'
-import { 
-  processElementOverride, 
-  type ElementOverrideProps 
-} from '../runtime/element-override'
 import {
-  ComponentWithCSSClasses,
-  type CSSClassesProps
-} from '../css-classes'
+  processElementOverride,
+  type ElementOverrideProps,
+} from '../runtime/element-override'
+import { ComponentWithCSSClasses, type CSSClassesProps } from '../css-classes'
 import type { Concatenatable } from '../concatenation/types'
-// Lazy import debug manager to avoid circular dependencies
-let debugManager: any = null
-const getDebugManager = () => {
-  if (!debugManager) {
-    try {
-      const debugModule = require('../debug')
-      debugManager = debugModule.debugManager
-    } catch {
-      // Debug module not available, create a mock
-      debugManager = {
-        isEnabled: () => false,
-        logComponent: () => {},
-      }
-    }
-  }
-  return debugManager
+// Debug functionality moved to @tachui/devtools package
+// Create a simple mock for backward compatibility
+const debugManager = {
+  isEnabled: () => false,
+  logComponent: (..._args: any[]) => {},
+  addDebugAttributes: (..._args: any[]) => {},
 }
 
 /**
@@ -52,10 +43,12 @@ export interface WrapperOptions {
  * Helper function to check if a component implements Concatenatable
  */
 function isConcatenatable(component: any): component is Concatenatable {
-  return component && 
-         typeof component.concat === 'function' && 
-         typeof component.toSegment === 'function' && 
-         typeof component.isConcatenatable === 'function'
+  return (
+    component &&
+    typeof component.concat === 'function' &&
+    typeof component.toSegment === 'function' &&
+    typeof component.isConcatenatable === 'function'
+  )
 }
 
 /**
@@ -63,7 +56,9 @@ function isConcatenatable(component: any): component is Concatenatable {
  */
 export function withModifiers<P extends ComponentProps>(
   component: ComponentInstance<P>
-): ModifiableComponent<P> & { modifier: ModifierBuilder<ModifiableComponent<P>> } & (ComponentInstance<P> extends Concatenatable ? Concatenatable : {}) {
+): ModifiableComponent<P> & {
+  modifier: ModifierBuilder<ModifiableComponent<P>>
+} & (ComponentInstance<P> extends Concatenatable ? Concatenatable : {}) {
   const modifiableComponent = createModifiableComponent(component)
   const modifierBuilder = createModifierBuilder(modifiableComponent)
 
@@ -75,13 +70,13 @@ export function withModifiers<P extends ComponentProps>(
 
   // If the original component supports concatenation, preserve those methods
   if (isConcatenatable(component)) {
-    result.concat = function(other: any) {
+    result.concat = function (other: any) {
       return (component as any).concat(other)
     }
-    result.toSegment = function() {
+    result.toSegment = function () {
       return (component as any).toSegment()
     }
-    result.isConcatenatable = function() {
+    result.isConcatenatable = function () {
       return (component as any).isConcatenatable()
     }
   }
@@ -95,7 +90,9 @@ export function withModifiers<P extends ComponentProps>(
 export function createReactiveWrapper<P extends ComponentProps>(
   renderFn: (props: P) => DOMNode | DOMNode[],
   options: WrapperOptions = {}
-): (props: P) => ModifiableComponent<P> & { modifier: ModifierBuilder<ModifiableComponent<P>> } {
+): (props: P) => ModifiableComponent<P> & {
+  modifier: ModifierBuilder<ModifiableComponent<P>>
+} {
   const { enableModifiers = true } = options
 
   return (props: P) => {
@@ -123,163 +120,13 @@ export function createReactiveWrapper<P extends ComponentProps>(
 }
 
 /**
- * Simple element component class
- */
-class ElementComponent implements ComponentInstance<ComponentProps> {
-  public readonly type = 'component' as const
-  public readonly id: string
-  public mounted = false
-  public cleanup: (() => void)[] = []
-
-  constructor(
-    public props: ComponentProps,
-    private tag: string,
-    private content?: string,
-    private attributes: Record<string, any> = {}
-  ) {
-    this.id = `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-  }
-
-  render() {
-    return [h(this.tag, this.attributes, this.content ? text(this.content) : '')]
-  }
-}
-
-/**
- * Simple HTML element wrappers with modifier support
- *
- * These are basic HTML element wrappers for simple use cases.
- * For enhanced SwiftUI-style components with advanced features,
- * use the main component exports (Button, Image, Text, etc.).
- */
-export const HTML = {
-  /**
-   * Create a div element with modifier support
-   */
-  div: (props: { children?: any } = {}) => {
-    const component = new ElementComponent(
-      props,
-      'div',
-      props.children ? String(props.children) : undefined
-    )
-    return withModifiers(component)
-  },
-
-  /**
-   * Create a span element with modifier support
-   */
-  span: (props: { children?: any } = {}) => {
-    const component = new ElementComponent(
-      props,
-      'span',
-      props.children ? String(props.children) : undefined
-    )
-    return withModifiers(component)
-  },
-
-  /**
-   * Create a paragraph element with modifier support
-   */
-  p: (props: { children?: any } = {}) => {
-    const component = new ElementComponent(
-      props,
-      'p',
-      props.children ? String(props.children) : undefined
-    )
-    return withModifiers(component)
-  },
-
-  /**
-   * Create a button element with modifier support
-   *
-   * Note: For enhanced button features (press states, variants, accessibility),
-   * use the main Button component instead.
-   */
-  button: (props: { children?: any; onClick?: () => void } = {}) => {
-    const component = new ElementComponent(
-      props,
-      'button',
-      props.children ? String(props.children) : undefined,
-      {
-        onclick: props.onClick,
-      }
-    )
-    return withModifiers(component)
-  },
-
-  /**
-   * Create an input element with modifier support
-   */
-  input: (
-    props: {
-      type?: string
-      value?: string
-      placeholder?: string
-      onChange?: (value: string) => void
-    } = {}
-  ) => {
-    const component = new ElementComponent(props, 'input', undefined, {
-      type: props.type || 'text',
-      value: props.value || '',
-      placeholder: props.placeholder || '',
-      oninput: (e: Event) => {
-        const target = e.target as HTMLInputElement
-        props.onChange?.(target.value)
-      },
-    })
-    return withModifiers(component)
-  },
-
-  /**
-   * Create an image element with modifier support
-   *
-   * Note: For enhanced image features (loading states, content modes, progressive loading),
-   * use the main Image component instead.
-   */
-  img: (props: {
-    src: string
-    alt?: string
-    width?: number | string
-    height?: number | string
-  }) => {
-    const component = new ElementComponent(props, 'img', undefined, {
-      src: props.src,
-      alt: props.alt || '',
-      width: props.width,
-      height: props.height,
-    })
-    return withModifiers(component)
-  },
-
-  /**
-   * Create a heading element with modifier support
-   */
-  heading:
-    (level: 1 | 2 | 3 | 4 | 5 | 6) =>
-    (props: { children?: any } = {}) => {
-      const component = new ElementComponent(
-        props,
-        `h${level}`,
-        props.children ? String(props.children) : undefined
-      )
-      return withModifiers(component)
-    },
-}
-
-/**
- * Shorthand for heading elements
- */
-export const H1 = HTML.heading(1)
-export const H2 = HTML.heading(2)
-export const H3 = HTML.heading(3)
-export const H4 = HTML.heading(4)
-export const H5 = HTML.heading(5)
-export const H6 = HTML.heading(6)
-
-/**
  * Layout container component class with element override support
  */
-class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstance<ComponentProps & ElementOverrideProps & CSSClassesProps> {
+class LayoutComponent
+  extends ComponentWithCSSClasses
+  implements
+    ComponentInstance<ComponentProps & ElementOverrideProps & CSSClassesProps>
+{
   public readonly type = 'component' as const
   public readonly id: string
   public mounted = false
@@ -295,14 +142,21 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
   ) {
     super()
     this.id = `layout-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    
+
     // Process element override for tag specification enhancement
-    const componentType = this.layoutType === 'hstack' ? 'HStack' : 
-                         this.layoutType === 'vstack' ? 'VStack' : 'ZStack'
-    const override = processElementOverride(componentType, 'div', this.props.element)
+    const componentType =
+      this.layoutType === 'hstack'
+        ? 'HStack'
+        : this.layoutType === 'vstack'
+          ? 'VStack'
+          : 'ZStack'
+    const override = processElementOverride(
+      componentType,
+      'div',
+      this.props.element
+    )
     this.effectiveTag = override.tag
     this.validationResult = override.validation
-
 
     // Set up lifecycle hooks to process child components
     useLifecycle(this, {
@@ -310,15 +164,23 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
         // Process lifecycle hooks for child components that have them
         this.children.forEach((child, index) => {
           const enhancedLifecycle = (child as any)._enhancedLifecycle
-          
-          if (enhancedLifecycle && enhancedLifecycle.onDOMReady && !child.domReady) {
+
+          if (
+            enhancedLifecycle &&
+            enhancedLifecycle.onDOMReady &&
+            !child.domReady
+          ) {
             try {
               // Find DOM elements for this child by searching within our container
               if (primaryElement) {
                 // For layout components, children are rendered as direct children
                 // Try to find the child's DOM element(s)
-                const childElements = this.findChildDOMElements(child, primaryElement, index)
-                
+                const childElements = this.findChildDOMElements(
+                  child,
+                  primaryElement,
+                  index
+                )
+
                 if (childElements.length > 0) {
                   // Set up DOM tracking for the child
                   child.domElements = new Map()
@@ -353,12 +215,15 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
                 }
               }
             } catch (error) {
-              console.error(`Error processing lifecycle hooks for child ${child.id}:`, error)
+              console.error(
+                `Error processing lifecycle hooks for child ${child.id}:`,
+                error
+              )
               // Continue processing other children even if one fails
             }
           }
         })
-      }
+      },
     })
 
     // Register this component for lifecycle processing
@@ -368,7 +233,11 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
   /**
    * Find DOM elements for a specific child component within the layout container
    */
-  private findChildDOMElements(child: ComponentInstance, container: Element, childIndex: number): Element[] {
+  private findChildDOMElements(
+    child: ComponentInstance,
+    container: Element,
+    childIndex: number
+  ): Element[] {
     // For Image components, look for img elements with the tachui-image class
     if (child.id.startsWith('image-')) {
       const images = container.querySelectorAll('img.tachui-image')
@@ -392,7 +261,9 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
 
     // For Text components, look for span elements with the tachui-text class
     if (child.id.startsWith('text-')) {
-      const textElements = container.querySelectorAll('span.tachui-text, .tachui-text')
+      const textElements = container.querySelectorAll(
+        'span.tachui-text, .tachui-text'
+      )
       if (textElements[childIndex]) {
         return [textElements[childIndex]]
       }
@@ -413,23 +284,29 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
   render() {
     const { spacing = 0, debugLabel } = this.layoutProps
     // Explicitly handle alignment to avoid default override
-    const alignment = this.layoutProps.alignment !== undefined ? this.layoutProps.alignment : 'center'
+    const alignment =
+      this.layoutProps.alignment !== undefined
+        ? this.layoutProps.alignment
+        : 'center'
 
     // Log component for debugging
-    const debug = getDebugManager()
-    debug.logComponent(this.layoutType.toUpperCase(), debugLabel)
-    
-    // Process CSS classes for this component
-    const baseClasses = [`tachui-${this.layoutType}`, ...(debug.isEnabled() ? ['tachui-debug'] : [])]
-    const classString = this.createClassString(this.props, baseClasses)
+    debugManager.logComponent(this.layoutType.toUpperCase(), debugLabel)
 
+    // Process CSS classes for this component
+    const baseClasses = [
+      `tachui-${this.layoutType}`,
+      ...(debugManager.isEnabled() ? ['tachui-debug'] : []),
+    ]
+    const classString = this.createClassString(this.props, baseClasses)
 
     switch (this.layoutType) {
       case 'vstack': {
         // Render children normally but also make them available for DOM bridge processing
-        const vstackRenderedChildren = this.children.map((child) => {
+        const vstackRenderedChildren = this.children.map(child => {
           const childResult = child.render()
-          const resultArray = Array.isArray(childResult) ? childResult : [childResult]
+          const resultArray = Array.isArray(childResult)
+            ? childResult
+            : [childResult]
           return resultArray
         })
         const vstackFlattened = vstackRenderedChildren.flat()
@@ -451,27 +328,30 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
                     : 'center',
             },
             // Add debug attributes
-            ...(debug.isEnabled() && {
+            ...(debugManager.isEnabled() && {
               'data-tachui-component': 'VStack',
-              ...(debugLabel && { 'data-tachui-label': debugLabel })
-            })
+              ...(debugLabel && { 'data-tachui-label': debugLabel }),
+            }),
           },
           children: vstackFlattened,
           // Add component metadata for semantic role processing
           componentMetadata: {
             originalType: 'VStack',
-            overriddenTo: this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
-            validationResult: this.validationResult
-          }
+            overriddenTo:
+              this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
+            validationResult: this.validationResult,
+          },
         }
 
         return [element]
       }
 
       case 'hstack': {
-        const hstackRenderedChildren = this.children.map((child) => {
+        const hstackRenderedChildren = this.children.map(child => {
           const childResult = child.render()
-          const resultArray = Array.isArray(childResult) ? childResult : [childResult]
+          const resultArray = Array.isArray(childResult)
+            ? childResult
+            : [childResult]
           return resultArray
         })
         const hstackFlattened = hstackRenderedChildren.flat()
@@ -493,18 +373,19 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
                     : 'center',
             },
             // Add debug attributes
-            ...(debug.isEnabled() && {
+            ...(debugManager.isEnabled() && {
               'data-tachui-component': 'HStack',
-              ...(debugLabel && { 'data-tachui-label': debugLabel })
-            })
+              ...(debugLabel && { 'data-tachui-label': debugLabel }),
+            }),
           },
           children: hstackFlattened,
           // Add component metadata for semantic role processing
           componentMetadata: {
             originalType: 'HStack',
-            overriddenTo: this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
-            validationResult: this.validationResult
-          }
+            overriddenTo:
+              this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
+            validationResult: this.validationResult,
+          },
         }
 
         return [element]
@@ -515,10 +396,10 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
         let maxPriority = -Infinity
         let highestPriorityChild: ComponentInstance | null = null
 
-        this.children.forEach((child) => {
+        this.children.forEach(child => {
           if ('modifiers' in child && Array.isArray(child.modifiers)) {
             const layoutMod = child.modifiers.find(
-              (m) =>
+              m =>
                 m.type === 'layout' &&
                 m.properties &&
                 'layoutPriority' in m.properties &&
@@ -558,29 +439,37 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
               : {}),
           },
           // Add debug attributes
-          ...(debug.isEnabled() && {
+          ...(debugManager.isEnabled() && {
             'data-tachui-component': 'ZStack',
-            ...(debugLabel && { 'data-tachui-label': debugLabel })
-          })
+            ...(debugLabel && { 'data-tachui-label': debugLabel }),
+          }),
         })
 
         // Apply absolute positioning to children for z-stack
         const renderedChildren = this.children.flatMap((child, index) => {
           const childNodes = child.render()
-          const nodeArray = Array.isArray(childNodes) ? childNodes : [childNodes]
+          const nodeArray = Array.isArray(childNodes)
+            ? childNodes
+            : [childNodes]
 
           // Get layoutPriority from child's modifiers
           let childPriority = index // Default to index-based z-index
           if ('modifiers' in child && Array.isArray(child.modifiers)) {
             const layoutMod = child.modifiers.find(
-              (m) => m.type === 'layout' && m.properties && 'layoutPriority' in m.properties
+              m =>
+                m.type === 'layout' &&
+                m.properties &&
+                'layoutPriority' in m.properties
             )
-            if (layoutMod && typeof layoutMod.properties.layoutPriority === 'number') {
+            if (
+              layoutMod &&
+              typeof layoutMod.properties.layoutPriority === 'number'
+            ) {
               childPriority = layoutMod.properties.layoutPriority
             }
           }
 
-          return nodeArray.map((node) => {
+          return nodeArray.map(node => {
             if (node.type === 'element') {
               const isHighestPriority = child === highestPriorityChild
               return {
@@ -617,15 +506,16 @@ class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstan
             tag: this.effectiveTag,
             props: {
               ...container.props,
-              className: classString
+              className: classString,
             },
             children: renderedChildren,
             // Add component metadata for semantic role processing
             componentMetadata: {
               originalType: 'ZStack',
-              overriddenTo: this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
-              validationResult: this.validationResult
-            }
+              overriddenTo:
+                this.effectiveTag !== 'div' ? this.effectiveTag : undefined,
+              validationResult: this.validationResult,
+            },
           },
         ]
       }
@@ -658,7 +548,10 @@ export const Layout = {
     } = {}
   ) => {
     const { children = [], spacing = 0, alignment = 'center' } = props
-    const component = new LayoutComponent(props, 'vstack', children, { spacing, alignment })
+    const component = new LayoutComponent(props, 'vstack', children, {
+      spacing,
+      alignment,
+    })
     return withModifiers(component)
   },
 
@@ -673,7 +566,10 @@ export const Layout = {
     } = {}
   ) => {
     const { children = [], spacing = 0, alignment = 'center' } = props
-    const component = new LayoutComponent(props, 'hstack', children, { spacing, alignment })
+    const component = new LayoutComponent(props, 'hstack', children, {
+      spacing,
+      alignment,
+    })
     return withModifiers(component)
   },
 
@@ -696,79 +592,11 @@ export const Layout = {
     } = {}
   ) => {
     const { children = [], alignment = 'center' } = props
-    const component = new LayoutComponent(props, 'zstack', children, { alignment })
+    const component = new LayoutComponent(props, 'zstack', children, {
+      alignment,
+    })
     return withModifiers(component)
   },
-}
-
-/**
- * SwiftUI-aligned direct exports for layout components
- * These provide the same functionality as Layout.VStack, Layout.HStack, Layout.ZStack
- * but with direct component names for better SwiftUI syntax alignment
- */
-export function VStack(
-  props: {
-    children?: ComponentInstance[]
-    spacing?: number
-    alignment?: 'leading' | 'center' | 'trailing'
-    debugLabel?: string
-    element?: string
-  } = {}
-) {
-  const { children = [], spacing = 0, debugLabel } = props
-  // Explicitly handle alignment to avoid default override
-  const alignment = props.alignment !== undefined ? props.alignment : 'center'
-  const component = new LayoutComponent(props, 'vstack', children, { spacing, alignment, debugLabel })
-  return withModifiers(component)
-}
-
-export function HStack(
-  props: {
-    children?: ComponentInstance[]
-    spacing?: number
-    alignment?: 'top' | 'center' | 'bottom'
-    debugLabel?: string
-    element?: string
-  } = {}
-) {
-  const { children = [], spacing = 0, debugLabel } = props
-  // Explicitly handle alignment to avoid default override
-  const alignment = props.alignment !== undefined ? props.alignment : 'center'
-  const component = new LayoutComponent(props, 'hstack', children, { spacing, alignment, debugLabel })
-  return withModifiers(component)
-}
-
-export function ZStack(
-  props: {
-    children?: ComponentInstance[]
-    alignment?:
-      | 'topLeading'
-      | 'top'
-      | 'topTrailing'
-      | 'leading'
-      | 'center'
-      | 'trailing'
-      | 'bottomLeading'
-      | 'bottom'
-      | 'bottomTrailing'
-    element?: string
-  } = {}
-) {
-  const { children = [], alignment = 'center' } = props
-  const component = new LayoutComponent(props, 'zstack', children, { alignment })
-  return withModifiers(component)
-}
-
-/**
- * Simple Text component with modifier support
- */
-export function Text(content: string | (() => string)) {
-  const component = new ElementComponent(
-    { content },
-    'span',
-    typeof content === 'function' ? content() : content
-  )
-  return withModifiers(component)
 }
 
 /**
@@ -776,7 +604,9 @@ export function Text(content: string | (() => string)) {
  */
 export function wrapComponent<P extends ComponentProps>(
   component: ComponentInstance<P>
-): ModifiableComponent<P> & { modifier: ModifierBuilder<ModifiableComponent<P>> } {
+): ModifiableComponent<P> & {
+  modifier: ModifierBuilder<ModifiableComponent<P>>
+} {
   return withModifiers(component)
 }
 

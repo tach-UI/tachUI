@@ -9,17 +9,21 @@ process.env.NODE_ENV = 'test'
 // Only mock APIs that are truly not available in jsdom or are external services
 
 // Mock only truly unavailable APIs in jsdom
-global.ResizeObserver = global.ResizeObserver || vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+global.ResizeObserver =
+  global.ResizeObserver ||
+  vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  }))
 
-global.IntersectionObserver = global.IntersectionObserver || vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+global.IntersectionObserver =
+  global.IntersectionObserver ||
+  vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  }))
 
 // Enhanced Performance API - keep real implementation when possible
 global.performance = global.performance || {
@@ -30,8 +34,8 @@ global.performance = global.performance || {
   memory: global.performance?.memory || {
     usedJSHeapSize: 0,
     totalJSHeapSize: 0,
-    jsHeapSizeLimit: 0
-  }
+    jsHeapSizeLimit: 0,
+  },
 }
 
 // WeakRef/FinalizationRegistry polyfill for older Node versions
@@ -47,7 +51,11 @@ if (typeof WeakRef === 'undefined') {
 if (typeof FinalizationRegistry === 'undefined') {
   global.FinalizationRegistry = class FinalizationRegistryPolyfill {
     constructor(private cleanup: (heldValue: any) => void) {}
-    register(_target: object, _heldValue: any, _unregisterToken?: object): void {}
+    register(
+      _target: object,
+      _heldValue: any,
+      _unregisterToken?: object
+    ): void {}
     unregister(_unregisterToken: object): boolean {
       return true
     }
@@ -63,30 +71,79 @@ if (typeof global.gc === 'function') {
 }
 
 // Navigator API enhancement for real browser API testing
-global.navigator = global.navigator || {
-  userAgent: 'test-agent',
-  vibrate: vi.fn(),
-  geolocation: {
-    getCurrentPosition: vi.fn(),
-    watchPosition: vi.fn(),
-    clearWatch: vi.fn()
-  },
-  mediaDevices: {
-    getUserMedia: vi.fn()
-  }
-} as any
+global.navigator =
+  global.navigator ||
+  ({
+    userAgent: 'test-agent',
+    vibrate: vi.fn(),
+    geolocation: {
+      getCurrentPosition: vi.fn(),
+      watchPosition: vi.fn(),
+      clearWatch: vi.fn(),
+    },
+    mediaDevices: {
+      getUserMedia: vi.fn(),
+    },
+  } as any)
 
 // Extend expect with custom DOM matchers
 expect.extend(domMatchers)
 
-// Set up better error reporting for integration tests
+// Set up better error reporting for integration tests - suppress expected test messages
 const originalConsoleError = console.error
+const originalConsoleWarn = console.warn
+
 console.error = (...args) => {
-  // In test environment, make console.error more visible
-  if (process.env.NODE_ENV === 'test') {
-    originalConsoleError('[TEST ERROR]', ...args)
-  } else {
-    originalConsoleError(...args)
+  const message = args.join(' ')
+
+  // Suppress known test error messages to reduce noise
+  const suppressedPatterns = [
+    'TachUI Error:',
+    'Navigation path listener error:',
+    'Coordinator with ID',
+    'already exists',
+    'Child error',
+    'Component error',
+    'Unknown validation rule:',
+    'Unknown built-in validation rule:',
+    'unknownRule',
+    'nonexistent',
+  ]
+
+  const shouldSuppress = suppressedPatterns.some(pattern =>
+    message.includes(pattern)
+  )
+
+  if (!shouldSuppress) {
+    // In test environment, make console.error more visible for real errors
+    if (process.env.NODE_ENV === 'test') {
+      originalConsoleError('[TEST ERROR]', ...args)
+    } else {
+      originalConsoleError(...args)
+    }
+  }
+}
+
+console.warn = (...args) => {
+  const message = args.join(' ')
+
+  // Suppress known development mode warnings from modifiers during tests
+  const suppressedPatterns = [
+    'PositionModifier:',
+    'ZIndexModifier:',
+    'OffsetModifier:',
+    'ScaleEffectModifier:',
+    'FixedSizeModifier:',
+    'Navigation:',
+    'NavigationManager:',
+  ]
+
+  const shouldSuppress = suppressedPatterns.some(pattern =>
+    message.includes(pattern)
+  )
+
+  if (!shouldSuppress) {
+    originalConsoleWarn(...args)
   }
 }
 
@@ -112,12 +169,12 @@ global.setInterval = ((...args) => {
 const originalClearTimeout = global.clearTimeout
 const originalClearInterval = global.clearInterval
 
-global.clearTimeout = (timeout) => {
+global.clearTimeout = timeout => {
   pendingTimeouts.delete(timeout)
   return originalClearTimeout(timeout)
 }
 
-global.clearInterval = (interval) => {
+global.clearInterval = interval => {
   pendingIntervals.delete(interval)
   return originalClearInterval(interval)
 }

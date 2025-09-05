@@ -19,6 +19,7 @@ describe('BackgroundModifier with State Support', () => {
   let mockContext: ModifierContext
   let addEventListener: ReturnType<typeof vi.fn>
   let removeEventListener: ReturnType<typeof vi.fn>
+  let setPropertyMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     vi.useFakeTimers()
@@ -26,16 +27,53 @@ describe('BackgroundModifier with State Support', () => {
     addEventListener = vi.fn()
     removeEventListener = vi.fn()
 
-    // Mock HTML element
-    mockElement = {
-      style: {},
+    // Create a proper HTMLElement mock that passes instanceof check
+    const element = document.createElement('div')
+
+    // Mock the style setProperty method to track calls and update background
+    setPropertyMock = vi.fn()
+
+    // Store values for style properties
+    let backgroundValue = ''
+    let cssTextValue = ''
+
+    // Override the style.setProperty method
+    element.style.setProperty = setPropertyMock
+    setPropertyMock.mockImplementation((prop: string, value: string) => {
+      if (prop === 'background') {
+        backgroundValue = value
+      }
+    })
+
+    // Override background property
+    Object.defineProperty(element.style, 'background', {
+      get: () => backgroundValue,
+      set: val => {
+        backgroundValue = val
+      },
+      configurable: true,
+      enumerable: true,
+    })
+
+    // Override cssText property to support += operations
+    Object.defineProperty(element.style, 'cssText', {
+      get: () => cssTextValue,
+      set: val => {
+        cssTextValue = val
+      },
+      configurable: true,
+      enumerable: true,
+    })
+
+    // Mock the necessary properties
+    mockElement = Object.assign(element, {
       addEventListener,
       removeEventListener,
       hasAttribute: vi.fn().mockReturnValue(false),
       matches: vi.fn().mockReturnValue(false),
       setAttribute: vi.fn(),
       getAttribute: vi.fn(),
-    } as unknown as HTMLElement
+    }) as HTMLElement
 
     mockContext = {
       componentId: 'test-component',
@@ -54,7 +92,9 @@ describe('BackgroundModifier with State Support', () => {
       const modifier = new BackgroundModifier({ background: '#ff0000' })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe('#ff0000')
+      expect(mockElement.style.background).toMatch(
+        /(#ff0000|rgb\(255,\s*0,\s*0\))/
+      )
     })
 
     it('should apply gradient background', () => {
@@ -230,7 +270,9 @@ describe('BackgroundModifier with State Support', () => {
       // Trigger focus
       focusHandler()
 
-      expect(mockElement.style.background).toBe('#ffaa00')
+      expect(mockElement.style.background).toMatch(
+        /(#ffaa00|rgb\(255,\s*170,\s*0\))/
+      )
     })
 
     it('should setup mutation observer for disabled state', () => {
@@ -288,7 +330,9 @@ describe('BackgroundModifier with State Support', () => {
       mousedownHandler() // Press (active)
       mouseupHandler() // Release (should return to hover)
 
-      expect(mockElement.style.background).toBe('#00ff00') // Hover color
+      expect(mockElement.style.background).toMatch(
+        /(#00ff00|rgb\(0,\s*255,\s*0\))/
+      ) // Hover color
     })
 
     it('should return to default after mouseup if not hovering', () => {
@@ -314,12 +358,16 @@ describe('BackgroundModifier with State Support', () => {
 
       // Simulate press -> release without hovering
       mousedownHandler() // Press (active)
-      expect(mockElement.style.background).toBe('#0000ff') // Active color from stateGradients
+      expect(mockElement.style.background).toMatch(
+        /(#0000ff|rgb\(0,\s*0,\s*255\))/
+      ) // Active color from stateGradients
 
       mouseupHandler() // Release (should return to default)
 
       // Should return to default color (string, not gradient in this test)
-      expect(mockElement.style.background).toBe('#ff0000')
+      expect(mockElement.style.background).toMatch(
+        /(#ff0000|rgb\(255,\s*0,\s*0\))/
+      )
     })
 
     it('should prioritize disabled state', () => {
@@ -337,7 +385,9 @@ describe('BackgroundModifier with State Support', () => {
       // Should return to disabled state, not default
       mouseleaveHandler()
 
-      expect(mockElement.style.background).toBe('#cccccc') // Disabled color
+      expect(mockElement.style.background).toMatch(
+        /(#cccccc|rgb\(204,\s*204,\s*204\))/
+      ) // Disabled color
     })
 
     it('should prioritize focus state over default', () => {
@@ -355,7 +405,9 @@ describe('BackgroundModifier with State Support', () => {
       // Should return to focus state, not default
       mouseleaveHandler()
 
-      expect(mockElement.style.background).toBe('#ffaa00') // Focus color
+      expect(mockElement.style.background).toMatch(
+        /(#ffaa00|rgb\(255,\s*170,\s*0\))/
+      ) // Focus color
     })
   })
 

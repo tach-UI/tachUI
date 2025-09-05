@@ -11,10 +11,15 @@ export default defineConfig({
     },
     rollupOptions: {
       // External dependencies that shouldn't be bundled
-      external: ['@tachui/core', '@tachui/core/validation'],
+      external: [
+        '@tachui/core',
+        '@tachui/core/validation',
+        '@tachui/primitives',
+      ],
       output: {
         globals: {
           '@tachui/core': 'TachUICore',
+          '@tachui/primitives': 'TachUIPrimitives',
         },
         exports: 'named',
       },

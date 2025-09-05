@@ -1,6 +1,6 @@
 /**
  * @fileoverview TachUI Common Bundle (~115KB)
- * 
+ *
  * Optimized for typical web applications (80% of use cases).
  * This bundle re-exports the complete framework but with metadata
  * to guide bundlers for common web app optimization.
@@ -14,17 +14,35 @@ export * from '../index.js'
  */
 export const BUNDLE_INFO = {
   name: '@tachui/core/common',
-  version: '0.1.0', 
+  version: '0.1.0',
   description: 'Common TachUI bundle for typical web applications',
   targetSize: '~115KB',
   recommendedComponents: [
-    'Text', 'Button', 'Image', 'HStack', 'VStack', 'Spacer', 'Show',
-    'BasicForm', 'BasicInput', 'Toggle', 'Picker', 'Link',
-    'List', 'ScrollView', 'Section', 'Divider'
+    'Text',
+    'Button',
+    'Image',
+    'HStack',
+    'VStack',
+    'Spacer',
+    'Show',
+    'BasicForm',
+    'BasicInput',
+    'Toggle',
+    'Picker',
+    'Link',
+    'List',
+    'Section',
+    'Divider', // ScrollView moved to @tachui/mobile
   ],
   useCase: 'Typical web applications, forms, navigation, lists',
   treeShakingHints: {
-    include: ['reactive', 'runtime', 'components/basic', 'components/forms', 'modifiers/common'],
-    exclude: ['components/advanced', 'modifiers/advanced', 'gradients/complex']
-  }
+    include: [
+      'reactive',
+      'runtime',
+      'components/basic',
+      'components/forms',
+      'modifiers/common',
+    ],
+    exclude: ['components/advanced', 'modifiers/advanced', 'gradients/complex'],
+  },
 } as const

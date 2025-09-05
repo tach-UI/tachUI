@@ -7,13 +7,14 @@ This document provides comprehensive examples of using the `.asHTML()` modifier 
 ### Simple Rich Text
 
 ```typescript
-import { Text, VStack } from '@tachui/core'
+import { Text, VStack } from '@tachui/primitives'
 
 // Basic formatted content
 const WelcomeMessage = () => {
-  return Text('<p>Welcome to <strong>TachUI</strong>! Start building <em>amazing</em> applications today.</p>')
-    .modifier
-    .asHTML()
+  return Text(
+    '<p>Welcome to <strong>TachUI</strong>! Start building <em>amazing</em> applications today.</p>'
+  )
+    .modifier.asHTML()
     .fontSize(16)
     .lineHeight(1.5)
     .textAlign('center')
@@ -56,8 +57,7 @@ const NewsletterArticle = () => {
   `
 
   return Text(content)
-    .modifier
-    .asHTML()
+    .modifier.asHTML()
     .maxWidth(600)
     .padding(24)
     .backgroundColor('#FFFFFF')
@@ -89,7 +89,7 @@ const CommentComponent = (comment: Comment) => {
       ALLOWED_TAGS: ['p', 'strong', 'em', 'code', 'br'],
       ALLOWED_ATTR: [],
       KEEP_CONTENT: true,
-      RETURN_DOM_FRAGMENT: false
+      RETURN_DOM_FRAGMENT: false,
     })
   }
 
@@ -97,39 +97,35 @@ const CommentComponent = (comment: Comment) => {
     children: [
       // Author (plain text, no HTML)
       Text(comment.author)
-        .modifier
-        .fontWeight('600')
+        .modifier.fontWeight('600')
         .fontSize(14)
         .foregroundColor('#2C3E50')
         .build(),
-      
+
       // Comment content (sanitized HTML)
       Text(comment.content)
-        .modifier
-        .asHTML({
-          customSanitizer: sanitizeUserContent
+        .modifier.asHTML({
+          customSanitizer: sanitizeUserContent,
         })
         .fontSize(14)
         .lineHeight(1.4)
         .marginTop(4)
         .build(),
-      
+
       // Timestamp (plain text)
       Text(comment.timestamp)
-        .modifier
-        .fontSize(12)
+        .modifier.fontSize(12)
         .opacity(0.6)
         .marginTop(8)
-        .build()
-    ]
+        .build(),
+    ],
   })
-  .modifier
-  .padding(16)
-  .backgroundColor('#F8F9FA')
-  .border(1, '#E9ECEF')
-  .cornerRadius(8)
-  .marginBottom(12)
-  .build()
+    .modifier.padding(16)
+    .backgroundColor('#F8F9FA')
+    .border(1, '#E9ECEF')
+    .cornerRadius(8)
+    .marginBottom(12)
+    .build()
 }
 
 // Usage example
@@ -137,17 +133,14 @@ const CommentsSection = (comments: Comment[]) => {
   return VStack({
     children: [
       Text('Comments')
-        .modifier
-        .fontSize(20)
+        .modifier.fontSize(20)
         .fontWeight('600')
         .marginBottom(16)
         .build(),
-      
-      ...comments.map(comment => CommentComponent(comment))
-    ]
-  })
-  .modifier
-  .build()
+
+      ...comments.map(comment => CommentComponent(comment)),
+    ],
+  }).modifier.build()
 }
 ```
 
@@ -167,50 +160,86 @@ const BlogPostComponent = (post: BlogPost) => {
     return DOMPurify.sanitize(html, {
       ALLOWED_TAGS: [
         // Structure
-        'article', 'section', 'header', 'footer', 'aside',
-        'div', 'span', 'p', 'br',
-        
+        'article',
+        'section',
+        'header',
+        'footer',
+        'aside',
+        'div',
+        'span',
+        'p',
+        'br',
+
         // Headers
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+
         // Text formatting
-        'strong', 'em', 'b', 'i', 'u', 's', 'sup', 'sub',
-        'mark', 'del', 'ins', 'small',
-        
+        'strong',
+        'em',
+        'b',
+        'i',
+        'u',
+        's',
+        'sup',
+        'sub',
+        'mark',
+        'del',
+        'ins',
+        'small',
+
         // Lists
-        'ul', 'ol', 'li', 'dl', 'dt', 'dd',
-        
+        'ul',
+        'ol',
+        'li',
+        'dl',
+        'dt',
+        'dd',
+
         // Links and media
-        'a', 'img',
-        
+        'a',
+        'img',
+
         // Code and quotes
-        'code', 'pre', 'blockquote', 'cite',
-        
+        'code',
+        'pre',
+        'blockquote',
+        'cite',
+
         // Tables
-        'table', 'thead', 'tbody', 'tr', 'td', 'th',
-        
+        'table',
+        'thead',
+        'tbody',
+        'tr',
+        'td',
+        'th',
+
         // Misc
-        'hr'
+        'hr',
       ],
       ALLOWED_ATTR: {
         // Global attributes
         '*': ['class', 'id'],
-        
+
         // Links
-        'a': ['href', 'target', 'rel', 'title'],
-        
+        a: ['href', 'target', 'rel', 'title'],
+
         // Images
-        'img': ['src', 'alt', 'width', 'height', 'title'],
-        
+        img: ['src', 'alt', 'width', 'height', 'title'],
+
         // Tables
-        'td': ['colspan', 'rowspan'],
-        'th': ['colspan', 'rowspan', 'scope'],
-        
+        td: ['colspan', 'rowspan'],
+        th: ['colspan', 'rowspan', 'scope'],
+
         // Code blocks
-        'pre': ['class'],  // For syntax highlighting
-        'code': ['class']
+        pre: ['class'], // For syntax highlighting
+        code: ['class'],
       },
-      ALLOWED_URI_REGEXP: /^https?:|^\/|^#|^mailto:/i
+      ALLOWED_URI_REGEXP: /^https?:|^\/|^#|^mailto:/i,
     })
   }
 
@@ -218,39 +247,35 @@ const BlogPostComponent = (post: BlogPost) => {
     children: [
       // Title
       Text(post.title)
-        .modifier
-        .fontSize(32)
+        .modifier.fontSize(32)
         .fontWeight('700')
         .lineHeight(1.2)
         .marginBottom(16)
         .build(),
-      
+
       // Tags
       Text(`Tagged: ${post.tags.join(', ')}`)
-        .modifier
-        .fontSize(14)
+        .modifier.fontSize(14)
         .opacity(0.7)
         .marginBottom(24)
         .build(),
-      
+
       // Content with rich HTML support
       Text(post.content)
-        .modifier
-        .asHTML({
-          customSanitizer: sanitizeBlogContent
+        .modifier.asHTML({
+          customSanitizer: sanitizeBlogContent,
         })
         .fontSize(16)
         .lineHeight(1.6)
-        .build()
-    ]
+        .build(),
+    ],
   })
-  .modifier
-  .maxWidth(800)
-  .padding(32)
-  .backgroundColor('#FFFFFF')
-  .cornerRadius(12)
-  .shadow({ x: 0, y: 2, blur: 16, color: 'rgba(0,0,0,0.08)' })
-  .build()
+    .modifier.maxWidth(800)
+    .padding(32)
+    .backgroundColor('#FFFFFF')
+    .cornerRadius(12)
+    .shadow({ x: 0, y: 2, blur: 16, color: 'rgba(0,0,0,0.08)' })
+    .build()
 }
 ```
 
@@ -259,57 +284,100 @@ const BlogPostComponent = (post: BlogPost) => {
 ### Email Template Preview
 
 ```typescript
-const EmailTemplatePreview = (templateHtml: string, variables: Record<string, string> = {}) => {
+const EmailTemplatePreview = (
+  templateHtml: string,
+  variables: Record<string, string> = {}
+) => {
   // Process email template with variable substitution
   const processEmailTemplate = (html: string) => {
     let processed = html
-    
+
     // Replace template variables
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g')
       processed = processed.replace(regex, value)
     })
-    
+
     // Remove remaining template syntax
     processed = processed.replace(/\{\{.*?\}\}/g, '[VARIABLE]')
-    
+
     // Clean server-side tags
     processed = processed.replace(/<\?.*?\?>/g, '')
     processed = processed.replace(/<%.*?%>/g, '')
-    
+
     return processed
   }
 
   return Text(templateHtml)
-    .modifier
-    .asHTML({
+    .modifier.asHTML({
       customSanitizer: processEmailTemplate,
       allowedTags: [
         // Email HTML structure
-        'html', 'head', 'body', 'meta', 'title', 'style',
-        
+        'html',
+        'head',
+        'body',
+        'meta',
+        'title',
+        'style',
+
         // Email layout (tables)
-        'table', 'tr', 'td', 'th', 'thead', 'tbody',
-        
+        'table',
+        'tr',
+        'td',
+        'th',
+        'thead',
+        'tbody',
+
         // Content
-        'div', 'span', 'p', 'br', 'a', 'img',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'strong', 'em', 'b', 'i', 'u',
-        'ul', 'ol', 'li', 'hr'
+        'div',
+        'span',
+        'p',
+        'br',
+        'a',
+        'img',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'strong',
+        'em',
+        'b',
+        'i',
+        'u',
+        'ul',
+        'ol',
+        'li',
+        'hr',
       ],
       allowedAttributes: {
         // Email needs inline styles and specific attributes
         '*': ['class', 'id', 'style'],
-        'table': ['width', 'height', 'border', 'cellspacing', 'cellpadding', 'align'],
-        'td': ['width', 'height', 'align', 'valign', 'colspan', 'rowspan', 'bgcolor'],
-        'th': ['width', 'height', 'align', 'valign', 'colspan', 'rowspan'],
-        'a': ['href', 'target', 'rel', 'title'],
-        'img': ['src', 'alt', 'width', 'height', 'border', 'align'],
-        'meta': ['charset', 'name', 'content', 'http-equiv']
-      }
+        table: [
+          'width',
+          'height',
+          'border',
+          'cellspacing',
+          'cellpadding',
+          'align',
+        ],
+        td: [
+          'width',
+          'height',
+          'align',
+          'valign',
+          'colspan',
+          'rowspan',
+          'bgcolor',
+        ],
+        th: ['width', 'height', 'align', 'valign', 'colspan', 'rowspan'],
+        a: ['href', 'target', 'rel', 'title'],
+        img: ['src', 'alt', 'width', 'height', 'border', 'align'],
+        meta: ['charset', 'name', 'content', 'http-equiv'],
+      },
     })
-    .modifier
-    .fontFamily('system-ui, -apple-system, "Segoe UI", sans-serif')
+    .modifier.fontFamily('system-ui, -apple-system, "Segoe UI", sans-serif')
     .fontSize(14)
     .lineHeight(1.4)
     .padding(20)
@@ -333,7 +401,7 @@ const emailContent = `
 
 const previewComponent = EmailTemplatePreview(emailContent, {
   firstName: 'John',
-  unsubscribeUrl: 'https://example.com/unsubscribe'
+  unsubscribeUrl: 'https://example.com/unsubscribe',
 })
 ```
 
@@ -346,33 +414,53 @@ import DOMPurify from 'dompurify'
 const MarkdownRenderer = (markdown: string) => {
   // Convert markdown to HTML
   const htmlContent = marked(markdown)
-  
+
   // Sanitize the generated HTML
   const sanitizeMarkdown = (html: string) => {
     return DOMPurify.sanitize(html, {
       ALLOWED_TAGS: [
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'p', 'br', 'strong', 'em', 'code', 'pre',
-        'ul', 'ol', 'li', 'blockquote', 'a', 'img',
-        'table', 'thead', 'tbody', 'tr', 'td', 'th',
-        'del', 'hr'
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'p',
+        'br',
+        'strong',
+        'em',
+        'code',
+        'pre',
+        'ul',
+        'ol',
+        'li',
+        'blockquote',
+        'a',
+        'img',
+        'table',
+        'thead',
+        'tbody',
+        'tr',
+        'td',
+        'th',
+        'del',
+        'hr',
       ],
       ALLOWED_ATTR: {
-        'a': ['href', 'title'],
-        'img': ['src', 'alt', 'title'],
-        'pre': ['class'],  // For code language
-        'code': ['class'],
-        'th': ['align'],
-        'td': ['align']
+        a: ['href', 'title'],
+        img: ['src', 'alt', 'title'],
+        pre: ['class'], // For code language
+        code: ['class'],
+        th: ['align'],
+        td: ['align'],
       },
-      ALLOWED_URI_REGEXP: /^https?:|^\/|^#/i
+      ALLOWED_URI_REGEXP: /^https?:|^\/|^#/i,
     })
   }
 
   return Text(htmlContent)
-    .modifier
-    .asHTML({
-      customSanitizer: sanitizeMarkdown
+    .modifier.asHTML({
+      customSanitizer: sanitizeMarkdown,
     })
     .fontSize(16)
     .lineHeight(1.6)
@@ -382,14 +470,11 @@ const MarkdownRenderer = (markdown: string) => {
 // Usage example
 const DocumentationPage = (markdownContent: string) => {
   return VStack({
-    children: [
-      MarkdownRenderer(markdownContent)
-    ]
+    children: [MarkdownRenderer(markdownContent)],
   })
-  .modifier
-  .maxWidth(800)
-  .padding(24)
-  .build()
+    .modifier.maxWidth(800)
+    .padding(24)
+    .build()
 }
 ```
 
@@ -407,24 +492,42 @@ const RichTextDisplay = (content: RichTextContent) => {
   const sanitizeEditorContent = (html: string) => {
     return DOMPurify.sanitize(html, {
       ALLOWED_TAGS: [
-        'p', 'br', 'div', 'span',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'strong', 'em', 'b', 'i', 'u', 's',
-        'ul', 'ol', 'li', 'blockquote',
-        'a', 'img', 'hr'
+        'p',
+        'br',
+        'div',
+        'span',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'strong',
+        'em',
+        'b',
+        'i',
+        'u',
+        's',
+        'ul',
+        'ol',
+        'li',
+        'blockquote',
+        'a',
+        'img',
+        'hr',
       ],
       ALLOWED_ATTR: {
-        '*': ['class', 'style'],  // Rich text editors use classes and inline styles
-        'a': ['href', 'target', 'rel'],
-        'img': ['src', 'alt', 'width', 'height', 'style'],
-        'span': ['style'],  // For text colors, fonts, etc.
-        'div': ['style'],
-        'p': ['style']
+        '*': ['class', 'style'], // Rich text editors use classes and inline styles
+        a: ['href', 'target', 'rel'],
+        img: ['src', 'alt', 'width', 'height', 'style'],
+        span: ['style'], // For text colors, fonts, etc.
+        div: ['style'],
+        p: ['style'],
       },
       ALLOWED_URI_REGEXP: /^https?:|^\/|^#|^mailto:/i,
       // Allow some safe inline styles
       FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
-      FORBID_ATTR: ['onclick', 'onerror', 'onload', 'onfocus', 'onmouseover']
+      FORBID_ATTR: ['onclick', 'onerror', 'onload', 'onfocus', 'onmouseover'],
     })
   }
 
@@ -432,30 +535,27 @@ const RichTextDisplay = (content: RichTextContent) => {
     children: [
       // Content
       Text(content.html)
-        .modifier
-        .asHTML({
-          customSanitizer: sanitizeEditorContent
+        .modifier.asHTML({
+          customSanitizer: sanitizeEditorContent,
         })
         .fontSize(16)
         .lineHeight(1.6)
         .build(),
-      
+
       // Meta information
       Text(`${content.wordCount} words`)
-        .modifier
-        .fontSize(12)
+        .modifier.fontSize(12)
         .opacity(0.6)
         .marginTop(16)
         .textAlign('right')
-        .build()
-    ]
+        .build(),
+    ],
   })
-  .modifier
-  .padding(20)
-  .backgroundColor('#FFFFFF')
-  .border(1, '#E5E5E7')
-  .cornerRadius(8)
-  .build()
+    .modifier.padding(20)
+    .backgroundColor('#FFFFFF')
+    .border(1, '#E5E5E7')
+    .cornerRadius(8)
+    .build()
 }
 ```
 
@@ -468,43 +568,39 @@ import { createSignal, createMemo } from '@tachui/core'
 
 const LargeHTMLContentViewer = (htmlContent: string) => {
   const [isExpanded, setIsExpanded] = createSignal(false)
-  
+
   // Memoize expensive sanitization
   const sanitizedContent = createMemo(() => {
-    const truncated = isExpanded() 
-      ? htmlContent 
+    const truncated = isExpanded()
+      ? htmlContent
       : htmlContent.substring(0, 1000) + '...'
-    
+
     return DOMPurify.sanitize(truncated, {
       ALLOWED_TAGS: ['p', 'strong', 'em', 'a', 'ul', 'li'],
-      ALLOWED_ATTR: { 'a': ['href'] }
+      ALLOWED_ATTR: { a: ['href'] },
     })
   })
 
   return VStack({
     children: [
       Text(sanitizedContent())
-        .modifier
-        .asHTML({
-          skipSanitizer: true,  // Already sanitized in memo
-          validateDOM: false    // Skip DOM validation for performance
+        .modifier.asHTML({
+          skipSanitizer: true, // Already sanitized in memo
+          validateDOM: false, // Skip DOM validation for performance
         })
         .fontSize(16)
         .lineHeight(1.6)
         .build(),
-      
-      !isExpanded() ? 
-        Text('Show More')
-          .modifier
-          .foregroundColor('#007AFF')
-          .onTap(() => setIsExpanded(true))
-          .padding(8)
-          .build()
-        : null
-    ]
-  })
-  .modifier
-  .build()
+
+      !isExpanded()
+        ? Text('Show More')
+            .modifier.foregroundColor('#007AFF')
+            .onTap(() => setIsExpanded(true))
+            .padding(8)
+            .build()
+        : null,
+    ],
+  }).modifier.build()
 }
 ```
 
@@ -515,7 +611,7 @@ const sanitizationCache = new Map<string, string>()
 
 const CachedHTMLRenderer = (content: string, cacheKey?: string) => {
   const key = cacheKey || content
-  
+
   let sanitizedContent: string
   if (sanitizationCache.has(key)) {
     sanitizedContent = sanitizationCache.get(key)!
@@ -525,10 +621,9 @@ const CachedHTMLRenderer = (content: string, cacheKey?: string) => {
   }
 
   return Text(sanitizedContent)
-    .modifier
-    .asHTML({
-      skipSanitizer: true,  // Already sanitized and cached
-      validateDOM: false
+    .modifier.asHTML({
+      skipSanitizer: true, // Already sanitized and cached
+      validateDOM: false,
     })
     .build()
 }
@@ -547,46 +642,41 @@ const SecurityTestComponent = () => {
     '<div onclick="alert(1)">Click</div>',
     '<iframe src="javascript:alert(1)"></iframe>',
     '<object data="javascript:alert(1)"></object>',
-    '<style>body{background:url("javascript:alert(1)")}</style>'
+    '<style>body{background:url("javascript:alert(1)")}</style>',
   ]
 
   return VStack({
     children: [
       Text('Security Test Results')
-        .modifier
-        .fontSize(18)
+        .modifier.fontSize(18)
         .fontWeight('600')
         .marginBottom(16)
         .build(),
-      
-      ...testVectors.map((vector, index) => 
+
+      ...testVectors.map((vector, index) =>
         VStack({
           children: [
             Text(`Test ${index + 1}: ${vector.substring(0, 50)}...`)
-              .modifier
-              .fontSize(12)
+              .modifier.fontSize(12)
               .fontFamily('monospace')
               .backgroundColor('#F8F9FA')
               .padding(8)
               .build(),
-            
+
             Text(vector)
-              .modifier
-              .asHTML()
+              .modifier.asHTML()
               .fontSize(14)
               .padding(8)
               .border(1, '#E5E5E7')
               .marginBottom(12)
-              .build()
-          ]
-        })
-        .modifier.build()
-      )
-    ]
+              .build(),
+          ],
+        }).modifier.build()
+      ),
+    ],
   })
-  .modifier
-  .padding(20)
-  .build()
+    .modifier.padding(20)
+    .build()
 }
 ```
 
@@ -613,41 +703,60 @@ const CMSContentRenderer = (content: CMSContent) => {
       case 'article':
         return {
           ALLOWED_TAGS: [
-            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-            'p', 'br', 'strong', 'em', 'u', 'i',
-            'ul', 'ol', 'li', 'blockquote', 'a', 'img',
-            'table', 'thead', 'tbody', 'tr', 'td', 'th'
+            'h1',
+            'h2',
+            'h3',
+            'h4',
+            'h5',
+            'h6',
+            'p',
+            'br',
+            'strong',
+            'em',
+            'u',
+            'i',
+            'ul',
+            'ol',
+            'li',
+            'blockquote',
+            'a',
+            'img',
+            'table',
+            'thead',
+            'tbody',
+            'tr',
+            'td',
+            'th',
           ],
           ALLOWED_ATTR: {
             '*': ['class'],
-            'a': ['href', 'target', 'rel'],
-            'img': ['src', 'alt', 'width', 'height']
-          }
+            a: ['href', 'target', 'rel'],
+            img: ['src', 'alt', 'width', 'height'],
+          },
         }
-      
+
       case 'page':
         return {
           ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'a'],
-          ALLOWED_ATTR: { 'a': ['href'] }
+          ALLOWED_ATTR: { a: ['href'] },
         }
-      
+
       case 'snippet':
         return {
           ALLOWED_TAGS: ['strong', 'em'],
-          ALLOWED_ATTR: {}
+          ALLOWED_ATTR: {},
         }
-      
+
       default:
         return { ALLOWED_TAGS: [], ALLOWED_ATTR: {} }
     }
   }
 
   const rules = getSanitizationRules(content.type)
-  
+
   return Text(content.content)
-    .modifier
-    .asHTML({
-      customSanitizer: (html) => DOMPurify.sanitize(html, rules)
+    .modifier.asHTML({
+      customSanitizer: html => DOMPurify.sanitize(html, rules),
     })
     .fontSize(content.type === 'article' ? 16 : 14)
     .lineHeight(1.6)

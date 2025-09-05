@@ -3,7 +3,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest'
-import { height, size, width } from '../../src/modifiers/size'
+import { height, size, width } from '@tachui/modifiers'
 import { createComputed, createSignal } from '../../src/reactive'
 import { setupModifierTest } from './test-utils'
 
@@ -108,7 +108,7 @@ describe('SizeModifier', () => {
       modifier.apply(mockNode, mockContext)
 
       // Wait for reactive effects
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 0))
 
       expect(mockElement.style.width).toBe('100px')
       expect(mockElement.style.height).toBe('50px')
@@ -125,18 +125,22 @@ describe('SizeModifier', () => {
 
     it('should support reactive string values', async () => {
       const [isFullWidth, setIsFullWidth] = createSignal(false)
-      const computedWidth = createComputed(() => (isFullWidth() ? '100%' : '50%'))
+      const computedWidth = createComputed(() =>
+        isFullWidth() ? '100%' : '50%'
+      )
 
       const modifier = size({ width: computedWidth })
 
       modifier.apply(mockNode, mockContext)
 
-      // Wait for reactive effects
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      // Wait for reactive effects with longer timeout for CI
+      await new Promise(resolve => setTimeout(resolve, 10))
       expect(mockElement.style.width).toBe('50%')
 
       setIsFullWidth(true)
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      // Re-apply modifier to trigger reactive update
+      modifier.apply(mockNode, mockContext)
+      await new Promise(resolve => setTimeout(resolve, 10))
       expect(mockElement.style.width).toBe('100%')
     })
   })

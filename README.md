@@ -7,7 +7,7 @@ cssclasses:
 
 > **SwiftUI-inspired web framework with fine-grained reactivity**
 
-[![Version](https://img.shields.io/badge/Version-0.7.1--alpha-orange)](https://github.com/tach-UI/tachUI/releases)
+[![Version](https://img.shields.io/badge/Version-0.8.0--alpha-orange)](https://github.com/tach-UI/tachUI/releases)
 [![License](https://img.shields.io/badge/License-MPL--2.0-blue)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-20+-green)](https://nodejs.org/)
@@ -18,9 +18,9 @@ cssclasses:
 
 ## Alpha Release - Welcome!
 
-**tachUI 0.7.1-alpha** marks our debut as a public framework! After extensive development, we're excited to share a SwiftUI-inspired web framework that prioritizes developer experience without compromising performance.
+**tachUI 0.8.0-alpha** represents a major architectural milestone with our new modular plugin system! This release delivers enhanced performance, improved developer experience, and a robust foundation for the upcoming 1.0 release.
 
-### What's Ready in 0.7.1 Alpha
+### What's New in 0.8.0 Alpha
 
 - **Complete Component Library:** 55+ SwiftUI-compatible components
 - **Fine-grained Reactivity:** SolidJS-inspired signals with automatic cleanup
@@ -53,9 +53,9 @@ This alpha is ideal for:
 ### Installation
 
 ```bash
-npm install @tachui/core@0.7.1-alpha
+npm install @tachui/core@0.8.0-alpha
 # or
-pnpm add @tachui/core@0.7.1-alpha
+pnpm add @tachui/core@0.8.0-alpha
 ```
 
 ### Your First Component
@@ -340,7 +340,7 @@ Special thanks to the open source community for continuous inspiration and feedb
 
 ```bash
 # Install tachUI Alpha 1
-npm install @tachui/core@0.7.1-alpha
+npm install @tachui/core@0.8.0-alpha
 
 # Create your first SwiftUI-style component
 import { Text, Button, VStack, createSignal } from '@tachui/core'
@@ -348,6 +348,6 @@ import { Text, Button, VStack, createSignal } from '@tachui/core'
 # Start building! 🎉
 ```
 
-**tachUI 0.7.1-alpha** - The future of SwiftUI-inspired web development is here.
+**tachUI 0.8.0-alpha** - The future of SwiftUI-inspired web development is here.
 
 [![Get Started](https://img.shields.io/badge/Get%20Started-Documentation-blue?style=for-the-badge)](./apps/docs/guide/getting-started.md) [![View Examples](https://img.shields.io/badge/View%20Examples-Live%20Demos-green?style=for-the-badge)](./apps/examples/) [![Join Community](https://img.shields.io/badge/Contribute-GitHub-purple?style=for-the-badge)](https://github.com/tach-UI/tachUI)

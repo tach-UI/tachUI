@@ -1,24 +1,18 @@
 import { defineConfig } from 'vitest/config'
+import sharedConfig from '../../vitest.shared.config'
 
 export default defineConfig({
+  ...sharedConfig,
   test: {
-    environment: 'jsdom',
-    globals: true,
+    ...sharedConfig.test,
     setupFiles: ['./__tests__/setup.ts'],
-    // Suppress stderr output for cleaner test results
-    silent: false,
-    reporter: 'verbose',
-    // Completely silent for errors to prevent stderr
     logLevel: 'silent',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        '__tests__/',
-        'dist/',
-        '*.config.*',
-      ],
+  },
+  resolve: {
+    ...sharedConfig.resolve,
+    alias: {
+      ...sharedConfig.resolve?.alias,
+      '@tachui/symbols': './src',
     },
   },
 })

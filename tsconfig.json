@@ -3,7 +3,7 @@
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -25,19 +25,25 @@
 
     "baseUrl": ".",
     "paths": {
-      "@tachui/core": ["./packages/core/src"],
-      "@tachui/forms": ["./packages/forms/src"],
-      "@tachui/navigation": ["./packages/navigation/src"],
-      "@tachui/symbols": ["./packages/symbols/src"],
-      "@tachui/cli": ["./packages/cli/src"]
+      "@tachui/core": ["./packages/core/dist"],
+      "@tachui/primitives": ["./packages/primitives/dist"],
+      "@tachui/forms": ["./packages/forms/dist"],
+      "@tachui/navigation": ["./packages/navigation/dist"],
+      "@tachui/symbols": ["./packages/symbols/dist"],
+      "@tachui/mobile": ["./packages/mobile/dist"],
+      "@tachui/effects": ["./packages/effects/dist"],
+      "@tachui/cli": ["./packages/cli/dist"]
     }
   },
   "include": [],
   "references": [
     { "path": "./packages/core" },
+    { "path": "./packages/primitives" },
     { "path": "./packages/forms" },
     { "path": "./packages/navigation" },
     { "path": "./packages/symbols" },
+    { "path": "./packages/mobile" },
+    { "path": "./packages/effects" },
     { "path": "./packages/cli" }
   ]
 }

@@ -17,24 +17,11 @@ export * from '../runtime/dom-bridge'
 export * from '../runtime/component'
 export * from '../runtime/props'
 
-// Basic components only
-export * from '../components/Text'
-export * from '../components/Button'
-export * from '../components/Image'
-export * from '../components/BasicInput'
-export * from '../components/Spacer'
-export * from '../components/Show'
-
-// Layout containers (from wrapper)
-export { HStack, VStack, ZStack } from '../components/wrapper'
+// Components: @tachui/primitives (Text, Button, Image, etc.)
+// Flow control: @tachui/flow-control (Show, When, Unless)
 
 // Essential modifiers
 export * from '../modifiers/core'
-export * from '../modifiers/padding'
-export * from '../modifiers/margin'
-export * from '../modifiers/size'
-export * from '../modifiers/typography'
-export * from '../modifiers/background'
 
 // State management
 export { State, isState, unwrapValue } from '../state/state'
@@ -58,8 +45,8 @@ export {
 export { LinearGradient } from '../gradients'
 
 // Additional components needed by intro
-export { Divider } from '../components/Divider'
-export { ScrollView } from '../components/ScrollView'
+// Divider moved to @tachui/primitives
+// ScrollView moved to @tachui/mobile package
 
 // Constants (for dimensions)
 export {

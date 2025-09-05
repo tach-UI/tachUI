@@ -11,13 +11,10 @@ The `.asHTML()` modifier allows Text components to render HTML content safely wh
 ### Basic HTML Rendering
 
 ```typescript
-import { Text } from '@tachui/core'
+import { Text } from '@tachui/primitives'
 
 // Safe: Basic HTML with default sanitization
-Text('<p>Welcome to <strong>TachUI</strong>!</p>')
-  .modifier
-  .asHTML()
-  .build()
+Text('<p>Welcome to <strong>TachUI</strong>!</p>').modifier.asHTML().build()
 
 // Rich content example
 Text(`
@@ -50,8 +47,7 @@ Text(`
     </footer>
   </article>
 `)
-  .modifier
-  .asHTML()
+  .modifier.asHTML()
   .padding(24)
   .backgroundColor('#FFFFFF')
   .border(1, '#E5E5E7')
@@ -68,24 +64,20 @@ The `.asHTML()` modifier enforces strict component type restrictions for securit
 
 ```typescript
 // ✅ Allowed: Text components only
-Text('<p>Safe HTML content</p>')
-  .modifier
-  .asHTML()
-  .build()
+Text('<p>Safe HTML content</p>').modifier.asHTML().build()
 
 // ❌ Runtime Error: Other components are blocked
 Button('Click me')
-  .modifier
-  .asHTML() // Error: AsHTML modifier can only be applied to Text components
+  .modifier.asHTML() // Error: AsHTML modifier can only be applied to Text components
   .build()
 
 VStack({ children: [] })
-  .modifier
-  .asHTML() // Error: AsHTML modifier can only be applied to Text components
+  .modifier.asHTML() // Error: AsHTML modifier can only be applied to Text components
   .build()
 ```
 
 **Why This Restriction Matters:**
+
 - Prevents HTML injection into interactive components
 - Ensures HTML content is treated as display-only
 - Reduces attack surface for XSS vulnerabilities
@@ -100,22 +92,24 @@ The modifier includes comprehensive protection against common XSS vectors:
 ```typescript
 // Script tags - completely removed
 Text('<script>alert("XSS")</script><p>Safe content</p>')
-  .modifier.asHTML().build()
+  .modifier.asHTML()
+  .build()
 // Result: '<p>Safe content</p>'
 
 // Event handlers - attributes stripped
 Text('<div onclick="alert(1)" class="safe">Content</div>')
-  .modifier.asHTML().build()  
+  .modifier.asHTML()
+  .build()
 // Result: '<div class="safe">Content</div>'
 
 // JavaScript URLs - removed from href/src attributes
-Text('<a href="javascript:alert(1)">Link</a>')
-  .modifier.asHTML().build()
+Text('<a href="javascript:alert(1)">Link</a>').modifier.asHTML().build()
 // Result: '<a>Link</a>'
 
 // Dangerous elements - completely removed
 Text('<iframe src="evil.html"></iframe><p>Content</p>')
-  .modifier.asHTML().build()
+  .modifier.asHTML()
+  .build()
 // Result: '<p>Content</p>'
 ```
 
@@ -144,13 +138,13 @@ import DOMPurify from 'dompurify'
 
 // Comprehensive sanitization with DOMPurify
 Text(userGeneratedContent)
-  .modifier
-  .asHTML({
-    customSanitizer: (html: string) => DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ['p', 'strong', 'em', 'a', 'ul', 'li', 'blockquote'],
-      ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
-      ALLOW_DATA_ATTR: false
-    })
+  .modifier.asHTML({
+    customSanitizer: (html: string) =>
+      DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['p', 'strong', 'em', 'a', 'ul', 'li', 'blockquote'],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+        ALLOW_DATA_ATTR: false,
+      }),
   })
   .build()
 
@@ -159,33 +153,72 @@ const sanitizeRichContent = (html: string) => {
   return DOMPurify.sanitize(html, {
     // Allow common formatting tags
     ALLOWED_TAGS: [
-      'p', 'br', 'strong', 'em', 'u', 'i', 'b', 's', 
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'ul', 'ol', 'li', 'dl', 'dt', 'dd',
-      'blockquote', 'pre', 'code', 'kbd',
-      'a', 'img', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
-      'div', 'span', 'section', 'article', 'header', 'footer'
+      'p',
+      'br',
+      'strong',
+      'em',
+      'u',
+      'i',
+      'b',
+      's',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'ul',
+      'ol',
+      'li',
+      'dl',
+      'dt',
+      'dd',
+      'blockquote',
+      'pre',
+      'code',
+      'kbd',
+      'a',
+      'img',
+      'table',
+      'thead',
+      'tbody',
+      'tr',
+      'td',
+      'th',
+      'div',
+      'span',
+      'section',
+      'article',
+      'header',
+      'footer',
     ],
-    
+
     // Safe attributes only
     ALLOWED_ATTR: [
-      'href', 'target', 'rel', 'class', 'id', 
-      'src', 'alt', 'width', 'height', 'title'
+      'href',
+      'target',
+      'rel',
+      'class',
+      'id',
+      'src',
+      'alt',
+      'width',
+      'height',
+      'title',
     ],
-    
+
     // Block data attributes and unknown protocols
     ALLOW_DATA_ATTR: false,
     ALLOWED_URI_REGEXP: /^https?:|^\/|^#/i,
-    
+
     // Additional security
     KEEP_CONTENT: true,
-    RETURN_DOM_FRAGMENT: false
+    RETURN_DOM_FRAGMENT: false,
   })
 }
 
 Text(blogContent)
-  .modifier
-  .asHTML({ customSanitizer: sanitizeRichContent })
+  .modifier.asHTML({ customSanitizer: sanitizeRichContent })
   .build()
 ```
 
@@ -194,27 +227,36 @@ Text(blogContent)
 ```typescript
 // Restrict to specific tags and attributes
 Text(articleContent)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     allowedTags: [
-      'p', 'strong', 'em', 'a', 'ul', 'li', 'blockquote', 
-      'h1', 'h2', 'h3', 'img'
+      'p',
+      'strong',
+      'em',
+      'a',
+      'ul',
+      'li',
+      'blockquote',
+      'h1',
+      'h2',
+      'h3',
+      'img',
     ],
     allowedAttributes: {
-      '*': ['class', 'id'],  // Global attributes
-      'a': ['href', 'target', 'rel'],
-      'img': ['src', 'alt', 'width', 'height'],
-      'h1': [], 'h2': [], 'h3': []  // No additional attributes
-    }
+      '*': ['class', 'id'], // Global attributes
+      a: ['href', 'target', 'rel'],
+      img: ['src', 'alt', 'width', 'height'],
+      h1: [],
+      h2: [],
+      h3: [], // No additional attributes
+    },
   })
   .build()
 
 // Minimal content (text formatting only)
 Text(commentContent)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     allowedTags: ['strong', 'em', 'code', 'br'],
-    allowedAttributes: {}  // No attributes allowed
+    allowedAttributes: {}, // No attributes allowed
   })
   .build()
 ```
@@ -224,8 +266,7 @@ Text(commentContent)
 ```typescript
 // Remove custom dangerous patterns
 Text(templateContent)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     customPatterns: [
       // Remove server-side includes
       /<\?.*?\?>/gi,
@@ -234,8 +275,8 @@ Text(templateContent)
       // Remove PHP tags
       /<\?php.*?\?>/gi,
       // Custom script-like patterns
-      /<customscript.*?<\/customscript>/gi
-    ]
+      /<customscript.*?<\/customscript>/gi,
+    ],
   })
   .build()
 ```
@@ -247,25 +288,20 @@ Text(templateContent)
 ```typescript
 // For trusted, pre-validated content
 Text(trustedServerContent)
-  .modifier
-  .asHTML({
-    validateDOM: false,    // Skip DOM validation
-    customPatterns: [],    // Skip custom pattern checks
-    __suppressWarnings: true
+  .modifier.asHTML({
+    validateDOM: false, // Skip DOM validation
+    customPatterns: [], // Skip custom pattern checks
+    __suppressWarnings: true,
   })
   .build()
 
 // Template content with known structure
 Text(emailTemplate)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     // Only check for critical patterns
-    customPatterns: [
-      /<script.*?<\/script>/gi,
-      /javascript:/gi
-    ],
+    customPatterns: [/<script.*?<\/script>/gi, /javascript:/gi],
     // Skip full DOM validation for performance
-    validateDOM: false
+    validateDOM: false,
   })
   .build()
 ```
@@ -277,45 +313,53 @@ Text(emailTemplate)
 ```typescript
 // User-generated content - Maximum security
 Text(userComment)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     customSanitizer: DOMPurify.sanitize,
     allowedTags: ['p', 'strong', 'em', 'code', 'br'],
-    allowedAttributes: {}
+    allowedAttributes: {},
   })
   .build()
 
 // Editorial content - Balanced security
 Text(blogPost)
-  .modifier
-  .asHTML({
-    customSanitizer: (html) => DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ['p', 'strong', 'em', 'a', 'ul', 'li', 'blockquote', 'h1', 'h2', 'h3'],
-      ALLOWED_ATTR: ['href', 'target', 'rel', 'class']
-    })
+  .modifier.asHTML({
+    customSanitizer: html =>
+      DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: [
+          'p',
+          'strong',
+          'em',
+          'a',
+          'ul',
+          'li',
+          'blockquote',
+          'h1',
+          'h2',
+          'h3',
+        ],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+      }),
   })
   .build()
 
-// Trusted CMS content - Moderate security  
+// Trusted CMS content - Moderate security
 Text(cmsContent)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     // Use built-in sanitization with custom allowed tags
     allowedTags: [...defaultTags, 'table', 'tr', 'td', 'img'],
     allowedAttributes: {
       '*': ['class', 'id'],
-      'a': ['href', 'target', 'rel'],
-      'img': ['src', 'alt', 'width', 'height']
-    }
+      a: ['href', 'target', 'rel'],
+      img: ['src', 'alt', 'width', 'height'],
+    },
   })
   .build()
 
 // Server templates - Minimal security (trusted source)
 Text(serverTemplate)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     skipSanitizer: true,
-    __suppressWarnings: true
+    __suppressWarnings: true,
   })
   .build()
 ```
@@ -328,17 +372,16 @@ Combine `.asHTML()` with Content Security Policy headers:
 // Add CSP meta tag or headers
 const cspPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",  // Avoid 'unsafe-inline' in production
+  "script-src 'self' 'unsafe-inline'", // Avoid 'unsafe-inline' in production
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https:",
   "object-src 'none'",
-  "base-uri 'self'"
+  "base-uri 'self'",
 ].join('; ')
 
 // Then use asHTML() knowing scripts are blocked by CSP
 Text(richContent)
-  .modifier
-  .asHTML()  // Even if sanitization fails, CSP provides backup protection
+  .modifier.asHTML() // Even if sanitization fails, CSP provides backup protection
   .build()
 ```
 
@@ -349,30 +392,26 @@ Text(richContent)
 const validateContentSource = (html: string): boolean => {
   // Check content length
   if (html.length > 50000) return false
-  
+
   // Check for suspicious patterns
   const suspiciousPatterns = [
     /<script/i,
     /javascript:/i,
     /data:.*script/i,
-    /vbscript:/i
+    /vbscript:/i,
   ]
-  
+
   return !suspiciousPatterns.some(pattern => pattern.test(html))
 }
 
 const renderSafeContent = (content: string) => {
   if (!validateContentSource(content)) {
     return Text('Content blocked for security reasons')
-      .modifier
-      .foregroundColor('#FF3B30')
+      .modifier.foregroundColor('#FF3B30')
       .build()
   }
-  
-  return Text(content)
-    .modifier
-    .asHTML()
-    .build()
+
+  return Text(content).modifier.asHTML().build()
 }
 ```
 
@@ -384,10 +423,7 @@ The modifier provides helpful development warnings:
 
 ```typescript
 // In development, this triggers security warnings
-Text('<script>alert(1)</script><p>Content</p>')
-  .modifier
-  .asHTML()
-  .build()
+Text('<script>alert(1)</script><p>Content</p>').modifier.asHTML().build()
 
 // Console output:
 // 🔒 AsHTML Security Warnings
@@ -408,13 +444,16 @@ const testSecurityVectors = () => {
     '<img src="x" onerror="alert(1)">',
     '<a href="javascript:alert(1)">Click</a>',
     '<div onclick="alert(1)">Click</div>',
-    '<iframe src="javascript:alert(1)"></iframe>'
+    '<iframe src="javascript:alert(1)"></iframe>',
   ]
-  
+
   dangerousInputs.forEach(input => {
     const result = Text(input).modifier.asHTML().build()
     // Verify that dangerous content is removed/sanitized
-    console.assert(!result.innerHTML?.includes('alert'), `Failed to sanitize: ${input}`)
+    console.assert(
+      !result.innerHTML?.includes('alert'),
+      `Failed to sanitize: ${input}`
+    )
   })
 }
 
@@ -429,7 +468,7 @@ if (process.env.NODE_ENV === 'development') {
 ### Blog Content Rendering
 
 ```typescript
-import { Text, VStack } from '@tachui/core'
+import { Text, VStack } from '@tachui/primitives'
 import DOMPurify from 'dompurify'
 
 interface BlogPost {
@@ -443,16 +482,45 @@ const BlogPostComponent = (post: BlogPost) => {
   const sanitizeBlogContent = (html: string) => {
     return DOMPurify.sanitize(html, {
       ALLOWED_TAGS: [
-        'p', 'br', 'strong', 'em', 'u', 'i', 
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
-        'a', 'img', 'table', 'thead', 'tbody', 'tr', 'td', 'th'
+        'p',
+        'br',
+        'strong',
+        'em',
+        'u',
+        'i',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'ul',
+        'ol',
+        'li',
+        'blockquote',
+        'pre',
+        'code',
+        'a',
+        'img',
+        'table',
+        'thead',
+        'tbody',
+        'tr',
+        'td',
+        'th',
       ],
       ALLOWED_ATTR: [
-        'href', 'target', 'rel', 'src', 'alt', 
-        'width', 'height', 'class', 'id'
+        'href',
+        'target',
+        'rel',
+        'src',
+        'alt',
+        'width',
+        'height',
+        'class',
+        'id',
       ],
-      ALLOWED_URI_REGEXP: /^https?:|^\/|^#/i
+      ALLOWED_URI_REGEXP: /^https?:|^\/|^#/i,
     })
   }
 
@@ -460,37 +528,33 @@ const BlogPostComponent = (post: BlogPost) => {
     children: [
       // Title (safe, no HTML)
       Text(post.title)
-        .modifier
-        .fontSize(32)
+        .modifier.fontSize(32)
         .fontWeight('bold')
         .marginBottom(8)
         .build(),
-      
+
       // Published date (safe, no HTML)
       Text(post.publishedAt)
-        .modifier
-        .fontSize(14)
+        .modifier.fontSize(14)
         .opacity(0.7)
         .marginBottom(24)
         .build(),
-      
+
       // Rich HTML content with security
       Text(post.content)
-        .modifier
-        .asHTML({
-          customSanitizer: sanitizeBlogContent
+        .modifier.asHTML({
+          customSanitizer: sanitizeBlogContent,
         })
         .fontSize(16)
         .lineHeight(1.6)
-        .build()
-    ]
+        .build(),
+    ],
   })
-  .modifier
-  .padding(24)
-  .backgroundColor('#FFFFFF')
-  .cornerRadius(8)
-  .shadow({ x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' })
-  .build()
+    .modifier.padding(24)
+    .backgroundColor('#FFFFFF')
+    .cornerRadius(8)
+    .shadow({ x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' })
+    .build()
 }
 ```
 
@@ -508,46 +572,39 @@ const CommentComponent = (comment: Comment) => {
   const sanitizeComment = (html: string) => {
     return DOMPurify.sanitize(html, {
       ALLOWED_TAGS: ['strong', 'em', 'code', 'br', 'p'],
-      ALLOWED_ATTR: [],  // No attributes allowed
-      KEEP_CONTENT: true
+      ALLOWED_ATTR: [], // No attributes allowed
+      KEEP_CONTENT: true,
     })
   }
 
   return VStack({
     children: [
       // Author name (plain text, no HTML)
-      Text(comment.author)
-        .modifier
-        .fontWeight('600')
-        .fontSize(14)
-        .build(),
-      
+      Text(comment.author).modifier.fontWeight('600').fontSize(14).build(),
+
       // User comment (limited HTML, heavily sanitized)
       Text(comment.content)
-        .modifier
-        .asHTML({
-          customSanitizer: sanitizeComment
+        .modifier.asHTML({
+          customSanitizer: sanitizeComment,
         })
         .fontSize(14)
         .lineHeight(1.4)
         .marginTop(4)
         .build(),
-      
+
       // Timestamp (plain text, no HTML)
       Text(comment.timestamp)
-        .modifier
-        .fontSize(12)
+        .modifier.fontSize(12)
         .opacity(0.6)
         .marginTop(8)
-        .build()
-    ]
+        .build(),
+    ],
   })
-  .modifier
-  .padding(16)
-  .backgroundColor('#F8F9FA')
-  .cornerRadius(6)
-  .marginBottom(12)
-  .build()
+    .modifier.padding(16)
+    .backgroundColor('#F8F9FA')
+    .cornerRadius(6)
+    .marginBottom(12)
+    .build()
 }
 ```
 
@@ -559,34 +616,57 @@ const EmailPreview = (templateHtml: string) => {
   const sanitizeEmailTemplate = (html: string) => {
     // Remove server-side template syntax but keep HTML structure
     return html
-      .replace(/\{\{.*?\}\}/g, '[VARIABLE]')  // Replace template variables
-      .replace(/<\?.*?\?>/g, '')              // Remove PHP tags
-      .replace(/<%.*?%>/g, '')                // Remove ASP tags
+      .replace(/\{\{.*?\}\}/g, '[VARIABLE]') // Replace template variables
+      .replace(/<\?.*?\?>/g, '') // Remove PHP tags
+      .replace(/<%.*?%>/g, '') // Remove ASP tags
   }
 
   return Text(templateHtml)
-    .modifier
-    .asHTML({
+    .modifier.asHTML({
       customSanitizer: sanitizeEmailTemplate,
       allowedTags: [
-        'html', 'head', 'body', 'meta', 'title',  // Email structure
-        'table', 'tr', 'td', 'th', 'thead', 'tbody',  // Email layout
-        'div', 'span', 'p', 'br', 'a', 'img',  // Content
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',   // Headers
-        'strong', 'em', 'b', 'i', 'u',         // Formatting
-        'ul', 'ol', 'li'                       // Lists
+        'html',
+        'head',
+        'body',
+        'meta',
+        'title', // Email structure
+        'table',
+        'tr',
+        'td',
+        'th',
+        'thead',
+        'tbody', // Email layout
+        'div',
+        'span',
+        'p',
+        'br',
+        'a',
+        'img', // Content
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6', // Headers
+        'strong',
+        'em',
+        'b',
+        'i',
+        'u', // Formatting
+        'ul',
+        'ol',
+        'li', // Lists
       ],
       allowedAttributes: {
-        '*': ['class', 'id', 'style'],  // Email needs inline styles
-        'a': ['href', 'target', 'rel'],
-        'img': ['src', 'alt', 'width', 'height', 'border'],
-        'table': ['width', 'height', 'border', 'cellspacing', 'cellpadding'],
-        'td': ['width', 'height', 'align', 'valign', 'colspan', 'rowspan'],
-        'meta': ['charset', 'name', 'content']
-      }
+        '*': ['class', 'id', 'style'], // Email needs inline styles
+        a: ['href', 'target', 'rel'],
+        img: ['src', 'alt', 'width', 'height', 'border'],
+        table: ['width', 'height', 'border', 'cellspacing', 'cellpadding'],
+        td: ['width', 'height', 'align', 'valign', 'colspan', 'rowspan'],
+        meta: ['charset', 'name', 'content'],
+      },
     })
-    .modifier
-    .fontFamily('system-ui, -apple-system, sans-serif')
+    .modifier.fontFamily('system-ui, -apple-system, sans-serif')
     .fontSize(14)
     .lineHeight(1.4)
     .build()
@@ -598,6 +678,7 @@ const EmailPreview = (templateHtml: string) => {
 ### Common Issues
 
 #### Content Not Rendering
+
 ```typescript
 // Issue: Empty output
 Text('<div>Content</div>').modifier.asHTML().build()
@@ -605,23 +686,20 @@ Text('<div>Content</div>').modifier.asHTML().build()
 
 // Solution: Add explicit allowed tags
 Text('<div>Content</div>')
-  .modifier
-  .asHTML({
-    allowedTags: ['div', 'p', 'span']  // Add div to allowed tags
+  .modifier.asHTML({
+    allowedTags: ['div', 'p', 'span'], // Add div to allowed tags
   })
   .build()
 ```
 
 #### Development Warnings
+
 ```typescript
 // Issue: Console spam with security warnings
 Text(content).modifier.asHTML().build()
 
 // Solution: Suppress warnings for known-safe content
-Text(content)
-  .modifier
-  .asHTML({ __suppressWarnings: true })
-  .build()
+Text(content).modifier.asHTML({ __suppressWarnings: true }).build()
 
 // Or: Fix the content to remove dangerous patterns
 const safeContent = content.replace(/<script.*?<\/script>/gi, '')
@@ -629,16 +707,16 @@ Text(safeContent).modifier.asHTML().build()
 ```
 
 #### Performance Issues
+
 ```typescript
 // Issue: Slow rendering with large content
 Text(largeHtmlContent).modifier.asHTML().build()
 
 // Solution: Optimize for trusted content
 Text(largeHtmlContent)
-  .modifier
-  .asHTML({
-    validateDOM: false,      // Skip DOM validation
-    customPatterns: []       // Skip custom pattern checks
+  .modifier.asHTML({
+    validateDOM: false, // Skip DOM validation
+    customPatterns: [], // Skip custom pattern checks
   })
   .build()
 ```
@@ -652,10 +730,7 @@ Text(largeHtmlContent)
 element.innerHTML = userContent
 
 // After: Secure asHTML modifier
-Text(userContent)
-  .modifier
-  .asHTML()
-  .build()
+Text(userContent).modifier.asHTML().build()
 ```
 
 ### From Manual Sanitization
@@ -667,9 +742,8 @@ element.innerHTML = sanitized
 
 // After: Integrated with asHTML
 Text(content)
-  .modifier
-  .asHTML({
-    customSanitizer: DOMPurify.sanitize
+  .modifier.asHTML({
+    customSanitizer: DOMPurify.sanitize,
   })
   .build()
 ```
@@ -679,6 +753,7 @@ Text(content)
 The `.asHTML()` modifier provides a secure, developer-friendly way to render HTML content in TachUI applications. By following the security best practices outlined in this guide, you can safely handle rich content while protecting your users from XSS attacks.
 
 Key takeaways:
+
 - Always use the modifier with security in mind
 - Classify your content sources and apply appropriate restrictions
 - Consider using DOMPurify for production applications with user-generated content

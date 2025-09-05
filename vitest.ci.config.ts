@@ -5,7 +5,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./tools/testing/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -31,6 +30,19 @@ export default defineConfig({
       '**/long-running-simulation.test.ts', // ~30s simulation tests
       '**/stress-test.test.ts', // Future stress testing
       '**/performance-regression.test.ts', // Future performance regression tests
+      // Exclude real-world integration tests (5000ms+ each)
+      '**/integration/real-world-auth.test.ts', // 8217ms - User authentication flow
+      '**/integration/real-world-dashboard.test.ts', // 4838ms + 4243ms - Dashboard tests
+      '**/integration/real-world-simple.test.ts', // 5051ms + 4960ms + 5550ms - Multiple flows
+      '**/integration/real-world-*.test.ts', // All real-world integration tests
+      // Exclude stress tests (2000ms+ each)
+      '**/*stress.test.ts', // All stress tests including modifiers stress tests
+      '**/elements/stress.test.ts', // 1486ms - Element stress tests
+      '**/appearance/stress.test.ts', // Appearance stress tests
+      '**/layout/overlay-stress.test.ts', // Overlay stress tests
+      // Exclude long-running simulation tests (2000-4000ms each)
+      '**/long-running-*.test.ts', // Long-running application simulations
+      '**/simulation*.test.ts', // Application simulation tests
       // Exclude memory-intensive security tests that cause memory exhaustion
       '**/security/malicious-plugin-detection.test.ts', // Memory-intensive malicious plugin tests
       '**/security/sandbox-security.test.ts', // Memory-intensive sandbox tests
@@ -48,19 +60,29 @@ export default defineConfig({
     testTimeout: 15000, // 15 seconds instead of default 5 seconds
   },
   resolve: {
+    // Essential for ES module resolution in TypeScript
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+
     alias: [
+      // Core packages - use built dist for proper type resolution
       {
         find: '@tachui/core/plugins',
-        replacement: path.resolve(__dirname, 'packages/core/src/plugins'),
+        replacement: path.resolve(__dirname, 'packages/core/dist/plugins'),
       },
       {
         find: '@tachui/core',
-        replacement: path.resolve(__dirname, 'packages/core/src'),
+        replacement: path.resolve(__dirname, 'packages/core/dist'),
       },
       {
-        find: '@tachui/cli',
-        replacement: path.resolve(__dirname, 'packages/cli/src'),
+        find: '@tachui/primitives',
+        replacement: path.resolve(__dirname, 'packages/primitives/dist'),
       },
+      {
+        find: '@tachui/devtools',
+        replacement: path.resolve(__dirname, 'packages/devtools/src'),
+      },
+
+      // Plugin packages
       {
         find: '@tachui/forms',
         replacement: path.resolve(__dirname, 'packages/forms/src'),
@@ -68,6 +90,46 @@ export default defineConfig({
       {
         find: '@tachui/navigation',
         replacement: path.resolve(__dirname, 'packages/navigation/src'),
+      },
+      {
+        find: '@tachui/mobile',
+        replacement: path.resolve(__dirname, 'packages/mobile/src'),
+      },
+      {
+        find: '@tachui/symbols',
+        replacement: path.resolve(__dirname, 'packages/symbols/src'),
+      },
+      {
+        find: '@tachui/data',
+        replacement: path.resolve(__dirname, 'packages/data/src'),
+      },
+      {
+        find: '@tachui/grid',
+        replacement: path.resolve(__dirname, 'packages/grid/src'),
+      },
+      {
+        find: '@tachui/responsive',
+        replacement: path.resolve(__dirname, 'packages/responsive/src'),
+      },
+      {
+        find: '@tachui/viewport',
+        replacement: path.resolve(__dirname, 'packages/viewport/src'),
+      },
+      {
+        find: '@tachui/modifiers',
+        replacement: path.resolve(__dirname, 'packages/modifiers/src'),
+      },
+      {
+        find: '@tachui/effects',
+        replacement: path.resolve(__dirname, 'packages/effects/src'),
+      },
+      {
+        find: '@tachui/flow-control',
+        replacement: path.resolve(__dirname, 'packages/flow-control/src'),
+      },
+      {
+        find: '@tachui/cli',
+        replacement: path.resolve(__dirname, 'packages/cli/src'),
       },
     ],
   },

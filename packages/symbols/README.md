@@ -26,11 +26,32 @@ npm install @tachui/core @tachui/symbols
 pnpm add @tachui/core @tachui/symbols
 ```
 
+### Using Modifiers
+
+To use modifiers with Symbol components, you also need to install and import the modifiers package:
+
+```bash
+npm install @tachui/modifiers
+# or
+pnpm add @tachui/modifiers
+```
+
+Then import it in your application:
+
+```typescript
+import '@tachui/modifiers' // Registers all modifiers
+import { Symbol } from '@tachui/symbols'
+
+// Now you can use modifiers
+Symbol('heart').modifier.padding(16).foregroundColor('#ff0000').build()
+```
+
 ## Quick Start
 
 ### Basic Usage
 
 ```typescript
+import '@tachui/modifiers' // Required for modifier support
 import { VStack, HStack, Text } from '@tachui/core'
 import { Symbol } from '@tachui/symbols'
 

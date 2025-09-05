@@ -61,7 +61,7 @@ export const TextFieldFormatters = {
   titleCase: (value: string): string => {
     return value.replace(
       /\w\S*/g,
-      (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+      txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
     )
   },
 

@@ -1,6 +1,6 @@
 {
   "name": "@tachui/core",
-  "version": "0.1.0",
+  "version": "0.8.0-alpha",
   "description": "tachUI core framework with reactive system and compiler",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -40,6 +40,38 @@
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js"
     },
+    "./modifiers": {
+      "types": "./dist/modifiers/index.d.ts",
+      "import": "./dist/modifiers/index.js"
+    },
+    "./modifiers/base": {
+      "types": "./dist/modifiers/base.d.ts",
+      "import": "./dist/modifiers/base.js"
+    },
+    "./modifiers/types": {
+      "types": "./dist/modifiers/types.d.ts",
+      "import": "./dist/modifiers/types.js"
+    },
+    "./modifiers/registry": {
+      "types": "./dist/modifiers/registry.d.ts",
+      "import": "./dist/modifiers/registry.js"
+    },
+    "./runtime/types": {
+      "types": "./dist/runtime/types.d.ts",
+      "import": "./dist/runtime/types.js"
+    },
+    "./reactive/types": {
+      "types": "./dist/reactive/types.d.ts",
+      "import": "./dist/reactive/types.js"
+    },
+    "./css-classes": {
+      "types": "./dist/css-classes/index.d.ts",
+      "import": "./dist/css-classes/index.js"
+    },
+    "./constants/layout": {
+      "types": "./dist/constants/layout.d.ts",
+      "import": "./dist/constants/layout.js"
+    },
     "./plugins": {
       "types": "./dist/plugins/index.d.ts",
       "import": "./dist/plugins/index.js"
@@ -59,8 +91,8 @@
   "scripts": {
     "build": "rm -rf dist && vite build && tsc --project tsconfig.build.json",
     "dev": "vite build --watch",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ci": "npm run test:run",
@@ -89,12 +121,15 @@
     "migrate": "node scripts/migration-tool.js",
     "migrate:fix": "node scripts/migration-tool.js --fix"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@tachui/devtools": "workspace:*",
+    "@tachui/primitives": "workspace:*",
+    "@tachui/modifiers": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/jsdom": "^21.1.6",
     "@vitest/coverage-v8": "^1.0.0",
-    "@playwright/test": "^1.40.0",
     "jsdom": "^23.2.0",
     "tsx": "^4.7.1",
     "typedoc": "^0.28.7",

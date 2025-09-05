@@ -6,8 +6,9 @@
  */
 
 import type { ComponentInstance } from '@tachui/core'
-import { Button, createSignal, HStack, HTML, Text, VStack } from '@tachui/core'
-import { NavigationManager } from './navigation-manager'
+import { createSignal } from '@tachui/core'
+import { Button, HStack, HTML, Text, VStack } from '@tachui/primitives'
+import { NavigationManagerSingleton } from './navigation-manager'
 import { createNavigationRouter } from './navigation-router'
 import { _setNavigationEnvironmentContext } from './navigation-environment'
 import type {
@@ -223,7 +224,7 @@ export function NavigationView(
   const router = createNavigationRouter(navigationContext)
 
   // Register with navigation manager
-  NavigationManager.getInstance().registerRouter(navigationId, router)
+  NavigationManagerSingleton.getInstance().registerRouter(navigationId, router)
 
   // Navigation bar component
   const NavigationBar = () => {
@@ -314,7 +315,7 @@ export function NavigationView(
 
   // Set up cleanup
   const cleanup = () => {
-    NavigationManager.getInstance().unregisterRouter(navigationId)
+    NavigationManagerSingleton.getInstance().unregisterRouter(navigationId)
     // Clear context if this was the current one
     if (_currentNavigationContext === navigationContext) {
       _setCurrentNavigationContext(null)

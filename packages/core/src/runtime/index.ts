@@ -46,20 +46,8 @@ export {
   useContext,
   withProvider,
 } from './context'
-// Development tools
-export {
-  type ComponentTreeNode,
-  type DebugEvent,
-  type DevState,
-  DevTools,
-  type DevToolsConfig,
-  devUtils,
-  enableDevelopmentMode,
-  enablePerformanceTracking,
-  getComponentTree,
-  getDevTools,
-  globalDevTools,
-} from './dev-tools'
+// Development tools moved to @tachui/devtools
+// Import from @tachui/devtools instead
 // DOM Bridge - Component mounting system
 export {
   mountRoot,
@@ -71,79 +59,12 @@ export {
   unmountComponentEnhanced,
   updateComponent,
 } from './dom-bridge'
-// Error handling and boundaries
-export {
-  createErrorBoundary,
-  ErrorBoundary,
-  type ErrorBoundaryProps,
-  type ErrorBoundaryState,
-  type ErrorCategory,
-  type ErrorHandler,
-  type ErrorHandlingConfig,
-  ErrorManager,
-  type ErrorRecoveryConfig,
-  type ErrorRecoveryStrategy,
-  type ErrorReporter,
-  type ErrorSeverity,
-  errorReporters,
-  errorUtils,
-  globalErrorManager,
-  type TachUIError,
-} from './error-boundary'
-// Error recovery
-export {
-  CircuitBreaker,
-  type CircuitBreakerConfig,
-  type CircuitBreakerState,
-  type FallbackConfig,
-  FallbackManager,
-  RecoveryOrchestrator,
-  RetryPolicy,
-  type RetryPolicyConfig,
-  recoveryPresets,
-  recoveryUtils,
-} from './error-recovery'
-// Error reporting and logging
-export {
-  type ErrorAggregation,
-  ErrorAggregator,
-  globalErrorAggregator,
-  globalLogger,
-  type LogEntry,
-  type Logger,
-  type LogLevel,
-  type ReportDestination,
-  type ReportingConfig,
-  reportDestinations,
-  reportingUtils,
-  StructuredLogger,
-  setupErrorReporting,
-} from './error-reporting'
-// Error utilities and debugging
-export {
-  devErrorUtils,
-  type ErrorAnalysis,
-  ErrorPatternDetector,
-  errorDebugUtils,
-  type PerformanceImpact,
-  PerformanceImpactAnalyzer,
-  type StackTraceAnalysis,
-  StackTraceAnalyzer,
-} from './error-utils'
+// Error handling system moved to @tachui/devtools - import from that package
 export { LifecycleManager } from './lifecycle'
 // Runtime utilities
 export { mount, unmount, updateProps } from './mounting'
 export { lazy, memo } from './optimization'
-export {
-  type ComponentMetrics,
-  globalPerformanceMonitor,
-  type MonitoringOptions,
-  type PerformanceListener,
-  type PerformanceMetric,
-  PerformanceMonitor,
-  performanceUtils,
-  type ReactiveMetrics,
-} from './performance'
+// Performance monitoring moved to @tachui/devtools - import from that package
 // Props and children handling
 export {
   ChildrenManager,
@@ -159,7 +80,8 @@ export { DOMRenderer, h, renderComponent, text } from './renderer'
 // Element override system (Tag Specification Enhancement)
 export * from './element-override'
 export * from './semantic-role-manager'
-export * from './development-warnings'
+// Development warnings moved to @tachui/devtools
+// Import from @tachui/devtools instead
 // Enhanced lifecycle hooks (Phase 1)
 export {
   AnimationManager,

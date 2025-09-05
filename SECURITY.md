@@ -30,6 +30,7 @@ For less critical issues (documentation, examples, development tools):
 
 | Version       | Supported          |
 | ------------- | ------------------ |
+| 0.8.x (alpha) | :white_check_mark: |
 | 0.7.x (alpha) | :white_check_mark: |
 | < 0.7.0       | :x:                |
 

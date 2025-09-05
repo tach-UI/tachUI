@@ -9,6 +9,7 @@ dist/
 # Generated TypeScript declarations (should only be in dist/)
 src/**/*.d.ts
 src/**/*.d.ts.map
+# Keep hand-written global type definitions
 !src/**/globals.d.ts
 
 # Environment variables

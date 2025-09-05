@@ -6,9 +6,15 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { HTML, Layout, Text } from '../../src/components'
-import { layoutModifiers } from '../../src/modifiers/core'
+import { HTML } from '@tachui/primitives'
+import { Layout } from '../../src/components'
+import { Text } from '@tachui/primitives'
+import { layoutModifiers } from '../../src/modifiers/presets'
 import { createSignal } from '../../src/reactive'
+
+// Import plugin packages to trigger auto-registration
+import '@tachui/effects'
+import '@tachui/modifiers'
 
 // Mock DOM environment
 function createMockElement(tagName: string = 'div'): HTMLElement {
@@ -33,7 +39,10 @@ function createMockElement(tagName: string = 'div'): HTMLElement {
 vi.mock('../../src/runtime/renderer', () => ({
   DOMRenderer: vi.fn().mockImplementation(() => ({
     createElement: vi.fn((tag: string) => createMockElement(tag)),
-    createTextNode: vi.fn((text: string) => ({ textContent: text, nodeType: 3 })),
+    createTextNode: vi.fn((text: string) => ({
+      textContent: text,
+      nodeType: 3,
+    })),
     appendChild: vi.fn(),
     insertBefore: vi.fn(),
     removeChild: vi.fn(),
@@ -79,7 +88,9 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
         .build()
 
       // Should have layout modifier with layoutPriority
-      const layoutMod = priorityComponent.modifiers.find((m) => m.type === 'layout')
+      const layoutMod = priorityComponent.modifiers.find(
+        m => m.type === 'layout'
+      )
       expect(layoutMod).toBeDefined()
       expect(layoutMod?.properties).toEqual({ layoutPriority: 20 })
     })
@@ -143,7 +154,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
         'bottomTrailing',
       ]
 
-      alignments.forEach((alignment) => {
+      alignments.forEach(alignment => {
         const zstack = Layout.ZStack({
           children: [backgroundChild, priorityChild],
           alignment,
@@ -216,9 +227,15 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
       const outerZStack = Layout.ZStack({
         children: [
-          Text('Background').modifier.layoutPriority(1).backgroundColor('#f9f9f9').build(),
+          Text('Background')
+            .modifier.layoutPriority(1)
+            .backgroundColor('#f9f9f9')
+            .build(),
           innerWithPriority,
-          Text('Overlay').modifier.layoutPriority(10).foregroundColor('#ffffff').build(),
+          Text('Overlay')
+            .modifier.layoutPriority(10)
+            .foregroundColor('#ffffff')
+            .build(),
         ],
         alignment: 'center',
       })
@@ -228,7 +245,10 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
     })
 
     it('should handle equal layoutPriority values', () => {
-      const child1 = Text('Child 1').modifier.layoutPriority(10).backgroundColor('#007AFF').build()
+      const child1 = Text('Child 1')
+        .modifier.layoutPriority(10)
+        .backgroundColor('#007AFF')
+        .build()
 
       const child2 = Text('Child 2')
         .modifier.layoutPriority(10) // Same priority as child1
@@ -279,11 +299,15 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
       expect(complexComponent.modifiers).toHaveLength(6)
 
       // Should have layout modifier with multiple properties
-      const layoutMods = complexComponent.modifiers.filter((m) => m.type === 'layout')
+      const layoutMods = complexComponent.modifiers.filter(
+        m => m.type === 'layout'
+      )
       expect(layoutMods.length).toBeGreaterThan(0)
 
       // Check that layoutPriority is included
-      const hasLayoutPriority = layoutMods.some((mod) => 'layoutPriority' in mod.properties)
+      const hasLayoutPriority = layoutMods.some(
+        mod => 'layoutPriority' in mod.properties
+      )
       expect(hasLayoutPriority).toBe(true)
     })
 
@@ -300,7 +324,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
         .transition('all', 200)
         .build()
 
-      const modifierTypes = interactiveComponent.modifiers.map((m) => m.type)
+      const modifierTypes = interactiveComponent.modifiers.map(m => m.type)
       expect(modifierTypes).toContain('layout')
       expect(modifierTypes).toContain('appearance')
       expect(modifierTypes).toContain('interaction')
@@ -314,19 +338,27 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
         .modifier.layoutPriority(Number.MAX_SAFE_INTEGER)
         .build()
 
-      expect(veryHighPriority.modifiers[0].properties.layoutPriority).toBe(Number.MAX_SAFE_INTEGER)
+      expect(veryHighPriority.modifiers[0].properties.layoutPriority).toBe(
+        Number.MAX_SAFE_INTEGER
+      )
     })
 
     it('should handle zero layoutPriority correctly', () => {
-      const zeroPriority = Text('Zero Priority').modifier.layoutPriority(0).build()
+      const zeroPriority = Text('Zero Priority')
+        .modifier.layoutPriority(0)
+        .build()
 
       expect(zeroPriority.modifiers[0].properties.layoutPriority).toBe(0)
     })
 
     it('should handle fractional layoutPriority values', () => {
-      const fractionalPriority = Text('Fractional Priority').modifier.layoutPriority(2.5).build()
+      const fractionalPriority = Text('Fractional Priority')
+        .modifier.layoutPriority(2.5)
+        .build()
 
-      expect(fractionalPriority.modifiers[0].properties.layoutPriority).toBe(2.5)
+      expect(fractionalPriority.modifiers[0].properties.layoutPriority).toBe(
+        2.5
+      )
     })
   })
 
@@ -378,7 +410,11 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
     it('should support SwiftUI-style priority-based sizing in flexible layouts', () => {
       // SwiftUI example: flexible sidebar with fixed content
       const sidebar = Layout.VStack({
-        children: [Text('Sidebar Item 1'), Text('Sidebar Item 2'), Text('Sidebar Item 3')],
+        children: [
+          Text('Sidebar Item 1'),
+          Text('Sidebar Item 2'),
+          Text('Sidebar Item 3'),
+        ],
         spacing: 12,
       })
         .modifier.layoutPriority(1) // Lower priority - can shrink
@@ -389,7 +425,10 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
       const mainContent = Layout.VStack({
         children: [
-          Text('Main Content Title').modifier.fontSize(24).fontWeight('bold').build(),
+          Text('Main Content Title')
+            .modifier.fontSize(24)
+            .fontWeight('bold')
+            .build(),
           Text('This is the main content area that should maintain its size.')
             .modifier.fontSize(16)
             .build(),

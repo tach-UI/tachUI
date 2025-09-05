@@ -5,6 +5,7 @@ The Text component is one of TachUI's most fundamental components, providing com
 ## Overview
 
 The Text component displays text content with full support for:
+
 - Reactive content updates
 - Typography presets following design system patterns
 - Advanced text formatting and styling
@@ -16,29 +17,25 @@ The Text component displays text content with full support for:
 ### Simple Text
 
 ```typescript
-import { Text } from '@tachui/core'
+import { Text } from '@tachui/primitives'
 
 // Static text
-Text("Hello, World!")
-  .modifier
-  .build()
+Text('Hello, World!').modifier.build()
 ```
 
 ### Reactive Text
 
 ```typescript
-import { Text, createSignal } from '@tachui/core'
+import { Text } from '@tachui/primitives'
+import { createSignal } from '@tachui/core'
 
-const [message, setMessage] = createSignal("Initial message")
+const [message, setMessage] = createSignal('Initial message')
 
 // Reactive text that updates automatically
-Text(message)
-  .modifier
-  .foregroundColor('#333')
-  .build()
+Text(message).modifier.foregroundColor('#333').build()
 
 // Update the text
-setMessage("Updated message!")
+setMessage('Updated message!')
 ```
 
 ### Functional Text
@@ -46,10 +43,7 @@ setMessage("Updated message!")
 ```typescript
 const currentTime = () => new Date().toLocaleTimeString()
 
-Text(currentTime)
-  .modifier
-  .font({ family: 'monospace', size: 16 })
-  .build()
+Text(currentTime).modifier.font({ family: 'monospace', size: 16 }).build()
 ```
 
 ## Typography Presets
@@ -57,97 +51,79 @@ Text(currentTime)
 TachUI provides built-in typography presets that follow system design patterns:
 
 ```typescript
-import { TextStyles } from '@tachui/core'
+import { TextStyles } from '@tachui/primitives'
 
 // Large title
-TextStyles.LargeTitle("Welcome")
-  .modifier
-  .foregroundColor('#000')
-  .build()
+TextStyles.LargeTitle('Welcome').modifier.foregroundColor('#000').build()
 
-// Regular title  
-TextStyles.Title("Section Title")
-  .modifier
-  .build()
+// Regular title
+TextStyles.Title('Section Title').modifier.build()
 
 // Body text
-TextStyles.Body("This is body text with proper line height and sizing.")
-  .modifier
-  .build()
+TextStyles.Body(
+  'This is body text with proper line height and sizing.'
+).modifier.build()
 
 // Caption text
-TextStyles.Caption("Small caption text")
-  .modifier
-  .opacity(0.7)
-  .build()
+TextStyles.Caption('Small caption text').modifier.opacity(0.7).build()
 ```
 
 ### Available Typography Presets
 
-| Preset | Size | Weight | Line Height | Use Case |
-|--------|------|---------|-------------|----------|
-| `LargeTitle` | 34px | 400 | 1.2 | Main page titles |
-| `Title` | 28px | 400 | 1.3 | Section headers |
-| `Title2` | 22px | 400 | 1.3 | Sub-section headers |
-| `Title3` | 20px | 400 | 1.4 | Minor headers |
-| `Headline` | 17px | 600 | 1.4 | Emphasized text |
-| `Body` | 17px | 400 | 1.5 | Main content |
-| `Callout` | 16px | 400 | 1.4 | Highlighted content |
-| `Subheadline` | 15px | 400 | 1.4 | Secondary content |
-| `Footnote` | 13px | 400 | 1.3 | Footnotes |
-| `Caption` | 12px | 400 | 1.2 | Image captions |
-| `Caption2` | 11px | 400 | 1.1 | Fine print |
+| Preset        | Size | Weight | Line Height | Use Case            |
+| ------------- | ---- | ------ | ----------- | ------------------- |
+| `LargeTitle`  | 34px | 400    | 1.2         | Main page titles    |
+| `Title`       | 28px | 400    | 1.3         | Section headers     |
+| `Title2`      | 22px | 400    | 1.3         | Sub-section headers |
+| `Title3`      | 20px | 400    | 1.4         | Minor headers       |
+| `Headline`    | 17px | 600    | 1.4         | Emphasized text     |
+| `Body`        | 17px | 400    | 1.5         | Main content        |
+| `Callout`     | 16px | 400    | 1.4         | Highlighted content |
+| `Subheadline` | 15px | 400    | 1.4         | Secondary content   |
+| `Footnote`    | 13px | 400    | 1.3         | Footnotes           |
+| `Caption`     | 12px | 400    | 1.2         | Image captions      |
+| `Caption2`    | 11px | 400    | 1.1         | Fine print          |
 
 ## Text Formatting
 
 ### Using TextFormat Utilities
 
 ```typescript
-import { TextFormat } from '@tachui/core'
+import { TextFormat } from '@tachui/primitives'
 
 // Bold text
-TextFormat.bold("Important message")
-  .modifier
-  .build()
+TextFormat.bold('Important message').modifier.build()
 
 // Italic text
-TextFormat.italic("Emphasized text")
-  .modifier
-  .build()
+TextFormat.italic('Emphasized text').modifier.build()
 
 // Underlined text
-TextFormat.underline("Underlined text")
-  .modifier
-  .build()
+TextFormat.underline('Underlined text').modifier.build()
 
 // Monospace text
-TextFormat.monospace("code snippet")
-  .modifier
-  .backgroundColor('#f5f5f5')
+TextFormat.monospace('code snippet')
+  .modifier.backgroundColor('#f5f5f5')
   .padding(4)
   .build()
 
 // Multiple formatting options
-TextFormat.formatted("Multi-formatted text", {
+TextFormat.formatted('Multi-formatted text', {
   bold: true,
   italic: true,
-  underline: true
-})
-  .modifier
-  .build()
+  underline: true,
+}).modifier.build()
 ```
 
 ### Manual Font Styling
 
 ```typescript
-Text("Custom styled text")
-  .modifier
-  .font({
+Text('Custom styled text')
+  .modifier.font({
     family: 'Georgia, serif',
     size: 18,
     weight: '600',
     style: 'italic',
-    variant: 'small-caps'
+    variant: 'small-caps',
   })
   .build()
 ```
@@ -157,9 +133,8 @@ Text("Custom styled text")
 ### Text Alignment and Decoration
 
 ```typescript
-Text("Centered text")
-  .modifier
-  .textAlign('center')
+Text('Centered text')
+  .modifier.textAlign('center')
   .textDecoration('underline')
   .textTransform('uppercase')
   .build()
@@ -168,9 +143,8 @@ Text("Centered text")
 ### Line Spacing and Letter Spacing
 
 ```typescript
-Text("Spaced text with custom typography")
-  .modifier
-  .lineHeight(1.8)
+Text('Spaced text with custom typography')
+  .modifier.lineHeight(1.8)
   .letterSpacing('2px')
   .wordSpacing('4px')
   .build()
@@ -180,16 +154,15 @@ Text("Spaced text with custom typography")
 
 ```typescript
 // Limit to 3 lines with tail truncation
-Text("This is a very long text that will be truncated after three lines...")
-  .modifier
-  .frame({ width: 200 })
+Text('This is a very long text that will be truncated after three lines...')
+  .modifier.frame({ width: 200 })
   .lineHeight(1.4)
   .css({
     display: '-webkit-box',
     '-webkit-line-clamp': '3',
     '-webkit-box-orient': 'vertical',
     overflow: 'hidden',
-    textOverflow: 'ellipsis'
+    textOverflow: 'ellipsis',
   })
   .build()
 ```
@@ -200,27 +173,20 @@ Text("This is a very long text that will be truncated after three lines...")
 
 ```typescript
 // Heading text
-Text("Page Title")
-  .modifier
-  .accessibilityRole('heading')
+Text('Page Title')
+  .modifier.accessibilityRole('heading')
   .accessibilityLevel(1)
   .font(Typography.largeTitle)
   .build()
 
 // Label text
-Text("Username:")
-  .modifier
-  .accessibilityRole('label')
-  .build()
+Text('Username:').modifier.accessibilityRole('label').build()
 ```
 
 ### Accessibility Labels
 
 ```typescript
-Text("👍")
-  .modifier
-  .accessibilityLabel("Thumbs up emoji")
-  .build()
+Text('👍').modifier.accessibilityLabel('Thumbs up emoji').build()
 ```
 
 ## Interactive Text
@@ -232,9 +198,8 @@ const handleClick = () => {
   console.log('Text clicked!')
 }
 
-Text("Click me")
-  .modifier
-  .foregroundColor('#007AFF')
+Text('Click me')
+  .modifier.foregroundColor('#007AFF')
   .textDecoration('underline')
   .cursor('pointer')
   .onTap(handleClick)
@@ -248,10 +213,7 @@ const handleLongPress = () => {
   console.log('Long press detected')
 }
 
-Text("Long press me")
-  .modifier
-  .onLongPress(handleLongPress)
-  .build()
+Text('Long press me').modifier.onLongPress(handleLongPress).build()
 ```
 
 ## Responsive Typography
@@ -263,11 +225,10 @@ import { createSignal } from '@tachui/core'
 
 const [isMobile, setIsMobile] = createSignal(window.innerWidth < 768)
 
-Text("Responsive text")
-  .modifier
-  .font({
-    size: () => isMobile() ? 16 : 20,
-    weight: '400'
+Text('Responsive text')
+  .modifier.font({
+    size: () => (isMobile() ? 16 : 20),
+    weight: '400',
   })
   .build()
 ```
@@ -275,9 +236,8 @@ Text("Responsive text")
 ### Responsive Line Height
 
 ```typescript
-Text("Text with responsive line height")
-  .modifier
-  .lineHeight(() => isMobile() ? 1.4 : 1.6)
+Text('Text with responsive line height')
+  .modifier.lineHeight(() => (isMobile() ? 1.4 : 1.6))
   .build()
 ```
 
@@ -287,26 +247,21 @@ Text("Text with responsive line height")
 
 ```typescript
 // Static color
-Text("Colored text")
-  .modifier
-  .foregroundColor('#FF6B6B')
-  .build()
+Text('Colored text').modifier.foregroundColor('#FF6B6B').build()
 
 // Reactive color
 const [isDark, setIsDark] = createSignal(false)
 
-Text("Theme-aware text")
-  .modifier
-  .foregroundColor(() => isDark() ? '#FFFFFF' : '#000000')
+Text('Theme-aware text')
+  .modifier.foregroundColor(() => (isDark() ? '#FFFFFF' : '#000000'))
   .build()
 ```
 
 ### Background Colors
 
 ```typescript
-Text("Text with background")
-  .modifier
-  .backgroundColor('#FFE66D')
+Text('Text with background')
+  .modifier.backgroundColor('#FFE66D')
   .padding(8)
   .cornerRadius(4)
   .build()
@@ -317,32 +272,22 @@ Text("Text with background")
 ### Text in Layouts
 
 ```typescript
-import { VStack, HStack } from '@tachui/core'
+import { VStack, HStack } from '@tachui/primitives'
 
 VStack([
-  TextStyles.Title("Article Title")
-    .modifier
-    .textAlign('center')
-    .build(),
-    
+  TextStyles.Title('Article Title').modifier.textAlign('center').build(),
+
   HStack([
-    TextStyles.Caption("By Author")
-      .modifier
-      .opacity(0.7)
-      .build(),
-      
+    TextStyles.Caption('By Author').modifier.opacity(0.7).build(),
+
     Spacer(),
-    
-    TextStyles.Caption("2 min read")
-      .modifier
-      .opacity(0.7)
-      .build()
+
+    TextStyles.Caption('2 min read').modifier.opacity(0.7).build(),
   ]),
-  
-  TextStyles.Body("Article content goes here...")
-    .modifier
-    .lineHeight(1.6)
-    .build()
+
+  TextStyles.Body('Article content goes here...')
+    .modifier.lineHeight(1.6)
+    .build(),
 ])
 ```
 
@@ -351,34 +296,23 @@ VStack([
 ### Article Header
 
 ```typescript
-const ArticleHeader = (title: string, author: string, date: string) => 
+const ArticleHeader = (title: string, author: string, date: string) =>
   VStack([
     TextStyles.LargeTitle(title)
-      .modifier
-      .textAlign('center')
+      .modifier.textAlign('center')
       .marginBottom(16)
       .build(),
-      
+
     HStack([
-      TextStyles.Subheadline(`By ${author}`)
-        .modifier
-        .opacity(0.8)
-        .build(),
-        
-      TextStyles.Subheadline(" • ")
-        .modifier
-        .opacity(0.5)
-        .build(),
-        
-      TextStyles.Subheadline(date)
-        .modifier
-        .opacity(0.8)
-        .build()
+      TextStyles.Subheadline(`By ${author}`).modifier.opacity(0.8).build(),
+
+      TextStyles.Subheadline(' • ').modifier.opacity(0.5).build(),
+
+      TextStyles.Subheadline(date).modifier.opacity(0.8).build(),
     ])
-      .modifier
-      .justifyContent('center')
+      .modifier.justifyContent('center')
       .marginBottom(24)
-      .build()
+      .build(),
   ])
 ```
 
@@ -387,8 +321,7 @@ const ArticleHeader = (title: string, author: string, date: string) =>
 ```typescript
 const CodeBlock = (code: string) =>
   TextFormat.monospace(code)
-    .modifier
-    .backgroundColor('#1e1e1e')
+    .modifier.backgroundColor('#1e1e1e')
     .foregroundColor('#d4d4d4')
     .padding(16)
     .cornerRadius(8)
@@ -403,8 +336,7 @@ const CodeBlock = (code: string) =>
 ```typescript
 const Badge = (text: string, color: string = '#007AFF') =>
   TextStyles.Caption(text)
-    .modifier
-    .backgroundColor(color)
+    .modifier.backgroundColor(color)
     .foregroundColor('#FFFFFF')
     .padding({ horizontal: 8, vertical: 4 })
     .cornerRadius(12)
@@ -420,15 +352,11 @@ const Badge = (text: string, color: string = '#007AFF') =>
 ```typescript
 const LinkText = (text: string, url: string) =>
   Text(text)
-    .modifier
-    .foregroundColor('#007AFF')
+    .modifier.foregroundColor('#007AFF')
     .textDecoration('underline')
     .cursor('pointer')
     .onTap(() => window.open(url, '_blank'))
-    .onHover((hovered) => hovered ? 
-      { opacity: 0.7 } : 
-      { opacity: 1 }
-    )
+    .onHover(hovered => (hovered ? { opacity: 0.7 } : { opacity: 1 }))
     .build()
 ```
 
@@ -443,13 +371,13 @@ import { createMemo } from '@tachui/core'
 
 const [data, setData] = createSignal([])
 
-const formattedText = createMemo(() => 
-  data().map(item => item.name).join(', ')
+const formattedText = createMemo(() =>
+  data()
+    .map(item => item.name)
+    .join(', ')
 )
 
-Text(formattedText)
-  .modifier
-  .build()
+Text(formattedText).modifier.build()
 ```
 
 ### Large Text Lists
@@ -457,16 +385,13 @@ Text(formattedText)
 For large amounts of text content, consider virtualization:
 
 ```typescript
-import { List } from '@tachui/core'
+import { List } from '@tachui/data'
 
 const LargeTextList = ({ items }: { items: string[] }) =>
   List({
     data: items,
     renderItem: (text, index) =>
-      TextStyles.Body(text)
-        .modifier
-        .padding(8)
-        .build()
+      TextStyles.Body(text).modifier.padding(8).build(),
   })
 ```
 
@@ -486,7 +411,7 @@ Text(
 ```typescript
 interface TextProps {
   content?: string | (() => string) | Signal<string>
-  
+
   // Typography
   font?: {
     family?: string
@@ -495,7 +420,7 @@ interface TextProps {
     style?: 'normal' | 'italic' | 'oblique'
     variant?: 'normal' | 'small-caps'
   }
-  
+
   // Styling
   color?: string | Signal<string>
   backgroundColor?: string | Signal<string>
@@ -505,17 +430,17 @@ interface TextProps {
   lineHeight?: number | string
   letterSpacing?: number | string
   wordSpacing?: number | string
-  
+
   // Layout
   lineLimit?: number
   truncationMode?: 'head' | 'tail' | 'middle'
   allowsSelection?: boolean
-  
+
   // Accessibility
   accessibilityLabel?: string
   accessibilityRole?: 'text' | 'heading' | 'label'
   accessibilityLevel?: 1 | 2 | 3 | 4 | 5 | 6
-  
+
   // Interactive
   onTap?: () => void
   onLongPress?: () => void
@@ -536,7 +461,7 @@ const Typography = {
   subheadline: { size: 15, weight: '400', lineHeight: 1.4 },
   footnote: { size: 13, weight: '400', lineHeight: 1.3 },
   caption: { size: 12, weight: '400', lineHeight: 1.2 },
-  caption2: { size: 11, weight: '400', lineHeight: 1.1 }
+  caption2: { size: 11, weight: '400', lineHeight: 1.1 },
 }
 ```
 
@@ -551,13 +476,10 @@ The Text component supports secure HTML content rendering through the `.asHTML()
 #### Basic HTML Rendering
 
 ```typescript
-import { Text } from '@tachui/core'
+import { Text } from '@tachui/primitives'
 
 // Simple HTML content
-Text('<p>Welcome to <strong>TachUI</strong>!</p>')
-  .modifier
-  .asHTML()
-  .build()
+Text('<p>Welcome to <strong>TachUI</strong>!</p>').modifier.asHTML().build()
 
 // Rich content with styling
 Text(`
@@ -574,8 +496,7 @@ Text(`
     </blockquote>
   </article>
 `)
-  .modifier
-  .asHTML()
+  .modifier.asHTML()
   .padding(20)
   .backgroundColor('#F8F9FA')
   .cornerRadius(8)
@@ -589,15 +510,11 @@ The `.asHTML()` modifier automatically protects against common XSS attacks:
 ```typescript
 // Dangerous content is automatically sanitized
 Text('<script>alert("xss")</script><p>Safe content</p>')
-  .modifier
-  .asHTML()
+  .modifier.asHTML()
   .build()
 // Result: '<p>Safe content</p>' (script removed)
 
-Text('<img src="x" onerror="alert(1)" alt="Image">')
-  .modifier
-  .asHTML()
-  .build()
+Text('<img src="x" onerror="alert(1)" alt="Image">').modifier.asHTML().build()
 // Result: '<img src="x" alt="Image">' (event handler removed)
 ```
 
@@ -608,21 +525,19 @@ import DOMPurify from 'dompurify'
 
 // Using DOMPurify for comprehensive sanitization
 Text(userGeneratedContent)
-  .modifier
-  .asHTML({
-    customSanitizer: (html: string) => DOMPurify.sanitize(html)
+  .modifier.asHTML({
+    customSanitizer: (html: string) => DOMPurify.sanitize(html),
   })
   .build()
 
 // Restrict to specific tags
 Text(blogContent)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     allowedTags: ['p', 'strong', 'em', 'a', 'ul', 'li', 'blockquote'],
     allowedAttributes: {
       '*': ['class'],
-      'a': ['href', 'target', 'rel']
-    }
+      a: ['href', 'target', 'rel'],
+    },
   })
   .build()
 ```
@@ -632,31 +547,28 @@ Text(blogContent)
 ```typescript
 // User comments - Maximum security
 Text(userComment)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     allowedTags: ['p', 'strong', 'em', 'br'],
-    allowedAttributes: {}
+    allowedAttributes: {},
   })
   .build()
 
 // Editorial content - Balanced security
 Text(articleContent)
-  .modifier
-  .asHTML({
+  .modifier.asHTML({
     allowedTags: ['p', 'strong', 'em', 'a', 'ul', 'li', 'h1', 'h2', 'h3'],
     allowedAttributes: {
       '*': ['class'],
-      'a': ['href', 'target', 'rel']
-    }
+      a: ['href', 'target', 'rel'],
+    },
   })
   .build()
 
 // Trusted server content - Skip sanitization (use with caution)
 Text(trustedTemplate)
-  .modifier
-  .asHTML({ 
+  .modifier.asHTML({
     skipSanitizer: true,
-    __suppressWarnings: true 
+    __suppressWarnings: true,
   })
   .build()
 ```
@@ -676,19 +588,23 @@ For comprehensive documentation on secure HTML rendering, see the [HTML Content 
 ## Troubleshooting
 
 ### Text Not Updating
+
 - Ensure you're using signals or reactive functions for dynamic content
 - Check that the signal is properly set up with `createSignal`
 
 ### Styling Not Applied
+
 - Remember that styling is applied through the modifier system
 - Use `.modifier` before applying styles
 
 ### Poor Performance with Large Text
+
 - Consider text virtualization for very large amounts of text
 - Use `createMemo` for expensive text computations
 - Debounce rapid text updates
 
 ### Accessibility Issues
+
 - Always provide `accessibilityLabel` for non-text content (emojis, symbols)
 - Use proper heading hierarchy with `accessibilityLevel`
 - Ensure sufficient color contrast ratios

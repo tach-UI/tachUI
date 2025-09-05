@@ -1,0 +1,2099 @@
+
+> tachui@0.1.0 test /Users/whoughton/Dev/tach-ui/tachUI
+> vitest run
+
+
+ RUN  v3.2.4 /Users/whoughton/Dev/tach-ui/tachUI
+
+ ❯ packages/modifiers/__tests__/appearance/stress.test.ts (15 tests | 1 failed) 371ms
+   ✓ Appearance Modifiers Stress Tests > High-Volume Clipped Modifier Tests > should handle rapid clipped enable/disable cycles 2ms
+   ✓ Appearance Modifiers Stress Tests > High-Volume Clipped Modifier Tests > should handle many clipped modifier instances 2ms
+   ✓ Appearance Modifiers Stress Tests > High-Volume Clipped Modifier Tests > should handle concurrent clipped applications efficiently 11ms
+   ✓ Appearance Modifiers Stress Tests > High-Volume ClipShape Modifier Tests > should handle many circle clipShape applications 1ms
+   ✓ Appearance Modifiers Stress Tests > High-Volume ClipShape Modifier Tests > should handle many ellipse clipShape applications with parameters 1ms
+   ✓ Appearance Modifiers Stress Tests > High-Volume ClipShape Modifier Tests > should handle complex polygon clipPath generations 0ms
+   ✓ Appearance Modifiers Stress Tests > High-Volume ClipShape Modifier Tests > should handle varied clipShape types efficiently 2ms
+   ✓ Appearance Modifiers Stress Tests > Memory and Resource Management > should not leak memory with many modifier instances 2ms
+   ✓ Appearance Modifiers Stress Tests > Memory and Resource Management > should handle property mutations efficiently 1ms
+   ✓ Appearance Modifiers Stress Tests > Memory and Resource Management > should handle string concatenation efficiently for complex paths 7ms
+   ✓ Appearance Modifiers Stress Tests > Edge Case Stress Tests > should handle rapid shape switching 1ms
+   × Appearance Modifiers Stress Tests > Edge Case Stress Tests > should handle invalid parameters gracefully at scale 336ms
+     → expected 332.56725000000006 to be less than 100
+   ✓ Appearance Modifiers Stress Tests > Edge Case Stress Tests > should handle concurrent applications on different elements 6ms
+   ✓ Appearance Modifiers Stress Tests > Real-World Usage Simulation > should handle typical UI component usage patterns 0ms
+   ✓ Appearance Modifiers Stress Tests > Real-World Usage Simulation > should handle dynamic clipping updates 0ms
+stdout | packages/core/__tests__/performance/baseline-benchmarks.test.ts > Phase 5.1: Performance Baseline Benchmarks > Component Render Performance Baselines > should benchmark basic Text component rendering
+Text Component Render Benchmark: {
+  renderTime: [33m7.790680666666655[39m,
+  memoryPeak: [33m56685360[39m,
+  domNodes: [33m4[39m,
+  status: [32m'pass'[39m
+}
+
+stdout | packages/primitives/__tests__/integration/error-recovery.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/primitives/__tests__/integration/long-running-simulation.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/core/__tests__/integration/real-world-dashboard.test.ts > Phase 4.4: Dashboard with Real-time Data Updates Real-World Scenarios > Complete Dashboard Flow > should handle real-time dashboard updates, interactions, and data refresh
+Dashboard Test Result: {
+  success: [33mtrue[39m,
+  completedSteps: [33m8[39m,
+  totalSteps: [33m8[39m,
+  errors: [],
+  duration: [33m4949[39m,
+  performance: {
+    memoryUsage: { initial: [33m57991224[39m, final: [33m51055320[39m, peak: [33m60401808[39m },
+    domNodes: { initial: [33m119[39m, final: [33m104[39m, peak: [33m139[39m }
+  }
+}
+
+=== Real-World Scenario Report ===
+Scenario: Real-time Dashboard Operations
+Success: ✅
+Completion Rate: 100.0% (8/8)
+Total Duration: 4949ms
+Average Step Duration: 609.9ms
+
+Performance:
+- Memory Usage: 57991224 → 51055320 (Peak: 60401808)
+- DOM Nodes: 119 → 104 (Peak: 139)
+
+
+
+Step Performance:
+- Verify Initial Dashboard State: 675ms
+- Test Manual Data Refresh: 1190ms
+- Test Chart Interactions: 500ms
+- Test Order Search Functionality: 385ms
+- Test Status Filter: 412ms
+- Test Notification Management: 614ms
+- Test Auto-refresh Toggle: 714ms
+- Clear All Notifications: 389ms
+
+
+stdout | packages/core/__tests__/integration/real-world-wizard.test.ts > Phase 4.2: Multi-step Wizard Form Real-World Scenarios > Complete Wizard Flow > should handle complete multi-step wizard form with navigation and validation
+Multi-step Wizard Test Result: {
+  success: [33mtrue[39m,
+  completedSteps: [33m8[39m,
+  totalSteps: [33m8[39m,
+  errors: [],
+  duration: [33m5049[39m,
+  performance: {
+    memoryUsage: { initial: [33m56326472[39m, final: [33m60036384[39m, peak: [33m59909208[39m },
+    domNodes: { initial: [33m81[39m, final: [33m109[39m, peak: [33m109[39m }
+  }
+}
+
+=== Real-World Scenario Report ===
+Scenario: Complete Multi-step Wizard
+Success: ✅
+Completion Rate: 100.0% (8/8)
+Total Duration: 5049ms
+Average Step Duration: 625.1ms
+
+Performance:
+- Memory Usage: 56326472 → 60036384 (Peak: 59909208)
+- DOM Nodes: 81 → 109 (Peak: 109)
+
+
+
+Step Performance:
+- Verify Initial Wizard State: 493ms
+- Fill Personal Information: 424ms
+- Navigate to Step 2: 686ms
+- Fill Company Information: 413ms
+- Navigate to Step 3: 685ms
+- Fill Preferences: 410ms
+- Navigate to Review Step: 691ms
+- Complete Wizard Submission: 1199ms
+
+
+stdout | packages/core/__tests__/integration/real-world-auth.test.ts > Phase 4.3: User Authentication and Session Management Real-World Scenarios > Complete Authentication Flow > should handle complete user registration, login, and session management
+Dashboard section found: [33mtrue[39m Display: block
+
+stdout | packages/core/__tests__/integration/real-world-ecommerce.test.ts > Phase 4.1: E-commerce Checkout Flow Real-World Scenarios > Complete Purchase Journey > should handle complete product selection to order confirmation flow
+E-commerce Checkout Test Result: {
+  success: [33mtrue[39m,
+  completedSteps: [33m8[39m,
+  totalSteps: [33m8[39m,
+  errors: [],
+  duration: [33m5174[39m,
+  performance: {
+    memoryUsage: { initial: [33m50475760[39m, final: [33m48746280[39m, peak: [33m53080208[39m },
+    domNodes: { initial: [33m59[39m, final: [33m61[39m, peak: [33m61[39m }
+  }
+}
+
+=== Real-World Scenario Report ===
+Scenario: Complete E-commerce Checkout
+Success: ✅
+Completion Rate: 100.0% (8/8)
+Total Duration: 5174ms
+Average Step Duration: 642.4ms
+
+Performance:
+- Memory Usage: 50475760 → 48746280 (Peak: 53080208)
+- DOM Nodes: 59 → 61 (Peak: 61)
+
+
+
+Step Performance:
+- Verify Product List Loaded: 673ms
+- Add First Product to Cart: 482ms
+- Add Second Product to Cart: 484ms
+- Proceed to Checkout: 687ms
+- Fill Shipping Information: 506ms
+- Continue to Payment: 691ms
+- Fill Payment Information: 429ms
+- Place Order: 1187ms
+
+
+stdout | packages/core/__tests__/integration/real-world-social.test.ts > Phase 4.5: Social Media Feed with Infinite Scroll Real-World Scenarios > Complete Social Feed Flow > should handle infinite scroll, user interactions, and real-time updates
+Social Feed Test Result: {
+  success: [33mtrue[39m,
+  completedSteps: [33m8[39m,
+  totalSteps: [33m8[39m,
+  errors: [],
+  duration: [33m5683[39m,
+  performance: {
+    memoryUsage: { initial: [33m50943728[39m, final: [33m48938344[39m, peak: [33m53584560[39m },
+    domNodes: { initial: [33m141[39m, final: [33m290[39m, peak: [33m290[39m }
+  }
+}
+
+=== Real-World Scenario Report ===
+Scenario: Social Media Feed with Infinite Scroll
+Success: ✅
+Completion Rate: 100.0% (8/8)
+Total Duration: 5683ms
+Average Step Duration: 702.0ms
+
+Performance:
+- Memory Usage: 50943728 → 48938344 (Peak: 53584560)
+- DOM Nodes: 141 → 290 (Peak: 290)
+
+
+
+Step Performance:
+- Verify Initial Feed State: 674ms
+- Test Post Interactions - Like: 383ms
+- Test Comment Toggle: 394ms
+- Test Share Functionality: 504ms
+- Test Search Functionality: 486ms
+- Clear Search and Test Feed Refresh: 728ms
+- Test New Post Creation: 761ms
+- Test Infinite Scroll Loading: 1686ms
+
+
+stdout | packages/core/__tests__/performance/baseline-benchmarks.test.ts > Phase 5.1: Performance Baseline Benchmarks > Component Render Performance Baselines > should benchmark complex List component with many items
+List Component Large Dataset Benchmark: {
+  renderTime: [33m625.8400280000001[39m,
+  memoryPeak: [33m90725504[39m,
+  domNodes: [33m4[39m,
+  avgTimePerItem: [33m0.6258400280000002[39m,
+  status: [32m'pass'[39m
+}
+
+stdout | packages/core/__tests__/integration/real-world-wizard.test.ts > Phase 4.2: Multi-step Wizard Form Real-World Scenarios > Complete Wizard Flow > should handle wizard navigation edge cases
+Wizard Navigation Test Result: { success: [33mtrue[39m, completedSteps: [33m3[39m, errors: [] }
+
+ ✓ packages/core/__tests__/integration/real-world-wizard.test.ts (2 tests) 6232ms
+   ✓ Phase 4.2: Multi-step Wizard Form Real-World Scenarios > Complete Wizard Flow > should handle complete multi-step wizard form with navigation and validation  5054ms
+   ✓ Phase 4.2: Multi-step Wizard Form Real-World Scenarios > Complete Wizard Flow > should handle wizard navigation edge cases  1177ms
+stdout | packages/core/__tests__/integration/real-world-ecommerce.test.ts > Phase 4.1: E-commerce Checkout Flow Real-World Scenarios > Complete Purchase Journey > should handle cart management edge cases
+Cart Edge Cases Test Result: { success: [33mtrue[39m, completedSteps: [33m3[39m, totalSteps: [33m3[39m, errors: [] }
+
+stdout | packages/core/__tests__/performance/baseline-benchmarks.test.ts > Phase 5.1: Performance Baseline Benchmarks > Component Render Performance Baselines > should benchmark reactive state updates performance
+Reactive State Updates Benchmark: {
+  renderTime: [33m418.5800416666668[39m,
+  stateUpdates: [33m500[39m,
+  avgUpdateTime: [33m0.8371600833333335[39m,
+  status: [32m'pass'[39m
+}
+
+stdout | packages/core/__tests__/integration/real-world-ecommerce.test.ts > Phase 4.1: E-commerce Checkout Flow Real-World Scenarios > Error Handling > should handle form validation errors gracefully
+Form Validation Test Result: { success: [33mtrue[39m, completedSteps: [33m3[39m, errors: [] }
+
+ ✓ packages/core/__tests__/integration/real-world-ecommerce.test.ts (3 tests) 7692ms
+   ✓ Phase 4.1: E-commerce Checkout Flow Real-World Scenarios > Complete Purchase Journey > should handle complete product selection to order confirmation flow  5179ms
+   ✓ Phase 4.1: E-commerce Checkout Flow Real-World Scenarios > Complete Purchase Journey > should handle cart management edge cases  1296ms
+   ✓ Phase 4.1: E-commerce Checkout Flow Real-World Scenarios > Error Handling > should handle form validation errors gracefully  1215ms
+stdout | packages/core/__tests__/integration/real-world-auth.test.ts > Phase 4.3: User Authentication and Session Management Real-World Scenarios > Complete Authentication Flow > should handle complete user registration, login, and session management
+Login Dashboard section found: [33mtrue[39m Display: block
+
+stdout | packages/core/__tests__/integration/real-world-auth.test.ts > Phase 4.3: User Authentication and Session Management Real-World Scenarios > Complete Authentication Flow > should handle complete user registration, login, and session management
+Authentication Flow Test Result: {
+  success: [33mtrue[39m,
+  completedSteps: [33m8[39m,
+  totalSteps: [33m8[39m,
+  errors: [],
+  duration: [33m8359[39m,
+  performance: {
+    memoryUsage: { initial: [33m47383624[39m, final: [33m45808552[39m, peak: [33m52708504[39m },
+    domNodes: { initial: [33m58[39m, final: [33m58[39m, peak: [33m58[39m }
+  }
+}
+
+=== Real-World Scenario Report ===
+Scenario: Complete Authentication Flow
+Success: ✅
+Completion Rate: 100.0% (8/8)
+Total Duration: 8359ms
+Average Step Duration: 1039.4ms
+
+Performance:
+- Memory Usage: 47383624 → 45808552 (Peak: 52708504)
+- DOM Nodes: 58 → 58 (Peak: 58)
+
+
+
+Step Performance:
+- Verify Initial Login State: 498ms
+- Test Invalid Login: 1416ms
+- Switch to Registration: 388ms
+- Complete User Registration: 2765ms
+- Verify Protected Content Access: 472ms
+- Test Session Persistence: 383ms
+- Logout and Clear Session: 682ms
+- Test Existing User Login: 1711ms
+
+
+ ✓ packages/primitives/__tests__/integration/error-recovery.test.ts (19 tests) 4969ms
+   ✓ Phase 2.4: Error Recovery and Retry Mechanisms Tests > Recovery Strategies > should use network error recovery strategy  4383ms
+stdout | packages/core/__tests__/integration/real-world-dashboard.test.ts > Phase 4.4: Dashboard with Real-time Data Updates Real-World Scenarios > Complete Dashboard Flow > should handle dashboard data loading states and error recovery
+Dashboard Error Handling Test Result: { success: [33mtrue[39m, completedSteps: [33m3[39m, errors: [] }
+
+ ✓ packages/core/__tests__/integration/real-world-dashboard.test.ts (2 tests) 9231ms
+   ✓ Phase 4.4: Dashboard with Real-time Data Updates Real-World Scenarios > Complete Dashboard Flow > should handle real-time dashboard updates, interactions, and data refresh  4959ms
+   ✓ Phase 4.4: Dashboard with Real-time Data Updates Real-World Scenarios > Complete Dashboard Flow > should handle dashboard data loading states and error recovery  4271ms
+stdout | packages/core/__tests__/integration/real-world-social.test.ts > Phase 4.5: Social Media Feed with Infinite Scroll Real-World Scenarios > Complete Social Feed Flow > should handle social feed performance with large datasets
+Social Feed Performance Test Result: {
+  success: [33mtrue[39m,
+  completedSteps: [33m3[39m,
+  errors: [],
+  performance: {
+    stepDurations: [ [36m[Object][39m, [36m[Object][39m, [36m[Object][39m ],
+    memoryUsage: { initial: [33m50703760[39m, final: [33m59141744[39m, peak: [33m58775808[39m },
+    domNodes: { initial: [33m12[39m, final: [33m312[39m, peak: [33m312[39m }
+  }
+}
+
+ ✓ packages/core/__tests__/performance/memory-usage-tracking.test.ts (23 tests) 9800ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Monitoring Core > should start and stop monitoring correctly  618ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Monitoring Core > should take memory snapshots at regular intervals  353ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Alert System > should trigger heap usage alerts when thresholds are exceeded  302ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Alert System > should detect memory growth rate alerts  401ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Alert System > should detect memory leaks over time  1001ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Alert System > should detect garbage collection pressure  301ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Alert System > should respect alert cooldown periods  502ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Analysis and Reporting > should generate comprehensive memory analysis  602ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Analysis and Reporting > should detect different memory usage patterns  603ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Analysis and Reporting > should estimate memory leak rates accurately  1206ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Analysis and Reporting > should calculate garbage collection efficiency  801ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Analysis and Reporting > should provide contextual recommendations based on memory patterns  1101ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Memory Usage Reporting > should generate comprehensive memory usage reports for multiple tests  613ms
+   ✓ Phase 5.3: Memory Usage Tracking and Alerts System > Edge Cases and Error Handling > should handle custom thresholds correctly  315ms
+ ✓ packages/core/__tests__/integration/real-world-social.test.ts (2 tests) 9368ms
+   ✓ Phase 4.5: Social Media Feed with Infinite Scroll Real-World Scenarios > Complete Social Feed Flow > should handle infinite scroll, user interactions, and real-time updates  5696ms
+   ✓ Phase 4.5: Social Media Feed with Infinite Scroll Real-World Scenarios > Complete Social Feed Flow > should handle social feed performance with large datasets  3671ms
+stdout | packages/core/__tests__/integration/real-world-auth.test.ts > Phase 4.3: User Authentication and Session Management Real-World Scenarios > Complete Authentication Flow > should handle password reset workflow
+Password Reset Test Result: { success: [33mtrue[39m, completedSteps: [33m3[39m, errors: [] }
+
+ ✓ packages/core/__tests__/integration/real-world-auth.test.ts (2 tests) 9557ms
+   ✓ Phase 4.3: User Authentication and Session Management Real-World Scenarios > Complete Authentication Flow > should handle complete user registration, login, and session management  8365ms
+   ✓ Phase 4.3: User Authentication and Session Management Real-World Scenarios > Complete Authentication Flow > should handle password reset workflow  1191ms
+stdout | packages/core/__tests__/performance/baseline-benchmarks.test.ts > Phase 5.1: Performance Baseline Benchmarks > Memory Usage Baselines > should benchmark memory usage with component creation and destruction
+Memory Usage Benchmark: {
+  memoryLeak: [33m-2602618.6666666665[39m,
+  peakMemory: [33m100786704[39m,
+  memoryGrowth: [33m0[39m,
+  status: [32m'pass'[39m
+}
+
+stderr | packages/forms/__tests__/edge-cases.test.ts > Forms Edge Cases and Error Boundaries > Validation Edge Cases > should handle invalid validation rule configurations
+Unknown validation rule: unknownRule
+Unknown built-in validation rule: nonexistent
+
+stdout | packages/forms/__tests__/edge-cases.test.ts > Forms Edge Cases and Error Boundaries > Form State Edge Cases > should handle form state with invalid initial values
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+stdout | packages/primitives/__tests__/integration/memory-leak-component.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/core/__tests__/performance/baseline-benchmarks.test.ts > Phase 5.1: Performance Baseline Benchmarks > Memory Usage Baselines > should benchmark DOM manipulation performance
+DOM Manipulation Benchmark: {
+  renderTime: [33m123.54377799999929[39m,
+  totalOperations: [33m550[39m,
+  avgOperationTime: [33m0.2246250509090896[39m,
+  finalNodeCount: [33m800[39m,
+  status: [32m'pass'[39m
+}
+
+stdout | packages/core/__tests__/integration/real-world-simple.test.ts > Phase 4.1: Simple Real-World Scenario Validation > should execute a basic button click scenario
+Basic Click Test Result: {
+  success: [33mtrue[39m,
+  completedSteps: [33m5[39m,
+  totalSteps: [33m5[39m,
+  errors: [],
+  duration: [33m1875[39m
+}
+
+stdout | packages/forms/__tests__/edge-cases.test.ts > Forms Edge Cases and Error Boundaries > Security Edge Cases > should handle validation rule injection attempts
+potential code execution
+
+stdout | packages/core/__tests__/integration/real-world-simple.test.ts > Phase 4.1: Simple Real-World Scenario Validation > should handle form input scenario
+Form Input Test Result: { success: [33mtrue[39m, completedSteps: [33m3[39m, totalSteps: [33m3[39m, errors: [] }
+
+ ✓ packages/core/__tests__/integration/real-world-simple.test.ts (2 tests) 3377ms
+   ✓ Phase 4.1: Simple Real-World Scenario Validation > should execute a basic button click scenario  1922ms
+   ✓ Phase 4.1: Simple Real-World Scenario Validation > should handle form input scenario  1454ms
+ ✓ packages/symbols/__tests__/components/Symbol-animations.test.ts (23 tests) 4213ms
+   ✓ Symbol Component - Animation Integration > Animation Speed Control > should add speed modifier classes  349ms
+   ✓ Symbol Component - Animation Integration > Performance Optimization > should handle high-performance effects efficiently  303ms
+stdout | packages/primitives/__tests__/integration/error-boundary.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/primitives/__tests__/integration/memory-leak-component.test.ts (11 tests) 2997ms
+   ✓ Phase 2.1: TachUI Component Memory Leak Testing > Button Component Memory Leak Tests > should not leak memory during rapid creation/destruction cycles  1388ms
+   ✓ Phase 2.1: TachUI Component Memory Leak Testing > Long-Running Application Simulation > should handle long-running component interactions  1586ms
+stdout | packages/core/__tests__/performance/baseline-benchmarks.test.ts > Phase 5.1: Performance Baseline Benchmarks > Complex Workflow Performance > should benchmark full application workflow performance
+Complete Workflow Benchmark: {
+  renderTime: [33m908.4483893333332[39m,
+  totalOperations: [33m506[39m,
+  itemsRendered: [33m500[39m,
+  avgOperationTime: [33m1.7953525480895915[39m,
+  status: [32m'pass'[39m
+}
+
+stdout | packages/core/__tests__/performance/baseline-benchmarks.test.ts > Phase 5.1: Performance Baseline Benchmarks > should have run all performance benchmarks successfully
+Collected 6 benchmark results
+
+stdout | packages/core/__tests__/performance/baseline-benchmarks.test.ts > Phase 5.1: Performance Baseline Benchmarks
+
+Total benchmarks run: 6
+
+=== Performance Benchmark Report ===
+
+Summary: 6 passed, 0 warnings, 0 failed
+
+
+--- Benchmark Results ---
+Status: PASS
+Render Time: 7.79ms
+Memory Peak: 54.06 MB
+DOM Nodes: 4
+
+Recommendations:
+  - Potential memory leak detected - investigate cleanup logic
+
+--- Benchmark Results ---
+Status: PASS
+Render Time: 625.84ms
+Memory Peak: 86.52 MB
+DOM Nodes: 4
+
+Recommendations:
+  - Potential memory leak detected - investigate cleanup logic
+  - Slow render time - consider code splitting or virtualization
+
+--- Benchmark Results ---
+Status: PASS
+Render Time: 418.58ms
+Memory Peak: 94.67 MB
+DOM Nodes: 4
+
+Recommendations:
+  - Potential memory leak detected - investigate cleanup logic
+  - Slow render time - consider code splitting or virtualization
+
+--- Benchmark Results ---
+Status: PASS
+Render Time: 724.41ms
+Memory Peak: 96.12 MB
+DOM Nodes: 4
+
+Recommendations:
+  - Slow render time - consider code splitting or virtualization
+
+--- Benchmark Results ---
+Status: PASS
+Render Time: 123.54ms
+Memory Peak: 98.28 MB
+DOM Nodes: 4
+
+Recommendations:
+  - Potential memory leak detected - investigate cleanup logic
+  - Slow render time - consider code splitting or virtualization
+
+--- Benchmark Results ---
+Status: PASS
+Render Time: 908.45ms
+Memory Peak: 143.88 MB
+DOM Nodes: 4
+
+Recommendations:
+  - Slow render time - consider code splitting or virtualization
+
+Baseline data for future comparisons: {
+  "Text Component Render": {
+    "renderTime": 7.790680666666655,
+    "memoryUsage": {
+      "initial": 52133378.666666664,
+      "peak": 56685360,
+      "final": 54414317.333333336,
+      "leak": 2280938.6666666665
+    },
+    "domMetrics": {
+      "nodes": 4,
+      "depth": 1,
+      "updates": 100
+    },
+    "timing": {
+      "setup": 0.6810276666666747,
+      "execution": 8.032888666666622,
+      "cleanup": 4.899930333333184
+    },
+    "customMetrics": {
+      "componentsRendered": 100
+    }
+  },
+  "List Component Large Dataset": {
+    "renderTime": 625.8400280000001,
+    "memoryUsage": {
+      "initial": 51565664,
+      "peak": 90725504,
+      "final": 79023000,
+      "leak": 27457336
+    },
+    "domMetrics": {
+      "nodes": 4,
+      "depth": 1,
+      "updates": 1000
+    },
+    "timing": {
+      "setup": 0.2228890000001229,
+      "execution": 665.5179723333332,
+      "cleanup": 46.14648633333339
+    },
+    "customMetrics": {
+      "itemsRendered": 1000,
+      "avgTimePerItem": 0.6258400280000002
+    }
+  },
+  "Reactive State Updates": {
+    "renderTime": 418.5800416666668,
+    "memoryUsage": {
+      "initial": 94548984,
+      "peak": 99271040,
+      "final": 97283261.33333333,
+      "leak": 2734277.3333333335
+    },
+    "domMetrics": {
+      "nodes": 4,
+      "depth": 1,
+      "updates": 500
+    },
+    "timing": {
+      "setup": 8.629666666667012,
+      "execution": 419.7521389999999,
+      "cleanup": 0.6621526666664673
+    },
+    "customMetrics": {
+      "stateUpdates": 500,
+      "avgUpdateTime": 0.8371600833333335,
+      "finalItemCount": 500
+    }
+  },
+  "Component Lifecycle Memory Usage": {
+    "renderTime": 724.4102223333333,
+    "memoryUsage": {
+      "initial": 98022002.66666667,
+      "peak": 100786704,
+      "final": 95419384,
+      "leak": -2602618.6666666665
+    },
+    "domMetrics": {
+      "nodes": 4,
+      "depth": 1,
+      "updates": 1000
+    },
+    "timing": {
+      "setup": 0.13584733333300392,
+      "execution": 724.496652666667,
+      "cleanup": 0.05534700000013496
+    },
+    "customMetrics": {
+      "cycles": 50,
+      "componentsPerCycle": 20,
+      "totalComponents": 1000,
+      "memoryGrowth": 0,
+      "finalMemoryLeak": 0
+    }
+  },
+  "DOM Manipulation Performance": {
+    "renderTime": 123.54377799999929,
+    "memoryUsage": {
+      "initial": 93530013.33333333,
+      "peak": 103058928,
+      "final": 99092133.33333333,
+      "leak": 5562120
+    },
+    "domMetrics": {
+      "nodes": 4,
+      "depth": 1,
+      "updates": 550
+    },
+    "timing": {
+      "setup": 0.15934666666665484,
+      "execution": 160.15994433333313,
+      "cleanup": 5.620541666666516
+    },
+    "customMetrics": {
+      "totalOperations": 550,
+      "avgOperationTime": 0.2246250509090896,
+      "finalNodeCount": 800
+    }
+  },
+  "Complete Application Workflow": {
+    "renderTime": 908.4483893333332,
+    "memoryUsage": {
+      "initial": 117082197.33333333,
+      "peak": 150867448,
+      "final": 113887437.33333333,
+      "leak": -3194760
+    },
+    "domMetrics": {
+      "nodes": 4,
+      "depth": 1,
+      "updates": 506
+    },
+    "timing": {
+      "setup": 0.1656526666671804,
+      "execution": 908.758208333334,
+      "cleanup": 0.31556933333376946
+    },
+    "customMetrics": {
+      "totalOperations": 506,
+      "itemsRendered": 500,
+      "viewTransitions": 3,
+      "userInteractions": 2,
+      "avgOperationTime": 1.7953525480895915
+    }
+  }
+}
+
+Benchmark Summary: 6 passed, 0 failed out of 6 total
+
+ ✓ packages/core/__tests__/performance/baseline-benchmarks.test.ts (7 tests) 11174ms
+   ✓ Phase 5.1: Performance Baseline Benchmarks > Component Render Performance Baselines > should benchmark basic Text component rendering  421ms
+   ✓ Phase 5.1: Performance Baseline Benchmarks > Component Render Performance Baselines > should benchmark complex List component with many items  2461ms
+   ✓ Phase 5.1: Performance Baseline Benchmarks > Component Render Performance Baselines > should benchmark reactive state updates performance  1736ms
+   ✓ Phase 5.1: Performance Baseline Benchmarks > Memory Usage Baselines > should benchmark memory usage with component creation and destruction  2527ms
+   ✓ Phase 5.1: Performance Baseline Benchmarks > Memory Usage Baselines > should benchmark DOM manipulation performance  915ms
+   ✓ Phase 5.1: Performance Baseline Benchmarks > Complex Workflow Performance > should benchmark full application workflow performance  3110ms
+ ✓ packages/forms/__tests__/edge-cases.test.ts (29 tests) 3679ms
+   ✓ Forms Edge Cases and Error Boundaries > Form State Edge Cases > should handle form state with invalid initial values  1994ms
+   ✓ Forms Edge Cases and Error Boundaries > Async Operation Edge Cases > should handle validation timeout scenarios  1118ms
+ ✓ packages/primitives/__tests__/integration/error-boundary.test.ts (12 tests) 1610ms
+   ✓ Phase 2.2: Error Boundary Testing for TachUI Components > Async Operation Error Testing > should handle async action errors in components  335ms
+   ✓ Phase 2.2: Error Boundary Testing for TachUI Components > Async Operation Error Testing > should handle network simulation errors  313ms
+   ✓ Phase 2.2: Error Boundary Testing for TachUI Components > Multiple Error Scenario Testing > should handle multiple concurrent errors  421ms
+   ✓ Phase 2.2: Error Boundary Testing for TachUI Components > Performance Impact Testing > should measure error handling performance impact  307ms
+ ✓ packages/cli/__tests__/basic-functionality.test.ts (14 tests | 4 skipped) 2730ms
+   ✓ TachUI CLI - Basic Functionality > Command Execution > should execute analyze command without crashing  410ms
+   ✓ TachUI CLI - Basic Functionality > Command Execution > should execute migrate command without crashing  355ms
+   ✓ TachUI CLI - Basic Functionality > Command Execution > should execute optimize command without crashing  520ms
+ ✓ packages/core/__tests__/integration/foundation-demo.test.ts (17 tests) 1499ms
+   ✓ Phase 1 Foundation - Testing Framework Validation > Memory Leak Testing Framework > should detect memory growth patterns  1050ms
+stdout | packages/forms/__tests__/integration-workflows.test.ts > Form Integration Workflows > Complete Form Workflow > should handle full user registration form workflow
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+stdout | packages/forms/__tests__/basic-integration.test.ts > @tachui/forms unified package > should export main components
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+stdout | packages/forms/__tests__/selection-components.test.ts
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+ ✓ packages/forms/__tests__/selection-components.test.ts (37 tests) 786ms
+   ✓ Selection Components > Checkbox Component > should export Checkbox component  776ms
+ ✓ packages/forms/__tests__/integration-workflows.test.ts (20 tests) 1013ms
+   ✓ Form Integration Workflows > Complete Form Workflow > should handle full user registration form workflow  825ms
+stdout | packages/symbols/__tests__/utils/icon-loader.test.ts > IconLoader > Error Handling > handles icon set registry errors
+Auto-registered Lucide icon set
+
+ ✓ packages/symbols/__tests__/utils/icon-loader.test.ts (29 tests) 606ms
+ ✓ packages/forms/__tests__/basic-integration.test.ts (2 tests) 1003ms
+   ✓ @tachui/forms unified package > should export main components  1001ms
+ ❯ packages/modifiers/__tests__/elements/stress.test.ts (20 tests | 1 failed) 4823ms
+   ✓ Elements Performance Stress Tests > High Volume Modifier Creation > should handle 1000 modifier instances efficiently 8ms
+   ✓ Elements Performance Stress Tests > High Volume Modifier Creation > should handle rapid modifier application 7ms
+   ✓ Elements Performance Stress Tests > Complex Styling Stress Tests > should handle deeply nested pseudo-element configurations 1ms
+   ✓ Elements Performance Stress Tests > Complex Styling Stress Tests > should handle maximum CSS property combinations 0ms
+   ✓ Elements Performance Stress Tests > Memory and Resource Management > should not create excessive DOM elements under stress 1ms
+   ✓ Elements Performance Stress Tests > Memory and Resource Management > should handle stylesheet rule insertion failures gracefully 1ms
+   ✓ Elements Performance Stress Tests > Concurrent Modifier Operations > should handle concurrent modifier applications 1ms
+   ✓ Elements Performance Stress Tests > Concurrent Modifier Operations > should maintain unique class generation under concurrency 79ms
+   ✓ Elements Performance Stress Tests > CSS Property Validation Stress > should handle invalid CSS values gracefully 1ms
+   ✓ Elements Performance Stress Tests > CSS Property Validation Stress > should handle extreme numeric values 1ms
+   ✓ Elements Performance Stress Tests > CSS Property Validation Stress > should handle special characters in content 1ms
+   ✓ Elements Performance Stress Tests > Memory Leak Prevention > should not accumulate references over many operations  408ms
+   ✓ Elements Performance Benchmarks > should meet modifier creation performance targets 9ms
+   × Elements Performance Benchmarks > should meet modifier application performance targets 1024ms
+     → expected 512.1759370398594 to be greater than 1000
+   ✓ Elements Performance Benchmarks > should handle massive CSS rule generation efficiently 18ms
+   ✓ Elements Edge Case Stress Tests > should handle Unicode and special characters at scale 107ms
+   ✓ Elements Edge Case Stress Tests > should handle extreme CSS values gracefully 33ms
+   ✓ Elements Edge Case Stress Tests > should handle rapid creation and destruction cycles  3122ms
+   ✓ Elements Cross-Browser Compatibility Stress > should handle CSS property variations safely 0ms
+   ✓ Elements Cross-Browser Compatibility Stress > should handle malformed CSS values gracefully 0ms
+ ✓ packages/cli/__tests__/index.test.ts (12 tests | 3 skipped) 3115ms
+   ✓ TachUI CLI - Main Entry Point > Basic CLI Functionality > should display help when --help flag is used  413ms
+   ✓ TachUI CLI - Main Entry Point > Basic CLI Functionality > should display version when --version flag is used  305ms
+   ✓ TachUI CLI - Main Entry Point > Basic CLI Functionality > should show help for unknown commands  348ms
+   ✓ TachUI CLI - Main Entry Point > CLI Banner and Branding > should display TachUI branding  572ms
+   ✓ TachUI CLI - Main Entry Point > Error Handling > should provide helpful error messages  454ms
+   ✓ TachUI CLI - Main Entry Point > Global Options > should handle unknown global flags gracefully  358ms
+ ✓ packages/forms/__tests__/comprehensive-state.test.ts (6 tests) 1221ms
+   ✓ Form State Management - Comprehensive > createField function > should create field with proper interface  1219ms
+stdout | Timeout.registerFormsValidators [as _onTimeout] (/Users/whoughton/Dev/tach-ui/tachUI/packages/forms/src/validation/component-validation.ts:412:15)
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+stdout | packages/forms/__tests__/real-dom-integration.test.ts > Real DOM Integration Testing > Component DOM Rendering > should render Form container component
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+ ✓ packages/forms/__tests__/real-dom-integration.test.ts (23 tests) 1122ms
+   ✓ Real DOM Integration Testing > Component DOM Rendering > should render TextField component to real DOM  990ms
+ ✓ packages/core/__tests__/performance/bundle-size-monitoring.test.ts (27 tests) 89ms
+ ❯ packages/modifiers/__tests__/layout/overlay-stress.test.ts (14 tests | 2 failed) 2296ms
+   ✓ Overlay Modifier Stress Tests > High-Volume Overlay Creation > should handle many overlay applications efficiently 47ms
+   ✓ Overlay Modifier Stress Tests > High-Volume Overlay Creation > should handle multiple overlays on single element 2ms
+   ✓ Overlay Modifier Stress Tests > High-Volume Overlay Creation > should handle all alignment types efficiently  393ms
+   ✓ Overlay Modifier Stress Tests > Complex Content Rendering Stress > should handle complex component hierarchies 96ms
+   ✓ Overlay Modifier Stress Tests > Complex Content Rendering Stress > should handle function content efficiently 207ms
+   ✓ Overlay Modifier Stress Tests > Complex Content Rendering Stress > should handle HTMLElement content efficiently 125ms
+   ✓ Overlay Modifier Stress Tests > Memory and Resource Management > should not leak memory with many overlay applications  443ms
+   ✓ Overlay Modifier Stress Tests > Memory and Resource Management > should handle DOM tree cleanup efficiently 95ms
+   × Overlay Modifier Stress Tests > Error Handling Under Stress > should handle many invalid content types gracefully 471ms
+     → expected 459.4808750000002 to be less than 200
+   × Overlay Modifier Stress Tests > Error Handling Under Stress > should handle missing elements gracefully at scale 354ms
+     → expected 327.7904169999997 to be less than 50
+   ✓ Overlay Modifier Stress Tests > Error Handling Under Stress > should handle invalid alignments at scale 24ms
+   ✓ Overlay Modifier Stress Tests > Real-World Usage Patterns > should handle typical modal/tooltip patterns 19ms
+   ✓ Overlay Modifier Stress Tests > Real-World Usage Patterns > should handle dynamic overlay updates 9ms
+   ✓ Overlay Modifier Stress Tests > Real-World Usage Patterns > should handle nested overlay scenarios 10ms
+stdout | packages/forms/__tests__/form-state.test.ts
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+ ✓ packages/forms/__tests__/form-state.test.ts (3 tests) 782ms
+   ✓ Form State Management > should create form state  780ms
+ ✓ packages/core/__tests__/modifiers/basic-sanitizer-security.test.ts (53 tests) 186ms
+ ✓ packages/cli/__tests__/commands/optimize.test.ts (5 tests | 4 skipped) 600ms
+   ✓ TachUI CLI - Optimize Command > Interactive Mode > should support interactive optimization  599ms
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should start disabled by default
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should start disabled by default
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should enable debug mode
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should enable debug mode
+🔧 TachUI Debug Mode Enabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should enable debug mode
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should disable debug mode
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should disable debug mode
+🔧 TachUI Debug Mode Enabled
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should disable debug mode
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should accept configuration options
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should accept configuration options
+🔧 TachUI Debug Mode Enabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > enable/disable functionality > should accept configuration options
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > debug attributes > should add debug attributes when enabled
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > debug attributes > should add debug attributes when enabled
+🔧 TachUI Debug Mode Enabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > debug attributes > should add debug attributes when enabled
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > debug attributes > should not add debug attributes when disabled
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > debug attributes > should not add debug attributes when disabled
+🔧 TachUI Debug Mode Disabled
+
+stdout | packages/devtools/__tests__/debug/debug.test.ts > Debug System > component tree logging > should log component tree when enabled
+🔧 TachUI Debug Mode Disabled
+
+ ✓ packages/devtools/__tests__/debug/debug.test.ts (11 tests) 20ms
+ ✓ packages/core/__tests__/plugins/component-loader-registry.test.ts (19 tests) 126ms
+ ✓ packages/forms/__tests__/enhanced-coverage.test.ts (31 tests) 1354ms
+   ✓ Enhanced Coverage Testing > Performance Essentials > should handle large form state efficiently  1271ms
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > high volume element creation and modifier application > should handle 1000+ elements with multiple modifiers efficiently
+Applied modifiers to 1000 elements in 0.00ms
+
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > high volume element creation and modifier application > should handle rapid modifier application and removal cycles
+Completed 100 apply/cleanup cycles, avg: 0.00ms
+
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > high frequency event handling > should handle rapid continuous hover events without performance degradation
+Processed 1000 hover events in 0.00ms
+
+stdout | packages/navigation/__tests__/real-world-scenarios.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > high frequency event handling > should handle rapid long press gesture attempts
+Processed 50 long press attempts in 0.00ms
+
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > high frequency event handling > should handle rapid keyboard shortcut attempts
+Processed 1000 keyboard events in 0.00ms
+
+ ✓ packages/navigation/__tests__/real-world-scenarios.test.ts (26 tests) 18ms
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > memory management under stress > should not leak memory during repeated modifier applications
+Memory test: created/cleaned 1000 elements
+Event listeners: 1000 added, 1000 removed
+
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > memory management under stress > should handle timer cleanup properly under stress
+Cleaned up 50 active timers in 0.00ms
+
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > edge case stress testing > should handle extremely rapid focus state changes
+Handled rapid focus changes for 0.00ms
+
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > edge case stress testing > should handle coordinate calculations with extreme values
+Processed extreme coordinate values in 0.00ms
+
+stdout | packages/modifiers/__tests__/interaction/stress.test.ts > Interaction Modifiers Stress Tests > concurrent modifier stress testing > should handle all modifiers active simultaneously under load
+Concurrent stress test: 50 elements, total time: 0.00ms
+  - Creation: 0.00ms
+  - Activity: 0.00ms
+  - Cleanup: 0.00ms
+
+ ✓ packages/modifiers/__tests__/interaction/stress.test.ts (10 tests) 1247ms
+   ✓ Interaction Modifiers Stress Tests > high volume element creation and modifier application > should handle 1000+ elements with multiple modifiers efficiently  544ms
+stdout | packages/primitives/__tests__/css-classes/performance-and-real-world.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/primitives/__tests__/css-classes/performance-and-real-world.test.ts (13 tests) 411ms
+stdout | packages/core/__tests__/modifiers/modifier-system.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stderr | packages/core/__tests__/modifiers/modifier-system.test.ts > Modifier System > Modifier Builder > should chain modifiers using builder pattern
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/core/__tests__/modifiers/modifier-system.test.ts > Modifier System > Component Integration > should create Layout components with modifiers
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/core/__tests__/modifiers/modifier-system.test.ts > Modifier System > Component Integration > should create Element components with modifiers
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/modifiers/__tests__/interaction/allows-hit-testing.test.ts (25 tests) 30ms
+ ✓ packages/core/__tests__/modifiers/modifier-system.test.ts (37 tests) 36ms
+ ✓ packages/core/__tests__/runtime/lazy-component.test.ts (13 tests) 239ms
+ ✓ packages/modifiers/__tests__/attributes/css-properties.test.ts (35 tests) 104ms
+stdout | packages/responsive/__tests__/modifiers/responsive/advanced-utilities.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/responsive/__tests__/modifiers/responsive/advanced-utilities.test.ts (21 tests) 15ms
+stdout | packages/grid/__tests__/modifiers/grid-spanning.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/grid/__tests__/modifiers/grid-spanning.test.ts (44 tests) 9ms
+stderr | packages/devtools/__tests__/runtime/error-handling.test.ts > ErrorBoundary > Error Boundary Creation > should create error boundary with custom fallback
+TachUI Error: unknown Error: Child error
+    at Object.render [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/devtools/__tests__/runtime/error-handling.test.ts:254:17[90m)[39m
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/devtools/src/runtime/error-boundary.ts:370:30
+    at Array.flatMap (<anonymous>)
+    at ErrorBoundary.render [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/devtools/src/runtime/error-boundary.ts:369:28[90m)[39m
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/devtools/__tests__/runtime/error-handling.test.ts:262:18
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+
+stderr | packages/devtools/__tests__/runtime/error-handling.test.ts > ErrorBoundary > Error Handling > should catch and handle component errors
+TachUI Error: unknown Error: Component error
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/devtools/__tests__/runtime/error-handling.test.ts:276:21
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+
+stderr | packages/devtools/__tests__/runtime/error-handling.test.ts > ErrorBoundary > Error Handling > should retry failed operations
+TachUI Error: unknown Error: Test error
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/devtools/__tests__/runtime/error-handling.test.ts:288:21
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+
+stderr | packages/devtools/__tests__/runtime/error-handling.test.ts > ErrorBoundary > Error Handling > should handle recovery strategies
+TachUI Error: unknown Error: Test error
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/devtools/__tests__/runtime/error-handling.test.ts:314:21
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+
+stderr | packages/devtools/__tests__/runtime/error-handling.test.ts > ErrorBoundary > Error Boundary Rendering > should render fallback UI when error occurs
+TachUI Error: unknown Error: Test error
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/devtools/__tests__/runtime/error-handling.test.ts:340:21
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+
+stderr | packages/devtools/__tests__/runtime/error-handling.test.ts > ErrorBoundary > Error Boundary Rendering > should render custom fallback when provided
+TachUI Error: unknown Error: Custom test error
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/devtools/__tests__/runtime/error-handling.test.ts:360:21
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+
+ ✓ packages/devtools/__tests__/runtime/error-handling.test.ts (50 tests) 354ms
+stderr | packages/symbols/__tests__/integration/symbols-basic.test.ts > Symbols Integration Tests > Basic Symbol Creation and Usage > supports method chaining with modifiers
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/core/__tests__/gradients/comprehensive-gradients.test.ts (17 tests) 149ms
+stderr | packages/symbols/__tests__/integration/symbols-basic.test.ts > Symbols Integration Tests > Integration with Icon Sets > handles non-existent icon set gracefully
+Icon set error for "heart": Error: Icon set "non-existent" not registered
+    at Function.get [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/icon-sets/registry.ts:19:13[90m)[39m
+    at Function.loadIconInternal [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/utils/icon-loader.ts:57:35[90m)[39m
+    at Function.loadIcon [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/utils/icon-loader.ts:32:30[90m)[39m
+    at loadIcon [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/components/Symbol.ts:106:37[90m)[39m
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/components/Symbol.ts:126:5
+    at ComputationImpl.effectFn [as fn] [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/core/src/reactive/effect.ts:41:23[90m)[39m
+    at ComputationImpl.execute [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/core/src/reactive/context.ts:126:25[90m)[39m
+    at createEffect [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/core/src/reactive/effect.ts:65:10[90m)[39m
+    at Module.Symbol [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/components/Symbol.ts:90:3[90m)[39m
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/__tests__/integration/symbols-basic.test.ts:278:22
+
+ ✓ packages/modifiers/__tests__/elements/integration.test.ts (14 tests) 12ms
+stderr | packages/symbols/__tests__/integration/symbols-basic.test.ts
+Icon "heart-0" (Heart0) not found in Lucide icon set
+Icon "heart-1" (Heart1) not found in Lucide icon set
+Icon "heart-2" (Heart2) not found in Lucide icon set
+Icon "heart-3" (Heart3) not found in Lucide icon set
+Icon "heart-4" (Heart4) not found in Lucide icon set
+
+ ✓ packages/symbols/__tests__/integration/symbols-basic.test.ts (23 tests) 235ms
+stdout | packages/primitives/__tests__/css-classes/edge-cases.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/forms/__tests__/form-container.test.ts
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+ ✓ packages/forms/__tests__/form-container.test.ts (18 tests) 300ms
+ ✓ packages/core/__tests__/state/enhanced-state.test.ts (28 tests) 118ms
+ ✓ packages/primitives/__tests__/css-classes/edge-cases.test.ts (21 tests) 227ms
+ ✓ packages/primitives/__tests__/integration/long-running-simulation.test.ts (10 tests) 25598ms
+   ✓ Phase 2.3: Long-Running Application Simulation Tests > Standard Application Scenarios > should handle interactive dashboard scenario  4208ms
+   ✓ Phase 2.3: Long-Running Application Simulation Tests > Standard Application Scenarios > should handle data entry form scenario  2549ms
+   ✓ Phase 2.3: Long-Running Application Simulation Tests > Standard Application Scenarios > should handle real-time updates scenario  2017ms
+   ✓ Phase 2.3: Long-Running Application Simulation Tests > Custom Application Patterns > should handle custom user interaction patterns  2558ms
+   ✓ Phase 2.3: Long-Running Application Simulation Tests > Custom Application Patterns > should handle component lifecycle stress patterns  3300ms
+   ✓ Phase 2.3: Long-Running Application Simulation Tests > Stress Testing Scenarios > should handle medium intensity stress test  2924ms
+   ✓ Phase 2.3: Long-Running Application Simulation Tests > Stress Testing Scenarios > should handle high frequency reactive updates  2500ms
+   ✓ Phase 2.3: Long-Running Application Simulation Tests > Error and Recovery Patterns > should handle applications with occasional errors  2159ms
+   ✓ Phase 2.3: Long-Running Application Simulation Tests > Performance Monitoring > should track performance degradation over time  3379ms
+ ✓ packages/core/__tests__/assets/theme-reactivity.test.ts (4 tests) 82ms
+ ✓ packages/symbols/__tests__/utils/accessibility.test.ts (33 tests) 7ms
+ ✓ packages/modifiers/__tests__/elements/pseudo-elements.test.ts (16 tests) 38ms
+ ✓ packages/modifiers/__tests__/attributes/stress.test.ts (14 tests) 78ms
+ ✓ packages/modifiers/__tests__/layout/position.test.ts (37 tests) 34ms
+ ✓ packages/modifiers/__tests__/layout/stress.test.ts (16 tests) 815ms
+ ✓ packages/core/__tests__/runtime/context.test.ts (33 tests) 8ms
+stderr | packages/devtools/__tests__/debug/enhanced-errors.test.ts > Enhanced Error System > DeveloperWarnings > should clear warnings
+🟡 TachUI Deprecation Warning in TestComponent: "oldAPI" is deprecated. Use "newAPI" instead.
+See: https://docs.tachui.dev/migration/deprecations
+
+ ✓ packages/devtools/__tests__/debug/enhanced-errors.test.ts (38 tests) 11ms
+ ✓ packages/data/__tests__/Menu.test.ts (35 tests) 66ms
+ ✓ packages/viewport/__tests__/viewport-manager.test.ts (22 tests) 14ms
+ ✓ packages/symbols/__tests__/compatibility/variant-mapping.test.ts (35 tests) 19ms
+stdout | packages/effects/__tests__/shadows/shadows.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/effects/__tests__/shadows/shadows.test.ts (57 tests) 18ms
+ ✓ packages/modifiers/__tests__/basic/margin.test.ts (30 tests) 5ms
+ ✓ packages/primitives/__tests__/controls/Button-assets.test.ts (15 tests) 4ms
+stdout | packages/devtools/__tests__/debug/phase-1d-integration.test.ts > Phase 1D: Developer Experience Integration (Migrated) > Integration Test: Complete Developer Experience Flow > should demonstrate complete error handling and debugging workflow
+✅ Complete developer experience workflow test passed
+
+stdout | packages/devtools/__tests__/debug/phase-1d-integration.test.ts > Phase 1D: Developer Experience Integration (Migrated) > Integration Test: Complete Developer Experience Flow > should provide comprehensive coverage statistics
+📊 Phase 1D Coverage Statistics:
+- Error templates: 3
+- Documentation resources: 150
+- IDE features enabled: 3
+- Debug memory usage: 1MB
+
+stdout | packages/devtools/__tests__/debug/phase-1d-integration.test.ts > Phase 1D: Developer Experience Integration (Migrated) > System Integration Tests > should run all system tests without errors
+🛠️ Developer Experience Utils test completed
+
+stdout | packages/devtools/__tests__/debug/phase-1d-integration.test.ts > Phase 1D: Developer Experience Integration (Migrated) > System Integration Tests > should run all system tests without errors
+✅ All Phase 1D system tests completed successfully
+
+stdout | packages/devtools/__tests__/debug/phase-1d-integration.test.ts > Phase 1D: Developer Experience Integration (Migrated) > System Integration Tests > should demonstrate 90% fix suggestion coverage target
+✅ Fix suggestion coverage: 100%
+
+ ✓ packages/devtools/__tests__/debug/phase-1d-integration.test.ts (27 tests) 8ms
+ ✓ packages/modifiers/__tests__/interaction/keyboard-shortcut.test.ts (21 tests) 7ms
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > DevTools initialization > should create singleton instance
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > DevTools initialization > should start disabled by default
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > DevTools initialization > should accept configuration
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > enable/disable functionality > should enable dev tools
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > enable/disable functionality > should enable dev tools
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > enable/disable functionality > should disable dev tools
+🛠️ TachUI DevTools enabled
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > enable/disable functionality > should disable dev tools
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > enable/disable functionality > should enable with configuration
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > enable/disable functionality > should enable with configuration
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component registration > should register component instances
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component registration > should register component instances
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component registration > should handle parent-child relationships
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component registration > should handle parent-child relationships
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component registration > should not register components when disabled
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component registration > should not register components when disabled
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component registration > should not register components when disabled
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component unregistration > should unregister component instances
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component unregistration > should unregister component instances
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component unregistration > should handle parent-child unregistration
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component unregistration > should handle parent-child unregistration
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component updates > should update component data
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component updates > should update component data
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component updates > should not update when disabled
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component updates > should not update when disabled
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component updates > should not update when disabled
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component tree queries > should get root components
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component tree queries > should get root components
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component tree queries > should find components by name
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component tree queries > should find components by name
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component tree queries > should get component by ID
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > component tree queries > should get component by ID
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > debug events > should track component mount events
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > debug events > should track component mount events
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > debug events > should track component unmount events
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > debug events > should track component unmount events
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > debug events > should limit debug events array size
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > debug events > should limit debug events array size
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > warnings and errors > should add warnings to components
+🛠️ TachUI DevTools enabled
+
+stderr | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > warnings and errors > should add warnings to components
+⚠️ [Button] Slow render detected
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > warnings and errors > should add warnings to components
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > warnings and errors > should add errors to components
+🛠️ TachUI DevTools enabled
+
+stderr | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > warnings and errors > should add errors to components
+❌ [Button] Component crashed Component crashed
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > warnings and errors > should add errors to components
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > warnings and errors > should not add warnings when disabled
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > warnings and errors > should not add warnings when disabled
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > warnings and errors > should not add warnings when disabled
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > performance summary > should calculate performance summary
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > performance summary > should calculate performance summary
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > performance summary > should identify slow components
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > performance summary > should identify slow components
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > data export > should export debug data
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > data export > should export debug data
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > data export > should clear all data
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > data export > should clear all data
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > global functions > should enable development mode globally
+🛠️ TachUI DevTools enabled
+🚀 TachUI Development Mode enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > global functions > should enable development mode globally
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > global functions > should get component tree globally
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > reactive debugging > should track reactive operations
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > reactive debugging > should track reactive operations
+🛠️ TachUI DevTools disabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > reactive debugging > should track context changes
+🛠️ TachUI DevTools enabled
+
+stdout | packages/devtools/__tests__/inspector/inspector.test.ts > Component Inspector > reactive debugging > should track context changes
+🛠️ TachUI DevTools disabled
+
+ ✓ packages/devtools/__tests__/inspector/inspector.test.ts (30 tests) 67ms
+stdout | packages/responsive/__tests__/modifiers/responsive/comprehensive-browser-tests.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/responsive/__tests__/modifiers/responsive/comprehensive-browser-tests.test.ts > Comprehensive Browser Compatibility Tests > Edge Cases and Error Handling > handles missing window object gracefully
+[ResponsiveDevTools] ResponsiveDevTools: Enabled
+🔍 TachUI Responsive State
+  Current breakpoint: base
+  Viewport: 0×0
+  Configuration: {
+    base: [32m'0px'[39m,
+    sm: [32m'640px'[39m,
+    md: [32m'768px'[39m,
+    lg: [32m'1024px'[39m,
+    xl: [32m'1280px'[39m,
+    [32m'2xl'[39m: [32m'1536px'[39m
+  }
+  Media Query Results:
+    Mobile: false
+    Tablet: false
+    Desktop: false
+    Touch Device: false
+    Dark Mode: false
+    Reduced Motion: false
+🔍 TachUI Responsive State
+  Current breakpoint: base
+  Viewport: 0×0
+  Configuration: {
+    base: [32m'0px'[39m,
+    sm: [32m'640px'[39m,
+    md: [32m'768px'[39m,
+    lg: [32m'1024px'[39m,
+    xl: [32m'1280px'[39m,
+    [32m'2xl'[39m: [32m'1536px'[39m
+  }
+  Media Query Results:
+    Mobile: false
+    Tablet: false
+    Desktop: false
+    Touch Device: false
+    Dark Mode: false
+    Reduced Motion: false
+
+stdout | packages/devtools/__tests__/profiler/profiler.test.ts > Performance Profiler > Integration scenarios > should handle development-only usage
+PerformanceProfiler initialized with config: {}
+MemoryProfiler started with config: {}
+Bundle analysis started
+
+ ✓ packages/devtools/__tests__/profiler/profiler.test.ts (9 tests) 12ms
+stdout | packages/responsive/__tests__/modifiers/responsive/comprehensive-browser-tests.test.ts > Comprehensive Browser Compatibility Tests > Development Tools Integration > development tools work in development mode
+[ResponsiveDevTools] ResponsiveDevTools: Enabled
+🔍 TachUI Responsive State
+  Current breakpoint: base
+  Viewport: 0×0
+  Configuration: {
+    base: [32m'0px'[39m,
+    sm: [32m'640px'[39m,
+    md: [32m'768px'[39m,
+    lg: [32m'1024px'[39m,
+    xl: [32m'1280px'[39m,
+    [32m'2xl'[39m: [32m'1536px'[39m
+  }
+  Media Query Results:
+    Mobile: false
+    Tablet: false
+    Desktop: false
+    Touch Device: false
+    Dark Mode: false
+    Reduced Motion: false
+🔍 Responsive Value - Test Value
+  Responsive object: { base: [32m'small'[39m, md: [32m'medium'[39m, lg: [32m'large'[39m }
+  Resolved value (base): small
+  Defined breakpoints:
+    → base: small
+      md: medium
+      lg: large
+
+stderr | packages/responsive/__tests__/modifiers/responsive/comprehensive-browser-tests.test.ts > Comprehensive Browser Compatibility Tests > Development Tools Integration > development tools are disabled in production
+ResponsiveDevTools: Not enabling in production mode
+
+ ✓ packages/responsive/__tests__/modifiers/responsive/comprehensive-browser-tests.test.ts (28 tests | 2 skipped) 315ms
+stdout | packages/core/__tests__/modifiers/size.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/core/__tests__/modifiers/size.test.ts (13 tests) 17ms
+stdout | packages/navigation/__tests__/navigation-manager.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stderr | packages/navigation/__tests__/navigation-manager.test.ts > Navigation Manager - Global Navigation Coordination > Navigation Coordinator > coordinates multiple navigation instances
+Coordinator with ID "coordinator-1757026695709" already exists
+
+stderr | packages/navigation/__tests__/navigation-manager.test.ts > Navigation Manager - Global Navigation Coordination > Navigation Coordinator > handles navigation conflicts
+Coordinator with ID "coordinator-1757026695709" already exists
+
+stderr | packages/navigation/__tests__/navigation-manager.test.ts > Navigation Manager - Global Navigation Coordination > Navigation Coordinator > manages navigation priorities
+Coordinator with ID "coordinator-1757026695710" already exists
+
+ ✓ packages/navigation/__tests__/navigation-manager.test.ts (39 tests) 18ms
+stdout | packages/navigation/__tests__/navigation-stack.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/navigation/__tests__/navigation-stack.test.ts (20 tests) 11ms
+ ✓ packages/core/__tests__/gradients/state-gradient-asset.test.ts (24 tests) 8ms
+ ✓ packages/symbols/__tests__/icon-sets/lucide.test.ts (26 tests) 30ms
+stdout | packages/effects/__tests__/transforms.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stderr | packages/symbols/__tests__/compatibility/swiftui-shim.test.ts > SwiftUI Compatibility Shim > Integration with TachUI Modifier System > should support modifier chaining with reactive values
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/symbols/__tests__/compatibility/swiftui-shim.test.ts > SwiftUI Compatibility Shim > Error Handling > should handle invalid props gracefully
+SF Symbol "undefined" has no Lucide equivalent. Using fallback.
+
+stderr | packages/symbols/__tests__/compatibility/swiftui-shim.test.ts > SwiftUI Compatibility Shim > Error Handling > should handle undefined systemName
+SF Symbol "undefined" has no Lucide equivalent. Using fallback.
+
+ ✓ packages/effects/__tests__/transforms.test.ts (12 tests) 14ms
+ ✓ packages/symbols/__tests__/compatibility/swiftui-shim.test.ts (25 tests) 9ms
+stdout | packages/responsive/__tests__/modifiers/responsive/responsive-integration.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/primitives/__tests__/integration/real-plugin-integration.test.ts (14 tests) 6ms
+ ✓ packages/responsive/__tests__/modifiers/responsive/responsive-integration.test.ts (8 tests) 9ms
+stdout | packages/navigation/__tests__/navigation-modifiers.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/navigation/__tests__/navigation-link.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/navigation/__tests__/navigation-modifiers.test.ts (30 tests) 7ms
+stderr | packages/primitives/__tests__/layout/Divider.test.ts > Divider Component > Integration with Modifier System > should work with modifier system
+Modifier 'margin' not found in registry, using stub
+
+ ✓ packages/primitives/__tests__/layout/Divider.test.ts (43 tests) 38ms
+ ✓ packages/navigation/__tests__/navigation-link.test.ts (30 tests) 10ms
+ ✓ packages/forms/__tests__/Stepper.test.ts (4 tests) 15ms
+ ✓ packages/core/__tests__/integration/batching-enabled.test.ts (3 tests) 3ms
+ ✓ packages/symbols/__tests__/compatibility/category-mapping.test.ts (36 tests) 20ms
+ ✓ packages/core/__tests__/runtime/props.test.ts (35 tests) 11ms
+ ✓ packages/core/__tests__/modifiers/as-html.test.ts (17 tests) 31ms
+ ✓ packages/symbols/__tests__/compatibility/migration-utilities.test.ts (36 tests) 9ms
+stdout | packages/responsive/__tests__/modifiers/responsive/layout-patterns.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/responsive/__tests__/modifiers/responsive/layout-patterns.test.ts (39 tests) 5ms
+ ✓ packages/forms/__tests__/textfield-formatters.test.ts (7 tests) 18ms
+ ✓ packages/modifiers/__tests__/elements/decorative.test.ts (31 tests) 18ms
+stdout | packages/primitives/__tests__/display/ImageAsset-integration.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/primitives/__tests__/display/ImageAsset-integration.test.ts (4 tests) 2ms
+ ✓ packages/viewport/__tests__/windowgroup-advanced-features.test.ts (19 tests) 38ms
+ ✓ packages/modifiers/__tests__/interaction/integration.test.ts (10 tests) 11ms
+stdout | packages/navigation/__tests__/navigation-path.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/primitives/__tests__/forms/BasicInput.test.ts (32 tests) 8ms
+stderr | packages/primitives/__tests__/controls/Button.test.ts > Button Factory Function > should support modifier chaining
+Modifier 'padding' not found in registry, using stub
+Modifier 'margin' not found in registry, using stub
+
+stderr | packages/primitives/__tests__/controls/Button.test.ts > Integration Tests > should handle complex button configuration
+Modifier 'padding' not found in registry, using stub
+Modifier 'margin' not found in registry, using stub
+
+stderr | packages/primitives/__tests__/controls/Button.test.ts > Integration Tests > should support chaining typography modifiers with other modifiers
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/primitives/__tests__/controls/Button.test.ts (73 tests) 15ms
+stderr | packages/navigation/__tests__/navigation-path.test.ts > Navigation Path - Path Management and Utilities > Error Handling > handles event listener errors
+Navigation path listener error: Error: Listener error
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/navigation/__tests__/navigation-path.test.ts:605:15
+    at mockCall [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+spy@3.2.4/node_modules/[4m@vitest[24m/spy/dist/index.js:96:15[90m)[39m
+    at spy [90m(file:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/tinyspy@4.0.3/node_modules/[4mtinyspy[24m/dist/index.js:47:103[90m)[39m
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/navigation/src/navigation-path.ts:511:11
+    at Set.forEach (<anonymous>)
+    at NavigationPath._notifyListeners [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/navigation/src/navigation-path.ts:509:23[90m)[39m
+    at NavigationPath.append [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/navigation/src/navigation-path.ts:102:10[90m)[39m
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/navigation/__tests__/navigation-path.test.ts:610:12
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/whoughton/Dev/tach-ui/tachUI/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+
+ ✓ packages/navigation/__tests__/navigation-path.test.ts (59 tests) 15ms
+stderr | packages/symbols/__tests__/reactive/modifier-integration.test.ts > Symbol Modifier Integration > Modifier Storage and Application > should store applied modifiers in component
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/symbols/__tests__/reactive/modifier-integration.test.ts > Symbol Modifier Integration > Modifier Storage and Application > should preserve modifier order based on priority
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/core/__tests__/gradients/background-modifier.test.ts (5 tests) 40ms
+stderr | packages/symbols/__tests__/reactive/modifier-integration.test.ts > Symbol Modifier Integration > Modifier Storage and Application > should handle complex modifier combinations
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/symbols/__tests__/reactive/modifier-integration.test.ts > Symbol Modifier Integration > ModifiableComponent Interface > should maintain component identity after modifier application
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/symbols/__tests__/reactive/modifier-integration.test.ts > Symbol Modifier Integration > Symbol-Specific Properties with Modifiers > should combine Symbol properties with TachUI modifiers
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/symbols/__tests__/reactive/modifier-integration.test.ts (8 tests) 25ms
+ ✓ packages/core/__tests__/compiler.test.ts (33 tests) 16ms
+ ✓ packages/core/__tests__/constants/layout.test.ts (23 tests) 4ms
+stderr | packages/primitives/__tests__/display/Text.test.ts > Text Factory Function > should support modifier chaining
+Modifier 'padding' not found in registry, using stub
+Modifier 'margin' not found in registry, using stub
+
+stderr | packages/primitives/__tests__/display/Text.test.ts > Integration Tests > should combine typography preset with formatting
+Modifier 'padding' not found in registry, using stub
+Modifier 'margin' not found in registry, using stub
+
+stderr | packages/primitives/__tests__/display/Text.test.ts > Integration Tests > should handle complex styling combinations
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/primitives/__tests__/display/Text.test.ts (68 tests) 14ms
+stdout | packages/primitives/__tests__/css-classes/component-integration.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/primitives/__tests__/css-classes/component-integration.test.ts (21 tests) 12ms
+ ✓ packages/forms/__tests__/validation.test.ts (4 tests) 22ms
+stderr | packages/core/__tests__/gradients/state-gradient-integration.test.ts > State Gradient Integration Tests > modifier builder integration > should chain with other modifiers correctly
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/core/__tests__/gradients/state-gradient-integration.test.ts > State Gradient Integration Tests > real-world usage patterns > should support button hover effects
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/core/__tests__/gradients/state-gradient-integration.test.ts > State Gradient Integration Tests > real-world usage patterns > should support card hover effects
+Modifier 'padding' not found in registry, using stub
+Modifier 'shadow' not found in registry, using stub
+
+stderr | packages/core/__tests__/gradients/state-gradient-integration.test.ts > State Gradient Integration Tests > real-world usage patterns > should support form input focus states
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/core/__tests__/gradients/state-gradient-integration.test.ts (11 tests) 8ms
+ ✓ packages/modifiers/__tests__/interaction/focusable.test.ts (29 tests) 7ms
+ ✓ packages/modifiers/__tests__/layout/z-index.test.ts (40 tests) 9ms
+stderr | packages/core/__tests__/components/wrapper.test.ts > withModifiers > should support modifier chaining
+Modifier 'padding' not found in registry, using stub
+Modifier 'margin' not found in registry, using stub
+
+stderr | packages/core/__tests__/components/wrapper.test.ts > HTML > div > should support modifier chaining
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/core/__tests__/components/wrapper.test.ts > Text Component > should support modifier chaining
+Modifier 'padding' not found in registry, using stub
+Modifier 'margin' not found in registry, using stub
+
+stderr | packages/core/__tests__/components/wrapper.test.ts > createModifiableComponentFactory > should support modifier chaining on factory components
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/core/__tests__/components/wrapper.test.ts > Integration Tests > should combine multiple wrapper features
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/core/__tests__/components/wrapper.test.ts > Integration Tests > should work with nested layouts
+Modifier 'padding' not found in registry, using stub
+Modifier 'margin' not found in registry, using stub
+
+stderr | packages/core/__tests__/components/wrapper.test.ts > Integration Tests > should handle complex element configurations
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/core/__tests__/components/wrapper.test.ts > Integration Tests > should create reusable component patterns
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/core/__tests__/components/wrapper.test.ts (50 tests) 9ms
+stdout | packages/navigation/__tests__/navigation-environment.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/forms/__tests__/TextField.test.ts
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+ ✓ packages/forms/__tests__/TextField.test.ts (4 tests) 7ms
+ ✓ packages/navigation/__tests__/navigation-environment.test.ts (28 tests) 9ms
+ ✓ packages/core/__tests__/gradients/phase4-features.test.ts (41 tests) 8ms
+ ✓ packages/modifiers/__tests__/layout/integration.test.ts (19 tests) 16ms
+ ✓ packages/core/__tests__/assets/assets.test.ts (40 tests) 15ms
+stderr | packages/primitives/__tests__/controls/Picker.test.ts > Picker Component > should apply modifiers correctly
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/primitives/__tests__/controls/Picker.test.ts (6 tests) 4ms
+stdout | packages/navigation/__tests__/enhanced-tab-view.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/navigation/__tests__/enhanced-tab-view.test.ts > Enhanced TabView > Tab Coordinator Enhanced Methods > should support tab reordering
+Reordering tabs: [ [32m'search'[39m, [32m'home'[39m, [32m'profile'[39m, [32m'settings'[39m ]
+
+stdout | packages/navigation/__tests__/enhanced-tab-view.test.ts > Enhanced TabView > Tab Coordinator Enhanced Methods > should validate tab reordering with invalid IDs
+Reordering tabs: [ [32m'search'[39m, [32m'invalid'[39m, [32m'home'[39m, [32m'nonexistent'[39m ]
+
+ ✓ packages/navigation/__tests__/enhanced-tab-view.test.ts (30 tests) 29ms
+ ✓ packages/core/__tests__/assets/FontAsset.test.ts (25 tests) 16ms
+stdout | packages/navigation/__tests__/accessibility.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/modifiers/__tests__/layout/overlay.test.ts (33 tests) 36ms
+ ✓ packages/navigation/__tests__/accessibility.test.ts (29 tests) 12ms
+stdout | packages/effects/__tests__/backdrop.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/effects/__tests__/filters.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/effects/__tests__/filters.test.ts (13 tests) 3ms
+ ✓ packages/effects/__tests__/backdrop.test.ts (34 tests) 20ms
+stdout | packages/responsive/__tests__/modifiers/responsive/responsive-reactivity.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/core/__tests__/assets/register-asset-overrides.test.ts (5 tests) 9ms
+ ✓ packages/responsive/__tests__/modifiers/responsive/responsive-reactivity.test.ts (8 tests) 7ms
+ ✓ packages/core/__tests__/gradients/state-background-modifier.test.ts (19 tests) 15ms
+ ✓ packages/flow-control/__tests__/iteration/index.test.ts (7 tests) 3ms
+stdout | packages/navigation/__tests__/navigation-router.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/navigation/__tests__/navigation-router.test.ts (37 tests) 12ms
+stderr | packages/primitives/__tests__/layout/Spacer.test.ts > Spacer Factory Function > Modifier Integration > should support chaining modifiers
+Modifier 'padding' not found in registry, using stub
+Modifier 'margin' not found in registry, using stub
+
+ ✓ packages/primitives/__tests__/layout/Spacer.test.ts (35 tests) 10ms
+stdout | packages/core/__tests__/reactive/computed-modifiers.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/core/__tests__/reactive/computed-modifiers.test.ts (14 tests) 41ms
+ ✓ packages/modifiers/__tests__/appearance/clipped.test.ts (18 tests) 4ms
+stdout | packages/data/__tests__/List.test.ts
+🔍 [@tachui/mobile] Registered 1 mobile modifiers with global registry
+
+ ✓ packages/devtools/__tests__/debug/enhanced-errors-migration.test.ts (22 tests) 10ms
+stderr | packages/data/__tests__/List.test.ts > List Factory Function > should support modifier chaining
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/data/__tests__/List.test.ts (63 tests) 12ms
+ ✓ packages/core/__tests__/modifiers/padding.test.ts (35 tests) 5ms
+ ✓ packages/core/__tests__/runtime/renderer.test.ts (31 tests) 14ms
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedPluginManager > should install and manage plugins correctly
+⚙️ Service "test-service" registered
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedPluginManager > should install and manage plugins correctly
+✅ Plugin "test-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedPluginManager > should uninstall plugins correctly
+⚙️ Service "test-service" registered
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedPluginManager > should uninstall plugins correctly
+✅ Plugin "test-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedPluginManager > should uninstall plugins correctly
+🗑️ Plugin "test-plugin" uninstalled successfully
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedComponentRegistry > should register and retrieve components
+📦 Component "TestComponent" registered (test)
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedComponentRegistry > should list components by category
+📦 Component "TestComponent1" registered (test)
+📦 Component "TestComponent2" registered (test)
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedComponentRegistry > should unregister components correctly
+📦 Component "TestComponent" registered
+🗑️ Component "TestComponent" unregistered
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedTachUIInstance > should integrate plugins and components
+📦 Component "Button" registered (input)
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedTachUIInstance > should integrate plugins and components
+✅ Plugin "ui-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedTachUIInstance > should handle services correctly
+⚙️ Service "config" registered
+🗑️ Service "config" unregistered
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedTachUIInstance > should reset correctly
+⚙️ Service "test-service" registered
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedTachUIInstance > should reset correctly
+✅ Plugin "test-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedTachUIInstance > should reset correctly
+⚙️ Service "direct-service" registered
+🗑️ Plugin "test-plugin" uninstalled successfully
+
+stdout | packages/core/__tests__/plugins/simplified-plugin-system.test.ts > Simplified Plugin System > SimplifiedTachUIInstance > should reset correctly
+🗑️ Cleared 0 registered components
+🔄 TachUI instance reset completed
+
+ ✓ packages/core/__tests__/plugins/simplified-plugin-system.test.ts (10 tests) 6ms
+ ✓ packages/symbols/__tests__/compatibility/weight-mapping.test.ts (42 tests) 11ms
+stdout | packages/core/__tests__/modifiers/event-modifiers.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/modifiers/__tests__/attributes/html.test.ts (28 tests) 10ms
+ ✓ packages/core/__tests__/modifiers/event-modifiers.test.ts (18 tests) 11ms
+stdout | packages/navigation/__tests__/programmatic-navigation.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/navigation/__tests__/programmatic-navigation.test.ts (50 tests) 23ms
+ ✓ packages/modifiers/__tests__/attributes/aria.test.ts (31 tests) 52ms
+ ✓ packages/modifiers/__tests__/layout/aspect-ratio.test.ts (41 tests) 10ms
+ ✓ packages/modifiers/__tests__/interaction/on-long-press-gesture.test.ts (15 tests) 13ms
+ ✓ packages/core/__tests__/runtime/renderer-simple.test.ts (2 tests) 10ms
+stderr | packages/symbols/__tests__/components/Symbol.test.ts > Symbol Component > Icon Loading > handles different icon sets
+Icon set error for "heart": Error: Icon set "custom" not registered
+    at Function.get [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/icon-sets/registry.ts:19:13[90m)[39m
+    at Function.loadIconInternal [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/utils/icon-loader.ts:57:35[90m)[39m
+    at Function.loadIcon [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/utils/icon-loader.ts:32:30[90m)[39m
+    at loadIcon [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/components/Symbol.ts:106:37[90m)[39m
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/components/Symbol.ts:126:5
+    at ComputationImpl.effectFn [as fn] [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/core/src/reactive/effect.ts:41:23[90m)[39m
+    at ComputationImpl.execute [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/core/src/reactive/context.ts:126:25[90m)[39m
+    at createEffect [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/core/src/reactive/effect.ts:65:10[90m)[39m
+    at Symbol [90m(/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/src/components/Symbol.ts:90:3[90m)[39m
+    at [90m/Users/whoughton/Dev/tach-ui/tachUI/[39mpackages/symbols/__tests__/components/Symbol.test.ts:168:22
+
+stderr | packages/symbols/__tests__/components/Symbol.test.ts > Symbol Component > Integration with TachUI Modifiers > can chain standard modifiers
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/symbols/__tests__/components/Symbol.test.ts
+Icon "nonexistent-icon" (NonexistentIcon) not found in Lucide icon set
+
+ ✓ packages/symbols/__tests__/components/Symbol.test.ts (25 tests) 65ms
+stdout | packages/core/__tests__/modifiers/lifecycle-modifiers.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/core/__tests__/reactive/signal.test.ts (22 tests) 8ms
+stdout | packages/core/__tests__/modifiers/lifecycle-modifiers.test.ts
+🔍 [@tachui/mobile] Registered 1 mobile modifiers with global registry
+
+ ✓ packages/core/__tests__/modifiers/lifecycle-modifiers.test.ts (23 tests | 10 skipped) 12ms
+ ✓ packages/modifiers/__tests__/appearance/clip-shape.test.ts (30 tests) 14ms
+ ✓ packages/modifiers/__tests__/layout/offset.test.ts (29 tests) 8ms
+stdout | packages/navigation/__tests__/advanced-tab-view.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/navigation/__tests__/advanced-tab-view.test.ts > Advanced TabView Features > AdvancedTabView > supports tab reordering
+Reordering tab from 0 to 2
+
+ ✓ packages/navigation/__tests__/advanced-tab-view.test.ts (28 tests) 20ms
+ ✓ packages/core/__tests__/modifiers/text.test.ts (21 tests) 10ms
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > End-to-End Plugin Workflow > should complete full plugin lifecycle successfully
+📦 Component "TestComponent" registered (test)
+📦 Component "AnotherComponent" registered (test)
+⚙️ Service "testConfig" registered
+⚙️ Service "testUtility" registered
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > End-to-End Plugin Workflow > should complete full plugin lifecycle successfully
+✅ Plugin "test-integration-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > End-to-End Plugin Workflow > should complete full plugin lifecycle successfully
+🗑️ Unregistered 2 components from plugin "test-integration-plugin": TestComponent, AnotherComponent
+Test plugin uninstalled
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > End-to-End Plugin Workflow > should complete full plugin lifecycle successfully
+🗑️ Plugin "test-integration-plugin" uninstalled successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > End-to-End Plugin Workflow > should handle multiple plugins with interdependencies
+⚙️ Service "baseService" registered
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > End-to-End Plugin Workflow > should handle multiple plugins with interdependencies
+✅ Plugin "base-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > End-to-End Plugin Workflow > should handle multiple plugins with interdependencies
+⚙️ Service "dependentService" registered
+📦 Component "DependentComponent" registered (dependent)
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > End-to-End Plugin Workflow > should handle multiple plugins with interdependencies
+✅ Plugin "dependent-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > Error Handling Integration > should handle uninstallation errors gracefully
+⚙️ Service "problemService" registered
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > Error Handling Integration > should handle uninstallation errors gracefully
+✅ Plugin "problematic-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > Error Handling Integration > should handle uninstallation errors gracefully
+🗑️ Plugin "problematic-plugin" uninstalled successfully (cleanup failed)
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > Real-World Usage Patterns > should support forms plugin-like registration pattern
+📦 Component "Form" registered (forms)
+📦 Component "TextField" registered (forms)
+📦 Component "Button" registered (forms)
+⚙️ Service "formsConfig" registered
+⚙️ Service "validation" registered
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > Real-World Usage Patterns > should support forms plugin-like registration pattern
+✅ Plugin "forms-like-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > Real-World Usage Patterns > should support symbols plugin-like usage without plugin interface
+📦 Component "Symbol" registered (symbols)
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > Performance and Scale Integration > should handle large numbers of components and services efficiently
+📦 Component "Component0" registered (large)
+📦 Component "Component1" registered (large)
+📦 Component "Component2" registered (large)
+📦 Component "Component3" registered (large)
+📦 Component "Component4" registered (large)
+📦 Component "Component5" registered (large)
+📦 Component "Component6" registered (large)
+📦 Component "Component7" registered (large)
+📦 Component "Component8" registered (large)
+📦 Component "Component9" registered (large)
+📦 Component "Component10" registered (large)
+📦 Component "Component11" registered (large)
+📦 Component "Component12" registered (large)
+📦 Component "Component13" registered (large)
+📦 Component "Component14" registered (large)
+📦 Component "Component15" registered (large)
+📦 Component "Component16" registered (large)
+📦 Component "Component17" registered (large)
+📦 Component "Component18" registered (large)
+📦 Component "Component19" registered (large)
+📦 Component "Component20" registered (large)
+📦 Component "Component21" registered (large)
+📦 Component "Component22" registered (large)
+📦 Component "Component23" registered (large)
+📦 Component "Component24" registered (large)
+📦 Component "Component25" registered (large)
+📦 Component "Component26" registered (large)
+📦 Component "Component27" registered (large)
+📦 Component "Component28" registered (large)
+📦 Component "Component29" registered (large)
+📦 Component "Component30" registered (large)
+📦 Component "Component31" registered (large)
+📦 Component "Component32" registered (large)
+📦 Component "Component33" registered (large)
+📦 Component "Component34" registered (large)
+📦 Component "Component35" registered (large)
+📦 Component "Component36" registered (large)
+📦 Component "Component37" registered (large)
+📦 Component "Component38" registered (large)
+📦 Component "Component39" registered (large)
+📦 Component "Component40" registered (large)
+📦 Component "Component41" registered (large)
+📦 Component "Component42" registered (large)
+📦 Component "Component43" registered (large)
+📦 Component "Component44" registered (large)
+📦 Component "Component45" registered (large)
+📦 Component "Component46" registered (large)
+📦 Component "Component47" registered (large)
+📦 Component "Component48" registered (large)
+📦 Component "Component49" registered (large)
+📦 Component "Component50" registered (large)
+📦 Component "Component51" registered (large)
+📦 Component "Component52" registered (large)
+📦 Component "Component53" registered (large)
+📦 Component "Component54" registered (large)
+📦 Component "Component55" registered (large)
+📦 Component "Component56" registered (large)
+📦 Component "Component57" registered (large)
+📦 Component "Component58" registered (large)
+📦 Component "Component59" registered (large)
+📦 Component "Component60" registered (large)
+📦 Component "Component61" registered (large)
+📦 Component "Component62" registered (large)
+📦 Component "Component63" registered (large)
+📦 Component "Component64" registered (large)
+📦 Component "Component65" registered (large)
+📦 Component "Component66" registered (large)
+📦 Component "Component67" registered (large)
+📦 Component "Component68" registered (large)
+📦 Component "Component69" registered (large)
+📦 Component "Component70" registered (large)
+📦 Component "Component71" registered (large)
+📦 Component "Component72" registered (large)
+📦 Component "Component73" registered (large)
+📦 Component "Component74" registered (large)
+📦 Component "Component75" registered (large)
+📦 Component "Component76" registered (large)
+📦 Component "Component77" registered (large)
+📦 Component "Component78" registered (large)
+📦 Component "Component79" registered (large)
+📦 Component "Component80" registered (large)
+📦 Component "Component81" registered (large)
+📦 Component "Component82" registered (large)
+📦 Component "Component83" registered (large)
+📦 Component "Component84" registered (large)
+📦 Component "Component85" registered (large)
+📦 Component "Component86" registered (large)
+📦 Component "Component87" registered (large)
+📦 Component "Component88" registered (large)
+📦 Component "Component89" registered (large)
+📦 Component "Component90" registered (large)
+📦 Component "Component91" registered (large)
+📦 Component "Component92" registered (large)
+📦 Component "Component93" registered (large)
+📦 Component "Component94" registered (large)
+📦 Component "Component95" registered (large)
+📦 Component "Component96" registered (large)
+📦 Component "Component97" registered (large)
+📦 Component "Component98" registered (large)
+📦 Component "Component99" registered (large)
+⚙️ Service "service0" registered
+⚙️ Service "service1" registered
+⚙️ Service "service2" registered
+⚙️ Service "service3" registered
+⚙️ Service "service4" registered
+⚙️ Service "service5" registered
+⚙️ Service "service6" registered
+⚙️ Service "service7" registered
+⚙️ Service "service8" registered
+⚙️ Service "service9" registered
+⚙️ Service "service10" registered
+⚙️ Service "service11" registered
+⚙️ Service "service12" registered
+⚙️ Service "service13" registered
+⚙️ Service "service14" registered
+⚙️ Service "service15" registered
+⚙️ Service "service16" registered
+⚙️ Service "service17" registered
+⚙️ Service "service18" registered
+⚙️ Service "service19" registered
+⚙️ Service "service20" registered
+⚙️ Service "service21" registered
+⚙️ Service "service22" registered
+⚙️ Service "service23" registered
+⚙️ Service "service24" registered
+⚙️ Service "service25" registered
+⚙️ Service "service26" registered
+⚙️ Service "service27" registered
+⚙️ Service "service28" registered
+⚙️ Service "service29" registered
+⚙️ Service "service30" registered
+⚙️ Service "service31" registered
+⚙️ Service "service32" registered
+⚙️ Service "service33" registered
+⚙️ Service "service34" registered
+⚙️ Service "service35" registered
+⚙️ Service "service36" registered
+⚙️ Service "service37" registered
+⚙️ Service "service38" registered
+⚙️ Service "service39" registered
+⚙️ Service "service40" registered
+⚙️ Service "service41" registered
+⚙️ Service "service42" registered
+⚙️ Service "service43" registered
+⚙️ Service "service44" registered
+⚙️ Service "service45" registered
+⚙️ Service "service46" registered
+⚙️ Service "service47" registered
+⚙️ Service "service48" registered
+⚙️ Service "service49" registered
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > Performance and Scale Integration > should handle large numbers of components and services efficiently
+✅ Plugin "large-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > System Reset Integration > should reset entire system cleanly
+📦 Component "Comp1" registered (test)
+⚙️ Service "service1" registered
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > System Reset Integration > should reset entire system cleanly
+✅ Plugin "plugin1" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > System Reset Integration > should reset entire system cleanly
+📦 Component "Comp2" registered (test)
+⚙️ Service "service2" registered
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > System Reset Integration > should reset entire system cleanly
+✅ Plugin "plugin2" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > System Reset Integration > should reset entire system cleanly
+🗑️ Unregistered 1 components from plugin "plugin1": Comp1
+🗑️ Plugin "plugin1" uninstalled successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > System Reset Integration > should reset entire system cleanly
+🗑️ Unregistered 1 components from plugin "plugin2": Comp2
+🗑️ Plugin "plugin2" uninstalled successfully
+
+stdout | packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts > Simplified Plugin System Integration > System Reset Integration > should reset entire system cleanly
+🗑️ Cleared 0 registered components
+🔄 TachUI instance reset completed
+
+ ✓ packages/core/__tests__/integration/simplified-plugin-system-integration.test.ts (8 tests) 9ms
+stdout | packages/primitives/__tests__/display/ImageAsset-reactive.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/navigation/__tests__/navigation-hooks.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/primitives/__tests__/display/ImageAsset-reactive.test.ts (4 tests) 6ms
+stderr | packages/mobile/__tests__/ScrollView.test.ts > ScrollView Factory Function > should support modifier chaining
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/mobile/__tests__/ScrollView.test.ts (34 tests) 9ms
+ ✓ packages/navigation/__tests__/navigation-hooks.test.ts (32 tests) 27ms
+ ✓ packages/symbols/__tests__/utils/performance.test.ts (30 tests) 52ms
+stdout | packages/navigation/__tests__/simple-tab-view.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/modifiers/__tests__/interaction/on-continuous-hover.test.ts (23 tests) 8ms
+ ✓ packages/navigation/__tests__/simple-tab-view.test.ts (23 tests) 9ms
+ ✓ packages/modifiers/__tests__/layout/scale-effect.test.ts (45 tests) 18ms
+ ✓ packages/symbols/__tests__/icon-sets/registry.test.ts (16 tests) 5ms
+ ✓ packages/core/__tests__/plugins/utils.test.ts (16 tests) 5ms
+stdout | packages/grid/__tests__/components/Grid.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/grid/__tests__/components/Grid.test.ts
+🔍 [@tachui/responsive] Registered 4 responsive modifiers with global registry
+
+ ✓ packages/core/__tests__/state/component-context.test.ts (27 tests) 7ms
+ ✓ packages/core/__tests__/css-classes/css-class-manager.test.ts (30 tests) 6ms
+ ✓ packages/grid/__tests__/components/Grid.test.ts (31 tests) 9ms
+stdout | packages/primitives/__tests__/display/Image.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/primitives/__tests__/display/Image.test.ts (42 tests) 12ms
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Plugin Installation > should install plugins through the global instance
+✅ Plugin "test-install" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Plugin Management > should track installed plugins
+✅ Plugin "plugin-one" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Plugin Management > should track installed plugins
+✅ Plugin "plugin-two" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Plugin Management > should uninstall plugins correctly
+✅ Plugin "uninstall-test" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Plugin Management > should uninstall plugins correctly
+🗑️ Plugin "uninstall-test" uninstalled successfully
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Component Registration > should register components through global function
+📦 Component "TestComponent" registered
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Component Registration > should register components with options
+📦 Component "TestComponent" registered (testing)
+
+stderr | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Component Registration > should register components with options
+Component TestComponent already registered, overwriting
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Service Registration > should register services through global function
+⚙️ Service "testService" registered
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Service Registration > should handle service registration with different types
+⚙️ Service "string" registered
+⚙️ Service "number" registered
+⚙️ Service "function" registered
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Integration Scenarios > should allow plugins to register components and services
+📦 Component "IntegrationComponent" registered (integration)
+⚙️ Service "integrationService" registered
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Integration Scenarios > should allow plugins to register components and services
+✅ Plugin "integration-plugin" v1.0.0 installed successfully
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Integration Scenarios > should allow plugins to register components and services
+🗑️ Component "IntegrationComponent" unregistered
+
+stdout | packages/core/__tests__/plugins/index.test.ts > Simplified Plugin System Integration > Integration Scenarios > should allow plugins to register components and services
+🗑️ Plugin "integration-plugin" uninstalled successfully
+
+ ✓ packages/core/__tests__/plugins/index.test.ts (11 tests) 8ms
+stdout | packages/responsive/__tests__/modifiers/responsive/advanced-media-queries.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/responsive/__tests__/modifiers/responsive/advanced-media-queries.test.ts (30 tests) 7ms
+stdout | packages/responsive/__tests__/modifiers/responsive/responsive-basic.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ✓ packages/modifiers/__tests__/layout/fixed-size.test.ts (41 tests) 7ms
+ ✓ packages/responsive/__tests__/modifiers/responsive/responsive-basic.test.ts (18 tests) 11ms
+ ✓ packages/flow-control/__tests__/iteration/ForEach.test.ts (22 tests) 5ms
+ ✓ packages/core/__tests__/modifiers/layout-infinity.test.ts (13 tests) 7ms
+ ✓ packages/mobile/__tests__/ActionSheet.test.ts (24 tests) 7ms
+ ✓ packages/forms/__tests__/comprehensive-validation.test.ts (5 tests) 24ms
+stdout | packages/grid/__tests__/components/grid-accessibility-styling.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/grid/__tests__/components/grid-accessibility-styling.test.ts
+🔍 [@tachui/responsive] Registered 4 responsive modifiers with global registry
+
+ ✓ packages/grid/__tests__/components/grid-accessibility-styling.test.ts (30 tests) 7ms
+ ✓ packages/modifiers/__tests__/layout/flexbox.test.ts (38 tests) 6ms
+stdout | packages/core/__tests__/components/Layout-Priority.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/core/__tests__/components/Layout-Priority.test.ts
+@tachui/effects: Registered 7 effects
+
+ ✓ packages/core/__tests__/components/Layout-Priority.test.ts (18 tests) 8ms
+stdout | packages/devtools/__tests__/testing/testing.test.ts > Testing Utilities > Integration scenarios > should support development workflow
+Running test: form submission
+Running accessibility tests
+Creating snapshot: Form default state
+Creating snapshot: Form validation error
+
+ ✓ packages/devtools/__tests__/testing/testing.test.ts (16 tests) 6ms
+stdout | packages/grid/__tests__/components/grid-animations.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/grid/__tests__/components/grid-animations.test.ts
+🔍 [@tachui/responsive] Registered 4 responsive modifiers with global registry
+
+ ✓ packages/core/__tests__/performance/regression-detection.test.ts (14 tests) 6ms
+ ✓ packages/grid/__tests__/components/grid-animations.test.ts (26 tests) 6ms
+ ✓ packages/symbols/__tests__/utils/custom-icon-set-builder.test.ts (29 tests) 6ms
+ ✓ packages/modifiers/__tests__/attributes/integration.test.ts (17 tests) 7ms
+ ✓ packages/modifiers/__tests__/interaction/focused.test.ts (21 tests) 6ms
+ ✓ packages/core/__tests__/gradients/angular-gradient.test.ts (8 tests) 3ms
+stderr | packages/symbols/__tests__/reactive/reactive-modifiers.test.ts > Symbol Reactive Modifier Tests > Basic Reactive Modifiers > should accept signals in padding modifier
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/symbols/__tests__/reactive/reactive-modifiers.test.ts > Symbol Reactive Modifier Tests > Computed Signal Modifiers > should accept computed signals for responsive sizing
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/symbols/__tests__/reactive/reactive-modifiers.test.ts > Symbol Reactive Modifier Tests > Combined Reactive Symbol Properties and Modifiers > should handle reactive symbol properties with reactive modifiers
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/symbols/__tests__/reactive/reactive-modifiers.test.ts > Symbol Reactive Modifier Tests > Modifier Chaining with Signals > should support complex modifier chains with mixed static and reactive values
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/symbols/__tests__/reactive/reactive-modifiers.test.ts (9 tests) 13ms
+ ✓ packages/symbols/__tests__/animations/SymbolAnimations.test.ts (28 tests) 6ms
+stderr | packages/core/__tests__/modifiers/as-html-integration.test.ts > AsHTML Integration Tests > asHTML can be chained with other modifiers
+Modifier 'padding' not found in registry, using stub
+
+stderr | packages/core/__tests__/modifiers/as-html-integration.test.ts > AsHTML Integration Tests > asHTML works in complex modifier chains
+Modifier 'padding' not found in registry, using stub
+Modifier 'shadow' not found in registry, using stub
+Modifier 'margin' not found in registry, using stub
+Modifier 'maxWidth' not found in registry, using stub
+
+stderr | packages/core/__tests__/modifiers/as-html-integration.test.ts > AsHTML Integration Tests > built component maintains original structure with asHTML modifier
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/core/__tests__/modifiers/as-html-integration.test.ts (10 tests) 5ms
+ ✓ packages/core/__tests__/css-classes/component-base.test.ts (26 tests) 11ms
+ ✓ packages/symbols/__tests__/rendering/AdvancedRenderer.test.ts (16 tests) 23ms
+ ✓ packages/primitives/__tests__/controls/Button-states-integration.test.ts (24 tests) 7ms
+ ✓ packages/flow-control/__tests__/conditional/Show.test.ts (15 tests) 6ms
+ ✓ packages/core/__tests__/gradients/radial-gradient.test.ts (8 tests) 3ms
+ ✓ packages/core/__tests__/gradients/linear-gradient.test.ts (7 tests) 2ms
+ ✓ packages/forms/__tests__/Select.test.ts (4 tests) 5ms
+stdout | Timeout.registerFormsValidators [as _onTimeout] (/Users/whoughton/Dev/tach-ui/tachUI/packages/forms/src/validation/component-validation.ts:412:15)
+🔍 [@tachui/advanced-forms] Registered 6 component validators
+
+ ✓ packages/core/__tests__/modifiers/margin.test.ts (19 tests) 5ms
+ ✓ packages/flow-control/__tests__/integration.test.ts (15 tests) 5ms
+ ✓ packages/modifiers/__tests__/basic/padding-presets.test.ts (12 tests) 6ms
+ ✓ packages/forms/__tests__/Slider.test.ts (4 tests) 4ms
+ ✓ packages/core/__tests__/constants/frame-utils.test.ts (28 tests) 4ms
+stderr | packages/primitives/__tests__/controls/Toggle.test.ts > Toggle Component > should apply modifiers correctly
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/primitives/__tests__/controls/Toggle.test.ts (7 tests) 5ms
+stderr | packages/mobile/__tests__/Alert.test.ts > Alert Component > Integration Scenarios > should work with modifier chaining
+Modifier 'padding' not found in registry, using stub
+
+ ✓ packages/mobile/__tests__/Alert.test.ts (6 tests) 6ms
+ ✓ packages/forms/__tests__/DatePicker.test.ts (4 tests) 5ms
+ ✓ packages/core/__tests__/modifiers/padding-string-support.test.ts (5 tests) 2ms
+ ✓ packages/modifiers/__tests__/appearance/integration.test.ts (12 tests) 4ms
+ ✓ packages/core/__tests__/modifiers/error-logging.test.ts (2 tests) 3ms
+ ✓ packages/core/__tests__/gradients/repeating-gradients.test.ts (10 tests) 3ms
+ ✓ packages/core/__tests__/gradients/gradient-asset.test.ts (5 tests) 4ms
+ ✓ packages/core/__tests__/runtime/component-context-basic.test.ts (5 tests) 3ms
+stdout | packages/effects/__tests__/effects.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+stdout | packages/effects/__tests__/effects.test.ts
+@tachui/effects: Registered 7 effects
+
+ ✓ packages/effects/__tests__/effects.test.ts (5 tests) 3ms
+ ✓ packages/devtools/__tests__/profiler/enhanced-codegen.test.ts (3 tests) 2ms
+ ✓ packages/primitives/__tests__/forms/Form.test.ts (6 tests) 3ms
+ ✓ packages/core/__tests__/modifiers/margin-string-support.test.ts (5 tests) 2ms
+ ✓ packages/devtools/__tests__/profiler/advanced-parser.test.ts (2 tests) 8ms
+stdout | packages/core/__tests__/modifiers/gradient-text-modifier.test.ts
+@tachui/modifiers: Registered 82 modifiers
+
+ ↓ packages/cli/__tests__/commands/analyze.test.ts (8 tests | 8 skipped)
+ ✓ packages/core/__tests__/modifiers/gradient-text-modifier.test.ts (5 tests) 3ms
+ ↓ packages/cli/__tests__/commands/dev.test.ts (24 tests | 24 skipped)
+ ↓ packages/cli/__tests__/commands/generate.test.ts (27 tests | 27 skipped)
+ ↓ packages/cli/__tests__/commands/init.test.ts (18 tests | 18 skipped)
+ ↓ packages/cli/__tests__/commands/migrate.test.ts (4 tests | 4 skipped)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/modifiers/__tests__/appearance/stress.test.ts > Appearance Modifiers Stress Tests > Edge Case Stress Tests > should handle invalid parameters gracefully at scale
+AssertionError: expected 332.56725000000006 to be less than 100
+ ❯ packages/modifiers/__tests__/appearance/stress.test.ts:322:24
+    320|       const duration = performance.now() - start
+    321| 
+    322|       expect(duration).toBeLessThan(100) // Should complete within 100…
+       |                        ^
+    323|     })
+    324| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  packages/modifiers/__tests__/layout/overlay-stress.test.ts > Overlay Modifier Stress Tests > Error Handling Under Stress > should handle many invalid content types gracefully
+AssertionError: expected 459.4808750000002 to be less than 200
+ ❯ packages/modifiers/__tests__/layout/overlay-stress.test.ts:335:24
+    333|       const duration = performance.now() - start
+    334| 
+    335|       expect(duration).toBeLessThan(200) // Should complete within 200…
+       |                        ^
+    336|     })
+    337| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  packages/modifiers/__tests__/layout/overlay-stress.test.ts > Overlay Modifier Stress Tests > Error Handling Under Stress > should handle missing elements gracefully at scale
+AssertionError: expected 327.7904169999997 to be less than 50
+ ❯ packages/modifiers/__tests__/layout/overlay-stress.test.ts:361:24
+    359|       const duration = performance.now() - start
+    360| 
+    361|       expect(duration).toBeLessThan(50) // Should complete within 50ms
+       |                        ^
+    362|     })
+    363| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  packages/modifiers/__tests__/elements/stress.test.ts > Elements Performance Benchmarks > should meet modifier application performance targets
+AssertionError: expected 512.1759370398594 to be greater than 1000
+ ❯ packages/modifiers/__tests__/elements/stress.test.ts:511:26
+    509| 
+    510|     // Should apply at least 1,000 modifiers per second
+    511|     expect(opsPerSecond).toBeGreaterThan(1000)
+       |                          ^
+    512|   })
+    513| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  3 failed | 205 passed | 5 skipped (213)
+      Tests  4 failed | 4414 passed | 104 skipped (4522)
+   Start at  18:57:35
+   Duration  58.99s (transform 10.99s, setup 0ms, collect 85.39s, tests 139.99s, environment 194.96s, prepare 28.53s)
+
+ ELIFECYCLE  Test failed. See above for more details.
