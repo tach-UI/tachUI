@@ -1,3 +1,8 @@
+---
+cssclasses:
+  - full-page
+---
+
 # Concatenation Optimization Enhancement
 
 ## Overview
