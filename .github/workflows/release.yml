@@ -38,11 +38,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Run tests
-        run: pnpm test:ci
-      
       - name: Build packages
         run: pnpm build
+      
+      - name: Run tests
+        run: pnpm test:ci
       
       - name: Generate API docs
         run: pnpm docs:api
