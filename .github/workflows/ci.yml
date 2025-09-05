@@ -58,7 +58,13 @@ jobs:
         run: |
           pnpm build:core
           pnpm build:mobile
+          pnpm build:flow-control
+          pnpm build:viewport
+          pnpm build:modifiers
           pnpm build:primitives
+          pnpm build:responsive
+          pnpm build:effects
+          pnpm build:symbols
       
       - name: Run type checking
         run: pnpm type-check
@@ -86,7 +92,11 @@ jobs:
       - name: Build dependencies (needed for tests)
         run: |
           pnpm build:core
+          pnpm build:mobile
+          pnpm build:flow-control
+          pnpm build:modifiers
           pnpm build:primitives
+          pnpm build:responsive
       
       - name: Run tests
         run: pnpm test:ci
