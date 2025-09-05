@@ -83,6 +83,14 @@
     "./viewport": {
       "types": "./dist/viewport/index.d.ts",
       "import": "./dist/viewport/index.js"
+    },
+    "./assets": {
+      "types": "./dist/bundles/assets.d.ts",
+      "import": "./dist/bundles/assets.js"
+    },
+    "./context": {
+      "types": "./dist/bundles/context.d.ts",
+      "import": "./dist/bundles/context.js"
     }
   },
   "files": [
