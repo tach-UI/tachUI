@@ -7,12 +7,12 @@ import {
   EnhancedScrollView,
   ScrollView,
   ScrollViewUtils,
-} from '../src/ScrollView'
+} from '../../src/display/ScrollView'
 import type {
   ContentOffset,
   ScrollEventInfo,
   ScrollViewProps,
-} from '../src/ScrollView'
+} from '../../src/display/ScrollView'
 import { createSignal } from '@tachui/core'
 
 // Create a simple mock Text component for testing

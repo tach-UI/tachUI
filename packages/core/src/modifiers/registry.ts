@@ -22,8 +22,7 @@ import type {
 import type { Concatenatable, ComponentSegment } from '../concatenation/types'
 import { ConcatenatedComponent } from '../concatenation/concatenated-component'
 
-// Module instance identifier for debugging
-const moduleInstanceId = Math.random().toString(36).substr(2, 6)
+// Pure ESM module singleton - no globalThis
 
 // Pure ESM module singleton - no globalThis
 let registryInstance: ModifierRegistryImpl | null = null
@@ -33,11 +32,6 @@ let registryInstance: ModifierRegistryImpl | null = null
  */
 export class ModifierRegistryImpl implements ModifierRegistry {
   private modifiers = new Map<string, ModifierFactory<any>>()
-  private registryId: string
-
-  constructor() {
-    this.registryId = Math.random().toString(36).substr(2, 9)
-  }
 
   static getInstance(): ModifierRegistryImpl {
     if (!registryInstance) {
@@ -377,7 +371,6 @@ export function createModifiableComponent<P extends ComponentProps>(
 
       return new ConcatenatedComponent([thisSegment, otherSegment], metadata)
     }
-
     ;(modifiableComponent as any).toSegment = function (): ComponentSegment {
       return {
         id: modifiableComponent.id,
@@ -389,7 +382,6 @@ export function createModifiableComponent<P extends ComponentProps>(
         },
       }
     }
-
     ;(modifiableComponent as any).isConcatenatable = function (): boolean {
       return true
     }

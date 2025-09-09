@@ -236,8 +236,6 @@ const outlineOffset = (..._args: any[]) => createStubModifier('outlineOffset')
  */
 function createRegistryModifier(name: string, ..._args: any[]): Modifier {
   const activeRegistry = getActiveRegistry()
-  const availableModifiers = activeRegistry.list()
-  const registryInstance = activeRegistry.constructor.name
 
   const factory = activeRegistry.get(name) as any
   if (factory) {

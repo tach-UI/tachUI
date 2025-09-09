@@ -702,7 +702,6 @@ export function text(content: string | (() => string)): DOMNode {
     const textNode: DOMNode = {
       type: 'text',
       text: '',
-      dispose: undefined,
       reactiveContent: content, // Store the reactive content function
     }
 
@@ -710,8 +709,18 @@ export function text(content: string | (() => string)): DOMNode {
     const initialText = content()
     textNode.text = String(initialText)
 
-    // Don't create the reactive effect here - let the renderer handle it
-    // This ensures the DOM element is available when the effect runs
+    // Create reactive effect for updating text content
+    const effect = createEffect(() => {
+      const newText = content()
+      textNode.text = String(newText)
+
+      // Update DOM element if it exists
+      if (textNode.element && 'textContent' in textNode.element) {
+        textNode.element.textContent = String(newText)
+      }
+    })
+
+    textNode.dispose = effect.dispose.bind(effect)
 
     return textNode
   }
