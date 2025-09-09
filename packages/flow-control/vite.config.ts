@@ -6,6 +6,8 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
+        'conditional/index': resolve(__dirname, 'src/conditional/index.ts'),
+        'iteration/index': resolve(__dirname, 'src/iteration/index.ts'),
       },
       name: 'TachUIFlowControl',
       formats: ['es'],

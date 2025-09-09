@@ -74,6 +74,9 @@ export { LinearGradient, StateGradient } from '../gradients'
 
 // Debug system: @tachui/devtools
 
+// Package Information - consistent across all TachUI packages
+export { TACHUI_PACKAGE, TACHUI_PACKAGE_VERSION, VERSION } from '../version'
+
 /**
  * Minimal Bundle Metadata
  */

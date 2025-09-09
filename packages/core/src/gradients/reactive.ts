@@ -1,6 +1,6 @@
 /**
  * Reactive Signal Integration for TachUI Gradients
- * 
+ *
  * Enables dynamic gradients that update based on reactive signals,
  * allowing for animated and data-driven gradient effects.
  */
@@ -18,10 +18,11 @@ import type {
   RadialGradientOptions,
   AngularGradientOptions,
   StateGradientOptions,
-  StatefulBackgroundValue
+  StatefulBackgroundValue,
 } from './types'
 import { LinearGradient, RadialGradient, AngularGradient } from './index'
 import { StateGradientAsset } from './state-gradient-asset'
+import { gradientToCSS } from './css-generator'
 
 /**
  * Reactive gradient options supporting signal-based values
@@ -29,24 +30,34 @@ import { StateGradientAsset } from './state-gradient-asset'
 export interface ReactiveLinearGradientOptions {
   colors: (string | Asset | Signal<string>)[]
   stops?: (number | Signal<number>)[]
-  startPoint: LinearGradientOptions['startPoint'] | Signal<LinearGradientOptions['startPoint']>
-  endPoint: LinearGradientOptions['endPoint'] | Signal<LinearGradientOptions['endPoint']>
+  startPoint:
+    | LinearGradientOptions['startPoint']
+    | Signal<LinearGradientOptions['startPoint']>
+  endPoint:
+    | LinearGradientOptions['endPoint']
+    | Signal<LinearGradientOptions['endPoint']>
   angle?: number | Signal<number>
 }
 
 export interface ReactiveRadialGradientOptions {
   colors: (string | Asset | Signal<string>)[]
   stops?: (number | Signal<number>)[]
-  center: RadialGradientOptions['center'] | Signal<RadialGradientOptions['center']>
+  center:
+    | RadialGradientOptions['center']
+    | Signal<RadialGradientOptions['center']>
   startRadius: number | Signal<number>
   endRadius: number | Signal<number>
-  shape?: RadialGradientOptions['shape'] | Signal<RadialGradientOptions['shape']>
+  shape?:
+    | RadialGradientOptions['shape']
+    | Signal<RadialGradientOptions['shape']>
 }
 
 export interface ReactiveAngularGradientOptions {
   colors: (string | Asset | Signal<string>)[]
   stops?: (number | Signal<number>)[]
-  center: AngularGradientOptions['center'] | Signal<AngularGradientOptions['center']>
+  center:
+    | AngularGradientOptions['center']
+    | Signal<AngularGradientOptions['center']>
   startAngle: number | Signal<number>
   endAngle: number | Signal<number>
 }
@@ -56,7 +67,10 @@ export interface ReactiveAngularGradientOptions {
  */
 export interface ReactiveGradientDefinition {
   type: GradientDefinition['type']
-  options: ReactiveLinearGradientOptions | ReactiveRadialGradientOptions | ReactiveAngularGradientOptions
+  options:
+    | ReactiveLinearGradientOptions
+    | ReactiveRadialGradientOptions
+    | ReactiveAngularGradientOptions
   __reactive: true
 }
 
@@ -117,45 +131,57 @@ export class ReactiveGradientAsset extends AssetClass<string> {
 
     switch (type) {
       case 'linear':
-        return LinearGradient(this.resolveLinearOptions(options as ReactiveLinearGradientOptions))
+        return LinearGradient(
+          this.resolveLinearOptions(options as ReactiveLinearGradientOptions)
+        )
       case 'radial':
-        return RadialGradient(this.resolveRadialOptions(options as ReactiveRadialGradientOptions))
+        return RadialGradient(
+          this.resolveRadialOptions(options as ReactiveRadialGradientOptions)
+        )
       case 'angular':
       case 'conic':
-        return AngularGradient(this.resolveAngularOptions(options as ReactiveAngularGradientOptions))
+        return AngularGradient(
+          this.resolveAngularOptions(options as ReactiveAngularGradientOptions)
+        )
       default:
         throw new Error(`Unsupported reactive gradient type: ${type}`)
     }
   }
 
-  private resolveLinearOptions(options: ReactiveLinearGradientOptions): LinearGradientOptions {
+  private resolveLinearOptions(
+    options: ReactiveLinearGradientOptions
+  ): LinearGradientOptions {
     return {
       colors: options.colors.map(color => this.resolveValue(color)),
       stops: options.stops?.map(stop => this.resolveValue(stop)),
       startPoint: this.resolveValue(options.startPoint),
       endPoint: this.resolveValue(options.endPoint),
-      angle: options.angle ? this.resolveValue(options.angle) : undefined
+      angle: options.angle ? this.resolveValue(options.angle) : undefined,
     }
   }
 
-  private resolveRadialOptions(options: ReactiveRadialGradientOptions): RadialGradientOptions {
+  private resolveRadialOptions(
+    options: ReactiveRadialGradientOptions
+  ): RadialGradientOptions {
     return {
       colors: options.colors.map(color => this.resolveValue(color)),
       stops: options.stops?.map(stop => this.resolveValue(stop)),
       center: this.resolveValue(options.center),
       startRadius: this.resolveValue(options.startRadius),
       endRadius: this.resolveValue(options.endRadius),
-      shape: options.shape ? this.resolveValue(options.shape) : undefined
+      shape: options.shape ? this.resolveValue(options.shape) : undefined,
     }
   }
 
-  private resolveAngularOptions(options: ReactiveAngularGradientOptions): AngularGradientOptions {
+  private resolveAngularOptions(
+    options: ReactiveAngularGradientOptions
+  ): AngularGradientOptions {
     return {
       colors: options.colors.map(color => this.resolveValue(color)),
       stops: options.stops?.map(stop => this.resolveValue(stop)),
       center: this.resolveValue(options.center),
       startAngle: this.resolveValue(options.startAngle),
-      endAngle: this.resolveValue(options.endAngle)
+      endAngle: this.resolveValue(options.endAngle),
     }
   }
 
@@ -167,10 +193,12 @@ export class ReactiveGradientAsset extends AssetClass<string> {
   }
 
   private isSignal<T>(value: T | Signal<T>): value is Signal<T> {
-    return value !== null && 
-           typeof value === 'object' && 
-           'value' in value && 
-           'subscribe' in value
+    return (
+      value !== null &&
+      typeof value === 'object' &&
+      'value' in value &&
+      'subscribe' in value
+    )
   }
 
   private setupSignalSubscriptions(): void {
@@ -183,13 +211,17 @@ export class ReactiveGradientAsset extends AssetClass<string> {
         // Handle arrays (colors, stops)
         value.forEach(item => {
           if (this.isSignal(item)) {
-            const unsubscribe = (item as Signal<any>).subscribe(() => this.handleSignalChange())
+            const unsubscribe = (item as Signal<any>).subscribe(() =>
+              this.handleSignalChange()
+            )
             this.subscriptions.push(unsubscribe)
           }
         })
       } else if (this.isSignal(value)) {
         // Handle individual signals
-        const unsubscribe = (value as Signal<any>).subscribe(() => this.handleSignalChange())
+        const unsubscribe = (value as Signal<any>).subscribe(() =>
+          this.handleSignalChange()
+        )
         this.subscriptions.push(unsubscribe)
       }
     }
@@ -207,8 +239,7 @@ export class ReactiveGradientAsset extends AssetClass<string> {
   }
 
   private gradientToCSS(gradient: GradientDefinition): string {
-    // Import and use the existing CSS generator
-    const { gradientToCSS } = require('./css-generator')
+    // Use the imported gradientToCSS function
     return gradientToCSS(gradient)
   }
 }
@@ -232,9 +263,11 @@ export class ReactiveStateGradientAsset extends StateGradientAsset {
     private updateCallback?: () => void
   ) {
     // Resolve initial state
-    const initialState = ReactiveStateGradientAsset.resolveStateOptions(reactiveStateGradients)
+    const initialState = ReactiveStateGradientAsset.resolveStateOptions(
+      reactiveStateGradients
+    )
     super(name, initialState)
-    
+
     this.setupStateSignalSubscriptions()
   }
 
@@ -246,11 +279,12 @@ export class ReactiveStateGradientAsset extends StateGradientAsset {
   ): void {
     this.cleanupStateSubscriptions()
     this.reactiveStateGradients = newState
-    
+
     // Update the underlying state gradients
-    const resolvedState = ReactiveStateGradientAsset.resolveStateOptions(newState)
+    const resolvedState =
+      ReactiveStateGradientAsset.resolveStateOptions(newState)
     this.updateStateGradients(resolvedState)
-    
+
     this.setupStateSignalSubscriptions()
     this.notifyStateUpdate()
   }
@@ -267,56 +301,74 @@ export class ReactiveStateGradientAsset extends StateGradientAsset {
     reactiveState: ReactiveStateGradientAsset['reactiveStateGradients']
   ): StateGradientOptions {
     const resolved: StateGradientOptions = {
-      default: ReactiveStateGradientAsset.resolveValue(reactiveState.default) as any,
-      animation: reactiveState.animation
+      default: ReactiveStateGradientAsset.resolveValue(
+        reactiveState.default
+      ) as any,
+      animation: reactiveState.animation,
     }
 
     if (reactiveState.hover) {
-      resolved.hover = ReactiveStateGradientAsset.resolveValue(reactiveState.hover) as any
+      resolved.hover = ReactiveStateGradientAsset.resolveValue(
+        reactiveState.hover
+      ) as any
     }
     if (reactiveState.active) {
-      resolved.active = ReactiveStateGradientAsset.resolveValue(reactiveState.active) as any
+      resolved.active = ReactiveStateGradientAsset.resolveValue(
+        reactiveState.active
+      ) as any
     }
     if (reactiveState.focus) {
-      resolved.focus = ReactiveStateGradientAsset.resolveValue(reactiveState.focus) as any
+      resolved.focus = ReactiveStateGradientAsset.resolveValue(
+        reactiveState.focus
+      ) as any
     }
     if (reactiveState.disabled) {
-      resolved.disabled = ReactiveStateGradientAsset.resolveValue(reactiveState.disabled) as any
+      resolved.disabled = ReactiveStateGradientAsset.resolveValue(
+        reactiveState.disabled
+      ) as any
     }
 
     return resolved
   }
 
   private static resolveValue<T>(value: T | Signal<T>): T {
-    if (value !== null && 
-        typeof value === 'object' && 
-        'value' in value && 
-        'subscribe' in value) {
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      'value' in value &&
+      'subscribe' in value
+    ) {
       return (value as Signal<T>).value
     }
     return value as T
   }
 
   private static isSignal<T>(value: T | Signal<T>): value is Signal<T> {
-    return value !== null && 
-           typeof value === 'object' && 
-           'value' in value && 
-           'subscribe' in value
+    return (
+      value !== null &&
+      typeof value === 'object' &&
+      'value' in value &&
+      'subscribe' in value
+    )
   }
 
   private setupStateSignalSubscriptions(): void {
     Object.entries(this.reactiveStateGradients).forEach(([key, value]) => {
       if (key === 'animation') return // Skip animation
-      
+
       if (ReactiveStateGradientAsset.isSignal(value)) {
-        const unsubscribe = (value as Signal<any>).subscribe(() => this.handleStateSignalChange())
+        const unsubscribe = (value as Signal<any>).subscribe(() =>
+          this.handleStateSignalChange()
+        )
         this.reactiveSubscriptions.push(unsubscribe)
       }
     })
   }
 
   private handleStateSignalChange(): void {
-    const resolvedState = ReactiveStateGradientAsset.resolveStateOptions(this.reactiveStateGradients)
+    const resolvedState = ReactiveStateGradientAsset.resolveStateOptions(
+      this.reactiveStateGradients
+    )
     this.updateStateGradients(resolvedState)
     this.notifyStateUpdate()
   }
@@ -383,7 +435,7 @@ export const ReactiveGradients = {
     updateCallback?: () => void
   ): ReactiveStateGradientAsset => {
     return new ReactiveStateGradientAsset(name, options, updateCallback)
-  }
+  },
 } as const
 
 /**
@@ -404,13 +456,13 @@ export const ReactiveGradientUtils = {
       subscribe: (_callback: () => void) => {
         // Implementation would cycle through colors
         return () => {} // unsubscribe
-      }
+      },
     } satisfies Signal<string>
 
     return ReactiveGradients.linear({
       colors: [colorSignal, colors[1]],
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
   },
 
@@ -425,7 +477,7 @@ export const ReactiveGradientUtils = {
       colors: [color, 'transparent'],
       stops: [progressSignal, progressSignal], // Both stops use the same signal
       startPoint: 'leading',
-      endPoint: 'trailing'
+      endPoint: 'trailing',
     })
   },
 
@@ -443,9 +495,9 @@ export const ReactiveGradientUtils = {
     return ReactiveGradients.linear({
       colors: colorScale,
       startPoint: 'top',
-      endPoint: 'bottom'
+      endPoint: 'bottom',
     })
-  }
+  },
 } as const
 
 /**
@@ -455,16 +507,23 @@ export const ReactiveBackgroundUtils = {
   /**
    * Check if a background value is reactive
    */
-  isReactiveBackground: (value: unknown): value is ReactiveGradientAsset | ReactiveStateGradientAsset => {
-    return value instanceof ReactiveGradientAsset || value instanceof ReactiveStateGradientAsset
+  isReactiveBackground: (
+    value: unknown
+  ): value is ReactiveGradientAsset | ReactiveStateGradientAsset => {
+    return (
+      value instanceof ReactiveGradientAsset ||
+      value instanceof ReactiveStateGradientAsset
+    )
   },
 
   /**
    * Create a reactive background from a signal
    */
-  fromSignal: (backgroundSignal: Signal<StatefulBackgroundValue>): ReactiveStateGradientAsset => {
+  fromSignal: (
+    backgroundSignal: Signal<StatefulBackgroundValue>
+  ): ReactiveStateGradientAsset => {
     return ReactiveGradients.state('signal-background', {
-      default: backgroundSignal
+      default: backgroundSignal,
     })
-  }
+  },
 } as const

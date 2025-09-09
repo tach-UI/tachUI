@@ -6,6 +6,7 @@
 
 import type { Asset } from './Asset'
 import { ColorAsset } from './ColorAsset'
+import { ImageAsset } from './ImageAsset'
 import { FontAsset } from './FontAsset'
 
 export class AssetCollection {
@@ -49,7 +50,42 @@ export class AssetCollection {
                   return (target as any)[prop]
                 }
 
+                // Explicit resolve method access
+                if (prop === 'resolve') {
+                  return () => target.resolve()
+                }
+
                 // If accessed directly (not as property), return resolved value
+                if (prop === 'toString' || prop === 'valueOf') {
+                  return () => target.resolve()
+                }
+
+                // Default property access
+                return (target as any)[prop]
+              },
+            })
+          }
+
+          // If it's an ImageAsset, enable convenient access
+          if (asset instanceof ImageAsset) {
+            return new Proxy(asset, {
+              get: (target, prop: string) => {
+                // Direct property access (.lightSrc, .darkSrc, .src)
+                if (
+                  prop === 'lightSrc' ||
+                  prop === 'darkSrc' ||
+                  prop === 'src' ||
+                  prop === 'defaultSrc'
+                ) {
+                  return (target as any)[prop]
+                }
+
+                // Explicit resolve method access
+                if (prop === 'resolve') {
+                  return () => target.resolve()
+                }
+
+                // String conversion returns resolved src
                 if (prop === 'toString' || prop === 'valueOf') {
                   return () => target.resolve()
                 }
@@ -65,8 +101,17 @@ export class AssetCollection {
             return new Proxy(asset, {
               get: (target, prop: string) => {
                 // Direct property access (.family, .fallbacks)
-                if (prop === 'family' || prop === 'fallbacks' || prop === 'options') {
+                if (
+                  prop === 'family' ||
+                  prop === 'fallbacks' ||
+                  prop === 'options'
+                ) {
                   return (target as any)[prop]
+                }
+
+                // Explicit resolve method access
+                if (prop === 'resolve') {
+                  return () => target.resolve()
                 }
 
                 // String conversion returns font-family CSS value
@@ -83,16 +128,16 @@ export class AssetCollection {
           // For other asset types, return the asset directly
           return asset
         },
-        
+
         // Add ownKeys handler to support Object.keys() enumeration
-        ownKeys: (_target) => {
+        ownKeys: _target => {
           return Array.from(this.assets.keys())
         },
-        
+
         // Add has handler to support 'in' operator
         has: (_target, property: string) => {
           return this.assets.has(property)
-        }
+        },
       }
     )
   }

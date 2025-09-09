@@ -62,6 +62,7 @@ import {
   shadow,
   cursor,
   transform,
+  hover,
 } from './internal-exports'
 
 /**
@@ -76,6 +77,7 @@ const effectsRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['shadow', shadow],
   ['cursor', cursor],
   ['transform', transform],
+  ['hover', hover],
 ]
 
 /**
@@ -98,7 +100,7 @@ function registerEffects(): void {
   console.log(
     `@tachui/effects: Registered ${registeredCount} effects${
       failedCount > 0 ? `, ${failedCount} failed` : ''
-    }`
+    }. Registry total: ${globalModifierRegistry.list().length}`
   )
 }
 

@@ -221,7 +221,38 @@ export class DOMRenderer {
    * Create a text node
    */
   private createTextNode(node: DOMNode): Text {
-    return document.createTextNode(node.text || '')
+    const textElement = document.createTextNode(node.text || '')
+
+    // Set up reactivity if this is a reactive text node
+    if (node.reactiveContent) {
+      const content = node.reactiveContent
+
+      // Create reactive effect now that we have the DOM element
+      const effect = createEffect(() => {
+        try {
+          const newText = content()
+          node.text = String(newText)
+
+          // Check if parent element has AsHTML flag
+          const parentElement = textElement.parentElement
+          if (parentElement && (parentElement as any).__tachui_asHTML) {
+            // Skip updating text content when AsHTML is active
+            return
+          }
+
+          textElement.textContent = node.text
+        } catch (error) {
+          console.error('createTextNode() reactive effect error:', error)
+        }
+      })
+
+      // Store cleanup function on the node
+      node.dispose = () => {
+        effect.dispose()
+      }
+    }
+
+    return textElement
   }
 
   /**
@@ -672,32 +703,16 @@ export function text(content: string | (() => string)): DOMNode {
       type: 'text',
       text: '',
       dispose: undefined,
+      reactiveContent: content, // Store the reactive content function
     }
 
-    // Create reactive effect
-    const cleanup = createRoot(() => {
-      const effect = createEffect(() => {
-        const newText = content()
-        textNode.text = String(newText)
-        // Update DOM if already rendered, but only if not using AsHTML modifier
-        if (textNode.element && textNode.element instanceof Text) {
-          // Check if parent element has AsHTML flag
-          const parentElement = textNode.element.parentElement
-          if (parentElement && (parentElement as any).__tachui_asHTML) {
-            // Skip updating text content when AsHTML is active
-            return
-          }
-          textNode.element.textContent = textNode.text
-        }
-      })
+    // Store the initial value immediately to establish tracking
+    const initialText = content()
+    textNode.text = String(initialText)
 
-      // Return cleanup function
-      return () => {
-        effect.dispose()
-      }
-    })
+    // Don't create the reactive effect here - let the renderer handle it
+    // This ensures the DOM element is available when the effect runs
 
-    textNode.dispose = cleanup
     return textNode
   }
 

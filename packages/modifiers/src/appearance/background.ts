@@ -19,12 +19,19 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
-    const element = context.element as HTMLElement
-    const cssValue = this.resolveBackground(this.properties.background)
+    console.log(
+      'BackgroundModifier apply - background value:',
+      this.properties.background,
+      'type:',
+      typeof this.properties.background
+    )
 
-    if (cssValue) {
-      element.style.background = cssValue
+    // Use reactive infrastructure instead of direct style setting
+    const styles = {
+      background: this.properties.background,
     }
+
+    this.applyStyles(context.element, styles)
 
     return undefined
   }

@@ -45,6 +45,7 @@ export {
   createModifierBuilder,
   ModifierBuilderImpl,
   modifierUtils,
+  setExternalModifierRegistry,
 } from './builder'
 
 // Registry and application infrastructure

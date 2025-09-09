@@ -193,7 +193,8 @@ export class EnhancedButton
     useLifecycle(this, {
       onDOMReady: (_elements, primaryElement) => {
         if (primaryElement instanceof HTMLButtonElement) {
-          this.attachInteractionEvents(primaryElement)
+          // Only set up reactive styles, not duplicate event listeners
+          // The onClick prop handles the action to avoid double events
           this.setupReactiveStyles(primaryElement)
         }
       },
@@ -305,125 +306,6 @@ export class EnhancedButton
   }
 
   /**
-   * Attach interaction event listeners to the button element
-   */
-  private attachInteractionEvents(button: HTMLButtonElement): void {
-    // Helper to check if button is currently enabled
-    const isCurrentlyEnabled = (): boolean => {
-      const enabled = this.isEnabled()
-      return typeof enabled === 'boolean' ? enabled : enabled()
-    }
-
-    // Store global mouseup handler reference for cleanup
-    let globalMouseUpHandler: ((event: MouseEvent) => void) | null = null
-
-    // Mouse/pointer events for press states
-    const handleMouseDown = (event: MouseEvent) => {
-      if (isCurrentlyEnabled() && event.button === 0) {
-        // Only left click
-        this.setState('pressed')
-
-        // Add global mouseup listener to handle mouseup outside the button
-        globalMouseUpHandler = () => {
-          if (this.stateSignal() === 'pressed') {
-            this.setState('normal')
-          }
-          // Remove the global listener after handling
-          if (globalMouseUpHandler) {
-            document.removeEventListener('mouseup', globalMouseUpHandler)
-            globalMouseUpHandler = null
-          }
-        }
-        document.addEventListener('mouseup', globalMouseUpHandler)
-      }
-    }
-
-    const handleMouseUp = () => {
-      if (isCurrentlyEnabled() && this.stateSignal() === 'pressed') {
-        this.setState('normal')
-        // Clean up global listener if it exists
-        if (globalMouseUpHandler) {
-          document.removeEventListener('mouseup', globalMouseUpHandler)
-          globalMouseUpHandler = null
-        }
-      }
-    }
-
-    const handleMouseLeave = () => {
-      if (isCurrentlyEnabled()) {
-        this.setState('normal')
-        // Clean up global listener if it exists
-        if (globalMouseUpHandler) {
-          document.removeEventListener('mouseup', globalMouseUpHandler)
-          globalMouseUpHandler = null
-        }
-      }
-    }
-
-    // Focus events
-    const handleFocus = () => {
-      if (isCurrentlyEnabled() && this.stateSignal() !== 'pressed') {
-        this.setState('focused')
-      }
-    }
-
-    const handleBlur = () => {
-      if (isCurrentlyEnabled() && this.stateSignal() === 'focused') {
-        this.setState('normal')
-      }
-    }
-
-    // Keyboard events
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        isCurrentlyEnabled() &&
-        (event.key === ' ' || event.key === 'Enter')
-      ) {
-        event.preventDefault()
-        this.setState('pressed')
-      }
-    }
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (
-        isCurrentlyEnabled() &&
-        (event.key === ' ' || event.key === 'Enter')
-      ) {
-        event.preventDefault()
-        this.setState('normal')
-        // Trigger the action for keyboard activation
-        this.props.action?.()
-      }
-    }
-
-    // Add event listeners
-    button.addEventListener('mousedown', handleMouseDown)
-    button.addEventListener('mouseup', handleMouseUp)
-    button.addEventListener('mouseleave', handleMouseLeave)
-    button.addEventListener('focus', handleFocus)
-    button.addEventListener('blur', handleBlur)
-    button.addEventListener('keydown', handleKeyDown)
-    button.addEventListener('keyup', handleKeyUp)
-
-    // Store cleanup functions
-    this.cleanup.push(() => {
-      button.removeEventListener('mousedown', handleMouseDown)
-      button.removeEventListener('mouseup', handleMouseUp)
-      button.removeEventListener('mouseleave', handleMouseLeave)
-      button.removeEventListener('focus', handleFocus)
-      button.removeEventListener('blur', handleBlur)
-      button.removeEventListener('keydown', handleKeyDown)
-      button.removeEventListener('keyup', handleKeyUp)
-
-      // Clean up global mouseup listener if it exists
-      if (globalMouseUpHandler) {
-        document.removeEventListener('mouseup', globalMouseUpHandler)
-        globalMouseUpHandler = null
-      }
-    })
-  }
-
-  /**
    * Check if button is enabled
    */
   isEnabled(): boolean | (() => boolean) {
@@ -478,13 +360,14 @@ export class EnhancedButton
     const classString = this.createClassString(this.props, baseClasses)
 
     // Create button element as DOMNode object with modifier metadata
+    // Use onClick for clean single event handling
     const buttonElement = {
       type: 'element' as const,
       tag: 'button',
       props: {
         className: classString,
         type: 'button',
-        disabled: typeof enabled === 'boolean' ? !enabled : () => !enabled(), // Invert enabled to disabled
+        disabled: typeof enabled === 'boolean' ? !enabled : !enabled(), // Invert enabled to disabled
         onClick: this.props.action
           ? () => {
               try {

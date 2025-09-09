@@ -4,6 +4,12 @@
 
 export * from './scroll'
 
+// Basic interaction modifiers
+export * from './on-hover'
+export * from './mouse-events'
+export * from './keyboard-events'
+export * from './focus-events'
+
 // Advanced gesture and interaction modifiers
 export * from './on-long-press-gesture'
 export * from './keyboard-shortcut'

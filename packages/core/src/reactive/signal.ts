@@ -5,7 +5,11 @@
  * fine-grained reactivity similar to SolidJS signals.
  */
 
-import { getCurrentComputation, isBatchingUpdates, setFlushFunction } from './context'
+import {
+  getCurrentComputation,
+  isBatchingUpdates,
+  setFlushFunction,
+} from './context'
 import type { Computation, SignalImpl as ISignal } from './types'
 import { ComputationState } from './types'
 
@@ -38,6 +42,7 @@ class SignalImpl<T> implements ISignal<T> {
       // Track this signal as a dependency
       this.observers.add(computation)
       computation.sources.add(this)
+    } else {
     }
     return this._value
   }
@@ -54,11 +59,14 @@ class SignalImpl<T> implements ISignal<T> {
    */
   set(newValue: T | ((prev: T) => T)): T {
     const value =
-      typeof newValue === 'function' ? (newValue as (prev: T) => T)(this._value) : newValue
+      typeof newValue === 'function'
+        ? (newValue as (prev: T) => T)(this._value)
+        : newValue
 
     if (value !== this._value) {
       this._value = value
       this.notify()
+    } else {
     }
 
     return value
@@ -72,6 +80,7 @@ class SignalImpl<T> implements ISignal<T> {
       if (observer.state !== ComputationState.Disposed) {
         observer.state = ComputationState.Dirty
         scheduleUpdate(observer)
+      } else {
       }
     }
   }
@@ -178,14 +187,18 @@ export function createSignal<T>(initialValue: T): [() => T, SignalSetter<T>] {
 /**
  * Type guard to check if a value is a signal
  */
-export function isSignal<T = any>(value: any): value is (() => T) & { peek: () => T } {
+export function isSignal<T = any>(
+  value: any
+): value is (() => T) & { peek: () => T } {
   return typeof value === 'function' && Symbol.for('tachui.signal') in value
 }
 
 /**
  * Get the underlying signal implementation for debugging
  */
-export function getSignalImpl<T>(signal: (() => T) & { peek: () => T }): SignalImpl<T> | null {
+export function getSignalImpl<T>(
+  signal: (() => T) & { peek: () => T }
+): SignalImpl<T> | null {
   return (signal as any)[Symbol.for('tachui.signal')] || null
 }
 

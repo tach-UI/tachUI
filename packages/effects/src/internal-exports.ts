@@ -6,5 +6,5 @@
 // Core effects - minimal set for testing
 export { filter, blur, brightness, contrast } from './filters'
 export { transform } from './transforms'
-export { cursor } from './effects'
+export { cursor, hover } from './effects'
 export { shadow } from './shadows'

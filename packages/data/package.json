@@ -39,7 +39,8 @@
   "dependencies": {
     "@tachui/core": "workspace:*",
     "@tachui/flow-control": "workspace:*",
-    "@tachui/mobile": "workspace:*"
+    "@tachui/mobile": "workspace:*",
+    "@tachui/primitives": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

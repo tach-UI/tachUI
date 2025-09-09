@@ -18,3 +18,6 @@ export * from './forms'
 
 // Validation system for primitive components
 export * from './validation'
+
+// Package Information - consistent across all TachUI packages
+export { TACHUI_PACKAGE, TACHUI_PACKAGE_VERSION } from './version'

@@ -7,7 +7,11 @@
 
 import type { ModifiableComponent } from '../modifiers/types'
 import { createRoot as createReactiveRoot, getOwner } from '../reactive'
-import { ComponentContextSymbol, createComponentContext, setCurrentComponentContext } from './component-context'
+import {
+  ComponentContextSymbol,
+  createComponentContext,
+  setCurrentComponentContext,
+} from './component-context'
 import { DOMRenderer } from './renderer'
 import type { ComponentInstance, DOMNode } from './types'
 
@@ -30,8 +34,9 @@ const componentsWithLifecycleHooks = new Set<ComponentInstance>()
 /**
  * Register a component that has lifecycle hooks for later processing
  */
-export function registerComponentWithLifecycleHooks(component: ComponentInstance): void {
-  
+export function registerComponentWithLifecycleHooks(
+  component: ComponentInstance
+): void {
   if ((component as any)._enhancedLifecycle) {
     componentsWithLifecycleHooks.add(component)
   }
@@ -56,12 +61,11 @@ function processPendingLifecycleHooks(): void {
             component.primaryElement = element
           }
         })
-        
+
         component.domReady = true
-        
+
         // Process lifecycle hooks
         if (enhancedLifecycle.onDOMReady) {
-          console.log('🚀 Processing delayed onDOMReady for component:', component.id)
           const cleanup = enhancedLifecycle.onDOMReady(
             component.domElements,
             component.primaryElement
@@ -71,7 +75,7 @@ function processPendingLifecycleHooks(): void {
             component.cleanup.push(cleanup)
           }
         }
-        
+
         if (enhancedLifecycle.onMount) {
           const cleanup = enhancedLifecycle.onMount()
           if (typeof cleanup === 'function') {
@@ -82,7 +86,7 @@ function processPendingLifecycleHooks(): void {
       }
     }
   }
-  
+
   // Clear the set of processed components
   componentsWithLifecycleHooks.clear()
 }
@@ -97,43 +101,43 @@ function findDOMElementsForComponent(component: ComponentInstance): Element[] {
     const allImages = document.querySelectorAll('img.tachui-image')
     return Array.from(allImages)
   }
-  
+
   // For other components, this could be expanded with more specific search logic
   return []
 }
 
 /**
  * Create a reactive root that can mount component trees to DOM.
- * 
+ *
  * This is the application-level mounting function for TachUI apps.
  * It creates a reactive context and mounts your component tree to the DOM.
- * 
+ *
  * @param rootFunction - Function that returns the root component of your app
- * 
+ *
  * @example
  * ```typescript
  * import { mountRoot } from '@tachui/core'
  * import { MyApp } from './MyApp'
- * 
+ *
  * mountRoot(() => MyApp())
  * ```
- * 
+ *
  * Note: This requires a DOM element with id="app" to exist.
  */
 export function mountRoot(rootFunction: () => ComponentInstance): void {
-  createReactiveRoot((dispose) => {
+  createReactiveRoot(dispose => {
     // Create root component context for State() to work throughout the entire app
     const rootContext = createComponentContext('root-app')
     setCurrentComponentContext(rootContext)
-    
+
     // Also store context in reactive owner so State() can find it
     const owner = getOwner()
     if (owner) {
       owner.context.set(ComponentContextSymbol, rootContext)
     }
-    
+
     let component: ComponentInstance
-    
+
     try {
       component = rootFunction()
 
@@ -169,8 +173,11 @@ export function mountRoot(rootFunction: () => ComponentInstance): void {
 /**
  * Mount a component tree to a DOM container
  */
-export function mountComponentTree(component: ComponentInstance, container: Element, clearContainer: boolean = true): () => void {
-  
+export function mountComponentTree(
+  component: ComponentInstance,
+  container: Element,
+  clearContainer: boolean = true
+): () => void {
   try {
     // Clear container only if requested (typically only for root components)
     if (clearContainer) {
@@ -204,26 +211,26 @@ export function mountComponentTree(component: ComponentInstance, container: Elem
     // ENHANCED: Set up DOM element tracking for lifecycle hooks
     if (elements.length > 0) {
       component.domElements = new Map()
-      
+
       elements.forEach((element, index) => {
         const key = element.id || `element-${index}`
         component.domElements!.set(key, element)
-        
+
         // Set primary element (first element with ID or index 0)
         if (!component.primaryElement) {
           component.primaryElement = element
         }
       })
-      
+
       // Mark DOM as ready
       component.domReady = true
-      
+
       // ENHANCED: Trigger onDOMReady with guaranteed DOM elements
       const enhancedLifecycle = (component as any)._enhancedLifecycle
-      
+
       if (enhancedLifecycle?.onDOMReady) {
         const cleanup = enhancedLifecycle.onDOMReady(
-          component.domElements, 
+          component.domElements,
           component.primaryElement
         )
         if (typeof cleanup === 'function') {
@@ -231,7 +238,7 @@ export function mountComponentTree(component: ComponentInstance, container: Elem
           component.cleanup.push(cleanup)
         }
       }
-      
+
       // Trigger legacy onMount for backwards compatibility
       if (enhancedLifecycle?.onMount) {
         const cleanup = enhancedLifecycle.onMount()
@@ -273,7 +280,7 @@ export function mountComponentTree(component: ComponentInstance, container: Elem
     // Return cleanup function
     return () => {
       // Clean up child components first
-      childCleanupFunctions.forEach((cleanup) => cleanup())
+      childCleanupFunctions.forEach(cleanup => cleanup())
       // Then clean up this component
       unmountComponentEnhanced(component, container)
     }
@@ -283,7 +290,7 @@ export function mountComponentTree(component: ComponentInstance, container: Elem
       code: 'MOUNT_FAILED',
       context: 'mountComponentTree',
     }) as any
-    
+
     const enhancedLifecycle = (component as any)._enhancedLifecycle
     if (enhancedLifecycle?.onDOMError) {
       enhancedLifecycle.onDOMError(domError, 'mount')
@@ -299,10 +306,13 @@ export function mountComponentTree(component: ComponentInstance, container: Elem
 /**
  * Unmount a component from DOM
  */
-export function unmountComponent(component: ComponentInstance, container: Element): void {
+export function unmountComponent(
+  component: ComponentInstance,
+  container: Element
+): void {
   const elements = componentElements.get(component)
   if (elements) {
-    elements.forEach((element) => {
+    elements.forEach(element => {
       if (element.parentNode) {
         element.parentNode.removeChild(element)
       }
@@ -315,7 +325,7 @@ export function unmountComponent(component: ComponentInstance, container: Elemen
 
   // Run cleanup functions
   if (component.cleanup) {
-    component.cleanup.forEach((cleanup) => cleanup())
+    component.cleanup.forEach(cleanup => cleanup())
     component.cleanup = []
   }
 }
@@ -323,17 +333,20 @@ export function unmountComponent(component: ComponentInstance, container: Elemen
 /**
  * Enhanced unmount component with lifecycle hooks
  */
-export function unmountComponentEnhanced(component: ComponentInstance, container: Element): void {
+export function unmountComponentEnhanced(
+  component: ComponentInstance,
+  container: Element
+): void {
   try {
     // Trigger onUnmount lifecycle
     const enhancedLifecycle = (component as any)._enhancedLifecycle
     if (enhancedLifecycle?.onUnmount) {
       enhancedLifecycle.onUnmount()
     }
-    
+
     // Run cleanup functions
     if (component.cleanup) {
-      component.cleanup.forEach((cleanup) => {
+      component.cleanup.forEach(cleanup => {
         try {
           cleanup()
         } catch (error) {
@@ -342,35 +355,35 @@ export function unmountComponentEnhanced(component: ComponentInstance, container
       })
       component.cleanup = []
     }
-    
+
     // Remove DOM elements
     const elements = componentElements.get(component)
     if (elements) {
-      elements.forEach((element) => {
+      elements.forEach(element => {
         if (element.parentNode) {
           element.parentNode.removeChild(element)
         }
       })
       componentElements.delete(component)
     }
-    
+
     // Clear enhanced DOM tracking
     if (component.domElements) {
       component.domElements.clear()
     }
-    
+
     // Clear references
     component.primaryElement = undefined
     component.domReady = false
     component.mounted = false
-    
+
     mountedComponents.delete(container)
   } catch (error) {
     const domError = Object.assign(new Error(), error, {
       code: 'UNMOUNT_FAILED',
       context: 'unmountComponentEnhanced',
     }) as any
-    
+
     const enhancedLifecycle = (component as any)._enhancedLifecycle
     if (enhancedLifecycle?.onDOMError) {
       enhancedLifecycle.onDOMError(domError, 'unmount')
@@ -383,8 +396,10 @@ export function unmountComponentEnhanced(component: ComponentInstance, container
 /**
  * Apply modifier chains to DOM elements
  */
-function applyModifiersToElement(element: Element, component: ModifiableComponent<any>): void {
-  
+function applyModifiersToElement(
+  element: Element,
+  component: ModifiableComponent<any>
+): void {
   if (!('modifiers' in component) || !component.modifiers) {
     return
   }
@@ -421,7 +436,10 @@ function applyModifiersToElement(element: Element, component: ModifiableComponen
 /**
  * Bind component event handlers to DOM events
  */
-function bindEventHandlers(element: Element, component: ComponentInstance): void {
+function bindEventHandlers(
+  element: Element,
+  component: ComponentInstance
+): void {
   const htmlElement = element as HTMLElement
 
   // Handle component-level events from props
@@ -454,7 +472,9 @@ function bindEventHandlers(element: Element, component: ComponentInstance): void
   if (isModifiableComponent(component) && component.modifiers) {
     for (const modifier of component.modifiers) {
       if (modifier && 'eventHandlers' in modifier && modifier.eventHandlers) {
-        for (const [eventType, handler] of Object.entries(modifier.eventHandlers)) {
+        for (const [eventType, handler] of Object.entries(
+          modifier.eventHandlers
+        )) {
           if (typeof handler === 'function') {
             htmlElement.addEventListener(
               eventType as keyof HTMLElementEventMap,
@@ -470,7 +490,9 @@ function bindEventHandlers(element: Element, component: ComponentInstance): void
 /**
  * Type guard to check if component is modifiable
  */
-function isModifiableComponent(component: any): component is ModifiableComponent<any> {
+function isModifiableComponent(
+  component: any
+): component is ModifiableComponent<any> {
   return (
     component &&
     typeof component === 'object' &&
@@ -498,7 +520,10 @@ export function mountComponentChildren(
 /**
  * Update a mounted component with new props
  */
-export function updateComponent(component: ComponentInstance, newProps: any): void {
+export function updateComponent(
+  component: ComponentInstance,
+  newProps: any
+): void {
   const elements = componentElements.get(component)
   if (!elements) {
     console.warn('Attempted to update unmounted component')
@@ -520,7 +545,9 @@ export function updateComponent(component: ComponentInstance, newProps: any): vo
 /**
  * Get mounted component from DOM element
  */
-export function getComponentFromElement(element: Element): ComponentInstance | undefined {
+export function getComponentFromElement(
+  element: Element
+): ComponentInstance | undefined {
   let current: Element | null = element
   while (current) {
     const component = mountedComponents.get(current)
@@ -532,14 +559,15 @@ export function getComponentFromElement(element: Element): ComponentInstance | u
   return undefined
 }
 
-
 /**
  * Debug utilities for DOM bridge
  */
 export const DOMBridgeDebug = {
   getMountedComponents: () => Array.from(mountedComponents.entries()),
-  getComponentElements: (component: ComponentInstance) => componentElements.get(component),
-  isComponentMounted: (component: ComponentInstance) => component.mounted || false,
+  getComponentElements: (component: ComponentInstance) =>
+    componentElements.get(component),
+  isComponentMounted: (component: ComponentInstance) =>
+    component.mounted || false,
 
   /**
    * Validate that all components are properly mounted
@@ -553,7 +581,9 @@ export const DOMBridgeDebug = {
       }
 
       if (!component.mounted) {
-        issues.push(`Component ${component.id} marked as unmounted but still registered`)
+        issues.push(
+          `Component ${component.id} marked as unmounted but still registered`
+        )
       }
 
       const elements = componentElements.get(component)

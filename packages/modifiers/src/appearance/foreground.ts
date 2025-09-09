@@ -19,8 +19,12 @@ export class ForegroundModifier extends BaseModifier<ForegroundOptions> {
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
-    const element = context.element as HTMLElement
-    element.style.color = this.properties.color
+    // Use reactive infrastructure instead of direct style setting
+    const styles = {
+      color: this.properties.color,
+    }
+
+    this.applyStyles(context.element, styles)
 
     return undefined
   }

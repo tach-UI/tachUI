@@ -97,12 +97,24 @@
       "import": "./dist/viewport/index.js"
     },
     "./assets": {
-      "types": "./dist/bundles/assets.d.ts",
-      "import": "./dist/bundles/assets.js"
+      "types": "./dist/assets/index.d.ts",
+      "import": "./dist/assets/index.js"
     },
     "./context": {
       "types": "./dist/bundles/context.d.ts",
       "import": "./dist/bundles/context.js"
+    },
+    "./state": {
+      "types": "./dist/state/index.d.ts",
+      "import": "./dist/state/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./version": {
+      "types": "./dist/version.d.ts",
+      "import": "./dist/version.js"
     }
   },
   "files": [
@@ -141,11 +153,7 @@
     "migrate": "node scripts/migration-tool.js",
     "migrate:fix": "node scripts/migration-tool.js --fix"
   },
-  "dependencies": {
-    "@tachui/devtools": "workspace:*",
-    "@tachui/primitives": "workspace:*",
-    "@tachui/modifiers": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/jsdom": "^21.1.6",

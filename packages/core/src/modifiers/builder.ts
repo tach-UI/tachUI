@@ -138,6 +138,32 @@ import type {
 } from './types'
 // Responsive functionality moved to @tachui/responsive package
 import { createModifiableComponent, globalModifierRegistry } from './registry'
+
+// Registry bridge to handle potential instance isolation
+let externalRegistry: any = null
+
+// Allow external packages to override the registry reference
+export function setExternalModifierRegistry(registry: any) {
+  externalRegistry = registry
+  console.debug(
+    '[RegistryBridge] External modifier registry set with',
+    registry?.list()?.length || 0,
+    'modifiers'
+  )
+}
+
+function getActiveRegistry() {
+  // Check for global registry first (set by @tachui/modifiers)
+  if (!externalRegistry && (globalThis as any).__TACHUI_MODIFIER_REGISTRY__) {
+    externalRegistry = (globalThis as any).__TACHUI_MODIFIER_REGISTRY__
+    console.debug(
+      '[RegistryBridge] Found global modifier registry with',
+      externalRegistry.list().length,
+      'modifiers'
+    )
+  }
+  return externalRegistry || globalModifierRegistry
+}
 import type {
   FontStyle,
   FontVariant,
@@ -209,7 +235,11 @@ const outlineOffset = (..._args: any[]) => createStubModifier('outlineOffset')
  * Replaces stub functions with actual modifier registry lookups
  */
 function createRegistryModifier(name: string, ..._args: any[]): Modifier {
-  const factory = globalModifierRegistry.get<any>(name)
+  const activeRegistry = getActiveRegistry()
+  const availableModifiers = activeRegistry.list()
+  const registryInstance = activeRegistry.constructor.name
+
+  const factory = activeRegistry.get(name) as any
   if (factory) {
     try {
       const modifier = (factory as any).apply(null, _args as any)
@@ -1054,13 +1084,12 @@ export class ModifierBuilderImpl<
     )
   }
 
-  onContinuousHover(
-    _coordinateSpace: 'local' | 'global',
-    _perform: (location: { x: number; y: number } | null) => void
-  ): ModifierBuilder<T> {
-    throw new Error(
-      'onContinuousHover has been moved to @tachui/modifiers. Please import { onContinuousHover } from "@tachui/modifiers" and use .apply(onContinuousHover(...)) instead.'
-    )
+  onContinuousHover(options: {
+    coordinateSpace?: 'local' | 'global'
+    perform: (location: { x: number; y: number } | null) => void
+  }): ModifierBuilder<T> {
+    this.modifiers.push(createRegistryModifier('onContinuousHover', options))
+    return this
   }
 
   highPriorityGesture(
@@ -1126,6 +1155,12 @@ export class ModifierBuilderImpl<
 
   // Custom modifier application
   modifier(modifier: Modifier): ModifierBuilder<T> {
+    this.modifiers.push(modifier)
+    return this
+  }
+
+  // Public method to add a modifier (used by Proxy)
+  addModifierInternal(modifier: Modifier): ModifierBuilder<T> {
     this.modifiers.push(modifier)
     return this
   }
@@ -1837,15 +1872,47 @@ export class ModifierBuilderImpl<
     this.modifiers.push(createRegistryModifier('shadowPreset', preset))
     return this
   }
+
+  clipped(clipped?: boolean): ModifierBuilder<T> {
+    this.modifiers.push(createRegistryModifier('clipped', clipped ?? true))
+    return this
+  }
 }
 
 /**
- * Create a modifier builder for a component
+ * Create a modifier builder for a component with dynamic method support
  */
 export function createModifierBuilder<T extends ComponentInstance>(
   component: T
 ): ModifierBuilder<T> {
-  return new ModifierBuilderImpl(component)
+  const builderImpl = new ModifierBuilderImpl(component)
+
+  // Create a Proxy to handle dynamic modifier methods
+  return new Proxy(builderImpl, {
+    get(target: any, prop: string | symbol) {
+      // If the property exists on the target, return it
+      if (prop in target) {
+        return target[prop]
+      }
+
+      // If it's a string property and looks like a modifier method
+      if (typeof prop === 'string') {
+        const activeRegistry = getActiveRegistry()
+
+        // Check if this modifier exists in the registry
+        if (activeRegistry.has(prop)) {
+          // Return a function that creates the modifier and adds it to the builder
+          return function (this: ModifierBuilderImpl<T>, ...args: any[]) {
+            const modifier = createRegistryModifier(prop, ...args)
+            return this.addModifierInternal(modifier)
+          }
+        }
+      }
+
+      // Return undefined for unknown properties
+      return undefined
+    },
+  }) as ModifierBuilder<T>
 }
 
 /**

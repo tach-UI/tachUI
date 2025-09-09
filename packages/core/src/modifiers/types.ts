@@ -24,6 +24,15 @@ export type FontWeight =
   | '700'
   | '800'
   | '900'
+  | 100
+  | 200
+  | 300
+  | 400
+  | 500
+  | 600
+  | 700
+  | 800
+  | 900
 export type FontStyle = 'normal' | 'italic' | 'oblique'
 export type FontVariant = 'normal' | 'small-caps'
 export type TextAlign =
@@ -192,19 +201,8 @@ export interface AppearanceModifierProps {
   font?: {
     family?: string
     size?: number | string | Signal<number> | Signal<string>
-    weight?:
-      | 'normal'
-      | 'bold'
-      | '100'
-      | '200'
-      | '300'
-      | '400'
-      | '500'
-      | '600'
-      | '700'
-      | '800'
-      | '900'
-    style?: 'normal' | 'italic' | 'oblique'
+    weight?: FontWeight
+    style?: FontStyle
   }
   cornerRadius?: number
   border?: {

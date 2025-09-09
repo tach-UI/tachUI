@@ -106,16 +106,6 @@ importers:
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/core:
-    dependencies:
-      '@tachui/devtools':
-        specifier: workspace:*
-        version: link:../devtools
-      '@tachui/modifiers':
-        specifier: workspace:*
-        version: link:../modifiers
-      '@tachui/primitives':
-        specifier: workspace:*
-        version: link:../primitives
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -156,6 +146,9 @@ importers:
       '@tachui/mobile':
         specifier: workspace:*
         version: link:../mobile
+      '@tachui/primitives':
+        specifier: workspace:*
+        version: link:../primitives
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6

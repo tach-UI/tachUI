@@ -5,38 +5,73 @@
  * and computation lifecycle.
  */
 
-import type { CleanupFunction, Computation, Owner, ReactiveContext } from './types'
+import type {
+  CleanupFunction,
+  Computation,
+  Owner,
+  ReactiveContext,
+} from './types'
 import { ComputationState } from './types'
 
 let computationIdCounter = 0
 let ownerIdCounter = 0
 
-/**
- * Global reactive context
- */
+// Module instance identifier for debugging
+const moduleInstanceId = Math.random().toString(36).substr(2, 6)
+
+// Pure ESM module singleton - no globalThis
 let currentComputation: Computation | null = null
 let currentOwner: Owner | null = null
 let isBatching = false
+
+// Module instance tracking for debugging
+const moduleInstances = new Set<string>()
+moduleInstances.add(moduleInstanceId)
+
+// Pure ESM Reactive context module loaded
+
+// Export the singleton state directly
+const reactiveContext = {
+  get currentComputation() {
+    return currentComputation
+  },
+  set currentComputation(value) {
+    currentComputation = value
+  },
+  get currentOwner() {
+    return currentOwner
+  },
+  set currentOwner(value) {
+    currentOwner = value
+  },
+  get isBatching() {
+    return isBatching
+  },
+  set isBatching(value) {
+    isBatching = value
+  },
+}
 
 /**
  * Get the current computation context
  */
 export function getCurrentComputation(): Computation | null {
-  return currentComputation
+  const computation = reactiveContext.currentComputation
+  return computation
 }
 
 /**
  * Get the current owner context
  */
 export function getCurrentOwner(): Owner | null {
-  return currentOwner
+  return reactiveContext.currentOwner
 }
 
 /**
  * Check if we're currently batching updates
  */
 export function isBatchingUpdates(): boolean {
-  return isBatching
+  return reactiveContext.isBatching
 }
 
 /**
@@ -118,8 +153,8 @@ export class ComputationImpl implements Computation {
     }
     this.sources.clear()
 
-    const prevComputation = currentComputation
-    currentComputation = this
+    const prevComputation = reactiveContext.currentComputation
+    reactiveContext.currentComputation = this
 
     try {
       this.state = ComputationState.Clean
@@ -134,7 +169,7 @@ export class ComputationImpl implements Computation {
       }
       throw error
     } finally {
-      currentComputation = prevComputation
+      reactiveContext.currentComputation = prevComputation
     }
   }
 
@@ -168,14 +203,14 @@ export class ComputationImpl implements Computation {
  * Create a new reactive computation root
  */
 export function createRoot<T>(fn: (dispose: () => void) => T): T {
-  const owner = new OwnerImpl(currentOwner)
-  const prevOwner = currentOwner
-  currentOwner = owner
+  const owner = new OwnerImpl(reactiveContext.currentOwner)
+  const prevOwner = reactiveContext.currentOwner
+  reactiveContext.currentOwner = owner
 
   try {
     return fn(() => owner.dispose())
   } finally {
-    currentOwner = prevOwner
+    reactiveContext.currentOwner = prevOwner
   }
 }
 
@@ -183,13 +218,13 @@ export function createRoot<T>(fn: (dispose: () => void) => T): T {
  * Run a function with a specific owner context
  */
 export function runWithOwner<T>(owner: Owner | null, fn: () => T): T {
-  const prevOwner = currentOwner
-  currentOwner = owner
+  const prevOwner = reactiveContext.currentOwner
+  reactiveContext.currentOwner = owner
 
   try {
     return fn()
   } finally {
-    currentOwner = prevOwner
+    reactiveContext.currentOwner = prevOwner
   }
 }
 
@@ -197,7 +232,7 @@ export function runWithOwner<T>(owner: Owner | null, fn: () => T): T {
  * Get the current owner context
  */
 export function getOwner(): Owner | null {
-  return currentOwner
+  return reactiveContext.currentOwner
 }
 
 // Global flush function reference
@@ -214,12 +249,12 @@ export function setFlushFunction(fn: () => void): void {
  * Batch multiple updates together
  */
 export function batch<T>(fn: () => T): T {
-  if (isBatching) {
+  if (reactiveContext.isBatching) {
     return fn()
   }
 
-  const wasBatching = isBatching
-  isBatching = true
+  const wasBatching = reactiveContext.isBatching
+  reactiveContext.isBatching = true
 
   try {
     const result = fn()
@@ -229,7 +264,7 @@ export function batch<T>(fn: () => T): T {
     }
     return result
   } finally {
-    isBatching = wasBatching
+    reactiveContext.isBatching = wasBatching
   }
 }
 
@@ -237,13 +272,13 @@ export function batch<T>(fn: () => T): T {
  * Read a signal without tracking dependency
  */
 export function untrack<T>(fn: () => T): T {
-  const prevComputation = currentComputation
-  currentComputation = null
+  const prevComputation = reactiveContext.currentComputation
+  reactiveContext.currentComputation = null
 
   try {
     return fn()
   } finally {
-    currentComputation = prevComputation
+    reactiveContext.currentComputation = prevComputation
   }
 }
 
@@ -251,16 +286,23 @@ export function untrack<T>(fn: () => T): T {
  * Add cleanup function to current owner
  */
 export function onCleanup(fn: CleanupFunction): void {
-  if (currentOwner && !currentOwner.disposed) {
-    currentOwner.cleanups.push(fn)
+  const owner = reactiveContext.currentOwner
+  if (owner && !owner.disposed) {
+    owner.cleanups.push(fn)
   }
 }
 
 /**
  * Create a computation that runs immediately and tracks dependencies
  */
-export function createComputation<T>(fn: () => T, owner?: Owner): ComputationImpl {
-  const computation = new ComputationImpl(fn, owner || currentOwner)
+export function createComputation<T>(
+  fn: () => T,
+  owner?: Owner
+): ComputationImpl {
+  const computation = new ComputationImpl(
+    fn,
+    owner || reactiveContext.currentOwner
+  )
   computation.execute()
   return computation
 }
@@ -270,8 +312,8 @@ export function createComputation<T>(fn: () => T, owner?: Owner): ComputationImp
  */
 export function getReactiveContext(): ReactiveContext {
   return {
-    computation: currentComputation,
-    batch: isBatching,
+    computation: reactiveContext.currentComputation,
+    batch: reactiveContext.isBatching,
   }
 }
 
@@ -279,9 +321,11 @@ export function getReactiveContext(): ReactiveContext {
  * Debug utilities
  */
 export const DEBUG = {
-  getCurrentComputation: () => currentComputation,
-  getCurrentOwner: () => currentOwner,
+  getCurrentComputation: () => reactiveContext.currentComputation,
+  getCurrentOwner: () => reactiveContext.currentOwner,
   getComputationCount: () => computationIdCounter,
   getOwnerCount: () => ownerIdCounter,
-  isBatching: () => isBatching,
+  isBatching: () => reactiveContext.isBatching,
+  getModuleInstances: () => Array.from(moduleInstances),
+  getModuleId: () => moduleInstanceId,
 }

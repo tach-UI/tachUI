@@ -119,6 +119,18 @@ import {
   editable,
   focused,
   keyboardShortcut,
+  onHover,
+  onMouseEnter,
+  onMouseLeave,
+  onMouseDown,
+  onMouseUp,
+  onDoubleClick,
+  onContextMenu,
+  onKeyDown,
+  onKeyUp,
+  onKeyPress,
+  onFocus,
+  onBlur,
   onContinuousHover,
   onLongPressGesture,
   scroll,
@@ -234,6 +246,20 @@ const modifierRegistrations: Array<[string, (...args: any[]) => any]> = [
 
   ['keyboardShortcut', keyboardShortcut],
 
+  // Basic event handlers
+  ['onHover', onHover],
+  ['onMouseEnter', onMouseEnter],
+  ['onMouseLeave', onMouseLeave],
+  ['onMouseDown', onMouseDown],
+  ['onMouseUp', onMouseUp],
+  ['onDoubleClick', onDoubleClick],
+  ['onContextMenu', onContextMenu],
+  ['onKeyDown', onKeyDown],
+  ['onKeyUp', onKeyUp],
+  ['onKeyPress', onKeyPress],
+  ['onFocus', onFocus],
+  ['onBlur', onBlur],
+
   ['onContinuousHover', onContinuousHover],
 
   ['onLongPressGesture', onLongPressGesture],
@@ -301,9 +327,12 @@ function registerModifiers(): void {
   console.log(
     `@tachui/modifiers: Registered ${registeredCount} modifiers${
       failedCount > 0 ? `, ${failedCount} failed` : ''
-    }`
+    }. Registry total: ${globalModifierRegistry.list().length}`
   )
 }
 
 // Auto-register all modifiers when this module is imported
 registerModifiers()
+
+// Package Information - consistent across all TachUI packages
+export { TACHUI_PACKAGE, TACHUI_PACKAGE_VERSION } from './version'
