@@ -12,6 +12,7 @@ interface ValidationError {
   message: string
   suggestion?: string
   severity: 'error' | 'warning' | 'info'
+  type?: string
 }
 
 interface UsageStats {
@@ -147,6 +148,7 @@ export class RuntimeModifierValidator {
     const expensiveModifiers = ['filter', 'backdrop', 'complex-transform']
     if (expensiveModifiers.includes(modifier.type)) {
       warnings.push({
+        modifier: modifier.name,
         type: 'performance',
         severity: 'warning',
         message: `Modifier '${modifier.type}' can be expensive. Consider caching if used frequently.`,
@@ -180,6 +182,7 @@ export class RuntimeModifierValidator {
 
     if (alternatives[modifier.type]) {
       suggestions.push({
+        modifier: modifier.name,
         type: 'suggestion',
         severity: 'info',
         message: `Consider modern alternative to '${modifier.type}'`,
