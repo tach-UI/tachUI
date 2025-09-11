@@ -7,7 +7,8 @@
  * Auto-registers all effects with the global registry when imported.
  */
 
-import { globalModifierRegistry } from '@tachui/core/modifiers/registry'
+// Effects now integrate with the shared ESM singleton registry via the modifiers package
+// No need for separate registry - the builder proxy system handles dynamic lookups
 
 // Re-export all filters
 export * from './filters'
@@ -52,57 +53,5 @@ export {
 // Re-export all interactive effects
 export * from './effects'
 
-// Import modifier factory functions for registration
-import {
-  // Core effects - start with a minimal set for testing
-  filter,
-  blur,
-  brightness,
-  contrast,
-  shadow,
-  cursor,
-  transform,
-  hover,
-} from './internal-exports'
-
-/**
- * Effects modifier registration entries: [registryKey, factoryFunction]
- */
-const effectsRegistrations: Array<[string, (...args: any[]) => any]> = [
-  // Core effects - minimal set for testing
-  ['filter', filter],
-  ['blur', blur],
-  ['brightness', brightness],
-  ['contrast', contrast],
-  ['shadow', shadow],
-  ['cursor', cursor],
-  ['transform', transform],
-  ['hover', hover],
-]
-
-/**
- * Register all effects with the global registry
- */
-function registerEffects(): void {
-  let registeredCount = 0
-  let failedCount = 0
-
-  effectsRegistrations.forEach(([name, factory]) => {
-    try {
-      globalModifierRegistry.register(name, factory)
-      registeredCount++
-    } catch (error) {
-      console.warn(`Failed to register effect '${name}':`, error)
-      failedCount++
-    }
-  })
-
-  console.log(
-    `@tachui/effects: Registered ${registeredCount} effects${
-      failedCount > 0 ? `, ${failedCount} failed` : ''
-    }. Registry total: ${globalModifierRegistry.list().length}`
-  )
-}
-
-// Auto-register all effects when this module is imported
-registerEffects()
+// Effects are now integrated into the modifiers package
+// No separate registration needed - the effects are available through the shared ESM singleton

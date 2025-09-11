@@ -55,6 +55,10 @@
     "./utility": {
       "types": "./dist/utility/index.d.ts",
       "import": "./dist/utility/index.js"
+    },
+    "./effects": {
+      "types": "./dist/effects.d.ts",
+      "import": "./dist/effects.js"
     }
   },
   "files": [

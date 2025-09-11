@@ -17,6 +17,7 @@ export default defineConfig({
         'appearance/index': resolve(__dirname, 'src/appearance/index.ts'),
         'interaction/index': resolve(__dirname, 'src/interaction/index.ts'),
         'utility/index': resolve(__dirname, 'src/utility/index.ts'),
+        effects: resolve(__dirname, 'src/effects.ts'),
       },
       formats: ['es'],
     },

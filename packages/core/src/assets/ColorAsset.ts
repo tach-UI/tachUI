@@ -4,7 +4,11 @@
  * Represents a theme-adaptive color with light and dark variants.
  */
 
-import { getCurrentTheme as _getCurrentTheme } from '../reactive/theme'
+import {
+  getCurrentTheme as _getCurrentTheme,
+  getThemeSignal,
+} from '../reactive/theme'
+import { getCurrentComputation } from '../reactive/context'
 import { Asset } from './Asset'
 import type { ColorValidationResult } from './types'
 
@@ -12,10 +16,10 @@ import type { ColorValidationResult } from './types'
  * ColorAsset initialization options
  */
 export interface ColorAssetOptions {
-  default: string  // Required - fallback for any theme
-  light?: string   // Optional - light theme override
-  dark?: string    // Optional - dark theme override  
-  name: string     // Required - asset identifier
+  default: string // Required - fallback for any theme
+  light?: string // Optional - light theme override
+  dark?: string // Optional - dark theme override
+  name: string // Required - asset identifier
 }
 
 export class ColorAsset extends Asset {
@@ -28,26 +32,34 @@ export class ColorAsset extends Asset {
 
     // Validate that default is provided
     if (!options.default) {
-      throw new Error(`ColorAsset "${options.name}" must specify a default color`)
+      throw new Error(
+        `ColorAsset "${options.name}" must specify a default color`
+      )
     }
 
     // Validate color formats
     const defaultValidation = ColorAsset.validateColor(options.default)
     if (!defaultValidation.isValid) {
-      throw new Error(`Invalid default color format for asset "${options.name}": ${defaultValidation.error}`)
+      throw new Error(
+        `Invalid default color format for asset "${options.name}": ${defaultValidation.error}`
+      )
     }
 
     if (options.light) {
       const lightValidation = ColorAsset.validateColor(options.light)
       if (!lightValidation.isValid) {
-        throw new Error(`Invalid light color format for asset "${options.name}": ${lightValidation.error}`)
+        throw new Error(
+          `Invalid light color format for asset "${options.name}": ${lightValidation.error}`
+        )
       }
     }
 
     if (options.dark) {
       const darkValidation = ColorAsset.validateColor(options.dark)
       if (!darkValidation.isValid) {
-        throw new Error(`Invalid dark color format for asset "${options.name}": ${darkValidation.error}`)
+        throw new Error(
+          `Invalid dark color format for asset "${options.name}": ${darkValidation.error}`
+        )
       }
     }
 
@@ -81,7 +93,8 @@ export class ColorAsset extends Asset {
     }
 
     // RGB format validation
-    const rgbRegex = /^rgb\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)$/
+    const rgbRegex =
+      /^rgb\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)$/
     if (rgbRegex.test(trimmed)) {
       const matches = trimmed.match(rgbRegex)!
       const [, r, g, b] = matches.map(Number)
@@ -114,7 +127,8 @@ export class ColorAsset extends Asset {
     }
 
     // HSL format validation
-    const hslRegex = /^hsl\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*\)$/
+    const hslRegex =
+      /^hsl\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*\)$/
     if (hslRegex.test(trimmed)) {
       const matches = trimmed.match(hslRegex)!
       const [, h, s, l] = matches.map(Number)
@@ -198,8 +212,20 @@ export class ColorAsset extends Asset {
   }
 
   resolve(): string {
-    const currentTheme = ColorAsset.getCurrentTheme()
-    
+    // If we're inside a reactive computation (effect/computed), use reactive theme signal
+    // Otherwise, use the static getCurrentTheme for backward compatibility with tests
+    const isInReactiveContext = getCurrentComputation() !== null
+
+    let currentTheme: string
+    if (isInReactiveContext) {
+      // Use reactive theme signal for proper reactivity
+      const themeSignal = getThemeSignal()
+      currentTheme = themeSignal()
+    } else {
+      // Use static theme access for tests and non-reactive contexts
+      currentTheme = ColorAsset.getCurrentTheme()
+    }
+
     // Resolve priority: theme-specific → default
     if (currentTheme === 'dark') {
       return this.dark || this.default

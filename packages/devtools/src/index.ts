@@ -21,6 +21,10 @@ export * from './testing'
 // Re-export build-time validation tools
 export * from './build-time'
 
+// CLI tooling exports
+export * from './import-guide'
+export * from './modifier-parameter-system'
+
 // Error handling system (moved from @tachui/core)
 export * from './runtime/error-boundary'
 export * from './runtime/error-recovery'

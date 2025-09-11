@@ -179,6 +179,30 @@ import {
   spinner,
 } from './elements'
 
+import {
+  // Effects - moved from @tachui/effects to avoid circular dependencies
+  hover,
+  cursor,
+  filter,
+  blur,
+  brightness,
+  contrast,
+  transform,
+  shadow,
+} from './effects'
+
+// Re-export effects for tree-shaking
+export {
+  hover,
+  cursor,
+  filter,
+  blur,
+  brightness,
+  contrast,
+  transform,
+  shadow,
+} from './effects'
+
 /**
  * Modifier registration entries: [registryKey, factoryFunction]
  */
@@ -305,6 +329,16 @@ const modifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['tooltip', tooltip],
   ['cornerRibbon', cornerRibbon],
   ['spinner', spinner],
+
+  // Effects modifiers from @tachui/effects
+  ['hover', hover],
+  ['cursor', cursor],
+  ['filter', filter],
+  ['blur', blur],
+  ['brightness', brightness],
+  ['contrast', contrast],
+  ['transform', transform],
+  ['shadow', shadow],
 ]
 
 /**
@@ -333,6 +367,9 @@ function registerModifiers(): void {
 
 // Auto-register all modifiers when this module is imported
 registerModifiers()
+
+// Export function for manual registration if needed
+export { registerModifiers }
 
 // Package Information - consistent across all TachUI packages
 export { TACHUI_PACKAGE, TACHUI_PACKAGE_VERSION } from './version'
