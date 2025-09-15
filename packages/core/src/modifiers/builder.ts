@@ -153,16 +153,13 @@ export function setExternalModifierRegistry(registry: any) {
 }
 
 function getActiveRegistry() {
-  // Check for global registry first (set by @tachui/modifiers)
-  if (!externalRegistry && (globalThis as any).__TACHUI_MODIFIER_REGISTRY__) {
-    externalRegistry = (globalThis as any).__TACHUI_MODIFIER_REGISTRY__
-    console.debug(
-      '[RegistryBridge] Found global modifier registry with',
-      externalRegistry.list().length,
-      'modifiers'
-    )
+  // Check for external registry first (set by setExternalModifierRegistry)
+  if (externalRegistry) {
+    return externalRegistry
   }
-  return externalRegistry || globalModifierRegistry
+
+  // Use the ESM singleton registry
+  return globalModifierRegistry
 }
 import type {
   FontStyle,
@@ -172,11 +169,11 @@ import type {
   TextDecoration,
   TextTransform,
 } from './types' // Temporarily changed to avoid circular dependency
+// textAlign should be retrieved from registry instead of direct import
 // import {
 //   letterSpacing,
 //   lineHeight,
 //   overflow,
-//   textAlign,
 //   textDecoration,
 //   textOverflow,
 //   textTransform,
@@ -195,7 +192,6 @@ import type {
 const letterSpacing = (..._args: any[]) => createStubModifier('letterSpacing')
 const lineHeight = (..._args: any[]) => createStubModifier('lineHeight')
 const overflow = (..._args: any[]) => createStubModifier('overflow')
-const textAlign = (..._args: any[]) => createStubModifier('textAlign')
 const textDecoration = (..._args: any[]) => createStubModifier('textDecoration')
 const textOverflow = (..._args: any[]) => createStubModifier('textOverflow')
 const textTransform = (value: string) => ({
@@ -585,7 +581,7 @@ export class ModifierBuilderImpl<
   textAlign(
     value: 'left' | 'center' | 'right' | 'justify' | 'start' | 'end'
   ): ModifierBuilder<T> {
-    this.modifiers.push(textAlign(value))
+    this.modifiers.push(createRegistryModifier('textAlign', value))
     return this
   }
 

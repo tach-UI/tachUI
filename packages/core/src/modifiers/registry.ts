@@ -22,9 +22,6 @@ import type {
 import type { Concatenatable, ComponentSegment } from '../concatenation/types'
 import { ConcatenatedComponent } from '../concatenation/concatenated-component'
 
-// Pure ESM module singleton - no globalThis
-
-// Pure ESM module singleton - no globalThis
 let registryInstance: ModifierRegistryImpl | null = null
 
 /**
@@ -312,7 +309,7 @@ export function createModifiableComponent<P extends ComponentProps>(
     }
   }
 
-  // Enhance the render function to apply modifiers
+  // Enhance the render function to attach modifiers for later application
   const originalRender = component.render
     ? component.render.bind(component)
     : () => []
@@ -320,13 +317,23 @@ export function createModifiableComponent<P extends ComponentProps>(
     const renderResult = originalRender()
     const nodes = Array.isArray(renderResult) ? renderResult : [renderResult]
 
-    // Attach modifiers to each node for later application without breaking component structure
-    return nodes.map((node: any) => {
-      // Preserve the original node and just add modifier metadata
+    // CRITICAL FIX: Only attach modifiers to the root node (first node)
+    // not to all child nodes which was causing modifier bleed-through
+    return nodes.map((node: any, index: number) => {
       if (node && typeof node === 'object') {
-        // Use direct property assignment instead of spread to preserve prototypes
-        node.modifiers = modifiableComponent.modifiers
-        node.componentId = component.id
+        // Only attach modifiers to the root node (index 0)
+        if (index === 0) {
+          node.modifiers = [...modifiableComponent.modifiers]
+          node.componentId = component.id
+        } else {
+          // Ensure no modifiers leak to non-root nodes
+          if (node.modifiers) {
+            delete node.modifiers
+          }
+          if (node.componentId && node.componentId === component.id) {
+            delete node.componentId
+          }
+        }
         return node
       }
       return node

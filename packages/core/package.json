@@ -115,6 +115,10 @@
     "./version": {
       "types": "./dist/version.d.ts",
       "import": "./dist/version.js"
+    },
+    "./gradients": {
+      "types": "./dist/gradients/gradient-asset.d.ts",
+      "import": "./dist/gradients/gradient-asset.js"
     }
   },
   "files": [

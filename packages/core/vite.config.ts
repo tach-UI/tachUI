@@ -30,22 +30,14 @@ export default defineConfig({
         'modifiers/registry': resolve(__dirname, 'src/modifiers/registry.ts'),
         'runtime/types': resolve(__dirname, 'src/runtime/types.ts'),
         'runtime/index': resolve(__dirname, 'src/runtime/index.ts'),
-        'runtime/concatenation-minimal': resolve(
-          __dirname,
-          'src/runtime/concatenation-minimal.ts'
-        ),
-        'runtime/concatenation-aria': resolve(
-          __dirname,
-          'src/runtime/concatenation-aria.ts'
-        ),
-        'runtime/concatenation-full': resolve(
-          __dirname,
-          'src/runtime/concatenation-full.ts'
-        ),
+        'runtime/concatenation-minimal': resolve(__dirname, 'src/runtime/concatenation-minimal.ts'),
+        'runtime/concatenation-aria': resolve(__dirname, 'src/runtime/concatenation-aria.ts'),
+        'runtime/concatenation-full': resolve(__dirname, 'src/runtime/concatenation-full.ts'),
         'reactive/types': resolve(__dirname, 'src/reactive/types.ts'),
         'constants/layout': resolve(__dirname, 'src/constants/layout.ts'),
         'validation/index': resolve(__dirname, 'src/validation/index.ts'),
         'assets/index': resolve(__dirname, 'src/assets/index.ts'),
+        'gradients/gradient-asset': resolve(__dirname, 'src/gradients/gradient-asset.ts'),
         'css-classes/index': resolve(__dirname, 'src/css-classes/index.ts'),
       },
       name: 'TachUICore',
@@ -78,10 +70,5 @@ export default defineConfig({
   // Configure for TypeScript
   esbuild: {
     target: 'es2020',
-  },
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./test/setup.ts'],
   },
 })

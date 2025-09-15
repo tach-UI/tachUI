@@ -96,13 +96,42 @@ function processPendingLifecycleHooks(): void {
  * This is a fallback method for components that were rendered but not mounted
  */
 function findDOMElementsForComponent(component: ComponentInstance): Element[] {
-  // For Image components, look for img elements that match the component's expected structure
-  if (component.id.startsWith('image-')) {
-    const allImages = document.querySelectorAll('img.tachui-image')
-    return Array.from(allImages)
+  // First, check if component already has DOM elements from normal mounting
+  const existingElements = componentElements.get(component)
+  if (existingElements && existingElements.length > 0) {
+    return existingElements
   }
 
-  // For other components, this could be expanded with more specific search logic
+  // Fallback: Search for DOM elements by component ID or data attributes
+  const elementsWithComponentId = document.querySelectorAll(`[data-component-id="${component.id}"]`)
+  if (elementsWithComponentId.length > 0) {
+    return Array.from(elementsWithComponentId)
+  }
+
+  // Type-specific fallbacks for components that might not have proper ID tracking
+  if (component.id.startsWith('image-')) {
+    const allImages = document.querySelectorAll('img.tachui-image')
+    // Filter to only unassociated images to prevent stealing from other components
+    return Array.from(allImages).filter(img => 
+      !Array.from(componentElements.values()).flat().includes(img)
+    )
+  }
+
+  if (component.id.startsWith('text-')) {
+    const allTextElements = document.querySelectorAll('.tachui-text')
+    return Array.from(allTextElements).filter(el => 
+      !Array.from(componentElements.values()).flat().includes(el)
+    )
+  }
+
+  if (component.id.startsWith('vstack-') || component.id.startsWith('hstack-')) {
+    const allStackElements = document.querySelectorAll('.tachui-vstack, .tachui-hstack')
+    return Array.from(allStackElements).filter(el => 
+      !Array.from(componentElements.values()).flat().includes(el)
+    )
+  }
+
+  // No elements found
   return []
 }
 
@@ -216,6 +245,11 @@ export function mountComponentTree(
         const key = element.id || `element-${index}`
         component.domElements!.set(key, element)
 
+        // Enhanced: Add component ID to DOM element for proper cleanup tracking
+        if (element instanceof HTMLElement) {
+          (element as any)._componentId = component.id
+        }
+
         // Set primary element (first element with ID or index 0)
         if (!component.primaryElement) {
           component.primaryElement = element
@@ -249,12 +283,9 @@ export function mountComponentTree(
       }
     }
 
-    // Apply modifiers if this is a modifiable component
-    if (isModifiableComponent(component)) {
-      for (const element of elements) {
-        applyModifiersToElement(element, component)
-      }
-    }
+    // ARCHITECTURAL FIX: Removed duplicate modifier application
+    // Modifiers are now handled exclusively by the renderer during element creation
+    // This eliminates the dangerous dual-system approach that was causing conflicts
 
     // Bind event handlers
     for (const element of elements) {
@@ -272,10 +303,8 @@ export function mountComponentTree(
     component.mounted = true
 
     // Process any pending lifecycle hooks for components that were rendered but not mounted
-    // Use setTimeout to ensure all DOM rendering is complete
-    setTimeout(() => {
-      processPendingLifecycleHooks()
-    }, 0)
+    // Execute synchronously to stay within the reactive update cycle
+    processPendingLifecycleHooks()
 
     // Return cleanup function
     return () => {
@@ -369,6 +398,12 @@ export function unmountComponentEnhanced(
 
     // Clear enhanced DOM tracking
     if (component.domElements) {
+      // Clean up component ID references from DOM elements
+      for (const element of component.domElements.values()) {
+        if (element instanceof HTMLElement) {
+          delete (element as any)._componentId
+        }
+      }
       component.domElements.clear()
     }
 

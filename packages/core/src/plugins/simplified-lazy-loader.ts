@@ -1,6 +1,6 @@
 /**
  * Optimized Lazy Plugin Loader - Week 3 Performance Enhancement
- * 
+ *
  * Enhanced dynamic plugin loading with performance optimizations:
  * - Load caching and deduplication
  * - Performance metrics tracking
@@ -58,25 +58,30 @@ export class OptimizedLazyPluginLoader {
     }
   }
 
-  private async doLoadPluginWithRetry(pluginName: string, attempt: number = 1): Promise<TachUIPlugin> {
+  private async doLoadPluginWithRetry(
+    pluginName: string,
+    attempt: number = 1
+  ): Promise<TachUIPlugin> {
     const metrics: LoadMetrics = {
       startTime: performance.now(),
       attempts: attempt,
       success: false,
-      cacheHit: false
+      cacheHit: false,
     }
     this.loadMetrics.set(pluginName, metrics)
 
     try {
       const plugin = await this.doLoadPlugin(pluginName)
-      
+
       // Record successful load metrics
       metrics.endTime = performance.now()
       metrics.duration = metrics.endTime - metrics.startTime
       metrics.success = true
-      
+
       if (process.env.NODE_ENV === 'development') {
-        console.log(`🚀 Plugin "${pluginName}" loaded in ${metrics.duration.toFixed(2)}ms (attempt ${attempt})`)
+        console.log(
+          `🚀 Plugin "${pluginName}" loaded in ${metrics.duration.toFixed(2)}ms (attempt ${attempt})`
+        )
       }
 
       return plugin
@@ -88,41 +93,61 @@ export class OptimizedLazyPluginLoader {
       if (attempt < this.maxRetries) {
         // Exponential backoff retry
         const delay = this.baseRetryDelay * Math.pow(2, attempt - 1)
-        
+
         if (process.env.NODE_ENV === 'development') {
-          console.warn(`⚠️ Plugin "${pluginName}" load failed (attempt ${attempt}), retrying in ${delay}ms...`)
+          console.warn(
+            `⚠️ Plugin "${pluginName}" load failed (attempt ${attempt}), retrying in ${delay}ms...`
+          )
         }
-        
+
         await this.delay(delay)
         return this.doLoadPluginWithRetry(pluginName, attempt + 1)
       }
 
       // All retries exhausted
       if (process.env.NODE_ENV === 'development') {
-        console.error(`❌ Plugin "${pluginName}" failed to load after ${attempt} attempts`)
+        console.error(
+          `❌ Plugin "${pluginName}" failed to load after ${attempt} attempts`
+        )
       }
-      
-      throw new PluginError(`Failed to load plugin "${pluginName}" after ${attempt} attempts: ${error}`)
+
+      throw new PluginError(
+        `Failed to load plugin "${pluginName}" after ${attempt} attempts: ${error}`
+      )
     }
   }
 
   private async doLoadPlugin(pluginName: string): Promise<TachUIPlugin> {
     try {
       // Optimized dynamic import - let bundler handle code splitting
-      const module = await import(/* webpackChunkName: "plugin-[request]" */ pluginName)
+      const module = await import(
+        /* @vite-ignore */
+        /* webpackChunkName: "plugin-[request]" */
+        pluginName
+      )
       const plugin = module.default || module
-      
+
       if (!plugin || typeof plugin !== 'object') {
-        throw new PluginError(`Plugin "${pluginName}" must export a plugin object`)
+        throw new PluginError(
+          `Plugin "${pluginName}" must export a plugin object`
+        )
       }
-      
-      if (!plugin.name || !plugin.version || typeof plugin.install !== 'function') {
-        throw new PluginError(`Plugin "${pluginName}" must have name, version, and install method`)
+
+      if (
+        !plugin.name ||
+        !plugin.version ||
+        typeof plugin.install !== 'function'
+      ) {
+        throw new PluginError(
+          `Plugin "${pluginName}" must have name, version, and install method`
+        )
       }
-      
+
       return plugin as TachUIPlugin
     } catch (error) {
-      throw new PluginError(`Dynamic import failed for "${pluginName}": ${error}`)
+      throw new PluginError(
+        `Dynamic import failed for "${pluginName}": ${error}`
+      )
     }
   }
 
@@ -142,9 +167,11 @@ export class OptimizedLazyPluginLoader {
   }
 
   // Performance monitoring methods
-  
+
   isLoading(pluginName: string): boolean {
-    return this.loadPromises.has(pluginName) && !this.loadedPlugins.has(pluginName)
+    return (
+      this.loadPromises.has(pluginName) && !this.loadedPlugins.has(pluginName)
+    )
   }
 
   isLoaded(pluginName: string): boolean {
@@ -158,7 +185,7 @@ export class OptimizedLazyPluginLoader {
   getAllMetrics(): Array<{ plugin: string; metrics: LoadMetrics }> {
     return Array.from(this.loadMetrics.entries()).map(([plugin, metrics]) => ({
       plugin,
-      metrics
+      metrics,
     }))
   }
 
@@ -166,10 +193,14 @@ export class OptimizedLazyPluginLoader {
     const allMetrics = this.getAllMetrics()
     const successful = allMetrics.filter(m => m.metrics.success)
     const failed = allMetrics.filter(m => !m.metrics.success)
-    
-    const totalLoadTime = successful.reduce((sum, m) => sum + (m.metrics.duration || 0), 0)
-    const avgLoadTime = successful.length > 0 ? totalLoadTime / successful.length : 0
-    
+
+    const totalLoadTime = successful.reduce(
+      (sum, m) => sum + (m.metrics.duration || 0),
+      0
+    )
+    const avgLoadTime =
+      successful.length > 0 ? totalLoadTime / successful.length : 0
+
     return {
       totalPlugins: allMetrics.length,
       successful: successful.length,
@@ -177,8 +208,11 @@ export class OptimizedLazyPluginLoader {
       cached: this.loadedPlugins.size,
       averageLoadTime: avgLoadTime,
       totalLoadTime,
-      cacheHitRate: successful.length > 0 ? 
-        successful.filter(m => m.metrics.cacheHit).length / successful.length : 0
+      cacheHitRate:
+        successful.length > 0
+          ? successful.filter(m => m.metrics.cacheHit).length /
+            successful.length
+          : 0,
     }
   }
 
@@ -195,11 +229,11 @@ export class OptimizedLazyPluginLoader {
   }
 
   // Memory management
-  
+
   unloadPlugin(pluginName: string): void {
     this.loadPromises.delete(pluginName)
     this.loadedPlugins.delete(pluginName)
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.log(`🗑️ Plugin "${pluginName}" unloaded from memory`)
     }
@@ -210,7 +244,8 @@ export class OptimizedLazyPluginLoader {
       loadedPlugins: this.loadedPlugins.size,
       pendingLoads: this.loadPromises.size,
       metricsEntries: this.loadMetrics.size,
-      estimatedMemoryKB: (this.loadedPlugins.size * 5) + (this.loadMetrics.size * 1) // rough estimate
+      estimatedMemoryKB:
+        this.loadedPlugins.size * 5 + this.loadMetrics.size * 1, // rough estimate
     }
   }
 }
@@ -225,15 +260,21 @@ export function createLazyPlugin(
     try {
       const module = await importFn()
       const plugin = 'default' in module ? module.default : module
-      
+
       if (!plugin || typeof plugin !== 'object') {
         throw new PluginError('Plugin module must export a plugin object')
       }
-      
-      if (!plugin.name || !plugin.version || typeof plugin.install !== 'function') {
-        throw new PluginError('Plugin must have name, version, and install method')
+
+      if (
+        !plugin.name ||
+        !plugin.version ||
+        typeof plugin.install !== 'function'
+      ) {
+        throw new PluginError(
+          'Plugin must have name, version, and install method'
+        )
       }
-      
+
       return plugin as TachUIPlugin
     } catch (error) {
       throw new PluginError(`Failed to load plugin: ${error}`)
