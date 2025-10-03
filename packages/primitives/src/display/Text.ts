@@ -176,6 +176,7 @@ export class EnhancedText
           overriddenTo:
             this.effectiveTag !== 'span' ? this.effectiveTag : undefined,
           validationResult: this.validationResult,
+          componentInstance: this, // Add reference to the Text component instance
         },
       },
       text(this.props.content || '')

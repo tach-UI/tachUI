@@ -50,7 +50,7 @@ export {
 } from './modifiers/grid'
 
 // Registry integration for grid modifiers
-import { globalModifierRegistry } from '@tachui/core'
+import { globalModifierRegistry } from '@tachui/registry'
 import {
   gridColumnSpan,
   gridRowSpan,

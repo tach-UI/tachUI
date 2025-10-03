@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -11,16 +11,17 @@ export default defineConfig({
     },
     emptyOutDir: false, // Don't clean the dist directory to preserve .d.ts files
     rollupOptions: {
-      external: ['@tachui/core', '@tachui/modifiers', '@tachui/responsive'],
+      external: ['@tachui/core', '@tachui/modifiers', '@tachui/responsive', '@tachui/registry'],
       output: {
         globals: {
           '@tachui/core': 'TachuiCore',
           '@tachui/modifiers': 'TachuiModifiers',
           '@tachui/responsive': 'TachuiResponsive',
+          '@tachui/registry': 'TachuiRegistry',
         },
       },
     },
-    sourcemap: true,
+    sourcemap: mode !== 'production',
     target: 'es2020',
     minify: false,
   },
@@ -28,4 +29,4 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
   },
-})
+}))

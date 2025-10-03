@@ -6,7 +6,7 @@
  * Auto-registers all modifiers with the global registry when imported.
  */
 
-import { globalModifierRegistry } from '@tachui/core/modifiers/registry'
+import { globalModifierRegistry } from '@tachui/registry'
 
 // Core base classes and types
 export * from './basic/base'
@@ -80,6 +80,7 @@ import {
   maxHeight,
   minWidth,
   minHeight,
+  transition,
 } from './basic'
 
 import {
@@ -91,15 +92,27 @@ import {
   position,
   scaleEffect,
   zIndex,
+  flexGrow,
+  flexShrink,
+  alignItems,
+  justifyContent,
+  flexDirection,
+  flexWrap,
+  gap,
 } from './layout'
 
 import {
   // Appearance modifiers - core functions only
   backgroundColor,
   border,
+  borderTop,
+  borderBottom,
+  borderLeft,
+  borderRight,
   clipShape,
   clipped,
   foregroundColor,
+  gradientText,
 } from './appearance'
 
 import {
@@ -109,6 +122,16 @@ import {
   font,
   lineClamp,
   wordBreak,
+  letterSpacing,
+  lineHeight,
+  textDecoration,
+  textOverflow,
+  textTransform,
+  textCase,
+  whiteSpace,
+  overflow,
+  hyphens,
+  overflowWrap,
 } from './typography'
 
 import {
@@ -149,6 +172,12 @@ import {
   cssProperty,
   cssVariable,
   utility,
+  cursor,
+  display,
+  overflowX,
+  overflowY,
+  outline,
+  outlineOffset,
 } from './utility'
 
 import {
@@ -180,27 +209,13 @@ import {
 } from './elements'
 
 import {
-  // Effects - moved from @tachui/effects to avoid circular dependencies
+  // Only legitimate interaction effects (hover is an interaction modifier)
   hover,
-  cursor,
-  filter,
-  blur,
-  brightness,
-  contrast,
-  transform,
-  shadow,
 } from './effects'
 
-// Re-export effects for tree-shaking
+// Re-export only legitimate modifiers
 export {
   hover,
-  cursor,
-  filter,
-  blur,
-  brightness,
-  contrast,
-  transform,
-  shadow,
 } from './effects'
 
 /**
@@ -245,12 +260,26 @@ const modifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['scaleEffect', scaleEffect],
   ['zIndex', zIndex],
 
+  // Flexbox modifiers
+  ['flexGrow', flexGrow],
+  ['flexShrink', flexShrink],
+  ['alignItems', alignItems],
+  ['justifyContent', justifyContent],
+  ['flexDirection', flexDirection],
+  ['flexWrap', flexWrap],
+  ['gap', gap],
+
   // Appearance modifiers - core functions only
   ['backgroundColor', backgroundColor],
   ['border', border],
+  ['borderTop', borderTop],
+  ['borderBottom', borderBottom],
+  ['borderLeft', borderLeft],
+  ['borderRight', borderRight],
   ['clipShape', clipShape],
   ['clipped', clipped],
   ['foregroundColor', foregroundColor],
+  ['gradientText', gradientText],
 
   // Typography modifiers - core functions only
   ['typography', typography],
@@ -258,6 +287,16 @@ const modifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['font', font],
   ['lineClamp', lineClamp],
   ['wordBreak', wordBreak],
+  ['letterSpacing', letterSpacing],
+  ['lineHeight', lineHeight],
+  ['textDecoration', textDecoration],
+  ['textOverflow', textOverflow],
+  ['textTransform', textTransform],
+  ['textCase', textCase],
+  ['whiteSpace', whiteSpace],
+  ['overflow', overflow],
+  ['hyphens', hyphens],
+  ['overflowWrap', overflowWrap],
 
   // Interaction modifiers
   ['allowsHitTesting', allowsHitTesting],
@@ -301,8 +340,14 @@ const modifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['css', css],
   ['cssProperty', cssProperty],
   ['cssVariable', cssVariable],
-
   ['utility', utility],
+  ['cursor', cursor],
+  ['display', display],
+  ['overflowX', overflowX],
+  ['overflowY', overflowY],
+  ['outline', outline],
+  ['outlineOffset', outlineOffset],
+  ['transition', transition],
 
   // Attribute modifiers
   ['aria', aria],
@@ -330,46 +375,39 @@ const modifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['cornerRibbon', cornerRibbon],
   ['spinner', spinner],
 
-  // Effects modifiers from @tachui/effects
+  // Effects modifiers (interaction effects only - visual effects should come from @tachui/effects)
   ['hover', hover],
-  ['cursor', cursor],
-  ['filter', filter],
-  ['blur', blur],
-  ['brightness', brightness],
-  ['contrast', contrast],
-  ['transform', transform],
-  ['shadow', shadow],
 ]
 
 /**
- * Register all modifiers with the global registry
+ * Register all modifiers with lazy loading
  */
-function registerModifiers(): void {
+function registerModifiersLazy(): void {
   let registeredCount = 0
   let failedCount = 0
 
   modifierRegistrations.forEach(([name, factory]) => {
     try {
-      globalModifierRegistry.register(name, factory)
+      globalModifierRegistry.registerLazy(name, () => factory)
       registeredCount++
     } catch (error) {
-      console.warn(`Failed to register modifier '${name}':`, error)
+      console.warn(`Failed to register lazy modifier '${name}':`, error)
       failedCount++
     }
   })
 
   console.log(
-    `@tachui/modifiers: Registered ${registeredCount} modifiers${
+    `@tachui/modifiers: Registered ${registeredCount} lazy loaders for modifiers${
       failedCount > 0 ? `, ${failedCount} failed` : ''
     }. Registry total: ${globalModifierRegistry.list().length}`
   )
 }
 
-// Auto-register all modifiers when this module is imported
-registerModifiers()
+// Register all modifiers with lazy loading when this module is imported
+registerModifiersLazy()
 
 // Export function for manual registration if needed
-export { registerModifiers }
+export { registerModifiersLazy as registerModifiers }
 
 // Package Information - consistent across all TachUI packages
 export { TACHUI_PACKAGE, TACHUI_PACKAGE_VERSION } from './version'

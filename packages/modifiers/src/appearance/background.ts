@@ -127,7 +127,9 @@ export function gradientText(gradient: string): BackgroundClipModifier {
   return new BackgroundClipModifier({
     backgroundImage: gradient,
     backgroundClip: 'text',
+    webkitBackgroundClip: 'text',
     color: 'transparent',
+    webkitTextFillColor: 'transparent',
   })
 }
 

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     lib: {
       entry: {
@@ -32,14 +32,16 @@ export default defineConfig({
         '@tachui/core/modifiers/types',
         '@tachui/core/modifiers/registry',
         '@tachui/core/constants/layout',
+        '@tachui/registry',
       ],
       output: {
         globals: {
           '@tachui/core': 'TachUICore',
+          '@tachui/registry': 'TachuiRegistry',
         },
       },
     },
-    sourcemap: true,
+    sourcemap: mode !== 'production',
     target: 'es2020',
   },
   resolve: {
@@ -47,4 +49,4 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
-})
+}))

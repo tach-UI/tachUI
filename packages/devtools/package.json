@@ -42,6 +42,8 @@
   ],
   "scripts": {
     "build": "vite build && tsc --project tsconfig.json --emitDeclarationOnly",
+    "build:dev": "vite build --mode development && tsc --project tsconfig.json --emitDeclarationOnly",
+    "build:prod": "vite build --mode production && tsc --project tsconfig.json --emitDeclarationOnly",
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
     "test": "vitest run",

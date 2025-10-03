@@ -66,6 +66,9 @@ importers:
       '@tachui/primitives':
         specifier: workspace:*
         version: link:../../packages/primitives
+      '@tachui/registry':
+        specifier: workspace:*
+        version: link:../../packages/registry
     devDependencies:
       '@types/node':
         specifier: ^20.19.10
@@ -109,6 +112,9 @@ importers:
       '@tachui/primitives':
         specifier: workspace:*
         version: link:../../packages/primitives
+      '@tachui/registry':
+        specifier: workspace:*
+        version: link:../../packages/registry
       '@tachui/responsive':
         specifier: workspace:*
         version: link:../../packages/responsive
@@ -204,6 +210,10 @@ importers:
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/core:
+    dependencies:
+      '@tachui/registry':
+        specifier: workspace:*
+        version: link:../registry
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -312,9 +322,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
-      '@tachui/modifiers':
+      '@tachui/registry':
         specifier: workspace:*
-        version: link:../modifiers
+        version: link:../registry
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -396,6 +406,9 @@ importers:
       '@tachui/modifiers':
         specifier: workspace:*
         version: link:../modifiers
+      '@tachui/registry':
+        specifier: workspace:*
+        version: link:../registry
       '@tachui/responsive':
         specifier: workspace:*
         version: link:../responsive
@@ -427,6 +440,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
+      '@tachui/registry':
+        specifier: workspace:*
+        version: link:../registry
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.11
@@ -448,6 +464,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
+      '@tachui/registry':
+        specifier: workspace:*
+        version: link:../registry
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -526,6 +545,21 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
+  packages/registry:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.11
+      typescript:
+        specifier: ^5.2.0
+        version: 5.9.2
+      vite:
+        specifier: ^7.1.1
+        version: 7.1.3(@types/node@20.19.11)(tsx@4.20.5)(yaml@2.8.1)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
+
   packages/responsive:
     dependencies:
       '@tachui/core':
@@ -534,6 +568,9 @@ importers:
       '@tachui/modifiers':
         specifier: workspace:*
         version: link:../modifiers
+      '@tachui/registry':
+        specifier: workspace:*
+        version: link:../registry
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6

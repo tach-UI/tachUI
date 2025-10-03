@@ -7,4 +7,4 @@
 export { filter, blur, brightness, contrast } from './filters'
 export { transform } from './transforms'
 export { cursor, hover } from './effects'
-export { shadow } from './shadows'
+export { shadow, textShadow } from './shadows'

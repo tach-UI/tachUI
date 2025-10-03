@@ -13,7 +13,7 @@ import {
   setCurrentComponentContext,
 } from './component-context'
 import { DOMRenderer } from './renderer'
-import type { ComponentInstance, DOMNode } from './types'
+import type { ComponentInstance } from './types'
 
 /**
  * Global DOM renderer instance
@@ -428,45 +428,6 @@ export function unmountComponentEnhanced(
   }
 }
 
-/**
- * Apply modifier chains to DOM elements
- */
-function applyModifiersToElement(
-  element: Element,
-  component: ModifiableComponent<any>
-): void {
-  if (!('modifiers' in component) || !component.modifiers) {
-    return
-  }
-
-  const htmlElement = element as HTMLElement
-  const modifiers = component.modifiers
-
-  // Create a DOMNode wrapper for the HTMLElement to match the modifier interface
-  const domNode: DOMNode = {
-    type: 'element',
-    tag: htmlElement.tagName.toLowerCase(),
-    props: {},
-    element: htmlElement,
-  }
-
-  // Apply each modifier to the DOM element
-  for (const modifier of modifiers) {
-    try {
-      // Each modifier should apply its styles/properties to the element
-      if (modifier && typeof modifier.apply === 'function') {
-        modifier.apply(domNode, {
-          componentId: component.id,
-          componentInstance: component,
-          element: htmlElement,
-          phase: 'creation',
-        })
-      }
-    } catch (error) {
-      console.warn('Failed to apply modifier:', modifier, error)
-    }
-  }
-}
 
 /**
  * Bind component event handlers to DOM events

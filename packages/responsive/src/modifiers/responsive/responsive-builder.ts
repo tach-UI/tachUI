@@ -124,34 +124,34 @@ export interface ResponsiveBreakpointBuilder<
   T extends ComponentInstance = ComponentInstance,
 > {
   // Layout properties
-  width(value: number | string): ModifierBuilder<T>
-  height(value: number | string): ModifierBuilder<T>
-  minWidth(value: number | string): ModifierBuilder<T>
-  maxWidth(value: number | string): ModifierBuilder<T>
-  minHeight(value: number | string): ModifierBuilder<T>
-  maxHeight(value: number | string): ModifierBuilder<T>
+  width(value: number | string): ResponsiveModifierBuilder<T>
+  height(value: number | string): ResponsiveModifierBuilder<T>
+  minWidth(value: number | string): ResponsiveModifierBuilder<T>
+  maxWidth(value: number | string): ResponsiveModifierBuilder<T>
+  minHeight(value: number | string): ResponsiveModifierBuilder<T>
+  maxHeight(value: number | string): ResponsiveModifierBuilder<T>
 
   // Padding properties
-  padding(value: number | string): ModifierBuilder<T>
-  paddingHorizontal(value: number | string): ModifierBuilder<T>
-  paddingVertical(value: number | string): ModifierBuilder<T>
-  paddingTop(value: number | string): ModifierBuilder<T>
-  paddingBottom(value: number | string): ModifierBuilder<T>
-  paddingLeft(value: number | string): ModifierBuilder<T>
-  paddingRight(value: number | string): ModifierBuilder<T>
+  padding(value: number | string): ResponsiveModifierBuilder<T>
+  paddingHorizontal(value: number | string): ResponsiveModifierBuilder<T>
+  paddingVertical(value: number | string): ResponsiveModifierBuilder<T>
+  paddingTop(value: number | string): ResponsiveModifierBuilder<T>
+  paddingBottom(value: number | string): ResponsiveModifierBuilder<T>
+  paddingLeft(value: number | string): ResponsiveModifierBuilder<T>
+  paddingRight(value: number | string): ResponsiveModifierBuilder<T>
 
   // Margin properties
-  margin(value: number | string): ModifierBuilder<T>
-  marginHorizontal(value: number | string): ModifierBuilder<T>
-  marginVertical(value: number | string): ModifierBuilder<T>
-  marginTop(value: number | string): ModifierBuilder<T>
-  marginBottom(value: number | string): ModifierBuilder<T>
-  marginLeft(value: number | string): ModifierBuilder<T>
-  marginRight(value: number | string): ModifierBuilder<T>
+  margin(value: number | string): ResponsiveModifierBuilder<T>
+  marginHorizontal(value: number | string): ResponsiveModifierBuilder<T>
+  marginVertical(value: number | string): ResponsiveModifierBuilder<T>
+  marginTop(value: number | string): ResponsiveModifierBuilder<T>
+  marginBottom(value: number | string): ResponsiveModifierBuilder<T>
+  marginLeft(value: number | string): ResponsiveModifierBuilder<T>
+  marginRight(value: number | string): ResponsiveModifierBuilder<T>
 
   // Typography properties
-  fontSize(value: number | string): ModifierBuilder<T>
-  textAlign(value: 'left' | 'center' | 'right' | 'justify'): ModifierBuilder<T>
+  fontSize(value: number | string): ResponsiveModifierBuilder<T>
+  textAlign(value: 'left' | 'center' | 'right' | 'justify'): ResponsiveModifierBuilder<T>
 
   // Display properties
   display(
@@ -163,12 +163,12 @@ export interface ResponsiveBreakpointBuilder<
       | 'flex'
       | 'inline-flex'
       | 'grid'
-  ): ModifierBuilder<T>
+  ): ResponsiveModifierBuilder<T>
 
   // Flexbox properties
   flexDirection(
     value: 'row' | 'column' | 'row-reverse' | 'column-reverse'
-  ): ModifierBuilder<T>
+  ): ResponsiveModifierBuilder<T>
   justifyContent(
     value:
       | 'flex-start'
@@ -177,15 +177,15 @@ export interface ResponsiveBreakpointBuilder<
       | 'space-between'
       | 'space-around'
       | 'space-evenly'
-  ): ModifierBuilder<T>
+  ): ResponsiveModifierBuilder<T>
   alignItems(
     value: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'
-  ): ModifierBuilder<T>
+  ): ResponsiveModifierBuilder<T>
 
   // Visual properties
-  backgroundColor(value: string): ModifierBuilder<T>
-  color(value: string): ModifierBuilder<T>
-  opacity(value: number): ModifierBuilder<T>
+  backgroundColor(value: string): ResponsiveModifierBuilder<T>
+  color(value: string): ResponsiveModifierBuilder<T>
+  opacity(value: number): ResponsiveModifierBuilder<T>
 }
 
 /**
@@ -199,12 +199,7 @@ export class ResponsiveModifierBuilderImpl<
     // Return a Proxy that delegates unknown methods to baseBuilder
     return new Proxy(this, {
       get(target, prop) {
-        // If the method exists on this class, use it
-        if (prop in target) {
-          return target[prop as keyof ResponsiveModifierBuilderImpl<T>]
-        }
-
-        // Special handling for responsive breakpoint getters
+        // Special handling for responsive breakpoint getters FIRST
         if (
           prop === 'base' ||
           prop === 'sm' ||
@@ -216,16 +211,23 @@ export class ResponsiveModifierBuilderImpl<
           return target[prop as keyof ResponsiveModifierBuilderImpl<T>]
         }
 
+        // If the method exists on this class, use it
+        if (prop in target) {
+          return target[prop as keyof ResponsiveModifierBuilderImpl<T>]
+        }
+
         // Delegate everything else to baseBuilder
         const baseProp = (target.baseBuilder as any)[prop]
         if (typeof baseProp === 'function') {
           return (...args: any[]) => {
-            baseProp.apply(target.baseBuilder, args)
-            // Return baseBuilder to maintain fluent chain
-            return target.baseBuilder
+            const result = baseProp.apply(target.baseBuilder, args)
+            // If the base method returns the baseBuilder, return the proxy instead
+            // to maintain fluent chaining with responsive methods
+            return result === target.baseBuilder ? target : result
           }
         }
 
+        // For non-function properties, return the baseBuilder's property
         return baseProp
       },
     }) as ResponsiveModifierBuilderImpl<T>
@@ -513,71 +515,71 @@ class ResponsiveBreakpointBuilderImpl<
   ) {}
 
   // Layout properties
-  width(value: number | string): ModifierBuilder<T> {
+  width(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier('width', responsiveValue)
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  height(value: number | string): ModifierBuilder<T> {
+  height(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier('height', responsiveValue)
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  minWidth(value: number | string): ModifierBuilder<T> {
+  minWidth(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'minWidth',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  maxWidth(value: number | string): ModifierBuilder<T> {
+  maxWidth(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'maxWidth',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  minHeight(value: number | string): ModifierBuilder<T> {
+  minHeight(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'minHeight',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  maxHeight(value: number | string): ModifierBuilder<T> {
+  maxHeight(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'maxHeight',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  padding(value: number | string): ModifierBuilder<T> {
+  padding(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'padding',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  paddingHorizontal(value: number | string): ModifierBuilder<T> {
+  paddingHorizontal(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const leftModifier = createResponsivePropertyModifier(
       'paddingLeft',
@@ -589,10 +591,10 @@ class ResponsiveBreakpointBuilderImpl<
     )
     this.parentBuilder.addModifier(leftModifier)
     this.parentBuilder.addModifier(rightModifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  paddingVertical(value: number | string): ModifierBuilder<T> {
+  paddingVertical(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const topModifier = createResponsivePropertyModifier(
       'paddingTop',
@@ -604,57 +606,57 @@ class ResponsiveBreakpointBuilderImpl<
     )
     this.parentBuilder.addModifier(topModifier)
     this.parentBuilder.addModifier(bottomModifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  paddingTop(value: number | string): ModifierBuilder<T> {
+  paddingTop(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'paddingTop',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  paddingBottom(value: number | string): ModifierBuilder<T> {
+  paddingBottom(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'paddingBottom',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  paddingLeft(value: number | string): ModifierBuilder<T> {
+  paddingLeft(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'paddingLeft',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  paddingRight(value: number | string): ModifierBuilder<T> {
+  paddingRight(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'paddingRight',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  margin(value: number | string): ModifierBuilder<T> {
+  margin(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier('margin', responsiveValue)
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  marginHorizontal(value: number | string): ModifierBuilder<T> {
+  marginHorizontal(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const leftModifier = createResponsivePropertyModifier(
       'marginLeft',
@@ -666,10 +668,10 @@ class ResponsiveBreakpointBuilderImpl<
     )
     this.parentBuilder.addModifier(leftModifier)
     this.parentBuilder.addModifier(rightModifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  marginVertical(value: number | string): ModifierBuilder<T> {
+  marginVertical(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const topModifier = createResponsivePropertyModifier(
       'marginTop',
@@ -681,70 +683,70 @@ class ResponsiveBreakpointBuilderImpl<
     )
     this.parentBuilder.addModifier(topModifier)
     this.parentBuilder.addModifier(bottomModifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  marginTop(value: number | string): ModifierBuilder<T> {
+  marginTop(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'marginTop',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  marginBottom(value: number | string): ModifierBuilder<T> {
+  marginBottom(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'marginBottom',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  marginLeft(value: number | string): ModifierBuilder<T> {
+  marginLeft(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'marginLeft',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  marginRight(value: number | string): ModifierBuilder<T> {
+  marginRight(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'marginRight',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
   // Typography properties
-  fontSize(value: number | string): ModifierBuilder<T> {
+  fontSize(value: number | string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'fontSize',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
   textAlign(
     value: 'left' | 'center' | 'right' | 'justify'
-  ): ModifierBuilder<T> {
+  ): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'textAlign',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
   // Display properties
@@ -757,27 +759,27 @@ class ResponsiveBreakpointBuilderImpl<
       | 'flex'
       | 'inline-flex'
       | 'grid'
-  ): ModifierBuilder<T> {
+  ): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'display',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
   // Flexbox properties
   flexDirection(
     value: 'row' | 'column' | 'row-reverse' | 'column-reverse'
-  ): ModifierBuilder<T> {
+  ): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'flexDirection',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
   justifyContent(
@@ -788,54 +790,54 @@ class ResponsiveBreakpointBuilderImpl<
       | 'space-between'
       | 'space-around'
       | 'space-evenly'
-  ): ModifierBuilder<T> {
+  ): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'justifyContent',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
   alignItems(
     value: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'
-  ): ModifierBuilder<T> {
+  ): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'alignItems',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
   // Visual properties
-  backgroundColor(value: string): ModifierBuilder<T> {
+  backgroundColor(value: string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'backgroundColor',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  color(value: string): ModifierBuilder<T> {
+  color(value: string): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier('color', responsiveValue)
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 
-  opacity(value: number): ModifierBuilder<T> {
+  opacity(value: number): ResponsiveModifierBuilder<T> {
     const responsiveValue = { [this.breakpoint]: value }
     const modifier = createResponsivePropertyModifier(
       'opacity',
       responsiveValue
     )
     this.parentBuilder.addModifier(modifier)
-    return this.baseBuilder
+    return this.parentBuilder
   }
 }
 

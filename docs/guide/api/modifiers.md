@@ -35,6 +35,72 @@ Text("Hello World")
   .build()
 ```
 
+## Optimized Imports & Tree-Shaking
+
+For optimal bundle sizes, import only the modifiers you need using granular import paths:
+
+### Basic Layout (Recommended for most apps)
+```typescript
+// Import only what you need (~2KB)
+import { padding, margin, size } from '@tachui/modifiers/basic'
+import { shadow } from '@tachui/effects/shadows'
+import { blur } from '@tachui/effects/filters'
+
+// Use directly
+Text("Hello").modifier.padding(16).shadow({ x: 0, y: 2, blur: 4 }).build()
+```
+
+### Visual Effects (Import specific effects)
+```typescript
+// Import specific visual effects (~3KB total)
+import { shadow, glowEffect } from '@tachui/effects/shadows'
+import { blur, saturate } from '@tachui/effects/filters'
+import { hover, cursor } from '@tachui/effects/effects'
+
+// Use specific effects
+Button("Click me")
+  .modifier
+  .shadow({ x: 0, y: 2, blur: 4 })
+  .hover(hoverEffect)
+  .cursor('pointer')
+  .build()
+```
+
+### Typography (Import only typography functions)
+```typescript
+// Import typography functions (~1KB)
+import { font, textAlign, lineClamp } from '@tachui/modifiers/typography'
+
+// Use typography modifiers
+Text("Title")
+  .modifier
+  .font({ size: 24, weight: 'bold', family: 'Inter' })
+  .textAlign('center')
+  .lineClamp(2)
+  .build()
+```
+
+### Full Import (Larger bundle - ~45KB)
+```typescript
+// Import everything (not recommended for production)
+import { Text } from '@tachui/core'
+import * as Modifiers from '@tachui/modifiers'
+import * as Effects from '@tachui/effects'
+
+// All modifiers available but larger bundle
+Text("Hello").modifier.padding(16).shadow({ x: 0, y: 2 }).build()
+```
+
+### Bundle Size Comparison
+
+| Import Strategy | Bundle Size | Use Case |
+|----------------|-------------|----------|
+| Granular imports | ~2-5KB | Production apps |
+| Category imports | ~10-15KB | Feature-rich apps |
+| Full imports | ~45KB | Prototyping, demos |
+
+**Best Practice**: Use granular imports in production for optimal performance.
+
 ## Layout Modifiers
 
 ### Frame & Sizing

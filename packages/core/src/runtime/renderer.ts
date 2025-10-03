@@ -575,7 +575,10 @@ export class DOMRenderer {
       const componentInstance =
         node.componentInstance ||
         (node.componentMetadata && node.componentMetadata.componentInstance) ||
+        (node._originalComponent) || // Use original component if available
         node
+
+
 
       // Apply modifiers with batching enabled for better performance
       applyModifiersToNode(
@@ -684,6 +687,11 @@ export function h(
     tag,
     props: props || {},
     children: normalizedChildren,
+  }
+
+  // Extract componentMetadata from props and store it on the node
+  if (props && 'componentMetadata' in props) {
+    ;(node as any).componentMetadata = props.componentMetadata
   }
 
   return node

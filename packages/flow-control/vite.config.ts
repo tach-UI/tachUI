@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     lib: {
       entry: {
@@ -26,11 +26,11 @@ export default defineConfig({
         exports: 'named',
       },
     },
-    sourcemap: false,
+    sourcemap: mode !== 'production',
     minify: 'esbuild',
     target: 'es2020',
   },
   esbuild: {
     target: 'es2020',
   },
-})
+}))

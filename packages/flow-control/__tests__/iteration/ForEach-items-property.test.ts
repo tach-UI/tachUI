@@ -80,7 +80,7 @@ describe('ForEach Component - Items Property Support', () => {
 
     const rendered = forEach.render()
     expect(Array.isArray(rendered)).toBe(true)
-    expect(rendered.length).toBeGreaterThan(0)
+    expect(Array.isArray(rendered) ? rendered.length : 1).toBeGreaterThan(0)
   })
 
   test('should handle empty items array', () => {
@@ -96,7 +96,7 @@ describe('ForEach Component - Items Property Support', () => {
   test('should throw error when neither data nor items provided', () => {
     expect(() => {
       ForEach({
-        children: item => Text(item),
+        children: (item: any) => Text(item),
       } as any)
     }).toThrow('ForEach component requires either "data" or "items" property')
   })

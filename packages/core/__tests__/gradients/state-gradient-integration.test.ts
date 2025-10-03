@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ModifierBuilderImpl } from '../../src/modifiers/builder'
+import { createModifierBuilder } from '../../src/modifiers/builder'
+import type { ModifierBuilder } from '../../src/modifiers/types'
 import { LinearGradient } from '../../src/gradients/index'
 import { StateGradient } from '../../src/gradients/state-gradient-asset'
 import type { ComponentInstance } from '../../src/runtime/types'
@@ -7,7 +8,7 @@ import type { StateGradientOptions } from '../../src/gradients/types'
 
 describe('State Gradient Integration Tests', () => {
   let mockComponent: ComponentInstance
-  let builder: ModifierBuilderImpl
+  let builder: ModifierBuilder<ComponentInstance>
 
   beforeEach(() => {
     mockComponent = {
@@ -17,7 +18,7 @@ describe('State Gradient Integration Tests', () => {
       children: [],
     }
 
-    builder = new ModifierBuilderImpl(mockComponent)
+    builder = createModifierBuilder(mockComponent)
   })
 
   describe('modifier builder integration', () => {
@@ -75,7 +76,7 @@ describe('State Gradient Integration Tests', () => {
       expect(builder.build().modifiers).toHaveLength(1)
 
       // Test string
-      const builder2 = new ModifierBuilderImpl(mockComponent)
+      const builder2 = createModifierBuilder(mockComponent)
       builder2.background('#ff0000')
       expect(builder2.build().modifiers).toHaveLength(1)
     })

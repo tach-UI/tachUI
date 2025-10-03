@@ -4,7 +4,6 @@
  * Key interactive effects integrated into the core modifier registry
  */
 
-import type { Signal } from '@tachui/core/reactive/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 import { BaseModifier } from './basic/base'
 import type {
@@ -203,37 +202,9 @@ export function hover(
   return new HoverModifier({ hoverStyles: styles, transition })
 }
 
-// Placeholder exports for other effects (to be implemented)
-export function cursor(value: string): any {
-  return { type: 'cursor', properties: { cursor: value } }
-}
-
-export function filter(value: string): any {
-  return { type: 'filter', properties: { filter: value } }
-}
-
-export function blur(radius: number): any {
-  return { type: 'blur', properties: { filter: `blur(${radius}px)` } }
-}
-
-export function brightness(value: number): any {
-  return { type: 'brightness', properties: { filter: `brightness(${value})` } }
-}
-
-export function contrast(value: number): any {
-  return { type: 'contrast', properties: { filter: `contrast(${value})` } }
-}
-
-export function transform(value: string): any {
-  return { type: 'transform', properties: { transform: value } }
-}
-
-export function shadow(config: any): any {
-  // Import the real shadow implementation from effects package
-  // For now, return a stub that won't break - the real implementation should come from @tachui/effects
-  return {
-    type: 'shadow',
-    properties: config,
-    apply: () => {}, // Minimal stub to prevent the error
-  }
-}
+// NOTE: Other effects (cursor, filter, blur, brightness, contrast, transform, shadow)
+// should be imported from @tachui/effects package to avoid architectural violations.
+//
+// Use:
+//   import { blur, shadow, transform } from '@tachui/effects'
+//   myComponent.apply(blur(5)).apply(shadow({...}))

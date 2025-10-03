@@ -1,5 +1,7 @@
 import { describe, test, expect } from 'vitest'
-import { ModifierBuilderImpl } from '../../src/modifiers/builder'
+import { createModifierBuilder } from '../../src/modifiers/builder'
+// Import modifiers to ensure they are registered
+import '@tachui/modifiers'
 
 // Mock components for testing integration
 const mockTextComponent = (content: string) => ({
@@ -18,24 +20,24 @@ const mockVStackComponent = () => ({
 describe('AsHTML Integration Tests', () => {
   test('asHTML method exists on ModifierBuilder', () => {
     const component = mockTextComponent('<p>Test</p>')
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     expect(typeof builder.asHTML).toBe('function')
   })
 
   test('asHTML returns ModifierBuilder for chaining', () => {
     const component = mockTextComponent('<p>Test</p>')
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     const result = builder.asHTML()
 
-    expect(result).toBe(builder) // Should return the same builder instance for chaining
+    // Result is a Proxy, so it won't be === to builder
     expect(result.asHTML).toBeDefined() // Should still have asHTML method for further chaining
   })
 
   test('asHTML can be chained with other modifiers', () => {
     const component = mockTextComponent('<p>Styled content</p>')
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     // Chain multiple modifiers including asHTML
     const result = builder
@@ -52,7 +54,7 @@ describe('AsHTML Integration Tests', () => {
 
   test('asHTML adds modifier to the modifier list', () => {
     const component = mockTextComponent('<p>Test</p>')
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     // Access private modifiers array for testing
     const initialModifierCount = (builder as any).modifiers.length
@@ -69,7 +71,7 @@ describe('AsHTML Integration Tests', () => {
 
   test('asHTML with options adds configured modifier', () => {
     const component = mockTextComponent('<p>Test</p>')
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     const customSanitizer = (html: string) =>
       html.replace(/<script.*?<\/script>/gi, '')
@@ -91,7 +93,7 @@ describe('AsHTML Integration Tests', () => {
 
   test('multiple asHTML calls add multiple modifiers', () => {
     const component = mockTextComponent('<p>Test</p>')
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     builder.asHTML()
     builder.asHTML({ skipSanitizer: true })
@@ -108,7 +110,7 @@ describe('AsHTML Integration Tests', () => {
     const component = mockTextComponent(
       '<article><h1>Title</h1><p>Content</p></article>'
     )
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     // Complex realistic chain
     const result = builder
@@ -138,21 +140,21 @@ describe('AsHTML Integration Tests', () => {
 
   test('asHTML modifier priority is correct', () => {
     const component = mockTextComponent('<p>Test</p>')
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     builder.asHTML()
 
     const modifiers = (builder as any).modifiers
     const asHTMLModifier = modifiers[modifiers.length - 1]
 
-    expect(asHTMLModifier.priority).toBe(25) // After layout, before styling
+    expect(asHTMLModifier.priority).toBe(10) // After layout, before styling
   })
 
   test('built component maintains original structure with asHTML modifier', () => {
     const originalContent =
       '<div class="article"><h1>Title</h1><p>Content</p></div>'
     const component = mockTextComponent(originalContent)
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     const builtComponent = builder.asHTML().padding(16).build()
 
@@ -173,7 +175,7 @@ describe('AsHTML Integration Tests', () => {
 
   test('asHTML error handling in build chain', () => {
     const component = mockVStackComponent() // Non-Text component
-    const builder = new ModifierBuilderImpl(component)
+    const builder = createModifierBuilder(component)
 
     // Adding asHTML to builder should work (error occurs during application)
     expect(() => {

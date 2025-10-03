@@ -19,6 +19,7 @@ export { setTheme, detectSystemTheme, getCurrentTheme } from '../reactive/theme'
 export * from '../runtime/dom-bridge'
 export * from '../runtime/component'
 export * from '../runtime/props'
+export type { ComponentInstance } from '../runtime/types'
 
 // Context system (commonly needed for apps)
 export {

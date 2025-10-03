@@ -8,7 +8,7 @@
 import type { Signal } from '../reactive/types'
 import type { ComponentInstance, ComponentProps } from '../runtime/types'
 import type { StatefulBackgroundValue } from '../gradients/types'
-import type { ColorValue, TextShadowConfig } from './types'
+import type { ColorValue } from './types'
 import type { FontAsset } from '../assets/FontAsset'
 import {
   AnimationModifier,
@@ -52,82 +52,8 @@ import { BackgroundModifier } from './background'
 //   paddingVertical,
 // } from '@tachui/modifiers'
 
-// Temporary type definitions to avoid build errors
-type BorderStyle = any
-
-// Create a stub modifier to avoid TypeScript errors
-const createStubModifier = (type: string) => ({
-  type,
-  priority: 50,
-  properties: {},
-  apply: () => undefined,
-})
-
-const borderBottom = (..._args: any[]) => createStubModifier('borderBottom')
-const borderLeft = (..._args: any[]) => createStubModifier('borderLeft')
-const borderRight = (..._args: any[]) => createStubModifier('borderRight')
-const borderTop = (..._args: any[]) => createStubModifier('borderTop')
-const alignItems = (..._args: any[]) => createStubModifier('alignItems')
-const flexDirection = (..._args: any[]) => createStubModifier('flexDirection')
-const flexGrow = (..._args: any[]) => createStubModifier('flexGrow')
-const flexShrink = (..._args: any[]) => createStubModifier('flexShrink')
-const flexWrap = (..._args: any[]) => createStubModifier('flexWrap')
-const gap = (..._args: any[]) => createStubModifier('gap')
-const justifyContent = (..._args: any[]) => createStubModifier('justifyContent')
-const margin = (..._args: any[]) => createRegistryModifier('margin', ..._args)
-const marginBottom = (..._args: any[]) =>
-  createRegistryModifier('marginBottom', ..._args)
-const marginHorizontal = (..._args: any[]) =>
-  createRegistryModifier('marginHorizontal', ..._args)
-const marginLeft = (..._args: any[]) =>
-  createRegistryModifier('marginLeft', ..._args)
-const marginRight = (..._args: any[]) =>
-  createRegistryModifier('marginRight', ..._args)
-const marginTop = (..._args: any[]) =>
-  createRegistryModifier('marginTop', ..._args)
-const marginVertical = (..._args: any[]) =>
-  createRegistryModifier('marginVertical', ..._args)
-const padding = (..._args: any[]) => createRegistryModifier('padding', ..._args)
-const paddingBottom = (..._args: any[]) =>
-  createRegistryModifier('paddingBottom', ..._args)
-const paddingHorizontal = (..._args: any[]) =>
-  createRegistryModifier('paddingHorizontal', ..._args)
-const paddingLeading = (..._args: any[]) =>
-  createRegistryModifier('paddingLeading', ..._args)
-const paddingLeft = (..._args: any[]) =>
-  createRegistryModifier('paddingLeft', ..._args)
-const paddingRight = (..._args: any[]) =>
-  createRegistryModifier('paddingRight', ..._args)
-const paddingTop = (..._args: any[]) =>
-  createRegistryModifier('paddingTop', ..._args)
-const paddingTrailing = (..._args: any[]) =>
-  createRegistryModifier('paddingTrailing', ..._args)
-const paddingVertical = (..._args: any[]) =>
-  createRegistryModifier('paddingVertical', ..._args)
-// Temporarily commented out to resolve circular dependency during build
-// Import new multi-property modifiers
-// import {
-//   height,
-//   maxHeight,
-//   maxWidth,
-//   minHeight,
-//   minWidth,
-//   size,
-//   width,
-// } from '@tachui/modifiers'
-
-// Temporary implementations to avoid build errors
-const height = (..._args: any[]) => createRegistryModifier('height', ..._args)
-const maxHeight = (..._args: any[]) =>
-  createRegistryModifier('maxHeight', ..._args)
-const maxWidth = (..._args: any[]) =>
-  createRegistryModifier('maxWidth', ..._args)
-const minHeight = (..._args: any[]) =>
-  createRegistryModifier('minHeight', ..._args)
-const minWidth = (..._args: any[]) =>
-  createRegistryModifier('minWidth', ..._args)
-const size = (..._args: any[]) => createRegistryModifier('size', ..._args)
-const width = (..._args: any[]) => createRegistryModifier('width', ..._args)
+// All modifiers moved to @tachui/modifiers and @tachui/effects
+// Available via Proxy when respective packages are imported
 import type {
   AnimationModifierProps,
   AppearanceModifierProps,
@@ -137,7 +63,8 @@ import type {
   ModifierBuilder,
 } from './types'
 // Responsive functionality moved to @tachui/responsive package
-import { createModifiableComponent, globalModifierRegistry } from './registry'
+import { globalModifierRegistry } from '@tachui/registry'
+import { createModifiableComponent } from './registry'
 
 // Registry bridge to handle potential instance isolation
 let externalRegistry: any = null
@@ -161,70 +88,6 @@ function getActiveRegistry() {
   // Use the ESM singleton registry
   return globalModifierRegistry
 }
-import type {
-  FontStyle,
-  FontVariant,
-  FontWeight,
-  TextAlign,
-  TextDecoration,
-  TextTransform,
-} from './types' // Temporarily changed to avoid circular dependency
-// textAlign should be retrieved from registry instead of direct import
-// import {
-//   letterSpacing,
-//   lineHeight,
-//   overflow,
-//   textDecoration,
-//   textOverflow,
-//   textTransform,
-//   typography,
-//   whiteSpace,
-// } from '@tachui/modifiers'
-// import {
-//   gradientText,
-//   lineClamp,
-//   wordBreak,
-//   overflowWrap,
-//   hyphens,
-// } from '@tachui/modifiers'
-
-// Temporary implementations to avoid build errors
-const letterSpacing = (..._args: any[]) => createStubModifier('letterSpacing')
-const lineHeight = (..._args: any[]) => createStubModifier('lineHeight')
-const overflow = (..._args: any[]) => createStubModifier('overflow')
-const textDecoration = (..._args: any[]) => createStubModifier('textDecoration')
-const textOverflow = (..._args: any[]) => createStubModifier('textOverflow')
-const textTransform = (value: string) => ({
-  type: 'typography',
-  priority: 50,
-  properties: { transform: value },
-  apply: () => undefined,
-})
-const typography = (..._args: any[]) => createStubModifier('typography')
-const whiteSpace = (..._args: any[]) => createStubModifier('whiteSpace')
-const gradientText = (gradient: string) => ({
-  type: 'backgroundClip',
-  priority: 50,
-  properties: {
-    backgroundImage: gradient,
-    backgroundClip: 'text',
-    webkitBackgroundClip: 'text',
-    color: 'transparent',
-    webkitTextFillColor: 'transparent',
-  },
-  apply: () => undefined,
-})
-const lineClamp = (..._args: any[]) => createStubModifier('lineClamp')
-const wordBreak = (..._args: any[]) => createStubModifier('wordBreak')
-const overflowWrap = (..._args: any[]) => createStubModifier('overflowWrap')
-const hyphens = (..._args: any[]) => createStubModifier('hyphens')
-// Utility functions moved to @tachui/modifiers - using registry lookups instead
-const cursor = (..._args: any[]) => createStubModifier('cursor')
-const display = (..._args: any[]) => createStubModifier('display')
-const overflowX = (..._args: any[]) => createStubModifier('overflowX')
-const overflowY = (..._args: any[]) => createStubModifier('overflowY')
-const outline = (..._args: any[]) => createStubModifier('outline')
-const outlineOffset = (..._args: any[]) => createStubModifier('outlineOffset')
 
 /**
  * Registry-based modifier lookup helper
@@ -232,6 +95,14 @@ const outlineOffset = (..._args: any[]) => createStubModifier('outlineOffset')
  */
 function createRegistryModifier(name: string, ..._args: any[]): Modifier {
   const activeRegistry = getActiveRegistry()
+
+  // Registry lookup with debug info for development
+  // if (process.env.NODE_ENV === 'development' && (name === 'padding' || name === 'textShadow')) {
+  //   console.log(`🔍 Looking up modifier '${name}' in registry ${(activeRegistry as any).instanceId || 'unknown'}:`, {
+  //     registryHas: activeRegistry ? activeRegistry.has(name) : false,
+  //     registrySize: activeRegistry ? activeRegistry.list().length : 0,
+  //   })
+  // }
 
   const factory = activeRegistry.get(name) as any
   if (factory) {
@@ -243,9 +114,69 @@ function createRegistryModifier(name: string, ..._args: any[]): Modifier {
     }
   }
 
-  // Fallback to stub if modifier not found
-  console.warn(`Modifier '${name}' not found in registry, using stub`)
-  return createStubModifier(name)
+  // RESILIENCE FIX: Return a lazy modifier that will retry lookup on first use
+  if (['padding', 'margin', 'width', 'height', 'maxWidth', 'minWidth', 'maxHeight', 'minHeight', 'size', 'borderBottom', 'borderTop', 'borderLeft', 'borderRight', 'position', 'zIndex', 'textShadow', 'shadow', 'blur', 'brightness', 'contrast', 'responsive'].includes(name)) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`🔧 Modifier '${name}' not found, creating lazy modifier that will retry lookup`)
+    }
+    return createLazyModifier(name, _args)
+  }
+
+  // No fallback - modifier must be registered in @tachui/modifiers or @tachui/effects
+  throw new Error(
+    `Modifier '${name}' not found in registry. ` +
+    `Import @tachui/modifiers or @tachui/effects to register modifiers.`
+  )
+}
+
+/**
+ * Creates a lazy modifier that will retry registry lookup when actually applied
+ * This provides resilience against import order issues
+ */
+function createLazyModifier(name: string, args: any[]): Modifier {
+  return {
+    type: 'lazy' as any,
+    priority: 50,
+    properties: { name, args },
+    apply: (node: any, context: any) => {
+      // Retry registry lookup at apply time
+      const activeRegistry = getActiveRegistry()
+
+      try {
+        // Try to get the factory synchronously first
+        let factory = activeRegistry.get(name) as any
+
+        // If we got a Promise, we need to handle it synchronously
+        // This shouldn't happen in normal cases, but let's handle it
+        if (factory && typeof factory.then === 'function') {
+          console.warn(`Lazy modifier '${name}' returned a Promise synchronously - this should not happen`)
+          factory = null
+        }
+
+        if (factory) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`✅ Lazy modifier '${name}' found factory on apply, using real modifier`)
+          }
+          try {
+            const realModifier = (factory as any).apply(null, args as any)
+            if (realModifier && realModifier.apply) {
+              return realModifier.apply(node, context)
+            }
+          } catch (error) {
+            console.warn(`Error applying lazy modifier '${name}':`, error)
+          }
+        }
+      } catch (error) {
+        console.warn(`Error loading lazy modifier '${name}':`, error)
+      }
+
+      // Still not found - throw error
+      throw new Error(
+        `Lazy modifier '${name}' still not found at apply time. ` +
+        `Ensure @tachui/modifiers or @tachui/effects is imported before using this modifier.`
+      )
+    }
+  }
 }
 
 // position and zIndex have been migrated to @tachui/modifiers/layout
@@ -271,58 +202,9 @@ function createRegistryModifier(name: string, ..._args: any[]): Modifier {
 //   layoutTransition,
 //   buttonTransition,
 //   cardTransition,
-
-// Shadow modifiers moved to @tachui/effects package
-const transitionModifier = (
-  property: string = 'all',
-  duration: number = 300,
-  easing: string = 'ease',
-  delay: number = 0
-) => {
-  // Create transition string from parameters
-  let transitionValue: string
-  if (property === 'none') {
-    transitionValue = 'none'
-  } else {
-    transitionValue = `${property} ${duration}ms ${easing} ${delay}ms`
-  }
-
-  return {
-    type: 'transition',
-    priority: 60,
-    properties: { transition: transitionValue },
-    apply: () => undefined,
-  }
-}
-const fadeTransition = (..._args: any[]) => createStubModifier('fadeTransition')
-const transformTransition = (..._args: any[]) =>
-  createStubModifier('transformTransition')
-const colorTransition = (..._args: any[]) =>
-  createStubModifier('colorTransition')
-const layoutTransition = (..._args: any[]) =>
-  createStubModifier('layoutTransition')
-const buttonTransition = (..._args: any[]) =>
-  createStubModifier('buttonTransition')
-const cardTransition = (..._args: any[]) => createStubModifier('cardTransition')
-const modalTransition = (..._args: any[]) =>
-  createStubModifier('modalTransition')
-const smoothTransition = (..._args: any[]) =>
-  createStubModifier('smoothTransition')
-const quickTransition = (..._args: any[]) =>
-  createStubModifier('quickTransition')
-const slowTransition = (..._args: any[]) => createStubModifier('slowTransition')
-// } from '@tachui/modifiers'
-// Temporarily commented out to resolve circular dependency during build
-// import {
-//   scroll as scrollModifier,
-//   scrollBehavior,
-//   overscrollBehavior,
-//   overscrollBehaviorX,
-//   overscrollBehaviorY,
-//   scrollMargin,
-//   scrollPadding,
-//   scrollSnap,
-// } from '@tachui/modifiers'
+//
+// Transition and scroll modifiers moved to @tachui/modifiers
+// Available via Proxy when @tachui/modifiers is imported
 
 // Import CSS modifier functions with aliases to avoid naming conflicts
 import {
@@ -332,19 +214,6 @@ import {
   cssVendor as cssVendorModifier,
 } from './css'
 
-// Temporary implementations to avoid build errors
-const scrollModifier = (..._args: any[]) => createStubModifier('scrollModifier')
-const scrollBehavior = (..._args: any[]) => createStubModifier('scrollBehavior')
-const overscrollBehavior = (..._args: any[]) =>
-  createStubModifier('overscrollBehavior')
-const overscrollBehaviorX = (..._args: any[]) =>
-  createStubModifier('overscrollBehaviorX')
-const overscrollBehaviorY = (..._args: any[]) =>
-  createStubModifier('overscrollBehaviorY')
-const scrollMargin = (..._args: any[]) => createStubModifier('scrollMargin')
-const scrollPadding = (..._args: any[]) => createStubModifier('scrollPadding')
-const scrollSnap = (..._args: any[]) => createStubModifier('scrollSnap')
-
 import { asHTML } from './as-html'
 import type { AsHTMLOptions } from './as-html'
 import { interactionModifiers } from './core'
@@ -353,11 +222,14 @@ import { interactionModifiers } from './core'
 
 /**
  * Concrete modifier builder implementation
+ *
+ * Note: This class intentionally does not implement all ModifierBuilder methods.
+ * Missing methods are handled dynamically via the Proxy in createModifierBuilder(),
+ * which looks them up in the global modifier registry at runtime.
  */
 export class ModifierBuilderImpl<
   T extends ComponentInstance = ComponentInstance,
-> implements ModifierBuilder<T>
-{
+> {
   private modifiers: Modifier[] = []
 
   constructor(private component: T) {}
@@ -380,468 +252,66 @@ export class ModifierBuilderImpl<
     }
 
     this.modifiers.push(new LayoutModifier({ frame: frameProps }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
-  // Padding is now handled by the new padding modifiers below
-
-  margin(value: number | string): ModifierBuilder<T>
-  margin(options: LayoutModifierProps['margin']): ModifierBuilder<T>
-  margin(
-    valueOrOptions: number | string | LayoutModifierProps['margin']
-  ): ModifierBuilder<T> {
-    if (
-      typeof valueOrOptions === 'number' ||
-      typeof valueOrOptions === 'string'
-    ) {
-      this.modifiers.push(margin(valueOrOptions))
-    } else {
-      // Handle both LayoutModifierProps margin format and direct MarginOptions format
-      const marginOptions = valueOrOptions as any
-
-      // Check if it's using vertical/horizontal pattern
-      if (
-        marginOptions.vertical !== undefined ||
-        marginOptions.horizontal !== undefined
-      ) {
-        this.modifiers.push(
-          margin({
-            vertical: marginOptions.vertical,
-            horizontal: marginOptions.horizontal,
-          })
-        )
-      } else if (
-        marginOptions.top !== undefined ||
-        marginOptions.right !== undefined ||
-        marginOptions.bottom !== undefined ||
-        marginOptions.left !== undefined
-      ) {
-        // Handle individual sides
-        this.modifiers.push(
-          margin({
-            top: marginOptions.top,
-            right: marginOptions.right,
-            bottom: marginOptions.bottom,
-            left: marginOptions.left,
-          })
-        )
-      }
-    }
-    return this
-  }
+  // margin() moved to @tachui/modifiers - available via Proxy when imported
 
   layoutPriority(priority: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new LayoutModifier({ layoutPriority: priority }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
-  // New multi-property modifiers
-  size(options: {
-    width?: number | string
-    height?: number | string
-    minWidth?: number | string
-    maxWidth?: number | string
-    minHeight?: number | string
-    maxHeight?: number | string
-  }): ModifierBuilder<T> {
-    this.modifiers.push(size(options))
-    return this
-  }
+  // Size, padding, and margin modifiers moved to @tachui/modifiers
+  // All available via Proxy when @tachui/modifiers is imported:
+  // - size(), width(), height(), minWidth(), maxWidth(), minHeight(), maxHeight()
+  // - padding(), paddingTop(), paddingBottom(), paddingLeft(), paddingRight()
+  // - paddingLeading(), paddingTrailing(), paddingHorizontal(), paddingVertical()
+  // - marginTop(), marginBottom(), marginLeft(), marginRight()
+  // - marginHorizontal(), marginVertical()
 
-  width(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(width(value))
-    return this
-  }
+  // Typography modifiers moved to @tachui/modifiers:
+  // typography(), textAlign(), textTransform(), gradientText()
+  // Available via Proxy when @tachui/modifiers is imported
 
-  height(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(height(value))
-    return this
-  }
-
-  maxWidth(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(maxWidth(value))
-    return this
-  }
-
-  minWidth(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(minWidth(value))
-    return this
-  }
-
-  maxHeight(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(maxHeight(value))
-    return this
-  }
-
-  minHeight(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(minHeight(value))
-    return this
-  }
-
-  marginTop(value: number): ModifierBuilder<T> {
-    this.modifiers.push(marginTop(value))
-    return this
-  }
-
-  marginBottom(value: number): ModifierBuilder<T> {
-    this.modifiers.push(marginBottom(value))
-    return this
-  }
-
-  marginHorizontal(value: number): ModifierBuilder<T> {
-    this.modifiers.push(marginHorizontal(value))
-    return this
-  }
-
-  marginVertical(value: number): ModifierBuilder<T> {
-    this.modifiers.push(marginVertical(value))
-    return this
-  }
-
-  marginLeft(value: number): ModifierBuilder<T> {
-    this.modifiers.push(marginLeft(value))
-    return this
-  }
-
-  marginRight(value: number): ModifierBuilder<T> {
-    this.modifiers.push(marginRight(value))
-    return this
-  }
-
-  // Padding modifiers
-  padding(value: number): ModifierBuilder<T>
-  padding(options: any): ModifierBuilder<T>
-  padding(valueOrOptions: number | any): ModifierBuilder<T> {
-    if (typeof valueOrOptions === 'number') {
-      this.modifiers.push(padding(valueOrOptions))
-    } else {
-      this.modifiers.push(padding(valueOrOptions as any))
-    }
-    return this
-  }
-
-  paddingTop(value: number): ModifierBuilder<T> {
-    this.modifiers.push(paddingTop(value))
-    return this
-  }
-
-  paddingBottom(value: number): ModifierBuilder<T> {
-    this.modifiers.push(paddingBottom(value))
-    return this
-  }
-
-  paddingLeft(value: number): ModifierBuilder<T> {
-    this.modifiers.push(paddingLeft(value))
-    return this
-  }
-
-  paddingRight(value: number): ModifierBuilder<T> {
-    this.modifiers.push(paddingRight(value))
-    return this
-  }
-
-  paddingLeading(value: number): ModifierBuilder<T> {
-    this.modifiers.push(paddingLeading(value))
-    return this
-  }
-
-  paddingTrailing(value: number): ModifierBuilder<T> {
-    this.modifiers.push(paddingTrailing(value))
-    return this
-  }
-
-  paddingHorizontal(value: number): ModifierBuilder<T> {
-    this.modifiers.push(paddingHorizontal(value))
-    return this
-  }
-
-  paddingVertical(value: number): ModifierBuilder<T> {
-    this.modifiers.push(paddingVertical(value))
-    return this
-  }
-
-  // Typography modifiers
-  typography(options: {
-    size?: number | string
-    weight?: FontWeight
-    family?: string
-    lineHeight?: number | string
-    letterSpacing?: number | string
-    align?: TextAlign
-    transform?: TextTransform
-    decoration?: TextDecoration
-    variant?: FontVariant
-    style?: FontStyle
-    color?: string
-  }): ModifierBuilder<T> {
-    this.modifiers.push(typography(options))
-    return this
-  }
-
-  textAlign(
-    value: 'left' | 'center' | 'right' | 'justify' | 'start' | 'end'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(createRegistryModifier('textAlign', value))
-    return this
-  }
-
-  textTransform(
-    value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(textTransform(value))
-    return this
-  }
-
-  gradientText(gradient: string): ModifierBuilder<T> {
-    this.modifiers.push(gradientText(gradient))
-    return this
-  }
-
-  // Text Modifiers
-  lineClamp(lines: number): ModifierBuilder<T> {
-    this.modifiers.push(lineClamp(lines))
-    return this
-  }
-
-  wordBreak(
-    value: 'normal' | 'break-all' | 'keep-all' | 'break-word'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(wordBreak(value))
-    return this
-  }
-
-  overflowWrap(
-    value: 'normal' | 'break-word' | 'anywhere'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(overflowWrap(value))
-    return this
-  }
-
-  hyphens(value: 'none' | 'manual' | 'auto'): ModifierBuilder<T> {
-    this.modifiers.push(hyphens(value))
-    return this
-  }
+  // Text modifiers (lineClamp, wordBreak, overflowWrap, hyphens) moved to @tachui/modifiers
+  // Available via Proxy when @tachui/modifiers is imported
 
   // position() and zIndex() methods have been migrated to @tachui/modifiers/layout
   // for enhanced SwiftUI-compatible functionality
 
-  // Backdrop filter modifiers - moved to @tachui/effects but keeping stubs for compatibility
-  backdropFilter(): ModifierBuilder<T> {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        'backdropFilter has been moved to @tachui/effects. Install @tachui/effects and use .apply(backdropFilter(...)) instead.'
-      )
-    }
-    throw new Error(
-      'backdropFilter is no longer available in @tachui/core. Please install @tachui/effects.'
-    )
-  }
 
-  glassmorphism(): ModifierBuilder<T> {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(
-        'glassmorphism has been moved to @tachui/effects. Install @tachui/effects and use .apply(glassmorphism(...)) instead.'
-      )
-    }
-    throw new Error(
-      'glassmorphism is no longer available in @tachui/core. Please install @tachui/effects.'
-    )
-  }
 
-  letterSpacing(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(letterSpacing(value))
-    return this
-  }
 
-  lineHeight(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(lineHeight(value))
-    return this
-  }
 
-  textOverflow(
-    value: 'clip' | 'ellipsis' | 'fade' | string
-  ): ModifierBuilder<T> {
-    this.modifiers.push(textOverflow(value))
-    return this
-  }
+  // Text spacing and overflow methods moved to @tachui/modifiers:
+  // letterSpacing(), lineHeight(), textOverflow(), whiteSpace(), overflow()
 
-  whiteSpace(
-    value:
-      | 'normal'
-      | 'nowrap'
-      | 'pre'
-      | 'pre-wrap'
-      | 'pre-line'
-      | 'break-spaces'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(whiteSpace(value))
-    return this
-  }
+  // Border modifiers moved to @tachui/modifiers:
+  // borderTop(), borderRight(), borderBottom(), borderLeft()
 
-  overflow(
-    value: 'visible' | 'hidden' | 'scroll' | 'auto'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(overflow(value))
-    return this
-  }
+  // Flexbox modifiers moved to @tachui/modifiers:
+  // flexGrow(), flexShrink(), justifyContent(), alignItems(), gap(), flexDirection(), flexWrap()
 
-  // Border modifiers
-  borderTop(
-    width: number | Signal<number>,
-    color: string | Signal<string>,
-    style?: BorderStyle
-  ): ModifierBuilder<T> {
-    this.modifiers.push(borderTop(width, color, style))
-    return this
-  }
-
-  borderRight(
-    width: number | Signal<number>,
-    color: string | Signal<string>,
-    style?: BorderStyle
-  ): ModifierBuilder<T> {
-    this.modifiers.push(borderRight(width, color, style))
-    return this
-  }
-
-  borderBottom(
-    width: number | Signal<number>,
-    color: string | Signal<string>,
-    style?: BorderStyle
-  ): ModifierBuilder<T> {
-    this.modifiers.push(borderBottom(width, color, style))
-    return this
-  }
-
-  borderLeft(
-    width: number | Signal<number>,
-    color: string | Signal<string>,
-    style?: BorderStyle
-  ): ModifierBuilder<T> {
-    this.modifiers.push(borderLeft(width, color, style))
-    return this
-  }
-
-  // Flexbox modifiers
-
-  flexGrow(value: number): ModifierBuilder<T> {
-    this.modifiers.push(flexGrow(value))
-    return this
-  }
-
-  flexShrink(value: number): ModifierBuilder<T> {
-    this.modifiers.push(flexShrink(value))
-    return this
-  }
-
-  justifyContent(
-    value:
-      | 'flex-start'
-      | 'flex-end'
-      | 'center'
-      | 'space-between'
-      | 'space-around'
-      | 'space-evenly'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(justifyContent(value))
-    return this
-  }
-
-  alignItems(
-    value: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(alignItems(value))
-    return this
-  }
-
-  gap(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(gap(value))
-    return this
-  }
-
-  flexDirection(
-    value: 'row' | 'row-reverse' | 'column' | 'column-reverse'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(flexDirection(value))
-    return this
-  }
-
-  flexWrap(value: 'nowrap' | 'wrap' | 'wrap-reverse'): ModifierBuilder<T> {
-    this.modifiers.push(flexWrap(value))
-    return this
-  }
-
-  // Utility modifiers
-  cursor(
-    value:
-      | 'auto'
-      | 'default'
-      | 'pointer'
-      | 'text'
-      | 'wait'
-      | 'help'
-      | 'not-allowed'
-      | 'grab'
-      | 'grabbing'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(cursor(value))
-    return this
-  }
-
-  overflowY(
-    value: 'visible' | 'hidden' | 'scroll' | 'auto'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(overflowY(value))
-    return this
-  }
-
-  overflowX(
-    value: 'visible' | 'hidden' | 'scroll' | 'auto'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(overflowX(value))
-    return this
-  }
-
-  outline(value: string): ModifierBuilder<T> {
-    this.modifiers.push(outline(value))
-    return this
-  }
-
-  outlineOffset(value: number | string): ModifierBuilder<T> {
-    this.modifiers.push(outlineOffset(value))
-    return this
-  }
-
-  display(
-    value:
-      | 'block'
-      | 'inline'
-      | 'inline-block'
-      | 'flex'
-      | 'inline-flex'
-      | 'grid'
-      | 'none'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(display(value))
-    return this
-  }
+  // Utility modifiers moved to @tachui/modifiers:
+  // cursor(), overflowX(), overflowY(), outline(), outlineOffset(), display()
 
   // Raw CSS modifiers - using imported functions from ./css
   css(properties: {
     [property: string]: string | number | undefined
   }): ModifierBuilder<T> {
     this.modifiers.push(cssModifier(properties))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   cssProperty(property: string, value: string | number): ModifierBuilder<T> {
     this.modifiers.push(cssPropertyModifier(property, value))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   cssVariable(name: string, value: string | number): ModifierBuilder<T> {
     this.modifiers.push(cssVariableModifier(name, value))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   cssVendor(
@@ -850,31 +320,11 @@ export class ModifierBuilderImpl<
     value: string | number
   ): ModifierBuilder<T> {
     this.modifiers.push(cssVendorModifier(prefix, property, value))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
-  textCase(
-    value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(textTransform(value))
-    return this
-  }
-
-  aspectRatio(
-    _ratio?: number,
-    _contentMode: 'fit' | 'fill' = 'fit'
-  ): ModifierBuilder<T> {
-    throw new Error(
-      'Layout modifiers have been moved to @tachui/modifiers. Please import { aspectRatio } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
-  textDecoration(
-    value: 'none' | 'underline' | 'overline' | 'line-through'
-  ): ModifierBuilder<T> {
-    this.modifiers.push(textDecoration(value))
-    return this
-  }
+  // textCase(), textDecoration(), and aspectRatio() moved to @tachui/modifiers
+  // Available via Proxy when @tachui/modifiers is imported
 
   // Phase 1 SwiftUI modifiers
 
@@ -898,25 +348,25 @@ export class ModifierBuilderImpl<
         },
       })
     )
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Appearance modifiers
   foregroundColor(color: ColorValue): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ foregroundColor: color }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   backgroundColor(color: ColorValue): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ backgroundColor: color }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   background(
     value: StatefulBackgroundValue | Signal<string>
   ): ModifierBuilder<T> {
     this.modifiers.push(new BackgroundModifier({ background: value as any }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   font(options: AppearanceModifierProps['font']): ModifierBuilder<T>
@@ -933,38 +383,38 @@ export class ModifierBuilderImpl<
     }
 
     this.modifiers.push(new AppearanceModifier({ font: fontProps }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   fontWeight(
     weight: NonNullable<AppearanceModifierProps['font']>['weight']
   ): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ font: { weight } }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   fontSize(
     size: number | string | Signal<number> | Signal<string>
   ): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ font: { size } }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   fontFamily(
     family: string | FontAsset | Signal<string | FontAsset>
   ): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ font: { family } }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   opacity(value: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ opacity: value }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   cornerRadius(radius: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ cornerRadius: radius }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   border(width: number | Signal<number>, color?: ColorValue): ModifierBuilder<T>
@@ -986,12 +436,12 @@ export class ModifierBuilderImpl<
     }
 
     this.modifiers.push(new AppearanceModifier({ border: borderProps }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   borderWidth(width: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ border: { width } }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Shadow functionality moved to @tachui/effects package
@@ -999,37 +449,37 @@ export class ModifierBuilderImpl<
   // Visual Effects Modifiers (Phase 2 - Epic: Butternut)
   blur(radius: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ blur: radius }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   brightness(amount: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ brightness: amount }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   contrast(amount: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ contrast: amount }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   saturation(amount: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ saturation: amount }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   hueRotation(angle: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ hueRotation: angle }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   grayscale(amount: number | Signal<number>): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ grayscale: amount }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   colorInvert(amount: number | Signal<number> = 1.0): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ colorInvert: amount }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // ============================================================================
@@ -1040,51 +490,9 @@ export class ModifierBuilderImpl<
 
   // Visual effects methods removed - use @tachui/effects package
 
-  // Phase 4 Advanced Gesture Modifiers moved to @tachui/modifiers
-  // Use: import { onLongPressGesture } from '@tachui/modifiers'
-  onLongPressGesture(_options: {
-    minimumDuration?: number
-    maximumDistance?: number
-    perform: () => void
-    onPressingChanged?: (isPressing: boolean) => void
-  }): ModifierBuilder<T> {
-    throw new Error(
-      'onLongPressGesture has been moved to @tachui/modifiers. Please import { onLongPressGesture } from "@tachui/modifiers" and use .apply(onLongPressGesture(...)) instead.'
-    )
-  }
-
-  keyboardShortcut(
-    _key: string,
-    _modifiers: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[],
-    _action: () => void
-  ): ModifierBuilder<T> {
-    throw new Error(
-      'keyboardShortcut has been moved to @tachui/modifiers. Please import { keyboardShortcut } from "@tachui/modifiers" and use .apply(keyboardShortcut(...)) instead.'
-    )
-  }
-
-  focused(_binding: boolean | Signal<boolean>): ModifierBuilder<T> {
-    throw new Error(
-      'focused has been moved to @tachui/modifiers. Please import { focused } from "@tachui/modifiers" and use .apply(focused(...)) instead.'
-    )
-  }
-
-  focusable(
-    _isFocusable: boolean = true,
-    _interactions?: ('activate' | 'edit')[]
-  ): ModifierBuilder<T> {
-    throw new Error(
-      'focusable has been moved to @tachui/modifiers. Please import { focusable } from "@tachui/modifiers" and use .apply(focusable(...)) instead.'
-    )
-  }
-
-  onContinuousHover(options: {
-    coordinateSpace?: 'local' | 'global'
-    perform: (location: { x: number; y: number } | null) => void
-  }): ModifierBuilder<T> {
-    this.modifiers.push(createRegistryModifier('onContinuousHover', options))
-    return this
-  }
+  // Advanced gesture and interaction modifiers moved to @tachui/modifiers
+  // Available via Proxy when @tachui/modifiers is imported:
+  // - onLongPressGesture(), keyboardShortcut(), focused(), focusable(), onContinuousHover()
 
   highPriorityGesture(
     gesture: any,
@@ -1095,7 +503,7 @@ export class ModifierBuilderImpl<
         highPriorityGesture: { gesture, including },
       })
     )
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   simultaneousGesture(
@@ -1107,24 +515,20 @@ export class ModifierBuilderImpl<
         simultaneousGesture: { gesture, including },
       })
     )
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
-  allowsHitTesting(_enabled: boolean): ModifierBuilder<T> {
-    throw new Error(
-      'allowsHitTesting has been moved to @tachui/modifiers. Please import { allowsHitTesting } from "@tachui/modifiers" and use .apply(allowsHitTesting(...)) instead.'
-    )
-  }
+  // allowsHitTesting() moved to @tachui/modifiers - available via Proxy when imported
 
   // Animation modifiers
   transform(value: string | Signal<string>): ModifierBuilder<T> {
     this.modifiers.push(new AnimationModifier({ transform: value }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   animation(options: AnimationModifierProps['animation']): ModifierBuilder<T> {
     this.modifiers.push(new AnimationModifier({ animation: options }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Lifecycle modifiers
@@ -1144,25 +548,51 @@ export class ModifierBuilderImpl<
         },
       })
     )
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Custom modifier application
+  /**
+   * @deprecated DO NOT USE - This is an internal API only.
+   * Always use direct modifier methods instead of .modifier()
+   *
+   * BAD:  component.modifier(padding(16))
+   * GOOD: component.padding(16)
+   *
+   * If you need a modifier from @tachui/modifiers, import and use it directly:
+   * BAD:  component.modifier(shadow({ radius: 4 }))
+   * GOOD: import { shadow } from '@tachui/modifiers'
+   *       const mod = shadow({ radius: 4 })
+   *       // Then apply via registry or component method
+   */
   modifier(modifier: Modifier): ModifierBuilder<T> {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        '⚠️ .modifier() should NOT be used by developers.\n' +
+        'Use direct modifier methods instead:\n' +
+        '  BAD:  component.modifier(padding(16))\n' +
+        '  GOOD: component.padding(16)\n' +
+        '\n' +
+        'If the method doesn\'t exist on the component, import the modifier package:\n' +
+        '  import { shadowModifier } from \'@tachui/modifiers\'\n' +
+        '\n' +
+        'This method is for internal framework use only.'
+      )
+    }
     this.modifiers.push(modifier)
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Public method to add a modifier (used by Proxy)
   addModifierInternal(modifier: Modifier): ModifierBuilder<T> {
     this.modifiers.push(modifier)
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Resizable modifier for images
   resizable(): ModifierBuilder<T> {
     this.modifiers.push(new ResizableModifier({}))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Responsive Design Methods
@@ -1191,123 +621,90 @@ export class ModifierBuilderImpl<
   // Interaction modifiers
   onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(interactionModifiers.onTap(handler))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
     this.modifiers.push(interactionModifiers.onFocus(handler))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onBlur: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onKeyDown(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onKeyDown: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onScroll(handler: (event: Event) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onScroll: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onKeyPress(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onKeyPress: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onKeyUp(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onKeyUp: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onDoubleClick(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onDoubleClick: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onContextMenu(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onContextMenu: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onWheel(handler: (event: WheelEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onWheel: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onInput(handler: (event: InputEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onInput: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onChange(handler: (value: any, event?: Event) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onChange: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onCopy(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onCopy: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onCut(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onCut: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onPaste(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onPaste: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onSelect(handler: (event: Event) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onSelect: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
-  // Transition modifiers
-  transition(
-    property: string = 'all',
-    duration: number = 300,
-    easing: string = 'ease',
-    delay: number = 0
-  ): ModifierBuilder<T> {
-    this.modifiers.push(transitionModifier(property, duration, easing, delay))
-    return this
-  }
+  // Transition modifier moved to @tachui/modifiers:
+  // transition()
 
-  // HTML and ARIA Attributes - MIGRATED TO @tachui/modifiers
-  id(_value: string): ModifierBuilder<T> {
-    throw new Error(
-      'Attribute modifiers have been moved to @tachui/modifiers. Please import { id } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
-  data(_attributes: {
-    [key: string]: string | number | boolean
-  }): ModifierBuilder<T> {
-    throw new Error(
-      'Attribute modifiers have been moved to @tachui/modifiers. Please import { data } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
-  aria(_attributes: {
-    [key: string]: string | number | boolean | undefined
-  }): ModifierBuilder<T> {
-    throw new Error(
-      'Attribute modifiers have been moved to @tachui/modifiers. Please import { aria } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
-  tabIndex(_value: number): ModifierBuilder<T> {
-    throw new Error(
-      'Attribute modifiers have been moved to @tachui/modifiers. Please import { tabIndex } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
+  // HTML and ARIA Attributes moved to @tachui/modifiers
+  // Available via Proxy when @tachui/modifiers is imported:
+  // - id(), data(), aria(), tabIndex()
 
   customProperties(_options: {
     properties: Record<string, string | number>
@@ -1346,13 +743,13 @@ export class ModifierBuilderImpl<
   // State modifiers
   disabled(isDisabled: boolean | Signal<boolean> = true): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ disabled: isDisabled }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // HTML Content Rendering (Text components only)
   asHTML(options?: AsHTMLOptions): ModifierBuilder<T> {
     this.modifiers.push(asHTML(options))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Build the final component with all modifiers applied
@@ -1574,56 +971,56 @@ export class ModifierBuilderImpl<
   // Individual ARIA methods for better developer experience
   role(value: string): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ role: value }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   ariaLabel(value: string): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ 'aria-label': value }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   ariaLive(value: 'off' | 'polite' | 'assertive'): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ 'aria-live': value }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   ariaDescribedBy(value: string): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ 'aria-describedby': value }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   ariaModal(value: boolean): ModifierBuilder<T> {
     this.modifiers.push(
       new AppearanceModifier({ 'aria-modal': value.toString() })
     )
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Touch and gesture events
   onTouchStart(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onTouchStart: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onTouchMove(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onTouchMove: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onTouchEnd(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onTouchEnd: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Swipe gestures (simplified implementations)
   onSwipeLeft(handler: () => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onSwipeLeft: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   onSwipeRight(handler: () => void): ModifierBuilder<T> {
     this.modifiers.push(new InteractionModifier({ onSwipeRight: handler }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // Navigation methods - these delegate to the navigation package functions
@@ -1636,7 +1033,7 @@ export class ModifierBuilderImpl<
         role: 'heading',
       })
     )
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   navigationBarHidden(hidden: boolean = true): ModifierBuilder<T> {
@@ -1647,7 +1044,7 @@ export class ModifierBuilderImpl<
         'aria-hidden': hidden.toString(),
       })
     )
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   navigationBarItems(options: {
@@ -1655,7 +1052,7 @@ export class ModifierBuilderImpl<
     trailing?: ComponentInstance | ComponentInstance[]
   }): ModifierBuilder<T> {
     this.modifiers.push(new AppearanceModifier({ navigationBarItems: options }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
   // ============================================================================
@@ -1665,122 +1062,19 @@ export class ModifierBuilderImpl<
   transitions(config: any): ModifierBuilder<T> {
     // Placeholder - implement with proper transition system
     this.modifiers.push(new AnimationModifier({ transitions: config }))
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
-  fadeTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(fadeTransition(duration))
-    return this
-  }
-
-  transformTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(transformTransition(duration))
-    return this
-  }
-
-  colorTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(colorTransition(duration))
-    return this
-  }
-
-  layoutTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(layoutTransition(duration))
-    return this
-  }
-
-  buttonTransition(): ModifierBuilder<T> {
-    this.modifiers.push(buttonTransition())
-    return this
-  }
-
-  cardTransition(): ModifierBuilder<T> {
-    this.modifiers.push(cardTransition())
-    return this
-  }
-
-  modalTransition(): ModifierBuilder<T> {
-    this.modifiers.push(modalTransition())
-    return this
-  }
-
-  smoothTransition(duration: number = 300): ModifierBuilder<T> {
-    this.modifiers.push(smoothTransition(duration))
-    return this
-  }
-
-  quickTransition(duration: number = 150): ModifierBuilder<T> {
-    this.modifiers.push(quickTransition(duration))
-    return this
-  }
-
-  slowTransition(duration: number = 500): ModifierBuilder<T> {
-    this.modifiers.push(slowTransition(duration))
-    return this
-  }
+  // All transition methods moved to @tachui/modifiers:
+  // fadeTransition(), transformTransition(), colorTransition(), layoutTransition(),
+  // buttonTransition(), cardTransition(), modalTransition(), smoothTransition(),
+  // quickTransition(), slowTransition()
 
   // ============================================================================
-  // SCROLL METHODS
+  // SCROLL METHODS - ALL MOVED TO @tachui/modifiers
   // ============================================================================
-
-  scroll(config: any): ModifierBuilder<T> {
-    this.modifiers.push(scrollModifier(config))
-    return this
-  }
-
-  scrollBehavior(value: 'auto' | 'smooth'): ModifierBuilder<T> {
-    this.modifiers.push(scrollBehavior(value))
-    return this
-  }
-
-  overscrollBehavior(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T> {
-    this.modifiers.push(overscrollBehavior(value))
-    return this
-  }
-
-  overscrollBehaviorX(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T> {
-    this.modifiers.push(overscrollBehaviorX(value))
-    return this
-  }
-
-  overscrollBehaviorY(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T> {
-    this.modifiers.push(overscrollBehaviorY(value))
-    return this
-  }
-
-  scrollMargin(
-    margin:
-      | number
-      | string
-      | {
-          top?: number | string
-          right?: number | string
-          bottom?: number | string
-          left?: number | string
-        }
-  ): ModifierBuilder<T> {
-    this.modifiers.push(scrollMargin(margin))
-    return this
-  }
-
-  scrollPadding(
-    padding:
-      | number
-      | string
-      | {
-          top?: number | string
-          right?: number | string
-          bottom?: number | string
-          left?: number | string
-        }
-  ): ModifierBuilder<T> {
-    this.modifiers.push(scrollPadding(padding))
-    return this
-  }
-
-  scrollSnap(config: any): ModifierBuilder<T> {
-    this.modifiers.push(scrollSnap(config))
-    return this
-  }
+  // scroll(), scrollBehavior(), overscrollBehavior(), overscrollBehaviorX(),
+  // overscrollBehaviorY(), scrollMargin(), scrollPadding(), scrollSnap()
 
   // ============================================================================
   // MIGRATED MODIFIERS - NOW IN SPECIALIZED PACKAGES
@@ -1838,39 +1132,12 @@ export class ModifierBuilderImpl<
         },
       })
     )
-    return this
+    return this as unknown as ModifierBuilder<T>
   }
 
-  // Shadow modifiers - registry-based lookup
-  shadow(config: {
-    x?: number
-    y?: number
-    radius?: number
-    color?: string
-  }): ModifierBuilder<T> {
-    this.modifiers.push(createRegistryModifier('shadow', config))
-    return this
-  }
-
-  textShadow(config: TextShadowConfig): ModifierBuilder<T> {
-    this.modifiers.push(createRegistryModifier('textShadow', config))
-    return this
-  }
-
-  shadows(shadows: any[]): ModifierBuilder<T> {
-    this.modifiers.push(createRegistryModifier('shadows', shadows))
-    return this
-  }
-
-  shadowPreset(preset: string): ModifierBuilder<T> {
-    this.modifiers.push(createRegistryModifier('shadowPreset', preset))
-    return this
-  }
-
-  clipped(clipped?: boolean): ModifierBuilder<T> {
-    this.modifiers.push(createRegistryModifier('clipped', clipped ?? true))
-    return this
-  }
+  // Shadow and clipping modifiers moved to @tachui/modifiers
+  // Available via Proxy when @tachui/modifiers is imported:
+  // - shadow(), textShadow(), shadows(), shadowPreset(), clipped()
 }
 
 /**
@@ -1883,25 +1150,67 @@ export function createModifierBuilder<T extends ComponentInstance>(
 
   // Create a Proxy to handle dynamic modifier methods
   return new Proxy(builderImpl, {
-    get(target: any, prop: string | symbol) {
+    get(target: any, prop: string | symbol, receiver: any) {
       // If the property exists on the target, return it
       if (prop in target) {
-        return target[prop]
-      }
-
-      // If it's a string property and looks like a modifier method
-      if (typeof prop === 'string') {
-        const activeRegistry = getActiveRegistry()
-
-        // Check if this modifier exists in the registry
-        if (activeRegistry.has(prop)) {
-          // Return a function that creates the modifier and adds it to the builder
-          return function (this: ModifierBuilderImpl<T>, ...args: any[]) {
-            const modifier = createRegistryModifier(prop, ...args)
-            return this.addModifierInternal(modifier)
+        const value = target[prop]
+        if (typeof value === 'function') {
+          // For methods, bind them to the receiver and ensure they return the receiver
+          return function (...args: any[]) {
+            const result = value.apply(receiver, args)
+            // If the method returns the target, return the receiver instead
+            return result === target ? receiver : result
           }
         }
+        return value
       }
+
+       // If it's a string property and looks like a modifier method
+       if (typeof prop === 'string') {
+         const activeRegistry = getActiveRegistry()
+
+            // Special handling for responsive modifier
+             if (prop === 'responsive') {
+               return function (this: ModifierBuilderImpl<T>, ...args: any[]) {
+                 const config = args[0]
+                 if (config) {
+                   const modifier = createRegistryModifier(prop, config)
+                   this.addModifierInternal(modifier)
+                 }
+                 // Return the receiver to maintain chaining compatibility
+                 return receiver
+               }
+             }
+
+           // Handle breakpoint methods directly on the builder
+            if (prop === 'base' || prop === 'sm' || prop === 'md' || prop === 'lg' || prop === 'xl' || prop === '2xl') {
+             return new Proxy({}, {
+               get(_target2, prop3) {
+                 if (typeof prop3 === 'string') {
+                   return (...args2: any[]) => {
+                     // Create responsive modifier for this breakpoint
+                     const responsiveConfig = { [prop3]: { [prop]: args2[0] } }
+                     const modifier = createRegistryModifier('responsive', responsiveConfig)
+                     target.addModifierInternal(modifier)
+                     // Return the main proxy (receiver) to maintain chaining
+                     return receiver
+                   }
+                 }
+                 return undefined
+               }
+             })
+           }
+
+          // Check if this modifier exists in the registry
+          if (activeRegistry.has(prop)) {
+            // Return a function that creates the modifier and adds it to the builder
+            return function (this: ModifierBuilderImpl<T>, ...args: any[]) {
+              const modifier = createRegistryModifier(prop, ...args)
+              this.addModifierInternal(modifier)
+              return receiver
+            }
+          }
+       }
 
       // Return undefined for unknown properties
       return undefined
@@ -1932,41 +1241,5 @@ export const modifierUtils = {
    */
   paddingAll(value: number): Modifier {
     return new LayoutModifier({ padding: value })
-  },
-
-  /**
-   * Create a margin modifier with all sides
-   */
-  marginAll(value: number): Modifier {
-    return new LayoutModifier({ margin: value })
-  },
-
-  /**
-   * Create a font modifier with common presets
-   */
-  fontPreset(preset: 'title' | 'heading' | 'body' | 'caption'): Modifier {
-    const presets = {
-      title: { size: 32, weight: 'bold' as const },
-      heading: { size: 24, weight: '600' as const },
-      body: { size: 16, weight: 'normal' as const },
-      caption: { size: 12, weight: 'normal' as const },
-    }
-
-    return new AppearanceModifier({ font: presets[preset] })
-  },
-
-  // shadowPreset moved to @tachui/effects package
-
-  /**
-   * Create a transition modifier with common presets
-   */
-  transitionPreset(preset: 'fast' | 'normal' | 'slow'): Modifier {
-    const presets = {
-      fast: { duration: 150, easing: 'ease-out' },
-      normal: { duration: 300, easing: 'ease' },
-      slow: { duration: 500, easing: 'ease-in-out' },
-    }
-
-    return new AnimationModifier({ transition: presets[preset] })
   },
 }

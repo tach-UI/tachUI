@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     lib: {
       entry: {
@@ -22,7 +22,7 @@ export default defineConfig({
     rollupOptions: {
       external: ['@tachui/core', '@tachui/primitives'],
     },
-    sourcemap: true,
+    sourcemap: mode !== 'production',
     minify: false, // Keep readable for debugging
   },
-})
+}))

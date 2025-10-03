@@ -3,25 +3,28 @@
   "version": "0.8.0-alpha",
   "description": "Advanced responsive design patterns and utilities for tachUI framework",
   "homepage": "https://tachui.dev/",
-  "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./modifiers": {
       "types": "./dist/modifiers/index.d.ts",
-      "import": "./dist/modifiers/index.js"
+      "import": "./dist/modifiers/index.mjs",
+      "require": "./dist/modifiers/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && vite build && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "build": "rm -rf dist && vite build && vite build --config vite.config.cjs.ts && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "build:dev": "rm -rf dist && vite build --mode development && vite build --config vite.config.cjs.ts && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "build:prod": "rm -rf dist && vite build --mode production && vite build --config vite.config.cjs.ts && tsc -p tsconfig.build.json --emitDeclarationOnly",
     "dev": "vite build --watch",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest run",
@@ -34,7 +37,8 @@
   },
   "dependencies": {
     "@tachui/core": "workspace:*",
-    "@tachui/modifiers": "workspace:*"
+    "@tachui/modifiers": "workspace:*",
+    "@tachui/registry": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

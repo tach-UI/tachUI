@@ -22,6 +22,8 @@
   ],
   "scripts": {
     "build": "rm -rf dist && vite build && tsc -p tsconfig.build.json",
+    "build:dev": "rm -rf dist && vite build --mode development && tsc -p tsconfig.build.json",
+    "build:prod": "rm -rf dist && vite build --mode production && tsc -p tsconfig.build.json",
     "build:types": "tsc -p tsconfig.build.json",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "dev": "vite build --watch",
@@ -33,10 +35,12 @@
     "type-check": "tsc --project tsconfig.type-check.json"
   },
   "peerDependencies": {
-    "@tachui/core": "^0.8.0-alpha"
+    "@tachui/core": "^0.8.0-alpha",
+    "@tachui/registry": "^0.8.0-alpha"
   },
   "devDependencies": {
     "@tachui/core": "workspace:*",
+    "@tachui/registry": "workspace:*",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^1.0.0",
     "typescript": "^5.2.0",

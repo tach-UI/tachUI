@@ -49,6 +49,8 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build && pnpm build:types",
+    "build:dev": "vite build --mode development && pnpm build:types",
+    "build:prod": "vite build --mode production && pnpm build:types",
     "build:types": "tsc --project tsconfig.build.json",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest --run",

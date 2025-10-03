@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     lib: {
       entry: {
@@ -35,7 +35,7 @@ export default defineConfig({
         manualChunks: undefined,
       },
     },
-    sourcemap: false,
+    sourcemap: mode !== 'production',
     minify: 'esbuild',
     target: 'es2020',
   },
@@ -46,4 +46,4 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
   },
-})
+}))

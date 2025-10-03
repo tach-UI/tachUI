@@ -33,12 +33,14 @@
       "@tachui/mobile": ["./packages/mobile/dist"],
       "@tachui/effects": ["./packages/effects/dist"],
       "@tachui/devtools": ["./packages/devtools/dist"],
-      "@tachui/cli": ["./packages/cli/dist"]
+      "@tachui/cli": ["./packages/cli/dist"],
+      "@tachui/registry": ["./packages/registry/dist"]
     }
   },
   "include": [],
   "references": [
     { "path": "./packages/core" },
+    { "path": "./packages/registry" },
     { "path": "./packages/primitives" },
     { "path": "./packages/forms" },
     { "path": "./packages/navigation" },

@@ -21,12 +21,11 @@ import { defineConfig } from 'vitest/config'
  * ```
  */
 
-//     setupFiles: ['./tools/testing/setup.ts'],
-
 export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    setupFiles: ['./tools/testing/setup.ts'],
 
     // Standard exclusions
     exclude: [
@@ -95,6 +94,10 @@ export default defineConfig({
       {
         find: '@tachui/cli',
         replacement: path.resolve(__dirname, 'packages/cli/src'),
+      },
+      {
+        find: '@tachui/registry',
+        replacement: path.resolve(__dirname, 'packages/registry/src'),
       },
 
       // Plugin packages - all use src for consistency

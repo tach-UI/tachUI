@@ -1423,7 +1423,12 @@ export class AnimationModifier extends BaseModifier {
       const delay = t.delay || 0
 
       if (context.element instanceof HTMLElement) {
-        context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
+        // Handle 'none' to disable transitions
+        if (property === 'none') {
+          context.element.style.transition = 'none'
+        } else {
+          context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
+        }
       }
     }
 

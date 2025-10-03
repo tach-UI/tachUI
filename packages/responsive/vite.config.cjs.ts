@@ -1,13 +1,13 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'TachUIResponsive',
       fileName: 'index',
-      formats: ['es'],
+      formats: ['cjs']
     },
     emptyOutDir: false, // Don't clean the dist directory to preserve .d.ts files
     rollupOptions: {
@@ -16,11 +16,11 @@ export default defineConfig(({ mode }) => ({
         globals: {
           '@tachui/core': 'TachUICore',
           '@tachui/modifiers': 'TachUIModifiers',
-          '@tachui/registry': 'TachuiRegistry',
-        },
-      },
+          '@tachui/registry': 'TachUIRegistry'
+        }
+      }
     },
-    sourcemap: mode !== 'production',
+    sourcemap: true,
     minify: true,
   },
   resolve: {
@@ -28,4 +28,4 @@ export default defineConfig(({ mode }) => ({
       '@tachui/core': resolve(__dirname, '../core/src'),
     },
   },
-}))
+})

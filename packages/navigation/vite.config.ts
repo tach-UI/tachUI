@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -24,7 +24,7 @@ export default defineConfig({
         exports: 'named',
       },
     },
-    sourcemap: false,
+    sourcemap: mode !== 'production',
     minify: 'esbuild',
     // Target modern browsers for better performance
     target: 'es2020',
@@ -33,4 +33,4 @@ export default defineConfig({
   esbuild: {
     target: 'es2020',
   },
-})
+}))

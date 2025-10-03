@@ -34,6 +34,8 @@
   ],
   "scripts": {
     "build": "rm -rf dist && vite build && tsc --project tsconfig.build.json",
+    "build:dev": "rm -rf dist && vite build --mode development && tsc --project tsconfig.build.json",
+    "build:prod": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json",
     "dev": "vite build --watch",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest run",
@@ -46,7 +48,7 @@
   },
   "dependencies": {
     "@tachui/core": "workspace:*",
-    "@tachui/modifiers": "workspace:*"
+    "@tachui/registry": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
