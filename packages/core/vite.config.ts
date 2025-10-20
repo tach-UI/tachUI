@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => ({
         'constants/layout': resolve(__dirname, 'src/constants/layout.ts'),
         'validation/index': resolve(__dirname, 'src/validation/index.ts'),
         'assets/index': resolve(__dirname, 'src/assets/index.ts'),
-        'gradients/gradient-asset': resolve(__dirname, 'src/gradients/gradient-asset.ts'),
+        'gradients/index': resolve(__dirname, 'src/gradients/index.ts'),
         'css-classes/index': resolve(__dirname, 'src/css-classes/index.ts'),
       },
       name: 'TachUICore',
