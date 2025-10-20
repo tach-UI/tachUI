@@ -212,6 +212,7 @@ export class ColorAsset extends Asset {
   }
 
   resolve(): string {
+<<<<<<< HEAD
     // If we're inside a reactive computation (effect/computed), use reactive theme signal
     // Otherwise, use the static getCurrentTheme for backward compatibility with tests
     const isInReactiveContext = getCurrentComputation() !== null
@@ -225,6 +226,11 @@ export class ColorAsset extends Asset {
       // Use static theme access for tests and non-reactive contexts
       currentTheme = ColorAsset.getCurrentTheme()
     }
+=======
+    // IMPORTANT: Access theme signal to create reactive dependency
+    // This ensures ColorAsset updates automatically when theme changes
+    const currentTheme = getThemeSignal()()
+>>>>>>> 434de21 (test work for strong reactive testing, focusing first on Assets and Flow Control)
 
     // Resolve priority: theme-specific → default
     if (currentTheme === 'dark') {
