@@ -12,6 +12,7 @@ import { h } from '@tachui/core'
 import type { ComponentInstance, ComponentProps } from '@tachui/core'
 import { withModifiers } from '@tachui/core'
 import { ImageAsset } from '@tachui/core'
+import type { ImageAssetProxy } from '@tachui/core/assets'
 // import { getThemeSignal } from '@tachui/core'
 import { useLifecycle } from '@tachui/core'
 import { registerComponentWithLifecycleHooks } from '@tachui/core'
@@ -24,6 +25,9 @@ import { ConcatenatedComponent } from '@tachui/core'
 import { processElementOverride, type ElementOverrideProps } from '@tachui/core'
 import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
 import { aspectRatio } from '@tachui/modifiers'
+
+type ImageAssetLike = ImageAsset | ImageAssetProxy
+type ImageSource = string | Signal<string> | ImageAssetLike
 
 /**
  * Image loading state
@@ -50,15 +54,30 @@ export type ImageResizeMode = 'cover' | 'contain' | 'fill' | 'none'
  */
 export type ImageLoadingStrategy = 'eager' | 'lazy'
 
-/**
- * Image component properties with element override support and CSS classes
- */
+function isImageAssetLike(value: unknown): value is ImageAssetLike {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as any).resolve === 'function'
+  )
+}
+
+function resolveImageAssetSource(
+  source: ImageSource | undefined
+): string | Signal<string> | undefined {
+  if (!source) return source
+  if (isImageAssetLike(source)) {
+    return source.resolve()
+  }
+  return source
+}
+
 export interface ImageProps
   extends ComponentProps,
     ElementOverrideProps,
     CSSClassesProps {
   // Source
-  src?: string | Signal<string> | ImageAsset
+  src?: ImageSource
   srcSet?: string | Signal<string>
   alt?: string | Signal<string>
 
@@ -156,7 +175,7 @@ export class EnhancedImage
       onDOMReady: (_elements, primaryElement) => {
         // Set up ImageAsset reactivity when DOM is ready
         if (
-          this.props.src instanceof ImageAsset &&
+          isImageAssetLike(this.props.src) &&
           primaryElement instanceof HTMLImageElement
         ) {
           this.setupImageAssetReactivityForDOMElement(
@@ -214,10 +233,7 @@ export class EnhancedImage
     }
 
     // Resolve ImageAsset to initial src value, reactive updates handled separately
-    const initialSrc =
-      this.props.src instanceof ImageAsset
-        ? this.props.src.resolve()
-        : this.props.src
+    const initialSrc = resolveImageAssetSource(this.props.src)
 
     // Process CSS classes for this component
     const baseClasses = ['tachui-image']
@@ -250,7 +266,7 @@ export class EnhancedImage
    * Set up ImageAsset reactivity for a real DOM element (called from onDOMReady)
    */
   private setupImageAssetReactivityForDOMElement(
-    imageAsset: ImageAsset,
+    imageAsset: ImageAssetLike,
     domElement: HTMLImageElement
   ): void {
     // Create the reactive effect that watches for theme changes
@@ -380,7 +396,7 @@ export interface ImageWithShorthands extends ModifiableComponent<ImageProps> {
 }
 
 export function Image(
-  src: string | Signal<string> | ImageAsset,
+  src: ImageSource,
   props: Omit<ImageProps, 'src'> = {}
 ): ImageWithShorthands {
   const imageProps: ImageProps = { ...props, src }

@@ -10,7 +10,6 @@ import {
   ColorAsset,
   ImageAsset,
   createColorAsset,
-  Asset,
   LinearGradient,
   StateGradient,
 } from "@tachui/core/assets";

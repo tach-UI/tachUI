@@ -1,6 +1,9 @@
 import { VStack, HStack, Text } from '@tachui/primitives'
 import { Assets } from '@tachui/core/assets'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
+import type { FontAssetProxy } from '@tachui/core/assets'
+
+const bodyFont = Assets.bodyFont as FontAssetProxy
 
 export function Patterns(): ComponentInstance {
   const swiftText = `<pre><code><span class="comment">// SwiftUI</span>
@@ -80,7 +83,6 @@ export function Patterns(): ComponentInstance {
 
            HStack({
             spacing: 0,
-            css: 'comparison',
             children: [
               VStack({
                 spacing: 0,
@@ -91,7 +93,7 @@ export function Patterns(): ComponentInstance {
                     .backgroundColor(Assets.primaryPurple20)
                     .foregroundColor(Assets.textWhite)
                     .padding({ horizontal: 20, vertical: 15 })
-                    .font({ weight: 400, family: Assets.bodyFont, size: '1.15rem' })
+                    .font({ weight: 400, family: bodyFont, size: '1.15rem' })
                     .borderBottom(1, Assets.primaryPurple30, 'solid')
                     .width('100%')
                     .build(),
@@ -134,7 +136,7 @@ export function Patterns(): ComponentInstance {
                     .backgroundColor(Assets.primaryPurple20)
                     .foregroundColor(Assets.textWhite)
                     .padding({ horizontal: 20, vertical: 15 })
-                    .font({ weight: 400, family: Assets.bodyFont, size: '1.15rem' })
+                    .font({ weight: 400, family: bodyFont, size: '1.15rem' })
                     .borderBottom(1, Assets.primaryPurple30, 'solid')
                     .width('100%')
                     .build(),
@@ -179,14 +181,14 @@ export function Patterns(): ComponentInstance {
 
           Text('Perfect for iOS developers transitioning to web development.')
             .modifier
-            .font({ size: '1.25rem', family: Assets.bodyFont, weight: 600 })
+            .font({ size: '1.25rem', family: bodyFont, weight: 600 })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .margin({ horizontal: 10 })
             .build(),
           Text('Your iOS development knowledge transfers directly - no new patterns to learn. ')
             .modifier
-            .font({ size: '1.25rem', family: Assets.bodyFont, weight: 300 })
+            .font({ size: '1.25rem', family: bodyFont, weight: 300 })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .margin({ horizontal: 10 })

@@ -5,22 +5,27 @@
  * This is a workaround until ColorAssets become fully reactive in TachUI core
  */
 
-import { createSignal } from '@tachui/core/reactive'
-import { getCurrentTheme } from '@tachui/core/reactive'
+import {
+  createSignal,
+  getCurrentTheme,
+  type Theme,
+} from "@tachui/core/reactive";
 
 // Global theme state that components can subscribe to
-const [themeState, setThemeState] = createSignal(getCurrentTheme())
+const [themeState, setThemeState] = createSignal<Theme>(getCurrentTheme())
 
 // Track render counter to force re-renders
 const [renderCount, setRenderCount] = createSignal(0)
 
 // Listen for theme changes and update the reactive state
-if (typeof document !== 'undefined') {
-  document.addEventListener('tachui-theme-changed', (event: CustomEvent) => {
-    setThemeState(event.detail.theme)
-    // Force all theme-reactive components to re-render
-    setRenderCount(prev => prev + 1)
-  })
+if (typeof document !== "undefined") {
+  document.addEventListener("tachui-theme-changed", (event: Event) => {
+    const detail = (event as CustomEvent<{ theme: Theme }>).detail;
+    if (!detail) return;
+
+    setThemeState(detail.theme);
+    setRenderCount(prev => prev + 1);
+  });
 }
 
 /**

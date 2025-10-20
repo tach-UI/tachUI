@@ -12,20 +12,21 @@ if (app) {
 // Test if TachUI imports work
 try {
   import('@tachui/core').then((TachUI) => {
-    console.log('TachUI imported successfully:', Object.keys(TachUI).slice(0, 10))
+    const core = TachUI as any
+    console.log('TachUI imported successfully:', Object.keys(core).slice(0, 10))
     
-    if (TachUI.mountRoot) {
+    if (typeof core.mountRoot === 'function') {
       console.log('mountRoot function found')
       
       try {
-        TachUI.mountRoot(() => {
+        core.mountRoot(() => {
           console.log('mountRoot callback called')
           
           // Create the simplest possible component
-          const textComponent = TachUI.text('Simple test')
+          const textComponent = core.text('Simple test')
           console.log('Text component created:', textComponent)
           
-          return textComponent
+          return textComponent as any
         })
         console.log('mountRoot call completed')
       } catch (e) {

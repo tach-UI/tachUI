@@ -12,10 +12,11 @@ describe('IntroApp', () => {
     const app = IntroApp()
     // The app should be a VStack with multiple children
     expect(app).toHaveProperty('props')
-    expect(app.props).toHaveProperty('children')
-    expect(Array.isArray(app.props.children)).toBe(true)
-    
+    const children = Array.isArray(app.props?.children)
+      ? app.props.children
+      : []
+
     // Should have multiple sections (Header, Hero, Features, etc.)
-    expect(app.props.children.length).toBeGreaterThan(5)
+    expect(children.length).toBeGreaterThan(5)
   })
 })

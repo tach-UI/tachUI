@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { AppStateStore } from '../store/AppStateStore'
+import { AppStateStore } from '../store/appStateStore'
 
 describe('AppStateStore', () => {
   let store: AppStateStore

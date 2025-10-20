@@ -1,7 +1,10 @@
 import { HStack, Text, Button } from "@tachui/primitives";
-import { Assets } from "@tachui/core/assets";
-import { LinearGradient } from "@tachui/core/minimal";
+import { Assets, LinearGradient } from "@tachui/core/assets";
 import type { ComponentInstance } from "@tachui/core/runtime/types";
+import type { FontAssetProxy } from "@tachui/core/assets";
+
+const logoFont = Assets.logoFont as FontAssetProxy;
+const baseFont = Assets.baseFont as FontAssetProxy;
 
 const scrollToSection = (sectionId: string) => {
   const element = document.getElementById(sectionId);
@@ -20,7 +23,7 @@ export function Header() {
         children: [
           // Logo
           Text("tachUI")
-            .modifier.font({ size: "24px", family: Assets.logoFont })
+            .modifier.font({ size: "24px", family: logoFont })
             .foregroundColor(Assets.primaryPurple)
             .textShadow({
               x: 0,
@@ -57,7 +60,7 @@ export function Header() {
             .foregroundColor(Assets.textWhite)
             .padding({ horizontal: 20, vertical: 10 })
             .cornerRadius(2)
-            .font({ weight: "600", family: Assets.baseFont, size: 16 })
+            .font({ weight: "600", family: baseFont, size: 16 })
             .shadow({
               x: 0,
               y: 4,
@@ -98,7 +101,7 @@ function NavButton(text: string, anchor: string): ComponentInstance {
     .border({ width: 0 })
     .padding({ horizontal: 15, vertical: 8 })
     .cursor("pointer")
-    .font({ size: "16px", family: Assets.baseFont, weight: "bold" })
+    .font({ size: "16px", family: baseFont, weight: "bold" })
     .textCase("uppercase")
     .transition({ property: "color", duration: 200, easing: "ease" })
     .build();

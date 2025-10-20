@@ -11,13 +11,14 @@ import type { Signal } from '@tachui/core'
 import { h } from '@tachui/core'
 import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
 import { createModifiableComponent, createModifierBuilder } from '@tachui/core'
+import type { ColorAssetProxy } from '@tachui/core/assets'
 
 /**
  * Divider component properties
  */
 export interface DividerProps extends ComponentProps {
   // Appearance
-  color?: string | Signal<string>
+  color?: string | Signal<string> | ColorAssetProxy
   thickness?: number | Signal<number>
   length?: number | string | Signal<number | string>
 
@@ -115,7 +116,22 @@ export class DividerComponent implements ComponentInstance<DividerProps> {
   }
 
   private resolveValue<T>(value: T | Signal<T>): T {
-    return isSignal(value) ? value() : value
+    const resolved = isSignal(value) ? value() : value
+    if (
+      typeof resolved === 'object' &&
+      resolved !== null &&
+      typeof (resolved as any).resolve === 'function'
+    ) {
+      return (resolved as any).resolve()
+    }
+    if (
+      typeof resolved === 'object' &&
+      resolved !== null &&
+      typeof (resolved as any).value === 'string'
+    ) {
+      return (resolved as any).value
+    }
+    return resolved
   }
 
   private getBaseStyles(): Record<string, string> {
@@ -125,7 +141,7 @@ export class DividerComponent implements ComponentInstance<DividerProps> {
     )
     const color = this.resolveValue(
       this.props.color ?? this.theme.colors.default
-    )
+    ) as string
     const style = this.props.style ?? 'solid'
     const opacity = this.resolveValue(this.props.opacity ?? 1)
     const margin = this.resolveValue(

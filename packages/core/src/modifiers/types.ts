@@ -199,7 +199,7 @@ export interface AppearanceModifierProps {
   background?: StatefulBackgroundValue
   opacity?: number
   font?: {
-    family?: string
+    family?: string | AssetValue
     size?: number | string | Signal<number> | Signal<string>
     weight?: FontWeight
     style?: FontStyle

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable", "ES2021.WeakRef"],
     "module": "ESNext",
     "skipLibCheck": true,
 
@@ -19,7 +19,25 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Path mapping for development */
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": ["vite/client"],
+    "paths": {
+      "@tachui/core": ["../../packages/core/src/index.ts"],
+      "@tachui/core/*": ["../../packages/core/src/*"],
+      "@tachui/primitives": ["../../packages/primitives/src/index.ts"],
+      "@tachui/primitives/*": ["../../packages/primitives/src/*"],
+      "@tachui/modifiers": ["../../packages/modifiers/src/index.ts"],
+      "@tachui/modifiers/*": ["../../packages/modifiers/src/*"],
+      "@tachui/effects": ["../../packages/effects/src/index.ts"],
+      "@tachui/effects/*": ["../../packages/effects/src/*"],
+      "@tachui/flow-control": ["../../packages/flow-control/src/index.ts"],
+      "@tachui/flow-control/*": ["../../packages/flow-control/src/*"],
+      "@tachui/responsive": ["../../packages/responsive/src/index.ts"],
+      "@tachui/responsive/*": ["../../packages/responsive/src/*"],
+      "@tachui/registry": ["../../packages/registry/src/index.ts"],
+      "@tachui/registry/*": ["../../packages/registry/src/*"],
+      "@tachui/devtools/debug": ["src/types/devtools-debug.d.ts"]
+    }
   },
   "include": [
     "src/**/*.ts",
@@ -28,6 +46,8 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/utils/ReactivityTestPattern.ts",
+    "src/utils/ScrollViewWorkaround.ts"
   ]
 }

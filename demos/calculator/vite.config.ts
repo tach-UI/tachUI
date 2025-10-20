@@ -1,9 +1,40 @@
 import { defineConfig } from 'vite'
 import { visualizer } from 'rollup-plugin-visualizer'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const workspaceRoot = fileURLToPath(new URL('../..', import.meta.url))
+
+const packageAlias = (pkg: string) =>
+  path.resolve(workspaceRoot, 'packages', pkg, 'src')
+
+const aliasEntries = [
+  ['@tachui/core', packageAlias('core')],
+  ['@tachui/primitives', packageAlias('primitives')],
+  ['@tachui/modifiers', packageAlias('modifiers')],
+  ['@tachui/effects', packageAlias('effects')],
+  ['@tachui/flow-control', packageAlias('flow-control')],
+  ['@tachui/responsive', packageAlias('responsive')],
+  ['@tachui/registry', packageAlias('registry')],
+  [
+    '@tachui/devtools/debug',
+    path.resolve(workspaceRoot, 'packages/devtools/src/debug/index.ts'),
+  ],
+]
 
 export default defineConfig(({ mode }) => ({
   resolve: {
-    dedupe: ['@tachui/core', '@tachui/primitives', '@tachui/modifiers', '@tachui/flow-control', '@tachui/responsive', '@tachui/effects', '@tachui/registry'],
+    dedupe: [
+      '@tachui/core',
+      '@tachui/primitives',
+      '@tachui/modifiers',
+      '@tachui/flow-control',
+      '@tachui/responsive',
+      '@tachui/effects',
+      '@tachui/registry',
+      '@tachui/devtools/debug',
+    ],
+    alias: aliasEntries.map(([find, replacement]) => ({ find, replacement })),
   },
   define: {
     global: 'globalThis',
@@ -26,8 +57,20 @@ export default defineConfig(({ mode }) => ({
     minifyWhitespace: false,
   },
    optimizeDeps: {
-     include: ['@tachui/core', '@tachui/primitives', '@tachui/registry', '@tachui/modifiers'],
-     exclude: ['typescript', '@typescript-eslint/parser', '@typescript-eslint/eslint-plugin'],
+     include: [],
+     exclude: [
+       '@tachui/core',
+       '@tachui/primitives',
+       '@tachui/registry',
+       '@tachui/modifiers',
+       '@tachui/effects',
+       '@tachui/flow-control',
+       '@tachui/responsive',
+       '@tachui/devtools/debug',
+       'typescript',
+       '@typescript-eslint/parser',
+       '@typescript-eslint/eslint-plugin',
+     ],
    },
   build: {
     sourcemap: mode !== 'production',

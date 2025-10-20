@@ -3,6 +3,7 @@
  * Replaces @tachui/symbols to avoid Lucide dependency
  */
 import { createComponent } from '@tachui/core/minimal'
+import type { ComponentInstance } from '@tachui/core/runtime/types'
 
 // Import the icon data directly to avoid dependency issues
 const iconData: Record<string, string> = {

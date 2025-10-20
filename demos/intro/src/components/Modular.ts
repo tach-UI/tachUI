@@ -1,7 +1,10 @@
 import { VStack, HStack, Text } from '@tachui/primitives'
 import { Assets } from '@tachui/core/assets'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
+import type { FontAssetProxy } from '@tachui/core/assets'
 import { ModularStack } from './ModularStack'
+
+const logoFont = Assets.logoFont as FontAssetProxy
 
 export function Modular(): ComponentInstance {
 
@@ -73,7 +76,7 @@ export function Modular(): ComponentInstance {
         children: [
           Text('Modular Architecture')
             .modifier
-            .font({ size: '2.5rem', family: Assets.logoFont, weight: 'normal' })
+            .font({ size: '2.5rem', family: logoFont, weight: 'normal' })
             .textAlign('center')
             .foregroundColor(Assets.textWhite)
             .padding(0)
@@ -84,7 +87,6 @@ export function Modular(): ComponentInstance {
 
           HStack({
             spacing: 16,
-            css: 'package',
             alignment: 'top',
             children: packagesA.map((pkg) => {
               return ModularStack(pkg.name, pkg.size, pkg.entries)
@@ -99,8 +101,7 @@ export function Modular(): ComponentInstance {
 
           HStack({
             spacing: 16,
-            css: 'package',
-            alignment: 'leading',
+            alignment: 'top',
             children: packagesB.map((pkg) => {
               return ModularStack(pkg.name, pkg.size, pkg.entries)
             }),

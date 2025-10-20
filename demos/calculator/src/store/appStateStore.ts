@@ -1,32 +1,46 @@
-import { ObservableObjectBase } from '@tachui/core/state'
-import { createSignal } from '@tachui/core/reactive'
-import type { TapeEntry } from '../types/calculator-tape'
+import { ObservableObjectBase } from "@tachui/core/state";
+import {
+  createSignal,
+  type Signal,
+  type SignalSetter,
+} from "@tachui/core/reactive";
+import type { TapeEntry } from "../types/calculator-tape";
 
 export class AppStateStore extends ObservableObjectBase {
-  private _tapeDisplaySignal = createSignal(false)
-  private _tapeEntriesSignal = createSignal<TapeEntry[]>([])
-  private _nextEntryId: number = 1
-  private _nextHistoryIndex: number = -1
+  private readonly tapeDisplayPair = createSignal(false) as [
+    Signal<boolean>,
+    SignalSetter<boolean>,
+  ];
+  private readonly tapeEntriesPair = createSignal<TapeEntry[]>([]) as [
+    Signal<TapeEntry[]>,
+    SignalSetter<TapeEntry[]>,
+  ];
+  private _nextEntryId = 1;
+  private _nextHistoryIndex = -1;
 
-  get tapeDisplay() {
-    return this._tapeDisplaySignal[0].peek()  // Use peek() for non-reactive access
+  get tapeDisplay(): boolean {
+    return this.tapeDisplayPair[0].peek();
   }
 
-  get tapeEntries() {
-    return this._tapeEntriesSignal[0].peek()  // Use peek() for non-reactive access
+  get tapeEntries(): TapeEntry[] {
+    return this.tapeEntriesPair[0].peek();
   }
 
-  // Reactive getter functions for components
-  getTapeDisplaySignal = () => this._tapeDisplaySignal[0]()
-  getTapeEntriesSignal = () => this._tapeEntriesSignal[0]()
+  // Reactive getters for components
+  getTapeDisplaySignal = (): Signal<boolean> => this.tapeDisplayPair[0];
+  getTapeEntriesSignal = (): Signal<TapeEntry[]> => this.tapeEntriesPair[0];
 
-  // Actual signal getters for reactive components
-  get tapeDisplaySignal() { return this._tapeDisplaySignal[0] }
-  get tapeEntriesSignal() { return this._tapeEntriesSignal[0] }
+  // Convenience accessors
+  get tapeDisplaySignal(): Signal<boolean> {
+    return this.tapeDisplayPair[0];
+  }
+  get tapeEntriesSignal(): Signal<TapeEntry[]> {
+    return this.tapeEntriesPair[0];
+  }
 
   toggleTape(): void {
-    const currentValue = this._tapeDisplaySignal[0].peek()  // Use peek() to avoid reactive subscription
-    this._tapeDisplaySignal[1](!currentValue)
+    const currentValue = this.tapeDisplayPair[0].peek();
+    this.tapeDisplayPair[1](!currentValue);
   }
 
   addTapeEntry(operation: string): void {
@@ -34,16 +48,16 @@ export class AppStateStore extends ObservableObjectBase {
       id: this._nextEntryId++,
       operation,
       timestamp: new Date(),
-      historyIndex: this._nextHistoryIndex--
-    }
+      historyIndex: this._nextHistoryIndex--,
+    };
 
-    const currentEntries = this._tapeEntriesSignal[0]()
-    this._tapeEntriesSignal[1]([...currentEntries, entry].slice(-256)) // Keep last 256 entries
+    const currentEntries = this.tapeEntriesPair[0]();
+    this.tapeEntriesPair[1]([...currentEntries, entry].slice(-256));
   }
 
   clearTape(): void {
-    this._tapeEntriesSignal[1]([])
-    this._nextEntryId = 1
-    this._nextHistoryIndex = -1
+    this.tapeEntriesPair[1]([]);
+    this._nextEntryId = 1;
+    this._nextHistoryIndex = -1;
   }
 }

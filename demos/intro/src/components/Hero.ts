@@ -1,10 +1,11 @@
 import { VStack, HStack, Text, Button } from "@tachui/primitives";
-import {
-  Assets,
-  LinearGradient,
-  ComponentInstance,
-} from "@tachui/core/minimal";
+import { Assets, LinearGradient } from "@tachui/core/assets";
+import type { ComponentInstance } from "@tachui/core/runtime/types";
+import type { FontAssetProxy } from "@tachui/core/assets";
 import { Symbol } from "@tachui/symbols";
+
+const logoFont = Assets.logoFont as FontAssetProxy;
+const baseFont = Assets.baseFont as FontAssetProxy;
 
 const scrollToSection = (sectionId: string) => {
   const element = document.getElementById(sectionId);
@@ -14,7 +15,6 @@ const scrollToSection = (sectionId: string) => {
 };
 
 export function Hero(): ComponentInstance {
-
 
   return VStack({
     element: "section",
@@ -80,7 +80,7 @@ export function Hero(): ComponentInstance {
             ],
             alignment: "leading",
           })
-             .modifier.fontFamily(Assets.logoFont)
+             .modifier.fontFamily(logoFont)
              .paddingVertical(40)
              .gradientText(
                "linear-gradient(135deg, #ffffff 0%, #e0e7ff 50%, #c7d2fe 100%)",
@@ -204,9 +204,9 @@ export function Hero(): ComponentInstance {
                 .cursor("pointer")
                 .build(),
 
-              Button("View on GitHub", () =>
-                window.open("https://github.com/tach-UI/tachUI", "_self"),
-              )
+              Button("View on GitHub", () => {
+                window.open("https://github.com/tach-UI/tachUI", "_self")
+              })
                 .modifier.backgroundColor(Assets.white10)
                 .foregroundColor(Assets.textWhite)
                 .opacity(0.9)
@@ -219,7 +219,7 @@ export function Hero(): ComponentInstance {
                 .cornerRadius(2)
                 .font({
                   weight: "600",
-                  family: '"Dosis", sans-serif',
+                  family: baseFont,
                   size: 16,
                 })
                 .cursor("pointer")

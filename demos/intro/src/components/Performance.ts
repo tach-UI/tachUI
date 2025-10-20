@@ -1,9 +1,11 @@
 import { VStack, HStack, Text } from '@tachui/primitives'
 import { Assets } from '@tachui/core/assets'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
+import type { FontAssetProxy } from '@tachui/core/assets'
+
+const logoFont = Assets.logoFont as FontAssetProxy
 
 export function Performance(): ComponentInstance {
-
   return VStack({
     element: 'section',
     spacing: 0,
@@ -41,7 +43,7 @@ export function Performance(): ComponentInstance {
 
           Text('Why tachUI is Fast')
             .modifier
-            .font({ size: '1.25rem', family: Assets.logoFont, weight: 'normal' })
+            .font({ size: '1.25rem', family: logoFont, weight: 'normal' })
             .textAlign('center')
             .padding({ vertical: 30 })
             .foregroundColor(Assets.textWhite)

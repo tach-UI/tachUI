@@ -1,9 +1,11 @@
 import { VStack, Text } from '@tachui/primitives'
 import { Assets } from '@tachui/core/assets'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
+import type { FontAssetProxy } from '@tachui/core/assets'
 import { Symbol } from '@tachui/symbols'
 
 export function FeatureItem(item: { icon: string; title: string; description: string }): ComponentInstance {
+  const logoFont = Assets.logoFont as FontAssetProxy
 
   return VStack({
     spacing: 15,
@@ -24,7 +26,7 @@ export function FeatureItem(item: { icon: string; title: string; description: st
       })
         .modifier
         .font({
-          family: Assets.logoFont,
+          family: logoFont,
           size: '1.33rem',
           weight: 400
         })

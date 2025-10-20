@@ -7,11 +7,11 @@
 
 import { VStack, HStack } from "@tachui/primitives/layout";
 import { Button } from "@tachui/primitives/controls";
-import { createSignal, createComputed } from "@tachui/core/reactive";
+import { createComputed } from "@tachui/core/reactive";
 import { ComponentInstance } from "@tachui/core/runtime/types";
 import { Assets } from "@tachui/core/assets";
-
-import { TACHUI_PACKAGE, TACHUI_PACKAGE_VERSION } from "@tachui/primitives";
+import type { FontAssetProxy } from "@tachui/core/assets";
+import { infinity } from "@tachui/core/constants/layout";
 
 import {
   type CalculatorButton as CalculatorButtonType,
@@ -42,11 +42,11 @@ export function CalculatorKeypad({
   onButtonPress,
   currentOperation,
 }: CalculatorKeypadProps): ComponentInstance {
+  const calculatorBaseFont = Assets.calculatorBaseFont as FontAssetProxy;
 
   // Helper function to create a button with proper styling
   const createButton = (value: CalculatorButtonType, size: string = "1") => {
     const buttonType = getButtonType(value);
-
 
     // Check if this operator button should be active (highlighted) - make it reactive
     // Note: '=' button should never be active since it completes operations
@@ -56,7 +56,6 @@ export function CalculatorKeypad({
         const shouldBeActive = buttonType === "operator" &&
           value !== "=" &&
           value === current;
-        console.log(`Button ${value}: current operation = "${current}", shouldBeActive = ${shouldBeActive}`);
         return shouldBeActive;
       }
     );
@@ -82,9 +81,6 @@ export function CalculatorKeypad({
         }, 10);
       }
     };
-
-    // hover tracking with reactive signal
-    const [isHovered, setIsHovered] = createSignal(false);
 
     // Get colors based on button type using ColorAssets for theme reactivity
     // ColorAssets are already theme-reactive, so we pass them directly
@@ -157,11 +153,11 @@ export function CalculatorKeypad({
 
     return Button(value, handlePress)
       .modifier.frame({ width: buttonWidth, height: buttonHeight })
-      .background(Assets.buttonGradientOverlay)
+      .background(Assets.buttonGradientOverlay as any)
       .backgroundColor(bgColor)
       .foregroundColor(fgColor)
       .font({
-        family: Assets.calculatorBaseFont,
+        family: calculatorBaseFont,
         size: 40,
         weight: 400,
       })
@@ -169,38 +165,28 @@ export function CalculatorKeypad({
       .textAlign("center")
       .border(0)
       .letterSpacing("-0.25px")
-      .onHover((hovered: boolean) => {
-        setIsHovered(hovered);
-      })
       .build();
   };
 
   return VStack({
     spacing: 0,
     debugLabel: "Calculator Keypad",
-    style: {
-      width: "100%",
-    },
     children: [
       HStack({
         spacing: 0,
         debugLabel: "Top Row (AC, ⓘ, Tape)",
-        style: {
-          width: "100%",
-        },
         children: [
           createButton("AC", "2w"),
-          // createButton('ⓘ'),
           createButton("⌫"),
           createButton("Tape", "2w"),
         ],
-      }),
+      })
+        .modifier.frame({ maxWidth: infinity })
+        .width("100%")
+        .build(),
       HStack({
         spacing: 0,
         debugLabel: "Row 4 (7, 8, 9, -, ÷)",
-        style: {
-          width: "100%",
-        },
         children: [
           createButton("7"),
           createButton("8"),
@@ -208,13 +194,13 @@ export function CalculatorKeypad({
           createButton("-"),
           createButton("÷"),
         ],
-      }),
+      })
+        .modifier.frame({ maxWidth: infinity })
+        .width("100%")
+        .build(),
       HStack({
         spacing: 0,
         debugLabel: "Row 3 (4, 5, 6, +, ×)",
-        style: {
-          width: "100%",
-        },
         children: [
           createButton("4"),
           createButton("5"),
@@ -222,13 +208,13 @@ export function CalculatorKeypad({
           createButton("+"),
           createButton("×"),
         ],
-      }),
+      })
+        .modifier.frame({ maxWidth: infinity })
+        .width("100%")
+        .build(),
       HStack({
         spacing: 0,
         debugLabel: "Row 1+2",
-        style: {
-          width: "100%",
-        },
         children: [
           VStack({
             spacing: 0,
@@ -244,7 +230,13 @@ export function CalculatorKeypad({
           }),
           createButton("=", "2x2"),
         ],
-      }),
+      })
+        .modifier.frame({ maxWidth: infinity })
+        .width("100%")
+        .build(),
     ],
-  });
+  })
+    .modifier.frame({ maxWidth: infinity })
+    .width("100%")
+    .build();
 }
