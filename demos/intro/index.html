@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TachUI - SwiftUI for the Web</title>
+    <meta
+      name="description"
+      content="TypeScript framework with 95% SwiftUI API parity and fine-grained reactivity. Build modern web applications with familiar SwiftUI patterns."
+    />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tachui.dev/" />
+    <meta property="og:title" content="TachUI - SwiftUI for the Web" />
+    <meta
+      property="og:description"
+      content="TypeScript framework with 95% SwiftUI API parity and fine-grained reactivity."
+    />
+    <meta property="og:image" content="https://tachui.dev/hero-image.jpg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://tachui.dev/" />
+    <meta property="twitter:title" content="TachUI - SwiftUI for the Web" />
+    <meta
+      property="twitter:description"
+      content="TypeScript framework with 95% SwiftUI API parity and fine-grained reactivity."
+    />
+    <meta
+      property="twitter:image"
+      content="https://tachui.dev/hero-image.jpg"
+    />
+
+    <!-- Base styles to match the original design -->
+    <style>
+      @media only screen and (max-width: 600px) {
+        html,
+        body {
+          overflow-x: hidden;
+        }
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          "Dosis",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        line-height: 1.6;
+        color: hsla(0, 0%, 20%, 1);
+        background: linear-gradient(
+          135deg,
+          hsla(263, 91%, 12%, 1) 0%,
+          hsla(253, 89%, 26%, 1) 25%,
+          hsla(251, 73%, 38%, 1) 50%,
+          hsla(263, 70%, 50%, 1) 75%,
+          hsla(251, 91%, 46%, 1) 100%
+        );
+        background-attachment: fixed;
+        min-height: 100vh;
+        position: relative;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+          linear-gradient(
+            90deg,
+            transparent 0%,
+            hsla(251, 91%, 66%, 0.1) 20%,
+            transparent 40%
+          ),
+          linear-gradient(
+            90deg,
+            transparent 60%,
+            hsla(251, 91%, 66%, 0.15) 80%,
+            transparent 100%
+          ),
+          linear-gradient(
+            0deg,
+            transparent 0%,
+            hsla(251, 91%, 66%, 0.05) 50%,
+            transparent 100%
+          );
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-family: "Madimi One", cursive;
+        font-weight: normal;
+      }
+
+      #app {
+        width: 100%;
+        min-height: 100vh;
+      }
+
+      /* Syntax highlighting */
+      .swift {
+        color: hsla(4, 100%, 72%, 1);
+      }
+      .typescript {
+        color: hsla(213, 100%, 74%, 1);
+      }
+      .keyword {
+        color: hsla(4, 100%, 72%, 1);
+      }
+      .string {
+        color: hsla(213, 100%, 84%, 1);
+      }
+      .comment {
+        color: hsla(220, 14%, 57%, 1);
+      }
+      .function {
+        color: hsla(267, 100%, 83%, 1);
+      }
+      .property {
+        color: hsla(213, 100%, 74%, 1);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

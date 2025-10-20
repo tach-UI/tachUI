@@ -1,0 +1,25 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="16" fill="url(#gradient)" />
+  <rect x="12" y="12" width="40" height="40" rx="8" fill="rgba(255,255,255,0.9)" />
+  
+  <!-- Display area -->
+  <rect x="16" y="16" width="32" height="12" rx="2" fill="rgba(0,0,0,0.1)" />
+  
+  <!-- Button grid -->
+  <circle cx="20" cy="36" r="3" fill="rgba(165,165,165,0.9)" />
+  <circle cx="28" cy="36" r="3" fill="rgba(165,165,165,0.9)" />
+  <circle cx="36" cy="36" r="3" fill="rgba(165,165,165,0.9)" />
+  <circle cx="44" cy="36" r="3" fill="#ff9500" />
+  
+  <circle cx="20" cy="44" r="3" fill="rgba(255,255,255,0.9)" />
+  <circle cx="28" cy="44" r="3" fill="rgba(255,255,255,0.9)" />
+  <circle cx="36" cy="44" r="3" fill="rgba(255,255,255,0.9)" />
+  <circle cx="44" cy="44" r="3" fill="#ff9500" />
+  
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea" />
+      <stop offset="100%" style="stop-color:#764ba2" />
+    </linearGradient>
+  </defs>
+</svg>

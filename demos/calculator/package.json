@@ -1,0 +1,52 @@
+{
+  "name": "@tachui/calculator-app",
+  "version": "0.1.0",
+  "description": "tachUI Calculator - Comprehensive demo showcasing precise interaction patterns and styling",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:clean": "rm -rf node_modules/.vite* && vite",
+    "build": "vite build",
+    "build:optimized": "vite build && node scripts/generate-optimized-bundle.js",
+    "preview": "vite preview",
+    "analyze": "npx vite-bundle-analyzer dist/stats.html",
+    "bundle:analyze": "node scripts/analyze-bundle.js",
+    "bundle:generate": "node scripts/generate-optimized-bundle.js",
+    "test:epic-pico": "npx tsx test-epic-pico.ts",
+    "epic-pico": "./build-and-test-epic-pico.sh",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules/.vite*"
+  },
+  "dependencies": {
+    "@tachui/core": "workspace:*",
+    "@tachui/devtools": "workspace:*",
+    "@tachui/effects": "workspace:*",
+    "@tachui/flow-control": "workspace:*",
+    "@tachui/modifiers": "workspace:*",
+    "@tachui/primitives": "workspace:*",
+    "@tachui/registry": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.10",
+    "rollup-plugin-visualizer": "^6.0.3",
+    "tsx": "^4.7.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.1.1",
+    "vite-bundle-analyzer": "^0.11.1",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "keywords": [
+    "tachui",
+    "calculator",
+    "demo",
+    "swiftui",
+    "reactive"
+  ],
+  "author": "tachUI Team",
+  "license": "MPL-2.0",
+  "homepage": "https://github.com/tachui/calculator-demo"
+}
