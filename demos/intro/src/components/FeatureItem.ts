@@ -1,11 +1,10 @@
 import { VStack, Text } from '@tachui/primitives'
 import { Assets } from '@tachui/core/assets'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
-import type { FontAssetProxy } from '@tachui/core/assets'
 import { Symbol } from '@tachui/symbols'
 
 export function FeatureItem(item: { icon: string; title: string; description: string }): ComponentInstance {
-  const logoFont = Assets.logoFont as FontAssetProxy
+  const logoFont = Assets.logoFont
 
   return VStack({
     spacing: 15,

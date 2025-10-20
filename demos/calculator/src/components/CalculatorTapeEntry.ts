@@ -8,7 +8,6 @@ import { VStack } from "@tachui/primitives/layout";
 import { Text } from "@tachui/primitives/display";
 import { ComponentInstance } from "@tachui/core/runtime/types";
 import { Assets } from "@tachui/core/assets";
-import type { FontAssetProxy } from "@tachui/core/assets";
 
 import type { TapeEntry } from "../types/calculator-tape";
 import { calculateEntryOpacity } from "../utils/tape-utils";
@@ -29,7 +28,7 @@ export function CalculatorTapeEntry({
     entry.historyIndex,
     newestHistoryIndex,
   );
-  const calculatorBaseFont = Assets.calculatorBaseFont as FontAssetProxy;
+  const calculatorBaseFont = Assets.calculatorBaseFont;
   return VStack({
     debugLabel: `Tape Entry ${entry.historyIndex}`,
     children: [

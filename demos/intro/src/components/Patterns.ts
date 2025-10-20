@@ -1,9 +1,8 @@
 import { VStack, HStack, Text } from '@tachui/primitives'
 import { Assets } from '@tachui/core/assets'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
-import type { FontAssetProxy } from '@tachui/core/assets'
 
-const bodyFont = Assets.bodyFont as FontAssetProxy
+const bodyFont = Assets.bodyFont
 
 export function Patterns(): ComponentInstance {
   const swiftText = `<pre><code><span class="comment">// SwiftUI</span>

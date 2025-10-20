@@ -10,7 +10,6 @@ import { Button } from "@tachui/primitives/controls";
 import { createComputed } from "@tachui/core/reactive";
 import { ComponentInstance } from "@tachui/core/runtime/types";
 import { Assets } from "@tachui/core/assets";
-import type { FontAssetProxy } from "@tachui/core/assets";
 import { infinity } from "@tachui/core/constants/layout";
 
 import {
@@ -42,7 +41,7 @@ export function CalculatorKeypad({
   onButtonPress,
   currentOperation,
 }: CalculatorKeypadProps): ComponentInstance {
-  const calculatorBaseFont = Assets.calculatorBaseFont as FontAssetProxy;
+  const calculatorBaseFont = Assets.calculatorBaseFont;
 
   // Helper function to create a button with proper styling
   const createButton = (value: CalculatorButtonType, size: string = "1") => {

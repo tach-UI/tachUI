@@ -1,10 +1,9 @@
 import { VStack, HStack, Text } from '@tachui/primitives'
 import { Assets } from '@tachui/core/assets'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
-import type { FontAssetProxy } from '@tachui/core/assets'
 import { ModularStack } from './ModularStack'
 
-const logoFont = Assets.logoFont as FontAssetProxy
+const logoFont = Assets.logoFont
 
 export function Modular(): ComponentInstance {
 

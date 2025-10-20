@@ -13,7 +13,7 @@ import { EnvironmentObject } from "@tachui/core/state";
 import { createSignal, createComputed, type Signal } from "@tachui/core/reactive";
 import { ComponentInstance } from "@tachui/core/runtime/types";
 import { Assets } from "@tachui/core/assets";
-import type { ImageAssetProxy, FontAssetProxy } from "@tachui/core/assets";
+import type { ImageAsset } from "@tachui/core/assets";
 import { infinity } from "@tachui/core/constants/layout";
 
 import { CalculatorKeypad } from "./CalculatorKeypad";
@@ -37,9 +37,9 @@ export function CalculatorApp(): ComponentInstance {
   // Calculator state using TachUI's reactive signals
   const [state, setState] = createSignal<CalculatorState>(initialState);
 
-  const tachuiLogo = Assets.tachuiLogo as ImageAssetProxy;
-  const calculatorLogoFont = Assets.calculatorLogoFont as FontAssetProxy;
-  const calculatorBaseFont = Assets.calculatorBaseFont as FontAssetProxy;
+  const tachuiLogo = Assets.tachuiLogo as ImageAsset;
+  const calculatorLogoFont = Assets.calculatorLogoFont;
+  const calculatorBaseFont = Assets.calculatorBaseFont;
 
   // Create computed value for display - CalculatorDisplay will handle formatting
   const displayValue = createComputed(() => {

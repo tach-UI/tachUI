@@ -1,10 +1,9 @@
 import { HStack, Text, Button } from "@tachui/primitives";
 import { Assets, LinearGradient } from "@tachui/core/assets";
 import type { ComponentInstance } from "@tachui/core/runtime/types";
-import type { FontAssetProxy } from "@tachui/core/assets";
 
-const logoFont = Assets.logoFont as FontAssetProxy;
-const baseFont = Assets.baseFont as FontAssetProxy;
+const logoFont = Assets.logoFont;
+const baseFont = Assets.baseFont;
 
 const scrollToSection = (sectionId: string) => {
   const element = document.getElementById(sectionId);

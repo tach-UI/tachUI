@@ -1,12 +1,11 @@
 import { VStack, HStack, Text, Divider } from '@tachui/primitives'
 import { Assets } from '@tachui/core/assets'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
-import type { FontAssetProxy, ColorAssetProxy } from '@tachui/core/assets'
 
 export function ModularStack(name: string, size: string, entries: string[][]): ComponentInstance {
-  const logoFont = Assets.logoFont as FontAssetProxy
-  const baseFont = Assets.baseFont as FontAssetProxy
-  const primaryPurple20 = Assets.primaryPurple20 as ColorAssetProxy
+  const logoFont = Assets.logoFont
+  const baseFont = Assets.baseFont
+  const primaryPurple20 = Assets.primaryPurple20.resolve() as string
 
   return VStack({
     spacing: 8,
@@ -65,7 +64,7 @@ export function ModularStack(name: string, size: string, entries: string[][]): C
   .background(Assets.primaryPurple10)
   .hover({
     background: primaryPurple20,
-    borderColor: Assets.primaryPurple50,
+    borderColor: Assets.primaryPurple50.resolve() as string,
     transform: 'translateY(-2px)'
   })
   .font({ size: '1rem', family: baseFont, weight: 'normal' })
@@ -76,6 +75,6 @@ export function ModularStack(name: string, size: string, entries: string[][]): C
   .base.width('98%')
   .md.width('32%')
   .transition({ property: 'all', duration: 300, easing: 'ease' })
-  .shadow(0, 8, 32, Assets.primaryPurple15)
+  .shadow(0, 8, 32, Assets.primaryPurple15.resolve() as string)
   .build()
 }

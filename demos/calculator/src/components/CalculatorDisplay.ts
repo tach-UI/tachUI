@@ -9,7 +9,6 @@ import { VStack } from "@tachui/primitives/layout";
 import { Text } from "@tachui/primitives/display";
 import { ComponentInstance, withComponentContext } from "@tachui/core/runtime";
 import { Assets } from "@tachui/core/assets";
-import type { FontAssetProxy } from "@tachui/core/assets";
 import { infinity } from "@tachui/core/constants/layout";
 import { Show } from "@tachui/flow-control/conditional";
 import type { Signal } from "@tachui/core/reactive";
@@ -26,10 +25,8 @@ export interface CalculatorDisplayProps {
 
 function _CalculatorDisplay({
   value,
-  tapeEntries,
   tapeVisible,
 }: CalculatorDisplayProps): ComponentInstance<CalculatorDisplayProps> {
-  const calculatorBaseFont = Assets.calculatorBaseFont as FontAssetProxy;
   const component = VStack({
     spacing: 0,
     children: [
@@ -44,7 +41,7 @@ function _CalculatorDisplay({
       // Main display value - using working textAlign function directly
       Text(value)
         .modifier.font({
-          family: calculatorBaseFont,
+          family: Assets.calculatorBaseFont,
           size: 48,
           weight: 400,
         })
