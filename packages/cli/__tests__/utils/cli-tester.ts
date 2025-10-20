@@ -5,11 +5,12 @@
  * file system operations, user prompts, and process spawning.
  */
 
-import { exec } from 'child_process'
+import { exec, execSync } from 'child_process'
 import { promisify } from 'util'
 import path from 'path'
 import { tmpdir } from 'os'
 import { mkdtemp, rm } from 'fs/promises'
+import { existsSync } from 'fs'
 
 const execAsync = promisify(exec)
 
@@ -37,6 +38,24 @@ export class CLITester {
 
   constructor() {
     this.cliPath = path.resolve(__dirname, '../../bin/tacho.js')
+    this.ensureBuild()
+  }
+
+  private ensureBuild(): void {
+    const distEntry = path.resolve(__dirname, '../../dist/index.js')
+    if (existsSync(distEntry)) {
+      return
+    }
+
+    const repoRoot = path.resolve(__dirname, '../../..')
+    try {
+      execSync('pnpm --filter @tachui/cli build', {
+        cwd: repoRoot,
+        stdio: 'ignore',
+      })
+    } catch (error) {
+      console.warn('Failed to build CLI before tests:', error)
+    }
   }
 
   /**

@@ -2,7 +2,7 @@
  * Tacho CLI - Comprehensive developer tooling for TachUI
  */
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import chalk from 'chalk'
@@ -19,8 +19,21 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 // Get package version
-const packagePath = join(__dirname, '../package.json')
-const packageJson = JSON.parse(readFileSync(packagePath, 'utf-8'))
+const packageJson = (() => {
+  const candidates = [
+    join(__dirname, '../package.json'),
+    join(__dirname, '../../package.json'),
+    join(__dirname, '../../../package.json'),
+  ]
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return JSON.parse(readFileSync(candidate, 'utf-8'))
+    }
+  }
+
+  return { version: '0.0.0' }
+})()
 
 export async function main() {
   const program = new Command()

@@ -59,7 +59,7 @@ export function Build(): ComponentInstance {
 pnpm: 10.14.0+ (recommended) or npm 9+
 TypeScript: 5.8+ support in your editor
 `,
-                { element: "pre" },
+                { element: "pre" } as any,
               ),
 
               Text("Install tachUI (and plugins as needed)")
@@ -95,7 +95,7 @@ pnpm add @tachui/symbols@0.7.0-alpha2
 # Mobile patterns (alerts, action sheets)
 pnpm add @tachui/mobile-patterns@0.7.0-alpha2
 `,
-                { element: "pre" },
+                { element: "pre" } as any,
               ),
             ],
           })

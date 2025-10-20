@@ -22,7 +22,7 @@ export function FeatureItem(item: { icon: string; title: string; description: st
 
       Text(item.title, {
         element: 'h3'
-      })
+      } as any)
         .modifier
         .font({
           family: logoFont,
@@ -33,7 +33,7 @@ export function FeatureItem(item: { icon: string; title: string; description: st
 
       Text(item.description, {
         element: 'p'
-      })
+      } as any)
       .modifier
       .fontSize(18)
       .fontWeight(300)
