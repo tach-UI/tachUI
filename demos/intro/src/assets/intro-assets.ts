@@ -5,8 +5,8 @@
  * Using HSL colors as requested
  */
 
-import { registerAsset, ColorAsset, LinearGradient, createGoogleFont } from '@tachui/core/minimal'
-import { createGradientAsset } from '@tachui/core/gradients'
+import { registerAsset, ColorAsset, createGoogleFont } from '@tachui/core/minimal'
+import { createGradientAsset, LinearGradient } from '@tachui/core/gradients'
 
 /**
  * Initialize intro app color assets
@@ -59,6 +59,12 @@ export function createIntroAssets() {
     ColorAsset.init({
       default: 'hsla(251, 91%, 66%, 0.2)',
       name: 'primaryPurple20',
+    })
+  )
+  registerAsset(
+    ColorAsset.init({
+      default: 'hsla(251, 91%, 66%, 0.15)',
+      name: 'primaryPurple15',
     })
   )
   registerAsset(

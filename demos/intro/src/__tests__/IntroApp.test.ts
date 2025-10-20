@@ -1,7 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll } from 'vitest'
 import { IntroApp } from '../components/IntroApp'
+import { createIntroAssets } from '../assets/intro-assets'
 
 describe('IntroApp', () => {
+  beforeAll(() => {
+    // Register all intro app assets before running tests
+    createIntroAssets()
+  })
+
   it('should create the intro app component', () => {
     const app = IntroApp()
     expect(app).toBeDefined()

@@ -44,7 +44,7 @@ export function ModularStack(name: string, size: string, entries: string[][]): C
               .build(),
             Text(entry[1]).modifier.build(),
           ],
-        }).build()
+        })
 
         if (index < entries.length - 1) {
           const divider = Divider({
