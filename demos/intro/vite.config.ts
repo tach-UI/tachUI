@@ -7,7 +7,8 @@ export default defineConfig(({ mode }) => ({
     dedupe: ['@tachui/core', '@tachui/primitives', '@tachui/modifiers', '@tachui/flow-control', '@tachui/responsive', '@tachui/effects', '@tachui/registry'],
     alias: {
       '@tachui/core/minimal': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist/minimal.js',
-      '@tachui/core/gradients': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist/gradients/gradient-asset.js',
+      '@tachui/core/gradients': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist/gradients/index.js',
+      '@tachui/core/assets': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist/assets/index.js',
     },
   },
   plugins: [
