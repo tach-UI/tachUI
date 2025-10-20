@@ -4,7 +4,7 @@ import '@tachui/modifiers'
 import '@tachui/effects'
 // Import responsive system to register responsive modifiers
 import '@tachui/responsive'
-import { mountRoot, setTheme, detectSystemTheme } from '@tachui/core/minimal'
+import { mountRoot, setTheme, detectSystemTheme } from '@tachui/core'
 import { initializeResponsiveSystem } from '@tachui/responsive'
 import { IntroApp } from './components/IntroApp'
 import { createIntroAssets } from './assets/intro-assets'

@@ -2,7 +2,7 @@
  * Lightweight Symbol component for intro app
  * Replaces @tachui/symbols to avoid Lucide dependency
  */
-import { createComponent } from '@tachui/core/minimal'
+import { createComponent } from '@tachui/core'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
 
 // Import the icon data directly to avoid dependency issues
@@ -21,7 +21,7 @@ const iconData: Record<string, string> = {
 export interface SymbolProps {
   renderingMode?: 'monochrome' | 'multicolor' | 'template'
   primaryColor?: string
-  secondaryColor?: string  
+  secondaryColor?: string
   size?: number
   weight?: number | string
 }
@@ -44,7 +44,7 @@ export function Symbol(iconName: string, props: SymbolProps = {}): ComponentInst
   const tempDiv = document.createElement('div')
   tempDiv.innerHTML = `<svg>${svg}</svg>`
   const svgElement = tempDiv.querySelector('svg')
-  
+
   const children: ComponentInstance[] = []
   if (svgElement) {
     for (const child of svgElement.children) {
@@ -52,7 +52,7 @@ export function Symbol(iconName: string, props: SymbolProps = {}): ComponentInst
       for (const attr of child.attributes) {
         attrs[attr.name] = attr.value
       }
-      
+
       children.push(createComponent(child.tagName.toLowerCase(), attrs, []))
     }
   }

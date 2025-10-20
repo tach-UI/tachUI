@@ -1,1 +1,1 @@
-declare module '@tachui/core/minimal'
+declare module '@tachui/core'

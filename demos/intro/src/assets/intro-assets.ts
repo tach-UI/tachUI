@@ -5,7 +5,7 @@
  * Using HSL colors as requested
  */
 
-import { registerAsset, ColorAsset, createGoogleFont } from '@tachui/core/minimal'
+import { registerAsset, ColorAsset, createGoogleFont } from '@tachui/core'
 import { createGradientAsset, LinearGradient } from '@tachui/core/gradients'
 
 /**

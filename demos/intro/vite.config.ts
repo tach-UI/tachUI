@@ -1,15 +1,39 @@
 import { defineConfig } from 'vite'
-import { resolve } from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const workspaceRoot = fileURLToPath(new URL('../..', import.meta.url))
+
+const packageAlias = (pkg: string) =>
+  path.resolve(workspaceRoot, 'packages', pkg, 'src')
+
+const aliasEntries = [
+  ['@tachui/core', packageAlias('core')],
+  ['@tachui/primitives', packageAlias('primitives')],
+  ['@tachui/modifiers', packageAlias('modifiers')],
+  ['@tachui/effects', packageAlias('effects')],
+  ['@tachui/flow-control', packageAlias('flow-control')],
+  ['@tachui/responsive', packageAlias('responsive')],
+  ['@tachui/registry', packageAlias('registry')],
+  [
+    '@tachui/devtools/debug',
+    path.resolve(workspaceRoot, 'packages/devtools/src/debug/index.ts'),
+  ],
+]
 
 export default defineConfig(({ mode }) => ({
   resolve: {
-    dedupe: ['@tachui/core', '@tachui/primitives', '@tachui/modifiers', '@tachui/flow-control', '@tachui/responsive', '@tachui/effects', '@tachui/registry'],
-    alias: {
-      '@tachui/core/minimal': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist/minimal.js',
-      '@tachui/core/gradients': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist/gradients/index.js',
-      '@tachui/core/assets': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist/assets/index.js',
-    },
+    dedupe: [
+      '@tachui/core',
+      '@tachui/primitives',
+      '@tachui/modifiers',
+      '@tachui/flow-control',
+      '@tachui/responsive',
+      '@tachui/effects',
+      '@tachui/registry',
+    ],
+    alias: aliasEntries.map(([find, replacement]) => ({ find, replacement })),
   },
   plugins: [
     visualizer({
@@ -31,7 +55,7 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main: path.resolve(__dirname, 'index.html'),
       },
       output: {
         format: 'es',
@@ -48,7 +72,7 @@ export default defineConfig(({ mode }) => ({
       },
       external: mode === 'production' ? [
         'typescript',
-        '@typescript-eslint/parser', 
+        '@typescript-eslint/parser',
         '@typescript-eslint/eslint-plugin',
         'vite',
         'rollup',
