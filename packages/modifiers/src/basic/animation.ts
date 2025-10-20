@@ -5,8 +5,6 @@
  */
 
 import { AnimationModifier } from './base'
-import type { DOMNode } from '@tachui/core/runtime/types'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
 
 /**
  * Transition configuration options
@@ -23,6 +21,7 @@ export interface TransitionConfig {
  * Extends AnimationModifier but with specific type for testing/debugging
  */
 export class TransitionModifier extends AnimationModifier {
+  // Override type to be 'transition' instead of 'animation'
   readonly type = 'transition' as const
 }
 
