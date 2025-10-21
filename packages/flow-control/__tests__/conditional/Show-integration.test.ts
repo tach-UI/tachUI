@@ -119,7 +119,8 @@ describe('Show Component DOM Integration Tests', () => {
 
   function renderToDOM(component: ComponentInstance): HTMLElement {
     const nodes = component.render()
-    const element = renderer.render(nodes[0])
+    const nodeArray = Array.isArray(nodes) ? nodes : [nodes]
+    const element = renderer.render(nodeArray[0]) as HTMLElement
     container.appendChild(element)
     return element
   }

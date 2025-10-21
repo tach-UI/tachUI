@@ -10,7 +10,7 @@ import { ForEach } from '../../src/iteration/ForEach'
 import { Show } from '../../src/conditional/Show'
 import { createSignal, createComputed } from '@tachui/core'
 import { DOMRenderer } from '@tachui/core'
-import type { ComponentInstance, DOMNode } from '@tachui/core'
+import type { ComponentInstance, DOMNode, Signal } from '@tachui/core'
 
 // Mock components
 function Text(content: string | (() => string)): ComponentInstance {
@@ -106,7 +106,7 @@ describe('ForEach + Show Integration Tests', () => {
 
   async function waitForUpdate(frames = 2): Promise<void> {
     // Wait for microtask queue to flush (reactive updates)
-    await new Promise(resolve => queueMicrotask(resolve))
+    await new Promise<void>(resolve => queueMicrotask(() => resolve()))
     // Wait for animation frames (DOM updates)
     for (let i = 0; i < frames; i++) {
       await new Promise(resolve => requestAnimationFrame(resolve))
@@ -115,7 +115,8 @@ describe('ForEach + Show Integration Tests', () => {
 
   function renderToDOM(component: ComponentInstance): HTMLElement {
     const nodes = component.render()
-    const element = renderer.render(nodes[0])
+    const nodeArray = Array.isArray(nodes) ? nodes : [nodes]
+    const element = renderer.render(nodeArray[0]) as HTMLElement
     container.appendChild(element)
     return element
   }
@@ -166,7 +167,7 @@ describe('ForEach + Show Integration Tests', () => {
         Show({
           when: visible,
           children: ForEach({
-            data: items,
+            data: items as Signal<string[]>,
             children: item => Text(item),
           }),
         })
@@ -200,7 +201,7 @@ describe('ForEach + Show Integration Tests', () => {
       const app = Show({
         when: visible,
         children: ForEach({
-          data: items,
+          data: items as Signal<string[]>,
           children: item => Text(item),
           fallback: Text('No items'),
         }),
@@ -242,7 +243,7 @@ describe('ForEach + Show Integration Tests', () => {
       ])
 
       const app = ForEach({
-        data: items,
+        data: items as Signal<Item[]>,
         children: item =>
           Show({
             when: item.visible,
@@ -271,7 +272,7 @@ describe('ForEach + Show Integration Tests', () => {
       ])
 
       const app = ForEach({
-        data: items,
+        data: items as Signal<Item[]>,
         children: item =>
           Show({
             when: () => item.visible,
@@ -348,7 +349,7 @@ describe('ForEach + Show Integration Tests', () => {
       ])
 
       const app = ForEach({
-        data: categories,
+        data: categories as Signal<Category[]>,
         children: category =>
           Show({
             when: category.visible,
@@ -392,7 +393,7 @@ describe('ForEach + Show Integration Tests', () => {
         Show({
           when: visible,
           children: ForEach({
-            data: items,
+            data: items as Signal<string[]>,
             children: item => Text(item),
           }),
         })
@@ -458,7 +459,7 @@ describe('ForEach + Show Integration Tests', () => {
       const app = VStack(
         Button('Toggle Completed', () => setShowCompleted(!showCompleted())),
         ForEach({
-          data: tasks,
+          data: tasks as Signal<Task[]>,
           children: task =>
             Show({
               when: () => showCompleted() || !task.completed,
