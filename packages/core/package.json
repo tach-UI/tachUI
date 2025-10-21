@@ -133,7 +133,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "test:ci": "npm run test:run",
+    "test:ci": "vitest run",
     "test:all": "vitest run --config vitest.all.config.ts",
     "bench": "vitest bench",
     "benchmark": "vitest run --config vitest.benchmark.config.ts benchmarks/full.bench.ts",
