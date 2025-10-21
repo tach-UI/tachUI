@@ -1,0 +1,60 @@
+{
+  "name": "tachui-import-optimizer",
+  "displayName": "TachUI Import Optimizer",
+  "description": "Intelligent import suggestions and bundle optimization for TachUI framework",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": ["Other", "Snippets"],
+  "keywords": ["tachui", "imports", "bundle", "optimization", "typescript"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tachui.optimizeImports",
+        "title": "TachUI: Optimize Imports",
+        "category": "TachUI"
+      },
+      {
+        "command": "tachui.showImportGuide",
+        "title": "TachUI: Show Import Guide",
+        "category": "TachUI"
+      },
+      {
+        "command": "tachui.analyzeBundleSize",
+        "title": "TachUI: Analyze Bundle Impact",
+        "category": "TachUI"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "TachUI Import Optimizer",
+      "properties": {
+        "tachui.autoOptimize": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically suggest import optimizations"
+        },
+        "tachui.showBundleSize": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show bundle size impact in hover tooltips"
+        },
+        "tachui.preferredImportStyle": {
+          "type": "string",
+          "enum": ["granular", "grouped", "minimal"],
+          "default": "granular",
+          "description": "Preferred import style for suggestions"
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "typescript",
+        "path": "./snippets/tachui-snippets.json"
+      }
+    ]
+  },
+  "activationEvents": ["onLanguage:typescript", "onLanguage:typescriptreact"]
+}

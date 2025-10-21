@@ -1,0 +1,257 @@
+import { VStack, HStack, Text, Button } from "@tachui/primitives";
+import { Assets, LinearGradient } from "@tachui/core/assets";
+import type { ComponentInstance } from "@tachui/core/runtime/types";
+import { Symbol } from "@tachui/symbols";
+
+const logoFont = Assets.logoFont;
+const baseFont = Assets.baseFont;
+
+const scrollToSection = (sectionId: string) => {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+};
+
+export function Hero(): ComponentInstance {
+
+  return VStack({
+    element: "section",
+    spacing: 0,
+    children: [
+      VStack({
+        spacing: 0,
+        children: [
+          // Definition List Structure - exact match to marketing.html
+          VStack({
+            spacing: 8,
+            children: [
+              Text("tachUI(isA: Framework)")
+                .modifier.responsive({
+                  fontSize: {
+                    base: "2rem",
+                    sm: "2.5rem",
+                    md: "3rem",
+                    lg: "3.5rem",
+                  },
+                })
+                .gradientText(
+                  "linear-gradient(to bottom, hsla(0, 0%, 100%, 1) 0%, hsla(218, 100%, 94%, 1) 50%, hsla(225, 92%, 90%, 1) 100%)",
+                )
+                .padding({ bottom: 8 })
+                .build(),
+
+              Text(".writtenIn(TypeScript).first")
+                .modifier.padding({ bottom: 4 })
+                .before({
+                  content: "• • ",
+                  color: "hsl(0, 0%, 100%)",
+                  opacity: 0.1,
+                })
+                .build(),
+
+              Text(".inspiredBy(SwiftUI)")
+                .modifier.padding({ bottom: 4 })
+                .before({
+                  content: "• • ",
+                  color: "hsl(0, 0%, 100%)",
+                  opacity: 0.1,
+                })
+                .build(),
+
+              Text(".inspiredBy(SolidJS)")
+                .modifier.padding({ bottom: 4 })
+                .before({
+                  content: "• • ",
+                  color: "hsl(0, 0%, 100%)",
+                  opacity: 0.1,
+                })
+                .build(),
+
+              Text(".forThe(Web).and(more)")
+                .modifier.padding({ bottom: 4 })
+                .before({
+                  content: "• • ",
+                  color: "hsl(0, 0%, 100%)",
+                  opacity: 0.1,
+                })
+                .build(),
+            ],
+            alignment: "leading",
+          })
+             .modifier.fontFamily(logoFont)
+             .paddingVertical(40)
+             .gradientText(
+               "linear-gradient(135deg, #ffffff 0%, #e0e7ff 50%, #c7d2fe 100%)",
+             )
+             .textShadow({
+               x: 0,
+               y: 4,
+               blur: 20,
+               color: "hsla(251, 91%, 66%, 0.5)",
+             })
+             .responsive({
+               fontSize: {
+                 base: "1.15rem",
+                 sm: "1.5rem",
+                 md: "2rem",
+                 lg: "2.5rem",
+               },
+             })
+             .base.paddingHorizontal(20)
+             .lg.paddingHorizontal("16rem")
+             .build(),
+
+          Text(
+            "TypeScript framework inspired by SwiftUI integrated with a fine-grained reactive core",
+          )
+            .modifier.font({
+              size: "1.25rem",
+              family: '"Dosis", sans-serif',
+              weight: "400",
+            })
+            .textAlign("center")
+            .opacity(0.9)
+            .margin({ horizontal: "auto", vertical: 0 })
+            .build(),
+
+          VStack({
+            spacing: 8,
+            children: [
+              HStack({
+                spacing: 10,
+                children: [
+                  Symbol("siren", {
+                    renderingMode: "monochrome",
+                    primaryColor: Assets.accentOrange,
+                    size: 32,
+                    weight: 500,
+                  }).modifier.build(),
+
+                  Text("PRE-RELEASE / EARLY ACCESS / BLEEDING EDGE")
+                    .modifier.font({
+                      size: "1.25rem",
+                      family: '"Dosis", sans-serif',
+                      weight: "600",
+                    })
+                    .foregroundColor(Assets.accentOrange)
+                    .build(),
+                ],
+                alignment: "center",
+              }),
+
+              Text(
+                "This is a preview version released for early testing and community feedback. Features and APIs may change before the stable release.",
+              )
+                .modifier.font({
+                  size: "1.15rem",
+                  family: '"Dosis", sans-serif',
+                })
+                .foregroundColor(Assets.textWhite)
+                .opacity(0.85)
+                .textAlign("center")
+                .lineHeight("1.4")
+                .padding({ top: 8, bottom: 0 })
+                .build(),
+            ],
+            alignment: "center",
+          })
+            .modifier.backgroundColor(Assets.accentOrange15)
+            .border({
+              width: 1,
+              color: Assets.accentOrange40,
+              style: "solid",
+            })
+            .cornerRadius(2)
+            .padding({ vertical: 16, horizontal: 20 })
+            .marginVertical(30)
+            .responsive()
+            .base.marginHorizontal(20)
+            .md.marginHorizontal("auto")
+             .maxWidth("500px")
+             .backdropFilter({ blur: 10 })
+             .build(),
+
+          // Hero buttons using proper tachUI modifiers
+          HStack({
+            spacing: 20,
+            children: [
+              Button("Get Started", () => scrollToSection("cta"))
+                .modifier.background(
+                  LinearGradient({
+                    colors: [Assets.primaryPurple, Assets.secondaryPurple],
+                    startPoint: "topLeading",
+                    endPoint: "bottomTrailing",
+                  }),
+                )
+                .foregroundColor(Assets.textWhite)
+                .padding({ vertical: 15, horizontal: 30 })
+                .cornerRadius(2)
+                .font({
+                  weight: "600",
+                  family: '"Dosis", sans-serif',
+                  size: 16,
+                })
+                .shadow({
+                  x: 0,
+                  y: 6,
+                  radius: 25,
+                  color: Assets.primaryPurle40,
+                })
+                .hoverEffect("lift")
+                .border({ width: 0 })
+                .cursor("pointer")
+                .build(),
+
+              Button("View on GitHub", () => {
+                window.open("https://github.com/tach-UI/tachUI", "_self")
+              })
+                .modifier.backgroundColor(Assets.white10)
+                .foregroundColor(Assets.textWhite)
+                .opacity(0.9)
+                .border({
+                  width: 2,
+                  color: Assets.primaryPurple60,
+                  style: "solid",
+                })
+                .padding({ vertical: 13, horizontal: 28 })
+                .cornerRadius(2)
+                .font({
+                  weight: "600",
+                  family: baseFont,
+                  size: 16,
+                })
+                .cursor("pointer")
+                .backdropFilter({ blur: 10 })
+                .hoverEffect("lift")
+                .build(),
+            ],
+            alignment: "center",
+          })
+            .modifier.width("100%")
+            .justifyContent("center")
+            .build(),
+        ],
+        alignment: "center",
+      }),
+    ],
+    alignment: "center",
+  })
+    .modifier // .background(Assets.darkPurple70)
+    .background(
+      LinearGradient({
+        colors: [Assets.darkPurple70, Assets.darkPurple70],
+        startPoint: "topLeading",
+        endPoint: "bottomTrailing",
+      }),
+    )
+    .foregroundColor(Assets.textWhite)
+    .border({
+      bottom: { width: 2, color: Assets.primaryPurple60, style: "solid" },
+    })
+    .padding({ top: 120, right: 20, bottom: 80, left: 20 })
+    .position("relative")
+    .width("100%")
+    .minHeight("600px")
+    .build();
+}

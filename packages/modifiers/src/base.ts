@@ -177,9 +177,21 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
 
           // Handle reactive values (signals and computed)
           if (isSignal(value) || isComputed(value)) {
+            console.log(
+              'BaseModifier applyStyles - creating reactive effect for property:',
+              cssProperty,
+              'value type:',
+              typeof value
+            )
             // Create reactive effect for this style property
             createEffect(() => {
               const currentValue = value()
+              console.log(
+                'BaseModifier reactive effect fired - property:',
+                cssProperty,
+                'currentValue:',
+                currentValue
+              )
               const cssValue = this.toCSSValueForProperty(
                 cssProperty,
                 currentValue

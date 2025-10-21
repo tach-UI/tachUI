@@ -235,3 +235,4 @@ export function outline(value: string): UtilityModifier {
 export function outlineOffset(value: number | string): UtilityModifier {
   return new UtilityModifier({ outlineOffset: value })
 }
+

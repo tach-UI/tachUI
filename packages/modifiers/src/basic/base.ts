@@ -148,6 +148,28 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
       return `${value}px`
     }
 
+    // Resolve ColorAssets and other assets with .resolve() method
+    // This must happen inside the reactive effect for theme reactivity
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      'resolve' in value &&
+      typeof value.resolve === 'function'
+    ) {
+      const resolved = value.resolve()
+      console.log('toCSSValueForProperty resolving asset:', { property, value, resolved })
+      return resolved
+    }
+
+    // Handle assets with .value property
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      'value' in value
+    ) {
+      return value.value
+    }
+
     // Properties that should be passed through as-is (no processing)
     const passthroughProperties = [
       'filter', // CSS filter strings should not be processed
@@ -180,6 +202,15 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
             // Create reactive effect for this style property
             createEffect(() => {
               const currentValue = value()
+
+              // Debug: log what we got from the signal
+              if (property === 'color' || property === 'background') {
+                console.log(`[BaseModifier] Signal resolved for ${property}:`, {
+                  hasResolve: currentValue && typeof currentValue === 'object' && 'resolve' in currentValue,
+                  value: currentValue
+                })
+              }
+
               const cssValue = this.toCSSValueForProperty(
                 cssProperty,
                 currentValue
@@ -1406,7 +1437,7 @@ export class InteractionModifier extends BaseModifier {
  * Animation modifier for transitions and animations
  */
 export class AnimationModifier extends BaseModifier {
-  readonly type = 'animation'
+  readonly type: 'animation' | 'transition' = 'animation'
   readonly priority = ModifierPriority.ANIMATION
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
@@ -1423,7 +1454,12 @@ export class AnimationModifier extends BaseModifier {
       const delay = t.delay || 0
 
       if (context.element instanceof HTMLElement) {
-        context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
+        // Handle 'none' to disable transitions
+        if (property === 'none') {
+          context.element.style.transition = 'none'
+        } else {
+          context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
+        }
       }
     }
 

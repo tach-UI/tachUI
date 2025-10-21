@@ -5,56 +5,81 @@
  * Provides a centralized system for custom modifier registration and application.
  */
 
-import type { ComponentInstance, ComponentProps, DOMNode } from '../runtime/types'
-import { createModifierBuilder } from './builder'
+import type {
+  ComponentInstance,
+  ComponentProps,
+  DOMNode,
+} from "../runtime/types";
+import { createModifierBuilder } from "./builder";
 import type {
   ModifiableComponent,
   Modifier,
   ModifierApplicationOptions,
   ModifierContext,
   ModifierFactory,
-  ModifierRegistry,
-} from './types'
-import type { Concatenatable, ComponentSegment } from '../concatenation/types'
-import { ConcatenatedComponent } from '../concatenation/concatenated-component'
+} from "./types";
+import type { Concatenatable, ComponentSegment } from "../concatenation/types";
+import { ConcatenatedComponent } from "../concatenation/concatenated-component";
+
+// Using global singleton registry from @tachui/registry instead of local implementation
+// The local ModifierRegistryImpl has been removed to prevent multiple registry instances
+import { globalModifierRegistry as registrySingleton } from "@tachui/registry";
+import type { ModifierRegistry as CoreModifierRegistry } from "./types";
 
 /**
- * Concrete modifier registry implementation
+ * Adapter to bridge between registry package and core package types
  */
-export class ModifierRegistryImpl implements ModifierRegistry {
-  private modifiers = new Map<string, ModifierFactory<any>>()
-
+class RegistryAdapter implements CoreModifierRegistry {
   register<TProps>(name: string, factory: ModifierFactory<TProps>): void {
-    this.modifiers.set(name, factory)
+    registrySingleton.register(name, factory as any);
   }
 
   get<TProps>(name: string): ModifierFactory<TProps> | undefined {
-    return this.modifiers.get(name) as ModifierFactory<TProps> | undefined
+    return registrySingleton.get(name) as any;
   }
 
   has(name: string): boolean {
-    return this.modifiers.has(name)
+    return registrySingleton.has(name);
   }
 
   list(): string[] {
-    return Array.from(this.modifiers.keys())
+    return registrySingleton.list();
   }
 
   clear(): void {
-    this.modifiers.clear()
+    registrySingleton.clear();
+  }
+
+  validateRegistry(): {
+    totalModifiers: number;
+    duplicateNames: string[];
+    orphanedReferences: any[];
+    instanceId: string;
+    createdAt: number;
+    instanceCount: number;
+  } {
+    return (registrySingleton as any).validateRegistry();
   }
 }
 
 /**
- * Global modifier registry instance
+ * Global modifier registry instance using singleton pattern
  */
-export const globalModifierRegistry = new ModifierRegistryImpl()
+const registryAdapter = new RegistryAdapter();
+export { registryAdapter as globalModifierRegistry };
+
+if (process.env.NODE_ENV === "development") {
+  console.log("📤 Created RegistryAdapter for globalModifierRegistry", {
+    registryId: (registrySingleton as any).instanceId,
+    currentSize: registrySingleton.list().length,
+  });
+}
 
 /**
- * Create a new modifier registry
+ * Create a new modifier registry (returns singleton for consistency)
  */
-export function createModifierRegistry(): ModifierRegistry {
-  return new ModifierRegistryImpl()
+export function createModifierRegistry(): CoreModifierRegistry {
+  return registryAdapter;
 }
 
 /**
@@ -64,26 +89,30 @@ export function applyModifiersToNode(
   node: DOMNode,
   modifiers: Modifier[],
   context: Partial<ModifierContext> = {},
-  options: ModifierApplicationOptions = {}
+  options: ModifierApplicationOptions = {},
 ): DOMNode {
-  if (!modifiers.length) return node
+  if (!modifiers.length) return node;
 
   const fullContext: ModifierContext = {
-    componentId: context.componentId || 'unknown',
-    phase: context.phase || 'creation',
+    componentId: context.componentId || "unknown",
+    phase: context.phase || "creation",
     ...(context.element && { element: context.element }),
     ...(context.parentElement && { parentElement: context.parentElement }),
-    ...(context.componentInstance && { componentInstance: context.componentInstance }),
-    ...(context.previousModifiers && { previousModifiers: context.previousModifiers }),
-  }
+    ...(context.componentInstance && {
+      componentInstance: context.componentInstance,
+    }),
+    ...(context.previousModifiers && {
+      previousModifiers: context.previousModifiers,
+    }),
+  };
 
-  const strategy = options.batch ? 'batch' : 'sequential'
+  const strategy = options.batch ? "batch" : "sequential";
 
   switch (strategy) {
-    case 'batch':
-      return applyModifiersBatch(node, modifiers, fullContext, options)
+    case "batch":
+      return applyModifiersBatch(node, modifiers, fullContext, options);
     default:
-      return applyModifiersSequential(node, modifiers, fullContext, options)
+      return applyModifiersSequential(node, modifiers, fullContext, options);
   }
 }
 
@@ -94,43 +123,45 @@ function applyModifiersSequential(
   node: DOMNode,
   modifiers: Modifier[],
   context: ModifierContext,
-  options: ModifierApplicationOptions
+  options: ModifierApplicationOptions,
 ): DOMNode {
   // Sort modifiers by priority
-  const sortedModifiers = [...modifiers].sort((a, b) => a.priority - b.priority)
+  const sortedModifiers = [...modifiers].sort(
+    (a, b) => a.priority - b.priority,
+  );
 
-  let currentNode = node
-  const effects: (() => void)[] = []
-  const cleanup: (() => void)[] = []
+  let currentNode = node;
+  const effects: (() => void)[] = [];
+  const cleanup: (() => void)[] = [];
 
   for (const modifier of sortedModifiers) {
     try {
-      const result = modifier.apply(currentNode, context)
+      const result = modifier.apply(currentNode, context);
 
-      if (result && typeof result === 'object' && 'type' in result) {
-        currentNode = result
+      if (result && typeof result === "object" && "type" in result) {
+        currentNode = result;
       }
 
       if (options.immediate && !options.suppressEffects) {
         // Apply effects immediately
-        effects.forEach((effect) => effect())
-        effects.length = 0
+        effects.forEach((effect) => effect());
+        effects.length = 0;
       }
     } catch (error) {
-      console.error(`Failed to apply modifier ${modifier.type}:`, error)
+      console.error(`Failed to apply modifier ${modifier.type}:`, error);
     }
   }
 
   // Store cleanup functions on the node
   if (cleanup.length > 0) {
-    const existingCleanup = currentNode.dispose
+    const existingCleanup = currentNode.dispose;
     currentNode.dispose = () => {
-      cleanup.forEach((fn) => fn())
-      if (existingCleanup) existingCleanup()
-    }
+      cleanup.forEach((fn) => fn());
+      if (existingCleanup) existingCleanup();
+    };
   }
 
-  return currentNode
+  return currentNode;
 }
 
 /**
@@ -140,57 +171,57 @@ function applyModifiersBatch(
   node: DOMNode,
   modifiers: Modifier[],
   context: ModifierContext,
-  options: ModifierApplicationOptions
+  options: ModifierApplicationOptions,
 ): DOMNode {
   // Group modifiers by type for more efficient application
-  const modifierGroups = groupModifiersByType(modifiers)
+  const modifierGroups = groupModifiersByType(modifiers);
 
-  let currentNode = node
-  const allEffects: (() => void)[] = []
-  const allCleanup: (() => void)[] = []
+  let currentNode = node;
+  const allEffects: (() => void)[] = [];
+  const allCleanup: (() => void)[] = [];
 
   // Apply each group
   for (const [type, groupModifiers] of modifierGroups) {
     try {
-      currentNode = applyModifierGroup(currentNode, groupModifiers, context)
+      currentNode = applyModifierGroup(currentNode, groupModifiers, context);
     } catch (error) {
       // Only log in non-test environments to avoid polluting test output
-      if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
-        console.error(`Failed to apply modifier group ${type}:`, error)
+      if (typeof process === "undefined" || process.env.NODE_ENV !== "test") {
+        console.error(`Failed to apply modifier group ${type}:`, error);
       }
     }
   }
 
   // Apply all effects at once if not suppressed
   if (!options.suppressEffects) {
-    allEffects.forEach((effect) => effect())
+    allEffects.forEach((effect) => effect());
   }
 
   // Store cleanup functions
   if (allCleanup.length > 0) {
-    const existingCleanup = currentNode.dispose
+    const existingCleanup = currentNode.dispose;
     currentNode.dispose = () => {
-      allCleanup.forEach((fn) => fn())
-      if (existingCleanup) existingCleanup()
-    }
+      allCleanup.forEach((fn) => fn());
+      if (existingCleanup) existingCleanup();
+    };
   }
 
-  return currentNode
+  return currentNode;
 }
 
 /**
  * Group modifiers by type for batch processing
  */
 function groupModifiersByType(modifiers: Modifier[]): Map<string, Modifier[]> {
-  const groups = new Map<string, Modifier[]>()
+  const groups = new Map<string, Modifier[]>();
 
   for (const modifier of modifiers) {
-    const existing = groups.get(modifier.type) || []
-    existing.push(modifier)
-    groups.set(modifier.type, existing)
+    const existing = groups.get(modifier.type) || [];
+    existing.push(modifier);
+    groups.set(modifier.type, existing);
   }
 
-  return groups
+  return groups;
 }
 
 /**
@@ -199,40 +230,44 @@ function groupModifiersByType(modifiers: Modifier[]): Map<string, Modifier[]> {
 function applyModifierGroup(
   node: DOMNode,
   modifiers: Modifier[],
-  context: ModifierContext
+  context: ModifierContext,
 ): DOMNode {
   // Sort by priority within the group
-  const sortedModifiers = [...modifiers].sort((a, b) => a.priority - b.priority)
+  const sortedModifiers = [...modifiers].sort(
+    (a, b) => a.priority - b.priority,
+  );
 
-  let currentNode = node
+  let currentNode = node;
 
   for (const modifier of sortedModifiers) {
     try {
-      const result = modifier.apply(currentNode, context)
-      if (result && typeof result === 'object' && 'type' in result) {
-        currentNode = result
+      const result = modifier.apply(currentNode, context);
+      if (result && typeof result === "object" && "type" in result) {
+        currentNode = result;
       }
     } catch (error) {
       // In batch mode, individual modifier failures shouldn't break the entire batch
       // Only log in non-test environments to avoid polluting test output
-      if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
-        console.error(`Failed to apply modifier ${modifier.type}:`, error)
+      if (typeof process === "undefined" || process.env.NODE_ENV !== "test") {
+        console.error(`Failed to apply modifier ${modifier.type}:`, error);
       }
       // Continue with the next modifier
     }
   }
 
-  return currentNode
+  return currentNode;
 }
 
 /**
  * Helper function to check if a component implements Concatenatable
  */
 function isConcatenatable(component: any): component is Concatenatable {
-  return component && 
-         typeof component.concat === 'function' && 
-         typeof component.toSegment === 'function' && 
-         typeof component.isConcatenatable === 'function'
+  return (
+    component &&
+    typeof component.concat === "function" &&
+    typeof component.toSegment === "function" &&
+    typeof component.isConcatenatable === "function"
+  );
 }
 
 /**
@@ -240,7 +275,7 @@ function isConcatenatable(component: any): component is Concatenatable {
  */
 export function createModifiableComponent<P extends ComponentProps>(
   component: ComponentInstance<P>,
-  initialModifiers: Modifier[] = []
+  initialModifiers: Modifier[] = [],
 ): ModifiableComponent<P> {
   // Create a proper copy to avoid shared references
   const modifiableComponent: ModifiableComponent<P> = {
@@ -252,105 +287,126 @@ export function createModifiableComponent<P extends ComponentProps>(
     modifiers: [...initialModifiers],
     modifierBuilder: null as any, // Will be set after component is created
     render: component.render ? component.render.bind(component) : () => [], // Bind to original component or provide default
-  }
-  
+    // Store reference to original component for modifier context
+    _originalComponent: component,
+  };
+
   // Create modifier builder with the modifiable component so it can update the right modifiers array
-  modifiableComponent.modifierBuilder = createModifierBuilder(modifiableComponent) as any
-  
+  modifiableComponent.modifierBuilder = createModifierBuilder(
+    modifiableComponent,
+  ) as any;
+
   // Store reference to modifiable component so Button can access modifiers
-  ;(component as any).modifiableComponent = modifiableComponent
-  
+  (component as any).modifiableComponent = modifiableComponent;
+
   // CRITICAL: Preserve enhanced lifecycle hooks when creating modifiable components
-  const enhancedLifecycle = (component as any)._enhancedLifecycle
+  const enhancedLifecycle = (component as any)._enhancedLifecycle;
   if (enhancedLifecycle) {
     // Preserve the enhanced lifecycle hooks
-    ;(modifiableComponent as any)._enhancedLifecycle = enhancedLifecycle
-    
+    (modifiableComponent as any)._enhancedLifecycle = enhancedLifecycle;
+
     // Also preserve other component properties that might be important
-    if ('domElements' in component) {
-      (modifiableComponent as any).domElements = component.domElements
+    if ("domElements" in component) {
+      (modifiableComponent as any).domElements = component.domElements;
     }
-    if ('primaryElement' in component) {
-      (modifiableComponent as any).primaryElement = component.primaryElement
+    if ("primaryElement" in component) {
+      (modifiableComponent as any).primaryElement = component.primaryElement;
     }
-    if ('domReady' in component) {
-      (modifiableComponent as any).domReady = component.domReady
+    if ("domReady" in component) {
+      (modifiableComponent as any).domReady = component.domReady;
     }
-    if ('children' in component) {
-      (modifiableComponent as any).children = component.children
+    if ("children" in component) {
+      (modifiableComponent as any).children = component.children;
     }
   }
 
-  // Enhance the render function to apply modifiers
-  const originalRender = component.render ? component.render.bind(component) : () => []
+  // Enhance the render function to attach modifiers for later application
+  const originalRender = component.render
+    ? component.render.bind(component)
+    : () => [];
   modifiableComponent.render = () => {
-    const renderResult = originalRender()
-    const nodes = Array.isArray(renderResult) ? renderResult : [renderResult]
+    const renderResult = originalRender();
+    const nodes = Array.isArray(renderResult) ? renderResult : [renderResult];
 
-    // Attach modifiers to each node for later application without breaking component structure
-    return nodes.map((node: any) => {
-      // Preserve the original node and just add modifier metadata
-      if (node && typeof node === 'object') {
-        // Use direct property assignment instead of spread to preserve prototypes
-        node.modifiers = modifiableComponent.modifiers
-        node.componentId = component.id
-        return node
+    // CRITICAL FIX: Only attach modifiers to the root node (first node)
+    // not to all child nodes which was causing modifier bleed-through
+    return nodes.map((node: any, index: number) => {
+      if (node && typeof node === "object") {
+        // Only attach modifiers to the root node (index 0)
+        if (index === 0) {
+          node.modifiers = [...modifiableComponent.modifiers];
+          node.componentId = component.id;
+          node._originalComponent = modifiableComponent._originalComponent;
+        } else {
+          // Ensure no modifiers leak to non-root nodes
+          if (node.modifiers) {
+            delete node.modifiers;
+          }
+          if (node.componentId && node.componentId === component.id) {
+            delete node.componentId;
+          }
+        }
+        return node;
       }
-      return node
-    })
-  }
+      return node;
+    });
+  };
 
   // If the original component supports concatenation, add concatenation methods to modifiable component
   if (isConcatenatable(component)) {
-    (modifiableComponent as any).concat = function<U extends Concatenatable<any>>(other: U): ConcatenatedComponent<P | U> {
+    (modifiableComponent as any).concat = function <
+      U extends Concatenatable<any>,
+    >(other: U): ConcatenatedComponent<P | U> {
       // Create segment for this modifiable component
       const thisSegment: ComponentSegment = {
         id: modifiableComponent.id,
         component: modifiableComponent,
         modifiers: modifiableComponent.modifiers,
         render: () => {
-          const result = modifiableComponent.render()
-          return Array.isArray(result) ? result[0] : result
-        }
-      }
-      
+          const result = modifiableComponent.render();
+          return Array.isArray(result) ? result[0] : result;
+        },
+      };
+
       // Get segment from other component
-      const otherSegment = other.toSegment()
-      
+      const otherSegment = other.toSegment();
+
       // Create concatenated component with appropriate metadata
       const metadata = {
-        totalSegments: other instanceof ConcatenatedComponent 
-          ? other.segments.length + 1 
-          : 2,
-        accessibilityRole: 'text' as const, // Simplified for now
-        semanticStructure: 'inline' as const // Simplified for now
-      }
-      
+        totalSegments:
+          other instanceof ConcatenatedComponent
+            ? other.segments.length + 1
+            : 2,
+        accessibilityRole: "text" as const, // Simplified for now
+        semanticStructure: "inline" as const, // Simplified for now
+      };
+
       if (other instanceof ConcatenatedComponent) {
-        return new ConcatenatedComponent([thisSegment, ...other.segments], metadata)
+        return new ConcatenatedComponent(
+          [thisSegment, ...other.segments],
+          metadata,
+        );
       }
-      
-      return new ConcatenatedComponent([thisSegment, otherSegment], metadata)
+
+      return new ConcatenatedComponent([thisSegment, otherSegment], metadata);
     };
-    
-    (modifiableComponent as any).toSegment = function(): ComponentSegment {
+    (modifiableComponent as any).toSegment = function (): ComponentSegment {
       return {
         id: modifiableComponent.id,
         component: modifiableComponent,
         modifiers: modifiableComponent.modifiers,
         render: () => {
-          const result = modifiableComponent.render()
-          return Array.isArray(result) ? result[0] : result
-        }
-      }
+          const result = modifiableComponent.render();
+          return Array.isArray(result) ? result[0] : result;
+        },
+      };
     };
-    
-    (modifiableComponent as any).isConcatenatable = function(): boolean {
-      return true
-    }
+    (modifiableComponent as any).isConcatenatable = function (): boolean {
+      return true;
+    };
   }
 
-  return modifiableComponent
+  return modifiableComponent;
 }
 
 /**
@@ -359,16 +415,15 @@ export function createModifiableComponent<P extends ComponentProps>(
 export function updateComponentModifiers<P extends ComponentProps>(
   component: ModifiableComponent<P>,
   newModifiers: Modifier[],
-  _options: ModifierApplicationOptions = {}
+  _options: ModifierApplicationOptions = {},
 ): void {
   // const _previousModifiers = component.modifiers
-  component.modifiers = [...newModifiers]
+  component.modifiers = [...newModifiers];
 
   // If the component is mounted, reapply modifiers
   if (component.mounted && component.context) {
     // This would require access to the actual DOM element
     // Implementation would depend on the component mounting system
-    console.log('Updating modifiers on mounted component', component.id)
   }
 }
 
@@ -380,21 +435,23 @@ export const modifierApplicationUtils = {
    * Check if a component has specific modifier types
    */
   hasModifierOfType(component: ModifiableComponent, type: string): boolean {
-    return component.modifiers.some((modifier) => modifier.type === type)
+    return component.modifiers.some((modifier) => modifier.type === type);
   },
 
   /**
    * Get modifiers of a specific type from a component
    */
   getModifiersOfType(component: ModifiableComponent, type: string): Modifier[] {
-    return component.modifiers.filter((modifier) => modifier.type === type)
+    return component.modifiers.filter((modifier) => modifier.type === type);
   },
 
   /**
    * Remove modifiers of a specific type from a component
    */
   removeModifiersOfType(component: ModifiableComponent, type: string): void {
-    component.modifiers = component.modifiers.filter((modifier) => modifier.type !== type)
+    component.modifiers = component.modifiers.filter(
+      (modifier) => modifier.type !== type,
+    );
   },
 
   /**
@@ -403,42 +460,44 @@ export const modifierApplicationUtils = {
   replaceModifiersOfType(
     component: ModifiableComponent,
     type: string,
-    newModifiers: Modifier[]
+    newModifiers: Modifier[],
   ): void {
     // Remove existing modifiers of this type
-    component.modifiers = component.modifiers.filter((modifier) => modifier.type !== type)
+    component.modifiers = component.modifiers.filter(
+      (modifier) => modifier.type !== type,
+    );
 
     // Add new modifiers
-    component.modifiers.push(...newModifiers)
+    component.modifiers.push(...newModifiers);
   },
 
   /**
    * Get the total number of modifiers on a component
    */
   getModifierCount(component: ModifiableComponent): number {
-    return component.modifiers.length
+    return component.modifiers.length;
   },
 
   /**
    * Check if two modifier arrays are equivalent
    */
   areModifiersEqual(modifiers1: Modifier[], modifiers2: Modifier[]): boolean {
-    if (modifiers1.length !== modifiers2.length) return false
+    if (modifiers1.length !== modifiers2.length) return false;
 
     for (let i = 0; i < modifiers1.length; i++) {
-      const m1 = modifiers1[i]
-      const m2 = modifiers2[i]
+      const m1 = modifiers1[i];
+      const m2 = modifiers2[i];
 
       if (m1.type !== m2.type || m1.priority !== m2.priority) {
-        return false
+        return false;
       }
 
       // Deep compare properties (simplified)
       if (JSON.stringify(m1.properties) !== JSON.stringify(m2.properties)) {
-        return false
+        return false;
       }
     }
 
-    return true
+    return true;
   },
-}
+};

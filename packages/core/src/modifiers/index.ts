@@ -45,6 +45,7 @@ export {
   createModifierBuilder,
   ModifierBuilderImpl,
   modifierUtils,
+  setExternalModifierRegistry,
 } from './builder'
 
 // Registry and application infrastructure
@@ -52,8 +53,11 @@ export {
   applyModifiersToNode,
   createModifiableComponent,
   createModifierRegistry,
-  globalModifierRegistry,
 } from './registry'
+
+// Note: globalModifierRegistry is NOT re-exported from @tachui/core
+// Import directly from @tachui/registry when needed:
+// import { globalModifierRegistry } from '@tachui/registry'
 
 // Core modifier utilities and helpers
 export {

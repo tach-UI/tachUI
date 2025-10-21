@@ -1,5 +1,5 @@
 /**
- * Global type definitions for TachUI Core
+ * Global type definitions for TachUI CLI
  */
 
 declare global {

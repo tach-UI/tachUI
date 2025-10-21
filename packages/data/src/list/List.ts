@@ -10,7 +10,7 @@ import { createEffect, createSignal, isSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h } from '@tachui/core'
 import type { ComponentInstance } from '@tachui/core'
-import { ScrollView, type ScrollViewProps } from '@tachui/mobile'
+import { ScrollView, type ScrollViewProps } from '@tachui/primitives'
 import { withModifiers } from '@tachui/core'
 
 /**

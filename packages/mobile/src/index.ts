@@ -4,10 +4,9 @@
  * Mobile-optimized UI components:
  * - ActionSheet: Mobile action selection pattern
  * - Alert: Modal dialogs with backdrop and animations
- * - ScrollView: Enhanced scrolling with pull-to-refresh, touch gestures, and mobile optimizations
  *
- * Bundle size: ~65KB (includes ScrollView)
- * Use cases: Mobile apps, responsive design, touch interfaces, scrollable content
+ * Bundle size: ~45KB (ScrollView moved to @tachui/primitives)
+ * Use cases: Mobile apps, responsive design, touch interfaces
  */
 
 // Mobile UI patterns
@@ -32,19 +31,6 @@ export {
   type AlertTheme,
 } from './Alert'
 
-export {
-  ScrollView,
-  EnhancedScrollView,
-  ScrollViewUtils,
-  type ScrollViewProps,
-  type ScrollDirection,
-  type ScrollBehavior,
-  type ContentOffset,
-  type ScrollEdges,
-  type ScrollEventInfo,
-  type PullToRefreshState,
-} from './ScrollView'
-
 // Mobile modifiers
 export * from './modifiers'
 
@@ -52,14 +38,13 @@ export * from './modifiers'
 export const PLUGIN_NAME = '@tachui/mobile'
 export const PLUGIN_VERSION = '0.1.0'
 export const PLUGIN_DESCRIPTION =
-  'Mobile UI components - ActionSheet, Alert, ScrollView with mobile optimizations'
-export const BUNDLE_SIZE_TARGET = '~65KB'
+  'Mobile UI components - ActionSheet, Alert with mobile optimizations'
+export const BUNDLE_SIZE_TARGET = '~45KB'
 
 // Component registry (static exports - no dynamic loading to avoid duplication)
 export const COMPONENTS = {
   ActionSheet: 'ActionSheet',
   Alert: 'Alert',
-  ScrollView: 'ScrollView',
 } as const
 
 export type MobilePatternsComponent = keyof typeof COMPONENTS

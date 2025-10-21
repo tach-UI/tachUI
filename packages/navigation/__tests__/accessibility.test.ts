@@ -391,7 +391,9 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
       expect(component).toBeDefined()
       // Should respect reduced motion preferences
-      expect((component as any).props?.style?.transition).toBe('none')
+      const transitionModifier = component.modifiers.find(m => m.type === 'transition')
+      expect(transitionModifier).toBeDefined()
+      expect((transitionModifier as any).properties.transition.property).toBe('none')
     })
   })
 

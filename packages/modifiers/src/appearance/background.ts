@@ -5,6 +5,7 @@
  */
 
 import { BaseModifier } from '../basic/base'
+import { createEffect, getThemeSignal } from '@tachui/core/reactive'
 import type { ModifierContext } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 
@@ -19,45 +20,60 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
-    const element = context.element as HTMLElement
-    const cssValue = this.resolveBackground(this.properties.background)
-
-    if (cssValue) {
-      element.style.background = cssValue
+    // Check if background is a ColorAsset and apply with theme reactivity
+    if (this.isColorAsset(this.properties.background)) {
+      this.applyColorAssetWithThemeReactivity(context.element, 'background', this.properties.background)
+    } else {
+      // Handle normal values (strings, signals, computed, gradients)
+      const styles = {
+        background: this.properties.background,
+      }
+      this.applyStyles(context.element, styles)
     }
 
     return undefined
   }
 
-  private resolveBackground(background: any): string {
-    if (typeof background === 'string') {
-      return background
-    }
+  /**
+   * Check if a value is a ColorAsset (has a resolve method)
+   */
+  private isColorAsset(value: any): boolean {
+    return (
+      value !== null &&
+      value !== undefined &&
+      typeof value === 'object' &&
+      'resolve' in value &&
+      typeof value.resolve === 'function'
+    )
+  }
 
-    if (
-      typeof background === 'object' &&
-      background !== null &&
-      'resolve' in background
-    ) {
-      return background.resolve()
-    }
+  /**
+   * Apply ColorAsset with theme reactivity
+   * This mirrors the core AppearanceModifier pattern
+   */
+  private applyColorAssetWithThemeReactivity(
+    element: Element,
+    property: string,
+    asset: any
+  ): void {
+    const themeSignal = getThemeSignal()
 
-    if (
-      typeof background === 'object' &&
-      background !== null &&
-      'value' in background
-    ) {
-      return background.value
-    }
-
-    return String(background)
+    createEffect(() => {
+      // Watch theme changes to trigger re-resolution
+      themeSignal()
+      // Re-resolve Asset when theme changes
+      const resolved = asset.resolve()
+      this.applyStyleChange(element, property, resolved)
+    })
   }
 }
 
 export interface BackgroundClipOptions {
   backgroundImage?: string
   backgroundClip?: 'text' | 'border-box' | 'padding-box' | 'content-box'
+  webkitBackgroundClip?: 'text' | 'border-box' | 'padding-box' | 'content-box'
   color?: string
+  webkitTextFillColor?: string
 }
 
 export class BackgroundClipModifier extends BaseModifier<BackgroundClipOptions> {
@@ -96,11 +112,11 @@ export class BackgroundClipModifier extends BaseModifier<BackgroundClipOptions> 
   }
 }
 
-export function backgroundColor(color: string): BackgroundModifier {
+export function backgroundColor(color: string | any): BackgroundModifier {
   return new BackgroundModifier({ background: color })
 }
 
-export function background(value: string): BackgroundModifier {
+export function background(value: string | any): BackgroundModifier {
   return new BackgroundModifier({ background: value })
 }
 
@@ -120,7 +136,9 @@ export function gradientText(gradient: string): BackgroundClipModifier {
   return new BackgroundClipModifier({
     backgroundImage: gradient,
     backgroundClip: 'text',
+    webkitBackgroundClip: 'text',
     color: 'transparent',
+    webkitTextFillColor: 'transparent',
   })
 }
 

@@ -27,7 +27,9 @@
       "@tachui/effects": ["../effects/src"],
       "@tachui/effects/*": ["../effects/src/*"],
       "@tachui/primitives": ["../primitives/src"],
-      "@tachui/primitives/*": ["../primitives/src/*"]
+      "@tachui/primitives/*": ["../primitives/src/*"],
+      "@tachui/registry": ["../registry/src"],
+      "@tachui/registry/*": ["../registry/src/*"]
     }
   },
   "include": ["src/**/*", "../../tools/globals.d.ts"],

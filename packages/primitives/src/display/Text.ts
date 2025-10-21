@@ -13,6 +13,12 @@ import { createModifiableComponent, createModifierBuilder } from '@tachui/core'
 import type { Concatenatable } from '@tachui/core'
 import { processElementOverride, type ElementOverrideProps } from '@tachui/core'
 import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
+import type {
+  Asset,
+  ColorAssetProxy,
+  ImageAssetProxy,
+  FontAssetProxy,
+} from '@tachui/core/assets'
 
 /**
  * Text component properties with element override support and CSS classes
@@ -25,7 +31,7 @@ export interface TextProps
 
   // Typography
   font?: {
-    family?: string
+    family?: string | Asset | ColorAssetProxy | ImageAssetProxy | FontAssetProxy
     size?: number | string
     weight?:
       | 'normal'
@@ -176,6 +182,7 @@ export class EnhancedText
           overriddenTo:
             this.effectiveTag !== 'span' ? this.effectiveTag : undefined,
           validationResult: this.validationResult,
+          componentInstance: this, // Add reference to the Text component instance
         },
       },
       text(this.props.content || '')

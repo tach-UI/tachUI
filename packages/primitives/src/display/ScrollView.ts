@@ -598,6 +598,20 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
   render() {
     const { children = [], scrollEnabled = true } = this.props
 
+    // ✅ FIXED: Handle both static arrays and reactive children
+    let resolvedChildren: ComponentInstance[] = []
+    
+    // Handle reactive children (createComputed functions)
+    const childrenAsAny = children as any
+    if (typeof childrenAsAny === 'function') {
+      // Reactive children - call function to get array
+      const result = childrenAsAny()
+      resolvedChildren = Array.isArray(result) ? result : []
+    } else if (Array.isArray(children)) {
+      // Static array children
+      resolvedChildren = children
+    }
+
     // Create content container
     const contentContainer = h(
       'div',
@@ -608,7 +622,7 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
           minWidth: '100%',
         },
       },
-      ...children.flatMap(child => child.render())
+      ...resolvedChildren.flatMap((child: ComponentInstance) => child.render())
     )
 
     // Create pull to refresh indicator
@@ -675,6 +689,28 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
         this.cleanup.push(() => effect.dispose())
       } else {
         updateScrollEnabled()
+      }
+
+      // ✅ ADDED: Reactive effect for dynamic children updates
+      if (typeof childrenAsAny === 'function') {
+        const childrenEffect = createEffect(() => {
+          // Re-render when reactive children change
+          const result = childrenAsAny()
+          const newChildren: ComponentInstance[] = Array.isArray(result) ? result : []
+          const newContentElements = newChildren.flatMap((child: ComponentInstance) => child.render())
+          
+          // Update content container
+          if (contentContainer.element) {
+            const contentEl = contentContainer.element as HTMLElement
+            contentEl.innerHTML = ''
+            newContentElements.forEach((el: any) => {
+              if (el && el.element) {
+                contentEl.appendChild(el.element)
+              }
+            })
+          }
+        })
+        this.cleanup.push(() => childrenEffect.dispose())
       }
     }
 

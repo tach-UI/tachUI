@@ -8,8 +8,8 @@
 import type { Signal } from '@tachui/core/reactive/types'
 import { isSignal, isComputed, createEffect } from '@tachui/core/reactive'
 import type { DOMNode } from '@tachui/core/runtime/types'
-import { BaseModifier } from '@tachui/modifiers'
-import type { ModifierContext, ReactiveModifierProps } from '@tachui/modifiers'
+import { BaseModifier } from '@tachui/core/modifiers/base'
+import type { ModifierContext, ReactiveModifierProps } from '@tachui/core/modifiers/types'
 
 // ============================================================================
 // Shadow Configuration Types

@@ -9,6 +9,7 @@
 
 import type { ComponentSegment } from './types'
 import type { Modifier } from '../modifiers/types'
+import { h, text } from '../runtime/renderer'
 
 /**
  * Optimization cache for storing processed segment combinations
@@ -326,14 +327,9 @@ export class TextConcatenationOptimizer {
       cleanup: [],
       modifiers: modifiers,
       render() {
-        // Simple text rendering - import at runtime to avoid circular deps
-        const runtime = (globalThis as any).__tachui_runtime
-        if (runtime && runtime.h && runtime.text) {
-          const textNode = runtime.text(content)
-          return [runtime.h('span', {}, [textNode])]
-        }
-        // Fallback if runtime not available
-        return []
+        // Simple text rendering using imported runtime functions
+        const textNode = text(content)
+        return [h('span', {}, textNode)]
       }
     }
   }

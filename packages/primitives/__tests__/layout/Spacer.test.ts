@@ -191,10 +191,11 @@ describe('Spacer Factory Function', () => {
       const spacer = Spacer(30)
 
       // Should have the same modifier interface as other components
-      expect(spacer.modifier).toHaveProperty('build')
-      expect(spacer.modifier).toHaveProperty('backgroundColor')
-      expect(spacer.modifier).toHaveProperty('padding')
-      expect(spacer.modifier).toHaveProperty('margin')
+      // Proxy provides methods dynamically, so check they're callable
+      expect(typeof spacer.modifier.build).toBe('function')
+      expect(typeof spacer.modifier.backgroundColor).toBe('function')
+      expect(typeof spacer.modifier.padding).toBe('function')
+      expect(typeof spacer.modifier.margin).toBe('function')
     })
   })
 

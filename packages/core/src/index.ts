@@ -165,5 +165,5 @@ export {
   ProductionUtils,
 } from './validation'
 
-// Version
-export const VERSION = '0.1.0'
+// Version and Package Information
+export { TACHUI_PACKAGE, TACHUI_PACKAGE_VERSION, VERSION } from './version'

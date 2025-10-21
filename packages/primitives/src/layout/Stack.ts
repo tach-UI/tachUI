@@ -21,6 +21,7 @@ export interface VStackProps {
   alignment?: 'leading' | 'center' | 'trailing'
   debugLabel?: string
   element?: string
+  id?: string
 }
 
 /**
@@ -32,6 +33,7 @@ export interface HStackProps {
   alignment?: 'top' | 'center' | 'bottom'
   debugLabel?: string
   element?: string
+  id?: string
 }
 
 /**
@@ -39,29 +41,16 @@ export interface HStackProps {
  */
 export interface ZStackProps {
   children?: ComponentInstance[]
-  alignment?:
-    | 'topLeading'
-    | 'top'
-    | 'topTrailing'
-    | 'leading'
-    | 'center'
-    | 'trailing'
-    | 'bottomLeading'
-    | 'bottom'
-    | 'bottomTrailing'
+  alignment?: 'topLeading' | 'top' | 'topTrailing' | 'leading' | 'center' | 'trailing' | 'bottomLeading' | 'bottom' | 'bottomTrailing'
   element?: string
+  id?: string
 }
 
 /**
  * Helper function to check if a component implements Concatenatable
  */
 function isConcatenatable(component: any): component is any {
-  return (
-    component &&
-    typeof component.concat === 'function' &&
-    typeof component.toSegment === 'function' &&
-    typeof component.isConcatenatable === 'function'
-  )
+  return component && typeof component.concat === 'function' && typeof component.toSegment === 'function' && typeof component.isConcatenatable === 'function'
 }
 
 /**
@@ -100,11 +89,7 @@ export function withModifiers<P extends ComponentProps>(
 /**
  * Layout container component class with element override support
  */
-export class LayoutComponent
-  extends ComponentWithCSSClasses
-  implements
-    ComponentInstance<ComponentProps & ElementOverrideProps & CSSClassesProps>
-{
+export class LayoutComponent extends ComponentWithCSSClasses implements ComponentInstance<ComponentProps & ElementOverrideProps & CSSClassesProps> {
   public readonly type = 'component' as const
   public readonly id: string
   public mounted = false
@@ -118,20 +103,12 @@ export class LayoutComponent
     private layoutProps: any = {}
   ) {
     super()
-    this.id = `layout-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    // Use provided ID from props or generate a new one
+    this.id = props.id || `layout-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
     // Process element override for tag specification enhancement
-    const componentType =
-      this.layoutType === 'hstack'
-        ? 'HStack'
-        : this.layoutType === 'vstack'
-          ? 'VStack'
-          : 'ZStack'
-    const override = processElementOverride(
-      componentType,
-      'div',
-      this.props.element
-    )
+    const componentType = this.layoutType === 'hstack' ? 'HStack' : this.layoutType === 'vstack' ? 'VStack' : 'ZStack'
+    const override = processElementOverride(componentType, 'div', this.props.element)
     this.effectiveTag = override.tag
 
     // Add semantic roles to props for test compatibility when using semantic elements
@@ -156,21 +133,13 @@ export class LayoutComponent
         this.children.forEach((child, index) => {
           const enhancedLifecycle = (child as any)._enhancedLifecycle
 
-          if (
-            enhancedLifecycle &&
-            enhancedLifecycle.onDOMReady &&
-            !child.domReady
-          ) {
+          if (enhancedLifecycle && enhancedLifecycle.onDOMReady && !child.domReady) {
             try {
               // Find DOM elements for this child by searching within our container
               if (primaryElement) {
                 // For layout components, children are rendered as direct children
                 // Try to find the child's DOM element(s)
-                const childElements = this.findChildDOMElements(
-                  child,
-                  primaryElement,
-                  index
-                )
+                const childElements = this.findChildDOMElements(child, primaryElement, index)
 
                 if (childElements.length > 0) {
                   // Set up DOM tracking for the child
@@ -186,10 +155,7 @@ export class LayoutComponent
                   child.domReady = true
 
                   // Call the child's onDOMReady hook
-                  const cleanup = enhancedLifecycle.onDOMReady(
-                    child.domElements,
-                    child.primaryElement
-                  )
+                  const cleanup = enhancedLifecycle.onDOMReady(child.domElements, child.primaryElement)
                   if (typeof cleanup === 'function') {
                     child.cleanup = child.cleanup || []
                     child.cleanup.push(cleanup)
@@ -206,10 +172,7 @@ export class LayoutComponent
                 }
               }
             } catch (error) {
-              console.error(
-                `Error processing lifecycle hooks for child ${child.id}:`,
-                error
-              )
+              console.error(`Error processing lifecycle hooks for child ${child.id}:`, error)
               // Continue processing other children even if one fails
             }
           }
@@ -224,11 +187,7 @@ export class LayoutComponent
   /**
    * Find DOM elements for a specific child component within the layout container
    */
-  private findChildDOMElements(
-    child: ComponentInstance,
-    container: Element,
-    childIndex: number
-  ): Element[] {
+  private findChildDOMElements(child: ComponentInstance, container: Element, childIndex: number): Element[] {
     // For Image components, look for img elements with the tachui-image class
     if (child.id.startsWith('image-')) {
       const images = container.querySelectorAll('img.tachui-image')
@@ -252,9 +211,7 @@ export class LayoutComponent
 
     // For Text components, look for span elements with the tachui-text class
     if (child.id.startsWith('text-')) {
-      const textElements = container.querySelectorAll(
-        'span.tachui-text, .tachui-text'
-      )
+      const textElements = container.querySelectorAll('span.tachui-text, .tachui-text')
       if (textElements[childIndex]) {
         return [textElements[childIndex]]
       }
@@ -275,10 +232,7 @@ export class LayoutComponent
   render(): DOMNode[] {
     const { spacing = 0, debugLabel } = this.layoutProps
     // Explicitly handle alignment to avoid default override
-    const alignment =
-      this.layoutProps.alignment !== undefined
-        ? this.layoutProps.alignment
-        : 'center'
+    const alignment = this.layoutProps.alignment !== undefined ? this.layoutProps.alignment : 'center'
 
     // Process CSS classes for this component
     const baseClasses = [`tachui-${this.layoutType}`]
@@ -289,9 +243,7 @@ export class LayoutComponent
         // Render children normally but also make them available for DOM bridge processing
         const vstackRenderedChildren = this.children.map(child => {
           const childResult = child.render()
-          const resultArray = Array.isArray(childResult)
-            ? childResult
-            : [childResult]
+          const resultArray = Array.isArray(childResult) ? childResult : [childResult]
           return resultArray
         })
         const vstackFlattened = vstackRenderedChildren.flat()
@@ -314,17 +266,13 @@ export class LayoutComponent
           type: 'element',
           tag: this.effectiveTag,
           props: {
+            id: this.id,
             className: classString,
             style: {
               display: 'flex',
               flexDirection: 'column',
               gap: spacing ? `${spacing}px` : '0',
-              alignItems:
-                alignment === 'leading'
-                  ? 'flex-start'
-                  : alignment === 'trailing'
-                    ? 'flex-end'
-                    : 'center',
+              alignItems: alignment === 'leading' ? 'flex-start' : alignment === 'trailing' ? 'flex-end' : 'center',
             },
             'data-tachui-component': 'VStack',
             ...(debugLabel && { 'data-tachui-label': debugLabel }),
@@ -339,9 +287,7 @@ export class LayoutComponent
       case 'hstack': {
         const hstackRenderedChildren = this.children.map(child => {
           const childResult = child.render()
-          const resultArray = Array.isArray(childResult)
-            ? childResult
-            : [childResult]
+          const resultArray = Array.isArray(childResult) ? childResult : [childResult]
           return resultArray
         })
         const hstackFlattened = hstackRenderedChildren.flat()
@@ -364,17 +310,13 @@ export class LayoutComponent
           type: 'element',
           tag: this.effectiveTag,
           props: {
+            id: this.id,
             className: classString,
             style: {
               display: 'flex',
               flexDirection: 'row',
               gap: spacing ? `${spacing}px` : '0',
-              alignItems:
-                alignment === 'top'
-                  ? 'flex-start'
-                  : alignment === 'bottom'
-                    ? 'flex-end'
-                    : 'center',
+              alignItems: alignment === 'top' ? 'flex-start' : alignment === 'bottom' ? 'flex-end' : 'center',
             },
             'data-tachui-component': 'HStack',
             ...(debugLabel && { 'data-tachui-label': debugLabel }),
@@ -389,9 +331,7 @@ export class LayoutComponent
       case 'zstack': {
         const zstackRenderedChildren = this.children.map(child => {
           const childResult = child.render()
-          const resultArray = Array.isArray(childResult)
-            ? childResult
-            : [childResult]
+          const resultArray = Array.isArray(childResult) ? childResult : [childResult]
           return resultArray
         })
         const zstackFlattened = zstackRenderedChildren.flat()
@@ -442,6 +382,7 @@ export class LayoutComponent
           type: 'element',
           tag: this.effectiveTag,
           props: {
+            id: this.id,
             className: classString,
             style: {
               display: 'flex',
@@ -526,5 +467,13 @@ export function ZStack(props: ZStackProps = {}) {
   const component = new LayoutComponent(props, 'zstack', children, {
     alignment,
   })
-  return withModifiers(component)
+  const modifiableComponent = createModifiableComponent(component)
+  const modifierBuilder = createModifierBuilder(modifiableComponent)
+
+  const result: any = {
+    ...modifiableComponent,
+    modifier: modifierBuilder,
+    modifierBuilder: modifierBuilder,
+  }
+  return result
 }

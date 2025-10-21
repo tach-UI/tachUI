@@ -20,6 +20,10 @@
       "types": "./dist/types.d.ts",
       "import": "./dist/types.js"
     },
+    "./basic": {
+      "types": "./dist/basic/index.d.ts",
+      "import": "./dist/basic/index.js"
+    },
     "./basic/padding": {
       "types": "./dist/basic/padding.d.ts",
       "import": "./dist/basic/padding.js"
@@ -55,6 +59,10 @@
     "./utility": {
       "types": "./dist/utility/index.d.ts",
       "import": "./dist/utility/index.js"
+    },
+    "./effects": {
+      "types": "./dist/effects.d.ts",
+      "import": "./dist/effects.js"
     }
   },
   "files": [
@@ -62,6 +70,8 @@
   ],
   "scripts": {
     "build": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
+    "build:dev": "rm -rf dist && vite build --mode development --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
+    "build:prod": "rm -rf dist && vite build --mode production --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "dev": "vite build --watch",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest run",
@@ -73,7 +83,8 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "workspace:*"
+    "@tachui/core": "workspace:*",
+    "@tachui/registry": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -173,3 +173,6 @@ registerAsset(ColorAsset.init({
   default: '#FFFFFF',
   name: 'systemWhite'
 }))
+
+// Re-export gradient functions from the same module context to ensure instanceof checks work
+export { LinearGradient, StateGradient, RadialGradient } from '../gradients'

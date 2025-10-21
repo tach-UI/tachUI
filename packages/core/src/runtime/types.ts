@@ -89,11 +89,11 @@ export interface ComponentInstance<P extends ComponentProps = ComponentProps> {
   id: string
   ref?: Ref | undefined
   mounted?: boolean
-  
+
   // ENHANCED: Multiple DOM element support
-  domElements?: Map<string, Element>     // Support components with multiple elements
-  primaryElement?: Element               // Main element for simple cases
-  
+  domElements?: Map<string, Element> // Support components with multiple elements
+  primaryElement?: Element // Main element for simple cases
+
   // NEW: DOM readiness tracking
   domReady?: boolean
 }
@@ -114,6 +114,7 @@ export interface DOMNode {
   text?: string
   element?: Element | Text | Comment | undefined
   dispose?: (() => void) | undefined
+  reactiveContent?: (() => string) | undefined
 }
 
 /**
@@ -149,14 +150,20 @@ export interface LifecycleHooks<P extends ComponentProps = ComponentProps> {
   onMount?: () => undefined | (() => void)
   onUpdate?: (prevProps: P, nextProps: P) => void
   onPropsChange?: (prevProps: P, nextProps: P, changedKeys: (keyof P)[]) => void
-  onChildrenChange?: (prevChildren: ComponentChildren, nextChildren: ComponentChildren) => void
+  onChildrenChange?: (
+    prevChildren: ComponentChildren,
+    nextChildren: ComponentChildren
+  ) => void
   onUnmount?: () => void
   onError?: (error: Error) => void
   shouldUpdate?: (prevProps: P, nextProps: P) => boolean
   onRender?: () => void
-  
+
   // ENHANCED: DOM-aware lifecycle hooks (Phase 1)
-  onDOMReady?: (elements: Map<string, Element>, primary?: Element) => void | (() => void)
+  onDOMReady?: (
+    elements: Map<string, Element>,
+    primary?: Element
+  ) => void | (() => void)
   onDOMError?: (error: DOMError, context: string) => void
 }
 
@@ -168,7 +175,6 @@ export interface DOMError extends Error {
   element?: Element
   context?: string
 }
-
 
 /**
  * Cleanup function type

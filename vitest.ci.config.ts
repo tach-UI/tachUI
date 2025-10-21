@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    setupFiles: ['./tools/testing/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -64,18 +65,30 @@ export default defineConfig({
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
 
     alias: [
-      // Core packages - use built dist for proper type resolution
+      // Core packages - use src for consistent testing with local environment
       {
         find: '@tachui/core/plugins',
-        replacement: path.resolve(__dirname, 'packages/core/dist/plugins'),
+        replacement: path.resolve(__dirname, 'packages/core/src/plugins'),
+      },
+      {
+        find: '@tachui/core/minimal',
+        replacement: path.resolve(__dirname, 'packages/core/src/bundles/minimal'),
+      },
+      {
+        find: '@tachui/core/gradients',
+        replacement: path.resolve(__dirname, 'packages/core/src/gradients'),
+      },
+      {
+        find: '@tachui/core/assets',
+        replacement: path.resolve(__dirname, 'packages/core/src/assets'),
       },
       {
         find: '@tachui/core',
-        replacement: path.resolve(__dirname, 'packages/core/dist'),
+        replacement: path.resolve(__dirname, 'packages/core/src'),
       },
       {
         find: '@tachui/primitives',
-        replacement: path.resolve(__dirname, 'packages/primitives/dist'),
+        replacement: path.resolve(__dirname, 'packages/primitives/src'),
       },
       {
         find: '@tachui/devtools',

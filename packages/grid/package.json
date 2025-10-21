@@ -26,6 +26,8 @@
   ],
   "scripts": {
     "build": "rm -rf dist && vite build",
+    "build:dev": "rm -rf dist && vite build --mode development",
+    "build:prod": "rm -rf dist && vite build --mode production",
     "dev": "vite build --watch",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest",
@@ -40,7 +42,8 @@
   "dependencies": {
     "@tachui/core": "workspace:*",
     "@tachui/responsive": "workspace:*",
-    "@tachui/modifiers": "workspace:*"
+    "@tachui/modifiers": "workspace:*",
+    "@tachui/registry": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

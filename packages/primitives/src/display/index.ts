@@ -26,3 +26,16 @@ export {
 } from './Image'
 
 export { HTML, H1, H2, H3, H4, H5, H6 } from './HTML'
+
+export {
+  ScrollView,
+  EnhancedScrollView,
+  ScrollViewUtils,
+  type ScrollViewProps,
+  type ScrollDirection,
+  type ScrollBehavior,
+  type ContentOffset,
+  type ScrollEdges,
+  type ScrollEventInfo,
+  type PullToRefreshState,
+} from './ScrollView'

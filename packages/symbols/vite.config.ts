@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     dts({
       insertTypesEntry: true,
@@ -49,7 +49,7 @@ export default defineConfig({
         // },
       },
     },
-    sourcemap: false,
+    sourcemap: mode !== 'production',
     minify: 'esbuild',
     target: 'es2020',
   },
@@ -58,4 +58,4 @@ export default defineConfig({
     globals: true,
     setupFiles: ['../core/__tests__/setup.ts'],
   },
-})
+}))

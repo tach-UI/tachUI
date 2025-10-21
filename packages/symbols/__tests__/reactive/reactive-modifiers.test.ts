@@ -7,6 +7,7 @@ import { Symbol } from '../../src/components/Symbol.js'
 import { createSignal, createComputed } from '@tachui/core'
 import { IconSetRegistry } from '../../src/icon-sets/registry.js'
 import { LucideIconSet } from '../../src/icon-sets/lucide.js'
+import '@tachui/modifiers' // Auto-register modifiers for Proxy access
 import { scaleEffect } from '@tachui/modifiers'
 
 // Mock the Lucide heart icon

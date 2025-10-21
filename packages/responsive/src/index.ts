@@ -30,8 +30,7 @@ export {
   DEFAULT_BREAKPOINTS,
 } from './modifiers/responsive'
 
-// Registry integration for responsive modifiers
-import { globalModifierRegistry } from '@tachui/core'
+// Import the functions synchronously for immediate availability
 import {
   createResponsiveModifier,
   createMediaQueryModifier,
@@ -39,22 +38,24 @@ import {
   createResponsiveLayoutModifier,
 } from './modifiers/responsive'
 
-const responsiveModifierRegistrations: Array<
-  [string, (...args: any[]) => any]
-> = [
-  ['responsive', createResponsiveModifier],
-  ['mediaQuery', createMediaQueryModifier],
-  ['responsiveProperty', createResponsivePropertyModifier],
-  ['responsiveLayout', createResponsiveLayoutModifier],
+// Lazy registration for responsive modifiers
+import { registerLazyModifier } from '@tachui/registry'
+
+// Create synchronous lazy loaders for responsive modifiers
+const responsiveLazyLoaders: Array<[string, () => any]> = [
+  ['responsive', () => createResponsiveModifier],
+  ['mediaQuery', () => createMediaQueryModifier],
+  ['responsiveProperty', () => createResponsivePropertyModifier],
+  ['responsiveLayout', () => createResponsiveLayoutModifier],
 ]
 
-// Auto-register responsive modifiers on import
-responsiveModifierRegistrations.forEach(([name, factory]) => {
-  globalModifierRegistry.register(name, factory)
+// Register lazy loaders for responsive modifiers
+responsiveLazyLoaders.forEach(([name, loader]) => {
+  registerLazyModifier(name, loader)
 })
 
 if (process.env.NODE_ENV !== 'production') {
   console.info(
-    `🔍 [@tachui/responsive] Registered ${responsiveModifierRegistrations.length} responsive modifiers with global registry`
+    `📦 [@tachui/responsive] Registered ${responsiveLazyLoaders.length} lazy loaders for responsive modifiers`
   )
 }

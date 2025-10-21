@@ -12,3 +12,6 @@ export * from './margin'
 
 // Size modifiers
 export * from './size'
+
+// Animation modifiers
+export * from './animation'

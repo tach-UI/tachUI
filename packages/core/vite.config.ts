@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     lib: {
       entry: {
@@ -15,10 +15,12 @@ export default defineConfig({
         'minimal-prod': resolve(__dirname, 'src/bundles/production-minimal.ts'), // ~45KB production
 
         // Granular exports (for maximum optimization)
+        version: resolve(__dirname, 'src/version.ts'),
         'reactive/index': resolve(__dirname, 'src/reactive/index.ts'),
         'compiler/index': resolve(__dirname, 'src/compiler/index.ts'),
         'components/index': resolve(__dirname, 'src/components/index.ts'),
         'plugins/index': resolve(__dirname, 'src/plugins/index.ts'),
+        'state/index': resolve(__dirname, 'src/state/index.ts'),
         'runtime/dom-bridge': resolve(__dirname, 'src/runtime/dom-bridge.ts'),
         'runtime/renderer': resolve(__dirname, 'src/runtime/renderer.ts'),
         'modifiers/index': resolve(__dirname, 'src/modifiers/index.ts'),
@@ -27,22 +29,15 @@ export default defineConfig({
         'modifiers/builder': resolve(__dirname, 'src/modifiers/builder.ts'),
         'modifiers/registry': resolve(__dirname, 'src/modifiers/registry.ts'),
         'runtime/types': resolve(__dirname, 'src/runtime/types.ts'),
-        'runtime/concatenation-minimal': resolve(
-          __dirname,
-          'src/runtime/concatenation-minimal.ts'
-        ),
-        'runtime/concatenation-aria': resolve(
-          __dirname,
-          'src/runtime/concatenation-aria.ts'
-        ),
-        'runtime/concatenation-full': resolve(
-          __dirname,
-          'src/runtime/concatenation-full.ts'
-        ),
+        'runtime/index': resolve(__dirname, 'src/runtime/index.ts'),
+        'runtime/concatenation-minimal': resolve(__dirname, 'src/runtime/concatenation-minimal.ts'),
+        'runtime/concatenation-aria': resolve(__dirname, 'src/runtime/concatenation-aria.ts'),
+        'runtime/concatenation-full': resolve(__dirname, 'src/runtime/concatenation-full.ts'),
         'reactive/types': resolve(__dirname, 'src/reactive/types.ts'),
         'constants/layout': resolve(__dirname, 'src/constants/layout.ts'),
         'validation/index': resolve(__dirname, 'src/validation/index.ts'),
-
+        'assets/index': resolve(__dirname, 'src/assets/index.ts'),
+        'gradients/index': resolve(__dirname, 'src/gradients/index.ts'),
         'css-classes/index': resolve(__dirname, 'src/css-classes/index.ts'),
       },
       name: 'TachUICore',
@@ -68,7 +63,7 @@ export default defineConfig({
         manualChunks: undefined, // Let Rollup optimize chunking
       },
     },
-    sourcemap: false,
+    sourcemap: mode !== 'production',
     minify: 'esbuild',
     target: 'es2020',
   },
@@ -76,9 +71,4 @@ export default defineConfig({
   esbuild: {
     target: 'es2020',
   },
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./test/setup.ts'],
-  },
-})
+}))

@@ -3,7 +3,7 @@
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -15,7 +15,17 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@tachui/core": ["../core/dist"],
+      "@tachui/primitives": ["../primitives/dist"],
+      "@tachui/forms": ["../forms/dist"],
+      "@tachui/navigation": ["../navigation/dist"],
+      "@tachui/symbols": ["../symbols/dist"],
+      "@tachui/cli": ["../cli/dist"],
+      "@tachui/registry": ["../registry/dist"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["**/*.test.ts", "**/*.bench.ts", "node_modules", "dist"]

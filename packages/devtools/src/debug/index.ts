@@ -7,6 +7,9 @@
 // Re-export debug system
 export * from './debug'
 
+// Explicitly export debugManager for direct access
+export { debugManager } from './debug'
+
 // Re-export enhanced errors and types
 export * from './enhanced-errors'
 export * from './enhanced-types'

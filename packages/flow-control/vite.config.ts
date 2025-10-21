@@ -1,11 +1,13 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
+        'conditional/index': resolve(__dirname, 'src/conditional/index.ts'),
+        'iteration/index': resolve(__dirname, 'src/iteration/index.ts'),
       },
       name: 'TachUIFlowControl',
       formats: ['es'],
@@ -24,11 +26,11 @@ export default defineConfig({
         exports: 'named',
       },
     },
-    sourcemap: false,
+    sourcemap: mode !== 'production',
     minify: 'esbuild',
     target: 'es2020',
   },
   esbuild: {
     target: 'es2020',
   },
-})
+}))

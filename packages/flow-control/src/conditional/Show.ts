@@ -4,7 +4,7 @@
  * Reactive implementation that works with TachUI's reactive architecture
  */
 
-import { createEffect, createRoot, isComputed, isSignal } from '@tachui/core'
+import { createEffect, isComputed, isSignal } from '@tachui/core'
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import { DOMRenderer } from '@tachui/core'
 
@@ -79,6 +79,7 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
   render(): DOMNode[] {
     // Check if condition is reactive
     const { when } = this.props
+
     const isReactive =
       typeof when === 'function' || isSignal(when) || isComputed(when)
 
@@ -102,30 +103,48 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
       dispose: undefined,
     }
 
-    // Create reactive effect that updates the container
-    const cleanup = createRoot(() => {
-      const effect = createEffect(() => {
-        const content = this.getContent()
+    // Create reactive effect directly - no createRoot isolation
+    const effect = createEffect(() => {
+      // Directly call the when function to ensure reactive subscription
+      const { when } = this.props
+      let condition: boolean
 
-        if (content) {
-          const rendered = content.render()
-          const nodes = Array.isArray(rendered) ? rendered : [rendered]
-          containerNode.children = nodes
-        } else {
-          containerNode.children = []
-        }
+      if (typeof when === 'boolean') {
+        condition = when
+      } else if (typeof when === 'function') {
+        // Call the signal directly - this is the key to reactive subscription
+        condition = when()
+      } else {
+        condition = false
+      }
 
-        // Update DOM if already rendered
-        if (
-          containerNode.element &&
-          containerNode.element instanceof HTMLElement
-        ) {
-          this.updateContainerDOM(containerNode.element, containerNode.children)
-        }
-      })
+      const { children, fallback } = this.props
+      const content = condition ? children : fallback
 
-      return () => effect.dispose()
+      if (content) {
+        const rendered = content.render()
+        const nodes = Array.isArray(rendered) ? rendered : [rendered]
+        containerNode.children = nodes
+      } else {
+        containerNode.children = []
+      }
+
+      // Update DOM if already rendered
+      if (
+        containerNode.element &&
+        containerNode.element instanceof HTMLElement
+      ) {
+        this.updateContainerDOM(containerNode.element, containerNode.children)
+      }
     })
+
+    // Store cleanup like other components do
+    this.cleanup.push(() => effect.dispose())
+
+    const cleanup = () => {
+      this.cleanup.forEach(fn => fn())
+      this.cleanup = []
+    }
 
     containerNode.dispose = cleanup
 

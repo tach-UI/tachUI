@@ -19,6 +19,7 @@ export { setTheme, detectSystemTheme, getCurrentTheme } from '../reactive/theme'
 export * from '../runtime/dom-bridge'
 export * from '../runtime/component'
 export * from '../runtime/props'
+export type { ComponentInstance } from '../runtime/types'
 
 // Context system (commonly needed for apps)
 export {
@@ -73,6 +74,9 @@ export { infinity, Layout, isInfinity } from '../constants'
 export { LinearGradient, StateGradient } from '../gradients'
 
 // Debug system: @tachui/devtools
+
+// Package Information - consistent across all TachUI packages
+export { TACHUI_PACKAGE, TACHUI_PACKAGE_VERSION, VERSION } from '../version'
 
 /**
  * Minimal Bundle Metadata

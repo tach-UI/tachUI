@@ -25,25 +25,39 @@
 
     "baseUrl": ".",
     "paths": {
-      "@tachui/core": ["./packages/core/dist"],
-      "@tachui/primitives": ["./packages/primitives/dist"],
-      "@tachui/forms": ["./packages/forms/dist"],
-      "@tachui/navigation": ["./packages/navigation/dist"],
-      "@tachui/symbols": ["./packages/symbols/dist"],
-      "@tachui/mobile": ["./packages/mobile/dist"],
-      "@tachui/effects": ["./packages/effects/dist"],
-      "@tachui/cli": ["./packages/cli/dist"]
+      "@tachui/core": ["./packages/core/dist/index.d.ts"],
+      "@tachui/core/*": ["./packages/core/dist/*"],
+      "@tachui/primitives": ["./packages/primitives/dist/index.d.ts"],
+      "@tachui/primitives/*": ["./packages/primitives/dist/*"],
+      "@tachui/forms": ["./packages/forms/dist/index.d.ts"],
+      "@tachui/forms/*": ["./packages/forms/dist/*"],
+      "@tachui/navigation": ["./packages/navigation/dist/index.d.ts"],
+      "@tachui/navigation/*": ["./packages/navigation/dist/*"],
+      "@tachui/symbols": ["./packages/symbols/dist/index.d.ts"],
+      "@tachui/symbols/*": ["./packages/symbols/dist/*"],
+      "@tachui/mobile": ["./packages/mobile/dist/index.d.ts"],
+      "@tachui/mobile/*": ["./packages/mobile/dist/*"],
+      "@tachui/effects": ["./packages/effects/dist/index.d.ts"],
+      "@tachui/effects/*": ["./packages/effects/dist/*"],
+      "@tachui/devtools": ["./packages/devtools/dist/index.d.ts"],
+      "@tachui/devtools/*": ["./packages/devtools/dist/*"],
+      "@tachui/cli": ["./packages/cli/dist/index.d.ts"],
+      "@tachui/cli/*": ["./packages/cli/dist/*"],
+      "@tachui/registry": ["./packages/registry/dist/index.d.ts"],
+      "@tachui/registry/*": ["./packages/registry/dist/*"]
     }
   },
   "include": [],
   "references": [
     { "path": "./packages/core" },
+    { "path": "./packages/registry" },
     { "path": "./packages/primitives" },
     { "path": "./packages/forms" },
     { "path": "./packages/navigation" },
     { "path": "./packages/symbols" },
     { "path": "./packages/mobile" },
     { "path": "./packages/effects" },
+    { "path": "./packages/devtools" },
     { "path": "./packages/cli" }
   ]
 }

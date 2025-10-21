@@ -24,6 +24,15 @@ export type FontWeight =
   | '700'
   | '800'
   | '900'
+  | 100
+  | 200
+  | 300
+  | 400
+  | 500
+  | 600
+  | 700
+  | 800
+  | 900
 export type FontStyle = 'normal' | 'italic' | 'oblique'
 export type FontVariant = 'normal' | 'small-caps'
 export type TextAlign =
@@ -190,21 +199,10 @@ export interface AppearanceModifierProps {
   background?: StatefulBackgroundValue
   opacity?: number
   font?: {
-    family?: string
+    family?: string | AssetValue
     size?: number | string | Signal<number> | Signal<string>
-    weight?:
-      | 'normal'
-      | 'bold'
-      | '100'
-      | '200'
-      | '300'
-      | '400'
-      | '500'
-      | '600'
-      | '700'
-      | '800'
-      | '900'
-    style?: 'normal' | 'italic' | 'oblique'
+    weight?: FontWeight
+    style?: FontStyle
   }
   cornerRadius?: number
   border?: {
@@ -357,35 +355,11 @@ export interface ModifierBuilder<
   // Layout modifiers
   frame(width?: Dimension, height?: Dimension): ModifierBuilder<T>
   frame(options: LayoutModifierProps['frame']): ModifierBuilder<T>
-  padding(value: number): ModifierBuilder<T>
-  padding(options: LayoutModifierProps['padding']): ModifierBuilder<T>
-  margin(value: number | string): ModifierBuilder<T>
-  margin(options: LayoutModifierProps['margin']): ModifierBuilder<T>
 
-  // New multi-property modifiers
-  size(options: {
-    width?: Dimension
-    height?: Dimension
-    minWidth?: Dimension
-    maxWidth?: Dimension
-    minHeight?: Dimension
-    maxHeight?: Dimension
-  }): ModifierBuilder<T>
-  width(value: Dimension): ModifierBuilder<T>
-  height(value: Dimension): ModifierBuilder<T>
-  maxWidth(value: Dimension): ModifierBuilder<T>
-  minWidth(value: Dimension): ModifierBuilder<T>
-  maxHeight(value: Dimension): ModifierBuilder<T>
-  minHeight(value: Dimension): ModifierBuilder<T>
-  marginTop(value: number | string): ModifierBuilder<T>
-  marginBottom(value: number | string): ModifierBuilder<T>
-  marginHorizontal(value: number | string): ModifierBuilder<T>
-  marginVertical(value: number | string): ModifierBuilder<T>
+  // Padding, margin, size modifiers moved to @tachui/modifiers
+  // Available via Proxy when @tachui/modifiers is imported
 
-  // Typography modifiers
-  textAlign(
-    value: 'left' | 'center' | 'right' | 'justify' | 'start' | 'end'
-  ): ModifierBuilder<T>
+  // Typography modifiers (most moved to @tachui/modifiers, available via Proxy)
   textTransform(
     value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
   ): ModifierBuilder<T>
@@ -562,15 +536,9 @@ export interface ModifierBuilder<
     including?: ('all' | 'subviews' | 'none')[]
   ): ModifierBuilder<T>
 
-  // HTML and ARIA Attributes
-  id(value: string): ModifierBuilder<T>
-  data(attributes: {
-    [key: string]: string | number | boolean
-  }): ModifierBuilder<T>
-  aria(attributes: {
-    [key: string]: string | number | boolean | undefined
-  }): ModifierBuilder<T>
-  tabIndex(value: number): ModifierBuilder<T>
+  // HTML and ARIA Attributes moved to @tachui/modifiers
+  // Available via Proxy when @tachui/modifiers is imported:
+  // - id(), data(), aria(), tabIndex()
 
   // Text Modifiers
   lineClamp(lines: number): ModifierBuilder<T>
@@ -580,25 +548,7 @@ export interface ModifierBuilder<
   overflowWrap(value: 'normal' | 'break-word' | 'anywhere'): ModifierBuilder<T>
   hyphens(value: 'none' | 'manual' | 'auto'): ModifierBuilder<T>
 
-  // Backdrop Filter Modifiers (Unified Implementation)
-  backdropFilter(
-    config: {
-      blur?: number
-      brightness?: number
-      contrast?: number
-      saturate?: number
-      [key: string]: any
-    },
-    fallbackColor?: ColorValue
-  ): ModifierBuilder<T>
-  backdropFilter(
-    cssValue: string,
-    fallbackColor?: ColorValue
-  ): ModifierBuilder<T>
-  glassmorphism(
-    intensity?: 'subtle' | 'light' | 'medium' | 'heavy',
-    customFallback?: ColorValue
-  ): ModifierBuilder<T>
+
 
   // State modifiers
   disabled(isDisabled?: boolean | Signal<boolean>): ModifierBuilder<T>
@@ -758,6 +708,9 @@ export interface ModifierBuilder<
 
   // Build the final component with all modifiers applied
   build(): T
+
+  // Dynamic modifier access from registry
+  [key: string]: any
 }
 
 /**
@@ -767,6 +720,7 @@ export interface ModifiableComponent<P extends ComponentProps = ComponentProps>
   extends ComponentInstance<P> {
   modifiers: Modifier[]
   modifierBuilder?: ModifierBuilder<ModifiableComponent<P>>
+  _originalComponent?: ComponentInstance<P> // Reference to original component for modifier context
 }
 
 /**

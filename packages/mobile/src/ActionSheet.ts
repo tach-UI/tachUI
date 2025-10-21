@@ -11,7 +11,7 @@ import type { Signal } from '@tachui/core'
 import { h } from '@tachui/core'
 import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
 import { withModifiers } from '@tachui/core'
-import { useLifecycle } from '@tachui/core'
+import { useLifecycle } from '@tachui/core/runtime'
 
 /**
  * Action button roles that determine styling and behavior

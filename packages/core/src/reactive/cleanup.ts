@@ -8,6 +8,17 @@
 import { getCurrentOwner } from './context'
 import type { CleanupFunction, Owner } from './types'
 
+// Global development flag
+declare const __DEV__: boolean
+
+// Build-time injected globals
+declare const process: {
+  env: {
+    NODE_ENV: string
+    [key: string]: any
+  }
+}
+
 /**
  * Add a cleanup function to the current reactive context
  *

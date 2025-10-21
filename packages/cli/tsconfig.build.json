@@ -8,7 +8,6 @@
     "isolatedModules": true,
     "noEmit": false,
     "outDir": "./dist",
-    "rootDir": "./src",
 
     "strict": true,
     "noUnusedLocals": false,
@@ -25,9 +24,10 @@
 
     "baseUrl": ".",
     "paths": {
-      "@tachui/core": ["../core/src"]
+      "@tachui/core": ["../core/src"],
+      "@tachui/devtools": ["../devtools/src"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/globals.d.ts"],
   "exclude": ["dist", "**/*.test.ts"]
 }

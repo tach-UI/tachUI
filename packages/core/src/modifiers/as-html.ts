@@ -1,6 +1,6 @@
 /**
  * AsHTML Modifier - Renders Text component content as HTML
- * 
+ *
  * Security-first design with:
  * - Text component restriction only
  * - Built-in basic sanitization by default
@@ -35,7 +35,7 @@ export interface TextComponent extends ComponentInstance {
 
 export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
   readonly type = 'asHTML'
-  readonly priority = 25 // After layout, before styling
+  readonly priority = 10 // Early priority to apply before other modifiers
 
   constructor(options: AsHTMLOptions = {}) {
     super(options)
@@ -46,6 +46,7 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
 
     // Security check: Only allow Text components
     const component = context.componentInstance
+
     if (!this.isTextComponent(component)) {
       throw new Error(
         `AsHTML modifier can only be applied to Text components. ` +
@@ -56,7 +57,7 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
 
     // Get the content from the Text component
     const htmlContent = this.getTextComponentContent(component)
-    
+
     if (!htmlContent) {
       if (process.env.NODE_ENV === 'development') {
         console.warn('asHTML: No content found in Text component')
@@ -66,15 +67,15 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
 
     // Process and apply HTML content (non-reactive for performance)
     const processedHTML = this.sanitizeHTML(htmlContent)
-    
+
     // Clear all existing child nodes first
     while (context.element.firstChild) {
       context.element.removeChild(context.element.firstChild)
     }
-    
+
     // Set HTML content
     context.element.innerHTML = processedHTML
-    
+
     // Mark element to prevent text() function from overwriting innerHTML
     ;(context.element as any).__tachui_asHTML = true
 
@@ -89,29 +90,62 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
   private isTextComponent(component: any): boolean {
     // Check if component is a Text component
     // Multiple checks for different ways Text components might be identified
-    return component.type === 'Text' || 
-           component.constructor?.name === 'TextComponent' ||
-           component.__tachui_component_type === 'Text' ||
-           (component.props && component.props.__componentType === 'Text') ||
-           // Check componentMetadata for enhanced Text components
-           (component.componentMetadata && component.componentMetadata.type === 'Text') ||
-           (component.componentMetadata && component.componentMetadata.originalType === 'Text')
+    if (component.type === 'Text' ||
+        component.constructor?.name === 'TextComponent' ||
+        component.__tachui_component_type === 'Text' ||
+        (component.props && component.props.__componentType === 'Text') ||
+        // Check componentMetadata for enhanced Text components (primary check for new Text components)
+        (component.componentMetadata && component.componentMetadata.originalType === 'Text') ||
+        (component.componentMetadata && component.componentMetadata.type === 'Text') ||
+        // Check constructor name for EnhancedText
+        component.constructor?.name === 'EnhancedText' ||
+        // Check for EnhancedText instance properties (type=component, effectiveTag=span, has concat methods)
+        (component.type === 'component' && component.effectiveTag === 'span' &&
+         component.validationResult && typeof component.concat === 'function' &&
+         typeof component.isConcatenatable === 'function' &&
+         component.props && typeof component.props.content === 'string') ||
+        // Check _originalComponent for modifiable components
+        (component._originalComponent && component._originalComponent.type === 'component' &&
+         component._originalComponent.constructor?.name === 'EnhancedText') ||
+        (component._originalComponent && component._originalComponent.componentMetadata &&
+         component._originalComponent.componentMetadata.originalType === 'Text') ||
+        // Check _originalComponent for EnhancedText properties
+        (component._originalComponent && component._originalComponent.type === 'component' &&
+         component._originalComponent.effectiveTag === 'span' &&
+         component._originalComponent.validationResult &&
+         typeof component._originalComponent.concat === 'function' &&
+         component._originalComponent.props && typeof component._originalComponent.props.content === 'string')) {
+      return true
+    }
+
+    // Fallback: If component is a DOM element, check its metadata
+    if (component.type === 'element' && component.componentMetadata) {
+      return component.componentMetadata.originalType === 'Text' ||
+             component.componentMetadata.type === 'Text'
+    }
+
+    return false
   }
 
   private getTextComponentContent(component: any): string {
     // Extract content from Text component
     // Text components should have their content in a predictable location
-    
+
     // Primary: Direct content property
     if (typeof component.content === 'string') {
       return component.content
     }
-    
+
     // Secondary: Props content
     if (component.props && typeof component.props.content === 'string') {
       return component.props.content
     }
-    
+
+    // Check _originalComponent for modifiable components
+    if (component._originalComponent && component._originalComponent.props && typeof component._originalComponent.props.content === 'string') {
+      return component._originalComponent.props.content
+    }
+
     // Tertiary: Check children array for text nodes (for enhanced Text components)
     if (component.children && Array.isArray(component.children) && component.children.length > 0) {
       const firstChild = component.children[0]
@@ -119,12 +153,12 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
         return firstChild.text
       }
     }
-    
+
     // Quaternary: Text property
     if (typeof component.text === 'string') {
       return component.text
     }
-    
+
     // Fifth: Check props for common text properties
     if (component.props) {
       if (typeof component.props.text === 'string') {
@@ -132,6 +166,14 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
       }
       if (typeof component.props.children === 'string') {
         return component.props.children
+      }
+    }
+
+    // Fallback: If component is DOM element with metadata, get content from component instance
+    if (component.type === 'element' && component.componentMetadata && component.componentMetadata.componentInstance) {
+      const instance = component.componentMetadata.componentInstance
+      if (instance.props && typeof instance.props.content === 'string') {
+        return instance.props.content
       }
     }
 
@@ -190,23 +232,23 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
 
 /**
  * Create an asHTML modifier for rendering HTML content
- * 
+ *
  * By default, applies basic sanitization to remove common XSS vectors.
  * Use { skipSanitizer: true } to bypass sanitization (dangerous).
- * 
+ *
  * The modifier treats the component's content as HTML instead of plain text.
  * SECURITY: Only works on Text components.
- * 
+ *
  * @param options - Configuration options
- * 
+ *
  * @example
  * ```typescript
  * // Safe: Basic sanitization applied
  * Text('<p>Hello <strong>world</strong></p>').modifier.asHTML().build()
- * 
+ *
  * // Dangerous: Skip sanitization
  * Text(serverTemplate).modifier.asHTML({ skipSanitizer: true }).build()
- * 
+ *
  * // Custom sanitization
  * Text(content).modifier.asHTML({ customSanitizer: DOMPurify.sanitize }).build()
  * ```

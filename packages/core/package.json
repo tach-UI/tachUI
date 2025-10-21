@@ -97,12 +97,28 @@
       "import": "./dist/viewport/index.js"
     },
     "./assets": {
-      "types": "./dist/bundles/assets.d.ts",
-      "import": "./dist/bundles/assets.js"
+      "types": "./dist/assets/index.d.ts",
+      "import": "./dist/assets/index.js"
     },
     "./context": {
       "types": "./dist/bundles/context.d.ts",
       "import": "./dist/bundles/context.js"
+    },
+    "./state": {
+      "types": "./dist/state/index.d.ts",
+      "import": "./dist/state/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./version": {
+      "types": "./dist/version.d.ts",
+      "import": "./dist/version.js"
+    },
+    "./gradients": {
+      "types": "./dist/gradients/index.d.ts",
+      "import": "./dist/gradients/index.js"
     }
   },
   "files": [
@@ -110,6 +126,8 @@
   ],
   "scripts": {
     "build": "rm -rf dist && vite build && tsc --project tsconfig.build.json",
+    "build:dev": "rm -rf dist && vite build --mode development && tsc --project tsconfig.build.json",
+    "build:prod": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json",
     "dev": "vite build --watch",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest run",
@@ -142,9 +160,7 @@
     "migrate:fix": "node scripts/migration-tool.js --fix"
   },
   "dependencies": {
-    "@tachui/devtools": "workspace:*",
-    "@tachui/primitives": "workspace:*",
-    "@tachui/modifiers": "workspace:*"
+    "@tachui/registry": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

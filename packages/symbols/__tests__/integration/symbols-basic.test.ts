@@ -4,6 +4,7 @@ import { IconSetRegistry } from '../../src/icon-sets/registry.js'
 import { LucideIconSet } from '../../src/icon-sets/lucide.js'
 import { suppressErrors } from '../utils/suppress-errors.js'
 import { createSignal } from '@tachui/core'
+import '@tachui/modifiers' // Auto-register modifiers for Proxy access
 
 // Mock DOM for testing
 Object.assign(global, {

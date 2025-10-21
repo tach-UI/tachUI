@@ -9,9 +9,17 @@ import {
   type FontStyle,
   type FontWeight,
 } from './typography'
+import type {
+  Asset,
+  ColorAssetProxy,
+  ImageAssetProxy,
+  FontAssetProxy,
+} from '@tachui/core/assets'
+
+type FontAssetInput = Asset | ColorAssetProxy | ImageAssetProxy | FontAssetProxy
 
 export interface FontOptions {
-  family?: string | any
+  family?: string | FontAssetInput
   size?: number | string
   weight?: FontWeight | any
   style?: FontStyle
@@ -82,7 +90,7 @@ export function system(options: {
 }
 
 export function custom(
-  family: string | any,
+  family: string | FontAssetInput,
   options?: {
     size?: number | string
     weight?: FontWeight | any

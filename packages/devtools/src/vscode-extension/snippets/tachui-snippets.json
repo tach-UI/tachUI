@@ -1,0 +1,63 @@
+{
+  "TachUI Layout Imports": {
+    "prefix": "tachui-layout",
+    "body": [
+      "import { ${1|VStack,HStack,Spacer|} } from '@tachui/primitives/layout'"
+    ],
+    "description": "Import TachUI layout components (8KB)"
+  },
+  "TachUI Display Imports": {
+    "prefix": "tachui-display",
+    "body": [
+      "import { ${1|Text,Image,ScrollView|} } from '@tachui/primitives/display'"
+    ],
+    "description": "Import TachUI display components (12KB)"
+  },
+  "TachUI Control Imports": {
+    "prefix": "tachui-controls",
+    "body": [
+      "import { ${1|Button,TextField,Toggle|} } from '@tachui/primitives/controls'"
+    ],
+    "description": "Import TachUI control components (15KB)"
+  },
+  "TachUI Reactive Imports": {
+    "prefix": "tachui-reactive",
+    "body": [
+      "import { ${1|createSignal,createEffect,createComputed,onCleanup|} } from '@tachui/core/reactive'"
+    ],
+    "description": "Import TachUI reactive functions (12KB)"
+  },
+  "TachUI Flow Control": {
+    "prefix": "tachui-flow",
+    "body": [
+      "import { ${1|Show,ForEach,Unless|} } from '@tachui/flow-control'"
+    ],
+    "description": "Import TachUI flow control components"
+  },
+  "TachUI Minimal Bundle": {
+    "prefix": "tachui-minimal",
+    "body": [
+      "import { ${1|createSignal,createEffect|} } from '@tachui/core/minimal'",
+      "import { ${2|VStack,HStack|} } from '@tachui/primitives/layout'"
+    ],
+    "description": "Minimal TachUI imports for small apps (~15KB)"
+  },
+  "TachUI Component Setup": {
+    "prefix": "tachui-component",
+    "body": [
+      "import { ${1:VStack} } from '@tachui/primitives/layout'",
+      "import { ${2:Text} } from '@tachui/primitives/display'",
+      "import { ${3:createSignal} } from '@tachui/core/reactive'",
+      "import { ComponentInstance } from '@tachui/core/runtime/types'",
+      "",
+      "export function ${4:MyComponent}(): ComponentInstance {",
+      "  const [${5:state}, set${5/(.*)/${1:/capitalize}/}] = ${3}('${6:initial}')",
+      "  ",
+      "  return ${1}(",
+      "    ${2}(${5}),",
+      "  ).${7|padding,margin,backgroundColor|}('${8:16px}')",
+      "}"
+    ],
+    "description": "Complete TachUI component with optimal imports"
+  }
+}

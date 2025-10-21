@@ -221,7 +221,38 @@ export class DOMRenderer {
    * Create a text node
    */
   private createTextNode(node: DOMNode): Text {
-    return document.createTextNode(node.text || '')
+    const textElement = document.createTextNode(node.text || '')
+
+    // Set up reactivity if this is a reactive text node
+    if (node.reactiveContent) {
+      const content = node.reactiveContent
+
+      // Create reactive effect now that we have the DOM element
+      const effect = createEffect(() => {
+        try {
+          const newText = content()
+          node.text = String(newText)
+
+          // Check if parent element has AsHTML flag
+          const parentElement = textElement.parentElement
+          if (parentElement && (parentElement as any).__tachui_asHTML) {
+            // Skip updating text content when AsHTML is active
+            return
+          }
+
+          textElement.textContent = node.text
+        } catch (error) {
+          console.error('createTextNode() reactive effect error:', error)
+        }
+      })
+
+      // Store cleanup function on the node
+      node.dispose = () => {
+        effect.dispose()
+      }
+    }
+
+    return textElement
   }
 
   /**
@@ -544,7 +575,10 @@ export class DOMRenderer {
       const componentInstance =
         node.componentInstance ||
         (node.componentMetadata && node.componentMetadata.componentInstance) ||
+        (node._originalComponent) || // Use original component if available
         node
+
+
 
       // Apply modifiers with batching enabled for better performance
       applyModifiersToNode(
@@ -655,6 +689,11 @@ export function h(
     children: normalizedChildren,
   }
 
+  // Extract componentMetadata from props and store it on the node
+  if (props && 'componentMetadata' in props) {
+    ;(node as any).componentMetadata = props.componentMetadata
+  }
+
   return node
 }
 
@@ -671,33 +710,26 @@ export function text(content: string | (() => string)): DOMNode {
     const textNode: DOMNode = {
       type: 'text',
       text: '',
-      dispose: undefined,
+      reactiveContent: content, // Store the reactive content function
     }
 
-    // Create reactive effect
-    const cleanup = createRoot(() => {
-      const effect = createEffect(() => {
-        const newText = content()
-        textNode.text = String(newText)
-        // Update DOM if already rendered, but only if not using AsHTML modifier
-        if (textNode.element && textNode.element instanceof Text) {
-          // Check if parent element has AsHTML flag
-          const parentElement = textNode.element.parentElement
-          if (parentElement && (parentElement as any).__tachui_asHTML) {
-            // Skip updating text content when AsHTML is active
-            return
-          }
-          textNode.element.textContent = textNode.text
-        }
-      })
+    // Store the initial value immediately to establish tracking
+    const initialText = content()
+    textNode.text = String(initialText)
 
-      // Return cleanup function
-      return () => {
-        effect.dispose()
+    // Create reactive effect for updating text content
+    const effect = createEffect(() => {
+      const newText = content()
+      textNode.text = String(newText)
+
+      // Update DOM element if it exists
+      if (textNode.element && 'textContent' in textNode.element) {
+        textNode.element.textContent = String(newText)
       }
     })
 
-    textNode.dispose = cleanup
+    textNode.dispose = effect.dispose.bind(effect)
+
     return textNode
   }
 

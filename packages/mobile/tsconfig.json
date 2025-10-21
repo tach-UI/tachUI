@@ -15,10 +15,11 @@
       "@tachui/forms": ["../forms/src"],
       "@tachui/navigation": ["../navigation/src"],
       "@tachui/symbols": ["../symbols/src"],
-      "@tachui/cli": ["../cli/src"]
+      "@tachui/cli": ["../cli/src"],
+      "@tachui/registry": ["../registry/dist"]
     }
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules", "__tests__"],
-  "references": [{ "path": "../core" }, { "path": "../primitives" }]
+  "references": [{ "path": "../core" }, { "path": "../primitives" }, { "path": "../registry" }]
 }

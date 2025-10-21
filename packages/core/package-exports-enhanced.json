@@ -1,0 +1,76 @@
+{
+  "name": "@tachui/core",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "bundleSize": "45KB",
+      "description": "Full TachUI core framework - use specific imports for better tree-shaking"
+    },
+    "./minimal": {
+      "types": "./dist/minimal.d.ts",
+      "import": "./dist/minimal.js",
+      "bundleSize": "15KB",
+      "description": "Minimal bundle for calculator-style apps"
+    },
+    "./reactive": {
+      "types": "./dist/reactive/index.d.ts",
+      "import": "./dist/reactive/index.js",
+      "bundleSize": "12KB",
+      "description": "Reactive system only - createSignal, createEffect, createComputed"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js",
+      "bundleSize": "8KB",
+      "description": "Component runtime - withComponentContext, ComponentInstance"
+    },
+    "./assets": {
+      "types": "./dist/assets/index.d.ts",
+      "import": "./dist/assets/index.js",
+      "bundleSize": "6KB",
+      "description": "Asset management - Assets, registerAsset, createColorAsset"
+    },
+    "./modifiers": {
+      "types": "./dist/modifiers/index.d.ts",
+      "import": "./dist/modifiers/index.js",
+      "bundleSize": "25KB",
+      "description": "All modifiers - prefer @tachui/modifiers package"
+    }
+  },
+  "importSuggestions": {
+    "reactive": {
+      "when": ["createSignal", "createEffect", "createComputed", "onCleanup"],
+      "use": "@tachui/core/reactive",
+      "instead": "@tachui/core",
+      "savings": "33KB"
+    },
+    "runtime": {
+      "when": [
+        "withComponentContext",
+        "ComponentInstance",
+        "createComponentContext"
+      ],
+      "use": "@tachui/core/runtime",
+      "instead": "@tachui/core",
+      "savings": "37KB"
+    }
+  },
+  "bundleVariants": {
+    "minimal": {
+      "target": "calculator-apps",
+      "size": "15KB",
+      "includes": ["reactive-core", "basic-components"]
+    },
+    "standard": {
+      "target": "typical-apps",
+      "size": "45KB",
+      "includes": ["full-reactive", "components", "modifiers"]
+    },
+    "full": {
+      "target": "complex-apps",
+      "size": "100KB",
+      "includes": ["everything", "effects", "advanced-features"]
+    }
+  }
+}

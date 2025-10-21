@@ -65,6 +65,11 @@ jobs:
           pnpm build:responsive
           pnpm build:effects
           pnpm build:symbols
+          pnpm build:devtools
+          pnpm build:data
+          pnpm build:forms
+          pnpm build:navigation
+          pnpm build:grid
       
       - name: Run type checking
         run: pnpm type-check

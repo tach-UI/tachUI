@@ -1,0 +1,309 @@
+{
+  "name": "@tachui/modifiers",
+  "version": "0.8.1-alpha",
+  "description": "200+ TachUI modifiers with comprehensive parameter documentation",
+  "modifierRegistry": {
+    "layout": [
+      {
+        "name": "padding",
+        "parameters": {
+          "value": {
+            "type": "string | number | EdgeInsets",
+            "required": true,
+            "description": "Padding value - can be uniform or per-edge",
+            "examples": [
+              "'16px'",
+              "24",
+              "{ top: 16, bottom: 16, leading: 8, trailing: 8 }"
+            ],
+            "validation": "^(\\d+(\\.\\d+)?(px|em|rem|%)?|\\{.*\\})$"
+          }
+        },
+        "bundleSize": "<1KB",
+        "swiftUIEquivalent": ".padding()",
+        "category": "layout"
+      },
+      {
+        "name": "frame",
+        "parameters": {
+          "width": {
+            "type": "number | string | undefined",
+            "required": false,
+            "description": "Fixed width of the element",
+            "examples": ["200", "'100%'", "undefined"]
+          },
+          "height": {
+            "type": "number | string | undefined",
+            "required": false,
+            "description": "Fixed height of the element",
+            "examples": ["100", "'50vh'", "undefined"]
+          },
+          "minWidth": {
+            "type": "number | string | undefined",
+            "required": false,
+            "description": "Minimum width constraint",
+            "examples": ["50", "'10em'"]
+          },
+          "maxWidth": {
+            "type": "number | string | undefined",
+            "required": false,
+            "description": "Maximum width constraint",
+            "examples": ["500", "'80vw'"]
+          },
+          "alignment": {
+            "type": "Alignment",
+            "required": false,
+            "description": "How to align the element within its frame",
+            "examples": ["'center'", "'topLeading'", "'bottomTrailing'"],
+            "enum": [
+              "center",
+              "leading",
+              "trailing",
+              "top",
+              "bottom",
+              "topLeading",
+              "topTrailing",
+              "bottomLeading",
+              "bottomTrailing"
+            ]
+          }
+        },
+        "bundleSize": "2KB",
+        "swiftUIEquivalent": ".frame(width:height:alignment:)",
+        "category": "layout"
+      },
+      {
+        "name": "fixedSize",
+        "parameters": {
+          "horizontal": {
+            "type": "boolean",
+            "required": false,
+            "description": "Fix width to content size",
+            "examples": ["true", "false"],
+            "default": true
+          },
+          "vertical": {
+            "type": "boolean",
+            "required": false,
+            "description": "Fix height to content size",
+            "examples": ["true", "false"],
+            "default": true
+          }
+        },
+        "bundleSize": "<1KB",
+        "swiftUIEquivalent": ".fixedSize(horizontal:vertical:)",
+        "category": "layout"
+      }
+    ],
+    "appearance": [
+      {
+        "name": "backgroundColor",
+        "parameters": {
+          "color": {
+            "type": "string | ColorAsset | LinearGradient",
+            "required": true,
+            "description": "Background color value",
+            "examples": [
+              "'#FF6B6B'",
+              "'rgba(255, 107, 107, 0.8)'",
+              "Assets.colors.primary",
+              "LinearGradient(['#FF6B6B', '#4ECDC4'])"
+            ],
+            "validation": "^(#[0-9A-Fa-f]{3,8}|rgba?\\(.*\\)|hsla?\\(.*\\)|[a-zA-Z]+)$"
+          }
+        },
+        "bundleSize": "<1KB",
+        "swiftUIEquivalent": ".background()",
+        "category": "appearance"
+      },
+      {
+        "name": "shadow",
+        "parameters": {
+          "color": {
+            "type": "string",
+            "required": false,
+            "description": "Shadow color",
+            "examples": ["'rgba(0, 0, 0, 0.5)'", "'#333'"],
+            "default": "'rgba(0, 0, 0, 0.3)'"
+          },
+          "radius": {
+            "type": "number",
+            "required": false,
+            "description": "Blur radius of the shadow",
+            "examples": ["5", "10", "0"],
+            "default": 3,
+            "min": 0,
+            "max": 50
+          },
+          "x": {
+            "type": "number",
+            "required": false,
+            "description": "Horizontal offset",
+            "examples": ["2", "-2", "0"],
+            "default": 0
+          },
+          "y": {
+            "type": "number",
+            "required": false,
+            "description": "Vertical offset",
+            "examples": ["4", "-4", "0"],
+            "default": 2
+          }
+        },
+        "bundleSize": "3KB",
+        "swiftUIEquivalent": ".shadow(color:radius:x:y:)",
+        "category": "appearance"
+      },
+      {
+        "name": "cornerRadius",
+        "parameters": {
+          "radius": {
+            "type": "number | string",
+            "required": true,
+            "description": "Corner radius value",
+            "examples": ["8", "'50%'", "16"],
+            "validation": "^(\\d+(\\.\\d+)?(px|em|rem|%)?|\\d+)$"
+          }
+        },
+        "bundleSize": "<1KB",
+        "swiftUIEquivalent": ".cornerRadius()",
+        "category": "appearance"
+      },
+      {
+        "name": "opacity",
+        "parameters": {
+          "value": {
+            "type": "number",
+            "required": true,
+            "description": "Opacity value between 0 and 1",
+            "examples": ["0.5", "0.8", "1"],
+            "min": 0,
+            "max": 1
+          }
+        },
+        "bundleSize": "<1KB",
+        "swiftUIEquivalent": ".opacity()",
+        "category": "appearance"
+      }
+    ],
+    "interaction": [
+      {
+        "name": "hover",
+        "parameters": {
+          "modifiers": {
+            "type": "ModifierChain",
+            "required": true,
+            "description": "Modifiers to apply on hover",
+            "examples": [
+              "backgroundColor('#FF6B6B')",
+              "scale(1.1).shadow({ radius: 10 })"
+            ]
+          }
+        },
+        "bundleSize": "2KB",
+        "category": "interaction"
+      },
+      {
+        "name": "onTap",
+        "parameters": {
+          "action": {
+            "type": "() => void",
+            "required": true,
+            "description": "Function to execute on tap/click",
+            "examples": ["() => console.log('tapped')", "handleClick"]
+          }
+        },
+        "bundleSize": "1KB",
+        "swiftUIEquivalent": ".onTapGesture()",
+        "category": "interaction"
+      }
+    ],
+    "animation": [
+      {
+        "name": "transition",
+        "parameters": {
+          "animation": {
+            "type": "Animation",
+            "required": true,
+            "description": "Animation configuration for transitions",
+            "examples": [
+              "{ duration: 0.3, easing: 'ease-in-out' }",
+              "Animation.spring()"
+            ]
+          }
+        },
+        "bundleSize": "4KB",
+        "swiftUIEquivalent": ".animation()",
+        "category": "animation"
+      },
+      {
+        "name": "scale",
+        "parameters": {
+          "factor": {
+            "type": "number | { x: number, y: number }",
+            "required": true,
+            "description": "Scale factor for x and y axes",
+            "examples": ["1.2", "{ x: 1.1, y: 1.05 }"],
+            "min": 0
+          }
+        },
+        "bundleSize": "1KB",
+        "swiftUIEquivalent": ".scaleEffect()",
+        "category": "animation"
+      }
+    ],
+    "responsive": [
+      {
+        "name": "responsive",
+        "parameters": {
+          "breakpoints": {
+            "type": "ResponsiveBreakpoints",
+            "required": true,
+            "description": "Modifier configurations for different screen sizes",
+            "examples": [
+              "{ sm: padding(8), md: padding(16), lg: padding(24) }",
+              "{ mobile: fontSize(14), tablet: fontSize(16), desktop: fontSize(18) }"
+            ]
+          }
+        },
+        "bundleSize": "4KB",
+        "category": "responsive"
+      }
+    ]
+  },
+  "usagePatterns": {
+    "chaining": [
+      "component.padding(16).backgroundColor('#f0f0f0').cornerRadius(8)",
+      "VStack().frame({ width: 200, height: 100 }).shadow({ radius: 5 })"
+    ],
+    "responsive": [
+      "Text().responsive({ sm: fontSize(14), md: fontSize(16), lg: fontSize(18) })",
+      "Button().responsive({ mobile: padding(12), desktop: padding(16) })"
+    ],
+    "animations": [
+      "component.hover(scale(1.05).backgroundColor('#FF6B6B'))",
+      "component.transition({ duration: 0.3 }).opacity(isVisible() ? 1 : 0)"
+    ]
+  },
+  "bestPractices": [
+    "Use specific imports like `import { padding } from '@tachui/modifiers/layout'` for better tree-shaking",
+    "Chain related modifiers together for better performance: `.padding(16).backgroundColor('#f0f0f0')`",
+    "Use responsive modifiers sparingly - they add ~4KB to bundle size",
+    "Prefer CSS values with units for better clarity: `'16px'` over `16`",
+    "Use asset references for colors: `Assets.colors.primary` over hardcoded values"
+  ],
+  "troubleshooting": {
+    "common_errors": [
+      {
+        "error": "Modifier 'padding' not found in registry",
+        "solution": "Import @tachui/modifiers or the specific modifier package",
+        "code": "import '@tachui/modifiers' // or import { padding } from '@tachui/modifiers/layout'"
+      },
+      {
+        "error": "Invalid parameter type for backgroundColor",
+        "solution": "Ensure color value is a string, ColorAsset, or LinearGradient",
+        "code": ".backgroundColor('#FF6B6B') // Valid\n.backgroundColor(255) // Invalid"
+      }
+    ]
+  }
+}

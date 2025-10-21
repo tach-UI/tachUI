@@ -7,6 +7,14 @@
 import { BaseModifier } from '../basic/base'
 import type { ModifierContext, FontWeight } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
+import type {
+  Asset,
+  ColorAssetProxy,
+  ImageAssetProxy,
+  FontAssetProxy,
+} from '@tachui/core/assets'
+
+type FontAssetInput = Asset | ColorAssetProxy | ImageAssetProxy | FontAssetProxy
 
 // Re-export FontWeight for convenience
 export type { FontWeight }
@@ -26,7 +34,7 @@ export type FontStyle = 'normal' | 'italic' | 'oblique'
 export interface TypographyOptions {
   size?: number | string
   weight?: FontWeight | number
-  family?: string | any
+  family?: string | FontAssetInput
   lineHeight?: number | string
   letterSpacing?: number | string
   wordSpacing?: number | string
@@ -72,10 +80,18 @@ export class TypographyModifier extends BaseModifier<TypographyOptions> {
     if (props.family !== undefined) {
       if (
         typeof props.family === 'object' &&
-        props.family !== null &&
-        'resolve' in props.family
+        props.family !== null
       ) {
-        styles.fontFamily = props.family.resolve()
+        const familyObj = props.family as any
+        if (typeof familyObj.resolve === 'function') {
+          styles.fontFamily = familyObj.resolve()
+        } else if (typeof familyObj.value === 'string') {
+          styles.fontFamily = familyObj.value
+        } else if (typeof familyObj.toString === 'function') {
+          styles.fontFamily = familyObj.toString()
+        } else {
+          styles.fontFamily = String(familyObj)
+        }
       } else {
         styles.fontFamily = props.family as string
       }
@@ -190,6 +206,6 @@ export function textCase(value: TextTransform): TypographyModifier {
   return textTransform(value)
 }
 
-export function fontFamily(value: string | any): TypographyModifier {
+export function fontFamily(value: string | FontAssetInput): TypographyModifier {
   return new TypographyModifier({ family: value })
 }

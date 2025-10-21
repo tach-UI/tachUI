@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -11,21 +11,22 @@ export default defineConfig({
     },
     emptyOutDir: false, // Don't clean the dist directory to preserve .d.ts files
     rollupOptions: {
-      external: ['@tachui/core', '@tachui/modifiers'],
+      external: ['@tachui/core', '@tachui/registry'],
       output: {
         globals: {
           '@tachui/core': 'TachUICore',
-          '@tachui/modifiers': 'TachUIModifiers',
+          '@tachui/registry': 'TachUIRegistry',
         },
       },
     },
-    sourcemap: true,
+    sourcemap: mode !== 'production',
     target: 'es2020',
   },
   resolve: {
     alias: {
       '@tachui/core': resolve(__dirname, '../core/src'),
       '@tachui/modifiers': resolve(__dirname, '../modifiers/dist'),
+      '@tachui/registry': resolve(__dirname, '../registry/dist'),
     },
   },
-})
+}))

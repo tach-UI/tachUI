@@ -4,7 +4,7 @@
  * Reactive implementation that works with TachUI's reactive architecture
  */
 
-import { createEffect, createRoot, isComputed, isSignal } from '@tachui/core'
+import { createEffect, isComputed, isSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import type {
   ComponentInstance,
@@ -18,7 +18,8 @@ import { DOMRenderer } from '@tachui/core'
  * ForEach component properties
  */
 export interface ForEachProps<T = any> {
-  data: T[] | Signal<T[]>
+  data?: T[] | Signal<T[]>
+  items?: T[] | Signal<T[]>  // Alternative property name for backward compatibility
   children: (item: T, index: number) => ComponentInstance | ComponentInstance[]
   getItemId?: (item: T, index: number) => string | number
   fallback?: ComponentInstance
@@ -65,18 +66,25 @@ export class ForEachComponent<T = any>
   private dataSignal: () => T[]
 
   constructor(props: ForEachProps<T>) {
+    // Determine data source - prefer 'data' property, fallback to 'items'
+    const dataSource = props.data !== undefined ? props.data : props.items
+    if (dataSource === undefined) {
+      throw new Error('ForEach component requires either "data" or "items" property')
+    }
+
     // Convert to internal props format
     this.props = {
       ...props,
+      data: dataSource,
       renderItem: props.children,
       children: undefined, // ComponentProps children
     } as ForEachInternalProps<T>
     this.id = `foreach-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
     // Set up reactive data
-    this.dataSignal = isSignal(props.data)
-      ? props.data
-      : () => props.data as T[]
+    this.dataSignal = isSignal(dataSource)
+      ? dataSource
+      : () => dataSource || []
   }
 
   /**
@@ -132,23 +140,27 @@ export class ForEachComponent<T = any>
       dispose: undefined,
     }
 
-    // Create reactive effect that updates the container
-    const cleanup = createRoot(() => {
-      const effect = createEffect(() => {
-        const newChildren = this.renderChildren()
-        containerNode.children = newChildren
+    // Create reactive effect directly - no createRoot isolation (like Show component)
+    const effect = createEffect(() => {
+      const newChildren = this.renderChildren()
+      containerNode.children = newChildren
 
-        // Update DOM if already rendered
-        if (
-          containerNode.element &&
-          containerNode.element instanceof HTMLElement
-        ) {
-          this.updateContainerDOM(containerNode.element, newChildren)
-        }
-      })
-
-      return () => effect.dispose()
+      // Update DOM if already rendered
+      if (
+        containerNode.element &&
+        containerNode.element instanceof HTMLElement
+      ) {
+        this.updateContainerDOM(containerNode.element, newChildren)
+      }
     })
+
+    // Store cleanup like other components do
+    this.cleanup.push(() => effect.dispose())
+
+    const cleanup = () => {
+      this.cleanup.forEach(fn => fn())
+      this.cleanup = []
+    }
 
     containerNode.dispose = cleanup
 

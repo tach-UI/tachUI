@@ -5,7 +5,7 @@
  * touch gestures, pull-to-refresh, and mobile interactions.
  */
 
-import { globalModifierRegistry } from '@tachui/core'
+import { globalModifierRegistry } from '@tachui/registry'
 import { refreshable } from './gestures'
 
 export { refreshable } from './gestures'
