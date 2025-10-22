@@ -6,10 +6,14 @@
  */
 
 import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
-import { h } from '@tachui/core'
-import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
-import { createModifiableComponent, createModifierBuilder } from '@tachui/core'
+import { h, withModifiers } from '@tachui/core'
+import type { ComponentProps, DOMNode } from '@tachui/core'
 import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
+import type { CloneableComponent, CloneOptions } from '@tachui/core/runtime/types'
+import {
+  clonePropsPreservingReactivity,
+  resetLifecycleState,
+} from '@tachui/core'
 
 /**
  * Spacer component properties with CSS classes support
@@ -19,33 +23,17 @@ export interface SpacerProps extends ComponentProps, CSSClassesProps {
 }
 
 /**
- * Enhanced component wrapper that adds modifier support
- */
-function withModifiers<P extends ComponentProps>(
-  component: ComponentInstance<P>
-): ModifiableComponent<P> & {
-  modifier: ModifierBuilder<ModifiableComponent<P>>
-} {
-  const modifiableComponent = createModifiableComponent(component)
-  const modifierBuilder = createModifierBuilder(modifiableComponent)
-
-  return {
-    ...modifiableComponent,
-    modifier: modifierBuilder,
-    modifierBuilder: modifierBuilder,
-  }
-}
-
-/**
  * Spacer component implementation with CSS classes support
  */
 export class SpacerComponent
   extends ComponentWithCSSClasses
-  implements ComponentInstance<SpacerProps>
+  implements CloneableComponent<SpacerProps>
 {
   public readonly type = 'component' as const
   public readonly id: string
   public readonly props: SpacerProps
+  public mounted = false
+  public cleanup: (() => void)[] = []
 
   constructor(props: SpacerProps) {
     super()
@@ -82,6 +70,26 @@ export class SpacerComponent
     })
 
     return element
+  }
+
+  clone(options: CloneOptions = {}): this {
+    return options.deep ? this.deepClone() : this.shallowClone()
+  }
+
+  shallowClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props)
+    const clone = new SpacerComponent(clonedProps)
+    resetLifecycleState(clone)
+    return clone as this
+  }
+
+  deepClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props, {
+      deep: true,
+    })
+    const clone = new SpacerComponent(clonedProps)
+    resetLifecycleState(clone)
+    return clone as this
   }
 }
 

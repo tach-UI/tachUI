@@ -9,6 +9,7 @@ import type {
   ComponentInstance,
   ComponentProps,
   DOMNode,
+  CloneOptions,
 } from "../runtime/types";
 import { createModifierBuilder } from "./builder";
 import type {
@@ -296,6 +297,18 @@ export function createModifiableComponent<P extends ComponentProps>(
     modifiableComponent,
   ) as any;
 
+  (modifiableComponent as any).modifier = modifiableComponent.modifierBuilder as any
+
+  if (!Object.prototype.hasOwnProperty.call(component, 'modifier')) {
+    Object.defineProperty(component, 'modifier', {
+      configurable: true,
+      enumerable: false,
+      get() {
+        return modifiableComponent.modifierBuilder;
+      },
+    });
+  }
+
   // Store reference to modifiable component so Button can access modifiers
   (component as any).modifiableComponent = modifiableComponent;
 
@@ -404,6 +417,16 @@ export function createModifiableComponent<P extends ComponentProps>(
     (modifiableComponent as any).isConcatenatable = function (): boolean {
       return true;
     };
+  }
+
+  if (typeof (component as any)?.clone === "function") {
+    (modifiableComponent as any).clone = (options?: CloneOptions) => {
+      const clonedOriginal = (component as any).clone(options)
+      return createModifiableComponent(
+        clonedOriginal,
+        [...modifiableComponent.modifiers],
+      ) as any
+    }
   }
 
   return modifiableComponent;

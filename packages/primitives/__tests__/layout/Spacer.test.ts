@@ -104,6 +104,34 @@ describe('SpacerComponent', () => {
       expect(result1.props.style.alignSelf).toBe(result2.props.style.alignSelf)
     })
   })
+
+  describe('Cloning', () => {
+    it('creates a shallow clone with shared props', () => {
+      const spacer = new SpacerComponent({ minLength: 24 })
+      spacer.mounted = true
+      spacer.cleanup.push(() => {})
+
+      const clone = spacer.clone()
+
+      expect(clone).not.toBe(spacer)
+      expect(clone.props).toEqual(spacer.props)
+      expect(clone.id).not.toBe(spacer.id)
+      expect(clone.mounted).toBe(false)
+      expect(clone.cleanup).toEqual([])
+    })
+
+    it('creates a deep clone that copies nested arrays', () => {
+      const spacer = new SpacerComponent({
+        minLength: 12,
+        classes: ['foo', 'bar'],
+      })
+
+      const clone = spacer.clone({ deep: true })
+
+      expect(clone.props).toEqual(spacer.props)
+      expect(clone.props.classes).not.toBe(spacer.props.classes)
+    })
+  })
 })
 
 describe('Spacer Factory Function', () => {

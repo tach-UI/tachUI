@@ -10,8 +10,4 @@ declare module '@tachui/core/modifiers/types' {
   interface ModifierBuilder<T extends ComponentInstance = ComponentInstance> {
     // No modifiers available.
   }
-
-  interface ModifiableComponent<T extends ComponentProps = ComponentProps> {
-    // No modifiers available.
-  }
 }

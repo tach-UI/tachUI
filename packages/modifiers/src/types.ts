@@ -929,6 +929,7 @@ export interface ModifiableComponent<P extends ComponentProps = ComponentProps>
   extends ComponentInstance<P> {
   modifiers: Modifier[]
   modifierBuilder?: ModifierBuilder<ModifiableComponent<P>>
+  _originalComponent?: ComponentInstance<P>
 }
 
 /**

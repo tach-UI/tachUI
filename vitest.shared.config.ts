@@ -25,7 +25,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./tools/testing/setup.ts'],
+    setupFiles: [path.resolve(__dirname, 'tools/testing/setup.ts')],
 
     // Standard exclusions
     exclude: [

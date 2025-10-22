@@ -55,6 +55,8 @@ export {
   createModifierRegistry,
 } from './registry'
 
+export { createComponentProxy, resetProxyCache } from './proxy'
+
 // Note: globalModifierRegistry is NOT re-exported from @tachui/core
 // Import directly from @tachui/registry when needed:
 // import { globalModifierRegistry } from '@tachui/registry'

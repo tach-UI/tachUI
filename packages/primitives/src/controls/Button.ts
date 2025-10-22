@@ -8,7 +8,6 @@
 import type {
   ModifiableComponent,
   ModifierBuilder,
-  ComponentInstance,
   ComponentProps,
   Signal,
 } from '@tachui/core'
@@ -21,6 +20,12 @@ import {
   withModifiers,
   useLifecycle,
   ColorAsset,
+} from '@tachui/core'
+import { createComponentInstance } from '@tachui/core/components'
+import type { CloneableComponent, CloneOptions } from '@tachui/core/runtime/types'
+import {
+  clonePropsPreservingReactivity,
+  resetLifecycleState,
 } from '@tachui/core'
 import type {
   Concatenatable,
@@ -159,7 +164,7 @@ export const defaultButtonTheme: ButtonTheme = {
  */
 export class EnhancedButton
   extends ComponentWithCSSClasses
-  implements ComponentInstance<ButtonProps>, Concatenatable<ButtonProps>
+  implements CloneableComponent<ButtonProps>, Concatenatable<ButtonProps>
 {
   public readonly type = 'component' as const
   public readonly id: string
@@ -824,6 +829,39 @@ export class EnhancedButton
     // Buttons always contribute as 'composite' (interactive), so result is always composite
     return 'composite'
   }
+
+  clone(options: CloneOptions = {}): this {
+    return options.deep ? this.deepClone() : this.shallowClone()
+  }
+
+  shallowClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props)
+    const clone = new EnhancedButton(clonedProps, this.theme)
+    this.syncStateToClone(clone)
+    resetLifecycleState(clone)
+    return clone as this
+  }
+
+  deepClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props, {
+      deep: true,
+    })
+    const clone = new EnhancedButton(clonedProps, this.theme)
+    this.syncStateToClone(clone)
+    resetLifecycleState(clone)
+    return clone as this
+  }
+
+  private syncStateToClone(clone: EnhancedButton) {
+    try {
+      const currentState = this.stateSignal()
+      clone.setState(currentState)
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Failed to sync button state to clone:', error)
+      }
+    }
+  }
 }
 
 /**
@@ -841,7 +879,7 @@ export function Button(
     title,
     ...(action && { action }),
   }
-  const component = new EnhancedButton(buttonProps)
+  const component = createComponentInstance(EnhancedButton, buttonProps)
   return withModifiers(component)
 }
 
