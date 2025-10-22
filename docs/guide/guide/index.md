@@ -55,6 +55,7 @@ Take your TachUI skills to the next level:
 Tools and utilities for TachUI development:
 
 - **[Validation System](/guide/validation)** - 🔍 **NEW**: Comprehensive error detection, IDE integration, and intelligent debugging tools
+- **[Modifier Type Generation](/guide/modifier-type-generation)** - 🛠️ **NEW**: Keep fluent modifier typings in sync with the registry (CLI, watch mode, Vite plugin)
 - **[Bundle Optimization CLI](/api/tacho-optimize)** - 🎯 **NEW**: Tacho CLI commands for automated bundle optimization
 - **[Tacho CLI](/guide/tacho-cli)** - Command-line interface for project management
 - **[AI Integration](/guide/ai-integration)** - AI-powered development features

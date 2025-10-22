@@ -56,6 +56,18 @@
       "types": "./dist/modifiers/registry.d.ts",
       "import": "./dist/modifiers/registry.js"
     },
+    "./modifiers/type-generator": {
+      "types": "./dist/modifiers/type-generator.d.ts",
+      "import": "./dist/modifiers/type-generator.js"
+    },
+    "./build-plugins": {
+      "types": "./dist/build-plugins/index.d.ts",
+      "import": "./dist/build-plugins/index.js"
+    },
+    "./build-plugins/modifier-types": {
+      "types": "./dist/build-plugins/modifier-types.d.ts",
+      "import": "./dist/build-plugins/modifier-types.js"
+    },
     "./runtime/types": {
       "types": "./dist/runtime/types.d.ts",
       "import": "./dist/runtime/types.js"
@@ -157,16 +169,20 @@
     "bundle:analyze": "node scripts/bundle-analyzer.js",
     "bundle:size": "node scripts/bundle-analyzer.js",
     "migrate": "node scripts/migration-tool.js",
-    "migrate:fix": "node scripts/migration-tool.js --fix"
+    "migrate:fix": "node scripts/migration-tool.js --fix",
+    "generate-modifier-types": "tsx --tsconfig ./tsconfig.typegen.json ./scripts/generate-types.ts",
+    "generate-modifier-types:check": "pnpm run generate-modifier-types -- --check",
+    "generate-modifier-types:monorepo": "tsx --tsconfig ./tsconfig.typegen.json ./scripts/generate-types-monorepo.ts"
   },
   "dependencies": {
     "@tachui/registry": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
     "@types/jsdom": "^21.1.6",
+    "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^1.0.0",
     "jsdom": "^23.2.0",
+    "ts-node": "^10.9.2",
     "tsx": "^4.7.1",
     "typedoc": "^0.28.7",
     "typescript": "^5.2.0",

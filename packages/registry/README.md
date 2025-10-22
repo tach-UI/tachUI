@@ -131,6 +131,48 @@ function createFadeInModifier({ duration = '0.3s' }) {
 }
 ```
 
+## Modifier Metadata & Type Generation
+
+The registry can store metadata for each modifier. This powers automated type generation and conflict detection.
+
+```typescript
+import { globalModifierRegistry } from '@tachui/registry'
+
+// Enable metadata registration (on by default in development)
+globalModifierRegistry.setFeatureFlags({ metadataRegistration: true })
+
+globalModifierRegistry.registerMetadata({
+  name: 'padding',
+  plugin: '@tachui/core',
+  priority: 100,
+  signature: '(value: number) => Modifier',
+  category: 'layout',
+  description: 'Apply uniform padding around the component'
+})
+
+// Query metadata for tooling
+const layoutModifiers = globalModifierRegistry.getModifiersByCategory('layout')
+const conflicts = globalModifierRegistry.getConflicts()
+```
+
+Metadata registration can be disabled via the `metadataRegistration` feature flag to support incremental rollout.
+
+## Plugin Registration
+
+Plugins can register their metadata so tooling can surface provenance and verification details.
+
+```typescript
+globalModifierRegistry.registerPlugin({
+  name: '@tachui/animations',
+  version: '0.2.0',
+  author: 'tachUI Team',
+  verified: true
+})
+
+const plugins = globalModifierRegistry.listPlugins()
+const animationsInfo = globalModifierRegistry.getPluginInfo('@tachui/animations')
+```
+
 ## Testing Support
 
 ```typescript

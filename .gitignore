@@ -11,6 +11,8 @@ src/**/*.d.ts
 src/**/*.d.ts.map
 # Keep hand-written global type definitions
 !src/**/globals.d.ts
+# Modifier type generation artifacts
+packages/core/src/types/modifier-metadata.snapshot.json
 
 # Environment variables
 .env

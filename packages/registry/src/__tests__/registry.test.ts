@@ -2,7 +2,7 @@
  * Registry Tests
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { 
   globalModifierRegistry,
   registerModifier,
@@ -209,6 +209,173 @@ describe('Registry API', () => {
       expect(hasModifier('isolatedMod')).toBe(false)
       expect(isolated.has('globalMod')).toBe(false)
       expect(isolated.has('isolatedMod')).toBe(true)
+    })
+  })
+
+  describe('Security Validation', () => {
+    it('should reject forbidden modifier names', () => {
+      const isolated = createIsolatedRegistry()
+
+      expect(() =>
+        isolated.register('__proto__', createTestModifier('__proto__'))
+      ).toThrowError(/Security Error/)
+    })
+
+    it('should reject modifier names that do not match the allowed pattern', () => {
+      const isolated = createIsolatedRegistry()
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      isolated.register('1invalid', createTestModifier('invalid'))
+      isolated.registerLazy('!oops', () => createTestModifier('oops'))
+
+      expect(warnSpy).toHaveBeenCalled()
+
+      warnSpy.mockRestore()
+    })
+  })
+
+  describe('Metadata Management', () => {
+    it('should register metadata when feature flag enabled', () => {
+      const isolated = createIsolatedRegistry()
+
+      isolated.registerMetadata({
+        name: 'fadeIn',
+        plugin: '@tachui/animations',
+        priority: 120,
+        signature: '(options: FadeOptions) => Modifier',
+        category: 'appearance',
+        description: 'Fade element into view'
+      })
+
+      expect(isolated.getMetadata('fadeIn')?.plugin).toBe('@tachui/animations')
+      expect(isolated.getModifiersByCategory('appearance')).toHaveLength(1)
+      expect(isolated.getConflicts().size).toBe(0)
+    })
+
+    it('should not register metadata when feature disabled', () => {
+      const isolated = createIsolatedRegistry()
+      isolated.setFeatureFlags({ metadataRegistration: false })
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      isolated.registerMetadata({
+        name: 'disabled',
+        plugin: '@tachui/dev-tools',
+        priority: 50,
+        signature: '() => Modifier',
+        category: 'custom'
+      })
+
+      expect(isolated.getMetadata('disabled')).toBeUndefined()
+      expect(isolated.getConflicts().size).toBe(0)
+
+      warnSpy.mockRestore()
+    })
+
+    it('should track conflicts when metadata shares name and priority across plugins', () => {
+      const isolated = createIsolatedRegistry()
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      isolated.registerMetadata({
+        name: 'padding',
+        plugin: '@tachui/core',
+        priority: 100,
+        signature: '(value: number) => Modifier',
+        category: 'layout'
+      })
+
+      isolated.registerMetadata({
+        name: 'padding',
+        plugin: '@third-party/layout',
+        priority: 100,
+        signature: '(value: CSSLength) => Modifier',
+        category: 'layout'
+      })
+
+      const conflicts = isolated.getConflicts()
+      expect(conflicts.size).toBe(1)
+      const paddingConflicts = conflicts.get('padding')
+      expect(paddingConflicts).toBeDefined()
+      expect(paddingConflicts?.map(meta => meta.plugin).sort()).toEqual(
+        ['@tachui/core', '@third-party/layout'].sort()
+      )
+
+      errorSpy.mockRestore()
+    })
+
+    it('should allow same plugin to update metadata regardless of priority changes', () => {
+      const isolated = createIsolatedRegistry()
+
+      isolated.registerMetadata({
+        name: 'border',
+        plugin: '@tachui/core',
+        priority: 80,
+        signature: '(width: number) => Modifier',
+        category: 'appearance'
+      })
+
+      isolated.registerMetadata({
+        name: 'border',
+        plugin: '@tachui/core',
+        priority: 60,
+        signature: '(width: CSSPixel) => Modifier',
+        category: 'appearance'
+      })
+
+      const latest = isolated.getMetadata('border')
+      expect(latest?.priority).toBe(60)
+      expect(latest?.signature).toContain('CSSPixel')
+    })
+
+    it('should enforce strict naming rules for metadata registration', () => {
+      const isolated = createIsolatedRegistry()
+
+      expect(() =>
+        isolated.registerMetadata({
+          name: 'invalid-name',
+          plugin: '@tachui/core',
+          priority: 10,
+          signature: '() => Modifier',
+          category: 'custom'
+        })
+      ).toThrowError(/Invalid modifier name/)
+    })
+  })
+
+  describe('Plugin Metadata', () => {
+    it('should register and list plugins', () => {
+      const isolated = createIsolatedRegistry()
+
+      isolated.registerPlugin({
+        name: '@tachui/animations',
+        version: '0.1.0',
+        author: 'tachUI Team',
+        verified: true
+      })
+
+      const info = isolated.getPluginInfo('@tachui/animations')
+      expect(info?.author).toBe('tachUI Team')
+      expect(isolated.listPlugins()).toHaveLength(1)
+    })
+
+    it('should enforce plugin metadata validation', () => {
+      const isolated = createIsolatedRegistry()
+
+      expect(() =>
+        isolated.registerPlugin({
+          name: '@tachui/bad-plugin',
+          version: '',
+          author: 'someone'
+        })
+      ).toThrowError(/name and version/)
+
+      expect(() =>
+        isolated.registerPlugin({
+          name: '@tachui/missing-author',
+          version: '1.0.0',
+          author: ''
+        })
+      ).toThrowError(/author or organization/)
     })
   })
 

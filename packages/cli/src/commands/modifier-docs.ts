@@ -13,8 +13,13 @@ import {
 } from '@tachui/devtools'
 import chalk from 'chalk'
 import Table from 'cli-table3'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
+import { readFile } from 'node:fs/promises'
+import type { ModifierMetadataSnapshot } from '@tachui/core/modifiers/type-generator'
 
 const program = new Command()
+const require = createRequire(import.meta.url)
 
 interface ModifierDocsOptions {
   category?: string
@@ -22,6 +27,10 @@ interface ModifierDocsOptions {
   search?: string
   output?: string
   format?: 'table' | 'markdown' | 'json'
+}
+
+interface ModifierConflictOptions {
+  format?: 'table' | 'json'
 }
 
 program
@@ -76,6 +85,14 @@ program
   .description('Display a quick reference cheat sheet')
   .action(async () => {
     await showCheatSheet()
+  })
+
+program
+  .command('conflicts')
+  .description('Show modifier registration conflicts from the latest type generation snapshot')
+  .option('-f, --format <format>', 'Output format', 'table')
+  .action(async (options: ModifierConflictOptions) => {
+    await showModifierConflicts(options)
   })
 
 async function listModifiers(options: ModifierDocsOptions) {
@@ -392,6 +409,101 @@ async function showCheatSheet() {
   console.log('')
 }
 
+async function showModifierConflicts(
+  options: ModifierConflictOptions,
+): Promise<void> {
+  const snapshot = await loadModifierSnapshot()
+
+  if (!snapshot) {
+    console.error(
+      chalk.red(
+        '❌ No modifier metadata snapshot found. Run `pnpm --filter @tachui/core generate-modifier-types` first.',
+      ),
+    )
+    return
+  }
+
+  if (options.format === 'json') {
+    console.log(JSON.stringify(snapshot.conflicts, null, 2))
+    return
+  }
+
+  if (snapshot.conflicts.length === 0) {
+    console.log(chalk.green('✅ No modifier conflicts detected.'))
+    console.log(
+      chalk.gray(
+        `Total modifiers analysed: ${snapshot.totalModifiers} (generated ${snapshot.generatedAt})`,
+      ),
+    )
+    return
+  }
+
+  const table = new Table({
+    head: [
+      chalk.blue('Modifier'),
+      chalk.blue('Plugins'),
+      chalk.blue('Categories'),
+    ],
+    colWidths: [20, 35, 20],
+    wordWrap: true,
+  })
+
+  for (const conflict of snapshot.conflicts) {
+    const plugins = conflict.entries
+      .map((entry) => `${entry.plugin} (priority ${entry.priority})`)
+      .join('\n')
+    const categories = Array.from(
+      new Set(conflict.entries.map((entry) => entry.category)),
+    ).join(', ')
+
+    table.push([
+      chalk.cyan(conflict.name),
+      plugins,
+      categories || 'n/a',
+    ])
+  }
+
+  console.log(
+    chalk.yellow(
+      `⚠️  Detected ${snapshot.conflicts.length} modifier conflict${
+        snapshot.conflicts.length === 1 ? '' : 's'
+      }. Review the plugins involved below:\n`,
+    ),
+  )
+  console.log(table.toString())
+  console.log(
+    chalk.gray(
+      `Snapshot generated at ${snapshot.generatedAt}. Re-run the generator after resolving conflicts.`,
+    ),
+  )
+}
+
+async function loadModifierSnapshot(): Promise<ModifierMetadataSnapshot | null> {
+  try {
+    const pkgPath = require.resolve('@tachui/core/package.json')
+    const coreDir = dirname(pkgPath)
+    const candidates = [
+      join(coreDir, 'dist/types/modifier-metadata.snapshot.json'),
+      join(coreDir, 'src/types/modifier-metadata.snapshot.json'),
+    ]
+
+    for (const path of candidates) {
+      try {
+        const data = await readFile(path, 'utf8')
+        return JSON.parse(data) as ModifierMetadataSnapshot
+      } catch (error: any) {
+        if (error?.code !== 'ENOENT') {
+          throw error
+        }
+      }
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
 // Export functions for programmatic use
 export {
   listModifiers,
@@ -399,6 +511,7 @@ export {
   generateFullDocumentation,
   validateModifierParameters,
   showCheatSheet,
+  showModifierConflicts,
 }
 
 // CLI execution

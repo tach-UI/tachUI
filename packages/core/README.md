@@ -182,6 +182,42 @@ Text('Hello').build().concat(Text('World').build())
 - **CLI Integration**: Use `tachui analyze --concatenation` for optimization insights
 - **Production Ready**: 27 tests passing, handles 250+ files in <500ms
 
+## Modifier Type Generation
+
+tachUI ships tooling to keep modifier chaining types in sync with the registry.
+
+### One-off generation
+
+```bash
+pnpm --filter @tachui/core generate-modifier-types
+```
+
+### CI verification / conflict detection
+
+```bash
+# Verifies that generated files are up to date
+pnpm --filter @tachui/core generate-modifier-types -- --check
+
+# Optionally fail when metadata conflicts are detected
+pnpm --filter @tachui/core generate-modifier-types -- --check --fail-on-conflict
+```
+
+### Watch mode
+
+```bash
+pnpm --filter @tachui/core generate-modifier-types -- --watch
+```
+
+### Monorepo generation
+
+Generate declarations for multiple packages at once:
+
+```bash
+pnpm --filter @tachui/core generate-modifier-types:monorepo -- --packages core,forms,navigation
+```
+
+The tooling automatically hydrates modifier metadata via `@tachui/modifiers` (for runtime definitions) and `@tachui/devtools` (for parameter signatures/documentation).
+
 ## Plugin Ecosystem
 
 Extend tachUI with additional packages:

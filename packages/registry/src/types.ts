@@ -108,6 +108,20 @@ export interface ModifierMetadata {
 }
 
 /**
+ * Plugin metadata stored in the registry
+ */
+export interface PluginInfo {
+  /** Package name of the plugin */
+  name: string
+  /** Published version identifier */
+  version: string
+  /** Author or organization maintaining the plugin */
+  author: string
+  /** Optional flag for first-party or verified plugins */
+  verified?: boolean
+}
+
+/**
  * Modifier registry for registering custom modifiers
  */
 export interface ModifierRegistry {
@@ -130,6 +144,18 @@ export interface ModifierRegistry {
   registerMetadata(metadata: ModifierMetadata): void
   getMetadata(name: string | symbol): ModifierMetadata | undefined
   getAllMetadata(): ModifierMetadata[]
-  getMetadataByCategory(category: ModifierMetadata['category']): ModifierMetadata[]
+  getModifiersByCategory(category: ModifierMetadata['category']): ModifierMetadata[]
   getConflicts(): Map<string | symbol, ModifierMetadata[]>
+
+  // Plugin metadata methods
+  registerPlugin(metadata: PluginInfo): void
+  getPluginInfo(name: string): PluginInfo | undefined
+  listPlugins(): PluginInfo[]
+
+  /**
+   * @deprecated Use getModifiersByCategory instead.
+   */
+  getMetadataByCategory(
+    category: ModifierMetadata['category']
+  ): ModifierMetadata[]
 }
