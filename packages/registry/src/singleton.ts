@@ -10,6 +10,8 @@ import type {
   ModifierFactory,
   ModifierLoader,
   RegistryHealth,
+  RegistryFeatureFlags,
+  ModifierMetadata,
 } from "./types";
 
 // Global singleton instance - this is the single source of truth
@@ -25,6 +27,19 @@ class ModifierRegistryImpl implements ModifierRegistry {
   private modifiers = new Map<string, ModifierFactory<any>>();
   private lazyLoaders = new Map<string, ModifierLoader<any>>();
   private loadingPromises = new Map<string, Promise<ModifierFactory<any>>>();
+
+  // Feature flags
+  private featureFlags: RegistryFeatureFlags = {
+    proxyModifiers: false, // Disabled by default for safe rollout
+    autoTypeGeneration: false,
+    hmrCacheInvalidation: false,
+    pluginValidation: true,
+    performanceMonitoring: false,
+    metadataRegistration: true, // Enable for new system
+  };
+
+  // Metadata storage for type generation
+  private metadata = new Map<string | symbol, ModifierMetadata>();
 
   constructor() {
     ModifierRegistryImpl.instanceCount++;
@@ -250,7 +265,157 @@ class ModifierRegistryImpl implements ModifierRegistry {
       modifiers: this.list(),
       loadedModifiers: Array.from(this.modifiers.keys()),
       lazyModifiers: Array.from(this.lazyLoaders.keys()),
+      featureFlags: this.featureFlags,
+      metadataCount: this.metadata.size,
     };
+  }
+
+  // ============================================================================
+  // Feature Flag Methods
+  // ============================================================================
+
+  /**
+   * Set feature flags for the registry
+   * Allows enabling/disabling features for gradual rollout
+   */
+  setFeatureFlags(flags: Partial<RegistryFeatureFlags>): void {
+    this.featureFlags = {
+      ...this.featureFlags,
+      ...flags,
+    };
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `🎚️ Updated feature flags in registry ${this.instanceId}:`,
+        this.featureFlags,
+      );
+    }
+  }
+
+  /**
+   * Get current feature flags
+   */
+  getFeatureFlags(): RegistryFeatureFlags {
+    return { ...this.featureFlags };
+  }
+
+  /**
+   * Check if a specific feature is enabled
+   */
+  isFeatureEnabled(feature: keyof RegistryFeatureFlags): boolean {
+    return this.featureFlags[feature] === true;
+  }
+
+  // ============================================================================
+  // Metadata Methods (for build-time type generation)
+  // ============================================================================
+
+  /**
+   * Register metadata for a modifier (for type generation)
+   */
+  registerMetadata(modifierMetadata: ModifierMetadata): void {
+    if (!this.isFeatureEnabled("metadataRegistration")) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          `⚠️ Metadata registration is disabled. Enable 'metadataRegistration' feature flag.`,
+        );
+      }
+      return;
+    }
+
+    const existing = this.metadata.get(modifierMetadata.name);
+
+    // Handle conflicts based on priority
+    if (existing) {
+      if (modifierMetadata.priority > existing.priority) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            `⚠️ Overriding modifier metadata '${String(modifierMetadata.name)}' from ${existing.plugin} (priority ${existing.priority}) with ${modifierMetadata.plugin} (priority ${modifierMetadata.priority})`,
+          );
+        }
+        this.metadata.set(modifierMetadata.name, modifierMetadata);
+      } else if (
+        modifierMetadata.priority === existing.priority &&
+        modifierMetadata.plugin !== existing.plugin
+      ) {
+        // Same priority, different plugin = conflict
+        if (process.env.NODE_ENV === "development") {
+          console.error(
+            `❌ Metadata conflict for '${String(modifierMetadata.name)}': ${existing.plugin} vs ${modifierMetadata.plugin} (both priority ${modifierMetadata.priority})`,
+          );
+        }
+      }
+    } else {
+      this.metadata.set(modifierMetadata.name, modifierMetadata);
+
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `📝 Registered metadata for '${String(modifierMetadata.name)}' from ${modifierMetadata.plugin}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Get metadata for a specific modifier
+   */
+  getMetadata(name: string | symbol): ModifierMetadata | undefined {
+    return this.metadata.get(name);
+  }
+
+  /**
+   * Get all registered metadata
+   */
+  getAllMetadata(): ModifierMetadata[] {
+    return Array.from(this.metadata.values());
+  }
+
+  /**
+   * Get metadata filtered by category
+   */
+  getMetadataByCategory(
+    category: ModifierMetadata["category"],
+  ): ModifierMetadata[] {
+    return this.getAllMetadata().filter((meta) => meta.category === category);
+  }
+
+  /**
+   * Get conflicts (multiple modifiers with same name but different plugins)
+   */
+  getConflicts(): Map<string | symbol, ModifierMetadata[]> {
+    const conflicts = new Map<string | symbol, ModifierMetadata[]>();
+    const nameToMetadata = new Map<string | symbol, ModifierMetadata[]>();
+
+    // Group metadata by name
+    for (const meta of this.metadata.values()) {
+      const existing = nameToMetadata.get(meta.name) || [];
+      existing.push(meta);
+      nameToMetadata.set(meta.name, existing);
+    }
+
+    // Find conflicts (same name, different plugin, same priority)
+    for (const [name, metadataList] of nameToMetadata) {
+      if (metadataList.length > 1) {
+        const samePriorityGroups = new Map<number, ModifierMetadata[]>();
+
+        for (const meta of metadataList) {
+          const group = samePriorityGroups.get(meta.priority) || [];
+          group.push(meta);
+          samePriorityGroups.set(meta.priority, group);
+        }
+
+        for (const group of samePriorityGroups.values()) {
+          if (group.length > 1) {
+            const uniquePlugins = new Set(group.map((m) => m.plugin));
+            if (uniquePlugins.size > 1) {
+              conflicts.set(name, group);
+            }
+          }
+        }
+      }
+    }
+
+    return conflicts;
   }
 }
 

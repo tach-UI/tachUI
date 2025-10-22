@@ -1,0 +1,65 @@
+Benchmarking is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+
+ RUN  v3.2.4 /Users/whoughton/Dev/tach-ui/tachUI/packages/core
+
+
+ ✓ benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Single Modifier Application 3210ms
+     name                                           hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · Layout modifier - padding              139,894.48  0.0064  0.3169  0.0071  0.0070  0.0104  0.0108  0.0400  ±0.63%    69948
+   · Layout modifier - frame                153,714.61  0.0058  0.5814  0.0065  0.0064  0.0091  0.0101  0.0577  ±0.81%    76858
+   · Appearance modifier - color            101,123.50  0.0082  2.7614  0.0099  0.0095  0.0153  0.0257  0.1958  ±1.53%    50562
+   · Appearance modifier - border            52,356.11  0.0173  0.3418  0.0191  0.0188  0.0236  0.0373  0.2399  ±0.65%    26179
+   · Interaction modifier - event handlers  317,218.75  0.0028  0.2840  0.0032  0.0031  0.0037  0.0058  0.0079  ±0.65%   158610
+
+ ✓ benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Multiple Modifier Application 1851ms
+     name                                    hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · Apply 3 modifiers sequentially   91,428.71  0.0099  0.3735  0.0109  0.0107  0.0142  0.0150  0.2012  ±0.66%    45715
+   · Apply 5 modifiers sequentially   37,820.98  0.0241  0.3487  0.0264  0.0260  0.0324  0.0640  0.2598  ±0.65%    18911
+   · Apply 10 modifiers sequentially  22,409.64  0.0406  0.4229  0.0446  0.0440  0.0740  0.1333  0.2958  ±0.70%    11205
+
+ ✓ benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Modifier Object Creation 10713ms
+     name                                   hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · Create LayoutModifier       14,208,691.91  0.0000  0.8383  0.0001  0.0001  0.0001  0.0001  0.0002  ±2.96%  7104346
+   · Create AppearanceModifier   16,553,022.21  0.0000  0.3642  0.0001  0.0001  0.0001  0.0001  0.0002  ±1.00%  8276512
+   · Create InteractionModifier  17,550,591.09  0.0000  0.0341  0.0001  0.0001  0.0001  0.0001  0.0002  ±0.09%  8775296
+   · Create 10 modifiers          4,166,349.57  0.0001  0.6583  0.0002  0.0002  0.0003  0.0003  0.0020  ±1.90%  2083175
+
+ ✓ benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Memory Characteristics 1984ms
+     name                                               hz     min     max    mean     p75     p99    p995    p999     rme  samples
+   · Create 100 components (memory pressure)    448,239.37  0.0013  0.5705  0.0022  0.0015  0.0047  0.0052  0.3869  ±3.00%   224120
+   · Create 100 modifiers (memory pressure)     439,959.62  0.0018  0.5865  0.0023  0.0020  0.0025  0.0049  0.0065  ±1.92%   219980
+   · Create 100 DOM elements (memory pressure)    3,601.16  0.2480  1.0800  0.2777  0.2620  0.9509  0.9904  1.0670  ±1.82%     1801
+
+ BENCH  Summary
+
+  Interaction modifier - event handlers - benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Single Modifier Application
+    2.06x faster than Layout modifier - frame
+    2.27x faster than Layout modifier - padding
+    3.14x faster than Appearance modifier - color
+    6.06x faster than Appearance modifier - border
+
+  Apply 3 modifiers sequentially - benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Multiple Modifier Application
+    2.42x faster than Apply 5 modifiers sequentially
+    4.08x faster than Apply 10 modifiers sequentially
+
+  Create simple component (no modifiers) - benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Component Creation
+    1.05x faster than Create component with render
+    NaNx faster than Create VStack with 3 children
+    NaNx faster than Create VStack with 10 children
+
+  Create InteractionModifier - benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Modifier Object Creation
+    1.06x faster than Create AppearanceModifier
+    1.24x faster than Create LayoutModifier
+    4.21x faster than Create 10 modifiers
+
+  Create 100 components (memory pressure) - benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Memory Characteristics
+    1.02x faster than Create 100 modifiers (memory pressure)
+    124.47x faster than Create 100 DOM elements (memory pressure)
+
+  VStack with 5 children + 3 modifiers each - benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Complex Scenarios
+    NaNx faster than Deep nesting: VStack > HStack > Components (3 levels)
+
+  20 modifiers on single element - benchmarks/modifier-baseline.bench.ts > Modifier Baseline Performance > Worst Case Scenarios
+    NaNx faster than VStack with 20 children, each with 5 modifiers
+
