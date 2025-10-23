@@ -146,6 +146,45 @@ describe('modifier proxy integration', () => {
     expect(chained).toBe(proxy)
   })
 
+  it('maintains method binding when functions are extracted from the proxy', () => {
+    configureCore({ proxyModifiers: true })
+
+    if (!globalModifierRegistry.has(modifierName)) {
+      globalModifierRegistry.register(modifierName, () => ({
+        type: 'appearance',
+        priority: 100,
+        properties: {},
+        apply: node => node,
+      }))
+    }
+
+    const proxy = withModifiers(new SampleComponent()) as ComponentInstance & {
+      clone: () => ComponentInstance
+    }
+
+    const { clone } = proxy
+    const detachedClone = clone()
+
+    expect(detachedClone).not.toBe(proxy)
+    expect(typeof (detachedClone as any)[modifierName]).toBe('function')
+  })
+
+  it('preserves standard symbol lookups without interception side effects', () => {
+    configureCore({ proxyModifiers: true })
+    const proxy = withModifiers(new SampleComponent()) as ComponentInstance
+
+    expect(proxy[Symbol.toStringTag]).toBeUndefined()
+  })
+
+  it('throws when invoking unknown modifiers', () => {
+    configureCore({ proxyModifiers: true })
+    const proxy = withModifiers(new SampleComponent()) as ComponentInstance & {
+      nonExisting: () => any
+    }
+
+    expect(() => (proxy as any).nonExisting()).toThrow()
+  })
+
   it('falls back to legacy builder when proxy disabled', () => {
     configureCore({ proxyModifiers: false })
 

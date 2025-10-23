@@ -272,7 +272,7 @@ function formatDeclaration(
     (signature) => transformSignature(signature, 'component'),
   )
 
-  if (builderBlock.length === 0) {
+  if (snapshot.totalModifiers === 0) {
     lines.push(`${indent}// No modifier metadata registered.`)
   } else {
     lines.push(builderBlock)

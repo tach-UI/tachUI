@@ -26,7 +26,6 @@ Both files should be committed when they change.
 From the repository root:
 
 ```bash
-# Generate (or refresh) modifier declarations for @tachui/core
 pnpm --filter @tachui/core generate-modifier-types
 
 # Verify that declarations are up to date (CI-friendly)
@@ -57,6 +56,14 @@ pnpm --filter @tachui/core generate-modifier-types:monorepo -- --packages core,f
 ```
 
 You can append `--fail-on-conflict` to the monorepo script as well.
+
+### Why this script lives in `@tachui/core`
+
+The generator ships with `@tachui/core` because it produces and verifies the
+type declarations that the core package publishes. Keeping the script colocated
+avoids cross-package dependency loops (for example, pulling the CLI into the
+core build) and guarantees the generator always runs against the same registry
+implementation and metadata that the core package uses at build time.
 
 ## Vite Integration
 
@@ -96,6 +103,16 @@ If you ship a custom package that registers modifiers, expose a function similar
 to `registerModifierMetadata` and add it via `TACHUI_TYPEGEN_HYDRATORS` (CLI)
 or `extraHydrators` (Vite plugin).
 
+When metadata lives outside the workspace paths the generator hydrates by
+default, you can explicitly point to the module:
+
+```bash
+TACHUI_TYPEGEN_HYDRATORS=../../apps/demo/src/register-modifiers.ts \
+  pnpm --filter @tachui/core generate-modifier-types
+```
+
+Multiple hydrators can be supplied by comma separating the paths.
+
 ## Conflict Handling
 
 When two plugins register metadata for the same modifier name **with the same
@@ -117,6 +134,11 @@ or specify `failOnConflict: true` in the Vite plugin options.
 - **“module not found” errors**  
   Ensure you are running the commands from the repository root (the generator
   relies on workspace-relative path aliases).
+
+- **“Total modifiers: 0” in the summary**  
+  No metadata hydrators executed before `generateModifierTypes()` ran. Confirm
+  `@tachui/modifiers` and `@tachui/devtools` are available or supply hydrator
+  paths via `TACHUI_TYPEGEN_HYDRATORS`.
 
 - **Types not updating in the IDE**  
   Confirm the generated `.d.ts` file is included in your editor’s TypeScript
