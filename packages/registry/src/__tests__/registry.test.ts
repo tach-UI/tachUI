@@ -233,6 +233,24 @@ describe('Registry API', () => {
 
       warnSpy.mockRestore()
     })
+
+    it('should warn when registering an unverified plugin', () => {
+      const isolated = createIsolatedRegistry()
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      isolated.registerPlugin({
+        name: 'third-party-plugin',
+        version: '1.0.0',
+        author: 'External Dev',
+        verified: false,
+      })
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Registering unverified plugin'),
+      )
+
+      warnSpy.mockRestore()
+    })
   })
 
   describe('Metadata Management', () => {

@@ -17,9 +17,33 @@ import {
   type PerformanceBenchmark
 } from '../../../../tools/testing/performance-benchmark-tester'
 import { createSignal } from '../../src/reactive'
+import { withModifiers } from '../../src/components/wrapper'
+import { configureCore } from '../../src/config'
+import { resetProxyCache } from '../../src/modifiers/proxy'
+import type { ComponentInstance } from '../../src/runtime/types'
 
 // Global benchmark results collection
 const globalBenchmarkResults: any[] = []
+
+function createSimpleComponent(id: string): ComponentInstance {
+  return {
+    type: 'component',
+    id,
+    props: {},
+    mounted: false,
+    cleanup: [],
+    render() {
+      return [
+        {
+          type: 'element' as const,
+          tag: 'div',
+          props: { className: 'proxy-benchmark' },
+          children: [],
+        },
+      ]
+    },
+  }
+}
 
 describe('Phase 5.1: Performance Baseline Benchmarks', () => {
   let benchmarkTester: PerformanceBenchmarkTester
@@ -691,6 +715,53 @@ describe('Phase 5.1: Performance Baseline Benchmarks', () => {
       expect(result.current.renderTime).toBeLessThan(2000)
       expect(result.current.customMetrics?.avgOperationTime).toBeLessThan(5)
     }, 20000)
+  })
+
+  describe('Proxy Overhead Validation', () => {
+    it('keeps proxy method invocation overhead under 50%', () => {
+      const iterations = 50000
+
+      configureCore({ proxyModifiers: false })
+      resetProxyCache()
+
+      const legacyComponent = withModifiers(
+        createSimpleComponent('legacy'),
+      ) as ComponentInstance & { render: () => unknown }
+
+      const startLegacy = performance.now()
+      for (let i = 0; i < iterations; i++) {
+        legacyComponent.render()
+      }
+      const legacyDuration = performance.now() - startLegacy
+
+      configureCore({ proxyModifiers: true })
+      resetProxyCache()
+
+      const proxiedComponent = withModifiers(
+        createSimpleComponent('proxied'),
+      ) as ComponentInstance & { render: () => unknown }
+
+      const startProxy = performance.now()
+      for (let i = 0; i < iterations; i++) {
+        proxiedComponent.render()
+      }
+      const proxyDuration = performance.now() - startProxy
+
+      const baseline = Math.max(legacyDuration, 0.0001)
+      const overhead = Math.max(proxyDuration - legacyDuration, 0) / baseline
+
+      console.log('Proxy Overhead Benchmark:', {
+        iterations,
+        legacyDuration,
+        proxyDuration,
+        overheadRatio: overhead,
+      })
+
+      expect(overhead).toBeLessThan(0.5)
+
+      configureCore({ proxyModifiers: false })
+      resetProxyCache()
+    })
   })
 
   // Final benchmark summary

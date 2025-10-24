@@ -184,3 +184,25 @@ When adding new benchmarks:
 - **Scores 80+** indicate excellent performance
 - **Scores 60-79** indicate good performance  
 - **Scores <60** may indicate optimization opportunities
+
+## Phase 5 Results Snapshot
+
+As part of the Phase 5 security & performance validation we recorded the following metrics (see `benchmarks/performance-results.md` for the full table):
+
+| Scenario | Observed |
+|----------|----------|
+| Text component render (100 nodes) | 3.23 ms total, peak heap 58 MB |
+| List render (1 000 items) | 140 ms total, 0.14 ms/item |
+| Reactive state updates (500 updates) | 205 ms total, 0.41 ms/update |
+| Component lifecycle memory stress | 236 ms runtime, ~0.55 MB leak |
+| DOM manipulation batch (550 ops) | 19 ms total, 0.035 ms/op |
+| Complete workflow simulation | 128 ms total, 0.25 ms/op |
+| Proxy vs builder render overhead | ~5.4 % |
+
+Security audits (summarised in `benchmarks/security-audit.md`) confirmed:
+
+- Forbidden modifier names (`__proto__`, `constructor`, etc.) are rejected by the registry.
+- Unverified plugins trigger the documented console warning.
+- HTML sanitisation strips script blocks, inline handlers, and `javascript:` URLs before modifiers run.
+- No production use of `eval`/`Function` was found (limited to test harnesses).
+- `pnpm audit` could not run inside the sandbox (IPC blocked); dependency scanning should continue in CI outside the restricted environment.
