@@ -1,0 +1,54 @@
+{
+  "name": "@tachui/eslint-plugin",
+  "version": "0.8.1-alpha",
+  "description": "ESLint rules for migrating tachUI modifiers to the direct call syntax",
+  "homepage": "https://tachui.dev/",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "lint": "oxlint src",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "eslint": "^8.57.0 || ^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.4"
+  },
+  "keywords": [
+    "eslint",
+    "tachui",
+    "modifiers",
+    "migration"
+  ],
+  "author": "tachUI Team",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tach-UI/tachUI",
+    "directory": "packages/eslint-plugin-tachui"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

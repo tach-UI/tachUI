@@ -43,6 +43,8 @@
       "@tachui/devtools/*": ["./packages/devtools/dist/*"],
       "@tachui/cli": ["./packages/cli/dist/index.d.ts"],
       "@tachui/cli/*": ["./packages/cli/dist/*"],
+      "@tachui/eslint-plugin": ["./packages/eslint-plugin-tachui/dist/index.d.ts"],
+      "@tachui/eslint-plugin/*": ["./packages/eslint-plugin-tachui/dist/*"],
       "@tachui/registry": ["./packages/registry/dist/index.d.ts"],
       "@tachui/registry/*": ["./packages/registry/dist/*"]
     }
@@ -58,6 +60,7 @@
     { "path": "./packages/mobile" },
     { "path": "./packages/effects" },
     { "path": "./packages/devtools" },
-    { "path": "./packages/cli" }
+    { "path": "./packages/cli" },
+    { "path": "./packages/eslint-plugin-tachui" }
   ]
 }
