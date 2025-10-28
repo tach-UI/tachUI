@@ -31,8 +31,10 @@ export default defineConfig(({ mode }) => ({
       external: [
         '@tachui/core',
         '@tachui/primitives',
+        '@tachui/registry',
         /^@tachui\/core\/.*/,
         /^@tachui\/primitives\/.*/,
+        /^@tachui\/registry\/.*/,
       ],
       output: {
         globals: {

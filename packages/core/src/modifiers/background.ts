@@ -15,6 +15,8 @@ import type {
   StateGradientOptions,
 } from '../gradients/types'
 import type { Asset } from '../assets/Asset'
+import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
+import { registerModifierWithMetadata } from './registration-utils'
 
 export interface BackgroundOptions {
   background?: string | GradientDefinition | Asset | StateGradientOptions // Support strings, gradients, assets, and state gradients
@@ -341,6 +343,28 @@ export function background(
   value: string | GradientDefinition | Asset | StateGradientOptions
 ): BackgroundModifier {
   return new BackgroundModifier({ background: value })
+}
+
+const backgroundMetadata = {
+  category: 'appearance' as const,
+  priority: ModifierPriority.APPEARANCE,
+  signature:
+    '(value: string | GradientDefinition | Asset | StateGradientOptions) => Modifier',
+  description:
+    'Applies a background fill supporting solid colors, gradients, assets, or state-driven variants.',
+}
+
+export function registerBackgroundModifier(
+  registry?: ModifierRegistry,
+  plugin?: PluginInfo,
+): void {
+  registerModifierWithMetadata(
+    'background',
+    background as any,
+    backgroundMetadata,
+    registry,
+    plugin,
+  )
 }
 
 // Types are exported through compat.ts re-export from @tachui/modifiers

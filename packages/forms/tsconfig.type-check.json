@@ -20,14 +20,17 @@
     "sourceMap": false,
     "baseUrl": ".",
     "paths": {
-      "@tachui/core": ["../core/src"],
-      "@tachui/core/*": ["../core/src/*"],
-      "@tachui/modifiers": ["../modifiers/src"],
-      "@tachui/modifiers/*": ["../modifiers/src/*"],
-      "@tachui/effects": ["../effects/src"],
-      "@tachui/effects/*": ["../effects/src/*"],
-      "@tachui/primitives": ["../primitives/src"],
-      "@tachui/primitives/*": ["../primitives/src/*"]
+      "@tachui/core": ["../core/dist/index.d.ts"],
+      "@tachui/core/*": ["../core/dist/*"],
+      "@tachui/core/modifiers": ["../core/dist/modifiers/index.d.ts"],
+      "@tachui/modifiers": ["../modifiers/dist/index.d.ts"],
+      "@tachui/modifiers/*": ["../modifiers/dist/*"],
+      "@tachui/effects": ["../effects/dist/index.d.ts"],
+      "@tachui/effects/*": ["../effects/dist/*"],
+      "@tachui/primitives": ["../primitives/dist/index.d.ts"],
+      "@tachui/primitives/*": ["../primitives/dist/*"],
+      "@tachui/registry": ["../registry/dist/index.d.ts"],
+      "@tachui/registry/*": ["../registry/dist/*.d.ts"]
     }
   },
   "include": ["src/**/*", "../../tools/globals.d.ts"],

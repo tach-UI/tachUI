@@ -75,6 +75,8 @@
     "directory": "packages/forms"
   },
   "dependencies": {
-    "@tachui/primitives": "workspace:*"
+    "@tachui/core": "workspace:*",
+    "@tachui/primitives": "workspace:*",
+    "@tachui/registry": "workspace:*"
   }
 }

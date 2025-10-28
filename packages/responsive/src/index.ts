@@ -30,32 +30,14 @@ export {
   DEFAULT_BREAKPOINTS,
 } from './modifiers/responsive'
 
-// Import the functions synchronously for immediate availability
-import {
-  createResponsiveModifier,
-  createMediaQueryModifier,
-  createResponsivePropertyModifier,
-  createResponsiveLayoutModifier,
-} from './modifiers/responsive'
+import { registerResponsiveModifiers } from './modifiers/responsive'
 
-// Lazy registration for responsive modifiers
-import { registerLazyModifier } from '@tachui/registry'
+registerResponsiveModifiers()
 
-// Create synchronous lazy loaders for responsive modifiers
-const responsiveLazyLoaders: Array<[string, () => any]> = [
-  ['responsive', () => createResponsiveModifier],
-  ['mediaQuery', () => createMediaQueryModifier],
-  ['responsiveProperty', () => createResponsivePropertyModifier],
-  ['responsiveLayout', () => createResponsiveLayoutModifier],
-]
+export { registerResponsiveModifiers } from './modifiers/responsive'
 
-// Register lazy loaders for responsive modifiers
-responsiveLazyLoaders.forEach(([name, loader]) => {
-  registerLazyModifier(name, loader)
-})
-
-if (process.env.NODE_ENV !== 'production') {
-  console.info(
-    `📦 [@tachui/responsive] Registered ${responsiveLazyLoaders.length} lazy loaders for responsive modifiers`
-  )
+if (typeof import.meta !== 'undefined' && (import.meta as any).hot) {
+  ;(import.meta as any).hot.accept(() => {
+    registerResponsiveModifiers({ force: true })
+  })
 }

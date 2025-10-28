@@ -14,10 +14,22 @@ import {
   AnimationModifier,
   AppearanceModifier,
   InteractionModifier,
-  LayoutModifier,
   LifecycleModifier,
 } from './base'
-import { BackgroundModifier } from './background'
+import { padding as paddingModifier } from './padding'
+import { margin as marginModifier } from './margin'
+import { frame as frameModifier } from './frame'
+import { alignment as alignmentModifier } from './alignment'
+import { layoutPriority as layoutPriorityModifier } from './layout-priority'
+import { foregroundColor as foregroundColorModifier } from './foreground-color'
+import { backgroundColor as backgroundColorModifier } from './background-color'
+import { background as backgroundFillModifier } from './background'
+import { fontSize as fontSizeModifier } from './font-size'
+import { fontWeight as fontWeightModifier } from './font-weight'
+import { fontFamily as fontFamilyModifier } from './font-family'
+import { opacity as opacityModifier } from './opacity'
+import { cornerRadius as cornerRadiusModifier } from './corner-radius'
+import { border as borderModifier } from './border'
 import type {
   AnimationModifierProps,
   AppearanceModifierProps,
@@ -33,7 +45,7 @@ export const layoutModifiers = {
    * Set foreground (text) color
    */
   foregroundColor(color: string | Signal<string> | any): Modifier {
-    return new AppearanceModifier({ foregroundColor: color })
+    return foregroundColorModifier(color as any)
   },
 
   /**
@@ -44,34 +56,28 @@ export const layoutModifiers = {
     height?: Dimension,
     options?: Omit<LayoutModifierProps['frame'], 'width' | 'height'>
   ): Modifier {
-    return new LayoutModifier({
-      frame: {
-        width,
-        height,
-        ...options,
-      },
-    })
+    return frameModifier(width, height, options)
   },
 
   /**
    * Set padding on all sides
    */
   padding(value: number): Modifier {
-    return new LayoutModifier({ padding: value })
+    return paddingModifier(value)
   },
 
   /**
    * Set margin on all sides
    */
   margin(value: number): Modifier {
-    return new LayoutModifier({ margin: value })
+    return marginModifier(value)
   },
 
   /**
    * Set content alignment
    */
   alignment(value: LayoutModifierProps['alignment']): Modifier {
-    return new LayoutModifier({ alignment: value })
+    return alignmentModifier(value as NonNullable<LayoutModifierProps['alignment']>)
   },
 
   /**
@@ -79,7 +85,7 @@ export const layoutModifiers = {
    * Higher priority views determine container size in ZStack
    */
   layoutPriority(priority: number | Signal<number>): Modifier {
-    return new LayoutModifier({ layoutPriority: priority })
+    return layoutPriorityModifier(priority)
   },
 }
 
@@ -91,21 +97,21 @@ export const appearanceModifiers = {
    * Set foreground (text) color
    */
   foregroundColor(color: string | Asset | Signal<string>): Modifier {
-    return new AppearanceModifier({ foregroundColor: color })
+    return foregroundColorModifier(color as any)
   },
 
   /**
    * Set background color
    */
   backgroundColor(color: string | Asset | Signal<string>): Modifier {
-    return new AppearanceModifier({ backgroundColor: color })
+    return backgroundColorModifier(color as any)
   },
 
   /**
    * Set background (supports gradients)
    */
   background(value: string | GradientDefinition | Asset): Modifier {
-    return new BackgroundModifier({ background: value })
+    return backgroundFillModifier(value)
   },
 
   /**
@@ -119,7 +125,7 @@ export const appearanceModifiers = {
    * Set font size
    */
   fontSize(size: number | string): Modifier {
-    return new AppearanceModifier({ font: { size } })
+    return fontSizeModifier(size)
   },
 
   /**
@@ -128,28 +134,28 @@ export const appearanceModifiers = {
   fontWeight(
     weight: NonNullable<AppearanceModifierProps['font']>['weight']
   ): Modifier {
-    return new AppearanceModifier({ font: { weight } })
+    return fontWeightModifier(weight)
   },
 
   /**
    * Set font family
    */
   fontFamily(family: string): Modifier {
-    return new AppearanceModifier({ font: { family } })
+    return fontFamilyModifier(family)
   },
 
   /**
    * Set opacity
    */
   opacity(value: number | Signal<number>): Modifier {
-    return new AppearanceModifier({ opacity: value })
+    return opacityModifier(value)
   },
 
   /**
    * Set corner radius (enhanced)
    */
   cornerRadius(radius: number | Signal<number>): Modifier {
-    return new AppearanceModifier({ cornerRadius: radius })
+    return cornerRadiusModifier(radius)
   },
 
   /**
@@ -160,9 +166,11 @@ export const appearanceModifiers = {
     color: string | Asset = '#000000',
     style: 'solid' | 'dashed' | 'dotted' = 'solid'
   ): Modifier {
-    return new AppearanceModifier({
-      border: { width, color, style },
-    })
+    return borderModifier(
+      width,
+      color as string | Asset | undefined,
+      style,
+    )
   },
 
   /**
