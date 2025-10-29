@@ -12,7 +12,6 @@ This guide provides practical examples of using TachUI's SwiftUI-inspired modifi
 import { Button } from '@tachui/core'
 
 const primaryButton = Button('Get Started', () => console.log('Getting started!'))
-  .modifier
   .backgroundColor('#007AFF')
   .foregroundColor('#ffffff')
   .fontSize(16)
@@ -35,7 +34,6 @@ const productCard = VStack({
       src: '/product-image.jpg',
       alt: 'Product'
     })
-    .modifier
     .frame({ width: '100%', height: 200 })
     .cornerRadius(8)
     .build(),
@@ -43,21 +41,18 @@ const productCard = VStack({
     VStack({
       children: [
         Text("Premium Headphones")
-          .modifier
           .fontSize(18)
           .fontWeight('bold')
           .foregroundColor('#1a1a1a')
           .build(),
         
         Text("High-quality wireless headphones with noise cancellation")
-          .modifier
           .fontSize(14)
           .foregroundColor('#666')
           .lineHeight(1.4)
           .build(),
         
         Text("$299.99")
-          .modifier
           .fontSize(20)
           .fontWeight('bold')
           .foregroundColor('#007AFF')
@@ -65,13 +60,11 @@ const productCard = VStack({
       ],
       spacing: 8
     })
-    .modifier
     .padding(16)
     .build()
   ],
   spacing: 0
 })
-.modifier
 .backgroundColor('#ffffff')
 .cornerRadius(8)
 .shadow({ x: 0, y: 4, radius: 12, color: 'rgba(0,0,0,0.1)' })
@@ -89,7 +82,6 @@ import { HStack, Text, Button } from '@tachui/core'
 
 // Using detailed padding modifiers
 const preciseCard = Text('Precisely padded content')
-  .modifier
   .padding({ top: 20, right: 16, bottom: 24, left: 16 })
   .margin({ top: 8, right: 12, bottom: 16, left: 12 })
   .backgroundColor('#f8f9fa')
@@ -100,7 +92,6 @@ const preciseCard = Text('Precisely padded content')
 const buttonRow = HStack({
   children: [
     Button('Cancel', () => {})
-      .modifier
       .padding(16, 8) // horizontal: 16, vertical: 8
       .backgroundColor('#6c757d')
       .foregroundColor('#ffffff')
@@ -108,7 +99,6 @@ const buttonRow = HStack({
       .build(),
     
     Button('Confirm', () => {})
-      .modifier
       .padding(20, 10) // More prominent button
       .backgroundColor('#007AFF')
       .foregroundColor('#ffffff')
@@ -117,7 +107,6 @@ const buttonRow = HStack({
   ],
   spacing: 12
 })
-.modifier
 .padding(16)
 .build()
 ```
@@ -130,7 +119,6 @@ import { Text, createSignal } from '@tachui/core'
 // Advanced transition controls
 const [isVisible, setIsVisible] = createSignal(false)
 const animatedCard = Text('Animated content')
-  .modifier
   .opacity(() => isVisible() ? 1 : 0)
   .transform(() => isVisible() ? 'translateY(0)' : 'translateY(20px)')
   .transition({
@@ -147,7 +135,6 @@ const animatedCard = Text('Animated content')
 
 // Simple animations
 const fadeInBox = Text('Fade in animation')
-  .modifier
   .animation('fadeIn', 300)
   .backgroundColor('#e6f3ff')
   .padding(16)
@@ -155,7 +142,6 @@ const fadeInBox = Text('Fade in animation')
   .build()
 
 const slideInBox = Text('Slide in from left')
-  .modifier
   .animation('slideInLeft', 400)
   .backgroundColor('#f0f8ff')
   .padding(16)
@@ -163,7 +149,6 @@ const slideInBox = Text('Slide in from left')
   .build()
 
 const scaleInBox = Text('Scale in animation')
-  .modifier
   .animation('scaleIn', 300)
   .backgroundColor('#fff5f5')
   .padding(16)
@@ -189,7 +174,6 @@ const themeColors = createMemo(() => ({
 }))
 
 const reactiveCard = Text('Reactive themed card')
-  .modifier
   .backgroundColor(() => themeColors().background)
   .foregroundColor(() => themeColors().text)
   .border(1, () => themeColors().border)
@@ -207,7 +191,6 @@ const reactiveCard = Text('Reactive themed card')
 
 // Progress bar with reactive width
 const progressBar = VStack()
-  .modifier
   .frame({ width: () => `${progress()}%`, height: 8 })
   .backgroundColor('#007AFF')
   .cornerRadius(4)
@@ -215,7 +198,6 @@ const progressBar = VStack()
   .build()
 
 const progressContainer = VStack({ children: [progressBar] })
-  .modifier
   .frame({ width: '100%', height: 8 })
   .backgroundColor('#e0e0e0')
   .cornerRadius(4)
@@ -229,7 +211,6 @@ import { Text, Button, TextField } from '@tachui/core'
 
 // Using component styling patterns
 const cardWithStyling = Text('Card with preset styling')
-  .modifier
   .padding(20)
   .backgroundColor('#ffffff')
   .cornerRadius(8)
@@ -237,7 +218,6 @@ const cardWithStyling = Text('Card with preset styling')
   .build()
 
 const primaryButton = Button('Primary Button', () => {})
-  .modifier
   .backgroundColor('#007AFF')
   .foregroundColor('#ffffff')
   .padding(12, 8)
@@ -245,7 +225,6 @@ const primaryButton = Button('Primary Button', () => {})
   .build()
 
 const styledInput = TextField({ placeholder: 'Enter text...' })
-  .modifier
   .padding(12)
   .border(1, '#e0e0e0')
   .cornerRadius(6)
@@ -254,28 +233,24 @@ const styledInput = TextField({ placeholder: 'Enter text...' })
 
 // Typography styles
 const titleText = Text("Page Title")
-  .modifier
   .fontSize(28)
   .fontWeight('bold')
   .foregroundColor('#1a1a1a')
   .build()
 
 const headingText = Text("Section Heading")
-  .modifier
   .fontSize(20)
   .fontWeight('600')
   .foregroundColor('#333333')
   .build()
 
 const bodyText = Text("Regular body text content goes here.")
-  .modifier
   .fontSize(16)
   .lineHeight(1.5)
   .foregroundColor('#666666')
   .build()
 
 const captionText = Text("Small caption or helper text")
-  .modifier
   .fontSize(12)
   .foregroundColor('#999999')
   .build()
@@ -294,7 +269,6 @@ function ToggleSwitch(props: { label: string; initialValue?: boolean }) {
   const toggle = HStack({
     children: [
       Text(props.label)
-        .modifier
         .fontSize(16)
         .foregroundColor('#1a1a1a')
         .build(),
@@ -307,7 +281,6 @@ function ToggleSwitch(props: { label: string; initialValue?: boolean }) {
     spacing: 12,
     alignment: 'center'
   })
-  .modifier
   .padding(12, 12)
   .build()
   
@@ -322,7 +295,6 @@ const settingsPanel = VStack({
   ],
   spacing: 16
 })
-.modifier
 .backgroundColor('#f8f9fa')
 .cornerRadius(8)
 .padding(16)
@@ -349,7 +321,6 @@ function LoginForm() {
   return VStack({
     children: [
       Text("Welcome Back")
-        .modifier
         .fontSize(24)
         .fontWeight('bold')
         .foregroundColor('#1a1a1a')
@@ -357,7 +328,6 @@ function LoginForm() {
         .build(),
       
       Text("Sign in to your account")
-        .modifier
         .fontSize(16)
         .foregroundColor('#666')
         .margin({ bottom: 24 })
@@ -369,7 +339,6 @@ function LoginForm() {
         value: email(),
         onChange: setEmail
       })
-      .modifier
       .padding(12)
       .fontSize(16)
       .border(1, '#e0e0e0')
@@ -385,7 +354,6 @@ function LoginForm() {
         value: password(),
         onChange: setPassword
       })
-      .modifier
       .padding(12)
       .fontSize(16)
       .border(1, '#e0e0e0')
@@ -399,7 +367,6 @@ function LoginForm() {
         () => isLoading() ? 'Signing in...' : 'Sign In',
         handleSubmit
       )
-      .modifier
       .backgroundColor('#007AFF')
       .foregroundColor('#ffffff')
       .fontSize(16)
@@ -414,7 +381,6 @@ function LoginForm() {
     spacing: 0,
     alignment: 'center'
   })
-  .modifier
   .backgroundColor('#ffffff')
   .padding(32)
   .cornerRadius(12)
@@ -437,14 +403,12 @@ function StatCard(props: { title: string; value: string; change: string; trend: 
   return VStack({
     children: [
       Text(props.title)
-        .modifier
         .fontSize(14)
         .foregroundColor('#666')
         .fontWeight('500')
         .build(),
       
       Text(props.value)
-        .modifier
         .fontSize(32)
         .fontWeight('bold')
         .foregroundColor('#1a1a1a')
@@ -452,7 +416,6 @@ function StatCard(props: { title: string; value: string; change: string; trend: 
         .build(),
       
       Text(props.change)
-        .modifier
         .fontSize(14)
         .foregroundColor(trendColor)
         .fontWeight('500')
@@ -461,7 +424,6 @@ function StatCard(props: { title: string; value: string; change: string; trend: 
     spacing: 0,
     alignment: 'leading'
   })
-  .modifier
   .backgroundColor('#ffffff')
   .padding(20)
   .cornerRadius(8)
@@ -474,7 +436,6 @@ function StatCard(props: { title: string; value: string; change: string; trend: 
 const dashboard = VStack({
   children: [
     Text("Dashboard")
-      .modifier
       .fontSize(28)
       .fontWeight('bold')
       .margin({ bottom: 24 })
@@ -493,7 +454,6 @@ const dashboard = VStack({
   ],
   spacing: 0
 })
-.modifier
 .padding(24)
 .backgroundColor('#f8f9fa')
 .frame({ minHeight: '100vh' })
@@ -510,7 +470,6 @@ function NavigationBar() {
     children: [
       // Logo
       Text("TachUI")
-        .modifier
         .fontSize(20)
         .fontWeight('bold')
         .foregroundColor('#007AFF')
@@ -518,7 +477,6 @@ function NavigationBar() {
       
       // Spacer (would need flex-grow implementation)
       Text('')
-        .modifier
         .frame({ flex: 1 })
         .build(),
       
@@ -526,7 +484,6 @@ function NavigationBar() {
       HStack({
         children: [
           Text("Home")
-            .modifier
             .fontSize(16)
             .foregroundColor('#1a1a1a')
             .onTap(() => console.log('Home clicked'))
@@ -536,7 +493,6 @@ function NavigationBar() {
             .build(),
           
           Text("About")
-            .modifier
             .fontSize(16)
             .foregroundColor('#1a1a1a')
             .onTap(() => console.log('About clicked'))
@@ -546,7 +502,6 @@ function NavigationBar() {
             .build(),
           
           Text("Contact")
-            .modifier
             .fontSize(16)
             .foregroundColor('#1a1a1a')
             .onTap(() => console.log('Contact clicked'))
@@ -556,7 +511,6 @@ function NavigationBar() {
             .build(),
           
           Button('Get Started', () => {})
-            .modifier
             .backgroundColor('#007AFF')
             .foregroundColor('#ffffff')
             .fontSize(14)
@@ -571,7 +525,6 @@ function NavigationBar() {
     ],
     alignment: 'center'
   })
-  .modifier
   .backgroundColor('#ffffff')
   .padding({ horizontal: 24, vertical: 16 })
   .border({ bottom: 1, color: '#f0f0f0' })
@@ -593,13 +546,11 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
       HStack({
         children: [
           Text("Confirm Action")
-            .modifier
             .fontSize(20)
             .fontWeight('bold')
             .build(),
           
           Button('×', props.onClose)
-            .modifier
             .fontSize(24)
             .backgroundColor('transparent')
             .padding(4)
@@ -611,7 +562,6 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
       
       // Body
       Text("Are you sure you want to delete this item? This action cannot be undone.")
-        .modifier
         .fontSize(16)
         .foregroundColor('#666')
         .lineHeight(1.5)
@@ -622,7 +572,6 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
       HStack({
         children: [
           Button('Cancel', props.onClose)
-            .modifier
             .backgroundColor('#f0f0f0')
             .foregroundColor('#333')
             .fontSize(16)
@@ -632,7 +581,6 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
             .build(),
           
           Button('Delete', () => {})
-            .modifier
             .backgroundColor('#dc3545')
             .foregroundColor('#ffffff')
             .fontSize(16)
@@ -646,7 +594,6 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
     ],
     spacing: 0
   })
-  .modifier
   .backgroundColor('#ffffff')
   .cornerRadius(12)
   .padding(24)
@@ -660,7 +607,6 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
     children: [
       // Backdrop
       VStack()
-        .modifier
         .backgroundColor('rgba(0,0,0,0.5)')
         .frame({ width: '100vw', height: '100vh' })
         .animation('fadeIn', 200)
@@ -672,7 +618,6 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
     ],
     alignment: 'center'
   })
-  .modifier
   .frame({ width: '100vw', height: '100vh' })
   .build()
 }
@@ -684,7 +629,6 @@ function App() {
   return VStack({
     children: [
       Button('Open Modal', () => setShowModal(true))
-        .modifier
         .backgroundColor('#007AFF')
         .foregroundColor('#ffffff')
         .padding(12)
@@ -711,7 +655,6 @@ function ResponsiveCardGrid(props: { items: Array<{ title: string; description: 
       VStack({
         children: [
           Text(item.title)
-            .modifier
             .fontSize(18)
             .fontWeight('bold')
             .margin({ bottom: 8 })
@@ -806,7 +749,6 @@ import { VStack, Text, Image } from '@tachui/core'
 const responsiveCard = VStack({
   children: [
     Image({ src: '/hero.jpg', alt: 'Hero' })
-      .modifier
       .size({
         width: '100%',
         height: 200,
@@ -817,7 +759,6 @@ const responsiveCard = VStack({
       .build(),
     
     Text('Responsive content card')
-      .modifier
       .typography({
         size: 18,
         weight: '600',
@@ -828,7 +769,6 @@ const responsiveCard = VStack({
       .build()
   ]
 })
-.modifier
 .backgroundColor('#ffffff')
 .cornerRadius(12)
 .margin({ all: 16 })
@@ -843,7 +783,6 @@ const flexContainer = VStack({
     Text('Footer').typography({ size: 14, color: '#666' }).build()
   ]
 })
-.modifier
 .display('flex')
 .justifyContent('space-between')
 .alignItems('stretch')
@@ -860,7 +799,6 @@ import { createSignal } from '@tachui/core'
 
 // 1. Simple borders (backward compatible)
 const basicCard = Text('Basic border card')
-  .modifier
   .padding(16)
   .border(1, '#e0e0e0', 'solid')     // Simple 1px solid border
   .backgroundColor('#f9f9f9')
@@ -869,7 +807,6 @@ const basicCard = Text('Basic border card')
 
 // 2. Individual border sides
 const customCard = VStack({ children: [...] })
-  .modifier
   .padding(20)
   .border({
     top: { width: 3, color: '#007AFF', style: 'solid' },      // Thick top
@@ -883,7 +820,6 @@ const customCard = VStack({ children: [...] })
 
 // 3. SwiftUI terminology (LTR-aware)
 const swiftUICard = Text('SwiftUI-style borders')
-  .modifier
   .padding(16)
   .border({
     leading: { width: 4, color: '#007AFF' },    // Maps to left in LTR
@@ -897,7 +833,6 @@ const swiftUICard = Text('SwiftUI-style borders')
 
 // 4. Shorthand properties
 const shorthandCard = VStack({ children: [...] })
-  .modifier
   .padding(24)
   .border({
     horizontal: { width: 2, color: '#007AFF', style: 'solid' }, // Left + right
@@ -909,7 +844,6 @@ const shorthandCard = VStack({ children: [...] })
 
 // 5. Border direction functions
 const functionalCard = Text('Direction functions')
-  .modifier
   .padding(16)
   .borderTop(3, '#007AFF', 'solid')         // Top border
   .borderHorizontal(1, '#ddd')              // Left + right borders
@@ -920,7 +854,6 @@ const functionalCard = Text('Direction functions')
 
 // 6. Advanced features with border images
 const gradientBorderCard = VStack({ children: [...] })
-  .modifier
   .padding(20)
   .border({
     width: 3,
@@ -934,7 +867,6 @@ const gradientBorderCard = VStack({ children: [...] })
 
 // 7. Integrated corner radius with borders
 const integratedCard = Text('Border with integrated radius')
-  .modifier
   .padding(20)
   .border({
     width: 2,
@@ -955,7 +887,6 @@ const [isActive, setIsActive] = createSignal(false)
 const [theme, setTheme] = createSignal({ borderColor: '#007AFF', accentColor: '#34C759' })
 
 const reactiveCard = Text('Reactive border card')
-  .modifier
   .padding(16)
   .border({
     width: () => isActive() ? 3 : 1,              // Dynamic width
@@ -971,7 +902,6 @@ const reactiveCard = Text('Reactive border card')
 
 // 9. Typography with emphasis borders
 const styledQuote = Text('"Design is not just what it looks like. Design is how it works." - Steve Jobs')
-  .modifier
   .typography({
     size: 18,
     weight: '400',
@@ -992,7 +922,6 @@ const styledQuote = Text('"Design is not just what it looks like. Design is how 
 const ctaCard = VStack({
   children: [
     Text('Special Offer!')
-      .modifier
       .typography({
         size: 20,
         weight: 'bold',
@@ -1003,7 +932,6 @@ const ctaCard = VStack({
       .build(),
     
     Text('Get 50% off your first purchase')
-      .modifier
       .typography({
         size: 16,
         lineHeight: 1.4,
@@ -1013,7 +941,6 @@ const ctaCard = VStack({
       .build()
   ]
 })
-.modifier
 .padding({ all: 24 })
 .backgroundColor('#ffffff')
 .border({
@@ -1035,21 +962,18 @@ const ctaCard = VStack({
 const modernGlassmorphismCard = VStack({
   children: [
     Text('Native Backdrop Filters')
-      .modifier
       .fontSize(20)
       .fontWeight('600')
       .foregroundColor('#ffffff')
       .build(),
       
     Text('Built-in browser compatibility and fallbacks')
-      .modifier
       .fontSize(14)
       .foregroundColor('rgba(255, 255, 255, 0.8)')
       .marginTop(8)
       .build()
   ]
 })
-.modifier
 .backdropFilter(
   { 
     blur: 16, 
@@ -1067,7 +991,6 @@ const modernGlassmorphismCard = VStack({
 
 // Glassmorphism presets
 const lightGlassCard = Text('Light Glass Effect')
-  .modifier
   .glassmorphism('light') // Preset with optimized parameters
   .backgroundColor('rgba(255, 255, 255, 0.08)')
   .padding(16)
@@ -1075,7 +998,6 @@ const lightGlassCard = Text('Light Glass Effect')
   .build()
 
 const heavyGlassCard = Text('Heavy Glass Effect')
-  .modifier
   .glassmorphism('heavy') // Strong glassmorphism for emphasis
   .backgroundColor('rgba(255, 255, 255, 0.15)')
   .padding(20)
@@ -1086,7 +1008,6 @@ const heavyGlassCard = Text('Heavy Glass Effect')
 // ColorAsset integration
 import { Colors } from './assets'
 const themedGlassCard = Text('Themed Glass Effect')
-  .modifier
   .backdropFilter(
     { blur: 12, saturate: 1.2 },
     Colors.glass.fallback // ColorAsset fallback
@@ -1100,13 +1021,11 @@ const themedGlassCard = Text('Themed Glass Effect')
 const advancedBackdropCard = VStack({
   children: [
     Text('Advanced Backdrop Effects')
-      .modifier
       .fontSize(18)
       .fontWeight('600')
       .build()
   ]
 })
-.modifier
 .backdropFilter({
   blur: 20,
   brightness: 1.15,
@@ -1127,7 +1046,6 @@ const advancedBackdropCard = VStack({
 
 // CSS string format for custom effects
 const customBackdropCard = Text('Custom Backdrop Filter')
-  .modifier
   .backdropFilter('blur(15px) hue-rotate(45deg) saturate(1.6)')
   .backgroundColor('rgba(255, 255, 255, 0.1)')
   .padding(18)
@@ -1141,7 +1059,6 @@ const customBackdropCard = Text('Custom Backdrop Filter')
 // Reactive glassmorphism based on state
 const [isActive, setIsActive] = createSignal(false)
 const interactiveGlassButton = Text('Interactive Glass')
-  .modifier
   .glassmorphism(() => isActive() ? 'heavy' : 'medium')
   .backgroundColor(() => 
     isActive() 
@@ -1161,13 +1078,11 @@ const [isHovered, setIsHovered] = createSignal(false)
 const hoverGlassCard = VStack({
   children: [
     Text('Hover for Enhanced Glass')
-      .modifier
       .fontSize(16)
       .fontWeight('500')
       .build()
   ]
 })
-.modifier
 .backdropFilter(
   () => isHovered() 
     ? { blur: 24, saturate: 1.5, brightness: 1.2 }
@@ -1204,7 +1119,6 @@ const glassNavigation = HStack({
   ],
   spacing: 12
 })
-.modifier
 .glassmorphism('light')
 .backgroundColor('rgba(255, 255, 255, 0.8)')
 .padding({ horizontal: 20, vertical: 12 })
@@ -1227,14 +1141,12 @@ const glassModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
       VStack({
         children: [
           Text('Glass Modal')
-            .modifier
             .fontSize(20)
             .fontWeight('600')
             .marginBottom(16)
             .build(),
             
           Text('Beautiful backdrop blur with automatic fallbacks')
-            .modifier
             .fontSize(14)
             .opacity(0.8)
             .textAlign('center')
@@ -1242,7 +1154,6 @@ const glassModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
             .build(),
             
           Button('Close', onClose)
-            .modifier
             .backgroundColor('#007AFF')
             .foregroundColor('#ffffff')
             .padding({ horizontal: 20, vertical: 10 })
@@ -1250,7 +1161,6 @@ const glassModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
             .build()
         ]
       })
-      .modifier
       .glassmorphism('heavy')
       .backgroundColor('rgba(255, 255, 255, 0.15)')
       .padding(32)
@@ -1261,7 +1171,6 @@ const glassModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
       .build()
     ]
   })
-  .modifier
   .position('fixed')
   .top(0)
   .left(0)
@@ -1287,7 +1196,6 @@ const glassModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
 const legacyGlassmorphismCard = VStack({
   children: [
     Text('Glassmorphism UI')
-      .modifier
       .typography({
         size: 24,
         weight: '600',
@@ -1296,7 +1204,6 @@ const legacyGlassmorphismCard = VStack({
       .build(),
     
     Text('Beautiful frosted glass effect using modern CSS')
-      .modifier
       .typography({
         size: 16,
         color: 'rgba(255, 255, 255, 0.8)',
@@ -1306,7 +1213,6 @@ const legacyGlassmorphismCard = VStack({
       .build()
   ]
 })
-.modifier
 .padding({ all: 32 })
 .css({
   background: 'rgba(255, 255, 255, 0.1)',
@@ -1322,12 +1228,10 @@ const legacyGlassmorphismCard = VStack({
 const containerQueryCard = VStack({
   children: [
     Text('Responsive with Container Queries')
-      .modifier
       .typography({ size: 18, weight: '600' })
       .build()
   ]
 })
-.modifier
 .padding({ all: 16 })
 .backgroundColor('#f0f8ff')
 .css({
@@ -1360,7 +1264,6 @@ function ThemedComponent() {
     () => `Switch to ${theme() === 'light' ? 'dark' : 'light'} theme`,
     () => setTheme(theme() === 'light' ? 'dark' : 'light')
   )
-  .modifier
   .cssVariable('primary-color', () => theme() === 'light' ? '#007AFF' : '#64D2FF')
   .cssVariable('bg-color', () => theme() === 'light' ? '#ffffff' : '#1a1a1a')
   .cssVariable('text-color', () => theme() === 'light' ? '#1a1a1a' : '#ffffff')
@@ -1377,7 +1280,6 @@ function ThemedComponent() {
   const themedCard = VStack({
     children: [
       Text('CSS Variables Demo')
-        .modifier
         .typography({ size: 20, weight: 'bold' })
         .css({ color: 'var(--text-color)' })
         .build(),
@@ -1386,7 +1288,6 @@ function ThemedComponent() {
     ],
     spacing: 16
   })
-  .modifier
   .cssVariable('bg-color', () => theme() === 'light' ? '#ffffff' : '#1a1a1a')
   .cssVariable('text-color', () => theme() === 'light' ? '#1a1a1a' : '#ffffff')
   .cssVariable('border-color', () => theme() === 'light' ? '#e0e0e0' : '#404040')
@@ -1411,13 +1312,11 @@ function ThemedComponent() {
 const gridGallery = VStack({
   children: [
     Text('Photo Gallery')
-      .modifier
       .typography({ size: 24, weight: 'bold', align: 'center' })
       .margin({ bottom: 24 })
       .build(),
     
     VStack({ children: [] }) // Grid container
-      .modifier
       .css({
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -1430,7 +1329,6 @@ const gridGallery = VStack({
       .build()
   ]
 })
-.modifier
 .padding({ all: 32 })
 .css({
   // Scroll snap for smooth scrolling
@@ -1443,12 +1341,10 @@ const gridGallery = VStack({
 const stickyNav = VStack({
   children: [
     Text('Navigation')
-      .modifier
       .typography({ size: 18, weight: '600', color: 'white' })
       .build()
   ]
 })
-.modifier
 .padding({ horizontal: 24, vertical: 16 })
 .backgroundColor('#007AFF')
 .css({
@@ -1469,7 +1365,6 @@ const stickyNav = VStack({
 const accessibleCard = VStack({
   children: [
     Text('Accessible Content')
-      .modifier
       .typography({
         size: 20,
         weight: '600',
@@ -1478,7 +1373,6 @@ const accessibleCard = VStack({
       .build()
   ]
 })
-.modifier
 .padding({ all: 20 })
 .backgroundColor('#ffffff')
 .cornerRadius(8)

@@ -4,8 +4,9 @@
  * Tests for SwiftUI-style advanced TabView features
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { HTML } from '@tachui/primitives'
+import { configureCore } from '@tachui/core'
 import {
   AdvancedTabView,
   PageTabView,
@@ -21,6 +22,9 @@ type TabReorderEvent = any
 type TabCloseEvent = any
 
 describe('Advanced TabView Features', () => {
+  beforeAll(() => {
+    configureCore({ proxyModifiers: true })
+  })
   describe('AdvancedTabView', () => {
     const mockTabs: AdvancedTabItem[] = [
       {

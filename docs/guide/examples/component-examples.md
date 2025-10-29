@@ -15,7 +15,6 @@ import { Text, createSignal } from '@tachui/core'
 
 // Static text
 const title = Text("Welcome to TachUI")
-  .modifier
   .fontSize(24)
   .fontWeight('bold')
   .foregroundColor('#1a1a1a')
@@ -25,7 +24,6 @@ const title = Text("Welcome to TachUI")
 // Dynamic text with signals
 const [count, setCount] = createSignal(0)
 const counter = Text(() => `Count: ${count()}`)
-  .modifier
   .fontSize(18)
   .foregroundColor('#007AFF')
   .fontWeight('500')
@@ -33,7 +31,6 @@ const counter = Text(() => `Count: ${count()}`)
 
 // Multi-line text with styling
 const description = Text("This is a longer description that demonstrates text wrapping and styling capabilities.")
-  .modifier
   .fontSize(16)
   .lineHeight(1.5)
   .foregroundColor('#666')
@@ -47,17 +44,14 @@ const description = Text("This is a longer description that demonstrates text wr
 ```typescript
 // Using typography presets
 const headline = Text("Headline Text")
-  .modifier
   .typography('headline')
   .build()
 
 const body = Text("Body text content")
-  .modifier
   .typography('body')
   .build()
 
 const caption = Text("Caption text")
-  .modifier
   .typography('caption')
   .foregroundColor('#888')
   .build()
@@ -72,7 +66,6 @@ import { Button, createSignal } from '@tachui/core'
 
 // Primary button
 const primaryButton = Button("Primary Action")
-  .modifier
   .variant('filled')
   .role('none')
   .backgroundColor('#007AFF')
@@ -84,7 +77,6 @@ const primaryButton = Button("Primary Action")
 
 // Secondary button
 const secondaryButton = Button("Secondary")
-  .modifier
   .variant('outlined')
   .role('none')
   .borderColor('#007AFF')
@@ -95,7 +87,6 @@ const secondaryButton = Button("Secondary")
 
 // Destructive button
 const deleteButton = Button("Delete")
-  .modifier
   .variant('filled')
   .role('destructive')
   .backgroundColor('#ff3b30')
@@ -111,7 +102,6 @@ const deleteButton = Button("Delete")
 // Loading state button
 const [isLoading, setIsLoading] = createSignal(false)
 const submitButton = Button(() => isLoading() ? "Loading..." : "Submit")
-  .modifier
   .variant('filled')
   .disabled(isLoading)
   .backgroundColor(() => isLoading() ? '#ccc' : '#007AFF')
@@ -131,7 +121,6 @@ const submitButton = Button(() => isLoading() ? "Loading..." : "Submit")
 // Toggle button
 const [isToggled, setIsToggled] = createSignal(false)
 const toggleButton = Button(() => isToggled() ? "ON" : "OFF")
-  .modifier
   .variant('bordered')
   .backgroundColor(() => isToggled() ? '#007AFF' : 'transparent')
   .foregroundColor(() => isToggled() ? '#ffffff' : '#007AFF')
@@ -151,7 +140,6 @@ import { Image, ImageUtils, ImageContentModes, createSignal } from '@tachui/core
 
 // Basic image with modifiers
 const profilePicture = Image('user-avatar.jpg')
-  .modifier
   .width(120)
   .height(120)
   .cornerRadius(60)
@@ -161,7 +149,6 @@ const profilePicture = Image('user-avatar.jpg')
 // Dynamic image source
 const [selectedImage, setSelectedImage] = createSignal('default.jpg')
 const dynamicImage = Image(() => selectedImage())
-  .modifier
   .width(400)
   .height(300)
   .cornerRadius(12)
@@ -170,7 +157,6 @@ const dynamicImage = Image(() => selectedImage())
 
 // Responsive image that adapts to container
 const responsiveImage = Image('hero-banner.jpg')
-  .modifier
   .width('100%')
   .height('auto')
   .maxWidth(1200)
@@ -187,7 +173,6 @@ const [isLoading, setIsLoading] = createSignal(true)
 const [hasError, setHasError] = createSignal(false)
 
 const loadingAwareImage = Image('large-photo.jpg')
-  .modifier
   .width(600)
   .height(400)
   .placeholder('loading-placeholder.jpg')
@@ -206,7 +191,6 @@ const progressiveImage = ImageUtils.progressive(
   'thumbnail.jpg',        // Low quality, fast loading
   'full-resolution.jpg'   // High quality, slower loading
 )
-.modifier
 .width(800)
 .height(600)
 .cornerRadius(16)
@@ -219,7 +203,6 @@ const responsiveHero = ImageUtils.responsive([
   { src: 'hero-tablet.jpg', width: 1024, media: '(max-width: 1200px)' },
   { src: 'hero-desktop.jpg', width: 1920 }
 ], 'hero-fallback.jpg')
-.modifier
 .width('100%')
 .height(400)
 .contentMode('cover')
@@ -233,7 +216,6 @@ const responsiveHero = ImageUtils.responsive([
 const photoGallery = [
   // Aspect fit - shows entire image, may have letterboxing
   Image('landscape.jpg')
-    .modifier
     .contentMode(ImageContentModes.fit)
     .frame(300, 200)
     .border(1, '#e0e0e0')
@@ -241,7 +223,6 @@ const photoGallery = [
   
   // Aspect fill - fills container, may crop image
   Image('portrait.jpg')
-    .modifier
     .contentMode(ImageContentModes.fill)
     .frame(300, 200)
     .cornerRadius(8)
@@ -249,7 +230,6 @@ const photoGallery = [
   
   // Center - shows image at original size, centered
   Image('icon.png')
-    .modifier
     .contentMode(ImageContentModes.center)
     .frame(100, 100)
     .backgroundColor('#f5f5f5')
@@ -257,7 +237,6 @@ const photoGallery = [
   
   // Scale down - shrinks if needed, never enlarges
   Image('small-logo.png')
-    .modifier
     .contentMode(ImageContentModes.scaleDown)
     .frame(200, 200)
     .backgroundColor('#ffffff')
@@ -266,7 +245,6 @@ const photoGallery = [
 
 // Aspect ratio controlled images
 const instagramPost = Image('square-photo.jpg')
-  .modifier
   .aspectRatio(1) // Perfect square
   .width('100%')
   .maxWidth(400)
@@ -274,7 +252,6 @@ const instagramPost = Image('square-photo.jpg')
   .build()
 
 const cinematicImage = Image('movie-still.jpg')
-  .modifier
   .aspectRatio(21/9) // Ultra-wide cinematic
   .width('100%')
   .maxWidth(800)
@@ -288,7 +265,6 @@ const cinematicImage = Image('movie-still.jpg')
 // Interactive hover effects
 const [isHovered, setIsHovered] = createSignal(false)
 const interactiveImage = Image('hover-effect.jpg')
-  .modifier
   .width(300)
   .height(200)
   .blur(() => isHovered() ? 2 : 0)
@@ -301,7 +277,6 @@ const interactiveImage = Image('hover-effect.jpg')
 
 // Filter effects for mood/style
 const vintagePhoto = Image('old-photo.jpg')
-  .modifier
   .sepia(true)
   .opacity(0.9)
   .border(8, '#8B4513')
@@ -310,7 +285,6 @@ const vintagePhoto = Image('old-photo.jpg')
   .build()
 
 const backgroundBlur = Image('background.jpg')
-  .modifier
   .blur(8)
   .opacity(0.3)
   .position('absolute')
@@ -323,7 +297,6 @@ const backgroundBlur = Image('background.jpg')
 const [saturation, setSaturation] = createSignal(1.0)
 const [brightness, setBrightness] = createSignal(1.0)
 const adjustableImage = Image('adjustable.jpg')
-  .modifier
   .filter(() => `saturate(${saturation()}) brightness(${brightness()})`)
   .transition('filter', 200)
   .build()
@@ -334,7 +307,6 @@ const adjustableImage = Image('adjustable.jpg')
 ```typescript
 // Lazy loading with intersection observer
 const lazyImage = Image('below-fold.jpg')
-  .modifier
   .loadingStrategy('lazy')
   .placeholder('lazy-placeholder.svg')
   .width(400)
@@ -343,7 +315,6 @@ const lazyImage = Image('below-fold.jpg')
 
 // High priority hero image
 const heroImage = Image('hero.jpg')
-  .modifier
   .loadingStrategy('eager')
   .fetchPriority('high')
   .decoding('sync')
@@ -354,7 +325,6 @@ const heroImage = Image('hero.jpg')
 
 // Cross-origin images with proper handling
 const externalImage = Image('https://external-cdn.com/image.jpg')
-  .modifier
   .crossOrigin('anonymous')
   .width(300)
   .height(200)
@@ -370,7 +340,6 @@ const imageGallery = VStack({
   children: [
     // Gallery header
     Text("Photo Gallery")
-      .modifier
       .fontSize(24)
       .fontWeight('bold')
       .margin({ bottom: 20 })
@@ -380,7 +349,6 @@ const imageGallery = VStack({
     HStack({
       children: photos.map((photo, index) => 
         Image(photo.src)
-          .modifier
           .width(200)
           .height(200)
           .contentMode('cover')
@@ -403,7 +371,6 @@ const imageGallery = VStack({
   ],
   spacing: 0
 })
-.modifier
 .padding(20)
 .build()
 ```
@@ -418,7 +385,6 @@ import { TextField, createSignal } from '@tachui/core'
 // Simple text input
 const [name, setName] = createSignal("")
 const nameField = TextField(() => name())
-  .modifier
   .placeholder("Enter your name")
   .onChange(setName)
   .padding(12)
@@ -430,7 +396,6 @@ const nameField = TextField(() => name())
 // Email input with validation
 const [email, setEmail] = createSignal("")
 const emailField = TextField(() => email())
-  .modifier
   .placeholder("Enter your email")
   .inputType('email')
   .validation('email')
@@ -449,7 +414,6 @@ const emailField = TextField(() => email())
 // Password field with strength validation
 const [password, setPassword] = createSignal("")
 const passwordField = TextField(() => password())
-  .modifier
   .placeholder("Create a password")
   .inputType('password')
   .secureTextEntry(true)
@@ -474,7 +438,6 @@ const passwordField = TextField(() => password())
 // Multiline text area
 const [comment, setComment] = createSignal("")
 const commentField = TextField(() => comment())
-  .modifier
   .placeholder("Enter your comment...")
   .multiline(true)
   .rows(4)
@@ -489,7 +452,6 @@ const commentField = TextField(() => comment())
 // Number input with formatting
 const [price, setPrice] = createSignal("")
 const priceField = TextField(() => price())
-  .modifier
   .placeholder("0.00")
   .inputType('number')
   .formatter('currency')
@@ -519,19 +481,16 @@ import { VStack, HStack, ZStack, Text, Button } from '@tachui/core'
 const profileCard = VStack({
   children: [
     Text("John Doe")
-      .modifier
       .fontSize(20)
       .fontWeight('bold')
       .build(),
     
     Text("Software Developer")
-      .modifier
       .fontSize(16)
       .foregroundColor('#666')
       .build(),
     
     Button("Contact")
-      .modifier
       .variant('outlined')
       .cornerRadius(6)
       .padding({ horizontal: 16, vertical: 8 })
@@ -540,7 +499,6 @@ const profileCard = VStack({
   spacing: 12,
   alignment: 'center'
 })
-.modifier
 .padding(20)
 .backgroundColor('#ffffff')
 .cornerRadius(12)
@@ -555,19 +513,16 @@ const profileCard = VStack({
 const navigationBar = HStack({
   children: [
     Button("← Back")
-      .modifier
       .variant('plain')
       .foregroundColor('#007AFF')
       .build(),
     
     Text("Profile")
-      .modifier
       .fontSize(18)
       .fontWeight('600')
       .build(),
     
     Button("Edit")
-      .modifier
       .variant('plain')
       .foregroundColor('#007AFF')
       .build()
@@ -576,7 +531,6 @@ const navigationBar = HStack({
   alignment: 'center',
   distribution: 'spaceBetween'
 })
-.modifier
 .padding({ horizontal: 16, vertical: 12 })
 .backgroundColor('#f9f9f9')
 .borderBottom(1, '#e0e0e0')
@@ -591,7 +545,6 @@ const heroSection = ZStack({
   children: [
     // Background image
     HTML.div()
-      .modifier
       .backgroundColor('#007AFF')
       .backgroundImage('url(/hero-bg.jpg)')
       .backgroundSize('cover')
@@ -602,7 +555,6 @@ const heroSection = ZStack({
     
     // Overlay gradient
     HTML.div()
-      .modifier
       .width('100%')
       .height(300)
       .background('linear-gradient(45deg, rgba(0,122,255,0.8), rgba(0,122,255,0.4))')
@@ -612,7 +564,6 @@ const heroSection = ZStack({
     VStack({
       children: [
         Text("Welcome to TachUI")
-          .modifier
           .fontSize(32)
           .fontWeight('bold')
           .foregroundColor('#ffffff')
@@ -620,7 +571,6 @@ const heroSection = ZStack({
           .build(),
         
         Text("SwiftUI-inspired web development")
-          .modifier
           .fontSize(18)
           .foregroundColor('#ffffff')
           .textAlign('center')
@@ -628,7 +578,6 @@ const heroSection = ZStack({
           .build(),
         
         Button("Get Started")
-          .modifier
           .variant('filled')
           .backgroundColor('#ffffff')
           .foregroundColor('#007AFF')
@@ -643,7 +592,6 @@ const heroSection = ZStack({
   ],
   alignment: 'center'
 })
-.modifier
 .width('100%')
 .cornerRadius(12)
 .overflow('hidden')
@@ -669,7 +617,6 @@ const basicScroll = ScrollView({
     Text("Item 5").padding(16).build()
   ]
 })
-.modifier
 .frame(undefined, 400)
 .backgroundColor('#f9f9f9')
 .cornerRadius(8)
@@ -686,7 +633,6 @@ const horizontalScroll = ScrollView({
   ],
   direction: 'horizontal'
 })
-.modifier
 .frame(undefined, 170)
 .padding(16)
 .build()
@@ -695,7 +641,6 @@ const horizontalScroll = ScrollView({
 const bidirectionalScroll = ScrollView({
   children: [
     HTML.div()
-      .modifier
       .width(1200)
       .height(800)
       .backgroundColor('#f0f8ff')
@@ -706,7 +651,6 @@ const bidirectionalScroll = ScrollView({
   ],
   direction: 'both'
 })
-.modifier
 .frame(600, 400)
 .border(1, '#ddd')
 .build()
@@ -736,7 +680,6 @@ const refreshableScroll = ScrollView({
       spacing: 12,
       alignment: 'center'
     })
-    .modifier
     .padding(16)
     .backgroundColor('#ffffff')
     .cornerRadius(8)
@@ -760,7 +703,6 @@ const refreshableScroll = ScrollView({
     title: 'Pull to refresh...'
   }
 })
-.modifier
 .frame(undefined, 500)
 .backgroundColor('#f5f5f5')
 .cornerRadius(12)
@@ -795,7 +737,6 @@ const infiniteScroll = ScrollView({
   },
   scrollEventThrottle: 16 // 60fps scroll events
 })
-.modifier
 .frame(undefined, 600)
 .build()
 ```
@@ -812,7 +753,6 @@ const pagedContent = [
 ]
 
 const pagedScroll = ScrollViewUtils.paged(pagedContent)
-.modifier
 .frame(400, 300)
 .cornerRadius(16)
 .shadow({ x: 0, y: 8, radius: 24, color: 'rgba(0,0,0,0.15)' })
@@ -826,7 +766,6 @@ const heavyContentScroll = ScrollView({
   scrollEventThrottle: 32, // 30fps for better performance
   decelerationRate: 'fast'
 })
-.modifier
 .frame(undefined, 400)
 .backgroundColor('#ffffff')
 .build()
@@ -845,7 +784,6 @@ const nestedScroll = ScrollView({
       ],
       direction: 'horizontal'
     })
-    .modifier
     .frame(undefined, 120)
     .backgroundColor('#f8f8f8')
     .cornerRadius(8)
@@ -854,7 +792,6 @@ const nestedScroll = ScrollView({
     Text("More outer content").padding(20).build()
   ]
 })
-.modifier
 .frame(undefined, 500)
 .build()
 ```
@@ -879,7 +816,6 @@ const basicList = List({
     HStack({
       children: [
         HTML.div()
-          .modifier
           .width(40)
           .height(40)
           .backgroundColor('#007AFF')
@@ -902,13 +838,11 @@ const basicList = List({
       spacing: 12,
       alignment: 'center'
     })
-    .modifier
     .padding(16)
     .backgroundColor('#ffffff')
     .borderRadius(8)
     .build()
 })
-.modifier
 .backgroundColor('#f5f5f5')
 .cornerRadius(12)
 .build()
@@ -929,7 +863,6 @@ const selectableList = List({
       children: [
         // Selection indicator
         HTML.div()
-          .modifier
           .width(20)
           .height(20)
           .backgroundColor(isSelected ? '#007AFF' : 'transparent')
@@ -952,7 +885,6 @@ const selectableList = List({
         
         // Action button
         Button("View")
-          .modifier
           .variant('outlined')
           .fontSize(14)
           .padding({ horizontal: 12, vertical: 6 })
@@ -962,7 +894,6 @@ const selectableList = List({
       spacing: 12,
       alignment: 'center'
     })
-    .modifier
     .padding(16)
     .backgroundColor(isSelected ? '#f0f8ff' : '#ffffff')
     .border(1, isSelected ? '#007AFF' : '#e0e0e0')
@@ -978,7 +909,6 @@ const selectableList = List({
   },
   getItemId: (user) => user.id
 })
-.modifier
 .frame(undefined, 400)
 .backgroundColor('#f9f9f9')
 .cornerRadius(12)
@@ -1004,7 +934,6 @@ const virtualList = ListUtils.virtual(
     HStack({
       children: [
         Image(user.avatar)
-          .modifier
           .width(40)
           .height(40)
           .cornerRadius(20)
@@ -1023,7 +952,6 @@ const virtualList = ListUtils.virtual(
       spacing: 12,
       alignment: 'center'
     })
-    .modifier
     .padding(12)
     .borderBottom(1, '#f0f0f0')
     .build(),
@@ -1034,7 +962,6 @@ const virtualList = ListUtils.virtual(
     scrollingDelay: 150
   }
 )
-.modifier
 .frame(undefined, 500)
 .backgroundColor('#ffffff')
 .border(1, '#e0e0e0')
@@ -1081,7 +1008,6 @@ const sectionedList = ListUtils.sectioned(
     HStack({
       children: [
         HTML.div()
-          .modifier
           .width(44)
           .height(44)
           .backgroundColor('#007AFF')
@@ -1101,7 +1027,6 @@ const sectionedList = ListUtils.sectioned(
         }),
         
         Button("Call")
-          .modifier
           .variant('outlined')
           .fontSize(14)
           .padding({ horizontal: 12, vertical: 6 })
@@ -1111,13 +1036,11 @@ const sectionedList = ListUtils.sectioned(
       spacing: 12,
       alignment: 'center'
     })
-    .modifier
     .padding(16)
     .backgroundColor('#ffffff')
     .borderBottom(1, '#f0f0f0')
     .build()
 )
-.modifier
 .backgroundColor('#f9f9f9')
 .cornerRadius(12)
 .build()
@@ -1147,7 +1070,6 @@ const todoList = ForEachComponent({
       children: [
         // Completion checkbox
         HTML.div()
-          .modifier
           .width(24)
           .height(24)
           .backgroundColor(todo.completed ? '#34c759' : 'transparent')
@@ -1164,7 +1086,6 @@ const todoList = ForEachComponent({
         VStack({
           children: [
             Text(todo.text)
-              .modifier
               .fontSize(16)
               .fontWeight('500')
               .textDecoration(todo.completed ? 'line-through' : 'none')
@@ -1172,7 +1093,6 @@ const todoList = ForEachComponent({
               .build(),
             
             Text(`Priority: ${todo.priority}`)
-              .modifier
               .fontSize(12)
               .foregroundColor(priorityColors[todo.priority])
               .fontWeight('600')
@@ -1184,7 +1104,6 @@ const todoList = ForEachComponent({
         
         // Delete button
         Button("Delete")
-          .modifier
           .variant('plain')
           .foregroundColor('#ff3b30')
           .fontSize(14)
@@ -1195,7 +1114,6 @@ const todoList = ForEachComponent({
       spacing: 12,
       alignment: 'center'
     })
-    .modifier
     .padding(16)
     .backgroundColor(todo.completed ? '#f8f8f8' : '#ffffff')
     .cornerRadius(8)
@@ -1205,7 +1123,6 @@ const todoList = ForEachComponent({
   },
   getItemId: (todo) => todo.id
 })
-.modifier
 .backgroundColor('#f5f5f5')
 .cornerRadius(12)
 .padding(8)
@@ -1245,7 +1162,6 @@ const advancedList = VStack({
     HStack({
       children: [
         TextField(() => searchTerm())
-          .modifier
           .placeholder('Search todos...')
           .onChange(setSearchTerm)
           .padding(12)
@@ -1255,7 +1171,6 @@ const advancedList = VStack({
           .build(),
         
         Button(filter())
-          .modifier
           .variant('outlined')
           .padding({ horizontal: 16, vertical: 12 })
           .onTap(() => {
@@ -1278,7 +1193,6 @@ const advancedList = VStack({
           data: filteredTodos,
           renderItem: (todo, index) => createTodoItem(todo, index),
           emptyState: Text("No todos found")
-            .modifier
             .fontSize(16)
             .foregroundColor('#999')
             .textAlign('center')
@@ -1288,7 +1202,6 @@ const advancedList = VStack({
       ],
       fallback: () => [
         Text("No todos match your criteria")
-          .modifier
           .fontSize(16)
           .foregroundColor('#999')
           .textAlign('center')
@@ -1299,7 +1212,6 @@ const advancedList = VStack({
   ],
   spacing: 16
 })
-.modifier
 .padding(16)
 .build()
 ```
@@ -1316,7 +1228,6 @@ const [isLoading, setIsLoading] = createSignal(false)
 const loginForm = VStack({
   children: [
     Text("Sign In")
-      .modifier
       .fontSize(28)
       .fontWeight('bold')
       .textAlign('center')
@@ -1324,7 +1235,6 @@ const loginForm = VStack({
       .build(),
     
     TextField(() => email())
-      .modifier
       .placeholder("Email")
       .inputType('email')
       .validation('email')
@@ -1337,7 +1247,6 @@ const loginForm = VStack({
       .build(),
     
     TextField(() => password())
-      .modifier
       .placeholder("Password")
       .inputType('password')
       .secureTextEntry(true)
@@ -1350,7 +1259,6 @@ const loginForm = VStack({
       .build(),
     
     Button(() => isLoading() ? "Signing in..." : "Sign In")
-      .modifier
       .variant('filled')
       .disabled(() => isLoading() || !email() || !password())
       .backgroundColor('#007AFF')
@@ -1372,7 +1280,6 @@ const loginForm = VStack({
   spacing: 16,
   alignment: 'stretch'
 })
-.modifier
 .maxWidth(400)
 .padding(32)
 .backgroundColor('#ffffff')
@@ -1394,21 +1301,18 @@ const productGrid = VStack({
           width: 80,
           height: 80
         })
-        .modifier
         .cornerRadius(8)
         .build(),
         
         VStack({
           children: [
             Text(product.name)
-              .modifier
               .fontSize(16)
               .fontWeight('600')
               .foregroundColor('#1a1a1a')
               .build(),
             
             Text(product.description)
-              .modifier
               .fontSize(14)
               .foregroundColor('#666')
               .lineHeight(1.4)
@@ -1418,14 +1322,12 @@ const productGrid = VStack({
             HStack({
               children: [
                 Text(`$${product.price}`)
-                  .modifier
                   .fontSize(18)
                   .fontWeight('bold')
                   .foregroundColor('#007AFF')
                   .build(),
                 
                 Button("Add to Cart")
-                  .modifier
                   .variant('filled')
                   .backgroundColor('#007AFF')
                   .foregroundColor('#ffffff')
@@ -1442,14 +1344,12 @@ const productGrid = VStack({
           spacing: 8,
           alignment: 'leading'
         })
-        .modifier
         .flex(1)
         .build()
       ],
       spacing: 16,
       alignment: 'top'
     })
-    .modifier
     .padding(16)
     .backgroundColor('#ffffff')
     .cornerRadius(12)
@@ -1459,7 +1359,6 @@ const productGrid = VStack({
   ),
   spacing: 16
 })
-.modifier
 .padding(16)
 .build()
 ```
@@ -1476,14 +1375,12 @@ const conditionalContent = Show({
   when: () => isLoggedIn(),
   children: () => [
     Text("Welcome back!")
-      .modifier
       .fontSize(18)
       .fontWeight('500')
       .build()
   ],
   fallback: () => [
     Button("Sign In")
-      .modifier
       .variant('outlined')
       .build()
   ]
@@ -1496,13 +1393,11 @@ const todoList = ForEachComponent({
     HStack({
       children: [
         Text(() => todo().title)
-          .modifier
           .flex(1)
           .fontSize(16)
           .build(),
         
         Button("Complete")
-          .modifier
           .variant('outlined')
           .fontSize(14)
           .padding({ horizontal: 8, vertical: 4 })
@@ -1512,7 +1407,6 @@ const todoList = ForEachComponent({
       spacing: 12,
       alignment: 'center'
     })
-    .modifier
     .padding(12)
     .borderBottom(1, '#f0f0f0')
     .build(),
@@ -1535,7 +1429,6 @@ test('ScrollView handles vertical scrolling', () => {
   )
   
   const scrollView = ScrollView({ children: content })
-    .modifier
     .frame(300, 200)
     .build()
   
@@ -1650,7 +1543,6 @@ test('ScrollView with List maintains scroll position', () => {
       })
     ]
   })
-  .modifier
   .frame(300, 200)
   .build()
   
@@ -1681,7 +1573,6 @@ const scrollViewBenchmark = {
       Text(`Item ${i}`).padding(8).build()
     )
     return ScrollView({ children: items })
-      .modifier
       .frame(300, 400)
       .build()
   },
@@ -1730,7 +1621,6 @@ const usernameInput = BasicInput({
   onChange: (value) => console.log('Username:', value),
   onSubmit: (value) => handleLogin(value)
 })
-  .modifier
   .padding(12, 16)
   .borderRadius(8)
   .fontSize(16)
@@ -1764,7 +1654,6 @@ const emailInput = BasicInput({
     }
   }
 })
-  .modifier
   .padding(12, 16)
   .borderRadius(6)
   .border(emailError() ? '2px solid #FF3B30' : '1px solid #D1D1D6')
@@ -1790,7 +1679,6 @@ const passwordInput = BasicInput({
     setPasswordStrength(checkPasswordStrength(value))
   }
 })
-  .modifier
   .padding(12, 16)
   .borderRadius(6)
   .fontSize(16)
@@ -1834,7 +1722,6 @@ const searchInput = BasicInput({
   },
   onSubmit: (query) => performSearch(query)
 })
-  .modifier
   .padding(12, 16)
   .borderRadius(20)
   .backgroundColor('#F8F8F8')
@@ -1866,7 +1753,6 @@ const reactiveInput = BasicInput({
     setPlaceholder('Click to edit...')
   }
 })
-  .modifier
   .padding(12, 16)
   .borderRadius(6)
   .backgroundColor(() => isEditing() ? '#FFFFFF' : '#F5F5F5')
@@ -1900,7 +1786,6 @@ const contactForm = VStack([
     placeholder: 'First name',
     accessibilityLabel: 'First name'
   })
-    .modifier
     .padding(12, 16)
     .borderRadius(8)
     .fontSize(16)
@@ -1915,7 +1800,6 @@ const contactForm = VStack([
     placeholder: 'Last name',
     accessibilityLabel: 'Last name'
   })
-    .modifier
     .padding(12, 16)
     .borderRadius(8)
     .fontSize(16)
@@ -1934,7 +1818,6 @@ const contactForm = VStack([
     placeholder: '(123) 456-7890',
     accessibilityLabel: 'Phone number'
   })
-    .modifier
     .padding(12, 16)
     .borderRadius(8)
     .fontSize(16)
@@ -1952,7 +1835,6 @@ const contactForm = VStack([
     }
     console.log('Form submitted:', formData)
   })
-    .modifier
     .padding(14, 20)
     .borderRadius(8)
     .backgroundColor('#007AFF')
@@ -1961,7 +1843,6 @@ const contactForm = VStack([
     .fontWeight('600')
     .build()
 ])
-  .modifier
   .padding(20)
   .maxWidth(400)
   .build()
@@ -1983,7 +1864,6 @@ const searchInput = BasicInput(
     performSearch(query)
   })
 )
-  .modifier
   .width('100%')
   .padding(12, 16)
   .borderRadius(20)
@@ -1993,7 +1873,6 @@ const searchInput = BasicInput(
 const emailInput = BasicInput(
   BasicInputUtils.email(userEmail, setUserEmail)
 )
-  .modifier
   .width('100%')
   .padding(12, 16)
   .borderRadius(8)
@@ -2003,7 +1882,6 @@ const emailInput = BasicInput(
 const passwordInput = BasicInput(
   BasicInputUtils.password(userPassword, setUserPassword)
 )
-  .modifier
   .width('100%')
   .padding(12, 16)
   .borderRadius(8)
@@ -2013,7 +1891,6 @@ const passwordInput = BasicInput(
 const phoneInput = BasicInput(
   BasicInputUtils.phone(phoneNumber, setPhoneNumber)
 )
-  .modifier
   .width('100%')
   .padding(12, 16)
   .borderRadius(8)

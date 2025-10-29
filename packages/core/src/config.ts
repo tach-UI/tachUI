@@ -3,7 +3,7 @@ export interface CoreFeatureFlags {
 }
 
 const defaultFlags: CoreFeatureFlags = {
-  proxyModifiers: false,
+  proxyModifiers: true,
 }
 
 let featureFlags: CoreFeatureFlags = { ...defaultFlags }

@@ -23,7 +23,6 @@ const BlogApp = () => {
     BlogMainContent(),
     BlogFooter()
   ])
-  .modifier
   .responsive({
     base: { minHeight: '100vh', backgroundColor: '#f8f9fa' },
     md: { backgroundColor: '#ffffff' }
@@ -43,7 +42,6 @@ const BlogHeader = () => {
     // Logo
     HStack([
       Image('/logo.svg')
-        .modifier
         .responsive({
           base: { width: 32, height: 32 },
           md: { width: 40, height: 40 }
@@ -51,7 +49,6 @@ const BlogHeader = () => {
         .build(),
       
       Text("TechBlog")
-        .modifier
         .responsive({
           base: { 
             fontSize: 20, 
@@ -64,7 +61,6 @@ const BlogHeader = () => {
         })
         .build()
     ])
-    .modifier
     .alignItems('center')
     .gap({ base: 8, md: 12 })
     .build(),
@@ -76,7 +72,6 @@ const BlogHeader = () => {
       Link("About").fontSize(16).color('#2c3e50').build(),
       Link("Contact").fontSize(16).color('#2c3e50').build()
     ])
-    .modifier
     .responsive({
       base: { display: 'none' },     // Hidden on mobile
       md: { display: 'flex', gap: 32 }
@@ -85,7 +80,6 @@ const BlogHeader = () => {
     
     // Mobile Menu Button
     Button("☰")
-      .modifier
       .responsive({
         base: { 
           display: 'flex',
@@ -97,7 +91,6 @@ const BlogHeader = () => {
       })
       .build()
   ])
-  .modifier
   .justifyContent('space-between')
   .alignItems('center')
   .responsive({
@@ -144,7 +137,6 @@ const BlogMainContent = () => {
         // Article grid
         ArticleGrid(articles.slice(1))
       ])
-      .modifier
       .responsive({
         base: { width: '100%' },
         lg: { width: 'calc(75% - 2rem)' }
@@ -154,7 +146,6 @@ const BlogMainContent = () => {
       
       // Sidebar
       BlogSidebar()
-        .modifier
         .responsive({
           base: { 
             display: 'none'           // Hidden on mobile
@@ -166,7 +157,6 @@ const BlogMainContent = () => {
         })
         .build()
     ])
-    .modifier
     .responsive({
       base: { flexDirection: 'column' },
       lg: { 
@@ -182,7 +172,6 @@ const BlogMainContent = () => {
 const FeaturedArticle = (article: Article) => {
   return VStack([
     Image(article.image)
-      .modifier
       .responsive({
         base: { 
           width: '100%', 
@@ -201,7 +190,6 @@ const FeaturedArticle = (article: Article) => {
     
     VStack([
       Text(article.title)
-        .modifier
         .responsive({
           base: { 
             fontSize: 24, 
@@ -222,7 +210,6 @@ const FeaturedArticle = (article: Article) => {
         .build(),
       
       Text(article.excerpt)
-        .modifier
         .responsive({
           base: { 
             fontSize: 16, 
@@ -239,31 +226,25 @@ const FeaturedArticle = (article: Article) => {
       
       HStack([
         Text(article.date)
-          .modifier
           .fontSize({ base: 14, md: 16 })
           .color('#6c757d')
           .build(),
         
         Text("•")
-          .modifier
           .color('#6c757d')
           .build(),
         
         Text(article.readTime)
-          .modifier
           .fontSize({ base: 14, md: 16 })
           .color('#6c757d')
           .build()
       ])
-      .modifier
       .gap(8)
       .build()
     ])
-    .modifier
     .padding({ base: 16, md: 20 })
     .build()
   ])
-  .modifier
   .backgroundColor('#ffffff')
   .borderRadius(16)
   .boxShadow('0 4px 12px rgba(0,0,0,0.1)')
@@ -283,7 +264,6 @@ const ArticleGrid = (articles: Article[]) => {
   return VStack(
     articles.map(article => ArticleCard(article))
   )
-  .modifier
   .apply(gridModifier)
   .build()
 }
@@ -291,7 +271,6 @@ const ArticleGrid = (articles: Article[]) => {
 const ArticleCard = (article: Article) => {
   return VStack([
     Image(article.image)
-      .modifier
       .responsive({
         base: { width: '100%', height: 150 },
         md: { height: 180 },
@@ -303,7 +282,6 @@ const ArticleCard = (article: Article) => {
     
     VStack([
       Text(article.title)
-        .modifier
         .responsive({
           base: { 
             fontSize: 18, 
@@ -320,7 +298,6 @@ const ArticleCard = (article: Article) => {
         .build(),
       
       Text(article.excerpt)
-        .modifier
         .fontSize({ base: 14, md: 16 })
         .lineHeight(1.5)
         .color('#6c757d')
@@ -332,15 +309,12 @@ const ArticleCard = (article: Article) => {
         Text("•").color('#6c757d').build(),
         Text(article.readTime).fontSize(12).color('#6c757d').build()
       ])
-      .modifier
       .gap(6)
       .build()
     ])
-    .modifier
     .padding({ base: 12, md: 16 })
     .build()
   ])
-  .modifier
   .backgroundColor('#ffffff')
   .borderRadius({ base: 12, md: 16 })
   .boxShadow('0 2px 8px rgba(0,0,0,0.1)')
@@ -356,7 +330,6 @@ const BlogSidebar = () => {
     // Search
     VStack([
       Text("Search")
-        .modifier
         .fontSize(18)
         .fontWeight('600')
         .marginBottom(12)
@@ -364,12 +337,10 @@ const BlogSidebar = () => {
       
       // Search input would go here
       Text("Search functionality...")
-        .modifier
         .fontSize(14)
         .color('#6c757d')
         .build()
     ])
-    .modifier
     .padding(20)
     .backgroundColor('#ffffff')
     .borderRadius(12)
@@ -380,7 +351,6 @@ const BlogSidebar = () => {
     // Categories
     VStack([
       Text("Categories")
-        .modifier
         .fontSize(18)
         .fontWeight('600')
         .marginBottom(12)
@@ -393,11 +363,9 @@ const BlogSidebar = () => {
         SidebarLink("React", 12),
         SidebarLink("TypeScript", 8)
       ])
-      .modifier
       .gap(8)
       .build()
     ])
-    .modifier
     .padding(20)
     .backgroundColor('#ffffff')
     .borderRadius(12)
@@ -410,18 +378,15 @@ const BlogSidebar = () => {
 const SidebarLink = (title: string, count: number) => {
   return HStack([
     Text(title)
-      .modifier
       .fontSize(14)
       .color('#2c3e50')
       .build(),
     
     Text(`(${count})`)
-      .modifier
       .fontSize(12)
       .color('#6c757d')
       .build()
   ])
-  .modifier
   .justifyContent('space-between')
   .padding(8)
   .borderRadius(6)
@@ -449,7 +414,6 @@ const ProductPage = ({ product }: { product: Product }) => {
       HStack([
         // Product images
         ProductImageGallery(product.images)
-          .modifier
           .responsive({
             base: { width: '100%' },
             lg: { width: '55%' }
@@ -458,14 +422,12 @@ const ProductPage = ({ product }: { product: Product }) => {
         
         // Product details
         ProductDetails(product)
-          .modifier
           .responsive({
             base: { width: '100%' },
             lg: { width: '40%' }
           })
           .build()
       ])
-      .modifier
       .responsive({
         base: { 
           flexDirection: 'column',
@@ -482,7 +444,6 @@ const ProductPage = ({ product }: { product: Product }) => {
       // Product tabs (description, reviews, etc.)
       ProductTabs(product)
     ])
-    .modifier
     .gap({ base: 24, md: 32, lg: 40 })
     .build()
   )
@@ -498,7 +459,6 @@ const ProductImageGallery = (images: string[]) => {
   return VStack([
     // Main image
     Image(images[selectedImage()])
-      .modifier
       .responsive({
         base: { 
           width: '100%', 
@@ -522,7 +482,6 @@ const ProductImageGallery = (images: string[]) => {
     HStack(
       images.map((image, index) => 
         Image(image)
-          .modifier
           .responsive({
             base: { 
               width: 60, 
@@ -542,7 +501,6 @@ const ProductImageGallery = (images: string[]) => {
           .build()
       )
     )
-    .modifier
     .responsive({
       base: { 
         gap: 8,
@@ -568,7 +526,6 @@ const ProductDetails = (product: Product) => {
   return VStack([
     // Product title
     Text(product.name)
-      .modifier
       .responsive({
         base: { 
           fontSize: 24, 
@@ -591,7 +548,6 @@ const ProductDetails = (product: Product) => {
     // Price
     HStack([
       Text(`$${product.price}`)
-        .modifier
         .responsive({
           base: { fontSize: 28, fontWeight: 'bold' },
           md: { fontSize: 32 },
@@ -602,14 +558,12 @@ const ProductDetails = (product: Product) => {
       
       ...(product.originalPrice ? [
         Text(`$${product.originalPrice}`)
-          .modifier
           .fontSize({ base: 18, md: 20 })
           .color('#6c757d')
           .textDecoration('line-through')
           .build()
       ] : [])
     ])
-    .modifier
     .alignItems('baseline')
     .gap(12)
     .marginBottom({ base: 16, md: 20 })
@@ -617,7 +571,6 @@ const ProductDetails = (product: Product) => {
     
     // Product description
     Text(product.description)
-      .modifier
       .responsive({
         base: { 
           fontSize: 16, 
@@ -640,20 +593,17 @@ const ProductDetails = (product: Product) => {
       // Quantity selector
       HStack([
         Text("Quantity:")
-          .modifier
           .fontSize({ base: 16, md: 18 })
           .fontWeight('600')
           .build(),
         
         // Quantity controls would go here
         Text("1") // Placeholder
-          .modifier
           .padding(8)
           .border('1px solid #dee2e6')
           .borderRadius(4)
           .build()
       ])
-      .modifier
       .alignItems('center')
       .gap(12)
       .marginBottom({ base: 16, md: 20 })
@@ -661,7 +611,6 @@ const ProductDetails = (product: Product) => {
       
       // Add to cart button
       Button("Add to Cart")
-        .modifier
         .responsive({
           base: { 
             width: '100%',
@@ -682,7 +631,6 @@ const ProductDetails = (product: Product) => {
       
       // Buy now button
       Button("Buy Now")
-        .modifier
         .responsive({
           base: { 
             width: '100%',
@@ -700,13 +648,11 @@ const ProductDetails = (product: Product) => {
         .borderRadius(8)
         .build()
     ])
-    .modifier
     .padding({ base: 20, md: 24 })
     .backgroundColor('#f8f9fa')
     .borderRadius(12)
     .build()
   ])
-  .modifier
   .responsive({
     base: { padding: 0 },
     lg: { paddingLeft: 24 }
@@ -730,7 +676,6 @@ const DashboardApp = () => {
   return HStack([
     // Sidebar
     DashboardSidebar(sidebarOpen, setSidebarOpen)
-      .modifier
       .responsive({
         base: { 
           position: 'fixed',
@@ -757,14 +702,12 @@ const DashboardApp = () => {
       // Main dashboard content
       DashboardContent()
     ])
-    .modifier
     .responsive({
       base: { width: '100%' },
       lg: { width: 'calc(100% - 250px)' }
     })
     .build()
   ])
-  .modifier
   .backgroundColor('#f8f9fa')
   .build()
 }
@@ -793,7 +736,6 @@ const MetricsGrid = () => {
   return VStack(
     metrics.map(metric => MetricCard(metric))
   )
-  .modifier
   .apply(gridModifier)
   .marginBottom({ base: 24, md: 32 })
   .build()
@@ -802,7 +744,6 @@ const MetricsGrid = () => {
 const MetricCard = (metric: Metric) => {
   return VStack([
     Text(metric.title)
-      .modifier
       .fontSize({ base: 14, md: 16 })
       .color('#6c757d')
       .marginBottom({ base: 8, md: 12 })
@@ -810,7 +751,6 @@ const MetricCard = (metric: Metric) => {
     
     HStack([
       Text(metric.value)
-        .modifier
         .responsive({
           base: { fontSize: 24, fontWeight: 'bold' },
           md: { fontSize: 28 },
@@ -820,18 +760,15 @@ const MetricCard = (metric: Metric) => {
         .build(),
       
       Text(metric.change)
-        .modifier
         .fontSize({ base: 12, md: 14 })
         .color(metric.positive ? '#28a745' : '#dc3545')
         .fontWeight('600')
         .build()
     ])
-    .modifier
     .justifyContent('space-between')
     .alignItems('baseline')
     .build()
   ])
-  .modifier
   .responsive({
     base: { 
       padding: 16,
@@ -865,7 +802,6 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
           columns.map(column => 
             HStack([
               Text(column.header)
-                .modifier
                 .fontSize(12)
                 .fontWeight('600')
                 .color('#6c757d')
@@ -873,18 +809,15 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
                 .build(),
               
               Text(row[column.key])
-                .modifier
                 .fontSize(14)
                 .color('#2c3e50')
                 .flex(1)
                 .build()
             ])
-            .modifier
             .marginBottom(8)
             .build()
           )
         )
-        .modifier
         .padding(16)
         .backgroundColor('#ffffff')
         .borderRadius(8)
@@ -902,7 +835,6 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
     HStack(
       columns.map(column => 
         Text(column.header)
-          .modifier
           .fontSize({ base: 14, md: 16 })
           .fontWeight('600')
           .color('#495057')
@@ -911,7 +843,6 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
           .build()
       )
     )
-    .modifier
     .backgroundColor('#f8f9fa')
     .borderRadius(8)
     .build(),
@@ -922,7 +853,6 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
         HStack(
           columns.map(column => 
             Text(row[column.key])
-              .modifier
               .fontSize({ base: 13, md: 15 })
               .color('#2c3e50')
               .padding({ base: 8, md: 12 })
@@ -930,12 +860,10 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
               .build()
           )
         )
-        .modifier
         .borderBottom('1px solid #e9ecef')
         .build()
       )
     )
-    .modifier
     .backgroundColor('#ffffff')
     .borderRadius(8)
     .boxShadow('0 2px 4px rgba(0,0,0,0.1)')
@@ -961,7 +889,6 @@ const HeroSection = () => {
       // Hero content
       VStack([
         Text("Build Amazing Web Applications")
-          .modifier
           .responsive({
             base: { 
               fontSize: 32, 
@@ -984,7 +911,6 @@ const HeroSection = () => {
           .build(),
         
         Text("The modern framework for creating responsive, performant web applications with TypeScript.")
-          .modifier
           .responsive({
             base: { 
               fontSize: 16, 
@@ -1008,7 +934,6 @@ const HeroSection = () => {
         // CTA buttons
         HStack([
           Button("Get Started")
-            .modifier
             .responsive({
               base: { 
                 padding: '12px 24px',
@@ -1026,7 +951,6 @@ const HeroSection = () => {
             .build(),
           
           Button("View Demo")
-            .modifier
             .responsive({
               base: { 
                 padding: '12px 24px',
@@ -1044,7 +968,6 @@ const HeroSection = () => {
             .borderRadius(8)
             .build()
         ])
-        .modifier
         .responsive({
           base: { 
             flexDirection: 'column',
@@ -1059,7 +982,6 @@ const HeroSection = () => {
         })
         .build()
       ])
-      .modifier
       .responsive({
         base: { 
           width: '100%',
@@ -1074,7 +996,6 @@ const HeroSection = () => {
       
       // Hero image/illustration
       Image('/hero-illustration.svg')
-        .modifier
         .responsive({
           base: { 
             display: 'none'  // Hidden on mobile
@@ -1087,7 +1008,6 @@ const HeroSection = () => {
         })
         .build()
     ])
-    .modifier
     .responsive({
       base: { 
         flexDirection: 'column',
@@ -1133,14 +1053,12 @@ const ReactiveMetricCard = ({ metric }: { metric: Signal<Metric> }) => {
   
   return VStack([
     Text(currentMetric.title)
-      .modifier
       .fontSize({ base: 14, md: 16 })
       .color('#6c757d')
       .marginBottom({ base: 8, md: 12 })
       .build(),
     
     Text(currentMetric.value)
-      .modifier
       .responsive({
         base: { 
           fontSize: 24, 
@@ -1153,7 +1071,6 @@ const ReactiveMetricCard = ({ metric }: { metric: Signal<Metric> }) => {
       })
       .build()
   ])
-  .modifier
   .responsive({
     base: { padding: 16, backgroundColor: '#ffffff' },
     md: { padding: 20 },
@@ -1180,7 +1097,6 @@ const ThemeAwareBlogCard = ({ article }: { article: Article }) => {
   
   return VStack([
     Image(article.image)
-      .modifier
       .responsive({
         base: { width: '100%', height: 150 },
         md: { height: 180 },
@@ -1189,7 +1105,6 @@ const ThemeAwareBlogCard = ({ article }: { article: Article }) => {
       .build(),
     
     Text(article.title)
-      .modifier
       .responsive({
         base: { 
           fontSize: 18,
@@ -1200,7 +1115,6 @@ const ThemeAwareBlogCard = ({ article }: { article: Article }) => {
       })
       .build()
   ])
-  .modifier
   .responsive({
     base: { 
       padding: 12,

@@ -56,7 +56,6 @@ const BasicGrid = Grid({
     ])
   ]
 })
-  .modifier
   .padding(16)
   .backgroundColor('rgba(128, 128, 128, 0.1)')
   .cornerRadius(8)
@@ -95,14 +94,12 @@ const VerticalGrid = LazyVGrid({
   spacing: 16,
   children: items.map(item => 
     Text(item.title)
-      .modifier
       .padding(16)
       .backgroundColor('rgba(0, 123, 255, 0.2)')
       .cornerRadius(8)
       .build()
   )
 })
-  .modifier
   .padding(16)
   .build()
 ```
@@ -136,13 +133,11 @@ const HorizontalGrid = LazyHGrid({
   spacing: 12,
   children: photos.map(photo => 
     Image({ src: photo.url, alt: photo.title })
-      .modifier
       .frame(150, 100)
       .cornerRadius(8)
       .build()
   )
 })
-  .modifier
   .padding(16)
   .build()
 ```
@@ -240,7 +235,6 @@ const SpanningGrid = Grid({
   children: [
     GridRow([
       Text('Header')
-        .modifier
         .gridColumnSpan(3)
         .backgroundColor('#007bff')
         .foregroundColor('#ffffff')
@@ -274,7 +268,6 @@ const SectionGrid = LazyVGrid({
   columns: [GridItem.flexible(), GridItem.flexible()],
   spacing: 16,
   header: Text('Featured Items')
-    .modifier
     .fontSize(18)
     .fontWeight('bold')
     .build(),
@@ -321,7 +314,6 @@ const PhotoGallery = LazyVGrid({
   children: photos.map(photo => 
     VStack([
       Image({ src: photo.url, alt: photo.title })
-        .modifier
         .aspectRatio(1, 'fill')
         .frame(undefined, 200)
         .clipped()
@@ -329,12 +321,10 @@ const PhotoGallery = LazyVGrid({
         .build(),
       
       Text(photo.title)
-        .modifier
         .fontSize(12)
         .foregroundColor('#666666')
         .build()
     ])
-    .modifier
     .padding(8)
     .backgroundColor('#ffffff')
     .cornerRadius(8)
@@ -394,7 +384,6 @@ const DashboardLayout = Grid({
   children: [
     GridRow([
       Text('Dashboard')
-        .modifier
         .fontSize(28)
         .gridColumnSpan(3)
         .build()
@@ -405,7 +394,6 @@ const DashboardLayout = Grid({
         Text('Sidebar'),
         // Sidebar content components
       ])
-      .modifier
       .gridRowSpan(2)
       .width(200)
       .build(),
@@ -419,7 +407,6 @@ const DashboardLayout = Grid({
         Text('Stats Panel'),
         // Stats content components  
       ])
-      .modifier
       .width(150)
       .build()
     ]),
@@ -429,13 +416,11 @@ const DashboardLayout = Grid({
       VStack([
         Text('Footer Content')
       ])
-      .modifier
       .gridColumnSpan(2)
       .build()
     ])
   ]
 })
-  .modifier
   .padding(16)
   .build()
 ```
@@ -661,25 +646,21 @@ const ProductGrid = (products: Product[]) => {
     children: products.map(product => 
       VStack([
         Image({ src: product.imageURL, alt: product.name })
-          .modifier
           .aspectRatio(1, 'fit')
           .cornerRadius(8)
           .build(),
         
         Text(product.name)
-          .modifier
           .fontSize(16)
           .fontWeight('bold')
           .lineClamp(2)
           .build(),
         
         Text(`$${product.price.toFixed(2)}`)
-          .modifier
           .fontSize(14)
           .foregroundColor('#666666')
           .build()
       ])
-      .modifier
       .padding(12)
       .backgroundColor('#ffffff')
       .cornerRadius(12)
@@ -687,7 +668,6 @@ const ProductGrid = (products: Product[]) => {
       .build()
     )
   })
-    .modifier
     .padding(16)
     .build()
 }

@@ -20,14 +20,12 @@ const ResponsiveCards = LazyVGrid({
   children: articles.map(article => 
     VStack([
       Image({ src: article.thumbnail, alt: article.title })
-        .modifier
         .aspectRatio(16/9, 'fill')
         .cornerRadius(12, [true, true, false, false]) // Top corners only
         .build(),
       
       VStack([
         Text(article.category)
-          .modifier
           .fontSize(12)
           .fontWeight('bold')
           .foregroundColor('#007bff')
@@ -35,7 +33,6 @@ const ResponsiveCards = LazyVGrid({
           .build(),
         
         Text(article.title)
-          .modifier
           .fontSize(18)
           .fontWeight('bold')
           .lineClamp(2)
@@ -43,7 +40,6 @@ const ResponsiveCards = LazyVGrid({
           .build(),
         
         Text(article.excerpt)
-          .modifier
           .fontSize(14)
           .foregroundColor('#666666')
           .lineClamp(3)
@@ -54,25 +50,21 @@ const ResponsiveCards = LazyVGrid({
           title: 'Read More',
           onTap: () => navigation.push(article.url)
         })
-          .modifier
           .backgroundColor('#007bff')
           .foregroundColor('#ffffff')
           .padding(12, 24)
           .cornerRadius(6)
           .build()
       ])
-      .modifier
       .padding(16)
       .build()
     ])
-    .modifier
     .backgroundColor('#ffffff')
     .cornerRadius(12)
     .shadow({ x: 0, y: 4, blur: 12, color: 'rgba(0,0,0,0.1)' })
     .build()
   )
 })
-  .modifier
   .responsive()
   .small({ padding: 12 })    // Mobile: smaller padding
   .medium({ padding: 16 })   // Tablet: medium padding
@@ -99,7 +91,6 @@ const ProgressiveGrid = LazyVGrid({
   spacing: 16,
   children: items
 })
-  .modifier
   .responsive()
   .small({
     // Mobile: Force single column by hiding extra columns
@@ -135,7 +126,6 @@ const ResponsiveDashboard = () => {
     children: [
       GridRow([
         Text('Dashboard')
-          .modifier
           .gridColumnSpan(4)
           .fontSize(28)
           .fontWeight('bold')
@@ -149,7 +139,6 @@ const ResponsiveDashboard = () => {
           NavigationWidget(),
           QuickActionsWidget()
         ])
-        .modifier
         .gridRowSpan(2)
         .width(250)
         .backgroundColor('#f8f9fa')
@@ -168,7 +157,6 @@ const ResponsiveDashboard = () => {
         
         // Recent activity
         RecentActivityWidget()
-          .modifier
           .backgroundColor('#ffffff')
           .padding(16)
           .cornerRadius(8)
@@ -178,7 +166,6 @@ const ResponsiveDashboard = () => {
       GridRow([
         null, // Skip sidebar column
         ChartWidget()
-          .modifier
           .gridColumnSpan(2)
           .build()
       ])
@@ -214,14 +201,12 @@ const MasonryGrid = LazyVGrid({
     
     return VStack([
       post.image && Image({ src: post.image, alt: post.title })
-        .modifier
         .aspectRatio(post.aspectRatio || 1.5, 'fill')
         .cornerRadius(8)
         .marginBottom(12)
         .build(),
       
       Text(post.title)
-        .modifier
         .fontSize(16)
         .fontWeight('bold')
         .lineClamp(post.image ? 2 : 4)
@@ -229,7 +214,6 @@ const MasonryGrid = LazyVGrid({
         .build(),
       
       Text(post.excerpt)
-        .modifier
         .fontSize(14)
         .foregroundColor('#666666')
         .lineClamp(contentHeight > 200 ? 6 : 3)
@@ -238,13 +222,11 @@ const MasonryGrid = LazyVGrid({
       
       HStack([
         Image({ src: post.author.avatar, alt: post.author.name })
-          .modifier
           .frame(24, 24)
           .cornerRadius(12)
           .build(),
         
         Text(post.author.name)
-          .modifier
           .fontSize(12)
           .foregroundColor('#666666')
           .build(),
@@ -252,13 +234,11 @@ const MasonryGrid = LazyVGrid({
         Spacer(),
         
         Text(post.date)
-          .modifier
           .fontSize(12)
           .foregroundColor('#999999')
           .build()
       ])
     ])
-    .modifier
     .padding(16)
     .backgroundColor('#ffffff')
     .cornerRadius(12)
@@ -286,7 +266,6 @@ const MagazineLayout = LazyVGrid({
   children: [
     // Hero article (spans 2x2)
     HeroArticle(featuredArticle)
-      .modifier
       .gridColumnSpan(2)
       .gridRowSpan(2)
       .build(),
@@ -298,7 +277,6 @@ const MagazineLayout = LazyVGrid({
     
     // Ad banner (full width)
     AdBanner()
-      .modifier
       .gridColumnSpan(4)
       .build(),
     
@@ -309,7 +287,6 @@ const MagazineLayout = LazyVGrid({
     
     // Newsletter signup (spans 2 columns)
     NewsletterSignup()
-      .modifier
       .gridColumnSpan(2)
       .backgroundColor('#f8f9fa')
       .padding(24)
@@ -351,21 +328,18 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
       // List view: horizontal layout
       return HStack([
         Image({ src: product.image, alt: product.name })
-          .modifier
           .frame(120, 120)
           .cornerRadius(8)
           .build(),
         
         VStack([
           Text(product.name)
-            .modifier
             .fontSize(18)
             .fontWeight('bold')
             .marginBottom(8)
             .build(),
           
           Text(product.description)
-            .modifier
             .fontSize(14)
             .foregroundColor('#666666')
             .lineClamp(2)
@@ -374,7 +348,6 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
           
           HStack([
             Text(`$${product.price}`)
-              .modifier
               .fontSize(16)
               .fontWeight('bold')
               .foregroundColor('#28a745')
@@ -386,7 +359,6 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
               title: 'Add to Cart',
               onTap: () => addToCart(product)
             })
-              .modifier
               .backgroundColor('#007bff')
               .foregroundColor('#ffffff')
               .padding(8, 16)
@@ -394,12 +366,10 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
               .build()
           ])
         ])
-        .modifier
         .flex(1)
         .padding(16)
         .build()
       ])
-      .modifier
       .backgroundColor('#ffffff')
       .cornerRadius(8)
       .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
@@ -408,14 +378,12 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
       // Grid view: vertical card layout
       return VStack([
         Image({ src: product.image, alt: product.name })
-          .modifier
           .aspectRatio(1, 'fill')
           .cornerRadius(8)
           .marginBottom(12)
           .build(),
         
         Text(product.name)
-          .modifier
           .fontSize(16)
           .fontWeight('bold')
           .lineClamp(2)
@@ -424,7 +392,6 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
           .build(),
         
         Text(`$${product.price}`)
-          .modifier
           .fontSize(18)
           .fontWeight('bold')
           .foregroundColor('#28a745')
@@ -436,14 +403,12 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
           title: 'Add to Cart',
           onTap: () => addToCart(product)
         })
-          .modifier
           .backgroundColor('#007bff')
           .foregroundColor('#ffffff')
           .padding(10, 20)
           .cornerRadius(4)
           .build()
       ])
-      .modifier
       .padding(16)
       .backgroundColor('#ffffff')
       .cornerRadius(8)
@@ -478,19 +443,16 @@ const TimelineGrid = LazyHGrid({
       // Date indicator
       VStack([
         Text(event.date.day)
-          .modifier
           .fontSize(24)
           .fontWeight('bold')
           .build(),
         
         Text(event.date.month)
-          .modifier
           .fontSize(12)
           .textTransform('uppercase')
           .foregroundColor('#666666')
           .build()
       ])
-      .modifier
       .padding(12)
       .backgroundColor('#f8f9fa')
       .cornerRadius(8)
@@ -500,7 +462,6 @@ const TimelineGrid = LazyHGrid({
       // Event content
       VStack([
         Text(event.title)
-          .modifier
           .fontSize(16)
           .fontWeight('bold')
           .lineClamp(2)
@@ -508,26 +469,22 @@ const TimelineGrid = LazyHGrid({
           .build(),
         
         Text(event.description)
-          .modifier
           .fontSize(14)
           .foregroundColor('#666666')
           .lineClamp(3)
           .build()
       ])
-      .modifier
       .padding(16)
       .backgroundColor('#ffffff')
       .cornerRadius(8)
       .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
       .build()
     ])
-    .modifier
     .minWidth(250)
     .maxWidth(300)
     .build()
   )
 })
-  .modifier
   .responsive()
   .small({
     // Mobile: Show fewer items, larger touch targets
@@ -557,7 +514,6 @@ const VirtualizedGrid = (items: Item[], windowSize: number = 50) => {
     spacing: 16,
     children: visibleItems.map(item => ItemComponent(item))
   })
-    .modifier
     .onScroll((event) => {
       // Update visible window based on scroll position
       const scrollTop = event.target.scrollTop
@@ -598,14 +554,12 @@ const LazyLoadingGrid = (items: Item[]) => {
       
       // Loading indicator
       isLoading && LoadingSpinner()
-        .modifier
         .gridColumnSpan(3)
         .padding(20)
         .textAlign('center')
         .build()
     ].filter(Boolean)
   })
-    .modifier
     .onScroll((event) => {
       const { scrollTop, scrollHeight, clientHeight } = event.target
       
@@ -642,7 +596,6 @@ const ResponsiveImageGrid = (images: ImageData[]) => {
         alt: image.alt,
         loading: 'lazy'
       })
-      .modifier
       .aspectRatio(image.aspectRatio || 1, 'fill')
       .cornerRadius(8)
       .build()
@@ -661,7 +614,6 @@ const StaggeredGrid = LazyVGrid({
   spacing: 16,
   children: items.map((item, index) => 
     ItemComponent(item)
-      .modifier
       .opacity(0)
       .transform(`translateY(20px)`)
       .animation({
@@ -692,7 +644,6 @@ const FilterableGrid = (items: Item[], activeFilter: string) => {
     animations: GridAnimations.comprehensive(200, 300),
     children: filteredItems.map(item => 
       ItemComponent(item)
-        .modifier
         // Fade in filtered items
         .animation({
           keyframes: {
@@ -740,7 +691,6 @@ const AccessibleGrid = LazyVGrid({
   },
   children: products.map((product, index) => 
     ProductCard(product)
-      .modifier
       .tabIndex(0)
       .aria({
         'aria-rowindex': Math.floor(index / 3) + 1,
@@ -767,26 +717,22 @@ const ScreenReaderGrid = LazyVGrid({
   children: articles.map((article, index) => 
     VStack([
       Text(`Article ${index + 1} of ${articles.length}`)
-        .modifier
         .fontSize(0) // Visually hidden but available to screen readers
         .aria({ 'aria-hidden': false })
         .build(),
       
       Text(article.title)
-        .modifier
         .fontSize(18)
         .fontWeight('bold')
         .marginBottom(8)
         .build(),
       
       Text(article.summary)
-        .modifier
         .fontSize(14)
         .foregroundColor('#666666')
         .lineClamp(3)
         .build()
     ])
-    .modifier
     .aria({
       role: 'article',
       'aria-labelledby': `article-${article.id}-title`,

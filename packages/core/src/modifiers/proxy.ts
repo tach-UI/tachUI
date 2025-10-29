@@ -13,6 +13,13 @@ let methodBindCache = new WeakMap<
 >()
 
 function ensureModifiable(component: ComponentInstance) {
+  if (
+    Object.prototype.hasOwnProperty.call(component, 'modifiers') &&
+    Object.prototype.hasOwnProperty.call(component, 'modifierBuilder')
+  ) {
+    return component as any
+  }
+
   if (!(component as any)._modifiableComponent) {
     const modifiable = createModifiableComponent(component)
     if (!Object.prototype.hasOwnProperty.call(component, 'modifier')) {
@@ -58,6 +65,16 @@ export function createComponentProxy<T extends ComponentInstance>(
     get(target, prop, receiver) {
       if (prop === Symbol.toStringTag) {
         return Reflect.get(target, prop, receiver)
+      }
+
+      if (prop === 'build') {
+        const modifiable = ensureModifiable(target)
+        const modifierApi =
+          modifiable.modifierBuilder || (modifiable as any).modifier
+        if (modifierApi && typeof modifierApi.build === 'function') {
+          return modifierApi.build.bind(modifierApi)
+        }
+        return undefined
       }
 
       if (Reflect.has(target, prop)) {

@@ -9,6 +9,7 @@ import { JSDOM } from 'jsdom'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Text, VStack, Button, BasicInput } from '@tachui/primitives'
 import { withModifiers } from '../../src/components'
+import { configureCore } from '../../src/config'
 import { InteractionModifier } from '../../src/modifiers/base'
 import { createSignal } from '../../src/reactive'
 import { createComponent, h } from '../../src/runtime'
@@ -37,6 +38,7 @@ const createTestElement = (tagName: string = 'div'): HTMLElement => {
 describe('Event Modifiers - Epic: Butternut Phase 1', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    configureCore({ proxyModifiers: true })
   })
 
   describe('InteractionModifier Event Handling', () => {
