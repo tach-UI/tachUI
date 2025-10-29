@@ -106,7 +106,7 @@ describe('Picker Component', () => {
     const picker = Picker(selection, testOptions, {
       onSelectionChange: setSelection,
     })
-      .modifier.padding(8)
+      .padding(8)
       .cornerRadius(6)
       .backgroundColor('white')
       .build()

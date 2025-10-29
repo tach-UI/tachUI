@@ -233,7 +233,7 @@ export function NavigationView(
     const title = currentTitle()
 
     if (options.navigationBarHidden) {
-      return HTML.div().modifier.build()
+      return HTML.div().build()
     }
 
     return HStack({
@@ -248,16 +248,16 @@ export function NavigationView(
                 setIsNavigating(false)
               }, 300)
             })
-              .modifier.backgroundColor('transparent')
+              .backgroundColor('transparent')
               .foregroundColor('#007AFF')
               .padding({ top: 8, bottom: 8, left: 12, right: 12 })
               .fontSize(16)
               .build()
-          : HTML.div().modifier.frame({ width: 100 }).build(),
+          : HTML.div().frame({ width: 100 }).build(),
 
         // Title
         Text(title)
-          .modifier.fontSize(
+          .fontSize(
             options.navigationBarTitleDisplayMode === 'large' ? 24 : 18
           )
           .fontWeight('bold')
@@ -265,11 +265,11 @@ export function NavigationView(
           .build(),
 
         // Spacer for balance
-        HTML.div().modifier.frame({ width: 100 }).build(),
+        HTML.div().frame({ width: 100 }).build(),
       ],
       alignment: 'center',
     })
-      .modifier.backgroundColor(options.toolbarBackground || '#f8f9fa')
+      .backgroundColor(options.toolbarBackground || '#f8f9fa')
       .border(1, '#e0e0e0')
       .padding({ top: 12, bottom: 12, left: 16, right: 16 })
       .frame({ height: 60 })
@@ -283,7 +283,7 @@ export function NavigationView(
 
     if (!currentEntry) {
       return Text('No content')
-        .modifier.padding(20)
+        .padding(20)
         .foregroundColor('#999')
         .build()
     }
@@ -291,7 +291,7 @@ export function NavigationView(
     return HTML.div({
       children: [currentEntry.component],
     })
-      .modifier.opacity(isNavigating() ? 0.8 : 1)
+      .opacity(isNavigating() ? 0.8 : 1)
       .build()
   }
 
@@ -301,7 +301,7 @@ export function NavigationView(
     spacing: 0,
     alignment: 'leading',
   })
-    .modifier.frame({ minHeight: '100vh' })
+    .frame({ minHeight: '100vh' })
     .backgroundColor('#ffffff')
     .build() as NavigationComponent
 

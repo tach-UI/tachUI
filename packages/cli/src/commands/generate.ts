@@ -67,7 +67,6 @@ export function ${componentName}() {${
       Text('${componentName} Component')${
         answers.withModifiers
           ? `
-        .modifier
         .fontSize(20)
         .fontWeight('bold')
         .foregroundColor('#007AFF')
@@ -80,7 +79,6 @@ export function ${componentName}() {${
       Text(() => \`Status: \${isActive.wrappedValue ? 'Active' : 'Inactive'}\`)${
         answers.withModifiers
           ? `
-        .modifier
         .fontSize(16)
         .foregroundColor('#666')
         .margin({ bottom: 16 })
@@ -94,7 +92,6 @@ export function ${componentName}() {${
       })${
         answers.withModifiers
           ? `
-      .modifier
       .backgroundColor('#007AFF')
       .foregroundColor('#ffffff')
       .padding(12, 24)
@@ -110,7 +107,6 @@ export function ${componentName}() {${
   })${
     answers.withModifiers
       ? `
-  .modifier
   .padding(24)
   .backgroundColor('#f8f9fa')
   .cornerRadius(12)
@@ -184,7 +180,6 @@ export function ${componentName}() {${
   return Layout.VStack({
     children: [
       Text('${componentName}')
-        .modifier
         .fontSize(28)
         .fontWeight('bold')
         .textAlign('center')
@@ -194,7 +189,6 @@ export function ${componentName}() {${
             ? `
       
       Text(() => isLoading.wrappedValue ? 'Loading...' : 'Ready')
-        .modifier
         .fontSize(18)
         .foregroundColor('#666')
         .margin({ bottom: 16 })
@@ -207,7 +201,6 @@ export function ${componentName}() {${
       NavigationLink(
         () => DetailScreen(),
         Text('Go to Detail')
-          .modifier
           .fontSize(16)
           .foregroundColor('#007AFF')
           .build()
@@ -217,7 +210,6 @@ export function ${componentName}() {${
         title: 'Go Back',
         onTap: () => navigation.pop()
       })
-      .modifier
       .backgroundColor('#f0f0f0')
       .foregroundColor('#333')
       .padding(12, 24)
@@ -230,7 +222,6 @@ export function ${componentName}() {${
     spacing: 0,
     alignment: 'center'
   })
-  .modifier
   .padding(24)
   .frame(undefined, '100vh')
   .justifyContent('center')${
@@ -527,7 +518,6 @@ export function ${componentName}() {
   return Layout.VStack({
     children: [
       Text('${componentName}')
-        .modifier
         .fontSize(24)
         .fontWeight('bold')
         .margin({ bottom: 24 })
@@ -537,7 +527,6 @@ export function ${componentName}() {
       Layout.VStack({
         children: [
           Text('Name')
-            .modifier
             .fontSize(16)
             .fontWeight('medium')
             .margin({ bottom: 8 })
@@ -550,7 +539,6 @@ export function ${componentName}() {
               (newName, data) => ({ ...data, name: newName })
             )
           })
-          .modifier
           .padding(12)
           .border('1px solid #ddd')
           .cornerRadius(8)
@@ -560,7 +548,6 @@ export function ${componentName}() {
           
           ...(errors.wrappedValue.name ? [
             Text(errors.wrappedValue.name)
-              .modifier
               .fontSize(14)
               .foregroundColor('#ef4444')
               .margin({ top: 4 })
@@ -577,7 +564,6 @@ export function ${componentName}() {
       Layout.VStack({
         children: [
           Text('Email')
-            .modifier
             .fontSize(16)
             .fontWeight('medium')
             .margin({ bottom: 8 })
@@ -590,7 +576,6 @@ export function ${componentName}() {
               (newEmail, data) => ({ ...data, email: newEmail })
             )
           })
-          .modifier
           .padding(12)
           .border('1px solid #ddd')
           .cornerRadius(8)
@@ -600,7 +585,6 @@ export function ${componentName}() {
           
           ...(errors.wrappedValue.email ? [
             Text(errors.wrappedValue.email)
-              .modifier
               .fontSize(14)
               .foregroundColor('#ef4444')
               .margin({ top: 4 })
@@ -617,7 +601,6 @@ export function ${componentName}() {
       Layout.VStack({
         children: [
           Text('Message')
-            .modifier
             .fontSize(16)
             .fontWeight('medium')
             .margin({ bottom: 8 })
@@ -630,7 +613,6 @@ export function ${componentName}() {
               (newMessage, data) => ({ ...data, message: newMessage })
             )
           })
-          .modifier
           .padding(12)
           .border('1px solid #ddd')
           .cornerRadius(8)
@@ -641,7 +623,6 @@ export function ${componentName}() {
           
           ...(errors.wrappedValue.message ? [
             Text(errors.wrappedValue.message)
-              .modifier
               .fontSize(14)
               .foregroundColor('#ef4444')
               .margin({ top: 4 })
@@ -660,7 +641,6 @@ export function ${componentName}() {
         onTap: ${answers.withSubmission ? 'handleSubmit' : '() => console.log("Form submitted:", formData.wrappedValue)'},
         disabled: isSubmitting.wrappedValue
       })
-      .modifier
       .backgroundColor(isSubmitting.wrappedValue ? '#ccc' : '#007AFF')
       .foregroundColor('#ffffff')
       .padding(16, 32)
@@ -671,7 +651,6 @@ export function ${componentName}() {
     spacing: 16,
     alignment: 'stretch'
   })
-  .modifier
   .padding(24)
   .maxWidth(500)
   .build()

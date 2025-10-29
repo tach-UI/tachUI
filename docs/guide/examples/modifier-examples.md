@@ -838,9 +838,9 @@ const responsiveCard = VStack({
 // Flexbox layout with modern styling
 const flexContainer = VStack({
   children: [
-    Text('Header').modifier.typography({ size: 24, weight: 'bold' }).build(),
-    Text('Content').modifier.flexGrow(1).build(),
-    Text('Footer').modifier.typography({ size: 14, color: '#666' }).build()
+    Text('Header').typography({ size: 24, weight: 'bold' }).build(),
+    Text('Content').flexGrow(1).build(),
+    Text('Footer').typography({ size: 14, color: '#666' }).build()
   ]
 })
 .modifier
@@ -1198,9 +1198,9 @@ const hoverGlassCard = VStack({
 // Glass navigation bar
 const glassNavigation = HStack({
   children: [
-    Text('Home').modifier.padding({ horizontal: 16, vertical: 8 }).build(),
-    Text('About').modifier.padding({ horizontal: 16, vertical: 8 }).build(),
-    Text('Contact').modifier.padding({ horizontal: 16, vertical: 8 }).build()
+    Text('Home').padding({ horizontal: 16, vertical: 8 }).build(),
+    Text('About').padding({ horizontal: 16, vertical: 8 }).build(),
+    Text('Contact').padding({ horizontal: 16, vertical: 8 }).build()
   ],
   spacing: 12
 })

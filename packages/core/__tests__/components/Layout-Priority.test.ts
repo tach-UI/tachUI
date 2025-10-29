@@ -83,7 +83,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
     it('should apply layoutPriority through modifier builder', () => {
       const priorityComponent = Text('High Priority')
-        .modifier.layoutPriority(20)
+        .layoutPriority(20)
         .backgroundColor('#007AFF')
         .build()
 
@@ -99,18 +99,18 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
   describe('ZStack with Layout Priority', () => {
     it('should identify highest priority child in ZStack', () => {
       const lowPriorityChild = Text('Background')
-        .modifier.layoutPriority(1)
+        .layoutPriority(1)
         .backgroundColor('#f0f0f0')
         .build()
 
       const highPriorityChild = Text('Main Content')
-        .modifier.layoutPriority(10)
+        .layoutPriority(10)
         .backgroundColor('#007AFF')
         .padding(20)
         .build()
 
       const mediumPriorityChild = Text('Overlay')
-        .modifier.layoutPriority(5)
+        .layoutPriority(5)
         .backgroundColor('#ff9500')
         .build()
 
@@ -125,8 +125,8 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
     })
 
     it('should handle ZStack without layoutPriority modifiers', () => {
-      const child1 = Text('Child 1').modifier.backgroundColor('#f0f0f0').build()
-      const child2 = Text('Child 2').modifier.backgroundColor('#007AFF').build()
+      const child1 = Text('Child 1').backgroundColor('#f0f0f0').build()
+      const child2 = Text('Child 2').backgroundColor('#007AFF').build()
 
       const zstack = Layout.ZStack({
         children: [child1, child2],
@@ -139,12 +139,12 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
     it('should support different ZStack alignments with priority', () => {
       const priorityChild = Text('Priority Content')
-        .modifier.layoutPriority(100)
+        .layoutPriority(100)
         .frame(200, 150)
         .build()
 
       const backgroundChild = Text('Background')
-        .modifier.layoutPriority(1)
+        .layoutPriority(1)
         .backgroundColor('#f0f0f0')
         .build()
 
@@ -169,12 +169,12 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
   describe('VStack and HStack with Layout Priority', () => {
     it('should apply layoutPriority to VStack children', () => {
       const flexibleChild = Text('Flexible')
-        .modifier.layoutPriority(1) // Lower priority, should shrink
+        .layoutPriority(1) // Lower priority, should shrink
         .backgroundColor('#f0f0f0')
         .build()
 
       const fixedChild = Text('Fixed Size')
-        .modifier.layoutPriority(10) // Higher priority, should maintain size
+        .layoutPriority(10) // Higher priority, should maintain size
         .backgroundColor('#007AFF')
         .padding(20)
         .build()
@@ -192,12 +192,12 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
     it('should apply layoutPriority to HStack children', () => {
       const compressibleChild = Text('Compressible Text Content')
-        .modifier.layoutPriority(0) // Default priority
+        .layoutPriority(0) // Default priority
         .backgroundColor('#f0f0f0')
         .build()
 
       const importantChild = Text('Important')
-        .modifier.layoutPriority(50) // High priority
+        .layoutPriority(50) // High priority
         .backgroundColor('#007AFF')
         .fontWeight('bold')
         .build()
@@ -217,23 +217,23 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
     it('should handle nested layouts with different priorities', () => {
       const innerVStack = Layout.VStack({
         children: [
-          Text('Inner 1').modifier.layoutPriority(5).build(),
-          Text('Inner 2').modifier.layoutPriority(15).build(),
+          Text('Inner 1').layoutPriority(5).build(),
+          Text('Inner 2').layoutPriority(15).build(),
         ],
         spacing: 8,
       })
 
-      const innerWithPriority = innerVStack.modifier.layoutPriority(20).build()
+      const innerWithPriority = innerVStack.layoutPriority(20).build()
 
       const outerZStack = Layout.ZStack({
         children: [
           Text('Background')
-            .modifier.layoutPriority(1)
+            .layoutPriority(1)
             .backgroundColor('#f9f9f9')
             .build(),
           innerWithPriority,
           Text('Overlay')
-            .modifier.layoutPriority(10)
+            .layoutPriority(10)
             .foregroundColor('#ffffff')
             .build(),
         ],
@@ -246,12 +246,12 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
     it('should handle equal layoutPriority values', () => {
       const child1 = Text('Child 1')
-        .modifier.layoutPriority(10)
+        .layoutPriority(10)
         .backgroundColor('#007AFF')
         .build()
 
       const child2 = Text('Child 2')
-        .modifier.layoutPriority(10) // Same priority as child1
+        .layoutPriority(10) // Same priority as child1
         .backgroundColor('#ff9500')
         .build()
 
@@ -266,12 +266,12 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
     it('should handle negative layoutPriority values', () => {
       const negativePriorityChild = Text('Low Priority')
-        .modifier.layoutPriority(-5) // Negative priority
+        .layoutPriority(-5) // Negative priority
         .backgroundColor('#f0f0f0')
         .build()
 
       const normalChild = Text('Normal Priority')
-        .modifier.layoutPriority(0)
+        .layoutPriority(0)
         .backgroundColor('#007AFF')
         .build()
 
@@ -288,7 +288,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
   describe('Modifier Integration', () => {
     it('should combine layoutPriority with other layout modifiers', () => {
       const complexComponent = HTML.div({ children: 'Complex Layout' })
-        .modifier.layoutPriority(25)
+        .layoutPriority(25)
         .frame(300, 200)
         .padding(16)
         .margin(8)
@@ -313,7 +313,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
     it('should work with appearance and interaction modifiers', () => {
       const interactiveComponent = Text('Interactive Priority Element')
-        .modifier.layoutPriority(30)
+        .layoutPriority(30)
         .fontSize(18)
         .fontWeight('bold')
         .foregroundColor('#ffffff')
@@ -335,7 +335,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
   describe('Performance and Edge Cases', () => {
     it('should handle large layoutPriority values', () => {
       const veryHighPriority = Text('Maximum Priority')
-        .modifier.layoutPriority(Number.MAX_SAFE_INTEGER)
+        .layoutPriority(Number.MAX_SAFE_INTEGER)
         .build()
 
       expect(veryHighPriority.modifiers[0].properties.layoutPriority).toBe(
@@ -345,7 +345,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
     it('should handle zero layoutPriority correctly', () => {
       const zeroPriority = Text('Zero Priority')
-        .modifier.layoutPriority(0)
+        .layoutPriority(0)
         .build()
 
       expect(zeroPriority.modifiers[0].properties.layoutPriority).toBe(0)
@@ -353,7 +353,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
 
     it('should handle fractional layoutPriority values', () => {
       const fractionalPriority = Text('Fractional Priority')
-        .modifier.layoutPriority(2.5)
+        .layoutPriority(2.5)
         .build()
 
       expect(fractionalPriority.modifiers[0].properties.layoutPriority).toBe(
@@ -369,18 +369,18 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
         src: '/background.jpg',
         alt: 'Background',
       })
-        .modifier.layoutPriority(0) // Default priority
+        .layoutPriority(0) // Default priority
         .frame('100%', '100%')
         .build()
 
       const contentCard = Layout.VStack({
         children: [
-          Text('Card Title').modifier.fontSize(20).fontWeight('bold').build(),
-          Text('Card content goes here...').modifier.fontSize(14).build(),
+          Text('Card Title').fontSize(20).fontWeight('bold').build(),
+          Text('Card content goes here...').fontSize(14).build(),
         ],
         spacing: 8,
       })
-        .modifier.layoutPriority(10) // High priority - determines container size
+        .layoutPriority(10) // High priority - determines container size
         .backgroundColor('#ffffff')
         .padding(20)
         .cornerRadius(12)
@@ -388,7 +388,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
         .build()
 
       const overlay = Text('NEW')
-        .modifier.layoutPriority(5) // Medium priority
+        .layoutPriority(5) // Medium priority
         .backgroundColor('#ff3b30')
         .foregroundColor('#ffffff')
         .fontSize(12)
@@ -417,7 +417,7 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
         ],
         spacing: 12,
       })
-        .modifier.layoutPriority(1) // Lower priority - can shrink
+        .layoutPriority(1) // Lower priority - can shrink
         .backgroundColor('#f9f9f9')
         .padding(16)
         .frame({ minWidth: 200 })
@@ -426,16 +426,16 @@ describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {
       const mainContent = Layout.VStack({
         children: [
           Text('Main Content Title')
-            .modifier.fontSize(24)
+            .fontSize(24)
             .fontWeight('bold')
             .build(),
           Text('This is the main content area that should maintain its size.')
-            .modifier.fontSize(16)
+            .fontSize(16)
             .build(),
         ],
         spacing: 16,
       })
-        .modifier.layoutPriority(10) // Higher priority - maintains size
+        .layoutPriority(10) // Higher priority - maintains size
         .backgroundColor('#ffffff')
         .padding(24)
         .frame({ minWidth: 400 })

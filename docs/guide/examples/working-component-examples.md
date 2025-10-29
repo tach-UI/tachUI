@@ -12,7 +12,7 @@ import { createSignal } from '@tachui/core'
 
 // Static text
 const welcomeTitle = Text('Welcome to TachUI')
-  .modifier.fontSize(24)
+  .fontSize(24)
   .fontWeight('bold')
   .foregroundColor('#1a1a1a')
   .build()
@@ -20,14 +20,14 @@ const welcomeTitle = Text('Welcome to TachUI')
 // Dynamic text with signals
 const [count, setCount] = createSignal(0)
 const counterDisplay = Text(() => `Count: ${count()}`)
-  .modifier.fontSize(18)
+  .fontSize(18)
   .foregroundColor('#007AFF')
   .fontWeight('500')
   .build()
 
 // Styled text with multiple modifiers
 const styledText = Text('This text demonstrates comprehensive styling')
-  .modifier.fontSize(16)
+  .fontSize(16)
   .lineHeight(1.5)
   .foregroundColor('#333333')
   .backgroundColor('#f8f9fa')
@@ -41,7 +41,7 @@ const styledText = Text('This text demonstrates comprehensive styling')
 ```typescript
 // Clickable text
 const linkText = Text('Click me for more info')
-  .modifier.foregroundColor('#007AFF')
+  .foregroundColor('#007AFF')
   .textDecoration('underline')
   .cursor('pointer')
   .onTap(() => console.log('Text clicked!'))
@@ -52,7 +52,7 @@ const linkText = Text('Click me for more info')
 
 // Selectable text
 const selectableText = Text('This text can be selected and copied')
-  .modifier.userSelect('text')
+  .userSelect('text')
   .padding(12)
   .backgroundColor('#f0f0f0')
   .build()
@@ -76,7 +76,7 @@ const primaryButton = Button('Save Changes', async () => {
   console.log('Saving changes...')
   await saveChanges()
 })
-  .modifier.backgroundColor('#007AFF')
+  .backgroundColor('#007AFF')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
@@ -90,7 +90,7 @@ const primaryButton = Button('Save Changes', async () => {
 ```typescript
 // Primary button
 const primary = Button('Primary', () => {})
-  .modifier.backgroundColor('#007AFF')
+  .backgroundColor('#007AFF')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
@@ -98,7 +98,7 @@ const primary = Button('Primary', () => {})
 
 // Secondary button
 const secondary = Button('Secondary', () => {})
-  .modifier.backgroundColor('transparent')
+  .backgroundColor('transparent')
   .foregroundColor('#007AFF')
   .border(1, '#007AFF')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
@@ -107,7 +107,7 @@ const secondary = Button('Secondary', () => {})
 
 // Destructive button
 const destructive = Button('Delete', () => {})
-  .modifier.backgroundColor('#FF3B30')
+  .backgroundColor('#FF3B30')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
@@ -115,7 +115,7 @@ const destructive = Button('Delete', () => {})
 
 // Text button
 const textButton = Button('Cancel', () => {})
-  .modifier.backgroundColor('transparent')
+  .backgroundColor('transparent')
   .foregroundColor('#666666')
   .padding({ top: 8, bottom: 8, left: 16, right: 16 })
   .build()
@@ -138,7 +138,7 @@ const loadingButton = Button(
     }
   }
 )
-  .modifier.disabled(isLoading)
+  .disabled(isLoading)
   .opacity(() => (isLoading() ? 0.7 : 1.0))
   .backgroundColor('#007AFF')
   .foregroundColor('white')
@@ -150,7 +150,7 @@ const loadingButton = Button(
 const [hasUnsavedChanges, setHasUnsavedChanges] = createSignal(false)
 
 const saveButton = Button('Save', () => {})
-  .modifier.disabled(() => !hasUnsavedChanges())
+  .disabled(() => !hasUnsavedChanges())
   .backgroundColor(() => (hasUnsavedChanges() ? '#007AFF' : '#cccccc'))
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
@@ -181,7 +181,7 @@ const dropdownPicker = Picker(selectedFruit, fruits, {
   variant: 'dropdown',
   placeholder: 'Select a fruit',
 })
-  .modifier.padding(12)
+  .padding(12)
   .border(1, '#e0e0e0')
   .cornerRadius(6)
   .minWidth(200)
@@ -192,7 +192,7 @@ const segmentedPicker = Picker(selectedFruit, fruits, {
   onSelectionChange: setSelectedFruit,
   variant: 'segmented',
 })
-  .modifier.backgroundColor('#f3f4f6')
+  .backgroundColor('#f3f4f6')
   .cornerRadius(8)
   .padding(4)
   .build()
@@ -202,7 +202,7 @@ const wheelPicker = Picker(selectedFruit, fruits, {
   onSelectionChange: setSelectedFruit,
   variant: 'wheel',
 })
-  .modifier.padding(8)
+  .padding(8)
   .border(1, '#d1d5db')
   .cornerRadius(6)
   .build()
@@ -213,7 +213,7 @@ const searchablePicker = Picker(selectedFruit, fruits, {
   searchable: true,
   placeholder: 'Search fruits...',
 })
-  .modifier.minWidth(250)
+  .minWidth(250)
   .build()
 ```
 
@@ -246,7 +246,7 @@ const buttonToggle = Toggle(darkMode, {
   onToggle: setDarkMode,
   variant: 'button',
 })
-  .modifier.cornerRadius(12)
+  .cornerRadius(12)
   .build()
 
 // Styled toggle
@@ -258,7 +258,7 @@ const customToggle = Toggle(isEnabled, {
   variant: 'switch',
   size: 'large',
 })
-  .modifier.padding(16)
+  .padding(16)
   .build()
 ```
 
@@ -278,7 +278,7 @@ const volumeSlider = Slider(volume, {
   max: 100,
   step: 1,
 })
-  .modifier.width(300)
+  .width(300)
   .build()
 
 // Formatted slider with marks
@@ -296,7 +296,7 @@ const brightnessSlider = Slider(brightness, {
     { value: 100, label: 'Max' },
   ],
 })
-  .modifier.width('100%')
+  .width('100%')
   .maxWidth(400)
   .padding(20)
   .build()
@@ -310,7 +310,7 @@ const customSlider = Slider(volume, {
   activeTrackColor: '#007AFF',
   thumbColor: '#ffffff',
 })
-  .modifier.width(250)
+  .width(250)
   .height(40)
   .build()
 ```
@@ -328,7 +328,7 @@ const basicVStack = VStack({
   spacing: 16,
   alignment: 'center',
 })
-  .modifier.padding(20)
+  .padding(20)
   .backgroundColor('#f8f9fa')
   .cornerRadius(12)
   .build()
@@ -336,22 +336,22 @@ const basicVStack = VStack({
 // Complex vertical layout
 const userProfileStack = VStack({
   children: [
-    Text('John Doe').modifier.fontSize(24).fontWeight('bold').build(),
+    Text('John Doe').fontSize(24).fontWeight('bold').build(),
 
     Text('Software Developer')
-      .modifier.fontSize(16)
+      .fontSize(16)
       .foregroundColor('#666666')
       .build(),
 
     Text('Passionate about creating great user experiences')
-      .modifier.fontSize(14)
+      .fontSize(14)
       .foregroundColor('#888888')
       .textAlign('center')
       .lineHeight(1.4)
       .build(),
 
     Button('Contact', () => console.log('Contact clicked'))
-      .modifier.backgroundColor('#007AFF')
+      .backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding({ top: 10, bottom: 10, left: 20, right: 20 })
       .cornerRadius(8)
@@ -360,7 +360,7 @@ const userProfileStack = VStack({
   spacing: 12,
   alignment: 'center',
 })
-  .modifier.padding(24)
+  .padding(24)
   .backgroundColor('#ffffff')
   .cornerRadius(16)
   .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
@@ -379,7 +379,7 @@ const basicHStack = HStack({
   spacing: 16,
   alignment: 'center',
 })
-  .modifier.padding(16)
+  .padding(16)
   .backgroundColor('#f0f0f0')
   .cornerRadius(8)
   .build()
@@ -388,26 +388,26 @@ const basicHStack = HStack({
 const navigationBar = HStack({
   children: [
     Button('Back', () => console.log('Back'))
-      .modifier.backgroundColor('transparent')
+      .backgroundColor('transparent')
       .foregroundColor('#007AFF')
       .build(),
 
     Text('Page Title')
-      .modifier.fontSize(18)
+      .fontSize(18)
       .fontWeight('600')
       .flexGrow(1)
       .textAlign('center')
       .build(),
 
     Button('Menu', () => console.log('Menu'))
-      .modifier.backgroundColor('transparent')
+      .backgroundColor('transparent')
       .foregroundColor('#007AFF')
       .build(),
   ],
   spacing: 16,
   alignment: 'center',
 })
-  .modifier.padding(16)
+  .padding(16)
   .backgroundColor('#ffffff')
   .borderBottom(1, '#e0e0e0')
   .build()
@@ -423,7 +423,7 @@ const cardWithOverlay = ZStack({
   children: [
     // Background
     Text('')
-      .modifier.backgroundColor('#007AFF')
+      .backgroundColor('#007AFF')
       .frame({ width: 200, height: 120 })
       .cornerRadius(12)
       .build(),
@@ -432,13 +432,13 @@ const cardWithOverlay = ZStack({
     VStack({
       children: [
         Text('Card Title')
-          .modifier.fontSize(18)
+          .fontSize(18)
           .fontWeight('bold')
           .foregroundColor('white')
           .build(),
 
         Text('Card description text')
-          .modifier.fontSize(14)
+          .fontSize(14)
           .foregroundColor('rgba(255,255,255,0.9)')
           .textAlign('center')
           .build(),
@@ -501,7 +501,7 @@ function UserRegistrationForm() {
             onSelectionChange: value => updateField('country', value),
             placeholder: 'Select your country',
           })
-            .modifier.padding(12)
+            .padding(12)
             .border(1, '#e0e0e0')
             .cornerRadius(6)
             .marginBottom(16)
@@ -518,14 +518,14 @@ function UserRegistrationForm() {
             label: 'Enable email notifications',
             labelPosition: 'leading',
           })
-            .modifier.marginBottom(16)
+            .marginBottom(16)
             .build(),
 
           // Experience Slider
           VStack({
             children: [
               Text(() => `Experience Level: ${formData().experience} years`)
-                .modifier.fontSize(14)
+                .fontSize(14)
                 .fontWeight('500')
                 .marginBottom(8)
                 .build(),
@@ -541,7 +541,7 @@ function UserRegistrationForm() {
                   { value: 10, label: 'Expert' },
                 ],
               })
-                .modifier.width('100%')
+                .width('100%')
                 .build(),
             ],
             spacing: 8,
@@ -552,7 +552,7 @@ function UserRegistrationForm() {
           onSubmit: handleSubmit,
         }
       )
-        .modifier.padding(20)
+        .padding(20)
         .backgroundColor('#ffffff')
         .cornerRadius(12)
         .border(1, '#e0e0e0')
@@ -560,7 +560,7 @@ function UserRegistrationForm() {
 
       // Submit Button
       Button('Create Account', handleSubmit)
-        .modifier.backgroundColor('#007AFF')
+        .backgroundColor('#007AFF')
         .foregroundColor('white')
         .padding({ top: 16, bottom: 16, left: 32, right: 32 })
         .cornerRadius(8)
@@ -572,7 +572,7 @@ function UserRegistrationForm() {
     spacing: 16,
     alignment: 'stretch',
   })
-    .modifier.padding(20)
+    .padding(20)
     .maxWidth(500)
     .backgroundColor('#f8f9fa')
     .build()
@@ -591,7 +591,7 @@ const HomeContent = () =>
   VStack({
     children: [
       Text('Welcome to the Home tab')
-        .modifier.fontSize(18)
+        .fontSize(18)
         .textAlign('center')
         .build(),
     ],
@@ -603,7 +603,7 @@ const SearchContent = () =>
   VStack({
     children: [
       Text('Search functionality here')
-        .modifier.fontSize(18)
+        .fontSize(18)
         .textAlign('center')
         .build(),
     ],
@@ -615,7 +615,7 @@ const ProfileContent = () =>
   VStack({
     children: [
       Text('User profile information')
-        .modifier.fontSize(18)
+        .fontSize(18)
         .textAlign('center')
         .build(),
     ],
@@ -677,13 +677,13 @@ function InteractiveCard() {
       HStack({
         children: [
           Text('Interactive Card')
-            .modifier.fontSize(18)
+            .fontSize(18)
             .fontWeight('600')
             .flexGrow(1)
             .build(),
 
           Button(() => (isSelected() ? '✓' : '○'), handleSelect)
-            .modifier.backgroundColor('transparent')
+            .backgroundColor('transparent')
             .foregroundColor(() => (isSelected() ? '#34C759' : '#666666'))
             .fontSize(18)
             .build(),
@@ -696,7 +696,7 @@ function InteractiveCard() {
       Text(
         'This card demonstrates reactive state management with hover, selection, and interaction states.'
       )
-        .modifier.fontSize(14)
+        .fontSize(14)
         .lineHeight(1.4)
         .foregroundColor('#666666')
         .build(),
@@ -705,13 +705,13 @@ function InteractiveCard() {
       HStack({
         children: [
           Button(`❤️ ${likeCount()}`, handleLike)
-            .modifier.backgroundColor('transparent')
+            .backgroundColor('transparent')
             .foregroundColor('#FF3B30')
             .fontSize(14)
             .build(),
 
           Button('Share', () => console.log('Share'))
-            .modifier.backgroundColor('#007AFF')
+            .backgroundColor('#007AFF')
             .foregroundColor('white')
             .padding({ top: 6, bottom: 6, left: 12, right: 12 })
             .cornerRadius(6)
@@ -725,7 +725,7 @@ function InteractiveCard() {
     spacing: 16,
     alignment: 'stretch',
   })
-    .modifier.padding(20)
+    .padding(20)
     .backgroundColor(() => (isHovered() ? '#f8f9fa' : '#ffffff'))
     .border(2, () => (isSelected() ? '#007AFF' : '#e0e0e0'))
     .cornerRadius(12)
@@ -773,7 +773,7 @@ describe('Button Component Examples', () => {
 
   it('should apply modifiers correctly', () => {
     const styledButton = Button('Styled', () => {})
-      .modifier.backgroundColor('#007AFF')
+      .backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding({ top: 12, bottom: 12, left: 24, right: 24 })
       .cornerRadius(8)
@@ -786,11 +786,37 @@ describe('Button Component Examples', () => {
 
 ---
 
+## Plugin-Powered Form Example
+
+```typescript
+import { TextField } from '@tachui/forms'
+import { registerFormsModifiers } from '@tachui/forms/modifiers'
+
+registerFormsModifiers()
+
+const emailField = TextField({
+  title: 'Email address',
+  text: userEmail,
+})
+  .placeholder('name@example.com')
+  .validation({
+    required: true,
+    pattern: /^[^@]+@[^@]+\.[^@]+$/,
+    message: 'Enter a valid email address',
+  })
+  .padding({ vertical: 12, horizontal: 16 })
+  .cornerRadius(12)
+  .backgroundColor('#F8FAFC')
+  .build()
+```
+
+---
+
 ## Notes
 
 - All examples use the verified API patterns from TachUI's test suite
 - Each component follows the `ComponentFunction(params, props)` pattern
-- Modifiers always use the `.modifier.property().build()` pattern
+- Modifiers are chained directly (for example, `component.padding(12).backgroundColor('#fff').build()`)
 - Reactive values use signals: `() => signal()` for dynamic properties
 - These examples are guaranteed to work with the current TachUI implementation
 

@@ -424,7 +424,7 @@ describe('Menu Component', () => {
         items,
         trigger: mockTrigger,
       })
-        .modifier.opacity(0.9)
+        .opacity(0.9)
         .build()
 
       expect(menuWithModifiers).toBeDefined()
@@ -441,8 +441,7 @@ describe('Menu Component', () => {
         placement: 'bottom-end',
       })
 
-      const modifiedMenu = originalMenu.modifier
-        .backgroundColor('#FFFFFF')
+      const modifiedMenu = originalMenu.backgroundColor('#FFFFFF')
         .build()
 
       expect(modifiedMenu.props.items).toEqual(items)

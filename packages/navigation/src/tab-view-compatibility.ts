@@ -24,7 +24,7 @@ export function AdvancedTabView(
     ;(tabView as any)._overflowButton = HTML.button({
       children: '···',
       onClick: () => console.log('Overflow menu'),
-    }).modifier.build()
+    }).build()
   }
 
   // Add AdvancedTabView metadata for test compatibility
@@ -238,10 +238,10 @@ export function PageTabView(
       HTML.div({
         children: pages.map((page, index) =>
           HTML.div({ children: page })
-            .modifier.display(index === currentIndex() ? 'block' : 'none')
+            .display(index === currentIndex() ? 'block' : 'none')
             .build()
         ),
-      }).modifier.build(),
+      }).build(),
 
       // Page indicators (if enabled)
       ...(indexDisplayMode !== 'never'
@@ -254,13 +254,13 @@ export function PageTabView(
                     setCurrentIndex(index)
                     onSelectionChange?.(index)
                   },
-                }).modifier.build()
+                }).build()
               ),
-            }).modifier.build(),
+            }).build(),
           ]
         : []),
     ],
-  }).modifier.build()
+  }).build()
 
   // Add PageTabView metadata
   ;(pageView as any)._pageTabView = {

@@ -362,7 +362,7 @@ describe('Divider Component', () => {
   describe('Integration with Modifier System', () => {
     it('should work with modifier system', () => {
       const dividerWithModifiers = Divider()
-        .modifier.margin(20)
+        .margin(20)
         .opacity(0.8)
         .build()
 
@@ -377,8 +377,7 @@ describe('Divider Component', () => {
         thickness: 2,
       })
 
-      const modifiedDivider = originalDivider.modifier
-        .backgroundColor('#FFFFFF')
+      const modifiedDivider = originalDivider.backgroundColor('#FFFFFF')
         .build()
 
       expect(modifiedDivider.props.color).toBe('#FF0000')

@@ -469,8 +469,8 @@ const primaryButtonGradient = StateGradient('primary-button', {
 })
 
 // Use across multiple components
-const button1 = Button('Save').modifier.background(primaryButtonGradient).build()
-const button2 = Button('Submit').modifier.background(primaryButtonGradient).build()
+const button1 = Button('Save').background(primaryButtonGradient).build()
+const button2 = Button('Submit').background(primaryButtonGradient).build()
 ```
 
 ### Animation Configurations

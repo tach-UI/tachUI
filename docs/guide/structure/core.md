@@ -276,7 +276,7 @@ modifiers/
 **Functionality**:
 - `ModifierBuilder` class enabling `.padding(16).foregroundColor('#007AFF')` syntax
 - Builder pattern implementation with method chaining
-- Component integration for `component.modifier.padding(16).build()`
+- Component integration for `component.padding(16).build()`
 - Type-safe modifier composition and validation
 
 #### `core.ts`

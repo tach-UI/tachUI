@@ -384,7 +384,7 @@ function generateSuggestions(results: AnalysisResult): string[] {
   // Modifier usage suggestions
   if (results.components.withModifiers < results.components.total * 0.7) {
     suggestions.push(
-      'Use TachUI modifiers for consistent styling (.modifier.padding(), .foregroundColor())'
+      'Use TachUI modifiers for consistent styling (.padding(), .foregroundColor())'
     )
   }
 

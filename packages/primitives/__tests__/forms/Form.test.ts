@@ -93,7 +93,7 @@ describe('BasicBasicForm Component', () => {
   it('should apply modifiers correctly', () => {
     const onSubmit = vi.fn()
     const form = BasicForm([], { onSubmit })
-      .modifier.padding(16)
+      .padding(16)
       .backgroundColor('white')
       .cornerRadius(8)
       .build()

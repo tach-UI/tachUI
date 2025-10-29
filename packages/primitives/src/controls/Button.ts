@@ -6,8 +6,7 @@
  */
 
 import type {
-  ModifiableComponent,
-  ModifierBuilder,
+  ModifiableComponentWithModifiers,
   ComponentProps,
   Signal,
 } from '@tachui/core'
@@ -871,9 +870,7 @@ export function Button(
   title: string | (() => string) | Signal<string>,
   action?: () => void | Promise<void>,
   props: Omit<ButtonProps, 'title' | 'action'> = {}
-): ModifiableComponent<ButtonProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<ButtonProps>>
-} {
+): ModifiableComponentWithModifiers<ButtonProps> {
   const buttonProps: ButtonProps = {
     ...props,
     title,

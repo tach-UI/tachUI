@@ -10,139 +10,71 @@ import { createSignal, createComputed } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 
 // Mock components for testing
-const Text = (content: string) => ({
-  type: 'component' as const,
-  render: () => [
-    {
-      type: 'element' as const,
-      tag: 'span',
-      props: {},
-      children: [{ type: 'text' as const, text: content }],
-    },
-  ],
-  props: { content },
-  children: [],
-  cleanup: [],
-  id: `text-${Date.now()}`,
-  modifier: {
-    fontSize: (size?: number) => ({
-      build: () => ({
-        type: 'component' as const,
-        render: () => [
-          {
-            type: 'element' as const,
-            tag: 'span',
-            props: {},
-            children: [{ type: 'text' as const, text: content }],
-          },
-        ],
-        props: { content },
-        children: [],
-        cleanup: [],
-        id: `text-${Date.now()}`,
-      }),
-    }),
-    padding: (value?: number | string) => ({
-      build: () => ({
-        type: 'component' as const,
-        render: () => [
-          {
-            type: 'element' as const,
-            tag: 'span',
-            props: {},
-            children: [{ type: 'text' as const, text: content }],
-          },
-        ],
-        props: { content },
-        children: [],
-        cleanup: [],
-        id: `text-${Date.now()}`,
-      }),
-    }),
-    fontWeight: (weight?: string | number) => ({
-      build: () => ({
-        type: 'component' as const,
-        render: () => [
-          {
-            type: 'element' as const,
-            tag: 'span',
-            props: {},
-            children: [{ type: 'text' as const, text: content }],
-          },
-        ],
-        props: { content },
-        children: [],
-        cleanup: [],
-        id: `text-${Date.now()}`,
-      }),
-    }),
-    color: (colorValue?: string) => ({
-      build: () => ({
-        type: 'component' as const,
-        render: () => [
-          {
-            type: 'element' as const,
-            tag: 'span',
-            props: {},
-            children: [{ type: 'text' as const, text: content }],
-          },
-        ],
-        props: { content },
-        children: [],
-        cleanup: [],
-        id: `text-${Date.now()}`,
-      }),
-    }),
-    build: () => ({
-      type: 'component' as const,
-      render: () => [
-        {
-          type: 'element' as const,
-          tag: 'span',
-          props: {},
-          children: [{ type: 'text' as const, text: content }],
-        },
-      ],
-      props: { content },
-      children: [],
-      cleanup: [],
-      id: `text-${Date.now()}`,
-    }),
-  },
-})
+const Text = (content: string) => {
+  const component = {
+    type: 'component' as const,
+    render: () => [
+      {
+        type: 'element' as const,
+        tag: 'span',
+        props: {},
+        children: [{ type: 'text' as const, text: content }],
+      },
+    ],
+    props: { content },
+    children: [],
+    cleanup: [],
+    id: `text-${Date.now()}`,
+  }
 
-const Button = (content: string, onClick?: () => void) => ({
-  type: 'component' as const,
-  render: () => [
-    {
-      type: 'element' as const,
-      tag: 'button',
-      props: { onClick },
-      children: [{ type: 'text' as const, text: content }],
-    },
-  ],
-  props: { content, onClick },
-  children: [],
-  cleanup: [],
-  id: `button-${Date.now()}`,
-  modifier: {
-    build: () => ({
-      type: 'component' as const,
-      render: () => [
-        {
-          type: 'element' as const,
-          tag: 'button',
-          props: { onClick },
-          children: [{ type: 'text' as const, text: content }],
-        },
-      ],
-      props: { content, onClick },
-      children: [],
-      cleanup: [],
-      id: `button-${Date.now()}`,
-    }),
-  },
-})
+  const builder: any = {
+    ...component,
+    fontSize: (_size?: number) => builder,
+    padding: (_value?: number | string) => builder,
+    fontWeight: (_weight?: string | number) => builder,
+    color: (_value?: string) => builder,
+    build: () => component,
+  }
+
+  builder.modifier = {
+    fontSize: (_size?: number) => builder,
+    padding: (_value?: number | string) => builder,
+    fontWeight: (_weight?: string | number) => builder,
+    color: (_value?: string) => builder,
+    build: () => component,
+  }
+
+  return builder
+}
+
+const Button = (content: string, onClick?: () => void) => {
+  const component = {
+    type: 'component' as const,
+    render: () => [
+      {
+        type: 'element' as const,
+        tag: 'button',
+        props: { onClick },
+        children: [{ type: 'text' as const, text: content }],
+      },
+    ],
+    props: { content, onClick },
+    children: [],
+    cleanup: [],
+    id: `button-${Date.now()}`,
+  }
+
+  const builder: any = {
+    ...component,
+    build: () => component,
+  }
+
+  builder.modifier = {
+    build: () => component,
+  }
+
+  return builder
+}
 
 const VStack = (children: any[]) => ({
   type: 'component' as const,
@@ -190,8 +122,8 @@ describe('Flow-Control Integration', () => {
         data: items,
         children: item =>
           VStack([
-            Text(item).modifier.fontSize(16).build(),
-            Text(`Description for ${item}`).modifier.fontSize(14).build(),
+            Text(item).fontSize(16).build(),
+            Text(`Description for ${item}`).fontSize(14).build(),
           ]),
       })
 
@@ -207,10 +139,10 @@ describe('Flow-Control Integration', () => {
         data: items as Signal<string[]>,
         children: item =>
           VStack([
-            Text(item).modifier.build(),
+            Text(item).build(),
             Button('Remove', () => {
               setItems(items().filter(i => i !== item))
-            }).modifier.build(),
+            }).build(),
           ]),
       })
 
@@ -229,8 +161,8 @@ describe('Flow-Control Integration', () => {
         data: items,
         children: item =>
           HStack([
-            Text(item).modifier.padding(8).build(),
-            Text('-').modifier.padding(4).build(),
+            Text(item).padding(8).build(),
+            Text('-').padding(4).build(),
           ]),
       })
 
@@ -245,8 +177,8 @@ describe('Flow-Control Integration', () => {
 
       const conditional = Show({
         when: isVisible,
-        children: Text('Visible content').modifier.build(),
-        fallback: Text('Hidden content').modifier.build(),
+        children: Text('Visible content').build(),
+        fallback: Text('Hidden content').build(),
       })
 
       expect(conditional.props.when).toBe(isVisible)
@@ -262,8 +194,8 @@ describe('Flow-Control Integration', () => {
 
       const conditional = Show({
         when: isEven,
-        children: Text('Even number').modifier.build(),
-        fallback: Text('Odd number').modifier.build(),
+        children: Text('Even number').build(),
+        fallback: Text('Odd number').build(),
       })
 
       expect(conditional.props.when).toBe(isEven)
@@ -278,8 +210,8 @@ describe('Flow-Control Integration', () => {
     test('should handle boolean conditions', () => {
       const conditional = Show({
         when: true,
-        children: Text('Always visible').modifier.build(),
-        fallback: Text('Never visible').modifier.build(),
+        children: Text('Always visible').build(),
+        fallback: Text('Never visible').build(),
       })
 
       expect(conditional.props.when).toBe(true)
@@ -290,7 +222,7 @@ describe('Flow-Control Integration', () => {
 
       const conditional = Show({
         when: conditionFn,
-        children: Text('Function result').modifier.build(),
+        children: Text('Function result').build(),
       })
 
       expect(conditional.props.when).toBe(conditionFn)
@@ -307,14 +239,14 @@ describe('Flow-Control Integration', () => {
           data: items as Signal<string[]>,
           children: item =>
             VStack([
-              Text(item).modifier.fontWeight('bold').build(),
+              Text(item).fontWeight('bold').build(),
               Show({
                 when: showDetails,
-                children: Text(`Details for ${item}`).modifier.build(),
+                children: Text(`Details for ${item}`).build(),
               }),
               Button('Toggle Details', () =>
                 setShowDetails(!showDetails())
-              ).modifier.build(),
+              ).build(),
             ]),
         }),
       ])
@@ -338,11 +270,11 @@ describe('Flow-Control Integration', () => {
         data: activeUsers,
         children: user =>
           HStack([
-            Text(`${user.id}: ${user.name}`).modifier.build(),
+            Text(`${user.id}: ${user.name}`).build(),
             Show({
               when: createComputed(() => user.active),
-              children: Text('✓').modifier.color('green').build(),
-              fallback: Text('✗').modifier.color('red').build(),
+              children: Text('✓').color('green').build(),
+              fallback: Text('✗').color('red').build(),
             }),
           ]),
       })
@@ -358,7 +290,7 @@ describe('Flow-Control Integration', () => {
 
       const listComponent = ForEach({
         data: largeList,
-        children: item => Text(item).modifier.build(),
+        children: item => Text(item).build(),
       })
 
       expect(listComponent).toBeDefined()
@@ -374,7 +306,7 @@ describe('Flow-Control Integration', () => {
 
       const listComponent = ForEach({
         data: items(),
-        children: item => Text(item).modifier.build(),
+        children: item => Text(item).build(),
       })
 
       // Update counter multiple times
@@ -396,8 +328,8 @@ describe('Flow-Control Integration', () => {
       const listComponent = ForEach({
         data: items,
         children: item => {
-          if (!item) return Text('Empty').modifier.build()
-          return Text(item).modifier.build()
+          if (!item) return Text('Empty').build()
+          return Text(item).build()
         },
       })
 
@@ -416,7 +348,7 @@ describe('Flow-Control Integration', () => {
         data: malformedData,
         children: item => {
           const name = item?.name || 'Unknown'
-          return Text(name).modifier.build()
+          return Text(name).build()
         },
       })
 
@@ -430,8 +362,8 @@ describe('Flow-Control Integration', () => {
 
       const conditionalComponent = Show({
         when: mounted,
-        children: Text('Mounted content').modifier.build(),
-        fallback: Text('Not mounted').modifier.build(),
+        children: Text('Mounted content').build(),
+        fallback: Text('Not mounted').build(),
       })
 
       expect(conditionalComponent.mounted).toBe(false)
@@ -446,7 +378,7 @@ describe('Flow-Control Integration', () => {
 
       const listComponent = ForEach({
         data: items(),
-        children: item => Text(item).modifier.build(),
+        children: item => Text(item).build(),
       })
 
       expect(listComponent.cleanup).toBeDefined()

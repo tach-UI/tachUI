@@ -47,7 +47,7 @@ import { shadow } from '@tachui/effects/shadows'
 import { blur } from '@tachui/effects/filters'
 
 // Use directly
-Text("Hello").modifier.padding(16).shadow({ x: 0, y: 2, blur: 4 }).build()
+Text("Hello").padding(16).shadow({ x: 0, y: 2, blur: 4 }).build()
 ```
 
 ### Visual Effects (Import specific effects)
@@ -88,7 +88,7 @@ import * as Modifiers from '@tachui/modifiers'
 import * as Effects from '@tachui/effects'
 
 // All modifiers available but larger bundle
-Text("Hello").modifier.padding(16).shadow({ x: 0, y: 2 }).build()
+Text("Hello").padding(16).shadow({ x: 0, y: 2 }).build()
 ```
 
 ### Bundle Size Comparison
@@ -110,7 +110,7 @@ Sets component dimensions with support for constraints.
 
 ```typescript
 // Basic frame
-Text("Content").modifier.frame(200, 100).build()
+Text("Content").frame(200, 100).build()
 
 // With constraints
 VStack().modifier
@@ -118,7 +118,7 @@ VStack().modifier
   .build()
 
 // Infinity support
-HStack().modifier.frame({ width: Infinity, height: 50 }).build()
+HStack().frame({ width: Infinity, height: 50 }).build()
 ```
 
 **Parameters:**
@@ -213,8 +213,8 @@ type MarginOptions =
 Sets layout priority for ZStack sizing calculations.
 
 ```typescript
-VStack().modifier.layoutPriority(1).build()  // Higher priority
-Text("Content").modifier.layoutPriority(0).build()  // Lower priority
+VStack().layoutPriority(1).build()  // Higher priority
+Text("Content").layoutPriority(0).build()  // Lower priority
 ```
 
 ## SwiftUI-Style Modifiers
@@ -328,7 +328,7 @@ Overlays content with alignment options.
 Image("/photo.jpg")
   .modifier
   .overlay(
-    Text("Caption").modifier.foregroundColor('white').build(),
+    Text("Caption").foregroundColor('white').build(),
     'bottomTrailing'
   )
   .build()
@@ -970,13 +970,13 @@ The `asHTML` modifier includes comprehensive security protection:
 **Blocked Content Examples:**
 ```typescript
 // All of these dangerous patterns are automatically removed:
-Text('<script>alert("xss")</script>').modifier.asHTML().build()
+Text('<script>alert("xss")</script>').asHTML().build()
 // Result: "" (script tags removed)
 
-Text('<img src="x" onerror="alert(1)">').modifier.asHTML().build()  
+Text('<img src="x" onerror="alert(1)">').asHTML().build()  
 // Result: '<img src="x">' (event handlers removed)
 
-Text('<a href="javascript:alert(1)">Link</a>').modifier.asHTML().build()
+Text('<a href="javascript:alert(1)">Link</a>').asHTML().build()
 // Result: '<a>Link</a>' (dangerous URLs removed)
 ```
 
@@ -1239,10 +1239,10 @@ Image('/hero-image.jpg')
   .overlay(
     VStack({
       children: [
-        Text('Hero Title').modifier.fontSize(32).fontWeight('bold').build(),
-        Text('Subtitle').modifier.fontSize(18).build()
+        Text('Hero Title').fontSize(32).fontWeight('bold').build(),
+        Text('Subtitle').fontSize(18).build()
       ]
-    }).modifier.foregroundColor('#FFFFFF').textAlign('center').build(),
+    }).foregroundColor('#FFFFFF').textAlign('center').build(),
     'center'
   )
   .css({

@@ -273,7 +273,7 @@ import { Colors } from './assets'
 **`.overlay(content, alignment?)`** - Layer content on top
 ```typescript
 .overlay(
-  Text("Caption").modifier.foregroundColor('white').build(),
+  Text("Caption").foregroundColor('white').build(),
   'bottomTrailing'
 )
 ```
@@ -469,7 +469,7 @@ import { Colors } from './assets'
 ## 🎯 Special Modifiers
 
 **`.resizable()`** - Make images resizable (Image component only)
-**`.modifier(modifier)`** - Apply a custom modifier instance
+**`(modifier)`** - Apply a custom modifier instance
 
 ## 📊 Modifier Statistics
 

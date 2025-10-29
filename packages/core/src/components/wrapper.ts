@@ -6,7 +6,11 @@
  */
 
 import { createModifiableComponent, createModifierBuilder } from '../modifiers'
-import type { ModifiableComponent, ModifierBuilder } from '../modifiers/types'
+import type {
+  ModifiableComponent,
+  ModifierBuilder,
+  ModifiableComponentWithModifiers,
+} from '../modifiers/types'
 import { h } from '../runtime'
 import type {
   ComponentInstance,
@@ -95,10 +99,9 @@ function isConcatenatable(component: any): component is Concatenatable {
  * Enhanced component wrapper that adds modifier support and preserves concatenation methods
  */
 export function withModifiers<P extends ComponentProps>(
-  component: ComponentInstance<P>
-): ModifiableComponent<P> & {
-  modifier: ModifierBuilder<ModifiableComponent<P>>
-} & (ComponentInstance<P> extends Concatenatable ? Concatenatable : {}) {
+  component: ComponentInstance<P>,
+): ModifiableComponentWithModifiers<P> &
+  (ComponentInstance<P> extends Concatenatable ? Concatenatable : {}) {
   const modifiableComponent = createModifiableComponent(component)
   const modifierBuilder = createModifierBuilder(modifiableComponent)
 
@@ -111,7 +114,10 @@ export function withModifiers<P extends ComponentProps>(
   }
 
   if (isProxyEnabled()) {
-    return createComponentProxy(component) as any
+    return createComponentProxy(
+      component,
+    ) as unknown as ModifiableComponentWithModifiers<P> &
+      (ComponentInstance<P> extends Concatenatable ? Concatenatable : {})
   }
   const result: any = {
     ...modifiableComponent,
@@ -132,7 +138,8 @@ export function withModifiers<P extends ComponentProps>(
     }
   }
 
-  return result
+  return result as ModifiableComponentWithModifiers<P> &
+    (ComponentInstance<P> extends Concatenatable ? Concatenatable : {})
 }
 
 /**
@@ -141,9 +148,7 @@ export function withModifiers<P extends ComponentProps>(
 export function createReactiveWrapper<P extends ComponentProps>(
   renderFn: (props: P) => DOMNode | DOMNode[],
   options: WrapperOptions = {}
-): (props: P) => ModifiableComponent<P> & {
-  modifier: ModifierBuilder<ModifiableComponent<P>>
-} {
+): (props: P) => ModifiableComponentWithModifiers<P> {
   const { enableModifiers = true } = options
 
   return (props: P) => {

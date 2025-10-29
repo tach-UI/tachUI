@@ -223,7 +223,7 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
     it.skip('should integrate with modifier builder', () => {
       const operation = vi.fn()
       const component = Text('Task component')
-        .modifier.task(operation, { id: 'test-task', priority: 'background' })
+        .task(operation, { id: 'test-task', priority: 'background' })
         .padding(16)
         .build()
 
@@ -334,7 +334,7 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       const onRefresh = vi.fn().mockResolvedValue(undefined)
 
       const component = HTML.div({ children: 'Multi-lifecycle component' })
-        .modifier.onAppear(onAppearHandler)
+        .onAppear(onAppearHandler)
         .onDisappear(onDisappearHandler)
         .task(taskOperation, { id: 'multi-task' })
         .refreshable(onRefresh)
@@ -369,7 +369,7 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       const onAppearHandler = vi.fn()
 
       const component = Text('Complex component')
-        .modifier.onAppear(onAppearHandler)
+        .onAppear(onAppearHandler)
         .fontSize(18)
         .fontWeight('bold')
         .backgroundColor('#007AFF')
@@ -395,7 +395,7 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       const onAppearAction = vi.fn()
 
       const component = Text('SwiftUI-style onAppear')
-        .modifier.onAppear(onAppearAction)
+        .onAppear(onAppearAction)
         .build()
 
       const lifecycleModifier = component.modifiers.find(
@@ -409,7 +409,7 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       const asyncOperation = vi.fn().mockResolvedValue(undefined)
 
       const component = HTML.div({ children: 'Async task component' })
-        .modifier.task(asyncOperation, { priority: 'userInitiated' })
+        .task(asyncOperation, { priority: 'userInitiated' })
         .build()
 
       const lifecycleModifier = component.modifiers.find(
@@ -424,7 +424,7 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       const refreshOperation = vi.fn().mockResolvedValue(undefined)
 
       const component = HTML.div({ children: 'Refreshable content' })
-        .modifier.refreshable(refreshOperation)
+        .refreshable(refreshOperation)
         .build()
 
       const lifecycleModifier = component.modifiers.find(

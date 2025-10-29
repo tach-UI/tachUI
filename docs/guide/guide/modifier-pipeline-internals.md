@@ -317,20 +317,20 @@ console.log('Applying modifiers to element:', element.tagName, modifiers)
 
 ```typescript
 // Good
-const component = Text('Hello').modifier.fontSize(24).build()
+const component = Text('Hello').fontSize(24).build()
 
 // Bad - modifiers won't be applied
-const component = Text('Hello').modifier.fontSize(24)
+const component = Text('Hello').fontSize(24)
 ```
 
 ### 2. Prefer Specific Modifiers
 
 ```typescript
 // Good
-.modifier.fontSize(24).backgroundColor('#blue')
+.fontSize(24).backgroundColor('#blue')
 
 // Avoid when possible
-.modifier.css({ fontSize: '24px', backgroundColor: '#blue' })
+.css({ fontSize: '24px', backgroundColor: '#blue' })
 ```
 
 ### 3. Handle Reactive Content Correctly

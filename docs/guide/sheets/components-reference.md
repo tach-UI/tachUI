@@ -24,7 +24,7 @@ Text(() => `Count: ${count()}`)
 
 // Styled text
 Text('Styled Text')
-  .modifier.fontSize(24)
+  .fontSize(24)
   .fontWeight('bold')
   .foregroundColor('#007AFF')
   .textAlign('center')
@@ -39,7 +39,7 @@ Button('Click Me', () => console.log('Clicked!'))
 
 // Styled button
 Button('Primary Action', handleAction)
-  .modifier.backgroundColor('#007AFF')
+  .backgroundColor('#007AFF')
   .foregroundColor('white')
   .padding(16)
   .cornerRadius(8)
@@ -47,7 +47,7 @@ Button('Primary Action', handleAction)
 
 // Reactive button state
 Button('Submit', handleSubmit)
-  .modifier.disabled(() => !isFormValid())
+  .disabled(() => !isFormValid())
   .build()
 ```
 
@@ -62,7 +62,7 @@ Image(Assets.logo)
 
 // Styled image
 Image('/hero-image.jpg')
-  .modifier.frame({ width: 300, height: 200 })
+  .frame({ width: 300, height: 200 })
   .cornerRadius(12)
   .contentMode('cover')
   .build()
@@ -91,7 +91,7 @@ BasicInput({
   value: searchTerm,
   onInput: setSearchTerm,
 })
-  .modifier.padding(12)
+  .padding(12)
   .border(1, '#E5E5E7')
   .cornerRadius(8)
   .build()
@@ -134,7 +134,7 @@ Slider({
   marks: [0, 25, 50, 75, 100],
   label: 'Brightness',
 })
-  .modifier.frame({ width: 300 })
+  .frame({ width: 300 })
   .build()
 ```
 
@@ -234,7 +234,7 @@ Link({
   target: '_blank',
   children: [Text('External Site')],
 })
-  .modifier.foregroundColor('#007AFF')
+  .foregroundColor('#007AFF')
   .textDecoration('none')
   .onHover(hovered => setHovered(hovered))
   .build()
@@ -385,7 +385,7 @@ ScrollView({
   showsIndicators: false,
   children: [...horizontalItems],
 })
-  .modifier.frame({ height: 200 })
+  .frame({ height: 200 })
   .build()
 
 // With pull-to-refresh
@@ -433,7 +433,7 @@ Grid({
   children: [
     GridRow([
       Text('Header')
-        .modifier.gridColumnSpan(3)
+        .gridColumnSpan(3)
         .backgroundColor('#007AFF')
         .foregroundColor('white')
         .build(),
@@ -482,7 +482,7 @@ LazyHGrid({
   spacing: 12,
   children: images.map(image =>
     Image({ src: image.url, alt: image.title })
-      .modifier.frame(150, 200)
+      .frame(150, 200)
       .cornerRadius(8)
       .build()
   ),
@@ -524,7 +524,7 @@ Symbol('star', {
   effect: 'glow',
   effectValue: 0.8,
 })
-  .modifier.foregroundColor('#FFD700')
+  .foregroundColor('#FFD700')
   .scaleLarge()
   .build()
 
@@ -540,7 +540,7 @@ Symbol('heart', {
   variant: () => (isFavorited() ? 'filled' : 'none'),
   effect: 'heartbeat',
 })
-  .modifier.foregroundColor(() => (isFavorited() ? '#ff0000' : '#999'))
+  .foregroundColor(() => (isFavorited() ? '#ff0000' : '#999'))
   .onTap(() => setIsFavorited(!isFavorited()))
   .build()
 ```
@@ -552,10 +552,10 @@ Symbol('heart', {
 Divider()
 
 // Vertical divider
-Divider({ orientation: 'vertical' }).modifier.frame({ height: 40 }).build()
+Divider({ orientation: 'vertical' }).frame({ height: 40 }).build()
 
 // Styled divider
-Divider().modifier.backgroundColor('#E5E5E7').frame({ height: 2 }).build()
+Divider().backgroundColor('#E5E5E7').frame({ height: 2 }).build()
 ```
 
 ### List & Data Components
@@ -568,7 +568,7 @@ List({
   data: items,
   children: item => [
     Text(item.title),
-    Text(item.subtitle).modifier.foregroundColor('#666').build(),
+    Text(item.subtitle).foregroundColor('#666').build(),
   ],
 })
 
@@ -598,7 +598,7 @@ Show(() => isLoggedIn(), Text('Welcome back!'), Text('Please log in'))
 // With reactive condition
 Show(
   () => error() !== null,
-  Text(error()).modifier.foregroundColor('red').build()
+  Text(error()).foregroundColor('red').build()
 )
 
 // Alternative utilities
@@ -685,12 +685,12 @@ Section({
 ```typescript
 // Semantic headings with modifiers
 H1('Main Title')
-  .modifier.fontSize(32)
+  .fontSize(32)
   .fontWeight('bold')
   .marginBottom(16)
   .build()
 
-H2('Section Title').modifier.fontSize(24).foregroundColor('#333').build()
+H2('Section Title').fontSize(24).foregroundColor('#333').build()
 ```
 
 ## 🧭 Navigation Components (@tachui/navigation)
@@ -716,7 +716,7 @@ NavigationView({
 NavigationView({
   children: [HomeView()],
 })
-  .modifier.navigationTitle('My App')
+  .navigationTitle('My App')
   .navigationBarTitleDisplayMode('large')
   .build()
 ```
@@ -731,7 +731,7 @@ NavigationStack({
   path: navigationPath,
   children: [HomeView()],
 })
-  .modifier.navigationDestination('settings', () => SettingsView())
+  .navigationDestination('settings', () => SettingsView())
   .navigationDestination('profile', () => ProfileView())
   .build()
 
@@ -758,7 +758,7 @@ NavigationLink(
   }),
   () => SettingsView()
 )
-  .modifier.padding(16)
+  .padding(16)
   .backgroundColor('#F8F9FA')
   .cornerRadius(8)
   .build()
@@ -783,11 +783,11 @@ SimpleTabView({
   onChange: setSelectedTab,
   children: [
     VStack({ children: [Text('Home Content')] })
-      .modifier.tabItem('Home', '/home-icon.svg')
+      .tabItem('Home', '/home-icon.svg')
       .build(),
 
     VStack({ children: [Text('Settings Content')] })
-      .modifier.tabItem('Settings', '/settings-icon.svg')
+      .tabItem('Settings', '/settings-icon.svg')
       .build(),
   ],
 })
@@ -822,7 +822,7 @@ TabView({
     },
   ],
 })
-  .modifier.tabViewStyle('page') // Optional: page-style tabs
+  .tabViewStyle('page') // Optional: page-style tabs
   .build()
 ```
 
@@ -896,7 +896,7 @@ NavigationStack({
 ```typescript
 // Navigation bar modifiers
 SomeView()
-  .modifier.navigationTitle('Page Title')
+  .navigationTitle('Page Title')
   .navigationBarTitleDisplayMode('inline')
   .navigationBarHidden(false)
   .navigationBarItems({
@@ -1086,7 +1086,7 @@ const AppNavigation = () => {
       }),
     ],
   })
-    .modifier.navigationDestination('settings', () => SettingsView())
+    .navigationDestination('settings', () => SettingsView())
     .navigationDestination('profile', () => ProfileView())
     .build()
 }

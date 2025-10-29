@@ -119,7 +119,7 @@ describe('Toggle Component', () => {
     const toggle = Toggle(isOn, {
       onToggle: setIsOn,
     })
-      .modifier.padding(8)
+      .padding(8)
       .disabled(false)
       .build()
 

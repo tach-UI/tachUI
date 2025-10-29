@@ -9,6 +9,7 @@ import chalk from 'chalk'
 import { Command } from 'commander'
 import { glob } from 'glob'
 import ora from 'ora'
+import { createRemoveModifierTriggerCommand } from './migrate/remove-modifier-trigger.js'
 
 interface MigrationRule {
   pattern: RegExp
@@ -30,7 +31,7 @@ const reactToTachUIMigrations: MigrationRule[] = [
   },
   {
     pattern: /import.*useEffect.*from ['"]react['"];?\n?/g,
-    replacement: '// Use .modifier.onAppear() or .task() instead of useEffect\n',
+    replacement: '// Use .onAppear() or .task() instead of useEffect\n',
     description: 'Replace useEffect with lifecycle modifiers',
   },
 
@@ -197,7 +198,7 @@ The following items may need manual attention:
 
 1. **Complex State Logic**: Review state management patterns and consider using ObservedObject for complex objects
 2. **Event Handlers**: Verify event handler conversions (onClick → onTap)
-3. **Styling**: Add TachUI modifiers for styling (.modifier.backgroundColor(), etc.)
+3. **Styling**: Add TachUI modifiers for styling (.backgroundColor(), etc.)
 4. **Component Structure**: Ensure proper Layout container usage (VStack, HStack, ZStack)
 5. **Imports**: Verify all TachUI imports are correct
 
@@ -395,3 +396,4 @@ export const migrateCommand = new Command('migrate')
       process.exit(1)
     }
   })
+  .addCommand(createRemoveModifierTriggerCommand())

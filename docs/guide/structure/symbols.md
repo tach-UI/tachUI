@@ -268,25 +268,25 @@ animations/
 **Available Animation Effects:**
 ```typescript
 // Bounce effect
-Symbol("heart").modifier.symbolEffect("bounce").build()
+Symbol("heart").symbolEffect("bounce").build()
 
 // Pulse with custom intensity  
-Symbol("star").modifier.symbolEffect("pulse", 0.8).build()
+Symbol("star").symbolEffect("pulse", 0.8).build()
 
 // Wiggle with custom speed
-Symbol("bell").modifier.symbolEffect("wiggle").effectSpeed(2).build()
+Symbol("bell").symbolEffect("wiggle").effectSpeed(2).build()
 
 // Rotate continuous
-Symbol("gear").modifier.symbolEffect("rotate").build()
+Symbol("gear").symbolEffect("rotate").build()
 
 // Breathe with scale and opacity
-Symbol("circle").modifier.symbolEffect("breathe").build()
+Symbol("circle").symbolEffect("breathe").build()
 
 // Shake with distance control
-Symbol("warning").modifier.symbolEffect("shake").build()
+Symbol("warning").symbolEffect("shake").build()
 
 // Glow with intensity control
-Symbol("lightbulb").modifier.symbolEffect("glow").build()
+Symbol("lightbulb").symbolEffect("glow").build()
 ```
 
 ---
@@ -700,7 +700,7 @@ const ProductCard = (product) => VStack([
   Symbol("heart", {
     variant: () => product.isFavorited() ? "filled" : "none",
     primaryColor: () => product.isFavorited() ? Assets.systemRed : Assets.systemGray
-  }).modifier.onTap(() => product.toggleFavorite()).build(),
+  }).onTap(() => product.toggleFavorite()).build(),
   
   Text(product.name),
   Text(`$${product.price}`)
@@ -714,7 +714,7 @@ const NavigationBar = () => HStack([
     .accessibilityLabel("Go back")
     .build(),
     
-  Text("Settings").modifier.layoutPriority(1).build(),
+  Text("Settings").layoutPriority(1).build(),
   
   Symbol("gear")
     .modifier  

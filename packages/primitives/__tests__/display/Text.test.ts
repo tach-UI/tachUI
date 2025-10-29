@@ -526,7 +526,7 @@ describe('Text Factory Function', () => {
 
     expect(text).toBeDefined()
     expect(typeof text.modifier).toBe('object')
-    expect(typeof text.modifier.build).toBe('function')
+    expect(typeof text.build).toBe('function')
   })
 
   it('should accept additional props', () => {
@@ -539,7 +539,7 @@ describe('Text Factory Function', () => {
   })
 
   it('should support modifier chaining', () => {
-    const text = Text('Hello').modifier.padding(16).margin(8).build()
+    const text = Text('Hello').padding(16).margin(8).build()
 
     expect(text).toBeDefined()
   })
@@ -682,7 +682,7 @@ describe('TextFormat Utilities', () => {
 describe('Integration Tests', () => {
   it('should combine typography preset with formatting', () => {
     const text = TextStyles.Headline('Important Notice')
-      .modifier.padding(16)
+      .padding(16)
       .margin(8)
       .build()
 
@@ -705,7 +705,7 @@ describe('Integration Tests', () => {
       letterSpacing: 1,
       textDecoration: 'underline',
     })
-      .modifier.padding(20)
+      .padding(20)
       .backgroundColor('#ecf0f1')
       .build()
 

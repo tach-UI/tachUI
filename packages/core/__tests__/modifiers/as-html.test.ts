@@ -140,7 +140,7 @@ describe('AsHTML Modifier', () => {
       expect(() => {
         modifier.apply(null as any, context)
       }).toThrow(
-        "Found: Button component. Use Text('<your-html>').modifier.asHTML() instead."
+        "Found: Button component. Use Text('<your-html>').asHTML() instead."
       )
     })
 
@@ -158,7 +158,7 @@ describe('AsHTML Modifier', () => {
 
       expect(() => {
         modifier.apply(null as any, context)
-      }).toThrow("Use Text('<your-html>').modifier.asHTML() instead.")
+      }).toThrow("Use Text('<your-html>').asHTML() instead.")
     })
   })
 

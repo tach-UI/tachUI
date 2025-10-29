@@ -109,6 +109,21 @@ tacho migrate swiftui-project ./MySwiftUIApp
 tacho migrate --interactive ./ContentView.swift
 ```
 
+### Modifier Migration Utilities
+
+```bash
+# Preview legacy `.modifier` trigger removal without touching files
+tacho migrate remove-modifier-trigger --dry-run
+
+# Apply the transformation to your source tree
+tacho migrate remove-modifier-trigger --pattern "src/**/*.{ts,tsx,js,jsx}"
+
+# Run in CI to ensure no legacy triggers remain
+tacho migrate remove-modifier-trigger --check
+```
+
+Use `--ignore` to skip certain glob patterns (for example, generated output) and `--preview`/`--dry-run` to review changes before applying them.
+
 ### Development Tools
 
 ```bash

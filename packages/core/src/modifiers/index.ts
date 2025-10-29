@@ -44,6 +44,7 @@ export type {
   LayoutModifierProps,
   LifecycleModifierProps,
   ModifiableComponent,
+  ModifiableComponentWithModifiers,
   Modifier,
   ModifierApplicationOptions,
   ModifierBuilder,

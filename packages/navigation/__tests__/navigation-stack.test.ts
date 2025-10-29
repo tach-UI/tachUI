@@ -18,7 +18,7 @@ describe('NavigationStack - SwiftUI Compatible Navigation System', () => {
   let mockRootView: any
 
   beforeEach(() => {
-    mockRootView = HTML.div({ children: 'Home View' }).modifier.build()
+    mockRootView = HTML.div({ children: 'Home View' }).build()
   })
 
   describe('Basic Functionality', () => {
@@ -104,12 +104,12 @@ describe('NavigationStack - SwiftUI Compatible Navigation System', () => {
     })
 
     it('works with NavigationLink children', () => {
-      const detailView = HTML.div({ children: 'Detail View' }).modifier.build()
+      const detailView = HTML.div({ children: 'Detail View' }).build()
       const linkView = NavigationLink('Go to Detail', () => detailView)
 
       const rootWithLink = HTML.div({
         children: [mockRootView, linkView],
-      }).modifier.build()
+      }).build()
       const navStack = NavigationStack(rootWithLink)
 
       expect(navStack).toBeDefined()
@@ -120,7 +120,7 @@ describe('NavigationStack - SwiftUI Compatible Navigation System', () => {
     it('supports navigationDestination modifier', () => {
       const destinationView = HTML.div({
         children: 'Destination',
-      }).modifier.build()
+      }).build()
       const rootWithDestination = navigationDestination(
         mockRootView,
         'detail',
@@ -140,7 +140,7 @@ describe('NavigationStack - SwiftUI Compatible Navigation System', () => {
       const rootWithDestination = navigationDestination(
         mockRootView,
         'detail',
-        () => HTML.div({ children: 'Detail View' }).modifier.build()
+        () => HTML.div({ children: 'Detail View' }).build()
       )
 
       const navStack = NavigationStack(rootWithDestination)
@@ -207,7 +207,7 @@ describe('NavigationStack - SwiftUI Compatible Navigation System', () => {
       const startTime = performance.now()
 
       for (let i = 0; i < 100; i++) {
-        NavigationStack(HTML.div({ children: `Root ${i}` }).modifier.build())
+        NavigationStack(HTML.div({ children: `Root ${i}` }).build())
       }
 
       const endTime = performance.now()
@@ -218,10 +218,10 @@ describe('NavigationStack - SwiftUI Compatible Navigation System', () => {
       const largeRootView = HTML.div({
         children: Array.from({ length: 50 }, (_, i) =>
           NavigationLink(`Item ${i}`, () =>
-            HTML.div({ children: `Detail ${i}` }).modifier.build()
+            HTML.div({ children: `Detail ${i}` }).build()
           )
         ),
-      }).modifier.build()
+      }).build()
 
       const navStack = NavigationStack(largeRootView)
 

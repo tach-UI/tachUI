@@ -29,7 +29,7 @@ describe('Symbol Reactive Modifier Tests', () => {
       const [color, setColor] = createSignal('#ff0000')
 
       expect(() => {
-        const symbol = Symbol('heart').modifier.foregroundColor(color).build()
+        const symbol = Symbol('heart').foregroundColor(color).build()
 
         expect(symbol).toBeDefined()
         expect(symbol.modifiers).toBeDefined()
@@ -45,7 +45,7 @@ describe('Symbol Reactive Modifier Tests', () => {
       const [padding, setPadding] = createSignal(16)
 
       expect(() => {
-        const symbol = Symbol('heart').modifier.padding(padding).build()
+        const symbol = Symbol('heart').padding(padding).build()
 
         expect(symbol).toBeDefined()
         expect(symbol.modifiers).toBeDefined()
@@ -63,7 +63,7 @@ describe('Symbol Reactive Modifier Tests', () => {
 
       expect(() => {
         const symbol = Symbol('heart')
-          .modifier.foregroundColor(color)
+          .foregroundColor(color)
           .frame(size, size)
           .opacity(opacity)
           .build()
@@ -90,7 +90,7 @@ describe('Symbol Reactive Modifier Tests', () => {
 
       expect(() => {
         const symbol = Symbol('heart')
-          .modifier.foregroundColor(textColor)
+          .foregroundColor(textColor)
           .build()
 
         expect(symbol).toBeDefined()
@@ -114,7 +114,7 @@ describe('Symbol Reactive Modifier Tests', () => {
 
       expect(() => {
         const symbol = Symbol('heart')
-          .modifier.frame(symbolSize, symbolSize)
+          .frame(symbolSize, symbolSize)
           .padding(symbolPadding)
           .build()
 
@@ -137,7 +137,7 @@ describe('Symbol Reactive Modifier Tests', () => {
 
       expect(() => {
         const symbol = Symbol(iconName, { variant })
-          .modifier.foregroundColor(color)
+          .foregroundColor(color)
           .padding(padding)
           .build()
 
@@ -173,7 +173,7 @@ describe('Symbol Reactive Modifier Tests', () => {
           variant: iconVariant,
           primaryColor: iconColor,
         })
-          .modifier.scaleEffect(iconScale)
+          .scaleEffect(iconScale)
           .build()
 
         expect(symbol).toBeDefined()
@@ -197,7 +197,7 @@ describe('Symbol Reactive Modifier Tests', () => {
 
       expect(() => {
         const symbol = Symbol('heart')
-          .modifier.foregroundColor(dynamicColor) // reactive
+          .foregroundColor(dynamicColor) // reactive
           .padding(16) // static
           .opacity(opacity) // computed reactive
           .frame(32, 32) // static

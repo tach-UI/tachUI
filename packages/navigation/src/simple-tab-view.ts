@@ -140,7 +140,7 @@ export function SimpleTabView(
                 HTML.div({
                   children: tab.icon,
                 })
-                  .modifier.fontSize(20)
+                  .fontSize(20)
                   .lineHeight('1')
                   .build(),
               ]
@@ -148,7 +148,7 @@ export function SimpleTabView(
 
           // Label
           Text(tab.label)
-            .modifier.fontSize(12)
+            .fontSize(12)
             .fontWeight(isSelected ? '600' : '400')
             .foregroundColor(isSelected ? accentColor : '#666666')
             .textAlign('center')
@@ -160,7 +160,7 @@ export function SimpleTabView(
                 HTML.div({
                   children: String(tab.badge),
                 })
-                  .modifier.backgroundColor('#ff3b30')
+                  .backgroundColor('#ff3b30')
                   .foregroundColor('#ffffff')
                   .fontSize(10)
                   .fontWeight('bold')
@@ -173,13 +173,13 @@ export function SimpleTabView(
         ],
         spacing: 4,
         alignment: 'center',
-      }).modifier.build()
+      }).build()
 
       // Tab button
       const button = HTML.div({
         children: [buttonContent],
       })
-        .modifier.padding({ top: 8, bottom: 8, left: 4, right: 4 })
+        .padding({ top: 8, bottom: 8, left: 4, right: 4 })
         .backgroundColor(isSelected ? '#ffffff' : 'transparent')
         .cornerRadius(8)
         .cursor(isDisabled ? 'not-allowed' : 'pointer')
@@ -197,7 +197,7 @@ export function SimpleTabView(
       spacing: 0,
       alignment: 'center',
     })
-      .modifier.backgroundColor(backgroundColor)
+      .backgroundColor(backgroundColor)
       .padding({ top: 8, bottom: 8, left: 8, right: 8 })
       .border(1, '#e0e0e0')
       .build()
@@ -209,13 +209,13 @@ export function SimpleTabView(
 
     if (!selectedTab) {
       return HTML.div({
-        children: [Text('No content').modifier.build()],
-      }).modifier.build()
+        children: [Text('No content').build()],
+      }).build()
     }
 
     return HTML.div({
       children: [selectedTab.content],
-    }).modifier.build()
+    }).build()
   }
 
   // Main tab view component
@@ -228,7 +228,7 @@ export function SimpleTabView(
     spacing: 0,
     alignment: 'leading',
   })
-    .modifier.frame({ minHeight: '100vh' })
+    .frame({ minHeight: '100vh' })
     .backgroundColor('#ffffff')
     .build() as NavigationComponent
 

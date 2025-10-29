@@ -28,7 +28,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
   let mockComponent: any
 
   beforeEach(() => {
-    mockComponent = HTML.div({ children: 'Base Component' }).modifier.build()
+    mockComponent = HTML.div({ children: 'Base Component' }).build()
   })
 
   describe('Basic Navigation Modifiers', () => {
@@ -98,8 +98,8 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
     })
 
     it('applies navigationBarItems modifier', () => {
-      const leadingItem = HTML.button({ children: 'Edit' }).modifier.build()
-      const trailingItem = HTML.button({ children: 'Save' }).modifier.build()
+      const leadingItem = HTML.button({ children: 'Edit' }).build()
+      const trailingItem = HTML.button({ children: 'Save' }).build()
 
       const withItems = navigationBarItems(mockComponent, {
         leading: leadingItem,
@@ -169,9 +169,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
     })
 
     it('supports SwiftUI display mode values', () => {
-      const comp1 = HTML.div({ children: 'Test1' }).modifier.build()
-      const comp2 = HTML.div({ children: 'Test2' }).modifier.build()
-      const comp3 = HTML.div({ children: 'Test3' }).modifier.build()
+      const comp1 = HTML.div({ children: 'Test1' }).build()
+      const comp2 = HTML.div({ children: 'Test2' }).build()
+      const comp3 = HTML.div({ children: 'Test3' }).build()
 
       const automatic = navigationBarTitleDisplayMode(comp1, 'automatic')
       const inline = navigationBarTitleDisplayMode(comp2, 'inline')
@@ -187,9 +187,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
     })
 
     it('supports SwiftUI toolbar item placement', () => {
-      const editButton = HTML.button({ children: 'Edit' }).modifier.build()
-      const doneButton = HTML.button({ children: 'Done' }).modifier.build()
-      const addButton = HTML.button({ children: '+' }).modifier.build()
+      const editButton = HTML.button({ children: 'Edit' }).build()
+      const doneButton = HTML.button({ children: 'Done' }).build()
+      const addButton = HTML.button({ children: '+' }).build()
 
       const withToolbarItems = navigationBarItems(mockComponent, {
         leading: editButton,
@@ -228,9 +228,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
     })
 
     it('checks if component has navigation modifiers', () => {
-      const unmodified = HTML.div({ children: 'Unmodified' }).modifier.build()
+      const unmodified = HTML.div({ children: 'Unmodified' }).build()
       const modified = navigationTitle(
-        HTML.div({ children: 'Modified' }).modifier.build(),
+        HTML.div({ children: 'Modified' }).build(),
         'Has Modifiers'
       )
 
@@ -241,7 +241,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
 
   describe('NavigationStack Integration', () => {
     it('enhances NavigationStack with modifiers', () => {
-      const mockNavStack = HTML.div({ children: 'Nav Stack' }).modifier.build()
+      const mockNavStack = HTML.div({ children: 'Nav Stack' }).build()
 
       const enhanced = enhanceNavigationStackWithModifiers(mockNavStack)
 
@@ -336,7 +336,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       let current = mockComponent
       for (let i = 0; i < 100; i++) {
         current = navigationTitle(
-          HTML.div({ children: `Test ${i}` }).modifier.build(),
+          HTML.div({ children: `Test ${i}` }).build(),
           `Title ${i}`
         )
       }
@@ -351,11 +351,11 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       const complex = toolbarForegroundColor(
         toolbarBackground(
           navigationBarItems(mockComponent, {
-            leading: HTML.button({ children: 'L1' }).modifier.build(),
+            leading: HTML.button({ children: 'L1' }).build(),
             trailing: [
-              HTML.button({ children: 'T1' }).modifier.build(),
-              HTML.button({ children: 'T2' }).modifier.build(),
-              HTML.button({ children: 'T3' }).modifier.build(),
+              HTML.button({ children: 'T1' }).build(),
+              HTML.button({ children: 'T2' }).build(),
+              HTML.button({ children: 'T3' }).build(),
             ],
           }),
           '#007AFF'
@@ -386,11 +386,11 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
           HTML.div({
             children: [
               Text('Nested content'),
-              HTML.button({ children: 'Button' }).modifier.build(),
+              HTML.button({ children: 'Button' }).build(),
             ],
-          }).modifier.build(),
+          }).build(),
         ],
-      }).modifier.build()
+      }).build()
 
       const modifiedNested = navigationTitle(nestedComponent, 'Nested Title')
 

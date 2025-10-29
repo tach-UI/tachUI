@@ -13,11 +13,11 @@ Scales the component by the specified factors, equivalent to SwiftUI's `.scaleEf
 ```typescript
 // SwiftUI equivalent: .scaleEffect(1.5)
 Text('Scaled')
-  .modifier.scaleEffect(1.5)
+  .scaleEffect(1.5)
 
 // SwiftUI equivalent: .scaleEffect(x: 1.5, y: 2.0, anchor: .topLeading)
 Text('Non-uniform scale')
-  .modifier.scaleEffect(1.5, 2.0, 'topLeading')
+  .scaleEffect(1.5, 2.0, 'topLeading')
 ```
 
 **Parameters:**
@@ -36,7 +36,7 @@ Applies relative positioning via CSS transforms, similar to SwiftUI's `.offset()
 ```typescript
 // SwiftUI equivalent: .offset(x: 100, y: 50)
 Text('Offset')
-  .modifier.offset(100, 50)
+  .offset(100, 50)
 ```
 
 **Parameters:**
@@ -52,7 +52,7 @@ Inverts all colors in the component, equivalent to SwiftUI's `.colorInvert()` mo
 ```typescript
 // SwiftUI equivalent: .colorInvert()
 Image('photo.jpg')
-  .modifier.colorInvert()
+  .colorInvert()
 ```
 
 #### saturation(amount)
@@ -62,11 +62,11 @@ Adjusts color saturation, equivalent to SwiftUI's `.saturation()` modifier.
 ```typescript
 // SwiftUI equivalent: .saturation(0.5)
 Image('photo.jpg')
-  .modifier.saturation(0.5)  // 50% less saturated
+  .saturation(0.5)  // 50% less saturated
 
 // SwiftUI equivalent: .saturation(0)  
 Image('grayscale.jpg')
-  .modifier.saturation(0)    // Completely desaturated (grayscale)
+  .saturation(0)    // Completely desaturated (grayscale)
 ```
 
 **Parameters:**
@@ -79,11 +79,11 @@ Rotates the hue of colors, equivalent to SwiftUI's `.hueRotation()` modifier.
 ```typescript
 // SwiftUI equivalent: .hueRotation(Angle(degrees: 90))
 Image('colorful.jpg')
-  .modifier.hueRotation('90deg')
+  .hueRotation('90deg')
 
 // SwiftUI equivalent: .hueRotation(Angle(radians: 1.57))
 Image('rainbow.jpg')
-  .modifier.hueRotation('1.57rad')
+  .hueRotation('1.57rad')
 ```
 
 **Parameters:**

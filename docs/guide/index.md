@@ -229,7 +229,7 @@ return <div onClick={() => setCount(c => c + 1)}>{count}</div>
 
 // TachUI - nearly identical
 const [count, setCount] = createSignal(0)
-return Text(() => count()).modifier.onTap(() => setCount(c => c + 1)).build()
+return Text(() => count()).onTap(() => setCount(c => c + 1)).build()
 ```
 
 ### From SwiftUI

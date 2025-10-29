@@ -263,15 +263,14 @@ describe('Symbol Component', () => {
       
       expect(symbol.type).toBe('component')
       expect(symbol.modifier).toBeDefined()
-      expect(typeof symbol.modifier.padding).toBe('function')
-      expect(typeof symbol.modifier.foregroundColor).toBe('function')
+      expect(typeof symbol.padding).toBe('function')
+      expect(typeof symbol.foregroundColor).toBe('function')
     })
 
     test('can chain standard modifiers', () => {
       const symbol = Symbol('heart')
       
-      const modified = symbol.modifier
-        .padding(16)
+      const modified = symbol.padding(16)
         .foregroundColor('#ff0000')
         .build()
       

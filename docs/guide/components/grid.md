@@ -22,12 +22,12 @@ import { Grid, GridRow, Text } from '@tachui/core'
 const BasicGrid = Grid({
   children: [
     GridRow([
-      Text('Header').modifier.padding(8).backgroundColor('#f0f0f0').build(),
-      Text('Header 2').modifier.padding(8).backgroundColor('#f0f0f0').build()
+      Text('Header').padding(8).backgroundColor('#f0f0f0').build(),
+      Text('Header 2').padding(8).backgroundColor('#f0f0f0').build()
     ]),
     GridRow([
-      Text('Content 1').modifier.padding(8).build(),
-      Text('Content 2').modifier.padding(8).build()
+      Text('Content 1').padding(8).build(),
+      Text('Content 2').padding(8).build()
     ])
   ]
 })
@@ -51,12 +51,12 @@ const CardGrid = LazyVGrid({
   ],
   spacing: 16,
   children: [
-    Text('Card 1').modifier.padding(20).backgroundColor('#e3f2fd').cornerRadius(8).build(),
-    Text('Card 2').modifier.padding(20).backgroundColor('#f3e5f5').cornerRadius(8).build(),
-    Text('Card 3').modifier.padding(20).backgroundColor('#e8f5e8').cornerRadius(8).build(),
-    Text('Card 4').modifier.padding(20).backgroundColor('#fff3e0').cornerRadius(8).build(),
-    Text('Card 5').modifier.padding(20).backgroundColor('#fce4ec').cornerRadius(8).build(),
-    Text('Card 6').modifier.padding(20).backgroundColor('#f1f8e9').cornerRadius(8).build()
+    Text('Card 1').padding(20).backgroundColor('#e3f2fd').cornerRadius(8).build(),
+    Text('Card 2').padding(20).backgroundColor('#f3e5f5').cornerRadius(8).build(),
+    Text('Card 3').padding(20).backgroundColor('#e8f5e8').cornerRadius(8).build(),
+    Text('Card 4').padding(20).backgroundColor('#fff3e0').cornerRadius(8).build(),
+    Text('Card 5').padding(20).backgroundColor('#fce4ec').cornerRadius(8).build(),
+    Text('Card 6').padding(20).backgroundColor('#f1f8e9').cornerRadius(8).build()
   ]
 })
   .modifier
@@ -75,16 +75,16 @@ const HorizontalGallery = LazyHGrid({
   spacing: 12,
   children: [
     VStack([
-      Image({ src: 'image1.jpg', alt: 'Photo 1' }).modifier.cornerRadius(8).build(),
-      Text('Photo 1').modifier.fontSize(12).build()
+      Image({ src: 'image1.jpg', alt: 'Photo 1' }).cornerRadius(8).build(),
+      Text('Photo 1').fontSize(12).build()
     ]),
     VStack([
-      Image({ src: 'image2.jpg', alt: 'Photo 2' }).modifier.cornerRadius(8).build(),
-      Text('Photo 2').modifier.fontSize(12).build()
+      Image({ src: 'image2.jpg', alt: 'Photo 2' }).cornerRadius(8).build(),
+      Text('Photo 2').fontSize(12).build()
     ]),
     VStack([
-      Image({ src: 'image3.jpg', alt: 'Photo 3' }).modifier.cornerRadius(8).build(),
-      Text('Photo 3').modifier.fontSize(12).build()
+      Image({ src: 'image3.jpg', alt: 'Photo 3' }).cornerRadius(8).build(),
+      Text('Photo 3').fontSize(12).build()
     ])
   ]
 })
@@ -165,11 +165,11 @@ const SpanningGrid = LazyVGrid({
       .gridRowSpan(2) // Spans 2 rows
       .build(),
     
-    Text('Content 1').modifier.padding(16).backgroundColor('#f0f0f0').build(),
-    Text('Content 2').modifier.padding(16).backgroundColor('#f0f0f0').build(),
-    Text('Content 3').modifier.padding(16).backgroundColor('#f0f0f0').build(),
-    Text('Content 4').modifier.padding(16).backgroundColor('#f0f0f0').build(),
-    Text('Content 5').modifier.padding(16).backgroundColor('#f0f0f0').build()
+    Text('Content 1').padding(16).backgroundColor('#f0f0f0').build(),
+    Text('Content 2').padding(16).backgroundColor('#f0f0f0').build(),
+    Text('Content 3').padding(16).backgroundColor('#f0f0f0').build(),
+    Text('Content 4').padding(16).backgroundColor('#f0f0f0').build(),
+    Text('Content 5').padding(16).backgroundColor('#f0f0f0').build()
   ]
 })
 ```
@@ -193,10 +193,10 @@ const SectionGrid = LazyVGrid({
     .padding(16)
     .build(),
   children: [
-    Text('Item 1').modifier.padding(12).backgroundColor('#f0f0f0').build(),
-    Text('Item 2').modifier.padding(12).backgroundColor('#f0f0f0').build(),
-    Text('Item 3').modifier.padding(12).backgroundColor('#f0f0f0').build(),
-    Text('Item 4').modifier.padding(12).backgroundColor('#f0f0f0').build()
+    Text('Item 1').padding(12).backgroundColor('#f0f0f0').build(),
+    Text('Item 2').padding(12).backgroundColor('#f0f0f0').build(),
+    Text('Item 3').padding(12).backgroundColor('#f0f0f0').build(),
+    Text('Item 4').padding(12).backgroundColor('#f0f0f0').build()
   ]
 })
 ```
@@ -272,9 +272,9 @@ const StyledGrid = LazyVGrid({
     pattern: 'dots'    // Background pattern
   }),
   children: [
-    Text('Interactive Item 1').modifier.padding(12).build(),
-    Text('Interactive Item 2').modifier.padding(12).build(),
-    Text('Interactive Item 3').modifier.padding(12).build()
+    Text('Interactive Item 1').padding(12).build(),
+    Text('Interactive Item 2').padding(12).build(),
+    Text('Interactive Item 3').padding(12).build()
   ]
 })
 
@@ -361,16 +361,16 @@ GridAnimations.comprehensive()    // All animations enabled
 const DashboardGrid = Grid({
   children: [
     GridRow([
-      Text('Dashboard').modifier.gridColumnSpan(3).fontSize(24).build()
+      Text('Dashboard').gridColumnSpan(3).fontSize(24).build()
     ]),
     GridRow([
-      Text('Sidebar').modifier.gridRowSpan(2).width(200).build(),
-      Text('Main Content').modifier.padding(20).build(),
-      Text('Stats').modifier.width(150).build()
+      Text('Sidebar').gridRowSpan(2).width(200).build(),
+      Text('Main Content').padding(20).build(),
+      Text('Stats').width(150).build()
     ]),
     GridRow([
       null, // Skip first column (spanned by sidebar)
-      Text('Footer Content').modifier.gridColumnSpan(2).build()
+      Text('Footer Content').gridColumnSpan(2).build()
     ])
   ]
 })
@@ -386,11 +386,11 @@ const ProductGallery = LazyVGrid({
   children: products.map(product => 
     VStack([
       Image({ src: product.image, alt: product.name })
-        .modifier.aspectRatio(1).cornerRadius(12).build(),
-      Text(product.name).modifier.fontWeight('bold').build(),
-      Text(`$${product.price}`).modifier.foregroundColor('#666666').build()
+        .aspectRatio(1).cornerRadius(12).build(),
+      Text(product.name).fontWeight('bold').build(),
+      Text(`$${product.price}`).foregroundColor('#666666').build()
     ])
-    .modifier.padding(12).backgroundColor('#ffffff').cornerRadius(8).build()
+    .padding(12).backgroundColor('#ffffff').cornerRadius(8).build()
   )
 })
 ```
@@ -402,9 +402,9 @@ const Timeline = LazyHGrid({
   spacing: 16,
   children: events.map(event => 
     VStack([
-      Text(event.date).modifier.fontSize(12).foregroundColor('#666666').build(),
-      Text(event.title).modifier.fontWeight('bold').build(),
-      Text(event.description).modifier.fontSize(14).build()
+      Text(event.date).fontSize(12).foregroundColor('#666666').build(),
+      Text(event.title).fontWeight('bold').build(),
+      Text(event.description).fontSize(14).build()
     ])
     .modifier
     .padding(12)

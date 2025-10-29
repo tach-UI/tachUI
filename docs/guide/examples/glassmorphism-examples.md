@@ -791,7 +791,7 @@ const ConditionalGlass = ({ enableGlass }: { enableGlass: Signal<boolean> }) => 
       .fontWeight('500')
   ])
   // Only apply glassmorphism when enabled (performance control)
-  .modifier(enableGlass() ? glassmorphism('medium') : {})
+  (enableGlass() ? glassmorphism('medium') : {})
   .backgroundColor(
     enableGlass() 
       ? 'rgba(255, 255, 255, 0.1)' 

@@ -22,11 +22,11 @@ describe('Navigation Path - Path Management and Utilities', () => {
 
   beforeEach(() => {
     mockComponent1 = () =>
-      HTML.div({ children: 'Component 1' }).modifier.build()
+      HTML.div({ children: 'Component 1' }).build()
     mockComponent2 = () =>
-      HTML.div({ children: 'Component 2' }).modifier.build()
+      HTML.div({ children: 'Component 2' }).build()
     mockComponent3 = () =>
-      HTML.div({ children: 'Component 3' }).modifier.build()
+      HTML.div({ children: 'Component 3' }).build()
   })
 
   describe('Navigation Path Creation', () => {

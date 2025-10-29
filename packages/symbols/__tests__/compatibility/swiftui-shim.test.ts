@@ -323,9 +323,9 @@ describe('SwiftUI Compatibility Shim', () => {
       const image = Image(props)
       
       expect(image.modifier).toBeDefined()
-      expect(typeof image.modifier.foregroundColor).toBe('function')
-      expect(typeof image.modifier.padding).toBe('function')
-      expect(typeof image.modifier.build).toBe('function')
+      expect(typeof image.foregroundColor).toBe('function')
+      expect(typeof image.padding).toBe('function')
+      expect(typeof image.build).toBe('function')
     })
 
     test('should support modifier chaining with reactive values', () => {
@@ -338,7 +338,6 @@ describe('SwiftUI Compatibility Shim', () => {
       
       expect(() => {
         const styledImage = Image(props)
-          .modifier
           .foregroundColor(color)
           .padding(16)
           .build()

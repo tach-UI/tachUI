@@ -1088,7 +1088,7 @@ TextStyles.Headline("Section Title")
 TextStyles.Body("Content text")
 
 // ❌ Avoid - Manual font sizing
-Text("Title").modifier.fontSize(22).fontWeight('bold').build()
+Text("Title").fontSize(22).fontWeight('bold').build()
 ```
 
 ### 3. Use Semantic Button Variants
@@ -1099,7 +1099,7 @@ ButtonStyles.Destructive("Delete", handleDelete)
 ButtonStyles.Filled("Save", handleSave)
 
 // ❌ Avoid - Manual styling for common patterns
-Button("Delete").modifier.backgroundColor('red').build()
+Button("Delete").backgroundColor('red').build()
 ```
 
 ### 4. Handle Loading States

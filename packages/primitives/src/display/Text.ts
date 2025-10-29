@@ -5,7 +5,7 @@
  * text formatting, and advanced styling capabilities.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h, text, withModifiers } from '@tachui/core'
 import type { ComponentProps } from '@tachui/core'
@@ -219,9 +219,7 @@ export class EnhancedText
 export function Text(
   content?: string | (() => string) | Signal<string>,
   additionalProps?: Partial<TextProps>
-): ModifiableComponent<TextProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-} & Concatenatable<TextProps> {
+): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
   const props: TextProps = {
     content,
     ...additionalProps,
@@ -241,9 +239,7 @@ export const TextFormat = {
     content: string | (() => string) | Signal<string>,
     formatting: TextFormatting,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     const props: Partial<TextProps> = { ...additionalProps }
 
     if (formatting.bold) {
@@ -274,9 +270,7 @@ export const TextFormat = {
   bold(
     content: string | (() => string) | Signal<string>,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     return Text(content, {
       font: { weight: 'bold' },
       ...additionalProps,
@@ -289,9 +283,7 @@ export const TextFormat = {
   italic(
     content: string | (() => string) | Signal<string>,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     return Text(content, {
       font: { style: 'italic' },
       ...additionalProps,
@@ -304,9 +296,7 @@ export const TextFormat = {
   underline(
     content: string | (() => string) | Signal<string>,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     return Text(content, {
       textDecoration: 'underline',
       ...additionalProps,
@@ -319,9 +309,7 @@ export const TextFormat = {
   monospace(
     content: string | (() => string) | Signal<string>,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     return Text(content, {
       font: { family: 'monospace' },
       ...additionalProps,

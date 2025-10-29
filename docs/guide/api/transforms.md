@@ -162,8 +162,8 @@ import { VStack, Text } from '@tachui/core'
 
 // 3D card flip effect
 VStack([
-  Text("Front").modifier.build(),
-  Text("Back").modifier.transform('rotateY(180deg)').build()
+  Text("Front").build(),
+  Text("Back").transform('rotateY(180deg)').build()
 ])
 .modifier
 .perspective(1000)

@@ -138,7 +138,7 @@ export class MobileGestureModifier extends BaseModifier<MobileGestureOptions> {
  * ScrollView({
  *   children: [] // content here
  * })
- *   .modifier.refreshable({
+ *   .refreshable({
  *     onRefresh: async () => {
  *       setRefreshing(true)
  *       await fetchNewData()

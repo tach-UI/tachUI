@@ -98,7 +98,7 @@ VStack({ children })
   .modifier
   .clipShape('circle')           // Circular clipping
   .overlay(
-    Text("Badge").modifier.foregroundColor('white').build(),
+    Text("Badge").foregroundColor('white').build(),
     'topTrailing'
   )
   .shadow({ x: 0, y: 4, radius: 8, color: 'rgba(0,0,0,0.1)' })
@@ -209,7 +209,7 @@ For projects using basic modifiers, the advanced system is fully backward compat
 
 ```typescript
 // Basic modifiers (still supported)
-Text('Hello').modifier.padding(16).build()
+Text('Hello').padding(16).build()
 
 // Advanced modifiers (new capabilities)
 Text('Hello')

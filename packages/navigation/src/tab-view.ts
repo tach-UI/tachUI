@@ -215,7 +215,7 @@ export function TabView(
           }
         }
       )
-        .modifier.backgroundColor('transparent')
+        .backgroundColor('transparent')
         .border(0)
         .padding({ top: 8, bottom: 8, left: 12, right: 12 })
         .opacity(isDisabled ? 0.5 : 1)
@@ -236,7 +236,7 @@ export function TabView(
                 HTML.div({
                   children: tab.icon,
                 })
-                  .modifier.fontSize(20)
+                  .fontSize(20)
                   .foregroundColor(isActive ? accentColor : '#666666')
                   .build(),
               ]
@@ -246,7 +246,7 @@ export function TabView(
           HStack({
             children: [
               Text(tab.title)
-                .modifier.fontSize(12)
+                .fontSize(12)
                 .fontWeight(isActive ? '600' : '400')
                 .foregroundColor(isActive ? accentColor : '#666666')
                 .build(),
@@ -257,7 +257,7 @@ export function TabView(
                     HTML.div({
                       children: String(tab.badge),
                     })
-                      .modifier.backgroundColor('#FF3B30')
+                      .backgroundColor('#FF3B30')
                       .foregroundColor('#ffffff')
                       .fontSize(10)
                       .fontWeight('bold')
@@ -275,7 +275,7 @@ export function TabView(
         spacing: 4,
         alignment: 'center',
       })
-        .modifier.padding(4)
+        .padding(4)
         .build()
 
       // Replace button content
@@ -287,7 +287,7 @@ export function TabView(
       spacing: 0,
       alignment: 'center',
     })
-      .modifier.backgroundColor(backgroundColor)
+      .backgroundColor(backgroundColor)
       .border(1, '#e0e0e0')
       .frame({ height: 60 })
       .build()
@@ -299,14 +299,14 @@ export function TabView(
 
     if (!activeTab) {
       return Text('No tab selected')
-        .modifier.padding(20)
+        .padding(20)
         .foregroundColor('#999')
         .build()
     }
 
     return HTML.div({
       children: [activeTab.content],
-    }).modifier.build()
+    }).build()
   }
 
   // Main tab view component
@@ -318,7 +318,7 @@ export function TabView(
     spacing: 0,
     alignment: 'leading',
   })
-    .modifier.frame({ minHeight: '100vh' })
+    .frame({ minHeight: '100vh' })
     .backgroundColor('#ffffff')
     .build() as NavigationComponent
 

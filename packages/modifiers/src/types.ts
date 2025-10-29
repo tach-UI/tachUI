@@ -877,13 +877,13 @@ export interface ModifierBuilder<
    * @example
    * ```typescript
    * // ✅ Allowed: Text components only
-   * Text('<p>Hello <strong>world</strong></p>').modifier.asHTML().build()
+   * Text('<p>Hello <strong>world</strong></p>').asHTML().build()
    *
    * // ❌ Compile Error: Not a Text component
-   * VStack({}).modifier.asHTML() // TypeScript error
+   * VStack({}).asHTML() // TypeScript error
    *
    * // ✅ Dangerous: Skip sanitization
-   * Text(serverTemplate).modifier.asHTML({ skipSanitizer: true }).build()
+   * Text(serverTemplate).asHTML({ skipSanitizer: true }).build()
    * ```
    */
   asHTML(options?: { skipSanitizer?: boolean }): ModifierBuilder<T>

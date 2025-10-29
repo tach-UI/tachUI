@@ -369,7 +369,7 @@ export function useNavigationPath(): {
     push: (segment: string) => {
       // This would use NavigationPath to manage segments
       const destination = () =>
-        HTML.div({ children: `Segment: ${segment}` }).modifier.build()
+        HTML.div({ children: `Segment: ${segment}` }).build()
       context.push(destination, `${context.currentPath}/${segment}`)
     },
     pop: () => context.pop(),

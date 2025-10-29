@@ -126,12 +126,10 @@ describe('Phase 2: Component-Level Concatenation Optimization', () => {
     it('should detect ModularStack concatenation pattern', () => {
       const code = `
         Text(entry[0])
-          .modifier
           .fontWeight('bold')
           .build()
           .concat(
             Text(entry[1])
-              .modifier
               .build()
           )
       `
@@ -140,7 +138,6 @@ describe('Phase 2: Component-Level Concatenation Optimization', () => {
 
       expect(patterns).toHaveLength(1)
       expect(patterns[0].leftComponent).toBe(`Text(entry[0])
-          .modifier
           .fontWeight('bold')`)
       expect(patterns[0].type).toBe('dynamic') // Contains variable
       expect(patterns[0].optimizable).toBe(false)
@@ -268,12 +265,10 @@ describe('Phase 2: Component-Level Concatenation Optimization', () => {
     it('should handle ModularStack use case correctly', () => {
       const modularStackCode = `
         Text(entry[0])
-          .modifier
           .fontWeight('bold')
           .build()
           .concat(
             Text(entry[1])
-              .modifier
               .build()
           )
       `
@@ -325,7 +320,6 @@ describe('Phase 2: Component-Level Concatenation Optimization', () => {
     it('should handle very long component chains', () => {
       const longChainCode = `
         Text("Start")
-          .modifier
           .font({ size: '16px' })
           .foregroundColor('blue')
           .backgroundColor('white')
@@ -334,7 +328,6 @@ describe('Phase 2: Component-Level Concatenation Optimization', () => {
           .build()
           .concat(
             Text("End")
-              .modifier
               .font({ size: '14px' })
               .foregroundColor('red')
               .build()

@@ -18,6 +18,9 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/developer-getting-started' },
       { text: 'API Reference', link: '/api/' },
+      { text: 'Reference', link: '/reference/modifier-system' },
+      { text: 'Migration Guides', link: '/migration-guides/swiftui-modifiers' },
+      { text: 'Upgrade Guide', link: '/upgrade-guide' },
       { text: 'Examples', link: '/examples/' },
       { text: 'Plugins', link: '/plugins/' },
       { text: 'Symbols', link: '/symbols/' },
@@ -79,6 +82,22 @@ export default defineConfig({
           ],
         },
         {
+          text: 'Developer Guides',
+          items: [
+            { text: 'Component Cloning', link: '/guide/component-cloning' },
+            { text: 'Type Generation Workflow', link: '/guide/type-generation' },
+            {
+              text: 'Performance Best Practices',
+              link: '/guide/performance-best-practices',
+            },
+            {
+              text: 'Plugin Security Guidelines',
+              link: '/guide/plugin-security-guidelines',
+            },
+            { text: 'Debugging Toolkit', link: '/guide/debugging-guide' },
+          ],
+        },
+        {
           text: 'Performance & Optimization',
           items: [
             {
@@ -136,6 +155,10 @@ export default defineConfig({
             },
             { text: 'TextField Migration', link: '/guide/textfield-migration' },
             { text: 'Migration Tools', link: '/guide/migration' },
+            {
+              text: 'SwiftUI Modifiers Migration',
+              link: '/migration-guides/swiftui-modifiers',
+            },
           ],
         },
         {
@@ -151,6 +174,28 @@ export default defineConfig({
           items: [
             { text: 'Tacho CLI', link: '/guide/tacho-cli' },
             { text: 'AI Integration', link: '/guide/ai-integration' },
+          ],
+        },
+      ],
+      '/reference/': [
+        {
+          text: 'Reference',
+          items: [
+            {
+              text: 'Modifier System API',
+              link: '/reference/modifier-system',
+            },
+          ],
+        },
+      ],
+      '/migration-guides/': [
+        {
+          text: 'Migration Guides',
+          items: [
+            {
+              text: 'SwiftUI Modifiers Migration',
+              link: '/migration-guides/swiftui-modifiers',
+            },
           ],
         },
       ],

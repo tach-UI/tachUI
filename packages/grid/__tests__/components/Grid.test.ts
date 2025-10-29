@@ -225,7 +225,7 @@ describe('Grid', () => {
     })
 
     it('should render grid element with CSS Grid display', () => {
-      const textChild = Text('Test').modifier.build() // Get the component instance
+      const textChild = Text('Test').build() // Get the component instance
       const gridComponent = new EnhancedGrid({ children: [textChild] }, [
         textChild,
       ])
@@ -265,8 +265,8 @@ describe('GridRow', () => {
 
     it('should render with display contents for transparent grid row', () => {
       const textChildren = [
-        Text('A').modifier.build(),
-        Text('B').modifier.build(),
+        Text('A').build(),
+        Text('B').build(),
       ]
       const gridRowComponent = new EnhancedGridRow(
         { children: textChildren },
@@ -295,7 +295,7 @@ describe('LazyVGrid', () => {
 
     it('should render with grid-template-columns', () => {
       const columns = [GridItem.fixed(100), GridItem.flexible()]
-      const textChildren = [Text('Test').modifier.build()]
+      const textChildren = [Text('Test').build()]
       const vgridComponent = new EnhancedLazyVGrid(
         { columns, children: textChildren },
         textChildren
@@ -313,7 +313,7 @@ describe('LazyVGrid', () => {
         base: [GridItem.flexible()],
         md: [GridItem.flexible(), GridItem.flexible()],
       }
-      const textChildren = [Text('Test').modifier.build()]
+      const textChildren = [Text('Test').build()]
       const vgridComponent = new EnhancedLazyVGrid(
         { columns: responsiveColumns, children: textChildren },
         textChildren
@@ -339,7 +339,7 @@ describe('LazyHGrid', () => {
 
     it('should render with grid-template-rows and horizontal flow', () => {
       const rows = [GridItem.fixed(80), GridItem.flexible()]
-      const textChildren = [Text('Test').modifier.build()]
+      const textChildren = [Text('Test').build()]
       const hgridComponent = new EnhancedLazyHGrid(
         { rows, children: textChildren },
         textChildren
@@ -359,14 +359,14 @@ describe('LazyHGrid', () => {
 describe('Integration Tests', () => {
   it('should create complex grid layout with Grid and GridRow', () => {
     const gridRowChildren1 = [
-      Text('A1').modifier.build(),
-      Text('B1').modifier.build(),
-      Text('C1').modifier.build(),
+      Text('A1').build(),
+      Text('B1').build(),
+      Text('C1').build(),
     ]
     const gridRowChildren2 = [
-      Text('A2').modifier.build(),
-      Text('B2').modifier.build(),
-      Text('C2').modifier.build(),
+      Text('A2').build(),
+      Text('B2').build(),
+      Text('C2').build(),
     ]
     const gridRow1 = new EnhancedGridRow(
       { children: gridRowChildren1 },
@@ -401,7 +401,7 @@ describe('Integration Tests', () => {
     }
 
     const items = Array.from({ length: 6 }, (_, i) =>
-      Text(`Item ${i + 1}`).modifier.build()
+      Text(`Item ${i + 1}`).build()
     )
     const vgridComponent = new EnhancedLazyVGrid(
       {

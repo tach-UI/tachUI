@@ -309,7 +309,7 @@ The Spacer component fills available space in stack layouts, pushing other compo
 HStack({
   children: [
     Text("Left"),
-    Spacer().modifier.build(),
+    Spacer().build(),
     Text("Right")
   ]
 })
@@ -322,7 +322,7 @@ HStack({
 VStack({
   children: [
     Text("Header"),
-    Spacer(50).modifier.build(), // Minimum 50px
+    Spacer(50).build(), // Minimum 50px
     Text("Footer")
   ]
 })
@@ -360,7 +360,7 @@ The Spacer component uses CSS flexbox properties to expand:
 HStack({
   children: [
     Button("Cancel", handleCancel),
-    Spacer().modifier.build(),
+    Spacer().build(),
     Button("Save", handleSave)
   ]
 })
@@ -370,9 +370,9 @@ HStack({
 ```typescript
 HStack({
   children: [
-    Spacer().modifier.build(),
+    Spacer().build(),
     Text("Centered Content"),
-    Spacer().modifier.build()
+    Spacer().build()
   ]
 })
 ```
@@ -382,9 +382,9 @@ HStack({
 HStack({
   children: [
     Button("1", action1),
-    Spacer().modifier.build(),
+    Spacer().build(),
     Button("2", action2),
-    Spacer().modifier.build(),
+    Spacer().build(),
     Button("3", action3)
   ]
 })

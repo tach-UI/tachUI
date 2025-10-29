@@ -85,7 +85,7 @@ class EnhancedDeveloperExperienceUtils {
         description: 'A modifier is being used incorrectly',
         severity: 'error',
         suggestions: ['Check modifier documentation'],
-        examples: ['.modifier(validValue)'],
+        examples: ['(validValue)'],
         documentation: 'https://docs.tachui.dev/modifiers',
       },
       'performance-warning': {

@@ -26,7 +26,7 @@ describe('Navigation Hooks - SwiftUI Compatible Navigation Hooks', () => {
 
   beforeEach(() => {
     mockDestination = () =>
-      HTML.div({ children: 'Destination View' }).modifier.build()
+      HTML.div({ children: 'Destination View' }).build()
   })
 
   describe('useNavigation Hook', () => {
@@ -196,8 +196,8 @@ describe('Navigation Hooks - SwiftUI Compatible Navigation Hooks', () => {
         setForegroundColor: vi.fn(),
       }
 
-      const leadingItems = [HTML.button({ children: 'Edit' }).modifier.build()]
-      const trailingItems = [HTML.button({ children: 'Save' }).modifier.build()]
+      const leadingItems = [HTML.button({ children: 'Edit' }).build()]
+      const trailingItems = [HTML.button({ children: 'Save' }).build()]
 
       mockNavigationBar.setItems({
         leading: leadingItems,
@@ -564,7 +564,7 @@ describe('Navigation Hooks - SwiftUI Compatible Navigation Hooks', () => {
         },
       }
 
-      const rootView = HTML.div({ children: 'Root' }).modifier.build()
+      const rootView = HTML.div({ children: 'Root' }).build()
       const mockNavStack = { type: 'NavigationStack', rootView }
 
       const hooks = mockHookIntegration.setupHooks(mockNavStack)
@@ -576,7 +576,7 @@ describe('Navigation Hooks - SwiftUI Compatible Navigation Hooks', () => {
     it('integrates with tab navigation', () => {
       const tabContent = HTML.div({
         children: 'Tab with hooks',
-      }).modifier.build()
+      }).build()
       const mockTabs = [{ id: 'home', label: 'Home', content: tabContent }]
 
       const mockTabView = { type: 'SimpleTabView', tabs: mockTabs }

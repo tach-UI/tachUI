@@ -78,7 +78,7 @@ describe('Navigation Router - SwiftUI Compatible Router System', () => {
 
   beforeEach(() => {
     mockContext = new MockNavigationContext()
-    mockDestination = () => HTML.div({ children: 'Test View' }).modifier.build()
+    mockDestination = () => HTML.div({ children: 'Test View' }).build()
   })
 
   describe('createNavigationRouter', () => {

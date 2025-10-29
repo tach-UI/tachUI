@@ -26,21 +26,21 @@ describe('Advanced TabView Features', () => {
       {
         id: 'tab1',
         label: 'Tab 1',
-        content: () => HTML.div({ children: 'Content 1' }).modifier.build(),
+        content: () => HTML.div({ children: 'Content 1' }).build(),
         badge: '3',
         isReorderable: true,
       },
       {
         id: 'tab2',
         label: 'Tab 2',
-        content: () => HTML.div({ children: 'Content 2' }).modifier.build(),
+        content: () => HTML.div({ children: 'Content 2' }).build(),
         badge: 'New',
         badgeColor: '#FF0000',
       },
       {
         id: 'tab3',
         label: 'Tab 3',
-        content: () => HTML.div({ children: 'Content 3' }).modifier.build(),
+        content: () => HTML.div({ children: 'Content 3' }).build(),
         isClosable: true,
       },
     ]
@@ -115,7 +115,7 @@ describe('Advanced TabView Features', () => {
       const manyTabs = Array.from({ length: 15 }, (_, i) => ({
         id: `tab${i}`,
         label: `Tab ${i}`,
-        content: () => HTML.div({ children: `Content ${i}` }).modifier.build(),
+        content: () => HTML.div({ children: `Content ${i}` }).build(),
       }))
 
       const tabView = AdvancedTabView(manyTabs, {
@@ -130,7 +130,7 @@ describe('Advanced TabView Features', () => {
       const manyTabs = Array.from({ length: 12 }, (_, i) => ({
         id: `tab${i}`,
         label: `Tab ${i}`,
-        content: () => HTML.div({ children: `Content ${i}` }).modifier.build(),
+        content: () => HTML.div({ children: `Content ${i}` }).build(),
       }))
 
       const tabView = AdvancedTabView(manyTabs, {
@@ -171,9 +171,9 @@ describe('Advanced TabView Features', () => {
 
   describe('PageTabView', () => {
     const mockPages = [
-      HTML.div({ children: 'Page 1' }).modifier.build(),
-      HTML.div({ children: 'Page 2' }).modifier.build(),
-      HTML.div({ children: 'Page 3' }).modifier.build(),
+      HTML.div({ children: 'Page 1' }).build(),
+      HTML.div({ children: 'Page 2' }).build(),
+      HTML.div({ children: 'Page 3' }).build(),
     ]
 
     it('creates page tab view with metadata', () => {
@@ -238,13 +238,13 @@ describe('Advanced TabView Features', () => {
             id: 'main1',
             label: 'Main 1',
             content: () =>
-              HTML.div({ children: 'Main Content 1' }).modifier.build(),
+              HTML.div({ children: 'Main Content 1' }).build(),
           },
           {
             id: 'main2',
             label: 'Main 2',
             content: () =>
-              HTML.div({ children: 'Main Content 2' }).modifier.build(),
+              HTML.div({ children: 'Main Content 2' }).build(),
           },
         ],
       },
@@ -255,7 +255,7 @@ describe('Advanced TabView Features', () => {
             id: 'sec1',
             label: 'Secondary 1',
             content: () =>
-              HTML.div({ children: 'Secondary Content 1' }).modifier.build(),
+              HTML.div({ children: 'Secondary Content 1' }).build(),
           },
         ],
       },
@@ -290,7 +290,7 @@ describe('Advanced TabView Features', () => {
       {
         id: 'tab1',
         label: 'Tab 1',
-        content: () => HTML.div({ children: 'Content 1' }).modifier.build(),
+        content: () => HTML.div({ children: 'Content 1' }).build(),
       },
     ]
 
@@ -298,7 +298,7 @@ describe('Advanced TabView Features', () => {
       const advancedTabView = AdvancedTabView(mockTabs)
       const regularDiv = HTML.div({
         children: 'Not a tab view',
-      }).modifier.build()
+      }).build()
 
       expect(AdvancedTabViewUtils.isAdvancedTabView(advancedTabView)).toBe(true)
       expect(AdvancedTabViewUtils.isAdvancedTabView(regularDiv)).toBe(false)
@@ -361,13 +361,13 @@ describe('Advanced TabView Features', () => {
         {
           id: 'tab1',
           label: 'Tab 1',
-          content: () => HTML.div({ children: 'Content 1' }).modifier.build(),
+          content: () => HTML.div({ children: 'Content 1' }).build(),
           isReorderable: true,
         },
         {
           id: 'tab2',
           label: 'Tab 2',
-          content: () => HTML.div({ children: 'Content 2' }).modifier.build(),
+          content: () => HTML.div({ children: 'Content 2' }).build(),
           isReorderable: true,
         },
       ]
@@ -386,7 +386,7 @@ describe('Advanced TabView Features', () => {
         {
           id: 'tab1',
           label: 'Tab 1',
-          content: () => HTML.div({ children: 'Content 1' }).modifier.build(),
+          content: () => HTML.div({ children: 'Content 1' }).build(),
           isClosable: true,
         },
       ]
@@ -405,7 +405,7 @@ describe('Advanced TabView Features', () => {
       const tabWithBadge: AdvancedTabItem = {
         id: 'badged-tab',
         label: 'Badged Tab',
-        content: () => HTML.div({ children: 'Content' }).modifier.build(),
+        content: () => HTML.div({ children: 'Content' }).build(),
         badge: '99+',
         badgeColor: '#FF0000',
       }
@@ -418,7 +418,7 @@ describe('Advanced TabView Features', () => {
       const accessibleTab: AdvancedTabItem = {
         id: 'accessible-tab',
         label: 'Accessible Tab',
-        content: () => HTML.div({ children: 'Content' }).modifier.build(),
+        content: () => HTML.div({ children: 'Content' }).build(),
         accessibilityLabel: 'Main navigation tab',
         accessibilityHint: 'Double tap to open main content',
       }
@@ -429,14 +429,14 @@ describe('Advanced TabView Features', () => {
 
     it('supports context menus', () => {
       const contextMenu = [
-        HTML.button({ children: 'Duplicate Tab' }).modifier.build(),
-        HTML.button({ children: 'Close Tab' }).modifier.build(),
+        HTML.button({ children: 'Duplicate Tab' }).build(),
+        HTML.button({ children: 'Close Tab' }).build(),
       ]
 
       const tabWithContext: AdvancedTabItem = {
         id: 'context-tab',
         label: 'Context Tab',
-        content: () => HTML.div({ children: 'Content' }).modifier.build(),
+        content: () => HTML.div({ children: 'Content' }).build(),
         contextMenu,
       }
 

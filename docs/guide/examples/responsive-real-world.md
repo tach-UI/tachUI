@@ -71,10 +71,10 @@ const BlogHeader = () => {
     
     // Desktop Navigation
     HStack([
-      Link("Home").modifier.fontSize(16).color('#2c3e50').build(),
-      Link("Articles").modifier.fontSize(16).color('#2c3e50').build(),
-      Link("About").modifier.fontSize(16).color('#2c3e50').build(),
-      Link("Contact").modifier.fontSize(16).color('#2c3e50').build()
+      Link("Home").fontSize(16).color('#2c3e50').build(),
+      Link("Articles").fontSize(16).color('#2c3e50').build(),
+      Link("About").fontSize(16).color('#2c3e50').build(),
+      Link("Contact").fontSize(16).color('#2c3e50').build()
     ])
     .modifier
     .responsive({
@@ -328,9 +328,9 @@ const ArticleCard = (article: Article) => {
         .build(),
       
       HStack([
-        Text(article.date).modifier.fontSize(12).color('#6c757d').build(),
-        Text("•").modifier.color('#6c757d').build(),
-        Text(article.readTime).modifier.fontSize(12).color('#6c757d').build()
+        Text(article.date).fontSize(12).color('#6c757d').build(),
+        Text("•").color('#6c757d').build(),
+        Text(article.readTime).fontSize(12).color('#6c757d').build()
       ])
       .modifier
       .gap(6)

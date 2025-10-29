@@ -850,7 +850,7 @@ describe('List Factory Function', () => {
 
     expect(list).toBeDefined()
     expect(typeof list.modifier).toBe('object')
-    expect(typeof list.modifier.build).toBe('function')
+    expect(typeof list.build).toBe('function')
   })
 
   it('should support modifier chaining', () => {
@@ -858,7 +858,7 @@ describe('List Factory Function', () => {
       data: sampleData,
       renderItem: (item, _index) => Text(item.name),
     })
-      .modifier.frame(undefined, 400)
+      .frame(undefined, 400)
       .padding(16)
       .backgroundColor('#ffffff')
       .build()

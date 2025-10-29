@@ -574,7 +574,7 @@ items.map(item => useResponsiveValue({ base: item.size }))
 
 // ✅ Better: Pre-compute responsive values
 const responsiveSize = useResponsiveValue({ base: 16, md: 20 })
-items.map(item => Text(item.text).modifier.fontSize(responsiveSize()).build())
+items.map(item => Text(item.text).fontSize(responsiveSize()).build())
 ```
 
 ## Reactive Responsive Values

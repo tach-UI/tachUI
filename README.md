@@ -70,13 +70,13 @@ const [count, setCount] = createSignal(0)
 const counterApp = VStack({
   children: [
     Text(() => `Count: ${count()}`)
-      .modifier.fontSize(24)
+      .fontSize(24)
       .fontWeight('bold')
       .foregroundColor('#007AFF')
       .build(),
 
     Button('Increment', () => setCount(count() + 1))
-      .modifier.backgroundColor('#007AFF')
+      .backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding({ horizontal: 24, vertical: 12 })
       .cornerRadius(8)
@@ -129,7 +129,7 @@ Chain modifiers just like SwiftUI:
 
 ```typescript
 Text('Hello tachUI')
-  .modifier.fontSize(18)
+  .fontSize(18)
   .fontWeight('semibold')
   .foregroundColor('#007AFF')
   .padding(16)

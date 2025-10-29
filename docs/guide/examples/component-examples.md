@@ -662,11 +662,11 @@ import { ScrollView, ScrollViewUtils, createSignal } from '@tachui/core'
 // Basic vertical scrolling
 const basicScroll = ScrollView({
   children: [
-    Text("Item 1").modifier.padding(16).build(),
-    Text("Item 2").modifier.padding(16).build(),
-    Text("Item 3").modifier.padding(16).build(),
-    Text("Item 4").modifier.padding(16).build(),
-    Text("Item 5").modifier.padding(16).build()
+    Text("Item 1").padding(16).build(),
+    Text("Item 2").padding(16).build(),
+    Text("Item 3").padding(16).build(),
+    Text("Item 4").padding(16).build(),
+    Text("Item 5").padding(16).build()
   ]
 })
 .modifier
@@ -679,10 +679,10 @@ const basicScroll = ScrollView({
 // Horizontal scrolling with spacing
 const horizontalScroll = ScrollView({
   children: [
-    Image('photo1.jpg').modifier.frame(200, 150).cornerRadius(8).build(),
-    Image('photo2.jpg').modifier.frame(200, 150).cornerRadius(8).build(),
-    Image('photo3.jpg').modifier.frame(200, 150).cornerRadius(8).build(),
-    Image('photo4.jpg').modifier.frame(200, 150).cornerRadius(8).build()
+    Image('photo1.jpg').frame(200, 150).cornerRadius(8).build(),
+    Image('photo2.jpg').frame(200, 150).cornerRadius(8).build(),
+    Image('photo3.jpg').frame(200, 150).cornerRadius(8).build(),
+    Image('photo4.jpg').frame(200, 150).cornerRadius(8).build()
   ],
   direction: 'horizontal'
 })
@@ -723,11 +723,11 @@ const refreshableScroll = ScrollView({
   children: items().map(item => 
     HStack({
       children: [
-        Image(item.avatar).modifier.frame(40, 40).cornerRadius(20).build(),
+        Image(item.avatar).frame(40, 40).cornerRadius(20).build(),
         VStack({
           children: [
-            Text(item.name).modifier.fontWeight('600').build(),
-            Text(item.message).modifier.fontSize(14).foregroundColor('#666').build()
+            Text(item.name).fontWeight('600').build(),
+            Text(item.message).fontSize(14).foregroundColor('#666').build()
           ],
           spacing: 4,
           alignment: 'leading'
@@ -834,14 +834,14 @@ const heavyContentScroll = ScrollView({
 // Nested scrolling with proper behavior
 const nestedScroll = ScrollView({
   children: [
-    Text("Outer Scroll Content").modifier.padding(20).build(),
+    Text("Outer Scroll Content").padding(20).build(),
     
     // Inner horizontal scroll
     ScrollView({
       children: [
-        HTML.div().modifier.width(200).height(100).backgroundColor('#ff6b6b').build(),
-        HTML.div().modifier.width(200).height(100).backgroundColor('#4ecdc4').build(),
-        HTML.div().modifier.width(200).height(100).backgroundColor('#45b7d1').build()
+        HTML.div().width(200).height(100).backgroundColor('#ff6b6b').build(),
+        HTML.div().width(200).height(100).backgroundColor('#4ecdc4').build(),
+        HTML.div().width(200).height(100).backgroundColor('#45b7d1').build()
       ],
       direction: 'horizontal'
     })
@@ -851,7 +851,7 @@ const nestedScroll = ScrollView({
     .cornerRadius(8)
     .build(),
     
-    Text("More outer content").modifier.padding(20).build()
+    Text("More outer content").padding(20).build()
   ]
 })
 .modifier
@@ -891,9 +891,9 @@ const basicList = List({
         
         VStack({
           children: [
-            Text(user.name).modifier.fontWeight('600').fontSize(16).build(),
-            Text(user.email).modifier.fontSize(14).foregroundColor('#666').build(),
-            Text(user.role).modifier.fontSize(12).foregroundColor('#999').build()
+            Text(user.name).fontWeight('600').fontSize(16).build(),
+            Text(user.email).fontSize(14).foregroundColor('#666').build(),
+            Text(user.role).fontSize(12).foregroundColor('#999').build()
           ],
           spacing: 2,
           alignment: 'leading'
@@ -943,8 +943,8 @@ const selectableList = List({
         // User info
         VStack({
           children: [
-            Text(user.name).modifier.fontWeight('600').build(),
-            Text(user.email).modifier.fontSize(14).foregroundColor('#666').build()
+            Text(user.name).fontWeight('600').build(),
+            Text(user.email).fontSize(14).foregroundColor('#666').build()
           ],
           spacing: 4,
           alignment: 'leading'
@@ -1012,9 +1012,9 @@ const virtualList = ListUtils.virtual(
         
         VStack({
           children: [
-            Text(`${user.name} (#${user.id})`).modifier.fontWeight('600').build(),
-            Text(user.email).modifier.fontSize(14).foregroundColor('#666').build(),
-            Text(`Last seen: ${user.lastSeen}`).modifier.fontSize(12).foregroundColor('#999').build()
+            Text(`${user.name} (#${user.id})`).fontWeight('600').build(),
+            Text(user.email).fontSize(14).foregroundColor('#666').build(),
+            Text(`Last seen: ${user.lastSeen}`).fontSize(12).foregroundColor('#999').build()
           ],
           spacing: 2,
           alignment: 'leading'
@@ -1093,8 +1093,8 @@ const sectionedList = ListUtils.sectioned(
         
         VStack({
           children: [
-            Text(contact.name).modifier.fontWeight('600').fontSize(16).build(),
-            Text(contact.phone).modifier.fontSize(14).foregroundColor('#666').build()
+            Text(contact.name).fontWeight('600').fontSize(16).build(),
+            Text(contact.phone).fontSize(14).foregroundColor('#666').build()
           ],
           spacing: 2,
           alignment: 'leading'
@@ -1531,7 +1531,7 @@ import { ScrollView, createSignal } from '@tachui/core'
 // Test basic scrolling behavior
 test('ScrollView handles vertical scrolling', () => {
   const content = Array.from({ length: 100 }, (_, i) => 
-    Text(`Item ${i + 1}`).modifier.padding(16).build()
+    Text(`Item ${i + 1}`).padding(16).build()
   )
   
   const scrollView = ScrollView({ children: content })
@@ -1678,7 +1678,7 @@ const scrollViewBenchmark = {
   name: 'ScrollView with 1000 items',
   setup: () => {
     const items = Array.from({ length: 1000 }, (_, i) => 
-      Text(`Item ${i}`).modifier.padding(8).build()
+      Text(`Item ${i}`).padding(8).build()
     )
     return ScrollView({ children: items })
       .modifier

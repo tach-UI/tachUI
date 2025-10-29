@@ -139,7 +139,7 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
     })
 
     it('provides navigation context to children', () => {
-      const childComponent = HTML.div({ children: 'Child' }).modifier.build()
+      const childComponent = HTML.div({ children: 'Child' }).build()
 
       const provider = NavigationEnvironmentProvider({
         context: mockContext,
@@ -264,7 +264,7 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
 
   describe('withNavigationEnvironment HOC', () => {
     it('wraps component with navigation environment', () => {
-      const testComponent = HTML.div({ children: 'Test' }).modifier.build()
+      const testComponent = HTML.div({ children: 'Test' }).build()
 
       const wrapped = withNavigationEnvironment(testComponent, {
         context: mockContext,
@@ -279,7 +279,7 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
       const testComponent = HTML.div({
         children: 'Test',
         className: 'test-class',
-      }).modifier.build()
+      }).build()
 
       const wrapped = withNavigationEnvironment(testComponent, {
         context: mockContext,
@@ -351,7 +351,7 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
 
   describe('Environment Integration with Components', () => {
     it('integrates with component lifecycle', () => {
-      const testComponent = HTML.div({ children: 'Test' }).modifier.build()
+      const testComponent = HTML.div({ children: 'Test' }).build()
 
       // Simulate component with environment
       const componentWithEnv = withNavigationEnvironment(testComponent, {
@@ -364,10 +364,10 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
     })
 
     it('provides environment to nested components', () => {
-      const childComponent = HTML.span({ children: 'Child' }).modifier.build()
+      const childComponent = HTML.span({ children: 'Child' }).build()
       const parentComponent = HTML.div({
         children: [childComponent],
-      }).modifier.build()
+      }).build()
 
       const wrapped = withNavigationEnvironment(parentComponent, {
         context: mockContext,

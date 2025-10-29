@@ -181,9 +181,9 @@ const ExpensiveUserCard = (user: User) => {
   // Memoize the concatenation result
   const userHeader = createMemo(() => 
     Image(user.avatar, { width: 48, height: 48 })
-      .concat(Text(user.name).modifier.fontSize(18))
-      .concat(Text(user.title).modifier.fontSize(14))
-      .concat(Text(`${user.followers} followers`).modifier.fontSize(12))
+      .concat(Text(user.name).fontSize(18))
+      .concat(Text(user.title).fontSize(14))
+      .concat(Text(`${user.followers} followers`).fontSize(12))
   )
 
   return VStack([
@@ -208,8 +208,8 @@ const styledContent = Text("Important:")
   .padding(16)
 
 // ❌ Less efficient: Multiple modifier applications
-const inefficient = Text("Important:").modifier.color('#dc3545')
-  .concat(Text(" Read this message").modifier.color('#dc3545'))
+const inefficient = Text("Important:").color('#dc3545')
+  .concat(Text(" Read this message").color('#dc3545'))
 ```
 
 ## Memory Management

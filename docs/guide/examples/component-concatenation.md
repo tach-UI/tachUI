@@ -15,7 +15,7 @@ const greeting = Text("Hello, ")
 
 // Multi-part message
 const welcomeMessage = Text("Welcome to ")
-  .concat(Text("tachUI").modifier.fontWeight('bold'))
+  .concat(Text("tachUI").fontWeight('bold'))
   .concat(Text(", the SwiftUI-inspired web framework!"))
 
 // Dynamic content
@@ -25,7 +25,7 @@ const PersonalGreeting = () => {
   const [name] = createSignal("John Doe")
   
   return Text("Welcome back, ")
-    .concat(Text(name).modifier.color('#007AFF'))
+    .concat(Text(name).color('#007AFF'))
     .concat(Text("!"))
 }
 ```
@@ -177,8 +177,8 @@ const UserProfileCard = (user: User) => {
     width: 48,
     height: 48 
   })
-  .concat(Text(user.name).modifier.fontSize(18).fontWeight('bold'))
-  .concat(Text(user.title).modifier.color('#666').fontSize(14))
+  .concat(Text(user.name).fontSize(18).fontWeight('bold'))
+  .concat(Text(user.title).color('#666').fontSize(14))
   .modifier
   .display('flex')
   .alignItems('center')
@@ -206,7 +206,7 @@ const UserProfileCard = (user: User) => {
     Text(user.bio),
     userStats,
     userActions
-  ]).modifier.padding(20).border('1px solid #e1e5e9').borderRadius(12)
+  ]).padding(20).border('1px solid #e1e5e9').borderRadius(12)
 }
 ```
 
@@ -223,13 +223,13 @@ const ProductCard = (product: Product) => {
 
   // Price with discount
   const priceDisplay = product.discountPrice 
-    ? Text(`$${product.discountPrice}`).modifier.fontSize(18).fontWeight('bold')
+    ? Text(`$${product.discountPrice}`).fontSize(18).fontWeight('bold')
         .concat(Text(` $${product.price}`).modifier
           .fontSize(14)
           .textDecoration('line-through')
           .color('#666')
           .marginLeft(8))
-    : Text(`$${product.price}`).modifier.fontSize(18).fontWeight('bold')
+    : Text(`$${product.price}`).fontSize(18).fontWeight('bold')
 
   // Rating with stars
   const ratingDisplay = Text("★".repeat(product.rating))
@@ -248,11 +248,11 @@ const ProductCard = (product: Product) => {
 
   return VStack([
     productImage,
-    Text(product.name).modifier.fontSize(16).fontWeight('500'),
+    Text(product.name).fontSize(16).fontWeight('500'),
     priceDisplay,
     ratingDisplay,
     productActions
-  ]).modifier.padding(16).border('1px solid #e1e5e9').borderRadius(8)
+  ]).padding(16).border('1px solid #e1e5e9').borderRadius(8)
 }
 ```
 
@@ -325,7 +325,7 @@ const FormField = (
 ) => {
   // Label with required indicator
   const fieldLabel = Text(label)
-    .concat(required ? Text(" *").modifier.color('#dc3545') : Text(""))
+    .concat(required ? Text(" *").color('#dc3545') : Text(""))
     .modifier
     .fontSize(14)
     .fontWeight('500')
@@ -333,12 +333,12 @@ const FormField = (
 
   // Help text
   const helpElement = helpText 
-    ? Text(helpText).modifier.fontSize(12).color('#666').marginTop(4)
+    ? Text(helpText).fontSize(12).color('#666').marginTop(4)
     : null
 
   // Error message
   const errorElement = error
-    ? Text(error).modifier.fontSize(12).color('#dc3545').marginTop(4)
+    ? Text(error).fontSize(12).color('#dc3545').marginTop(4)
     : null
 
   const elements = [
@@ -349,7 +349,7 @@ const FormField = (
   if (helpElement) elements.push(helpElement)
   if (errorElement) elements.push(errorElement)
 
-  return VStack(elements).modifier.marginBottom(16)
+  return VStack(elements).marginBottom(16)
 }
 
 // Usage in a form
@@ -412,8 +412,8 @@ const TagList = (tags: string[], maxVisible: number = 3) => {
 
 ```typescript
 const ResponsiveHeader = (title: string, subtitle: string, action?: () => void) => {
-  let header = Text(title).modifier.fontSize(24).fontWeight('bold')
-    .concat(Text(subtitle).modifier.fontSize(16).color('#666'))
+  let header = Text(title).fontSize(24).fontWeight('bold')
+    .concat(Text(subtitle).fontSize(16).color('#666'))
 
   if (action) {
     header = header.concat(Button("Action", action))

@@ -51,7 +51,7 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
       throw new Error(
         `AsHTML modifier can only be applied to Text components. ` +
         `Found: ${component.type || 'unknown'} component. ` +
-        `Use Text('<your-html>').modifier.asHTML() instead.`
+        `Use Text('<your-html>').asHTML() instead.`
       )
     }
 
@@ -244,13 +244,13 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
  * @example
  * ```typescript
  * // Safe: Basic sanitization applied
- * Text('<p>Hello <strong>world</strong></p>').modifier.asHTML().build()
+ * Text('<p>Hello <strong>world</strong></p>').asHTML().build()
  *
  * // Dangerous: Skip sanitization
- * Text(serverTemplate).modifier.asHTML({ skipSanitizer: true }).build()
+ * Text(serverTemplate).asHTML({ skipSanitizer: true }).build()
  *
  * // Custom sanitization
- * Text(content).modifier.asHTML({ customSanitizer: DOMPurify.sanitize }).build()
+ * Text(content).asHTML({ customSanitizer: DOMPurify.sanitize }).build()
  * ```
  */
 export function asHTML(options: AsHTMLOptions = {}): AsHTMLModifier {

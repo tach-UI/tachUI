@@ -23,7 +23,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
   beforeEach(() => {
     mockDestination = () =>
-      HTML.div({ children: 'Destination' }).modifier.build()
+      HTML.div({ children: 'Destination' }).build()
   })
 
   describe('NavigationLink Accessibility', () => {
@@ -76,12 +76,12 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
       const tabs = [
         tabItem(
-          () => HTML.div({ children: 'Home' }).modifier.build(),
+          () => HTML.div({ children: 'Home' }).build(),
           'home',
           'Home'
         ),
         tabItem(
-          () => HTML.div({ children: 'Profile' }).modifier.build(),
+          () => HTML.div({ children: 'Profile' }).build(),
           'profile',
           'Profile'
         ),
@@ -102,17 +102,17 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
       const tabs = [
         tabItem(
-          () => HTML.div({ children: 'Home' }).modifier.build(),
+          () => HTML.div({ children: 'Home' }).build(),
           'home',
           'Home'
         ),
         tabItem(
-          () => HTML.div({ children: 'Search' }).modifier.build(),
+          () => HTML.div({ children: 'Search' }).build(),
           'search',
           'Search'
         ),
         tabItem(
-          () => HTML.div({ children: 'Profile' }).modifier.build(),
+          () => HTML.div({ children: 'Profile' }).build(),
           'profile',
           'Profile'
         ),
@@ -133,12 +133,12 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
       const tabs = [
         tabItem(
-          () => HTML.div({ children: 'Home' }).modifier.build(),
+          () => HTML.div({ children: 'Home' }).build(),
           'home',
           'Home'
         ),
         tabItem(
-          () => HTML.div({ children: 'Profile' }).modifier.build(),
+          () => HTML.div({ children: 'Profile' }).build(),
           'profile',
           'Profile'
         ),
@@ -157,7 +157,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
     it('provides proper tab labels', () => {
       const tabs = [
         tabItem(
-          () => HTML.div({ children: 'Home' }).modifier.build(),
+          () => HTML.div({ children: 'Home' }).build(),
           'home',
           'Home',
           undefined,
@@ -166,7 +166,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
           }
         ),
         tabItem(
-          () => HTML.div({ children: 'Profile' }).modifier.build(),
+          () => HTML.div({ children: 'Profile' }).build(),
           'profile',
           'Profile'
         ),
@@ -183,7 +183,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
   describe('Navigation Modifiers Accessibility', () => {
     it('navigationTitle provides proper heading semantics', () => {
       const component = HTML.div({ children: 'Content' })
-        .modifier.navigationTitle('Page Title')
+        .navigationTitle('Page Title')
         .build()
 
       expect(component).toBeDefined()
@@ -193,7 +193,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('navigationBarHidden removes navigation from accessibility tree', () => {
       const component = HTML.div({ children: 'Content' })
-        .modifier.navigationBarHidden()
+        .navigationBarHidden()
         .build()
 
       expect(component).toBeDefined()
@@ -203,9 +203,9 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('supports navigation bar button accessibility', () => {
       const component = HTML.div({ children: 'Content' })
-        .modifier.navigationBarItems({
-          leading: HTML.button({ children: 'Back' }).modifier.build(),
-          trailing: HTML.button({ children: 'Save' }).modifier.build(),
+        .navigationBarItems({
+          leading: HTML.button({ children: 'Back' }).build(),
+          trailing: HTML.button({ children: 'Save' }).build(),
         })
         .build()
 
@@ -251,7 +251,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
     it('supports Escape key to dismiss', () => {
       const onDismiss = vi.fn()
       const component = HTML.div({ children: 'Modal' })
-        .modifier.onKeyDown((e: KeyboardEvent) => {
+        .onKeyDown((e: KeyboardEvent) => {
           if (e.key === 'Escape') {
             onDismiss()
           }
@@ -269,7 +269,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
       const component = HStack({
         element: 'nav',
         children: 'Navigation',
-      }).modifier.build()
+      }).build()
 
       expect(component).toBeDefined()
       // Should have navigation landmark
@@ -282,7 +282,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
       const component = HTML.div({
         children: isLoading() ? 'Loading...' : 'Content loaded',
       })
-        .modifier.ariaLive('polite')
+        .ariaLive('polite')
         .build()
 
       expect(component).toBeDefined()
@@ -292,7 +292,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('provides status announcements', () => {
       const component = HTML.div({ children: 'Operation completed' })
-        .modifier.role('status')
+        .role('status')
         .ariaLive('polite')
         .build()
 
@@ -304,7 +304,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('supports custom ARIA attributes', () => {
       const component = HTML.div({ children: 'Custom ARIA' })
-        .modifier.ariaLabel('Custom label')
+        .ariaLabel('Custom label')
         .ariaDescribedBy('description-id')
         .build()
 
@@ -331,7 +331,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('handles focus trapping in modals', () => {
       const modal = HTML.div({ children: 'Modal Content' })
-        .modifier.role('dialog')
+        .role('dialog')
         .ariaModal(true)
         .build()
 
@@ -342,7 +342,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
     })
 
     it('restores focus on navigation', () => {
-      const button = HTML.button({ children: 'Focus Target' }).modifier.build()
+      const button = HTML.button({ children: 'Focus Target' }).build()
 
       expect(button).toBeDefined()
       // Should be focusable
@@ -351,7 +351,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('handles focus within navigation transitions', () => {
       const destination = () =>
-        HTML.div({ children: 'New View' }).modifier.build()
+        HTML.div({ children: 'New View' }).build()
       const link = NavigationLink(destination, 'Navigate')
 
       expect(link).toBeDefined()
@@ -363,7 +363,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
   describe('Color and Contrast', () => {
     it('supports high contrast mode', () => {
       const component = HTML.div({ children: 'High Contrast' })
-        .modifier.backgroundColor('#000000')
+        .backgroundColor('#000000')
         .foregroundColor('#FFFFFF')
         .build()
 
@@ -375,7 +375,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('provides focus indicators', () => {
       const link = NavigationLink(mockDestination, 'Focus Indicator')
-        .modifier.outline('2px solid #007AFF')
+        .outline('2px solid #007AFF')
         .outlineOffset('2px')
         .build()
 
@@ -386,7 +386,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('supports reduced motion preferences', () => {
       const component = HTML.div({ children: 'Reduced Motion' })
-        .modifier.transition('none')
+        .transition('none')
         .build()
 
       expect(component).toBeDefined()
@@ -400,7 +400,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
   describe('Touch and Mobile Accessibility', () => {
     it('provides adequate touch targets', () => {
       const button = HTML.button({ children: 'Touch Target' })
-        .modifier.minHeight('44px')
+        .minHeight('44px')
         .minWidth('44px')
         .build()
 
@@ -412,7 +412,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('handles touch gestures', () => {
       const component = HTML.div({ children: 'Swipeable' })
-        .modifier.onTouchStart(() => {})
+        .onTouchStart(() => {})
         .onTouchMove(() => {})
         .onTouchEnd(() => {})
         .build()
@@ -425,7 +425,7 @@ describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
 
     it('supports swipe navigation', () => {
       const component = HTML.div({ children: 'Swipe Navigation' })
-        .modifier.onSwipeLeft(() => {})
+        .onSwipeLeft(() => {})
         .onSwipeRight(() => {})
         .build()
 

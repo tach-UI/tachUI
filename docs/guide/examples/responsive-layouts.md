@@ -487,7 +487,7 @@ const RhythmicContent = () => {
   })
 
   return VStack([
-    Text("Heading").modifier.fontSize({ base: 24, md: 28, lg: 32 }).build(),
+    Text("Heading").fontSize({ base: 24, md: 28, lg: 32 }).build(),
     Text("Paragraph content with proper vertical rhythm...").build(),
     Text("Another paragraph...").build()
   ])

@@ -26,9 +26,9 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
   let mockView3: any
 
   beforeEach(() => {
-    mockView1 = () => HTML.div({ children: 'View 1' }).modifier.build()
-    mockView2 = () => HTML.div({ children: 'View 2' }).modifier.build()
-    mockView3 = () => HTML.div({ children: 'View 3' }).modifier.build()
+    mockView1 = () => HTML.div({ children: 'View 1' }).build()
+    mockView2 = () => HTML.div({ children: 'View 2' }).build()
+    mockView3 = () => HTML.div({ children: 'View 3' }).build()
   })
 
   describe('Programmatic Navigation Path', () => {
