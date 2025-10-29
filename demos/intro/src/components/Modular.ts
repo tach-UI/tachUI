@@ -106,7 +106,7 @@ export function Modular(): ComponentInstance {
             })
                 .padding({ vertical: 0, horizontal: 20 })
                 .maxWidth(1200)
-                .id('modular')
+                .elementId('modular')
                 .build(),
         ]
     })
@@ -115,6 +115,6 @@ export function Modular(): ComponentInstance {
         .padding({ vertical: 80, horizontal: 0 })
         .position('relative')
         .width("100%")
-        .id('architecture')
+        .elementId('architecture')
         .build();
 }

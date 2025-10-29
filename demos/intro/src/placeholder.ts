@@ -296,7 +296,7 @@
         .opacity(0.8)
         .padding({ top: 80, bottom: 80, left: 40, right: 40 })
         .backdropFilter('blur(10px)')
-        .id('features')
+        .elementId('features')
         .build(),
 
       // Code Comparison Section

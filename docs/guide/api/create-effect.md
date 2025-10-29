@@ -222,7 +222,7 @@ function SearchComponent() {
   return VStack({
     children: [
       TextField(query, setQuery, 'Search...')
-        .id('search-input')
+        .elementId('search-input')
     ]
   })
 }

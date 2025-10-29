@@ -125,8 +125,6 @@ export function withModifiers<P extends ComponentProps>(
     modifierBuilder: modifierBuilder,
   }
 
-  // Expose builder methods directly when the proxy path is disabled
-  Object.setPrototypeOf(result, modifierBuilder)
   if (typeof modifierBuilder.build === 'function') {
     result.build = modifierBuilder.build.bind(modifierBuilder)
   }

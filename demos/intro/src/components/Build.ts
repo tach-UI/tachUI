@@ -96,7 +96,7 @@ pnpm add @tachui/mobile-patterns@0.7.0-alpha2
             })
                 .padding({ vertical: 0, horizontal: 20 })
                 .maxWidth(1200)
-                .id("cta")
+                .elementId("cta")
                 .build(),
         ],
     })

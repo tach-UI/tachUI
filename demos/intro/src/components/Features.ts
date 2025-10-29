@@ -29,8 +29,7 @@ export function Features(): ComponentInstance {
                         .foregroundColor(Assets.textWhite)
                         .padding(0)
                         .margin(0)
-                        .textShadow({ x: 0, y: 2, blur: 15, color: 'hsla(251, 91%, 66%, 0.4)' })
-                        .build(),
+                        .textShadow({ x: 0, y: 2, blur: 15, color: 'hsla(251, 91%, 66%, 0.4)' }),
                     // Features Grid using responsive layout
                     VStack({
                         children: items.map((item) => FeatureItem(item))
@@ -40,13 +39,11 @@ export function Features(): ComponentInstance {
                         .flexWrap('wrap')
                         .gap('36px')
                         .alignItems('flex-start')
-                        .build()
                 ]
             })
                 .padding({ vertical: 0, horizontal: 20 })
                 .maxWidth(1200)
-                .id('features')
-                .build()
+                .elementId('features')
         ]
     })
         .background(Assets.darkPurple80)
@@ -55,5 +52,4 @@ export function Features(): ComponentInstance {
         .position('relative')
         .width("100%")
         .minHeight('600px')
-        .build();
 }

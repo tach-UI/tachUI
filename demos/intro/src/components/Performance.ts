@@ -68,7 +68,7 @@ export function Performance(): ComponentInstance {
             })
                 .padding({ vertical: 0, horizontal: 20 })
                 .maxWidth(1200)
-                .id('features')
+                .elementId('features')
                 .build()
         ]
     })
@@ -131,6 +131,6 @@ function FastItem(header: string, description: string): ComponentInstance {
         .base.width('98%')
         .md.width('46%')
         .hoverEffect('lift')
-        .id('performance')
+        .elementId('performance')
         .build();
 }

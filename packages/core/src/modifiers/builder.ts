@@ -759,6 +759,12 @@ export class ModifierBuilderImpl<
       // Update the existing modifiable component with new modifiers
       const existingModifiable = this.component as ModifiableComponent
 
+      const existingModifiers = Array.isArray(
+        existingModifiable.modifiers,
+      )
+        ? [...existingModifiable.modifiers]
+        : []
+
       // Only add modifiers that aren't already in the component's modifiers array
       // This prevents duplicates when addModifier has already added them
       const newModifiers = this.modifiers.filter(
@@ -768,19 +774,51 @@ export class ModifierBuilderImpl<
           )
       )
 
-      existingModifiable.modifiers = [
-        ...existingModifiable.modifiers,
-        ...newModifiers,
-      ]
+      const combinedModifiers = [...existingModifiers, ...newModifiers]
+
+      const baseComponent =
+        (existingModifiable as any)._originalComponent ||
+        existingModifiable
+
+      let clonedBase: ComponentInstance
+
+      if (typeof (baseComponent as any)?.clone === 'function') {
+        clonedBase = (baseComponent as any).clone()
+      } else {
+        const prototype =
+          (baseComponent && Object.getPrototypeOf(baseComponent)) ||
+          Object.prototype
+        clonedBase = Object.create(prototype)
+
+        Object.assign(clonedBase, baseComponent)
+
+        clonedBase.props = { ...baseComponent.props }
+        clonedBase.cleanup = Array.isArray(baseComponent.cleanup)
+          ? [...baseComponent.cleanup]
+          : []
+        clonedBase.mounted = baseComponent.mounted ?? false
+        clonedBase.id = baseComponent.id
+        clonedBase.type = baseComponent.type
+        clonedBase.render =
+          typeof baseComponent.render === 'function'
+            ? baseComponent.render.bind(baseComponent)
+            : () => []
+      }
+
+      const modifiableComponent = createModifiableComponent(
+        clonedBase,
+        combinedModifiers,
+      )
 
       // TEMPORARY: Apply modifiers to component props for test compatibility
       if (process.env.NODE_ENV === 'test') {
-        this.applyModifiersToPropsForTesting(existingModifiable, [
-          ...existingModifiable.modifiers,
-        ])
+        this.applyModifiersToPropsForTesting(
+          modifiableComponent,
+          combinedModifiers,
+        )
       }
 
-      return this.component as T
+      return modifiableComponent as unknown as T
     } else {
       // Create a new modifiable component with the accumulated modifiers using the proper factory
       const modifiableComponent = createModifiableComponent(

@@ -7,10 +7,5 @@ export default mergeConfig(
     test: {
       setupFiles: ['__tests__/setup.ts'],
     },
-    resolve: {
-      alias: {
-        '@tachui/viewport': './src',
-      },
-    },
   })
 )

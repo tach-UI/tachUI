@@ -180,7 +180,7 @@ export function Patterns(): ComponentInstance {
     })
         .foregroundColor(Assets.textWhite)
         .backgroundColor(Assets.darkPurple20)
-        .id('comparison')
+        .elementId('comparison')
         .padding({ vertical: 60, horizontal: 0 })
         .width("100%")
         .build();
