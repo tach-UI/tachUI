@@ -133,6 +133,7 @@ export interface DOMNode {
   element?: Element | Text | Comment | undefined
   dispose?: (() => void) | undefined
   reactiveContent?: (() => string) | undefined
+  key?: string | number
 }
 
 /**

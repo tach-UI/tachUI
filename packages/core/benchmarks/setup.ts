@@ -5,6 +5,8 @@
  * and other industry benchmarking tools.
  */
 
+import { ComponentManager } from '../src/runtime/component'
+
 export interface BenchmarkResult {
   name: string
   framework: string
@@ -34,9 +36,12 @@ export class BenchmarkRunner {
     type: BenchmarkResult['type'],
     benchmark: () => Promise<void> | void
   ): Promise<BenchmarkResult> {
+    const manager = ComponentManager.getInstance()
+
     // Warmup runs
     for (let i = 0; i < this.config.warmupRuns; i++) {
       await benchmark()
+      manager.cleanup()
     }
 
     // Force garbage collection if available
@@ -45,24 +50,29 @@ export class BenchmarkRunner {
     }
 
     const startMemory = this.config.measureMemory ? this.getMemoryUsage() : undefined
+    const iterations = Math.max(1, this.config.iterations)
     const startTime = performance.now()
 
     // Run actual benchmark
-    for (let i = 0; i < this.config.iterations; i++) {
+    for (let i = 0; i < iterations; i++) {
       await benchmark()
+      manager.cleanup()
     }
 
     const endTime = performance.now()
     const endMemory = this.config.measureMemory ? this.getMemoryUsage() : undefined
 
-    const duration = endTime - startTime
-    const operationsPerSecond = (this.config.iterations * 1000) / duration
+    const totalDuration = endTime - startTime
+    const perIterationDuration = totalDuration / iterations
+    const memoryDelta =
+      endMemory && startMemory ? (endMemory - startMemory) / iterations : undefined
+    const operationsPerSecond = perIterationDuration > 0 ? 1000 / perIterationDuration : undefined
 
     const result: BenchmarkResult = {
       name,
       framework: this.config.framework,
-      duration,
-      memory: endMemory && startMemory ? endMemory - startMemory : undefined,
+      duration: perIterationDuration,
+      memory: memoryDelta,
       operationsPerSecond,
       type,
     }

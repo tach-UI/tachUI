@@ -7,7 +7,10 @@
  */
 
 import { createEffect, onCleanup } from '../reactive'
-import { createComponentContext } from './component-context'
+import {
+  createComponentContext,
+  runWithComponentContext,
+} from './component-context'
 import { ChildrenManager, PropsManager, propsUtils, RefManager } from './props'
 import type {
   Component,
@@ -233,82 +236,90 @@ export function createComponent<P extends ComponentProps = ComponentProps>(
     // Track previous props for lifecycle hooks
     let previousProps: P | undefined
     let mounted = false
+    let cleanupRegistered = false
 
     // Create render function with reactive context
-    const renderFunction: RenderFunction = () => {
-      // Set up lifecycle hooks
-      if (options.lifecycle?.onMount && !mounted) {
-        const mountCleanup = options.lifecycle.onMount()
-        if (typeof mountCleanup === 'function') {
-          cleanup.push(mountCleanup)
-        }
-        mounted = true
-      }
-
-      // Set up props change tracking
-      createEffect(() => {
-        const currentProps = propsManager.getProps()
-
-        if (previousProps && options.lifecycle?.onPropsChange) {
-          const changedKeys = propsUtils.compareProps(previousProps, currentProps)
-          if (changedKeys.length > 0) {
-            options.lifecycle.onPropsChange(previousProps, currentProps, changedKeys)
+    const renderFunction: RenderFunction = () =>
+      runWithComponentContext(context, () => {
+        // Set up lifecycle hooks
+        if (options.lifecycle?.onMount && !mounted) {
+          const mountCleanup = options.lifecycle.onMount()
+          if (typeof mountCleanup === 'function') {
+            cleanup.push(mountCleanup)
           }
+          mounted = true
         }
 
-        if (previousProps && options.lifecycle?.onUpdate) {
-          options.lifecycle.onUpdate(previousProps, currentProps)
+        // Ensure unmount cleanup is registered once per instance
+        if (!cleanupRegistered) {
+          cleanupRegistered = true
+
+          createEffect(() => {
+            onCleanup(() => {
+              if (options.lifecycle?.onUnmount) {
+                options.lifecycle.onUnmount()
+              }
+
+              // Run all cleanup functions
+              cleanup.forEach(fn => fn())
+
+              // Unregister component
+              manager.unregisterComponent(componentId)
+            })
+          })
         }
 
-        previousProps = { ...currentProps }
-      })
+        // Set up props change tracking
+        createEffect(() => {
+          const currentProps = propsManager.getProps()
 
-      // Set up children change tracking
-      createEffect(() => {
-        const currentChildren = childrenManager.getChildren()
-        if (options.lifecycle?.onChildrenChange && previousProps) {
-          options.lifecycle.onChildrenChange(previousProps.children, currentChildren)
-        }
-      })
-
-      // Set up onCleanup for unmount
-      onCleanup(() => {
-        if (options.lifecycle?.onUnmount) {
-          options.lifecycle.onUnmount()
-        }
-
-        // Run all cleanup functions
-        cleanup.forEach((fn) => fn())
-
-        // Unregister component
-        manager.unregisterComponent(componentId)
-      })
-
-      // Render the component
-      try {
-        if (options.lifecycle?.onRender) {
-          options.lifecycle.onRender()
-        }
-
-        const currentProps = propsManager.getProps()
-        const currentChildren = childrenManager.getChildren()
-
-        // Check shouldUpdate if provided
-        if (previousProps && options.shouldUpdate) {
-          if (!options.shouldUpdate(previousProps, currentProps)) {
-            // Skip render if shouldUpdate returns false
-            return []
+          if (previousProps && options.lifecycle?.onPropsChange) {
+            const changedKeys = propsUtils.compareProps(previousProps, currentProps)
+            if (changedKeys.length > 0) {
+              options.lifecycle.onPropsChange(previousProps, currentProps, changedKeys)
+            }
           }
-        }
 
-        return render(currentProps, currentChildren)
-      } catch (error) {
-        if (options.lifecycle?.onError) {
-          options.lifecycle.onError(error as Error)
+          if (previousProps && options.lifecycle?.onUpdate) {
+            options.lifecycle.onUpdate(previousProps, currentProps)
+          }
+
+          previousProps = { ...currentProps }
+        })
+
+        // Set up children change tracking
+        createEffect(() => {
+          const currentChildren = childrenManager.getChildren()
+          if (options.lifecycle?.onChildrenChange && previousProps) {
+            options.lifecycle.onChildrenChange(previousProps.children, currentChildren)
+          }
+        })
+
+        // Render the component
+        try {
+          if (options.lifecycle?.onRender) {
+            options.lifecycle.onRender()
+          }
+
+          const currentProps = propsManager.getProps()
+          const currentChildren = childrenManager.getChildren()
+
+          // Check shouldUpdate if provided
+          if (previousProps && options.shouldUpdate) {
+            if (!options.shouldUpdate(previousProps, currentProps)) {
+              // Skip render if shouldUpdate returns false
+              return []
+            }
+          }
+
+          return render(currentProps, currentChildren)
+        } catch (error) {
+          if (options.lifecycle?.onError) {
+            options.lifecycle.onError(error as Error)
+          }
+          throw error
         }
-        throw error
-      }
-    }
+      })
 
     // Create component instance
     const instance: ComponentInstance<P> = {

@@ -1,5 +1,5 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
-// Generated at: 2025-10-29T16:57:21.411Z
+// Generated at: 2025-10-29T23:56:06.602Z
 //
 // Run `pnpm --filter @tachui/core generate-modifier-types` to regenerate.
 

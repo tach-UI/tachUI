@@ -20,10 +20,25 @@ const debugManager = {
 /**
  * Direct DOM renderer for efficient DOM manipulation
  */
+type RendererMetrics = {
+  created: number
+  adopted: number
+  removed: number
+  inserted: number
+  moved: number
+}
+
 export class DOMRenderer {
   private nodeMap = new WeakMap<DOMNode, Element | Text | Comment>()
   private cleanupMap = new WeakMap<Element | Text | Comment, (() => void)[]>()
   private renderedNodes = new Set<DOMNode>()
+  private metrics: RendererMetrics = {
+    created: 0,
+    adopted: 0,
+    removed: 0,
+    inserted: 0,
+    moved: 0,
+  }
 
   /**
    * Render a DOM node to an actual DOM element
@@ -40,6 +55,20 @@ export class DOMRenderer {
   }
 
   /**
+   * Check if a DOM node has been rendered and tracked.
+   */
+  hasNode(node: DOMNode): boolean {
+    return this.nodeMap.has(node)
+  }
+
+  /**
+   * Get the rendered DOM element associated with a node.
+   */
+  getRenderedNode(node: DOMNode): Element | Text | Comment | undefined {
+    return this.nodeMap.get(node)
+  }
+
+  /**
    * Render a single DOM node
    */
   private renderSingle(
@@ -53,13 +82,15 @@ export class DOMRenderer {
 
     switch (node.type) {
       case 'element':
-        element = this.createElement(node)
+        element = this.createOrUpdateElement(node)
         break
       case 'text':
         element = this.createTextNode(node)
+        this.metrics.created++
         break
       case 'comment':
         element = this.createComment(node)
+        this.metrics.created++
         break
       default:
         throw new Error(`Unknown node type: ${(node as any).type}`)
@@ -104,7 +135,7 @@ export class DOMRenderer {
 
     // Append to container if provided
     if (container) {
-      container.appendChild(element)
+      this.appendNode(container, element)
     }
 
     return element
@@ -126,6 +157,7 @@ export class DOMRenderer {
 
     if (container) {
       container.appendChild(fragment)
+      this.metrics.inserted += nodes.length
     }
 
     return fragment
@@ -134,49 +166,170 @@ export class DOMRenderer {
   /**
    * Create a DOM element with props and children
    */
-  private createElement(node: DOMNode): Element {
+  private createOrUpdateElement(node: DOMNode): Element {
     if (!node.tag) {
       throw new Error('Element node must have a tag')
     }
 
+    if (node.element && node.element instanceof Element) {
+      const element = node.element
+      this.updateProps(element, node)
+      this.updateChildren(element, node)
+      return element
+    }
+
     const element = document.createElement(node.tag)
+    this.metrics.created++
 
     // Apply debug attributes if debug mode is enabled
     this.applyDebugAttributes(element, node)
 
-    // Apply props
-    if (node.props) {
-      this.applyProps(element, node.props)
-    }
+    this.updateProps(element, node)
+    this.updateChildren(element, node)
 
-    // Process semantic attributes for components with element overrides
+    return element
+  }
+
+  private updateProps(element: Element, node: DOMNode): void {
+    const newProps = node.props || {}
+    const previousProps = (node as any).__appliedProps || {}
+
+    // Remove props that are no longer present
+    Object.keys(previousProps).forEach(key => {
+      if (!(key in newProps)) {
+        if (key === 'key') return
+        if (key === 'children') return
+        if (key.startsWith('on')) {
+          return
+        }
+        this.setElementProp(element, key, undefined)
+      }
+    })
+
+    Object.entries(newProps).forEach(([key, value]) => {
+      if (key === 'key' || key === 'children') return
+      if (previousProps && previousProps[key] === value) {
+        return
+      }
+      this.applyProp(element, key, value)
+    })
+
+    ;(node as any).__appliedProps = { ...newProps }
+
     if ('componentMetadata' in node && (node as any).componentMetadata) {
       const metadata = (node as any).componentMetadata
       if (metadata.overriddenTo && metadata.originalType) {
-        // Import and use semantic role manager
-        try {
-          semanticRoleManager.processElementNode(
-            element as HTMLElement,
-            node.tag,
-            metadata,
-            node.props?.['aria'] || undefined
-          )
-        } catch (error) {
-          // Gracefully handle missing semantic role manager
-          console.warn('[tachUI] Could not process semantic attributes:', error)
+        if (node.tag) {
+          try {
+            semanticRoleManager.processElementNode(
+              element as HTMLElement,
+              node.tag,
+              metadata,
+              newProps?.['aria'] || undefined
+            )
+          } catch (error) {
+            console.warn('[tachUI] Could not process semantic attributes:', error)
+          }
         }
       }
     }
+  }
 
-    // Render children
-    if (node.children && node.children.length > 0) {
-      node.children.forEach(child => {
-        const childElement = this.renderSingle(child)
-        element.appendChild(childElement)
+  private updateChildren(element: Element, node: DOMNode): void {
+    const previousChildren: DOMNode[] = (node as any).__renderedChildren || []
+    const newChildren = node.children || []
+
+    if (
+      previousChildren.length === newChildren.length &&
+      previousChildren.length > 0 &&
+      previousChildren.every((child, index) => child === newChildren[index])
+    ) {
+      newChildren.forEach(child => {
+        this.updateExistingNode(child)
       })
+      ;(node as any).__renderedChildren = newChildren
+      return
     }
 
-    return element
+    if (previousChildren.length === 0) {
+      newChildren.forEach(child => {
+        const childElement = this.renderSingle(child)
+        this.appendNode(element, childElement)
+      })
+      ;(node as any).__renderedChildren = newChildren
+      return
+    }
+
+    const previousByKey = new Map<any, DOMNode>()
+    const usedPrevious = new Set<DOMNode>()
+    previousChildren.forEach(prevChild => {
+      if (prevChild.key != null) {
+        previousByKey.set(prevChild.key, prevChild)
+      }
+    })
+
+    const domNodes: (Element | Text | Comment | undefined)[] = []
+
+    newChildren.forEach((child, index) => {
+      let matched: DOMNode | undefined
+      if (child.key != null) {
+        matched = previousByKey.get(child.key)
+        if (matched) {
+          previousByKey.delete(child.key)
+        }
+      }
+
+      if (!matched) {
+        for (let i = index; i < previousChildren.length; i++) {
+          const candidate = previousChildren[i]
+          if (usedPrevious.has(candidate)) continue
+          if (candidate.key == null) {
+            matched = candidate
+            break
+          }
+        }
+      }
+
+      if (matched) {
+        usedPrevious.add(matched)
+        this.adoptNode(matched, child)
+        this.updateExistingNode(child)
+      } else {
+        this.renderSingle(child)
+        this.updateExistingNode(child)
+      }
+
+      domNodes.push(this.getRenderedNode(child))
+    })
+
+    previousChildren.forEach(prevChild => {
+      if (!usedPrevious.has(prevChild)) {
+        this.removeNode(prevChild)
+      }
+    })
+
+    const canReorder =
+      typeof (element as any).insertBefore === 'function' &&
+      typeof (element as any).appendChild === 'function'
+
+    if (canReorder) {
+      let nextSibling: Node | null = null
+      for (let i = domNodes.length - 1; i >= 0; i--) {
+        const domNode = domNodes[i]
+        if (!domNode) continue
+        this.insertNode(element, domNode, nextSibling)
+        nextSibling = domNode
+      }
+    }
+
+    ;(node as any).__renderedChildren = newChildren
+  }
+
+  private updateExistingNode(node: DOMNode): void {
+    if (node.type === 'element' && node.element instanceof Element) {
+      this.updateProps(node.element, node)
+      this.updateChildren(node.element, node)
+    }
   }
 
   /**
@@ -259,6 +412,7 @@ export class DOMRenderer {
    * Create a comment node
    */
   private createComment(node: DOMNode): Comment {
+    this.metrics.created++
     return document.createComment(node.text || '')
   }
 
@@ -494,8 +648,29 @@ export class DOMRenderer {
    * Remove a DOM node and run cleanup
    */
   removeNode(node: DOMNode): void {
+    this.cleanupNode(node, true)
+  }
+
+  /**
+   * Cleanup a node (and its descendants) and optionally remove from DOM.
+   */
+  private cleanupNode(node: DOMNode, removeFromDom: boolean): void {
     const element = this.nodeMap.get(node)
-    if (!element) return
+
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => {
+        this.cleanupNode(child, false)
+      })
+    }
+
+    if (!element) {
+      if (node.element !== undefined) {
+        node.element = undefined
+      }
+      this.renderedNodes.delete(node)
+      this.nodeMap.delete(node)
+      return
+    }
 
     // Run cleanup functions
     const cleanupFunctions = this.cleanupMap.get(element)
@@ -511,7 +686,7 @@ export class DOMRenderer {
     }
 
     // Remove from DOM
-    if (element.parentNode) {
+    if (removeFromDom && element.parentNode) {
       element.parentNode.removeChild(element)
     }
 
@@ -520,6 +695,9 @@ export class DOMRenderer {
     if (node.element !== undefined) {
       node.element = undefined
     }
+
+    this.renderedNodes.delete(node)
+    this.metrics.removed++
   }
 
   /**
@@ -600,6 +778,34 @@ export class DOMRenderer {
   }
 
   /**
+   * Adopt an existing DOM mapping from one node to another.
+   */
+  adoptNode(oldNode: DOMNode, newNode: DOMNode): void {
+    const element = this.nodeMap.get(oldNode)
+    if (!element) return
+
+    this.nodeMap.set(newNode, element)
+    this.nodeMap.delete(oldNode)
+    this.renderedNodes.delete(oldNode)
+    this.renderedNodes.add(newNode)
+
+    newNode.element = element
+    if (oldNode.dispose) {
+      newNode.dispose = oldNode.dispose
+    }
+
+    if ((oldNode as any).__renderedChildren) {
+      (newNode as any).__renderedChildren = (oldNode as any).__renderedChildren
+    }
+
+    if ((oldNode as any).__appliedProps) {
+      (newNode as any).__appliedProps = (oldNode as any).__appliedProps
+    }
+
+    this.metrics.adopted++
+  }
+
+  /**
    * Cleanup all tracked elements
    */
   cleanup(): void {
@@ -618,6 +824,38 @@ export class DOMRenderer {
     this.renderedNodes.clear()
     this.nodeMap = new WeakMap()
     this.cleanupMap = new WeakMap()
+    this.resetMetrics()
+  }
+
+  resetMetrics(): void {
+    this.metrics = {
+      created: 0,
+      adopted: 0,
+      removed: 0,
+      inserted: 0,
+      moved: 0,
+    }
+  }
+
+  getMetrics(): RendererMetrics {
+    return { ...this.metrics }
+  }
+
+  insertNode(container: Element, node: Element | Text | Comment, nextSibling: Node | null): void {
+    if (node.parentNode !== container) {
+      container.insertBefore(node, nextSibling)
+      this.metrics.inserted++
+    } else if (node.nextSibling !== nextSibling) {
+      container.insertBefore(node, nextSibling)
+      this.metrics.moved++
+    }
+  }
+
+  appendNode(container: Element, node: Element | Text | Comment): void {
+    if (node.parentNode !== container) {
+      container.appendChild(node)
+      this.metrics.inserted++
+    }
   }
 }
 
@@ -625,6 +863,16 @@ export class DOMRenderer {
  * Global renderer instance
  */
 const globalRenderer = new DOMRenderer()
+
+export type RendererMetricsSnapshot = RendererMetrics
+
+export function resetRendererMetrics(): void {
+  globalRenderer.resetMetrics()
+}
+
+export function getRendererMetrics(): RendererMetricsSnapshot {
+  return globalRenderer.getMetrics()
+}
 
 /**
  * Render a component instance to DOM
@@ -638,19 +886,109 @@ export function renderComponent(
 
     // Create reactive effect for component re-rendering
     const effect = createEffect(() => {
-      // Clear previous nodes
+      const renderResult = instance.render()
+      const nodes = Array.isArray(renderResult) ? renderResult : [renderResult]
+
+      const removalSet = new Set(currentNodes)
+      const adoptedByIndex = new Set<DOMNode>()
+      const adoptedOldNodes = new Set<DOMNode>()
+      const minLength = Math.min(currentNodes.length, nodes.length)
+
+      for (let i = 0; i < minLength; i++) {
+        const oldNode = currentNodes[i]
+        const newNode = nodes[i]
+        if (
+          oldNode &&
+          newNode &&
+          oldNode.type === newNode.type &&
+          oldNode.tag === newNode.tag &&
+          (oldNode.key === newNode.key || (oldNode.key == null && newNode.key == null))
+        ) {
+          globalRenderer.adoptNode(oldNode, newNode)
+          adoptedByIndex.add(newNode)
+          adoptedOldNodes.add(oldNode)
+          removalSet.delete(oldNode)
+        }
+      }
+
+      const currentKeyMap = new Map<unknown, DOMNode>()
       currentNodes.forEach(node => {
+        if (node.key != null && !adoptedOldNodes.has(node)) {
+          currentKeyMap.set(node.key, node)
+        }
+      })
+
+      const domNodes = nodes.map(node => {
+        if (adoptedByIndex.has(node)) {
+          return globalRenderer.getRenderedNode(node)
+        }
+        if (node.key != null) {
+          const existing = currentKeyMap.get(node.key)
+          if (existing) {
+            currentKeyMap.delete(node.key)
+            removalSet.delete(existing)
+            globalRenderer.adoptNode(existing, node)
+            return globalRenderer.getRenderedNode(node)
+          }
+        }
+
+        if (node.key != null) {
+          // Attempt to reuse a node that was removed earlier but matches by key.
+          for (const candidate of removalSet) {
+            if (candidate.key === node.key) {
+              removalSet.delete(candidate)
+              globalRenderer.adoptNode(candidate, node)
+              break
+            }
+          }
+        }
+
+        if (!globalRenderer.hasNode(node)) {
+          for (const candidate of removalSet) {
+            if (
+              candidate.type === node.type &&
+              candidate.tag === node.tag &&
+              candidate.key == null &&
+              node.key == null
+            ) {
+              removalSet.delete(candidate)
+              globalRenderer.adoptNode(candidate, node)
+              break
+            }
+          }
+        }
+
+        if (!globalRenderer.hasNode(node)) {
+          globalRenderer.render(node)
+        }
+        return globalRenderer.getRenderedNode(node)
+      })
+
+      removalSet.forEach(node => {
         globalRenderer.removeNode(node)
       })
 
-      // Render new nodes
-      const renderResult = instance.render()
-      const nodes = Array.isArray(renderResult) ? renderResult : [renderResult]
-      currentNodes = nodes
+      const canReorder =
+        typeof (container as any).insertBefore === 'function' &&
+        typeof (container as any).appendChild === 'function'
 
-      nodes.forEach(node => {
-        globalRenderer.render(node, container)
-      })
+      if (canReorder) {
+        let nextSibling: Node | null = null
+        for (let i = domNodes.length - 1; i >= 0; i--) {
+          const domNode = domNodes[i]
+          if (!domNode) continue
+          globalRenderer.insertNode(container, domNode, nextSibling)
+          nextSibling = domNode
+        }
+      } else {
+        domNodes.forEach(domNode => {
+          if (domNode && domNode.parentNode !== container) {
+            globalRenderer.appendNode(container, domNode)
+          }
+        })
+      }
+
+      currentNodes = nodes
     })
 
     // Return cleanup function
@@ -687,6 +1025,7 @@ export function h(
     tag,
     props: props || {},
     children: normalizedChildren,
+    key: props?.key ?? undefined,
   }
 
   // Extract componentMetadata from props and store it on the node

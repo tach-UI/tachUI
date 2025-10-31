@@ -327,6 +327,8 @@ export function calculatePerformanceScore(data: FrameworkBenchmarkData): number 
     bundleSize: 45, // KB
   }
 
+  // (et al repeated revert)
+
   let totalScore = 0
   let totalWeight = 0
 
