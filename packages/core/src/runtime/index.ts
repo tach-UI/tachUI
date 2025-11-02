@@ -76,7 +76,8 @@ export {
   propsUtils,
   RefManager,
 } from './props'
-export { DOMRenderer, h, renderComponent, text } from './renderer'
+export { DOMRenderer, h, renderComponent, text, resetRendererMetrics, getRendererMetrics } from './renderer'
+export type { RendererMetricsSnapshot } from './renderer'
 // Element override system (Tag Specification Enhancement)
 export * from './element-override'
 export * from './semantic-role-manager'

@@ -121,9 +121,31 @@ export const FRAMEWORK_BASELINES: FrameworkBenchmarkData[] = [
 /**
  * Convert TachUI benchmark results to comparable format
  */
+type BenchmarkResultWithMetadata = {
+  name: string
+  duration: number
+  memory?: number
+  metadata?: Record<string, unknown>
+}
+
+function selectBaselineResult(
+  results: BenchmarkResultWithMetadata[],
+  benchmarkName: string
+) {
+  const normalizedName = benchmarkName.toLowerCase()
+  const baseline = results.find(
+    result =>
+      result.name.toLowerCase().includes(normalizedName) &&
+      (result.metadata?.cacheMode === 'baseline' || result.metadata?.cacheMode == null)
+  )
+  if (baseline) {
+    return baseline
+  }
+  return results.find(result => result.name.toLowerCase().includes(normalizedName))
+}
+
 export function convertTachUIResults(results: any[]): FrameworkBenchmarkData {
-  const findResult = (name: string) =>
-    results.find((r) => r.name.toLowerCase().includes(name.toLowerCase()))
+  const findResult = (name: string) => selectBaselineResult(results, name)
 
   return {
     framework: 'TachUI',

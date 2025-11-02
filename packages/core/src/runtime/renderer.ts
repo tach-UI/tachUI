@@ -26,6 +26,12 @@ type RendererMetrics = {
   removed: number
   inserted: number
   moved: number
+  cacheHits: number
+  cacheMisses: number
+  attributeWrites: number
+  attributeRemovals: number
+  textUpdates: number
+  modifierApplications: number
 }
 
 export class DOMRenderer {
@@ -38,6 +44,12 @@ export class DOMRenderer {
     removed: 0,
     inserted: 0,
     moved: 0,
+    cacheHits: 0,
+    cacheMisses: 0,
+    attributeWrites: 0,
+    attributeRemovals: 0,
+    textUpdates: 0,
+    modifierApplications: 0,
   }
 
   /**
@@ -85,8 +97,7 @@ export class DOMRenderer {
         element = this.createOrUpdateElement(node)
         break
       case 'text':
-        element = this.createTextNode(node)
-        this.metrics.created++
+        element = this.createOrUpdateTextNode(node)
         break
       case 'comment':
         element = this.createComment(node)
@@ -238,7 +249,8 @@ export class DOMRenderer {
   private updateChildren(element: Element, node: DOMNode): void {
     const previousChildren: DOMNode[] = (node as any).__renderedChildren || []
     const newChildren = node.children || []
-
+    const debugChildDiff =
+      typeof process !== 'undefined' && process.env?.TACHUI_DEBUG_PHASE1B === '1'
     if (
       previousChildren.length === newChildren.length &&
       previousChildren.length > 0 &&
@@ -261,51 +273,78 @@ export class DOMRenderer {
     }
 
     const previousByKey = new Map<any, DOMNode>()
-    const usedPrevious = new Set<DOMNode>()
+    const previousKeyless: DOMNode[] = []
+
     previousChildren.forEach(prevChild => {
       if (prevChild.key != null) {
         previousByKey.set(prevChild.key, prevChild)
+      } else {
+        previousKeyless.push(prevChild)
       }
     })
 
-    const domNodes: (Element | Text | Comment | undefined)[] = []
+    const domNodes: (Element | Text | Comment | undefined)[] = new Array(newChildren.length)
 
     newChildren.forEach((child, index) => {
       let matched: DOMNode | undefined
+
       if (child.key != null) {
         matched = previousByKey.get(child.key)
         if (matched) {
           previousByKey.delete(child.key)
         }
-      }
-
-      if (!matched) {
-        for (let i = index; i < previousChildren.length; i++) {
-          const candidate = previousChildren[i]
-          if (usedPrevious.has(candidate)) continue
-          if (candidate.key == null) {
-            matched = candidate
-            break
-          }
-        }
+      } else if (previousKeyless.length > 0) {
+        matched = previousKeyless.shift()
       }
 
       if (matched) {
-        usedPrevious.add(matched)
+        if (debugChildDiff) {
+          console.log('[diff] adopt', {
+            parent: node.tag,
+            key: child.key,
+            index,
+            type: child.type,
+          })
+        }
         this.adoptNode(matched, child)
         this.updateExistingNode(child)
       } else {
+        if (debugChildDiff) {
+          console.log('[diff] create', {
+            parent: node.tag,
+            key: child.key,
+            index,
+            type: child.type,
+          })
+        }
         this.renderSingle(child)
         this.updateExistingNode(child)
       }
 
-      domNodes.push(this.getRenderedNode(child))
+      domNodes[index] = this.getRenderedNode(child)
     })
 
-    previousChildren.forEach(prevChild => {
-      if (!usedPrevious.has(prevChild)) {
-        this.removeNode(prevChild)
-      }
+    if (debugChildDiff && node.tag) {
+      const debugKeys = newChildren.map(child => child.key ?? null)
+      const debugPrevKeys = previousChildren.map(child => child.key ?? null)
+      const debugDom = domNodes.map(domNode =>
+        domNode && 'getAttribute' in (domNode as any)
+          ? (domNode as any).getAttribute('data-id')
+          : null
+      )
+      console.log('[diff] state', {
+        parent: node.tag,
+        prev: debugPrevKeys,
+        next: debugKeys,
+        dom: debugDom,
+      })
+    }
+
+    previousByKey.forEach(remaining => {
+      this.removeNode(remaining)
+    })
+    previousKeyless.forEach(remaining => {
+      this.removeNode(remaining)
     })
 
     const canReorder =
@@ -313,10 +352,22 @@ export class DOMRenderer {
       typeof (element as any).appendChild === 'function'
 
     if (canReorder) {
+      // Iterate backward to properly maintain order
+      // Insert each node before the previously inserted node
       let nextSibling: Node | null = null
       for (let i = domNodes.length - 1; i >= 0; i--) {
         const domNode = domNodes[i]
         if (!domNode) continue
+        if (debugChildDiff) {
+          console.log('[diff] reorder', {
+            parent: node.tag,
+            key: newChildren[i]?.key ?? null,
+            nextSiblingId:
+              nextSibling && 'getAttribute' in (nextSibling as any)
+                ? (nextSibling as any).getAttribute('data-id')
+                : null,
+          })
+        }
         this.insertNode(element, domNode, nextSibling)
         nextSibling = domNode
       }
@@ -329,6 +380,12 @@ export class DOMRenderer {
     if (node.type === 'element' && node.element instanceof Element) {
       this.updateProps(node.element, node)
       this.updateChildren(node.element, node)
+    } else if (node.type === 'text' && node.element instanceof Text) {
+      // Update text content if it changed
+      if (node.element.textContent !== node.text) {
+        node.element.textContent = node.text || ''
+        this.recordTextUpdate()
+      }
     }
   }
 
@@ -371,10 +428,59 @@ export class DOMRenderer {
   }
 
   /**
+   * Create or update a text node
+   */
+  private createOrUpdateTextNode(node: DOMNode): Text {
+    // Check if we can reuse existing text node
+    if (node.element && node.element instanceof Text) {
+      const textElement = node.element
+
+      // Update text content in place if it changed
+      if (textElement.textContent !== node.text) {
+        textElement.textContent = node.text || ''
+        this.recordTextUpdate()
+      }
+
+      // Handle reactive content update
+      if (node.reactiveContent && !node.dispose) {
+        const content = node.reactiveContent
+        const effect = createEffect(() => {
+          try {
+            const newText = content()
+            node.text = String(newText)
+
+            // Check if parent element has AsHTML flag
+            const parentElement = textElement.parentElement
+            if (parentElement && (parentElement as any).__tachui_asHTML) {
+              return
+            }
+
+            textElement.textContent = node.text
+            this.recordTextUpdate()
+          } catch (error) {
+            console.error('createOrUpdateTextNode() reactive effect error:', error)
+          }
+        })
+
+        node.dispose = () => {
+          effect.dispose()
+        }
+      }
+
+      return textElement
+    }
+
+    // Create new text node if none exists
+    return this.createTextNode(node)
+  }
+
+  /**
    * Create a text node
    */
   private createTextNode(node: DOMNode): Text {
     const textElement = document.createTextNode(node.text || '')
+    this.metrics.created++
+    this.recordTextUpdate()
 
     // Set up reactivity if this is a reactive text node
     if (node.reactiveContent) {
@@ -394,6 +500,7 @@ export class DOMRenderer {
           }
 
           textElement.textContent = node.text
+          this.recordTextUpdate()
         } catch (error) {
           console.error('createTextNode() reactive effect error:', error)
         }
@@ -470,6 +577,7 @@ export class DOMRenderer {
   private setElementProp(element: Element, key: string, value: any): void {
     if (value == null) {
       element.removeAttribute(key)
+      this.recordAttributeRemoval()
       return
     }
 
@@ -477,14 +585,17 @@ export class DOMRenderer {
     if (typeof value === 'boolean') {
       if (value) {
         element.setAttribute(key, '')
+        this.recordAttributeWrite()
       } else {
         element.removeAttribute(key)
+        this.recordAttributeRemoval()
       }
       return
     }
 
     // Handle regular attributes
     element.setAttribute(key, String(value))
+    this.recordAttributeWrite()
   }
 
   /**
@@ -496,6 +607,7 @@ export class DOMRenderer {
       const effect = createEffect(() => {
         const currentValue = value()
         element.className = this.normalizeClassName(currentValue)
+        this.recordAttributeWrite()
       })
 
       // Add cleanup
@@ -504,6 +616,7 @@ export class DOMRenderer {
       })
     } else {
       element.className = this.normalizeClassName(value)
+      this.recordAttributeWrite()
     }
   }
 
@@ -553,6 +666,7 @@ export class DOMRenderer {
   private setElementStyles(element: HTMLElement, styles: any): void {
     if (typeof styles === 'string') {
       element.style.cssText = styles
+      this.recordAttributeWrite()
       return
     }
 
@@ -564,11 +678,13 @@ export class DOMRenderer {
             const currentValue = value()
             if (currentValue == null) {
               element.style.removeProperty(property)
+              this.recordAttributeRemoval()
             } else {
               element.style.setProperty(
                 property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`),
                 String(currentValue)
               )
+              this.recordAttributeWrite()
             }
           })
 
@@ -580,11 +696,13 @@ export class DOMRenderer {
           // Static style property
           if (value == null) {
             element.style.removeProperty(property)
+            this.recordAttributeRemoval()
           } else {
             element.style.setProperty(
               property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`),
               String(value)
             )
+            this.recordAttributeWrite()
           }
         }
       })
@@ -749,6 +867,9 @@ export class DOMRenderer {
     node: any
   ): void {
     try {
+      if (modifiers.length > 0) {
+        this.recordModifierApplications(modifiers.length)
+      }
       // Extract component instance from node if available
       const componentInstance =
         node.componentInstance ||
@@ -834,6 +955,12 @@ export class DOMRenderer {
       removed: 0,
       inserted: 0,
       moved: 0,
+      cacheHits: 0,
+      cacheMisses: 0,
+      attributeWrites: 0,
+      attributeRemovals: 0,
+      textUpdates: 0,
+      modifierApplications: 0,
     }
   }
 
@@ -841,11 +968,39 @@ export class DOMRenderer {
     return { ...this.metrics }
   }
 
+  recordCacheHit(): void {
+    this.metrics.cacheHits++
+  }
+
+  recordCacheMiss(): void {
+    this.metrics.cacheMisses++
+  }
+
   insertNode(container: Element, node: Element | Text | Comment, nextSibling: Node | null): void {
+    const debugChildDiff =
+      typeof process !== 'undefined' && process.env?.TACHUI_DEBUG_PHASE1B === '1'
     if (node.parentNode !== container) {
+      if (debugChildDiff) {
+        console.log('[diff] insertNode append', {
+          tag: 'tagName' in (node as any) ? (node as any).tagName : 'text',
+          before:
+            nextSibling && 'getAttribute' in (nextSibling as any)
+              ? (nextSibling as any).getAttribute('data-id')
+              : null,
+        })
+      }
       container.insertBefore(node, nextSibling)
       this.metrics.inserted++
     } else if (node.nextSibling !== nextSibling) {
+      if (debugChildDiff) {
+        console.log('[diff] insertNode move', {
+          tag: 'tagName' in (node as any) ? (node as any).tagName : 'text',
+          before:
+            nextSibling && 'getAttribute' in (nextSibling as any)
+              ? (nextSibling as any).getAttribute('data-id')
+              : null,
+        })
+      }
       container.insertBefore(node, nextSibling)
       this.metrics.moved++
     }
@@ -856,6 +1011,22 @@ export class DOMRenderer {
       container.appendChild(node)
       this.metrics.inserted++
     }
+  }
+
+  private recordAttributeWrite(): void {
+    this.metrics.attributeWrites++
+  }
+
+  private recordAttributeRemoval(): void {
+    this.metrics.attributeRemovals++
+  }
+
+  private recordTextUpdate(): void {
+    this.metrics.textUpdates++
+  }
+
+  private recordModifierApplications(count: number): void {
+    this.metrics.modifierApplications += count
   }
 }
 
@@ -883,11 +1054,42 @@ export function renderComponent(
 ): () => void {
   return createRoot(() => {
     let currentNodes: DOMNode[] = []
+    // Key-based element cache for structural node reuse across renders
+    const keyToNodeCache = new Map<unknown, DOMNode>()
+
+    // Helper to recursively populate node.element from cache
+    const populateFromCache = (node: DOMNode): void => {
+      if (node.key != null) {
+        const cached = keyToNodeCache.get(node.key)
+        if (cached && cached.type === node.type && cached.tag === node.tag && cached.element) {
+          // Transfer the DOM element reference to the new node
+          node.element = cached.element
+          // Also transfer internal state for reconciliation
+          if ((cached as any).__appliedProps) {
+            (node as any).__appliedProps = (cached as any).__appliedProps
+          }
+          if ((cached as any).__renderedChildren) {
+            (node as any).__renderedChildren = (cached as any).__renderedChildren
+          }
+          globalRenderer.recordCacheHit()
+        } else {
+          globalRenderer.recordCacheMiss()
+        }
+      }
+      // Recursively process children
+      if (node.children) {
+        node.children.forEach(populateFromCache)
+      }
+    }
 
     // Create reactive effect for component re-rendering
     const effect = createEffect(() => {
       const renderResult = instance.render()
       const nodes = Array.isArray(renderResult) ? renderResult : [renderResult]
+
+      // Pre-populate node.element from key cache BEFORE reconciliation
+      // This allows createOrUpdateElement() to see existing DOM elements and reuse them
+      nodes.forEach(populateFromCache)
 
       const removalSet = new Set(currentNodes)
       const adoptedByIndex = new Set<DOMNode>()
@@ -911,6 +1113,13 @@ export function renderComponent(
         }
       }
 
+      // Update key cache with current nodes
+      currentNodes.forEach(node => {
+        if (node.key != null) {
+          keyToNodeCache.set(node.key, node)
+        }
+      })
+
       const currentKeyMap = new Map<unknown, DOMNode>()
       currentNodes.forEach(node => {
         if (node.key != null && !adoptedOldNodes.has(node)) {
@@ -920,14 +1129,38 @@ export function renderComponent(
 
       const domNodes = nodes.map(node => {
         if (adoptedByIndex.has(node)) {
+          // Update the adopted node to reconcile children
+          globalRenderer.render(node)
           return globalRenderer.getRenderedNode(node)
         }
+
+        // Check key cache first for structural node reuse
+        if (node.key != null) {
+          const cached = keyToNodeCache.get(node.key)
+          if (cached && cached.type === node.type && cached.tag === node.tag) {
+            // Cache hit - reuse existing DOM element
+            globalRenderer.recordCacheHit()
+            removalSet.delete(cached)
+            currentKeyMap.delete(node.key)
+            keyToNodeCache.set(node.key, node) // Update cache with new node
+            globalRenderer.adoptNode(cached, node)
+            // Update the node to reconcile children
+            globalRenderer.render(node)
+            return globalRenderer.getRenderedNode(node)
+          } else {
+            globalRenderer.recordCacheMiss()
+          }
+        }
+
         if (node.key != null) {
           const existing = currentKeyMap.get(node.key)
           if (existing) {
             currentKeyMap.delete(node.key)
             removalSet.delete(existing)
             globalRenderer.adoptNode(existing, node)
+            keyToNodeCache.set(node.key, node) // Cache for next render
+            // Update the node to reconcile children
+            globalRenderer.render(node)
             return globalRenderer.getRenderedNode(node)
           }
         }
@@ -938,6 +1171,8 @@ export function renderComponent(
             if (candidate.key === node.key) {
               removalSet.delete(candidate)
               globalRenderer.adoptNode(candidate, node)
+              // Update the node to reconcile children
+              globalRenderer.render(node)
               break
             }
           }
@@ -953,6 +1188,8 @@ export function renderComponent(
             ) {
               removalSet.delete(candidate)
               globalRenderer.adoptNode(candidate, node)
+              // Update the node to reconcile children
+              globalRenderer.render(node)
               break
             }
           }
@@ -960,12 +1197,20 @@ export function renderComponent(
 
         if (!globalRenderer.hasNode(node)) {
           globalRenderer.render(node)
+          // Cache newly rendered node by key for future renders
+          if (node.key != null) {
+            keyToNodeCache.set(node.key, node)
+          }
         }
         return globalRenderer.getRenderedNode(node)
       })
 
       removalSet.forEach(node => {
         globalRenderer.removeNode(node)
+        // Remove from key cache when node is removed
+        if (node.key != null) {
+          keyToNodeCache.delete(node.key)
+        }
       })
 
       const canReorder =
@@ -988,6 +1233,17 @@ export function renderComponent(
         })
       }
 
+      // Update key cache with all rendered nodes for next render
+      const updateCache = (node: DOMNode): void => {
+        if (node.key != null && node.element) {
+          keyToNodeCache.set(node.key, node)
+        }
+        if (node.children) {
+          node.children.forEach(updateCache)
+        }
+      }
+      nodes.forEach(updateCache)
+
       currentNodes = nodes
     })
 
@@ -997,6 +1253,8 @@ export function renderComponent(
       currentNodes.forEach(node => {
         globalRenderer.removeNode(node)
       })
+      // Clear key cache on component unmount
+      keyToNodeCache.clear()
     }
   })
 }

@@ -6,6 +6,7 @@
  */
 
 import { ComponentManager } from '../src/runtime/component'
+import type { RendererMetricsSnapshot } from '../src/runtime/renderer'
 
 export interface BenchmarkResult {
   name: string
@@ -14,6 +15,8 @@ export interface BenchmarkResult {
   memory?: number
   operationsPerSecond?: number
   type: 'create' | 'update' | 'select' | 'swap' | 'remove' | 'clear'
+  metadata?: Record<string, unknown>
+  rendererMetrics?: RendererMetricsSnapshot
 }
 
 export interface BenchmarkConfig {
@@ -42,6 +45,9 @@ export class BenchmarkRunner {
     for (let i = 0; i < this.config.warmupRuns; i++) {
       await benchmark()
       manager.cleanup()
+      if (global.gc) {
+        global.gc()
+      }
     }
 
     // Force garbage collection if available
@@ -57,6 +63,9 @@ export class BenchmarkRunner {
     for (let i = 0; i < iterations; i++) {
       await benchmark()
       manager.cleanup()
+      if (global.gc) {
+        global.gc()
+      }
     }
 
     const endTime = performance.now()

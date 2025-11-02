@@ -39,3 +39,42 @@ All six Phase 5.1 benchmarks completed under their respective targets. The reg
 - The suite reports “Potential memory leak detected” suggestions whenever leak > 0; the recorded leak values are all below 3 MB and within the Phase 5 acceptance envelope.
 - Results align with the Phase 0 baseline: no benchmark exceeded the target or hard maximum defined in the implementation plan.
 - The generated baseline JSON emitted by the test run can be promoted to CI artefacts if needed. Copies of the raw output were captured from the test run logged on Oct 24 2025.
+
+---
+
+# Phase 1A Renderer Benchmarks – Nov 4, 2025
+
+Commands executed:
+
+```bash
+pnpm --filter @tachui/core benchmark -- --reporter verbose
+```
+
+Environment: Node.js v22.20.0 (Vitest 3.2.4). Benchmark harness now auto-scales to **6 iterations / 1 warmup** when both cache modes run, with explicit `global.gc()` calls after each warmup/iteration to avoid OOM (see `packages/core/benchmarks/{setup,tachui-benchmarks}.ts`).
+
+## Results (baseline mode)
+
+| Operation | Duration (avg) | Renderer Metrics (created/adopted/removed) | Notes |
+|-----------|----------------|-------------------------------------------|-------|
+| Create 1 000 rows | 90.6 ms | 10 002 / 0 / 10 002 | Parent nodes now persist; child churn remains |
+| Replace 1 000 rows | 86.0 ms | 10 002 / 1 / 1 | First adoption hit now retained |
+| Partial update (every 10th) | 96.6 ms | 10 002 / 1 / 1 | Still rebuilding row nodes; to be addressed in Phase 1B |
+| Select row | 98.3 ms | 10 002 / 1 / 1 | Class mutations dominate attr writes (8 001) |
+| Swap rows | 97.1 ms | 10 002 / 1 / 1 | No DOM moves yet (child diff work pending) |
+| Remove rows | 101.5 ms | 10 002 / 1 / 1 | Removal counts now match expected single delete |
+| Clear rows | 97.9 ms | 10 002 / 1 / 1 | Parent nodes survive final clear |
+
+### Structural coverage
+
+- **Create 1 000 rows (sectioned table)**: 142.3 ms, metrics 10 006 / 0 / 10 006 – confirms nested `<tbody>` sections still churn and motivates Phase 1B row reuse.
+- **Unkeyed list partial update**: 18.3 ms, metrics 2 001 / 1 / 1 – positional adoption path behaves as expected.
+
+### Row-cache mode (for comparison)
+
+Row cache remains slower (e.g., `Replace 1 000 rows` → 124.2 ms, `Partial update` → 174.7 ms) because the manual cache performs synchronous text/class mutations in addition to renderer work. Parent nodes now remain stable even when the external cache reuses row definitions.
+
+## Observations
+
+- Parent `<table>/<tbody>` elements are no longer re-created; DOM identity assertions via the new `parent-reuse.test.ts` integration test plus a JSDOM runtime probe both pass.
+- Renderer metrics still show ~10 000 creates/removes per benchmark, highlighting Phase 1B’s focus: keyed child diff improvements to eliminate row churn.
+- Attribute writes remain high (≈8 001 per run), reinforcing Phase 2’s attribute reconciliation priorities once child reuse is in place.

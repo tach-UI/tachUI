@@ -5,7 +5,13 @@
  * measured by js-framework-benchmark and similar tools.
  */
 
-import { ComponentManager, createComponent, createSignal, h, renderComponent } from '../src'
+import {
+  ComponentManager,
+  createComponent,
+  createSignal,
+  h,
+  renderComponent,
+} from '../src'
 import type { DOMNode } from '../src/runtime/types'
 import {
   getRendererMetrics,
@@ -14,6 +20,7 @@ import {
 } from '../src/runtime/renderer'
 import {
   type BenchmarkConfig,
+  type BenchmarkResult,
   BenchmarkRunner,
   generateData,
   getBenchmarkContainer,
@@ -23,14 +30,27 @@ import {
 // Setup DOM environment for benchmarks
 setupMockDOM()
 
-const iterations =
-  typeof process !== 'undefined' && process.env?.TACHUI_BENCH_ITERATIONS
-    ? Number(process.env.TACHUI_BENCH_ITERATIONS)
-    : 20
-const warmupRuns =
-  typeof process !== 'undefined' && process.env?.TACHUI_BENCH_WARMUPS
-    ? Number(process.env.TACHUI_BENCH_WARMUPS)
-    : 2
+type CacheMode = 'baseline' | 'row-cache'
+
+const cacheModeEnv =
+  typeof process !== 'undefined' && process.env?.TACHUI_BENCH_CACHE_MODE
+    ? process.env.TACHUI_BENCH_CACHE_MODE
+    : ''
+
+const cacheModes: CacheMode[] = resolveCacheModes(cacheModeEnv)
+const hasMultipleModes = cacheModes.length > 1
+const DEFAULT_ITERATIONS = hasMultipleModes ? 6 : 12
+const DEFAULT_WARMUPS = hasMultipleModes ? 1 : 2
+
+const CACHE_MODE_LABEL: Record<CacheMode, string> = {
+  baseline: ' (baseline)',
+  'row-cache': ' (row-cache)',
+}
+
+const SECTION_GROUP_SIZE = 200
+
+const iterations = getNumericEnv('TACHUI_BENCH_ITERATIONS', DEFAULT_ITERATIONS)
+const warmupRuns = getNumericEnv('TACHUI_BENCH_WARMUPS', DEFAULT_WARMUPS)
 
 const config: BenchmarkConfig = {
   iterations,
@@ -49,6 +69,9 @@ async function runWithRendererMetrics<T>(
   resetRendererMetrics()
   const result = await execute()
   rendererMetricsByBenchmark.set(benchmarkName, getRendererMetrics())
+  if (typeof globalThis !== 'undefined' && typeof (globalThis as any).gc === 'function') {
+    ;(globalThis as any).gc()
+  }
   return result
 }
 
@@ -75,32 +98,147 @@ interface SelectionContext {
   onSelect?: (id: number) => void
 }
 
-function createTableComponentWithCache(options: TableOptions) {
-  const rowCache = new Map<number, CachedRow>()
+function resolveCacheModes(value: string): CacheMode[] {
+  const normalized = value.trim().toLowerCase()
+  if (!normalized || normalized === 'both') {
+    return ['baseline', 'row-cache']
+  }
+
+  if (normalized === 'baseline' || normalized === 'row-cache') {
+    return [normalized]
+  }
+
+  if (normalized.includes(',')) {
+    const modes = Array.from(
+      new Set(
+        normalized
+          .split(',')
+          .map(mode => mode.trim())
+          .filter((mode): mode is CacheMode => mode === 'baseline' || mode === 'row-cache')
+      )
+    )
+    if (modes.length > 0) {
+      return modes
+    }
+  }
+
+  console.warn(
+    `[tachUI benchmarks] Unknown cache mode "${value}", defaulting to baseline + row-cache`
+  )
+  return ['baseline', 'row-cache']
+}
+
+function getNumericEnv(name: string, fallback: number): number {
+  if (typeof process === 'undefined' || !process.env) {
+    return fallback
+  }
+  const raw = process.env[name]
+  if (raw == null || raw === '') {
+    return fallback
+  }
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    console.warn(
+      `[tachUI benchmarks] Ignoring invalid ${name} value "${raw}", using fallback ${fallback}`
+    )
+    return fallback
+  }
+  return parsed
+}
+
+function createRowNode(item: RowData, selectionContext: SelectionContext): DOMNode {
+  const className = selectionContext.selectedId === item.id ? 'selected' : ''
+
+  const rowProps: Record<string, any> = {
+    className,
+    'data-id': item.id,
+    key: item.id,
+  }
+
+  if (selectionContext.onSelect) {
+    rowProps.onClick = () => selectionContext.onSelect!(item.id)
+  }
+
+  return h(
+    'tr',
+    rowProps,
+    h('td', { className: 'col-md-1' }, item.id.toString()),
+    h('td', { className: 'col-md-4' }, h('a', null, item.label)),
+    h(
+      'td',
+      { className: 'col-md-1' },
+      h(
+        'button',
+        {
+          className: 'btn btn-sm btn-danger',
+          type: 'button',
+        },
+        'x'
+      )
+    ),
+    h('td', { className: 'col-md-6' })
+  )
+}
+
+function pruneRowCache(cache: Map<number, CachedRow>, data: RowData[]): void {
+  if (cache.size <= data.length) {
+    return
+  }
+
+  const active = new Set(data.map(item => item.id))
+  cache.forEach((_value, id) => {
+    if (!active.has(id)) {
+      cache.delete(id)
+    }
+  })
+}
+
+function buildTableRows(
+  data: RowData[],
+  cacheMode: CacheMode,
+  cache: Map<number, CachedRow> | null,
+  selectionChanged: boolean,
+  selectedId: number | null,
+  previousSelectedId: number | null,
+  onSelect?: (id: number) => void
+): DOMNode[] {
+  return data.map(item => {
+    const selectionContext: SelectionContext = {
+      selectedId,
+      shouldUpdateSelection:
+        selectionChanged && (item.id === selectedId || item.id === previousSelectedId),
+      onSelect,
+    }
+
+    if (cacheMode === 'row-cache' && cache) {
+      return ensureRowNode(item, cache, selectionContext)
+    }
+
+    return createRowNode(item, selectionContext)
+  })
+}
+
+function createTableComponent(options: TableOptions, cacheMode: CacheMode) {
+  const rowCache = cacheMode === 'row-cache' ? new Map<number, CachedRow>() : null
   let previousSelectedId: number | null = null
 
   const TableComponent = createComponent(() => {
     const data = options.getData()
     const selectedId = options.getSelectedId ? options.getSelectedId() : null
     const selectionChanged = selectedId !== previousSelectedId
-    const rows = data.map(item => {
-      const shouldUpdateSelection =
-        selectionChanged &&
-        (item.id === selectedId || item.id === previousSelectedId)
-      return ensureRowNode(item, rowCache, {
-        selectedId,
-        shouldUpdateSelection,
-        onSelect: options.onSelect,
-      })
-    })
 
-    if (rowCache.size > data.length) {
-      const active = new Set(data.map(item => item.id))
-      rowCache.forEach((_value, id) => {
-        if (!active.has(id)) {
-          rowCache.delete(id)
-        }
-      })
+    const rows = buildTableRows(
+      data,
+      cacheMode,
+      rowCache,
+      selectionChanged,
+      selectedId,
+      previousSelectedId,
+      options.onSelect
+    )
+
+    if (rowCache) {
+      pruneRowCache(rowCache, data)
     }
 
     previousSelectedId = selectedId
@@ -115,10 +253,91 @@ function createTableComponentWithCache(options: TableOptions) {
   return {
     TableComponent,
     resetCache: () => {
-      rowCache.clear()
+      if (rowCache) {
+        rowCache.clear()
+      }
       previousSelectedId = null
     },
   }
+}
+
+function createSectionedTableComponent(
+  options: TableOptions & { groupSize: number },
+  cacheMode: CacheMode
+) {
+  const rowCache = cacheMode === 'row-cache' ? new Map<number, CachedRow>() : null
+  let previousSelectedId: number | null = null
+
+  const TableComponent = createComponent(() => {
+    const data = options.getData()
+    const selectedId = options.getSelectedId ? options.getSelectedId() : null
+    const selectionChanged = selectedId !== previousSelectedId
+
+    const rows = buildTableRows(
+      data,
+      cacheMode,
+      rowCache,
+      selectionChanged,
+      selectedId,
+      previousSelectedId,
+      options.onSelect
+    )
+
+    if (rowCache) {
+      pruneRowCache(rowCache, data)
+    }
+
+    previousSelectedId = selectedId
+
+    const bodies: DOMNode[] = []
+    for (let index = 0; index < rows.length; index += options.groupSize) {
+      const sectionRows = rows.slice(index, index + options.groupSize)
+      bodies.push(h('tbody', { key: `section-${index / options.groupSize}` }, ...sectionRows))
+    }
+
+    return h(
+      'table',
+      { className: 'table table-hover table-striped test-data', key: 'table-root' },
+      ...bodies
+    )
+  })
+
+  return {
+    TableComponent,
+    resetCache: () => {
+      if (rowCache) {
+        rowCache.clear()
+      }
+      previousSelectedId = null
+    },
+  }
+}
+
+function createUnkeyedListComponent(options: {
+  getData: () => RowData[]
+  getSelectedId?: () => number | null
+  onSelect?: (id: number) => void
+}) {
+  const ListComponent = createComponent(() => {
+    const data = options.getData()
+    const selectedId = options.getSelectedId ? options.getSelectedId() : null
+
+    const items = data.map(item => {
+      const isSelected = selectedId === item.id
+      const props: Record<string, any> = {
+        className: isSelected ? 'selected list-item' : 'list-item',
+        'data-id': item.id,
+      }
+      if (options.onSelect) {
+        props.onClick = () => options.onSelect!(item.id)
+      }
+      return h('li', props, `${item.id}: ${item.label}`)
+    })
+
+    return h('ul', { className: 'test-data-list' }, ...items)
+  })
+
+  return { ListComponent }
 }
 
 function ensureRowNode(
@@ -129,35 +348,7 @@ function ensureRowNode(
   let cached = cache.get(item.id)
 
   if (!cached) {
-    const className = selectionContext.selectedId === item.id ? 'selected' : ''
-
-    const rowNode = h(
-      'tr',
-      {
-        className,
-        'data-id': item.id,
-        key: item.id,
-        ...(selectionContext.onSelect
-          ? { onClick: () => selectionContext.onSelect!(item.id) }
-          : {}),
-      },
-      h('td', { className: 'col-md-1' }, item.id.toString()),
-      h('td', { className: 'col-md-4' }, h('a', null, item.label)),
-      h(
-        'td',
-        { className: 'col-md-1' },
-        h(
-          'button',
-          {
-            className: 'btn btn-sm btn-danger',
-            type: 'button',
-          },
-          'x'
-        )
-      ),
-      h('td', { className: 'col-md-6' })
-    )
-
+    const rowNode = createRowNode(item, selectionContext)
     const idText = rowNode.children?.[0]?.children?.[0]
     const labelText = rowNode.children?.[1]?.children?.[0]?.children?.[0]
 
@@ -167,15 +358,13 @@ function ensureRowNode(
       labelText,
       idString: item.id.toString(),
       currentLabel: item.label,
-      selected: className === 'selected',
+      selected: selectionContext.selectedId === item.id,
     }
     cache.set(item.id, cached)
-  } else {
-    if (cached.node.props?.['data-id'] !== item.id) {
-      cached.node.props = {
-        ...cached.node.props,
-        'data-id': item.id,
-      }
+  } else if (cached.node.props?.['data-id'] !== item.id) {
+    cached.node.props = {
+      ...cached.node.props,
+      'data-id': item.id,
     }
   }
 
@@ -190,21 +379,16 @@ function ensureRowNode(
     }
   }
 
-  if (cached.labelText) {
-    if (cached.currentLabel !== item.label) {
-      cached.currentLabel = item.label
-      cached.labelText.text = item.label
-      if (cached.labelText.element && 'textContent' in cached.labelText.element) {
-        ;(cached.labelText.element as Text).textContent = item.label
-      }
+  if (cached.labelText && cached.currentLabel !== item.label) {
+    cached.currentLabel = item.label
+    cached.labelText.text = item.label
+    if (cached.labelText.element && 'textContent' in cached.labelText.element) {
+      ;(cached.labelText.element as Text).textContent = item.label
     }
   }
 
   const selected = selectionContext.selectedId === item.id
-  if (
-    selectionContext.shouldUpdateSelection ||
-    cached.selected !== selected
-  ) {
+  if (selectionContext.shouldUpdateSelection || cached.selected !== selected) {
     cached.selected = selected
     const className = selected ? 'selected' : ''
     if (!cached.node.props || cached.node.props.className !== className) {
@@ -221,38 +405,37 @@ function ensureRowNode(
   return cached.node
 }
 
-/**
- * Benchmark 1: Create 1,000 rows
- * Standard benchmark: Create a large table with 1,000 rows
- */
-async function benchmarkCreate1000Rows() {
-  await runWithRendererMetrics('Create 1,000 rows', async () => {
+async function benchmarkCreate1000Rows(cacheMode: CacheMode, benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
     const data = generateData(1000)
     const container = getBenchmarkContainer()
 
-  const { TableComponent } = createTableComponentWithCache({
-    getData: () => data,
-  })
+    const { TableComponent, resetCache } = createTableComponent(
+      {
+        getData: () => data,
+      },
+      cacheMode
+    )
 
     const tableInstance = TableComponent({})
     const dispose = renderComponent(tableInstance, container)
     await Promise.resolve()
     dispose()
+    resetCache()
   })
 }
 
-/**
- * Benchmark 2: Replace all 1,000 rows
- * Standard benchmark: Replace all data in table
- */
-async function benchmarkReplaceAll1000Rows() {
-  await runWithRendererMetrics('Replace all 1,000 rows', async () => {
+async function benchmarkReplaceAll1000Rows(cacheMode: CacheMode, benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
     const [data, setData] = createSignal(generateData(1000))
     const container = getBenchmarkContainer()
 
-    const { TableComponent } = createTableComponentWithCache({
-      getData: () => data(),
-    })
+    const { TableComponent, resetCache } = createTableComponent(
+      {
+        getData: () => data(),
+      },
+      cacheMode
+    )
 
     const tableInstance = TableComponent({})
     const dispose = renderComponent(tableInstance, container)
@@ -262,21 +445,21 @@ async function benchmarkReplaceAll1000Rows() {
     await Promise.resolve()
 
     dispose()
+    resetCache()
   })
 }
 
-/**
- * Benchmark 3: Partial update (update every 10th row)
- * Standard benchmark: Update every 10th row
- */
-async function benchmarkPartialUpdate() {
-  await runWithRendererMetrics('Partial update', async () => {
+async function benchmarkPartialUpdate(cacheMode: CacheMode, benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
     const [data, setData] = createSignal(generateData(1000))
     const container = getBenchmarkContainer()
 
-    const { TableComponent } = createTableComponentWithCache({
-      getData: () => data(),
-    })
+    const { TableComponent, resetCache } = createTableComponent(
+      {
+        getData: () => data(),
+      },
+      cacheMode
+    )
 
     const tableInstance = TableComponent({})
     const dispose = renderComponent(tableInstance, container)
@@ -296,24 +479,24 @@ async function benchmarkPartialUpdate() {
     await Promise.resolve()
 
     dispose()
+    resetCache()
   })
 }
 
-/**
- * Benchmark 4: Select row
- * Standard benchmark: Select a single row
- */
-async function benchmarkSelectRow() {
-  await runWithRendererMetrics('Select row', async () => {
+async function benchmarkSelectRow(cacheMode: CacheMode, benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
     const data = generateData(1000)
     const [selectedId, setSelectedId] = createSignal<number | null>(null)
     const container = getBenchmarkContainer()
 
-    const { TableComponent } = createTableComponentWithCache({
-      getData: () => data,
-      getSelectedId: () => selectedId(),
-      onSelect: setSelectedId,
-    })
+    const { TableComponent, resetCache } = createTableComponent(
+      {
+        getData: () => data,
+        getSelectedId: () => selectedId(),
+        onSelect: setSelectedId,
+      },
+      cacheMode
+    )
 
     const tableInstance = TableComponent({})
     const dispose = renderComponent(tableInstance, container)
@@ -323,21 +506,21 @@ async function benchmarkSelectRow() {
     await Promise.resolve()
 
     dispose()
+    resetCache()
   })
 }
 
-/**
- * Benchmark 5: Swap rows
- * Standard benchmark: Swap two rows
- */
-async function benchmarkSwapRows() {
-  await runWithRendererMetrics('Swap rows', async () => {
+async function benchmarkSwapRows(cacheMode: CacheMode, benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
     const [data, setData] = createSignal(generateData(1000))
     const container = getBenchmarkContainer()
 
-    const { TableComponent } = createTableComponentWithCache({
-      getData: () => data(),
-    })
+    const { TableComponent, resetCache } = createTableComponent(
+      {
+        getData: () => data(),
+      },
+      cacheMode
+    )
 
     const tableInstance = TableComponent({})
     const dispose = renderComponent(tableInstance, container)
@@ -351,21 +534,21 @@ async function benchmarkSwapRows() {
     await Promise.resolve()
 
     dispose()
+    resetCache()
   })
 }
 
-/**
- * Benchmark 6: Remove row
- * Standard benchmark: Remove every 10th row
- */
-async function benchmarkRemoveRows() {
-  await runWithRendererMetrics('Remove rows', async () => {
+async function benchmarkRemoveRows(cacheMode: CacheMode, benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
     const [data, setData] = createSignal(generateData(1000))
     const container = getBenchmarkContainer()
 
-    const { TableComponent } = createTableComponentWithCache({
-      getData: () => data(),
-    })
+    const { TableComponent, resetCache } = createTableComponent(
+      {
+        getData: () => data(),
+      },
+      cacheMode
+    )
 
     const tableInstance = TableComponent({})
     const dispose = renderComponent(tableInstance, container)
@@ -376,21 +559,21 @@ async function benchmarkRemoveRows() {
     await Promise.resolve()
 
     dispose()
+    resetCache()
   })
 }
 
-/**
- * Benchmark 7: Clear all rows
- * Standard benchmark: Clear table
- */
-async function benchmarkClearRows() {
-  await runWithRendererMetrics('Clear rows', async () => {
+async function benchmarkClearRows(cacheMode: CacheMode, benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
     const [data, setData] = createSignal(generateData(1000))
     const container = getBenchmarkContainer()
 
-    const { TableComponent } = createTableComponentWithCache({
-      getData: () => data(),
-    })
+    const { TableComponent, resetCache } = createTableComponent(
+      {
+        getData: () => data(),
+      },
+      cacheMode
+    )
 
     const tableInstance = TableComponent({})
     const dispose = renderComponent(tableInstance, container)
@@ -400,15 +583,66 @@ async function benchmarkClearRows() {
     await Promise.resolve()
 
     dispose()
+    resetCache()
   })
 }
 
-/**
- * Benchmark 8: Component Creation Performance
- * Test raw component creation speed
- */
-async function benchmarkComponentCreation() {
-  await runWithRendererMetrics('Component creation', async () => {
+async function benchmarkSectionedTableCreate(cacheMode: CacheMode, benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const data = generateData(1000)
+    const container = getBenchmarkContainer()
+
+    const { TableComponent, resetCache } = createSectionedTableComponent(
+      {
+        getData: () => data,
+        groupSize: SECTION_GROUP_SIZE,
+      },
+      cacheMode
+    )
+
+    const tableInstance = TableComponent({})
+    const dispose = renderComponent(tableInstance, container)
+    await Promise.resolve()
+    dispose()
+    resetCache()
+  })
+}
+
+async function benchmarkUnkeyedListPartialUpdate(
+  _cacheMode: CacheMode,
+  benchmarkName: string
+) {
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const [data, setData] = createSignal(generateData(1000))
+    const container = getBenchmarkContainer()
+
+    const { ListComponent } = createUnkeyedListComponent({
+      getData: () => data(),
+    })
+
+    const listInstance = ListComponent({})
+    const dispose = renderComponent(listInstance, container)
+    await Promise.resolve()
+
+    const updatedData = data().map((item, index) => {
+      if (index % 10 === 0) {
+        return {
+          ...item,
+          label: `${item.label} !!!`,
+        }
+      }
+      return item
+    })
+
+    setData(updatedData)
+    await Promise.resolve()
+
+    dispose()
+  })
+}
+
+async function benchmarkComponentCreation(benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
     const SimpleComponent = createComponent<{ text: string }>((props) => {
       return h('div', null, props.text)
     })
@@ -419,13 +653,9 @@ async function benchmarkComponentCreation() {
   })
 }
 
-/**
- * Benchmark 9: Reactive Updates Performance
- * Test reactive system performance with many signals
- */
-async function benchmarkReactiveUpdates() {
-  await runWithRendererMetrics('Reactive updates', async () => {
-    const signals = []
+async function benchmarkReactiveUpdates(benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const signals: Array<{ signal: () => number; setSignal: (value: number) => void }> = []
 
     for (let i = 0; i < 100; i++) {
       const [signal, setSignal] = createSignal(i)
@@ -440,31 +670,115 @@ async function benchmarkReactiveUpdates() {
   })
 }
 
+async function runBenchmarkWithMode(
+  baseName: string,
+  type: BenchmarkResult['type'],
+  cacheMode: CacheMode,
+  benchmark: (cacheMode: CacheMode, benchmarkName: string) => Promise<void>
+): Promise<BenchmarkResult> {
+  const benchmarkName = `${baseName}${CACHE_MODE_LABEL[cacheMode]}`
+  const result = await runner.run(benchmarkName, type, () => benchmark(cacheMode, benchmarkName))
+  result.metadata = {
+    ...result.metadata,
+    cacheMode,
+    benchmark: baseName,
+  }
+  const metrics = rendererMetricsByBenchmark.get(benchmarkName)
+  if (metrics) {
+    result.rendererMetrics = metrics
+  }
+  return result
+}
+
+async function runStandaloneBenchmark(
+  name: string,
+  type: BenchmarkResult['type'],
+  benchmark: (benchmarkName: string) => Promise<void>
+): Promise<BenchmarkResult> {
+  const result = await runner.run(name, type, () => benchmark(name))
+  const metrics = rendererMetricsByBenchmark.get(name)
+  if (metrics) {
+    result.rendererMetrics = metrics
+  }
+  return result
+}
+
 /**
  * Run all benchmarks
  */
 export async function runTachUIBenchmarks() {
   console.log('🏃‍♂️ Running TachUI Performance Benchmarks...\n')
-
-  const results = []
-
-  // Standard js-framework-benchmark tests
-  results.push(await runner.run('Create 1,000 rows', 'create', benchmarkCreate1000Rows))
-  results.push(await runner.run('Replace all 1,000 rows', 'update', benchmarkReplaceAll1000Rows))
-  results.push(
-    await runner.run('Partial update (every 10th row)', 'update', benchmarkPartialUpdate)
+  console.log(`Cache modes: ${cacheModes.join(', ')}`)
+  console.log(
+    `Iterations per benchmark: ${iterations} (override via TACHUI_BENCH_ITERATIONS, default adjusts for ${hasMultipleModes ? 'multi-mode' : 'single-mode'} run)`
   )
-  results.push(await runner.run('Select row', 'select', benchmarkSelectRow))
-  results.push(await runner.run('Swap rows', 'swap', benchmarkSwapRows))
-  results.push(await runner.run('Remove rows', 'remove', benchmarkRemoveRows))
-  results.push(await runner.run('Clear rows', 'clear', benchmarkClearRows))
+  console.log(
+    `Warmup runs: ${warmupRuns} (override via TACHUI_BENCH_WARMUPS, default adjusts for ${hasMultipleModes ? 'multi-mode' : 'single-mode'} run)`
+  )
 
-  // TachUI-specific performance tests
+  rendererMetricsByBenchmark.clear()
+
+  const results: BenchmarkResult[] = []
+
+  for (const cacheMode of cacheModes) {
+    results.push(
+      await runBenchmarkWithMode('Create 1,000 rows', 'create', cacheMode, benchmarkCreate1000Rows)
+    )
+    results.push(
+      await runBenchmarkWithMode(
+        'Replace all 1,000 rows',
+        'update',
+        cacheMode,
+        benchmarkReplaceAll1000Rows
+      )
+    )
+    results.push(
+      await runBenchmarkWithMode(
+        'Partial update (every 10th row)',
+        'update',
+        cacheMode,
+        benchmarkPartialUpdate
+      )
+    )
+    results.push(
+      await runBenchmarkWithMode('Select row', 'select', cacheMode, benchmarkSelectRow)
+    )
+    results.push(
+      await runBenchmarkWithMode('Swap rows', 'swap', cacheMode, benchmarkSwapRows)
+    )
+    results.push(
+      await runBenchmarkWithMode('Remove rows', 'remove', cacheMode, benchmarkRemoveRows)
+    )
+    results.push(
+      await runBenchmarkWithMode('Clear rows', 'clear', cacheMode, benchmarkClearRows)
+    )
+    results.push(
+      await runBenchmarkWithMode(
+        'Create 1,000 rows (sectioned table)',
+        'create',
+        cacheMode,
+        benchmarkSectionedTableCreate
+      )
+    )
+    results.push(
+      await runBenchmarkWithMode(
+        'Unkeyed list partial update',
+        'update',
+        cacheMode,
+        benchmarkUnkeyedListPartialUpdate
+      )
+    )
+  }
+
   results.push(
-    await runner.run('Component creation (1,000 components)', 'create', benchmarkComponentCreation)
+    await runStandaloneBenchmark(
+      'Component creation (1,000 components)',
+      'create',
+      benchmarkComponentCreation
+    )
   )
   results.push(
-    await runner.run(
+    await runStandaloneBenchmark(
       'Reactive updates (100 signals × 10 updates)',
       'update',
       benchmarkReactiveUpdates
@@ -477,7 +791,7 @@ export async function runTachUIBenchmarks() {
     console.log('\nRenderer operation metrics:')
     rendererMetricsByBenchmark.forEach((metrics, name) => {
       console.log(
-        `  ${name}: created=${metrics.created}, adopted=${metrics.adopted}, inserted=${metrics.inserted}, moved=${metrics.moved}, removed=${metrics.removed}`
+        `  ${name}: created=${metrics.created}, adopted=${metrics.adopted}, cacheHits=${metrics.cacheHits}, cacheMisses=${metrics.cacheMisses}, inserted=${metrics.inserted}, moved=${metrics.moved}, removed=${metrics.removed}, attrWrites=${metrics.attributeWrites}, attrRemovals=${metrics.attributeRemovals}, textUpdates=${metrics.textUpdates}, modifierApps=${metrics.modifierApplications}`
       )
     })
     console.log('')
@@ -498,6 +812,8 @@ export {
   benchmarkSwapRows,
   benchmarkRemoveRows,
   benchmarkClearRows,
+  benchmarkSectionedTableCreate,
+  benchmarkUnkeyedListPartialUpdate,
   benchmarkComponentCreation,
   benchmarkReactiveUpdates,
 }

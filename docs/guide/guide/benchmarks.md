@@ -39,6 +39,16 @@ npm run benchmark
 
 Runs all benchmarks with detailed timing but no framework comparison (~25 seconds).
 
+Set the environment variable `TACHUI_BENCH_CACHE_MODE` to control manual row caching during the run:
+
+- `baseline` – render without the benchmark-specific row cache
+- `row-cache` – force the manual cache for cache-aware workloads
+- `both` (default) – execute each table benchmark in both modes for side-by-side metrics
+
+Each run prints the active cache modes and appends renderer metrics (DOM mutations, attribute writes/removals, text updates, modifier invocations, cache hits/misses) so you can quickly gauge the impact of renderer changes.
+
+When both cache modes run together, the suite automatically reduces to 6 iterations and a single warmup per benchmark to keep memory usage manageable. Override via `TACHUI_BENCH_ITERATIONS` / `TACHUI_BENCH_WARMUPS` if you need different sample sizes, or lower them further if your environment still runs out of memory (e.g. set `TACHUI_BENCH_ITERATIONS=3` for extremely tight environments).
+
 ### Browser Benchmarks (Real Performance) ⚡
 
 #### Quick Browser Benchmark
@@ -90,6 +100,11 @@ This demonstrates why:
 8. **Component creation** - Raw component instantiation speed
 9. **Reactive updates** - Signal/effect system performance
 
+### Structural Coverage Benchmarks
+
+10. **Create 1,000 rows (sectioned table)** - Nested `<tbody>` reuse validation  
+11. **Unkeyed list partial update** - Positional adoption behaviour without keys
+
 ## Framework Comparisons
 
 The benchmark suite compares TachUI against:
@@ -110,6 +125,13 @@ The benchmark suite compares TachUI against:
 - **Operations per second** - Throughput measurement
 - **Memory usage** - Heap memory consumption (MB)
 - **Bundle size** - Framework overhead (KB)
+
+### Renderer Metrics
+- **DOM mutations** - Created, adopted, inserted, moved, removed counts
+- **Cache hits/misses** - Structural node reuse effectiveness
+- **Attribute writes/removals** - Prop churn at the DOM boundary
+- **Text updates** - Text node mutations per benchmark
+- **Modifier applications** - Modifier pipeline invocations
 
 ### Performance Score
 The benchmark suite calculates a weighted performance score (0-100):
