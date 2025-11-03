@@ -576,26 +576,49 @@ export class DOMRenderer {
    */
   private setElementProp(element: Element, key: string, value: any): void {
     if (value == null) {
-      element.removeAttribute(key)
-      this.recordAttributeRemoval()
-      return
-    }
-
-    // Handle boolean attributes
-    if (typeof value === 'boolean') {
-      if (value) {
-        element.setAttribute(key, '')
-        this.recordAttributeWrite()
-      } else {
+      if (element.hasAttribute(key)) {
         element.removeAttribute(key)
         this.recordAttributeRemoval()
       }
       return
     }
 
-    // Handle regular attributes
-    element.setAttribute(key, String(value))
-    this.recordAttributeWrite()
+    // Use properties instead of attributes for form elements (faster)
+    const htmlElement = element as any
+    if (
+      (key === 'value' || key === 'checked' || key === 'disabled') &&
+      key in htmlElement
+    ) {
+      if (htmlElement[key] !== value) {
+        htmlElement[key] = value
+        this.recordAttributeWrite()
+      }
+      return
+    }
+
+    // Handle boolean attributes
+    if (typeof value === 'boolean') {
+      if (value) {
+        if (!element.hasAttribute(key)) {
+          element.setAttribute(key, '')
+          this.recordAttributeWrite()
+        }
+      } else {
+        if (element.hasAttribute(key)) {
+          element.removeAttribute(key)
+          this.recordAttributeRemoval()
+        }
+      }
+      return
+    }
+
+    // Handle regular attributes - only set if changed
+    const currentValue = element.getAttribute(key)
+    const stringValue = String(value)
+    if (currentValue !== stringValue) {
+      element.setAttribute(key, stringValue)
+      this.recordAttributeWrite()
+    }
   }
 
   /**
@@ -606,8 +629,11 @@ export class DOMRenderer {
       // Reactive className
       const effect = createEffect(() => {
         const currentValue = value()
-        element.className = this.normalizeClassName(currentValue)
-        this.recordAttributeWrite()
+        const newClassName = this.normalizeClassName(currentValue)
+        if (element.className !== newClassName) {
+          element.className = newClassName
+          this.recordAttributeWrite()
+        }
       })
 
       // Add cleanup
@@ -615,8 +641,11 @@ export class DOMRenderer {
         effect.dispose()
       })
     } else {
-      element.className = this.normalizeClassName(value)
-      this.recordAttributeWrite()
+      const newClassName = this.normalizeClassName(value)
+      if (element.className !== newClassName) {
+        element.className = newClassName
+        this.recordAttributeWrite()
+      }
     }
   }
 
@@ -665,26 +694,41 @@ export class DOMRenderer {
    */
   private setElementStyles(element: HTMLElement, styles: any): void {
     if (typeof styles === 'string') {
-      element.style.cssText = styles
-      this.recordAttributeWrite()
+      if (element.style.cssText !== styles) {
+        element.style.cssText = styles
+        this.recordAttributeWrite()
+      }
       return
     }
 
     if (typeof styles === 'object' && styles !== null) {
+      // Get previous style object for comparison
+      const prevStyles = (element as any).__appliedStyles || {}
+
+      // Remove properties that are no longer present
+      Object.keys(prevStyles).forEach(property => {
+        if (!(property in styles)) {
+          element.style.removeProperty(property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`))
+          this.recordAttributeRemoval()
+        }
+      })
+
       Object.entries(styles).forEach(([property, value]) => {
         if (isSignal(value) || isComputed(value)) {
           // Individual style property is reactive
           const effect = createEffect(() => {
             const currentValue = value()
+            const kebabProperty = property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
             if (currentValue == null) {
-              element.style.removeProperty(property)
+              element.style.removeProperty(kebabProperty)
               this.recordAttributeRemoval()
             } else {
-              element.style.setProperty(
-                property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`),
-                String(currentValue)
-              )
-              this.recordAttributeWrite()
+              const stringValue = String(currentValue)
+              const currentStyleValue = element.style.getPropertyValue(kebabProperty)
+              if (currentStyleValue !== stringValue) {
+                element.style.setProperty(kebabProperty, stringValue)
+                this.recordAttributeWrite()
+              }
             }
           })
 
@@ -693,19 +737,26 @@ export class DOMRenderer {
             effect.dispose()
           })
         } else {
-          // Static style property
+          // Static style property - only set if changed
+          const kebabProperty = property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
           if (value == null) {
-            element.style.removeProperty(property)
-            this.recordAttributeRemoval()
+            if (element.style.getPropertyValue(kebabProperty)) {
+              element.style.removeProperty(kebabProperty)
+              this.recordAttributeRemoval()
+            }
           } else {
-            element.style.setProperty(
-              property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`),
-              String(value)
-            )
-            this.recordAttributeWrite()
+            const stringValue = String(value)
+            const currentStyleValue = element.style.getPropertyValue(kebabProperty)
+            if (currentStyleValue !== stringValue) {
+              element.style.setProperty(kebabProperty, stringValue)
+              this.recordAttributeWrite()
+            }
           }
         }
       })
+
+      // Track applied styles for next render
+      ;(element as any).__appliedStyles = { ...styles }
     }
   }
 
