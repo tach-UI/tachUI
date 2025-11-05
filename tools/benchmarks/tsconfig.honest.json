@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "paths": {
+      "@tachui/core": ["../../packages/core/src/index.ts"],
+      "@tachui/core/*": ["../../packages/core/src/*"],
+      "@tachui/registry": ["../../packages/registry/src/index.ts"],
+      "@tachui/registry/*": ["../../packages/registry/src/*"],
+      "@tachui/modifiers": ["../../packages/modifiers/src/index.ts"],
+      "@tachui/modifiers/*": ["../../packages/modifiers/src/*"],
+      "@tachui/effects": ["../../packages/effects/src/index.ts"],
+      "@tachui/effects/*": ["../../packages/effects/src/*"],
+      "@tachui/primitives": ["../../packages/primitives/src/index.ts"],
+      "@tachui/primitives/*": ["../../packages/primitives/src/*"],
+      "@tachui/forms": ["../../packages/forms/src/index.ts"],
+      "@tachui/forms/*": ["../../packages/forms/src/*"],
+      "@tachui/navigation": ["../../packages/navigation/src/index.ts"],
+      "@tachui/navigation/*": ["../../packages/navigation/src/*"],
+      "@tachui/symbols": ["../../packages/symbols/src/index.ts"],
+      "@tachui/symbols/*": ["../../packages/symbols/src/*"],
+      "@tachui/responsive": ["../../packages/responsive/src/index.ts"],
+      "@tachui/responsive/*": ["../../packages/responsive/src/*"],
+      "@tachui/grid": ["../../packages/grid/src/index.ts"],
+      "@tachui/grid/*": ["../../packages/grid/src/*"],
+      "@tachui/data": ["../../packages/data/src/index.ts"],
+      "@tachui/data/*": ["../../packages/data/src/*"],
+      "@tachui/viewport": ["../../packages/viewport/src/index.ts"],
+      "@tachui/viewport/*": ["../../packages/viewport/src/*"],
+      "@tachui/mobile": ["../../packages/mobile/src/index.ts"],
+      "@tachui/mobile/*": ["../../packages/mobile/src/*"],
+      "@tachui/flow-control": ["../../packages/flow-control/src/index.ts"],
+      "@tachui/flow-control/*": ["../../packages/flow-control/src/*"],
+      "@tachui/core/plugins": ["../../packages/core/src/plugins/index.ts"]
+    }
+  },
+  "include": ["./honest-benchmark.ts"]
+}

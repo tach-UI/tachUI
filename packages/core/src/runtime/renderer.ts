@@ -9,6 +9,7 @@ import { applyModifiersToNode } from '../modifiers/registry'
 import { createEffect, createRoot, isComputed, isSignal } from '../reactive'
 import type { ComponentInstance, DOMNode } from './types'
 import { semanticRoleManager } from './semantic-role-manager'
+import { globalEventDelegator } from './event-delegation'
 // Debug functionality moved to @tachui/devtools package
 // Create a simple mock for backward compatibility
 const debugManager = {
@@ -38,6 +39,8 @@ export class DOMRenderer {
   private nodeMap = new WeakMap<DOMNode, Element | Text | Comment>()
   private cleanupMap = new WeakMap<Element | Text | Comment, (() => void)[]>()
   private renderedNodes = new Set<DOMNode>()
+  // Map each element to its delegation container
+  private elementToContainer = new WeakMap<Element, Element>()
   private metrics: RendererMetrics = {
     created: 0,
     adopted: 0,
@@ -94,7 +97,7 @@ export class DOMRenderer {
 
     switch (node.type) {
       case 'element':
-        element = this.createOrUpdateElement(node)
+        element = this.createOrUpdateElement(node, container)
         break
       case 'text':
         element = this.createOrUpdateTextNode(node)
@@ -110,6 +113,11 @@ export class DOMRenderer {
     // Store reference
     this.nodeMap.set(node, element)
     node.element = element
+
+    // Track delegation container for this element
+    if (element instanceof Element && container) {
+      this.elementToContainer.set(element, container)
+    }
 
     // Apply modifiers if present (only for Element nodes, not Text/Comment)
     if (element instanceof Element) {
@@ -177,14 +185,18 @@ export class DOMRenderer {
   /**
    * Create a DOM element with props and children
    */
-  private createOrUpdateElement(node: DOMNode): Element {
+  private createOrUpdateElement(node: DOMNode, container?: Element): Element {
     if (!node.tag) {
       throw new Error('Element node must have a tag')
     }
 
     if (node.element && node.element instanceof Element) {
       const element = node.element
-      this.updateProps(element, node)
+      // Update container mapping if container changed
+      if (container) {
+        this.elementToContainer.set(element, container)
+      }
+      this.updateProps(element, node, container)
       this.updateChildren(element, node)
       return element
     }
@@ -192,16 +204,21 @@ export class DOMRenderer {
     const element = document.createElement(node.tag)
     this.metrics.created++
 
+    // Track delegation container for this element
+    if (container) {
+      this.elementToContainer.set(element, container)
+    }
+
     // Apply debug attributes if debug mode is enabled
     this.applyDebugAttributes(element, node)
 
-    this.updateProps(element, node)
+    this.updateProps(element, node, container)
     this.updateChildren(element, node)
 
     return element
   }
 
-  private updateProps(element: Element, node: DOMNode): void {
+  private updateProps(element: Element, node: DOMNode, container?: Element): void {
     const newProps = node.props || {}
     const previousProps = (node as any).__appliedProps || {}
 
@@ -222,7 +239,7 @@ export class DOMRenderer {
       if (previousProps && previousProps[key] === value) {
         return
       }
-      this.applyProp(element, key, value)
+      this.applyProp(element, key, value, container)
     })
 
     ;(node as any).__appliedProps = { ...newProps }
@@ -249,6 +266,10 @@ export class DOMRenderer {
   private updateChildren(element: Element, node: DOMNode): void {
     const previousChildren: DOMNode[] = (node as any).__renderedChildren || []
     const newChildren = node.children || []
+
+    // Get delegation container for this element's children
+    const delegationContainer = this.elementToContainer.get(element)
+
     const debugChildDiff =
       typeof process !== 'undefined' && process.env?.TACHUI_DEBUG_PHASE1B === '1'
     if (
@@ -265,7 +286,7 @@ export class DOMRenderer {
 
     if (previousChildren.length === 0) {
       newChildren.forEach(child => {
-        const childElement = this.renderSingle(child)
+        const childElement = this.renderSingle(child, delegationContainer)
         this.appendNode(element, childElement)
       })
       ;(node as any).__renderedChildren = newChildren
@@ -297,31 +318,13 @@ export class DOMRenderer {
         matched = previousKeyless.shift()
       }
 
-      if (matched) {
-        if (debugChildDiff) {
-          console.log('[diff] adopt', {
-            parent: node.tag,
-            key: child.key,
-            index,
-            type: child.type,
-          })
+        if (matched) {
+          this.adoptNode(matched, child)
         }
-        this.adoptNode(matched, child)
-        this.updateExistingNode(child)
-      } else {
-        if (debugChildDiff) {
-          console.log('[diff] create', {
-            parent: node.tag,
-            key: child.key,
-            index,
-            type: child.type,
-          })
-        }
-        this.renderSingle(child)
-        this.updateExistingNode(child)
-      }
 
-      domNodes[index] = this.getRenderedNode(child)
+        // Ensure child is rendered using existing element when possible, pass delegation container
+        const rendered = this.renderSingle(child, delegationContainer)
+        domNodes[index] = rendered
     })
 
     if (debugChildDiff && node.tag) {
@@ -352,22 +355,10 @@ export class DOMRenderer {
       typeof (element as any).appendChild === 'function'
 
     if (canReorder) {
-      // Iterate backward to properly maintain order
-      // Insert each node before the previously inserted node
       let nextSibling: Node | null = null
       for (let i = domNodes.length - 1; i >= 0; i--) {
         const domNode = domNodes[i]
         if (!domNode) continue
-        if (debugChildDiff) {
-          console.log('[diff] reorder', {
-            parent: node.tag,
-            key: newChildren[i]?.key ?? null,
-            nextSiblingId:
-              nextSibling && 'getAttribute' in (nextSibling as any)
-                ? (nextSibling as any).getAttribute('data-id')
-                : null,
-          })
-        }
         this.insertNode(element, domNode, nextSibling)
         nextSibling = domNode
       }
@@ -378,7 +369,9 @@ export class DOMRenderer {
 
   private updateExistingNode(node: DOMNode): void {
     if (node.type === 'element' && node.element instanceof Element) {
-      this.updateProps(node.element, node)
+      // Get the delegation container for this element
+      const container = this.elementToContainer.get(node.element)
+      this.updateProps(node.element, node, container)
       this.updateChildren(node.element, node)
     } else if (node.type === 'text' && node.element instanceof Text) {
       // Update text content if it changed
@@ -535,7 +528,7 @@ export class DOMRenderer {
   /**
    * Apply a single prop to an element
    */
-  private applyProp(element: Element, key: string, value: any): void {
+  private applyProp(element: Element, key: string, value: any, container?: Element): void {
     // Handle special props
     if (key === 'className' || key === 'class') {
       this.applyClassName(element, value)
@@ -548,7 +541,7 @@ export class DOMRenderer {
     }
 
     if (key.startsWith('on') && typeof value === 'function') {
-      this.applyEventListener(element, key, value)
+      this.applyEventListener(element, key, value, container)
       return
     }
 
@@ -607,6 +600,8 @@ export class DOMRenderer {
         if (element.hasAttribute(key)) {
           element.removeAttribute(key)
           this.recordAttributeRemoval()
+        } else {
+          element.removeAttribute(key)
         }
       }
       return
@@ -761,15 +756,40 @@ export class DOMRenderer {
   }
 
   /**
-   * Apply event listener
+   * Apply event listener (with delegation if possible)
    */
   private applyEventListener(
     element: Element,
     eventName: string,
-    handler: Function
+    handler: Function,
+    container?: Element
   ): void {
-    const event = eventName.slice(2).toLowerCase() // Remove 'on' prefix
+    let eventType = eventName.slice(2).toLowerCase() // Remove 'on' prefix
 
+    // Map focus/blur to focusin/focusout for delegation (they bubble)
+    if (eventType === 'focus') {
+      eventType = 'focusin'
+    } else if (eventType === 'blur') {
+      eventType = 'focusout'
+    }
+
+    // Get container from parameter or lookup
+    const delegationContainer = container || this.elementToContainer.get(element)
+
+    // Use delegation if we have a container and event type supports it
+    if (delegationContainer && globalEventDelegator.shouldDelegate(eventType)) {
+      const cleanup = globalEventDelegator.register(
+        delegationContainer,
+        element,
+        eventType,
+        handler as (event: Event) => void
+      )
+
+      this.addCleanup(element, cleanup)
+      return
+    }
+
+    // Fallback to direct attachment for non-delegatable events
     const listener = (e: Event) => {
       try {
         handler(e)
@@ -778,11 +798,16 @@ export class DOMRenderer {
       }
     }
 
-    element.addEventListener(event, listener)
+    // Use passive listeners for scroll-related events
+    const options: AddEventListenerOptions | undefined = globalEventDelegator.shouldBePassive(eventType)
+      ? { passive: true }
+      : undefined
+
+    element.addEventListener(eventType, listener, options)
 
     // Add cleanup
     this.addCleanup(element, () => {
-      element.removeEventListener(event, listener)
+      element.removeEventListener(eventType, listener, options)
     })
   }
 
@@ -1180,8 +1205,8 @@ export function renderComponent(
 
       const domNodes = nodes.map(node => {
         if (adoptedByIndex.has(node)) {
-          // Update the adopted node to reconcile children
-          globalRenderer.render(node)
+          // Update the adopted node to reconcile children - pass container for delegation
+          globalRenderer.render(node, container)
           return globalRenderer.getRenderedNode(node)
         }
 
@@ -1195,8 +1220,8 @@ export function renderComponent(
             currentKeyMap.delete(node.key)
             keyToNodeCache.set(node.key, node) // Update cache with new node
             globalRenderer.adoptNode(cached, node)
-            // Update the node to reconcile children
-            globalRenderer.render(node)
+            // Update the node to reconcile children - pass container for delegation
+            globalRenderer.render(node, container)
             return globalRenderer.getRenderedNode(node)
           } else {
             globalRenderer.recordCacheMiss()
@@ -1210,8 +1235,8 @@ export function renderComponent(
             removalSet.delete(existing)
             globalRenderer.adoptNode(existing, node)
             keyToNodeCache.set(node.key, node) // Cache for next render
-            // Update the node to reconcile children
-            globalRenderer.render(node)
+            // Update the node to reconcile children - pass container for delegation
+            globalRenderer.render(node, container)
             return globalRenderer.getRenderedNode(node)
           }
         }
@@ -1222,8 +1247,8 @@ export function renderComponent(
             if (candidate.key === node.key) {
               removalSet.delete(candidate)
               globalRenderer.adoptNode(candidate, node)
-              // Update the node to reconcile children
-              globalRenderer.render(node)
+              // Update the node to reconcile children - pass container for delegation
+              globalRenderer.render(node, container)
               break
             }
           }
@@ -1239,15 +1264,16 @@ export function renderComponent(
             ) {
               removalSet.delete(candidate)
               globalRenderer.adoptNode(candidate, node)
-              // Update the node to reconcile children
-              globalRenderer.render(node)
+              // Update the node to reconcile children - pass container for delegation
+              globalRenderer.render(node, container)
               break
             }
           }
         }
 
         if (!globalRenderer.hasNode(node)) {
-          globalRenderer.render(node)
+          // Render with container for delegation
+          globalRenderer.render(node, container)
           // Cache newly rendered node by key for future renders
           if (node.key != null) {
             keyToNodeCache.set(node.key, node)
@@ -1306,6 +1332,8 @@ export function renderComponent(
       })
       // Clear key cache on component unmount
       keyToNodeCache.clear()
+      // Cleanup event delegation for this container
+      globalEventDelegator.cleanupContainer(container)
     }
   })
 }

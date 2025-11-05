@@ -78,3 +78,26 @@ Row cache remains slower (e.g., `Replace 1 000 rows` → 124.2 ms, `Partial 
 - Parent `<table>/<tbody>` elements are no longer re-created; DOM identity assertions via the new `parent-reuse.test.ts` integration test plus a JSDOM runtime probe both pass.
 - Renderer metrics still show ~10 000 creates/removes per benchmark, highlighting Phase 1B’s focus: keyed child diff improvements to eliminate row churn.
 - Attribute writes remain high (≈8 001 per run), reinforcing Phase 2’s attribute reconciliation priorities once child reuse is in place.
+
+## Renderer metrics aggregation (Nov 2025 update)
+
+Phase 2’s instrumentation work standardised how renderer counters are captured and reported:
+
+- `packages/core/benchmarks/tachui-benchmarks.ts` now aggregates counters across measured iterations before logging them and attaches the summary to each `BenchmarkResult`. Warmups are excluded, so averages reflect only timed samples.
+- The browser harness (`run-browser-benchmark.ts`) captures the same structure via Playwright. Each JSON artefact now ships a `rendererMetrics` object with the per-benchmark averages, maxima, totals, and per-iteration samples.
+- Guardrails live in `packages/core/__tests__/runtime/renderer-metrics-guards.test.ts`. The suite fails if a keyed partial update ever reports more than a couple of creations/removals, or if the swap benchmark stops recording DOM moves.
+
+Example console excerpt (Node harness with 12 iterations):
+
+```
+Renderer operation metrics (averages across measured iterations):
+  Partial update (every 10th row): iterations=12 | created=avg:0,max:0,total:0, adopted=avg:10002,max:10002,total:120024, removed=avg:0,max:0,total:0, textUpdates=avg:100,max:100,total:1200
+  Swap rows: iterations=12 | created=avg:0,max:0,total:0, adopted=avg:10002,max:10002,total:120024, moved=avg:996,max:996,total:11952, removed=avg:0,max:0,total:0
+```
+
+When reading these numbers:
+
+- **Created / Removed** above ~50 on an update path (`Partial update`, `Select row`, `Swap rows`) means keyed reuse regressed and the new guards will fail.
+- **Moved** should sit near 996 for the swap benchmark; a flat zero indicates the keyed diff is no longer issuing DOM moves.
+- **Text updates** for partial updates should stay at ~100 (one per modified row). Any large spike suggests duplicate DOM writes.
+- **Attribute writes** on the select benchmark will remain high (~8 001) until Phase 2 completes the attribute reconciliation project.

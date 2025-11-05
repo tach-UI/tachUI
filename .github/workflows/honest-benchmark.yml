@@ -1,0 +1,50 @@
+name: honest-benchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * *'
+
+jobs:
+  run:
+    name: Honest Benchmark
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.14.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: tachUI
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: tachUI
+
+      - name: Run browser benchmark (Chromium)
+        run: pnpm benchmark:browser:report
+        working-directory: tachUI
+
+      - name: Generate combined benchmark summary
+        run: pnpm benchmark:report
+        working-directory: tachUI
+
+      - name: Upload benchmark history artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: honest-benchmark-history
+          path: tachUI/benchmarks/history/*.json

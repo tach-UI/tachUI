@@ -78,6 +78,8 @@ export {
 } from './props'
 export { DOMRenderer, h, renderComponent, text, resetRendererMetrics, getRendererMetrics } from './renderer'
 export type { RendererMetricsSnapshot } from './renderer'
+// Event delegation system (Phase 3)
+export { EventDelegator, globalEventDelegator } from './event-delegation'
 // Element override system (Tag Specification Enhancement)
 export * from './element-override'
 export * from './semantic-role-manager'

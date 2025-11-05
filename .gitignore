@@ -60,6 +60,7 @@ temp/
 
 # Benchmark results
 benchmarks/results/
+benchmarks/history/*.json
 
 # Markdown editor
 .obsidian
