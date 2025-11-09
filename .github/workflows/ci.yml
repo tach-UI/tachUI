@@ -222,22 +222,17 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: tachUI
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-        working-directory: tachUI
 
       - name: Run browser benchmark suite
         run: pnpm benchmark:browser:report
-        working-directory: tachUI
 
       - name: Generate combined benchmark summary
         run: pnpm benchmark:report:combined
-        working-directory: tachUI
 
       - name: Publish benchmark comparison
-        working-directory: tachUI
         run: |
           node -e "const fs=require('fs');const reportPath='benchmarks/history/latest.json';if(!fs.existsSync(reportPath)){console.error('missing benchmark history');process.exit(1);}const data=JSON.parse(fs.readFileSync(reportPath,'utf8'));const summary=data.comparison?.report||'No comparison report generated.';const output=['### Benchmark Comparison','```',summary,'```',''];fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,output.join('\n'));"
 
@@ -246,6 +241,6 @@ jobs:
         with:
           name: benchmark-results
           path: |
-            tachUI/benchmarks/history/*.json
-            tachUI/packages/core/benchmarks/results/browser/*.json
+            benchmarks/history/*.json
+            packages/core/benchmarks/results/browser/*.json
           if-no-files-found: warn
