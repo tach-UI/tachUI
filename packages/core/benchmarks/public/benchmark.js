@@ -999,10 +999,7 @@ function createSignalList(initialItems, keyFn) {
   const setIds = (newIds) => {
     const currentIds = peekIds();
     if (!arraysEqual(currentIds, newIds)) {
-      console.log(`[SignalList.setIds] Arrays differ. Old length: ${currentIds.length}, New length: ${newIds.length}`);
       _setIds(newIds);
-    } else {
-      console.log(`[SignalList.setIds] Arrays are equal, skipping update. Length: ${currentIds.length}`);
     }
   };
   const arraysEqual = (a, b) => {
@@ -1028,11 +1025,9 @@ function createSignalList(initialItems, keyFn) {
     if (signal) {
       signal[1](item);
     } else {
-      console.log(`[SignalList.update] Creating new signal for key ${String(key)}`);
       itemSignals.set(key, createSignal(item));
       const currentIds = peekIds();
       setIds([...currentIds, key]);
-      console.log(`[SignalList.update] Added key ${String(key)} to IDs`);
     }
   };
   const detectStructuralChange = (oldKeys, newKeys) => {
@@ -1055,7 +1050,6 @@ function createSignalList(initialItems, keyFn) {
     const newKeys = items.map(keyFn);
     const newKeySet = new Set(newKeys);
     const currentKeys = peekIds();
-    console.log(`[SignalList.set] Called with ${items.length} items. Current: ${currentKeys.length}`);
     items.forEach((item) => {
       const key = keyFn(item);
       const signal = itemSignals.get(key);
@@ -1071,10 +1065,8 @@ function createSignalList(initialItems, keyFn) {
       }
     });
     const structureChanged = detectStructuralChange(currentKeys, newKeys);
-    console.log(`[SignalList.set] Structure changed: ${structureChanged}`);
     if (structureChanged) {
       setIds(newKeys);
-      console.log(`[SignalList.set] Called setIds with ${newKeys.length} keys`);
     }
   };
   const readItemValue = (key, shouldTrack) => {
@@ -1091,10 +1083,8 @@ function createSignalList(initialItems, keyFn) {
     return getter();
   };
   const clear = () => {
-    console.log("[SignalList.clear] Clearing all items");
     itemSignals.clear();
     setIds([]);
-    console.log("[SignalList.clear] Called setIds with empty array");
   };
   const remove = (key) => {
     itemSignals.delete(key);

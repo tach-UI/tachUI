@@ -127,10 +127,7 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
     const currentIds = peekIds()
     // Only update if arrays are actually different
     if (!arraysEqual(currentIds, newIds)) {
-      console.log(`[SignalList.setIds] Arrays differ. Old length: ${currentIds.length}, New length: ${newIds.length}`)
       _setIds(newIds)
-    } else {
-      console.log(`[SignalList.setIds] Arrays are equal, skipping update. Length: ${currentIds.length}`)
     }
   }
 
@@ -165,12 +162,10 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
       signal[1](item)
     } else {
       // Create new signal if doesn't exist
-      console.log(`[SignalList.update] Creating new signal for key ${String(key)}`)
       itemSignals.set(key, createSignal(item))
       // Add to IDs array - use peek() to avoid tracking
       const currentIds = peekIds()
       setIds([...currentIds, key])
-      console.log(`[SignalList.update] Added key ${String(key)} to IDs`)
     }
   }
 
@@ -208,8 +203,6 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
     // Use peek() to avoid tracking the signal
     const currentKeys = peekIds()
 
-    console.log(`[SignalList.set] Called with ${items.length} items. Current: ${currentKeys.length}`)
-
     // Update existing items and create new ones
     items.forEach(item => {
       const key = keyFn(item)
@@ -232,10 +225,8 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
 
     // Smart detection of structural changes vs reordering
     const structureChanged = detectStructuralChange(currentKeys, newKeys)
-    console.log(`[SignalList.set] Structure changed: ${structureChanged}`)
     if (structureChanged) {
       setIds(newKeys)
-      console.log(`[SignalList.set] Called setIds with ${newKeys.length} keys`)
     }
   }
 
@@ -255,10 +246,8 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
 
   // Clear all items
   const clear = (): void => {
-    console.log('[SignalList.clear] Clearing all items')
     itemSignals.clear()
     setIds([])
-    console.log('[SignalList.clear] Called setIds with empty array')
   }
 
   // Remove a specific item
