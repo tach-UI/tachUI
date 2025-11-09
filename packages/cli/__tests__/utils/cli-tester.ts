@@ -5,7 +5,7 @@
  * file system operations, user prompts, and process spawning.
  */
 
-import { exec, execSync } from 'child_process'
+import { exec } from 'child_process'
 import { promisify } from 'util'
 import path from 'path'
 import { tmpdir } from 'os'
@@ -34,28 +34,14 @@ export interface CLITestOptions {
  */
 export class CLITester {
   private tempDir: string | null = null
-  private readonly cliPath: string
+  private readonly baseCommand: string[]
 
   constructor() {
-    this.cliPath = path.resolve(__dirname, '../../bin/tacho.js')
-    this.ensureBuild()
-  }
-
-  private ensureBuild(): void {
-    const distEntry = path.resolve(__dirname, '../../dist/index.js')
-    if (existsSync(distEntry)) {
-      return
+    const cliPath = path.resolve(__dirname, '../../bin/tacho.js')
+    if (!existsSync(cliPath)) {
+      throw new Error('CLI entry point not found. Ensure bin/tacho.js exists.')
     }
-
-    const repoRoot = path.resolve(__dirname, '../../..')
-    try {
-      execSync('pnpm --filter @tachui/cli build', {
-        cwd: repoRoot,
-        stdio: 'ignore',
-      })
-    } catch (error) {
-      console.warn('Failed to build CLI before tests:', error)
-    }
+    this.baseCommand = [process.execPath, cliPath]
   }
 
   /**
@@ -81,12 +67,15 @@ export class CLITester {
     const startTime = Date.now()
     
     try {
-      const fullCommand = [
-        'node',
-        this.cliPath,
-        command,
-        ...args
-      ].join(' ')
+      const userArgs =
+        command && command.trim().length > 0
+          ? command.trim().split(/\s+/)
+          : []
+      const fullCommand = this.buildCommand([
+        ...this.baseCommand,
+        ...userArgs,
+        ...args,
+      ])
 
       const { stdout, stderr } = await execAsync(fullCommand, {
         cwd,
@@ -173,6 +162,19 @@ export class CLITester {
       }
       this.tempDir = null
     }
+  }
+
+  private buildCommand(parts: string[]): string {
+    const quote = (value: string) => {
+      if (value === '') return '""'
+      if (!/\s|["'\\$`]/.test(value)) return value
+      return `"${value.replace(/(["\\$`])/g, '\\$1')}"`
+    }
+
+    return parts
+      .filter(Boolean)
+      .map(quote)
+      .join(' ')
   }
 }
 

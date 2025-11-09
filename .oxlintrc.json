@@ -86,7 +86,7 @@
       }
     }
   ],
-  "ignorePatterns": ["node_modules", "dist", "build", ".next", "coverage"],
+  "ignorePatterns": ["node_modules", "dist", "build", ".next", "coverage", "**/benchmarks/public/**"],
   "settings": {
     "typescript": {
       "paths": {

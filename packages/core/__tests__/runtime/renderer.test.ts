@@ -5,7 +5,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createSignal } from '../../src/reactive'
+import {
+  createEffect,
+  createRoot,
+  createSignal,
+  flushSync,
+} from '../../src/reactive'
 import { createComponent } from '../../src/runtime/component'
 import { DOMRenderer, h, renderComponent, text } from '../../src/runtime/renderer'
 import type { DOMNode } from '../../src/runtime/types'
@@ -467,6 +472,25 @@ describe('DOM Renderer System', () => {
 
         // Text should be updated in the signal
         expect(message()).toBe('updated')
+      })
+
+      it('should not subscribe parent computation when initializing reactive text', () => {
+        const [message, setMessage] = createSignal('initial')
+        let renderCount = 0
+
+        createRoot(() => {
+          createEffect(() => {
+            renderCount++
+            text(() => message())
+          })
+        })
+
+        expect(renderCount).toBe(1)
+
+        setMessage('updated')
+        flushSync()
+
+        expect(renderCount).toBe(1)
       })
     })
   })

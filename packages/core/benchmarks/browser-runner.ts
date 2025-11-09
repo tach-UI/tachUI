@@ -1,4 +1,4 @@
-import { createSignal } from '../src/reactive'
+import { createSignal, createSignalList, type SignalListControls } from '../src/reactive'
 import { createComponent } from '../src/runtime/component'
 import { h, renderComponent, resetRendererMetrics, getRendererMetrics, type RendererMetricsSnapshot } from '../src/runtime/renderer'
 import { generateData } from './data'
@@ -113,26 +113,31 @@ class RendererMetricsCollector {
 }
 
 interface TableOptions {
-  getData: () => RowData[]
+  list: SignalListControls<RowData>
   getSelectedId?: () => number | null
   onSelect?: (id: number) => void
 }
 
-function createRowNode(item: RowData, selectedId: number | null, onSelect?: (id: number) => void) {
-  const isSelected = item.id === selectedId
+function createRowNode(
+  id: number,  // Row ID (not reactive)
+  getRowData: () => RowData,  // Signal getter for this specific row
+  getSelectedId: (() => number | null) | null,
+  onSelect?: (id: number) => void
+) {
   const rowProps: Record<string, unknown> = {
-    className: isSelected ? 'selected' : '',
-    'data-id': item.id,
-    key: item.id,
+    // Reactive className - updates when selectedId changes
+    className: getSelectedId ? () => (id === getSelectedId() ? 'selected' : '') : '',
+    'data-id': id,
+    key: id,
   }
   if (onSelect) {
-    rowProps.onClick = () => onSelect(item.id)
+    rowProps.onClick = () => onSelect(id)
   }
   return h(
     'tr',
     rowProps,
-    h('td', { className: 'col-md-1' }, item.id.toString()),
-    h('td', { className: 'col-md-4' }, h('a', null, item.label)),
+    h('td', { className: 'col-md-1' }, id.toString()),
+    h('td', { className: 'col-md-4' }, h('a', null, () => getRowData().label)),  // Reactive text - updates when label changes
     h(
       'td',
       { className: 'col-md-1' },
@@ -150,10 +155,35 @@ function createRowNode(item: RowData, selectedId: number | null, onSelect?: (id:
 }
 
 function createTableComponent(options: TableOptions) {
+  let renderCount = 0
+  // Cache row nodes by ID to avoid recreating them on every render
+  const rowNodeCache = new Map<number, ReturnType<typeof createRowNode>>()
+
   return createComponent(() => {
-    const data = options.getData()
-    const selectedId = options.getSelectedId ? options.getSelectedId() : null
-    const rows = data.map(item => createRowNode(item, selectedId, options.onSelect))
+    renderCount++
+    console.log(`[TableComponent] Render #${renderCount}`)
+    const rowIds = options.list.ids()  // Only tracks array of IDs, not row data
+    console.log(`[TableComponent] Row IDs length: ${rowIds.length}`)
+
+    // Reuse cached row nodes - only create new ones for new IDs
+    const rows = rowIds.map(id => {
+      let rowNode = rowNodeCache.get(id)
+      if (!rowNode) {
+        const getRowData = options.list.get(id)
+        rowNode = createRowNode(id, getRowData, options.getSelectedId || null, options.onSelect)
+        rowNodeCache.set(id, rowNode)
+      }
+      return rowNode
+    })
+
+    // Clean up cache for removed IDs
+    const currentIdSet = new Set(rowIds)
+    for (const cachedId of rowNodeCache.keys()) {
+      if (!currentIdSet.has(cachedId)) {
+        rowNodeCache.delete(cachedId)
+      }
+    }
+
     return h(
       'table',
       { className: 'table table-hover table-striped test-data', key: 'table-root' },
@@ -179,11 +209,11 @@ class BrowserBenchmarkRunner {
   private baselineRows: RowData[] = []
   private alternateLabels: string[] = []
   private originalLabels: string[] = []
-  private currentRows: RowData[] = []
   private useAlternateLabels = true
+  private rowsCreated = false
 
-  private readonly rows: () => RowData[]
-  private readonly setRows: (rows: RowData[]) => void
+  // Fine-grained reactivity using framework's createSignalList
+  private readonly rowList: SignalListControls<RowData>
   private readonly getSelectedId: () => number | null
   private readonly setSelectedId: (id: number | null) => void
   private readonly disposeTable: () => void
@@ -197,11 +227,14 @@ class BrowserBenchmarkRunner {
     this.resultsDiv = document.getElementById('results') as HTMLElement
     this.outputDiv = document.getElementById('benchmark-output') as HTMLElement
 
-    ;[this.rows, this.setRows] = createSignal<RowData[]>([])
+    // Create signal list with fine-grained reactivity (framework feature!)
+    const [, list] = createSignalList<RowData>([], item => item.id)
+    this.rowList = list
+
     ;[this.getSelectedId, this.setSelectedId] = createSignal<number | null>(null)
 
     const TableComponent = createTableComponent({
-      getData: () => this.rows(),
+      list: this.rowList,
       getSelectedId: () => this.getSelectedId(),
       onSelect: id => this.setSelectedId(id),
     })
@@ -257,9 +290,9 @@ class BrowserBenchmarkRunner {
     this.metricsCollector.reset()
     this.resultsDiv.style.display = 'none'
     this.outputDiv.innerHTML = ''
-    this.setRows([])
-    this.currentRows = []
+    this.rowList.clear()
     this.setSelectedId(null)
+    this.rowsCreated = false
   }
 
   getResults(): BrowserBenchmarkResult[] {
@@ -400,100 +433,148 @@ class BrowserBenchmarkRunner {
   }
 
   private applyRows(rows: RowData[]) {
-    this.currentRows = rows
-    this.setRows([...this.currentRows])
+    // Use framework's createSignalList.set() - handles everything!
+    this.rowList.set(rows)
   }
 
-  private mutateRows(mutator: (rows: RowData[]) => void) {
-    mutator(this.currentRows)
-    this.setRows([...this.currentRows])
+  private mutateRows(rows: RowData[]) {
+    // For data mutations: update individual row signals WITHOUT changing structure
+    // This prevents component re-render while still triggering reactive updates
+    rows.forEach(row => {
+      this.rowList.update(row.id, row)
+    })
   }
 
   private async createRowsBenchmark() {
     await this.measurePerformance('Create 1,000 rows', async () => {
       this.ensureBaselineData()
       this.applyRows(this.baselineRows.map(row => ({ ...row })))
+      this.rowsCreated = true
       this.useAlternateLabels = true
     })
   }
 
   private async replaceAllRowsBenchmark() {
+    // Ensure rows exist BEFORE measurement starts
+    this.ensureBaselineData()
+    // Check if we need to create rows without calling getAll()
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map(row => ({ ...row })))
+      this.rowsCreated = true
+      // Wait for initial render to complete
+      await Promise.resolve()
+      await new Promise(requestAnimationFrame)
+    }
+
     await this.measurePerformance('Replace all 1,000 rows', async () => {
-      this.ensureBaselineData()
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map(row => ({ ...row })))
-      }
       const labels = this.useAlternateLabels ? this.alternateLabels : this.originalLabels
-      this.mutateRows(rows => {
-        rows.forEach((row, index) => {
-          row.label = labels[index] ?? row.label
-        })
+      // Use baselineRows to avoid tracking signals
+      this.baselineRows.forEach((row, index) => {
+        this.rowList.update(row.id, { id: row.id, label: labels[index] ?? row.label })
       })
       this.useAlternateLabels = !this.useAlternateLabels
     })
   }
 
   private async updateEveryTenthRowBenchmark() {
+    // Ensure rows exist BEFORE measurement starts
+    this.ensureBaselineData()
+    // Check if we need to create rows without calling getAll()
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map(row => ({ ...row })))
+      this.rowsCreated = true
+      // Wait for initial render to complete
+      await Promise.resolve()
+      await new Promise(requestAnimationFrame)
+    }
+
     await this.measurePerformance('Partial update (every 10th row)', async () => {
-      this.ensureBaselineData()
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map(row => ({ ...row })))
-      }
-      this.mutateRows(rows => {
-        rows.forEach((row, index) => {
-          if (index % 10 === 0) {
-            row.label = `${row.label} !!!`
-          }
-        })
-      })
-    })
-  }
-
-  private async selectRowBenchmark() {
-    await this.measurePerformance('Select row', async () => {
-      this.ensureBaselineData()
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map(row => ({ ...row })))
-      }
-      const middleIndex = Math.floor(this.currentRows.length / 2)
-      const targetId = this.currentRows[middleIndex]?.id ?? null
-      this.setSelectedId(targetId)
-    })
-  }
-
-  private async swapRowsBenchmark() {
-    await this.measurePerformance('Swap rows', async () => {
-      this.ensureBaselineData()
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map(row => ({ ...row })))
-      }
-      this.mutateRows(rows => {
-        if (rows.length >= 2) {
-          const secondIndex = 1
-          const penultimateIndex = rows.length - 2
-          const temp = rows[secondIndex]
-          rows[secondIndex] = rows[penultimateIndex]
-          rows[penultimateIndex] = temp
+      // Mutate labels and trigger signal to fire reactive text effects
+      // The reactive text nodes should update surgically without reconciliation
+      // Use baselineRows to avoid tracking signals
+      this.baselineRows.forEach((row, index) => {
+        if (index % 10 === 0) {
+          this.rowList.update(row.id, { id: row.id, label: `${row.label} !!!` })
         }
       })
     })
   }
 
+  private async selectRowBenchmark() {
+    // Ensure rows exist BEFORE measurement starts
+    this.ensureBaselineData()
+    // Check if we need to create rows without calling getAll()
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map(row => ({ ...row })))
+      this.rowsCreated = true
+      // Wait for initial render to complete
+      await Promise.resolve()
+      await new Promise(requestAnimationFrame)
+    }
+
+    await this.measurePerformance('Select row', async () => {
+      // Use baselineRows to avoid tracking signals
+      const middleIndex = Math.floor(this.baselineRows.length / 2)
+      const targetId = this.baselineRows[middleIndex]?.id ?? null
+
+      this.setSelectedId(targetId)
+    })
+  }
+
+  private async swapRowsBenchmark() {
+    // Ensure rows exist BEFORE measurement starts
+    this.ensureBaselineData()
+    // Check if we need to create rows without calling getAll()
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map(row => ({ ...row })))
+      this.rowsCreated = true
+      // Wait for initial render to complete
+      await Promise.resolve()
+      await new Promise(requestAnimationFrame)
+    }
+
+    await this.measurePerformance('Swap rows', async () => {
+      const ids = this.rowList.ids()
+      if (ids.length < 2) return
+      const nextIds = [...ids]
+      const secondIndex = 1
+      const penultimateIndex = nextIds.length - 2
+      ;[nextIds[secondIndex], nextIds[penultimateIndex]] = [
+        nextIds[penultimateIndex],
+        nextIds[secondIndex],
+      ]
+      this.rowList.reorder(nextIds)
+    })
+  }
+
   private async removeRowsBenchmark() {
+    // Ensure rows exist BEFORE measurement starts
+    this.ensureBaselineData()
+    // Check if we need to create rows without calling getAll()
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map(row => ({ ...row })))
+      this.rowsCreated = true
+      // Wait for initial render to complete
+      await Promise.resolve()
+      await new Promise(requestAnimationFrame)
+    }
+
     await this.measurePerformance('Remove rows', async () => {
-      this.ensureBaselineData()
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map(row => ({ ...row })))
-      }
-      this.currentRows = this.currentRows.filter((_, index) => index % 10 !== 0)
-      this.setRows([...this.currentRows])
+      const ids = this.rowList.ids()
+      if (ids.length === 0) return
+      const toRemove = ids.filter((_, index) => index % 10 === 0)
+      toRemove.forEach(id => this.rowList.remove(id))
     })
   }
 
   private async clearRowsBenchmark() {
     await this.measurePerformance('Clear rows', async () => {
-      this.currentRows = []
-      this.setRows([])
+      this.rowList.clear()
       this.setSelectedId(null)
     })
   }
@@ -518,18 +599,28 @@ class BrowserBenchmarkRunner {
     this.resultsDiv.style.display = 'none'
     this.outputDiv.innerHTML = ''
 
+    console.log('[Benchmark] About to run Create rows')
     await this.createRowsBenchmark()
+    console.log('[Benchmark] Create rows complete, waiting 50ms')
     await new Promise(resolve => setTimeout(resolve, 50))
+    console.log('[Benchmark] About to run Replace all')
     await this.replaceAllRowsBenchmark()
+    console.log('[Benchmark] Replace all complete, waiting 50ms')
     await new Promise(resolve => setTimeout(resolve, 50))
+    console.log('[Benchmark] About to run Partial update')
     await this.updateEveryTenthRowBenchmark()
+    console.log('[Benchmark] Partial update complete, waiting 50ms')
     await new Promise(resolve => setTimeout(resolve, 50))
+    console.log('[Benchmark] About to run Select row')
     await this.selectRowBenchmark()
     await new Promise(resolve => setTimeout(resolve, 50))
+    console.log('[Benchmark] About to run Swap rows')
     await this.swapRowsBenchmark()
     await new Promise(resolve => setTimeout(resolve, 50))
+    console.log('[Benchmark] About to run Remove rows')
     await this.removeRowsBenchmark()
     await new Promise(resolve => setTimeout(resolve, 50))
+    console.log('[Benchmark] About to run Clear rows')
     await this.clearRowsBenchmark()
     await new Promise(resolve => setTimeout(resolve, 50))
     await this.componentCreationBenchmark()

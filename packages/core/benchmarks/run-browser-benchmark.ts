@@ -118,6 +118,15 @@ async function runBrowserBenchmarks() {
   })
   const page = await browser.newPage()
 
+  // Capture console logs from the browser
+  page.on('console', msg => {
+    const type = msg.type()
+    const text = msg.text()
+    if (text.includes('[TableComponent]') || text.includes('[SignalList')) {
+      console.log(`[BROWSER ${type}]`, text)
+    }
+  })
+
   try {
     const memorySamples: MemorySample[] = []
     const captureMemory = async (label: string) => {
@@ -148,10 +157,10 @@ async function runBrowserBenchmarks() {
 
     await captureMemory('warmup')
     console.log('🚀 Launching Chromium and navigating to benchmark page…')
-    await page.goto(`http://127.0.0.1:${DEFAULT_PORT}/`, { waitUntil: 'networkidle' })
-    await page.waitForFunction(() => (window as any).benchmarkRunner !== undefined, {
-      timeout: 15_000,
-    })
+  await page.goto(`http://127.0.0.1:${DEFAULT_PORT}/`, { waitUntil: 'networkidle' })
+  await page.waitForFunction(() => (window as any).benchmarkRunner !== undefined, {
+    timeout: 15_000,
+  })
 
     console.log('🏃‍♂️ Running complete browser benchmark suite…')
     await page.evaluate(() => {

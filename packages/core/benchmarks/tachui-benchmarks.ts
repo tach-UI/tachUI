@@ -8,10 +8,12 @@ import {
   ComponentManager,
   createComponent,
   createSignal,
+  createSignalListControls,
   h,
   renderComponent,
 } from '../src'
 import type { DOMNode } from '../src/runtime/types'
+import type { SignalListControls } from '../src/reactive'
 import {
   getRendererMetrics,
   resetRendererMetrics,
@@ -147,6 +149,18 @@ interface TableOptions {
   onSelect?: (id: number) => void
 }
 
+type RowListControls = SignalListControls<RowData, number>
+
+interface SignalListTableOptions {
+  list: RowListControls
+  getSelectedId?: () => number | null
+  onSelect?: (id: number) => void
+}
+
+function cloneRows(rows: RowData[]): RowData[] {
+  return rows.map(row => ({ ...row }))
+}
+
 function getNumericEnv(name: string, fallback: number): number {
   if (typeof process === 'undefined' || !process.env) {
     return fallback
@@ -263,6 +277,92 @@ function createUnkeyedListComponent(options: {
   })
 }
 
+function createReactiveRowNode(
+  id: number,
+  getRowData: () => RowData,
+  getSelectedId?: () => number | null,
+  onSelect?: (id: number) => void
+): DOMNode {
+  const rowProps: Record<string, unknown> = {
+    className: getSelectedId ? () => (id === getSelectedId() ? 'selected' : '') : '',
+    'data-id': id,
+    key: id,
+  }
+  if (onSelect) {
+    rowProps.onClick = () => onSelect(id)
+  }
+
+  return h(
+    'tr',
+    rowProps,
+    h('td', { className: 'col-md-1' }, id.toString()),
+    h('td', { className: 'col-md-4' }, h('a', null, () => getRowData().label)),
+    h(
+      'td',
+      { className: 'col-md-1' },
+      h(
+        'button',
+        {
+          className: 'btn btn-sm btn-danger',
+          type: 'button',
+        },
+        'x'
+      )
+    ),
+    h('td', { className: 'col-md-6' })
+  )
+}
+
+function createSignalListTableComponent(options: SignalListTableOptions) {
+  const rowCache = new Map<number, DOMNode>()
+  return createComponent(() => {
+    const rowIds = options.list.ids()
+    const rows = rowIds.map(id => {
+      let cached = rowCache.get(id)
+      if (!cached) {
+        const getRowData = options.list.get(id)
+        cached = createReactiveRowNode(id, getRowData, options.getSelectedId, options.onSelect)
+        rowCache.set(id, cached)
+      }
+      return cached
+    })
+
+    const idSet = new Set(rowIds)
+    rowCache.forEach((_node, id) => {
+      if (!idSet.has(id)) {
+        rowCache.delete(id)
+      }
+    })
+
+    return h(
+      'table',
+      { className: 'table table-hover table-striped test-data', key: 'table-root' },
+      h('tbody', { key: 'table-body' }, ...rows)
+    )
+  })
+}
+
+function setupSignalListTable(
+  container: Element,
+  options: {
+    initialRows?: RowData[]
+    getSelectedId?: () => number | null
+    onSelect?: (id: number) => void
+  } = {}
+) {
+  const initialRows = options.initialRows ? cloneRows(options.initialRows) : []
+  const list = createSignalListControls<RowData, number>(initialRows, row => row.id)
+  const TableComponent = createSignalListTableComponent({
+    list,
+    getSelectedId: options.getSelectedId,
+    onSelect: options.onSelect,
+  })
+
+  const tableInstance = TableComponent({})
+  const dispose = renderComponent(tableInstance, container)
+  return { list, dispose }
+}
+
 async function runWithRendererMetrics<T>(
   benchmarkName: string,
   execute: () => Promise<T> | T
@@ -281,50 +381,39 @@ async function runWithRendererMetrics<T>(
 }
 
 async function benchmarkCreate1000Rows(benchmarkName: string) {
+  const container = getBenchmarkContainer()
+  const { list, dispose } = setupSignalListTable(container)
+
   await runWithRendererMetrics(benchmarkName, async () => {
-    const data = generateData(1000)
-    const container = getBenchmarkContainer()
-
-    const TableComponent = createTableComponent({
-      getData: () => data,
-    })
-
-    const tableInstance = TableComponent({})
-    const dispose = renderComponent(tableInstance, container)
+    list.set(cloneRows(generateData(1000)))
     await Promise.resolve()
-    dispose()
   })
+
+  dispose()
 }
 
 async function benchmarkReplaceAll1000Rows(benchmarkName: string) {
   const baselineRows = generateData(1000)
   const alternateLabels = generateData(1000).map(row => row.label)
   const originalLabels = baselineRows.map(row => row.label)
-  const [data, setData] = createSignal(
-    baselineRows.map(row => ({
-      ...row,
-    }))
-  )
   const container = getBenchmarkContainer()
 
-  const TableComponent = createTableComponent({
-    getData: () => data(),
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows: baselineRows,
   })
-
-  const tableInstance = TableComponent({})
-  const dispose = renderComponent(tableInstance, container)
   await Promise.resolve()
 
   let useAlternateLabels = true
 
   await runWithRendererMetrics(benchmarkName, async () => {
-    const currentRows = data()
     const labels = useAlternateLabels ? alternateLabels : originalLabels
-    currentRows.forEach((row, index) => {
-      row.label = labels[index] ?? row.label
+    baselineRows.forEach((row, index) => {
+      list.update(row.id, {
+        id: row.id,
+        label: labels[index] ?? row.label,
+      })
     })
     useAlternateLabels = !useAlternateLabels
-    setData([...currentRows])
     await Promise.resolve()
   })
 
@@ -332,29 +421,28 @@ async function benchmarkReplaceAll1000Rows(benchmarkName: string) {
 }
 
 async function benchmarkPartialUpdate(benchmarkName: string) {
-  const [data, setData] = createSignal(generateData(1000))
+  const initialRows = generateData(1000)
   const container = getBenchmarkContainer()
-
-  const TableComponent = createTableComponent({
-    getData: () => data(),
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows,
   })
-
-  const tableInstance = TableComponent({})
-  const dispose = renderComponent(tableInstance, container)
   await Promise.resolve()
 
-  await runWithRendererMetrics(benchmarkName, async () => {
-    const updatedData = data().map((item, index) => {
-      if (index % 10 === 0) {
-        return {
-          ...item,
-          label: `${item.label} !!!`,
-        }
-      }
-      return item
-    })
+  let toggle = true
 
-    setData(updatedData)
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const currentRows = list.getAll()
+    currentRows.forEach((row, index) => {
+      if (index % 10 === 0) {
+        const suffix = toggle ? ' !!!' : ''
+        const base = row.label.replace(/ !!!$/, '')
+        list.update(row.id, {
+          id: row.id,
+          label: `${base}${suffix}`,
+        })
+      }
+    })
+    toggle = !toggle
     await Promise.resolve()
   })
 
@@ -366,14 +454,11 @@ async function benchmarkSelectRow(benchmarkName: string) {
   const [selectedId, setSelectedId] = createSignal<number | null>(null)
   const container = getBenchmarkContainer()
 
-  const TableComponent = createTableComponent({
-    getData: () => data,
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows: data,
     getSelectedId: () => selectedId(),
     onSelect: setSelectedId,
   })
-
-  const tableInstance = TableComponent({})
-  const dispose = renderComponent(tableInstance, container)
   await Promise.resolve()
 
   await runWithRendererMetrics(benchmarkName, async () => {
@@ -381,27 +466,29 @@ async function benchmarkSelectRow(benchmarkName: string) {
     await Promise.resolve()
   })
 
+  list.clear()
   dispose()
 }
 
 async function benchmarkSwapRows(benchmarkName: string) {
-  const [data, setData] = createSignal(generateData(1000))
+  const initialRows = generateData(1000)
   const container = getBenchmarkContainer()
-
-  const TableComponent = createTableComponent({
-    getData: () => data(),
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows,
   })
-
-  const tableInstance = TableComponent({})
-  const dispose = renderComponent(tableInstance, container)
   await Promise.resolve()
 
   await runWithRendererMetrics(benchmarkName, async () => {
-    const swappedData = [...data()]
-    const temp = swappedData[1]
-    swappedData[1] = swappedData[998]
-    swappedData[998] = temp
-    setData(swappedData)
+    const ids = list.ids()
+    if (ids.length < 2) return
+    const nextIds = [...ids]
+    const secondIndex = 1
+    const penultimateIndex = nextIds.length - 2
+    ;[nextIds[secondIndex], nextIds[penultimateIndex]] = [
+      nextIds[penultimateIndex],
+      nextIds[secondIndex],
+    ]
+    list.reorder(nextIds)
     await Promise.resolve()
   })
 
@@ -409,20 +496,18 @@ async function benchmarkSwapRows(benchmarkName: string) {
 }
 
 async function benchmarkRemoveRows(benchmarkName: string) {
-  const [data, setData] = createSignal(generateData(1000))
+  const initialRows = generateData(1000)
   const container = getBenchmarkContainer()
-
-  const TableComponent = createTableComponent({
-    getData: () => data(),
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows,
   })
-
-  const tableInstance = TableComponent({})
-  const dispose = renderComponent(tableInstance, container)
   await Promise.resolve()
 
   await runWithRendererMetrics(benchmarkName, async () => {
-    const filteredData = data().filter((_, index) => index % 10 !== 0)
-    setData(filteredData)
+    const ids = list.ids()
+    if (ids.length === 0) return
+    const toRemove = ids.filter((_, index) => index % 10 === 0)
+    toRemove.forEach(id => list.remove(id))
     await Promise.resolve()
   })
 
@@ -430,19 +515,15 @@ async function benchmarkRemoveRows(benchmarkName: string) {
 }
 
 async function benchmarkClearRows(benchmarkName: string) {
-  const [data, setData] = createSignal(generateData(1000))
+  const initialRows = generateData(1000)
   const container = getBenchmarkContainer()
-
-  const TableComponent = createTableComponent({
-    getData: () => data(),
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows,
   })
-
-  const tableInstance = TableComponent({})
-  const dispose = renderComponent(tableInstance, container)
   await Promise.resolve()
 
   await runWithRendererMetrics(benchmarkName, async () => {
-    setData([])
+    list.clear()
     await Promise.resolve()
   })
 

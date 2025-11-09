@@ -990,6 +990,147 @@ var MicrotaskScheduler = class {
 };
 var currentScheduler = new MicrotaskScheduler();
 
+// src/reactive/signal-list.ts
+function createSignalList(initialItems, keyFn) {
+  const itemSignals = /* @__PURE__ */ new Map();
+  const [_getIds, _setIds] = createSignal(initialItems.map(keyFn));
+  const getIds = _getIds;
+  const peekIds = () => _getIds.peek();
+  const setIds = (newIds) => {
+    const currentIds = peekIds();
+    if (!arraysEqual(currentIds, newIds)) {
+      console.log(`[SignalList.setIds] Arrays differ. Old length: ${currentIds.length}, New length: ${newIds.length}`);
+      _setIds(newIds);
+    } else {
+      console.log(`[SignalList.setIds] Arrays are equal, skipping update. Length: ${currentIds.length}`);
+    }
+  };
+  const arraysEqual = (a, b) => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  };
+  initialItems.forEach((item) => {
+    const key = keyFn(item);
+    itemSignals.set(key, createSignal(item));
+  });
+  const get = (key) => {
+    const signal = itemSignals.get(key);
+    if (!signal) {
+      throw new Error(`SignalList: Item with key "${String(key)}" not found`);
+    }
+    return signal[0];
+  };
+  const update = (key, item) => {
+    const signal = itemSignals.get(key);
+    if (signal) {
+      signal[1](item);
+    } else {
+      console.log(`[SignalList.update] Creating new signal for key ${String(key)}`);
+      itemSignals.set(key, createSignal(item));
+      const currentIds = peekIds();
+      setIds([...currentIds, key]);
+      console.log(`[SignalList.update] Added key ${String(key)} to IDs`);
+    }
+  };
+  const detectStructuralChange = (oldKeys, newKeys) => {
+    if (oldKeys.length !== newKeys.length) {
+      return true;
+    }
+    const oldKeySet = new Set(oldKeys);
+    const newKeySet = new Set(newKeys);
+    if (oldKeySet.size !== newKeySet.size) {
+      return true;
+    }
+    for (const key of newKeys) {
+      if (!oldKeySet.has(key)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const set = (items) => {
+    const newKeys = items.map(keyFn);
+    const newKeySet = new Set(newKeys);
+    const currentKeys = peekIds();
+    console.log(`[SignalList.set] Called with ${items.length} items. Current: ${currentKeys.length}`);
+    items.forEach((item) => {
+      const key = keyFn(item);
+      const signal = itemSignals.get(key);
+      if (signal) {
+        signal[1](item);
+      } else {
+        itemSignals.set(key, createSignal(item));
+      }
+    });
+    currentKeys.forEach((key) => {
+      if (!newKeySet.has(key)) {
+        itemSignals.delete(key);
+      }
+    });
+    const structureChanged = detectStructuralChange(currentKeys, newKeys);
+    console.log(`[SignalList.set] Structure changed: ${structureChanged}`);
+    if (structureChanged) {
+      setIds(newKeys);
+      console.log(`[SignalList.set] Called setIds with ${newKeys.length} keys`);
+    }
+  };
+  const readItemValue = (key, shouldTrack) => {
+    const signal = itemSignals.get(key);
+    if (!signal) return null;
+    const getter = signal[0];
+    if (!getter) return null;
+    if (shouldTrack) {
+      return getter();
+    }
+    if (typeof getter.peek === "function") {
+      return getter.peek();
+    }
+    return getter();
+  };
+  const clear = () => {
+    console.log("[SignalList.clear] Clearing all items");
+    itemSignals.clear();
+    setIds([]);
+    console.log("[SignalList.clear] Called setIds with empty array");
+  };
+  const remove = (key) => {
+    itemSignals.delete(key);
+    const currentIds = peekIds();
+    setIds(currentIds.filter((k) => k !== key));
+  };
+  const reorder = (newIds) => {
+    const allExist = newIds.every((id) => itemSignals.has(id));
+    if (!allExist) {
+      throw new Error("[SignalList.reorder] Cannot reorder with unknown ids");
+    }
+    setIds([...newIds]);
+  };
+  const getAll = () => {
+    const ids = peekIds();
+    return ids.map((key) => readItemValue(key, false)).filter((item) => item !== null);
+  };
+  const getAllReactive = () => {
+    const ids = getIds();
+    return ids.map((key) => readItemValue(key, true)).filter((item) => item !== null);
+  };
+  return [
+    getAllReactive,
+    {
+      ids: getIds,
+      get,
+      update,
+      set,
+      clear,
+      remove,
+      reorder,
+      getAll
+    }
+  ];
+}
+
 // src/reactive/theme.ts
 var [currentTheme, setCurrentTheme] = createSignal("light");
 var themeComputed = createComputed(() => {
@@ -4430,6 +4571,7 @@ var DOMRenderer = class {
     }
     if (previousChildren.length === 0) {
       newChildren.forEach((child) => {
+        if (!child || child.type == null) return;
         const childElement = this.renderSingle(child, delegationContainer);
         this.appendNode(element, childElement);
       });
@@ -4445,7 +4587,7 @@ var DOMRenderer = class {
         previousKeyless.push(prevChild);
       }
     });
-    const domNodes = new Array(newChildren.length);
+    const domNodes = Array.from({ length: newChildren.length });
     newChildren.forEach((child, index) => {
       let matched;
       if (child.key != null) {
@@ -5379,21 +5521,22 @@ var RendererMetricsCollector = class {
     return output;
   }
 };
-function createRowNode(item, selectedId, onSelect) {
-  const isSelected = item.id === selectedId;
+function createRowNode(id, getRowData, getSelectedId, onSelect) {
   const rowProps = {
-    className: isSelected ? "selected" : "",
-    "data-id": item.id,
-    key: item.id
+    // Reactive className - updates when selectedId changes
+    className: getSelectedId ? () => id === getSelectedId() ? "selected" : "" : "",
+    "data-id": id,
+    key: id
   };
   if (onSelect) {
-    rowProps.onClick = () => onSelect(item.id);
+    rowProps.onClick = () => onSelect(id);
   }
   return h(
     "tr",
     rowProps,
-    h("td", { className: "col-md-1" }, item.id.toString()),
-    h("td", { className: "col-md-4" }, h("a", null, item.label)),
+    h("td", { className: "col-md-1" }, id.toString()),
+    h("td", { className: "col-md-4" }, h("a", null, () => getRowData().label)),
+    // Reactive text - updates when label changes
     h(
       "td",
       { className: "col-md-1" },
@@ -5410,10 +5553,28 @@ function createRowNode(item, selectedId, onSelect) {
   );
 }
 function createTableComponent(options) {
+  let renderCount = 0;
+  const rowNodeCache = /* @__PURE__ */ new Map();
   return createComponent(() => {
-    const data = options.getData();
-    const selectedId = options.getSelectedId ? options.getSelectedId() : null;
-    const rows = data.map((item) => createRowNode(item, selectedId, options.onSelect));
+    renderCount++;
+    console.log(`[TableComponent] Render #${renderCount}`);
+    const rowIds = options.list.ids();
+    console.log(`[TableComponent] Row IDs length: ${rowIds.length}`);
+    const rows = rowIds.map((id) => {
+      let rowNode = rowNodeCache.get(id);
+      if (!rowNode) {
+        const getRowData = options.list.get(id);
+        rowNode = createRowNode(id, getRowData, options.getSelectedId || null, options.onSelect);
+        rowNodeCache.set(id, rowNode);
+      }
+      return rowNode;
+    });
+    const currentIdSet = new Set(rowIds);
+    for (const cachedId of rowNodeCache.keys()) {
+      if (!currentIdSet.has(cachedId)) {
+        rowNodeCache.delete(cachedId);
+      }
+    }
     return h(
       "table",
       { className: "table table-hover table-striped test-data", key: "table-root" },
@@ -5429,10 +5590,10 @@ var BrowserBenchmarkRunner = class {
     __publicField(this, "baselineRows", []);
     __publicField(this, "alternateLabels", []);
     __publicField(this, "originalLabels", []);
-    __publicField(this, "currentRows", []);
     __publicField(this, "useAlternateLabels", true);
-    __publicField(this, "rows");
-    __publicField(this, "setRows");
+    __publicField(this, "rowsCreated", false);
+    // Fine-grained reactivity using framework's createSignalList
+    __publicField(this, "rowList");
     __publicField(this, "getSelectedId");
     __publicField(this, "setSelectedId");
     __publicField(this, "disposeTable");
@@ -5442,10 +5603,11 @@ var BrowserBenchmarkRunner = class {
     this.statusDiv = document.getElementById("status");
     this.resultsDiv = document.getElementById("results");
     this.outputDiv = document.getElementById("benchmark-output");
-    [this.rows, this.setRows] = createSignal([]);
+    const [, list] = createSignalList([], (item) => item.id);
+    this.rowList = list;
     [this.getSelectedId, this.setSelectedId] = createSignal(null);
     const TableComponent = createTableComponent({
-      getData: () => this.rows(),
+      list: this.rowList,
       getSelectedId: () => this.getSelectedId(),
       onSelect: (id) => this.setSelectedId(id)
     });
@@ -5496,9 +5658,9 @@ var BrowserBenchmarkRunner = class {
     this.metricsCollector.reset();
     this.resultsDiv.style.display = "none";
     this.outputDiv.innerHTML = "";
-    this.setRows([]);
-    this.currentRows = [];
+    this.rowList.clear();
     this.setSelectedId(null);
+    this.rowsCreated = false;
   }
   getResults() {
     return this.results;
@@ -5614,92 +5776,111 @@ var BrowserBenchmarkRunner = class {
     }
   }
   applyRows(rows) {
-    this.currentRows = rows;
-    this.setRows([...this.currentRows]);
+    this.rowList.set(rows);
   }
-  mutateRows(mutator) {
-    mutator(this.currentRows);
-    this.setRows([...this.currentRows]);
+  mutateRows(rows) {
+    rows.forEach((row) => {
+      this.rowList.update(row.id, row);
+    });
   }
   async createRowsBenchmark() {
     await this.measurePerformance("Create 1,000 rows", async () => {
       this.ensureBaselineData();
       this.applyRows(this.baselineRows.map((row) => ({ ...row })));
+      this.rowsCreated = true;
       this.useAlternateLabels = true;
     });
   }
   async replaceAllRowsBenchmark() {
+    this.ensureBaselineData();
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated;
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map((row) => ({ ...row })));
+      this.rowsCreated = true;
+      await Promise.resolve();
+      await new Promise(requestAnimationFrame);
+    }
     await this.measurePerformance("Replace all 1,000 rows", async () => {
-      this.ensureBaselineData();
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map((row) => ({ ...row })));
-      }
       const labels = this.useAlternateLabels ? this.alternateLabels : this.originalLabels;
-      this.mutateRows((rows) => {
-        rows.forEach((row, index) => {
-          row.label = labels[index] ?? row.label;
-        });
+      this.baselineRows.forEach((row, index) => {
+        this.rowList.update(row.id, { id: row.id, label: labels[index] ?? row.label });
       });
       this.useAlternateLabels = !this.useAlternateLabels;
     });
   }
   async updateEveryTenthRowBenchmark() {
+    this.ensureBaselineData();
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated;
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map((row) => ({ ...row })));
+      this.rowsCreated = true;
+      await Promise.resolve();
+      await new Promise(requestAnimationFrame);
+    }
     await this.measurePerformance("Partial update (every 10th row)", async () => {
-      this.ensureBaselineData();
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map((row) => ({ ...row })));
-      }
-      this.mutateRows((rows) => {
-        rows.forEach((row, index) => {
-          if (index % 10 === 0) {
-            row.label = `${row.label} !!!`;
-          }
-        });
-      });
-    });
-  }
-  async selectRowBenchmark() {
-    await this.measurePerformance("Select row", async () => {
-      this.ensureBaselineData();
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map((row) => ({ ...row })));
-      }
-      const middleIndex = Math.floor(this.currentRows.length / 2);
-      const targetId = this.currentRows[middleIndex]?.id ?? null;
-      this.setSelectedId(targetId);
-    });
-  }
-  async swapRowsBenchmark() {
-    await this.measurePerformance("Swap rows", async () => {
-      this.ensureBaselineData();
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map((row) => ({ ...row })));
-      }
-      this.mutateRows((rows) => {
-        if (rows.length >= 2) {
-          const secondIndex = 1;
-          const penultimateIndex = rows.length - 2;
-          const temp = rows[secondIndex];
-          rows[secondIndex] = rows[penultimateIndex];
-          rows[penultimateIndex] = temp;
+      this.baselineRows.forEach((row, index) => {
+        if (index % 10 === 0) {
+          this.rowList.update(row.id, { id: row.id, label: `${row.label} !!!` });
         }
       });
     });
   }
+  async selectRowBenchmark() {
+    this.ensureBaselineData();
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated;
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map((row) => ({ ...row })));
+      this.rowsCreated = true;
+      await Promise.resolve();
+      await new Promise(requestAnimationFrame);
+    }
+    await this.measurePerformance("Select row", async () => {
+      const middleIndex = Math.floor(this.baselineRows.length / 2);
+      const targetId = this.baselineRows[middleIndex]?.id ?? null;
+      this.setSelectedId(targetId);
+    });
+  }
+  async swapRowsBenchmark() {
+    this.ensureBaselineData();
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated;
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map((row) => ({ ...row })));
+      this.rowsCreated = true;
+      await Promise.resolve();
+      await new Promise(requestAnimationFrame);
+    }
+    await this.measurePerformance("Swap rows", async () => {
+      const ids = this.rowList.ids();
+      if (ids.length < 2) return;
+      const nextIds = [...ids];
+      const secondIndex = 1;
+      const penultimateIndex = nextIds.length - 2;
+      [nextIds[secondIndex], nextIds[penultimateIndex]] = [
+        nextIds[penultimateIndex],
+        nextIds[secondIndex]
+      ];
+      this.rowList.reorder(nextIds);
+    });
+  }
   async removeRowsBenchmark() {
+    this.ensureBaselineData();
+    const needsSetup = this.baselineRows.length > 0 && !this.rowsCreated;
+    if (needsSetup) {
+      this.applyRows(this.baselineRows.map((row) => ({ ...row })));
+      this.rowsCreated = true;
+      await Promise.resolve();
+      await new Promise(requestAnimationFrame);
+    }
     await this.measurePerformance("Remove rows", async () => {
-      this.ensureBaselineData();
-      if (this.currentRows.length === 0) {
-        this.applyRows(this.baselineRows.map((row) => ({ ...row })));
-      }
-      this.currentRows = this.currentRows.filter((_, index) => index % 10 !== 0);
-      this.setRows([...this.currentRows]);
+      const ids = this.rowList.ids();
+      if (ids.length === 0) return;
+      const toRemove = ids.filter((_, index) => index % 10 === 0);
+      toRemove.forEach((id) => this.rowList.remove(id));
     });
   }
   async clearRowsBenchmark() {
     await this.measurePerformance("Clear rows", async () => {
-      this.currentRows = [];
-      this.setRows([]);
+      this.rowList.clear();
       this.setSelectedId(null);
     });
   }
@@ -5721,18 +5902,28 @@ var BrowserBenchmarkRunner = class {
     this.results = [];
     this.resultsDiv.style.display = "none";
     this.outputDiv.innerHTML = "";
+    console.log("[Benchmark] About to run Create rows");
     await this.createRowsBenchmark();
+    console.log("[Benchmark] Create rows complete, waiting 50ms");
     await new Promise((resolve) => setTimeout(resolve, 50));
+    console.log("[Benchmark] About to run Replace all");
     await this.replaceAllRowsBenchmark();
+    console.log("[Benchmark] Replace all complete, waiting 50ms");
     await new Promise((resolve) => setTimeout(resolve, 50));
+    console.log("[Benchmark] About to run Partial update");
     await this.updateEveryTenthRowBenchmark();
+    console.log("[Benchmark] Partial update complete, waiting 50ms");
     await new Promise((resolve) => setTimeout(resolve, 50));
+    console.log("[Benchmark] About to run Select row");
     await this.selectRowBenchmark();
     await new Promise((resolve) => setTimeout(resolve, 50));
+    console.log("[Benchmark] About to run Swap rows");
     await this.swapRowsBenchmark();
     await new Promise((resolve) => setTimeout(resolve, 50));
+    console.log("[Benchmark] About to run Remove rows");
     await this.removeRowsBenchmark();
     await new Promise((resolve) => setTimeout(resolve, 50));
+    console.log("[Benchmark] About to run Clear rows");
     await this.clearRowsBenchmark();
     await new Promise((resolve) => setTimeout(resolve, 50));
     await this.componentCreationBenchmark();

@@ -6,7 +6,7 @@
  */
 
 import { applyModifiersToNode } from '../modifiers/registry'
-import { createEffect, createRoot, isComputed, isSignal } from '../reactive'
+import { createEffect, createRoot, isComputed, isSignal, untrack } from '../reactive'
 import type { ComponentInstance, DOMNode } from './types'
 import { semanticRoleManager } from './semantic-role-manager'
 import { globalEventDelegator } from './event-delegation'
@@ -286,6 +286,8 @@ export class DOMRenderer {
 
     if (previousChildren.length === 0) {
       newChildren.forEach(child => {
+        // Skip undefined/null children
+        if (!child || child.type == null) return
         const childElement = this.renderSingle(child, delegationContainer)
         this.appendNode(element, childElement)
       })
@@ -304,7 +306,7 @@ export class DOMRenderer {
       }
     })
 
-    const domNodes: (Element | Text | Comment | undefined)[] = new Array(newChildren.length)
+    const domNodes: (Element | Text | Comment | undefined)[] = Array.from({ length: newChildren.length })
 
     newChildren.forEach((child, index) => {
       let matched: DOMNode | undefined
@@ -1390,7 +1392,8 @@ export function text(content: string | (() => string)): DOMNode {
     }
 
     // Store the initial value immediately to establish tracking
-    const initialText = content()
+    // Use untrack to prevent subscribing parent computation during initialization
+    const initialText = untrack(() => content())
     textNode.text = String(initialText)
 
     // Create reactive effect for updating text content

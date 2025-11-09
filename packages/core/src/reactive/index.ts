@@ -119,6 +119,14 @@ export {
   type SignalSetter,
 } from './signal'
 
+// Fine-grained reactive lists
+export {
+  createSignalList,
+  createSignalListControls,
+  type SignalListControls,
+  type SignalListKeyFn,
+} from './signal-list'
+
 // Theme management
 export {
   detectSystemTheme,
