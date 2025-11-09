@@ -248,6 +248,63 @@ export { MyComponent } from './components/MyComponent'
 - **Performance tests**: Benchmarks and memory usage
 - **Security tests**: XSS prevention, CSP compliance
 
+### Workspace Package Aliases in Tests
+
+**Important**: When writing tests that import other workspace packages (e.g., `@tachui/forms`, `@tachui/grid`), you **must** configure proper aliases in your package's `vitest.config.ts` file.
+
+#### Why This Matters
+
+Vitest needs to resolve workspace package imports during testing. Without proper aliases, imports like `import { Form } from '@tachui/forms'` will fail with:
+
+```
+Error: Failed to resolve import "@tachui/forms"
+```
+
+#### How to Configure Aliases
+
+Add workspace packages to the `resolve.alias` section of your `vitest.config.ts`:
+
+```typescript
+import { defineConfig } from 'vitest/config'
+import { resolve } from 'path'
+
+export default defineConfig({
+  test: {
+    environment: 'jsdom',
+    // ... other config
+  },
+  resolve: {
+    alias: {
+      '@tachui/core': resolve(__dirname, '../core/src'),
+      '@tachui/forms': resolve(__dirname, '../forms/src'),
+      '@tachui/grid': resolve(__dirname, '../grid/src'),
+      // Add other packages as needed
+    },
+  },
+})
+```
+
+#### Validation Tool
+
+Run the workspace alias validator to check for missing aliases:
+
+```bash
+# Check for missing aliases
+pnpm validate:workspace-aliases
+
+# Auto-fix missing aliases
+pnpm validate:workspace-aliases --fix
+```
+
+The validator scans your test files for `@tachui/*` imports and ensures all referenced packages have proper aliases configured. It only checks for aliases that are actually used in your tests.
+
+#### Rules of Thumb
+
+1. **Only add aliases you need**: The validator only checks for packages actually imported in your tests
+2. **Point to `src/` not `dist/`**: Tests should import from source for better debugging
+3. **Update when adding dependencies**: If you add a new workspace dependency to your tests, add the alias
+4. **Run validation in CI**: The validator can fail CI if aliases are missing (`--fix` flag excluded)
+
 ### Writing Tests
 
 ```typescript

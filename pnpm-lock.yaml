@@ -18,6 +18,9 @@ importers:
       esbuild:
         specifier: ^0.21.0
         version: 0.21.5
+      glob:
+        specifier: ^10.4.5
+        version: 10.4.5
       jsdom:
         specifier: ^23.2.0
         version: 23.2.0
@@ -48,6 +51,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
+      yaml:
+        specifier: ^2.8.1
+        version: 2.8.1
 
   demos/calculator:
     dependencies:

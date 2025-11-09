@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { createIsolatedRegistry } from '@tachui/registry'
 import { registerCoreModifiers } from '../../src/modifiers'
-import { registerFormsModifiers } from '@tachui/forms/modifiers'
+import { registerFormsModifiers } from '@tachui/forms'
 import { registerGridModifiers } from '@tachui/grid'
 import { registerResponsiveModifiers } from '@tachui/responsive'
-import { registerMobileModifiers } from '@tachui/mobile/modifiers'
-import { registerViewportModifiers } from '@tachui/viewport/modifiers'
+import { registerMobileModifiers } from '@tachui/mobile'
+import { registerViewportModifiers } from '@tachui/viewport'
 
 describe('plugin modifier registration', () => {
   it('hydrates a shared registry with core and plugin metadata', () => {
