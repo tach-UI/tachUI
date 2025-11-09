@@ -113,8 +113,22 @@ async function runBrowserBenchmarks() {
   const server = await serveStatic(PUBLIC_DIR, DEFAULT_PORT)
   console.log(`🌐 Benchmark page available at http://127.0.0.1:${DEFAULT_PORT}`)
 
+  const isCI = !!process.env.CI
+  const ciLaunchArgs = [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    '--disable-background-networking',
+    '--disable-renderer-backgrounding',
+  ]
   const browser = await chromium.launch({
-    args: ['--enable-precise-memory-info', '--js-flags=--expose-gc'],
+    headless: true,
+    args: [
+      '--enable-precise-memory-info',
+      '--js-flags=--expose-gc',
+      ...(isCI ? ciLaunchArgs : []),
+    ],
   })
   const page = await browser.newPage()
 
