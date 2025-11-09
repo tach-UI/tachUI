@@ -62,6 +62,7 @@
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@types/node": "^20.0.0",
     "esbuild": "^0.21.0",
     "glob": "^10.4.5",
