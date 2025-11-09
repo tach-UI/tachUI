@@ -203,7 +203,7 @@ This test expects `moved >= 2` but gets `moved = 0`, indicating keyed row reuse 
 - Cannot determine if TachUI is faster, slower, or comparable
 
 **Missing Files**:
-- `benchmarks/history/honest-benchmark-*.json` - None found
+- `benchmarks/history/benchmark-*.json` - None found
 - `benchmarks/history/latest.json` - None found
 - CI workflow for automated benchmarks - Not verified
 

@@ -38,7 +38,7 @@
     "benchmark:browser": "pnpm --filter @tachui/core benchmark:browser",
     "benchmark:browser:quick": "pnpm --filter @tachui/core benchmark:browser:quick",
     "benchmark:browser:report": "pnpm --filter @tachui/core benchmark:browser:report",
-    "benchmark:report:combined": "tsx --tsconfig ./tools/benchmarks/tsconfig.honest.json ./tools/benchmarks/honest-benchmark.ts",
+    "benchmark:report:combined": "tsx --tsconfig ./tools/benchmarks/tsconfig.benchmark.json ./tools/benchmarks/core-benchmark.ts",
     "benchmark:report": "pnpm benchmark:report:combined",
     "benchmark:navigation": "pnpm --filter @tachui/navigation benchmark",
     "benchmark:navigation:quick": "pnpm --filter @tachui/navigation benchmark:quick",

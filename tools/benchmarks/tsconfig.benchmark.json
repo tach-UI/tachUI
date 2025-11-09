@@ -35,5 +35,5 @@
       "@tachui/core/plugins": ["../../packages/core/src/plugins/index.ts"]
     }
   },
-  "include": ["./honest-benchmark.ts"]
+  "include": ["./core-benchmark.ts"]
 }

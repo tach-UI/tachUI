@@ -193,7 +193,7 @@ async function run() {
   const start = new Date()
   await ensureHistoryDir()
 
-  console.log('🏁 Running TachUI honest benchmark (Node harness)...')
+  console.log('🏁 Running TachUI core benchmark (Node harness)...')
   const { results: nodeResults, report: nodeReport } = await runTachUIBenchmarks()
   const tachuiNodeData = convertTachUIResults(nodeResults)
 
@@ -247,7 +247,7 @@ async function run() {
     },
   }
 
-  const historyFilename = `honest-benchmark-${timestamp}.json`
+  const historyFilename = `benchmark-${timestamp}.json`
 
   await writeHistoryFile(historyFilename, historyEntry)
   await writeHistoryFile('latest.json', historyEntry)

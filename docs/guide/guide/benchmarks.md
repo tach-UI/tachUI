@@ -82,7 +82,7 @@ pnpm benchmark:browser:report    # optional fresh browser run (root command)
 pnpm benchmark:report:combined
 ```
 
-Generates a combined Node/browser summary, stores it under `benchmarks/history/`, and prints an updated TachUI vs React/Solid comparison table. CI runs this nightly via the `honest-benchmark` workflow and uploads the history artefact for traceability.
+Generates a combined Node/browser summary, stores it under `benchmarks/history/`, and prints an updated TachUI vs React/Solid comparison table. CI runs this nightly via the `benchmark-report` workflow and uploads the history artefact for traceability.
 When a recent browser run is present, the comparison and performance score are based on the Chromium measurements; otherwise the script falls back to the Node (JSDOM) harness. The legacy 21/100 score is kept only for historical reference—always cite the latest browser-backed score emitted by the combined summary.
 
 ## Performance Reality Check

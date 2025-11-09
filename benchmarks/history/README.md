@@ -4,7 +4,7 @@ This directory stores timestamped summaries produced by the `pnpm benchmark:repo
 
 Each run writes:
 
-- `honest-benchmark-<timestamp>.json` – combined Node + browser results, renderer metrics, and cross-framework comparison data.
+- `benchmark-<timestamp>.json` – combined Node + browser results, renderer metrics, and cross-framework comparison data.
 - `latest.json` – copy of the most recent summary for quick inspection.
 
 CI uploads the generated files as build artefacts, so committed history is optional. To create a new entry locally:
