@@ -1,0 +1,124 @@
+:root {
+  --tach-primary: #0d6efd;
+  --tach-surface: #0f172a;
+  --tach-border: rgba(148, 163, 184, 0.25);
+}
+
+:root.dark {
+  --tach-surface: #020617;
+  --tach-border: rgba(148, 163, 184, 0.35);
+}
+
+.tach-hero {
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.tach-hero__subtitle {
+  color: var(--vp-c-text-2);
+  margin-bottom: 1rem;
+}
+
+.tach-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.tach-button {
+  border-radius: 999px;
+  padding: 0.65rem 1.4rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  color: #fff;
+  background: var(--tach-primary);
+}
+
+.tach-button.secondary {
+  background: transparent;
+  color: var(--tach-primary);
+  border-color: var(--tach-border);
+}
+
+.tach-button.ghost {
+  background: transparent;
+  color: var(--vp-c-text-2);
+}
+
+.tach-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.tach-card {
+  border: 1px solid var(--tach-border);
+  border-radius: 0.85rem;
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+:root.dark .tach-card {
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.tach-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.tach-card p {
+  margin: 0;
+  color: var(--vp-c-text-2);
+  font-size: 0.95rem;
+}
+
+.tach-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.tach-stat {
+  padding: 1rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--tach-border);
+}
+
+.tach-stat__value {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.tach-roadmap {
+  border-left: 4px solid var(--tach-primary);
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+}
+
+.tach-roadmap__meta {
+  font-size: 0.9rem;
+  color: var(--vp-c-text-2);
+}
+
+.tach-roadmap__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(13, 110, 253, 0.1);
+  color: var(--tach-primary);
+  border-radius: 999px;
+  padding: 0.15rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.tach-playground-frame {
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid var(--tach-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
