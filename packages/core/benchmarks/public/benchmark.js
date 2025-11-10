@@ -2876,9 +2876,9 @@ function gradientToCSS(gradient) {
   }
 }
 
-// ../registry/dist/index.js
-var c = null;
-var _o = class _o {
+// ../registry/src/singleton.ts
+var globalRegistryInstance = null;
+var _ModifierRegistryImpl = class _ModifierRegistryImpl {
   constructor() {
     __publicField(this, "instanceId");
     __publicField(this, "createdAt");
@@ -2902,116 +2902,179 @@ var _o = class _o {
     __publicField(this, "conflicts", /* @__PURE__ */ new Map());
     // Plugin metadata storage
     __publicField(this, "plugins", /* @__PURE__ */ new Map());
-    _o.instanceCount++, this.instanceId = Math.random().toString(36).substr(2, 9), this.createdAt = Date.now(), console.log(
-      `\u{1F3D7}\uFE0F ModifierRegistry instance created: ${this.instanceId} (total: ${_o.instanceCount})`
-    );
+    _ModifierRegistryImpl.instanceCount++;
+    this.instanceId = Math.random().toString(36).substr(2, 9);
+    this.createdAt = Date.now();
+    if (true) {
+      console.log(
+        `\u{1F3D7}\uFE0F ModifierRegistry instance created: ${this.instanceId} (total: ${_ModifierRegistryImpl.instanceCount})`
+      );
+    }
   }
-  static validateModifierName(e, t = {}) {
-    if (_o.FORBIDDEN_NAMES.has(e))
+  static validateModifierName(name, options = {}) {
+    if (_ModifierRegistryImpl.FORBIDDEN_NAMES.has(name)) {
       throw new Error(
-        `Security Error: Cannot register modifier '${e}' (forbidden name)`
+        `Security Error: Cannot register modifier '${name}' (forbidden name)`
       );
-    if (!_o.NAME_PATTERN.test(e)) {
-      if (t.strict)
+    }
+    if (!_ModifierRegistryImpl.NAME_PATTERN.test(name)) {
+      if (options.strict) {
         throw new Error(
-          `Invalid modifier name '${e}'. Modifier names must match ${_o.NAME_PATTERN}`
+          `Invalid modifier name '${name}'. Modifier names must match ${_ModifierRegistryImpl.NAME_PATTERN}`
         );
-      console.warn(
-        `\u26A0\uFE0F Modifier name '${e}' does not match ${_o.NAME_PATTERN}. Prefer alphanumeric names for best tooling support.`
+      }
+      if (true) {
+        console.warn(
+          `\u26A0\uFE0F Modifier name '${name}' does not match ${_ModifierRegistryImpl.NAME_PATTERN}. Prefer alphanumeric names for best tooling support.`
+        );
+      }
+    }
+  }
+  register(name, factory) {
+    _ModifierRegistryImpl.validateModifierName(name);
+    this.modifiers.set(name, factory);
+    this.lazyLoaders.delete(name);
+    this.loadingPromises.delete(name);
+    if (true) {
+      console.log(
+        `\u2705 Registered modifier '${name}' in registry ${this.instanceId} (total: ${this.modifiers.size})`
       );
     }
   }
-  register(e, t) {
-    _o.validateModifierName(e), this.modifiers.set(e, t), this.lazyLoaders.delete(e), this.loadingPromises.delete(e), console.log(
-      `\u2705 Registered modifier '${e}' in registry ${this.instanceId} (total: ${this.modifiers.size})`
-    );
-  }
-  registerLazy(e, t) {
-    if (_o.validateModifierName(e), this.modifiers.has(e)) {
-      console.warn(
-        `\u26A0\uFE0F Modifier '${e}' already registered, skipping lazy registration`
-      );
+  registerLazy(name, loader) {
+    _ModifierRegistryImpl.validateModifierName(name);
+    if (this.modifiers.has(name)) {
+      if (true) {
+        console.warn(
+          `\u26A0\uFE0F Modifier '${name}' already registered, skipping lazy registration`
+        );
+      }
       return;
     }
-    this.lazyLoaders.set(e, t);
+    this.lazyLoaders.set(name, loader);
   }
-  get(e, t) {
-    const i = this.modifiers.get(e);
-    if (i)
-      return i;
-    const s = this.lazyLoaders.get(e);
-    if (!s) {
-      console.warn(
-        `\u26A0\uFE0F Modifier '${e}' not found in registry ${this.instanceId}`
-      );
-      return;
+  get(name, options) {
+    const cached = this.modifiers.get(name);
+    if (cached) {
+      return cached;
     }
-    if (t?.async)
-      return this.getAsync(e);
+    const loader = this.lazyLoaders.get(name);
+    if (!loader) {
+      if (true) {
+        console.warn(
+          `\u26A0\uFE0F Modifier '${name}' not found in registry ${this.instanceId}`
+        );
+      }
+      return void 0;
+    }
+    if (options?.async) {
+      return this.getAsync(name);
+    }
     try {
-      const r = s();
-      return r instanceof Promise ? r.then((l) => (this.modifiers.set(e, l), this.lazyLoaders.delete(e), l)).catch((l) => {
-        console.warn(`\u26A0\uFE0F Failed to load modifier '${e}':`, l);
-      }) : (this.modifiers.set(e, r), this.lazyLoaders.delete(e), r);
-    } catch (r) {
-      console.warn(
-        `\u26A0\uFE0F Failed to load modifier '${e}' synchronously:`,
-        r
-      );
-      return;
+      const factory = loader();
+      if (factory instanceof Promise) {
+        return factory.then((resolvedFactory) => {
+          this.modifiers.set(name, resolvedFactory);
+          this.lazyLoaders.delete(name);
+          return resolvedFactory;
+        }).catch((error) => {
+          if (true) {
+            console.warn(`\u26A0\uFE0F Failed to load modifier '${name}':`, error);
+          }
+          return void 0;
+        });
+      } else {
+        this.modifiers.set(name, factory);
+        this.lazyLoaders.delete(name);
+        return factory;
+      }
+    } catch (error) {
+      if (true) {
+        console.warn(
+          `\u26A0\uFE0F Failed to load modifier '${name}' synchronously:`,
+          error
+        );
+      }
+      return void 0;
     }
   }
-  async getAsync(e) {
-    const t = this.loadingPromises.get(e);
-    if (t)
-      return t;
-    const i = this.lazyLoaders.get(e);
-    if (!i)
-      return;
-    const s = this.loadModifier(e, i);
-    this.loadingPromises.set(e, s);
+  async getAsync(name) {
+    const existingPromise = this.loadingPromises.get(name);
+    if (existingPromise) {
+      return existingPromise;
+    }
+    const loader = this.lazyLoaders.get(name);
+    if (!loader) {
+      return void 0;
+    }
+    const loadPromise = this.loadModifier(name, loader);
+    this.loadingPromises.set(name, loadPromise);
     try {
-      const r = await s;
-      return this.loadingPromises.delete(e), r;
-    } catch (r) {
-      throw this.loadingPromises.delete(e), console.error(`\u274C Failed to load modifier '${e}':`, r), r;
+      const factory = await loadPromise;
+      this.loadingPromises.delete(name);
+      return factory;
+    } catch (error) {
+      this.loadingPromises.delete(name);
+      if (true) {
+        console.error(`\u274C Failed to load modifier '${name}':`, error);
+      }
+      throw error;
     }
   }
-  async loadModifier(e, t) {
+  async loadModifier(name, loader) {
     try {
-      const i = await t();
-      return this.modifiers.set(e, i), this.lazyLoaders.delete(e), i;
-    } catch (i) {
-      throw console.error(`\u274C Error loading modifier '${e}':`, i), i;
+      const factory = await loader();
+      this.modifiers.set(name, factory);
+      this.lazyLoaders.delete(name);
+      return factory;
+    } catch (error) {
+      if (true) {
+        console.error(`\u274C Error loading modifier '${name}':`, error);
+      }
+      throw error;
     }
   }
-  has(e) {
-    return this.modifiers.has(e) || this.lazyLoaders.has(e);
+  has(name) {
+    return this.modifiers.has(name) || this.lazyLoaders.has(name);
   }
   list() {
-    const e = Array.from(this.modifiers.keys()), t = Array.from(this.lazyLoaders.keys());
-    return [...e, ...t];
+    const loaded = Array.from(this.modifiers.keys());
+    const lazy = Array.from(this.lazyLoaders.keys());
+    return [...loaded, ...lazy];
   }
   clear() {
-    this.modifiers.clear(), this.lazyLoaders.clear(), this.loadingPromises.clear(), this.metadata.clear(), this.metadataHistory.clear(), this.conflicts.clear(), this.plugins.clear(), console.log(
-      `\u{1F9F9} Cleared all modifiers and lazy loaders from registry ${this.instanceId}`
-    );
+    this.modifiers.clear();
+    this.lazyLoaders.clear();
+    this.loadingPromises.clear();
+    this.metadata.clear();
+    this.metadataHistory.clear();
+    this.conflicts.clear();
+    this.plugins.clear();
+    if (true) {
+      console.log(
+        `\u{1F9F9} Cleared all modifiers and lazy loaders from registry ${this.instanceId}`
+      );
+    }
   }
   reset() {
-    this.clear(), false;
+    this.clear();
+    if (false) {
+      _ModifierRegistryImpl.instanceCount = 0;
+    }
   }
   validateRegistry() {
-    const e = this.list(), t = e.filter(
-      (i, s) => e.indexOf(i) !== s
+    const modifierNames = this.list();
+    const duplicates = modifierNames.filter(
+      (name, index) => modifierNames.indexOf(name) !== index
     );
     return {
       totalModifiers: this.modifiers.size + this.lazyLoaders.size,
-      duplicateNames: t,
+      duplicateNames: duplicates,
       orphanedReferences: [],
       // Could be enhanced to scan for broken references
       instanceId: this.instanceId,
       createdAt: this.createdAt,
-      instanceCount: _o.instanceCount
+      instanceCount: _ModifierRegistryImpl.instanceCount
     };
   }
   /**
@@ -3037,14 +3100,17 @@ var _o = class _o {
    * Set feature flags for the registry
    * Allows enabling/disabling features for gradual rollout
    */
-  setFeatureFlags(e) {
+  setFeatureFlags(flags) {
     this.featureFlags = {
       ...this.featureFlags,
-      ...e
-    }, console.log(
-      `\u{1F39A}\uFE0F Updated feature flags in registry ${this.instanceId}:`,
-      this.featureFlags
-    );
+      ...flags
+    };
+    if (true) {
+      console.log(
+        `\u{1F39A}\uFE0F Updated feature flags in registry ${this.instanceId}:`,
+        this.featureFlags
+      );
+    }
   }
   /**
    * Get current feature flags
@@ -3055,8 +3121,8 @@ var _o = class _o {
   /**
    * Check if a specific feature is enabled
    */
-  isFeatureEnabled(e) {
-    return this.featureFlags[e] === true;
+  isFeatureEnabled(feature) {
+    return this.featureFlags[feature] === true;
   }
   // ============================================================================
   // Metadata Methods (for build-time type generation)
@@ -3064,64 +3130,96 @@ var _o = class _o {
   /**
    * Register metadata for a modifier (for type generation)
    */
-  registerMetadata(e) {
+  registerMetadata(modifierMetadata) {
     if (!this.isFeatureEnabled("metadataRegistration")) {
-      console.warn(
-        "\u26A0\uFE0F Metadata registration is disabled. Enable 'metadataRegistration' feature flag."
-      );
+      if (true) {
+        console.warn(
+          `\u26A0\uFE0F Metadata registration is disabled. Enable 'metadataRegistration' feature flag.`
+        );
+      }
       return;
     }
-    if (!e.plugin)
+    if (!modifierMetadata.plugin) {
       throw new Error(
-        `Modifier metadata '${String(e.name)}' must include a plugin identifier`
+        `Modifier metadata '${String(modifierMetadata.name)}' must include a plugin identifier`
       );
-    typeof e.name == "string" && _o.validateModifierName(e.name, {
-      strict: true
-    });
-    const t = this.metadata.get(e.name), i = t?.plugin === e.plugin;
-    if (this.recordMetadataHistoryEntry(e), !t) {
-      this.metadata.set(e.name, e), console.log(
-        `\u{1F4DD} Registered metadata for '${String(e.name)}' from ${e.plugin}`
+    }
+    if (typeof modifierMetadata.name === "string") {
+      _ModifierRegistryImpl.validateModifierName(modifierMetadata.name, {
+        strict: true
+      });
+    }
+    const existing = this.metadata.get(modifierMetadata.name);
+    const samePlugin = existing?.plugin === modifierMetadata.plugin;
+    this.recordMetadataHistoryEntry(modifierMetadata);
+    if (!existing) {
+      this.metadata.set(modifierMetadata.name, modifierMetadata);
+      if (true) {
+        console.log(
+          `\u{1F4DD} Registered metadata for '${String(modifierMetadata.name)}' from ${modifierMetadata.plugin}`
+        );
+      }
+      return;
+    }
+    if (samePlugin) {
+      this.metadata.set(modifierMetadata.name, modifierMetadata);
+      return;
+    }
+    if (modifierMetadata.priority > existing.priority) {
+      if (true) {
+        console.warn(
+          `\u26A0\uFE0F Overriding modifier metadata '${String(modifierMetadata.name)}' from ${existing.plugin} (priority ${existing.priority}) with ${modifierMetadata.plugin} (priority ${modifierMetadata.priority})`
+        );
+      }
+      this.metadata.set(modifierMetadata.name, modifierMetadata);
+      return;
+    }
+    if (modifierMetadata.priority === existing.priority && modifierMetadata.plugin !== existing.plugin && true) {
+      console.error(
+        `\u274C Metadata conflict for '${String(modifierMetadata.name)}': ${existing.plugin} vs ${modifierMetadata.plugin} (both priority ${modifierMetadata.priority})`
       );
-      return;
     }
-    if (i) {
-      this.metadata.set(e.name, e);
-      return;
-    }
-    if (e.priority > t.priority) {
-      console.warn(
-        `\u26A0\uFE0F Overriding modifier metadata '${String(e.name)}' from ${t.plugin} (priority ${t.priority}) with ${e.plugin} (priority ${e.priority})`
-      ), this.metadata.set(e.name, e);
-      return;
-    }
-    e.priority === t.priority && e.plugin !== t.plugin && true && console.error(
-      `\u274C Metadata conflict for '${String(e.name)}': ${t.plugin} vs ${e.plugin} (both priority ${e.priority})`
-    );
   }
-  recordMetadataHistoryEntry(e) {
-    const t = this.metadataHistory.get(e.name) ?? [], i = `${e.plugin}:${e.priority}`, s = t.findIndex(
-      (r) => `${r.plugin}:${r.priority}` === i
+  recordMetadataHistoryEntry(metadata14) {
+    const entries = this.metadataHistory.get(metadata14.name) ?? [];
+    const key = `${metadata14.plugin}:${metadata14.priority}`;
+    const existingIndex = entries.findIndex(
+      (entry) => `${entry.plugin}:${entry.priority}` === key
     );
-    s >= 0 ? t[s] = e : t.push(e), this.metadataHistory.set(e.name, t), this.refreshConflictsFor(e.name, t);
-  }
-  refreshConflictsFor(e, t) {
-    const i = [], s = /* @__PURE__ */ new Map();
-    for (const r of t) {
-      const l = s.get(r.priority) ?? /* @__PURE__ */ new Map();
-      l.set(r.plugin, r), s.set(r.priority, l);
+    if (existingIndex >= 0) {
+      entries[existingIndex] = metadata14;
+    } else {
+      entries.push(metadata14);
     }
-    for (const r of s.values())
-      if (r.size > 1)
-        for (const l of r.values())
-          i.push(l);
-    i.length > 0 ? this.conflicts.set(e, i) : this.conflicts.delete(e);
+    this.metadataHistory.set(metadata14.name, entries);
+    this.refreshConflictsFor(metadata14.name, entries);
+  }
+  refreshConflictsFor(name, entries) {
+    const conflictsForName = [];
+    const byPriority = /* @__PURE__ */ new Map();
+    for (const entry of entries) {
+      const priorityMap = byPriority.get(entry.priority) ?? /* @__PURE__ */ new Map();
+      priorityMap.set(entry.plugin, entry);
+      byPriority.set(entry.priority, priorityMap);
+    }
+    for (const priorityMap of byPriority.values()) {
+      if (priorityMap.size > 1) {
+        for (const conflictEntry of priorityMap.values()) {
+          conflictsForName.push(conflictEntry);
+        }
+      }
+    }
+    if (conflictsForName.length > 0) {
+      this.conflicts.set(name, conflictsForName);
+    } else {
+      this.conflicts.delete(name);
+    }
   }
   /**
    * Get metadata for a specific modifier
    */
-  getMetadata(e) {
-    return this.metadata.get(e);
+  getMetadata(name) {
+    return this.metadata.get(name);
   }
   /**
    * Get all registered metadata
@@ -3132,43 +3230,48 @@ var _o = class _o {
   /**
    * Get metadata filtered by category
    */
-  getModifiersByCategory(e) {
-    return this.getAllMetadata().filter((t) => t.category === e);
+  getModifiersByCategory(category) {
+    return this.getAllMetadata().filter((meta) => meta.category === category);
   }
-  getMetadataByCategory(e) {
-    return this.getModifiersByCategory(e);
+  getMetadataByCategory(category) {
+    return this.getModifiersByCategory(category);
   }
   /**
    * Get conflicts (multiple modifiers with same name but different plugins)
    */
   getConflicts() {
     return new Map(
-      Array.from(this.conflicts.entries(), ([e, t]) => [
-        e,
-        [...t]
+      Array.from(this.conflicts.entries(), ([key, value]) => [
+        key,
+        [...value]
       ])
     );
   }
-  registerPlugin(e) {
-    if (!e.name || !e.version)
+  registerPlugin(metadata14) {
+    if (!metadata14.name || !metadata14.version) {
       throw new Error("Plugin must define both name and version");
-    if (!e.author)
+    }
+    if (!metadata14.author) {
       throw new Error(
-        `Plugin '${e.name}' must include an author or organization`
+        `Plugin '${metadata14.name}' must include an author or organization`
       );
-    !e.verified && true && console.warn(
-      `\u26A0\uFE0F Registering unverified plugin '${e.name}'. Install plugins from trusted sources.`
-    ), this.plugins.set(e.name, e);
+    }
+    if (!metadata14.verified && true) {
+      console.warn(
+        `\u26A0\uFE0F Registering unverified plugin '${metadata14.name}'. Install plugins from trusted sources.`
+      );
+    }
+    this.plugins.set(metadata14.name, metadata14);
   }
-  getPluginInfo(e) {
-    return this.plugins.get(e);
+  getPluginInfo(name) {
+    return this.plugins.get(name);
   }
   listPlugins() {
     return Array.from(this.plugins.values());
   }
 };
-__publicField(_o, "instanceCount", 0);
-__publicField(_o, "FORBIDDEN_NAMES", /* @__PURE__ */ new Set([
+__publicField(_ModifierRegistryImpl, "instanceCount", 0);
+__publicField(_ModifierRegistryImpl, "FORBIDDEN_NAMES", /* @__PURE__ */ new Set([
   "__proto__",
   "constructor",
   "prototype",
@@ -3177,13 +3280,22 @@ __publicField(_o, "FORBIDDEN_NAMES", /* @__PURE__ */ new Set([
   "toString",
   "valueOf"
 ]));
-__publicField(_o, "NAME_PATTERN", /^[a-zA-Z_$][a-zA-Z0-9_$]*$/);
-var o = _o;
-function d() {
-  return c || (c = new o(), console.log("\u{1F31F} Created global TachUI modifier registry singleton")), c;
+__publicField(_ModifierRegistryImpl, "NAME_PATTERN", /^[a-zA-Z_$][a-zA-Z0-9_$]*$/);
+var ModifierRegistryImpl = _ModifierRegistryImpl;
+function getGlobalRegistry() {
+  if (!globalRegistryInstance) {
+    globalRegistryInstance = new ModifierRegistryImpl();
+    if (true) {
+      console.log("\u{1F31F} Created global TachUI modifier registry singleton");
+    }
+  }
+  return globalRegistryInstance;
 }
-var n = d();
-n.getDiagnostics = () => c?.getDiagnostics(), console.log("\u{1F4E4} Exported globalModifierRegistry from @tachui/registry");
+var globalModifierRegistry = getGlobalRegistry();
+if (true) {
+  globalModifierRegistry.getDiagnostics = () => globalRegistryInstance?.getDiagnostics();
+  console.log("\u{1F4E4} Exported globalModifierRegistry from @tachui/registry");
+}
 
 // src/modifiers/background.ts
 var BackgroundModifier = class extends BaseModifier {
@@ -3939,29 +4051,29 @@ var coreModifiers = {
 // src/modifiers/registry.ts
 var RegistryAdapter = class {
   register(name, factory) {
-    n.register(name, factory);
+    globalModifierRegistry.register(name, factory);
   }
   get(name) {
-    return n.get(name);
+    return globalModifierRegistry.get(name);
   }
   has(name) {
-    return n.has(name);
+    return globalModifierRegistry.has(name);
   }
   list() {
-    return n.list();
+    return globalModifierRegistry.list();
   }
   clear() {
-    n.clear();
+    globalModifierRegistry.clear();
   }
   validateRegistry() {
-    return n.validateRegistry();
+    return globalModifierRegistry.validateRegistry();
   }
 };
 var registryAdapter = new RegistryAdapter();
 if (true) {
   console.log("\u{1F4E4} Created RegistryAdapter for globalModifierRegistry", {
-    registryId: n.instanceId,
-    currentSize: n.list().length
+    registryId: globalModifierRegistry.instanceId,
+    currentSize: globalModifierRegistry.list().length
   });
 }
 function applyModifiersToNode(node, modifiers, context = {}, options = {}) {

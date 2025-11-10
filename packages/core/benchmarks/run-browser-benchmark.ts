@@ -41,6 +41,13 @@ const __dirname = path.dirname(__filename)
 const DEFAULT_PORT = Number(process.env.TACHUI_BROWSER_BENCH_PORT || 4173)
 const PUBLIC_DIR = path.resolve(__dirname, '../benchmarks/public')
 const RESULTS_DIR = path.resolve(__dirname, '../benchmarks/results/browser')
+const PACKAGES_DIR = path.resolve(__dirname, '..', '..')
+const workspaceAliases: Record<string, string> = {}
+
+const registrySourceEntry = path.resolve(PACKAGES_DIR, 'registry/src/index.ts')
+if (fs.existsSync(registrySourceEntry)) {
+  workspaceAliases['@tachui/registry'] = registrySourceEntry
+}
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -107,6 +114,7 @@ async function runBrowserBenchmarks() {
       '.ts': 'ts',
     },
     external: ['node:module'],
+    alias: workspaceAliases,
   })
 
   console.log('🔧 Starting static server for browser benchmarks…')
