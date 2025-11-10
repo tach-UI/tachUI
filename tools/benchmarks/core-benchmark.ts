@@ -1,24 +1,19 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
-
-import {
-  FRAMEWORK_BASELINES,
-  calculatePerformanceScore,
-  convertTachUIResults,
-  generateComparisonReport,
-  runTachUIBenchmarks,
-} from '../../packages/core/benchmarks'
+import { spawn } from 'node:child_process'
+import type { FrameworkBenchmarkData } from '../../packages/core/benchmarks/comparison'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const repoRoot = path.resolve(__dirname, '../..')
 const historyDir = path.resolve(repoRoot, 'benchmarks/history')
-const browserResultsDir = path.resolve(
-  repoRoot,
-  'packages/core/benchmarks/results/browser'
-)
+const browserResultsDir = path.resolve(repoRoot, 'packages/core/benchmarks/results/browser')
+const registryPackageDir = path.resolve(repoRoot, 'packages/registry')
+const registryDistEntry = path.resolve(registryPackageDir, 'dist/index.js')
 
+type TachUIBenchmarkModule = typeof import('../../packages/core/benchmarks/index.ts')
+type TachUIBenchmarkRun = Awaited<ReturnType<TachUIBenchmarkModule['runTachUIBenchmarks']>>
 type BrowserBenchmarkPayload = {
   runAt: string
   port: number
@@ -35,10 +30,58 @@ type BrowserBenchmarkPayload = {
   rendererMetrics?: Record<string, unknown>
 }
 
-type BenchmarkResultLike = Parameters<typeof convertTachUIResults>[0]
+type BrowserBenchmarkResult = BrowserBenchmarkPayload['results'][number]
+type BenchmarkResultLike = Parameters<TachUIBenchmarkModule['convertTachUIResults']>[0]
+let benchmarkModulePromise: Promise<TachUIBenchmarkModule> | null = null
 
 function toTimestampSlug(date: Date): string {
   return date.toISOString().replace(/[:]/g, '-')
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.stat(filePath)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function runCommand(command: string, args: string[], cwd: string): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd,
+      stdio: 'inherit',
+      env: process.env,
+    })
+    child.once('error', reject)
+    child.once('exit', code => {
+      if (code === 0) {
+        resolve()
+      } else {
+        reject(new Error(`${command} ${args.join(' ')} exited with code ${code ?? 'null'}`))
+      }
+    })
+  })
+}
+
+async function ensureBenchmarkDependencies(): Promise<void> {
+  if (await fileExists(registryDistEntry)) {
+    return
+  }
+  console.log('📦 Building @tachui/registry (required for benchmark runtime imports)…')
+  await runCommand('pnpm', ['--filter', '@tachui/registry', 'build'], repoRoot)
+  if (!(await fileExists(registryDistEntry))) {
+    throw new Error(`Failed to build @tachui/registry – missing ${registryDistEntry}`)
+  }
+}
+
+async function loadBenchmarkModule(): Promise<TachUIBenchmarkModule> {
+  if (!benchmarkModulePromise) {
+    await ensureBenchmarkDependencies()
+    benchmarkModulePromise = import('../../packages/core/benchmarks/index.ts')
+  }
+  return benchmarkModulePromise
 }
 
 async function ensureHistoryDir(): Promise<void> {
@@ -73,7 +116,7 @@ async function readLatestBrowserResult(): Promise<BrowserBenchmarkPayload | null
   }
 }
 
-function normaliseNodeResults(results: Awaited<ReturnType<typeof runTachUIBenchmarks>>['results']) {
+function normaliseNodeResults(results: TachUIBenchmarkRun['results']) {
   return results.map(result => ({
     name: result.name,
     type: result.type,
@@ -192,6 +235,13 @@ async function writeHistoryFile(
 async function run() {
   const start = new Date()
   await ensureHistoryDir()
+  const {
+    FRAMEWORK_BASELINES,
+    calculatePerformanceScore,
+    convertTachUIResults,
+    generateComparisonReport,
+    runTachUIBenchmarks,
+  } = await loadBenchmarkModule()
 
   console.log('🏁 Running TachUI core benchmark (Node harness)...')
   const { results: nodeResults, report: nodeReport } = await runTachUIBenchmarks()
