@@ -7,17 +7,23 @@ title: tachUI
   description="tachUI pairs SolidJS-style reactivity with SwiftUI ergonomics so you can ship interactive web apps without re-learning everything you love about declarative UI."
 >
   <template #actions>
-    <a class="tach-button" href="/guide/getting-started">Get started</a>
-    <a class="tach-button secondary" href="/showcase">Explore showcase</a>
-    <a class="tach-button ghost" href="/roadmap">Roadmap</a>
+    <a class="tach-button" href="/docs/guide/getting-started">Get started</a>
+    <a class="tach-button secondary" href="/docs/showcase">Explore showcase</a>
+    <a class="tach-button ghost" href="/docs/roadmap">Roadmap</a>
   </template>
 </DocHero>
 
 <div class="tach-stat-grid">
-  <DocStat value="71+" label="Components" />
-  <DocStat value="130+" label="Modifiers" />
-  <DocStat value="16" label="Packages" />
-  <DocStat value="3,687" label="Tests" />
+  <a class="tach-stat-link" href="/docs/components/catalog">
+    <DocStat value="71+" label="Components" />
+  </a>
+  <a class="tach-stat-link" href="/docs/modifiers/catalog">
+    <DocStat value="130+" label="Modifiers" />
+  </a>
+  <a class="tach-stat-link" href="/docs/packages/">
+    <DocStat value="16" label="Packages" />
+  </a>
+  <DocStat value="4,774" label="Tests" />
 </div>
 
 ## Why tachUI
@@ -46,12 +52,10 @@ title: tachUI
 ## Jump in
 
 - `guide/` – fundamentals, migration guides, and core concepts
-- `packages/` – deep dives for each of the 16 packages
-- `in-action/` – live playgrounds, galleries, and real-world blueprints
-- `cheatsheets/` – quick reference tables for components and modifiers
-- `api/` – typed API reference powered by TypeDoc
-- `demos/` – calculator, intro experience, and upcoming showcases
-- `resources/` – tooling, community, learning material
+- `packages/` – deep dives and API links for every package
+- `showcase/` – interactive playgrounds, galleries, and demos
+- `resources/` – community, tooling, roadmap, and cheat sheets
+- `api/` – typed API reference (linked from package pages)
 
 ## Interactive playground (Phase 1 preview)
 

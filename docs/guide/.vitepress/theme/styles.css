@@ -88,6 +88,15 @@
   border: 1px solid var(--tach-border);
 }
 
+.tach-stat-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.tach-stat-link:hover .tach-stat {
+  border-color: var(--tach-primary);
+}
+
 .tach-stat__value {
   font-size: 1.5rem;
   font-weight: 600;

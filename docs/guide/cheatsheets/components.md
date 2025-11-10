@@ -13,4 +13,4 @@ title: Component Cheat Sheet
 | `TabView` | Tab-based navigation | Provided by `@tachui/navigation` |
 | `Form` | Group form inputs | Provided by `@tachui/forms` |
 
-Looking for the original exhaustive table? Head to [/sheets/components-reference](/sheets/components-reference) until we finish backfilling this section.
+Looking for the original exhaustive table? Head to the [Component Catalog](/components/catalog) for the full list.

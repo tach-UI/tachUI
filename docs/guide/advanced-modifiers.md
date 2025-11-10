@@ -222,7 +222,7 @@ Text('Hello')
 
 ## Related Documentation
 
-- [Modifiers Reference](/sheets/modifiers-reference.md) - Complete modifier API
+- [Modifier Catalog](/modifiers/catalog) - Complete modifier API
 - [Component Examples](/examples/) - Practical usage examples
 - [Getting Started Guide](/guide/getting-started) - Basic modifier usage
 - [Performance Guide](/guide/performance) - Optimization techniques

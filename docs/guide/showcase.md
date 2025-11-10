@@ -35,6 +35,6 @@ tachUI ships with production-grade demos and examples that highlight the breadth
 
 - **Bundles**: calculator (67 KB), intro experience (~150–200 KB gzipped)
 - **Framework parity**: 71+ components, 130+ modifiers targeted to exceed 200 by 1.0
-- **Coverage**: 3,687 tests ensure demos stay aligned with framework changes
+- **Coverage**: 4,774 tests ensure demos stay aligned with framework changes
 
 Looking for something specific? Drop ideas in the [community hub](/resources/community) so we can prioritize the next round of demos.
