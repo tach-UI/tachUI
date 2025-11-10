@@ -62,7 +62,7 @@ function UserCard({ user }) {
   
   return VStack({
     children: [
-      Text(user.name).modifier.fontSize(18).fontWeight('600').build(),
+      Text(user.name).fontSize(18).fontWeight('600').build(),
       Button(
         () => expanded() ? 'Less' : 'More',
         () => setExpanded(!expanded())

@@ -12,7 +12,7 @@ describe('Gradient Text Modifier', () => {
     const gradient = 'linear-gradient(135deg, #ff0000, #00ff00, #0000ff)'
 
     const textComponent = Text('Hello World')
-      .modifier.gradientText(gradient)
+      .gradientText(gradient)
       .build()
 
     // Verify the component has the expected modifiers
@@ -32,7 +32,7 @@ describe('Gradient Text Modifier', () => {
     const gradient = 'linear-gradient(45deg, #667eea, #764ba2)'
 
     const textComponent = Text('Chained Gradient')
-      .modifier.fontSize(24)
+      .fontSize(24)
       .gradientText(gradient)
       .padding({ horizontal: 16, vertical: 8 })
       .build()
@@ -54,7 +54,7 @@ describe('Gradient Text Modifier', () => {
     ]
 
     testCases.forEach(gradient => {
-      const textComponent = Text('Test').modifier.gradientText(gradient).build()
+      const textComponent = Text('Test').gradientText(gradient).build()
 
       const gradientModifier = textComponent.modifiers[0]
       expect(gradientModifier.properties.backgroundImage).toBe(gradient)
@@ -65,7 +65,7 @@ describe('Gradient Text Modifier', () => {
     const gradient = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
 
     const textComponent = Text('Webkit Test')
-      .modifier.gradientText(gradient)
+      .gradientText(gradient)
       .build()
 
     const gradientModifier = textComponent.modifiers[0]
@@ -78,7 +78,7 @@ describe('Gradient Text Modifier', () => {
   })
 
   it('should work with empty string gradient (edge case)', () => {
-    const textComponent = Text('Edge Case').modifier.gradientText('').build()
+    const textComponent = Text('Edge Case').gradientText('').build()
 
     const gradientModifier = textComponent.modifiers[0]
     expect(gradientModifier.properties.backgroundImage).toBe('')

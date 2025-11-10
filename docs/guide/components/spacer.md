@@ -439,7 +439,7 @@ HStack({
 HStack({
   children: [
     Text("Start"),
-    VStack().modifier.width(200).build(), // Fixed width, not flexible
+    VStack().width(200).build(), // Fixed width, not flexible
     Text("End")
   ]
 })

@@ -15,7 +15,7 @@ const greeting = Text("Hello, ")
 
 // Multi-part message
 const welcomeMessage = Text("Welcome to ")
-  .concat(Text("tachUI").modifier.fontWeight('bold'))
+  .concat(Text("tachUI").fontWeight('bold'))
   .concat(Text(", the SwiftUI-inspired web framework!"))
 
 // Dynamic content
@@ -25,7 +25,7 @@ const PersonalGreeting = () => {
   const [name] = createSignal("John Doe")
   
   return Text("Welcome back, ")
-    .concat(Text(name).modifier.color('#007AFF'))
+    .concat(Text(name).color('#007AFF'))
     .concat(Text("!"))
 }
 ```
@@ -42,7 +42,6 @@ const successMessage = Image("check-circle.svg", {
   height: 16 
 })
 .concat(Text(" Operation completed successfully"))
-.modifier
 .color('#28a745')
 .display('flex')
 .alignItems('center')
@@ -55,7 +54,6 @@ const warningMessage = Image("warning.svg", {
   height: 16 
 })
 .concat(Text(" Please review your changes"))
-.modifier
 .color('#ffc107')
 .display('flex')
 .alignItems('center')
@@ -64,7 +62,6 @@ const warningMessage = Image("warning.svg", {
 // Navigation item
 const homeNavItem = Image("home-icon.svg", { alt: "" })
   .concat(Text("Home"))
-  .modifier
   .display('flex')
   .alignItems('center')
   .gap(8)
@@ -82,7 +79,6 @@ import { Button, Image, Text } from '@tachui/core'
 // Save button with icon
 const saveButton = Image("save-icon.svg", { alt: "" })
   .concat(Button("Save Changes", handleSave))
-  .modifier
   .display('flex')
   .alignItems('center')
   .gap(8)
@@ -94,7 +90,6 @@ const downloadButton = Button("Download", handleDownload)
     width: 16,
     height: 16 
   }))
-  .modifier
   .display('flex')
   .alignItems('center')
   .gap(8)
@@ -102,7 +97,6 @@ const downloadButton = Button("Download", handleDownload)
 // Social login button
 const googleLogin = Image("google-logo.svg", { alt: "Google" })
   .concat(Text("Sign in with Google"))
-  .modifier
   .display('flex')
   .alignItems('center')
   .gap(12)
@@ -177,9 +171,8 @@ const UserProfileCard = (user: User) => {
     width: 48,
     height: 48 
   })
-  .concat(Text(user.name).modifier.fontSize(18).fontWeight('bold'))
-  .concat(Text(user.title).modifier.color('#666').fontSize(14))
-  .modifier
+  .concat(Text(user.name).fontSize(18).fontWeight('bold'))
+  .concat(Text(user.title).color('#666').fontSize(14))
   .display('flex')
   .alignItems('center')
   .gap(12)
@@ -190,14 +183,12 @@ const UserProfileCard = (user: User) => {
     .concat(Text(`${user.following} following`))
     .concat(Text(" • "))
     .concat(Text(`${user.posts} posts`))
-    .modifier
     .fontSize(12)
     .color('#666')
 
   // Action buttons
   const userActions = Button("Follow", () => followUser(user))
     .concat(Button("Message", () => messageUser(user), { variant: 'outlined' }))
-    .modifier
     .display('flex')
     .gap(8)
 
@@ -206,7 +197,7 @@ const UserProfileCard = (user: User) => {
     Text(user.bio),
     userStats,
     userActions
-  ]).modifier.padding(20).border('1px solid #e1e5e9').borderRadius(12)
+  ]).padding(20).border('1px solid #e1e5e9').borderRadius(12)
 }
 ```
 
@@ -223,19 +214,18 @@ const ProductCard = (product: Product) => {
 
   // Price with discount
   const priceDisplay = product.discountPrice 
-    ? Text(`$${product.discountPrice}`).modifier.fontSize(18).fontWeight('bold')
-        .concat(Text(` $${product.price}`).modifier
+    ? Text(`$${product.discountPrice}`).fontSize(18).fontWeight('bold')
+        .concat(Text(` $${product.price}`)
           .fontSize(14)
           .textDecoration('line-through')
           .color('#666')
           .marginLeft(8))
-    : Text(`$${product.price}`).modifier.fontSize(18).fontWeight('bold')
+    : Text(`$${product.price}`).fontSize(18).fontWeight('bold')
 
   // Rating with stars
   const ratingDisplay = Text("★".repeat(product.rating))
     .concat(Text("☆".repeat(5 - product.rating)))
     .concat(Text(` (${product.reviewCount} reviews)`))
-    .modifier
     .color('#ffd700')
     .fontSize(14)
 
@@ -248,11 +238,11 @@ const ProductCard = (product: Product) => {
 
   return VStack([
     productImage,
-    Text(product.name).modifier.fontSize(16).fontWeight('500'),
+    Text(product.name).fontSize(16).fontWeight('500'),
     priceDisplay,
     ratingDisplay,
     productActions
-  ]).modifier.padding(16).border('1px solid #e1e5e9').borderRadius(8)
+  ]).padding(16).border('1px solid #e1e5e9').borderRadius(8)
 }
 ```
 
@@ -290,7 +280,7 @@ const StatusNotification = (
       .concat(Button(actionText, onAction, { variant: 'plain' }))
   }
 
-  return notification.modifier
+  return notification
     .display('flex')
     .alignItems('center')
     .gap(12)
@@ -325,20 +315,19 @@ const FormField = (
 ) => {
   // Label with required indicator
   const fieldLabel = Text(label)
-    .concat(required ? Text(" *").modifier.color('#dc3545') : Text(""))
-    .modifier
+    .concat(required ? Text(" *").color('#dc3545') : Text(""))
     .fontSize(14)
     .fontWeight('500')
     .marginBottom(4)
 
   // Help text
   const helpElement = helpText 
-    ? Text(helpText).modifier.fontSize(12).color('#666').marginTop(4)
+    ? Text(helpText).fontSize(12).color('#666').marginTop(4)
     : null
 
   // Error message
   const errorElement = error
-    ? Text(error).modifier.fontSize(12).color('#dc3545').marginTop(4)
+    ? Text(error).fontSize(12).color('#dc3545').marginTop(4)
     : null
 
   const elements = [
@@ -349,7 +338,7 @@ const FormField = (
   if (helpElement) elements.push(helpElement)
   if (errorElement) elements.push(errorElement)
 
-  return VStack(elements).modifier.marginBottom(16)
+  return VStack(elements).marginBottom(16)
 }
 
 // Usage in a form
@@ -382,7 +371,7 @@ const TagList = (tags: string[], maxVisible: number = 3) => {
   let tagDisplay: any = null
 
   visibleTags.forEach((tag, index) => {
-    const tagElement = Text(tag).modifier
+    const tagElement = Text(tag)
       .padding(4)
       .backgroundColor('#e9ecef')
       .borderRadius(4)
@@ -398,7 +387,7 @@ const TagList = (tags: string[], maxVisible: number = 3) => {
   if (hiddenCount > 0) {
     tagDisplay = tagDisplay
       .concat(Text(" "))
-      .concat(Text(`+${hiddenCount} more`).modifier
+      .concat(Text(`+${hiddenCount} more`)
         .fontSize(12)
         .color('#666')
         .fontStyle('italic'))
@@ -412,14 +401,14 @@ const TagList = (tags: string[], maxVisible: number = 3) => {
 
 ```typescript
 const ResponsiveHeader = (title: string, subtitle: string, action?: () => void) => {
-  let header = Text(title).modifier.fontSize(24).fontWeight('bold')
-    .concat(Text(subtitle).modifier.fontSize(16).color('#666'))
+  let header = Text(title).fontSize(24).fontWeight('bold')
+    .concat(Text(subtitle).fontSize(16).color('#666'))
 
   if (action) {
     header = header.concat(Button("Action", action))
   }
 
-  return header.modifier
+  return header
     .responsive({
       mobile: {
         flexDirection: 'column',
@@ -465,7 +454,7 @@ const UserStatus = (user: User) => {
 
   if (user.unreadCount > 0) {
     status = status.concat(
-      Text(user.unreadCount.toString()).modifier
+      Text(user.unreadCount.toString())
         .backgroundColor('#dc3545')
         .color('white')
         .borderRadius('50%')

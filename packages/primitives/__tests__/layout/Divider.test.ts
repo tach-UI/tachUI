@@ -7,6 +7,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   Divider,
+  DividerComponent,
   type DividerProps,
   DividerStyles,
   DividerUtils,
@@ -361,7 +362,7 @@ describe('Divider Component', () => {
   describe('Integration with Modifier System', () => {
     it('should work with modifier system', () => {
       const dividerWithModifiers = Divider()
-        .modifier.margin(20)
+        .margin(20)
         .opacity(0.8)
         .build()
 
@@ -376,8 +377,7 @@ describe('Divider Component', () => {
         thickness: 2,
       })
 
-      const modifiedDivider = originalDivider.modifier
-        .backgroundColor('#FFFFFF')
+      const modifiedDivider = originalDivider.backgroundColor('#FFFFFF')
         .build()
 
       expect(modifiedDivider.props.color).toBe('#FF0000')
@@ -449,6 +449,31 @@ describe('Divider Component', () => {
 
       expect(horizontalRendered).toBeDefined()
       expect(verticalRendered).toBeDefined()
+    })
+  })
+
+  describe('Cloning', () => {
+    it('resets lifecycle state on shallow clone', () => {
+      const divider = new DividerComponent({ margin: 8 })
+      divider.mounted = true
+      divider.cleanup.push(() => {})
+
+      const clone = divider.clone()
+
+      expect(clone).not.toBe(divider)
+      expect(clone.props).toEqual(divider.props)
+      expect(clone.id).not.toBe(divider.id)
+      expect(clone.mounted).toBe(false)
+      expect(clone.cleanup).toEqual([])
+    })
+
+    it('keeps reactive props references on deep clone', () => {
+      const [color] = createSignal('#CCCCCC')
+      const divider = new DividerComponent({ color })
+
+      const clone = divider.clone({ deep: true })
+
+      expect(clone.props.color).toBe(color)
     })
   })
 })

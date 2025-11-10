@@ -39,7 +39,6 @@ const AutoFitGrid = () => {
   return VStack(
     items.map(item => 
       Text(item)
-        .modifier
         .padding(16)
         .backgroundColor('#f5f5f5')
         .borderRadius(8)
@@ -47,7 +46,6 @@ const AutoFitGrid = () => {
         .build()
     )
   )
-  .modifier
   .apply(gridModifier)
   .build()
 }
@@ -78,7 +76,6 @@ const ResponsiveColumnGrid = () => {
   return VStack([
     // Grid items...
   ])
-  .modifier
   .apply(gridModifier)
   .build()
 }
@@ -109,7 +106,6 @@ const MasonryGrid = () => {
   return VStack([
     // Variable height content items...
   ])
-  .modifier
   .apply(masonryModifier)
   .build()
 }
@@ -144,7 +140,6 @@ const ResponsiveNavigation = () => {
     Button("Services").build(),
     Button("Contact").build()
   ])
-  .modifier
   .apply(stackToRowModifier)
   .build()
 }
@@ -182,7 +177,6 @@ const ResponsiveTagList = () => {
   return VStack(
     tags.map(tag => 
       Text(tag)
-        .modifier
         .padding({ base: 6, sm: 8 })
         .backgroundColor('#e0e0e0')
         .borderRadius(16)
@@ -190,7 +184,6 @@ const ResponsiveTagList = () => {
         .build()
     )
   )
-  .modifier
   .apply(flexWrapModifier)
   .build()
 }
@@ -222,7 +215,6 @@ const SpaceDistributionLayout = () => {
   return VStack([
     // Content cards...
   ])
-  .modifier
   .apply(spaceModifier)
   .build()
 }
@@ -259,7 +251,6 @@ const ResponsiveContainer = ({ children }: { children: any[] }) => {
   })
 
   return VStack(children)
-    .modifier
     .apply(containerModifier)
     .build()
 }
@@ -290,7 +281,6 @@ const CenteredLayout = ({ children }: { children: any[] }) => {
   })
 
   return VStack(children)
-    .modifier
     .apply(centeredModifier)
     .build()
 }
@@ -326,7 +316,6 @@ const SidebarLayout = ({ sidebar, main }: { sidebar: any, main: any }) => {
   })
 
   return VStack([sidebar, main])
-    .modifier
     .apply(sidebarModifier)
     .build()
 }
@@ -346,7 +335,6 @@ const MobileMenuButton = () => {
   const mobileOnlyModifier = ResponsiveVisibilityPatterns.showOnBreakpoints(['base', 'sm'])
   
   return Button("☰ Menu")
-    .modifier
     .apply(mobileOnlyModifier)
     .build()
 }
@@ -360,7 +348,6 @@ const DesktopNavigation = () => {
     Button("About").build(),
     Button("Contact").build()
   ])
-  .modifier
   .apply(desktopOnlyModifier)
   .build()
 }
@@ -373,13 +360,11 @@ const ProgressiveContent = () => {
     
     // Additional content on tablets and up
     Text("Additional content for tablet and desktop users")
-      .modifier
       .apply(ResponsiveVisibilityPatterns.showFromBreakpoint('md'))
       .build(),
     
     // Extra content only on desktop
     Text("Extra content only for desktop users")
-      .modifier
       .apply(ResponsiveVisibilityPatterns.showFromBreakpoint('lg'))
       .build()
   ])
@@ -408,7 +393,6 @@ const ResponsiveText = ({ content }: { content: string }) => {
   })
 
   return Text(content)
-    .modifier
     .apply(textModifier)
     .build()
 }
@@ -448,7 +432,6 @@ const SpacedComponent = () => {
   return VStack([
     Text("Consistently spaced content").build()
   ])
-  .modifier
   .apply(spacingModifier)
   .build()
 }
@@ -487,11 +470,10 @@ const RhythmicContent = () => {
   })
 
   return VStack([
-    Text("Heading").modifier.fontSize({ base: 24, md: 28, lg: 32 }).build(),
+    Text("Heading").fontSize({ base: 24, md: 28, lg: 32 }).build(),
     Text("Paragraph content with proper vertical rhythm...").build(),
     Text("Another paragraph...").build()
   ])
-  .modifier
   .apply(rhythmModifier)
   .build()
 }
@@ -539,7 +521,6 @@ const ResponsiveHeading = ({ level, children }: { level: 1 | 2 | 3 | 4 | 5 | 6, 
   })
 
   return Text(children)
-    .modifier
     .apply(typographyModifier)
     .build()
 }
@@ -560,7 +541,6 @@ const ResponsiveBodyText = ({ children }: { children: string }) => {
   })
 
   return Text(children)
-    .modifier
     .apply(bodyModifier)
     .build()
 }
@@ -589,7 +569,6 @@ const FluidTypography = ({ children }: { children: string }) => {
   })
 
   return Text(children)
-    .modifier
     .apply(fluidModifier)
     .build()
 }
@@ -607,7 +586,6 @@ const HeroSection = () => {
     // Hero content
     VStack([
       Text("Welcome to TachUI")
-        .modifier
         .responsive({
           base: { 
             fontSize: 28, 
@@ -628,7 +606,6 @@ const HeroSection = () => {
         .build(),
       
       Text("Build responsive applications with ease")
-        .modifier
         .responsive({
           base: { 
             fontSize: 16, 
@@ -653,7 +630,6 @@ const HeroSection = () => {
         Button("Get Started").build(),
         Button("Learn More").build()
       ])
-      .modifier
       .responsive({
         base: { 
           flexDirection: 'column', 
@@ -668,7 +644,6 @@ const HeroSection = () => {
       })
       .build()
     ])
-    .modifier
     .responsive({
       base: { 
         padding: 24,
@@ -686,7 +661,6 @@ const HeroSection = () => {
     })
     .build()
   ])
-  .modifier
   .responsive({
     base: { 
       minHeight: '60vh',
@@ -735,7 +709,6 @@ const ProductGrid = ({ products }: { products: Product[] }) => {
       VStack([
         // Product image
         Image(product.image)
-          .modifier
           .responsive({
             base: { width: '100%', height: 200 },
             md: { height: 220 },
@@ -747,31 +720,26 @@ const ProductGrid = ({ products }: { products: Product[] }) => {
         // Product info
         VStack([
           Text(product.name)
-            .modifier
             .fontSize({ base: 16, md: 18 })
             .fontWeight('600')
             .marginBottom(8)
             .build(),
           
           Text(product.price)
-            .modifier
             .fontSize({ base: 18, md: 20 })
             .fontWeight('bold')
             .color('#007bff')
             .build()
         ])
-        .modifier
         .padding({ base: 12, md: 16 })
         .build()
       ])
-      .modifier
       .backgroundColor('#ffffff')
       .borderRadius(12)
       .boxShadow('0 2px 8px rgba(0,0,0,0.1)')
       .build()
     )
   )
-  .modifier
   .apply(gridModifier)
   .padding({ base: 16, md: 24, lg: 32 })
   .build()
@@ -804,7 +772,6 @@ const ComplexLayout = () => {
   return VStack([
     // Content items...
   ])
-  .modifier
   .apply(containerModifier)
   .apply(gridModifier)
   .apply(spacingModifier)

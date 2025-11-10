@@ -81,7 +81,7 @@ export function NavigationLink(
   // Convert label to component if string
   const labelComponent =
     typeof label === 'string'
-      ? HTML.span({ children: label }).modifier.build()
+      ? HTML.span({ children: label }).build()
       : label
 
   // Navigation handler
@@ -345,7 +345,7 @@ export function StyledNavigationLink(
           typeof label === 'string' ? HTML.span({ children: label }) : label,
         ],
       })
-        .modifier.backgroundColor(backgroundColor || '#007AFF')
+        .backgroundColor(backgroundColor || '#007AFF')
         .foregroundColor(foregroundColor || '#ffffff')
         .padding({ top: 12, bottom: 12, left: 24, right: 24 })
         .cornerRadius(cornerRadius || 8)
@@ -359,7 +359,7 @@ export function StyledNavigationLink(
           typeof label === 'string' ? HTML.span({ children: label }) : label,
         ],
       })
-        .modifier.backgroundColor(backgroundColor || '#ffffff')
+        .backgroundColor(backgroundColor || '#ffffff')
         .foregroundColor(foregroundColor || '#333333')
         .padding(16)
         .cornerRadius(cornerRadius || 12)
@@ -374,7 +374,7 @@ export function StyledNavigationLink(
           typeof label === 'string' ? HTML.span({ children: label }) : label,
         ],
       })
-        .modifier.backgroundColor(backgroundColor || 'transparent')
+        .backgroundColor(backgroundColor || 'transparent')
         .foregroundColor(foregroundColor || '#333333')
         .padding({ top: 16, bottom: 16, left: 20, right: 20 })
         .border(1, '#e0e0e0')
@@ -412,7 +412,7 @@ export function NavigationListLink(
           HTML.div({
             children: title,
           })
-            .modifier.fontSize(16)
+            .fontSize(16)
             .fontWeight('500')
             .foregroundColor('#333333')
             .build(),
@@ -422,14 +422,14 @@ export function NavigationListLink(
                 HTML.div({
                   children: subtitle,
                 })
-                  .modifier.fontSize(14)
+                  .fontSize(14)
                   .foregroundColor('#666666')
                   .margin({ top: 4 })
                   .build(),
               ]
             : []),
         ],
-      }).modifier.build(),
+      }).build(),
 
       // Accessories
       ...(accessories || []),
@@ -438,13 +438,13 @@ export function NavigationListLink(
       HTML.div({
         children: '›',
       })
-        .modifier.fontSize(18)
+        .fontSize(18)
         .foregroundColor('#c0c0c0')
         .fontWeight('300')
         .build(),
     ],
   })
-    .modifier.padding({ top: 16, bottom: 16, left: 20, right: 20 })
+    .padding({ top: 16, bottom: 16, left: 20, right: 20 })
     .backgroundColor('#ffffff')
     .border(1, '#e0e0e0')
     .build()
@@ -472,7 +472,7 @@ export function NavigationIconLink(
   const iconComponent =
     typeof icon === 'string'
       ? HTML.div({ children: icon })
-          .modifier.fontSize(20)
+          .fontSize(20)
           .frame({ width: 24, height: 24 })
           .build()
       : icon
@@ -481,13 +481,13 @@ export function NavigationIconLink(
     children: [
       iconComponent,
       HTML.div({ children: title })
-        .modifier.fontSize(16)
+        .fontSize(16)
         .fontWeight('500')
         .margin({ left: 12 })
         .build(),
     ],
   })
-    .modifier.padding({ top: 12, bottom: 12, left: 16, right: 16 })
+    .padding({ top: 12, bottom: 12, left: 16, right: 16 })
     .build()
 
   return NavigationLink(label, destination, options)

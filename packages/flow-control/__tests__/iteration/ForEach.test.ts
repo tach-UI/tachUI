@@ -15,38 +15,34 @@ import { createSignal } from '@tachui/core'
 import type { Signal, DOMNode } from '@tachui/core'
 
 // Mock Text component for testing
-const Text = (content: string) => ({
-  type: 'component' as const,
-  render: () => [
-    {
-      type: 'element' as const,
-      tag: 'span',
-      props: {},
-      children: [{ type: 'text' as const, text: content }],
-    },
-  ],
-  props: { content },
-  children: [],
-  cleanup: [],
-  id: `text-${Date.now()}`,
-  modifier: {
-    build: () => ({
-      type: 'component' as const,
-      render: () => [
-        {
-          type: 'element' as const,
-          tag: 'span',
-          props: {},
-          children: [{ type: 'text' as const, text: content }],
-        },
-      ],
-      props: { content },
-      children: [],
-      cleanup: [],
-      id: `text-${Date.now()}`,
-    }),
-  },
-})
+const Text = (content: string) => {
+  const component = {
+    type: 'component' as const,
+    render: () => [
+      {
+        type: 'element' as const,
+        tag: 'span',
+        props: {},
+        children: [{ type: 'text' as const, text: content }],
+      },
+    ],
+    props: { content },
+    children: [],
+    cleanup: [],
+    id: `text-${Date.now()}`,
+  }
+
+  const builder: any = {
+    ...component,
+    build: () => component,
+  }
+
+  builder.modifier = {
+    build: () => component,
+  }
+
+  return builder
+}
 import type { ComponentInstance } from '@tachui/core'
 
 describe('ForEach Component', () => {
@@ -55,7 +51,7 @@ describe('ForEach Component', () => {
 
   beforeEach(() => {
     mockItems = ['item1', 'item2', 'item3']
-    mockComponent = Text('test').modifier.build()
+    mockComponent = Text('test').build()
   })
 
   describe('Basic Functionality', () => {

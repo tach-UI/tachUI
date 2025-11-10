@@ -189,8 +189,7 @@ describe('Alert Component', () => {
       }
 
       const alert = Alert(props)
-      const modifiedAlert = alert.modifier
-        .padding(20)
+      const modifiedAlert = alert.padding(20)
         .backgroundColor('#f0f0f0')
         .build()
 

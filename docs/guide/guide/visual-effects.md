@@ -219,7 +219,7 @@ import { customGlassmorphism } from '@tachui/core'
 VStack([
   Text("Custom glass")
 ])
-.modifier(customGlassmorphism(
+(customGlassmorphism(
   18,   // blur amount
   1.4,  // saturation multiplier  
   1.15, // brightness multiplier

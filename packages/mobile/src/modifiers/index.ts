@@ -5,24 +5,66 @@
  * touch gestures, pull-to-refresh, and mobile interactions.
  */
 
-import { globalModifierRegistry } from '@tachui/registry'
+import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
+import { TACHUI_PACKAGE_VERSION } from '../version'
 import { refreshable } from './gestures'
 
 export { refreshable } from './gestures'
 export type { RefreshableOptions } from './types'
 
-// Registry integration for mobile modifiers
-const mobileModifierRegistrations: Array<[string, (...args: any[]) => any]> = [
-  ['refreshable', refreshable],
-]
+const MOBILE_PLUGIN_INFO: PluginInfo = {
+  name: '@tachui/mobile',
+  version: TACHUI_PACKAGE_VERSION,
+  author: 'TachUI Team',
+  verified: true,
+}
 
-// Auto-register mobile modifiers on import
-mobileModifierRegistrations.forEach(([name, factory]) => {
-  globalModifierRegistry.register(name, factory)
-})
+const refreshableMetadata = {
+  category: 'interaction' as const,
+  priority: 120,
+  signature: '(options: RefreshableOptions) => Modifier',
+  description:
+    'Adds pull-to-refresh gesture support with built-in loading indicator management.',
+}
 
-if (process.env.NODE_ENV !== 'production') {
-  console.info(
-    `🔍 [@tachui/mobile] Registered ${mobileModifierRegistrations.length} mobile modifiers with global registry`
+let mobileRegistered = false
+
+export interface RegisterMobileModifiersOptions {
+  registry?: ModifierRegistry
+  plugin?: PluginInfo
+  force?: boolean
+}
+
+export function registerMobileModifiers(
+  options?: RegisterMobileModifiersOptions,
+): void {
+  const targetRegistry = options?.registry
+  const targetPlugin = options?.plugin ?? MOBILE_PLUGIN_INFO
+  const shouldForce = options?.force === true
+  const isCustomTarget = Boolean(targetRegistry || options?.plugin)
+
+  if (!isCustomTarget && mobileRegistered && !shouldForce) {
+    return
+  }
+
+  registerModifierWithMetadata(
+    'refreshable',
+    refreshable,
+    refreshableMetadata,
+    targetRegistry,
+    targetPlugin,
   )
+
+  if (!isCustomTarget) {
+    mobileRegistered = true
+  }
+}
+
+registerMobileModifiers()
+
+if (typeof import.meta !== 'undefined' && (import.meta as any).hot) {
+  ;(import.meta as any).hot.accept(() => {
+    registerMobileModifiers({ force: true })
+  })
 }

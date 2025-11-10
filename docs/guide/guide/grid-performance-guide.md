@@ -151,14 +151,14 @@ const VirtualGrid = ({ items }: { items: Item[] }) => {
     children: [
       // Spacer for items before visible range
       visibleRange.start > 0 && 
-        Spacer().modifier.height(visibleRange.start * itemHeight).build(),
+        Spacer().height(visibleRange.start * itemHeight).build(),
       
       // Visible items
       ...visibleItems.map(item => ItemComponent(item)),
       
       // Spacer for items after visible range
       visibleRange.end < items.length &&
-        Spacer().modifier.height((items.length - visibleRange.end) * itemHeight).build()
+        Spacer().height((items.length - visibleRange.end) * itemHeight).build()
     ].filter(Boolean)
   })
     .modifier
@@ -217,7 +217,7 @@ const ProgressiveGrid = ({ initialItems }: { initialItems: Item[] }) => {
       hasMore && VStack([
         isLoading ? 
           LoadingSpinner() : 
-          Text('Load More').modifier.ref(loadMoreRef).build()
+          Text('Load More').ref(loadMoreRef).build()
       ])
     ]
   })
@@ -432,12 +432,12 @@ const ProductGrid = ({ products }: { products: Product[] }) => {
         alt: product.name,
         loading: 'lazy'
       })
-      .modifier.aspectRatio(1, 'fill').cornerRadius(8).build(),
+      .aspectRatio(1, 'fill').cornerRadius(8).build(),
       
-      Text(product.name).modifier.fontWeight('bold').lineClamp(2).build(),
-      Text(`$${product.price}`).modifier.foregroundColor('#28a745').build()
+      Text(product.name).fontWeight('bold').lineClamp(2).build(),
+      Text(`$${product.price}`).foregroundColor('#28a745').build()
     ])
-    .modifier.padding(12).backgroundColor('#ffffff').cornerRadius(8).build()
+    .padding(12).backgroundColor('#ffffff').cornerRadius(8).build()
   ))
   
   return LazyVGrid({
@@ -476,21 +476,21 @@ const SocialFeed = ({ initialPosts }: { initialPosts: Post[] }) => {
           alt: post.author.name,
           loading: 'lazy'
         })
-        .modifier.frame(40, 40).cornerRadius(20).build(),
+        .frame(40, 40).cornerRadius(20).build(),
         
         VStack([
-          Text(post.author.name).modifier.fontWeight('bold').build(),
-          Text(post.timestamp).modifier.fontSize(12).foregroundColor('#666').build()
-        ]).modifier.flex(1).marginLeft(12).build()
+          Text(post.author.name).fontWeight('bold').build(),
+          Text(post.timestamp).fontSize(12).foregroundColor('#666').build()
+        ]).flex(1).marginLeft(12).build()
       ]),
       
       // Content
-      Text(post.content).modifier.marginVertical(12).build(),
+      Text(post.content).marginVertical(12).build(),
       
       // Media (if present)
       post.image && VStack([
         // Placeholder while loading
-        !imageLoaded && Spacer().modifier.height(200).backgroundColor('#f0f0f0').build(),
+        !imageLoaded && Spacer().height(200).backgroundColor('#f0f0f0').build(),
         
         Image({ 
           src: post.image, 
@@ -510,7 +510,7 @@ const SocialFeed = ({ initialPosts }: { initialPosts: Post[] }) => {
         Button({ title: '♥ Like', onTap: () => likePost(post.id) }),
         Button({ title: '💬 Comment', onTap: () => showComments(post.id) }),
         Button({ title: '🔄 Share', onTap: () => sharePost(post.id) })
-      ]).modifier.marginTop(12).build()
+      ]).marginTop(12).build()
     ])
     .modifier
     .padding(16)
@@ -541,9 +541,9 @@ const DashboardGrid = ({ widgets }: { widgets: Widget[] }) => {
   const MemoizedWidget = memo(({ widget }: { widget: Widget }) => {
     return VStack([
       HStack([
-        Text(widget.title).modifier.fontWeight('bold').build(),
+        Text(widget.title).fontWeight('bold').build(),
         Spacer(),
-        widget.loading && LoadingSpinner().modifier.frame(16, 16).build()
+        widget.loading && LoadingSpinner().frame(16, 16).build()
       ]),
       
       widget.data ? 

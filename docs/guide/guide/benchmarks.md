@@ -4,7 +4,7 @@ TachUI includes a comprehensive benchmark suite aligned with industry standards,
 
 ## Overview
 
-The benchmark suite measures TachUI's performance against other popular frameworks across critical scenarios that impact real-world user experience.
+The benchmark suite measures TachUI's performance against other popular frameworks across critical scenarios that impact real-world user experience. Earlier documentation referenced a 21/100 score from the legacy JSDOM-only harness; the combined Node + browser workflow supersedes that figure, and the first Chromium-backed run recorded under `benchmarks/history/` should be used as the current baseline.
 
 ## Running Benchmarks
 
@@ -39,6 +39,24 @@ npm run benchmark
 
 Runs all benchmarks with detailed timing but no framework comparison (~25 seconds).
 
+Set the environment variable `TACHUI_BENCH_CACHE_MODE` to control manual row caching during the run:
+
+- `baseline` – render without the benchmark-specific row cache
+- `row-cache` – force the manual cache for cache-aware workloads
+- `both` (default) – execute each table benchmark in both modes for side-by-side metrics
+
+Each run prints the active cache modes and appends renderer metrics (DOM mutations, attribute writes/removals, text updates, modifier invocations, cache hits/misses) so you can quickly gauge the impact of renderer changes.
+
+When both cache modes run together, the suite automatically reduces to 6 iterations and a single warmup per benchmark to keep memory usage manageable. Override via `TACHUI_BENCH_ITERATIONS` / `TACHUI_BENCH_WARMUPS` if you need different sample sizes, or lower them further if your environment still runs out of memory (e.g. set `TACHUI_BENCH_ITERATIONS=3` for extremely tight environments).
+
+#### Browser Benchmark (Chromium)
+```bash
+npm run benchmark:browser:report
+```
+
+Launches Chromium, runs the full benchmark suite against the real DOM, and saves the results as JSON under `packages/core/benchmarks/results/browser/`. Use this when you need apples-to-apples comparisons with js-framework-benchmark or to validate optimizations outside the JSDOM environment.
+> Note: The `benchmarks/public/` directory hosts the interactive demo harness used for manual experimentation. The automated `benchmark:browser:report` command executes the full TachUI benchmark suite via Playwright and is the source of the browser metrics consumed by the combined reports.
+
 ### Browser Benchmarks (Real Performance) ⚡
 
 #### Quick Browser Benchmark
@@ -57,6 +75,15 @@ npm run benchmark:browser
 ```
 
 Full benchmark suite in real browser environment (~10 seconds) with all operations showing 100-1000x performance improvement over mock DOM testing.
+
+#### Honest Benchmark Summary (Node + Browser + Comparison)
+```bash
+pnpm benchmark:browser:report    # optional fresh browser run (root command)
+pnpm benchmark:report:combined
+```
+
+Generates a combined Node/browser summary, stores it under `benchmarks/history/`, and prints an updated TachUI vs React/Solid comparison table. CI runs this nightly via the `benchmark-report` workflow and uploads the history artefact for traceability.
+When a recent browser run is present, the comparison and performance score are based on the Chromium measurements; otherwise the script falls back to the Node (JSDOM) harness. The legacy 21/100 score is kept only for historical reference—always cite the latest browser-backed score emitted by the combined summary.
 
 ## Performance Reality Check
 
@@ -90,6 +117,11 @@ This demonstrates why:
 8. **Component creation** - Raw component instantiation speed
 9. **Reactive updates** - Signal/effect system performance
 
+### Structural Coverage Benchmarks
+
+10. **Create 1,000 rows (sectioned table)** - Nested `<tbody>` reuse validation  
+11. **Unkeyed list partial update** - Positional adoption behaviour without keys
+
 ## Framework Comparisons
 
 The benchmark suite compares TachUI against:
@@ -110,6 +142,27 @@ The benchmark suite compares TachUI against:
 - **Operations per second** - Throughput measurement
 - **Memory usage** - Heap memory consumption (MB)
 - **Bundle size** - Framework overhead (KB)
+
+### Renderer Metrics
+- **DOM mutations** - Created, adopted, inserted, moved, removed counts
+- **Cache hits/misses** - Structural node reuse effectiveness
+- **Attribute writes/removals** - Prop churn at the DOM boundary
+- **Text updates** - Text node mutations per benchmark
+- **Modifier applications** - Modifier pipeline invocations
+
+The Node harness aggregates these counters across measured iterations before logging them, and the browser automation now writes the same summaries alongside each JSON artefact. Expect console output similar to:
+
+```
+Renderer operation metrics (averages across measured iterations):
+  Partial update (every 10th row): iterations=12 | created=avg:0,max:0,total:0, adopted=avg:10002,…
+  Swap rows: iterations=12 | created=avg:0,max:0,total:0, moved=avg:996,max:996,total:11952,…
+```
+
+Use these heuristics when reviewing runs:
+- **Created/Removed > ~50** on update paths (`Partial update`, `Select row`, `Swap rows`) means keyed reuse regressed; a dedicated guard lives in `packages/core/__tests__/runtime/renderer-metrics-guards.test.ts`.
+- **Moved** should register for the swap benchmark (≈996 after the Phase 1B diff improvements). A flat zero indicates DOM moves are not being issued.
+- **Text updates** should align with the number of rows touched (~100 for “every 10th”). Large spikes suggest redundant writes.
+- **Attribute writes** remain high on the select benchmark until Phase 2’s attribute reconciliation work lands; track deltas rather than absolute numbers there.
 
 ### Performance Score
 The benchmark suite calculates a weighted performance score (0-100):

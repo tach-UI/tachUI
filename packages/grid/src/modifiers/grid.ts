@@ -7,8 +7,14 @@
 
 import { BaseModifier } from '@tachui/modifiers'
 import type { ModifierContext } from '@tachui/modifiers'
+import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import type {
+  ModifierRegistry,
+  PluginInfo,
+} from '@tachui/registry'
 import type { DOMNode } from '@tachui/core/runtime/types'
 import type { GridSpanConfig } from '../components/Grid'
+import { TACHUI_PACKAGE_VERSION } from '../version'
 
 /**
  * Grid column span modifier (equivalent to SwiftUI's gridCellColumns)
@@ -248,3 +254,143 @@ export function gridItemConfig(config: GridSpanConfig): GridItemConfigModifier {
 export const gridCellColumns = gridColumnSpan
 export const gridCellRows = gridRowSpan
 export const gridCellAnchor = gridCellAlignment
+
+const GRID_PLUGIN_INFO: PluginInfo = {
+  name: '@tachui/grid',
+  version: TACHUI_PACKAGE_VERSION,
+  author: 'TachUI Team',
+  verified: true,
+}
+
+type GridModifierRegistration = [
+  name: string,
+  factory: (...args: any[]) => any,
+  metadata: {
+    category: 'layout'
+    priority: number
+    signature: string
+    description: string
+  }
+]
+
+const GRID_MODIFIER_PRIORITY = 180
+
+const gridModifierRegistrations: GridModifierRegistration[] = [
+  [
+    'gridColumnSpan',
+    gridColumnSpan,
+    {
+      category: 'layout',
+      priority: GRID_MODIFIER_PRIORITY,
+      signature: '(span: number, start?: number) => Modifier',
+      description: 'Spans a grid item across multiple columns with optional starting column.',
+    },
+  ],
+  [
+    'gridRowSpan',
+    gridRowSpan,
+    {
+      category: 'layout',
+      priority: GRID_MODIFIER_PRIORITY,
+      signature: '(span: number, start?: number) => Modifier',
+      description: 'Spans a grid item across multiple rows with optional starting row.',
+    },
+  ],
+  [
+    'gridArea',
+    gridArea,
+    {
+      category: 'layout',
+      priority: GRID_MODIFIER_PRIORITY,
+      signature: '(area: string) => Modifier',
+      description: 'Places a grid item into a named CSS grid area.',
+    },
+  ],
+  [
+    'gridCellAlignment',
+    gridCellAlignment,
+    {
+      category: 'layout',
+      priority: GRID_MODIFIER_PRIORITY,
+      signature:
+        "(alignment: 'start' | 'center' | 'end' | 'stretch', axis?: 'horizontal' | 'vertical' | 'both') => Modifier",
+      description: 'Aligns a grid item within its cell on horizontal or vertical axes.',
+    },
+  ],
+  [
+    'gridItemConfig',
+    gridItemConfig,
+    {
+      category: 'layout',
+      priority: GRID_MODIFIER_PRIORITY,
+      signature: '(config: GridSpanConfig) => Modifier',
+      description: 'Applies a full grid configuration including span, start, area, and alignment.',
+    },
+  ],
+  [
+    'gridCellColumns',
+    gridCellColumns,
+    {
+      category: 'layout',
+      priority: GRID_MODIFIER_PRIORITY,
+      signature: '(span: number, start?: number) => Modifier',
+      description: 'SwiftUI compatibility alias for gridColumnSpan.',
+    },
+  ],
+  [
+    'gridCellRows',
+    gridCellRows,
+    {
+      category: 'layout',
+      priority: GRID_MODIFIER_PRIORITY,
+      signature: '(span: number, start?: number) => Modifier',
+      description: 'SwiftUI compatibility alias for gridRowSpan.',
+    },
+  ],
+  [
+    'gridCellAnchor',
+    gridCellAnchor,
+    {
+      category: 'layout',
+      priority: GRID_MODIFIER_PRIORITY,
+      signature:
+        "(alignment: 'start' | 'center' | 'end' | 'stretch', axis?: 'horizontal' | 'vertical' | 'both') => Modifier",
+      description: 'SwiftUI compatibility alias for gridCellAlignment.',
+    },
+  ],
+]
+
+let gridModifiersRegistered = false
+
+export interface RegisterGridModifiersOptions {
+  registry?: ModifierRegistry
+  plugin?: PluginInfo
+  force?: boolean
+}
+
+export function registerGridModifiers(
+  options?: RegisterGridModifiersOptions,
+): void {
+  const targetRegistry = options?.registry
+  const targetPlugin = options?.plugin ?? GRID_PLUGIN_INFO
+  const shouldForce = options?.force === true
+  const isCustomTarget = Boolean(targetRegistry || options?.plugin)
+
+  if (!isCustomTarget && gridModifiersRegistered && !shouldForce) {
+    return
+  }
+
+  gridModifierRegistrations.forEach(([name, factory, metadata]) => {
+    registerModifierWithMetadata(
+      name,
+      factory,
+      metadata,
+      targetRegistry,
+      targetPlugin,
+    )
+  })
+
+  if (!isCustomTarget) {
+    gridModifiersRegistered = true
+  }
+}

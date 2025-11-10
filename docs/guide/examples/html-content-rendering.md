@@ -14,7 +14,7 @@ const WelcomeMessage = () => {
   return Text(
     '<p>Welcome to <strong>TachUI</strong>! Start building <em>amazing</em> applications today.</p>'
   )
-    .modifier.asHTML()
+    .asHTML()
     .fontSize(16)
     .lineHeight(1.5)
     .textAlign('center')
@@ -57,7 +57,7 @@ const NewsletterArticle = () => {
   `
 
   return Text(content)
-    .modifier.asHTML()
+    .asHTML()
     .maxWidth(600)
     .padding(24)
     .backgroundColor('#FFFFFF')
@@ -97,14 +97,14 @@ const CommentComponent = (comment: Comment) => {
     children: [
       // Author (plain text, no HTML)
       Text(comment.author)
-        .modifier.fontWeight('600')
+        .fontWeight('600')
         .fontSize(14)
         .foregroundColor('#2C3E50')
         .build(),
 
       // Comment content (sanitized HTML)
       Text(comment.content)
-        .modifier.asHTML({
+        .asHTML({
           customSanitizer: sanitizeUserContent,
         })
         .fontSize(14)
@@ -114,13 +114,13 @@ const CommentComponent = (comment: Comment) => {
 
       // Timestamp (plain text)
       Text(comment.timestamp)
-        .modifier.fontSize(12)
+        .fontSize(12)
         .opacity(0.6)
         .marginTop(8)
         .build(),
     ],
   })
-    .modifier.padding(16)
+    .padding(16)
     .backgroundColor('#F8F9FA')
     .border(1, '#E9ECEF')
     .cornerRadius(8)
@@ -133,14 +133,14 @@ const CommentsSection = (comments: Comment[]) => {
   return VStack({
     children: [
       Text('Comments')
-        .modifier.fontSize(20)
+        .fontSize(20)
         .fontWeight('600')
         .marginBottom(16)
         .build(),
 
       ...comments.map(comment => CommentComponent(comment)),
     ],
-  }).modifier.build()
+  }).build()
 }
 ```
 
@@ -247,7 +247,7 @@ const BlogPostComponent = (post: BlogPost) => {
     children: [
       // Title
       Text(post.title)
-        .modifier.fontSize(32)
+        .fontSize(32)
         .fontWeight('700')
         .lineHeight(1.2)
         .marginBottom(16)
@@ -255,14 +255,14 @@ const BlogPostComponent = (post: BlogPost) => {
 
       // Tags
       Text(`Tagged: ${post.tags.join(', ')}`)
-        .modifier.fontSize(14)
+        .fontSize(14)
         .opacity(0.7)
         .marginBottom(24)
         .build(),
 
       // Content with rich HTML support
       Text(post.content)
-        .modifier.asHTML({
+        .asHTML({
           customSanitizer: sanitizeBlogContent,
         })
         .fontSize(16)
@@ -270,7 +270,7 @@ const BlogPostComponent = (post: BlogPost) => {
         .build(),
     ],
   })
-    .modifier.maxWidth(800)
+    .maxWidth(800)
     .padding(32)
     .backgroundColor('#FFFFFF')
     .cornerRadius(12)
@@ -309,7 +309,7 @@ const EmailTemplatePreview = (
   }
 
   return Text(templateHtml)
-    .modifier.asHTML({
+    .asHTML({
       customSanitizer: processEmailTemplate,
       allowedTags: [
         // Email HTML structure
@@ -377,7 +377,7 @@ const EmailTemplatePreview = (
         meta: ['charset', 'name', 'content', 'http-equiv'],
       },
     })
-    .modifier.fontFamily('system-ui, -apple-system, "Segoe UI", sans-serif')
+    .fontFamily('system-ui, -apple-system, "Segoe UI", sans-serif')
     .fontSize(14)
     .lineHeight(1.4)
     .padding(20)
@@ -459,7 +459,7 @@ const MarkdownRenderer = (markdown: string) => {
   }
 
   return Text(htmlContent)
-    .modifier.asHTML({
+    .asHTML({
       customSanitizer: sanitizeMarkdown,
     })
     .fontSize(16)
@@ -472,7 +472,7 @@ const DocumentationPage = (markdownContent: string) => {
   return VStack({
     children: [MarkdownRenderer(markdownContent)],
   })
-    .modifier.maxWidth(800)
+    .maxWidth(800)
     .padding(24)
     .build()
 }
@@ -535,7 +535,7 @@ const RichTextDisplay = (content: RichTextContent) => {
     children: [
       // Content
       Text(content.html)
-        .modifier.asHTML({
+        .asHTML({
           customSanitizer: sanitizeEditorContent,
         })
         .fontSize(16)
@@ -544,14 +544,14 @@ const RichTextDisplay = (content: RichTextContent) => {
 
       // Meta information
       Text(`${content.wordCount} words`)
-        .modifier.fontSize(12)
+        .fontSize(12)
         .opacity(0.6)
         .marginTop(16)
         .textAlign('right')
         .build(),
     ],
   })
-    .modifier.padding(20)
+    .padding(20)
     .backgroundColor('#FFFFFF')
     .border(1, '#E5E5E7')
     .cornerRadius(8)
@@ -584,7 +584,7 @@ const LargeHTMLContentViewer = (htmlContent: string) => {
   return VStack({
     children: [
       Text(sanitizedContent())
-        .modifier.asHTML({
+        .asHTML({
           skipSanitizer: true, // Already sanitized in memo
           validateDOM: false, // Skip DOM validation for performance
         })
@@ -594,13 +594,13 @@ const LargeHTMLContentViewer = (htmlContent: string) => {
 
       !isExpanded()
         ? Text('Show More')
-            .modifier.foregroundColor('#007AFF')
+            .foregroundColor('#007AFF')
             .onTap(() => setIsExpanded(true))
             .padding(8)
             .build()
         : null,
     ],
-  }).modifier.build()
+  }).build()
 }
 ```
 
@@ -621,7 +621,7 @@ const CachedHTMLRenderer = (content: string, cacheKey?: string) => {
   }
 
   return Text(sanitizedContent)
-    .modifier.asHTML({
+    .asHTML({
       skipSanitizer: true, // Already sanitized and cached
       validateDOM: false,
     })
@@ -648,7 +648,7 @@ const SecurityTestComponent = () => {
   return VStack({
     children: [
       Text('Security Test Results')
-        .modifier.fontSize(18)
+        .fontSize(18)
         .fontWeight('600')
         .marginBottom(16)
         .build(),
@@ -657,25 +657,25 @@ const SecurityTestComponent = () => {
         VStack({
           children: [
             Text(`Test ${index + 1}: ${vector.substring(0, 50)}...`)
-              .modifier.fontSize(12)
+              .fontSize(12)
               .fontFamily('monospace')
               .backgroundColor('#F8F9FA')
               .padding(8)
               .build(),
 
             Text(vector)
-              .modifier.asHTML()
+              .asHTML()
               .fontSize(14)
               .padding(8)
               .border(1, '#E5E5E7')
               .marginBottom(12)
               .build(),
           ],
-        }).modifier.build()
+        }).build()
       ),
     ],
   })
-    .modifier.padding(20)
+    .padding(20)
     .build()
 }
 ```
@@ -755,7 +755,7 @@ const CMSContentRenderer = (content: CMSContent) => {
   const rules = getSanitizationRules(content.type)
 
   return Text(content.content)
-    .modifier.asHTML({
+    .asHTML({
       customSanitizer: html => DOMPurify.sanitize(html, rules),
     })
     .fontSize(content.type === 'article' ? 16 : 14)

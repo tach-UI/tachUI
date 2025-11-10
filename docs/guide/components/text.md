@@ -20,7 +20,7 @@ The Text component displays text content with full support for:
 import { Text } from '@tachui/primitives'
 
 // Static text
-Text('Hello, World!').modifier.build()
+Text('Hello, World!').build()
 ```
 
 ### Reactive Text
@@ -32,7 +32,7 @@ import { createSignal } from '@tachui/core'
 const [message, setMessage] = createSignal('Initial message')
 
 // Reactive text that updates automatically
-Text(message).modifier.foregroundColor('#333').build()
+Text(message).foregroundColor('#333').build()
 
 // Update the text
 setMessage('Updated message!')
@@ -43,7 +43,7 @@ setMessage('Updated message!')
 ```typescript
 const currentTime = () => new Date().toLocaleTimeString()
 
-Text(currentTime).modifier.font({ family: 'monospace', size: 16 }).build()
+Text(currentTime).font({ family: 'monospace', size: 16 }).build()
 ```
 
 ## Typography Presets
@@ -54,18 +54,18 @@ TachUI provides built-in typography presets that follow system design patterns:
 import { TextStyles } from '@tachui/primitives'
 
 // Large title
-TextStyles.LargeTitle('Welcome').modifier.foregroundColor('#000').build()
+TextStyles.LargeTitle('Welcome').foregroundColor('#000').build()
 
 // Regular title
-TextStyles.Title('Section Title').modifier.build()
+TextStyles.Title('Section Title').build()
 
 // Body text
 TextStyles.Body(
   'This is body text with proper line height and sizing.'
-).modifier.build()
+).build()
 
 // Caption text
-TextStyles.Caption('Small caption text').modifier.opacity(0.7).build()
+TextStyles.Caption('Small caption text').opacity(0.7).build()
 ```
 
 ### Available Typography Presets
@@ -92,17 +92,17 @@ TextStyles.Caption('Small caption text').modifier.opacity(0.7).build()
 import { TextFormat } from '@tachui/primitives'
 
 // Bold text
-TextFormat.bold('Important message').modifier.build()
+TextFormat.bold('Important message').build()
 
 // Italic text
-TextFormat.italic('Emphasized text').modifier.build()
+TextFormat.italic('Emphasized text').build()
 
 // Underlined text
-TextFormat.underline('Underlined text').modifier.build()
+TextFormat.underline('Underlined text').build()
 
 // Monospace text
 TextFormat.monospace('code snippet')
-  .modifier.backgroundColor('#f5f5f5')
+  .backgroundColor('#f5f5f5')
   .padding(4)
   .build()
 
@@ -111,14 +111,14 @@ TextFormat.formatted('Multi-formatted text', {
   bold: true,
   italic: true,
   underline: true,
-}).modifier.build()
+}).build()
 ```
 
 ### Manual Font Styling
 
 ```typescript
 Text('Custom styled text')
-  .modifier.font({
+  .font({
     family: 'Georgia, serif',
     size: 18,
     weight: '600',
@@ -134,7 +134,7 @@ Text('Custom styled text')
 
 ```typescript
 Text('Centered text')
-  .modifier.textAlign('center')
+  .textAlign('center')
   .textDecoration('underline')
   .textTransform('uppercase')
   .build()
@@ -144,7 +144,7 @@ Text('Centered text')
 
 ```typescript
 Text('Spaced text with custom typography')
-  .modifier.lineHeight(1.8)
+  .lineHeight(1.8)
   .letterSpacing('2px')
   .wordSpacing('4px')
   .build()
@@ -155,7 +155,7 @@ Text('Spaced text with custom typography')
 ```typescript
 // Limit to 3 lines with tail truncation
 Text('This is a very long text that will be truncated after three lines...')
-  .modifier.frame({ width: 200 })
+  .frame({ width: 200 })
   .lineHeight(1.4)
   .css({
     display: '-webkit-box',
@@ -174,19 +174,19 @@ Text('This is a very long text that will be truncated after three lines...')
 ```typescript
 // Heading text
 Text('Page Title')
-  .modifier.accessibilityRole('heading')
+  .accessibilityRole('heading')
   .accessibilityLevel(1)
   .font(Typography.largeTitle)
   .build()
 
 // Label text
-Text('Username:').modifier.accessibilityRole('label').build()
+Text('Username:').accessibilityRole('label').build()
 ```
 
 ### Accessibility Labels
 
 ```typescript
-Text('👍').modifier.accessibilityLabel('Thumbs up emoji').build()
+Text('👍').accessibilityLabel('Thumbs up emoji').build()
 ```
 
 ## Interactive Text
@@ -199,7 +199,7 @@ const handleClick = () => {
 }
 
 Text('Click me')
-  .modifier.foregroundColor('#007AFF')
+  .foregroundColor('#007AFF')
   .textDecoration('underline')
   .cursor('pointer')
   .onTap(handleClick)
@@ -213,7 +213,7 @@ const handleLongPress = () => {
   console.log('Long press detected')
 }
 
-Text('Long press me').modifier.onLongPress(handleLongPress).build()
+Text('Long press me').onLongPress(handleLongPress).build()
 ```
 
 ## Responsive Typography
@@ -226,7 +226,7 @@ import { createSignal } from '@tachui/core'
 const [isMobile, setIsMobile] = createSignal(window.innerWidth < 768)
 
 Text('Responsive text')
-  .modifier.font({
+  .font({
     size: () => (isMobile() ? 16 : 20),
     weight: '400',
   })
@@ -237,7 +237,7 @@ Text('Responsive text')
 
 ```typescript
 Text('Text with responsive line height')
-  .modifier.lineHeight(() => (isMobile() ? 1.4 : 1.6))
+  .lineHeight(() => (isMobile() ? 1.4 : 1.6))
   .build()
 ```
 
@@ -247,13 +247,13 @@ Text('Text with responsive line height')
 
 ```typescript
 // Static color
-Text('Colored text').modifier.foregroundColor('#FF6B6B').build()
+Text('Colored text').foregroundColor('#FF6B6B').build()
 
 // Reactive color
 const [isDark, setIsDark] = createSignal(false)
 
 Text('Theme-aware text')
-  .modifier.foregroundColor(() => (isDark() ? '#FFFFFF' : '#000000'))
+  .foregroundColor(() => (isDark() ? '#FFFFFF' : '#000000'))
   .build()
 ```
 
@@ -261,7 +261,7 @@ Text('Theme-aware text')
 
 ```typescript
 Text('Text with background')
-  .modifier.backgroundColor('#FFE66D')
+  .backgroundColor('#FFE66D')
   .padding(8)
   .cornerRadius(4)
   .build()
@@ -275,18 +275,18 @@ Text('Text with background')
 import { VStack, HStack } from '@tachui/primitives'
 
 VStack([
-  TextStyles.Title('Article Title').modifier.textAlign('center').build(),
+  TextStyles.Title('Article Title').textAlign('center').build(),
 
   HStack([
-    TextStyles.Caption('By Author').modifier.opacity(0.7).build(),
+    TextStyles.Caption('By Author').opacity(0.7).build(),
 
     Spacer(),
 
-    TextStyles.Caption('2 min read').modifier.opacity(0.7).build(),
+    TextStyles.Caption('2 min read').opacity(0.7).build(),
   ]),
 
   TextStyles.Body('Article content goes here...')
-    .modifier.lineHeight(1.6)
+    .lineHeight(1.6)
     .build(),
 ])
 ```
@@ -299,18 +299,18 @@ VStack([
 const ArticleHeader = (title: string, author: string, date: string) =>
   VStack([
     TextStyles.LargeTitle(title)
-      .modifier.textAlign('center')
+      .textAlign('center')
       .marginBottom(16)
       .build(),
 
     HStack([
-      TextStyles.Subheadline(`By ${author}`).modifier.opacity(0.8).build(),
+      TextStyles.Subheadline(`By ${author}`).opacity(0.8).build(),
 
-      TextStyles.Subheadline(' • ').modifier.opacity(0.5).build(),
+      TextStyles.Subheadline(' • ').opacity(0.5).build(),
 
-      TextStyles.Subheadline(date).modifier.opacity(0.8).build(),
+      TextStyles.Subheadline(date).opacity(0.8).build(),
     ])
-      .modifier.justifyContent('center')
+      .justifyContent('center')
       .marginBottom(24)
       .build(),
   ])
@@ -321,7 +321,7 @@ const ArticleHeader = (title: string, author: string, date: string) =>
 ```typescript
 const CodeBlock = (code: string) =>
   TextFormat.monospace(code)
-    .modifier.backgroundColor('#1e1e1e')
+    .backgroundColor('#1e1e1e')
     .foregroundColor('#d4d4d4')
     .padding(16)
     .cornerRadius(8)
@@ -336,7 +336,7 @@ const CodeBlock = (code: string) =>
 ```typescript
 const Badge = (text: string, color: string = '#007AFF') =>
   TextStyles.Caption(text)
-    .modifier.backgroundColor(color)
+    .backgroundColor(color)
     .foregroundColor('#FFFFFF')
     .padding({ horizontal: 8, vertical: 4 })
     .cornerRadius(12)
@@ -352,7 +352,7 @@ const Badge = (text: string, color: string = '#007AFF') =>
 ```typescript
 const LinkText = (text: string, url: string) =>
   Text(text)
-    .modifier.foregroundColor('#007AFF')
+    .foregroundColor('#007AFF')
     .textDecoration('underline')
     .cursor('pointer')
     .onTap(() => window.open(url, '_blank'))
@@ -377,7 +377,7 @@ const formattedText = createMemo(() =>
     .join(', ')
 )
 
-Text(formattedText).modifier.build()
+Text(formattedText).build()
 ```
 
 ### Large Text Lists
@@ -391,7 +391,7 @@ const LargeTextList = ({ items }: { items: string[] }) =>
   List({
     data: items,
     renderItem: (text, index) =>
-      TextStyles.Body(text).modifier.padding(8).build(),
+      TextStyles.Body(text).padding(8).build(),
   })
 ```
 
@@ -479,7 +479,7 @@ The Text component supports secure HTML content rendering through the `.asHTML()
 import { Text } from '@tachui/primitives'
 
 // Simple HTML content
-Text('<p>Welcome to <strong>TachUI</strong>!</p>').modifier.asHTML().build()
+Text('<p>Welcome to <strong>TachUI</strong>!</p>').asHTML().build()
 
 // Rich content with styling
 Text(`
@@ -496,7 +496,7 @@ Text(`
     </blockquote>
   </article>
 `)
-  .modifier.asHTML()
+  .asHTML()
   .padding(20)
   .backgroundColor('#F8F9FA')
   .cornerRadius(8)
@@ -510,11 +510,11 @@ The `.asHTML()` modifier automatically protects against common XSS attacks:
 ```typescript
 // Dangerous content is automatically sanitized
 Text('<script>alert("xss")</script><p>Safe content</p>')
-  .modifier.asHTML()
+  .asHTML()
   .build()
 // Result: '<p>Safe content</p>' (script removed)
 
-Text('<img src="x" onerror="alert(1)" alt="Image">').modifier.asHTML().build()
+Text('<img src="x" onerror="alert(1)" alt="Image">').asHTML().build()
 // Result: '<img src="x" alt="Image">' (event handler removed)
 ```
 
@@ -525,14 +525,14 @@ import DOMPurify from 'dompurify'
 
 // Using DOMPurify for comprehensive sanitization
 Text(userGeneratedContent)
-  .modifier.asHTML({
+  .asHTML({
     customSanitizer: (html: string) => DOMPurify.sanitize(html),
   })
   .build()
 
 // Restrict to specific tags
 Text(blogContent)
-  .modifier.asHTML({
+  .asHTML({
     allowedTags: ['p', 'strong', 'em', 'a', 'ul', 'li', 'blockquote'],
     allowedAttributes: {
       '*': ['class'],
@@ -547,7 +547,7 @@ Text(blogContent)
 ```typescript
 // User comments - Maximum security
 Text(userComment)
-  .modifier.asHTML({
+  .asHTML({
     allowedTags: ['p', 'strong', 'em', 'br'],
     allowedAttributes: {},
   })
@@ -555,7 +555,7 @@ Text(userComment)
 
 // Editorial content - Balanced security
 Text(articleContent)
-  .modifier.asHTML({
+  .asHTML({
     allowedTags: ['p', 'strong', 'em', 'a', 'ul', 'li', 'h1', 'h2', 'h3'],
     allowedAttributes: {
       '*': ['class'],
@@ -566,7 +566,7 @@ Text(articleContent)
 
 // Trusted server content - Skip sanitization (use with caution)
 Text(trustedTemplate)
-  .modifier.asHTML({
+  .asHTML({
     skipSanitizer: true,
     __suppressWarnings: true,
   })

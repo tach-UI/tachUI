@@ -1,9 +1,9 @@
-/**
- * TachUI Benchmark Setup
- *
- * Standard benchmark setup aligned with js-framework-benchmark
- * and other industry benchmarking tools.
- */
+import { createRequire } from 'node:module'
+
+import { ComponentManager } from '../src/runtime/component'
+import type { RendererMetricsSnapshot } from '../src/runtime/renderer'
+
+import { generateData } from './data'
 
 export interface BenchmarkResult {
   name: string
@@ -12,6 +12,8 @@ export interface BenchmarkResult {
   memory?: number
   operationsPerSecond?: number
   type: 'create' | 'update' | 'select' | 'swap' | 'remove' | 'clear'
+  metadata?: Record<string, unknown>
+  rendererMetrics?: RendererMetricsSummary
 }
 
 export interface BenchmarkConfig {
@@ -21,54 +23,104 @@ export interface BenchmarkConfig {
   framework: string
 }
 
+export type BenchmarkPhase = 'warmup' | 'measurement'
+
+let currentPhase: BenchmarkPhase = 'measurement'
+
+export function setBenchmarkPhase(phase: BenchmarkPhase) {
+  currentPhase = phase
+}
+
+export function getBenchmarkPhase(): BenchmarkPhase {
+  return currentPhase
+}
+
 export class BenchmarkRunner {
   private results: BenchmarkResult[] = []
-  private config: BenchmarkConfig
 
-  constructor(config: BenchmarkConfig) {
-    this.config = config
-  }
+  constructor(private readonly config: BenchmarkConfig) {}
 
   async run(
     name: string,
     type: BenchmarkResult['type'],
     benchmark: () => Promise<void> | void
   ): Promise<BenchmarkResult> {
-    // Warmup runs
+    const manager = ComponentManager.getInstance()
+
+    setBenchmarkPhase('warmup')
     for (let i = 0; i < this.config.warmupRuns; i++) {
       await benchmark()
+      manager.cleanup()
+      this.tryGc()
     }
 
-    // Force garbage collection if available
-    if (global.gc) {
-      global.gc()
-    }
+    this.tryGc()
+    setBenchmarkPhase('measurement')
 
+    const iterations = Math.max(1, this.config.iterations)
     const startMemory = this.config.measureMemory ? this.getMemoryUsage() : undefined
-    const startTime = performance.now()
+    const start = performance.now()
 
-    // Run actual benchmark
-    for (let i = 0; i < this.config.iterations; i++) {
+    for (let i = 0; i < iterations; i++) {
       await benchmark()
+      manager.cleanup()
+      this.tryGc()
     }
 
-    const endTime = performance.now()
+    const end = performance.now()
     const endMemory = this.config.measureMemory ? this.getMemoryUsage() : undefined
 
-    const duration = endTime - startTime
-    const operationsPerSecond = (this.config.iterations * 1000) / duration
+    const duration = (end - start) / iterations
+    const operationsPerSecond = duration > 0 ? 1000 / duration : undefined
+    const memory =
+      startMemory != null && endMemory != null ? (endMemory - startMemory) / iterations : undefined
 
     const result: BenchmarkResult = {
       name,
       framework: this.config.framework,
       duration,
-      memory: endMemory && startMemory ? endMemory - startMemory : undefined,
+      memory,
       operationsPerSecond,
       type,
     }
 
     this.results.push(result)
     return result
+  }
+
+  getResults(): BenchmarkResult[] {
+    return this.results
+  }
+
+  clearResults() {
+    this.results = []
+  }
+
+  generateReport(): string {
+    const lines = ['TachUI Benchmark Results', '='.repeat(50)]
+    const grouped = this.results.reduce<Record<string, BenchmarkResult[]>>((acc, result) => {
+      if (!acc[result.type]) {
+        acc[result.type] = []
+      }
+      acc[result.type].push(result)
+      return acc
+    }, {})
+
+    Object.entries(grouped).forEach(([type, results]) => {
+      lines.push(`\n${type.toUpperCase()} Operations:`)
+      results.forEach(result => {
+        lines.push(`  ${result.name}:`)
+        lines.push(`    Duration: ${result.duration.toFixed(2)}ms`)
+        lines.push(
+          `    Ops/sec: ${result.operationsPerSecond != null ? result.operationsPerSecond.toFixed(0) : 'N/A'}`
+        )
+        if (result.memory != null) {
+          lines.push(`    Memory: ${(result.memory / 1024 / 1024).toFixed(2)}MB`)
+        }
+      })
+    })
+
+    return lines.join('\n')
   }
 
   private getMemoryUsage(): number {
@@ -81,139 +133,60 @@ export class BenchmarkRunner {
     return 0
   }
 
-  getResults(): BenchmarkResult[] {
-    return this.results
-  }
-
-  clearResults(): void {
-    this.results = []
-  }
-
-  generateReport(): string {
-    const report = ['TachUI Benchmark Results', '='.repeat(50)]
-
-    const grouped = this.results.reduce(
-      (acc, result) => {
-        if (!acc[result.type]) {
-          acc[result.type] = []
-        }
-        acc[result.type].push(result)
-        return acc
-      },
-      {} as Record<string, BenchmarkResult[]>
-    )
-
-    Object.entries(grouped).forEach(([type, results]) => {
-      report.push(`\n${type.toUpperCase()} Operations:`)
-      results.forEach((result) => {
-        report.push(`  ${result.name}:`)
-        report.push(`    Duration: ${result.duration.toFixed(2)}ms`)
-        report.push(`    Ops/sec: ${result.operationsPerSecond?.toFixed(0) || 'N/A'}`)
-        if (result.memory) {
-          report.push(`    Memory: ${(result.memory / 1024 / 1024).toFixed(2)}MB`)
-        }
-      })
-    })
-
-    return report.join('\n')
+  private tryGc() {
+    if (typeof (globalThis as any).gc === 'function') {
+      try {
+        ;(globalThis as any).gc()
+      } catch (error) {
+        console.warn('gc failed:', error)
+      }
+    }
   }
 }
 
-// Mock DOM for Node.js environment
+export interface RendererMetricsSummary {
+  iterations: number
+  totals: RendererMetricsSnapshot
+  average: RendererMetricsSnapshot
+  max: RendererMetricsSnapshot
+  samples: RendererMetricsSnapshot[]
+}
+
+const nodeRequire = typeof createRequire === 'function' ? createRequire(import.meta.url) : null
+
 export function setupMockDOM(): void {
   if (typeof window === 'undefined') {
-    const { JSDOM } = require('jsdom')
+    if (!nodeRequire) {
+      throw new Error('Cannot create mock DOM without createRequire support')
+    }
+    const { JSDOM } = nodeRequire('jsdom')
     const dom = new JSDOM(
       '<!DOCTYPE html><html><body><div id="benchmark-root"></div></body></html>'
     )
 
-    global.window = dom.window as any
-    global.document = dom.window.document
-    global.HTMLElement = dom.window.HTMLElement
-    global.Text = dom.window.Text
-    global.Comment = dom.window.Comment
-    global.DocumentFragment = dom.window.DocumentFragment
-    global.Node = dom.window.Node
-    global.performance = dom.window.performance
+    ;(globalThis as any).window = dom.window
+    ;(globalThis as any).document = dom.window.document
+    ;(globalThis as any).HTMLElement = dom.window.HTMLElement
+    ;(globalThis as any).Element = dom.window.Element
+    ;(globalThis as any).Text = dom.window.Text
+    ;(globalThis as any).Comment = dom.window.Comment
+    ;(globalThis as any).DocumentFragment = dom.window.DocumentFragment
+    ;(globalThis as any).Node = dom.window.Node
+    if (typeof globalThis.performance === 'undefined') {
+      ;(globalThis as any).performance = dom.window.performance
+    }
   }
 }
 
 export function getBenchmarkContainer(): HTMLElement {
   let container = document.getElementById('benchmark-root')
   if (!container) {
-    // Create container if it doesn't exist
     container = document.createElement('div')
     container.id = 'benchmark-root'
     document.body.appendChild(container)
   }
-  container.innerHTML = '' // Clear previous content
+  container.innerHTML = ''
   return container
 }
 
-// Standard benchmark data (aligned with js-framework-benchmark)
-export function generateData(count: number = 1000) {
-  const adjectives = [
-    'pretty',
-    'large',
-    'big',
-    'small',
-    'tall',
-    'short',
-    'long',
-    'handsome',
-    'plain',
-    'quaint',
-    'clean',
-    'elegant',
-    'easy',
-    'angry',
-    'crazy',
-    'helpful',
-    'mushy',
-    'odd',
-    'unsightly',
-    'adorable',
-    'important',
-    'inexpensive',
-    'cheap',
-    'expensive',
-    'fancy',
-  ]
-  const colours = [
-    'red',
-    'yellow',
-    'blue',
-    'green',
-    'pink',
-    'brown',
-    'purple',
-    'brown',
-    'white',
-    'black',
-    'orange',
-  ]
-  const nouns = [
-    'table',
-    'chair',
-    'house',
-    'bbq',
-    'desk',
-    'car',
-    'pony',
-    'cookie',
-    'sandwich',
-    'burger',
-    'pizza',
-    'mouse',
-    'keyboard',
-  ]
-
-  const data = []
-  for (let i = 0; i < count; i++) {
-    data.push({
-      id: i + 1,
-      label: `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${colours[Math.floor(Math.random() * colours.length)]} ${nouns[Math.floor(Math.random() * nouns.length)]}`,
-    })
-  }
-  return data
-}
+export { generateData }

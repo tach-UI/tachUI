@@ -18,7 +18,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       const textColor = createComputed(() => (isDark() ? '#ffffff' : '#000000'))
 
       expect(() => {
-        Text('Hello').modifier.foregroundColor(textColor).build()
+        Text('Hello').foregroundColor(textColor).build()
       }).not.toThrow()
     })
 
@@ -27,7 +27,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       const bgColor = createComputed(() => (isDark() ? '#333333' : '#ffffff'))
 
       expect(() => {
-        Text('Hello').modifier.backgroundColor(bgColor).build()
+        Text('Hello').backgroundColor(bgColor).build()
       }).not.toThrow()
     })
 
@@ -36,7 +36,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       const fontSize = createComputed(() => (size() === 'large' ? 20 : 14))
 
       expect(() => {
-        Text('Hello').modifier.fontSize(fontSize).build()
+        Text('Hello').fontSize(fontSize).build()
       }).not.toThrow()
     })
 
@@ -45,7 +45,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       const opacity = createComputed(() => (visible() ? 1.0 : 0.5))
 
       expect(() => {
-        Text('Hello').modifier.opacity(opacity).build()
+        Text('Hello').opacity(opacity).build()
       }).not.toThrow()
     })
 
@@ -54,7 +54,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       const radius = createComputed(() => (rounded() ? 12 : 0))
 
       expect(() => {
-        Text('Hello').modifier.cornerRadius(radius).build()
+        Text('Hello').cornerRadius(radius).build()
       }).not.toThrow()
     })
   })
@@ -65,7 +65,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       const borderWidth = createComputed(() => (thick() ? 3 : 1))
 
       expect(() => {
-        Text('Hello').modifier.border(borderWidth, '#000000').build()
+        Text('Hello').border(borderWidth, '#000000').build()
       }).not.toThrow()
     })
 
@@ -76,7 +76,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       )
 
       expect(() => {
-        Text('Hello').modifier.border(1, borderColor).build()
+        Text('Hello').border(1, borderColor).build()
       }).not.toThrow()
     })
 
@@ -87,7 +87,7 @@ describe('Computed Signal Modifier Compatibility', () => {
 
       expect(() => {
         Text('Hello')
-          .modifier.borderTop(width, color)
+          .borderTop(width, color)
           .borderRight(width, color)
           .borderBottom(width, color)
           .borderLeft(width, color)
@@ -113,7 +113,7 @@ describe('Computed Signal Modifier Compatibility', () => {
 
       expect(() => {
         Text('Complex Component')
-          .modifier.foregroundColor(textColor)
+          .foregroundColor(textColor)
           .backgroundColor(bgColor)
           .fontSize(fontSize)
           .border(borderWidth, textColor)
@@ -130,7 +130,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       const largeSize = createComputed(() => mediumSize() * 1.5)
 
       expect(() => {
-        Text('Nested Computed').modifier.fontSize(largeSize).build()
+        Text('Nested Computed').fontSize(largeSize).build()
       }).not.toThrow()
     })
 
@@ -140,13 +140,13 @@ describe('Computed Signal Modifier Compatibility', () => {
       // Should accept computed number for fontSize
       const fontSize = createComputed(() => count() + 14)
       expect(() => {
-        Text('Counter').modifier.fontSize(fontSize).build()
+        Text('Counter').fontSize(fontSize).build()
       }).not.toThrow()
 
       // Should accept computed string for fontSize
       const fontSizeString = createComputed(() => `${count() + 14}px`)
       expect(() => {
-        Text('Counter').modifier.fontSize(fontSizeString).build()
+        Text('Counter').fontSize(fontSizeString).build()
       }).not.toThrow()
     })
   })
@@ -162,7 +162,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       // Both should work in the same modifier
       expect(() => {
         Text('Mixed Signals')
-          .modifier.foregroundColor(regularColor)
+          .foregroundColor(regularColor)
           .backgroundColor(computedColor)
           .build()
       }).not.toThrow()
@@ -176,7 +176,7 @@ describe('Computed Signal Modifier Compatibility', () => {
 
       expect(() => {
         Text('Mixed Values')
-          .modifier.foregroundColor(dynamicColor) // Computed signal
+          .foregroundColor(dynamicColor) // Computed signal
           .backgroundColor('#ffffff') // Static value
           .fontSize(16) // Static value
           .padding(12) // Static value
@@ -193,7 +193,7 @@ describe('Computed Signal Modifier Compatibility', () => {
       )
 
       const component = Text('Test Component')
-        .modifier.foregroundColor(textColor)
+        .foregroundColor(textColor)
         .build()
 
       expect(component).toBeDefined()

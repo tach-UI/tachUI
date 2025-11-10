@@ -393,10 +393,10 @@ Focus on components that benefit most from enhanced styling:
 
 ```typescript
 // ✅ High impact: Cards, buttons, form elements
-Card.modifier.cornerRadius({ top: 12, bottom: 8 })
+Card.cornerRadius({ top: 12, bottom: 8 })
 
 // ⚠️ Low impact: Simple text elements
-Text("Simple").modifier.cornerRadius(4) // Keep simple
+Text("Simple").cornerRadius(4) // Keep simple
 ```
 
 ### 2. Use Design System Integration
@@ -419,16 +419,16 @@ Card.modifier
 // ✅ Gradual: Adopt features as needed
 const migrationSteps = {
   // Step 1: Use new cursor values
-  phase1: () => Button("Drag").modifier.cursor('grab'),
+  phase1: () => Button("Drag").cursor('grab'),
   
   // Step 2: Add individual corners
-  phase2: () => Card.modifier.cornerRadius({ top: 12, bottom: 8 }),
+  phase2: () => Card.cornerRadius({ top: 12, bottom: 8 }),
   
   // Step 3: Multiple shadows
-  phase3: () => Card.modifier.shadows([shadow1, shadow2]),
+  phase3: () => Card.shadows([shadow1, shadow2]),
   
   // Step 4: Advanced border control
-  phase4: () => Card.modifier.border({ leading: spec1, trailing: spec2 })
+  phase4: () => Card.border({ leading: spec1, trailing: spec2 })
 }
 ```
 

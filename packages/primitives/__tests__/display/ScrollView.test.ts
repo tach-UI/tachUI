@@ -471,14 +471,14 @@ describe('ScrollView Factory Function', () => {
 
     expect(scrollView).toBeDefined()
     expect(typeof scrollView.modifier).toBe('object')
-    expect(typeof scrollView.modifier.build).toBe('function')
+    expect(typeof scrollView.build).toBe('function')
   })
 
   it('should support modifier chaining', () => {
     const scrollView = ScrollView({
       children: [Text('Content')],
     })
-      .modifier.frame(undefined, 400)
+      .frame(undefined, 400)
       .padding(16)
       .backgroundColor('#f5f5f5')
       .build()

@@ -39,6 +39,27 @@ export class CustomPropertiesModifier extends BaseModifier<CustomPropertiesOptio
     if (!context.element) return
 
     const styles = this.computeCustomPropertyStyles(this.properties)
+    const element = context.element as HTMLElement | { style?: any }
+    const styleTarget =
+      element instanceof HTMLElement ? element.style : (element as any).style
+
+    if (styleTarget && typeof styleTarget.setProperty === 'function') {
+      for (const [propertyName, formatted] of Object.entries(styles)) {
+        const baseName = propertyName.startsWith('--')
+          ? propertyName.slice(2)
+          : propertyName
+        const normalizedName = `--${this.toCSSProperty(baseName)}`
+
+        styleTarget.setProperty(normalizedName, formatted)
+        try {
+          styleTarget[normalizedName] = formatted
+        } catch {
+          // Some style implementations (CSSStyleDeclaration) may not allow direct assignment.
+        }
+      }
+      return undefined
+    }
+
     this.applyStyles(context.element, styles)
 
     return undefined

@@ -5,14 +5,19 @@
  * text formatting, and advanced styling capabilities.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import type { Signal } from '@tachui/core'
-import { h, text } from '@tachui/core'
-import type { ComponentInstance, ComponentProps } from '@tachui/core'
-import { createModifiableComponent, createModifierBuilder } from '@tachui/core'
+import { h, text, withModifiers } from '@tachui/core'
+import type { ComponentProps } from '@tachui/core'
+import { createComponentInstance } from '@tachui/core/components'
 import type { Concatenatable } from '@tachui/core'
 import { processElementOverride, type ElementOverrideProps } from '@tachui/core'
 import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
+import type { CloneableComponent, CloneOptions } from '@tachui/core/runtime/types'
+import {
+  clonePropsPreservingReactivity,
+  resetLifecycleState,
+} from '@tachui/core'
 import type {
   Asset,
   ColorAssetProxy,
@@ -104,44 +109,13 @@ export const Typography = {
 }
 
 /**
- * Enhanced component wrapper that adds modifier support and preserves concatenation methods
- */
-function withModifiers<P extends ComponentProps>(
-  component: ComponentInstance<P>
-): ModifiableComponent<P> & {
-  modifier: ModifierBuilder<ModifiableComponent<P>>
-} & (ComponentInstance<P> extends Concatenatable ? Concatenatable : {}) {
-  const modifiableComponent = createModifiableComponent(component)
-  const modifierBuilder = createModifierBuilder(modifiableComponent)
-
-  const result: any = {
-    ...modifiableComponent,
-    modifier: modifierBuilder,
-    modifierBuilder: modifierBuilder,
-  }
-
-  // If the original component supports concatenation, preserve those methods
-  if (component && typeof (component as any).concat === 'function') {
-    result.concat = function (other: any) {
-      return (component as any).concat(other)
-    }
-    result.toSegment = function () {
-      return (component as any).toSegment()
-    }
-    result.isConcatenatable = function () {
-      return (component as any).isConcatenatable()
-    }
-  }
-
-  return result
-}
-
-/**
  * Enhanced Text component class with reactive content handling, concatenation support, element override, and CSS classes
  */
 export class EnhancedText
   extends ComponentWithCSSClasses
-  implements ComponentInstance<TextProps>, Concatenatable<TextProps>
+  implements
+    CloneableComponent<TextProps>,
+    Concatenatable<TextProps>
 {
   public readonly type = 'component' as const
   public readonly id: string
@@ -217,6 +191,26 @@ export class EnhancedText
     })
     this.cleanup = []
   }
+
+  clone(options: CloneOptions = {}): this {
+    return options.deep ? this.deepClone() : this.shallowClone()
+  }
+
+  shallowClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props)
+    const clone = new EnhancedText(clonedProps)
+    resetLifecycleState(clone)
+    return clone as this
+  }
+
+  deepClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props, {
+      deep: true,
+    })
+    const clone = new EnhancedText(clonedProps)
+    resetLifecycleState(clone)
+    return clone as this
+  }
 }
 
 /**
@@ -225,10 +219,12 @@ export class EnhancedText
 export function Text(
   content?: string | (() => string) | Signal<string>,
   additionalProps?: Partial<TextProps>
-): ModifiableComponent<TextProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-} & Concatenatable<TextProps> {
-  const component = new EnhancedText({ content, ...additionalProps })
+): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
+  const props: TextProps = {
+    content,
+    ...additionalProps,
+  }
+  const component = createComponentInstance(EnhancedText, props)
   return withModifiers(component) as any
 }
 
@@ -243,9 +239,7 @@ export const TextFormat = {
     content: string | (() => string) | Signal<string>,
     formatting: TextFormatting,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     const props: Partial<TextProps> = { ...additionalProps }
 
     if (formatting.bold) {
@@ -276,9 +270,7 @@ export const TextFormat = {
   bold(
     content: string | (() => string) | Signal<string>,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     return Text(content, {
       font: { weight: 'bold' },
       ...additionalProps,
@@ -291,9 +283,7 @@ export const TextFormat = {
   italic(
     content: string | (() => string) | Signal<string>,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     return Text(content, {
       font: { style: 'italic' },
       ...additionalProps,
@@ -306,9 +296,7 @@ export const TextFormat = {
   underline(
     content: string | (() => string) | Signal<string>,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     return Text(content, {
       textDecoration: 'underline',
       ...additionalProps,
@@ -321,9 +309,7 @@ export const TextFormat = {
   monospace(
     content: string | (() => string) | Signal<string>,
     additionalProps?: Partial<TextProps>
-  ): ModifiableComponent<TextProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<TextProps>>
-  } & Concatenatable<TextProps> {
+  ): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
     return Text(content, {
       font: { family: 'monospace' },
       ...additionalProps,

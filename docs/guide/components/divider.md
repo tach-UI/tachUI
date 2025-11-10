@@ -301,8 +301,8 @@ function SectionLayout() {
       // Header
       VStack({
         children: [
-          Text("Settings").modifier.fontSize(24).fontWeight('bold').build(),
-          Text("Manage your preferences").modifier.fontSize(14).foregroundColor('#8E8E93').build()
+          Text("Settings").fontSize(24).fontWeight('bold').build(),
+          Text("Manage your preferences").fontSize(14).foregroundColor('#8E8E93').build()
         ]
       }),
       
@@ -311,7 +311,7 @@ function SectionLayout() {
       // Account section
       VStack({
         children: [
-          Text("Account").modifier.fontSize(18).fontWeight('600').build(),
+          Text("Account").fontSize(18).fontWeight('600').build(),
           Text("Profile settings"),
           Text("Privacy settings"),
           Text("Security settings")
@@ -327,7 +327,7 @@ function SectionLayout() {
       // Appearance section
       VStack({
         children: [
-          Text("Appearance").modifier.fontSize(18).fontWeight('600').build(),
+          Text("Appearance").fontSize(18).fontWeight('600').build(),
           Text("Theme settings"),
           Text("Display settings")
         ]
@@ -441,10 +441,10 @@ Divider({ thickness: 10 })
 // ✅ Good - Different emphasis levels
 VStack({
   children: [
-    Text("Major Section").modifier.fontSize(24).build(),
+    Text("Major Section").fontSize(24).build(),
     DividerUtils.prominent(), // Strong separator
     
-    Text("Subsection").modifier.fontSize(18).build(),
+    Text("Subsection").fontSize(18).build(),
     DividerUtils.subtle(), // Subtle separator
     
     Text("Content...")

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Toggle } from '../../src/controls/Toggle'
 import { createSignal } from '@tachui/core'
+import { configureCore } from '@tachui/core'
 
 vi.mock('../../runtime/renderer', () => ({
   DOMRenderer: vi.fn().mockImplementation(() => ({
@@ -22,6 +23,7 @@ vi.mock('../../runtime/renderer', () => ({
 describe('Toggle Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    configureCore({ proxyModifiers: true })
   })
 
   it('should create toggle with default props', () => {
@@ -119,7 +121,7 @@ describe('Toggle Component', () => {
     const toggle = Toggle(isOn, {
       onToggle: setIsOn,
     })
-      .modifier.padding(8)
+      .padding(8)
       .disabled(false)
       .build()
 

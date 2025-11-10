@@ -9,11 +9,5 @@ export default mergeConfig(
       setupFiles: ['./__tests__/setup.ts'],
     },
 
-    resolve: {
-      alias: {
-        // Package-specific aliases
-        '@tachui/forms': './src',
-      },
-    },
   })
 )

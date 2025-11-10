@@ -1,410 +1,626 @@
 /**
  * TachUI Framework Benchmarks
  *
- * Industry-aligned performance benchmarks covering the key operations
- * measured by js-framework-benchmark and similar tools.
+ * Parity-aligned harness matching js-framework-benchmark operations.
  */
 
-import { ComponentManager, createComponent, createSignal, DOMRenderer, h, text } from '../src'
+import {
+  ComponentManager,
+  createComponent,
+  createSignal,
+  createSignalListControls,
+  h,
+  renderComponent,
+} from '../src'
+import type { DOMNode } from '../src/runtime/types'
+import type { SignalListControls } from '../src/reactive'
+import {
+  getRendererMetrics,
+  resetRendererMetrics,
+  type RendererMetricsSnapshot,
+} from '../src/runtime/renderer'
 import {
   type BenchmarkConfig,
+  type BenchmarkResult,
+  type RendererMetricsSummary,
   BenchmarkRunner,
   generateData,
   getBenchmarkContainer,
+  getBenchmarkPhase,
   setupMockDOM,
 } from './setup'
 
-// Setup DOM environment for benchmarks
+// Setup DOM for Node-based runs
 setupMockDOM()
 
+const iterations = getNumericEnv('TACHUI_BENCH_ITERATIONS', 12)
+const warmupRuns = getNumericEnv('TACHUI_BENCH_WARMUPS', 2)
+
 const config: BenchmarkConfig = {
-  iterations: 100,
-  warmupRuns: 5,
+  iterations,
+  warmupRuns,
   measureMemory: true,
   framework: 'TachUI',
 }
 
 const runner = new BenchmarkRunner(config)
+const METRIC_KEYS = [
+  'created',
+  'adopted',
+  'removed',
+  'inserted',
+  'moved',
+  'cacheHits',
+  'cacheMisses',
+  'attributeWrites',
+  'attributeRemovals',
+  'textUpdates',
+  'modifierApplications',
+] as const
 
-/**
- * Benchmark 1: Create 1,000 rows
- * Standard benchmark: Create a large table with 1,000 rows
- */
-async function benchmarkCreate1000Rows() {
-  const data = generateData(1000)
-  const container = getBenchmarkContainer()
-  const renderer = new DOMRenderer()
+type MetricKey = (typeof METRIC_KEYS)[number]
 
-  const RowComponent = createComponent<{ item: { id: number; label: string }; selected?: boolean }>(
-    (props) => {
-      return h(
-        'tr',
+const rendererMetricsByBenchmark = new Map<string, RendererMetricsSummary>()
+
+function cloneMetrics(snapshot: RendererMetricsSnapshot): RendererMetricsSnapshot {
+  const clone = {} as RendererMetricsSnapshot
+  METRIC_KEYS.forEach(key => {
+    clone[key] = snapshot[key]
+  })
+  return clone
+}
+
+function accumulateMetrics(target: RendererMetricsSnapshot, source: RendererMetricsSnapshot): void {
+  METRIC_KEYS.forEach(key => {
+    target[key] += source[key]
+  })
+}
+
+function updateMaxMetrics(target: RendererMetricsSnapshot, source: RendererMetricsSnapshot): void {
+  METRIC_KEYS.forEach(key => {
+    target[key] = Math.max(target[key], source[key])
+  })
+}
+
+function computeAverageMetrics(
+  totals: RendererMetricsSnapshot,
+  iterations: number
+): RendererMetricsSnapshot {
+  const average = {} as RendererMetricsSnapshot
+  METRIC_KEYS.forEach(key => {
+    average[key] = iterations === 0 ? 0 : totals[key] / iterations
+  })
+  return average
+}
+
+function recordRendererMetrics(benchmarkName: string, snapshot: RendererMetricsSnapshot): void {
+  const summary = rendererMetricsByBenchmark.get(benchmarkName)
+  if (!summary) {
+    rendererMetricsByBenchmark.set(benchmarkName, {
+      iterations: 1,
+      totals: cloneMetrics(snapshot),
+      average: cloneMetrics(snapshot),
+      max: cloneMetrics(snapshot),
+      samples: [cloneMetrics(snapshot)],
+    })
+    return
+  }
+
+  summary.iterations += 1
+  accumulateMetrics(summary.totals, snapshot)
+  updateMaxMetrics(summary.max, snapshot)
+  summary.samples.push(cloneMetrics(snapshot))
+  summary.average = computeAverageMetrics(summary.totals, summary.iterations)
+}
+
+function cloneSummary(summary: RendererMetricsSummary): RendererMetricsSummary {
+  return {
+    iterations: summary.iterations,
+    totals: cloneMetrics(summary.totals),
+    average: cloneMetrics(summary.average),
+    max: cloneMetrics(summary.max),
+    samples: summary.samples.map(cloneMetrics),
+  }
+}
+
+const LOG_METRICS: MetricKey[] = [
+  'created',
+  'adopted',
+  'moved',
+  'removed',
+  'attributeWrites',
+  'attributeRemovals',
+  'textUpdates',
+]
+
+function formatMetricSummary(summary: RendererMetricsSummary, key: MetricKey): string {
+  const average = summary.average[key]
+  const max = summary.max[key]
+  const total = summary.totals[key]
+  const avgDisplay = Number.isInteger(average) ? average.toString() : average.toFixed(1)
+  return `${key}=avg:${avgDisplay},max:${Math.round(max)},total:${Math.round(total)}`
+}
+
+type RowData = { id: number; label: string }
+
+interface TableOptions {
+  getData: () => RowData[]
+  getSelectedId?: () => number | null
+  onSelect?: (id: number) => void
+}
+
+type RowListControls = SignalListControls<RowData, number>
+
+interface SignalListTableOptions {
+  list: RowListControls
+  getSelectedId?: () => number | null
+  onSelect?: (id: number) => void
+}
+
+function cloneRows(rows: RowData[]): RowData[] {
+  return rows.map(row => ({ ...row }))
+}
+
+function getNumericEnv(name: string, fallback: number): number {
+  if (typeof process === 'undefined' || !process.env) {
+    return fallback
+  }
+  const raw = process.env[name]
+  if (raw == null || raw === '') {
+    return fallback
+  }
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    console.warn(
+      `[tachUI benchmarks] Ignoring invalid ${name} value "${raw}", using fallback ${fallback}`
+    )
+    return fallback
+  }
+  return parsed
+}
+
+function createRowNode(
+  item: RowData,
+  selectedId: number | null,
+  onSelect?: (id: number) => void
+): DOMNode {
+  const className = item.id === selectedId ? 'selected' : ''
+  const rowProps: Record<string, unknown> = {
+    className,
+    'data-id': item.id,
+    key: item.id,
+  }
+
+  if (onSelect) {
+    rowProps.onClick = () => onSelect(item.id)
+  }
+
+  return h(
+    'tr',
+    rowProps,
+    h('td', { className: 'col-md-1' }, item.id.toString()),
+    h('td', { className: 'col-md-4' }, h('a', null, item.label)),
+    h(
+      'td',
+      { className: 'col-md-1' },
+      h(
+        'button',
         {
-          className: props.selected ? 'selected' : '',
-          'data-id': props.item.id,
+          className: 'btn btn-sm btn-danger',
+          type: 'button',
         },
-        h('td', { className: 'col-md-1' }, props.item.id.toString()),
-        h('td', { className: 'col-md-4' }, h('a', null, props.item.label)),
-        h(
-          'td',
-          { className: 'col-md-1' },
-          h(
-            'button',
-            {
-              className: 'btn btn-sm btn-danger',
-              type: 'button',
-            },
-            'x'
-          )
-        ),
-        h('td', { className: 'col-md-6' })
+        'x'
       )
-    }
+    ),
+    h('td', { className: 'col-md-6' })
   )
-
-  const TableComponent = createComponent(() => {
-    return h(
-      'table',
-      { className: 'table table-hover table-striped test-data' },
-      h(
-        'tbody',
-        null,
-        ...data.map((item) => {
-          const instance = RowComponent({ item })
-          return instance.render()
-        })
-      )
-    )
-  })
-
-  const tableInstance = TableComponent({})
-  renderer.render(tableInstance.render(), container)
 }
 
-/**
- * Benchmark 2: Replace all 1,000 rows
- * Standard benchmark: Replace all data in table
- */
-async function benchmarkReplaceAll1000Rows() {
-  const [data, setData] = createSignal(generateData(1000))
-  const container = getBenchmarkContainer()
-  const renderer = new DOMRenderer()
+function createTableComponent(options: TableOptions) {
+  return createComponent(() => {
+    const data = options.getData()
+    const selectedId = options.getSelectedId ? options.getSelectedId() : null
 
-  const TableComponent = createComponent(() => {
+    const rows = data.map(item => createRowNode(item, selectedId, options.onSelect))
+
     return h(
       'table',
-      { className: 'table table-hover table-striped test-data' },
-      h(
-        'tbody',
-        null,
-        text(() => {
-          return data().map((item) =>
-            h(
-              'tr',
-              { 'data-id': item.id },
-              h('td', { className: 'col-md-1' }, item.id.toString()),
-              h('td', { className: 'col-md-4' }, h('a', null, item.label)),
-              h(
-                'td',
-                { className: 'col-md-1' },
-                h('button', { className: 'btn btn-sm btn-danger' }, 'x')
-              ),
-              h('td', { className: 'col-md-6' })
-            )
-          )
-        })
-      )
+      { className: 'table table-hover table-striped test-data', key: 'table-root' },
+      h('tbody', { key: 'table-body' }, ...rows)
     )
   })
-
-  const tableInstance = TableComponent({})
-  renderer.render(tableInstance.render(), container)
-
-  // Now replace the data
-  setData(generateData(1000))
 }
 
-/**
- * Benchmark 3: Partial update (update every 10th row)
- * Standard benchmark: Update every 10th row
- */
-async function benchmarkPartialUpdate() {
-  const initialData = generateData(1000)
-  const [data, setData] = createSignal(initialData)
-  const container = getBenchmarkContainer()
-  const renderer = new DOMRenderer()
+function createSectionedTableComponent(options: TableOptions & { groupSize: number }) {
+  return createComponent(() => {
+    const data = options.getData()
+    const selectedId = options.getSelectedId ? options.getSelectedId() : null
 
-  const TableComponent = createComponent(() => {
-    return h(
-      'table',
-      { className: 'table table-hover table-striped test-data' },
-      h(
-        'tbody',
-        null,
-        text(() => {
-          return data().map((item) =>
-            h(
-              'tr',
-              { 'data-id': item.id },
-              h('td', { className: 'col-md-1' }, item.id.toString()),
-              h('td', { className: 'col-md-4' }, h('a', null, item.label)),
-              h(
-                'td',
-                { className: 'col-md-1' },
-                h('button', { className: 'btn btn-sm btn-danger' }, 'x')
-              ),
-              h('td', { className: 'col-md-6' })
-            )
-          )
-        })
-      )
-    )
-  })
-
-  const tableInstance = TableComponent({})
-  renderer.render(tableInstance.render(), container)
-
-  // Update every 10th row
-  const updatedData = data().map((item, index) => {
-    if (index % 10 === 0) {
-      return {
-        ...item,
-        label: `${item.label} !!!`,
-      }
+    const bodies: DOMNode[] = []
+    for (let index = 0; index < data.length; index += options.groupSize) {
+      const sectionRows = data
+        .slice(index, index + options.groupSize)
+        .map(item => createRowNode(item, selectedId, options.onSelect))
+      bodies.push(h('tbody', { key: `section-${index / options.groupSize}` }, ...sectionRows))
     }
-    return item
-  })
 
-  setData(updatedData)
+    return h(
+      'table',
+      { className: 'table table-hover table-striped test-data', key: 'table-root' },
+      ...bodies
+    )
+  })
 }
 
-/**
- * Benchmark 4: Select row
- * Standard benchmark: Select a single row
- */
-async function benchmarkSelectRow() {
+function createUnkeyedListComponent(options: {
+  getData: () => RowData[]
+  getSelectedId?: () => number | null
+  onSelect?: (id: number) => void
+}) {
+  return createComponent(() => {
+    const data = options.getData()
+    const selectedId = options.getSelectedId ? options.getSelectedId() : null
+
+    const items = data.map(item => {
+      const isSelected = selectedId === item.id
+      const props: Record<string, unknown> = {
+        className: isSelected ? 'selected list-item' : 'list-item',
+        'data-id': item.id,
+      }
+      if (options.onSelect) {
+        props.onClick = () => options.onSelect!(item.id)
+      }
+      return h('li', props, `${item.id}: ${item.label}`)
+    })
+
+    return h('ul', { className: 'test-data-list' }, ...items)
+  })
+}
+
+function createReactiveRowNode(
+  id: number,
+  getRowData: () => RowData,
+  getSelectedId?: () => number | null,
+  onSelect?: (id: number) => void
+): DOMNode {
+  const rowProps: Record<string, unknown> = {
+    className: getSelectedId ? () => (id === getSelectedId() ? 'selected' : '') : '',
+    'data-id': id,
+    key: id,
+  }
+  if (onSelect) {
+    rowProps.onClick = () => onSelect(id)
+  }
+
+  return h(
+    'tr',
+    rowProps,
+    h('td', { className: 'col-md-1' }, id.toString()),
+    h('td', { className: 'col-md-4' }, h('a', null, () => getRowData().label)),
+    h(
+      'td',
+      { className: 'col-md-1' },
+      h(
+        'button',
+        {
+          className: 'btn btn-sm btn-danger',
+          type: 'button',
+        },
+        'x'
+      )
+    ),
+    h('td', { className: 'col-md-6' })
+  )
+}
+
+function createSignalListTableComponent(options: SignalListTableOptions) {
+  const rowCache = new Map<number, DOMNode>()
+  return createComponent(() => {
+    const rowIds = options.list.ids()
+    const rows = rowIds.map(id => {
+      let cached = rowCache.get(id)
+      if (!cached) {
+        const getRowData = options.list.get(id)
+        cached = createReactiveRowNode(id, getRowData, options.getSelectedId, options.onSelect)
+        rowCache.set(id, cached)
+      }
+      return cached
+    })
+
+    const idSet = new Set(rowIds)
+    rowCache.forEach((_node, id) => {
+      if (!idSet.has(id)) {
+        rowCache.delete(id)
+      }
+    })
+
+    return h(
+      'table',
+      { className: 'table table-hover table-striped test-data', key: 'table-root' },
+      h('tbody', { key: 'table-body' }, ...rows)
+    )
+  })
+}
+
+function setupSignalListTable(
+  container: Element,
+  options: {
+    initialRows?: RowData[]
+    getSelectedId?: () => number | null
+    onSelect?: (id: number) => void
+  } = {}
+) {
+  const initialRows = options.initialRows ? cloneRows(options.initialRows) : []
+  const list = createSignalListControls<RowData, number>(initialRows, row => row.id)
+  const TableComponent = createSignalListTableComponent({
+    list,
+    getSelectedId: options.getSelectedId,
+    onSelect: options.onSelect,
+  })
+
+  const tableInstance = TableComponent({})
+  const dispose = renderComponent(tableInstance, container)
+  return { list, dispose }
+}
+
+async function runWithRendererMetrics<T>(
+  benchmarkName: string,
+  execute: () => Promise<T> | T
+): Promise<T> {
+  const shouldRecordMetrics = getBenchmarkPhase() === 'measurement'
+  resetRendererMetrics()
+  const result = await execute()
+  const snapshot = getRendererMetrics()
+  if (shouldRecordMetrics) {
+    recordRendererMetrics(benchmarkName, snapshot)
+  }
+  if (typeof globalThis !== 'undefined' && typeof (globalThis as any).gc === 'function') {
+    ;(globalThis as any).gc()
+  }
+  return result
+}
+
+async function benchmarkCreate1000Rows(benchmarkName: string) {
+  const container = getBenchmarkContainer()
+  const { list, dispose } = setupSignalListTable(container)
+
+  await runWithRendererMetrics(benchmarkName, async () => {
+    list.set(cloneRows(generateData(1000)))
+    await Promise.resolve()
+  })
+
+  dispose()
+}
+
+async function benchmarkReplaceAll1000Rows(benchmarkName: string) {
+  const baselineRows = generateData(1000)
+  const alternateLabels = generateData(1000).map(row => row.label)
+  const originalLabels = baselineRows.map(row => row.label)
+  const container = getBenchmarkContainer()
+
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows: baselineRows,
+  })
+  await Promise.resolve()
+
+  let useAlternateLabels = true
+
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const labels = useAlternateLabels ? alternateLabels : originalLabels
+    baselineRows.forEach((row, index) => {
+      list.update(row.id, {
+        id: row.id,
+        label: labels[index] ?? row.label,
+      })
+    })
+    useAlternateLabels = !useAlternateLabels
+    await Promise.resolve()
+  })
+
+  dispose()
+}
+
+async function benchmarkPartialUpdate(benchmarkName: string) {
+  const initialRows = generateData(1000)
+  const container = getBenchmarkContainer()
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows,
+  })
+  await Promise.resolve()
+
+  let toggle = true
+
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const currentRows = list.getAll()
+    currentRows.forEach((row, index) => {
+      if (index % 10 === 0) {
+        const suffix = toggle ? ' !!!' : ''
+        const base = row.label.replace(/ !!!$/, '')
+        list.update(row.id, {
+          id: row.id,
+          label: `${base}${suffix}`,
+        })
+      }
+    })
+    toggle = !toggle
+    await Promise.resolve()
+  })
+
+  dispose()
+}
+
+async function benchmarkSelectRow(benchmarkName: string) {
   const data = generateData(1000)
   const [selectedId, setSelectedId] = createSignal<number | null>(null)
   const container = getBenchmarkContainer()
-  const renderer = new DOMRenderer()
 
-  const RowComponent = createComponent<{ item: { id: number; label: string } }>((props) => {
-    return h(
-      'tr',
-      {
-        className: () => (selectedId() === props.item.id ? 'selected' : ''),
-        'data-id': props.item.id,
-        onClick: () => setSelectedId(props.item.id),
-      },
-      h('td', { className: 'col-md-1' }, props.item.id.toString()),
-      h('td', { className: 'col-md-4' }, h('a', null, props.item.label)),
-      h('td', { className: 'col-md-1' }, h('button', { className: 'btn btn-sm btn-danger' }, 'x')),
-      h('td', { className: 'col-md-6' })
-    )
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows: data,
+    getSelectedId: () => selectedId(),
+    onSelect: setSelectedId,
+  })
+  await Promise.resolve()
+
+  await runWithRendererMetrics(benchmarkName, async () => {
+    setSelectedId(500)
+    await Promise.resolve()
   })
 
-  const TableComponent = createComponent(() => {
-    return h(
-      'table',
-      { className: 'table table-hover table-striped test-data' },
-      h(
-        'tbody',
-        null,
-        ...data.map((item) => {
-          const instance = RowComponent({ item })
-          return instance.render()
-        })
-      )
-    )
-  })
-
-  const tableInstance = TableComponent({})
-  renderer.render(tableInstance.render(), container)
-
-  // Select row 500
-  setSelectedId(500)
+  list.clear()
+  dispose()
 }
 
-/**
- * Benchmark 5: Swap rows
- * Standard benchmark: Swap two rows
- */
-async function benchmarkSwapRows() {
-  const initialData = generateData(1000)
-  const [data, setData] = createSignal(initialData)
+async function benchmarkSwapRows(benchmarkName: string) {
+  const initialRows = generateData(1000)
   const container = getBenchmarkContainer()
-  const renderer = new DOMRenderer()
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows,
+  })
+  await Promise.resolve()
 
-  const TableComponent = createComponent(() => {
-    return h(
-      'table',
-      { className: 'table table-hover table-striped test-data' },
-      h(
-        'tbody',
-        null,
-        text(() => {
-          return data().map((item) =>
-            h(
-              'tr',
-              { 'data-id': item.id },
-              h('td', { className: 'col-md-1' }, item.id.toString()),
-              h('td', { className: 'col-md-4' }, h('a', null, item.label)),
-              h(
-                'td',
-                { className: 'col-md-1' },
-                h('button', { className: 'btn btn-sm btn-danger' }, 'x')
-              ),
-              h('td', { className: 'col-md-6' })
-            )
-          )
-        })
-      )
-    )
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const ids = list.ids()
+    if (ids.length < 2) return
+    const nextIds = [...ids]
+    const secondIndex = 1
+    const penultimateIndex = nextIds.length - 2
+    ;[nextIds[secondIndex], nextIds[penultimateIndex]] = [
+      nextIds[penultimateIndex],
+      nextIds[secondIndex],
+    ]
+    list.reorder(nextIds)
+    await Promise.resolve()
   })
 
-  const tableInstance = TableComponent({})
-  renderer.render(tableInstance.render(), container)
-
-  // Swap rows 2 and 998
-  const swappedData = [...data()]
-  const temp = swappedData[1]
-  swappedData[1] = swappedData[997]
-  swappedData[997] = temp
-  setData(swappedData)
+  dispose()
 }
 
-/**
- * Benchmark 6: Remove row
- * Standard benchmark: Remove every 10th row
- */
-async function benchmarkRemoveRows() {
-  const initialData = generateData(1000)
-  const [data, setData] = createSignal(initialData)
+async function benchmarkRemoveRows(benchmarkName: string) {
+  const initialRows = generateData(1000)
   const container = getBenchmarkContainer()
-  const renderer = new DOMRenderer()
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows,
+  })
+  await Promise.resolve()
 
-  const TableComponent = createComponent(() => {
-    return h(
-      'table',
-      { className: 'table table-hover table-striped test-data' },
-      h(
-        'tbody',
-        null,
-        text(() => {
-          return data().map((item) =>
-            h(
-              'tr',
-              { 'data-id': item.id },
-              h('td', { className: 'col-md-1' }, item.id.toString()),
-              h('td', { className: 'col-md-4' }, h('a', null, item.label)),
-              h(
-                'td',
-                { className: 'col-md-1' },
-                h(
-                  'button',
-                  {
-                    className: 'btn btn-sm btn-danger',
-                    onClick: () => {
-                      setData((current) => current.filter((i) => i.id !== item.id))
-                    },
-                  },
-                  'x'
-                )
-              ),
-              h('td', { className: 'col-md-6' })
-            )
-          )
-        })
-      )
-    )
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const ids = list.ids()
+    if (ids.length === 0) return
+    const toRemove = ids.filter((_, index) => index % 10 === 0)
+    toRemove.forEach(id => list.remove(id))
+    await Promise.resolve()
   })
 
-  const tableInstance = TableComponent({})
-  renderer.render(tableInstance.render(), container)
-
-  // Remove every 10th row
-  const filteredData = data().filter((_, index) => index % 10 !== 0)
-  setData(filteredData)
+  dispose()
 }
 
-/**
- * Benchmark 7: Clear all rows
- * Standard benchmark: Clear table
- */
-async function benchmarkClearRows() {
-  const initialData = generateData(1000)
-  const [data, setData] = createSignal(initialData)
+async function benchmarkClearRows(benchmarkName: string) {
+  const initialRows = generateData(1000)
   const container = getBenchmarkContainer()
-  const renderer = new DOMRenderer()
+  const { list, dispose } = setupSignalListTable(container, {
+    initialRows,
+  })
+  await Promise.resolve()
 
-  const TableComponent = createComponent(() => {
-    return h(
-      'table',
-      { className: 'table table-hover table-striped test-data' },
-      h(
-        'tbody',
-        null,
-        text(() => {
-          return data().map((item) =>
-            h(
-              'tr',
-              { 'data-id': item.id },
-              h('td', { className: 'col-md-1' }, item.id.toString()),
-              h('td', { className: 'col-md-4' }, h('a', null, item.label)),
-              h(
-                'td',
-                { className: 'col-md-1' },
-                h('button', { className: 'btn btn-sm btn-danger' }, 'x')
-              ),
-              h('td', { className: 'col-md-6' })
-            )
-          )
-        })
-      )
-    )
+  await runWithRendererMetrics(benchmarkName, async () => {
+    list.clear()
+    await Promise.resolve()
   })
 
-  const tableInstance = TableComponent({})
-  renderer.render(tableInstance.render(), container)
-
-  // Clear all data
-  setData([])
+  dispose()
 }
 
-/**
- * Benchmark 8: Component Creation Performance
- * Test raw component creation speed
- */
-async function benchmarkComponentCreation() {
-  const SimpleComponent = createComponent<{ text: string }>((props) => {
-    return h('div', null, props.text)
-  })
+async function benchmarkSectionedTableCreate(benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const data = generateData(1000)
+    const container = getBenchmarkContainer()
 
-  // Create 1000 component instances
-  for (let i = 0; i < 1000; i++) {
-    SimpleComponent({ text: `Component ${i}` })
-  }
-}
-
-/**
- * Benchmark 9: Reactive Updates Performance
- * Test reactive system performance with many signals
- */
-async function benchmarkReactiveUpdates() {
-  const signals = []
-
-  // Create 100 signals
-  for (let i = 0; i < 100; i++) {
-    const [signal, setSignal] = createSignal(i)
-    signals.push({ signal, setSignal })
-  }
-
-  // Update all signals 10 times
-  for (let update = 0; update < 10; update++) {
-    signals.forEach(({ setSignal }, index) => {
-      setSignal(index + update * 100)
+    const TableComponent = createSectionedTableComponent({
+      getData: () => data,
+      groupSize: 200,
     })
+
+    const tableInstance = TableComponent({})
+    const dispose = renderComponent(tableInstance, container)
+    await Promise.resolve()
+    dispose()
+  })
+}
+
+async function benchmarkUnkeyedListPartialUpdate(benchmarkName: string) {
+  const [data, setData] = createSignal(generateData(1000))
+  const container = getBenchmarkContainer()
+
+  const ListComponent = createUnkeyedListComponent({
+    getData: () => data(),
+  })
+
+  const listInstance = ListComponent({})
+  const dispose = renderComponent(listInstance, container)
+  await Promise.resolve()
+
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const updatedData = data().map((item, index) => {
+      if (index % 10 === 0) {
+        return {
+          ...item,
+          label: `${item.label} !!!`,
+        }
+      }
+      return item
+    })
+
+    setData(updatedData)
+    await Promise.resolve()
+  })
+
+  dispose()
+}
+
+async function benchmarkComponentCreation(benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const SimpleComponent = createComponent<{ text: string }>((props) => {
+      return h('div', null, props.text)
+    })
+
+    for (let i = 0; i < 1000; i++) {
+      SimpleComponent({ text: `Component ${i}` })
+    }
+  })
+}
+
+async function benchmarkReactiveUpdates(benchmarkName: string) {
+  await runWithRendererMetrics(benchmarkName, async () => {
+    const signals = []
+
+    for (let i = 0; i < 100; i++) {
+      const [signal, setSignal] = createSignal(i)
+      signals.push({ signal, setSignal })
+    }
+
+    for (let update = 0; update < 10; update++) {
+      signals.forEach(({ setSignal }, index) => {
+        setSignal(index + update * 100)
+      })
+    }
+  })
+}
+
+async function runBenchmark(
+  name: string,
+  type: BenchmarkResult['type'],
+  benchmark: (benchmarkName: string) => Promise<void>
+): Promise<BenchmarkResult> {
+  const result = await runner.run(name, type, () => benchmark(name))
+  result.metadata = {
+    ...result.metadata,
+    benchmark: name,
   }
+  const metrics = rendererMetricsByBenchmark.get(name)
+  if (metrics) {
+    result.rendererMetrics = cloneSummary(metrics)
+  }
+  return result
 }
 
 /**
@@ -412,34 +628,53 @@ async function benchmarkReactiveUpdates() {
  */
 export async function runTachUIBenchmarks() {
   console.log('🏃‍♂️ Running TachUI Performance Benchmarks...\n')
+  console.log(`Iterations per benchmark: ${iterations} (override via TACHUI_BENCH_ITERATIONS)`)
+  console.log(`Warmup runs: ${warmupRuns} (override via TACHUI_BENCH_WARMUPS)`)
 
-  const results = []
+  rendererMetricsByBenchmark.clear()
 
-  // Standard js-framework-benchmark tests
-  results.push(await runner.run('Create 1,000 rows', 'create', benchmarkCreate1000Rows))
-  results.push(await runner.run('Replace all 1,000 rows', 'update', benchmarkReplaceAll1000Rows))
+  const results: BenchmarkResult[] = []
+
+  results.push(await runBenchmark('Create 1,000 rows', 'create', benchmarkCreate1000Rows))
+  results.push(await runBenchmark('Replace all 1,000 rows', 'update', benchmarkReplaceAll1000Rows))
   results.push(
-    await runner.run('Partial update (every 10th row)', 'update', benchmarkPartialUpdate)
+    await runBenchmark('Partial update (every 10th row)', 'update', benchmarkPartialUpdate)
   )
-  results.push(await runner.run('Select row', 'select', benchmarkSelectRow))
-  results.push(await runner.run('Swap rows', 'swap', benchmarkSwapRows))
-  results.push(await runner.run('Remove rows', 'remove', benchmarkRemoveRows))
-  results.push(await runner.run('Clear rows', 'clear', benchmarkClearRows))
-
-  // TachUI-specific performance tests
+  results.push(await runBenchmark('Select row', 'select', benchmarkSelectRow))
+  results.push(await runBenchmark('Swap rows', 'swap', benchmarkSwapRows))
+  results.push(await runBenchmark('Remove rows', 'remove', benchmarkRemoveRows))
+  results.push(await runBenchmark('Clear rows', 'clear', benchmarkClearRows))
   results.push(
-    await runner.run('Component creation (1,000 components)', 'create', benchmarkComponentCreation)
+    await runBenchmark(
+      'Create 1,000 rows (sectioned table)',
+      'create',
+      benchmarkSectionedTableCreate
+    )
   )
   results.push(
-    await runner.run(
+    await runBenchmark('Unkeyed list partial update', 'update', benchmarkUnkeyedListPartialUpdate)
+  )
+  results.push(
+    await runBenchmark('Component creation (1,000 components)', 'create', benchmarkComponentCreation)
+  )
+  results.push(
+    await runBenchmark(
       'Reactive updates (100 signals × 10 updates)',
       'update',
       benchmarkReactiveUpdates
     )
   )
 
-  // Cleanup
   ComponentManager.getInstance().cleanup()
+
+  if (rendererMetricsByBenchmark.size > 0) {
+    console.log('\nRenderer operation metrics (averages across measured iterations):')
+    rendererMetricsByBenchmark.forEach((summary, name) => {
+      const formattedMetrics = LOG_METRICS.map(key => formatMetricSummary(summary, key)).join(', ')
+      console.log(`  ${name}: iterations=${summary.iterations} | ${formattedMetrics}`)
+    })
+    console.log('')
+  }
 
   return {
     results,
@@ -456,6 +691,8 @@ export {
   benchmarkSwapRows,
   benchmarkRemoveRows,
   benchmarkClearRows,
+  benchmarkSectionedTableCreate,
+  benchmarkUnkeyedListPartialUpdate,
   benchmarkComponentCreation,
   benchmarkReactiveUpdates,
 }

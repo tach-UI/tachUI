@@ -22,8 +22,8 @@ describe('Navigation Manager - Global Navigation Coordination', () => {
   let mockNavigationContext: any
 
   beforeEach(() => {
-    mockView1 = () => HTML.div({ children: 'View 1' }).modifier.build()
-    mockView2 = () => HTML.div({ children: 'View 2' }).modifier.build()
+    mockView1 = () => HTML.div({ children: 'View 1' }).build()
+    mockView2 = () => HTML.div({ children: 'View 2' }).build()
 
     mockNavigationContext = {
       currentPath: '/home',

@@ -206,7 +206,7 @@ Compile-time constant evaluation:
 
 ```typescript
 // Input
-Text("Hello").modifier.opacity(0.5 + 0.3).build()
+Text("Hello").opacity(0.5 + 0.3).build()
 
 // Output  
 textElement.style.opacity = 0.8  // Pre-calculated

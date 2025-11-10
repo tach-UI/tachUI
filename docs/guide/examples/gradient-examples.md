@@ -11,7 +11,6 @@ import { Button, LinearGradient } from '@tachui/core'
 
 const createGradientButton = (text: string, action: () => void) => {
   return Button(text, action)
-    .modifier
     .background(
       LinearGradient({
         colors: ['#667eea', '#764ba2'],
@@ -55,7 +54,6 @@ const createHeroCard = (title: string, subtitle: string) => {
       .opacity(0.9)
       .foregroundColor('white')
   ] })
-    .modifier
     .background(heroGradient)
     .padding(32)
     .cornerRadius(16)
@@ -101,7 +99,6 @@ const createAdaptiveCard = (content: string) => {
       .fontSize(16)
       .padding(24)
   ] })
-    .modifier
     .background(adaptiveGradient)
     .cornerRadius(12)
     .border(1, '#dee2e6')
@@ -134,7 +131,6 @@ const brandGradient = LinearGradient({
 
 const createBrandButton = (text: string, action: () => void) => {
   return Button(text, action)
-    .modifier
     .background(brandGradient)
     .foregroundColor('white')
     .fontWeight('semibold')
@@ -200,7 +196,6 @@ const functionGradient = createGradientAsset({
 // Button factory functions
 const createNumberButton = (number: string, action: () => void) => {
   return Button(number, action)
-    .modifier
     .background(numberGradient)
     .foregroundColor(Assets.textPrimary)
     .fontSize(24)
@@ -212,7 +207,6 @@ const createNumberButton = (number: string, action: () => void) => {
 
 const createOperatorButton = (operator: string, action: () => void) => {
   return Button(operator, action)
-    .modifier
     .background(operatorGradient)
     .foregroundColor('white')
     .fontSize(24)
@@ -224,7 +218,6 @@ const createOperatorButton = (operator: string, action: () => void) => {
 
 const createFunctionButton = (fn: string, action: () => void) => {
   return Button(fn, action)
-    .modifier
     .background(functionGradient)
     .foregroundColor('white')
     .fontSize(18)
@@ -267,7 +260,6 @@ const createCalculatorButtons = () => {
       createOperatorButton('+', () => console.log('Add'))
     ] })
   ] })
-    .modifier
     .gap(8)
     .build()
 }
@@ -352,7 +344,6 @@ const createMetricCard = ({ title, value, change, type }: MetricCardProps) => {
       .opacity(0.7)
       .margin({ top: 4 })
   ] })
-    .modifier
     .background(gradientMap[type])
     .padding(20)
     .cornerRadius(16)
@@ -389,11 +380,9 @@ const createDashboard = () => {
         type: 'warning'
       })
     ] })
-      .modifier
       .gap(20)
       .build()
   ] })
-    .modifier
     .padding(32)
     .build()
 }
@@ -437,7 +426,6 @@ const createNavHeader = () => {
     // Navigation items
     HStack({ children: [
       Button('Features', () => console.log('Features'))
-        .modifier
         .foregroundColor('white')
         .backgroundColor('rgba(255,255,255,0.1)')
         .padding({ top: 8, bottom: 8, left: 16, right: 16 })
@@ -445,7 +433,6 @@ const createNavHeader = () => {
         .build(),
       
       Button('Docs', () => console.log('Docs'))
-        .modifier
         .foregroundColor('white')
         .backgroundColor('rgba(255,255,255,0.1)')
         .padding({ top: 8, bottom: 8, left: 16, right: 16 })
@@ -453,7 +440,6 @@ const createNavHeader = () => {
         .build(),
       
       Button('GitHub', () => console.log('GitHub'))
-        .modifier
         .foregroundColor('white')
         .backgroundColor('rgba(255,255,255,0.2)')
         .padding({ top: 8, bottom: 8, left: 16, right: 16 })
@@ -461,11 +447,9 @@ const createNavHeader = () => {
         .border(1, 'rgba(255,255,255,0.3)')
         .build()
     ] })
-      .modifier
       .gap(12)
       .build()
   ] })
-    .modifier
     .background(headerGradient)
     .padding({ top: 16, bottom: 16, left: 32, right: 32 })
     .justifyContent('space-between')
@@ -614,7 +598,6 @@ const createGradientTheme = (): AdaptiveGradientTheme => {
 // Usage with full type safety
 const gradientTheme = createGradientTheme()
 const primaryButton = Button('Primary', () => {})
-  .modifier
   .background(gradientTheme.primary)
   .build()
 ```

@@ -198,3 +198,52 @@ jobs:
       - name: Run dependency security audit
         run: pnpm audit --audit-level=moderate
         continue-on-error: true
+
+  benchmarks:
+    name: Browser Benchmarks
+    runs-on: ubuntu-latest
+    needs: [build]
+    env:
+      TACHUI_BENCH_ITERATIONS: 4
+      TACHUI_BENCH_WARMUPS: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser benchmark suite
+        run: pnpm benchmark:browser:report
+
+      - name: Generate combined benchmark summary
+        run: pnpm benchmark:report:combined
+
+      - name: Publish benchmark comparison
+        run: |
+          node -e "const fs=require('fs');const reportPath='benchmarks/history/latest.json';if(!fs.existsSync(reportPath)){console.error('missing benchmark history');process.exit(1);}const data=JSON.parse(fs.readFileSync(reportPath,'utf8'));const summary=data.comparison?.report||'No comparison report generated.';const output=['### Benchmark Comparison','```',summary,'```',''];fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,output.join('\n'));"
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            benchmarks/history/*.json
+            packages/core/benchmarks/results/browser/*.json
+          if-no-files-found: warn

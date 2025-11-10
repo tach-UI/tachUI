@@ -150,9 +150,9 @@ import { HStack, Text, Button } from '@tachui/core'
 // Top alignment
 HStack({
   children: [
-    Text("Top").modifier.font({ size: 12 }).build(),
+    Text("Top").font({ size: 12 }).build(),
     Button("Aligned"),
-    Text("Content").modifier.font({ size: 20 }).build()
+    Text("Content").font({ size: 20 }).build()
   ],
   alignment: 'top'
 })
@@ -160,9 +160,9 @@ HStack({
 // Center alignment (default)
 HStack({
   children: [
-    Text("Center").modifier.font({ size: 12 }).build(), 
+    Text("Center").font({ size: 12 }).build(), 
     Button("Aligned"),
-    Text("Content").modifier.font({ size: 20 }).build()
+    Text("Content").font({ size: 20 }).build()
   ],
   alignment: 'center'
 })
@@ -170,9 +170,9 @@ HStack({
 // Bottom alignment
 HStack({
   children: [
-    Text("Bottom").modifier.font({ size: 12 }).build(),
+    Text("Bottom").font({ size: 12 }).build(),
     Button("Aligned"), 
-    Text("Content").modifier.font({ size: 20 }).build()
+    Text("Content").font({ size: 20 }).build()
   ],
   alignment: 'bottom'
 })
@@ -248,7 +248,7 @@ import { ZStack, Text, VStack } from '@tachui/core'
 // Center alignment (default)
 ZStack({
   children: [
-    VStack().modifier.backgroundColor('blue').size({ width: 200, height: 200 }).build(),
+    VStack().backgroundColor('blue').size({ width: 200, height: 200 }).build(),
     Text("Centered")
   ],
   alignment: 'center'
@@ -257,7 +257,7 @@ ZStack({
 // Corner alignments
 ZStack({
   children: [
-    VStack().modifier.backgroundColor('blue').size({ width: 200, height: 200 }).build(),
+    VStack().backgroundColor('blue').size({ width: 200, height: 200 }).build(),
     Text("Top Left")
   ],
   alignment: 'topLeading'
@@ -265,7 +265,7 @@ ZStack({
 
 ZStack({
   children: [
-    VStack().modifier.backgroundColor('blue').size({ width: 200, height: 200 }).build(), 
+    VStack().backgroundColor('blue').size({ width: 200, height: 200 }).build(), 
     Text("Bottom Right")
   ],
   alignment: 'bottomTrailing'

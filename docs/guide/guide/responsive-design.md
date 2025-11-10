@@ -129,7 +129,7 @@ import { HStack, VStack, Button } from '@tachui/core'
 
 const ResponsiveNav = () => {
   return HStack([
-    Text("Logo").modifier.fontSize(24).fontWeight('bold').build(),
+    Text("Logo").fontSize(24).fontWeight('bold').build(),
     
     // Desktop navigation - horizontal
     HStack([

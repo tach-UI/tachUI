@@ -29,6 +29,9 @@ export default defineConfig({
       '@tachui/viewport': resolve(__dirname, '../viewport/src'),
       '@tachui/mobile': resolve(__dirname, '../mobile/src'),
       '@tachui/registry': resolve(__dirname, '../registry/src'),
+      '@tachui/forms': resolve(__dirname, '../forms/src'),
+      '@tachui/grid': resolve(__dirname, '../grid/src'),
+      '@tachui/responsive': resolve(__dirname, '../responsive/src'),
     },
   },
 })

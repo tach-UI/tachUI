@@ -11,11 +11,17 @@
  */
 
 import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
-import { createEffect, createSignal } from '@tachui/core'
+import {
+  clonePropsPreservingReactivity,
+  createEffect,
+  createSignal,
+  resetLifecycleState,
+} from '@tachui/core'
 // Signal type import removed - using function signatures instead
 import { h, text } from '@tachui/core'
 import type { ComponentInstance, ComponentProps } from '@tachui/core'
 import { withModifiers } from '@tachui/core'
+import type { CloneableComponent, CloneOptions } from '@tachui/core/runtime/types'
 
 /**
  * BasicForm component properties
@@ -62,7 +68,7 @@ export interface FormData {
  * BasicForm component class
  */
 export class BasicFormImplementation
-  implements ComponentInstance<BasicFormProps>
+  implements CloneableComponent<BasicFormProps>
 {
   public readonly type = 'component' as const
   public readonly id: string
@@ -332,6 +338,26 @@ export class BasicFormImplementation
         ...children.flatMap(child => child.render())
       ),
     ]
+  }
+
+  clone(options: CloneOptions = {}): this {
+    return options.deep ? this.deepClone() : this.shallowClone()
+  }
+
+  shallowClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props)
+    const clone = new BasicFormImplementation(clonedProps)
+    resetLifecycleState(clone)
+    return clone as this
+  }
+
+  deepClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props, {
+      deep: true,
+    })
+    const clone = new BasicFormImplementation(clonedProps)
+    resetLifecycleState(clone)
+    return clone as this
   }
 }
 

@@ -159,6 +159,63 @@ const MyAdvancedPlugin: TachUIPlugin = {
 
 Register components with category and tags for organization:
 
+### Modifier Registration Lifecycle
+
+Every plugin that ships modifiers must register both the runtime factory and the corresponding metadata with the global modifier registry. All first-party packages expose a `register*Modifiers()` helper that performs this dual registration and is safe to call multiple times.
+
+```ts
+// packages/forms/src/modifiers/index.ts
+import { registerFormsModifiers } from '@tachui/forms/modifiers'
+
+registerFormsModifiers()
+
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    registerFormsModifiers({ force: true })
+  })
+}
+```
+
+The recommended plugin workflow is:
+
+1. Call `registerCoreModifiers()` once during app bootstrap (already invoked inside `@tachui/core`).
+2. Call each package-specific helper (`registerFormsModifiers()`, `registerGridModifiers()`, `registerResponsiveModifiers()`, `registerMobileModifiers()`, `registerViewportModifiers()`, etc.) before you use the related APIs.
+3. Re-register on HMR updates using the `force` flag shown above.
+
+#### Priority Ranges
+
+| Plugin Type        | Priority Range |
+|--------------------|----------------|
+| Core modifiers     | 100 – 199      |
+| Official plugins   | 50 – 99        |
+| Third-party plugins| 0 – 49         |
+| App-specific       | -100 – -1      |
+
+Setting the appropriate priority ensures deterministic modifier ordering and conflict resolution.
+
+#### Plugin File Structure
+
+```
+packages/my-plugin/
+├─ src/
+│  ├─ index.ts                // export surface + registerMyPluginModifiers()
+│  ├─ modifiers/
+│  │  ├─ my-feature.ts        // modifier implementation + metadata
+│  │  └─ index.ts             // exports + register helper
+│  └─ version.ts              // exports TACHUI_PACKAGE/_VERSION
+└─ __tests__/modifiers/
+   └─ my-plugin-registration.test.ts
+```
+
+Each modifier module should:
+
+- Implement the runtime class or factory.
+- Call `registerModifierWithMetadata()` inside the package’s `register*Modifiers()` helper.
+- Expose user-facing helper functions (e.g., `refreshable({ ... })`).
+- Provide HMR support via `import.meta.hot`.
+
+The registration pattern keeps type generation, conflict detection, and plugin discovery aligned across the monorepo.
+
 ```typescript
 // Basic registration
 instance.registerComponent('MyButton', MyButton)

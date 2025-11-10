@@ -357,9 +357,9 @@ VStack({
     ]}),
     HStack({ children: [
       Text("Total:")
-        .modifier.fontWeight('bold').build(),
+        .fontWeight('bold').build(),
       Text(() => `$${total().toFixed(2)}`)
-        .modifier.fontWeight('bold').build()
+        .fontWeight('bold').build()
     ]})
   ],
   spacing: 8
@@ -391,7 +391,7 @@ VStack({
   children: [
     () => parsedData().error ? 
       Text(`Error: ${parsedData().error}`)
-        .modifier.foregroundColor('#dc2626').build() :
+        .foregroundColor('#dc2626').build() :
       List({
         data: parsedData().items,
         renderItem: (item, index) => Text(item.name)

@@ -99,6 +99,24 @@ export interface ComponentInstance<P extends ComponentProps = ComponentProps> {
 }
 
 /**
+ * Options for component cloning.
+ */
+export interface CloneOptions {
+  /** Perform deep clone of children (default: false) */
+  deep?: boolean
+}
+
+/**
+ * Components that support cloning implement this interface.
+ */
+export interface CloneableComponent<P extends ComponentProps = ComponentProps>
+  extends ComponentInstance<P> {
+  clone(options?: CloneOptions): this
+  shallowClone(): this
+  deepClone(): this
+}
+
+/**
  * Render function that creates DOM nodes
  */
 export type RenderFunction = () => DOMNode | DOMNode[]
@@ -115,6 +133,7 @@ export interface DOMNode {
   element?: Element | Text | Comment | undefined
   dispose?: (() => void) | undefined
   reactiveContent?: (() => string) | undefined
+  key?: string | number
 }
 
 /**

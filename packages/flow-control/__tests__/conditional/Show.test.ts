@@ -9,38 +9,32 @@ import { Show, ShowComponent, Unless, When } from '../../src/conditional/Show'
 import { createSignal } from '@tachui/core'
 
 // Mock Text component for testing
-const Text = (content: string) => ({
-  type: 'component' as const,
-  render: () => [
-    {
-      type: 'element' as const,
-      tag: 'span',
-      props: {},
-      children: [{ type: 'text' as const, text: content }],
+const Text = (content: string) => {
+  const component = {
+    type: 'component' as const,
+    render: () => [
+      {
+        type: 'element' as const,
+        tag: 'span',
+        props: {},
+        children: [{ type: 'text' as const, text: content }],
+      },
+    ],
+    props: { content },
+    children: [],
+    cleanup: [],
+    id: `text-${Date.now()}`,
+  }
+
+  const builder = {
+    build: () => component,
+    modifier: {
+      build: () => component,
     },
-  ],
-  props: { content },
-  children: [],
-  cleanup: [],
-  id: `text-${Date.now()}`,
-  modifier: {
-    build: () => ({
-      type: 'component' as const,
-      render: () => [
-        {
-          type: 'element' as const,
-          tag: 'span',
-          props: {},
-          children: [{ type: 'text' as const, text: content }],
-        },
-      ],
-      props: { content },
-      children: [],
-      cleanup: [],
-      id: `text-${Date.now()}`,
-    }),
-  },
-})
+  }
+
+  return builder
+}
 import type { ComponentInstance } from '@tachui/core'
 
 describe('Show Component', () => {
@@ -49,8 +43,8 @@ describe('Show Component', () => {
 
   beforeEach(() => {
     // Create mock text components for testing
-    mockText = Text('Main content').modifier.build()
-    mockFallbackText = Text('Fallback content').modifier.build()
+    mockText = Text('Main content').build()
+    mockFallbackText = Text('Fallback content').build()
   })
 
   describe('Basic Functionality', () => {
@@ -219,7 +213,7 @@ describe('Convenience Functions', () => {
   let mockText: ComponentInstance
 
   beforeEach(() => {
-    mockText = Text('Test content').modifier.build()
+    mockText = Text('Test content').build()
   })
 
   describe('When Function', () => {

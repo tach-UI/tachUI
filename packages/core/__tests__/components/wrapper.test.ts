@@ -142,7 +142,7 @@ describe('withModifiers', () => {
 
     expect(wrapped).toBeDefined()
     expect(typeof wrapped.modifier).toBe('object')
-    expect(typeof wrapped.modifier.build).toBe('function')
+    expect(typeof wrapped.build).toBe('function')
   })
 
   it('should preserve original component properties', () => {
@@ -158,7 +158,7 @@ describe('withModifiers', () => {
   it('should support modifier chaining', () => {
     const component = new TestComponent({})
     const result = withModifiers(component)
-      .modifier.padding(16)
+      .padding(16)
       .margin(8)
       .backgroundColor('#ffffff')
       .build()
@@ -227,7 +227,7 @@ describe('HTML', () => {
 
     it('should support modifier chaining', () => {
       const div = HTML.div()
-        .modifier.padding(16)
+        .padding(16)
         .backgroundColor('#f0f0f0')
         .build()
 
@@ -484,7 +484,7 @@ describe('Text Component', () => {
   })
 
   it('should support modifier chaining', () => {
-    const text = Text('Styled Text').modifier.padding(16).margin(8).build()
+    const text = Text('Styled Text').padding(16).margin(8).build()
 
     expect(text).toBeDefined()
   })
@@ -564,7 +564,7 @@ describe('createModifiableComponentFactory', () => {
       h('div', {}, text(props.content))
     const factory = createModifiableComponentFactory(renderFn)
     const component = factory({ content: 'Test' })
-      .modifier.padding(10)
+      .padding(10)
       .backgroundColor('#eeeeee')
       .build()
 
@@ -581,7 +581,7 @@ describe('Integration Tests', () => {
     ]
 
     const layout = Layout.VStack({ children, spacing: 16 })
-      .modifier.padding(20)
+      .padding(20)
       .backgroundColor('#ffffff')
       .build()
 
@@ -603,7 +603,7 @@ describe('Integration Tests', () => {
       ],
       spacing: 24,
     })
-      .modifier.padding(20)
+      .padding(20)
       .margin(10)
       .build()
 
@@ -630,7 +630,7 @@ describe('Integration Tests', () => {
       ],
       spacing: 12,
     })
-      .modifier.padding(20)
+      .padding(20)
       .backgroundColor('#f9f9f9')
       .build()
 
@@ -661,7 +661,7 @@ describe('Integration Tests', () => {
       content: 'Card content here',
       action: vi.fn(),
     })
-      .modifier.padding(16)
+      .padding(16)
       .backgroundColor('#ffffff')
       .build()
 

@@ -5,6 +5,8 @@
  * compile-time optimization, and TypeScript-first design.
  */
 
+import { configureCore, getCoreFeatureFlags, isProxyEnabled } from './config'
+
 // Assets system
 export {
   Assets,
@@ -41,6 +43,20 @@ export {
   type Dimension,
   type InfinityValue,
 } from './constants'
+
+export { configureCore, getCoreFeatureFlags, isProxyEnabled }
+
+export const tachui = Object.freeze({
+  configure: configureCore,
+  getFeatureFlags: getCoreFeatureFlags,
+})
+
+// Utilities
+export {
+  clonePropsPreservingReactivity,
+  createResetLifecycleState,
+  resetLifecycleState,
+} from './utils/clone-helpers'
 
 // Concatenation system
 export {

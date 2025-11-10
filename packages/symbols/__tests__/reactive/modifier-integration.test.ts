@@ -27,7 +27,7 @@ describe('Symbol Modifier Integration', () => {
   describe('Modifier Storage and Application', () => {
     test('should store applied modifiers in component', () => {
       const symbol = Symbol('heart')
-        .modifier.padding(16)
+        .padding(16)
         .foregroundColor('#ff0000')
         .build()
 
@@ -46,7 +46,7 @@ describe('Symbol Modifier Integration', () => {
 
     test('should preserve modifier order based on priority', () => {
       const symbol = Symbol('heart')
-        .modifier.padding(16) // Layout modifier
+        .padding(16) // Layout modifier
         .foregroundColor('#ff0000') // Appearance modifier
         .opacity(0.8) // Appearance modifier
         .build()
@@ -66,7 +66,7 @@ describe('Symbol Modifier Integration', () => {
       const [padding, setPadding] = createSignal(16)
 
       const symbol = Symbol('heart')
-        .modifier.foregroundColor(color)
+        .foregroundColor(color)
         .padding(padding)
         .frame(32, 32)
         .opacity(0.9)
@@ -95,14 +95,14 @@ describe('Symbol Modifier Integration', () => {
 
       // Test modifier builder interface
       expect(symbol.modifier).toHaveProperty('build')
-      expect(typeof symbol.modifier.build).toBe('function')
-      expect(typeof symbol.modifier.padding).toBe('function')
-      expect(typeof symbol.modifier.foregroundColor).toBe('function')
+      expect(typeof symbol.build).toBe('function')
+      expect(typeof symbol.padding).toBe('function')
+      expect(typeof symbol.foregroundColor).toBe('function')
     })
 
     test('should maintain component identity after modifier application', () => {
       const originalSymbol = Symbol('heart')
-      const modifiedSymbol = originalSymbol.modifier.padding(16).build()
+      const modifiedSymbol = originalSymbol.padding(16).build()
 
       // Original component properties should be preserved
       expect(modifiedSymbol.props.name).toBe(originalSymbol.props.name)
@@ -121,7 +121,7 @@ describe('Symbol Modifier Integration', () => {
       const [opacity, setOpacity] = createSignal(1.0)
 
       const symbol = Symbol('heart')
-        .modifier.foregroundColor(color)
+        .foregroundColor(color)
         .opacity(opacity)
         .build()
 
@@ -160,7 +160,7 @@ describe('Symbol Modifier Integration', () => {
       }
 
       const symbol = Symbol('heart')
-        .modifier.foregroundColor(color)
+        .foregroundColor(color)
         .scaleEffect(scale)
         .build()
 
@@ -192,7 +192,7 @@ describe('Symbol Modifier Integration', () => {
         scale: 'large',
         effect: 'pulse',
       })
-        .modifier.foregroundColor(color)
+        .foregroundColor(color)
         .padding(16)
         .build()
 

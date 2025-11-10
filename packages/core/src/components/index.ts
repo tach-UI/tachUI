@@ -14,12 +14,21 @@ export type {
 } from '../runtime/types'
 
 // Component wrapper system and utilities
-export type { WrapperOptions } from './wrapper'
+export type {
+  WrapperOptions,
+  BaseLayoutProps,
+  VStackLayoutProps,
+  HStackLayoutProps,
+  ZStackLayoutProps,
+} from './wrapper'
 export {
   createModifiableComponentFactory,
   createReactiveWrapper,
   Layout,
+  LayoutComponent,
   withModifierSupport,
   withModifiers,
   wrapComponent,
 } from './wrapper'
+
+export { createComponentInstance, type CreateComponentOptions } from './factory'

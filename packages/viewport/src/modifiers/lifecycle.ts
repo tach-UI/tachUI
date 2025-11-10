@@ -62,7 +62,7 @@ export class ViewportLifecycleModifier extends BaseModifier<ViewportLifecycleOpt
  * @example
  * ```typescript
  * VStack({ children: [] })
- *   .modifier.onAppear(() => console.log('Element is now visible'))
+ *   .onAppear(() => console.log('Element is now visible'))
  *   .build()
  * ```
  */
@@ -79,7 +79,7 @@ export function onAppear(handler: () => void): ViewportLifecycleModifier {
  * @example
  * ```typescript
  * VStack({ children: [] })
- *   .modifier.onDisappear(() => console.log('Element is now hidden'))
+ *   .onDisappear(() => console.log('Element is now hidden'))
  *   .build()
  * ```
  */

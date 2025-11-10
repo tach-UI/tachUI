@@ -5,7 +5,7 @@
  * smooth scrolling, pull-to-refresh, and advanced scroll handling.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import { createEffect, createSignal, isSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h } from '@tachui/core'
@@ -115,6 +115,8 @@ export interface ScrollViewProps extends ComponentProps {
   accessibilityLabel?: string
   accessibilityRole?: string
 }
+
+type ScrollViewInstance = ModifiableComponentWithModifiers<ScrollViewProps>
 
 /**
  * Enhanced ScrollView component class
@@ -723,11 +725,9 @@ export class EnhancedScrollView implements ComponentInstance<ScrollViewProps> {
  */
 export function ScrollView(
   props: ScrollViewProps = {}
-): ModifiableComponent<ScrollViewProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<ScrollViewProps>>
-} {
+): ScrollViewInstance {
   const component = new EnhancedScrollView(props)
-  return withModifiers(component)
+  return withModifiers(component) as ScrollViewInstance
 }
 
 /**
@@ -741,9 +741,7 @@ export const ScrollViewUtils = {
     children: ComponentInstance[],
     onRefresh: () => Promise<void>,
     options: Partial<ScrollViewProps['refreshControl']> = {}
-  ): ModifiableComponent<ScrollViewProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<ScrollViewProps>>
-  } {
+  ): ScrollViewInstance {
     return ScrollView({
       children,
       refreshControl: {
@@ -760,9 +758,7 @@ export const ScrollViewUtils = {
   horizontal(
     children: ComponentInstance[],
     props: Omit<ScrollViewProps, 'children' | 'direction'> = {}
-  ): ModifiableComponent<ScrollViewProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<ScrollViewProps>>
-  } {
+  ): ScrollViewInstance {
     return ScrollView({
       ...props,
       children,
@@ -776,9 +772,7 @@ export const ScrollViewUtils = {
   paged(
     children: ComponentInstance[],
     props: Omit<ScrollViewProps, 'children' | 'pagingEnabled'> = {}
-  ): ModifiableComponent<ScrollViewProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<ScrollViewProps>>
-  } {
+  ): ScrollViewInstance {
     return ScrollView({
       ...props,
       children,

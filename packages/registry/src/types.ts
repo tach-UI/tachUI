@@ -68,6 +68,60 @@ export interface RegistryHealth {
 }
 
 /**
+ * Feature flags for registry functionality
+ */
+export interface RegistryFeatureFlags {
+  /** Enable proxy-based modifier system (new SwiftUI approach) */
+  proxyModifiers?: boolean
+  /** Enable automatic type generation */
+  autoTypeGeneration?: boolean
+  /** Enable HMR cache invalidation */
+  hmrCacheInvalidation?: boolean
+  /** Enable plugin system validation */
+  pluginValidation?: boolean
+  /** Enable performance monitoring */
+  performanceMonitoring?: boolean
+  /** Enable metadata registration */
+  metadataRegistration?: boolean
+}
+
+/**
+ * Modifier metadata for build-time type generation
+ */
+export interface ModifierMetadata {
+  /** Modifier name (string or symbol) */
+  name: string | symbol
+  /** Plugin package name */
+  plugin: string
+  /** Priority for conflict resolution */
+  priority: number
+  /** TypeScript signature for type generation */
+  signature: string
+  /** Category for organization */
+  category: 'layout' | 'appearance' | 'interaction' | 'animation' | 'accessibility' | 'custom'
+  /** Optional description */
+  description?: string
+  /** Deprecated flag */
+  deprecated?: boolean
+  /** Deprecation message */
+  deprecationMessage?: string
+}
+
+/**
+ * Plugin metadata stored in the registry
+ */
+export interface PluginInfo {
+  /** Package name of the plugin */
+  name: string
+  /** Published version identifier */
+  version: string
+  /** Author or organization maintaining the plugin */
+  author: string
+  /** Optional flag for first-party or verified plugins */
+  verified?: boolean
+}
+
+/**
  * Modifier registry for registering custom modifiers
  */
 export interface ModifierRegistry {
@@ -80,4 +134,28 @@ export interface ModifierRegistry {
   clear(): void
   reset(): void
   validateRegistry(): RegistryHealth
+
+  // Feature flag methods
+  setFeatureFlags(flags: Partial<RegistryFeatureFlags>): void
+  getFeatureFlags(): RegistryFeatureFlags
+  isFeatureEnabled(feature: keyof RegistryFeatureFlags): boolean
+
+  // Metadata methods (for build-time type generation)
+  registerMetadata(metadata: ModifierMetadata): void
+  getMetadata(name: string | symbol): ModifierMetadata | undefined
+  getAllMetadata(): ModifierMetadata[]
+  getModifiersByCategory(category: ModifierMetadata['category']): ModifierMetadata[]
+  getConflicts(): Map<string | symbol, ModifierMetadata[]>
+
+  // Plugin metadata methods
+  registerPlugin(metadata: PluginInfo): void
+  getPluginInfo(name: string): PluginInfo | undefined
+  listPlugins(): PluginInfo[]
+
+  /**
+   * @deprecated Use getModifiersByCategory instead.
+   */
+  getMetadataByCategory(
+    category: ModifierMetadata['category']
+  ): ModifierMetadata[]
 }

@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => ({
           'src/components/advanced/index.ts'
         ),
         'validation/index': resolve(__dirname, 'src/validation/index.ts'),
+        'modifiers/index': resolve(__dirname, 'src/modifiers/index.ts'),
       },
       name: 'TachUIForms',
       formats: ['es'],
@@ -31,8 +32,10 @@ export default defineConfig(({ mode }) => ({
       external: [
         '@tachui/core',
         '@tachui/primitives',
+        '@tachui/registry',
         /^@tachui\/core\/.*/,
         /^@tachui\/primitives\/.*/,
+        /^@tachui\/registry\/.*/,
       ],
       output: {
         globals: {

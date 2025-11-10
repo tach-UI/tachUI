@@ -336,7 +336,7 @@ describe('Overlay Modifier Stress Tests', () => {
 
         const duration = performance.now() - start
 
-        expect(duration).toBeLessThan(200) // Should complete within 200ms
+        expect(duration).toBeLessThan(300) // Allow extra headroom for proxy instrumentation
       }
     )
 

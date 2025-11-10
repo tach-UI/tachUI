@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { BasicForm } from '../../src/forms/BasicForm'
+import { BasicForm, BasicFormImplementation } from '../../src/forms/BasicForm'
 import { createSignal } from '@tachui/core'
 
 // Mock console.warn to suppress any deprecation warnings in tests
@@ -93,12 +93,41 @@ describe('BasicBasicForm Component', () => {
   it('should apply modifiers correctly', () => {
     const onSubmit = vi.fn()
     const form = BasicForm([], { onSubmit })
-      .modifier.padding(16)
+      .padding(16)
       .backgroundColor('white')
       .cornerRadius(8)
       .build()
 
     const rendered = form.render()
     expect(rendered).toBeDefined()
+  })
+
+  it('should clone form instances with reset lifecycle state', () => {
+    const form = new BasicFormImplementation({ children: [] })
+    form.mounted = true
+    form.cleanup.push(() => {})
+
+    const clone = form.clone()
+
+    expect(clone).not.toBe(form)
+    expect(clone.props).toEqual(form.props)
+    expect(clone.id).not.toBe(form.id)
+    expect(clone.mounted).toBe(false)
+    expect(clone.cleanup).toEqual([])
+  })
+
+  it('should deep clone children arrays when requested', () => {
+    const child = {
+      type: 'component' as const,
+      id: 'child-1',
+      render: () => [],
+      props: {},
+    }
+
+    const form = new BasicFormImplementation({ children: [child] })
+    const clone = form.clone({ deep: true })
+
+    expect(clone.props.children).toEqual(form.props.children)
+    expect(clone.props.children).not.toBe(form.props.children)
   })
 })

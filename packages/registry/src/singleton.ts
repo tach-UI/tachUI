@@ -10,6 +10,9 @@ import type {
   ModifierFactory,
   ModifierLoader,
   RegistryHealth,
+  RegistryFeatureFlags,
+  ModifierMetadata,
+  PluginInfo,
 } from "./types";
 
 // Global singleton instance - this is the single source of truth
@@ -20,11 +23,64 @@ let globalRegistryInstance: ModifierRegistryImpl | null = null;
  */
 class ModifierRegistryImpl implements ModifierRegistry {
   private static instanceCount = 0;
+  private static readonly FORBIDDEN_NAMES = new Set<string>([
+    "__proto__",
+    "constructor",
+    "prototype",
+    "hasOwnProperty",
+    "isPrototypeOf",
+    "toString",
+    "valueOf",
+  ]);
+  private static readonly NAME_PATTERN = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+
+  private static validateModifierName(
+    name: string,
+    options: { strict?: boolean } = {},
+  ): void {
+    if (ModifierRegistryImpl.FORBIDDEN_NAMES.has(name)) {
+      throw new Error(
+        `Security Error: Cannot register modifier '${name}' (forbidden name)`,
+      );
+    }
+
+    if (!ModifierRegistryImpl.NAME_PATTERN.test(name)) {
+      if (options.strict) {
+        throw new Error(
+          `Invalid modifier name '${name}'. Modifier names must match ${ModifierRegistryImpl.NAME_PATTERN}`,
+        );
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          `⚠️ Modifier name '${name}' does not match ${ModifierRegistryImpl.NAME_PATTERN}. Prefer alphanumeric names for best tooling support.`,
+        );
+      }
+    }
+  }
   private readonly instanceId: string;
   private readonly createdAt: number;
   private modifiers = new Map<string, ModifierFactory<any>>();
   private lazyLoaders = new Map<string, ModifierLoader<any>>();
   private loadingPromises = new Map<string, Promise<ModifierFactory<any>>>();
+
+  // Feature flags
+  private featureFlags: RegistryFeatureFlags = {
+    proxyModifiers: false, // Disabled by default for safe rollout
+    autoTypeGeneration: false,
+    hmrCacheInvalidation: false,
+    pluginValidation: true,
+    performanceMonitoring: false,
+    metadataRegistration: true, // Enable for new system
+  };
+
+  // Metadata storage for type generation
+  private metadata = new Map<string | symbol, ModifierMetadata>();
+  private metadataHistory = new Map<string | symbol, ModifierMetadata[]>();
+  private conflicts = new Map<string | symbol, ModifierMetadata[]>();
+
+  // Plugin metadata storage
+  private plugins = new Map<string, PluginInfo>();
 
   constructor() {
     ModifierRegistryImpl.instanceCount++;
@@ -39,6 +95,8 @@ class ModifierRegistryImpl implements ModifierRegistry {
   }
 
   register<TProps>(name: string, factory: ModifierFactory<TProps>): void {
+    ModifierRegistryImpl.validateModifierName(name);
+
     this.modifiers.set(name, factory);
     // Remove any lazy loader for this name since we now have the actual factory
     this.lazyLoaders.delete(name);
@@ -52,6 +110,8 @@ class ModifierRegistryImpl implements ModifierRegistry {
   }
 
   registerLazy<TProps>(name: string, loader: ModifierLoader<TProps>): void {
+    ModifierRegistryImpl.validateModifierName(name);
+
     // Don't overwrite if already registered
     if (this.modifiers.has(name)) {
       if (process.env.NODE_ENV === "development") {
@@ -207,6 +267,10 @@ class ModifierRegistryImpl implements ModifierRegistry {
     this.modifiers.clear();
     this.lazyLoaders.clear();
     this.loadingPromises.clear();
+    this.metadata.clear();
+    this.metadataHistory.clear();
+    this.conflicts.clear();
+    this.plugins.clear();
     if (process.env.NODE_ENV === "development") {
       console.log(
         `🧹 Cleared all modifiers and lazy loaders from registry ${this.instanceId}`,
@@ -250,7 +314,235 @@ class ModifierRegistryImpl implements ModifierRegistry {
       modifiers: this.list(),
       loadedModifiers: Array.from(this.modifiers.keys()),
       lazyModifiers: Array.from(this.lazyLoaders.keys()),
+      featureFlags: this.featureFlags,
+      metadataCount: this.metadata.size,
     };
+  }
+
+  // ============================================================================
+  // Feature Flag Methods
+  // ============================================================================
+
+  /**
+   * Set feature flags for the registry
+   * Allows enabling/disabling features for gradual rollout
+   */
+  setFeatureFlags(flags: Partial<RegistryFeatureFlags>): void {
+    this.featureFlags = {
+      ...this.featureFlags,
+      ...flags,
+    };
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `🎚️ Updated feature flags in registry ${this.instanceId}:`,
+        this.featureFlags,
+      );
+    }
+  }
+
+  /**
+   * Get current feature flags
+   */
+  getFeatureFlags(): RegistryFeatureFlags {
+    return { ...this.featureFlags };
+  }
+
+  /**
+   * Check if a specific feature is enabled
+   */
+  isFeatureEnabled(feature: keyof RegistryFeatureFlags): boolean {
+    return this.featureFlags[feature] === true;
+  }
+
+  // ============================================================================
+  // Metadata Methods (for build-time type generation)
+  // ============================================================================
+
+  /**
+   * Register metadata for a modifier (for type generation)
+   */
+  registerMetadata(modifierMetadata: ModifierMetadata): void {
+    if (!this.isFeatureEnabled("metadataRegistration")) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          `⚠️ Metadata registration is disabled. Enable 'metadataRegistration' feature flag.`,
+        );
+      }
+      return;
+    }
+
+    if (!modifierMetadata.plugin) {
+      throw new Error(
+        `Modifier metadata '${String(modifierMetadata.name)}' must include a plugin identifier`,
+      );
+    }
+
+    if (typeof modifierMetadata.name === "string") {
+      ModifierRegistryImpl.validateModifierName(modifierMetadata.name, {
+        strict: true,
+      });
+    }
+
+    const existing = this.metadata.get(modifierMetadata.name);
+    const samePlugin = existing?.plugin === modifierMetadata.plugin;
+
+    this.recordMetadataHistoryEntry(modifierMetadata);
+
+    if (!existing) {
+      this.metadata.set(modifierMetadata.name, modifierMetadata);
+
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `📝 Registered metadata for '${String(modifierMetadata.name)}' from ${modifierMetadata.plugin}`,
+        );
+      }
+      return;
+    }
+
+    if (samePlugin) {
+      this.metadata.set(modifierMetadata.name, modifierMetadata);
+      return;
+    }
+
+    if (modifierMetadata.priority > existing.priority) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          `⚠️ Overriding modifier metadata '${String(modifierMetadata.name)}' from ${existing.plugin} (priority ${existing.priority}) with ${modifierMetadata.plugin} (priority ${modifierMetadata.priority})`,
+        );
+      }
+      this.metadata.set(modifierMetadata.name, modifierMetadata);
+      return;
+    }
+
+    if (
+      modifierMetadata.priority === existing.priority &&
+      modifierMetadata.plugin !== existing.plugin &&
+      process.env.NODE_ENV === "development"
+    ) {
+      console.error(
+        `❌ Metadata conflict for '${String(modifierMetadata.name)}': ${existing.plugin} vs ${modifierMetadata.plugin} (both priority ${modifierMetadata.priority})`,
+      );
+    }
+  }
+
+  private recordMetadataHistoryEntry(
+    metadata: ModifierMetadata,
+  ): void {
+    const entries =
+      this.metadataHistory.get(metadata.name) ?? [];
+
+    const key = `${metadata.plugin}:${metadata.priority}`;
+    const existingIndex = entries.findIndex(
+      (entry) => `${entry.plugin}:${entry.priority}` === key,
+    );
+
+    if (existingIndex >= 0) {
+      entries[existingIndex] = metadata;
+    } else {
+      entries.push(metadata);
+    }
+
+    this.metadataHistory.set(metadata.name, entries);
+    this.refreshConflictsFor(metadata.name, entries);
+  }
+
+  private refreshConflictsFor(
+    name: string | symbol,
+    entries: ModifierMetadata[],
+  ): void {
+    const conflictsForName: ModifierMetadata[] = [];
+    const byPriority = new Map<number, Map<string, ModifierMetadata>>();
+
+    for (const entry of entries) {
+      const priorityMap =
+        byPriority.get(entry.priority) ?? new Map<string, ModifierMetadata>();
+      priorityMap.set(entry.plugin, entry);
+      byPriority.set(entry.priority, priorityMap);
+    }
+
+    for (const priorityMap of byPriority.values()) {
+      if (priorityMap.size > 1) {
+        for (const conflictEntry of priorityMap.values()) {
+          conflictsForName.push(conflictEntry);
+        }
+      }
+    }
+
+    if (conflictsForName.length > 0) {
+      this.conflicts.set(name, conflictsForName);
+    } else {
+      this.conflicts.delete(name);
+    }
+  }
+
+  /**
+   * Get metadata for a specific modifier
+   */
+  getMetadata(name: string | symbol): ModifierMetadata | undefined {
+    return this.metadata.get(name);
+  }
+
+  /**
+   * Get all registered metadata
+   */
+  getAllMetadata(): ModifierMetadata[] {
+    return Array.from(this.metadata.values());
+  }
+
+  /**
+   * Get metadata filtered by category
+   */
+  getModifiersByCategory(
+    category: ModifierMetadata["category"],
+  ): ModifierMetadata[] {
+    return this.getAllMetadata().filter((meta) => meta.category === category);
+  }
+
+  getMetadataByCategory(
+    category: ModifierMetadata["category"],
+  ): ModifierMetadata[] {
+    return this.getModifiersByCategory(category);
+  }
+
+  /**
+   * Get conflicts (multiple modifiers with same name but different plugins)
+   */
+  getConflicts(): Map<string | symbol, ModifierMetadata[]> {
+    return new Map(
+      Array.from(this.conflicts.entries(), ([key, value]) => [
+        key,
+        [...value],
+      ]),
+    );
+  }
+
+  registerPlugin(metadata: PluginInfo): void {
+    if (!metadata.name || !metadata.version) {
+      throw new Error("Plugin must define both name and version");
+    }
+
+    if (!metadata.author) {
+      throw new Error(
+        `Plugin '${metadata.name}' must include an author or organization`,
+      );
+    }
+
+    if (!metadata.verified && process.env.NODE_ENV !== "production") {
+      console.warn(
+        `⚠️ Registering unverified plugin '${metadata.name}'. Install plugins from trusted sources.`,
+      );
+    }
+
+    this.plugins.set(metadata.name, metadata);
+  }
+
+  getPluginInfo(name: string): PluginInfo | undefined {
+    return this.plugins.get(name);
+  }
+
+  listPlugins(): PluginInfo[] {
+    return Array.from(this.plugins.values());
   }
 }
 

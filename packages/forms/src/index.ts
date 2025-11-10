@@ -29,6 +29,14 @@ export * from './validation'
 // Utilities and Helpers
 export * from './utils'
 
+// Modifiers
+export {
+  placeholder,
+  required,
+  validation,
+  registerFormsModifiers,
+} from './modifiers'
+
 // Export specific types to avoid conflicts
 export type {
   // Core form types

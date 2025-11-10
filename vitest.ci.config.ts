@@ -94,6 +94,10 @@ export default defineConfig({
         find: '@tachui/devtools',
         replacement: path.resolve(__dirname, 'packages/devtools/src'),
       },
+      {
+        find: '@tachui/registry',
+        replacement: path.resolve(__dirname, 'packages/registry/src'),
+      },
 
       // Plugin packages
       {

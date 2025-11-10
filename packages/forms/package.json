@@ -35,6 +35,10 @@
     "./validation": {
       "types": "./dist/validation/index.d.ts",
       "import": "./dist/validation/index.js"
+    },
+    "./modifiers": {
+      "types": "./dist/modifiers/index.d.ts",
+      "import": "./dist/modifiers/index.js"
     }
   },
   "peerDependencies": {
@@ -75,6 +79,8 @@
     "directory": "packages/forms"
   },
   "dependencies": {
-    "@tachui/primitives": "workspace:*"
+    "@tachui/core": "workspace:*",
+    "@tachui/primitives": "workspace:*",
+    "@tachui/registry": "workspace:*"
   }
 }

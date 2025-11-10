@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@tachui/registry": ["../registry/src/index.ts"],
+      "@tachui/registry/*": ["../registry/src/*"],
+      "@tachui/modifiers": ["../modifiers/src/index.ts"],
+      "@tachui/modifiers/*": ["../modifiers/src/*"],
+      "@tachui/devtools": ["../devtools/src/index.ts"],
+      "@tachui/devtools/*": ["../devtools/src/*"]
+    }
+  }
+}

@@ -58,14 +58,13 @@ describe('Symbols Integration Tests', () => {
       const symbol = Symbol('heart')
       
       expect(symbol.modifier).toBeDefined()
-      expect(typeof symbol.modifier.padding).toBe('function')
-      expect(typeof symbol.modifier.foregroundColor).toBe('function')
-      expect(typeof symbol.modifier.build).toBe('function')
+      expect(typeof symbol.padding).toBe('function')
+      expect(typeof symbol.foregroundColor).toBe('function')
+      expect(typeof symbol.build).toBe('function')
     })
 
     test('supports method chaining with modifiers', () => {
       const modifiedSymbol = Symbol('heart')
-        .modifier
         .padding(16)
         .foregroundColor('#ff0000')
         .build()

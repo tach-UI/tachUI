@@ -6,12 +6,16 @@
  */
 
 import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
-import { createEffect, isSignal } from '@tachui/core'
+import { createEffect, isSignal, withModifiers } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h } from '@tachui/core'
-import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
-import { createModifiableComponent, createModifierBuilder } from '@tachui/core'
+import type { ComponentProps, DOMNode } from '@tachui/core'
 import type { ColorAssetProxy } from '@tachui/core/assets'
+import type { CloneableComponent, CloneOptions } from '@tachui/core/runtime/types'
+import {
+  clonePropsPreservingReactivity,
+  resetLifecycleState,
+} from '@tachui/core'
 
 /**
  * Divider component properties
@@ -83,30 +87,13 @@ export const defaultDividerTheme: DividerTheme = {
 }
 
 /**
- * Enhanced component wrapper that adds modifier support
- */
-function withModifiers<P extends ComponentProps>(
-  component: ComponentInstance<P>
-): ModifiableComponent<P> & {
-  modifier: ModifierBuilder<ModifiableComponent<P>>
-} {
-  const modifiableComponent = createModifiableComponent(component)
-  const modifierBuilder = createModifierBuilder(modifiableComponent)
-
-  return {
-    ...modifiableComponent,
-    modifier: modifierBuilder,
-    modifierBuilder: modifierBuilder,
-  }
-}
-
-/**
  * Divider component implementation
  */
-export class DividerComponent implements ComponentInstance<DividerProps> {
+export class DividerComponent implements CloneableComponent<DividerProps> {
   public readonly type = 'component' as const
   public readonly id: string
   public readonly props: DividerProps
+  public mounted = false
   public cleanup: (() => void)[] = []
   private theme: DividerTheme = defaultDividerTheme
 
@@ -227,6 +214,26 @@ export class DividerComponent implements ComponentInstance<DividerProps> {
       }
     })
     this.cleanup = []
+  }
+
+  clone(options: CloneOptions = {}): this {
+    return options.deep ? this.deepClone() : this.shallowClone()
+  }
+
+  shallowClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props)
+    const clone = new DividerComponent(clonedProps)
+    resetLifecycleState(clone)
+    return clone as this
+  }
+
+  deepClone(): this {
+    const clonedProps = clonePropsPreservingReactivity(this.props, {
+      deep: true,
+    })
+    const clone = new DividerComponent(clonedProps)
+    resetLifecycleState(clone)
+    return clone as this
   }
 }
 

@@ -340,13 +340,13 @@ configureBreakpoints(teamBreakpoints)
 // Usage across the application
 const ResponsiveCard = () => {
   return VStack([
-    Text("Card Title").modifier.responsive({
+    Text("Card Title").responsive({
       phone: { fontSize: 18, textAlign: 'center' },
       tablet: { fontSize: 22, textAlign: 'left' },
       desktop: { fontSize: 26, textAlign: 'left' }
     }).build(),
     
-    Text("Card content...").modifier.responsive({
+    Text("Card content...").responsive({
       phone: { fontSize: 14, lineHeight: 1.4 },
       tablet: { fontSize: 16, lineHeight: 1.5 },
       desktop: { fontSize: 18, lineHeight: 1.6 }

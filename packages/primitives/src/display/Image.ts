@@ -5,7 +5,11 @@
  * responsive sizing, and advanced image handling capabilities.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type {
+  ModifiableComponent,
+  ModifierBuilder,
+  ModifiableComponentWithModifiers,
+} from '@tachui/core'
 import { createEffect, createSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h } from '@tachui/core'
@@ -389,8 +393,8 @@ export class EnhancedImage
 /**
  * Extended Image component interface with SwiftUI-style shorthands
  */
-export interface ImageWithShorthands extends ModifiableComponent<ImageProps> {
-  modifier: ModifierBuilder<ModifiableComponent<ImageProps>>
+export interface ImageWithShorthands
+  extends ModifiableComponentWithModifiers<ImageProps> {
   scaledToFit(): ImageWithShorthands
   scaledToFill(): ImageWithShorthands
 }

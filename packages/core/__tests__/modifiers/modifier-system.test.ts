@@ -428,8 +428,7 @@ describe('Modifier System', () => {
       expect(textComponent.modifiers).toEqual([])
       expect(textComponent.modifier).toBeDefined()
 
-      const withColor = textComponent.modifier
-        .foregroundColor('#ff0000')
+      const withColor = textComponent.foregroundColor('#ff0000')
         .fontSize(18)
         .build()
 
@@ -441,8 +440,7 @@ describe('Modifier System', () => {
 
       expect(vstack.modifier).toBeDefined()
 
-      const withPadding = vstack.modifier
-        .padding(20)
+      const withPadding = vstack.padding(20)
         .backgroundColor('#f0f0f0')
         .build()
 
@@ -454,8 +452,7 @@ describe('Modifier System', () => {
 
       expect(button.modifier).toBeDefined()
 
-      const styledButton = button.modifier
-        .backgroundColor('#007AFF')
+      const styledButton = button.backgroundColor('#007AFF')
         .foregroundColor('#ffffff')
         .cornerRadius(6)
         .padding(12)

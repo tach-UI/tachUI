@@ -93,7 +93,7 @@ function createTestRouter(routes: Record<string, any>, options?: any) {
       // Called with just a path string - create a simple destination
       const path = pathOrDestination
       const routeFunction =
-        routes[path] || (() => HTML.div({ children: path }).modifier.build())
+        routes[path] || (() => HTML.div({ children: path }).build())
 
       // Execute the route function to trigger side effects
       const destination = routeFunction()
@@ -116,11 +116,11 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
 
     beforeEach(() => {
       productListView = () =>
-        HTML.div({ children: 'Product List' }).modifier.build()
+        HTML.div({ children: 'Product List' }).build()
       productDetailView = (productId: string) =>
-        HTML.div({ children: `Product ${productId}` }).modifier.build()
-      cartView = () => HTML.div({ children: 'Shopping Cart' }).modifier.build()
-      checkoutView = () => HTML.div({ children: 'Checkout' }).modifier.build()
+        HTML.div({ children: `Product ${productId}` }).build()
+      cartView = () => HTML.div({ children: 'Shopping Cart' }).build()
+      checkoutView = () => HTML.div({ children: 'Checkout' }).build()
     })
 
     it('handles product browsing to purchase flow', () => {
@@ -171,7 +171,7 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
       const enhancedCartView = () =>
         HTML.div({
           children: `Cart: ${cartItems().join(', ')}`,
-        }).modifier.build()
+        }).build()
 
       const router = createTestRouter({
         '/cart': () => enhancedCartView(),
@@ -192,13 +192,13 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
     let notificationsView: any
 
     beforeEach(() => {
-      feedView = () => HTML.div({ children: 'Feed' }).modifier.build()
+      feedView = () => HTML.div({ children: 'Feed' }).build()
       profileView = (userId: string) =>
-        HTML.div({ children: `Profile ${userId}` }).modifier.build()
+        HTML.div({ children: `Profile ${userId}` }).build()
       postDetailView = (postId: string) =>
-        HTML.div({ children: `Post ${postId}` }).modifier.build()
+        HTML.div({ children: `Post ${postId}` }).build()
       notificationsView = () =>
-        HTML.div({ children: 'Notifications' }).modifier.build()
+        HTML.div({ children: 'Notifications' }).build()
     })
 
     it('handles feed to profile to post navigation', () => {
@@ -256,7 +256,7 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
           deepLinking: {
             enabled: true,
             handleUnknownRoutes: path =>
-              HTML.div({ children: `404: ${path}` }).modifier.build(),
+              HTML.div({ children: `404: ${path}` }).build(),
           },
         }
       )
@@ -274,11 +274,11 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
     let settingsView: any
 
     beforeEach(() => {
-      dashboardView = () => HTML.div({ children: 'Dashboard' }).modifier.build()
+      dashboardView = () => HTML.div({ children: 'Dashboard' }).build()
       usersView = () =>
-        HTML.div({ children: 'User Management' }).modifier.build()
-      analyticsView = () => HTML.div({ children: 'Analytics' }).modifier.build()
-      settingsView = () => HTML.div({ children: 'Settings' }).modifier.build()
+        HTML.div({ children: 'User Management' }).build()
+      analyticsView = () => HTML.div({ children: 'Analytics' }).build()
+      settingsView = () => HTML.div({ children: 'Settings' }).build()
     })
 
     it('handles hierarchical admin navigation', () => {
@@ -288,7 +288,7 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
         '/admin/analytics': () => analyticsView(),
         '/admin/settings': () => settingsView(),
         '/admin/*': () =>
-          HTML.div({ children: 'Admin Section' }).modifier.build(),
+          HTML.div({ children: 'Admin Section' }).build(),
       })
 
       // Navigate through admin sections
@@ -307,7 +307,7 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
         '/admin': () => dashboardView(),
         '/admin/users': () => usersView(),
         '/admin/users/:id': ({ id }: { id: string }) =>
-          HTML.div({ children: `User ${id}` }).modifier.build(),
+          HTML.div({ children: `User ${id}` }).build(),
       })
 
       router.push('/admin')
@@ -327,11 +327,11 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
         '/admin/users': () =>
           userPermissions.canManageUsers
             ? usersView()
-            : HTML.div({ children: 'Access Denied' }).modifier.build(),
+            : HTML.div({ children: 'Access Denied' }).build(),
         '/admin/analytics': () =>
           userPermissions.canViewAnalytics
             ? analyticsView()
-            : HTML.div({ children: 'Access Denied' }).modifier.build(),
+            : HTML.div({ children: 'Access Denied' }).build(),
       })
 
       router.push('/admin/users')
@@ -351,15 +351,15 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
 
     beforeEach(() => {
       step1View = () =>
-        HTML.div({ children: 'Step 1: Personal Info' }).modifier.build()
+        HTML.div({ children: 'Step 1: Personal Info' }).build()
       step2View = () =>
-        HTML.div({ children: 'Step 2: Address' }).modifier.build()
+        HTML.div({ children: 'Step 2: Address' }).build()
       step3View = () =>
-        HTML.div({ children: 'Step 3: Payment' }).modifier.build()
+        HTML.div({ children: 'Step 3: Payment' }).build()
       reviewView = () =>
-        HTML.div({ children: 'Review & Submit' }).modifier.build()
+        HTML.div({ children: 'Review & Submit' }).build()
       confirmationView = () =>
-        HTML.div({ children: 'Confirmation' }).modifier.build()
+        HTML.div({ children: 'Confirmation' }).build()
     })
 
     it('handles linear multi-step form flow', () => {
@@ -400,7 +400,7 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
         '/form/step2': () =>
           step2Valid()
             ? step2View()
-            : HTML.div({ children: 'Complete Step 1 first' }).modifier.build(),
+            : HTML.div({ children: 'Complete Step 1 first' }).build(),
       })
 
       router.push('/form/step1')
@@ -421,8 +421,8 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
           return Object.keys(progress).length > 0
             ? HTML.div({
                 children: 'Resume from saved progress',
-              }).modifier.build()
-            : HTML.div({ children: 'Start new form' }).modifier.build()
+              }).build()
+            : HTML.div({ children: 'Start new form' }).build()
         },
       })
 
@@ -442,12 +442,12 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
     let filterView: any
 
     beforeEach(() => {
-      searchView = () => HTML.div({ children: 'Search' }).modifier.build()
+      searchView = () => HTML.div({ children: 'Search' }).build()
       resultsView = (query: string, filters: any) =>
         HTML.div({
           children: `Results for "${query}" with filters: ${JSON.stringify(filters)}`,
-        }).modifier.build()
-      filterView = () => HTML.div({ children: 'Filters' }).modifier.build()
+        }).build()
+      filterView = () => HTML.div({ children: 'Filters' }).build()
     })
 
     it('handles search query navigation', () => {
@@ -505,11 +505,11 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
         '/search/history': () =>
           HTML.div({
             children: `History: ${searchHistory.join(', ')}`,
-          }).modifier.build(),
+          }).build(),
         '/search/suggestions': () =>
           HTML.div({
             children: `Suggestions: ${suggestions.join(', ')}`,
-          }).modifier.build(),
+          }).build(),
       })
 
       router.push('/search/history')
@@ -524,11 +524,11 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
     let dashboardView: any
 
     beforeEach(() => {
-      loginView = () => HTML.div({ children: 'Login' }).modifier.build()
-      registerView = () => HTML.div({ children: 'Register' }).modifier.build()
+      loginView = () => HTML.div({ children: 'Login' }).build()
+      registerView = () => HTML.div({ children: 'Register' }).build()
       forgotPasswordView = () =>
-        HTML.div({ children: 'Forgot Password' }).modifier.build()
-      dashboardView = () => HTML.div({ children: 'Dashboard' }).modifier.build()
+        HTML.div({ children: 'Forgot Password' }).build()
+      dashboardView = () => HTML.div({ children: 'Dashboard' }).build()
     })
 
     it('handles login to dashboard flow', () => {
@@ -541,7 +541,7 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
         '/dashboard': () =>
           isAuthenticated()
             ? dashboardView()
-            : HTML.div({ children: 'Please login first' }).modifier.build(),
+            : HTML.div({ children: 'Please login first' }).build(),
       })
 
       // Try to access dashboard without auth
@@ -558,11 +558,11 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
       const router = createTestRouter({
         '/login': () => loginView(),
         '/auth/google': () =>
-          HTML.div({ children: 'Google OAuth' }).modifier.build(),
+          HTML.div({ children: 'Google OAuth' }).build(),
         '/auth/github': () =>
-          HTML.div({ children: 'GitHub OAuth' }).modifier.build(),
+          HTML.div({ children: 'GitHub OAuth' }).build(),
         '/auth/callback': () =>
-          HTML.div({ children: 'Auth Callback' }).modifier.build(),
+          HTML.div({ children: 'Auth Callback' }).build(),
       })
 
       // Social login flow
@@ -597,12 +597,12 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
     it('handles offline navigation gracefully', () => {
       const [isOnline, setIsOnline] = createSignal(true)
       const dashboardView = () =>
-        HTML.div({ children: 'Dashboard' }).modifier.build()
+        HTML.div({ children: 'Dashboard' }).build()
 
       const router = createTestRouter({
         '/dashboard': () => dashboardView(),
         '/offline': () =>
-          HTML.div({ children: 'You are offline' }).modifier.build(),
+          HTML.div({ children: 'You are offline' }).build(),
       })
 
       // Simulate going offline
@@ -615,11 +615,11 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
 
     it('supports navigation prefetching', () => {
       const dashboardView = () =>
-        HTML.div({ children: 'Dashboard' }).modifier.build()
+        HTML.div({ children: 'Dashboard' }).build()
       const profileView = (id: string) =>
-        HTML.div({ children: `Profile ${id}` }).modifier.build()
+        HTML.div({ children: `Profile ${id}` }).build()
       const settingsView = () =>
-        HTML.div({ children: 'Settings' }).modifier.build()
+        HTML.div({ children: 'Settings' }).build()
 
       const router = createTestRouter(
         {
@@ -642,9 +642,9 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
     it('handles service worker navigation', () => {
       const router = createTestRouter(
         {
-          '/app': () => HTML.div({ children: 'PWA App' }).modifier.build(),
+          '/app': () => HTML.div({ children: 'PWA App' }).build(),
           '/install': () =>
-            HTML.div({ children: 'Install PWA' }).modifier.build(),
+            HTML.div({ children: 'Install PWA' }).build(),
         },
         {
           serviceWorker: {
@@ -662,11 +662,11 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
   describe('Internationalization Navigation', () => {
     it('handles locale-based routing', () => {
       const router = createTestRouter({
-        '/': () => HTML.div({ children: 'Home' }).modifier.build(),
+        '/': () => HTML.div({ children: 'Home' }).build(),
         '/:locale/dashboard': ({ locale }: { locale: string }) =>
-          HTML.div({ children: `Dashboard (${locale})` }).modifier.build(),
+          HTML.div({ children: `Dashboard (${locale})` }).build(),
         '/:locale/profile': ({ locale }: { locale: string }) =>
-          HTML.div({ children: `Profile (${locale})` }).modifier.build(),
+          HTML.div({ children: `Profile (${locale})` }).build(),
       })
 
       router.push('/en/dashboard')
@@ -680,7 +680,7 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
       const router = createTestRouter(
         {
           '/rtl/dashboard': () =>
-            HTML.div({ children: 'RTL Dashboard' }).modifier.build(),
+            HTML.div({ children: 'RTL Dashboard' }).build(),
         },
         {
           rtl: {
@@ -700,7 +700,7 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
       const routes: Record<string, any> = {}
       for (let i = 0; i < 1000; i++) {
         routes[`/page/${i}`] = () =>
-          HTML.div({ children: `Page ${i}` }).modifier.build()
+          HTML.div({ children: `Page ${i}` }).build()
       }
 
       const router = createTestRouter(routes)
@@ -723,7 +723,7 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
         for (let i = 0; i < 5; i++) {
           const path = `${prefix}/level${i}`
           routes[path] = () =>
-            HTML.div({ children: `Level ${depth}-${i}` }).modifier.build()
+            HTML.div({ children: `Level ${depth}-${i}` }).build()
 
           if (depth > 1) {
             Object.assign(routes, createNestedRoutes(depth - 1, path))
@@ -742,9 +742,9 @@ describe('Real-World Navigation Scenarios - Complex User Journeys', () => {
 
     it('maintains performance with frequent navigation', () => {
       const router = createTestRouter({
-        '/page1': () => HTML.div({ children: 'Page 1' }).modifier.build(),
-        '/page2': () => HTML.div({ children: 'Page 2' }).modifier.build(),
-        '/page3': () => HTML.div({ children: 'Page 3' }).modifier.build(),
+        '/page1': () => HTML.div({ children: 'Page 1' }).build(),
+        '/page2': () => HTML.div({ children: 'Page 2' }).build(),
+        '/page3': () => HTML.div({ children: 'Page 3' }).build(),
       })
 
       const startTime = performance.now()

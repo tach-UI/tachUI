@@ -104,6 +104,34 @@ describe('SpacerComponent', () => {
       expect(result1.props.style.alignSelf).toBe(result2.props.style.alignSelf)
     })
   })
+
+  describe('Cloning', () => {
+    it('creates a shallow clone with shared props', () => {
+      const spacer = new SpacerComponent({ minLength: 24 })
+      spacer.mounted = true
+      spacer.cleanup.push(() => {})
+
+      const clone = spacer.clone()
+
+      expect(clone).not.toBe(spacer)
+      expect(clone.props).toEqual(spacer.props)
+      expect(clone.id).not.toBe(spacer.id)
+      expect(clone.mounted).toBe(false)
+      expect(clone.cleanup).toEqual([])
+    })
+
+    it('creates a deep clone that copies nested arrays', () => {
+      const spacer = new SpacerComponent({
+        minLength: 12,
+        classes: ['foo', 'bar'],
+      })
+
+      const clone = spacer.clone({ deep: true })
+
+      expect(clone.props).toEqual(spacer.props)
+      expect(clone.props.classes).not.toBe(spacer.props.classes)
+    })
+  })
 })
 
 describe('Spacer Factory Function', () => {
@@ -113,7 +141,7 @@ describe('Spacer Factory Function', () => {
 
       expect(spacer).toBeDefined()
       expect(spacer.modifier).toBeDefined()
-      expect(typeof spacer.modifier.build).toBe('function')
+      expect(typeof spacer.build).toBe('function')
     })
 
     it('should create spacer with props object', () => {
@@ -121,7 +149,7 @@ describe('Spacer Factory Function', () => {
 
       expect(spacer).toBeDefined()
       expect(spacer.modifier).toBeDefined()
-      expect(typeof spacer.modifier.build).toBe('function')
+      expect(typeof spacer.build).toBe('function')
     })
 
     it('should create spacer with no parameters', () => {
@@ -129,7 +157,7 @@ describe('Spacer Factory Function', () => {
 
       expect(spacer).toBeDefined()
       expect(spacer.modifier).toBeDefined()
-      expect(typeof spacer.modifier.build).toBe('function')
+      expect(typeof spacer.build).toBe('function')
     })
   })
 
@@ -171,15 +199,14 @@ describe('Spacer Factory Function', () => {
 
       expect(spacer.modifier).toBeDefined()
       expect(typeof spacer.modifier).toBe('object')
-      expect(typeof spacer.modifier.build).toBe('function')
+      expect(typeof spacer.build).toBe('function')
     })
 
     it('should support chaining modifiers', () => {
       const spacer = Spacer()
 
       expect(() => {
-        spacer.modifier
-          .backgroundColor('#ff0000')
+        spacer.backgroundColor('#ff0000')
           .padding(10)
           .margin({ horizontal: 5 })
           .cornerRadius(4)
@@ -192,10 +219,10 @@ describe('Spacer Factory Function', () => {
 
       // Should have the same modifier interface as other components
       // Proxy provides methods dynamically, so check they're callable
-      expect(typeof spacer.modifier.build).toBe('function')
-      expect(typeof spacer.modifier.backgroundColor).toBe('function')
-      expect(typeof spacer.modifier.padding).toBe('function')
-      expect(typeof spacer.modifier.margin).toBe('function')
+      expect(typeof spacer.build).toBe('function')
+      expect(typeof spacer.backgroundColor).toBe('function')
+      expect(typeof spacer.padding).toBe('function')
+      expect(typeof spacer.margin).toBe('function')
     })
   })
 
@@ -355,7 +382,7 @@ describe('Spacer TypeScript Integration', () => {
 
     it('should maintain type information through modifier chain', () => {
       const spacer = Spacer(10)
-      const built = spacer.modifier.build()
+      const built = spacer.build()
 
       // Should maintain component type information
       expect(built.type).toBe('component')
@@ -368,13 +395,13 @@ describe('Spacer Visual Debug Support', () => {
   describe('Debug Visualization', () => {
     it('should support background color for debugging', () => {
       expect(() => {
-        Spacer().modifier.backgroundColor('rgba(255, 0, 0, 0.1)').build()
+        Spacer().backgroundColor('rgba(255, 0, 0, 0.1)').build()
       }).not.toThrow()
     })
 
     it('should support border for debugging', () => {
       expect(() => {
-        Spacer().modifier.border(1, '#ff0000').build()
+        Spacer().border(1, '#ff0000').build()
       }).not.toThrow()
     })
   })

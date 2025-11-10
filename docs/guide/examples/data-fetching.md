@@ -49,9 +49,9 @@ function UserList() {
   return VStack({
     children: [
       () => loading() ? Text("Loading users...") : null,
-      () => error() ? Text(`Error: ${error()}`).modifier.foregroundColor('red').build() : null,
+      () => error() ? Text(`Error: ${error()}`).foregroundColor('red').build() : null,
       () => users().map(user => 
-        Text(user.name).modifier.padding(8).backgroundColor('#f5f5f5').build()
+        Text(user.name).padding(8).backgroundColor('#f5f5f5').build()
       ),
       Button("Refresh", fetchUsers)
     ],

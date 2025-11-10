@@ -49,37 +49,14 @@ export {
   gridCellAnchor,
 } from './modifiers/grid'
 
-// Registry integration for grid modifiers
-import { globalModifierRegistry } from '@tachui/registry'
-import {
-  gridColumnSpan,
-  gridRowSpan,
-  gridArea,
-  gridCellAlignment,
-  gridItemConfig,
-  gridCellColumns,
-  gridCellRows,
-  gridCellAnchor,
-} from './modifiers/grid'
+import { registerGridModifiers } from './modifiers/grid'
 
-const gridModifierRegistrations: Array<[string, (...args: any[]) => any]> = [
-  ['gridColumnSpan', gridColumnSpan],
-  ['gridRowSpan', gridRowSpan],
-  ['gridArea', gridArea],
-  ['gridCellAlignment', gridCellAlignment],
-  ['gridItemConfig', gridItemConfig],
-  ['gridCellColumns', gridCellColumns],
-  ['gridCellRows', gridCellRows],
-  ['gridCellAnchor', gridCellAnchor],
-]
+registerGridModifiers()
 
-// Auto-register grid modifiers on import
-gridModifierRegistrations.forEach(([name, factory]) => {
-  globalModifierRegistry.register(name, factory)
-})
+export { registerGridModifiers } from './modifiers/grid'
 
-if (process.env.NODE_ENV !== 'production') {
-  console.info(
-    `🔍 [@tachui/grid] Registered ${gridModifierRegistrations.length} grid modifiers with global registry`
-  )
+if (typeof import.meta !== 'undefined' && (import.meta as any).hot) {
+  ;(import.meta as any).hot.accept(() => {
+    registerGridModifiers({ force: true })
+  })
 }

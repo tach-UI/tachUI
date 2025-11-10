@@ -161,7 +161,7 @@ Enhance form usability with concatenated labels:
 ```typescript
 const FormField = (label: string, required: boolean = false) => {
   const labelElement = Text(label)
-    .concat(required ? Text(" *").modifier.color('red') : Text(""))
+    .concat(required ? Text(" *").color('red') : Text(""))
 
   return VStack([
     labelElement,
@@ -366,9 +366,9 @@ const Breadcrumb = (items: Array<{ label: string, href?: string }>) => {
 const RichText = (content: string) => {
   // Simple bold text example
   return Text("This text has ")
-    .concat(Text("bold").modifier.fontWeight('bold'))
+    .concat(Text("bold").fontWeight('bold'))
     .concat(Text(" and "))
-    .concat(Text("italic").modifier.fontStyle('italic'))
+    .concat(Text("italic").fontStyle('italic'))
     .concat(Text(" formatting"))
 }
 ```

@@ -6,8 +6,7 @@
         spacing: 60,
         children: [
           Text('Why TachUI?')
-            .modifier
-            .font({ size: '2.5rem', family: '"Madimi One", cursive', weight: 'normal' })
+                        .font({ size: '2.5rem', family: '"Madimi One", cursive', weight: 'normal' })
             .textAlign('center')
             .foregroundColor(Assets.textWhite)
             .padding({ bottom: 60 })
@@ -23,8 +22,7 @@
                 spacing: 20,
                 children: [
                   Text('🚀')
-                    .modifier
-                    .font({ size: '48px' })
+                                        .font({ size: '48px' })
                     .width('48px')
                     .height('48px')
                     .foregroundColor(Assets.primaryPurple)
@@ -33,8 +31,7 @@
                     .build(),
 
                   Text('iOS Developer Friendly')
-                    .modifier
-                    .font({ size: '1.25rem', family: '"Madimi One", cursive', weight: 'normal' })
+                                        .font({ size: '1.25rem', family: '"Madimi One", cursive', weight: 'normal' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .padding({ bottom: 15 })
@@ -42,8 +39,7 @@
                     .build(),
 
                   Text('Familiar API patterns with 66 components and 130+ modifiers. Identical syntax and concepts - iOS developers feel at home immediately with declarative UI patterns.')
-                    .modifier
-                    .font({ family: '"Dosis", sans-serif', weight: '400' })
+                                        .font({ family: '"Dosis", sans-serif', weight: '400' })
                     .foregroundColor(Assets.textWhite)
                     .opacity(0.85)
                     .textAlign('center')
@@ -52,8 +48,7 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ width: 1, color: Assets.borderPurple, style: 'solid' })
                 .padding({ all: 30 })
                 .cornerRadius(2)
@@ -70,20 +65,17 @@
                     spacing: 15,
                     children: [
                       Text('⚡')
-                        .modifier
-                        .font({ size: '1.8rem' })
+                                                .font({ size: '1.8rem' })
                         .build(),
 
                       Text('Fine-Grained Reactivity')
-                        .modifier
-                        .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
+                                                .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .build(),
 
                       Text('SolidJS-inspired signals for performance')
-                        .modifier
-                        .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
+                                                .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .opacity(0.85)
@@ -91,8 +83,7 @@
                     ],
                     alignment: 'center'
                   })
-                    .modifier
-                    .backgroundColor(Assets.cardBackground)
+                                        .backgroundColor(Assets.cardBackground)
                     .border({ color: Assets.borderPurple, width: 1 })
                     .padding({ all: 20 })
                     .cornerRadius(12)
@@ -104,20 +95,17 @@
                     spacing: 15,
                     children: [
                       Text('📦')
-                        .modifier
-                        .font({ size: '1.8rem' })
+                                                .font({ size: '1.8rem' })
                         .build(),
 
                       Text('Plugin Architecture')
-                        .modifier
-                        .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
+                                                .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .build(),
 
                       Text('Now 99.89% smaller! From 6.2MB to 7KB')
-                        .modifier
-                        .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
+                                                .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.accentOrange)
                         .textAlign('center')
                         .opacity(0.95)
@@ -126,8 +114,7 @@
                     ],
                     alignment: 'center'
                   })
-                    .modifier
-                    .backgroundColor(Assets.cardBackground)
+                                        .backgroundColor(Assets.cardBackground)
                     .border({ color: Assets.borderPurple, width: 1 })
                     .padding({ all: 20 })
                     .cornerRadius(12)
@@ -139,20 +126,17 @@
                     spacing: 15,
                     children: [
                       Text('🎨')
-                        .modifier
-                        .font({ size: '1.8rem' })
+                                                .font({ size: '1.8rem' })
                         .build(),
 
                       Text('Advanced Styling System')
-                        .modifier
-                        .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
+                                                .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .build(),
 
                       Text('Comprehensive modifier system')
-                        .modifier
-                        .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
+                                                .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .opacity(0.85)
@@ -160,8 +144,7 @@
                     ],
                     alignment: 'center'
                   })
-                    .modifier
-                    .backgroundColor(Assets.cardBackground)
+                                        .backgroundColor(Assets.cardBackground)
                     .border({ color: Assets.borderPurple, width: 1 })
                     .padding({ all: 20 })
                     .cornerRadius(12)
@@ -183,20 +166,17 @@
                 spacing: 15,
                 children: [
                   Text('🧭')
-                        .modifier
-                        .font({ size: '1.8rem' })
+                                                .font({ size: '1.8rem' })
                         .build(),
 
                       Text('Complete Navigation')
-                        .modifier
-                        .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
+                                                .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .build(),
 
                       Text('Stack and tab navigation with routing')
-                        .modifier
-                        .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
+                                                .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .opacity(0.85)
@@ -204,8 +184,7 @@
                     ],
                     alignment: 'center'
                   })
-                    .modifier
-                    .backgroundColor(Assets.cardBackground)
+                                        .backgroundColor(Assets.cardBackground)
                     .border({ color: Assets.borderPurple, width: 1 })
                     .padding({ all: 20 })
                     .cornerRadius(12)
@@ -217,20 +196,17 @@
                     spacing: 15,
                     children: [
                       Text('📝')
-                        .modifier
-                        .font({ size: '1.8rem' })
+                                                .font({ size: '1.8rem' })
                         .build(),
 
                       Text('Rich Form System')
-                        .modifier
-                        .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
+                                                .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .build(),
 
                       Text('25+ specialized form components')
-                        .modifier
-                        .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
+                                                .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .opacity(0.85)
@@ -238,8 +214,7 @@
                     ],
                     alignment: 'center'
                   })
-                    .modifier
-                    .backgroundColor(Assets.cardBackground)
+                                        .backgroundColor(Assets.cardBackground)
                     .border({ color: Assets.borderPurple, width: 1 })
                     .padding({ all: 20 })
                     .cornerRadius(12)
@@ -251,20 +226,17 @@
                     spacing: 15,
                     children: [
                       Text('💠')
-                        .modifier
-                        .font({ size: '1.8rem' })
+                                                .font({ size: '1.8rem' })
                         .build(),
 
                       Text('TypeScript-First')
-                        .modifier
-                        .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
+                                                .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .build(),
 
                       Text('Built with TypeScript from day one')
-                        .modifier
-                        .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
+                                                .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .opacity(0.85)
@@ -272,8 +244,7 @@
                     ],
                     alignment: 'center'
                   })
-                    .modifier
-                    .backgroundColor(Assets.cardBackground)
+                                        .backgroundColor(Assets.cardBackground)
                     .border({ color: Assets.borderPurple, width: 1 })
                     .padding({ all: 20 })
                     .cornerRadius(12)
@@ -285,20 +256,17 @@
                     spacing: 15,
                     children: [
                       Text('🧪')
-                        .modifier
-                        .font({ size: '1.8rem' })
+                                                .font({ size: '1.8rem' })
                         .build(),
 
                       Text('Comprehensive Testing')
-                        .modifier
-                        .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
+                                                .font({ size: '1.1rem', weight: '600', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .build(),
 
                       Text('95%+ test coverage for reliability')
-                        .modifier
-                        .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
+                                                .font({ size: '0.9rem', family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .opacity(0.85)
@@ -306,8 +274,7 @@
                     ],
                     alignment: 'center'
                   })
-                    .modifier
-                    .backgroundColor(Assets.cardBackground)
+                                        .backgroundColor(Assets.cardBackground)
                     .border({ color: Assets.borderPurple, width: 1 })
                     .padding({ all: 20 })
                     .cornerRadius(12)
@@ -320,18 +287,16 @@
             ],
             alignment: 'stretch'
           })
-            .modifier
-            .maxWidth('1200px')
+                        .maxWidth('1200px')
             .build()
         ],
         alignment: 'center'
       })
-        .modifier
-        .backgroundColor(Assets.darkPurple)
+                .backgroundColor(Assets.darkPurple)
         .opacity(0.8)
         .padding({ top: 80, bottom: 80, left: 40, right: 40 })
         .backdropFilter('blur(10px)')
-        .id('features')
+        .elementId('features')
         .build(),
 
       // Code Comparison Section
@@ -339,8 +304,7 @@
         spacing: 40,
         children: [
           Text('Familiar iOS Development Patterns')
-            .modifier
-            .font({ size: '2.2rem', family: '"Madimi One", cursive' })
+                        .font({ size: '2.2rem', family: '"Madimi One", cursive' })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .build(),
@@ -353,16 +317,14 @@
                 spacing: 0,
                 children: [
                   Text('SwiftUI (Swift)')
-                    .modifier
-                    .backgroundColor(Assets.primaryPurple)
+                                        .backgroundColor(Assets.primaryPurple)
                     .foregroundColor(Assets.textWhite)
                     .padding({ horizontal: 20, vertical: 15 })
                     .font({ weight: '600', family: '"Dosis", sans-serif' })
                     .build(),
 
                   Text(swiftText)
-                    .modifier
-                    .backgroundColor('hsl(0, 0%, 12%)')
+                                        .backgroundColor('hsl(0, 0%, 12%)')
                     .foregroundColor('hsl(0, 0%, 83%)')
                     .padding({ all: 20 })
                     .font({ family: '"Monaco", "Menlo", "Ubuntu Mono", monospace', size: '14px' })
@@ -372,8 +334,7 @@
                 ],
                 alignment: 'stretch'
               })
-                .modifier
-                .backgroundColor('hsl(0, 0%, 12%)')
+                                .backgroundColor('hsl(0, 0%, 12%)')
                 .cornerRadius(12)
                 .border({ width: 1, color: 'rgba(139, 92, 246, 0.3)', style: 'solid' })
                 .overflow('hidden')
@@ -388,16 +349,14 @@
                 spacing: 0,
                 children: [
                   Text('TachUI (TypeScript)')
-                    .modifier
-                    .backgroundColor(Assets.primaryPurple)
+                                        .backgroundColor(Assets.primaryPurple)
                     .foregroundColor(Assets.textWhite)
                     .padding({ horizontal: 20, vertical: 15 })
                     .font({ weight: '600', family: '"Dosis", sans-serif' })
                     .build(),
 
                   Text(tachText)
-                    .modifier
-                    .backgroundColor('hsl(0, 0%, 12%)')
+                                        .backgroundColor('hsl(0, 0%, 12%)')
                     .foregroundColor('hsl(0, 0%, 83%)')
                     .padding({ all: 20 })
                     .font({ family: '"Monaco", "Menlo", "Ubuntu Mono", monospace', size: '14px' })
@@ -407,8 +366,7 @@
                 ],
                 alignment: 'stretch'
               })
-                .modifier
-                .backgroundColor('hsl(0, 0%, 12%)')
+                                .backgroundColor('hsl(0, 0%, 12%)')
                 .cornerRadius(12)
                 .border({ width: 1, color: 'rgba(139, 92, 246, 0.3)', style: 'solid' })
                 .overflow('hidden')
@@ -422,8 +380,7 @@
           }),
 
           Text('Perfect for iOS developers transitioning to web development.')
-            .modifier
-            .font({ size: '1.1rem', family: '"Dosis", sans-serif', weight: 'bold' })
+                        .font({ size: '1.1rem', family: '"Dosis", sans-serif', weight: 'bold' })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .opacity(0.8)
@@ -431,8 +388,7 @@
         ],
         alignment: 'center'
       })
-        .modifier
-        .backgroundColor(Assets.darkPurple)
+                .backgroundColor(Assets.darkPurple)
         .padding({ top: 60, bottom: 60, horizontal: 40 })
         .setAttribute('id', 'comparison')
         .build(),
@@ -442,8 +398,7 @@
         spacing: 40,
         children: [
           Text('Modular Architecture')
-            .modifier
-            .font({ size: '2.2rem', family: '"Madimi One", cursive' })
+                        .font({ size: '2.2rem', family: '"Madimi One", cursive' })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .build(),
@@ -459,14 +414,12 @@
                     spacing: 10,
                     children: [
                       Text('@tachui/core')
-                        .modifier
-                        .font({ size: '1.25rem', family: '"Madimi One", cursive' })
+                                                .font({ size: '1.25rem', family: '"Madimi One", cursive' })
                         .foregroundColor(Assets.textWhite)
                         .build(),
 
                       Text('7KB')
-                        .modifier
-                        .backgroundColor(Assets.primaryPurple)
+                                                .backgroundColor(Assets.primaryPurple)
                         .foregroundColor(Assets.textWhite)
                         .padding({ horizontal: 8, vertical: 4 })
                         .cornerRadius(6)
@@ -480,22 +433,19 @@
                     spacing: 8,
                     children: [
                       Text('• Production-minimal bundle - Core reactive system only')
-                        .modifier
-                        .font({ family: '"Dosis", sans-serif' })
+                                                .font({ family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .opacity(0.85)
                         .build(),
 
                       Text('• Zero TypeScript overhead - 99.89% bundle reduction achieved')
-                        .modifier
-                        .font({ family: '"Dosis", sans-serif' })
+                                                .font({ family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .opacity(0.85)
                         .build(),
 
                       Text('• Perfect for: Maximum performance applications, landing pages')
-                        .modifier
-                        .font({ family: '"Dosis", sans-serif' })
+                                                .font({ family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .opacity(0.85)
                         .build()
@@ -505,8 +455,7 @@
                 ],
                 alignment: 'leading'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -520,14 +469,12 @@
                     spacing: 10,
                     children: [
                       Text('@tachui/navigation')
-                        .modifier
-                        .font({ size: '1.25rem', family: '"Madimi One", cursive' })
+                                                .font({ size: '1.25rem', family: '"Madimi One", cursive' })
                         .foregroundColor(Assets.textWhite)
                         .build(),
 
                       Text('+25KB')
-                        .modifier
-                        .backgroundColor(Assets.primaryPurple)
+                                                .backgroundColor(Assets.primaryPurple)
                         .foregroundColor(Assets.textWhite)
                         .padding({ horizontal: 8, vertical: 4 })
                         .cornerRadius(6)
@@ -541,22 +488,19 @@
                     spacing: 8,
                     children: [
                       Text('• 9 navigation components - NavigationStack, TabView, NavigationLink')
-                        .modifier
-                        .font({ family: '"Dosis", sans-serif' })
+                                                .font({ family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .opacity(0.85)
                         .build(),
 
                       Text('• SwiftUI routing - Path-based navigation with type safety')
-                        .modifier
-                        .font({ family: '"Dosis", sans-serif' })
+                                                .font({ family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .opacity(0.85)
                         .build(),
 
                       Text('• Perfect for: Single-page applications, mobile apps')
-                        .modifier
-                        .font({ family: '"Dosis", sans-serif' })
+                                                .font({ family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .opacity(0.85)
                         .build()
@@ -566,8 +510,7 @@
                 ],
                 alignment: 'leading'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -581,14 +524,12 @@
                     spacing: 10,
                     children: [
                       Text('@tachui/forms')
-                        .modifier
-                        .font({ size: '1.25rem', family: '"Madimi One", cursive' })
+                                                .font({ size: '1.25rem', family: '"Madimi One", cursive' })
                         .foregroundColor(Assets.textWhite)
                         .build(),
 
                       Text('+35KB')
-                        .modifier
-                        .backgroundColor(Assets.primaryPurple)
+                                                .backgroundColor(Assets.primaryPurple)
                         .foregroundColor(Assets.textWhite)
                         .padding({ horizontal: 8, vertical: 4 })
                         .cornerRadius(6)
@@ -602,22 +543,19 @@
                     spacing: 8,
                     children: [
                       Text('• 24 specialized components - EmailField, CreditCardField, DatePicker')
-                        .modifier
-                        .font({ family: '"Dosis", sans-serif' })
+                                                .font({ family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .opacity(0.85)
                         .build(),
 
                       Text('• Advanced validation - Built-in rules, custom validators')
-                        .modifier
-                        .font({ family: '"Dosis", sans-serif' })
+                                                .font({ family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .opacity(0.85)
                         .build(),
 
                       Text('• Perfect for: Data-heavy applications, complex forms')
-                        .modifier
-                        .font({ family: '"Dosis", sans-serif' })
+                                                .font({ family: '"Dosis", sans-serif' })
                         .foregroundColor(Assets.textWhite)
                         .opacity(0.85)
                         .build()
@@ -627,8 +565,7 @@
                 ],
                 alignment: 'leading'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -639,8 +576,7 @@
         ],
         alignment: 'center'
       })
-        .modifier
-        .backgroundColor(Assets.midPurple)
+                .backgroundColor(Assets.midPurple)
         .padding({ top: 60, bottom: 60, horizontal: 40 })
         .setAttribute('id', 'architecture')
         .build(),
@@ -650,8 +586,7 @@
         spacing: 40,
         children: [
           Text('Bundle Size Scaling')
-            .modifier
-            .font({ size: '2.2rem', family: '"Madimi One", cursive' })
+                        .font({ size: '2.2rem', family: '"Madimi One", cursive' })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .build(),
@@ -664,8 +599,7 @@
                 spacing: 20,
                 children: [
                   Text('Minimal Production')
-                    .modifier
-                    .font({ size: '0.95rem', weight: '500', family: '"Dosis", sans-serif' })
+                                        .font({ size: '0.95rem', weight: '500', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .minWidth('120px')
                     .build(),
@@ -677,16 +611,14 @@
                         spacing: 0,
                         children: [
                           VStack({ children: [] })
-                            .modifier
-                            .backgroundColor(Assets.accentOrange)
+                                                        .backgroundColor(Assets.accentOrange)
                             .height('20px')
                             .width('5%')
                             .css({ 'border-radius': '10px 0 0 10px' })
                             .build(),
 
                           VStack({ children: [] })
-                            .modifier
-                            .backgroundColor('hsla(139, 92, 246, 0.2)')
+                                                        .backgroundColor('hsla(139, 92, 246, 0.2)')
                             .height('20px')
                             .width('95%')
                             .css({ 'border-radius': '0 10px 10px 0' })
@@ -697,14 +629,12 @@
                     ],
                     alignment: 'stretch'
                   })
-                    .modifier
-                    .flexGrow(1)
+                                        .flexGrow(1)
                     .maxWidth('200px')
                     .build(),
 
                   Text('~7KB')
-                    .modifier
-                    .font({ size: '0.95rem', weight: '600', family: '"Dosis", sans-serif' })
+                                        .font({ size: '0.95rem', weight: '600', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.accentOrange)
                     .minWidth('60px')
                     .build()
@@ -717,8 +647,7 @@
                 spacing: 20,
                 children: [
                   Text('+ Navigation')
-                    .modifier
-                    .font({ size: '0.95rem', weight: '500', family: '"Dosis", sans-serif' })
+                                        .font({ size: '0.95rem', weight: '500', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .minWidth('120px')
                     .build(),
@@ -730,16 +659,14 @@
                         spacing: 0,
                         children: [
                           VStack({ children: [] })
-                            .modifier
-                            .backgroundColor(Assets.primaryPurple)
+                                                        .backgroundColor(Assets.primaryPurple)
                             .height('20px')
                             .width('57%')
                             .css({ 'border-radius': '10px 0 0 10px' })
                             .build(),
 
                           VStack({ children: [] })
-                            .modifier
-                            .backgroundColor('hsla(139, 92, 246, 0.2)')
+                                                        .backgroundColor('hsla(139, 92, 246, 0.2)')
                             .height('20px')
                             .width('43%')
                             .css({ 'border-radius': '0 10px 10px 0' })
@@ -750,14 +677,12 @@
                     ],
                     alignment: 'stretch'
                   })
-                    .modifier
-                    .flexGrow(1)
+                                        .flexGrow(1)
                     .maxWidth('200px')
                     .build(),
 
                   Text('~85KB')
-                    .modifier
-                    .font({ size: '0.95rem', weight: '600', family: '"Dosis", sans-serif' })
+                                        .font({ size: '0.95rem', weight: '600', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.accentOrange)
                     .minWidth('60px')
                     .build()
@@ -770,8 +695,7 @@
                 spacing: 20,
                 children: [
                   Text('+ Forms')
-                    .modifier
-                    .font({ size: '0.95rem', weight: '500', family: '"Dosis", sans-serif' })
+                                        .font({ size: '0.95rem', weight: '500', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .minWidth('120px')
                     .build(),
@@ -783,16 +707,14 @@
                         spacing: 0,
                         children: [
                           VStack({ children: [] })
-                            .modifier
-                            .backgroundColor(Assets.primaryPurple)
+                                                        .backgroundColor(Assets.primaryPurple)
                             .height('20px')
                             .width('80%')
                             .css({ 'border-radius': '10px 0 0 10px' })
                             .build(),
 
                           VStack({ children: [] })
-                            .modifier
-                            .backgroundColor('hsla(139, 92, 246, 0.2)')
+                                                        .backgroundColor('hsla(139, 92, 246, 0.2)')
                             .height('20px')
                             .width('20%')
                             .css({ 'border-radius': '0 10px 10px 0' })
@@ -803,14 +725,12 @@
                     ],
                     alignment: 'stretch'
                   })
-                    .modifier
-                    .flexGrow(1)
+                                        .flexGrow(1)
                     .maxWidth('200px')
                     .build(),
 
                   Text('~120KB')
-                    .modifier
-                    .font({ size: '0.95rem', weight: '600', family: '"Dosis", sans-serif' })
+                                        .font({ size: '0.95rem', weight: '600', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.accentOrange)
                     .minWidth('60px')
                     .build()
@@ -823,8 +743,7 @@
                 spacing: 20,
                 children: [
                   Text('Full Framework')
-                    .modifier
-                    .font({ size: '0.95rem', weight: '500', family: '"Dosis", sans-serif' })
+                                        .font({ size: '0.95rem', weight: '500', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .minWidth('120px')
                     .build(),
@@ -836,8 +755,7 @@
                         spacing: 0,
                         children: [
                           VStack({ children: [] })
-                            .modifier
-                            .backgroundColor(Assets.primaryPurple)
+                                                        .backgroundColor(Assets.primaryPurple)
                             .height('20px')
                             .width('100%')
                             .cornerRadius(10)
@@ -848,14 +766,12 @@
                     ],
                     alignment: 'stretch'
                   })
-                    .modifier
-                    .flexGrow(1)
+                                        .flexGrow(1)
                     .maxWidth('200px')
                     .build(),
 
                   Text('~150KB')
-                    .modifier
-                    .font({ size: '0.95rem', weight: '600', family: '"Dosis", sans-serif' })
+                                        .font({ size: '0.95rem', weight: '600', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.accentOrange)
                     .minWidth('60px')
                     .build()
@@ -867,15 +783,13 @@
                 spacing: 10,
                 children: [
                   Text('🏆 BREAKTHROUGH: 99.89% Bundle Reduction Achieved!')
-                    .modifier
-                    .font({ size: '1.1rem', family: '"Dosis", sans-serif', weight: '700' })
+                                        .font({ size: '1.1rem', family: '"Dosis", sans-serif', weight: '700' })
                     .foregroundColor(Assets.accentOrange)
                     .textAlign('center')
                     .build(),
 
                   Text('From 6.2MB TypeScript bloat to 7KB production-optimized core')
-                    .modifier
-                    .font({ size: '0.95rem', family: '"Dosis", sans-serif', style: 'italic' })
+                                        .font({ size: '0.95rem', family: '"Dosis", sans-serif', style: 'italic' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .opacity(0.8)
@@ -883,20 +797,17 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .padding({ top: 15 })
+                                .padding({ top: 15 })
                 .build()
             ],
             alignment: 'stretch'
           })
-            .modifier
-            .maxWidth('400px')
+                        .maxWidth('400px')
             .build()
         ],
         alignment: 'center'
       })
-        .modifier
-        .backgroundColor(Assets.darkPurple)
+                .backgroundColor(Assets.darkPurple)
         .padding({ top: 60, bottom: 60, horizontal: 40 })
         .build(),
 
@@ -905,8 +816,7 @@
         spacing: 40,
         children: [
           Text('Performance-First Architecture')
-            .modifier
-            .font({ size: '2.2rem', family: '"Madimi One", cursive' })
+                        .font({ size: '2.2rem', family: '"Madimi One", cursive' })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .build(),
@@ -918,14 +828,12 @@
                 spacing: 10,
                 children: [
                   Text('95%')
-                    .modifier
-                    .font({ size: '2rem', family: '"Madimi One", cursive' })
+                                        .font({ size: '2rem', family: '"Madimi One", cursive' })
                     .foregroundColor(Assets.accentOrange)
                     .build(),
 
                   Text('iOS API Compatibility')
-                    .modifier
-                    .font({ weight: '500', family: '"Dosis", sans-serif' })
+                                        .font({ weight: '500', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .opacity(0.85)
@@ -933,8 +841,7 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -944,14 +851,12 @@
                 spacing: 10,
                 children: [
                   Text('66')
-                    .modifier
-                    .font({ size: '2rem', family: '"Madimi One", cursive' })
+                                        .font({ size: '2rem', family: '"Madimi One", cursive' })
                     .foregroundColor(Assets.accentOrange)
                     .build(),
 
                   Text('Total Components')
-                    .modifier
-                    .font({ weight: '500', family: '"Dosis", sans-serif' })
+                                        .font({ weight: '500', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .opacity(0.85)
@@ -959,8 +864,7 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -970,14 +874,12 @@
                 spacing: 10,
                 children: [
                   Text('130+')
-                    .modifier
-                    .font({ size: '2rem', family: '"Madimi One", cursive' })
+                                        .font({ size: '2rem', family: '"Madimi One", cursive' })
                     .foregroundColor(Assets.accentOrange)
                     .build(),
 
                   Text('Modifiers Available')
-                    .modifier
-                    .font({ weight: '500', family: '"Dosis", sans-serif' })
+                                        .font({ weight: '500', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .opacity(0.85)
@@ -985,8 +887,7 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -996,14 +897,12 @@
                 spacing: 10,
                 children: [
                   Text('95%+')
-                    .modifier
-                    .font({ size: '2rem', family: '"Madimi One", cursive' })
+                                        .font({ size: '2rem', family: '"Madimi One", cursive' })
                     .foregroundColor(Assets.accentOrange)
                     .build(),
 
                   Text('Test Coverage')
-                    .modifier
-                    .font({ weight: '500', family: '"Dosis", sans-serif' })
+                                        .font({ weight: '500', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .opacity(0.85)
@@ -1011,8 +910,7 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -1023,8 +921,7 @@
         ],
         alignment: 'center'
       })
-        .modifier
-        .backgroundColor(Assets.darkPurple)
+                .backgroundColor(Assets.darkPurple)
         .padding({ top: 60, bottom: 60, horizontal: 40 })
         .setAttribute('id', 'performance')
         .build(),
@@ -1034,8 +931,7 @@
         spacing: 50,
         children: [
           Text('Why TachUI is Fast')
-            .modifier
-            .font({ size: '2.2rem', family: '"Madimi One", cursive' })
+                        .font({ size: '2.2rem', family: '"Madimi One", cursive' })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .build(),
@@ -1048,20 +944,17 @@
                 spacing: 15,
                 children: [
                   Text('🎯')
-                    .modifier
-                    .font({ size: '2.5rem' })
+                                        .font({ size: '2.5rem' })
                     .build(),
 
                   Text('Fine-Grained Updates')
-                    .modifier
-                    .font({ size: '1.3rem', weight: '600', family: '"Dosis", sans-serif' })
+                                        .font({ size: '1.3rem', weight: '600', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .build(),
 
                   Text('Only changed properties trigger DOM updates. No full component re-renders or virtual DOM diffing overhead.')
-                    .modifier
-                    .font({ size: '1rem', family: '"Dosis", sans-serif' })
+                                        .font({ size: '1rem', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .opacity(0.85)
@@ -1069,8 +962,7 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -1081,20 +973,17 @@
                 spacing: 15,
                 children: [
                   Text('🚫')
-                    .modifier
-                    .font({ size: '2.5rem' })
+                                        .font({ size: '2.5rem' })
                     .build(),
 
                   Text('Zero Virtual DOM')
-                    .modifier
-                    .font({ size: '1.3rem', weight: '600', family: '"Dosis", sans-serif' })
+                                        .font({ size: '1.3rem', weight: '600', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .build(),
 
                   Text('Direct DOM manipulation eliminates reconciliation overhead. Updates are applied immediately without intermediate steps.')
-                    .modifier
-                    .font({ size: '1rem', family: '"Dosis", sans-serif' })
+                                        .font({ size: '1rem', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .opacity(0.85)
@@ -1102,8 +991,7 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -1120,20 +1008,17 @@
                 spacing: 15,
                 children: [
                   Text('⚙️')
-                    .modifier
-                    .font({ size: '2.5rem' })
+                                        .font({ size: '2.5rem' })
                     .build(),
 
                   Text('Compile-Time Optimized')
-                    .modifier
-                    .font({ size: '1.3rem', weight: '600', family: '"Dosis", sans-serif' })
+                                        .font({ size: '1.3rem', weight: '600', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .build(),
 
                   Text('Build-time optimizations eliminate runtime bloat. Dead code elimination and tree-shaking reduce bundle sizes.')
-                    .modifier
-                    .font({ size: '1rem', family: '"Dosis", sans-serif' })
+                                        .font({ size: '1rem', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .opacity(0.85)
@@ -1141,8 +1026,7 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -1153,20 +1037,17 @@
                 spacing: 15,
                 children: [
                   Text('🧠')
-                    .modifier
-                    .font({ size: '2.5rem' })
+                                        .font({ size: '2.5rem' })
                     .build(),
 
                   Text('Memory Efficient')
-                    .modifier
-                    .font({ size: '1.3rem', weight: '600', family: '"Dosis", sans-serif' })
+                                        .font({ size: '1.3rem', weight: '600', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .build(),
 
                   Text('Automatic cleanup and minimal memory footprint. Signals automatically dispose when components are removed.')
-                    .modifier
-                    .font({ size: '1rem', family: '"Dosis", sans-serif' })
+                                        .font({ size: '1rem', family: '"Dosis", sans-serif' })
                     .foregroundColor(Assets.textWhite)
                     .textAlign('center')
                     .opacity(0.85)
@@ -1174,8 +1055,7 @@
                 ],
                 alignment: 'center'
               })
-                .modifier
-                .backgroundColor(Assets.cardBackground)
+                                .backgroundColor(Assets.cardBackground)
                 .border({ color: Assets.borderPurple, width: 1 })
                 .padding({ all: 30 })
                 .cornerRadius(12)
@@ -1187,8 +1067,7 @@
         ],
         alignment: 'center'
       })
-        .modifier
-        .backgroundColor(Assets.midPurple)
+                .backgroundColor(Assets.midPurple)
         .padding({ top: 60, bottom: 60, horizontal: 40 })
         .build(),
 
@@ -1197,15 +1076,13 @@
         spacing: 40,
         children: [
           Text('Ready to Build Something Amazing?')
-            .modifier
-            .font({ size: '2.2rem', family: '"Madimi One", cursive' })
+                        .font({ size: '2.2rem', family: '"Madimi One", cursive' })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .build(),
 
           Text('Start building applications with familiar SwiftUI patterns')
-            .modifier
-            .font({ size: '1.25rem', weight: '400', family: '"Dosis", sans-serif' })
+                        .font({ size: '1.25rem', weight: '400', family: '"Dosis", sans-serif' })
             .foregroundColor(Assets.textWhite)
             .textAlign('center')
             .opacity(0.9)
@@ -1215,8 +1092,7 @@
             spacing: 20,
             children: [
               Button('Get Started', () => console.log('Get Started clicked'))
-                .modifier
-                .backgroundColor(Assets.primaryPurple)
+                                .backgroundColor(Assets.primaryPurple)
                 .foregroundColor(Assets.textWhite)
                 .padding({ horizontal: 30, vertical: 15 })
                 .cornerRadius(2)
@@ -1224,8 +1100,7 @@
                 .build(),
 
               Button('View Components', () => console.log('View Components clicked'))
-                .modifier
-                .backgroundColor('hsla(0, 0%, 100%, 0.1)')
+                                .backgroundColor('hsla(0, 0%, 100%, 0.1)')
                 .foregroundColor(Assets.textWhite)
                 .padding({ horizontal: 28, vertical: 13 })
                 .cornerRadius(2)
@@ -1241,8 +1116,7 @@
             spacing: 15,
             children: [
               Text('Quick Start:')
-                .modifier
-                .font({ size: '1.2rem', weight: '600', family: '"Dosis", sans-serif' })
+                                .font({ size: '1.2rem', weight: '600', family: '"Dosis", sans-serif' })
                 .foregroundColor(Assets.accentOrange)
                 .build(),
 
@@ -1252,8 +1126,7 @@ tacho init my-app
 
 # Or add to existing project
 npm install @tachui/core`)
-                .modifier
-                .backgroundColor('hsl(0, 0%, 12%)')
+                                .backgroundColor('hsl(0, 0%, 12%)')
                 .foregroundColor('hsl(0, 0%, 83%)')
                 .padding({ all: 20 })
                 .cornerRadius(8)
@@ -1266,8 +1139,7 @@ npm install @tachui/core`)
             ],
             alignment: 'center'
           })
-            .modifier
-            .backgroundColor(Assets.warningBackground)
+                        .backgroundColor(Assets.warningBackground)
             .border({ color: Assets.accentOrange, width: 1 })
             .padding({ all: 25 })
             .cornerRadius(12)
@@ -1276,8 +1148,7 @@ npm install @tachui/core`)
         ],
         alignment: 'center'
       })
-        .modifier
-        .backgroundColor(Assets.midPurple)
+                .backgroundColor(Assets.midPurple)
         .padding({ top: 60, bottom: 60, horizontal: 40 })
         .setAttribute('id', 'cta')
         .build(),
@@ -1290,26 +1161,22 @@ npm install @tachui/core`)
             spacing: 30,
             children: [
               Text('Documentation')
-                .modifier
-                .foregroundColor(Assets.textWhite)
+                                .foregroundColor(Assets.textWhite)
                 .font({ weight: '400', family: '"Dosis", sans-serif' })
                 .build(),
 
               Text('API Reference')
-                .modifier
-                .foregroundColor(Assets.textWhite)
+                                .foregroundColor(Assets.textWhite)
                 .font({ weight: '400', family: '"Dosis", sans-serif' })
                 .build(),
 
               Text('Examples')
-                .modifier
-                .foregroundColor(Assets.textWhite)
+                                .foregroundColor(Assets.textWhite)
                 .font({ weight: '400', family: '"Dosis", sans-serif' })
                 .build(),
 
               Text('GitHub')
-                .modifier
-                .foregroundColor(Assets.textWhite)
+                                .foregroundColor(Assets.textWhite)
                 .font({ weight: '400', family: '"Dosis", sans-serif' })
                 .build()
             ],
@@ -1317,23 +1184,20 @@ npm install @tachui/core`)
           }),
 
           Text('© 2025 TachUI Team. Released under the MIT License.')
-            .modifier
-            .foregroundColor(Assets.textWhite)
+                        .foregroundColor(Assets.textWhite)
             .font({ family: '"Dosis", sans-serif' })
             .textAlign('center')
             .build(),
 
           Text('Latest Release: v1.4 • Components: 66 • Modifiers: 130+ • iOS Compatibility: 95% • Test Coverage: 95%+')
-            .modifier
-            .foregroundColor(Assets.textWhite)
+                        .foregroundColor(Assets.textWhite)
             .font({ size: '14px', family: '"Dosis", sans-serif' })
             .textAlign('center')
             .opacity(0.8)
             .build(),
 
           Text('SwiftUI is a trademark of Apple Inc. TachUI is not affiliated with, endorsed by, or sponsored by Apple Inc.')
-            .modifier
-            .foregroundColor(Assets.textWhite)
+                        .foregroundColor(Assets.textWhite)
             .font({ size: '12px', family: '"Dosis", sans-serif' })
             .textAlign('center')
             .opacity(0.6)
@@ -1342,8 +1206,7 @@ npm install @tachui/core`)
         ],
         alignment: 'center'
       })
-        .modifier
-        .backgroundColor(Assets.darkPurple)
+                .backgroundColor(Assets.darkPurple)
         .padding({ top: 40, bottom: 40, horizontal: 40 })
         .build()
     ]

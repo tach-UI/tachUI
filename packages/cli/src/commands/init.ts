@@ -95,7 +95,6 @@ export function App() {
   return Layout.VStack({
     children: [
       Text('Welcome to TachUI!')
-        .modifier
         .fontSize(32)
         .fontWeight('bold')
         .foregroundColor('#007AFF')
@@ -103,7 +102,6 @@ export function App() {
         .build(),
       
       Text('SwiftUI-inspired web development')
-        .modifier
         .fontSize(18)
         .foregroundColor('#666')
         .margin({ bottom: 24 })
@@ -113,7 +111,6 @@ export function App() {
         title: 'Get Started',
         onTap: () => console.log('Hello TachUI!')
       })
-      .modifier
       .backgroundColor('#007AFF')
       .foregroundColor('#ffffff')
       .padding(16, 32)
@@ -123,7 +120,6 @@ export function App() {
     spacing: 0,
     alignment: 'center'
   })
-  .modifier
   .frame(undefined, '100vh')
   .justifyContent('center')
   .alignItems('center')
@@ -303,7 +299,6 @@ export function HomeScreen() {
   return Layout.VStack({
     children: [
       Text(() => welcomeMessage.wrappedValue)
-        .modifier
         .fontSize(28)
         .fontWeight('bold')
         .foregroundColor('#007AFF')
@@ -312,7 +307,6 @@ export function HomeScreen() {
         .build(),
       
       Text('This app demonstrates all Phase 6 features:')
-        .modifier
         .fontSize(18)
         .foregroundColor('#333')
         .margin({ bottom: 16 })
@@ -325,8 +319,7 @@ export function HomeScreen() {
           Text('✅ TabView navigation system'),
           Text('✅ Real-world component patterns')
         ].map(text => 
-          text.modifier
-            .fontSize(16)
+          text.fontSize(16)
             .foregroundColor('#666')
             .padding({ vertical: 4 })
             .build()
@@ -339,7 +332,6 @@ export function HomeScreen() {
         title: \`Clicked \${() => clickCount.wrappedValue} times\`,
         onTap: () => clickCount.wrappedValue++
       })
-      .modifier
       .backgroundColor('#007AFF')
       .foregroundColor('#ffffff')
       .padding(16, 24)
@@ -350,7 +342,6 @@ export function HomeScreen() {
     spacing: 0,
     alignment: 'center'
   })
-  .modifier
   .padding(24)
   .onAppear(() => {
     console.log('Home screen appeared!')
@@ -428,14 +419,12 @@ export function TodoScreen() {
   return Layout.VStack({
     children: [
       Text('My Todos')
-        .modifier
         .fontSize(28)
         .fontWeight('bold')
         .margin({ bottom: 16 })
         .build(),
       
       Text(() => \`\${todoStore.wrappedValue.completedCount} of \${todoStore.wrappedValue.items.length} completed\`)
-        .modifier
         .fontSize(16)
         .foregroundColor('#666')
         .margin({ bottom: 20 })
@@ -447,7 +436,6 @@ export function TodoScreen() {
             placeholder: 'Enter new todo',
             text: newTodoText.projectedValue
           })
-          .modifier
           .flexGrow(1)
           .build(),
           
@@ -455,7 +443,6 @@ export function TodoScreen() {
             title: 'Add',
             onTap: addTodo
           })
-          .modifier
           .backgroundColor('#007AFF')
           .foregroundColor('#ffffff')
           .padding(8, 16)
@@ -475,14 +462,12 @@ export function TodoScreen() {
                 title: observedItem.wrappedValue.completed ? '✅' : '⬜',
                 onTap: () => observedItem.wrappedValue.toggle()
               })
-              .modifier
               .backgroundColor('transparent')
               .border(0)
               .padding(0)
               .build(),
               
               Text(() => observedItem.wrappedValue.text)
-                .modifier
                 .fontSize(16)
                 .foregroundColor(observedItem.wrappedValue.completed ? '#999' : '#333')
                 .textDecoration(observedItem.wrappedValue.completed ? 'line-through' : 'none')
@@ -493,7 +478,6 @@ export function TodoScreen() {
                 title: '🗑️',
                 onTap: () => todoStore.wrappedValue.removeItem(observedItem.wrappedValue.id)
               })
-              .modifier
               .backgroundColor('transparent')
               .border(0)
               .padding(0)
@@ -502,7 +486,6 @@ export function TodoScreen() {
             spacing: 12,
             alignment: 'center'
           })
-          .modifier
           .backgroundColor('#f8f9fa')
           .padding(12)
           .cornerRadius(8)
@@ -511,13 +494,11 @@ export function TodoScreen() {
         }),
         spacing: 0
       })
-      .modifier
       .margin({ top: 20 })
       .build()
     ],
     spacing: 0
   })
-  .modifier
   .padding(24)
   .build()
 }`,
@@ -531,7 +512,6 @@ export function SettingsScreen() {
   return Layout.VStack({
     children: [
       Text('Settings')
-        .modifier
         .fontSize(28)
         .fontWeight('bold')
         .margin({ bottom: 32 })
@@ -540,7 +520,6 @@ export function SettingsScreen() {
       Layout.VStack({
         children: [
           Text('App Information')
-            .modifier
             .fontSize(20)
             .fontWeight('semibold')
             .margin({ bottom: 16 })
@@ -549,13 +528,11 @@ export function SettingsScreen() {
           Layout.HStack({
             children: [
               Text('Version:')
-                .modifier
                 .fontSize(16)
                 .foregroundColor('#666')
                 .build(),
               
               Text(() => version.wrappedValue)
-                .modifier
                 .fontSize(16)
                 .fontWeight('medium')
                 .build()
@@ -567,13 +544,11 @@ export function SettingsScreen() {
           Layout.HStack({
             children: [
               Text('Framework:')
-                .modifier
                 .fontSize(16)
                 .foregroundColor('#666')
                 .build(),
               
               Text('TachUI Phase 6')
-                .modifier
                 .fontSize(16)
                 .fontWeight('medium')
                 .build()
@@ -583,7 +558,6 @@ export function SettingsScreen() {
           }),
           
           Text('Built with SwiftUI-inspired components and reactive state management')
-            .modifier
             .fontSize(14)
             .foregroundColor('#999')
             .textAlign('center')
@@ -596,7 +570,6 @@ export function SettingsScreen() {
     ],
     spacing: 0
   })
-  .modifier
   .padding(24)
   .build()
 }`,

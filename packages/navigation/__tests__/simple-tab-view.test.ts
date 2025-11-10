@@ -22,9 +22,9 @@ describe('SimpleTabView - SwiftUI Compatible Tab System', () => {
   let mockTabContent3: any
 
   beforeEach(() => {
-    mockTabContent1 = HTML.div({ children: 'Home Content' }).modifier.build()
-    mockTabContent2 = HTML.div({ children: 'Search Content' }).modifier.build()
-    mockTabContent3 = HTML.div({ children: 'Profile Content' }).modifier.build()
+    mockTabContent1 = HTML.div({ children: 'Home Content' }).build()
+    mockTabContent2 = HTML.div({ children: 'Search Content' }).build()
+    mockTabContent3 = HTML.div({ children: 'Profile Content' }).build()
   })
 
   describe('Basic Functionality', () => {
@@ -225,7 +225,7 @@ describe('SimpleTabView - SwiftUI Compatible Tab System', () => {
       const tabView = SimpleTabView(tabs)
       const regularComponent = HTML.div({
         children: 'Not a tab view',
-      }).modifier.build()
+      }).build()
 
       expect(isSimpleTabView(tabView)).toBe(true)
       expect(isSimpleTabView(regularComponent)).toBe(false)
@@ -243,7 +243,7 @@ describe('SimpleTabView - SwiftUI Compatible Tab System', () => {
     it('handles components without tabItem modifier', () => {
       const plainComponent = HTML.div({
         children: 'Plain content',
-      }).modifier.build()
+      }).build()
       const tabView = SimpleTabView([plainComponent])
 
       expect(tabView).toBeDefined()
@@ -279,7 +279,7 @@ describe('SimpleTabView - SwiftUI Compatible Tab System', () => {
     it('handles many tabs efficiently', () => {
       const manyTabs = Array.from({ length: 10 }, (_, i) =>
         tabItem(
-          HTML.div({ children: `Tab ${i} Content` }).modifier.build(),
+          HTML.div({ children: `Tab ${i} Content` }).build(),
           `tab-${i}`,
           `Tab ${i}`,
           `📄`
@@ -313,9 +313,9 @@ describe('SimpleTabView - SwiftUI Compatible Tab System', () => {
       const contentWithLinks = HTML.div({
         children: [
           mockTabContent1,
-          HTML.div({ children: 'Navigation content' }).modifier.build(),
+          HTML.div({ children: 'Navigation content' }).build(),
         ],
-      }).modifier.build()
+      }).build()
 
       const tabs = [tabItem(contentWithLinks, 'home', 'Home')]
 

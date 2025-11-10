@@ -395,7 +395,7 @@ describe('Image Factory Function', () => {
 
     expect(image).toBeDefined()
     expect(typeof image.modifier).toBe('object')
-    expect(typeof image.modifier.build).toBe('function')
+    expect(typeof image.build).toBe('function')
   })
 
   it('should create image with props', () => {
@@ -409,7 +409,7 @@ describe('Image Factory Function', () => {
   })
 
   it('should support modifier chaining', () => {
-    const image = Image('test.jpg').modifier.padding(16).cornerRadius(8).build()
+    const image = Image('test.jpg').padding(16).cornerRadius(8).build()
 
     expect(image).toBeDefined()
   })
@@ -432,7 +432,7 @@ describe('Image Factory Function', () => {
     it('should support chaining shorthands with other modifiers', () => {
       const image = Image('test.jpg')
         .scaledToFit()
-        .modifier.frame(200, 200)
+        .frame(200, 200)
         .cornerRadius(8)
         .build()
 

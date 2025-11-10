@@ -25,7 +25,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
 
   beforeEach(() => {
     mockDestination = () =>
-      HTML.div({ children: 'Detail View' }).modifier.build()
+      HTML.div({ children: 'Detail View' }).build()
     mockLabel = 'Go to Details'
     mockComponentLabel = Text('Navigate Here')
   })
@@ -76,7 +76,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
       const destinationClosure = () => {
         return HTML.div({
           children: 'Dynamically Created View',
-        }).modifier.build()
+        }).build()
       }
 
       const navLink = NavigationLink('Dynamic Destination', destinationClosure)
@@ -87,7 +87,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
     it('supports SwiftUI-style inline destination', () => {
       const inlineDestination = HTML.div({
         children: 'Inline View',
-      }).modifier.build()
+      }).build()
 
       const navLink = NavigationLink('Inline', () => inlineDestination)
 
@@ -97,10 +97,10 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
     it('works with SwiftUI-style complex labels', () => {
       const complexLabel = HTML.div({
         children: [
-          HTML.img({ src: '/icon.png' }).modifier.build(),
+          HTML.img({ src: '/icon.png' }).build(),
           Text('Complex Navigation Label'),
         ],
-      }).modifier.build()
+      }).build()
 
       const navLink = NavigationLink(complexLabel, mockDestination)
 
@@ -154,7 +154,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
     })
 
     it('builds navigation link with card style', () => {
-      const content = HTML.div({ children: 'Card Content' }).modifier.build()
+      const content = HTML.div({ children: 'Card Content' }).build()
       const navLink = NavigationLinkBuilder.to(mockDestination).card(content)
 
       expect(navLink).toBeDefined()
@@ -167,16 +167,16 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
       const linkConfigs = [
         {
           label: 'Home',
-          destination: () => HTML.div({ children: 'Home' }).modifier.build(),
+          destination: () => HTML.div({ children: 'Home' }).build(),
         },
         {
           label: 'Profile',
-          destination: () => HTML.div({ children: 'Profile' }).modifier.build(),
+          destination: () => HTML.div({ children: 'Profile' }).build(),
         },
         {
           label: 'Settings',
           destination: () =>
-            HTML.div({ children: 'Settings' }).modifier.build(),
+            HTML.div({ children: 'Settings' }).build(),
         },
       ]
 
@@ -224,7 +224,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
       const navLink = NavigationLink(mockLabel, mockDestination)
       const regularComponent = HTML.div({
         children: 'Not a nav link',
-      }).modifier.build()
+      }).build()
 
       expect(isNavigationLink(navLink)).toBe(true)
       expect(isNavigationLink(regularComponent)).toBe(false)
@@ -266,7 +266,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
       const destinationWithData = (data: any) => {
         return HTML.div({
           children: `User ID: ${data.userId}`,
-        }).modifier.build()
+        }).build()
       }
 
       const navLink = NavigationLink(mockLabel, () =>
@@ -288,7 +288,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
     it('handles component labels', () => {
       const componentLabel = HTML.div({
         children: 'Component Label',
-      }).modifier.build()
+      }).build()
       const navLink = NavigationLink(componentLabel, mockDestination)
 
       expect(navLink).toBeDefined()
@@ -303,7 +303,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
 
     it('handles destination function that returns component', () => {
       const workingDestination = () => {
-        return HTML.div({ children: 'Working View' }).modifier.build()
+        return HTML.div({ children: 'Working View' }).build()
       }
 
       const navLink = NavigationLink(mockLabel, workingDestination)
@@ -328,9 +328,9 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
       const complexDestination = () => {
         return HTML.div({
           children: Array.from({ length: 10 }, (_, i) =>
-            HTML.div({ children: `Item ${i}` }).modifier.build()
+            HTML.div({ children: `Item ${i}` }).build()
           ),
-        }).modifier.build()
+        }).build()
       }
 
       const navLink = NavigationLink('Complex Destination', complexDestination)
@@ -346,7 +346,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
           Text('Welcome'),
           NavigationLink('Go to Details', mockDestination),
         ],
-      }).modifier.build()
+      }).build()
 
       expect(rootView).toBeDefined()
     })
@@ -360,14 +360,14 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
 
       const tabContent = HTML.div({
         children: [Text('Tab Content'), styledButton],
-      }).modifier.build()
+      }).build()
 
       expect(tabContent).toBeDefined()
     })
 
     it('supports navigation with modifiers', () => {
       const destination = () => {
-        return HTML.div({ children: 'Detail View' }).modifier.build()
+        return HTML.div({ children: 'Detail View' }).build()
       }
 
       const navLink = NavigationLink('Titled Destination', destination)

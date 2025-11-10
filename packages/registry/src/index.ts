@@ -19,8 +19,11 @@ export type {
   Modifier,
   ModifierContext,
   RegistryHealth,
+  RegistryFeatureFlags,
   ReactiveModifierProps,
-  Signal
+  Signal,
+  ModifierMetadata,
+  PluginInfo
 } from './types'
 
 // Developer convenience API

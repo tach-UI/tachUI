@@ -121,22 +121,53 @@ export const FRAMEWORK_BASELINES: FrameworkBenchmarkData[] = [
 /**
  * Convert TachUI benchmark results to comparable format
  */
+type BenchmarkResultWithMetadata = {
+  name: string
+  duration: number
+  memory?: number
+  metadata?: Record<string, unknown>
+}
+
+function selectBaselineResult(
+  results: BenchmarkResultWithMetadata[],
+  benchmarkName: string
+) {
+  const normalizedName = benchmarkName.toLowerCase()
+  const baseline = results.find(
+    result =>
+      result.name.toLowerCase().includes(normalizedName) &&
+      (result.metadata?.cacheMode === 'baseline' || result.metadata?.cacheMode == null)
+  )
+  if (baseline) {
+    return baseline
+  }
+  return results.find(result => result.name.toLowerCase().includes(normalizedName))
+}
+
 export function convertTachUIResults(results: any[]): FrameworkBenchmarkData {
-  const findResult = (name: string) =>
-    results.find((r) => r.name.toLowerCase().includes(name.toLowerCase()))
+  const findResult = (name: string) => selectBaselineResult(results, name)
+  const toDuration = (name: string) => {
+    const value = findResult(name)?.duration
+    return typeof value === 'number' && Number.isFinite(value) ? value : Number.NaN
+  }
+  const createMemoryBytes = findResult('create 1,000')?.memory
+  const memoryUsageMb =
+    typeof createMemoryBytes === 'number' && createMemoryBytes > 0
+      ? createMemoryBytes / 1024 / 1024
+      : Number.NaN
 
   return {
     framework: 'TachUI',
     version: '0.1.0',
     results: {
-      create1000: findResult('create 1,000')?.duration || 0,
-      replaceAll: findResult('replace all')?.duration || 0,
-      partialUpdate: findResult('partial update')?.duration || 0,
-      selectRow: findResult('select row')?.duration || 0,
-      swapRows: findResult('swap rows')?.duration || 0,
-      removeRows: findResult('remove rows')?.duration || 0,
-      clearRows: findResult('clear rows')?.duration || 0,
-      memoryUsage: (findResult('create 1,000')?.memory || 0) / 1024 / 1024,
+      create1000: toDuration('create 1,000'),
+      replaceAll: toDuration('replace all'),
+      partialUpdate: toDuration('partial update'),
+      selectRow: toDuration('select row'),
+      swapRows: toDuration('swap rows'),
+      removeRows: toDuration('remove rows'),
+      clearRows: toDuration('clear rows'),
+      memoryUsage: memoryUsageMb,
       bundleSize: 15.8, // Estimated based on current implementation
     },
   }
@@ -149,6 +180,9 @@ export function generateComparisonReport(
   tachuiData: FrameworkBenchmarkData,
   baselines: FrameworkBenchmarkData[] = FRAMEWORK_BASELINES
 ): string {
+  const formatValue = (value: number): string =>
+    Number.isFinite(value) ? value.toFixed(1) : 'N/A'
+
   const report = [
     'TachUI Performance Comparison Report',
     '='.repeat(50),
@@ -178,16 +212,15 @@ export function generateComparisonReport(
   ]
 
   benchmarks.forEach((benchmark) => {
+    const tachuiValue = tachuiData.results[benchmark.key as keyof typeof tachuiData.results]
     const row = [
       benchmark.name.padEnd(colWidths[0]),
-      tachuiData.results[benchmark.key as keyof typeof tachuiData.results]
-        .toFixed(1)
-        .padEnd(colWidths[1]),
+      formatValue(tachuiValue).padEnd(colWidths[1]),
     ]
 
     baselines.forEach((baseline, i) => {
       const value = baseline.results[benchmark.key as keyof typeof baseline.results]
-      row.push(value.toFixed(1).padEnd(colWidths[i + 2]))
+      row.push(formatValue(value).padEnd(colWidths[i + 2]))
     })
 
     report.push(row.join(' | '))
@@ -200,54 +233,64 @@ export function generateComparisonReport(
 
   // Compare against SolidJS (closest architecture)
   const solid = baselines.find((b) => b.framework === 'SolidJS')
-  if (solid) {
-    const tachuiVsSolid = {
-      create: tachuiData.results.create1000 / solid.results.create1000,
-      update: tachuiData.results.partialUpdate / solid.results.partialUpdate,
-      memory: tachuiData.results.memoryUsage / solid.results.memoryUsage,
+  const formatRatio = (ratio: number): string => {
+    if (!Number.isFinite(ratio)) {
+      return 'N/A'
     }
+    return ratio > 1
+      ? `${(ratio * 100 - 100).toFixed(1)}% slower`
+      : `${(100 - ratio * 100).toFixed(1)}% faster`
+  }
+
+  const formatRatioInverse = (ratio: number): string => {
+    if (!Number.isFinite(ratio)) {
+      return 'N/A'
+    }
+    return ratio > 1
+      ? `${(ratio * 100 - 100).toFixed(1)}% higher`
+      : `${(100 - ratio * 100).toFixed(1)}% lower`
+  }
+
+  if (solid) {
+    const createRatio = tachuiData.results.create1000 / solid.results.create1000
+    const updateRatio = tachuiData.results.partialUpdate / solid.results.partialUpdate
+    const memoryRatio = tachuiData.results.memoryUsage / solid.results.memoryUsage
 
     analysis.push(`vs SolidJS (closest architecture):`)
-    analysis.push(
-      `  Create performance: ${tachuiVsSolid.create > 1 ? `${(tachuiVsSolid.create * 100 - 100).toFixed(1)}% slower` : `${(100 - tachuiVsSolid.create * 100).toFixed(1)}% faster`}`
-    )
-    analysis.push(
-      `  Update performance: ${tachuiVsSolid.update > 1 ? `${(tachuiVsSolid.update * 100 - 100).toFixed(1)}% slower` : `${(100 - tachuiVsSolid.update * 100).toFixed(1)}% faster`}`
-    )
-    analysis.push(
-      `  Memory usage: ${tachuiVsSolid.memory > 1 ? `${(tachuiVsSolid.memory * 100 - 100).toFixed(1)}% higher` : `${(100 - tachuiVsSolid.memory * 100).toFixed(1)}% lower`}`
-    )
+    analysis.push(`  Create performance: ${formatRatio(createRatio)}`)
+    analysis.push(`  Update performance: ${formatRatio(updateRatio)}`)
+    analysis.push(`  Memory usage: ${formatRatioInverse(memoryRatio)}`)
   }
 
   // Compare against React (most popular)
   const react = baselines.find((b) => b.framework === 'React')
   if (react) {
-    const tachuiVsReact = {
-      create: tachuiData.results.create1000 / react.results.create1000,
-      update: tachuiData.results.partialUpdate / react.results.partialUpdate,
-      memory: tachuiData.results.memoryUsage / react.results.memoryUsage,
-    }
+    const createRatio = tachuiData.results.create1000 / react.results.create1000
+    const updateRatio = tachuiData.results.partialUpdate / react.results.partialUpdate
+    const memoryRatio = tachuiData.results.memoryUsage / react.results.memoryUsage
 
     analysis.push(``, `vs React (most popular):`)
-    analysis.push(
-      `  Create performance: ${tachuiVsReact.create > 1 ? `${(tachuiVsReact.create * 100 - 100).toFixed(1)}% slower` : `${(100 - tachuiVsReact.create * 100).toFixed(1)}% faster`}`
-    )
-    analysis.push(
-      `  Update performance: ${tachuiVsReact.update > 1 ? `${(tachuiVsReact.update * 100 - 100).toFixed(1)}% slower` : `${(100 - tachuiVsReact.update * 100).toFixed(1)}% faster`}`
-    )
-    analysis.push(
-      `  Memory usage: ${tachuiVsReact.memory > 1 ? `${(tachuiVsReact.memory * 100 - 100).toFixed(1)}% higher` : `${(100 - tachuiVsReact.memory * 100).toFixed(1)}% lower`}`
-    )
+    analysis.push(`  Create performance: ${formatRatio(createRatio)}`)
+    analysis.push(`  Update performance: ${formatRatio(updateRatio)}`)
+    analysis.push(`  Memory usage: ${formatRatioInverse(memoryRatio)}`)
   }
 
   // Overall ranking
   analysis.push(``, `Overall Performance Ranking:`)
   const allFrameworks = [tachuiData, ...baselines]
   const avgPerformance = allFrameworks
-    .map((f) => ({
-      framework: f.framework,
-      avgTime: (f.results.create1000 + f.results.replaceAll + f.results.partialUpdate) / 3,
-    }))
+    .map((f) => {
+      const values = [f.results.create1000, f.results.replaceAll, f.results.partialUpdate]
+      const validValues = values.filter(value => Number.isFinite(value))
+      const avgTime =
+        validValues.length > 0
+          ? validValues.reduce((sum, value) => sum + value, 0) / validValues.length
+          : Number.POSITIVE_INFINITY
+      return {
+        framework: f.framework,
+        avgTime,
+      }
+    })
     .sort((a, b) => a.avgTime - b.avgTime)
 
   avgPerformance.forEach((f, i) => {
@@ -265,13 +308,13 @@ export function generateComparisonReport(
   if (tachuiData.results.bundleSize < 20) {
     strengths.push('  ✅ Lightweight bundle size')
   }
-  if (tachuiData.results.memoryUsage < 8) {
+  if (Number.isFinite(tachuiData.results.memoryUsage) && tachuiData.results.memoryUsage < 8) {
     strengths.push('  ✅ Efficient memory usage')
   }
-  if (tachuiData.results.create1000 < 35) {
+  if (Number.isFinite(tachuiData.results.create1000) && tachuiData.results.create1000 < 35) {
     strengths.push('  ✅ Fast component creation')
   }
-  if (tachuiData.results.partialUpdate < 15) {
+  if (Number.isFinite(tachuiData.results.partialUpdate) && tachuiData.results.partialUpdate < 15) {
     strengths.push('  ✅ Efficient reactive updates')
   }
 
@@ -326,6 +369,8 @@ export function calculatePerformanceScore(data: FrameworkBenchmarkData): number 
     memoryUsage: 10, // MB
     bundleSize: 45, // KB
   }
+
+  // (et al repeated revert)
 
   let totalScore = 0
   let totalWeight = 0

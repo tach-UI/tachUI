@@ -9,6 +9,7 @@ import { JSDOM } from 'jsdom'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Text, VStack, Button, BasicInput } from '@tachui/primitives'
 import { withModifiers } from '../../src/components'
+import { configureCore } from '../../src/config'
 import { InteractionModifier } from '../../src/modifiers/base'
 import { createSignal } from '../../src/reactive'
 import { createComponent, h } from '../../src/runtime'
@@ -37,6 +38,7 @@ const createTestElement = (tagName: string = 'div'): HTMLElement => {
 describe('Event Modifiers - Epic: Butternut Phase 1', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    configureCore({ proxyModifiers: true })
   })
 
   describe('InteractionModifier Event Handling', () => {
@@ -286,7 +288,7 @@ describe('Event Modifiers - Epic: Butternut Phase 1', () => {
       const onScrollHandler = vi.fn()
 
       const component = Text('Test Component')
-        .modifier.onFocus(onFocusHandler)
+        .onFocus(onFocusHandler)
         .onBlur(onBlurHandler)
         .onKeyDown(onKeyDownHandler)
         .onScroll(onScrollHandler)
@@ -302,7 +304,7 @@ describe('Event Modifiers - Epic: Butternut Phase 1', () => {
     it('should provide TypeScript support for all new modifiers', () => {
       // This test ensures the TypeScript interfaces are properly defined
       const component = Button('Test Button', () => {})
-        .modifier.onFocus((focused: boolean) => console.log(focused))
+        .onFocus((focused: boolean) => console.log(focused))
         .onBlur((focused: boolean) => console.log(focused))
         .onKeyPress((event: KeyboardEvent) => console.log(event.key))
         .onKeyDown((event: KeyboardEvent) => console.log(event.key))

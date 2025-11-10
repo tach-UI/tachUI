@@ -576,7 +576,7 @@ describe('Button Factory Function', () => {
 
     expect(button).toBeDefined()
     expect(typeof button.modifier).toBe('object')
-    expect(typeof button.modifier.build).toBe('function')
+    expect(typeof button.build).toBe('function')
   })
 
   it('should accept action parameter', () => {
@@ -596,7 +596,7 @@ describe('Button Factory Function', () => {
   })
 
   it('should support modifier chaining', () => {
-    const button = Button('Click Me').modifier.padding(16).margin(8).build()
+    const button = Button('Click Me').padding(16).margin(8).build()
 
     expect(button).toBeDefined()
   })
@@ -700,7 +700,7 @@ describe('Integration Tests', () => {
       hapticFeedback: true,
       accessibilityLabel: 'Delete item button',
     })
-      .modifier.padding(20)
+      .padding(20)
       .margin(10)
       .build()
 
@@ -716,7 +716,7 @@ describe('Integration Tests', () => {
 
   it('should support textCase modifiers', () => {
     const button = Button('hello world', vi.fn())
-      .modifier.textCase('uppercase')
+      .textCase('uppercase')
       .build()
 
     expect(button).toBeDefined()
@@ -741,7 +741,7 @@ describe('Integration Tests', () => {
 
   it('should support chaining typography modifiers with other modifiers', () => {
     const button = Button('styled button', vi.fn())
-      .modifier.textCase('capitalize')
+      .textCase('capitalize')
       .fontSize(18)
       .padding(10)
       .backgroundColor('#007AFF')

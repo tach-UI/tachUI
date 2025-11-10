@@ -12,19 +12,16 @@ import { VStack, HStack, Text, Button } from '@tachui/core'
 const GlassmorphismCard = () =>
   VStack([
     Text("Glassmorphism Card")
-      .modifier
       .font({ size: 24, weight: 'bold' })
       .foregroundColor('white')
       .build(),
     
     Text("Beautiful glass effect with backdrop blur")
-      .modifier
       .opacity(0.9)
       .foregroundColor('white')
       .build(),
     
     Button("Learn More")
-      .modifier
       .backgroundColor('rgba(255,255,255,0.2)')
       .foregroundColor('white')
       .border({ width: 1, color: 'rgba(255,255,255,0.3)' })
@@ -33,7 +30,6 @@ const GlassmorphismCard = () =>
       .hoverEffect('highlight')
       .build()
   ])
-  .modifier
   .glassmorphism('medium') // Built-in glassmorphism preset
   .padding(32)
   .cornerRadius(20)
@@ -52,7 +48,6 @@ import { HStack, VStack, Image, Text } from '@tachui/core'
 const ImageCard = ({ src, title }: { src: string, title: string }) =>
   VStack([
     Image({ src })
-      .modifier
       .css({ 
         width: '100%', 
         height: '200px', 
@@ -67,12 +62,10 @@ const ImageCard = ({ src, title }: { src: string, title: string }) =>
       .build(),
     
     Text(title)
-      .modifier
       .font({ size: 16, weight: '600' })
       .textAlign('center')
       .build()
   ])
-  .modifier
   .padding(16)
   .backgroundColor('white')
   .cornerRadius(16)
@@ -90,7 +83,6 @@ const HoverGallery = () =>
     ImageCard({ src: 'nature2.jpg', title: 'Ocean Waves' }),
     ImageCard({ src: 'nature3.jpg', title: 'Forest Path' })
   ])
-  .modifier
   .gap(24)
   .padding(32)
   .build()
@@ -120,7 +112,6 @@ const FilterDemo = () => {
   return VStack([
     // Image with dynamic filter
     Image({ src: 'sample-photo.jpg' })
-      .modifier
       .css({ 
         width: '400px', 
         height: '300px', 
@@ -140,11 +131,9 @@ const FilterDemo = () => {
       Button("Cool", () => setCurrentFilter('cool')),
       Button("Blur", () => setCurrentFilter('blur'))
     ])
-    .modifier
     .gap(12)
     .build()
   ])
-  .modifier
   .padding(32)
   .gap(24)
   .build()
@@ -167,17 +156,14 @@ const Transform3DCard = () => {
     // 3D rotating card
     VStack([
       Text("3D Transform Card")
-        .modifier
         .font({ size: 20, weight: 'bold' })
         .foregroundColor('white')
         .build(),
       
       Text(() => `X: ${rotationX()}° Y: ${rotationY()}°`)
-        .modifier
         .foregroundColor('rgba(255,255,255,0.8)')
         .build()
     ])
-    .modifier
     .css({ 
       width: '300px', 
       height: '200px',
@@ -203,13 +189,11 @@ const Transform3DCard = () => {
         setRotationY(0)
       })
     ])
-    .modifier
     .gap(8)
     .build(),
     
     // Flip card demo
     VStack()
-      .modifier
       .css({ 
         width: '200px', 
         height: '120px',
@@ -220,7 +204,6 @@ const Transform3DCard = () => {
       .cursor('pointer')
       .build()
   ])
-  .modifier
   .padding(32)
   .gap(32)
   .alignItems('center')
@@ -254,18 +237,15 @@ const BlurLoadingDemo = () => {
     // Content with conditional blur
     VStack([
       Text(() => content())
-        .modifier
         .font({ size: 18 })
         .textAlign('center')
         .build(),
       
       Text("This content blurs while loading")
-        .modifier
         .opacity(0.7)
         .textAlign('center')
         .build()
     ])
-    .modifier
     .padding(32)
     .backgroundColor('white')
     .cornerRadius(12)
@@ -276,12 +256,10 @@ const BlurLoadingDemo = () => {
     // Loading overlay
     VStack([
       Text("Loading...")
-        .modifier
         .font({ size: 16, weight: '600' })
         .foregroundColor('#4F46E5')
         .build()
     ])
-    .modifier
     .css({
       position: 'absolute',
       top: '50%',
@@ -293,11 +271,9 @@ const BlurLoadingDemo = () => {
     .build(),
     
     Button("Simulate Loading", simulateLoading)
-      .modifier
       .padding({ horizontal: 20, vertical: 10 })
       .build()
   ])
-  .modifier
   .css({ position: 'relative' })
   .padding(32)
   .gap(24)
@@ -317,7 +293,6 @@ const NavItem = (title: string, isActive = false) => {
   
   return VStack([
     Text(title)
-      .modifier
       .foregroundColor(() => 
         isActive ? '#4F46E5' : 
         isHovered() ? '#6366F1' : '#6B7280'
@@ -327,7 +302,6 @@ const NavItem = (title: string, isActive = false) => {
     
     // Animated underline
     VStack()
-      .modifier
       .css({ height: '2px' })
       .backgroundColor('#4F46E5')
       .cornerRadius(1)
@@ -335,7 +309,6 @@ const NavItem = (title: string, isActive = false) => {
       .transition('transform', 200, 'ease-out')
       .build()
   ])
-  .modifier
   .padding({ horizontal: 16, vertical: 12 })
   .cursor('pointer')
   .onMouseEnter(() => setHovered(true))
@@ -354,7 +327,6 @@ const AdvancedNavMenu = () =>
     NavItem("Portfolio"),
     NavItem("Contact")
   ])
-  .modifier
   .backgroundColor('white')
   .shadow({ x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' })
   .cornerRadius(12)
@@ -369,26 +341,22 @@ const AdvancedNavMenu = () =>
 ```typescript
 // ✅ Good - Use transform and opacity for smooth animations
 VStack()
-  .modifier
   .transition('transform', 200) // Hardware accelerated
   .hoverEffect('scale')
   .build()
 
 // ✅ Good - Combine filters efficiently  
 Image({ src: 'photo.jpg' })
-  .modifier
   .filter('blur(2px) brightness(1.1) contrast(1.2)') // Single filter declaration
   .build()
 
 // ✅ Good - Use presets for common effects
 VStack()
-  .modifier
   .glassmorphism('medium') // Optimized preset
   .build()
 
 // ❌ Avoid - Multiple individual filter calls
 Image({ src: 'photo.jpg' })
-  .modifier
   .blur(2)
   .brightness(1.1)
   .contrast(1.2) // Creates multiple filter declarations
@@ -400,7 +368,6 @@ Image({ src: 'photo.jpg' })
 ```typescript
 // Force hardware acceleration for complex animations
 VStack()
-  .modifier
   .css({ willChange: 'transform' }) // Hint to browser
   .transform('translateZ(0)') // Force compositing layer
   .build()

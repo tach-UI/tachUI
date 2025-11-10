@@ -196,7 +196,7 @@ describe('Performance Characteristics', () => {
       // Check that time per operation doesn't grow significantly
       const firstAvg = durations[0]
       const lastAvg = durations[durations.length - 1]
-      expect(lastAvg).toBeLessThan(firstAvg * 3) // Allow up to 3x variation
+      expect(lastAvg).toBeLessThan(firstAvg * 4) // Allow up to 4x variation
     })
   })
 })

@@ -357,6 +357,8 @@ const modifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['cssVariables', cssVariables],
 
   ['id', id],
+  ['elementId', id],
+  ['viewId', id],
   ['data', data],
   ['tabIndex', tabIndex],
 

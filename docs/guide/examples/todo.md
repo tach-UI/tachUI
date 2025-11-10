@@ -162,7 +162,6 @@ function TodoApp() {
       VStack({
         children: [
           Text("Todo List")
-            .modifier
             .fontSize(32)
             .fontWeight('bold')
             .foregroundColor('#2c3e50')
@@ -173,7 +172,6 @@ function TodoApp() {
             const { total, active, completed } = stats()
             return `${total} total • ${active} active • ${completed} completed`
           })
-            .modifier
             .fontSize(14)
             .foregroundColor('#7f8c8d')
             .textAlign('center')
@@ -181,7 +179,6 @@ function TodoApp() {
         ],
         spacing: 8
       })
-      .modifier
       .padding({ bottom: 24 })
       .build(),
       
@@ -192,7 +189,6 @@ function TodoApp() {
           HStack({
             children: [
               TextField(newTodoText, setNewTodoText, "What needs to be done?")
-                .modifier
                 .flexGrow(1)
                 .padding(12)
                 .border(1, '#ddd')
@@ -201,7 +197,6 @@ function TodoApp() {
                 .build(),
               
               Button("Add", addTodo)
-                .modifier
                 .backgroundColor('#3498db')
                 .foregroundColor('white')
                 .padding({ horizontal: 20, vertical: 12 })
@@ -215,7 +210,6 @@ function TodoApp() {
           })
         ]
       })
-      .modifier
       .padding({ bottom: 24 })
       .build(),
       
@@ -224,7 +218,6 @@ function TodoApp() {
         children: [
           // Search
           TextField(searchQuery, setSearchQuery, "Search todos...")
-            .modifier
             .padding(10)
             .border(1, '#ddd')
             .cornerRadius(6)
@@ -239,7 +232,6 @@ function TodoApp() {
                   filterType.charAt(0).toUpperCase() + filterType.slice(1),
                   () => setFilter(filterType)
                 )
-                  .modifier
                   .backgroundColor(() => 
                     filter() === filterType ? '#3498db' : '#ecf0f1'
                   )
@@ -254,7 +246,6 @@ function TodoApp() {
               
               // Bulk actions
               Button("Toggle All", toggleAll)
-                .modifier
                 .backgroundColor('#f39c12')
                 .foregroundColor('white')
                 .padding({ horizontal: 16, vertical: 8 })
@@ -264,7 +255,6 @@ function TodoApp() {
                 .build(),
               
               Button("Clear Completed", clearCompleted)
-                .modifier
                 .backgroundColor('#e74c3c')
                 .foregroundColor('white')
                 .padding({ horizontal: 16, vertical: 8 })
@@ -279,7 +269,6 @@ function TodoApp() {
         ],
         spacing: 16
       })
-      .modifier
       .padding({ bottom: 24 })
       .build(),
       
@@ -296,7 +285,6 @@ function TodoApp() {
               }
               return `No ${filter()} todos`
             })
-              .modifier
               .fontSize(16)
               .foregroundColor('#7f8c8d')
               .textAlign('center')
@@ -320,7 +308,6 @@ function TodoApp() {
     spacing: 0,
     alignment: 'stretch'
   })
-  .modifier
   .padding(24)
   .backgroundColor('#ffffff')
   .minHeight('100vh')
@@ -376,7 +363,6 @@ function TodoItem({
           VStack({
             children: []
           })
-            .modifier
             .width(4)
             .height(20)
             .backgroundColor(priorityColors[todo.priority])
@@ -395,7 +381,6 @@ function TodoItem({
             HStack({
               children: [
                 TextField(editText, setEditText, "Todo text")
-                  .modifier
                   .flexGrow(1)
                   .padding(8)
                   .border(1, '#3498db')
@@ -403,7 +388,6 @@ function TodoItem({
                   .build(),
                 
                 Button("Save", saveEdit)
-                  .modifier
                   .backgroundColor('#27ae60')
                   .foregroundColor('white')
                   .padding({ horizontal: 12, vertical: 6 })
@@ -412,7 +396,6 @@ function TodoItem({
                   .build(),
                 
                 Button("Cancel", cancelEdit)
-                  .modifier
                   .backgroundColor('#95a5a6')
                   .foregroundColor('white')
                   .padding({ horizontal: 12, vertical: 6 })
@@ -427,7 +410,6 @@ function TodoItem({
             HStack({
               children: [
                 Text(todo.text)
-                  .modifier
                   .flexGrow(1)
                   .fontSize(16)
                   .foregroundColor(() => todo.completed ? '#7f8c8d' : '#2c3e50')
@@ -439,7 +421,6 @@ function TodoItem({
                 HStack({
                   children: (['high', 'medium', 'low'] as const).map(priority =>
                     Button(priority[0].toUpperCase(), () => onUpdatePriority(todo.id, priority))
-                      .modifier
                       .width(24)
                       .height(24)
                       .backgroundColor(() => 
@@ -458,7 +439,6 @@ function TodoItem({
                 }),
                 
                 Button("Delete", () => onDelete(todo.id))
-                  .modifier
                   .backgroundColor('#e74c3c')
                   .foregroundColor('white')
                   .padding({ horizontal: 12, vertical: 6 })
@@ -476,7 +456,6 @@ function TodoItem({
       
       // Creation date
       Text(() => `Created ${todo.createdAt.toLocaleDateString()}`)
-        .modifier
         .fontSize(11)
         .foregroundColor('#bdc3c7')
         .padding({ left: 32, top: 4 })
@@ -485,7 +464,6 @@ function TodoItem({
     spacing: 0,
     alignment: 'stretch'
   })
-  .modifier
   .padding(16)
   .backgroundColor(() => todo.completed ? '#f8f9fa' : 'white')
   .border(1, '#e9ecef')
@@ -680,7 +658,6 @@ function DragDropTodos() {
   return VStack({
     children: todos().map((todo, index) =>
       TodoItem({ todo })
-        .modifier
         .draggable(true)
         .onDragStart(() => handleDragStart(index))
         .onDrop(() => handleDrop(index))

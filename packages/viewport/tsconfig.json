@@ -5,10 +5,14 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@tachui/core": ["../core/dist/index.d.ts"],
+      "@tachui/core/*": ["../core/dist/*"],
+      "@tachui/registry": ["../registry/dist/index.d.ts"],
+      "@tachui/registry/*": ["../registry/dist/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "package.json"],
   "exclude": ["dist", "node_modules"],
   "references": [
     {

@@ -287,7 +287,7 @@ export function NavigationStack(
           // For now, create a simple path-based destination
           const path = '/' + newPath.segments.slice(0, index + 1).join('/')
           navigationContext.push(
-            () => Text(`Destination: ${segment}`).modifier.build(),
+            () => Text(`Destination: ${segment}`).build(),
             path,
             segment
           )
@@ -305,7 +305,7 @@ export function NavigationStack(
     const title = currentTitle()
 
     if (options.navigationBarHidden) {
-      return HTML.div().modifier.build()
+      return HTML.div().build()
     }
 
     return HStack({
@@ -320,28 +320,28 @@ export function NavigationStack(
                 setIsNavigating(false)
               }, 300)
             })
-              .modifier.backgroundColor('transparent')
+              .backgroundColor('transparent')
               .foregroundColor('#007AFF')
               .padding({ top: 8, bottom: 8, left: 12, right: 12 })
               .fontSize(16)
               .build()
-          : HTML.div().modifier.frame({ width: 100 }).build(),
+          : HTML.div().frame({ width: 100 }).build(),
 
         // Title
         Text(title)
-          .modifier.fontSize(18)
+          .fontSize(18)
           .fontWeight('bold')
           .foregroundColor('#1a1a1a')
           .textAlign('center')
           .build(),
 
         // Spacer for right side
-        HTML.div().modifier.frame({ width: 100 }).build(),
+        HTML.div().frame({ width: 100 }).build(),
       ],
       spacing: 12,
       alignment: 'center',
     })
-      .modifier.padding({ top: 12, bottom: 12, left: 16, right: 16 })
+      .padding({ top: 12, bottom: 12, left: 16, right: 16 })
       .backgroundColor('#f8f8f8')
       .border(1, '#e0e0e0')
       .build()
@@ -354,14 +354,14 @@ export function NavigationStack(
 
     if (!currentEntry) {
       return HTML.div({
-        children: [Text('No content').modifier.build()],
-      }).modifier.build()
+        children: [Text('No content').build()],
+      }).build()
     }
 
     return HTML.div({
       children: [currentEntry.component],
     })
-      .modifier.opacity(isNavigating() ? 0.8 : 1)
+      .opacity(isNavigating() ? 0.8 : 1)
       .build()
   }
 
@@ -371,7 +371,7 @@ export function NavigationStack(
     spacing: 0,
     alignment: 'leading',
   })
-    .modifier.frame({ minHeight: '100vh' })
+    .frame({ minHeight: '100vh' })
     .backgroundColor('#ffffff')
     .build() as NavigationComponent
 
@@ -461,10 +461,10 @@ export function NavigationLinkForDestination<T>(
   const simpleNavLink = HTML.div({
     children: [
       typeof label === 'string'
-        ? HTML.span({ children: label }).modifier.build()
+        ? HTML.span({ children: label }).build()
         : label,
     ],
-  }).modifier.build()
+  }).build()
 
   // Add navigation metadata
   ;(simpleNavLink as any)._navigationLink = {

@@ -48,10 +48,10 @@ export function MyComponent() {
 
 ```typescript
 // Always use light variant
-Text('Always Light').modifier.foregroundColor(Assets.primaryColor.light)
+Text('Always Light').foregroundColor(Assets.primaryColor.light)
 
 // Always use dark variant
-Text('Always Dark').modifier.foregroundColor(Assets.primaryColor.dark)
+Text('Always Dark').foregroundColor(Assets.primaryColor.dark)
 ```
 
 ### Image Assets

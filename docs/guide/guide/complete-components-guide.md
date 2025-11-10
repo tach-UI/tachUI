@@ -7,7 +7,7 @@ The definitive guide to all TachUI components with their actual API patterns, ba
 TachUI provides a comprehensive set of SwiftUI-inspired components for building web applications. All components follow consistent patterns:
 
 1. **Function-based API** - Components are functions, not objects
-2. **Modifier system** - Use `.modifier.property().build()` for styling
+2. **Modifier system** - Use `.property().build()` for styling
 3. **Reactive state** - Use signals for dynamic values
 4. **Type safety** - Full TypeScript support
 
@@ -30,7 +30,7 @@ const dynamicText = Text(() => message())
 
 // Styled text with modifiers
 const styledText = Text('Styled Text')
-  .modifier.fontSize(24)
+  .fontSize(24)
   .fontWeight('bold')
   .foregroundColor('#007AFF')
   .backgroundColor('#f0f8ff')
@@ -48,7 +48,7 @@ const styledText = Text('Styled Text')
 
 ```typescript
 Text('Example')
-  .modifier.fontSize(18) // Size in pixels
+  .fontSize(18) // Size in pixels
   .fontWeight('600') // CSS font-weight
   .foregroundColor('#333333') // Text color
   .textAlign('center') // 'left' | 'center' | 'right'
@@ -73,7 +73,7 @@ const basicButton = Button('Click Me', () => {
 const styledButton = Button('Save', async () => {
   await saveData()
 })
-  .modifier.backgroundColor('#007AFF')
+  .backgroundColor('#007AFF')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 20, right: 20 })
   .cornerRadius(8)
@@ -95,7 +95,7 @@ const loadingButton = Button(
     }
   }
 )
-  .modifier.disabled(isLoading)
+  .disabled(isLoading)
   .opacity(() => (isLoading() ? 0.7 : 1.0))
   .build()
 ```
@@ -110,7 +110,7 @@ const loadingButton = Button(
 ```typescript
 // Primary button
 Button('Primary', action)
-  .modifier.backgroundColor('#007AFF')
+  .backgroundColor('#007AFF')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
@@ -118,7 +118,7 @@ Button('Primary', action)
 
 // Secondary button
 Button('Secondary', action)
-  .modifier.backgroundColor('transparent')
+  .backgroundColor('transparent')
   .foregroundColor('#007AFF')
   .border(1, '#007AFF')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
@@ -127,7 +127,7 @@ Button('Secondary', action)
 
 // Destructive button
 Button('Delete', action)
-  .modifier.backgroundColor('#FF3B30')
+  .backgroundColor('#FF3B30')
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
@@ -157,7 +157,7 @@ const dropdownPicker = Picker(selectedOption, options, {
   variant: 'dropdown',
   placeholder: 'Select a fruit',
 })
-  .modifier.padding(12)
+  .padding(12)
   .border(1, '#e0e0e0')
   .cornerRadius(6)
   .build()
@@ -167,7 +167,7 @@ const segmentedPicker = Picker(selectedOption, options, {
   onSelectionChange: setSelectedOption,
   variant: 'segmented',
 })
-  .modifier.backgroundColor('#f3f4f6')
+  .backgroundColor('#f3f4f6')
   .cornerRadius(8)
   .build()
 
@@ -176,7 +176,7 @@ const wheelPicker = Picker(selectedOption, options, {
   onSelectionChange: setSelectedOption,
   variant: 'wheel',
 })
-  .modifier.padding(8)
+  .padding(8)
   .border(1, '#d1d5db')
   .cornerRadius(6)
   .build()
@@ -231,7 +231,7 @@ const buttonToggle = Toggle(isEnabled, {
   variant: 'button',
   size: 'large',
 })
-  .modifier.cornerRadius(12)
+  .cornerRadius(12)
   .build()
 ```
 
@@ -257,7 +257,7 @@ const basicSlider = Slider(volume, {
   max: 100,
   step: 1,
 })
-  .modifier.width(300)
+  .width(300)
   .build()
 
 // Formatted slider with marks
@@ -273,7 +273,7 @@ const formattedSlider = Slider(volume, {
     { value: 100, label: 'Loud' },
   ],
 })
-  .modifier.width('100%')
+  .width('100%')
   .maxWidth(400)
   .build()
 
@@ -326,7 +326,7 @@ const userForm = Form(
     validate: validateForm,
   }
 )
-  .modifier.padding(20)
+  .padding(20)
   .backgroundColor('#f8f9fa')
   .cornerRadius(12)
   .build()
@@ -337,7 +337,7 @@ const collapsibleSection = Section([], {
   collapsible: true,
   defaultExpanded: false,
 })
-  .modifier.backgroundColor('#ffffff')
+  .backgroundColor('#ffffff')
   .border(1, '#e0e0e0')
   .cornerRadius(8)
   .build()
@@ -366,7 +366,7 @@ const verticalLayout = VStack({
   spacing: 16,
   alignment: 'leading', // 'leading' | 'center' | 'trailing'
 })
-  .modifier.padding(20)
+  .padding(20)
   .backgroundColor('#f8f9fa')
   .cornerRadius(8)
   .build()
@@ -383,7 +383,7 @@ const horizontalLayout = HStack({
   children: [
     Text('Left'),
     Text('Center')
-      .modifier.flexGrow(1) // Take remaining space
+      .flexGrow(1) // Take remaining space
       .textAlign('center')
       .build(),
     Text('Right'),
@@ -391,7 +391,7 @@ const horizontalLayout = HStack({
   spacing: 12,
   alignment: 'center', // 'top' | 'center' | 'bottom'
 })
-  .modifier.padding(16)
+  .padding(16)
   .build()
 ```
 
@@ -406,14 +406,14 @@ const layeredLayout = ZStack({
   children: [
     // Background layer
     Text('')
-      .modifier.backgroundColor('#007AFF')
+      .backgroundColor('#007AFF')
       .frame({ width: 200, height: 100 })
       .cornerRadius(8)
       .build(),
 
     // Foreground content
     Text('Overlay Text')
-      .modifier.foregroundColor('white')
+      .foregroundColor('white')
       .fontWeight('bold')
       .build(),
   ],
@@ -507,19 +507,19 @@ const [isDark, setIsDark] = createSignal(false)
 
 // Reactive text content
 const counterText = Text(() => `Count: ${count()}`)
-  .modifier.fontSize(18)
+  .fontSize(18)
   .build()
 
 // Reactive styling
 const themedButton = Button('Increment', () => setCount(count() + 1))
-  .modifier.backgroundColor(() => (isDark() ? '#333333' : '#007AFF'))
+  .backgroundColor(() => (isDark() ? '#333333' : '#007AFF'))
   .foregroundColor(() => (isDark() ? '#ffffff' : '#ffffff'))
   .build()
 
 // Reactive visibility
 const conditionalText = () =>
   count() > 5
-    ? Text('Count is high!').modifier.foregroundColor('#FF3B30').build()
+    ? Text('Count is high!').foregroundColor('#FF3B30').build()
     : null
 ```
 
@@ -535,7 +535,7 @@ const emailField = TextField(userEmail.projectedValue, 'Enter email', {
   type: 'email',
   onInput: value => console.log('Email changed:', value),
 })
-  .modifier.padding(12)
+  .padding(12)
   .border(1, '#e0e0e0')
   .cornerRadius(6)
   .build()
@@ -609,7 +609,7 @@ function UserPreferencesForm() {
                 value => updateField('email', value),
                 'Email Address'
               )
-                .modifier.padding(12)
+                .padding(12)
                 .border(1, '#e0e0e0')
                 .cornerRadius(6)
                 .build(),
@@ -639,7 +639,7 @@ function UserPreferencesForm() {
                 max: 100,
                 formatter: value => `${value}%`,
               })
-                .modifier.marginTop(16)
+                .marginTop(16)
                 .build(),
 
               Toggle(() => formData().notifications, {
@@ -666,7 +666,7 @@ function UserPreferencesForm() {
 
       // Submit Button
       Button('Save Preferences', handleSubmit)
-        .modifier.backgroundColor('#007AFF')
+        .backgroundColor('#007AFF')
         .foregroundColor('white')
         .padding({ top: 16, bottom: 16, left: 32, right: 32 })
         .cornerRadius(8)
@@ -676,7 +676,7 @@ function UserPreferencesForm() {
     spacing: 16,
     alignment: 'stretch',
   })
-    .modifier.padding(20)
+    .padding(20)
     .maxWidth(600)
     .backgroundColor('#ffffff')
     .build()
@@ -701,8 +701,8 @@ const [count, setCount] = createSignal<number>(0)
 ### 2. Use Consistent Modifier Patterns
 
 ```typescript
-// ✅ Good - Always use .modifier.build()
-const component = Text('Hello').modifier.fontSize(18).padding(16).build()
+// ✅ Good - Always use .build()
+const component = Text('Hello').fontSize(18).padding(16).build()
 
 // ❌ Wrong - This syntax doesn't exist
 // const component = Text('Hello').fontSize(18).padding(16)
@@ -733,7 +733,7 @@ const submitButton = Button(
     }
   }
 )
-  .modifier.disabled(isLoading)
+  .disabled(isLoading)
   .backgroundColor(() => (error() ? '#FF3B30' : '#007AFF'))
   .build()
 ```
@@ -744,7 +744,7 @@ const submitButton = Button(
 // ✅ Good - Reusable component function
 function PrimaryButton(title: string, action: () => void) {
   return Button(title, action)
-    .modifier.backgroundColor('#007AFF')
+    .backgroundColor('#007AFF')
     .foregroundColor('white')
     .padding({ top: 12, bottom: 12, left: 24, right: 24 })
     .cornerRadius(8)
@@ -754,7 +754,7 @@ function PrimaryButton(title: string, action: () => void) {
 
 function SecondaryButton(title: string, action: () => void) {
   return Button(title, action)
-    .modifier.backgroundColor('transparent')
+    .backgroundColor('transparent')
     .foregroundColor('#007AFF')
     .border(1, '#007AFF')
     .padding({ top: 12, bottom: 12, left: 24, right: 24 })
@@ -782,7 +782,7 @@ function UserCard({ user }: { user: User }) {
     spacing: 16,
     alignment: 'stretch',
   })
-    .modifier.padding(16)
+    .padding(16)
     .backgroundColor('#ffffff')
     .cornerRadius(12)
     .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })

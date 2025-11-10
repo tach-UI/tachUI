@@ -193,7 +193,7 @@ registerMyModifiers()
 The `ModifierBuilder` uses the registry to resolve modifier methods. When a user calls:
 
 ```typescript
-Text('Hello').modifier.myModifier(16, '#FF0000').build()
+Text('Hello').myModifier(16, '#FF0000').build()
 ```
 
 The builder:
@@ -280,7 +280,7 @@ describe('MyModifier Integration', () => {
   })
 
   it('should work with ModifierBuilder', () => {
-    const component = Text('Test').modifier.myModifier(16, '#FF0000').build()
+    const component = Text('Test').myModifier(16, '#FF0000').build()
 
     expect(component.modifiers).toHaveLength(1)
     expect(component.modifiers[0].type).toBe('myModifier')
@@ -411,15 +411,15 @@ Document your modifiers thoroughly:
  * @example
  * ```typescript
  * // Static usage
- * Text("Hello").modifier.myModifier(16, '#FF0000').build()
+ * Text("Hello").myModifier(16, '#FF0000').build()
  *
  * // Reactive usage
  * const size = signal(16)
  * const color = signal('#FF0000')
- * Text("Hello").modifier.myModifier(size, color).build()
+ * Text("Hello").myModifier(size, color).build()
  *
  * // Preset usage
- * Text("Hello").modifier.myModifierLarge().build()
+ * Text("Hello").myModifierLarge().build()
  * ```
  *
  * @param value The size value (supports reactive signals)
@@ -583,7 +583,7 @@ console.log(`Registered ${modifiers.length} modifiers from my-modifier-plugin`)
 Following this guide ensures your modifiers:
 
 1. ✅ Integrate seamlessly with the TachUI modifier system
-2. ✅ Provide the expected developer experience (`component.modifier.yourModifier()`)
+2. ✅ Provide the expected developer experience (`component.yourModifier()`)
 3. ✅ Support both static and reactive values
 4. ✅ Are properly tested and documented
 5. ✅ Follow framework conventions and best practices

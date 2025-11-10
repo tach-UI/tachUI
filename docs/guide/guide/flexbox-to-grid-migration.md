@@ -187,11 +187,11 @@ const ProductGallery = LazyVGrid({
 const Dashboard = VStack([
   // Header
   HStack([
-    Text('Dashboard').modifier.fontSize(28).build(),
+    Text('Dashboard').fontSize(28).build(),
     Spacer(),
     UserMenu()
   ])
-  .modifier.padding(16).backgroundColor('#ffffff').build(),
+  .padding(16).backgroundColor('#ffffff').build(),
   
   // Main content
   HStack([
@@ -200,7 +200,7 @@ const Dashboard = VStack([
       Navigation(),
       QuickActions()
     ])
-    .modifier.width(250).backgroundColor('#f8f9fa').build(),
+    .width(250).backgroundColor('#f8f9fa').build(),
     
     // Content area
     VStack([
@@ -210,17 +210,17 @@ const Dashboard = VStack([
         StatsCard('Revenue', '$45,678'),
         StatsCard('Orders', '1,234')
       ])
-      .modifier.marginBottom(20).build(),
+      .marginBottom(20).build(),
       
       // Charts row
       HStack([
-        ChartWidget().modifier.flex(2).build(),
-        RecentActivity().modifier.flex(1).build()
+        ChartWidget().flex(2).build(),
+        RecentActivity().flex(1).build()
       ])
     ])
-    .modifier.flex(1).padding(16).build()
+    .flex(1).padding(16).build()
   ])
-  .modifier.flex(1).build()
+  .flex(1).build()
 ])
 ```
 
@@ -327,24 +327,24 @@ const ComplexCard = VStack([
   // Header with avatar and actions
   HStack([
     Image({ src: user.avatar, alt: user.name })
-      .modifier.frame(40, 40).cornerRadius(20).build(),
+      .frame(40, 40).cornerRadius(20).build(),
     
     VStack([
-      Text(user.name).modifier.fontWeight('bold').build(),
-      Text(user.role).modifier.fontSize(12).foregroundColor('#666').build()
+      Text(user.name).fontWeight('bold').build(),
+      Text(user.role).fontSize(12).foregroundColor('#666').build()
     ])
-    .modifier.flex(1).marginLeft(12).build(),
+    .flex(1).marginLeft(12).build(),
     
     Button({ title: 'Follow' })
   ])
-  .modifier.padding(16).build(),
+  .padding(16).build(),
   
   // Main content
   VStack([
-    Text(post.content).modifier.marginBottom(12).build(),
+    Text(post.content).marginBottom(12).build(),
     
     post.image && Image({ src: post.image, alt: 'Post image' })
-      .modifier.cornerRadius(8).marginBottom(12).build(),
+      .cornerRadius(8).marginBottom(12).build(),
     
     // Actions
     HStack([
@@ -352,10 +352,10 @@ const ComplexCard = VStack([
       Button({ title: '💬 Comment' }),
       Button({ title: '🔄 Share' }),
       Spacer(),
-      Text(post.timestamp).modifier.fontSize(12).foregroundColor('#999').build()
+      Text(post.timestamp).fontSize(12).foregroundColor('#999').build()
     ])
   ])
-  .modifier.padding(16).paddingTop(0).build()
+  .padding(16).paddingTop(0).build()
 ])
 ```
 
@@ -372,13 +372,13 @@ const ComplexCard = Grid({
         .build(),
       
       VStack([
-        Text(user.name).modifier.fontWeight('bold').build(),
-        Text(user.role).modifier.fontSize(12).foregroundColor('#666').build()
+        Text(user.name).fontWeight('bold').build(),
+        Text(user.role).fontSize(12).foregroundColor('#666').build()
       ])
-      .modifier.gridArea('userInfo').build(),
+      .gridArea('userInfo').build(),
       
       Button({ title: 'Follow' })
-        .modifier.gridArea('action').build()
+        .gridArea('action').build()
     ]),
     
     GridRow([

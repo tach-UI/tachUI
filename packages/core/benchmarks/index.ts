@@ -9,6 +9,7 @@ export * from './comparison'
 export * from './setup'
 export * from './tachui-benchmarks'
 
+import { pathToFileURL } from 'node:url'
 import {
   calculatePerformanceScore,
   convertTachUIResults,
@@ -95,7 +96,13 @@ export async function runQuickBenchmark() {
 }
 
 // CLI runner if called directly
-if (require.main === module) {
+const isDirectRun =
+  typeof process !== 'undefined' &&
+  Array.isArray(process.argv) &&
+  typeof process.argv[1] === 'string' &&
+  pathToFileURL(process.argv[1]).href === import.meta.url
+
+if (isDirectRun) {
   runCompleteBenchmarkSuite()
     .then(() => process.exit(0))
     .catch((error) => {

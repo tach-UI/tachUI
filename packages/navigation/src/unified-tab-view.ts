@@ -479,8 +479,7 @@ export function UnifiedTabView(
     })
 
     // Apply unified styling
-    return button.modifier
-      .backgroundColor('transparent')
+    return button.backgroundColor('transparent')
       .border(0)
       .padding(
         currentStyle === 'sidebar'
@@ -502,7 +501,7 @@ export function UnifiedTabView(
         Button('···', () => {
           setIsCustomizing(!isCustomizing())
         })
-          .modifier.backgroundColor('transparent')
+          .backgroundColor('transparent')
           .border(0)
           .padding({ top: 8, bottom: 8, left: 12, right: 12 })
           .build()
@@ -515,7 +514,7 @@ export function UnifiedTabView(
         Button('⚙️', () => {
           setIsCustomizing(!isCustomizing())
         })
-          .modifier.backgroundColor('transparent')
+          .backgroundColor('transparent')
           .border(0)
           .padding({ top: 8, bottom: 8, left: 12, right: 12 })
           .build()
@@ -538,7 +537,7 @@ export function UnifiedTabView(
       spacing: currentStyle === 'sidebar' ? 8 : 0,
       alignment: 'center',
     })
-      .modifier.backgroundColor(containerStyles.backgroundColor)
+      .backgroundColor(containerStyles.backgroundColor)
       .cornerRadius((containerStyles as any).borderRadius || 0)
       .padding(containerStyles.padding || 0)
       .build()
@@ -582,7 +581,7 @@ export function UnifiedTabView(
 
     if (!activeTab) {
       return Text('No tab selected')
-        .modifier.padding(20)
+        .padding(20)
         .foregroundColor('#999')
         .build()
     }
@@ -592,7 +591,7 @@ export function UnifiedTabView(
         ? activeTab.content()
         : activeTab.content
 
-    return HTML.div({ children: [content] }).modifier.build()
+    return HTML.div({ children: [content] }).build()
   }
 
   // Customization Panel
@@ -605,7 +604,7 @@ export function UnifiedTabView(
     return HTML.div({
       children: [
         HTML.div({ children: 'Customize Tabs' })
-          .modifier.fontSize(18)
+          .fontSize(18)
           .fontWeight('bold')
           .padding({ bottom: 16 })
           .build(),
@@ -618,12 +617,12 @@ export function UnifiedTabView(
               HTML.span({ children: tab.label }),
               allowHiding
                 ? Button('Hide', () => tabCoordinator.hideTab(tab.id))
-                    .modifier.fontSize(12)
+                    .fontSize(12)
                     .build()
                 : null,
             ].filter(Boolean),
           })
-            .modifier.padding({ top: 8, bottom: 8 })
+            .padding({ top: 8, bottom: 8 })
             .build()
         ),
 
@@ -631,7 +630,7 @@ export function UnifiedTabView(
         ...(hiddenTabsArray.length > 0
           ? [
               HTML.div({ children: 'Hidden Tabs' })
-                .modifier.fontSize(16)
+                .fontSize(16)
                 .fontWeight('600')
                 .padding({ top: 16, bottom: 8 })
                 .build(),
@@ -642,11 +641,11 @@ export function UnifiedTabView(
                     HTML.span({ children: tab.icon || '📄' }),
                     HTML.span({ children: tab.label }),
                     Button('Show', () => tabCoordinator.showTab(tab.id))
-                      .modifier.fontSize(12)
+                      .fontSize(12)
                       .build(),
                   ],
                 })
-                  .modifier.padding({ top: 8, bottom: 8 })
+                  .padding({ top: 8, bottom: 8 })
                   .opacity(0.7)
                   .build()
               ),
@@ -654,7 +653,7 @@ export function UnifiedTabView(
           : []),
       ],
     })
-      .modifier.backgroundColor('#ffffff')
+      .backgroundColor('#ffffff')
       .border(1, '#e0e0e0')
       .cornerRadius(12)
       .padding(20)
@@ -696,7 +695,7 @@ export function UnifiedTabView(
   }
 
   const tabViewComponent: NavigationComponent = assembleTabView()
-    .modifier.backgroundColor('#ffffff')
+    .backgroundColor('#ffffff')
     .build() as NavigationComponent
 
   // Add unified coordinator and metadata
@@ -778,10 +777,10 @@ export function PageTabView(
       HTML.div({
         children: pages.map((page, index) =>
           HTML.div({ children: page })
-            .modifier.display(index === currentIndex() ? 'block' : 'none')
+            .display(index === currentIndex() ? 'block' : 'none')
             .build()
         ),
-      }).modifier.build(),
+      }).build(),
 
       // Page indicators
       ...(indexDisplayMode !== 'never'
@@ -792,14 +791,14 @@ export function PageTabView(
                   setCurrentIndex(index)
                   onSelectionChange?.(index)
                 })
-                  .modifier.fontSize(12)
+                  .fontSize(12)
                   .build()
               ),
-            }).modifier.build(),
+            }).build(),
           ]
         : []),
     ],
-  }).modifier.build()
+  }).build()
 }
 
 /**
