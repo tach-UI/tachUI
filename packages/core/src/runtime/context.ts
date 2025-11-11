@@ -194,7 +194,13 @@ export class ContextManager {
 
         // Render children with context available
         const childNodes = children.flatMap((child) => {
-          const result = child.render()
+          // Auto-build if it's a ModifierBuilder
+          let componentToRender = child
+          if ('build' in child && typeof child.build === 'function') {
+            componentToRender = child.build()
+          }
+
+          const result = componentToRender.render()
           return Array.isArray(result) ? result : [result]
         })
 
@@ -306,7 +312,13 @@ export function createContextConsumer<T>(
         return render(value)
       })
 
-      const result = consumerInstance().render()
+      // Auto-build if it's a ModifierBuilder
+      let componentToRender = consumerInstance()
+      if ('build' in componentToRender && typeof componentToRender.build === 'function') {
+        componentToRender = componentToRender.build()
+      }
+
+      const result = componentToRender.render()
       return Array.isArray(result) ? result : [result]
     },
     props: {},

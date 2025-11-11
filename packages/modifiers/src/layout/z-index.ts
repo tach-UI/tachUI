@@ -115,38 +115,35 @@ export class ZIndexModifier extends BaseModifier<ZIndexOptions> {
     this.checkStackingContext(element)
   }
 
-  private checkStackingContext(element: HTMLElement): void {
-    const style = getComputedStyle(element)
-
-    // Properties that create new stacking contexts
-    const stackingContextProperties = [
-      { prop: 'opacity', value: style.opacity, creates: style.opacity !== '1' },
-      {
-        prop: 'transform',
-        value: style.transform,
-        creates: style.transform !== 'none',
-      },
-      { prop: 'filter', value: style.filter, creates: style.filter !== 'none' },
-      {
-        prop: 'isolation',
-        value: style.isolation,
-        creates: style.isolation === 'isolate',
-      },
-      {
-        prop: 'mix-blend-mode',
-        value: style.mixBlendMode,
-        creates: style.mixBlendMode !== 'normal',
-      },
-    ]
-
-    const creatingContexts = stackingContextProperties.filter(p => p.creates)
-
-    if (creatingContexts.length > 0) {
-      console.info(
-        'ZIndexModifier: Element creates new stacking context due to:',
-        creatingContexts.map(p => `${p.prop}: ${p.value}`).join(', ')
-      )
-    }
+  private checkStackingContext(_element: HTMLElement): void {
+    // Removed verbose logging - enable if debugging stacking contexts
+    // const style = getComputedStyle(element)
+    // const stackingContextProperties = [
+    //   { prop: 'opacity', value: style.opacity, creates: style.opacity !== '1' },
+    //   {
+    //     prop: 'transform',
+    //     value: style.transform,
+    //     creates: style.transform !== 'none',
+    //   },
+    //   { prop: 'filter', value: style.filter, creates: style.filter !== 'none' },
+    //   {
+    //     prop: 'isolation',
+    //     value: style.isolation,
+    //     creates: style.isolation === 'isolate',
+    //   },
+    //   {
+    //     prop: 'mix-blend-mode',
+    //     value: style.mixBlendMode,
+    //     creates: style.mixBlendMode !== 'normal',
+    //   },
+    // ]
+    // const creatingContexts = stackingContextProperties.filter(p => p.creates)
+    // if (creatingContexts.length > 0) {
+    //   console.info(
+    //     'ZIndexModifier: Element creates new stacking context due to:',
+    //     creatingContexts.map(p => `${p.prop}: ${p.value}`).join(', ')
+    //   )
+    // }
   }
 
   /**

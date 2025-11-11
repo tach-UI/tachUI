@@ -44,8 +44,18 @@ export function createOptimizedConcatenation(
       }
 
       // Render both components and add to children
-      const leftElement = left.render()
-      const rightElement = right.render()
+      // Auto-build if it's a ModifierBuilder
+      let leftToRender = left
+      if ('build' in left && typeof left.build === 'function') {
+        leftToRender = left.build()
+      }
+      let rightToRender = right
+      if ('build' in right && typeof right.build === 'function') {
+        rightToRender = right.build()
+      }
+
+      const leftElement = leftToRender.render()
+      const rightElement = rightToRender.render()
 
       const children: DOMNode[] = []
       if (Array.isArray(leftElement)) {

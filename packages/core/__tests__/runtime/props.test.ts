@@ -16,7 +16,8 @@ import {
   propsUtils,
   RefManager,
 } from '../../src/runtime/props'
-import type { ComponentProps } from '../../src/runtime/types'
+import type { ComponentInstance, ComponentProps } from '../../src/runtime/types'
+import type { ModifierBuilder } from '../../src/modifiers/types'
 
 describe('Props and Children Handling System', () => {
   describe('PropsManager', () => {
@@ -196,6 +197,34 @@ describe('Props and Children Handling System', () => {
         children: ['a', 'b', 'c'],
       })
     })
+
+    it('auto-builds modifier builder children before rendering', () => {
+      const builtComponent: ComponentInstance = {
+        type: 'component',
+        render: vi.fn(() => ({
+          type: 'text' as const,
+          text: 'built child',
+        })),
+        props: {},
+        id: 'child',
+      }
+
+      const builder = {
+        build: vi.fn(() => builtComponent),
+      } as unknown as ModifierBuilder<ComponentInstance>
+
+      const manager = new ChildrenManager(builder as any)
+      const nodes = manager.renderChildren()
+
+      expect(builder.build).toHaveBeenCalledTimes(1)
+      expect(builtComponent.render).toHaveBeenCalledTimes(1)
+      expect(nodes).toHaveLength(1)
+      expect(nodes[0]).toEqual({
+        type: 'text',
+        text: 'built child',
+      })
+    })
+
   })
 
   describe('RefManager', () => {

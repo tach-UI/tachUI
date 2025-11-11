@@ -19,6 +19,7 @@ export interface ShadowConfig {
   x?: number | Signal<number>
   y?: number | Signal<number>
   blur?: number | Signal<number>
+  radius?: number | Signal<number> // Alias for blur (SwiftUI compatibility)
   spread?: number | Signal<number>
   color?: string | Signal<string>
   inset?: boolean | Signal<boolean>
@@ -28,6 +29,7 @@ export interface TextShadowConfig {
   x?: number | Signal<number>
   y?: number | Signal<number>
   blur?: number | Signal<number>
+  radius?: number | Signal<number> // Alias for blur (SwiftUI compatibility)
   color?: string | Signal<string>
 }
 
@@ -35,6 +37,7 @@ export interface DropShadowConfig {
   x?: number | Signal<number>
   y?: number | Signal<number>
   blur?: number | Signal<number>
+  radius?: number | Signal<number> // Alias for blur (SwiftUI compatibility)
   color?: string | Signal<string>
 }
 
@@ -145,7 +148,8 @@ export class ShadowModifier extends BaseModifier<ShadowOptions> {
   private generateShadowCSS(config: ShadowConfig): string {
     const x = this.resolveValue(config.x, 0)
     const y = this.resolveValue(config.y, 0)
-    const blur = this.resolveValue(config.blur, 0)
+    // Support both 'blur' and 'radius' (prefer blur if present)
+    const blur = this.resolveValue(config.blur !== undefined ? config.blur : config.radius, 0)
     const spread =
       config.spread !== undefined ? this.resolveValue(config.spread, 0) : 0
     const color = this.resolveValue(config.color, 'rgba(0,0,0,0.25)')
@@ -158,6 +162,10 @@ export class ShadowModifier extends BaseModifier<ShadowOptions> {
   private resolveValue<T>(value: T | Signal<T>, defaultValue: T): T {
     if (isSignal(value) || isComputed(value)) {
       return (value as any)()
+    }
+    // Resolve Assets (ColorAsset, etc.)
+    if (typeof value === 'object' && value !== null && 'resolve' in value && typeof (value as any).resolve === 'function') {
+      return (value as any).resolve()
     }
     return value !== undefined ? value : defaultValue
   }
@@ -256,7 +264,8 @@ export class TextShadowModifier extends BaseModifier<TextShadowOptions> {
   private generateTextShadowCSS(config: TextShadowConfig): string {
     const x = this.resolveValue(config.x, 0)
     const y = this.resolveValue(config.y, 0)
-    const blur = this.resolveValue(config.blur, 0)
+    // Support both 'blur' and 'radius' (prefer blur if present)
+    const blur = this.resolveValue(config.blur !== undefined ? config.blur : config.radius, 0)
     const color = this.resolveValue(config.color, 'rgba(0,0,0,0.5)')
 
     return `${x}px ${y}px ${blur}px ${color}`
@@ -265,6 +274,10 @@ export class TextShadowModifier extends BaseModifier<TextShadowOptions> {
   private resolveValue<T>(value: T | Signal<T>, defaultValue: T): T {
     if (isSignal(value) || isComputed(value)) {
       return (value as any)()
+    }
+    // Resolve Assets (ColorAsset, etc.)
+    if (typeof value === 'object' && value !== null && 'resolve' in value && typeof (value as any).resolve === 'function') {
+      return (value as any).resolve()
     }
     return value !== undefined ? value : defaultValue
   }
@@ -378,7 +391,8 @@ export class DropShadowModifier extends BaseModifier<DropShadowOptions> {
   private generateDropShadowCSS(config: DropShadowConfig): string {
     const x = this.resolveValue(config.x, 0)
     const y = this.resolveValue(config.y, 0)
-    const blur = this.resolveValue(config.blur, 0)
+    // Support both 'blur' and 'radius' (prefer blur if present)
+    const blur = this.resolveValue(config.blur !== undefined ? config.blur : config.radius, 0)
     const color = this.resolveValue(config.color, 'rgba(0,0,0,0.25)')
 
     return `${x}px ${y}px ${blur}px ${color}`
@@ -387,6 +401,10 @@ export class DropShadowModifier extends BaseModifier<DropShadowOptions> {
   private resolveValue<T>(value: T | Signal<T>, defaultValue: T): T {
     if (isSignal(value) || isComputed(value)) {
       return (value as any)()
+    }
+    // Resolve Assets (ColorAsset, etc.)
+    if (typeof value === 'object' && value !== null && 'resolve' in value && typeof (value as any).resolve === 'function') {
+      return (value as any).resolve()
     }
     return value !== undefined ? value : defaultValue
   }

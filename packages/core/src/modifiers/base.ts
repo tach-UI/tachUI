@@ -630,6 +630,10 @@ export class AppearanceModifier extends BaseModifier {
 
     // Font
     if (props.font) {
+      if (process.env.NODE_ENV === 'development' && props.font.family === undefined) {
+        console.log('[CORE AppearanceModifier] ⚠️ Font modifier WITHOUT family:', props.font)
+        console.trace('Stack trace:')
+      }
       const font = props.font
       if (font.family) {
         // Handle FontAsset objects that need to be resolved
@@ -638,8 +642,15 @@ export class AppearanceModifier extends BaseModifier {
           font.family !== null &&
           'resolve' in font.family
         ) {
-          styles.fontFamily = (font.family as any).resolve()
+          const resolved = (font.family as any).resolve()
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[CORE AppearanceModifier] Resolved FontAsset:', resolved)
+          }
+          styles.fontFamily = resolved
         } else {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[CORE AppearanceModifier] Using font.family as string:', font.family)
+          }
           styles.fontFamily = font.family as string
         }
       }

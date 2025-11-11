@@ -378,11 +378,26 @@ export class ModifierBuilderImpl<
 
     if (typeof sizeOrOptions === 'object') {
       fontProps = sizeOrOptions
+
+      // Split into individual modifier calls to ensure each property is properly handled
+      // This is necessary because AppearanceModifier merging doesn't work correctly
+      if (fontProps.family !== undefined) {
+        this.modifiers.push(new AppearanceModifier({ font: { family: fontProps.family } }))
+      }
+      if (fontProps.size !== undefined) {
+        this.modifiers.push(new AppearanceModifier({ font: { size: fontProps.size } }))
+      }
+      if (fontProps.weight !== undefined) {
+        this.modifiers.push(new AppearanceModifier({ font: { weight: fontProps.weight } }))
+      }
+      if (fontProps.style !== undefined) {
+        this.modifiers.push(new AppearanceModifier({ font: { style: fontProps.style } }))
+      }
     } else {
       fontProps = sizeOrOptions !== undefined ? { size: sizeOrOptions } : {}
+      this.modifiers.push(new AppearanceModifier({ font: fontProps }))
     }
 
-    this.modifiers.push(new AppearanceModifier({ font: fontProps }))
     return this as unknown as ModifierBuilder<T>
   }
 

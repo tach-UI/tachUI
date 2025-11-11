@@ -72,9 +72,10 @@ export class PositionModifier extends BaseModifier<PositionOptions> {
           this.warnIfMissingPositionedParent(element)
           break
         case 'fixed':
-          console.info(
-            'PositionModifier: Fixed positioning relative to viewport. Consider impact on mobile layouts.'
-          )
+          // Removed verbose logging - enable if debugging positioning
+          // console.info(
+          //   'PositionModifier: Fixed positioning relative to viewport. Consider impact on mobile layouts.'
+          // )
           break
         case 'sticky':
           this.warnIfMissingStickyProperties(element)

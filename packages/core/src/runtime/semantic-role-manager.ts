@@ -69,11 +69,12 @@ export class SemanticRoleManager {
     // Safe to auto-apply the semantic role
     element.setAttribute('role', semanticInfo.role)
 
-    if (config.warnOnSemanticIssues && process.env.NODE_ENV !== 'production') {
-      console.info(
-        `Applied semantic role '${semanticInfo.role}' to tag '${tag}'`
-      )
-    }
+    // Removed verbose logging - enable if debugging semantic roles
+    // if (config.warnOnSemanticIssues && process.env.NODE_ENV !== 'production') {
+    //   console.info(
+    //     `Applied semantic role '${semanticInfo.role}' to tag '${tag}'`
+    //   )
+    // }
   }
 
   /**

@@ -157,7 +157,8 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
       typeof value.resolve === 'function'
     ) {
       const resolved = value.resolve()
-      console.log('toCSSValueForProperty resolving asset:', { property, value, resolved })
+      // Removed verbose logging - enable if debugging asset resolution
+      // console.log('toCSSValueForProperty resolving asset:', { property, value, resolved })
       return resolved
     }
 
