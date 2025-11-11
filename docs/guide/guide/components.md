@@ -45,27 +45,24 @@ The Text component displays static or dynamic text with full typography control.
 ```typescript
 // Simple text
 Text("Hello, World!")
-  .modifier
   .fontSize(24)
   .fontWeight('bold')
   .foregroundColor('#007AFF')
-  .build()
+  
 
 // Reactive text with signal
 const [message, setMessage] = createSignal("Dynamic content")
 Text(message)
-  .modifier
   .fontSize(18)
   .italic()
-  .build()
+  
 
 // Dynamic text with state
 const [count, setCount] = createSignal(0)
 Text(() => `Count: ${count()}`)
-  .modifier
   .fontSize(18)
   .textAlign('center')
-  .build()
+  
 ```
 
 ### Typography Presets
@@ -84,7 +81,6 @@ TextStyles.Caption("Small details")
 
 ```typescript
 Text("Styled Text")
-  .modifier
   .font({
     family: 'system-ui',
     size: 20,
@@ -97,7 +93,7 @@ Text("Styled Text")
   .letterSpacing(0.5)
   .lineLimit(3)
   .truncationMode('tail')
-  .build()
+  
 ```
 
 ### Text Properties
@@ -144,12 +140,11 @@ Interactive buttons with press states, variants, and actions.
 ```typescript
 // Simple button
 Button("Click Me", () => console.log("Clicked!"))
-  .modifier
   .backgroundColor('#007AFF')
   .foregroundColor('#ffffff')
   .padding(12, 24)
   .cornerRadius(8)
-  .build()
+  
 
 // Button with reactive state
 const [isLoading, setIsLoading] = createSignal(false)
@@ -167,27 +162,23 @@ Pre-configured button styles following SwiftUI patterns:
 ```typescript
 // Primary filled button
 ButtonStyles.Filled("Save", handleSave)
-  .modifier
   .cornerRadius(8)
-  .build()
+  
 
 // Outlined button  
 ButtonStyles.Outlined("Cancel", handleCancel)
-  .modifier
   .cornerRadius(8)
-  .build()
+  
 
 // Destructive action
 ButtonStyles.Destructive("Delete", handleDelete)
-  .modifier
   .cornerRadius(8)
-  .build()
+  
 
 // Plain text button
 ButtonStyles.Plain("Learn More", showDetails)
-  .modifier
   .fontSize(16)
-  .build()
+  
 ```
 
 ### Button States and Interactions
@@ -196,13 +187,12 @@ ButtonStyles.Plain("Learn More", showDetails)
 const [isPressed, setIsPressed] = createSignal(false)
 
 Button("Interactive Button", handleClick)
-  .modifier
   .backgroundColor(() => isPressed() ? '#0056b3' : '#007AFF')
   .transform(() => isPressed() ? 'scale(0.95)' : 'scale(1)')
   .onTouchStart(() => setIsPressed(true))
   .onTouchEnd(() => setIsPressed(false))
   .transition('all', 150)
-  .build()
+  
 ```
 
 ### Button Properties
@@ -243,11 +233,10 @@ Text input with validation, formatting, and SwiftUI-style binding.
 const [email, setEmail] = createSignal("")
 
 TextField(email, setEmail, "Enter email address")
-  .modifier
   .padding(12)
   .border(1, '#ddd')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### TextField with State Binding
@@ -256,14 +245,13 @@ TextField(email, setEmail, "Enter email address")
 const userEmail = State("")
 
 TextField(userEmail.projectedValue, "Email")
-  .modifier
   .padding(12)
   .border(1, '#e0e0e0')
   .cornerRadius(8)
   .onFocus(true, {
     borderColor: '#007AFF'
   })
-  .build()
+  
 ```
 
 ### TextField Variants
@@ -291,7 +279,6 @@ TextFieldStyles.Multiline(notesState.projectedValue, "Notes", 4)
 const email = State("")
 
 TextField(email.projectedValue, "Email")
-  .modifier
   .validator(TextFieldValidators.email)
   .validateOnBlur(true)
   .onValidation((result) => {
@@ -299,16 +286,15 @@ TextField(email.projectedValue, "Email")
       console.log("Validation error:", result.message)
     }
   })
-  .build()
+  
 
 // Format phone numbers automatically
 const phone = State("")
 
 TextField(phone.projectedValue, "Phone")
-  .modifier
   .formatter(TextFieldFormatters.phone)
   .keyboardType('tel')
-  .build()
+  
 ```
 
 ### TextField Properties
@@ -357,23 +343,21 @@ Display images with loading states, content modes, and progressive loading.
 
 ```typescript
 Image("/path/to/image.jpg")
-  .modifier
   .width(200)
   .height(200)
   .cornerRadius(12)
   .contentMode('fit')
-  .build()
+  
 ```
 
 ### Responsive Images
 
 ```typescript
 Image("/hero-image.jpg")
-  .modifier
   .width('100%')
   .aspectRatio(16/9)
   .contentMode('cover')
-  .build()
+  
 ```
 
 ### Progressive Loading
@@ -382,7 +366,6 @@ Image("/hero-image.jpg")
 const [imageState, setImageState] = createSignal('loading')
 
 Image("/large-image.jpg")  
-  .modifier
   .width(300)
   .height(200)
   .placeholder('/thumbnail.jpg')
@@ -390,7 +373,7 @@ Image("/large-image.jpg")
   .onLoadingStateChange(setImageState)
   .opacity(() => imageState() === 'loaded' ? 1 : 0.7)
   .transition('opacity', 300)
-  .build()
+  
 ```
 
 ### Image Utilities
@@ -398,9 +381,8 @@ Image("/large-image.jpg")
 ```typescript
 // Progressive loading
 ImageUtils.progressive("/thumb.jpg", "/full.jpg")
-  .modifier
   .aspectRatio(4/3)
-  .build()
+  
 
 // Responsive images
 ImageUtils.responsive([
@@ -458,25 +440,22 @@ function UserCard({ user }) {
       HStack({
         children: [
           Image(user.avatar)
-            .modifier
             .width(40)
             .height(40)
             .cornerRadius(20)
-            .build(),
+            ,
             
           VStack({
             children: [
               Text(user.name)
-                .modifier
                 .fontSize(18)
                 .fontWeight('600')
-                .build(),
+                ,
                 
               Text(user.email)
-                .modifier
                 .fontSize(14)
                 .foregroundColor('#666')
-                .build()
+                
             ],
             spacing: 2,
             alignment: 'leading'
@@ -489,29 +468,26 @@ function UserCard({ user }) {
       // Expandable bio section
       () => isExpanded() ? 
         Text(user.bio)
-          .modifier
           .fontSize(14)
           .lineHeight(1.4)
-          .build() : null,
+           : null,
       
       // Expand/collapse button
       Button(() => isExpanded() ? "Show Less" : "Show More", 
         () => setIsExpanded(!isExpanded())
       )
-      .modifier
       .fontSize(14)
       .foregroundColor('#007AFF')
-      .build()
+      
     ],
     spacing: 12,
     alignment: 'stretch'
   })
-  .modifier
   .padding(16)
   .backgroundColor('#ffffff')
   .cornerRadius(12)
   .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 }
 
 // Modern clean syntax with updated API
@@ -588,15 +564,13 @@ const [isLoggedIn, setIsLoggedIn] = createSignal(false)
 Show({
   when: isLoggedIn,  // Can pass signal directly
   children: Text('Welcome back!')
-    .modifier
     .fontSize(18)
     .foregroundColor('#007AFF')
-    .build(),
+    ,
   fallback: Text('Please sign in')
-    .modifier
     .fontSize(18)
     .foregroundColor('#FF3B30')
-    .build()
+    
 })
 
 // With State Management
@@ -620,31 +594,27 @@ Show({
   children: VStack({
     children: [
       Text(() => `Hello, ${user().name}!`)
-        .modifier
         .fontSize(24)
         .fontWeight('bold')
-        .build(),
+        ,
       
       Text(() => user().email)
-        .modifier
         .fontSize(16)
         .foregroundColor('#666')
-        .build()
+        
     ],
     spacing: 8,
     alignment: 'center'
   }),
   fallback: loading() 
     ? Text('Loading...')
-        .modifier
         .fontSize(16)
         .foregroundColor('#666')
-        .build()
+        
     : Text('No user found')
-        .modifier
         .fontSize(16)
         .foregroundColor('#FF3B30')
-        .build()
+        
 })
 ```
 
@@ -698,10 +668,9 @@ ForEach({
   data: items,  // Pass signal directly
   children: (item, index) => 
     Text(`${index + 1}. ${item}`)
-      .modifier
       .fontSize(16)
       .padding(8)
-      .build()
+      
 })
 
 // With State Management
@@ -739,9 +708,8 @@ ForEach({
           (value) => updateTodo(todo.id, { completed: value })
         ),
         Text(todo.text)
-          .modifier
           .textDecoration(() => todo.completed ? 'line-through' : 'none')
-          .build()
+          
       ]
     }),
   getItemId: (todo) => todo.id  // Essential for efficient updates
@@ -762,10 +730,9 @@ For({
   each: items,
   children: (item, index) => 
     Text(`${index + 1}. ${item}`)
-      .modifier
       .fontSize(16)
       .padding(8)
-      .build(),
+      ,
   fallback: Text("No items to display")  // Optional empty state
 })
 ```
@@ -784,10 +751,9 @@ For({
     HStack({
       children: [
         Text(todo.text)
-          .modifier
           .fontSize(16)
           .strikethrough(todo.completed)
-          .build(),
+          ,
         
         Button('Toggle', () => {
           const updatedTodos = todos().map(t => 
@@ -817,28 +783,25 @@ const addFeature = () => {
 VStack({
   children: [
     Text('Features:')
-      .modifier
       .fontSize(18)
       .fontWeight('bold')
-      .build(),
+      ,
     
     For({
       each: features,
       children: (feature, index) => 
         Text(`• ${feature}`)
-          .modifier
           .fontSize(14)
           .padding({ left: 16, bottom: 4 })
-          .build()
+          
     }),
     
     Button('Add Feature', addFeature)
-      .modifier
       .backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding(12)
       .cornerRadius(8)
-      .build()
+      
   ],
   spacing: 16
 })
@@ -866,10 +829,9 @@ interface TodoItemProps {
 function TodoItem(props: TodoItemProps): ComponentInstance {
   // Todo item implementation
   return Text(props.todo.text)
-    .modifier
     .fontSize(16)
     .strikethrough(props.todo.completed)
-    .build()
+    
 }
 
 // Form-driven lists with two-way binding
@@ -893,18 +855,16 @@ function TodoApp(): VStack {
   return VStack({
     children: [
       TextField(newTodoText.projectedValue, "New todo")
-        .modifier
         .padding(12)
         .border(1, '#ddd')
         .cornerRadius(8)
-        .build(),
+        ,
       Button("Add", addTodo)
-        .modifier
         .backgroundColor('#007AFF')
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build(),
+        ,
       ForEach({
         data: (): Todo[] => todos.wrappedValue,
         children: (todo: Todo): ComponentInstance => TodoItem({ todo }),
@@ -936,15 +896,13 @@ function ItemView(props: ItemViewProps): ComponentInstance {
   return VStack({
     children: [
       Text(props.item.name)
-        .modifier
         .fontSize(16)
         .fontWeight('bold')
-        .build(),
+        ,
       Text(`$${props.item.price}`)
-        .modifier
         .fontSize(14)
         .foregroundColor('#007AFF')
-        .build()
+        
     ]
   })
 }
@@ -966,17 +924,15 @@ function FilteredList(): VStack {
   return VStack({
     children: [
       TextField(filter, setFilter, "Search...")
-        .modifier
         .padding(12)
         .border(1, '#ddd')
         .cornerRadius(8)
-        .build(),
+        ,
       Text((): string => `Showing ${filteredItems().length} of ${items().length} items`)
-        .modifier
         .fontSize(14)
         .foregroundColor('#666')
         .marginVertical(8)
-        .build(),
+        ,
       ForEach({
         data: filteredItems,  // Reactive computed data
         children: (item: Item): ComponentInstance => ItemView({ item }),
@@ -1057,11 +1013,10 @@ VStack({
         children: (item) => Text(item)
       }),
       fallback: Text('No items found')
-        .modifier
         .fontSize(16)
         .foregroundColor('#666')
         .textAlign('center')
-        .build()
+        
     })
   ]
 })
@@ -1088,7 +1043,7 @@ TextStyles.Headline("Section Title")
 TextStyles.Body("Content text")
 
 // ❌ Avoid - Manual font sizing
-Text("Title").fontSize(22).fontWeight('bold').build()
+Text("Title").fontSize(22).fontWeight('bold')
 ```
 
 ### 3. Use Semantic Button Variants
@@ -1099,7 +1054,7 @@ ButtonStyles.Destructive("Delete", handleDelete)
 ButtonStyles.Filled("Save", handleSave)
 
 // ❌ Avoid - Manual styling for common patterns
-Button("Delete").backgroundColor('red').build()
+Button("Delete").backgroundColor('red')
 ```
 
 ### 4. Handle Loading States
@@ -1116,9 +1071,8 @@ Button(() => isLoading() ? "Saving..." : "Save", async () => {
     setIsLoading(false)
   }
 })
-.modifier
 .disabled(isLoading)
-.build()
+
 ```
 
 ### 5. Use Proper Accessibility
@@ -1126,15 +1080,13 @@ Button(() => isLoading() ? "Saving..." : "Save", async () => {
 ```typescript
 // ✅ Good - Accessible components
 Button("Save Document", handleSave)
-  .modifier
   .accessibilityLabel("Save the current document")
   .accessibilityHint("Saves your work to the cloud")
-  .build()
+  
 
 Image("/profile.jpg")
-  .modifier
   .accessibilityLabel("User profile photo")
-  .build()
+  
 ```
 
 ## Performance Tips
@@ -1175,11 +1127,10 @@ Form({
 }, [
   // Form content here
 ])
-  .modifier
   .padding(20)
   .background('white')
   .cornerRadius(12)
-  .build()
+  
 ```
 
 ### Section Component
@@ -1194,10 +1145,9 @@ Section({
   TextField(nameState, 'Full Name'),
   TextField(emailState, 'Email Address')
 ])
-  .modifier
   .padding(16)
   .background('#f9f9f9')
-  .build()
+  
 ```
 
 ### Picker Component
@@ -1252,10 +1202,9 @@ Slider({
     { value: 100, label: 'Max' }
   ]
 })
-  .modifier
   .accentColor('#007AFF')
   .padding(16)
-  .build()
+  
 ```
 
 ### Toggle Component

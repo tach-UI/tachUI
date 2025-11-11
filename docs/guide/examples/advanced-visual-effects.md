@@ -14,12 +14,12 @@ const GlassmorphismCard = () =>
     Text("Glassmorphism Card")
       .font({ size: 24, weight: 'bold' })
       .foregroundColor('white')
-      .build(),
+      ,
     
     Text("Beautiful glass effect with backdrop blur")
       .opacity(0.9)
       .foregroundColor('white')
-      .build(),
+      ,
     
     Button("Learn More")
       .backgroundColor('rgba(255,255,255,0.2)')
@@ -28,14 +28,14 @@ const GlassmorphismCard = () =>
       .cornerRadius(8)
       .padding({ horizontal: 20, vertical: 10 })
       .hoverEffect('highlight')
-      .build()
+      
   ])
   .glassmorphism('medium') // Built-in glassmorphism preset
   .padding(32)
   .cornerRadius(20)
   .border({ width: 1, color: 'rgba(255,255,255,0.2)' })
   .shadow({ x: 0, y: 8, blur: 32, color: 'rgba(0,0,0,0.12)' })
-  .build()
+  
 ```
 
 ## Interactive Hover Gallery
@@ -59,12 +59,12 @@ const ImageCard = ({ src, title }: { src: string, title: string }) =>
         transform: 'scale(1.05)',
         filter: 'brightness(1.1) saturate(1.2)'
       })
-      .build(),
+      ,
     
     Text(title)
       .font({ size: 16, weight: '600' })
       .textAlign('center')
-      .build()
+      
   ])
   .padding(16)
   .backgroundColor('white')
@@ -75,7 +75,7 @@ const ImageCard = ({ src, title }: { src: string, title: string }) =>
     boxShadow: '0 12px 24px rgba(0,0,0,0.15)'
   }, 250)
   .cursor('pointer')
-  .build()
+  
 
 const HoverGallery = () =>
   HStack([
@@ -85,7 +85,7 @@ const HoverGallery = () =>
   ])
   .gap(24)
   .padding(32)
-  .build()
+  
 ```
 
 ## Animated Filter Effects
@@ -120,7 +120,7 @@ const FilterDemo = () => {
       .filter(() => getFilterStyle())
       .transition('filter', 400, 'ease-out')
       .cornerRadius(16)
-      .build(),
+      ,
     
     // Filter control buttons
     HStack([
@@ -132,11 +132,11 @@ const FilterDemo = () => {
       Button("Blur", () => setCurrentFilter('blur'))
     ])
     .gap(12)
-    .build()
+    
   ])
   .padding(32)
   .gap(24)
-  .build()
+  
 }
 ```
 
@@ -158,11 +158,11 @@ const Transform3DCard = () => {
       Text("3D Transform Card")
         .font({ size: 20, weight: 'bold' })
         .foregroundColor('white')
-        .build(),
+        ,
       
       Text(() => `X: ${rotationX()}° Y: ${rotationY()}°`)
         .foregroundColor('rgba(255,255,255,0.8)')
-        .build()
+        
     ])
     .css({ 
       width: '300px', 
@@ -176,7 +176,7 @@ const Transform3DCard = () => {
     .perspective(1000)
     .transform(() => `rotateX(${rotationX()}deg) rotateY(${rotationY()}deg)`)
     .transition('transform', 300, 'ease-out')
-    .build(),
+    ,
     
     // Control buttons
     HStack([
@@ -190,7 +190,7 @@ const Transform3DCard = () => {
       })
     ])
     .gap(8)
-    .build(),
+    ,
     
     // Flip card demo
     VStack()
@@ -202,12 +202,12 @@ const Transform3DCard = () => {
       .perspective(1000)
       .onTap(() => setFlipped(!isFlipped()))
       .cursor('pointer')
-      .build()
+      
   ])
   .padding(32)
   .gap(32)
   .alignItems('center')
-  .build()
+  
 }
 ```
 
@@ -239,26 +239,26 @@ const BlurLoadingDemo = () => {
       Text(() => content())
         .font({ size: 18 })
         .textAlign('center')
-        .build(),
+        ,
       
       Text("This content blurs while loading")
         .opacity(0.7)
         .textAlign('center')
-        .build()
+        
     ])
     .padding(32)
     .backgroundColor('white')
     .cornerRadius(12)
     .blur(() => isLoading() ? 4 : 0)
     .transition('filter', 300, 'ease-out')
-    .build(),
+    ,
     
     // Loading overlay
     VStack([
       Text("Loading...")
         .font({ size: 16, weight: '600' })
         .foregroundColor('#4F46E5')
-        .build()
+        
     ])
     .css({
       position: 'absolute',
@@ -268,16 +268,16 @@ const BlurLoadingDemo = () => {
     })
     .opacity(() => isLoading() ? 1 : 0)
     .transition('opacity', 200)
-    .build(),
+    ,
     
     Button("Simulate Loading", simulateLoading)
       .padding({ horizontal: 20, vertical: 10 })
-      .build()
+      
   ])
   .css({ position: 'relative' })
   .padding(32)
   .gap(24)
-  .build()
+  
 }
 ```
 
@@ -298,7 +298,7 @@ const NavItem = (title: string, isActive = false) => {
         isHovered() ? '#6366F1' : '#6B7280'
       )
       .font({ weight: isActive ? '600' : '500' })
-      .build(),
+      ,
     
     // Animated underline
     VStack()
@@ -307,7 +307,7 @@ const NavItem = (title: string, isActive = false) => {
       .cornerRadius(1)
       .scaleEffect(() => (isActive || isHovered()) ? 1 : 0, 1)
       .transition('transform', 200, 'ease-out')
-      .build()
+      
   ])
   .padding({ horizontal: 16, vertical: 12 })
   .cursor('pointer')
@@ -316,7 +316,7 @@ const NavItem = (title: string, isActive = false) => {
   .hoverWithTransition({
     transform: 'translateY(-2px)'
   }, 150)
-  .build()
+  
 }
 
 const AdvancedNavMenu = () =>
@@ -331,7 +331,7 @@ const AdvancedNavMenu = () =>
   .shadow({ x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' })
   .cornerRadius(12)
   .padding({ horizontal: 8, vertical: 4 })
-  .build()
+  
 ```
 
 ## Performance Tips
@@ -343,24 +343,24 @@ const AdvancedNavMenu = () =>
 VStack()
   .transition('transform', 200) // Hardware accelerated
   .hoverEffect('scale')
-  .build()
+  
 
 // ✅ Good - Combine filters efficiently  
 Image({ src: 'photo.jpg' })
   .filter('blur(2px) brightness(1.1) contrast(1.2)') // Single filter declaration
-  .build()
+  
 
 // ✅ Good - Use presets for common effects
 VStack()
   .glassmorphism('medium') // Optimized preset
-  .build()
+  
 
 // ❌ Avoid - Multiple individual filter calls
 Image({ src: 'photo.jpg' })
   .blur(2)
   .brightness(1.1)
   .contrast(1.2) // Creates multiple filter declarations
-  .build()
+  
 ```
 
 ### Hardware Acceleration
@@ -370,7 +370,7 @@ Image({ src: 'photo.jpg' })
 VStack()
   .css({ willChange: 'transform' }) // Hint to browser
   .transform('translateZ(0)') // Force compositing layer
-  .build()
+  
 ```
 
 These examples demonstrate how tachUI's advanced visual effects can create modern, engaging user interfaces with smooth animations and professional polish. The combination of SwiftUI-style APIs with modern CSS capabilities provides both developer ergonomics and high performance.

@@ -298,7 +298,6 @@ const cardActions = Button("Edit", editItem)
 // Responsive concatenation for mobile
 const mobileNavItem = Image(icon, { width: 24, height: 24 })
   .concat(Text(label))
-  .modifier
   .responsive({
     mobile: { flexDirection: 'column', fontSize: 12 },
     desktop: { flexDirection: 'row', fontSize: 16 }
@@ -380,7 +379,6 @@ const RichText = (content: string) => {
 ```typescript
 const styledContent = Text("Important: ")
   .concat(Text("Read this carefully"))
-  .modifier
   .padding(16)
   .backgroundColor('#fff3cd')
   .border('1px solid #ffeaa7')

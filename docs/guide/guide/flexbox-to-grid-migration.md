@@ -40,13 +40,12 @@ const CardGrid = VStack([
     Card('Item 6')
   ])
 ])
-  .modifier
   .responsive()
   .small({
     // Mobile: Stack vertically
     css: { 'flex-direction': 'column' }
   })
-  .build()
+  
 ```
 
 **After (LazyVGrid):**
@@ -77,7 +76,6 @@ const ResponsiveLayout = HStack([
   MainContent(),
   RightPanel()
 ])
-  .modifier
   .responsive()
   .small({
     css: {
@@ -95,7 +93,7 @@ const ResponsiveLayout = HStack([
       '& > *:last-child': { 'flex-basis': '300px' }
     }
   })
-  .build()
+  
 ```
 
 **After (Grid):**
@@ -109,7 +107,6 @@ const ResponsiveLayout = Grid({
     ])
   ]
 })
-  .modifier
   .responsive()
   .small({
     // Mobile: Stack vertically, reorder
@@ -126,7 +123,7 @@ const ResponsiveLayout = Grid({
       'grid-template-areas': '"sidebar main right"'
     }
   })
-  .build()
+  
 ```
 
 ## Common Migration Scenarios
@@ -149,7 +146,6 @@ const ProductGallery = VStack([
   ])
   // ... more manual rows
 ])
-  .modifier
   .css({
     '& > *': { 
       display: 'flex',
@@ -165,7 +161,7 @@ const ProductGallery = VStack([
   .medium({
     css: { '& > * > *': { 'flex-basis': 'calc(50% - 8px)' } } // Two columns
   })
-  .build()
+  
 ```
 
 **After (LazyVGrid with automatic layout):**
@@ -175,9 +171,8 @@ const ProductGallery = LazyVGrid({
   spacing: 16,
   children: products.map(product => ProductCard(product))
 })
-  .modifier
   .padding(16)
-  .build()
+  
 ```
 
 ### 2. Dashboard Layout
@@ -187,11 +182,11 @@ const ProductGallery = LazyVGrid({
 const Dashboard = VStack([
   // Header
   HStack([
-    Text('Dashboard').fontSize(28).build(),
+    Text('Dashboard').fontSize(28),
     Spacer(),
     UserMenu()
   ])
-  .padding(16).backgroundColor('#ffffff').build(),
+  .padding(16).backgroundColor('#ffffff'),
   
   // Main content
   HStack([
@@ -200,7 +195,7 @@ const Dashboard = VStack([
       Navigation(),
       QuickActions()
     ])
-    .width(250).backgroundColor('#f8f9fa').build(),
+    .width(250).backgroundColor('#f8f9fa'),
     
     // Content area
     VStack([
@@ -210,17 +205,17 @@ const Dashboard = VStack([
         StatsCard('Revenue', '$45,678'),
         StatsCard('Orders', '1,234')
       ])
-      .marginBottom(20).build(),
+      .marginBottom(20),
       
       // Charts row
       HStack([
-        ChartWidget().flex(2).build(),
-        RecentActivity().flex(1).build()
+        ChartWidget().flex(2),
+        RecentActivity().flex(1)
       ])
     ])
-    .flex(1).padding(16).build()
+    .flex(1).padding(16)
   ])
-  .flex(1).build()
+  .flex(1)
 ])
 ```
 
@@ -230,12 +225,11 @@ const Dashboard = Grid({
   children: [
     GridRow([
       Text('Dashboard')
-        .modifier
         .fontSize(28)
         .gridColumnSpan(4) // Span entire width
         .padding(16)
         .backgroundColor('#ffffff')
-        .build()
+        
     ]),
     
     GridRow([
@@ -244,12 +238,11 @@ const Dashboard = Grid({
         Navigation(),
         QuickActions()
       ])
-      .modifier
       .gridRowSpan(2) // Span multiple rows
       .width(250)
       .backgroundColor('#f8f9fa')
       .padding(16)
-      .build(),
+      ,
       
       // Stats cards
       StatsCard('Users', '12,345'),
@@ -260,9 +253,8 @@ const Dashboard = Grid({
     GridRow([
       null, // Skip sidebar column
       ChartWidget()
-        .modifier
         .gridColumnSpan(2) // Span 2 columns
-        .build(),
+        ,
       
       RecentActivity()
     ])
@@ -275,7 +267,6 @@ const Dashboard = Grid({
 **Before (Flexbox with media queries):**
 ```typescript
 const ImageGallery = HStack([])
-  .modifier
   .css({
     'flex-wrap': 'wrap',
     gap: '12px',
@@ -299,7 +290,7 @@ const ImageGallery = HStack([])
   .large({
     css: { '& img': { 'flex-basis': 'calc(33.333% - 8px)' } }
   })
-  .build()
+  
 ```
 
 **After (LazyVGrid with responsive columns):**
@@ -309,10 +300,9 @@ const ImageGallery = LazyVGrid({
   spacing: 12,
   children: images.map(image => 
     Image({ src: image.url, alt: image.alt })
-      .modifier
       .aspectRatio(1.5, 'fill')
       .cornerRadius(8)
-      .build()
+      
   )
 })
 ```
@@ -327,24 +317,24 @@ const ComplexCard = VStack([
   // Header with avatar and actions
   HStack([
     Image({ src: user.avatar, alt: user.name })
-      .frame(40, 40).cornerRadius(20).build(),
+      .frame(40, 40).cornerRadius(20),
     
     VStack([
-      Text(user.name).fontWeight('bold').build(),
-      Text(user.role).fontSize(12).foregroundColor('#666').build()
+      Text(user.name).fontWeight('bold'),
+      Text(user.role).fontSize(12).foregroundColor('#666')
     ])
-    .flex(1).marginLeft(12).build(),
+    .flex(1).marginLeft(12),
     
     Button({ title: 'Follow' })
   ])
-  .padding(16).build(),
+  .padding(16),
   
   // Main content
   VStack([
-    Text(post.content).marginBottom(12).build(),
+    Text(post.content).marginBottom(12),
     
     post.image && Image({ src: post.image, alt: 'Post image' })
-      .cornerRadius(8).marginBottom(12).build(),
+      .cornerRadius(8).marginBottom(12),
     
     // Actions
     HStack([
@@ -352,10 +342,10 @@ const ComplexCard = VStack([
       Button({ title: '💬 Comment' }),
       Button({ title: '🔄 Share' }),
       Spacer(),
-      Text(post.timestamp).fontSize(12).foregroundColor('#999').build()
+      Text(post.timestamp).fontSize(12).foregroundColor('#999')
     ])
   ])
-  .padding(16).paddingTop(0).build()
+  .padding(16).paddingTop(0)
 ])
 ```
 
@@ -365,20 +355,19 @@ const ComplexCard = Grid({
   children: [
     GridRow([
       Image({ src: user.avatar, alt: user.name })
-        .modifier
         .frame(40, 40)
         .cornerRadius(20)
         .gridArea('avatar')
-        .build(),
+        ,
       
       VStack([
-        Text(user.name).fontWeight('bold').build(),
-        Text(user.role).fontSize(12).foregroundColor('#666').build()
+        Text(user.name).fontWeight('bold'),
+        Text(user.role).fontSize(12).foregroundColor('#666')
       ])
-      .gridArea('userInfo').build(),
+      .gridArea('userInfo'),
       
       Button({ title: 'Follow' })
-        .gridArea('action').build()
+        .gridArea('action')
     ]),
     
     GridRow([
@@ -394,20 +383,18 @@ const ComplexCard = Grid({
           Text(post.timestamp)
         ])
       ])
-      .modifier
       .gridColumnSpan(3)
       .padding(16)
-      .build()
+      
     ])
   ]
 })
-  .modifier
   .css({
     'grid-template-columns': 'auto 1fr auto',
     'grid-template-areas': '"avatar userInfo action" "content content content"',
     gap: '12px 16px'
   })
-  .build()
+  
 ```
 
 ### 2. Masonry-Style Layout Migration
@@ -430,7 +417,6 @@ const MasonryLayout = () => {
       VStack(columnItems.map(item => ItemCard(item)))
     )
   )
-    .modifier
     .responsive()
     .small({ 
       children: () => {
@@ -444,7 +430,7 @@ const MasonryLayout = () => {
         return distributedItems
       }
     })
-    .build()
+    
 }
 ```
 
@@ -455,12 +441,11 @@ const MasonryLayout = LazyVGrid({
   spacing: 16,
   children: items.map(item => ItemCard(item))
 })
-  .modifier
   .css({
     // CSS Grid masonry (when supported)
     'grid-template-rows': 'masonry'
   })
-  .build()
+  
 ```
 
 ## Migration Checklist

@@ -22,19 +22,18 @@ import { Grid, GridRow, Text } from '@tachui/core'
 const BasicGrid = Grid({
   children: [
     GridRow([
-      Text('Header').padding(8).backgroundColor('#f0f0f0').build(),
-      Text('Header 2').padding(8).backgroundColor('#f0f0f0').build()
+      Text('Header').padding(8).backgroundColor('#f0f0f0'),
+      Text('Header 2').padding(8).backgroundColor('#f0f0f0')
     ]),
     GridRow([
-      Text('Content 1').padding(8).build(),
-      Text('Content 2').padding(8).build()
+      Text('Content 1').padding(8),
+      Text('Content 2').padding(8)
     ])
   ]
 })
-  .modifier
   .backgroundColor('#ffffff')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### LazyVGrid
@@ -51,17 +50,16 @@ const CardGrid = LazyVGrid({
   ],
   spacing: 16,
   children: [
-    Text('Card 1').padding(20).backgroundColor('#e3f2fd').cornerRadius(8).build(),
-    Text('Card 2').padding(20).backgroundColor('#f3e5f5').cornerRadius(8).build(),
-    Text('Card 3').padding(20).backgroundColor('#e8f5e8').cornerRadius(8).build(),
-    Text('Card 4').padding(20).backgroundColor('#fff3e0').cornerRadius(8).build(),
-    Text('Card 5').padding(20).backgroundColor('#fce4ec').cornerRadius(8).build(),
-    Text('Card 6').padding(20).backgroundColor('#f1f8e9').cornerRadius(8).build()
+    Text('Card 1').padding(20).backgroundColor('#e3f2fd').cornerRadius(8),
+    Text('Card 2').padding(20).backgroundColor('#f3e5f5').cornerRadius(8),
+    Text('Card 3').padding(20).backgroundColor('#e8f5e8').cornerRadius(8),
+    Text('Card 4').padding(20).backgroundColor('#fff3e0').cornerRadius(8),
+    Text('Card 5').padding(20).backgroundColor('#fce4ec').cornerRadius(8),
+    Text('Card 6').padding(20).backgroundColor('#f1f8e9').cornerRadius(8)
   ]
 })
-  .modifier
   .padding(16)
-  .build()
+  
 ```
 
 ### LazyHGrid
@@ -75,22 +73,21 @@ const HorizontalGallery = LazyHGrid({
   spacing: 12,
   children: [
     VStack([
-      Image({ src: 'image1.jpg', alt: 'Photo 1' }).cornerRadius(8).build(),
-      Text('Photo 1').fontSize(12).build()
+      Image({ src: 'image1.jpg', alt: 'Photo 1' }).cornerRadius(8),
+      Text('Photo 1').fontSize(12)
     ]),
     VStack([
-      Image({ src: 'image2.jpg', alt: 'Photo 2' }).cornerRadius(8).build(),
-      Text('Photo 2').fontSize(12).build()
+      Image({ src: 'image2.jpg', alt: 'Photo 2' }).cornerRadius(8),
+      Text('Photo 2').fontSize(12)
     ]),
     VStack([
-      Image({ src: 'image3.jpg', alt: 'Photo 3' }).cornerRadius(8).build(),
-      Text('Photo 3').fontSize(12).build()
+      Image({ src: 'image3.jpg', alt: 'Photo 3' }).cornerRadius(8),
+      Text('Photo 3').fontSize(12)
     ])
   ]
 })
-  .modifier
   .padding(16)
-  .build()
+  
 ```
 
 ## GridItem Configuration
@@ -151,25 +148,23 @@ const SpanningGrid = LazyVGrid({
   ],
   children: [
     Text('Header')
-      .modifier
       .padding(16)
       .backgroundColor('#2196f3')
       .foregroundColor('#ffffff')
       .gridColumnSpan(4) // Spans all 4 columns
-      .build(),
+      ,
     
     Text('Sidebar')
-      .modifier
       .padding(16)
       .backgroundColor('#4caf50')
       .gridRowSpan(2) // Spans 2 rows
-      .build(),
+      ,
     
-    Text('Content 1').padding(16).backgroundColor('#f0f0f0').build(),
-    Text('Content 2').padding(16).backgroundColor('#f0f0f0').build(),
-    Text('Content 3').padding(16).backgroundColor('#f0f0f0').build(),
-    Text('Content 4').padding(16).backgroundColor('#f0f0f0').build(),
-    Text('Content 5').padding(16).backgroundColor('#f0f0f0').build()
+    Text('Content 1').padding(16).backgroundColor('#f0f0f0'),
+    Text('Content 2').padding(16).backgroundColor('#f0f0f0'),
+    Text('Content 3').padding(16).backgroundColor('#f0f0f0'),
+    Text('Content 4').padding(16).backgroundColor('#f0f0f0'),
+    Text('Content 5').padding(16).backgroundColor('#f0f0f0')
   ]
 })
 ```
@@ -181,22 +176,20 @@ Add section structure to your grids:
 const SectionGrid = LazyVGrid({
   columns: [GridItem.flexible(), GridItem.flexible()],
   header: Text('Featured Items')
-    .modifier
     .fontSize(18)
     .fontWeight('bold')
     .padding(16)
-    .build(),
+    ,
   footer: Text('End of featured items')
-    .modifier
     .fontSize(14)
     .foregroundColor('#666666')
     .padding(16)
-    .build(),
+    ,
   children: [
-    Text('Item 1').padding(12).backgroundColor('#f0f0f0').build(),
-    Text('Item 2').padding(12).backgroundColor('#f0f0f0').build(),
-    Text('Item 3').padding(12).backgroundColor('#f0f0f0').build(),
-    Text('Item 4').padding(12).backgroundColor('#f0f0f0').build()
+    Text('Item 1').padding(12).backgroundColor('#f0f0f0'),
+    Text('Item 2').padding(12).backgroundColor('#f0f0f0'),
+    Text('Item 3').padding(12).backgroundColor('#f0f0f0'),
+    Text('Item 4').padding(12).backgroundColor('#f0f0f0')
   ]
 })
 ```
@@ -212,11 +205,10 @@ const AnimatedGrid = LazyVGrid({
   animations: GridAnimations.fadeIn(250, 50), // Fade in with stagger
   children: items.map(item => 
     Text(item.title)
-      .modifier
       .padding(16)
       .backgroundColor(item.color)
       .cornerRadius(8)
-      .build()
+      
   )
 })
 
@@ -242,11 +234,10 @@ const AccessibleGrid = LazyVGrid({
   ),
   children: products.map(product => 
     Text(product.name)
-      .modifier
       .padding(12)
       .backgroundColor('#f0f0f0')
       .cornerRadius(4)
-      .build()
+      
   )
 })
 
@@ -272,9 +263,9 @@ const StyledGrid = LazyVGrid({
     pattern: 'dots'    // Background pattern
   }),
   children: [
-    Text('Interactive Item 1').padding(12).build(),
-    Text('Interactive Item 2').padding(12).build(),
-    Text('Interactive Item 3').padding(12).build()
+    Text('Interactive Item 1').padding(12),
+    Text('Interactive Item 2').padding(12),
+    Text('Interactive Item 3').padding(12)
   ]
 })
 
@@ -303,12 +294,11 @@ const ResponsiveGrid = LazyVGrid({
   spacing: 16,
   children: items
 })
-  .modifier
   .responsive()
   .small({ padding: 8 })      // Mobile padding
   .medium({ padding: 12 })    // Tablet padding  
   .large({ padding: 16 })     // Desktop padding
-  .build()
+  
 ```
 
 ## Performance Best Practices
@@ -361,16 +351,16 @@ GridAnimations.comprehensive()    // All animations enabled
 const DashboardGrid = Grid({
   children: [
     GridRow([
-      Text('Dashboard').gridColumnSpan(3).fontSize(24).build()
+      Text('Dashboard').gridColumnSpan(3).fontSize(24)
     ]),
     GridRow([
-      Text('Sidebar').gridRowSpan(2).width(200).build(),
-      Text('Main Content').padding(20).build(),
-      Text('Stats').width(150).build()
+      Text('Sidebar').gridRowSpan(2).width(200),
+      Text('Main Content').padding(20),
+      Text('Stats').width(150)
     ]),
     GridRow([
       null, // Skip first column (spanned by sidebar)
-      Text('Footer Content').gridColumnSpan(2).build()
+      Text('Footer Content').gridColumnSpan(2)
     ])
   ]
 })
@@ -386,11 +376,11 @@ const ProductGallery = LazyVGrid({
   children: products.map(product => 
     VStack([
       Image({ src: product.image, alt: product.name })
-        .aspectRatio(1).cornerRadius(12).build(),
-      Text(product.name).fontWeight('bold').build(),
-      Text(`$${product.price}`).foregroundColor('#666666').build()
+        .aspectRatio(1).cornerRadius(12),
+      Text(product.name).fontWeight('bold'),
+      Text(`$${product.price}`).foregroundColor('#666666')
     ])
-    .padding(12).backgroundColor('#ffffff').cornerRadius(8).build()
+    .padding(12).backgroundColor('#ffffff').cornerRadius(8)
   )
 })
 ```
@@ -402,16 +392,15 @@ const Timeline = LazyHGrid({
   spacing: 16,
   children: events.map(event => 
     VStack([
-      Text(event.date).fontSize(12).foregroundColor('#666666').build(),
-      Text(event.title).fontWeight('bold').build(),
-      Text(event.description).fontSize(14).build()
+      Text(event.date).fontSize(12).foregroundColor('#666666'),
+      Text(event.title).fontWeight('bold'),
+      Text(event.description).fontSize(14)
     ])
-    .modifier
     .padding(12)
     .backgroundColor('#f8f9fa')
     .cornerRadius(8)
     .minWidth(200)
-    .build()
+    
   )
 })
 ```

@@ -14,7 +14,7 @@ The `.asHTML()` modifier allows Text components to render HTML content safely wh
 import { Text } from '@tachui/primitives'
 
 // Safe: Basic HTML with default sanitization
-Text('<p>Welcome to <strong>TachUI</strong>!</p>').asHTML().build()
+Text('<p>Welcome to <strong>TachUI</strong>!</p>').asHTML()
 
 // Rich content example
 Text(`
@@ -53,7 +53,7 @@ Text(`
   .border(1, '#E5E5E7')
   .cornerRadius(12)
   .shadow({ x: 0, y: 4, blur: 16, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 ## Security Model
@@ -64,16 +64,16 @@ The `.asHTML()` modifier enforces strict component type restrictions for securit
 
 ```typescript
 // ✅ Allowed: Text components only
-Text('<p>Safe HTML content</p>').asHTML().build()
+Text('<p>Safe HTML content</p>').asHTML()
 
 // ❌ Runtime Error: Other components are blocked
 Button('Click me')
   .asHTML() // Error: AsHTML modifier can only be applied to Text components
-  .build()
+  
 
 VStack({ children: [] })
   .asHTML() // Error: AsHTML modifier can only be applied to Text components
-  .build()
+  
 ```
 
 **Why This Restriction Matters:**
@@ -93,23 +93,23 @@ The modifier includes comprehensive protection against common XSS vectors:
 // Script tags - completely removed
 Text('<script>alert("XSS")</script><p>Safe content</p>')
   .asHTML()
-  .build()
+  
 // Result: '<p>Safe content</p>'
 
 // Event handlers - attributes stripped
 Text('<div onclick="alert(1)" class="safe">Content</div>')
   .asHTML()
-  .build()
+  
 // Result: '<div class="safe">Content</div>'
 
 // JavaScript URLs - removed from href/src attributes
-Text('<a href="javascript:alert(1)">Link</a>').asHTML().build()
+Text('<a href="javascript:alert(1)">Link</a>').asHTML()
 // Result: '<a>Link</a>'
 
 // Dangerous elements - completely removed
 Text('<iframe src="evil.html"></iframe><p>Content</p>')
   .asHTML()
-  .build()
+  
 // Result: '<p>Content</p>'
 ```
 
@@ -146,7 +146,7 @@ Text(userGeneratedContent)
         ALLOW_DATA_ATTR: false,
       }),
   })
-  .build()
+  
 
 // DOMPurify with custom configuration
 const sanitizeRichContent = (html: string) => {
@@ -219,7 +219,7 @@ const sanitizeRichContent = (html: string) => {
 
 Text(blogContent)
   .asHTML({ customSanitizer: sanitizeRichContent })
-  .build()
+  
 ```
 
 #### Custom Tag and Attribute Filtering
@@ -250,7 +250,7 @@ Text(articleContent)
       h3: [], // No additional attributes
     },
   })
-  .build()
+  
 
 // Minimal content (text formatting only)
 Text(commentContent)
@@ -258,7 +258,7 @@ Text(commentContent)
     allowedTags: ['strong', 'em', 'code', 'br'],
     allowedAttributes: {}, // No attributes allowed
   })
-  .build()
+  
 ```
 
 #### Custom Pattern Removal
@@ -278,7 +278,7 @@ Text(templateContent)
       /<customscript.*?<\/customscript>/gi,
     ],
   })
-  .build()
+  
 ```
 
 ### Performance Optimizations
@@ -293,7 +293,7 @@ Text(trustedServerContent)
     customPatterns: [], // Skip custom pattern checks
     __suppressWarnings: true,
   })
-  .build()
+  
 
 // Template content with known structure
 Text(emailTemplate)
@@ -303,7 +303,7 @@ Text(emailTemplate)
     // Skip full DOM validation for performance
     validateDOM: false,
   })
-  .build()
+  
 ```
 
 ## Security Best Practices
@@ -318,7 +318,7 @@ Text(userComment)
     allowedTags: ['p', 'strong', 'em', 'code', 'br'],
     allowedAttributes: {},
   })
-  .build()
+  
 
 // Editorial content - Balanced security
 Text(blogPost)
@@ -340,7 +340,7 @@ Text(blogPost)
         ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
       }),
   })
-  .build()
+  
 
 // Trusted CMS content - Moderate security
 Text(cmsContent)
@@ -353,7 +353,7 @@ Text(cmsContent)
       img: ['src', 'alt', 'width', 'height'],
     },
   })
-  .build()
+  
 
 // Server templates - Minimal security (trusted source)
 Text(serverTemplate)
@@ -361,7 +361,7 @@ Text(serverTemplate)
     skipSanitizer: true,
     __suppressWarnings: true,
   })
-  .build()
+  
 ```
 
 ### 2. Content Security Policy (CSP)
@@ -382,7 +382,7 @@ const cspPolicy = [
 // Then use asHTML() knowing scripts are blocked by CSP
 Text(richContent)
   .asHTML() // Even if sanitization fails, CSP provides backup protection
-  .build()
+  
 ```
 
 ### 3. Input Validation at Source
@@ -408,10 +408,10 @@ const renderSafeContent = (content: string) => {
   if (!validateContentSource(content)) {
     return Text('Content blocked for security reasons')
       .foregroundColor('#FF3B30')
-      .build()
+      
   }
 
-  return Text(content).asHTML().build()
+  return Text(content).asHTML()
 }
 ```
 
@@ -423,7 +423,7 @@ The modifier provides helpful development warnings:
 
 ```typescript
 // In development, this triggers security warnings
-Text('<script>alert(1)</script><p>Content</p>').asHTML().build()
+Text('<script>alert(1)</script><p>Content</p>').asHTML()
 
 // Console output:
 // 🔒 AsHTML Security Warnings
@@ -448,7 +448,7 @@ const testSecurityVectors = () => {
   ]
 
   dangerousInputs.forEach(input => {
-    const result = Text(input).asHTML().build()
+    const result = Text(input).asHTML()
     // Verify that dangerous content is removed/sanitized
     console.assert(
       !result.innerHTML?.includes('alert'),
@@ -531,14 +531,14 @@ const BlogPostComponent = (post: BlogPost) => {
         .fontSize(32)
         .fontWeight('bold')
         .marginBottom(8)
-        .build(),
+        ,
 
       // Published date (safe, no HTML)
       Text(post.publishedAt)
         .fontSize(14)
         .opacity(0.7)
         .marginBottom(24)
-        .build(),
+        ,
 
       // Rich HTML content with security
       Text(post.content)
@@ -547,14 +547,14 @@ const BlogPostComponent = (post: BlogPost) => {
         })
         .fontSize(16)
         .lineHeight(1.6)
-        .build(),
+        ,
     ],
   })
     .padding(24)
     .backgroundColor('#FFFFFF')
     .cornerRadius(8)
     .shadow({ x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
 }
 ```
 
@@ -580,7 +580,7 @@ const CommentComponent = (comment: Comment) => {
   return VStack({
     children: [
       // Author name (plain text, no HTML)
-      Text(comment.author).fontWeight('600').fontSize(14).build(),
+      Text(comment.author).fontWeight('600').fontSize(14),
 
       // User comment (limited HTML, heavily sanitized)
       Text(comment.content)
@@ -590,21 +590,21 @@ const CommentComponent = (comment: Comment) => {
         .fontSize(14)
         .lineHeight(1.4)
         .marginTop(4)
-        .build(),
+        ,
 
       // Timestamp (plain text, no HTML)
       Text(comment.timestamp)
         .fontSize(12)
         .opacity(0.6)
         .marginTop(8)
-        .build(),
+        ,
     ],
   })
     .padding(16)
     .backgroundColor('#F8F9FA')
     .cornerRadius(6)
     .marginBottom(12)
-    .build()
+    
 }
 ```
 
@@ -669,7 +669,7 @@ const EmailPreview = (templateHtml: string) => {
     .fontFamily('system-ui, -apple-system, sans-serif')
     .fontSize(14)
     .lineHeight(1.4)
-    .build()
+    
 }
 ```
 
@@ -681,7 +681,7 @@ const EmailPreview = (templateHtml: string) => {
 
 ```typescript
 // Issue: Empty output
-Text('<div>Content</div>').asHTML().build()
+Text('<div>Content</div>').asHTML()
 // Check: Is 'div' in allowedTags? Default sanitizer may be too restrictive
 
 // Solution: Add explicit allowed tags
@@ -689,28 +689,28 @@ Text('<div>Content</div>')
   .asHTML({
     allowedTags: ['div', 'p', 'span'], // Add div to allowed tags
   })
-  .build()
+  
 ```
 
 #### Development Warnings
 
 ```typescript
 // Issue: Console spam with security warnings
-Text(content).asHTML().build()
+Text(content).asHTML()
 
 // Solution: Suppress warnings for known-safe content
-Text(content).asHTML({ __suppressWarnings: true }).build()
+Text(content).asHTML({ __suppressWarnings: true })
 
 // Or: Fix the content to remove dangerous patterns
 const safeContent = content.replace(/<script.*?<\/script>/gi, '')
-Text(safeContent).asHTML().build()
+Text(safeContent).asHTML()
 ```
 
 #### Performance Issues
 
 ```typescript
 // Issue: Slow rendering with large content
-Text(largeHtmlContent).asHTML().build()
+Text(largeHtmlContent).asHTML()
 
 // Solution: Optimize for trusted content
 Text(largeHtmlContent)
@@ -718,7 +718,7 @@ Text(largeHtmlContent)
     validateDOM: false, // Skip DOM validation
     customPatterns: [], // Skip custom pattern checks
   })
-  .build()
+  
 ```
 
 ## Migration from Other Solutions
@@ -730,7 +730,7 @@ Text(largeHtmlContent)
 element.innerHTML = userContent
 
 // After: Secure asHTML modifier
-Text(userContent).asHTML().build()
+Text(userContent).asHTML()
 ```
 
 ### From Manual Sanitization
@@ -745,7 +745,7 @@ Text(content)
   .asHTML({
     customSanitizer: DOMPurify.sanitize,
   })
-  .build()
+  
 ```
 
 ## Conclusion

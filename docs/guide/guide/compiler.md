@@ -71,20 +71,18 @@ ZStack {
 ```typescript
 // Text with styling
 Text("Hello World")
-  .modifier
   .font("24px")
   .foregroundColor("blue")
   .padding()
-  .build()
+  
 
 // Interactive button
 Button("Click Me")
-  .modifier
   .background("green")
   .foregroundColor("white")
   .cornerRadius(8)
   .onTapGesture(() => handleClick())
-  .build()
+  
 ```
 
 ### Modifiers
@@ -107,23 +105,20 @@ Button("Click Me")
 ```typescript
 VStack {
   Text("Welcome to TachUI")
-    .modifier
     .font("24px")
     .foregroundColor("blue")
     .padding()
-    .build()
+    
   
   Button("Get Started")
-    .modifier
     .background("blue")
     .foregroundColor("white")
     .cornerRadius(8)
     .onTapGesture(() => navigate("/home"))
-    .build()
+    
 }
-.modifier
 .padding()
-.build()
+
 ```
 
 ### Output: Reactive DOM Code
@@ -206,7 +201,7 @@ Compile-time constant evaluation:
 
 ```typescript
 // Input
-Text("Hello").opacity(0.5 + 0.3).build()
+Text("Hello").opacity(0.5 + 0.3)
 
 // Output  
 textElement.style.opacity = 0.8  // Pre-calculated

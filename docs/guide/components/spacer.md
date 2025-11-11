@@ -68,9 +68,8 @@ import { VStack, Text, Button, Spacer } from '@tachui/core'
 VStack({
   children: [
     Text("Card Title")
-      .modifier
       .font({ size: 18, weight: 'bold' })
-      .build(),
+      ,
     
     Text("Card content goes here..."),
     
@@ -79,10 +78,9 @@ VStack({
     Button("Action")
   ]
 })
-.modifier
 .height(300)
 .padding(16)
-.build()
+
 ```
 
 ## Common Patterns
@@ -105,9 +103,8 @@ const Toolbar = () =>
       
       // Center title
       Text("Document.txt")
-        .modifier
         .font({ weight: 'bold' })
-        .build(),
+        ,
       
       Spacer(), // Flexible space
       
@@ -117,11 +114,10 @@ const Toolbar = () =>
     ],
     spacing: 8
   })
-  .modifier
   .padding({ horizontal: 16, vertical: 8 })
   .backgroundColor('white')
   .border({ bottom: { width: 1, color: '#e0e0e0' } })
-  .build()
+  
 ```
 
 ### Center Content
@@ -141,9 +137,8 @@ const CenteredLayout = () =>
           Spacer(), // Left flexible space
           
           Text("Perfectly Centered")
-            .modifier
             .font({ size: 24, weight: 'bold' })
-            .build(),
+            ,
           
           Spacer()  // Right flexible space
         ]
@@ -152,9 +147,8 @@ const CenteredLayout = () =>
       Spacer()   // Bottom flexible space
     ]
   })
-  .modifier
   .css({ minHeight: '100vh' })
-  .build()
+  
 ```
 
 ### Modal Footer
@@ -169,15 +163,13 @@ const Modal = ({ title, content }: { title: string, content: string }) =>
     children: [
       // Header
       Text(title)
-        .modifier
         .font({ size: 20, weight: 'bold' })
-        .build(),
+        ,
       
       // Content
       Text(content)
-        .modifier
         .padding({ vertical: 16 })
-        .build(),
+        ,
       
       Spacer(), // Push buttons to bottom
       
@@ -192,14 +184,13 @@ const Modal = ({ title, content }: { title: string, content: string }) =>
       })
     ]
   })
-  .modifier
   .width(400)
   .height(300)
   .padding(24)
   .backgroundColor('white')
   .cornerRadius(12)
   .shadow({ x: 0, y: 8, blur: 24, color: 'rgba(0,0,0,0.15)' })
-  .build()
+  
 ```
 
 ### Sidebar Layout
@@ -216,9 +207,8 @@ const AppLayout = () =>
       VStack({
         children: [
           Text("Navigation")
-            .modifier
             .font({ size: 18, weight: 'bold' })
-            .build(),
+            ,
           
           Button("Dashboard"),
           Button("Projects"),
@@ -232,26 +222,23 @@ const AppLayout = () =>
         ],
         spacing: 8
       })
-      .modifier
       .width(200)
       .padding(16)
       .backgroundColor('#f5f5f5')
       .css({ minHeight: '100vh' })
-      .build(),
+      ,
       
       // Main content area
       VStack({
         children: [
           Text("Main Content Area")
-            .modifier
             .font({ size: 24, weight: 'bold' })
-            .build()
+            
         ]
       })
-      .modifier
       .padding(24)
       .flexGrow(1) // Takes remaining space
-      .build()
+      
     ]
   })
 ```
@@ -271,9 +258,8 @@ HStack({
     Button("Another Button")
   ]
 })
-.modifier
 .width(300) // Constrained width
-.build()
+
 ```
 
 ## Responsive Spacers
@@ -330,9 +316,8 @@ HStack({
     Spacer(), // 1 part of space
     
     Text("Section 2")
-      .modifier
       .textAlign('center')
-      .build(),
+      ,
     
     Spacer(), // 1 part of space (equal to first)
     
@@ -367,10 +352,9 @@ const ContactForm = () =>
     ],
     spacing: 12
   })
-  .modifier
   .padding(20)
   .maxWidth(400)
-  .build()
+  
 ```
 
 ### List Item Layouts
@@ -388,14 +372,12 @@ const ListItem = ({ title, subtitle, action }: {
       VStack({
         children: [
           Text(title)
-            .modifier
             .font({ weight: 'bold' })
-            .build(),
+            ,
           Text(subtitle)
-            .modifier
             .opacity(0.7)
             .font({ size: 14 })
-            .build()
+            
         ],
         spacing: 4,
         alignment: 'leading'
@@ -404,21 +386,19 @@ const ListItem = ({ title, subtitle, action }: {
       Spacer(), // Flexible space between content and action
       
       Button("Edit", action)
-        .modifier
         .backgroundColor('#4F46E5')
         .foregroundColor('white')
         .cornerRadius(6)
         .padding({ horizontal: 12, vertical: 6 })
-        .build()
+        
     ],
     alignment: 'center'
   })
-  .modifier
   .padding(16)
   .backgroundColor('white')
   .cornerRadius(8)
   .border({ width: 1, color: '#e0e0e0' })
-  .build()
+  
 ```
 
 ## Best Practices
@@ -439,7 +419,7 @@ HStack({
 HStack({
   children: [
     Text("Start"),
-    VStack().width(200).build(), // Fixed width, not flexible
+    VStack().width(200), // Fixed width, not flexible
     Text("End")
   ]
 })
@@ -476,9 +456,8 @@ HStack({
     Text("Main Content"),
     Spacer(), // Creates clear visual separation
     Button("Secondary Action")
-      .modifier
       .aria({ label: "Secondary action button" })
-      .build()
+      
   ]
 })
 ```

@@ -21,12 +21,11 @@ Transform modifiers provide SwiftUI-style positioning and transformation capabil
 
 ```typescript
 Text("Interactive Content")
-  .modifier
   .offset(10, -5)                    // Position offset
   .scaleEffect(() => isHovered() ? 1.05 : 1.0)  // Reactive scaling
   .rotationEffect(45, 'topLeading')  // Rotation with anchor
   .clipped()                         // Clip overflow
-  .build()
+  
 ```
 
 ### Layout & Sizing Modifiers
@@ -42,11 +41,10 @@ Advanced layout modifiers for responsive design:
 
 ```typescript
 Image('/hero-image.jpg')
-  .modifier
   .aspectRatio(16/9, 'fit')     // 16:9 aspect ratio
   .frame({ maxWidth: 600 })     // Responsive width
   .fixedSize(false, true)       // Allow horizontal flex
-  .build()
+  
 ```
 
 ### Visual Effects Modifiers
@@ -65,21 +63,19 @@ Complete CSS filter effects system:
 
 ```typescript
 Image('/photo.jpg')
-  .modifier
   .blur(() => isLoading() ? 3 : 0)
   .brightness(() => isDarkMode() ? 0.8 : 1.0)
   .saturation(() => isDisabled() ? 0.3 : 1.0)
   .transition({ property: 'all', duration: 300 })
-  .build()
+  
 
 // Glassmorphism effect
 VStack({ children })
-  .modifier
   .backgroundColor('rgba(255, 255, 255, 0.1)')
   .blur(10)
   .border(1, 'rgba(255, 255, 255, 0.2)')
   .cornerRadius(16)
-  .build()
+  
 ```
 
 ### Shape & Clipping Modifiers
@@ -95,14 +91,13 @@ Advanced shape clipping and overlay system:
 
 ```typescript
 VStack({ children })
-  .modifier
   .clipShape('circle')           // Circular clipping
   .overlay(
-    Text("Badge").foregroundColor('white').build(),
+    Text("Badge").foregroundColor('white'),
     'topTrailing'
   )
   .shadow({ x: 0, y: 4, radius: 8, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 ### Advanced Gesture & Interaction Modifiers
@@ -119,7 +114,6 @@ Comprehensive interaction system beyond basic events:
 
 ```typescript
 Button('Action Button', handleAction)
-  .modifier
   .onLongPressGesture({
     minimumDuration: 500,
     perform: () => showContextMenu()
@@ -127,7 +121,7 @@ Button('Action Button', handleAction)
   .keyboardShortcut('Enter', [], () => activate())
   .focused(() => isFocused())
   .focusable(true, ['activate', 'edit'])
-  .build()
+  
 ```
 
 ## Reactive Modifier System
@@ -139,12 +133,11 @@ const [isActive, setIsActive] = createSignal(false)
 const [scale, setScale] = createSignal(1.0)
 
 Button('Interactive', () => setIsActive(!isActive()))
-  .modifier
   .scaleEffect(() => scale())                    // Reactive scaling
   .backgroundColor(() => isActive() ? '#007AFF' : '#F0F0F0')
   .opacity(() => isActive() ? 1.0 : 0.7)
   .transition({ property: 'all', duration: 200 })
-  .build()
+  
 ```
 
 ## Modifier Composition & Performance
@@ -155,14 +148,13 @@ Modifiers can be chained in any order and are applied efficiently:
 
 ```typescript
 Text('Styled Text')
-  .modifier
   .padding(16)                    // Layout
   .backgroundColor('#FFFFFF')     // Appearance
   .cornerRadius(8)               // Shape
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
   .onTap(handleTap)              // Interaction
   .transition({ duration: 200 }) // Animation
-  .build()
+  
 ```
 
 ### Performance Optimization
@@ -209,15 +201,14 @@ For projects using basic modifiers, the advanced system is fully backward compat
 
 ```typescript
 // Basic modifiers (still supported)
-Text('Hello').padding(16).build()
+Text('Hello').padding(16)
 
 // Advanced modifiers (new capabilities)
 Text('Hello')
-  .modifier
   .padding(16)
   .scaleEffect(() => isHovered() ? 1.05 : 1.0)
   .blur(() => isLoading() ? 2 : 0)
-  .build()
+  
 ```
 
 ## Related Documentation

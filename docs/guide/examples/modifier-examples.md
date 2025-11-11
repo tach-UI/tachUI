@@ -20,7 +20,7 @@ const primaryButton = Button('Get Started', () => console.log('Getting started!'
   .cornerRadius(8)
   .transition('all', 200)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0, 122, 255, 0.3)' })
-  .build()
+  
 ```
 
 ### Card Component
@@ -36,7 +36,7 @@ const productCard = VStack({
     })
     .frame({ width: '100%', height: 200 })
     .cornerRadius(8)
-    .build(),
+    ,
     
     VStack({
       children: [
@@ -44,24 +44,24 @@ const productCard = VStack({
           .fontSize(18)
           .fontWeight('bold')
           .foregroundColor('#1a1a1a')
-          .build(),
+          ,
         
         Text("High-quality wireless headphones with noise cancellation")
           .fontSize(14)
           .foregroundColor('#666')
           .lineHeight(1.4)
-          .build(),
+          ,
         
         Text("$299.99")
           .fontSize(20)
           .fontWeight('bold')
           .foregroundColor('#007AFF')
-          .build()
+          
       ],
       spacing: 8
     })
     .padding(16)
-    .build()
+    
   ],
   spacing: 0
 })
@@ -70,7 +70,7 @@ const productCard = VStack({
 .shadow({ x: 0, y: 4, radius: 12, color: 'rgba(0,0,0,0.1)' })
 .border(1, '#f0f0f0')
 .frame({ width: 300 })
-.build()
+
 ```
 
 ## Advanced Modifier Examples
@@ -86,7 +86,7 @@ const preciseCard = Text('Precisely padded content')
   .margin({ top: 8, right: 12, bottom: 16, left: 12 })
   .backgroundColor('#f8f9fa')
   .cornerRadius(8)
-  .build()
+  
 
 // Button row with consistent styling
 const buttonRow = HStack({
@@ -96,19 +96,19 @@ const buttonRow = HStack({
       .backgroundColor('#6c757d')
       .foregroundColor('#ffffff')
       .cornerRadius(6)
-      .build(),
+      ,
     
     Button('Confirm', () => {})
       .padding(20, 10) // More prominent button
       .backgroundColor('#007AFF')
       .foregroundColor('#ffffff')
       .cornerRadius(6)
-      .build()
+      
   ],
   spacing: 12
 })
 .padding(16)
-.build()
+
 ```
 
 ### Animation and Transition Examples
@@ -131,7 +131,7 @@ const animatedCard = Text('Animated content')
   .padding(20)
   .cornerRadius(12)
   .shadow({ x: 0, y: 4, radius: 16, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 
 // Simple animations
 const fadeInBox = Text('Fade in animation')
@@ -139,21 +139,21 @@ const fadeInBox = Text('Fade in animation')
   .backgroundColor('#e6f3ff')
   .padding(16)
   .cornerRadius(8)
-  .build()
+  
 
 const slideInBox = Text('Slide in from left')
   .animation('slideInLeft', 400)
   .backgroundColor('#f0f8ff')
   .padding(16)
   .cornerRadius(8)
-  .build()
+  
 
 const scaleInBox = Text('Scale in animation')
   .animation('scaleIn', 300)
   .backgroundColor('#fff5f5')
   .padding(16)
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### Reactive Modifiers with Signals
@@ -187,7 +187,7 @@ const reactiveCard = Text('Reactive themed card')
   .padding(20)
   .cornerRadius(12)
   .onTap(() => setIsActive(!isActive()))
-  .build()
+  
 
 // Progress bar with reactive width
 const progressBar = VStack()
@@ -195,13 +195,13 @@ const progressBar = VStack()
   .backgroundColor('#007AFF')
   .cornerRadius(4)
   .transition('width', 300, 'ease-out')
-  .build()
+  
 
 const progressContainer = VStack({ children: [progressBar] })
   .frame({ width: '100%', height: 8 })
   .backgroundColor('#e0e0e0')
   .cornerRadius(4)
-  .build()
+  
 ```
 
 ### Preset Modifier Combinations
@@ -215,45 +215,45 @@ const cardWithStyling = Text('Card with preset styling')
   .backgroundColor('#ffffff')
   .cornerRadius(8)
   .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 
 const primaryButton = Button('Primary Button', () => {})
   .backgroundColor('#007AFF')
   .foregroundColor('#ffffff')
   .padding(12, 8)
   .cornerRadius(6)
-  .build()
+  
 
 const styledInput = TextField({ placeholder: 'Enter text...' })
   .padding(12)
   .border(1, '#e0e0e0')
   .cornerRadius(6)
   .fontSize(16)
-  .build()
+  
 
 // Typography styles
 const titleText = Text("Page Title")
   .fontSize(28)
   .fontWeight('bold')
   .foregroundColor('#1a1a1a')
-  .build()
+  
 
 const headingText = Text("Section Heading")
   .fontSize(20)
   .fontWeight('600')
   .foregroundColor('#333333')
-  .build()
+  
 
 const bodyText = Text("Regular body text content goes here.")
   .fontSize(16)
   .lineHeight(1.5)
   .foregroundColor('#666666')
-  .build()
+  
 
 const captionText = Text("Small caption or helper text")
   .fontSize(12)
   .foregroundColor('#999999')
-  .build()
+  
 ```
 
 ## Interactive Examples
@@ -271,7 +271,7 @@ function ToggleSwitch(props: { label: string; initialValue?: boolean }) {
       Text(props.label)
         .fontSize(16)
         .foregroundColor('#1a1a1a')
-        .build(),
+        ,
       
       Toggle({ 
         isOn: isOn(), 
@@ -282,7 +282,7 @@ function ToggleSwitch(props: { label: string; initialValue?: boolean }) {
     alignment: 'center'
   })
   .padding(12, 12)
-  .build()
+  
   
   return toggle
 }
@@ -298,7 +298,7 @@ const settingsPanel = VStack({
 .backgroundColor('#f8f9fa')
 .cornerRadius(8)
 .padding(16)
-.build()
+
 ```
 
 ### Input Form
@@ -325,13 +325,13 @@ function LoginForm() {
         .fontWeight('bold')
         .foregroundColor('#1a1a1a')
         .margin({ bottom: 8 })
-        .build(),
+        ,
       
       Text("Sign in to your account")
         .fontSize(16)
         .foregroundColor('#666')
         .margin({ bottom: 24 })
-        .build(),
+        ,
       
       TextField({
         type: 'email',
@@ -346,7 +346,7 @@ function LoginForm() {
       .frame({ width: '100%' })
       .transition('border-color', 200)
       .margin({ bottom: 16 })
-      .build(),
+      ,
       
       TextField({
         type: 'password',
@@ -361,7 +361,7 @@ function LoginForm() {
       .frame({ width: '100%' })
       .transition('border-color', 200)
       .margin({ bottom: 24 })
-      .build(),
+      ,
       
       Button(
         () => isLoading() ? 'Signing in...' : 'Sign In',
@@ -376,7 +376,7 @@ function LoginForm() {
       .frame({ width: '100%' })
       .disabled(isLoading())
       .transition('all', 200)
-      .build()
+      
     ],
     spacing: 0,
     alignment: 'center'
@@ -386,7 +386,7 @@ function LoginForm() {
   .cornerRadius(12)
   .shadow({ x: 0, y: 8, radius: 24, color: 'rgba(0,0,0,0.1)' })
   .frame({ maxWidth: 400 })
-  .build()
+  
 }
 ```
 
@@ -406,20 +406,20 @@ function StatCard(props: { title: string; value: string; change: string; trend: 
         .fontSize(14)
         .foregroundColor('#666')
         .fontWeight('500')
-        .build(),
+        ,
       
       Text(props.value)
         .fontSize(32)
         .fontWeight('bold')
         .foregroundColor('#1a1a1a')
         .margin({ vertical: 8 })
-        .build(),
+        ,
       
       Text(props.change)
         .fontSize(14)
         .foregroundColor(trendColor)
         .fontWeight('500')
-        .build()
+        
     ],
     spacing: 0,
     alignment: 'leading'
@@ -430,7 +430,7 @@ function StatCard(props: { title: string; value: string; change: string; trend: 
   .border(1, '#f0f0f0')
   .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.08)' })
   .frame({ minWidth: 200 })
-  .build()
+  
 }
 
 const dashboard = VStack({
@@ -439,7 +439,7 @@ const dashboard = VStack({
       .fontSize(28)
       .fontWeight('bold')
       .margin({ bottom: 24 })
-      .build(),
+      ,
     
     // Stats grid (would need CSS Grid or custom layout for real grid)
     HStack({
@@ -457,7 +457,7 @@ const dashboard = VStack({
 .padding(24)
 .backgroundColor('#f8f9fa')
 .frame({ minHeight: '100vh' })
-.build()
+
 ```
 
 ### Navigation Bar
@@ -473,12 +473,12 @@ function NavigationBar() {
         .fontSize(20)
         .fontWeight('bold')
         .foregroundColor('#007AFF')
-        .build(),
+        ,
       
       // Spacer (would need flex-grow implementation)
       Text('')
         .frame({ flex: 1 })
-        .build(),
+        ,
       
       // Navigation links
       HStack({
@@ -490,7 +490,7 @@ function NavigationBar() {
             .padding({ horizontal: 12, vertical: 8 })
             .cornerRadius(4)
             .transition('background-color', 200)
-            .build(),
+            ,
           
           Text("About")
             .fontSize(16)
@@ -499,7 +499,7 @@ function NavigationBar() {
             .padding({ horizontal: 12, vertical: 8 })
             .cornerRadius(4)
             .transition('background-color', 200)
-            .build(),
+            ,
           
           Text("Contact")
             .fontSize(16)
@@ -508,7 +508,7 @@ function NavigationBar() {
             .padding({ horizontal: 12, vertical: 8 })
             .cornerRadius(4)
             .transition('background-color', 200)
-            .build(),
+            ,
           
           Button('Get Started', () => {})
             .backgroundColor('#007AFF')
@@ -518,7 +518,7 @@ function NavigationBar() {
             .padding({ horizontal: 16, vertical: 8 })
             .cornerRadius(6)
             .transition('all', 200)
-            .build()
+            
         ],
         spacing: 8
       })
@@ -528,7 +528,7 @@ function NavigationBar() {
   .backgroundColor('#ffffff')
   .padding({ horizontal: 24, vertical: 16 })
   .border({ bottom: 1, color: '#f0f0f0' })
-  .build()
+  
 }
 ```
 
@@ -548,14 +548,14 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
           Text("Confirm Action")
             .fontSize(20)
             .fontWeight('bold')
-            .build(),
+            ,
           
           Button('×', props.onClose)
             .fontSize(24)
             .backgroundColor('transparent')
             .padding(4)
             .cornerRadius(4)
-            .build()
+            
         ],
         alignment: 'center'
       }),
@@ -566,7 +566,7 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
         .foregroundColor('#666')
         .lineHeight(1.5)
         .margin({ vertical: 16 })
-        .build(),
+        ,
       
       // Footer
       HStack({
@@ -578,7 +578,7 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
             .padding({ horizontal: 20, vertical: 10 })
             .cornerRadius(6)
             .transition('all', 200)
-            .build(),
+            ,
           
           Button('Delete', () => {})
             .backgroundColor('#dc3545')
@@ -587,7 +587,7 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
             .padding({ horizontal: 20, vertical: 10 })
             .cornerRadius(6)
             .transition('all', 200)
-            .build()
+            
         ],
         spacing: 12
       })
@@ -599,7 +599,7 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
   .padding(24)
   .shadow({ x: 0, y: 10, radius: 30, color: 'rgba(0,0,0,0.3)' })
   .frame({ maxWidth: 400 })
-  .build()
+  
   
   if (!props.isOpen) return null
   
@@ -611,7 +611,7 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
         .frame({ width: '100vw', height: '100vh' })
         .animation('fadeIn', 200)
         .onTap(props.onClose)
-        .build(),
+        ,
       
       // Modal
       modalContent
@@ -619,7 +619,7 @@ function AnimatedModal(props: { isOpen: boolean; onClose: () => void }) {
     alignment: 'center'
   })
   .frame({ width: '100vw', height: '100vh' })
-  .build()
+  
 }
 
 // Usage
@@ -633,7 +633,7 @@ function App() {
         .foregroundColor('#ffffff')
         .padding(12)
         .cornerRadius(8)
-        .build(),
+        ,
       
       AnimatedModal({
         isOpen: showModal(),
@@ -658,7 +658,7 @@ function ResponsiveCardGrid(props: { items: Array<{ title: string; description: 
             .fontSize(18)
             .fontWeight('bold')
             .margin({ bottom: 8 })
-            .build(),
+            ,
           
           Text(item.description)
             .fontSize(14)
@@ -756,7 +756,7 @@ const responsiveCard = VStack({
         minHeight: 150
       })
       .cornerRadius(8)
-      .build(),
+      ,
     
     Text('Responsive content card')
       .typography({
@@ -766,21 +766,21 @@ const responsiveCard = VStack({
         letterSpacing: '0.5px'
       })
       .margin({ top: 16, horizontal: 12 })
-      .build()
+      
   ]
 })
 .backgroundColor('#ffffff')
 .cornerRadius(12)
 .margin({ all: 16 })
 .maxWidth(600)
-.build()
+
 
 // Flexbox layout with modern styling
 const flexContainer = VStack({
   children: [
-    Text('Header').typography({ size: 24, weight: 'bold' }).build(),
-    Text('Content').flexGrow(1).build(),
-    Text('Footer').typography({ size: 14, color: '#666' }).build()
+    Text('Header').typography({ size: 24, weight: 'bold' }),
+    Text('Content').flexGrow(1),
+    Text('Footer').typography({ size: 14, color: '#666' })
   ]
 })
 .display('flex')
@@ -789,7 +789,7 @@ const flexContainer = VStack({
 .gap(16)
 .minHeight('100vh')
 .padding({ all: 24 })
-.build()
+
 ```
 
 ### Comprehensive Border Examples
@@ -803,7 +803,7 @@ const basicCard = Text('Basic border card')
   .border(1, '#e0e0e0', 'solid')     // Simple 1px solid border
   .backgroundColor('#f9f9f9')
   .cornerRadius(8)
-  .build()
+  
 
 // 2. Individual border sides
 const customCard = VStack({ children: [...] })
@@ -816,7 +816,7 @@ const customCard = VStack({ children: [...] })
   })
   .backgroundColor('#ffffff')
   .cornerRadius(8)
-  .build()
+  
 
 // 3. SwiftUI terminology (LTR-aware)
 const swiftUICard = Text('SwiftUI-style borders')
@@ -829,7 +829,7 @@ const swiftUICard = Text('SwiftUI-style borders')
   })
   .backgroundColor('#f8f9fa')
   .cornerRadius(6)
-  .build()
+  
 
 // 4. Shorthand properties
 const shorthandCard = VStack({ children: [...] })
@@ -840,7 +840,7 @@ const shorthandCard = VStack({ children: [...] })
   })
   .backgroundColor('#ffffff')
   .cornerRadius(12)
-  .build()
+  
 
 // 5. Border direction functions
 const functionalCard = Text('Direction functions')
@@ -850,7 +850,7 @@ const functionalCard = Text('Direction functions')
   .borderLeading(4, '#34C759')              // SwiftUI leading border
   .backgroundColor('#f9f9f9')
   .cornerRadius(8)
-  .build()
+  
 
 // 6. Advanced features with border images
 const gradientBorderCard = VStack({ children: [...] })
@@ -863,7 +863,7 @@ const gradientBorderCard = VStack({ children: [...] })
   })
   .backgroundColor('#ffffff')
   .cornerRadius(12)
-  .build()
+  
 
 // 7. Integrated corner radius with borders
 const integratedCard = Text('Border with integrated radius')
@@ -880,7 +880,7 @@ const integratedCard = Text('Border with integrated radius')
     }
   })
   .backgroundColor('#f8f9fa')
-  .build()
+  
 
 // 8. Reactive borders with Signals
 const [isActive, setIsActive] = createSignal(false)
@@ -898,7 +898,7 @@ const reactiveCard = Text('Reactive border card')
   .backgroundColor(() => isActive() ? '#f0f8ff' : '#ffffff')
   .cornerRadius(8)
   .onTap(() => setIsActive(!isActive()))
-  .build()
+  
 
 // 9. Typography with emphasis borders
 const styledQuote = Text('"Design is not just what it looks like. Design is how it works." - Steve Jobs')
@@ -916,7 +916,7 @@ const styledQuote = Text('"Design is not just what it looks like. Design is how 
   .borderLeft(4, '#3498db')                    // Left accent border
   .backgroundColor('#f8f9fa')
   .cornerRadius(8)
-  .build()
+  
 
 // 10. Call-to-action with complex borders
 const ctaCard = VStack({
@@ -929,7 +929,7 @@ const ctaCard = VStack({
         letterSpacing: '1px',
         color: '#e74c3c'
       })
-      .build(),
+      ,
     
     Text('Get 50% off your first purchase')
       .typography({
@@ -938,7 +938,7 @@ const ctaCard = VStack({
         color: '#2c3e50'
       })
       .margin({ vertical: 12 })
-      .build()
+      
   ]
 })
 .padding({ all: 24 })
@@ -950,7 +950,7 @@ const ctaCard = VStack({
 })
 .cornerRadius(8)
 .shadow({ x: 0, y: 4, radius: 12, color: 'rgba(231, 76, 60, 0.2)' })
-.build()
+
 ```
 
 ## Visual Effects & Backdrop Filter Examples
@@ -965,13 +965,13 @@ const modernGlassmorphismCard = VStack({
       .fontSize(20)
       .fontWeight('600')
       .foregroundColor('#ffffff')
-      .build(),
+      ,
       
     Text('Built-in browser compatibility and fallbacks')
       .fontSize(14)
       .foregroundColor('rgba(255, 255, 255, 0.8)')
       .marginTop(8)
-      .build()
+      
   ]
 })
 .backdropFilter(
@@ -987,7 +987,7 @@ const modernGlassmorphismCard = VStack({
 .cornerRadius(16)
 .border(1, 'rgba(255, 255, 255, 0.2)')
 .shadow({ x: 0, y: 8, radius: 20, color: 'rgba(0, 0, 0, 0.15)' })
-.build()
+
 
 // Glassmorphism presets
 const lightGlassCard = Text('Light Glass Effect')
@@ -995,7 +995,7 @@ const lightGlassCard = Text('Light Glass Effect')
   .backgroundColor('rgba(255, 255, 255, 0.08)')
   .padding(16)
   .cornerRadius(12)
-  .build()
+  
 
 const heavyGlassCard = Text('Heavy Glass Effect')
   .glassmorphism('heavy') // Strong glassmorphism for emphasis
@@ -1003,7 +1003,7 @@ const heavyGlassCard = Text('Heavy Glass Effect')
   .padding(20)
   .cornerRadius(16)
   .border(1, 'rgba(255, 255, 255, 0.25)')
-  .build()
+  
 
 // ColorAsset integration
 import { Colors } from './assets'
@@ -1015,7 +1015,7 @@ const themedGlassCard = Text('Themed Glass Effect')
   .backgroundColor('rgba(255, 255, 255, 0.1)')
   .padding(20)
   .cornerRadius(14)
-  .build()
+  
 
 // Complex backdrop filters
 const advancedBackdropCard = VStack({
@@ -1023,7 +1023,7 @@ const advancedBackdropCard = VStack({
     Text('Advanced Backdrop Effects')
       .fontSize(18)
       .fontWeight('600')
-      .build()
+      
   ]
 })
 .backdropFilter({
@@ -1042,7 +1042,7 @@ const advancedBackdropCard = VStack({
 .padding(24)
 .cornerRadius(16)
 .border(1, 'rgba(255, 255, 255, 0.18)')
-.build()
+
 
 // CSS string format for custom effects
 const customBackdropCard = Text('Custom Backdrop Filter')
@@ -1050,7 +1050,7 @@ const customBackdropCard = Text('Custom Backdrop Filter')
   .backgroundColor('rgba(255, 255, 255, 0.1)')
   .padding(18)
   .cornerRadius(12)
-  .build()
+  
 ```
 
 ### Interactive Glass Effects
@@ -1071,7 +1071,7 @@ const interactiveGlassButton = Text('Interactive Glass')
   .cursor('pointer')
   .transition('all', 200, 'ease-out')
   .onTap(() => setIsActive(!isActive()))
-  .build()
+  
 
 // Hover-responsive glass effect
 const [isHovered, setIsHovered] = createSignal(false)
@@ -1080,7 +1080,7 @@ const hoverGlassCard = VStack({
     Text('Hover for Enhanced Glass')
       .fontSize(16)
       .fontWeight('500')
-      .build()
+      
   ]
 })
 .backdropFilter(
@@ -1104,7 +1104,7 @@ const hoverGlassCard = VStack({
 .transition('all', 300, 'cubic-bezier(0.4, 0, 0.2, 1)')
 .onHover(setIsHovered)
 .cursor('pointer')
-.build()
+
 ```
 
 ### Glassmorphism Navigation
@@ -1113,9 +1113,9 @@ const hoverGlassCard = VStack({
 // Glass navigation bar
 const glassNavigation = HStack({
   children: [
-    Text('Home').padding({ horizontal: 16, vertical: 8 }).build(),
-    Text('About').padding({ horizontal: 16, vertical: 8 }).build(),
-    Text('Contact').padding({ horizontal: 16, vertical: 8 }).build()
+    Text('Home').padding({ horizontal: 16, vertical: 8 }),
+    Text('About').padding({ horizontal: 16, vertical: 8 }),
+    Text('Contact').padding({ horizontal: 16, vertical: 8 })
   ],
   spacing: 12
 })
@@ -1130,7 +1130,7 @@ const glassNavigation = HStack({
 .transform('translateX(-50%)')
 .shadow({ x: 0, y: 4, radius: 16, color: 'rgba(0, 0, 0, 0.08)' })
 .zIndex(100)
-.build()
+
 
 // Glass modal overlay
 const glassModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
@@ -1144,21 +1144,21 @@ const glassModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
             .fontSize(20)
             .fontWeight('600')
             .marginBottom(16)
-            .build(),
+            ,
             
           Text('Beautiful backdrop blur with automatic fallbacks')
             .fontSize(14)
             .opacity(0.8)
             .textAlign('center')
             .marginBottom(20)
-            .build(),
+            ,
             
           Button('Close', onClose)
             .backgroundColor('#007AFF')
             .foregroundColor('#ffffff')
             .padding({ horizontal: 20, vertical: 10 })
             .cornerRadius(8)
-            .build()
+            
         ]
       })
       .glassmorphism('heavy')
@@ -1168,7 +1168,7 @@ const glassModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
       .border(1, 'rgba(255, 255, 255, 0.2)')
       .shadow({ x: 0, y: 16, radius: 32, color: 'rgba(0, 0, 0, 0.2)' })
       .maxWidth(400)
-      .build()
+      
     ]
   })
   .position('fixed')
@@ -1183,7 +1183,7 @@ const glassModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void 
   .onTap((e) => {
     if (e.target === e.currentTarget) onClose()
   })
-  .build()
+  
 }
 ```
 
@@ -1201,7 +1201,7 @@ const legacyGlassmorphismCard = VStack({
         weight: '600',
         color: 'white'
       })
-      .build(),
+      ,
     
     Text('Beautiful frosted glass effect using modern CSS')
       .typography({
@@ -1210,7 +1210,7 @@ const legacyGlassmorphismCard = VStack({
         lineHeight: 1.5
       })
       .margin({ top: 8 })
-      .build()
+      
   ]
 })
 .padding({ all: 32 })
@@ -1222,14 +1222,14 @@ const legacyGlassmorphismCard = VStack({
   boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)'
 })
 .cornerRadius(16)
-.build()
+
 
 // Container queries for responsive design
 const containerQueryCard = VStack({
   children: [
     Text('Responsive with Container Queries')
       .typography({ size: 18, weight: '600' })
-      .build()
+      
   ]
 })
 .padding({ all: 16 })
@@ -1248,7 +1248,7 @@ const containerQueryCard = VStack({
     gap: '16px'
   }
 })
-.build()
+
 ```
 
 ### CSS Custom Properties and Theming
@@ -1275,14 +1275,14 @@ function ThemedComponent() {
   })
   .padding({ horizontal: 20, vertical: 12 })
   .cornerRadius(8)
-  .build()
+  
   
   const themedCard = VStack({
     children: [
       Text('CSS Variables Demo')
         .typography({ size: 20, weight: 'bold' })
         .css({ color: 'var(--text-color)' })
-        .build(),
+        ,
       
       themedButton
     ],
@@ -1299,7 +1299,7 @@ function ThemedComponent() {
   .padding({ all: 24 })
   .border(1, 'transparent')
   .cornerRadius(12)
-  .build()
+  
   
   return themedCard
 }
@@ -1314,7 +1314,7 @@ const gridGallery = VStack({
     Text('Photo Gallery')
       .typography({ size: 24, weight: 'bold', align: 'center' })
       .margin({ bottom: 24 })
-      .build(),
+      ,
     
     VStack({ children: [] }) // Grid container
       .css({
@@ -1326,7 +1326,7 @@ const gridGallery = VStack({
         aspectRatio: 'auto',
         containerType: 'inline-size'
       })
-      .build()
+      
   ]
 })
 .padding({ all: 32 })
@@ -1335,14 +1335,14 @@ const gridGallery = VStack({
   scrollSnapType: 'y mandatory',
   scrollBehavior: 'smooth'
 })
-.build()
+
 
 // Sticky navigation with scroll effects
 const stickyNav = VStack({
   children: [
     Text('Navigation')
       .typography({ size: 18, weight: '600', color: 'white' })
-      .build()
+      
   ]
 })
 .padding({ horizontal: 24, vertical: 16 })
@@ -1355,7 +1355,7 @@ const stickyNav = VStack({
   background: 'rgba(0, 122, 255, 0.9)',
   borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
 })
-.build()
+
 ```
 
 ### Performance and Accessibility
@@ -1370,7 +1370,7 @@ const accessibleCard = VStack({
         weight: '600',
         color: '#1a1a1a'
       })
-      .build()
+      
   ]
 })
 .padding({ all: 20 })
@@ -1406,7 +1406,7 @@ const accessibleCard = VStack({
 })
 .onTap(() => console.log('Card clicked'))
 .accessibilityLabel('Interactive content card')
-.build()
+
 ```
 
 These examples demonstrate the power and flexibility of TachUI's modifier system for creating complex, interactive, and responsive user interfaces with a clean, declarative API.

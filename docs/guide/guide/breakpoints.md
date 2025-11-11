@@ -27,7 +27,6 @@ Use breakpoint keys in responsive objects:
 import { Text } from '@tachui/core'
 
 Text("Responsive Text")
-  .modifier
   .responsive({
     base: { fontSize: 16, padding: 12 },    // Mobile
     sm: { fontSize: 18, padding: 14 },      // Large phone
@@ -36,7 +35,7 @@ Text("Responsive Text")
     xl: { fontSize: 28, padding: 24 },      // Desktop
     '2xl': { fontSize: 32, padding: 28 }    // Large screen
   })
-  .build()
+  
 ```
 
 ### Shorthand Modifiers
@@ -45,14 +44,13 @@ Use breakpoint shorthand for simple responsive changes:
 
 ```typescript
 Text("Quick Responsive")
-  .modifier
   .fontSize(16)          // Base (mobile)
   .sm.fontSize(18)       // Small and up
   .md.fontSize(20)       // Medium and up
   .lg.fontSize(24)       // Large and up
   .xl.fontSize(28)       // Extra large and up
   ['2xl'].fontSize(32)   // 2XL and up (bracket notation for non-identifier keys)
-  .build()
+  
 ```
 
 ## Custom Breakpoint Configuration
@@ -80,7 +78,6 @@ Once configured, use your custom breakpoints throughout your application:
 
 ```typescript
 Text("Custom Breakpoints")
-  .modifier
   .responsive({
     base: { fontSize: 14 },
     mobile: { fontSize: 16 },     // Custom 480px+
@@ -88,7 +85,7 @@ Text("Custom Breakpoints")
     laptop: { fontSize: 22 },     // Custom 1200px+
     desktop: { fontSize: 26 }     // Custom 1440px+
   })
-  .build()
+  
 ```
 
 ### TypeScript Support
@@ -112,7 +109,6 @@ configureBreakpoints<CustomBreakpoints>({
 
 // TypeScript will enforce correct breakpoint names
 Text("Type-safe")
-  .modifier
   .responsive({
     base: { fontSize: 16 },
     mobile: { fontSize: 18 },   // ✅ Valid
@@ -120,7 +116,7 @@ Text("Type-safe")
     desktop: { fontSize: 24 },  // ✅ Valid
     // laptop: { fontSize: 22 } // ❌ TypeScript error - not in CustomBreakpoints
   })
-  .build()
+  
 ```
 
 ## Breakpoint Presets
@@ -208,9 +204,8 @@ const MyComponent = () => {
   const isTabletRange = bp.isBetween('md', 'lg') // true if md or lg
   
   return Text(`Mobile: ${isMobile}, Desktop: ${isDesktop}`)
-    .modifier
     .fontSize(isMobile ? 16 : 20)
-    .build()
+    
 }
 ```
 
@@ -222,7 +217,6 @@ TachUI uses a mobile-first approach where styles cascade upward:
 
 ```typescript
 Text("Mobile-First")
-  .modifier
   .responsive({
     base: { 
       fontSize: 16,        // Applied to all breakpoints
@@ -240,7 +234,7 @@ Text("Mobile-First")
       // padding: 16 and color: '#333' remain from previous breakpoints
     }
   })
-  .build()
+  
 ```
 
 ### Breakpoint Resolution
@@ -310,14 +304,13 @@ configureBreakpoints(designSystem.breakpoints)
 
 // Use with responsive spacing
 Text("Design System")
-  .modifier
   .responsive({
     base: { padding: designSystem.spacing.mobile.md },
     tablet: { padding: designSystem.spacing.tablet.md },
     laptop: { padding: designSystem.spacing.laptop.md },
     desktop: { padding: designSystem.spacing.desktop.md }
   })
-  .build()
+  
 ```
 
 ### Team Configuration
@@ -344,21 +337,20 @@ const ResponsiveCard = () => {
       phone: { fontSize: 18, textAlign: 'center' },
       tablet: { fontSize: 22, textAlign: 'left' },
       desktop: { fontSize: 26, textAlign: 'left' }
-    }).build(),
+    }),
     
     Text("Card content...").responsive({
       phone: { fontSize: 14, lineHeight: 1.4 },
       tablet: { fontSize: 16, lineHeight: 1.5 },
       desktop: { fontSize: 18, lineHeight: 1.6 }
-    }).build()
+    })
   ])
-  .modifier
   .responsive({
     phone: { padding: 16, gap: 8 },
     tablet: { padding: 24, gap: 12 },
     desktop: { padding: 32, gap: 16 }
   })
-  .build()
+  
 }
 ```
 

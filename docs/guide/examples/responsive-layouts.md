@@ -43,11 +43,11 @@ const AutoFitGrid = () => {
         .backgroundColor('#f5f5f5')
         .borderRadius(8)
         .textAlign('center')
-        .build()
+        
     )
   )
   .apply(gridModifier)
-  .build()
+  
 }
 ```
 
@@ -77,7 +77,7 @@ const ResponsiveColumnGrid = () => {
     // Grid items...
   ])
   .apply(gridModifier)
-  .build()
+  
 }
 ```
 
@@ -107,7 +107,7 @@ const MasonryGrid = () => {
     // Variable height content items...
   ])
   .apply(masonryModifier)
-  .build()
+  
 }
 ```
 
@@ -135,13 +135,13 @@ const ResponsiveNavigation = () => {
   })
 
   return VStack([
-    Button("Home").build(),
-    Button("About").build(),
-    Button("Services").build(),
-    Button("Contact").build()
+    Button("Home"),
+    Button("About"),
+    Button("Services"),
+    Button("Contact")
   ])
   .apply(stackToRowModifier)
-  .build()
+  
 }
 ```
 
@@ -181,11 +181,11 @@ const ResponsiveTagList = () => {
         .backgroundColor('#e0e0e0')
         .borderRadius(16)
         .fontSize({ base: 12, sm: 14 })
-        .build()
+        
     )
   )
   .apply(flexWrapModifier)
-  .build()
+  
 }
 ```
 
@@ -216,7 +216,7 @@ const SpaceDistributionLayout = () => {
     // Content cards...
   ])
   .apply(spaceModifier)
-  .build()
+  
 }
 ```
 
@@ -252,7 +252,7 @@ const ResponsiveContainer = ({ children }: { children: any[] }) => {
 
   return VStack(children)
     .apply(containerModifier)
-    .build()
+    
 }
 ```
 
@@ -282,7 +282,7 @@ const CenteredLayout = ({ children }: { children: any[] }) => {
 
   return VStack(children)
     .apply(centeredModifier)
-    .build()
+    
 }
 ```
 
@@ -317,7 +317,7 @@ const SidebarLayout = ({ sidebar, main }: { sidebar: any, main: any }) => {
 
   return VStack([sidebar, main])
     .apply(sidebarModifier)
-    .build()
+    
 }
 ```
 
@@ -336,7 +336,7 @@ const MobileMenuButton = () => {
   
   return Button("☰ Menu")
     .apply(mobileOnlyModifier)
-    .build()
+    
 }
 
 // Desktop navigation (hidden on mobile)
@@ -344,31 +344,31 @@ const DesktopNavigation = () => {
   const desktopOnlyModifier = ResponsiveVisibilityPatterns.hideOnBreakpoints(['base', 'sm'])
   
   return HStack([
-    Button("Home").build(),
-    Button("About").build(),
-    Button("Contact").build()
+    Button("Home"),
+    Button("About"),
+    Button("Contact")
   ])
   .apply(desktopOnlyModifier)
-  .build()
+  
 }
 
 // Progressive disclosure (show more content on larger screens)
 const ProgressiveContent = () => {
   return VStack([
     // Always visible core content
-    Text("Essential content visible on all devices").build(),
+    Text("Essential content visible on all devices"),
     
     // Additional content on tablets and up
     Text("Additional content for tablet and desktop users")
       .apply(ResponsiveVisibilityPatterns.showFromBreakpoint('md'))
-      .build(),
+      ,
     
     // Extra content only on desktop
     Text("Extra content only for desktop users")
       .apply(ResponsiveVisibilityPatterns.showFromBreakpoint('lg'))
-      .build()
+      
   ])
-  .build()
+  
 }
 ```
 
@@ -394,7 +394,7 @@ const ResponsiveText = ({ content }: { content: string }) => {
 
   return Text(content)
     .apply(textModifier)
-    .build()
+    
 }
 ```
 
@@ -430,10 +430,10 @@ const SpacedComponent = () => {
   })
 
   return VStack([
-    Text("Consistently spaced content").build()
+    Text("Consistently spaced content")
   ])
   .apply(spacingModifier)
-  .build()
+  
 }
 ```
 
@@ -470,12 +470,12 @@ const RhythmicContent = () => {
   })
 
   return VStack([
-    Text("Heading").fontSize({ base: 24, md: 28, lg: 32 }).build(),
-    Text("Paragraph content with proper vertical rhythm...").build(),
-    Text("Another paragraph...").build()
+    Text("Heading").fontSize({ base: 24, md: 28, lg: 32 }),
+    Text("Paragraph content with proper vertical rhythm..."),
+    Text("Another paragraph...")
   ])
   .apply(rhythmModifier)
-  .build()
+  
 }
 ```
 
@@ -522,7 +522,7 @@ const ResponsiveHeading = ({ level, children }: { level: 1 | 2 | 3 | 4 | 5 | 6, 
 
   return Text(children)
     .apply(typographyModifier)
-    .build()
+    
 }
 
 // Body text with responsive sizing
@@ -542,7 +542,7 @@ const ResponsiveBodyText = ({ children }: { children: string }) => {
 
   return Text(children)
     .apply(bodyModifier)
-    .build()
+    
 }
 ```
 
@@ -570,7 +570,7 @@ const FluidTypography = ({ children }: { children: string }) => {
 
   return Text(children)
     .apply(fluidModifier)
-    .build()
+    
 }
 ```
 
@@ -603,7 +603,7 @@ const HeroSection = () => {
             marginBottom: 32
           }
         })
-        .build(),
+        ,
       
       Text("Build responsive applications with ease")
         .responsive({
@@ -623,12 +623,12 @@ const HeroSection = () => {
             marginBottom: 40
           }
         })
-        .build(),
+        ,
       
       // CTA buttons
       HStack([
-        Button("Get Started").build(),
-        Button("Learn More").build()
+        Button("Get Started"),
+        Button("Learn More")
       ])
       .responsive({
         base: { 
@@ -642,7 +642,7 @@ const HeroSection = () => {
           alignItems: 'center'
         }
       })
-      .build()
+      
     ])
     .responsive({
       base: { 
@@ -659,7 +659,7 @@ const HeroSection = () => {
         padding: 60
       }
     })
-    .build()
+    
   ])
   .responsive({
     base: { 
@@ -674,7 +674,7 @@ const HeroSection = () => {
     }
   })
   .backgroundColor({ base: '#f8f9fa', md: '#ffffff' })
-  .build()
+  
 }
 ```
 
@@ -715,7 +715,7 @@ const ProductGrid = ({ products }: { products: Product[] }) => {
             lg: { height: 240 }
           })
           .borderRadius(8)
-          .build(),
+          ,
         
         // Product info
         VStack([
@@ -723,26 +723,26 @@ const ProductGrid = ({ products }: { products: Product[] }) => {
             .fontSize({ base: 16, md: 18 })
             .fontWeight('600')
             .marginBottom(8)
-            .build(),
+            ,
           
           Text(product.price)
             .fontSize({ base: 18, md: 20 })
             .fontWeight('bold')
             .color('#007bff')
-            .build()
+            
         ])
         .padding({ base: 12, md: 16 })
-        .build()
+        
       ])
       .backgroundColor('#ffffff')
       .borderRadius(12)
       .boxShadow('0 2px 8px rgba(0,0,0,0.1)')
-      .build()
+      
     )
   )
   .apply(gridModifier)
   .padding({ base: 16, md: 24, lg: 32 })
-  .build()
+  
 }
 ```
 
@@ -775,7 +775,7 @@ const ComplexLayout = () => {
   .apply(containerModifier)
   .apply(gridModifier)
   .apply(spacingModifier)
-  .build()
+  
 }
 ```
 

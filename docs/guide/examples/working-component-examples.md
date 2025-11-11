@@ -15,7 +15,7 @@ const welcomeTitle = Text('Welcome to TachUI')
   .fontSize(24)
   .fontWeight('bold')
   .foregroundColor('#1a1a1a')
-  .build()
+  
 
 // Dynamic text with signals
 const [count, setCount] = createSignal(0)
@@ -23,7 +23,7 @@ const counterDisplay = Text(() => `Count: ${count()}`)
   .fontSize(18)
   .foregroundColor('#007AFF')
   .fontWeight('500')
-  .build()
+  
 
 // Styled text with multiple modifiers
 const styledText = Text('This text demonstrates comprehensive styling')
@@ -33,7 +33,7 @@ const styledText = Text('This text demonstrates comprehensive styling')
   .backgroundColor('#f8f9fa')
   .padding(16)
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### Interactive Text
@@ -48,14 +48,14 @@ const linkText = Text('Click me for more info')
   .onHover(isHovered => {
     console.log('Hover state:', isHovered)
   })
-  .build()
+  
 
 // Selectable text
 const selectableText = Text('This text can be selected and copied')
   .userSelect('text')
   .padding(12)
   .backgroundColor('#f0f0f0')
-  .build()
+  
 ```
 
 ## Button Component Examples
@@ -82,7 +82,7 @@ const primaryButton = Button('Save Changes', async () => {
   .cornerRadius(8)
   .fontSize(16)
   .fontWeight('600')
-  .build()
+  
 ```
 
 ### Button Variants
@@ -94,7 +94,7 @@ const primary = Button('Primary', () => {})
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
-  .build()
+  
 
 // Secondary button
 const secondary = Button('Secondary', () => {})
@@ -103,7 +103,7 @@ const secondary = Button('Secondary', () => {})
   .border(1, '#007AFF')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
-  .build()
+  
 
 // Destructive button
 const destructive = Button('Delete', () => {})
@@ -111,14 +111,14 @@ const destructive = Button('Delete', () => {})
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
-  .build()
+  
 
 // Text button
 const textButton = Button('Cancel', () => {})
   .backgroundColor('transparent')
   .foregroundColor('#666666')
   .padding({ top: 8, bottom: 8, left: 16, right: 16 })
-  .build()
+  
 ```
 
 ### Button States
@@ -144,7 +144,7 @@ const loadingButton = Button(
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
-  .build()
+  
 
 // Conditional button
 const [hasUnsavedChanges, setHasUnsavedChanges] = createSignal(false)
@@ -155,7 +155,7 @@ const saveButton = Button('Save', () => {})
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ## Form Components
@@ -185,7 +185,7 @@ const dropdownPicker = Picker(selectedFruit, fruits, {
   .border(1, '#e0e0e0')
   .cornerRadius(6)
   .minWidth(200)
-  .build()
+  
 
 // Segmented picker
 const segmentedPicker = Picker(selectedFruit, fruits, {
@@ -195,7 +195,7 @@ const segmentedPicker = Picker(selectedFruit, fruits, {
   .backgroundColor('#f3f4f6')
   .cornerRadius(8)
   .padding(4)
-  .build()
+  
 
 // Wheel picker
 const wheelPicker = Picker(selectedFruit, fruits, {
@@ -205,7 +205,7 @@ const wheelPicker = Picker(selectedFruit, fruits, {
   .padding(8)
   .border(1, '#d1d5db')
   .cornerRadius(6)
-  .build()
+  
 
 // Searchable picker
 const searchablePicker = Picker(selectedFruit, fruits, {
@@ -214,7 +214,7 @@ const searchablePicker = Picker(selectedFruit, fruits, {
   placeholder: 'Search fruits...',
 })
   .minWidth(250)
-  .build()
+  
 ```
 
 ### Toggle Component
@@ -247,7 +247,7 @@ const buttonToggle = Toggle(darkMode, {
   variant: 'button',
 })
   .cornerRadius(12)
-  .build()
+  
 
 // Styled toggle
 const customToggle = Toggle(isEnabled, {
@@ -259,7 +259,7 @@ const customToggle = Toggle(isEnabled, {
   size: 'large',
 })
   .padding(16)
-  .build()
+  
 ```
 
 ### Slider Component
@@ -279,7 +279,7 @@ const volumeSlider = Slider(volume, {
   step: 1,
 })
   .width(300)
-  .build()
+  
 
 // Formatted slider with marks
 const brightnessSlider = Slider(brightness, {
@@ -299,7 +299,7 @@ const brightnessSlider = Slider(brightness, {
   .width('100%')
   .maxWidth(400)
   .padding(20)
-  .build()
+  
 
 // Custom styled slider
 const customSlider = Slider(volume, {
@@ -312,7 +312,7 @@ const customSlider = Slider(volume, {
 })
   .width(250)
   .height(40)
-  .build()
+  
 ```
 
 ## Layout Components
@@ -331,31 +331,31 @@ const basicVStack = VStack({
   .padding(20)
   .backgroundColor('#f8f9fa')
   .cornerRadius(12)
-  .build()
+  
 
 // Complex vertical layout
 const userProfileStack = VStack({
   children: [
-    Text('John Doe').fontSize(24).fontWeight('bold').build(),
+    Text('John Doe').fontSize(24).fontWeight('bold'),
 
     Text('Software Developer')
       .fontSize(16)
       .foregroundColor('#666666')
-      .build(),
+      ,
 
     Text('Passionate about creating great user experiences')
       .fontSize(14)
       .foregroundColor('#888888')
       .textAlign('center')
       .lineHeight(1.4)
-      .build(),
+      ,
 
     Button('Contact', () => console.log('Contact clicked'))
       .backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding({ top: 10, bottom: 10, left: 20, right: 20 })
       .cornerRadius(8)
-      .build(),
+      ,
   ],
   spacing: 12,
   alignment: 'center',
@@ -365,7 +365,7 @@ const userProfileStack = VStack({
   .cornerRadius(16)
   .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
   .maxWidth(300)
-  .build()
+  
 ```
 
 ### HStack Examples
@@ -382,7 +382,7 @@ const basicHStack = HStack({
   .padding(16)
   .backgroundColor('#f0f0f0')
   .cornerRadius(8)
-  .build()
+  
 
 // Navigation bar example
 const navigationBar = HStack({
@@ -390,19 +390,19 @@ const navigationBar = HStack({
     Button('Back', () => console.log('Back'))
       .backgroundColor('transparent')
       .foregroundColor('#007AFF')
-      .build(),
+      ,
 
     Text('Page Title')
       .fontSize(18)
       .fontWeight('600')
       .flexGrow(1)
       .textAlign('center')
-      .build(),
+      ,
 
     Button('Menu', () => console.log('Menu'))
       .backgroundColor('transparent')
       .foregroundColor('#007AFF')
-      .build(),
+      ,
   ],
   spacing: 16,
   alignment: 'center',
@@ -410,7 +410,7 @@ const navigationBar = HStack({
   .padding(16)
   .backgroundColor('#ffffff')
   .borderBottom(1, '#e0e0e0')
-  .build()
+  
 ```
 
 ### ZStack Examples
@@ -426,7 +426,7 @@ const cardWithOverlay = ZStack({
       .backgroundColor('#007AFF')
       .frame({ width: 200, height: 120 })
       .cornerRadius(12)
-      .build(),
+      ,
 
     // Overlay content
     VStack({
@@ -435,13 +435,13 @@ const cardWithOverlay = ZStack({
           .fontSize(18)
           .fontWeight('bold')
           .foregroundColor('white')
-          .build(),
+          ,
 
         Text('Card description text')
           .fontSize(14)
           .foregroundColor('rgba(255,255,255,0.9)')
           .textAlign('center')
-          .build(),
+          ,
       ],
       spacing: 8,
       alignment: 'center',
@@ -505,7 +505,7 @@ function UserRegistrationForm() {
             .border(1, '#e0e0e0')
             .cornerRadius(6)
             .marginBottom(16)
-            .build(),
+            ,
 
           // Preferences Section
           Section([], {
@@ -519,7 +519,7 @@ function UserRegistrationForm() {
             labelPosition: 'leading',
           })
             .marginBottom(16)
-            .build(),
+            ,
 
           // Experience Slider
           VStack({
@@ -528,7 +528,7 @@ function UserRegistrationForm() {
                 .fontSize(14)
                 .fontWeight('500')
                 .marginBottom(8)
-                .build(),
+                ,
 
               Slider(() => formData().experience, {
                 onValueChange: value => updateField('experience', value),
@@ -542,7 +542,7 @@ function UserRegistrationForm() {
                 ],
               })
                 .width('100%')
-                .build(),
+                ,
             ],
             spacing: 8,
             alignment: 'stretch',
@@ -556,7 +556,7 @@ function UserRegistrationForm() {
         .backgroundColor('#ffffff')
         .cornerRadius(12)
         .border(1, '#e0e0e0')
-        .build(),
+        ,
 
       // Submit Button
       Button('Create Account', handleSubmit)
@@ -567,7 +567,7 @@ function UserRegistrationForm() {
         .fontSize(16)
         .fontWeight('600')
         .marginTop(24)
-        .build(),
+        ,
     ],
     spacing: 16,
     alignment: 'stretch',
@@ -575,7 +575,7 @@ function UserRegistrationForm() {
     .padding(20)
     .maxWidth(500)
     .backgroundColor('#f8f9fa')
-    .build()
+    
 }
 ```
 
@@ -593,7 +593,7 @@ const HomeContent = () =>
       Text('Welcome to the Home tab')
         .fontSize(18)
         .textAlign('center')
-        .build(),
+        ,
     ],
     spacing: 16,
     alignment: 'center',
@@ -605,7 +605,7 @@ const SearchContent = () =>
       Text('Search functionality here')
         .fontSize(18)
         .textAlign('center')
-        .build(),
+        ,
     ],
     spacing: 16,
     alignment: 'center',
@@ -617,7 +617,7 @@ const ProfileContent = () =>
       Text('User profile information')
         .fontSize(18)
         .textAlign('center')
-        .build(),
+        ,
     ],
     spacing: 16,
     alignment: 'center',
@@ -680,13 +680,13 @@ function InteractiveCard() {
             .fontSize(18)
             .fontWeight('600')
             .flexGrow(1)
-            .build(),
+            ,
 
           Button(() => (isSelected() ? '✓' : '○'), handleSelect)
             .backgroundColor('transparent')
             .foregroundColor(() => (isSelected() ? '#34C759' : '#666666'))
             .fontSize(18)
-            .build(),
+            ,
         ],
         spacing: 12,
         alignment: 'center',
@@ -699,7 +699,7 @@ function InteractiveCard() {
         .fontSize(14)
         .lineHeight(1.4)
         .foregroundColor('#666666')
-        .build(),
+        ,
 
       // Actions
       HStack({
@@ -708,7 +708,7 @@ function InteractiveCard() {
             .backgroundColor('transparent')
             .foregroundColor('#FF3B30')
             .fontSize(14)
-            .build(),
+            ,
 
           Button('Share', () => console.log('Share'))
             .backgroundColor('#007AFF')
@@ -716,7 +716,7 @@ function InteractiveCard() {
             .padding({ top: 6, bottom: 6, left: 12, right: 12 })
             .cornerRadius(6)
             .fontSize(14)
-            .build(),
+            ,
         ],
         spacing: 12,
         alignment: 'center',
@@ -737,7 +737,7 @@ function InteractiveCard() {
     .onHover(setIsHovered)
     .cursor('pointer')
     .transition('all', 200, 'ease-out')
-    .build()
+    
 }
 ```
 
@@ -777,7 +777,7 @@ describe('Button Component Examples', () => {
       .foregroundColor('white')
       .padding({ top: 12, bottom: 12, left: 24, right: 24 })
       .cornerRadius(8)
-      .build()
+      
 
     expect(styledButton).toBeDefined()
   })
@@ -807,7 +807,7 @@ const emailField = TextField({
   .padding({ vertical: 12, horizontal: 16 })
   .cornerRadius(12)
   .backgroundColor('#F8FAFC')
-  .build()
+  
 ```
 
 ---
@@ -816,7 +816,7 @@ const emailField = TextField({
 
 - All examples use the verified API patterns from TachUI's test suite
 - Each component follows the `ComponentFunction(params, props)` pattern
-- Modifiers are chained directly (for example, `component.padding(12).backgroundColor('#fff').build()`)
+- Modifiers are chained directly (for example, `component.padding(12).backgroundColor('#fff')`)
 - Reactive values use signals: `() => signal()` for dynamic properties
 - These examples are guaranteed to work with the current TachUI implementation
 

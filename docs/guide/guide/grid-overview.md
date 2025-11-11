@@ -28,10 +28,10 @@ const QuickGrid = LazyVGrid({
   columns: [GridItem.adaptive(250, 350)], // Responsive columns
   spacing: 16,
   children: [
-    Text('Card 1').padding(20).backgroundColor('#e3f2fd').build(),
-    Text('Card 2').padding(20).backgroundColor('#f3e5f5').build(),
-    Text('Card 3').padding(20).backgroundColor('#e8f5e8').build(),
-    Text('Card 4').padding(20).backgroundColor('#fff3e0').build()
+    Text('Card 1').padding(20).backgroundColor('#e3f2fd'),
+    Text('Card 2').padding(20).backgroundColor('#f3e5f5'),
+    Text('Card 3').padding(20).backgroundColor('#e8f5e8'),
+    Text('Card 4').padding(20).backgroundColor('#fff3e0')
   ]
 })
 ```
@@ -44,12 +44,12 @@ import { Grid, GridRow, Text } from '@tachui/core'
 const QuickDashboard = Grid({
   children: [
     GridRow([
-      Text('Header').gridColumnSpan(3).fontSize(24).build()
+      Text('Header').gridColumnSpan(3).fontSize(24)
     ]),
     GridRow([
-      Text('Sidebar').width(200).build(),
-      Text('Main Content').flex(1).build(),
-      Text('Stats').width(150).build()
+      Text('Sidebar').width(200),
+      Text('Main Content').flex(1),
+      Text('Stats').width(150)
     ])
   ]
 })
@@ -194,7 +194,7 @@ LazyVGrid({
 Flexbox layouts can be systematically migrated to Grid:
 ```typescript
 // Before: Complex flexbox
-HStack([...]).responsive().css({...}).build()
+HStack([...]).responsive().css({...})
 
 // After: Simple Grid
 LazyVGrid({

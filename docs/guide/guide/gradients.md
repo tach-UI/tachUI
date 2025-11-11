@@ -21,7 +21,6 @@ import { Button, LinearGradient } from '@tachui/core'
 const gradientButton = Button('Click Me', () => {
   console.log('Button clicked!')
 })
-  .modifier
   .background(
     LinearGradient({
       colors: ['#FF6B6B', '#4ECDC4'],
@@ -32,7 +31,7 @@ const gradientButton = Button('Click Me', () => {
   .foregroundColor('white')
   .cornerRadius(8)
   .padding(16)
-  .build()
+  
 ```
 
 ### Diagonal Gradients
@@ -48,12 +47,11 @@ const heroCard = VStack({ children: [
   Text('Welcome to TachUI').fontSize(24).fontWeight('bold'),
   Text('SwiftUI-inspired web framework').opacity(0.8)
 ] })
-  .modifier
   .background(diagonalGradient)
   .foregroundColor('white')
   .padding(32)
   .cornerRadius(16)
-  .build()
+  
 ```
 
 ### Custom Angle Gradients
@@ -104,9 +102,8 @@ const themeGradient = createGradientAsset({
 
 // Use in components
 const adaptiveCard = VStack({ children: [...] })
-  .modifier
   .background(themeGradient)
-  .build()
+  
 ```
 
 ### Mixed Asset and Static Colors
@@ -166,14 +163,13 @@ const operatorGradient = createGradientAsset({
 
 const operatorButton = (symbol: string, action: () => void) => 
   Button(symbol, action)
-    .modifier
     .background(operatorGradient)
     .foregroundColor('white')
     .fontSize(24)
     .fontWeight('semibold')
     .frame(60, 60)
     .cornerRadius(30)
-    .build()
+    
 ```
 
 ### Card with Hover Gradient Transition
@@ -197,7 +193,6 @@ const interactiveCard = VStack({ children: [
   Text('Interactive Card').fontSize(18).fontWeight('bold'),
   Text('Hover to see gradient transition').opacity(0.8)
 ] })
-  .modifier
   .background(cardGradient)
   .foregroundColor('white')
   .padding(24)
@@ -206,7 +201,7 @@ const interactiveCard = VStack({ children: [
     // Note: Advanced hover state transitions will be available in Version 1.3
     console.log('Card hovered:', isHovered)
   })
-  .build()
+  
 ```
 
 ## Performance Considerations
@@ -322,7 +317,6 @@ import { Button, LinearGradient } from '@tachui/core'
 const interactiveButton = Button('Hover Me', () => {
   console.log('Clicked!')
 })
-  .modifier
   .background({
     default: LinearGradient({
       colors: ['#007AFF', '#0051D2'],
@@ -346,7 +340,7 @@ const interactiveButton = Button('Hover Me', () => {
   })
   .padding(12)
   .cornerRadius(6)
-  .build()
+  
 ```
 
 ### Card Hover Effects
@@ -358,7 +352,6 @@ const hoverCard = VStack({ children: [
   Text('Interactive Card').fontSize(18).fontWeight('600'),
   Text('Hover to see gradient transition').opacity(0.7)
 ] })
-  .modifier
   .background({
     default: '#FFFFFF',
     hover: LinearGradient({
@@ -374,7 +367,7 @@ const hoverCard = VStack({ children: [
   .padding(16)
   .cornerRadius(8)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 ### Form Input Focus States
@@ -383,7 +376,6 @@ const hoverCard = VStack({ children: [
 import { TextField } from '@tachui/core'
 
 const focusInput = TextField('Enter your name')
-  .modifier
   .background({
     default: '#FFFFFF',
     focus: LinearGradient({
@@ -400,7 +392,7 @@ const focusInput = TextField('Enter your name')
   .border({ width: 1, color: '#DDD', style: 'solid' })
   .cornerRadius(4)
   .padding(8)
-  .build()
+  
 ```
 
 ### Complete State Configuration
@@ -469,8 +461,8 @@ const primaryButtonGradient = StateGradient('primary-button', {
 })
 
 // Use across multiple components
-const button1 = Button('Save').background(primaryButtonGradient).build()
-const button2 = Button('Submit').background(primaryButtonGradient).build()
+const button1 = Button('Save').background(primaryButtonGradient)
+const button2 = Button('Submit').background(primaryButtonGradient)
 ```
 
 ### Animation Configurations
@@ -513,7 +505,6 @@ State gradients are optimized for performance:
 import { RadialGradient } from '@tachui/core'
 
 const radialButton = Button('Radial Effect')
-  .modifier
   .background(
     RadialGradient({
       center: 'center',
@@ -522,7 +513,7 @@ const radialButton = Button('Radial Effect')
       colors: ['#FF6B6B', '#4ECDC4', '#45B7D1']
     })
   )
-  .build()
+  
 ```
 
 ### AngularGradient
@@ -574,22 +565,19 @@ import {
 
 // Quick preset usage
 const button = Button('Click Me')
-  .modifier
   .background(InteractiveGradientPresets.primaryButton())
-  .build()
+  
 
 // iOS-style gradients
 const iosButton = Button('iOS Style')
-  .modifier
   .background(LinearGradientPresets.iosBlue())
-  .build()
+  
 
 // Component-specific presets
 const buttonGradients = GradientExamples.createComponentGradients('ios')
 const primaryBtn = Button('Primary')
-  .modifier
   .background(buttonGradients.Button.primary)
-  .build()
+  
 ```
 
 ### Reactive Gradients
@@ -613,11 +601,10 @@ const progressGradient = ReactiveGradients.linear({
 
 // Use in component
 const progressBar = VStack([])
-  .modifier
   .background(progressGradient)
   .height(20)
   .cornerRadius(10)
-  .build()
+  
 
 // Update progress
 progressSignal.value = 0.7 // Gradient updates automatically
@@ -716,11 +703,10 @@ const modernGradients = GradientExamples.createComponentGradients('modern')
 
 // Use themed gradients
 const themedButton = Button('Themed')
-  .modifier
   .background(iosGradients.Button.primary)
   .padding(12)
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ## API Reference

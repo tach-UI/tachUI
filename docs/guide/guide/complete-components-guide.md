@@ -7,7 +7,7 @@ The definitive guide to all TachUI components with their actual API patterns, ba
 TachUI provides a comprehensive set of SwiftUI-inspired components for building web applications. All components follow consistent patterns:
 
 1. **Function-based API** - Components are functions, not objects
-2. **Modifier system** - Use `.property().build()` for styling
+2. **Modifier system** - Use `.property()` for styling
 3. **Reactive state** - Use signals for dynamic values
 4. **Type safety** - Full TypeScript support
 
@@ -36,7 +36,7 @@ const styledText = Text('Styled Text')
   .backgroundColor('#f0f8ff')
   .padding(16)
   .cornerRadius(8)
-  .build()
+  
 ```
 
 **Text API:**
@@ -54,7 +54,7 @@ Text('Example')
   .textAlign('center') // 'left' | 'center' | 'right'
   .lineHeight(1.4) // Line height multiplier
   .letterSpacing(0.5) // Letter spacing in pixels
-  .build()
+  
 ```
 
 ### Button Component
@@ -79,7 +79,7 @@ const styledButton = Button('Save', async () => {
   .cornerRadius(8)
   .fontSize(16)
   .fontWeight('600')
-  .build()
+  
 
 // Reactive button state
 const [isLoading, setIsLoading] = createSignal(false)
@@ -97,7 +97,7 @@ const loadingButton = Button(
 )
   .disabled(isLoading)
   .opacity(() => (isLoading() ? 0.7 : 1.0))
-  .build()
+  
 ```
 
 **Button API:**
@@ -114,7 +114,7 @@ Button('Primary', action)
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
-  .build()
+  
 
 // Secondary button
 Button('Secondary', action)
@@ -123,7 +123,7 @@ Button('Secondary', action)
   .border(1, '#007AFF')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
-  .build()
+  
 
 // Destructive button
 Button('Delete', action)
@@ -131,7 +131,7 @@ Button('Delete', action)
   .foregroundColor('white')
   .padding({ top: 12, bottom: 12, left: 24, right: 24 })
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ## Form Components
@@ -160,7 +160,7 @@ const dropdownPicker = Picker(selectedOption, options, {
   .padding(12)
   .border(1, '#e0e0e0')
   .cornerRadius(6)
-  .build()
+  
 
 // Segmented picker
 const segmentedPicker = Picker(selectedOption, options, {
@@ -169,7 +169,7 @@ const segmentedPicker = Picker(selectedOption, options, {
 })
   .backgroundColor('#f3f4f6')
   .cornerRadius(8)
-  .build()
+  
 
 // Wheel picker (native select)
 const wheelPicker = Picker(selectedOption, options, {
@@ -179,7 +179,7 @@ const wheelPicker = Picker(selectedOption, options, {
   .padding(8)
   .border(1, '#d1d5db')
   .cornerRadius(6)
-  .build()
+  
 
 // Searchable picker
 const searchablePicker = Picker(selectedOption, options, {
@@ -232,7 +232,7 @@ const buttonToggle = Toggle(isEnabled, {
   size: 'large',
 })
   .cornerRadius(12)
-  .build()
+  
 ```
 
 **Toggle API:**
@@ -258,7 +258,7 @@ const basicSlider = Slider(volume, {
   step: 1,
 })
   .width(300)
-  .build()
+  
 
 // Formatted slider with marks
 const formattedSlider = Slider(volume, {
@@ -275,7 +275,7 @@ const formattedSlider = Slider(volume, {
 })
   .width('100%')
   .maxWidth(400)
-  .build()
+  
 
 // Styled slider
 const styledSlider = Slider(volume, {
@@ -329,7 +329,7 @@ const userForm = Form(
   .padding(20)
   .backgroundColor('#f8f9fa')
   .cornerRadius(12)
-  .build()
+  
 
 // Section with collapsible content
 const collapsibleSection = Section([], {
@@ -340,7 +340,7 @@ const collapsibleSection = Section([], {
   .backgroundColor('#ffffff')
   .border(1, '#e0e0e0')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 **Form API:**
@@ -369,7 +369,7 @@ const verticalLayout = VStack({
   .padding(20)
   .backgroundColor('#f8f9fa')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### HStack - Horizontal Layout
@@ -385,14 +385,14 @@ const horizontalLayout = HStack({
     Text('Center')
       .flexGrow(1) // Take remaining space
       .textAlign('center')
-      .build(),
+      ,
     Text('Right'),
   ],
   spacing: 12,
   alignment: 'center', // 'top' | 'center' | 'bottom'
 })
   .padding(16)
-  .build()
+  
 ```
 
 ### ZStack - Layered Layout
@@ -409,13 +409,13 @@ const layeredLayout = ZStack({
       .backgroundColor('#007AFF')
       .frame({ width: 200, height: 100 })
       .cornerRadius(8)
-      .build(),
+      ,
 
     // Foreground content
     Text('Overlay Text')
       .foregroundColor('white')
       .fontWeight('bold')
-      .build(),
+      ,
   ],
   alignment: 'center',
 })
@@ -464,37 +464,34 @@ const responsiveTabView = EnhancedTabView(tabs, {
 ### Layout Modifiers
 
 ```typescript
-component.modifier
+component
   .frame({ width: 300, height: 200 }) // Set dimensions
   .padding(16) // All sides
   .padding({ top: 10, right: 15, bottom: 10, left: 15 }) // Specific sides
   .margin(12) // External spacing
   .flexGrow(1) // CSS flex-grow
-  .build()
 ```
 
 ### Appearance Modifiers
 
 ```typescript
-component.modifier
+component
   .backgroundColor('#f8f9fa') // Background color
   .foregroundColor('#333333') // Text/content color
   .opacity(0.8) // Transparency (0-1)
   .cornerRadius(8) // Border radius
   .border(1, '#e0e0e0') // Border width, color
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
-  .build()
 ```
 
 ### Interaction Modifiers
 
 ```typescript
-component.modifier
+component
   .onTap(() => console.log('Tapped')) // Click handler
   .onHover(hovered => console.log(hovered)) // Hover state
   .disabled(false) // Enable/disable
   .cursor('pointer') // Mouse cursor style
-  .build()
 ```
 
 ## Reactive State Patterns
@@ -508,18 +505,18 @@ const [isDark, setIsDark] = createSignal(false)
 // Reactive text content
 const counterText = Text(() => `Count: ${count()}`)
   .fontSize(18)
-  .build()
+  
 
 // Reactive styling
 const themedButton = Button('Increment', () => setCount(count() + 1))
   .backgroundColor(() => (isDark() ? '#333333' : '#007AFF'))
   .foregroundColor(() => (isDark() ? '#ffffff' : '#ffffff'))
-  .build()
+  
 
 // Reactive visibility
 const conditionalText = () =>
   count() > 5
-    ? Text('Count is high!').foregroundColor('#FF3B30').build()
+    ? Text('Count is high!').foregroundColor('#FF3B30')
     : null
 ```
 
@@ -538,7 +535,7 @@ const emailField = TextField(userEmail.projectedValue, 'Enter email', {
   .padding(12)
   .border(1, '#e0e0e0')
   .cornerRadius(6)
-  .build()
+  
 
 // Access current value
 console.log('Current email:', userEmail.wrappedValue)
@@ -612,7 +609,7 @@ function UserPreferencesForm() {
                 .padding(12)
                 .border(1, '#e0e0e0')
                 .cornerRadius(6)
-                .build(),
+                ,
 
               Picker(() => formData().country, countries, {
                 onSelectionChange: value => updateField('country', value),
@@ -640,7 +637,7 @@ function UserPreferencesForm() {
                 formatter: value => `${value}%`,
               })
                 .marginTop(16)
-                .build(),
+                ,
 
               Toggle(() => formData().notifications, {
                 onToggle: value => updateField('notifications', value),
@@ -671,7 +668,7 @@ function UserPreferencesForm() {
         .padding({ top: 16, bottom: 16, left: 32, right: 32 })
         .cornerRadius(8)
         .marginTop(24)
-        .build(),
+        ,
     ],
     spacing: 16,
     alignment: 'stretch',
@@ -679,7 +676,7 @@ function UserPreferencesForm() {
     .padding(20)
     .maxWidth(600)
     .backgroundColor('#ffffff')
-    .build()
+    
 }
 ```
 
@@ -701,8 +698,8 @@ const [count, setCount] = createSignal<number>(0)
 ### 2. Use Consistent Modifier Patterns
 
 ```typescript
-// ✅ Good - Always use .build()
-const component = Text('Hello').fontSize(18).padding(16).build()
+// ✅ Good - Always use 
+const component = Text('Hello').fontSize(18).padding(16)
 
 // ❌ Wrong - This syntax doesn't exist
 // const component = Text('Hello').fontSize(18).padding(16)
@@ -735,7 +732,7 @@ const submitButton = Button(
 )
   .disabled(isLoading)
   .backgroundColor(() => (error() ? '#FF3B30' : '#007AFF'))
-  .build()
+  
 ```
 
 ### 4. Create Reusable Components
@@ -749,7 +746,7 @@ function PrimaryButton(title: string, action: () => void) {
     .padding({ top: 12, bottom: 12, left: 24, right: 24 })
     .cornerRadius(8)
     .fontWeight('600')
-    .build()
+    
 }
 
 function SecondaryButton(title: string, action: () => void) {
@@ -759,7 +756,7 @@ function SecondaryButton(title: string, action: () => void) {
     .border(1, '#007AFF')
     .padding({ top: 12, bottom: 12, left: 24, right: 24 })
     .cornerRadius(8)
-    .build()
+    
 }
 ```
 
@@ -786,7 +783,7 @@ function UserCard({ user }: { user: User }) {
     .backgroundColor('#ffffff')
     .cornerRadius(12)
     .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
 }
 ```
 

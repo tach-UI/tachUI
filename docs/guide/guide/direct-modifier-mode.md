@@ -1,8 +1,8 @@
 # Direct Modifier Mode
 
-TachUI supports SwiftUI-style modifier chaining without the intermediate
-`.modifier` builder. This behaviour is currently **optional** and can be enabled
-per application.
+Direct chaining (for example `Text('Hi').padding(12).fontWeight('bold')`) is the
+default experience in TachUI. This page documents the configuration flag in case
+you ever need to re-enable the legacy builder for backwards compatibility.
 
 ## Enabling the proxy mode
 
@@ -20,21 +20,18 @@ Once enabled, modifiers can be chained directly:
 ```ts
 import { Text } from '@tachui/primitives'
 
-configureCore({ proxyModifiers: true })
-
-Text('Hello proxy mode')
+Text('Hello direct mode')
   .fontSize(20)
   .foregroundColor('#007AFF')
   .padding(16)
-  .build()
 ```
 
-All modifier calls still return the same proxied component, so existing chaining
-patterns (including `.build()`) continue to work.
+## Legacy builder mode
+
+If you need to temporarily bring back the legacy builder pattern (for example,
+during a staggered migration), toggle the flag off:
 
 ## Toggling at runtime
-
-You can switch back to the legacy builder mode by disabling the flag:
 
 ```ts
 configureCore({ proxyModifiers: false })
@@ -55,9 +52,8 @@ console.log(tachui.getFeatureFlags())
 
 ## Notes
 
-- Proxy mode currently applies to components created via `withModifiers`, the
-  standard wrappers, and factory helpers. Additional entry points will adopt the
-  proxy in subsequent updates.
+- Direct chaining applies to components created via `withModifiers`, the
+  standard wrappers, and factory helpers.
 - Modifiers are resolved through the global registry; custom packages can
   continue to register new modifiers using the existing APIs.
 - Cloning (`component.clone()`) returns a proxied instance when the feature flag

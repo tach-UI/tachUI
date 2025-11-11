@@ -145,9 +145,8 @@ function ReactiveDivider() {
   return VStack({
     children: [
       Button(`${isDarkMode() ? 'Light' : 'Dark'} Mode`)
-        .modifier
         .onTap(() => setIsDarkMode(!isDarkMode()))
-        .build(),
+        ,
         
       Divider({
         color: dividerColor, // Reactive color
@@ -158,9 +157,8 @@ function ReactiveDivider() {
       Text("Dynamic divider changes with theme"),
       
       Button("Increase Thickness")
-        .modifier
         .onTap(() => setThickness(t => Math.min(t + 1, 5)))
-        .build()
+        
     ]
   })
 }
@@ -301,8 +299,8 @@ function SectionLayout() {
       // Header
       VStack({
         children: [
-          Text("Settings").fontSize(24).fontWeight('bold').build(),
-          Text("Manage your preferences").fontSize(14).foregroundColor('#8E8E93').build()
+          Text("Settings").fontSize(24).fontWeight('bold'),
+          Text("Manage your preferences").fontSize(14).foregroundColor('#8E8E93')
         ]
       }),
       
@@ -311,7 +309,7 @@ function SectionLayout() {
       // Account section
       VStack({
         children: [
-          Text("Account").fontSize(18).fontWeight('600').build(),
+          Text("Account").fontSize(18).fontWeight('600'),
           Text("Profile settings"),
           Text("Privacy settings"),
           Text("Security settings")
@@ -327,7 +325,7 @@ function SectionLayout() {
       // Appearance section
       VStack({
         children: [
-          Text("Appearance").fontSize(18).fontWeight('600').build(),
+          Text("Appearance").fontSize(18).fontWeight('600'),
           Text("Theme settings"),
           Text("Display settings")
         ]
@@ -352,10 +350,9 @@ function SidebarLayout() {
           Text("Settings")
         ]
       })
-      .modifier
       .minWidth(200)
       .padding(16)
-      .build(),
+      ,
       
       // Vertical divider between sidebar and content
       DividerUtils.vertical('100vh', 1),
@@ -367,10 +364,9 @@ function SidebarLayout() {
           Text("Your content goes here...")
         ]
       })
-      .modifier
       .flexGrow(1)
       .padding(16)
-      .build()
+      
     ]
   })
 }
@@ -399,11 +395,10 @@ function ListWithDividers() {
   return VStack({
     children
   })
-  .modifier
   .padding(16)
   .backgroundColor('#FFFFFF')
   .cornerRadius(8)
-  .build()
+  
 }
 ```
 
@@ -441,10 +436,10 @@ Divider({ thickness: 10 })
 // ✅ Good - Different emphasis levels
 VStack({
   children: [
-    Text("Major Section").fontSize(24).build(),
+    Text("Major Section").fontSize(24),
     DividerUtils.prominent(), // Strong separator
     
-    Text("Subsection").fontSize(18).build(),
+    Text("Subsection").fontSize(18),
     DividerUtils.subtle(), // Subtle separator
     
     Text("Content...")

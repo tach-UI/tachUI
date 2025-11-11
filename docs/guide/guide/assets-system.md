@@ -37,10 +37,9 @@ import { Text } from '@tachui/core/components'
 
 export function MyComponent() {
   return Text('Hello World')
-    .modifier
     .foregroundColor(Assets.primaryColor)  // Auto-adapts to current theme
     .backgroundColor(Assets.backgroundColor)
-    .build()
+    
 }
 ```
 
@@ -72,9 +71,8 @@ import { Image } from '@tachui/core/components'
 
 export function LogoComponent() {
   return Image(Assets.logo)  // Auto-adapts to current theme
-    .modifier
     .frame(100, 50)
-    .build()
+    
 }
 ```
 
@@ -191,9 +189,8 @@ registerAsset(customFont)
 registerAsset(inter)
 
 Text("Custom Typography")
-  .modifier
   .font({ family: Assets.inter })
-  .build()
+  
 ```
 
 For comprehensive font documentation, see the [Font Assets Guide](./font-assets.md).

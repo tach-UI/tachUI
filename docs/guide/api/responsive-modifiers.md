@@ -67,14 +67,13 @@ Apply responsive styles using breakpoint-specific configuration.
 
 // Usage
 Text("Responsive text")
-  .modifier
   .responsive({
     fontSize: { base: 16, md: 20, lg: 24 },
     padding: { base: 8, md: 12, lg: 16 },
     color: { base: '#333', md: '#000' },
     textAlign: 'center'  // Applied to all breakpoints
   })
-  .build()
+  
 ```
 
 **Parameters:**
@@ -85,7 +84,6 @@ Text("Responsive text")
 **Example with all CSS properties:**
 ```typescript
 Text("Full responsive example")
-  .modifier
   .responsive({
     // Typography
     fontSize: { base: 14, md: 16, lg: 18, xl: 20 },
@@ -109,7 +107,7 @@ Text("Full responsive example")
     alignItems: { base: 'stretch', md: 'center' },
     gap: { base: 8, md: 16 }
   })
-  .build()
+  
 ```
 
 ### .mediaQuery()
@@ -121,12 +119,11 @@ Apply styles for custom media queries.
 
 // Usage
 Text("Media query example")
-  .modifier
   .fontSize(16)
   .mediaQuery('(orientation: landscape)', { fontSize: 18 })
   .mediaQuery('(prefers-color-scheme: dark)', { color: '#ffffff' })
   .mediaQuery('(min-width: 900px)', { fontSize: 20 })
-  .build()
+  
 ```
 
 **Parameters:**
@@ -176,7 +173,6 @@ Apply styles at specific breakpoints and above using shorthand syntax.
 
 // Usage
 Text("Shorthand responsive")
-  .modifier
   .fontSize(14)          // Base (all breakpoints)
   .color('#666')         // Base (all breakpoints)
   .sm.fontSize(16)       // sm and above
@@ -186,13 +182,12 @@ Text("Shorthand responsive")
   .lg.fontWeight('bold') // lg and above
   .xl.fontSize(26)       // xl and above
   ['2xl'].fontSize(30)   // 2xl and above
-  .build()
+  
 ```
 
 **Chaining with other modifiers:**
 ```typescript
 Text("Mixed responsive and static")
-  .modifier
   .textAlign('center')     // Static - applies to all breakpoints
   .fontSize(14)            // Base fontSize
   .padding(8)              // Base padding
@@ -201,7 +196,7 @@ Text("Mixed responsive and static")
   .lg.fontSize(22)         // Override fontSize at lg+
   .lg.fontWeight('bold')   // Add fontWeight at lg+
   .backgroundColor('#f5f5f5') // Static - applies to all breakpoints
-  .build()
+  
 ```
 
 ## Responsive Property Modifiers
@@ -339,9 +334,8 @@ const MyComponent = () => {
   const isTabletRange = bp.isBetween('md', 'lg')() // false
   
   return Text(`Current: ${currentBreakpoint}`)
-    .modifier
     .fontSize(isMobile ? 16 : 20)
-    .build()
+    
 }
 ```
 
@@ -359,10 +353,9 @@ const MyComponent = () => {
   const isHighDPI = useMediaQuery('(min-resolution: 2dppx)')
   
   return Text("Media query example")
-    .modifier
     .color(isDarkMode() ? '#ffffff' : '#000000')
     .fontSize(isLandscape() ? 18 : 16)
-    .build()
+    
 }
 ```
 
@@ -388,10 +381,9 @@ const MyComponent = () => {
   })
   
   return Text("Dynamic responsive values")
-    .modifier
     .fontSize(fontSize())
     .padding(padding())
-    .build()
+    
 }
 ```
 
@@ -535,7 +527,7 @@ const MyComponent = () => {
   console.log(info.activeBreakpoint) // 'md'
   console.log(info.isResponsive)     // true
   
-  return Text("Inspected value").build()
+  return Text("Inspected value")
 }
 ```
 
@@ -574,7 +566,7 @@ items.map(item => useResponsiveValue({ base: item.size }))
 
 // ✅ Better: Pre-compute responsive values
 const responsiveSize = useResponsiveValue({ base: 16, md: 20 })
-items.map(item => Text(item.text).fontSize(responsiveSize()).build())
+items.map(item => Text(item.text).fontSize(responsiveSize()))
 ```
 
 ## Reactive Responsive Values
@@ -601,7 +593,6 @@ const ReactiveThemeComponent = () => {
   })
   
   return Text("Theme-Reactive Text")
-    .modifier
     .responsive({
       base: { 
         fontSize: 16,
@@ -618,7 +609,7 @@ const ReactiveThemeComponent = () => {
         padding: 32
       }
     })
-    .build()
+    
 }
 ```
 
@@ -648,7 +639,6 @@ const DynamicResponsiveComponent = () => {
   )
   
   return Text("Dynamic Responsive Text")
-    .modifier
     .responsive({
       fontSize: sizeBasedFontSize,    // Reactive responsive object
       color: statusColor,             // Reactive color
@@ -658,7 +648,7 @@ const DynamicResponsiveComponent = () => {
       )
     })
     .onClick(() => setIsActive(!isActive()))
-    .build()
+    
 }
 ```
 
@@ -679,7 +669,6 @@ const MixedReactiveComponent = () => {
   })
   
   return Text("Mixed Reactive Design")
-    .modifier
     .responsive({
       base: { 
         fontSize: 16,               // Static
@@ -698,7 +687,7 @@ const MixedReactiveComponent = () => {
         // padding and color inherited from md breakpoint
       }
     })
-    .build()
+    
 }
 ```
 
@@ -717,7 +706,6 @@ const ReactiveMediaQueryComponent = () => {
   )
   
   return Text("Reactive Media Query Text")
-    .modifier
     .responsive({
       base: { 
         fontSize: 16,
@@ -734,7 +722,7 @@ const ReactiveMediaQueryComponent = () => {
     .mediaQuery('(prefers-color-scheme: dark)', {
       backgroundColor: '#1a1a1a'    // Static dark mode background
     })
-    .build()
+    
 }
 ```
 
@@ -766,9 +754,8 @@ const OptimizedReactiveComponent = () => {
   }))
   
   return Text("Optimized Reactive Text")
-    .modifier
     .responsive(responsiveConfig)    // Single reactive responsive config
-    .build()
+    
 }
 
 // ❌ Avoid: Creating reactive values in render
@@ -776,14 +763,13 @@ const UnoptimizedComponent = () => {
   const [active, setActive] = createSignal(false)
   
   return Text("Unoptimized")
-    .modifier
     .responsive({
       // Bad: Creates new computed on every render
       fontSize: createComputed(() => active() ? 20 : 16),
       // Bad: Creates new asset on every render  
       color: ColorAsset.init({ light: '#000', dark: '#fff' })
     })
-    .build()
+    
 }
 ```
 
@@ -799,18 +785,16 @@ const ResponsiveCard = ({ title, content, image }: CardProps) => {
   return VStack([
     // Image with responsive sizing
     Image(image)
-      .modifier
       .responsive({
         base: { width: '100%', height: 200 },
         md: { width: 300, height: 200 },
         lg: { width: 400, height: 250 }
       })
       .borderRadius({ base: 8, md: 12 })
-      .build(),
+      ,
     
     // Title with responsive typography
     Text(title)
-      .modifier
       .responsive({
         base: { 
           fontSize: 18, 
@@ -828,11 +812,10 @@ const ResponsiveCard = ({ title, content, image }: CardProps) => {
           marginBottom: 16
         }
       })
-      .build(),
+      ,
     
     // Content with responsive spacing
     Text(content)
-      .modifier
       .responsive({
         base: { 
           fontSize: 14, 
@@ -849,9 +832,8 @@ const ResponsiveCard = ({ title, content, image }: CardProps) => {
           lineHeight: 1.6
         }
       })
-      .build()
+      
   ])
-  .modifier
   .responsive({
     base: { 
       padding: 16,
@@ -876,7 +858,7 @@ const ResponsiveCard = ({ title, content, image }: CardProps) => {
     backgroundColor: '#1a1a1a',
     color: '#ffffff'
   })
-  .build()
+  
 }
 ```
 

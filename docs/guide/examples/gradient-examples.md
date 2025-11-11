@@ -22,7 +22,7 @@ const createGradientButton = (text: string, action: () => void) => {
     .fontWeight('600')
     .padding(16)
     .cornerRadius(8)
-    .build()
+    
 }
 
 // Usage
@@ -58,7 +58,7 @@ const createHeroCard = (title: string, subtitle: string) => {
     .padding(32)
     .cornerRadius(16)
     .shadow({ x: 0, y: 4, radius: 20, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
 }
 
 // Usage
@@ -102,7 +102,7 @@ const createAdaptiveCard = (content: string) => {
     .background(adaptiveGradient)
     .cornerRadius(12)
     .border(1, '#dee2e6')
-    .build()
+    
 }
 
 // This card automatically adapts to light/dark themes
@@ -136,7 +136,7 @@ const createBrandButton = (text: string, action: () => void) => {
     .fontWeight('semibold')
     .padding({ top: 12, bottom: 12, left: 24, right: 24 })
     .cornerRadius(25)
-    .build()
+    
 }
 ```
 
@@ -202,7 +202,7 @@ const createNumberButton = (number: string, action: () => void) => {
     .fontWeight('400')
     .frame(60, 60)
     .cornerRadius(30)
-    .build()
+    
 }
 
 const createOperatorButton = (operator: string, action: () => void) => {
@@ -213,7 +213,7 @@ const createOperatorButton = (operator: string, action: () => void) => {
     .fontWeight('600')
     .frame(60, 60)
     .cornerRadius(30)
-    .build()
+    
 }
 
 const createFunctionButton = (fn: string, action: () => void) => {
@@ -224,7 +224,7 @@ const createFunctionButton = (fn: string, action: () => void) => {
     .fontWeight('500')
     .frame(60, 60)
     .cornerRadius(30)
-    .build()
+    
 }
 
 // Calculator layout
@@ -261,7 +261,7 @@ const createCalculatorButtons = () => {
     ] })
   ] })
     .gap(8)
-    .build()
+    
 }
 ```
 
@@ -349,7 +349,7 @@ const createMetricCard = ({ title, value, change, type }: MetricCardProps) => {
     .cornerRadius(16)
     .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
     .minWidth(200)
-    .build()
+    
 }
 
 // Dashboard layout
@@ -381,10 +381,10 @@ const createDashboard = () => {
       })
     ] })
       .gap(20)
-      .build()
+      
   ] })
     .padding(32)
-    .build()
+    
 }
 ```
 
@@ -430,14 +430,14 @@ const createNavHeader = () => {
         .backgroundColor('rgba(255,255,255,0.1)')
         .padding({ top: 8, bottom: 8, left: 16, right: 16 })
         .cornerRadius(6)
-        .build(),
+        ,
       
       Button('Docs', () => console.log('Docs'))
         .foregroundColor('white')
         .backgroundColor('rgba(255,255,255,0.1)')
         .padding({ top: 8, bottom: 8, left: 16, right: 16 })
         .cornerRadius(6)
-        .build(),
+        ,
       
       Button('GitHub', () => console.log('GitHub'))
         .foregroundColor('white')
@@ -445,16 +445,16 @@ const createNavHeader = () => {
         .padding({ top: 8, bottom: 8, left: 16, right: 16 })
         .cornerRadius(6)
         .border(1, 'rgba(255,255,255,0.3)')
-        .build()
+        
     ] })
       .gap(12)
-      .build()
+      
   ] })
     .background(headerGradient)
     .padding({ top: 16, bottom: 16, left: 32, right: 32 })
     .justifyContent('space-between')
     .alignItems('center')
-    .build()
+    
 }
 ```
 
@@ -599,7 +599,7 @@ const createGradientTheme = (): AdaptiveGradientTheme => {
 const gradientTheme = createGradientTheme()
 const primaryButton = Button('Primary', () => {})
   .background(gradientTheme.primary)
-  .build()
+  
 ```
 
 ## Testing Examples

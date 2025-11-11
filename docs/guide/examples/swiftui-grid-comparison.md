@@ -59,7 +59,7 @@ const BasicGrid = Grid({
   .padding(16)
   .backgroundColor('rgba(128, 128, 128, 0.1)')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### Vertical Grid (LazyVGrid)
@@ -97,11 +97,11 @@ const VerticalGrid = LazyVGrid({
       .padding(16)
       .backgroundColor('rgba(0, 123, 255, 0.2)')
       .cornerRadius(8)
-      .build()
+      
   )
 })
   .padding(16)
-  .build()
+  
 ```
 
 ### Horizontal Grid (LazyHGrid)
@@ -135,11 +135,11 @@ const HorizontalGrid = LazyHGrid({
     Image({ src: photo.url, alt: photo.title })
       .frame(150, 100)
       .cornerRadius(8)
-      .build()
+      
   )
 })
   .padding(16)
-  .build()
+  
 ```
 
 ## GridItem Configuration Patterns
@@ -238,7 +238,7 @@ const SpanningGrid = Grid({
         .gridColumnSpan(3)
         .backgroundColor('#007bff')
         .foregroundColor('#ffffff')
-        .build()
+        
     ]),
     GridRow([
       Text('A1'),
@@ -270,7 +270,7 @@ const SectionGrid = LazyVGrid({
   header: Text('Featured Items')
     .fontSize(18)
     .fontWeight('bold')
-    .build(),
+    ,
   children: featuredItems.map(item => ItemView(item))
 })
 ```
@@ -318,18 +318,18 @@ const PhotoGallery = LazyVGrid({
         .frame(undefined, 200)
         .clipped()
         .cornerRadius(12)
-        .build(),
+        ,
       
       Text(photo.title)
         .fontSize(12)
         .foregroundColor('#666666')
-        .build()
+        
     ])
     .padding(8)
     .backgroundColor('#ffffff')
     .cornerRadius(8)
     .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
   )
 })
 ```
@@ -386,7 +386,7 @@ const DashboardLayout = Grid({
       Text('Dashboard')
         .fontSize(28)
         .gridColumnSpan(3)
-        .build()
+        
     ]),
     
     GridRow([
@@ -396,7 +396,7 @@ const DashboardLayout = Grid({
       ])
       .gridRowSpan(2)
       .width(200)
-      .build(),
+      ,
       
       VStack([
         Text('Main Content'),
@@ -408,7 +408,7 @@ const DashboardLayout = Grid({
         // Stats content components  
       ])
       .width(150)
-      .build()
+      
     ]),
     
     GridRow([
@@ -417,12 +417,12 @@ const DashboardLayout = Grid({
         Text('Footer Content')
       ])
       .gridColumnSpan(2)
-      .build()
+      
     ])
   ]
 })
   .padding(16)
-  .build()
+  
 ```
 
 ## Migration Patterns
@@ -648,28 +648,28 @@ const ProductGrid = (products: Product[]) => {
         Image({ src: product.imageURL, alt: product.name })
           .aspectRatio(1, 'fit')
           .cornerRadius(8)
-          .build(),
+          ,
         
         Text(product.name)
           .fontSize(16)
           .fontWeight('bold')
           .lineClamp(2)
-          .build(),
+          ,
         
         Text(`$${product.price.toFixed(2)}`)
           .fontSize(14)
           .foregroundColor('#666666')
-          .build()
+          
       ])
       .padding(12)
       .backgroundColor('#ffffff')
       .cornerRadius(12)
       .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-      .build()
+      
     )
   })
     .padding(16)
-    .build()
+    
 }
 ```
 

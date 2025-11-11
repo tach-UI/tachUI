@@ -26,7 +26,7 @@ TachUI provides multiple layers of tooling—from CLI helpers to DevTools integr
 
 - Run `pnpm --filter @tachui/core generate-modifier-types -- --check` to catch stale declaration files.
 - Examine `packages/core/src/types/generated-modifiers.d.ts` if TypeScript reports missing modifiers. Regenerate and commit the file if necessary.
-- ESLint with `@tachui/prefer-direct-modifiers` flags lingering `.modifier` chains that TypeScript can’t type correctly.
+- ESLint with `@tachui/prefer-direct-modifiers` flags lingering legacy builder usage so TypeScript typings stay accurate.
 
 ## 5. Profile Performance Issues
 

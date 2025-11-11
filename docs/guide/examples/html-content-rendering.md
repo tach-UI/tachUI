@@ -19,7 +19,7 @@ const WelcomeMessage = () => {
     .lineHeight(1.5)
     .textAlign('center')
     .padding(20)
-    .build()
+    
 }
 ```
 
@@ -64,7 +64,7 @@ const NewsletterArticle = () => {
     .border(1, '#E5E5E7')
     .cornerRadius(12)
     .shadow({ x: 0, y: 4, blur: 16, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
 }
 ```
 
@@ -100,7 +100,7 @@ const CommentComponent = (comment: Comment) => {
         .fontWeight('600')
         .fontSize(14)
         .foregroundColor('#2C3E50')
-        .build(),
+        ,
 
       // Comment content (sanitized HTML)
       Text(comment.content)
@@ -110,14 +110,14 @@ const CommentComponent = (comment: Comment) => {
         .fontSize(14)
         .lineHeight(1.4)
         .marginTop(4)
-        .build(),
+        ,
 
       // Timestamp (plain text)
       Text(comment.timestamp)
         .fontSize(12)
         .opacity(0.6)
         .marginTop(8)
-        .build(),
+        ,
     ],
   })
     .padding(16)
@@ -125,7 +125,7 @@ const CommentComponent = (comment: Comment) => {
     .border(1, '#E9ECEF')
     .cornerRadius(8)
     .marginBottom(12)
-    .build()
+    
 }
 
 // Usage example
@@ -136,11 +136,11 @@ const CommentsSection = (comments: Comment[]) => {
         .fontSize(20)
         .fontWeight('600')
         .marginBottom(16)
-        .build(),
+        ,
 
       ...comments.map(comment => CommentComponent(comment)),
     ],
-  }).build()
+  })
 }
 ```
 
@@ -251,14 +251,14 @@ const BlogPostComponent = (post: BlogPost) => {
         .fontWeight('700')
         .lineHeight(1.2)
         .marginBottom(16)
-        .build(),
+        ,
 
       // Tags
       Text(`Tagged: ${post.tags.join(', ')}`)
         .fontSize(14)
         .opacity(0.7)
         .marginBottom(24)
-        .build(),
+        ,
 
       // Content with rich HTML support
       Text(post.content)
@@ -267,7 +267,7 @@ const BlogPostComponent = (post: BlogPost) => {
         })
         .fontSize(16)
         .lineHeight(1.6)
-        .build(),
+        ,
     ],
   })
     .maxWidth(800)
@@ -275,7 +275,7 @@ const BlogPostComponent = (post: BlogPost) => {
     .backgroundColor('#FFFFFF')
     .cornerRadius(12)
     .shadow({ x: 0, y: 2, blur: 16, color: 'rgba(0,0,0,0.08)' })
-    .build()
+    
 }
 ```
 
@@ -382,7 +382,7 @@ const EmailTemplatePreview = (
     .lineHeight(1.4)
     .padding(20)
     .backgroundColor('#F5F5F5')
-    .build()
+    
 }
 
 // Usage
@@ -464,7 +464,7 @@ const MarkdownRenderer = (markdown: string) => {
     })
     .fontSize(16)
     .lineHeight(1.6)
-    .build()
+    
 }
 
 // Usage example
@@ -474,7 +474,7 @@ const DocumentationPage = (markdownContent: string) => {
   })
     .maxWidth(800)
     .padding(24)
-    .build()
+    
 }
 ```
 
@@ -540,7 +540,7 @@ const RichTextDisplay = (content: RichTextContent) => {
         })
         .fontSize(16)
         .lineHeight(1.6)
-        .build(),
+        ,
 
       // Meta information
       Text(`${content.wordCount} words`)
@@ -548,14 +548,14 @@ const RichTextDisplay = (content: RichTextContent) => {
         .opacity(0.6)
         .marginTop(16)
         .textAlign('right')
-        .build(),
+        ,
     ],
   })
     .padding(20)
     .backgroundColor('#FFFFFF')
     .border(1, '#E5E5E7')
     .cornerRadius(8)
-    .build()
+    
 }
 ```
 
@@ -590,17 +590,17 @@ const LargeHTMLContentViewer = (htmlContent: string) => {
         })
         .fontSize(16)
         .lineHeight(1.6)
-        .build(),
+        ,
 
       !isExpanded()
         ? Text('Show More')
             .foregroundColor('#007AFF')
             .onTap(() => setIsExpanded(true))
             .padding(8)
-            .build()
+            
         : null,
     ],
-  }).build()
+  })
 }
 ```
 
@@ -625,7 +625,7 @@ const CachedHTMLRenderer = (content: string, cacheKey?: string) => {
       skipSanitizer: true, // Already sanitized and cached
       validateDOM: false,
     })
-    .build()
+    
 }
 ```
 
@@ -651,7 +651,7 @@ const SecurityTestComponent = () => {
         .fontSize(18)
         .fontWeight('600')
         .marginBottom(16)
-        .build(),
+        ,
 
       ...testVectors.map((vector, index) =>
         VStack({
@@ -661,7 +661,7 @@ const SecurityTestComponent = () => {
               .fontFamily('monospace')
               .backgroundColor('#F8F9FA')
               .padding(8)
-              .build(),
+              ,
 
             Text(vector)
               .asHTML()
@@ -669,14 +669,14 @@ const SecurityTestComponent = () => {
               .padding(8)
               .border(1, '#E5E5E7')
               .marginBottom(12)
-              .build(),
+              ,
           ],
-        }).build()
+        })
       ),
     ],
   })
     .padding(20)
-    .build()
+    
 }
 ```
 
@@ -760,7 +760,7 @@ const CMSContentRenderer = (content: CMSContent) => {
     })
     .fontSize(content.type === 'article' ? 16 : 14)
     .lineHeight(1.6)
-    .build()
+    
 }
 ```
 

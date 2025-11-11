@@ -6,51 +6,22 @@ Complete guide to TachUI's SwiftUI-inspired components with our specific syntax,
 
 ## Core Concepts
 
-### The Modifier System
+### Fluent Modifier System
 
-Unlike SwiftUI, TachUI uses an explicit `.modifier` chain that must be terminated with `.build()`:
+TachUI components expose modifiers directly—call them on the component you
+create, just like SwiftUI, and there is no extra builder step:
 
 ```typescript
-// TachUI Pattern (Web-Specific)
-Text("Hello")
-  .modifier
+Text('Hello')
   .fontSize(24)
   .foregroundColor('#007AFF')
   .padding(16)
   .backgroundColor('white')
   .cornerRadius(8)
-  .build()               // Required to create component
-
-// NOT SwiftUI - this won't work in TachUI:
-Text("Hello")
-  .font(.title)          // SwiftUI syntax
-  .foregroundColor(.blue)
 ```
 
-### TachUI Modifier Pattern
-
-TachUI uses a consistent modifier pattern that requires `.modifier` and `.build()`:
-
-```typescript
-// Correct TachUI pattern (all modifiers require this structure)
-const component = Text('Hello')
-  .fontSize(24)
-  .padding(16)
-  .foregroundColor('#007AFF')
-  .build()
-
-// For complex styling (same pattern)
-const styledComponent = Text('Hello')
-  .fontSize(24)
-  .padding(16)
-  .foregroundColor('#007AFF')
-  .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
-  .backgroundColor('white')
-  .cornerRadius(8)
-  .build()
-```
-
-> **Important**: All TachUI modifiers must use the `.property().build()` pattern. There are no "direct" modifiers.
+> **Important**: Modifiers always use the `.property()` naming pattern (for
+> example, `.padding(12)`, `.shadow(...)`).
 
 ## Text Component
 
@@ -76,7 +47,7 @@ const styledText = Text('Styled Text')
   .backgroundColor('#f0f8ff')
   .padding(16)
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### Typography Modifiers
@@ -91,7 +62,7 @@ Text('Typography Example')
   .textAlign('center') // 'left' | 'center' | 'right' | 'justify'
   .textDecoration('underline') // CSS text-decoration
   .textTransform('uppercase') // CSS text-transform
-  .build()
+  
 ```
 
 ### Advanced Text Features
@@ -101,19 +72,19 @@ Text('Typography Example')
 Text('Very long text that might need truncation...')
   .lineLimit(2) // Limit to 2 lines
   .textOverflow('ellipsis') // Handle overflow
-  .build()
+  
 
 // Selectable text
 Text('This text can be selected')
   .userSelect('text') // Enable text selection
-  .build()
+  
 
 // Interactive text
 Text('Clickable Text')
   .onTap(() => console.log('Text clicked'))
   .cursor('pointer')
   .textDecoration('underline')
-  .build()
+  
 ```
 
 ## Button Component
@@ -140,7 +111,7 @@ const styledButton = Button('Save', async () => {
   .cornerRadius(8)
   .fontSize(16)
   .fontWeight('600')
-  .build()
+  
 ```
 
 ### Button States
@@ -157,7 +128,7 @@ Button('Submit', async () => {
   .disabled(() => isLoading() || isDisabled())
   .opacity(() => (isDisabled() ? 0.5 : 1.0))
   .cursor(() => (isDisabled() ? 'not-allowed' : 'pointer'))
-  .build()
+  
 ```
 
 ### Button Variants
@@ -167,26 +138,26 @@ Button('Submit', async () => {
 Button('Primary', action)
   .backgroundColor('#007AFF')
   .foregroundColor('white')
-  .build()
+  
 
 // Secondary button
 Button('Secondary', action)
   .backgroundColor('transparent')
   .foregroundColor('#007AFF')
   .border(1, '#007AFF')
-  .build()
+  
 
 // Destructive button
 Button('Delete', action)
   .backgroundColor('#ff3b30')
   .foregroundColor('white')
-  .build()
+  
 
 // Text button
 Button('Cancel', action)
   .backgroundColor('transparent')
   .foregroundColor('#666')
-  .build()
+  
 ```
 
 ## TextField Component
@@ -210,7 +181,7 @@ TextField({
   .border(1, '#e0e0e0')
   .cornerRadius(6)
   .fontSize(16)
-  .build()
+  
 ```
 
 ### Input Types
@@ -268,11 +239,11 @@ TextField({
   placeholder: 'Enter email',
 })
   .borderColor(() => (error() ? '#ff3b30' : '#e0e0e0'))
-  .build()
+  
 
 // Show error message
 if (error()) {
-  Text(error()).foregroundColor('#ff3b30').fontSize(14).build()
+  Text(error()).foregroundColor('#ff3b30').fontSize(14)
 }
 ```
 
@@ -289,13 +260,13 @@ import { Image } from '@tachui/primitives'
 Image({ src: '/path/to/image.jpg', alt: 'Description' })
   .frame({ width: 300, height: 200 })
   .cornerRadius(8)
-  .build()
+  
 
 // Responsive image
 Image({ src: '/hero-image.jpg' })
   .frame({ width: '100%', height: 'auto' })
   .maxWidth(800)
-  .build()
+  
 ```
 
 ### Content Modes
@@ -305,20 +276,20 @@ Image({ src: '/hero-image.jpg' })
 Image({ src: '/photo.jpg' })
   .frame({ width: 300, height: 200 })
   .objectFit('contain') // CSS object-fit: contain
-  .build()
+  
 
 // Aspect fill (like SwiftUI .scaleAspectFill)
 Image({ src: '/photo.jpg' })
   .frame({ width: 300, height: 200 })
   .objectFit('cover') // CSS object-fit: cover
-  .build()
+  
 
 // Center (no scaling)
 Image({ src: '/icon.png' })
   .frame({ width: 100, height: 100 })
   .objectFit('none')
   .objectPosition('center')
-  .build()
+  
 ```
 
 ### Loading States
@@ -334,11 +305,11 @@ Image({
   onError: () => setLoadingState('error'),
 })
   .opacity(() => (loadingState() === 'loaded' ? 1 : 0.5))
-  .build()
+  
 
 // Show loading indicator
 if (loadingState() === 'loading') {
-  Text('Loading...').fontSize(14).foregroundColor('#666').build()
+  Text('Loading...').fontSize(14).foregroundColor('#666')
 }
 ```
 
@@ -363,7 +334,7 @@ VStack({
   .padding(20)
   .backgroundColor('#f8f9fa')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### HStack - Horizontal Layout
@@ -374,14 +345,14 @@ Stack components horizontally.
 HStack({
   children: [
     Text('Left'),
-    Text('Center').flexGrow(1).build(), // Take remaining space
+    Text('Center').flexGrow(1), // Take remaining space
     Text('Right'),
   ],
   spacing: 12,
   alignment: 'center', // 'top' | 'center' | 'bottom'
 })
   .padding(16)
-  .build()
+  
 ```
 
 ### ZStack - Layered Layout
@@ -396,13 +367,13 @@ ZStack({
       .backgroundColor('#007AFF')
       .frame({ width: 200, height: 100 })
       .cornerRadius(8)
-      .build(),
+      ,
 
     // Foreground content
     Text('Overlay Text')
       .foregroundColor('white')
       .fontWeight('bold')
-      .build(),
+      ,
   ],
   alignment: 'center', // Position of overlay content
 })
@@ -431,7 +402,7 @@ Form({
 })
   .padding(20)
   .backgroundColor('#f8f9fa')
-  .build()
+  
 ```
 
 ### Toggle Switch
@@ -449,7 +420,7 @@ Toggle({
   label: 'Enable Notifications',
 })
   .accentColor('#007AFF') // Switch color when enabled
-  .build()
+  
 ```
 
 ### Slider Component
@@ -470,7 +441,7 @@ Slider({
 })
   .accentColor('#007AFF')
   .frame({ width: 300 })
-  .build()
+  
 
 // Display current value
 Text(() => `Volume: ${volume()}%`)
@@ -501,7 +472,7 @@ Picker({
   style: 'segmented',
 })
   .frame({ width: 300 })
-  .build()
+  
 ```
 
 ## Common Modifiers Reference
@@ -555,7 +526,7 @@ component
 ### 1. Explicit Modifier Chains
 
 - **SwiftUI**: Modifiers can be chained directly
-- **TachUI**: Complex styling requires `.build()` pattern
+- **TachUI**: Complex styling requires `` pattern
 
 ### 2. Web-Specific Values
 
@@ -586,11 +557,11 @@ import { Text, Button, VStack } from '@tachui/primitives'
 
 ### 2. Use Consistent Modifier Pattern
 
-Always use the `.build()` pattern for TachUI components:
+Always use the `` pattern for TachUI components:
 
 ```typescript
 // Correct TachUI pattern
-Text('Hello').fontSize(24).padding(16).build()
+Text('Hello').fontSize(24).padding(16)
 
 // This syntax doesn't exist in TachUI
 // Text('Hello').fontSize(24).padding(16)
@@ -606,7 +577,7 @@ const [isDark, setIsDark] = createSignal(false)
 Text('Themed Text')
   .foregroundColor(() => (isDark() ? 'white' : 'black'))
   .backgroundColor(() => (isDark() ? '#333' : 'white'))
-  .build()
+  
 ```
 
 ### 4. Semantic Component Names
@@ -620,7 +591,7 @@ function PrimaryButton(title: string, action: () => void) {
     .foregroundColor('white')
     .padding(12, 20)
     .cornerRadius(8)
-    .build()
+    
 }
 ```
 

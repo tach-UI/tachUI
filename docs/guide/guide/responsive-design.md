@@ -24,13 +24,12 @@ import { Text } from '@tachui/core'
 
 // Responsive text sizing
 Text("Welcome to TachUI")
-  .modifier
   .responsive({
     base: { fontSize: 24, padding: 16 },    // Mobile (default)
     md: { fontSize: 32, padding: 24 },      // Tablet and up
     lg: { fontSize: 40, padding: 32 }       // Desktop and up
   })
-  .build()
+  
 ```
 
 ### Breakpoint Shorthand
@@ -39,12 +38,11 @@ For simpler responsive changes, use breakpoint shorthand modifiers:
 
 ```typescript
 Text("Responsive Title")
-  .modifier
   .fontSize(24)        // Base size (mobile)
   .md.fontSize(32)     // Medium screens and up
   .lg.fontSize(40)     // Large screens and up
   .textAlign('center') // Applied to all breakpoints
-  .build()
+  
 ```
 
 ### Custom Media Queries
@@ -53,11 +51,10 @@ For specific responsive behavior, use custom media queries:
 
 ```typescript
 Text("Landscape Text")
-  .modifier
   .fontSize(16)
   .mediaQuery('(orientation: landscape)', { fontSize: 18 })
   .mediaQuery('(prefers-color-scheme: dark)', { color: '#ffffff' })
-  .build()
+  
 ```
 
 ## Breakpoint System
@@ -79,13 +76,12 @@ Styles cascade upward from smaller to larger breakpoints:
 
 ```typescript
 Text("Mobile-First Text")
-  .modifier
   .responsive({
     base: { fontSize: 16, color: '#333' },  // Applied on all screens
     md: { fontSize: 20 },                   // Overrides fontSize on md+
     lg: { fontSize: 24, fontWeight: 'bold' } // Adds fontWeight on lg+
   })
-  .build()
+  
 ```
 
 ## Responsive Layout Examples
@@ -102,21 +98,19 @@ const ResponsiveGrid = () => {
   return VStack([
     ...items.map(item => 
       Text(item.title)
-        .modifier
         .responsive({
           base: { width: '100%' },           // Full width on mobile
           md: { width: 'calc(50% - 1rem)' }, // 2 columns on tablet
           lg: { width: 'calc(33.333% - 1rem)' } // 3 columns on desktop
         })
-        .build()
+        
     )
   ])
-  .modifier
   .responsive({
     base: { flexDirection: 'column', gap: '1rem' },
     md: { flexDirection: 'row', flexWrap: 'wrap' }
   })
-  .build()
+  
 }
 ```
 
@@ -129,35 +123,32 @@ import { HStack, VStack, Button } from '@tachui/core'
 
 const ResponsiveNav = () => {
   return HStack([
-    Text("Logo").fontSize(24).fontWeight('bold').build(),
+    Text("Logo").fontSize(24).fontWeight('bold'),
     
     // Desktop navigation - horizontal
     HStack([
-      Button("Home").build(),
-      Button("About").build(),
-      Button("Contact").build()
+      Button("Home"),
+      Button("About"),
+      Button("Contact")
     ])
-    .modifier
     .responsive({
       base: { display: 'none' },  // Hidden on mobile
       lg: { display: 'flex' }     // Visible on desktop
     })
-    .build(),
+    ,
     
     // Mobile menu button
     Button("☰")
-      .modifier
       .responsive({
         base: { display: 'block' }, // Visible on mobile
         lg: { display: 'none' }     // Hidden on desktop
       })
-      .build()
+      
   ])
-  .modifier
   .justifyContent('space-between')
   .alignItems('center')
   .padding({ base: 16, md: 24 })
-  .build()
+  
 }
 ```
 
@@ -167,31 +158,28 @@ const ResponsiveNav = () => {
 
 ```typescript
 Text("Orientation-aware")
-  .modifier
   .fontSize(16)
   .mediaQuery('(orientation: portrait)', { fontSize: 18 })
   .mediaQuery('(orientation: landscape)', { fontSize: 14 })
-  .build()
+  
 ```
 
 ### Dark Mode Support
 
 ```typescript
 Text("Theme-aware text")
-  .modifier
   .color('#333333')
   .mediaQuery('(prefers-color-scheme: dark)', { 
     color: '#ffffff',
     backgroundColor: '#1a1a1a'
   })
-  .build()
+  
 ```
 
 ### Accessibility Preferences
 
 ```typescript
 Button("Accessible Button")
-  .modifier
   .transition('all 0.2s ease')
   .mediaQuery('(prefers-reduced-motion: reduce)', { 
     transition: 'none' 
@@ -200,7 +188,7 @@ Button("Accessible Button")
     borderWidth: 2,
     borderColor: '#000000'
   })
-  .build()
+  
 ```
 
 ## Reactive Responsive Design
@@ -236,7 +224,6 @@ const textColor = ColorAsset.init({
 // Responsive component that reacts to theme changes
 const ThemeAwareCard = () => {
   return Text("Theme-Reactive Text")
-    .modifier
     .responsive({
       base: { 
         fontSize: 16,
@@ -254,7 +241,7 @@ const ThemeAwareCard = () => {
         borderLeft: `4px solid ${brandColor.resolve()}` // Theme-aware border
       }
     })
-    .build()
+    
 }
 ```
 
@@ -287,7 +274,6 @@ const DynamicResponsiveComponent = () => {
   )
   
   return Text("Dynamic Responsive Text")
-    .modifier
     .responsive({
       base: { 
         fontSize: 16,
@@ -305,7 +291,7 @@ const DynamicResponsiveComponent = () => {
       }
     })
     .onClick(() => setIsExpanded(!isExpanded()))
-    .build()
+    
 }
 ```
 
@@ -322,7 +308,6 @@ const MixedReactiveComponent = () => {
   )
   
   return Text("Mixed Reactive Design")
-    .modifier
     .responsive({
       base: { 
         fontSize: adaptiveFontSize,   // Reactive - changes with user preference
@@ -340,7 +325,7 @@ const MixedReactiveComponent = () => {
         // color and backgroundColor inherited from previous breakpoints
       }
     })
-    .build()
+    
 }
 ```
 
@@ -361,7 +346,6 @@ const ReactiveMediaQueryComponent = () => {
   )
   
   return Text("Reactive Media Query Text")
-    .modifier
     .responsive({
       base: { 
         fontSize: 16,
@@ -379,7 +363,7 @@ const ReactiveMediaQueryComponent = () => {
       filter: dynamicBlur,         // Reactive - dynamic blur effect
       transition: 'filter 0.3s ease'
     })
-    .build()
+    
 }
 ```
 
@@ -411,7 +395,6 @@ const RealTimeComponent = () => {
   )
   
   return Text(`Value: ${Math.round(liveData().value)}`)
-    .modifier
     .responsive({
       base: { 
         fontSize: 16,
@@ -428,7 +411,7 @@ const RealTimeComponent = () => {
         padding: 20
       }
     })
-    .build()
+    
 }
 ```
 
@@ -461,12 +444,11 @@ const OptimizedComponent = () => {
   })
   
   return Text("Optimized Reactive Text")
-    .modifier
     .responsive({
       fontSize: responsiveSize,      // Reactive responsive object
       color: stableColor            // Stable reactive asset
     })
-    .build()
+    
 }
 ```
 
@@ -491,9 +473,8 @@ const ResponsiveComponent = () => {
   const isTabletRange = breakpoint.isBetween('md', 'lg')
   
   return Text(`Current breakpoint: ${currentBp}`)
-    .modifier
     .fontSize(isMobile ? 16 : 20)
-    .build()
+    
 }
 ```
 
@@ -507,10 +488,9 @@ const DarkModeComponent = () => {
   const isLandscape = useMediaQuery('(orientation: landscape)')
   
   return Text("Responsive to preferences")
-    .modifier
     .color(isDarkMode() ? '#ffffff' : '#000000')
     .fontSize(isLandscape() ? 18 : 16)
-    .build()
+    
 }
 ```
 
@@ -533,10 +513,9 @@ const ResponsiveValueComponent = () => {
   })
   
   return Text("Dynamic responsive values")
-    .modifier
     .fontSize(fontSize())
     .padding(padding())
-    .build()
+    
 }
 ```
 
@@ -572,23 +551,21 @@ Always start with mobile styles and enhance for larger screens:
 ```typescript
 // ✅ Good: Mobile-first approach
 Text("Content")
-  .modifier
   .responsive({
     base: { fontSize: 16, padding: 12 },    // Mobile base
     md: { fontSize: 18, padding: 16 },      // Enhance for tablet
     lg: { fontSize: 20, padding: 20 }       // Enhance for desktop
   })
-  .build()
+  
 
 // ❌ Avoid: Desktop-first approach
 Text("Content")
-  .modifier
   .responsive({
     lg: { fontSize: 20, padding: 20 },      // Desktop first
     md: { fontSize: 18, padding: 16 },      // Scale down
     base: { fontSize: 16, padding: 12 }     // Scale down more
   })
-  .build()
+  
 ```
 
 ### 2. Consistent Breakpoint Usage
@@ -618,13 +595,12 @@ Use meaningful responsive values that reflect content hierarchy:
 ```typescript
 // ✅ Good: Semantic responsive sizing
 Text("Main Heading")
-  .modifier
   .responsive({
     base: { fontSize: 24, lineHeight: 1.2 },  // Large enough to be readable
     md: { fontSize: 32, lineHeight: 1.1 },    // Larger but proportional
     lg: { fontSize: 40, lineHeight: 1.0 }     // Desktop-appropriate size
   })
-  .build()
+  
 ```
 
 ### 4. Test Across Devices

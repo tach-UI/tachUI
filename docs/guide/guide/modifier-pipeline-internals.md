@@ -57,11 +57,10 @@ When you use the fluent API:
 
 ```typescript
 const styledText = Text('Hello')
-  .modifier
   .fontSize(24)           // Creates FontSize modifier
   .backgroundColor('red') // Creates Background modifier  
   .padding(10)           // Creates Padding modifier
-  .build()               // Finalizes the component
+                 // Finalizes the component
 ```
 
 Each method in the chain:
@@ -71,7 +70,7 @@ Each method in the chain:
 
 ### The build() Method
 
-The critical `.build()` method finalizes the modifier chain:
+The critical `` method finalizes the modifier chain:
 
 ```typescript
 // In builder.ts
@@ -88,7 +87,7 @@ build(): T {
 }
 ```
 
-**Key Point**: `.build()` transfers modifiers from the builder to the component's `modifiers` array.
+**Key Point**: `` transfers modifiers from the builder to the component's `modifiers` array.
 
 ## Stage 3: Component Rendering to DOM Nodes
 
@@ -313,11 +312,11 @@ console.log('Applying modifiers to element:', element.tagName, modifiers)
 
 ## Best Practices
 
-### 1. Always Use .build()
+### 1. Always Use 
 
 ```typescript
 // Good
-const component = Text('Hello').fontSize(24).build()
+const component = Text('Hello').fontSize(24)
 
 // Bad - modifiers won't be applied
 const component = Text('Hello').fontSize(24)
