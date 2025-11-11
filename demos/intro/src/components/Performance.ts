@@ -1,5 +1,5 @@
 import { VStack, HStack, Text } from '@tachui/primitives';
-import { Assets } from '@tachui/core/assets';
+import { Assets } from '@tachui/core';
 import type { ComponentInstance } from '@tachui/core/runtime/types';
 const logoFont = Assets.logoFont;
 export function Performance(): ComponentInstance {

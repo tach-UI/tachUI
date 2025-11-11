@@ -1,5 +1,5 @@
 import { VStack, HStack, Text, Button } from "@tachui/primitives";
-import { Assets, LinearGradient } from "@tachui/core/assets";
+import { Assets, LinearGradient } from "@tachui/core";
 import type { ComponentInstance } from "@tachui/core/runtime/types";
 import { Symbol } from "@tachui/symbols";
 const logoFont = Assets.logoFont;
@@ -92,7 +92,7 @@ export function Hero(): ComponentInstance {
                     Text("TypeScript framework inspired by SwiftUI integrated with a fine-grained reactive core")
                         .font({
                         size: "1.25rem",
-                        family: '"Dosis", sans-serif',
+                        family: baseFont,
                         weight: "400",
                     })
                         .textAlign("center")
@@ -114,7 +114,7 @@ export function Hero(): ComponentInstance {
                                     Text("PRE-RELEASE / EARLY ACCESS / BLEEDING EDGE")
                                         .font({
                                         size: "1.25rem",
-                                        family: '"Dosis", sans-serif',
+                                        family: baseFont,
                                         weight: "600",
                                     })
                                         .foregroundColor(Assets.accentOrange)
@@ -125,7 +125,7 @@ export function Hero(): ComponentInstance {
                             Text("This is a preview version released for early testing and community feedback. Features and APIs may change before the stable release.")
                                 .font({
                                 size: "1.15rem",
-                                family: '"Dosis", sans-serif',
+                                family: baseFont,
                             })
                                 .foregroundColor(Assets.textWhite)
                                 .opacity(0.85)
@@ -166,14 +166,14 @@ export function Hero(): ComponentInstance {
                                 .cornerRadius(2)
                                 .font({
                                 weight: "600",
-                                family: '"Dosis", sans-serif',
+                                family: 'Dosis, sans-serif',
                                 size: 16,
                             })
                                 .shadow({
                                 x: 0,
                                 y: 6,
-                                radius: 25,
-                                color: Assets.primaryPurle40,
+                                blur: 25,
+                                color: Assets.primaryPurple40,
                             })
                                 .hoverEffect("lift")
                                 .border({ width: 0 })

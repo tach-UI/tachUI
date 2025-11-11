@@ -1,5 +1,5 @@
 import { VStack, HStack, Text, Divider } from '@tachui/primitives';
-import { Assets } from '@tachui/core/assets';
+import { Assets } from '@tachui/core';
 import type { ComponentInstance } from '@tachui/core/runtime/types';
 export function ModularStack(name: string, size: string, entries: string[][]): ComponentInstance {
     const logoFont = Assets.logoFont;
