@@ -34,7 +34,9 @@
     "benchmark:all": "pnpm benchmark && pnpm benchmark:bundle && pnpm benchmark:browser",
     "lint": "oxlint src"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@tachui/modifiers": "workspace:*"
+  },
   "peerDependencies": {
     "@tachui/core": "^0.8.0-alpha"
   },

@@ -35,7 +35,8 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "workspace:*"
+    "@tachui/core": "workspace:*",
+    "@tachui/modifiers": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

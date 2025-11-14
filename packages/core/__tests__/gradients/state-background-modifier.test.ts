@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { BackgroundModifier } from '../../src/modifiers/background'
+import { BackgroundModifier } from '@tachui/modifiers/appearance/background'
 import { LinearGradient } from '../../src/gradients/index'
 import type { StateGradientOptions } from '../../src/gradients/types'
 import type { ModifierContext } from '../../src/modifiers/types'

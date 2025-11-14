@@ -5,13 +5,8 @@
  * and complex responsive logic utilities for sophisticated applications.
  */
 
-import {
-  createSignal,
-  createComputed,
-  createEffect,
-  createMemo,
-  Signal,
-} from '@tachui/core'
+import { createSignal, createComputed, createEffect, createMemo } from '@tachui/core'
+import type { Signal } from '@tachui/core/reactive/types'
 import {
   ResponsiveValue,
   BreakpointKey,

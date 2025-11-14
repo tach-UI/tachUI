@@ -131,6 +131,10 @@
     "./gradients": {
       "types": "./dist/gradients/index.d.ts",
       "import": "./dist/gradients/index.js"
+    },
+    "./gradients/css-generator": {
+      "types": "./dist/gradients/css-generator.d.ts",
+      "import": "./dist/gradients/css-generator.js"
     }
   },
   "files": [

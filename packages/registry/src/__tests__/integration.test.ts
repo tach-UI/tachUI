@@ -101,7 +101,7 @@ describe('Integration Scenarios', () => {
       registerModifier('padding', createTestModifier('padding'))
       registerModifier('margin', createTestModifier('margin'))
 
-      // Simulate @tachui/effects
+      // Simulate @tachui/modifiers/effects
       registerModifier('blur', createTestModifier('blur'))
       registerModifier('shadow', createTestModifier('shadow'))
 

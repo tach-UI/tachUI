@@ -23,9 +23,7 @@
       "@tachui/core": ["../core/src"],
       "@tachui/core/*": ["../core/src/*"],
       "@tachui/modifiers": ["../modifiers/src"],
-      "@tachui/modifiers/*": ["../modifiers/src/*"],
-      "@tachui/effects": ["../effects/src"],
-      "@tachui/effects/*": ["../effects/src/*"],
+      "@tachui/modifiers/*": ["../modifiers/src/*"], // Effects merged into modifiers
       "@tachui/primitives": ["../primitives/src"],
       "@tachui/primitives/*": ["../primitives/src/*"],
       "@tachui/registry": ["../registry/dist/index.d.ts"],

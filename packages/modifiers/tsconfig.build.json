@@ -22,7 +22,12 @@
 
     "baseUrl": ".",
     "paths": {
-      "@tachui/core": ["../../core/src"]
+      "@tachui/core": ["../core/dist/index.d.ts"],
+      "@tachui/core/*": ["../core/dist/*"],
+      "@tachui/core/gradients": ["../core/dist/gradients/index.d.ts"],
+      "@tachui/core/gradients/*": ["../core/dist/gradients/*"],
+      "@tachui/core/assets": ["../core/dist/assets/index.d.ts"],
+      "@tachui/core/assets/*": ["../core/dist/assets/*"]
     }
   },
   "include": ["src/**/*"],

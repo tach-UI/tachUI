@@ -147,7 +147,7 @@ pnpm benchmark:navigation # Navigation-specific benchmarks
 
 **Foundation Packages:**
 - **@tachui/data** - Data display components (List, Menu components)
-- **@tachui/effects** - Visual effects, transforms, filters, and backdrop effects
+- **@tachui/modifiers/effects** - Visual effects, transforms, filters, and backdrop effects
 - **@tachui/grid** - CSS Grid layout system with responsive design
 - **@tachui/responsive** - Breakpoint system and responsive utilities
 
@@ -291,5 +291,4 @@ pnpm benchmark:navigation # Navigation-specific benchmarks
 1. **Design Document Review** - Review completed designs in `/Users/whoughton/Dev/tach-ui/design/_completed/`
 2. **Demo Application Enhancement** - Expand calculator and intro applications
 3. **Migration Guides** - React/Vue to tachUI conversion documentation
-
 

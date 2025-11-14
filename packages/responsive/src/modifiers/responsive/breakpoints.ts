@@ -12,7 +12,8 @@ import {
   BreakpointContext,
   isValidBreakpointKey,
 } from './types'
-import { createSignal, Signal } from '@tachui/core'
+import { createSignal } from '@tachui/core'
+import type { Signal } from '@tachui/core/reactive/types'
 
 /**
  * Global breakpoint configuration state

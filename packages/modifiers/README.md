@@ -283,7 +283,7 @@ VStack({
 ### With Effects
 
 ```typescript
-import { shadow, blur } from '@tachui/effects'
+import { shadow, blur } from '@tachui/modifiers/effects'
 
 Text('Enhanced')
   .modifier.padding(20)

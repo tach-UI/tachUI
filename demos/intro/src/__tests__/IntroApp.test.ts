@@ -1,14 +1,15 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { VStack } from '@tachui/primitives'
 import '@tachui/modifiers'
-import { registerModifiers } from '@tachui/modifiers'
+import '@tachui/modifiers/effects'
+import { registerBasicModifiers } from '@tachui/modifiers'
 import { globalModifierRegistry } from '@tachui/registry'
 import { IntroApp } from '../components/IntroApp'
 import { createIntroAssets } from '../assets/intro-assets'
 
 describe('IntroApp', () => {
   beforeAll(() => {
-    registerModifiers()
+    registerBasicModifiers()
     if (!globalModifierRegistry.has('id')) {
       throw new Error('IntroApp test setup: id modifier not registered')
     }

@@ -16,7 +16,6 @@
   "dependencies": {
     "@tachui/core": "workspace:*",
     "@tachui/devtools": "workspace:*",
-    "@tachui/effects": "workspace:*",
     "@tachui/flow-control": "workspace:*",
     "@tachui/modifiers": "workspace:*",
     "@tachui/responsive": "workspace:*",

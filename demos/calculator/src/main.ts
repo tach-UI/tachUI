@@ -20,9 +20,9 @@ import { setTheme, detectSystemTheme } from "@tachui/core/reactive";
 
 // Removed CoreVersion import to reduce bundle size
 
-// Import modifiers and effects (auto-registers all modifiers)
+// Import modifiers (effects merged into modifiers - auto-registers all modifiers)
 import "@tachui/modifiers";
-import "@tachui/effects";
+import '@tachui/modifiers/effects';
 
 // import { initializeResponsiveSystem } from '@tachui/core' // REMOVED: Causing 3.9MB bundle bloat
 

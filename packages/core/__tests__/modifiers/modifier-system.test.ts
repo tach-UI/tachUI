@@ -120,7 +120,7 @@ describe('Modifier System', () => {
       const paddingModifier = layoutModifiers.padding(16)
 
       expect(frameModifier.type).toBe('layout')
-      expect(paddingModifier.type).toBe('layout')
+      expect(paddingModifier.type).toBe('padding')
     })
 
     it('should create appearance modifiers through functions', () => {
@@ -130,8 +130,8 @@ describe('Modifier System', () => {
         weight: 'bold',
       })
 
-      expect(colorModifier.type).toBe('appearance')
-      expect(fontModifier.type).toBe('appearance')
+      expect(colorModifier.type).toBe('foreground')
+      expect(fontModifier.type).toBe('typography')
     })
 
     it('should create interaction modifiers through functions', () => {
@@ -364,7 +364,7 @@ describe('Modifier System', () => {
 
       const conditional = conditionalModifier(condition, baseModifier)
 
-      expect(conditional.type).toBe('conditional-appearance')
+      expect(conditional.type).toBe('conditional-foreground')
     })
 
     it('should create class modifiers', () => {

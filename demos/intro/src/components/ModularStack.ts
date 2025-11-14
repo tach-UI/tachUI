@@ -2,9 +2,9 @@ import { VStack, HStack, Text, Divider } from '@tachui/primitives';
 import { Assets } from '@tachui/core';
 import type { ComponentInstance } from '@tachui/core/runtime/types';
 export function ModularStack(name: string, size: string, entries: string[][]): ComponentInstance {
+    const primaryPurple20 = Assets.primaryPurple20.resolve() as string;
     const logoFont = Assets.logoFont;
     const baseFont = Assets.baseFont;
-    const primaryPurple20 = Assets.primaryPurple20.resolve() as string;
     return VStack({
         spacing: 8,
         alignment: 'leading',

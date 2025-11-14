@@ -2,8 +2,6 @@ import { VStack, HStack, Text, Button } from "@tachui/primitives";
 import { Assets, LinearGradient } from "@tachui/core";
 import type { ComponentInstance } from "@tachui/core/runtime/types";
 import { Symbol } from "@tachui/symbols";
-const logoFont = Assets.logoFont;
-const baseFont = Assets.baseFont;
 const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -24,30 +22,27 @@ export function Hero(): ComponentInstance {
                         children: [
                             Text("tachUI(isA: Framework)")
                                 .responsive({
-                                fontSize: {
-                                    base: "2rem",
-                                    sm: "2.5rem",
-                                    md: "3rem",
-                                    lg: "3.5rem",
+                                  fontSize: { base: "2rem", sm: "2.5rem", md: "3rem", lg: "3.5rem",
                                 },
                             })
                                 .gradientText("linear-gradient(to bottom, hsla(0, 0%, 100%, 1) 0%, hsla(218, 100%, 94%, 1) 50%, hsla(225, 92%, 90%, 1) 100%)")
                                 .padding({ bottom: 8 })
                                 .build(),
+
                             Text(".writtenIn(TypeScript).first")
                                 .padding({ bottom: 4 })
                                 .before({
-                                content: "• • ",
-                                color: "hsl(0, 0%, 100%)",
-                                opacity: 0.1,
-                            })
+                                  content: "• • ",
+                                  color: "hsl(0, 0%, 100%)",
+                                  opacity: 0.1,
+                              })
                                 .build(),
                             Text(".inspiredBy(SwiftUI)")
                                 .padding({ bottom: 4 })
                                 .before({
-                                content: "• • ",
-                                color: "hsl(0, 0%, 100%)",
-                                opacity: 0.1,
+                                  content: "• • ",
+                                  color: "hsl(0, 0%, 100%)",
+                                  opacity: 0.1,
                             })
                                 .build(),
                             Text(".inspiredBy(SolidJS)")
@@ -69,7 +64,7 @@ export function Hero(): ComponentInstance {
                         ],
                         alignment: "leading",
                     })
-                        .fontFamily(logoFont)
+                        .fontFamily(Assets.logoFont)
                         .paddingVertical(40)
                         .gradientText("linear-gradient(135deg, #ffffff 0%, #e0e7ff 50%, #c7d2fe 100%)")
                         .textShadow({
@@ -92,7 +87,7 @@ export function Hero(): ComponentInstance {
                     Text("TypeScript framework inspired by SwiftUI integrated with a fine-grained reactive core")
                         .font({
                         size: "1.25rem",
-                        family: baseFont,
+                        family: Assets.baseFont,
                         weight: "400",
                     })
                         .textAlign("center")
@@ -114,7 +109,7 @@ export function Hero(): ComponentInstance {
                                     Text("PRE-RELEASE / EARLY ACCESS / BLEEDING EDGE")
                                         .font({
                                         size: "1.25rem",
-                                        family: baseFont,
+                                        family: Assets.baseFont,
                                         weight: "600",
                                     })
                                         .foregroundColor(Assets.accentOrange)
@@ -125,7 +120,7 @@ export function Hero(): ComponentInstance {
                             Text("This is a preview version released for early testing and community feedback. Features and APIs may change before the stable release.")
                                 .font({
                                 size: "1.15rem",
-                                family: baseFont,
+                                family: Assets.baseFont,
                             })
                                 .foregroundColor(Assets.textWhite)
                                 .opacity(0.85)
@@ -194,7 +189,7 @@ export function Hero(): ComponentInstance {
                                 .cornerRadius(2)
                                 .font({
                                 weight: "600",
-                                family: baseFont,
+                                family: Assets.baseFont,
                                 size: 16,
                             })
                                 .cursor("pointer")

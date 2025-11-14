@@ -1,7 +1,6 @@
-// Import modifiers FIRST to register basic modifiers (padding, width, height, etc.)
+// Import modifiers FIRST to register basic modifiers AND effects (effects merged into modifiers)
 import '@tachui/modifiers'
-// Import effects to register textShadow and other effects modifiers
-import '@tachui/effects'
+import '@tachui/modifiers/effects'
 // Import responsive system to register responsive modifiers
 import '@tachui/responsive'
 import { mountRoot, setTheme, detectSystemTheme } from '@tachui/core'

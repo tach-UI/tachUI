@@ -16,6 +16,7 @@ export default mergeConfig(
       alias: {
         // Self-reference for imports
         '@tachui/modifiers': './src',
+        '@tachui/modifiers/effects': './src/effects/index.ts',
       },
     },
   })

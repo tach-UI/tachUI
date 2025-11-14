@@ -630,21 +630,27 @@ export class AppearanceModifier extends BaseModifier {
 
     // Font
     if (props.font) {
-      if (process.env.NODE_ENV === 'development' && props.font.family === undefined) {
-        console.log('[CORE AppearanceModifier] ⚠️ Font modifier WITHOUT family:', props.font)
-        console.trace('Stack trace:')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[CORE AppearanceModifier] Processing font:', props.font)
+        if (props.font.family === undefined) {
+          console.log('[CORE AppearanceModifier] ⚠️ Font modifier WITHOUT family')
+        }
       }
       const font = props.font
       if (font.family) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[CORE AppearanceModifier] font.family value:', font.family)
+          console.log('[CORE AppearanceModifier] typeof font.family:', typeof font.family)
+        }
         // Handle FontAsset objects that need to be resolved
         if (
           typeof font.family === 'object' &&
           font.family !== null &&
-          'resolve' in font.family
+          typeof (font.family as any).resolve === 'function'
         ) {
           const resolved = (font.family as any).resolve()
           if (process.env.NODE_ENV === 'development') {
-            console.log('[CORE AppearanceModifier] Resolved FontAsset:', resolved)
+            console.log('[CORE AppearanceModifier] ✅ Resolved FontAsset to:', resolved)
           }
           styles.fontFamily = resolved
         } else {
@@ -653,6 +659,8 @@ export class AppearanceModifier extends BaseModifier {
           }
           styles.fontFamily = font.family as string
         }
+      } else if (process.env.NODE_ENV === 'development') {
+        console.log('[CORE AppearanceModifier] ⚠️ font.family is falsy:', font.family)
       }
       if (font.size) styles.fontSize = this.toCSSValue(font.size)
       if (font.weight) styles.fontWeight = String(font.weight)
@@ -675,7 +683,7 @@ export class AppearanceModifier extends BaseModifier {
       if (border.style) styles.borderStyle = border.style
     }
 
-    // Shadow functionality moved to @tachui/effects package
+    // Shadow functionality moved to @tachui/modifiers/effects entry point
 
     // Clipped and Clip Shape modifiers moved to @tachui/modifiers package
 

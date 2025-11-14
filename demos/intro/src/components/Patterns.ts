@@ -1,7 +1,6 @@
 import { VStack, HStack, Text } from '@tachui/primitives';
 import { Assets } from '@tachui/core';
 import type { ComponentInstance } from '@tachui/core/runtime/types';
-const bodyFont = Assets.bodyFont;
 export function Patterns(): ComponentInstance {
     const swiftText = `<pre><code><span class="comment">// SwiftUI</span>
 <span class="keyword">VStack</span>(spacing: <span class="string">16</span>) {
@@ -85,7 +84,7 @@ export function Patterns(): ComponentInstance {
                                         .backgroundColor(Assets.primaryPurple20)
                                         .foregroundColor(Assets.textWhite)
                                         .padding({ horizontal: 20, vertical: 15 })
-                                        .font({ weight: 400, family: bodyFont, size: '1.15rem' })
+                                        .font({ weight: 400, family: Assets.baseFont, size: '1.15rem' })
                                         .borderBottom(1, Assets.primaryPurple30, 'solid')
                                         .width('100%')
                                         .build(),
@@ -122,7 +121,7 @@ export function Patterns(): ComponentInstance {
                                         .backgroundColor(Assets.primaryPurple20)
                                         .foregroundColor(Assets.textWhite)
                                         .padding({ horizontal: 20, vertical: 15 })
-                                        .font({ weight: 400, family: bodyFont, size: '1.15rem' })
+                                        .font({ weight: 400, family: Assets.baseFont, size: '1.15rem' })
                                         .borderBottom(1, Assets.primaryPurple30, 'solid')
                                         .width('100%')
                                         .build(),
@@ -161,13 +160,13 @@ export function Patterns(): ComponentInstance {
                         .maxWidth('1200px')
                         .build(),
                     Text('Perfect for iOS developers transitioning to web development.')
-                        .font({ size: '1.25rem', family: bodyFont, weight: 600 })
+                        .font({ size: '1.25rem', family: Assets.baseFont, weight: 600 })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .margin({ horizontal: 10 })
                         .build(),
                     Text('Your iOS development knowledge transfers directly - no new patterns to learn. ')
-                        .font({ size: '1.25rem', family: bodyFont, weight: 300 })
+                        .font({ size: '1.25rem', family: Assets.baseFont, weight: 300 })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .margin({ horizontal: 10 })

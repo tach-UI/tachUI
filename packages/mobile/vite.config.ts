@@ -10,7 +10,11 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       // Mark @tachui/core as external since it's a peer dependency
-      external: ['@tachui/core', '@tachui/registry'],
+      external: [
+        '@tachui/core',
+        '@tachui/core/gradients/css-generator',
+        '@tachui/registry',
+      ],
       output: {
         globals: {
           '@tachui/core': 'TachUICore',

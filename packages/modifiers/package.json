@@ -61,8 +61,48 @@
       "import": "./dist/utility/index.js"
     },
     "./effects": {
-      "types": "./dist/effects.d.ts",
-      "import": "./dist/effects.js"
+      "types": "./dist/effects/index.d.ts",
+      "import": "./dist/effects/index.js"
+    },
+    "./effects/filters": {
+      "types": "./dist/effects/filters/index.d.ts",
+      "import": "./dist/effects/filters/index.js"
+    },
+    "./effects/transforms": {
+      "types": "./dist/effects/transforms/index.d.ts",
+      "import": "./dist/effects/transforms/index.js"
+    },
+    "./effects/shadows": {
+      "types": "./dist/effects/shadows/index.d.ts",
+      "import": "./dist/effects/shadows/index.js"
+    },
+    "./effects/backdrop": {
+      "types": "./dist/effects/backdrop/index.d.ts",
+      "import": "./dist/effects/backdrop/index.js"
+    },
+    "./preload/basic": {
+      "types": "./dist/preload/basic.d.ts",
+      "import": "./dist/preload/basic.js"
+    },
+    "./preload/effects": {
+      "types": "./dist/preload/effects.d.ts",
+      "import": "./dist/preload/effects.js"
+    },
+    "./preload/filters": {
+      "types": "./dist/preload/filters.d.ts",
+      "import": "./dist/preload/filters.js"
+    },
+    "./preload/shadows": {
+      "types": "./dist/preload/shadows.d.ts",
+      "import": "./dist/preload/shadows.js"
+    },
+    "./preload/transforms": {
+      "types": "./dist/preload/transforms.d.ts",
+      "import": "./dist/preload/transforms.js"
+    },
+    "./preload/backdrop": {
+      "types": "./dist/preload/backdrop.d.ts",
+      "import": "./dist/preload/backdrop.js"
     }
   },
   "files": [

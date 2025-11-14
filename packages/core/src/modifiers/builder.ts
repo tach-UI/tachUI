@@ -18,7 +18,7 @@ import {
   LifecycleModifier,
   ResizableModifier,
 } from './base'
-import { BackgroundModifier } from './background'
+
 
 // Dynamic imports for effects and modifiers to avoid circular dependencies
 // (Removed lazy loading functions - using direct modifier classes instead)
@@ -52,8 +52,8 @@ import { BackgroundModifier } from './background'
 //   paddingVertical,
 // } from '@tachui/modifiers'
 
-// All modifiers moved to @tachui/modifiers and @tachui/effects
-// Available via Proxy when respective packages are imported
+// All modifiers moved to @tachui/modifiers (core) and @tachui/modifiers/effects
+// Available via Proxy when respective entry points are imported
 import type {
   AnimationModifierProps,
   AppearanceModifierProps,
@@ -122,10 +122,10 @@ function createRegistryModifier(name: string, ..._args: any[]): Modifier {
     return createLazyModifier(name, _args)
   }
 
-  // No fallback - modifier must be registered in @tachui/modifiers or @tachui/effects
+  // No fallback - modifier must be registered in @tachui/modifiers or @tachui/modifiers/effects
   throw new Error(
     `Modifier '${name}' not found in registry. ` +
-    `Import @tachui/modifiers or @tachui/effects to register modifiers.`
+    `Import @tachui/modifiers or @tachui/modifiers/effects to register modifiers.`
   )
 }
 
@@ -173,7 +173,7 @@ function createLazyModifier(name: string, args: any[]): Modifier {
       // Still not found - throw error
       throw new Error(
         `Lazy modifier '${name}' still not found at apply time. ` +
-        `Ensure @tachui/modifiers or @tachui/effects is imported before using this modifier.`
+        `Ensure @tachui/modifiers or @tachui/modifiers/effects is imported before using this modifier.`
       )
     }
   }
@@ -182,18 +182,18 @@ function createLazyModifier(name: string, args: any[]): Modifier {
 // position and zIndex have been migrated to @tachui/modifiers/layout
 // AriaModifier and TabIndexModifier have been moved to @tachui/modifiers
 // import { AriaModifier, TabIndexModifier } from './attributes'
-// BackdropFilterModifier moved to @tachui/effects
+// BackdropFilterModifier moved to @tachui/modifiers/effects entry point
 // Pseudo-element modifiers moved to @tachui/modifiers package
 // Temporarily commented out to resolve circular dependency during build
-// Filter modifiers moved to @tachui/effects
+// Filter modifiers moved to @tachui/modifiers/effects
 // import {
 //   textShadow,
 //   shadow as shadowModifier,
 //   shadows as shadowsModifier,
 //   shadowPreset,
 // } from '@tachui/modifiers'
-// Transform modifiers moved to @tachui/effects
-// Interactive effects moved to @tachui/effects
+// Transform modifiers moved to @tachui/modifiers/effects
+// Interactive effects moved to @tachui/modifiers/effects
 // import {
 //   transition as transitionModifier,
 //   fadeTransition,
@@ -365,7 +365,8 @@ export class ModifierBuilderImpl<
   background(
     value: StatefulBackgroundValue | Signal<string>
   ): ModifierBuilder<T> {
-    this.modifiers.push(new BackgroundModifier({ background: value as any }))
+    const modifier = createRegistryModifier('background', value as any)
+    this.modifiers.push(modifier)
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -379,9 +380,18 @@ export class ModifierBuilderImpl<
     if (typeof sizeOrOptions === 'object') {
       fontProps = sizeOrOptions
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ModifierBuilder] font() called with:', fontProps)
+        console.log('[ModifierBuilder] fontProps.family:', fontProps.family)
+        console.log('[ModifierBuilder] typeof fontProps.family:', typeof fontProps.family)
+      }
+
       // Split into individual modifier calls to ensure each property is properly handled
       // This is necessary because AppearanceModifier merging doesn't work correctly
       if (fontProps.family !== undefined) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[ModifierBuilder] Creating AppearanceModifier with family:', fontProps.family)
+        }
         this.modifiers.push(new AppearanceModifier({ font: { family: fontProps.family } }))
       }
       if (fontProps.size !== undefined) {
@@ -459,7 +469,7 @@ export class ModifierBuilderImpl<
     return this as unknown as ModifierBuilder<T>
   }
 
-  // Shadow functionality moved to @tachui/effects package
+  // Shadow functionality moved to @tachui/modifiers/effects entry point
 
   // Visual Effects Modifiers (Phase 2 - Epic: Butternut)
   blur(radius: number | Signal<number>): ModifierBuilder<T> {
@@ -498,12 +508,12 @@ export class ModifierBuilderImpl<
   }
 
   // ============================================================================
-  // VISUAL EFFECTS MOVED TO @tachui/effects PACKAGE
+  // VISUAL EFFECTS MOVED TO @tachui/modifiers/effects ENTRY
   // ============================================================================
   //
-  // Visual effects have been extracted to @tachui/effects for better tree-shaking
+  // Visual effects have been extracted to @tachui/modifiers/effects for better tree-shaking
 
-  // Visual effects methods removed - use @tachui/effects package
+  // Visual effects methods removed - use @tachui/modifiers/effects
 
   // Advanced gesture and interaction modifiers moved to @tachui/modifiers
   // Available via Proxy when @tachui/modifiers is imported:

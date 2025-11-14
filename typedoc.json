@@ -4,7 +4,7 @@
     "./packages/cli/src/index.ts",
     "./packages/primitives/src/index.ts",
     "./packages/modifiers/src/index.ts",
-    "./packages/effects/src/index.ts",
+    "./packages/modifiers/src/effects/index.ts",
     "./packages/flow-control/src/index.ts",
     "./packages/forms/src/index.ts",
     "./packages/navigation/src/index.ts",

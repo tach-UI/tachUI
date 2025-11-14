@@ -3,4 +3,4 @@
 // eslint-disable-next-line import/no-unassigned-import
 import '@tachui/modifiers'
 // eslint-disable-next-line import/no-unassigned-import
-import '@tachui/effects'
+import '@tachui/modifiers/effects'

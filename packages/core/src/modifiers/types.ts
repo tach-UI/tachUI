@@ -210,7 +210,7 @@ export interface AppearanceModifierProps {
     color?: ColorValue
     style?: 'solid' | 'dashed' | 'dotted'
   }
-  // shadow moved to @tachui/effects package
+  // shadow moved to @tachui/modifiers/effects entry point
   // clipped moved to @tachui/modifiers package
   // clipShape moved to @tachui/modifiers package
   // Visual Effects (Phase 2 - Epic: Butternut)
@@ -510,17 +510,17 @@ export interface ModifierBuilder<
   border(width: number | Signal<number>, color?: ColorValue): ModifierBuilder<T>
   border(options: AppearanceModifierProps['border']): ModifierBuilder<T>
   borderWidth(width: number | Signal<number>): ModifierBuilder<T>
-  // shadow, shadows, textShadow, shadowPreset moved to @tachui/effects package
+  // shadow, shadows, textShadow, shadowPreset moved to @tachui/modifiers/effects entry point
 
   // Visual Effects Modifiers (Phase 2 - Epic: Butternut)
 
   // ============================================================================
-  // VISUAL EFFECTS METHODS MOVED TO @tachui/effects
+  // VISUAL EFFECTS METHODS MOVED TO @tachui/modifiers/effects
   // ============================================================================
   // Visual effects methods (filters, transforms, backdrop, hover) have been
-  // moved to @tachui/effects package. Import and use with .apply():
+  // moved to the @tachui/modifiers/effects entry point. Import and use with .apply():
   //
-  //   import { blur, scale, glassmorphism, hoverEffect } from '@tachui/effects'
+  //   import { blur, scale, glassmorphism, hoverEffect } from '@tachui/modifiers/effects'
   //   VStack().apply(blur(5)).apply(scale(1.1))
   //
   // This provides better tree-shaking and cleaner plugin boundaries.

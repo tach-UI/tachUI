@@ -1,8 +1,7 @@
 import { HStack, Text, Button } from "@tachui/primitives";
 import { Assets, LinearGradient } from "@tachui/core";
 import type { ComponentInstance } from "@tachui/core/runtime/types";
-const logoFont = Assets.logoFont;
-const baseFont = Assets.baseFont;
+
 const scrollToSection = (sectionId: string) => {
   const element = document.getElementById(sectionId);
   if (element) {
@@ -19,7 +18,7 @@ export function Header() {
         children: [
           // Logo
           Text("tachUI")
-            .font({ size: "24px", family: logoFont })
+            .font({ size: "24px", family: Assets.logoFont })
             .foregroundColor(Assets.primaryPurple)
             .textShadow({ x: 0, y: 0, blur: 10, color: "rgba(139, 92, 246, 0.5)" })
             ,
@@ -35,7 +34,7 @@ export function Header() {
             ],
           })
             .foregroundColor(Assets.textWhite)
-            .font({ weight: "500", family: baseFont, size: 16 }),
+            .font({ weight: "500", family: Assets.baseFont, size: 16 }),
 
           // CTA Button using proper tachUI modifiers with Assets
           Button("Get Started", () => scrollToSection("cta"))
@@ -49,7 +48,7 @@ export function Header() {
             .foregroundColor(Assets.textWhite)
             .padding({ horizontal: 20, vertical: 10 })
             .cornerRadius(2)
-            .font({ weight: "600", family: baseFont, size: 16 })
+            .font({ weight: "600", family: Assets.baseFont, size: 16 })
             .shadow({ x: 0, y: 4, radius: 15, color: "rgba(139, 92, 246, 0.3)" })
             .border({ width: 0 })
             .cursor("pointer")
@@ -77,7 +76,7 @@ function NavButton(text: string, anchor: string): ComponentInstance {
     .border({ width: 0 })
     .padding({ horizontal: 15, vertical: 8 })
     .cursor("pointer")
-    .font({ size: "16px", family: baseFont, weight: "bold" })
+    .font({ size: "16px", family: Assets.baseFont, weight: "bold" })
     .textCase("uppercase")
     .transition({ property: "color", duration: 200, easing: "ease" });
 }

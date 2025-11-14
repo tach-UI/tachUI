@@ -134,13 +134,13 @@ export class ImportGuidanceSystem {
           '',
           '// Complex dashboard app',
           "import { createSignal } from '@tachui/core/reactive'",
-          "import '@tachui/effects' // Only if animations needed",
+          "import '@tachui/modifiers/effects' // Only if animations needed",
         ],
         avoid: [
           '// Avoid importing everything',
           "import '@tachui/core'",
           "import '@tachui/primitives'",
-          "import '@tachui/effects' // Unless you need animations",
+          "import '@tachui/modifiers/effects' // Unless you need animations",
         ],
       },
     })
@@ -252,7 +252,7 @@ import { createSignal, createEffect } from '@tachui/core/reactive'
 
 ## 🎭 Effects & Animations (Only if needed!)
 \`\`\`typescript
-import '@tachui/effects' // Adds 25KB
+import '@tachui/modifiers/effects' // Adds 25KB
 \`\`\`
 
 ## 📱 Mobile UI Patterns
@@ -276,7 +276,7 @@ import { VStack } from '@tachui/primitives/layout'
 ### Complex Apps (45KB total)
 \`\`\`typescript
 import { createSignal } from '@tachui/core/reactive'
-import '@tachui/effects'
+import '@tachui/modifiers/effects'
 \`\`\`
 
 ## 🚫 Anti-Patterns to Avoid

@@ -3810,7 +3810,7 @@ var appearanceModifiers = {
   borderDetailed(options) {
     return new AppearanceModifier({ border: options });
   }
-  // Shadow functionality moved to @tachui/effects package
+  // Shadow functionality moved to @tachui/modifiers/effects entry point
 };
 var interactionModifiers = {
   /**
@@ -3984,7 +3984,7 @@ var presetModifiers = {
     return [
       appearanceModifiers.backgroundColor("#ffffff"),
       appearanceModifiers.cornerRadius(8),
-      // shadow moved to @tachui/effects package
+      // shadow moved to @tachui/modifiers/effects entry point
       layoutModifiers.padding(padding2)
     ];
   },

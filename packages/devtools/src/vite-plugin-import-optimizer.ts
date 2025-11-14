@@ -221,7 +221,7 @@ export function tachUIImportOptimizer(
       '@tachui/primitives/display': 12,
       '@tachui/primitives/controls': 15,
       '@tachui/modifiers': 25,
-      '@tachui/effects': 25,
+      '@tachui/modifiers/effects': 25,
       '@tachui/flow-control': 8,
       '@tachui/forms': 20,
       '@tachui/navigation': 18,
@@ -272,8 +272,8 @@ export function tachUIImportOptimizer(
         )
       }
 
-      if (importStats.has('@tachui/effects')) {
-        console.log('  - Only import @tachui/effects if you need animations')
+      if (importStats.has('@tachui/modifiers/effects')) {
+        console.log('  - Only import @tachui/modifiers/effects if you need the advanced effects bundle')
       }
     }
   }

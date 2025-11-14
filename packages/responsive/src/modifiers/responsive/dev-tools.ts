@@ -5,7 +5,8 @@
  * for the responsive design system.
  */
 
-import { createComputed, Signal } from '@tachui/core'
+import { createComputed } from '@tachui/core'
+import type { Signal } from '@tachui/core/reactive/types'
 import {
   ResponsiveValue,
   BreakpointKey,

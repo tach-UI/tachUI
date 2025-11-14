@@ -11,8 +11,11 @@ const packageAlias = (pkg: string) =>
 const aliasEntries = [
   ['@tachui/core', packageAlias('core')],
   ['@tachui/primitives', packageAlias('primitives')],
-  ['@tachui/modifiers', packageAlias('modifiers')],
-  ['@tachui/effects', packageAlias('effects')],
+  ['@tachui/modifiers', packageAlias('modifiers')], // Effects merged into modifiers
+  [
+    '@tachui/modifiers/effects',
+    path.resolve(workspaceRoot, 'packages/modifiers/src/effects/index.ts'),
+  ],
   ['@tachui/flow-control', packageAlias('flow-control')],
   ['@tachui/responsive', packageAlias('responsive')],
   ['@tachui/registry', packageAlias('registry')],
@@ -28,9 +31,9 @@ export default defineConfig(({ mode }) => ({
       '@tachui/core',
       '@tachui/primitives',
       '@tachui/modifiers',
+      '@tachui/modifiers/effects',
       '@tachui/flow-control',
       '@tachui/responsive',
-      '@tachui/effects',
       '@tachui/registry',
       '@tachui/devtools/debug',
     ],
@@ -63,7 +66,7 @@ export default defineConfig(({ mode }) => ({
        '@tachui/primitives',
        '@tachui/registry',
        '@tachui/modifiers',
-       '@tachui/effects',
+       '@tachui/modifiers/effects',
        '@tachui/flow-control',
        '@tachui/responsive',
        '@tachui/devtools/debug',
@@ -105,6 +108,4 @@ export default defineConfig(({ mode }) => ({
 '@tachui/core/runtime': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist/runtime',
 '@tachui/core/modifiers': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist/modifiers',
 '@tachui/core': '/Users/whoughton/Dev/tach-ui/tachUI/packages/core/dist',
-'@tachui/effects': '/Users/whoughton/Dev/tach-ui/tachUI/packages/effects/dist'
-
 */

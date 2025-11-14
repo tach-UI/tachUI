@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createIsolatedRegistry } from '@tachui/registry'
-import { registerCoreModifiers } from '../../src/modifiers'
+import { registerModifiers as registerBasicModifiers } from '@tachui/modifiers'
 import { registerFormsModifiers } from '@tachui/forms'
 import { registerGridModifiers } from '@tachui/grid'
 import { registerResponsiveModifiers } from '@tachui/responsive'
@@ -11,7 +11,7 @@ describe('plugin modifier registration', () => {
   it('hydrates a shared registry with core and plugin metadata', () => {
     const registry = createIsolatedRegistry()
 
-    registerCoreModifiers({ registry })
+    registerBasicModifiers({ registry })
     registerFormsModifiers({ registry })
     registerGridModifiers({ registry })
     registerResponsiveModifiers({ registry })
@@ -20,7 +20,6 @@ describe('plugin modifier registration', () => {
 
     const plugins = registry.listPlugins().map(plugin => plugin.name)
 
-    expect(plugins).toContain('@tachui/core')
     expect(plugins).toContain('@tachui/forms')
     expect(plugins).toContain('@tachui/grid')
     expect(plugins).toContain('@tachui/responsive')

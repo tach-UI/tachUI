@@ -32,7 +32,7 @@ cssclasses:
 ### What to know about...
 
 - **Modular Extraction:** We have revamped the entire framework structure for better separation and tree-shaking which should lead to smaller output. This is undergoing real-world integration testing now.
-- **Package Ecosystem:** 15 packages including @tachui/grid, @tachui/responsive, @tachui/effects
+- **Package Ecosystem:** 15 packages including @tachui/grid, @tachui/responsive, @tachui/modifiers/effects
 - **Testing:** We're doing extensive dogfooding with tachUI now as we build out apps to test it from (hopefully) end to end
 - **Documentation:** Documentation is there and pretty extensive, but disheveled and somewhat inconsistent, as the restructure winds down, this is our next major task.
 - **Impact:** All of this means you can have a great impact if you have feedback now!
@@ -172,7 +172,7 @@ These applications are coming and will be available in a separate repository
 - **@tachui/navigation** - NavigationView, TabView, routing
 - **@tachui/grid** - CSS Grid integration with responsive design
 - **@tachui/responsive** - Breakpoint system and responsive utilities
-- **@tachui/effects** - Visual effects and filters
+- **@tachui/modifiers/effects** - Visual effects (filters, transforms, backdrop, presets)
 - **@tachui/symbols** - Icon system with Lucide integration
 - **@tachui/mobile** - Mobile UI patterns (ActionSheet, Alert, ScrollView)
 - **@tachui/viewport** - Window and viewport management
