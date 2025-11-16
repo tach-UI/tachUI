@@ -8,9 +8,12 @@
  * - Clear error messages for misuse
  */
 
-import { BaseModifier } from './base'
-import type { DOMNode, ComponentInstance } from '../runtime/types'
-import type { ModifierContext } from './types'
+import { BaseModifier } from '../basic/base'
+import type {
+  DOMNode,
+  ComponentInstance,
+} from '@tachui/core/runtime/types'
+import type { ModifierContext } from '@tachui/core/modifiers/types'
 import { BasicSanitizer, type BasicSanitizerOptions } from './basic-sanitizer'
 import { AsHTMLValidator } from './as-html-validator'
 

@@ -33,9 +33,6 @@ export {
   eventModifier,
 } from './factories'
 
-// Re-export CSS utilities
-export { css, cssProperty, cssVariable, cssVendor } from './css'
-
 /**
  * For backwards compatibility, export coreModifiers as default export
  */

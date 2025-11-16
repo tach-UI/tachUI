@@ -214,7 +214,6 @@ effectRegistrations.forEach(([name, factory]) => {
 })
 
 // Export all types and utilities
-export type * from '../types'
 
 // Re-export all effects with explicit aliases to resolve conflicts
 export {

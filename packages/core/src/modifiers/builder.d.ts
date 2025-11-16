@@ -11,7 +11,6 @@ import type { ColorValue } from './types';
 import type { FontAsset } from '../assets/FontAsset';
 import type { AnimationModifierProps, AppearanceModifierProps, LayoutModifierProps, ModifiableComponent, Modifier, ModifierBuilder } from './types';
 export declare function setExternalModifierRegistry(registry: any): void;
-import type { AsHTMLOptions } from './as-html';
 /**
  * Concrete modifier builder implementation
  *
@@ -26,12 +25,6 @@ export declare class ModifierBuilderImpl<T extends ComponentInstance = Component
     frame(width?: number | string, height?: number | string): ModifierBuilder<T>;
     frame(options: LayoutModifierProps['frame']): ModifierBuilder<T>;
     layoutPriority(priority: number | Signal<number>): ModifierBuilder<T>;
-    css(properties: {
-        [property: string]: string | number | undefined;
-    }): ModifierBuilder<T>;
-    cssProperty(property: string, value: string | number): ModifierBuilder<T>;
-    cssVariable(name: string, value: string | number): ModifierBuilder<T>;
-    cssVendor(prefix: 'webkit' | 'moz' | 'ms' | 'o', property: string, value: string | number): ModifierBuilder<T>;
     absolutePosition(x: number | Signal<number>, y: number | Signal<number>): ModifierBuilder<T>;
     foregroundColor(color: ColorValue): ModifierBuilder<T>;
     backgroundColor(color: ColorValue): ModifierBuilder<T>;
@@ -105,7 +98,6 @@ export declare class ModifierBuilderImpl<T extends ComponentInstance = Component
     themeColors(_colors: Record<string, string>): ModifierBuilder<T>;
     designTokens(_tokens: Record<string, string | number>): ModifierBuilder<T>;
     disabled(isDisabled?: boolean | Signal<boolean>): ModifierBuilder<T>;
-    asHTML(options?: AsHTMLOptions): ModifierBuilder<T>;
     build(): T;
     private applyModifiersToPropsForTesting;
     role(value: string): ModifierBuilder<T>;

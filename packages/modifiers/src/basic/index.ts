@@ -341,8 +341,7 @@ export function registerBasicModifiers(options?: RegisterOptions): void {
 // Register with global registry on module load
 registerBasicModifiers()
 
-// Export all types and utilities
-export type * from '../types'
+// Export core helper
 export { createModifierBuilder } from '@tachui/core/modifiers'
 
 // Re-export all basic modifiers

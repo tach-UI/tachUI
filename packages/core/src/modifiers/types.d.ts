@@ -264,11 +264,6 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
     overflowX(value: 'visible' | 'hidden' | 'scroll' | 'auto'): ModifierBuilder<T>;
     display(value: 'block' | 'inline' | 'inline-block' | 'flex' | 'inline-flex' | 'grid' | 'none'): ModifierBuilder<T>;
     transform(value: string | Signal<string>): ModifierBuilder<T>;
-    css(properties: {
-        [property: string]: string | number | undefined;
-    }): ModifierBuilder<T>;
-    cssProperty(property: string, value: string | number): ModifierBuilder<T>;
-    cssVariable(name: string, value: string | number): ModifierBuilder<T>;
     absolutePosition(x: number | Signal<number>, y: number | Signal<number>): ModifierBuilder<T>;
     foregroundColor(color: ColorValue): ModifierBuilder<T>;
     backgroundColor(color: ColorValue): ModifierBuilder<T>;
@@ -328,35 +323,9 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
     resizable(): ModifierBuilder<T>;
     textCase(value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'): ModifierBuilder<T>;
     /**
-     * Render component content as HTML instead of plain text
-     *
-     * ⚠️ **RESTRICTION**: Only available on Text components for security
-     * ⚠️ **SECURITY NOTICE**: This modifier treats content as HTML.
-     * - Default: Basic sanitization removes common XSS vectors
-     * - Use skipSanitizer: true only with fully trusted content
-     * - Consider DOMPurify for comprehensive sanitization
-     * - Non-reactive for performance (content is processed once)
-     *
-     * @param options - Configuration options
-     *
-     * @example
-     * ```typescript
-     * // ✅ Allowed: Text components only
-     * Text('<p>Hello <strong>world</strong></p>').asHTML().build()
-     *
-     * // ❌ Compile Error: Not a Text component
-     * VStack({}).asHTML() // TypeScript error
-     *
-     * // ✅ Dangerous: Skip sanitization
-     * Text(serverTemplate).asHTML({ skipSanitizer: true }).build()
-     * ```
+     * Raw CSS and HTML rendering modifiers have moved to @tachui/modifiers/utility.
+     * Import from '@tachui/modifiers/utility' and apply explicitly.
      */
-    css(properties: {
-        [property: string]: string | number | undefined;
-    }): ModifierBuilder<T>;
-    cssProperty(property: string, value: string | number): ModifierBuilder<T>;
-    cssVariable(name: string, value: string | number): ModifierBuilder<T>;
-    cssVendor(prefix: 'webkit' | 'moz' | 'ms' | 'o', property: string, value: string | number): ModifierBuilder<T>;
     onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T>;
     onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T>;
     onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T>;

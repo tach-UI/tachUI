@@ -7,7 +7,6 @@
  */
 export { animationModifiers, appearanceModifiers, coreModifiers, interactionModifiers, layoutModifiers, lifecycleModifiers, presetModifiers, } from './presets';
 export { modifierHelpers, createCustomModifier, createStyleModifier, createPresetModifier, createComponentVariant, combineModifiers, conditionalModifier, stateModifier, responsiveModifier, classModifier, styleModifier, eventModifier, } from './factories';
-export { css, cssProperty, cssVariable, cssVendor } from './css';
 /**
  * For backwards compatibility, export coreModifiers as default export
  */

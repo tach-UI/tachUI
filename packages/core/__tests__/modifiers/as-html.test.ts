@@ -1,7 +1,10 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
-import { AsHTMLModifier, asHTML } from '../../src/modifiers/as-html'
-import { BasicSanitizer } from '../../src/modifiers/basic-sanitizer'
-import { AsHTMLValidator } from '../../src/modifiers/as-html-validator'
+import {
+  AsHTMLModifier,
+  AsHTMLValidator,
+  BasicSanitizer,
+  asHTML,
+} from '@tachui/modifiers/utility'
 
 // Mock Text component for testing
 const mockTextComponent = (content: string) => ({

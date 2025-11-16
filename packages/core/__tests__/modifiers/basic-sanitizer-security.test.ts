@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { BasicSanitizer } from '../../src/modifiers/basic-sanitizer'
+import { BasicSanitizer } from '@tachui/modifiers/utility'
 
 describe('BasicSanitizer Security Tests', () => {
   const xssVectors = [

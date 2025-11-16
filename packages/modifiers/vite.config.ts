@@ -40,6 +40,7 @@ export default defineConfig(({ mode }) => ({
         '@tachui/core/reactive',
         '@tachui/core/reactive/types',
         '@tachui/core/runtime/types',
+        '@tachui/core/modifiers',
         '@tachui/core/modifiers/types',
         '@tachui/core/modifiers/registry',
         '@tachui/core/constants/layout',

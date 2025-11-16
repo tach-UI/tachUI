@@ -206,16 +206,6 @@ function createLazyModifier(name: string, args: any[]): Modifier {
 // Transition and scroll modifiers moved to @tachui/modifiers
 // Available via Proxy when @tachui/modifiers is imported
 
-// Import CSS modifier functions with aliases to avoid naming conflicts
-import {
-  css as cssModifier,
-  cssProperty as cssPropertyModifier,
-  cssVariable as cssVariableModifier,
-  cssVendor as cssVendorModifier,
-} from './css'
-
-import { asHTML } from './as-html'
-import type { AsHTMLOptions } from './as-html'
 import { interactionModifiers } from './core'
 // Attribute modifiers have been moved to @tachui/modifiers
 // import { id, data, aria, tabIndex } from '@tachui/modifiers'
@@ -296,32 +286,8 @@ export class ModifierBuilderImpl<
   // Utility modifiers moved to @tachui/modifiers:
   // cursor(), overflowX(), overflowY(), outline(), outlineOffset(), display()
 
-  // Raw CSS modifiers - using imported functions from ./css
-  css(properties: {
-    [property: string]: string | number | undefined
-  }): ModifierBuilder<T> {
-    this.modifiers.push(cssModifier(properties))
-    return this as unknown as ModifierBuilder<T>
-  }
-
-  cssProperty(property: string, value: string | number): ModifierBuilder<T> {
-    this.modifiers.push(cssPropertyModifier(property, value))
-    return this as unknown as ModifierBuilder<T>
-  }
-
-  cssVariable(name: string, value: string | number): ModifierBuilder<T> {
-    this.modifiers.push(cssVariableModifier(name, value))
-    return this as unknown as ModifierBuilder<T>
-  }
-
-  cssVendor(
-    prefix: 'webkit' | 'moz' | 'ms' | 'o',
-    property: string,
-    value: string | number
-  ): ModifierBuilder<T> {
-    this.modifiers.push(cssVendorModifier(prefix, property, value))
-    return this as unknown as ModifierBuilder<T>
-  }
+  // Raw CSS modifiers moved to @tachui/modifiers/utility
+  // Import { css } from '@tachui/modifiers/utility' and apply explicitly.
 
   // textCase(), textDecoration(), and aspectRatio() moved to @tachui/modifiers
   // Available via Proxy when @tachui/modifiers is imported
@@ -771,11 +737,7 @@ export class ModifierBuilderImpl<
     return this as unknown as ModifierBuilder<T>
   }
 
-  // HTML Content Rendering (Text components only)
-  asHTML(options?: AsHTMLOptions): ModifierBuilder<T> {
-    this.modifiers.push(asHTML(options))
-    return this as unknown as ModifierBuilder<T>
-  }
+  // HTML content rendering moved to @tachui/modifiers/utility (Text.asHTML()).
 
   // Build the final component with all modifiers applied
   build(): T {

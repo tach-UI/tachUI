@@ -469,12 +469,7 @@ export interface ModifierBuilder<
   ): ModifierBuilder<T>
   transform(value: string | Signal<string>): ModifierBuilder<T>
 
-  // Raw CSS modifiers
-  css(properties: {
-    [property: string]: string | number | undefined
-  }): ModifierBuilder<T>
-  cssProperty(property: string, value: string | number): ModifierBuilder<T>
-  cssVariable(name: string, value: string | number): ModifierBuilder<T>
+  // Raw CSS modifiers moved to @tachui/modifiers/utility
 
   // Phase 1 SwiftUI modifiers
   // clipped() moved to @tachui/modifiers
@@ -638,43 +633,8 @@ export interface ModifierBuilder<
     value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
   ): ModifierBuilder<T>
 
-  // HTML Content Rendering (Text components only)
-  /**
-   * Render component content as HTML instead of plain text
-   *
-   * ⚠️ **RESTRICTION**: Only available on Text components for security
-   * ⚠️ **SECURITY NOTICE**: This modifier treats content as HTML.
-   * - Default: Basic sanitization removes common XSS vectors
-   * - Use skipSanitizer: true only with fully trusted content
-   * - Consider DOMPurify for comprehensive sanitization
-   * - Non-reactive for performance (content is processed once)
-   *
-   * @param options - Configuration options
-   *
-   * @example
-   * ```typescript
-   * // ✅ Allowed: Text components only
-   * Text('<p>Hello <strong>world</strong></p>').asHTML().build()
-   *
-   * // ❌ Compile Error: Not a Text component
-   * VStack({}).asHTML() // TypeScript error
-   *
-   * // ✅ Dangerous: Skip sanitization
-   * Text(serverTemplate).asHTML({ skipSanitizer: true }).build()
-   * ```
-   */
-
-  // Raw CSS modifiers
-  css(properties: {
-    [property: string]: string | number | undefined
-  }): ModifierBuilder<T>
-  cssProperty(property: string, value: string | number): ModifierBuilder<T>
-  cssVariable(name: string, value: string | number): ModifierBuilder<T>
-  cssVendor(
-    prefix: 'webkit' | 'moz' | 'ms' | 'o',
-    property: string,
-    value: string | number
-  ): ModifierBuilder<T>
+  // Raw CSS and HTML rendering modifiers have moved to @tachui/modifiers/utility.
+  // Import from '@tachui/modifiers/utility' and apply explicitly.
 
   // Responsive functionality moved to @tachui/responsive package
 
