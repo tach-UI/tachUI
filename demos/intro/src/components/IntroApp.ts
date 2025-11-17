@@ -1,3 +1,4 @@
+import '@tachui/responsive'
 import { VStack } from '@tachui/primitives'
 import type { ComponentInstance } from "@tachui/core/runtime/types"
 // import { backdropFilter, dropShadow, gradientText } from '@tachui/core/modifiers'
