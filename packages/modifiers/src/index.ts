@@ -34,6 +34,9 @@ export * from './interaction'
 export * from './responsive'
 export * from './elements'
 export * from './attributes'
+export * from './navigation'
+export * from './animation'
+export * from './lifecycle'
 
 // Package Information - consistent across all TachUI packages
 export { TACHUI_PACKAGE, TACHUI_PACKAGE_VERSION } from './version'

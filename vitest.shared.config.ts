@@ -138,6 +138,10 @@ export default defineConfig({
         replacement: path.resolve(__dirname, 'packages/modifiers/src'), // Effects merged into modifiers
       },
       {
+        find: '@tachui/modifiers/',
+        replacement: path.resolve(__dirname, 'packages/modifiers/src') + '/',
+      },
+      {
         find: '@tachui/modifiers/effects',
         replacement: path.resolve(__dirname, 'packages/modifiers/src/effects/index.ts'),
       },

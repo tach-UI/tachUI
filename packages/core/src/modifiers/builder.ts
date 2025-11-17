@@ -10,17 +10,14 @@ import type { ComponentInstance, ComponentProps } from '../runtime/types'
 import type { StatefulBackgroundValue } from '../gradients/types'
 import type { ColorValue } from './types'
 import type { FontAsset } from '../assets/FontAsset'
-import {
-  AnimationModifier,
-  AppearanceModifier,
-  LifecycleModifier,
-  ResizableModifier,
-} from './base'
+import { AppearanceModifier } from './base'
 import type { InteractionModifier } from './base'
 import {
   frame as frameModifier,
   layoutPriority as layoutPriorityModifier,
   absolutePosition as absolutePositionModifier,
+  scaleEffect as scaleEffectModifier,
+  resizable as resizableModifier,
 } from '@tachui/modifiers/layout'
 import {
   foregroundColorReactive,
@@ -67,6 +64,24 @@ import {
   onDoubleClickInteraction as onDoubleClickFactory,
   onContextMenuInteraction as onContextMenuFactory,
 } from '@tachui/modifiers/interaction/dom-events'
+import {
+  animation as animationModifier,
+  transform as transformAnimationModifier,
+  transitions as transitionsModifier,
+} from '@tachui/modifiers/animation'
+import { task as taskModifier } from '@tachui/modifiers/lifecycle'
+import {
+  role as roleModifier,
+  ariaLabel as ariaLabelModifier,
+  ariaLive as ariaLiveModifier,
+  ariaDescribedBy as ariaDescribedByModifier,
+  ariaModal as ariaModalModifier,
+} from '@tachui/modifiers/attributes/accessibility'
+import {
+  navigationTitle as navigationTitleModifier,
+  navigationBarHidden as navigationBarHiddenModifier,
+  navigationBarItems as navigationBarItemsModifier,
+} from '@tachui/modifiers/navigation'
 
 
 // Dynamic imports for effects and modifiers to avoid circular dependencies
@@ -164,72 +179,14 @@ function createRegistryModifier(name: string, ..._args: any[]): Modifier {
       return modifier as Modifier
     } catch (error) {
       console.warn(`Error creating modifier '${name}':`, error)
+      throw error
     }
   }
 
-  // RESILIENCE FIX: Return a lazy modifier that will retry lookup on first use
-  if (['padding', 'margin', 'width', 'height', 'maxWidth', 'minWidth', 'maxHeight', 'minHeight', 'size', 'borderBottom', 'borderTop', 'borderLeft', 'borderRight', 'position', 'zIndex', 'textShadow', 'shadow', 'blur', 'brightness', 'contrast', 'responsive'].includes(name)) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(`🔧 Modifier '${name}' not found, creating lazy modifier that will retry lookup`)
-    }
-    return createLazyModifier(name, _args)
-  }
-
-  // No fallback - modifier must be registered in @tachui/modifiers or @tachui/modifiers/effects
   throw new Error(
     `Modifier '${name}' not found in registry. ` +
     `Import @tachui/modifiers or @tachui/modifiers/effects to register modifiers.`
   )
-}
-
-/**
- * Creates a lazy modifier that will retry registry lookup when actually applied
- * This provides resilience against import order issues
- */
-function createLazyModifier(name: string, args: any[]): Modifier {
-  return {
-    type: 'lazy' as any,
-    priority: 50,
-    properties: { name, args },
-    apply: (node: any, context: any) => {
-      // Retry registry lookup at apply time
-      const activeRegistry = getActiveRegistry()
-
-      try {
-        // Try to get the factory synchronously first
-        let factory = activeRegistry.get(name) as any
-
-        // If we got a Promise, we need to handle it synchronously
-        // This shouldn't happen in normal cases, but let's handle it
-        if (factory && typeof factory.then === 'function') {
-          console.warn(`Lazy modifier '${name}' returned a Promise synchronously - this should not happen`)
-          factory = null
-        }
-
-        if (factory) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ Lazy modifier '${name}' found factory on apply, using real modifier`)
-          }
-          try {
-            const realModifier = (factory as any).apply(null, args as any)
-            if (realModifier && realModifier.apply) {
-              return realModifier.apply(node, context)
-            }
-          } catch (error) {
-            console.warn(`Error applying lazy modifier '${name}':`, error)
-          }
-        }
-      } catch (error) {
-        console.warn(`Error loading lazy modifier '${name}':`, error)
-      }
-
-      // Still not found - throw error
-      throw new Error(
-        `Lazy modifier '${name}' still not found at apply time. ` +
-        `Ensure @tachui/modifiers or @tachui/modifiers/effects is imported before using this modifier.`
-      )
-    }
-  }
 }
 
 // position and zIndex have been migrated to @tachui/modifiers/layout
@@ -548,12 +505,12 @@ export class ModifierBuilderImpl<
 
   // Animation modifiers
   transform(value: string | Signal<string>): ModifierBuilder<T> {
-    this.modifiers.push(new AnimationModifier({ transform: value }))
+    this.modifiers.push(transformAnimationModifier(value))
     return this as unknown as ModifierBuilder<T>
   }
 
-  animation(options: AnimationModifierProps['animation']): ModifierBuilder<T> {
-    this.modifiers.push(new AnimationModifier({ animation: options }))
+  animation(options?: AnimationModifierProps['animation']): ModifierBuilder<T> {
+    this.modifiers.push(animationModifier(options))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -566,12 +523,10 @@ export class ModifierBuilderImpl<
     }
   ): ModifierBuilder<T> {
     this.modifiers.push(
-      new LifecycleModifier({
-        task: {
-          operation,
-          id: options?.id,
-          priority: options?.priority || 'default',
-        },
+      taskModifier({
+        operation,
+        id: options?.id,
+        priority: options?.priority || 'default',
       })
     )
     return this as unknown as ModifierBuilder<T>
@@ -617,7 +572,7 @@ export class ModifierBuilderImpl<
 
   // Resizable modifier for images
   resizable(): ModifierBuilder<T> {
-    this.modifiers.push(new ResizableModifier({}))
+    this.modifiers.push(resizableModifier())
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1034,29 +989,27 @@ export class ModifierBuilderImpl<
 
   // Individual ARIA methods for better developer experience
   role(value: string): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ role: value }))
+    this.modifiers.push(roleModifier(value))
     return this as unknown as ModifierBuilder<T>
   }
 
   ariaLabel(value: string): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ 'aria-label': value }))
+    this.modifiers.push(ariaLabelModifier(value))
     return this as unknown as ModifierBuilder<T>
   }
 
   ariaLive(value: 'off' | 'polite' | 'assertive'): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ 'aria-live': value }))
+    this.modifiers.push(ariaLiveModifier(value))
     return this as unknown as ModifierBuilder<T>
   }
 
   ariaDescribedBy(value: string): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ 'aria-describedby': value }))
+    this.modifiers.push(ariaDescribedByModifier(value))
     return this as unknown as ModifierBuilder<T>
   }
 
   ariaModal(value: boolean): ModifierBuilder<T> {
-    this.modifiers.push(
-      new AppearanceModifier({ 'aria-modal': value.toString() })
-    )
+    this.modifiers.push(ariaModalModifier(value))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1089,25 +1042,12 @@ export class ModifierBuilderImpl<
 
   // Navigation methods - these delegate to the navigation package functions
   navigationTitle(title: string): ModifierBuilder<T> {
-    // Add a modifier that will be handled by the navigation system
-    // navigationTitle should provide heading semantics
-    this.modifiers.push(
-      new AppearanceModifier({
-        navigationTitle: title,
-        role: 'heading',
-      })
-    )
+    this.modifiers.push(navigationTitleModifier(title))
     return this as unknown as ModifierBuilder<T>
   }
 
   navigationBarHidden(hidden: boolean = true): ModifierBuilder<T> {
-    // navigationBarHidden should hide from screen readers
-    this.modifiers.push(
-      new AppearanceModifier({
-        navigationBarHidden: hidden,
-        'aria-hidden': hidden.toString(),
-      })
-    )
+    this.modifiers.push(navigationBarHiddenModifier(hidden))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1115,7 +1055,7 @@ export class ModifierBuilderImpl<
     leading?: ComponentInstance | ComponentInstance[]
     trailing?: ComponentInstance | ComponentInstance[]
   }): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ navigationBarItems: options }))
+    this.modifiers.push(navigationBarItemsModifier(options))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1125,7 +1065,7 @@ export class ModifierBuilderImpl<
 
   transitions(config: any): ModifierBuilder<T> {
     // Placeholder - implement with proper transition system
-    this.modifiers.push(new AnimationModifier({ transitions: config }))
+    this.modifiers.push(transitionsModifier(config))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1185,17 +1125,7 @@ export class ModifierBuilderImpl<
       | 'bottomLeading'
       | 'bottomTrailing'
   ): ModifierBuilder<T> {
-    // Use AnimationModifier for transform effects to maintain compatibility
-    // The actual transform will be handled by the modifier's apply method
-    this.modifiers.push(
-      new AnimationModifier({
-        scaleEffect: {
-          x,
-          y: y ?? x, // Default to uniform scaling
-          anchor: anchor ?? 'center',
-        },
-      })
-    )
+    this.modifiers.push(scaleEffectModifier(x, y, anchor))
     return this as unknown as ModifierBuilder<T>
   }
 

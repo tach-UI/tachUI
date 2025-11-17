@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { defineConfig, mergeConfig } from 'vitest/config'
 import sharedConfig from '../../vitest.shared.config'
 
@@ -15,8 +16,12 @@ export default mergeConfig(
     resolve: {
       alias: {
         // Self-reference for imports
-        '@tachui/modifiers': './src',
-        '@tachui/modifiers/effects': './src/effects/index.ts',
+        '@tachui/modifiers': path.resolve(__dirname, './src'),
+        '@tachui/modifiers/': path.resolve(__dirname, './src') + '/',
+        '@tachui/modifiers/effects': path.resolve(
+          __dirname,
+          './src/effects/index.ts'
+        ),
       },
     },
   })

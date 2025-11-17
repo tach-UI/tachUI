@@ -564,7 +564,7 @@ export interface ModifierBuilder<
     delay?: number
   ): ModifierBuilder<T>
   transitions(config: any): ModifierBuilder<T>
-  animation(options: AnimationModifierProps['animation']): ModifierBuilder<T>
+  animation(options?: AnimationModifierProps['animation']): ModifierBuilder<T>
 
   // Transition presets
   fadeTransition(duration?: number): ModifierBuilder<T>

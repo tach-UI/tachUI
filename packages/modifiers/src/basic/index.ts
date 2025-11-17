@@ -43,6 +43,12 @@ import {
   minHeight,
 } from './size'
 import { transition } from './animation'
+import {
+  animation as animationModifier,
+  transform as transformModifier,
+  transitions as transitionsModifier,
+} from '../animation'
+import { task as taskModifier } from '../lifecycle'
 
 import {
   aspectRatio,
@@ -51,6 +57,7 @@ import {
   overlay,
   position,
   scaleEffect,
+  resizable,
   zIndex,
   flexbox,
   flexGrow,
@@ -186,7 +193,7 @@ import {
   spinner,
 } from '../elements'
 
-const basicModifierRegistrations: Array<[string, (...args: any[]) => any]> = [
+export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   // Padding
   ['padding', padding],
   ['paddingTop', paddingTop],
@@ -222,6 +229,7 @@ const basicModifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['aspectRatio', aspectRatio],
   ['fixedSize', fixedSize],
   ['frame', frame],
+  ['resizable', resizable],
   ['layoutPriority', layoutPriority],
   ['offset', offset],
   ['overlay', overlay],
@@ -328,6 +336,9 @@ const basicModifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['overflowY', overflowY],
   ['outline', outline],
   ['outlineOffset', outlineOffset],
+  ['animation', animationModifier],
+  ['transform', transformModifier],
+  ['transitions', transitionsModifier],
   ['transition', transition],
 
   // Attributes
@@ -355,6 +366,8 @@ const basicModifierRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['tooltip', tooltip],
   ['cornerRibbon', cornerRibbon],
   ['spinner', spinner],
+  // Lifecycle
+  ['task', taskModifier],
 ]
 
 type RegisterOptions = {
