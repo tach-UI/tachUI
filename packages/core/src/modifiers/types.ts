@@ -53,6 +53,7 @@ import type {
   ImageAssetProxy,
   FontAssetProxy,
 } from '../assets/types'
+import type { AsHTMLOptions } from '@tachui/modifiers/utility'
 
 /**
  * Valid color value types for modifiers
@@ -468,6 +469,13 @@ export interface ModifierBuilder<
       | 'none'
   ): ModifierBuilder<T>
   transform(value: string | Signal<string>): ModifierBuilder<T>
+
+  /**
+   * Render Text component content as HTML.
+   *
+   * Backed by @tachui/modifiers/utility -> asHTML().
+   */
+  asHTML(options?: AsHTMLOptions): ModifierBuilder<T>
 
   // Raw CSS modifiers moved to @tachui/modifiers/utility
 

@@ -10,6 +10,7 @@ import type { StatefulBackgroundValue } from '../gradients/types';
 import type { ColorValue } from './types';
 import type { FontAsset } from '../assets/FontAsset';
 import type { AnimationModifierProps, AppearanceModifierProps, LayoutModifierProps, ModifiableComponent, Modifier, ModifierBuilder } from './types';
+import type { AsHTMLOptions } from '@tachui/modifiers/utility';
 export declare function setExternalModifierRegistry(registry: any): void;
 /**
  * Concrete modifier builder implementation
@@ -98,6 +99,7 @@ export declare class ModifierBuilderImpl<T extends ComponentInstance = Component
     themeColors(_colors: Record<string, string>): ModifierBuilder<T>;
     designTokens(_tokens: Record<string, string | number>): ModifierBuilder<T>;
     disabled(isDisabled?: boolean | Signal<boolean>): ModifierBuilder<T>;
+    asHTML(options?: AsHTMLOptions): ModifierBuilder<T>;
     build(): T;
     private applyModifiersToPropsForTesting;
     role(value: string): ModifierBuilder<T>;

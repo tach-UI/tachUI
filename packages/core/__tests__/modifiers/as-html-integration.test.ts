@@ -1,9 +1,6 @@
 import { describe, test, expect } from 'vitest'
 import { createModifierBuilder } from '../../src/modifiers/builder'
-// Import modifiers to ensure they are registered
-import '@tachui/modifiers'
 
-// Mock components for testing integration
 const mockTextComponent = (content: string) => ({
   type: 'Text',
   __tachui_component_type: 'Text',
@@ -31,15 +28,13 @@ describe('AsHTML Integration Tests', () => {
 
     const result = builder.asHTML()
 
-    // Result is a Proxy, so it won't be === to builder
-    expect(result.asHTML).toBeDefined() // Should still have asHTML method for further chaining
+    expect(result.asHTML).toBeDefined()
   })
 
   test('asHTML can be chained with other modifiers', () => {
     const component = mockTextComponent('<p>Styled content</p>')
     const builder = createModifierBuilder(component)
 
-    // Chain multiple modifiers including asHTML
     const result = builder
       .asHTML()
       .padding(16)
@@ -47,8 +42,6 @@ describe('AsHTML Integration Tests', () => {
       .cornerRadius(8)
 
     expect(result).toBe(builder)
-
-    // Build should not throw
     expect(() => result.build()).not.toThrow()
   })
 
@@ -56,7 +49,6 @@ describe('AsHTML Integration Tests', () => {
     const component = mockTextComponent('<p>Test</p>')
     const builder = createModifierBuilder(component)
 
-    // Access private modifiers array for testing
     const initialModifierCount = (builder as any).modifiers.length
 
     builder.asHTML()
@@ -64,7 +56,6 @@ describe('AsHTML Integration Tests', () => {
     const finalModifierCount = (builder as any).modifiers.length
     expect(finalModifierCount).toBe(initialModifierCount + 1)
 
-    // Check that the last modifier is AsHTMLModifier
     const lastModifier = (builder as any).modifiers[finalModifierCount - 1]
     expect(lastModifier.type).toBe('asHTML')
   })
@@ -112,7 +103,6 @@ describe('AsHTML Integration Tests', () => {
     )
     const builder = createModifierBuilder(component)
 
-    // Complex realistic chain
     const result = builder
       .padding({ vertical: 20, horizontal: 16 })
       .backgroundColor('#ffffff')
@@ -132,7 +122,6 @@ describe('AsHTML Integration Tests', () => {
     expect(result).toBe(builder)
     expect(() => result.build()).not.toThrow()
 
-    // Check that asHTML modifier is in the chain
     const modifiers = (builder as any).modifiers
     const hasAsHTML = modifiers.some((m: any) => m.type === 'asHTML')
     expect(hasAsHTML).toBe(true)
@@ -147,7 +136,7 @@ describe('AsHTML Integration Tests', () => {
     const modifiers = (builder as any).modifiers
     const asHTMLModifier = modifiers[modifiers.length - 1]
 
-    expect(asHTMLModifier.priority).toBe(10) // After layout, before styling
+    expect(asHTMLModifier.priority).toBe(10)
   })
 
   test('built component maintains original structure with asHTML modifier', () => {
@@ -158,11 +147,9 @@ describe('AsHTML Integration Tests', () => {
 
     const builtComponent = builder.asHTML().padding(16).build()
 
-    // Component should maintain its basic structure
     expect(builtComponent).toBeDefined()
     expect(typeof builtComponent).toBe('object')
 
-    // Should have modifiers applied
     if ('modifiers' in builtComponent) {
       const modifiers = (builtComponent as any).modifiers
       const hasAsHTML = modifiers.some((m: any) => m.type === 'asHTML')
@@ -174,24 +161,20 @@ describe('AsHTML Integration Tests', () => {
   })
 
   test('asHTML error handling in build chain', () => {
-    const component = mockVStackComponent() // Non-Text component
+    const component = mockVStackComponent()
     const builder = createModifierBuilder(component)
 
-    // Adding asHTML to builder should work (error occurs during application)
     expect(() => {
       builder.asHTML()
     }).not.toThrow()
 
-    // Build should work (error occurs during render/apply)
     expect(() => {
       builder.build()
     }).not.toThrow()
 
-    // The error would occur when the modifier is actually applied to DOM
     const modifiers = (builder as any).modifiers
     const asHTMLModifier = modifiers[modifiers.length - 1]
 
-    // Mock DOM application
     const element = document.createElement('div')
     const context = {
       componentId: 'test',

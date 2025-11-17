@@ -65,6 +65,10 @@ import type {
 // Responsive functionality moved to @tachui/responsive package
 import { globalModifierRegistry } from '@tachui/registry'
 import { createModifiableComponent } from './registry'
+import {
+  asHTML as asHTMLModifier,
+  type AsHTMLOptions,
+} from '@tachui/modifiers/utility'
 
 // Registry bridge to handle potential instance isolation
 let externalRegistry: any = null
@@ -737,7 +741,11 @@ export class ModifierBuilderImpl<
     return this as unknown as ModifierBuilder<T>
   }
 
-  // HTML content rendering moved to @tachui/modifiers/utility (Text.asHTML()).
+  asHTML(options?: AsHTMLOptions): ModifierBuilder<T> {
+    const modifier = asHTMLModifier(options)
+    this.modifiers.push(modifier)
+    return this as unknown as ModifierBuilder<T>
+  }
 
   // Build the final component with all modifiers applied
   build(): T {

@@ -16,6 +16,7 @@ import type { Dimension } from '../constants/layout';
 import type { StatefulBackgroundValue } from '../gradients/types';
 import type { Asset } from '../assets/Asset';
 import type { ColorAssetProxy, ImageAssetProxy, FontAssetProxy } from '../assets/types';
+import type { AsHTMLOptions } from '@tachui/modifiers/utility';
 /**
  * Valid color value types for modifiers
  */
@@ -322,10 +323,7 @@ export interface ModifierBuilder<T extends ComponentInstance = ComponentInstance
     modifier(modifier: Modifier): ModifierBuilder<T>;
     resizable(): ModifierBuilder<T>;
     textCase(value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'): ModifierBuilder<T>;
-    /**
-     * Raw CSS and HTML rendering modifiers have moved to @tachui/modifiers/utility.
-     * Import from '@tachui/modifiers/utility' and apply explicitly.
-     */
+    asHTML(options?: AsHTMLOptions): ModifierBuilder<T>;
     onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T>;
     onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T>;
     onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T>;

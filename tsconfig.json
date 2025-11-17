@@ -46,10 +46,14 @@
       "@tachui/eslint-plugin/*": ["./packages/eslint-plugin-tachui/dist/*"],
       "@tachui/registry": ["./packages/registry/dist/index.d.ts"],
       "@tachui/registry/*": ["./packages/registry/dist/*"],
-      "@tachui/modifiers": ["./packages/modifiers/src/index.d.ts"],
+      "@tachui/modifiers": [
+        "./packages/modifiers/dist/index.d.ts",
+        "./packages/modifiers/src/index.ts"
+      ],
       "@tachui/modifiers/*": [
-        "./packages/modifiers/src/*.d.ts",
-        "./packages/modifiers/src/*/index.d.ts"
+        "./packages/modifiers/dist/*",
+        "./packages/modifiers/src/*/index.ts",
+        "./packages/modifiers/src/*"
       ]
     }
   },
