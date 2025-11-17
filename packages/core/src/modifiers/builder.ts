@@ -13,11 +13,60 @@ import type { FontAsset } from '../assets/FontAsset'
 import {
   AnimationModifier,
   AppearanceModifier,
-  InteractionModifier,
-  LayoutModifier,
   LifecycleModifier,
   ResizableModifier,
 } from './base'
+import type { InteractionModifier } from './base'
+import {
+  frame as frameModifier,
+  layoutPriority as layoutPriorityModifier,
+  absolutePosition as absolutePositionModifier,
+} from '@tachui/modifiers/layout'
+import {
+  foregroundColorReactive,
+  backgroundColorReactive as backgroundColorModifier,
+  borderReactive,
+  opacity as opacityModifier,
+  cornerRadius as cornerRadiusModifier,
+  blur as blurModifier,
+  brightness as brightnessModifier,
+  contrast as contrastModifier,
+  saturation as saturationModifier,
+  hueRotation as hueRotationModifier,
+  grayscale as grayscaleModifier,
+  colorInvert as colorInvertModifier,
+  fontFamilyModifier as appearanceFontFamilyModifier,
+  fontSizeModifier as appearanceFontSizeModifier,
+  fontWeightModifier as appearanceFontWeightModifier,
+  fontStyleModifier as appearanceFontStyleModifier,
+  fontPreset as appearanceFontPreset,
+} from '@tachui/modifiers/appearance/reactive-factories'
+import {
+  highPriorityGesture as highPriorityGestureFactory,
+  simultaneousGesture as simultaneousGestureFactory,
+  onTap as onTapFactory,
+  onScroll as onScrollFactory,
+  onWheel as onWheelFactory,
+  onInput as onInputFactory,
+  onChange as onChangeFactory,
+  onCopy as onCopyFactory,
+  onCut as onCutFactory,
+  onPaste as onPasteFactory,
+  onSelect as onSelectFactory,
+  disabled as disabledFactory,
+  onTouchStart as onTouchStartFactory,
+  onTouchMove as onTouchMoveFactory,
+  onTouchEnd as onTouchEndFactory,
+  onSwipeLeft as onSwipeLeftFactory,
+  onSwipeRight as onSwipeRightFactory,
+  onFocusInteraction as onFocusFactory,
+  onBlurInteraction as onBlurFactory,
+  onKeyDownInteraction as onKeyDownFactory,
+  onKeyPressInteraction as onKeyPressFactory,
+  onKeyUpInteraction as onKeyUpFactory,
+  onDoubleClickInteraction as onDoubleClickFactory,
+  onContextMenuInteraction as onContextMenuFactory,
+} from '@tachui/modifiers/interaction/dom-events'
 
 
 // Dynamic imports for effects and modifiers to avoid circular dependencies
@@ -210,7 +259,6 @@ function createLazyModifier(name: string, args: any[]): Modifier {
 // Transition and scroll modifiers moved to @tachui/modifiers
 // Available via Proxy when @tachui/modifiers is imported
 
-import { interactionModifiers } from './core'
 // Attribute modifiers have been moved to @tachui/modifiers
 // import { id, data, aria, tabIndex } from '@tachui/modifiers'
 
@@ -245,14 +293,14 @@ export class ModifierBuilderImpl<
       if (height !== undefined) frameProps.height = height
     }
 
-    this.modifiers.push(new LayoutModifier({ frame: frameProps }))
+    this.modifiers.push(frameModifier(frameProps))
     return this as unknown as ModifierBuilder<T>
   }
 
   // margin() moved to @tachui/modifiers - available via Proxy when imported
 
   layoutPriority(priority: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new LayoutModifier({ layoutPriority: priority }))
+    this.modifiers.push(layoutPriorityModifier(priority))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -310,25 +358,18 @@ export class ModifierBuilderImpl<
     x: number | Signal<number>,
     y: number | Signal<number>
   ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new LayoutModifier({
-        position: {
-          x,
-          y,
-        },
-      })
-    )
+    this.modifiers.push(absolutePositionModifier(x, y))
     return this as unknown as ModifierBuilder<T>
   }
 
   // Appearance modifiers
   foregroundColor(color: ColorValue): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ foregroundColor: color }))
+    this.modifiers.push(foregroundColorReactive(color))
     return this as unknown as ModifierBuilder<T>
   }
 
   backgroundColor(color: ColorValue): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ backgroundColor: color }))
+    this.modifiers.push(backgroundColorModifier(color))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -350,32 +391,30 @@ export class ModifierBuilderImpl<
     if (typeof sizeOrOptions === 'object') {
       fontProps = sizeOrOptions
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[ModifierBuilder] font() called with:', fontProps)
-        console.log('[ModifierBuilder] fontProps.family:', fontProps.family)
-        console.log('[ModifierBuilder] typeof fontProps.family:', typeof fontProps.family)
-      }
-
-      // Split into individual modifier calls to ensure each property is properly handled
-      // This is necessary because AppearanceModifier merging doesn't work correctly
       if (fontProps.family !== undefined) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[ModifierBuilder] Creating AppearanceModifier with family:', fontProps.family)
-        }
-        this.modifiers.push(new AppearanceModifier({ font: { family: fontProps.family } }))
+        this.modifiers.push(
+          appearanceFontFamilyModifier(fontProps.family)
+        )
       }
       if (fontProps.size !== undefined) {
-        this.modifiers.push(new AppearanceModifier({ font: { size: fontProps.size } }))
+        this.modifiers.push(appearanceFontSizeModifier(fontProps.size))
       }
       if (fontProps.weight !== undefined) {
-        this.modifiers.push(new AppearanceModifier({ font: { weight: fontProps.weight } }))
+        this.modifiers.push(appearanceFontWeightModifier(fontProps.weight))
       }
       if (fontProps.style !== undefined) {
-        this.modifiers.push(new AppearanceModifier({ font: { style: fontProps.style } }))
+        this.modifiers.push(appearanceFontStyleModifier(fontProps.style))
       }
     } else {
       fontProps = sizeOrOptions !== undefined ? { size: sizeOrOptions } : {}
-      this.modifiers.push(new AppearanceModifier({ font: fontProps }))
+      if (
+        typeof sizeOrOptions === 'string' &&
+        sizeOrOptions.startsWith('.')
+      ) {
+        this.modifiers.push(appearanceFontPreset(sizeOrOptions))
+      } else if (fontProps.size !== undefined) {
+        this.modifiers.push(appearanceFontSizeModifier(fontProps.size))
+      }
     }
 
     return this as unknown as ModifierBuilder<T>
@@ -384,31 +423,31 @@ export class ModifierBuilderImpl<
   fontWeight(
     weight: NonNullable<AppearanceModifierProps['font']>['weight']
   ): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ font: { weight } }))
+    this.modifiers.push(appearanceFontWeightModifier(weight))
     return this as unknown as ModifierBuilder<T>
   }
 
   fontSize(
     size: number | string | Signal<number> | Signal<string>
   ): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ font: { size } }))
+    this.modifiers.push(appearanceFontSizeModifier(size))
     return this as unknown as ModifierBuilder<T>
   }
 
   fontFamily(
     family: string | FontAsset | Signal<string | FontAsset>
   ): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ font: { family } }))
+    this.modifiers.push(appearanceFontFamilyModifier(family))
     return this as unknown as ModifierBuilder<T>
   }
 
   opacity(value: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ opacity: value }))
+    this.modifiers.push(opacityModifier(value))
     return this as unknown as ModifierBuilder<T>
   }
 
   cornerRadius(radius: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ cornerRadius: radius }))
+    this.modifiers.push(cornerRadiusModifier(radius))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -430,12 +469,12 @@ export class ModifierBuilderImpl<
       }
     }
 
-    this.modifiers.push(new AppearanceModifier({ border: borderProps }))
+    this.modifiers.push(borderReactive(borderProps))
     return this as unknown as ModifierBuilder<T>
   }
 
   borderWidth(width: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ border: { width } }))
+    this.modifiers.push(borderReactive({ width }))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -443,37 +482,37 @@ export class ModifierBuilderImpl<
 
   // Visual Effects Modifiers (Phase 2 - Epic: Butternut)
   blur(radius: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ blur: radius }))
+    this.modifiers.push(blurModifier(radius))
     return this as unknown as ModifierBuilder<T>
   }
 
   brightness(amount: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ brightness: amount }))
+    this.modifiers.push(brightnessModifier(amount))
     return this as unknown as ModifierBuilder<T>
   }
 
   contrast(amount: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ contrast: amount }))
+    this.modifiers.push(contrastModifier(amount))
     return this as unknown as ModifierBuilder<T>
   }
 
   saturation(amount: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ saturation: amount }))
+    this.modifiers.push(saturationModifier(amount))
     return this as unknown as ModifierBuilder<T>
   }
 
   hueRotation(angle: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ hueRotation: angle }))
+    this.modifiers.push(hueRotationModifier(angle))
     return this as unknown as ModifierBuilder<T>
   }
 
   grayscale(amount: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ grayscale: amount }))
+    this.modifiers.push(grayscaleModifier(amount))
     return this as unknown as ModifierBuilder<T>
   }
 
   colorInvert(amount: number | Signal<number> = 1.0): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ colorInvert: amount }))
+    this.modifiers.push(colorInvertModifier(amount))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -493,11 +532,7 @@ export class ModifierBuilderImpl<
     gesture: any,
     including?: ('all' | 'subviews' | 'none')[]
   ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new InteractionModifier({
-        highPriorityGesture: { gesture, including },
-      })
-    )
+    this.modifiers.push(highPriorityGestureFactory(gesture, including))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -505,11 +540,7 @@ export class ModifierBuilderImpl<
     gesture: any,
     including?: ('all' | 'subviews' | 'none')[]
   ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new InteractionModifier({
-        simultaneousGesture: { gesture, including },
-      })
-    )
+    this.modifiers.push(simultaneousGestureFactory(gesture, including))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -615,82 +646,82 @@ export class ModifierBuilderImpl<
 
   // Interaction modifiers
   onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(interactionModifiers.onTap(handler))
+    this.modifiers.push(onTapFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
-    this.modifiers.push(interactionModifiers.onFocus(handler))
+    this.modifiers.push(onFocusFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onBlur: handler }))
+    this.modifiers.push(onBlurFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onKeyDown(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onKeyDown: handler }))
+    this.modifiers.push(onKeyDownFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onScroll(handler: (event: Event) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onScroll: handler }))
+    this.modifiers.push(onScrollFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onKeyPress(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onKeyPress: handler }))
+    this.modifiers.push(onKeyPressFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onKeyUp(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onKeyUp: handler }))
+    this.modifiers.push(onKeyUpFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onDoubleClick(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onDoubleClick: handler }))
+    this.modifiers.push(onDoubleClickFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onContextMenu(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onContextMenu: handler }))
+    this.modifiers.push(onContextMenuFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onWheel(handler: (event: WheelEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onWheel: handler }))
+    this.modifiers.push(onWheelFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onInput(handler: (event: InputEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onInput: handler }))
+    this.modifiers.push(onInputFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onChange(handler: (value: any, event?: Event) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onChange: handler }))
+    this.modifiers.push(onChangeFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onCopy(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onCopy: handler }))
+    this.modifiers.push(onCopyFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onCut(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onCut: handler }))
+    this.modifiers.push(onCutFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onPaste(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onPaste: handler }))
+    this.modifiers.push(onPasteFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onSelect(handler: (event: Event) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onSelect: handler }))
+    this.modifiers.push(onSelectFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -737,7 +768,7 @@ export class ModifierBuilderImpl<
 
   // State modifiers
   disabled(isDisabled: boolean | Signal<boolean> = true): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ disabled: isDisabled }))
+    this.modifiers.push(disabledFactory(isDisabled))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1031,28 +1062,28 @@ export class ModifierBuilderImpl<
 
   // Touch and gesture events
   onTouchStart(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onTouchStart: handler }))
+    this.modifiers.push(onTouchStartFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onTouchMove(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onTouchMove: handler }))
+    this.modifiers.push(onTouchMoveFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onTouchEnd(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onTouchEnd: handler }))
+    this.modifiers.push(onTouchEndFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   // Swipe gestures (simplified implementations)
   onSwipeLeft(handler: () => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onSwipeLeft: handler }))
+    this.modifiers.push(onSwipeLeftFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onSwipeRight(handler: () => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onSwipeRight: handler }))
+    this.modifiers.push(onSwipeRightFactory(handler))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1273,6 +1304,6 @@ export const modifierUtils = {
    * Create a padding modifier with all sides
    */
   paddingAll(value: number): Modifier {
-    return new LayoutModifier({ padding: value })
+    return createRegistryModifier('padding', { all: value })
   },
 }

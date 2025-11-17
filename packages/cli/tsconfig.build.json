@@ -25,7 +25,9 @@
     "baseUrl": ".",
     "paths": {
       "@tachui/core": ["../core/src"],
-      "@tachui/devtools": ["../devtools/src"]
+      "@tachui/devtools": ["../devtools/src"],
+      "@tachui/modifiers": ["../modifiers/src/index.ts", "../modifiers/src"],
+      "@tachui/modifiers/*": ["../modifiers/src/*"]
     }
   },
   "include": ["src/**/*", "src/globals.d.ts"],

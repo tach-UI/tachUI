@@ -5,5 +5,6 @@
  */
 
 export * from './typography'
+export { font } from './font'
 export * from './font'
 export * from './text'

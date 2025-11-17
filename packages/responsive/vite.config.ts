@@ -11,7 +11,10 @@ export default defineConfig(({ mode }) => ({
     },
     emptyOutDir: false, // Don't clean the dist directory to preserve .d.ts files
     rollupOptions: {
-      external: ['@tachui/core', '@tachui/modifiers', '@tachui/registry'],
+      external: id =>
+        id === '@tachui/core' ||
+        id === '@tachui/registry' ||
+        id.startsWith('@tachui/modifiers'),
       output: {
         globals: {
           '@tachui/core': 'TachUICore',

@@ -37,6 +37,8 @@
       "@tachui/symbols/*": ["./packages/symbols/dist/*"],
       "@tachui/mobile": ["./packages/mobile/dist/index.d.ts"],
       "@tachui/mobile/*": ["./packages/mobile/dist/*"],
+      "@tachui/responsive": ["./packages/responsive/dist/index.d.ts"],
+      "@tachui/responsive/*": ["./packages/responsive/dist/*"],
 
       "@tachui/devtools": ["./packages/devtools/dist/index.d.ts"],
       "@tachui/devtools/*": ["./packages/devtools/dist/*"],
@@ -66,6 +68,7 @@
     { "path": "./packages/navigation" },
     { "path": "./packages/symbols" },
     { "path": "./packages/mobile" },
+    { "path": "./packages/responsive" },
     { "path": "./packages/devtools" },
     { "path": "./packages/cli" },
     { "path": "./packages/eslint-plugin-tachui" }

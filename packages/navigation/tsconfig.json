@@ -24,7 +24,11 @@
     "baseUrl": ".",
     "paths": {
       "@tachui/core": ["../core/dist"],
-      "@tachui/primitives": ["../primitives/dist"]
+      "@tachui/primitives": [
+        "../primitives/dist",
+        "../primitives/src/index.ts",
+        "../primitives/src"
+      ]
     }
   },
   "include": ["src/**/*"],
