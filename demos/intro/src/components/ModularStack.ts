@@ -13,8 +13,7 @@ export function ModularStack(name: string, size: string, entries: string[][]): C
                 children: [
                     Text(name)
                         .font({ size: '1.25rem', family: logoFont })
-                        .foregroundColor(Assets.textWhite)
-                        .build(),
+                        .foregroundColor(Assets.textWhite),
                     Text(size)
                         .backgroundColor(Assets.primaryPurple)
                         .foregroundColor(Assets.textWhite)
@@ -22,20 +21,17 @@ export function ModularStack(name: string, size: string, entries: string[][]): C
                         .cornerRadius(6)
                         .margin({ left: 10 })
                         .font({ size: '1.15rem', weight: '600', family: baseFont })
-                        .build()
                 ]
             })
-                .paddingBottom(20)
-                .build(),
+                .paddingBottom(20),
             ...entries.flatMap((entry, index) => {
                 const row = HStack({
                     spacing: 6,
                     alignment: 'center',
                     children: [
                         Text(entry[0])
-                            .fontWeight('bold')
-                            .build(),
-                        Text(entry[1]).build(),
+                            .fontWeight('bold'),
+                        Text(entry[1]),
                     ],
                 });
                 if (index < entries.length - 1) {
@@ -43,7 +39,7 @@ export function ModularStack(name: string, size: string, entries: string[][]): C
                         color: primaryPurple20,
                         thickness: 1,
                     })
-                        .margin(0).build();
+                        .margin(0);
                     return [row, divider];
                 }
                 return [row];
@@ -52,10 +48,10 @@ export function ModularStack(name: string, size: string, entries: string[][]): C
     })
         .background(Assets.primaryPurple10)
         .hover({
-        background: primaryPurple20,
-        borderColor: Assets.primaryPurple50.resolve() as string,
-        transform: 'translateY(-2px)'
-    })
+            background: primaryPurple20,
+            borderColor: Assets.primaryPurple50.resolve() as string,
+            transform: 'translateY(-2px)'
+        })
         .font({ size: '1rem', family: baseFont, weight: 'normal' })
         .backdropFilter('blur(15px)')
         .border(1, Assets.primaryPurple30, 'solid')
@@ -64,6 +60,5 @@ export function ModularStack(name: string, size: string, entries: string[][]): C
         .base.width('98%')
         .md.width('32%')
         .transition({ property: 'all', duration: 300, easing: 'ease' })
-        .shadow(0, 8, 32, Assets.primaryPurple15.resolve() as string)
-        .build();
+        .shadow(0, 8, 32, Assets.primaryPurple15.resolve() as string);
 }

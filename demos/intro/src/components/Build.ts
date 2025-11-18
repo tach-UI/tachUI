@@ -21,26 +21,14 @@ export function Build(): ComponentInstance {
                         .foregroundColor(Assets.textWhite)
                         .padding(0)
                         .margin(0)
-                        .textShadow({
-                        x: 0,
-                        y: 2,
-                        blur: 15,
-                        color: "hsla(251, 91%, 66%, 0.4)",
-                    })
-                        .build(),
+                        .textShadow({ x: 0, y: 2, blur: 15, color: "hsla(251, 91%, 66%, 0.4)" }),
                     Text("Start building applications with familiar SwiftUI patterns")
                         .font({ size: "1.5rem", weight: "normal" })
                         .textAlign("center")
                         .foregroundColor(Assets.textWhite)
                         .padding(0)
                         .margin({ vertical: 30 })
-                        .textShadow({
-                        x: 0,
-                        y: 2,
-                        blur: 15,
-                        color: "hsla(251, 91%, 66%, 0.4)",
-                    })
-                        .build(),
+                        .textShadow({ x: 0, y: 2, blur: 15, color: "hsla(251, 91%, 66%, 0.4)" }),
                     VStack({
                         spacing: 10,
                         alignment: "leading",
@@ -48,8 +36,7 @@ export function Build(): ComponentInstance {
                             Text("Prerequisites")
                                 .font({ size: "1.15rem", weight: 700 })
                                 .width("100%")
-                                .borderBottom(1, Assets.accentOrange15, "solid")
-                                .build(),
+                                .borderBottom(1, Assets.accentOrange15, "solid"),
                             Text(`Node.js: 20+
 pnpm: 10.14.0+ (recommended) or npm 9+
 TypeScript: 5.8+ support in your editor
@@ -58,8 +45,7 @@ TypeScript: 5.8+ support in your editor
                                 .font({ size: "1.15rem", weight: 700 })
                                 .width("100%")
                                 .marginTop(30)
-                                .borderBottom(1, Assets.accentOrange15, "solid")
-                                .build(),
+                                .borderBottom(1, Assets.accentOrange15, "solid"),
                             Text(`# Using pnpm (recommended)
 pnpm add @tachui/core@0.7.0-alpha2
 
@@ -90,14 +76,12 @@ pnpm add @tachui/mobile-patterns@0.7.0-alpha2
                         .backgroundColor(Assets.darkPurple80)
                         .padding(20)
                         .border(1, Assets.accentOrange15, "solid")
-                        .cornerRadius(2)
-                        .build(),
+                        .cornerRadius(2),
                 ],
             })
                 .padding({ vertical: 0, horizontal: 20 })
                 .maxWidth(1200)
-                .elementId("cta")
-                .build(),
+                .elementId("cta"),
         ],
     })
         .background(Assets.darkPurple80)
@@ -105,6 +89,5 @@ pnpm add @tachui/mobile-patterns@0.7.0-alpha2
         .padding({ vertical: 80, horizontal: 0 })
         .position("relative")
         .width("100%")
-        .minHeight("600px")
-        .build();
+        .minHeight("600px");
 }

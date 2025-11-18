@@ -17,7 +17,6 @@
     "build:modifiers": "pnpm --filter @tachui/modifiers... build",
     "build:primitives": "pnpm --filter @tachui/primitives... build",
     "build:responsive": "pnpm --filter @tachui/responsive... build",
-
     "build:symbols": "pnpm --filter @tachui/symbols... build",
     "build:data": "pnpm --filter @tachui/data... build",
     "build:forms": "pnpm --filter @tachui/forms... build",
@@ -65,6 +64,7 @@
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "esbuild": "^0.21.0",
     "glob": "^10.4.5",
     "jsdom": "^23.2.0",

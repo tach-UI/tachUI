@@ -21,20 +21,16 @@ export function Footer(): ComponentInstance {
                 .font({ size: 16, weight: 300 })
                 .paddingBottom(20)
                 .base.flexDirection("column")
-                .md.flexDirection("row")
-                .build(),
+                .md.flexDirection("row"),
             Text("Copyright ©2025 the tachUI team, all rights reserved. Released under ")
                 .font({ size: 16, weight: 300 })
                 .paddingBottom(20)
-                .build()
                 .concat(Link("MPL-2.0 License", "https://www.mozilla.org/en-US/MPL/2.0/")
                 .foregroundColor(Assets.accentOrange)
-                .textDecoration("underline")
-                .build()),
+                .textDecoration("underline")),
             Text("SwiftUI is a trademark of Apple Inc. tachUI is not affiliated with, endorsed by, or sponsored by Apple Inc.")
                 .font({ size: 12, weight: 300 })
-                .foregroundColor(Assets.white60)
-                .build(),
+                .foregroundColor(Assets.white60),
         ],
     })
         .background(Assets.darkPurple90)
@@ -43,8 +39,7 @@ export function Footer(): ComponentInstance {
         .backdropFilter("blur(15px)")
         .borderTop(1, Assets.primaryPurple30, "solid")
         .width("100%")
-        .minHeight("600px")
-        .build();
+        .minHeight("600px");
 }
 function LinkWrapper(url: string, text: string): ComponentInstance {
     return Link(text, url)
@@ -54,6 +49,5 @@ function LinkWrapper(url: string, text: string): ComponentInstance {
         .cornerRadius(4)
         .hover({
         color: Assets.accentOrange,
-    })
-        .build();
+    });
 }

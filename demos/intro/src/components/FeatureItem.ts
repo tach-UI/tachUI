@@ -18,27 +18,18 @@ export function FeatureItem(item: {
                 size: 64,
                 weight: 300
             })
-                .dropShadow('4px 4px 8px hsla(251, 91%, 66%, 0.67)')
-                .build(),
-            Text(item.title, {
-                element: 'h3'
-            } as any)
-                .font({
-                family: logoFont,
-                size: '1.33rem',
-                weight: 400
-            })
-                .build(),
-            Text(item.description, {
-                element: 'p'
-            } as any)
+                .dropShadow('4px 4px 8px hsla(251, 91%, 66%, 0.67)'),
+
+            Text(item.title, { element: 'h3' } as any)
+                .font({ family: logoFont, size: '1.33rem', weight: 400}),
+
+            Text(item.description, { element: 'p' } as any)
                 .fontSize(18)
                 .fontWeight(300)
                 .lineHeight(1.6)
                 .minHeight('128px')
                 .maxHeight('128px')
                 .clipped()
-                .build()
         ]
     })
         .border({ width: 1, color: 'hsla(251, 91%, 66%, 0.3)', style: 'solid' })
@@ -54,6 +45,5 @@ export function FeatureItem(item: {
         .cornerRadius(2)
         .sm.width('94%')
         .md.width('47%')
-        .lg.width('31%')
-        .build();
+        .lg.width('31%');
 }

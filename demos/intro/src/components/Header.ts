@@ -20,8 +20,7 @@ export function Header() {
           Text("tachUI")
             .font({ size: "24px", family: Assets.logoFont })
             .foregroundColor(Assets.primaryPurple)
-            .textShadow({ x: 0, y: 0, blur: 10, color: "rgba(139, 92, 246, 0.5)" })
-            ,
+            .textShadow({ x: 0, y: 0, blur: 10, color: "rgba(139, 92, 246, 0.5)" }),
 
           // Navigation links
           HStack({

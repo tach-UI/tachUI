@@ -30,32 +30,24 @@ export function Patterns(): ComponentInstance {
     const _swiftText = `<p>poop<span>rocket</span></p>`;
     const tachText = `<pre><code><span class="comment">// TachUI - identical patterns</span>
 <span class="keyword">VStack</span>({
+  spacing: <span class="string">16</span>,
   children: [
     <span class="function">Text</span>(<span class="string">'Welcome to TachUI'</span>)
-      .<span class="property">modifier</span>
       .<span class="property">font</span>({ size: <span class="string">'title'</span> })
       .<span class="property">fontWeight</span>(<span class="string">'bold'</span>)
-      .<span class="property">foregroundColor</span>(<span class="string">'blue'</span>)
-      .<span class="property">build</span>(),
+      .<span class="property">foregroundColor</span>(<span class="string">'blue'</span>),
 
     <span class="function">Image</span>(<span class="string">'/hero.jpg'</span>)
-      .<span class="property">modifier</span>
       .<span class="property">resizable</span>()
       .<span class="property">aspectRatio</span>(<span class="string">16/9</span>, <span class="string">'fit'</span>)
-      .<span class="property">cornerRadius</span>(<span class="string">12</span>)
-      .<span class="property">build</span>(),
+      .<span class="property">cornerRadius</span>(<span class="string">12</span>),
 
     <span class="function">Button</span>(<span class="string">'Get Started'</span>, handleAction)
-      .<span class="property">modifier</span>
       .<span class="property">buttonStyle</span>(<span class="string">'borderedProminent'</span>)
-      .<span class="property">build</span>()
-  ],
-  spacing: <span class="string">16</span>
+  ]
 })
-  .<span class="property">modifier</span>
   .<span class="property">padding</span>()
-  .<span class="property">navigationTitle</span>(<span class="string">'Home'</span>)
-  .<span class="property">build</span>()</code></pre>`;
+  .<span class="property">navigationTitle</span>(<span class="string">'Home'</span>)</code></pre>`;
     return VStack({
         element: 'section',
         spacing: 0,
@@ -71,8 +63,7 @@ export function Patterns(): ComponentInstance {
                         .foregroundColor(Assets.textWhite)
                         .padding(0)
                         .margin(0)
-                        .textShadow({ x: 0, y: 2, blur: 15, color: 'hsla(251, 91%, 66%, 0.4)' })
-                        .build(),
+                        .textShadow({ x: 0, y: 2, blur: 15, color: 'hsla(251, 91%, 66%, 0.4)' }),
                     HStack({
                         spacing: 0,
                         children: [
@@ -86,8 +77,7 @@ export function Patterns(): ComponentInstance {
                                         .padding({ horizontal: 20, vertical: 15 })
                                         .font({ weight: 400, family: Assets.baseFont, size: '1.15rem' })
                                         .borderBottom(1, Assets.primaryPurple30, 'solid')
-                                        .width('100%')
-                                        .build(),
+                                        .width('100%'),
                                     Text(swiftText)
                                         .backgroundColor('hsl(0, 0%, 12%)')
                                         .foregroundColor('hsl(0, 0%, 83%)')
@@ -98,7 +88,6 @@ export function Patterns(): ComponentInstance {
                                         .overflowX('scroll')
                                         .width('100%')
                                         .height('100%')
-                                        .build()
                                 ],
                             })
                                 .backgroundColor('hsl(0, 0%, 12%, 0.9)')
@@ -110,8 +99,7 @@ export function Patterns(): ComponentInstance {
                                 .base.width('370px')
                                 .sm.width('620px')
                                 .md.width('40%')
-                                .margin(10)
-                                .build(),
+                                .margin(10),
                             // TachUI Code Block
                             VStack({
                                 spacing: 0,
@@ -123,8 +111,7 @@ export function Patterns(): ComponentInstance {
                                         .padding({ horizontal: 20, vertical: 15 })
                                         .font({ weight: 400, family: Assets.baseFont, size: '1.15rem' })
                                         .borderBottom(1, Assets.primaryPurple30, 'solid')
-                                        .width('100%')
-                                        .build(),
+                                        .width('100%'),
                                     Text(tachText)
                                         .backgroundColor('hsl(0, 0%, 12%)')
                                         .foregroundColor('hsl(0, 0%, 83%)')
@@ -136,7 +123,6 @@ export function Patterns(): ComponentInstance {
                                         .overflowX('scroll')
                                         .width('100%')
                                         .height('100%')
-                                        .build()
                                 ],
                             })
                                 .backgroundColor('hsl(0, 0%, 12%, 0.9)')
@@ -149,7 +135,6 @@ export function Patterns(): ComponentInstance {
                                 .sm.width('620px')
                                 .md.width('40%')
                                 .margin(10)
-                                .build()
                         ]
                     })
                         .margin({ vertical: 60, horizontal: 0 })
@@ -157,30 +142,25 @@ export function Patterns(): ComponentInstance {
                         .base.flexDirection('column')
                         .md.flexDirection('row')
                         .width('100%')
-                        .maxWidth('1200px')
-                        .build(),
+                        .maxWidth('1200px'),
                     Text('Perfect for iOS developers transitioning to web development.')
                         .font({ size: '1.25rem', family: Assets.baseFont, weight: 600 })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
-                        .margin({ horizontal: 10 })
-                        .build(),
+                        .margin({ horizontal: 10 }),
                     Text('Your iOS development knowledge transfers directly - no new patterns to learn. ')
                         .font({ size: '1.25rem', family: Assets.baseFont, weight: 300 })
                         .foregroundColor(Assets.textWhite)
                         .textAlign('center')
                         .margin({ horizontal: 10 })
-                        .build()
                 ]
             })
                 .width('100%')
-                .build()
         ]
     })
         .foregroundColor(Assets.textWhite)
         .backgroundColor(Assets.darkPurple20)
         .elementId('comparison')
         .padding({ vertical: 60, horizontal: 0 })
-        .width("100%")
-        .build();
+        .width("100%");
 }

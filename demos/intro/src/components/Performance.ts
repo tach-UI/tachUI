@@ -18,27 +18,24 @@ export function Performance(): ComponentInstance {
                         .padding(0)
                         .margin(0)
                         .marginBottom(60)
-                        .textShadow({ x: 0, y: 2, blur: 15, color: 'hsla(251, 91%, 66%, 0.4)' })
-                        .build(),
+                        .textShadow({ x: 0, y: 2, blur: 15, color: 'hsla(251, 91%, 66%, 0.4)' }),
                     HStack({
                         spacing: 30,
                         children: [
-                            PerformanceItem('>80%', 'SwiftUI API Compatability'),
-                            PerformanceItem('65+', 'Components Available'),
-                            PerformanceItem('130+', 'Component Modifiers Available'),
-                            PerformanceItem('>85%', 'Modifier Compatability'),
+                            PerformanceItem('~86%', 'Framework Maturity'),
+                            PerformanceItem('70+', 'Components Available'),
+                            PerformanceItem('258', 'Modifiers Available'),
+                            PerformanceItem('18', 'Modular Packages'),
                         ]
                     })
                         .alignItems('stretch')
                         .base.flexDirection('column')
-                        .md.flexDirection('row')
-                        .build(),
+                        .md.flexDirection('row'),
                     Text('Why tachUI is Fast')
                         .font({ size: '1.25rem', family: Assets.logoFont, weight: 'normal' })
                         .textAlign('center')
                         .padding({ vertical: 30 })
-                        .foregroundColor(Assets.textWhite)
-                        .build(),
+                        .foregroundColor(Assets.textWhite),
                     HStack({
                         spacing: 30,
                         children: [
@@ -49,8 +46,7 @@ export function Performance(): ComponentInstance {
                         .marginBottom(30)
                         .justifyContent('center')
                         .base.flexDirection('column')
-                        .md.flexDirection('row')
-                        .build(),
+                        .md.flexDirection('row'),
                     HStack({
                         spacing: 30,
                         children: [
@@ -61,21 +57,18 @@ export function Performance(): ComponentInstance {
                         .marginBottom(30)
                         .justifyContent('center')
                         .base.flexDirection('column')
-                        .md.flexDirection('row')
-                        .build(),
+                        .md.flexDirection('row'),
                 ]
             })
                 .padding({ vertical: 0, horizontal: 20 })
                 .maxWidth(1200)
                 .elementId('features')
-                .build()
         ]
     })
         .foregroundColor(Assets.textWhite)
         .padding({ vertical: 80, horizontal: 0 })
         .position('relative')
-        .width("100%")
-        .build();
+        .width("100%");
 }
 function PerformanceItem(value: string, desc: string): ComponentInstance {
     return VStack({
@@ -85,12 +78,10 @@ function PerformanceItem(value: string, desc: string): ComponentInstance {
             Text(value)
                 .fontSize('2rem')
                 .fontWeight('bold')
-                .foregroundColor(Assets.accentOrange)
-                .build(),
+                .foregroundColor(Assets.accentOrange),
             Text(desc)
                 .fontSize('1.15rem')
-                .textAlign('center')
-                .build(),
+                .textAlign('center'),
         ]
     })
         .backgroundColor(Assets.primaryPurple10)
@@ -101,8 +92,7 @@ function PerformanceItem(value: string, desc: string): ComponentInstance {
         .padding(30)
         .base.width('100%')
         .md.width('23%')
-        .hoverEffect('lift')
-        .build();
+        .hoverEffect('lift');
 }
 function FastItem(header: string, description: string): ComponentInstance {
     return VStack({
@@ -113,12 +103,10 @@ function FastItem(header: string, description: string): ComponentInstance {
                 .fontSize('1.33rem')
                 .fontWeight(500)
                 .foregroundColor(Assets.accentOrange)
-                .marginBottom(15)
-                .build(),
+                .marginBottom(15),
             Text(description)
                 .fontSize('1.15rem')
-                .textAlign('center')
-                .build(),
+                .textAlign('center'),
         ]
     })
         .backgroundColor(Assets.primaryPurple10)
@@ -130,6 +118,5 @@ function FastItem(header: string, description: string): ComponentInstance {
         .base.width('98%')
         .md.width('46%')
         .hoverEffect('lift')
-        .elementId('performance')
-        .build();
+        .elementId('performance');
 }

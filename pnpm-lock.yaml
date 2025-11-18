@@ -18,6 +18,9 @@ importers:
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.11
+      '@vitest/coverage-v8':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
       esbuild:
         specifier: ^0.21.0
         version: 0.21.5
