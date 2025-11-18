@@ -131,15 +131,19 @@
     "./gradients": {
       "types": "./dist/gradients/index.d.ts",
       "import": "./dist/gradients/index.js"
+    },
+    "./gradients/css-generator": {
+      "types": "./dist/gradients/css-generator.d.ts",
+      "import": "./dist/gradients/css-generator.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && vite build && tsc --project tsconfig.build.json",
-    "build:dev": "rm -rf dist && vite build --mode development && tsc --project tsconfig.build.json",
-    "build:prod": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json",
+    "build": "rm -rf dist tsconfig.build.tsbuildinfo && vite build && tsc --build tsconfig.build.json",
+    "build:dev": "rm -rf dist tsconfig.build.tsbuildinfo && vite build --mode development && tsc --build tsconfig.build.json",
+    "build:prod": "rm -rf dist tsconfig.build.tsbuildinfo && vite build --mode production && tsc --build tsconfig.build.json",
     "dev": "vite build --watch",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest run",
@@ -176,12 +180,13 @@
     "generate-modifier-types:monorepo": "tsx --tsconfig ./tsconfig.typegen.json ./scripts/generate-types-monorepo.ts"
   },
   "dependencies": {
+    "@tachui/types": "workspace:*",
     "@tachui/registry": "workspace:*"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.6",
     "@types/node": "^20.0.0",
-    "@vitest/coverage-v8": "^1.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "@playwright/test": "^1.55.0",
     "esbuild": "^0.21.0",
     "jsdom": "^23.2.0",

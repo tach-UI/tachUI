@@ -17,7 +17,8 @@ import {
   createBreakpointContext,
   getBreakpointIndex,
 } from './breakpoints'
-import { createSignal, createComputed, Signal } from '@tachui/core'
+import { createSignal, createComputed } from '@tachui/core'
+import type { Signal } from '@tachui/core/reactive/types'
 
 /**
  * Hook to get current breakpoint information

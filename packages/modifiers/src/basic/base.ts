@@ -10,8 +10,8 @@ import {
   isSignal,
   getThemeSignal,
 } from '@tachui/core/reactive'
-import type { Signal } from '@tachui/core/reactive/types'
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { Signal } from '@tachui/types/reactive'
+import type { DOMNode } from '@tachui/types/runtime'
 import type {
   CSSStyleProperties,
   LifecycleModifierProps,
@@ -20,7 +20,7 @@ import type {
   ReactiveModifierProps,
   StyleComputationContext,
 } from '../types'
-import { ModifierPriority } from '@tachui/core/modifiers/types'
+import { ModifierPriority } from '@tachui/types/modifiers'
 import {
   isInfinity,
   dimensionToCSS,
@@ -157,7 +157,8 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
       typeof value.resolve === 'function'
     ) {
       const resolved = value.resolve()
-      console.log('toCSSValueForProperty resolving asset:', { property, value, resolved })
+      // Removed verbose logging - enable if debugging asset resolution
+      // console.log('toCSSValueForProperty resolving asset:', { property, value, resolved })
       return resolved
     }
 

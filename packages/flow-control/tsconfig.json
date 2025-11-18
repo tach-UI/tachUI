@@ -14,7 +14,16 @@
     "downlevelIteration": true,
     "paths": {
       "@tachui/core": ["../core/src"],
-      "@tachui/core/*": ["../core/src/*"]
+      "@tachui/core/*": ["../core/src/*"],
+      "@tachui/modifiers": [
+        "../modifiers/dist/index.d.ts",
+        "../modifiers/src/index.ts"
+      ],
+      "@tachui/modifiers/*": [
+        "../modifiers/dist/*",
+        "../modifiers/src/*/index.ts",
+        "../modifiers/src/*"
+      ]
     }
   },
   "include": ["src/**/*", "__tests__/**/*"],

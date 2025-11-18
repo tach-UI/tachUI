@@ -12,30 +12,35 @@ import type { Dimension } from '../constants/layout'
 import type { GradientDefinition } from '../gradients/types'
 import {
   AnimationModifier,
-  AppearanceModifier,
   InteractionModifier,
   LifecycleModifier,
+  LayoutModifier,
 } from './base'
-import { padding as paddingModifier } from './padding'
-import { margin as marginModifier } from './margin'
-import { frame as frameModifier } from './frame'
 import { alignment as alignmentModifier } from './alignment'
 import { layoutPriority as layoutPriorityModifier } from './layout-priority'
-import { foregroundColor as foregroundColorModifier } from './foreground-color'
-import { backgroundColor as backgroundColorModifier } from './background-color'
-import { background as backgroundFillModifier } from './background'
-import { fontSize as fontSizeModifier } from './font-size'
-import { fontWeight as fontWeightModifier } from './font-weight'
-import { fontFamily as fontFamilyModifier } from './font-family'
 import { opacity as opacityModifier } from './opacity'
 import { cornerRadius as cornerRadiusModifier } from './corner-radius'
-import { border as borderModifier } from './border'
 import type {
   AnimationModifierProps,
   AppearanceModifierProps,
   LayoutModifierProps,
   Modifier,
 } from './types'
+import { globalModifierRegistry } from '@tachui/registry'
+
+type ModifierFactoryFn = (...args: any[]) => Modifier
+
+function resolveRegistryModifier(name: string, ...args: any[]): Modifier {
+  const factory = globalModifierRegistry.get(name) as ModifierFactoryFn | undefined
+
+  if (!factory) {
+    throw new Error(
+      `Modifier '${name}' not found in registry. Import '@tachui/modifiers' or the relevant segmented bundle before using preset helpers.`
+    )
+  }
+
+  return factory(...args)
+}
 
 /**
  * Layout Modifiers
@@ -45,7 +50,7 @@ export const layoutModifiers = {
    * Set foreground (text) color
    */
   foregroundColor(color: string | Signal<string> | any): Modifier {
-    return foregroundColorModifier(color as any)
+    return resolveRegistryModifier('foregroundColor', color as any)
   },
 
   /**
@@ -56,21 +61,31 @@ export const layoutModifiers = {
     height?: Dimension,
     options?: Omit<LayoutModifierProps['frame'], 'width' | 'height'>
   ): Modifier {
-    return frameModifier(width, height, options)
+    let frameProps: LayoutModifierProps['frame'] = options || {}
+
+    if (width !== undefined || height !== undefined) {
+      frameProps = {
+        ...frameProps,
+        ...(width !== undefined ? { width } : {}),
+        ...(height !== undefined ? { height } : {}),
+      }
+    }
+
+    return new LayoutModifier({ frame: frameProps })
   },
 
   /**
    * Set padding on all sides
    */
   padding(value: number): Modifier {
-    return paddingModifier(value)
+    return resolveRegistryModifier('padding', value)
   },
 
   /**
    * Set margin on all sides
    */
   margin(value: number): Modifier {
-    return marginModifier(value)
+    return resolveRegistryModifier('margin', value)
   },
 
   /**
@@ -97,35 +112,35 @@ export const appearanceModifiers = {
    * Set foreground (text) color
    */
   foregroundColor(color: string | Asset | Signal<string>): Modifier {
-    return foregroundColorModifier(color as any)
+    return resolveRegistryModifier('foregroundColor', color as any)
   },
 
   /**
    * Set background color
    */
   backgroundColor(color: string | Asset | Signal<string>): Modifier {
-    return backgroundColorModifier(color as any)
+    return resolveRegistryModifier('backgroundColor', color as any)
   },
 
   /**
    * Set background (supports gradients)
    */
   background(value: string | GradientDefinition | Asset): Modifier {
-    return backgroundFillModifier(value)
+    return resolveRegistryModifier('background', value)
   },
 
   /**
    * Set font properties
    */
   font(options: AppearanceModifierProps['font']): Modifier {
-    return new AppearanceModifier({ font: options })
+    return resolveRegistryModifier('font', options)
   },
 
   /**
    * Set font size
    */
   fontSize(size: number | string): Modifier {
-    return fontSizeModifier(size)
+    return resolveRegistryModifier('fontSize', size)
   },
 
   /**
@@ -134,14 +149,14 @@ export const appearanceModifiers = {
   fontWeight(
     weight: NonNullable<AppearanceModifierProps['font']>['weight']
   ): Modifier {
-    return fontWeightModifier(weight)
+    return resolveRegistryModifier('fontWeight', weight)
   },
 
   /**
    * Set font family
    */
   fontFamily(family: string): Modifier {
-    return fontFamilyModifier(family)
+    return resolveRegistryModifier('fontFamily', family)
   },
 
   /**
@@ -166,21 +181,17 @@ export const appearanceModifiers = {
     color: string | Asset = '#000000',
     style: 'solid' | 'dashed' | 'dotted' = 'solid'
   ): Modifier {
-    return borderModifier(
-      width,
-      color as string | Asset | undefined,
-      style,
-    )
+    return resolveRegistryModifier('border', width, color, style)
   },
 
   /**
    * Set detailed border properties
    */
   borderDetailed(options: AppearanceModifierProps['border']): Modifier {
-    return new AppearanceModifier({ border: options })
+    return resolveRegistryModifier('border', options)
   },
 
-  // Shadow functionality moved to @tachui/effects package
+  // Shadow functionality moved to @tachui/modifiers/effects entry point
 }
 
 /**
@@ -408,7 +419,7 @@ export const presetModifiers = {
     return [
       appearanceModifiers.backgroundColor('#ffffff'),
       appearanceModifiers.cornerRadius(8),
-      // shadow moved to @tachui/effects package
+      // shadow moved to @tachui/modifiers/effects entry point
       layoutModifiers.padding(padding),
     ]
   },

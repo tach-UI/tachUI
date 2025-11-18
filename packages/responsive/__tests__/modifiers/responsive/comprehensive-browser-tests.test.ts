@@ -257,36 +257,6 @@ describe('Comprehensive Browser Compatibility Tests', () => {
       })
     })
 
-    test.skip('handles advanced media query features', () => {
-      const advancedQueries = [
-        MediaQueries.highContrast,
-        MediaQueries.wideColorGamut,
-        MediaQueries.hdr,
-        MediaQueries.forcedColors,
-        MediaQueries.scriptingEnabled,
-      ]
-
-      // Set up mock to always return matches: true for advanced queries
-      const originalMatchMedia = window.matchMedia
-      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-        matches: true,
-        media: query,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      }))
-
-      advancedQueries.forEach(query => {
-        const mediaQuery = window.matchMedia(query)
-        expect(mediaQuery.matches).toBe(true)
-      })
-
-      // Restore original behavior
-      window.matchMedia = originalMatchMedia
-    })
 
     test('handles custom media query builders', () => {
       const customQueries = [
@@ -389,27 +359,6 @@ describe('Comprehensive Browser Compatibility Tests', () => {
       }).not.toThrow()
     })
 
-    test.skip('handles malformed media queries', () => {
-      // Override window.matchMedia directly for this test
-      const originalMatchMedia = window.matchMedia
-      window.matchMedia = vi.fn().mockImplementation((query: string) => {
-        if (query.includes('invalid-query')) {
-          throw new Error('Invalid media query')
-        }
-        return {
-          matches: false,
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-        }
-      })
-
-      expect(() => {
-        window.matchMedia('(invalid-query)')
-      }).toThrow('Invalid media query')
-
-      // Restore original behavior
-      window.matchMedia = originalMatchMedia
-    })
 
     test('handles CSS.supports not available', () => {
       // Mock CSS.supports as undefined

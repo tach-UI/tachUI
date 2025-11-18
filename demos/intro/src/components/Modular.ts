@@ -1,8 +1,7 @@
 import { VStack, HStack, Text } from '@tachui/primitives';
-import { Assets } from '@tachui/core/assets';
+import { Assets } from '@tachui/core';
 import type { ComponentInstance } from '@tachui/core/runtime/types';
 import { ModularStack } from './ModularStack';
-const logoFont = Assets.logoFont;
 export function Modular(): ComponentInstance {
     const packagesA = [
         { name: '@tachui/core (Framework Foundation)', size: '~46KB', entries: [
@@ -70,7 +69,7 @@ export function Modular(): ComponentInstance {
                 alignment: 'center',
                 children: [
                     Text('Modular Architecture')
-                        .font({ size: '2.5rem', family: logoFont, weight: 'normal' })
+                        .font({ size: '2.5rem', family: Assets.logoFont, weight: 'normal' })
                         .textAlign('center')
                         .foregroundColor(Assets.textWhite)
                         .padding(0)

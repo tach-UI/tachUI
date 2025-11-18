@@ -24,9 +24,7 @@
       "@tachui/core/*": ["../core/dist/*"],
       "@tachui/core/modifiers": ["../core/dist/modifiers/index.d.ts"],
       "@tachui/modifiers": ["../modifiers/dist/index.d.ts"],
-      "@tachui/modifiers/*": ["../modifiers/dist/*"],
-      "@tachui/effects": ["../effects/dist/index.d.ts"],
-      "@tachui/effects/*": ["../effects/dist/*"],
+      "@tachui/modifiers/*": ["../modifiers/dist/*"], // Effects merged into modifiers
       "@tachui/primitives": ["../primitives/dist/index.d.ts"],
       "@tachui/primitives/*": ["../primitives/dist/*"],
       "@tachui/registry": ["../registry/dist/index.d.ts"],

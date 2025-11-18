@@ -80,6 +80,7 @@
   },
   "dependencies": {
     "@tachui/core": "workspace:*",
+    "@tachui/modifiers": "workspace:*",
     "@tachui/primitives": "workspace:*",
     "@tachui/registry": "workspace:*"
   }

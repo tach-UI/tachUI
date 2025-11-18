@@ -213,8 +213,14 @@ export function mountComponentTree(
       container.innerHTML = ''
     }
 
-    // Render component to DOM nodes
-    const domNodes = component.render()
+    // Render component to DOM nodes - auto-build if it's a ModifierBuilder
+    let componentToRender = component
+    if ('build' in component && typeof component.build === 'function') {
+      // This is a ModifierBuilder that hasn't been built yet - build it automatically
+      componentToRender = component.build()
+    }
+
+    const domNodes = componentToRender.render()
     const nodeArray = Array.isArray(domNodes) ? domNodes : [domNodes]
 
     // Convert DOM nodes to actual DOM elements

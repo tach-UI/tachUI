@@ -1,7 +1,6 @@
 import { VStack, HStack, Text } from '@tachui/primitives';
-import { Assets } from '@tachui/core/assets';
+import { Assets } from '@tachui/core';
 import type { ComponentInstance } from '@tachui/core/runtime/types';
-const logoFont = Assets.logoFont;
 export function Performance(): ComponentInstance {
     return VStack({
         element: 'section',
@@ -35,7 +34,7 @@ export function Performance(): ComponentInstance {
                         .md.flexDirection('row')
                         .build(),
                     Text('Why tachUI is Fast')
-                        .font({ size: '1.25rem', family: logoFont, weight: 'normal' })
+                        .font({ size: '1.25rem', family: Assets.logoFont, weight: 'normal' })
                         .textAlign('center')
                         .padding({ vertical: 30 })
                         .foregroundColor(Assets.textWhite)

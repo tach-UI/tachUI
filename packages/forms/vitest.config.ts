@@ -7,7 +7,7 @@ export default mergeConfig(
     test: {
       // Package-specific test configuration
       setupFiles: ['./__tests__/setup.ts'],
-    },
-
+    silent: true,    },
+    onConsoleLog: () => false, // Suppress console.log output during tests
   })
 )

@@ -17,7 +17,7 @@
     "build:modifiers": "pnpm --filter @tachui/modifiers... build",
     "build:primitives": "pnpm --filter @tachui/primitives... build",
     "build:responsive": "pnpm --filter @tachui/responsive... build",
-    "build:effects": "pnpm --filter @tachui/effects... build",
+
     "build:symbols": "pnpm --filter @tachui/symbols... build",
     "build:data": "pnpm --filter @tachui/data... build",
     "build:forms": "pnpm --filter @tachui/forms... build",
@@ -27,7 +27,8 @@
     "build:cli": "pnpm --filter @tachui/cli... build",
     "dev": "pnpm -r --parallel dev",
     "test": "vitest run",
-    "test:ci": "vitest run --config=vitest.ci.config.ts",
+    "test:stress": "vitest run --config vitest.stress.config.ts",
+    "test:ci": "vitest run --config=vitest.ci.config.ts && pnpm -F @tachui/modifiers verify:tree-shaking",
     "test:long": "vitest run packages/core/__tests__/integration/long-running-simulation.test.ts packages/core/__tests__/security/malicious-plugin-detection.test.ts packages/core/__tests__/security/sandbox-security.test.ts",
     "test:error-recovery": "vitest run packages/core/__tests__/integration/error-recovery.test.ts",
     "test:coverage": "vitest run --coverage",

@@ -17,7 +17,7 @@ const PRIORITY_MAP: Record<string, number> = {
   '@tachui/primitives': 110,
   '@tachui/forms': 100,
   '@tachui/navigation': 100,
-  '@tachui/effects': 90,
+  '@tachui/modifiers/effects': 90,
   '@tachui/responsive': 90,
   '@tachui/data': 80,
   '@tachui/grid': 80,

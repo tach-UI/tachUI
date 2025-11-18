@@ -4,9 +4,9 @@
  * CSS z-index property modifier with enhanced validation and stacking context utilities.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
+import type { ModifierContext } from '@tachui/types/modifiers'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 
 export interface ZIndexOptions {
@@ -118,7 +118,6 @@ export class ZIndexModifier extends BaseModifier<ZIndexOptions> {
   private checkStackingContext(element: HTMLElement): void {
     const style = getComputedStyle(element)
 
-    // Properties that create new stacking contexts
     const stackingContextProperties = [
       { prop: 'opacity', value: style.opacity, creates: style.opacity !== '1' },
       {
@@ -139,12 +138,12 @@ export class ZIndexModifier extends BaseModifier<ZIndexOptions> {
       },
     ]
 
-    const creatingContexts = stackingContextProperties.filter(p => p.creates)
+    const creatingContexts = stackingContextProperties.filter(entry => entry.creates)
 
     if (creatingContexts.length > 0) {
       console.info(
         'ZIndexModifier: Element creates new stacking context due to:',
-        creatingContexts.map(p => `${p.prop}: ${p.value}`).join(', ')
+        creatingContexts.map(entry => `${entry.prop}: ${entry.value}`).join(', ')
       )
     }
   }

@@ -24,8 +24,10 @@
       "@tachui/core/*": ["../core/src/*"],
       "@tachui/modifiers": ["../modifiers/src"],
       "@tachui/modifiers/*": ["../modifiers/src/*"],
-      "@tachui/effects": ["../effects/src"],
-      "@tachui/effects/*": ["../effects/src/*"],
+      "@tachui/modifiers/effects": ["../modifiers/src/effects/index.ts"],
+      "@tachui/modifiers/effects/*": ["../modifiers/src/effects/*"],
+      "@tachui/responsive": ["../responsive/src"],
+      "@tachui/responsive/*": ["../responsive/src/*"],
       "@tachui/primitives": ["../primitives/src"],
       "@tachui/primitives/*": ["../primitives/src/*"]
     }

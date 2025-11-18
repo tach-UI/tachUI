@@ -588,6 +588,6 @@ Following this guide ensures your modifiers:
 4. ✅ Are properly tested and documented
 5. ✅ Follow framework conventions and best practices
 
-For more advanced examples, see the implementations in `@tachui/modifiers`, `@tachui/effects`, and `@tachui/responsive`.
+For more advanced examples, see the implementations in `@tachui/modifiers`, `@tachui/modifiers/effects`, and `@tachui/responsive`.
 
 Happy modifying! 🚀

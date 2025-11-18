@@ -248,8 +248,8 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
       })
     }
 
-    const isDisabled = this.resolveValue(item.disabled ?? false)
-    const title = this.resolveValue(item.title)
+    const isDisabled = this.resolveValue<boolean>(item.disabled ?? false)
+    const title = this.resolveValue<string>(item.title)
 
     const menuItem = h('div', {
       role: 'menuitem',
@@ -353,7 +353,9 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
         },
       })
       const shortcutElement = shortcut.element as HTMLElement
-      if (shortcutElement) shortcutElement.textContent = item.shortcut
+      if (shortcutElement) {
+        shortcutElement.textContent = item.shortcut ?? ''
+      }
       if (menuItemElement && shortcutElement)
         menuItemElement.appendChild(shortcutElement)
     }

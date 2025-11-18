@@ -66,9 +66,6 @@ importers:
       '@tachui/devtools':
         specifier: workspace:*
         version: link:../../packages/devtools
-      '@tachui/effects':
-        specifier: workspace:*
-        version: link:../../packages/effects
       '@tachui/flow-control':
         specifier: workspace:*
         version: link:../../packages/flow-control
@@ -112,9 +109,6 @@ importers:
       '@tachui/devtools':
         specifier: workspace:*
         version: link:../../packages/devtools
-      '@tachui/effects':
-        specifier: workspace:*
-        version: link:../../packages/effects
       '@tachui/flow-control':
         specifier: workspace:*
         version: link:../../packages/flow-control
@@ -226,6 +220,9 @@ importers:
       '@tachui/registry':
         specifier: workspace:*
         version: link:../registry
+      '@tachui/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@playwright/test':
         specifier: ^1.55.0
@@ -237,8 +234,8 @@ importers:
         specifier: ^20.0.0
         version: 20.19.11
       '@vitest/coverage-v8':
-        specifier: ^1.0.0
-        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
       esbuild:
         specifier: ^0.21.0
         version: 0.21.5
@@ -286,8 +283,8 @@ importers:
         specifier: ^20.0.0
         version: 20.19.11
       '@vitest/coverage-v8':
-        specifier: ^1.0.0
-        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
       jsdom:
         specifier: ^23.2.0
         version: 23.2.0
@@ -341,37 +338,6 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
-  packages/effects:
-    dependencies:
-      '@tachui/core':
-        specifier: workspace:*
-        version: link:../core
-      '@tachui/registry':
-        specifier: workspace:*
-        version: link:../registry
-    devDependencies:
-      '@types/jsdom':
-        specifier: ^21.1.6
-        version: 21.1.7
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.11
-      '@vitest/coverage-v8':
-        specifier: ^1.0.0
-        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
-      jsdom:
-        specifier: ^23.2.0
-        version: 23.2.0
-      typescript:
-        specifier: ^5.2.0
-        version: 5.9.2
-      vite:
-        specifier: ^7.1.1
-        version: 7.1.3(@types/node@20.19.11)(tsx@4.20.5)(yaml@2.8.1)
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
-
   packages/eslint-plugin-tachui:
     dependencies:
       eslint:
@@ -401,8 +367,8 @@ importers:
         specifier: ^20.0.0
         version: 20.19.11
       '@vitest/coverage-v8':
-        specifier: ^1.0.0
-        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
       jsdom:
         specifier: ^23.2.0
         version: 23.2.0
@@ -421,6 +387,9 @@ importers:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
+      '@tachui/modifiers':
+        specifier: workspace:*
+        version: link:../modifiers
       '@tachui/primitives':
         specifier: workspace:*
         version: link:../primitives
@@ -463,8 +432,8 @@ importers:
         specifier: ^20.0.0
         version: 20.19.11
       '@vitest/coverage-v8':
-        specifier: ^1.0.0
-        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
       jsdom:
         specifier: ^23.2.0
         version: 23.2.0
@@ -479,6 +448,10 @@ importers:
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/mobile:
+    dependencies:
+      '@tachui/modifiers':
+        specifier: workspace:*
+        version: link:../modifiers
     devDependencies:
       '@tachui/core':
         specifier: workspace:*
@@ -490,8 +463,8 @@ importers:
         specifier: ^20.0.0
         version: 20.19.11
       '@vitest/coverage-v8':
-        specifier: ^1.0.0
-        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
       typescript:
         specifier: ^5.2.0
         version: 5.9.2
@@ -510,6 +483,9 @@ importers:
       '@tachui/registry':
         specifier: workspace:*
         version: link:../registry
+      '@tachui/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -534,6 +510,10 @@ importers:
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/navigation:
+    dependencies:
+      '@tachui/modifiers':
+        specifier: workspace:*
+        version: link:../modifiers
     devDependencies:
       '@playwright/test':
         specifier: ^1.40.0
@@ -573,8 +553,8 @@ importers:
         specifier: ^20.0.0
         version: 20.19.11
       '@vitest/coverage-v8':
-        specifier: ^1.0.0
-        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
       jsdom:
         specifier: ^23.2.0
         version: 23.2.0
@@ -622,8 +602,8 @@ importers:
         specifier: ^20.0.0
         version: 20.19.11
       '@vitest/coverage-v8':
-        specifier: ^1.0.0
-        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
       jsdom:
         specifier: ^23.2.0
         version: 23.2.0
@@ -665,11 +645,20 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
 
+  packages/types:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.2
+
   packages/viewport:
     dependencies:
       '@tachui/core':
         specifier: workspace:*
         version: link:../core
+      '@tachui/modifiers':
+        specifier: workspace:*
+        version: link:../modifiers
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -678,8 +667,8 @@ importers:
         specifier: ^20.0.0
         version: 20.19.11
       '@vitest/coverage-v8':
-        specifier: ^1.0.0
-        version: 1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))
       jsdom:
         specifier: ^23.2.0
         version: 23.2.0
@@ -797,9 +786,6 @@ packages:
   '@babel/types@7.28.2':
     resolution: {integrity: sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==}
     engines: {node: '>=6.9.0'}
-
-  '@bcoe/v8-coverage@0.2.3':
-    resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
   '@bcoe/v8-coverage@1.0.2':
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
@@ -1571,11 +1557,6 @@ packages:
       vite: ^5.0.0 || ^6.0.0
       vue: ^3.2.25
 
-  '@vitest/coverage-v8@1.6.1':
-    resolution: {integrity: sha512-6YeRZwuO4oTGKxD3bijok756oktHSIm3eczVVzNe3scqzuhLwltIF3S9ZL/vwOVIpURmU6SnZhziXXAfw8/Qlw==}
-    peerDependencies:
-      vitest: 1.6.1
-
   '@vitest/coverage-v8@3.2.4':
     resolution: {integrity: sha512-EyF9SXU6kS5Ku/U82E259WSnvg6c8KTjppUncuNdm5QHpe17mwREHnjDzozC8x9MZ0xfBUFSaLkRv4TMA75ALQ==}
     peerDependencies:
@@ -2218,9 +2199,6 @@ packages:
     resolution: {integrity: sha512-eXvGGwZ5CL17ZSwHWd3bbgk7UUpF6IFHtP57NYYakPvHOs8GDgDe5KJI36jIJzDkJ6eJjuzRA8eBQb6SkKue0g==}
     engines: {node: '>=14.14'}
 
-  fs.realpath@1.0.0:
-    resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
-
   fsevents@2.3.2:
     resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -2264,10 +2242,6 @@ packages:
   glob@10.4.5:
     resolution: {integrity: sha512-7Bv8RF0k6xjo7d4A/PxYLbUCfb6c+Vpd2/mB2yRDlew7Jb5hEXiCD9ibfO7wpk8i4sevK6DFny9h7EYbM3/sHg==}
     hasBin: true
-
-  glob@7.2.3:
-    resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
 
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
@@ -2357,10 +2331,6 @@ packages:
   imurmurhash@0.1.4:
     resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
     engines: {node: '>=0.8.19'}
-
-  inflight@1.0.6:
-    resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
-    deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
 
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
@@ -2682,9 +2652,6 @@ packages:
     resolution: {integrity: sha512-ppwTtiJZq0O/ai0z7yfudtBpWIoxM8yE6nHi1X47eFR2EWORqfbu6CnPlNsjeN683eT0qG6H/Pyf9fCcvjnnnQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  once@1.4.0:
-    resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
-
   onetime@5.1.2:
     resolution: {integrity: sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg==}
     engines: {node: '>=6'}
@@ -2754,10 +2721,6 @@ packages:
   path-exists@4.0.0:
     resolution: {integrity: sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==}
     engines: {node: '>=8'}
-
-  path-is-absolute@1.0.1:
-    resolution: {integrity: sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==}
-    engines: {node: '>=0.10.0'}
 
   path-key@3.1.1:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
@@ -3066,9 +3029,6 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
 
-  strip-literal@2.1.1:
-    resolution: {integrity: sha512-631UJ6O00eNGfMiWG78ck80dfBab8X6IVFB51jZK5Icd7XAs60Z5y7QdSd/wGIklnWvRbUNloVzhOKKmutxQ6Q==}
-
   strip-literal@3.0.0:
     resolution: {integrity: sha512-TcccoMhJOM3OebGhSBEmp3UZ2SfDMZUEBdRA/9ynfLi8yYajyWX3JiXArcJt4Umh4vISpspkQIY8ZZoCqjbviA==}
 
@@ -3093,10 +3053,6 @@ packages:
 
   tabbable@6.2.0:
     resolution: {integrity: sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==}
-
-  test-exclude@6.0.0:
-    resolution: {integrity: sha512-cAGWPIyOHU6zlmg88jwm7VRyXnMN7iV68OGAbYDk/Mh/xC/pzVPlQtY6ngoIH/5/tciuhGfvESU8GrHrcxD56w==}
-    engines: {node: '>=8'}
 
   test-exclude@7.0.1:
     resolution: {integrity: sha512-pFYqmTw68LXVjeWJMST4+borgQP2AyMNbg1BpZh9LbyhUeNkeaPF9gzfPGUAnSMV3qPYdWUwDIjjCLiSDOl7vg==}
@@ -3438,9 +3394,6 @@ packages:
     resolution: {integrity: sha512-G8ura3S+3Z2G+mkgNRq8dqaFZAuxfsxpBB8OCTGRTCtp+l/v9nbFNmCUP1BZMts3G1142MsZfn6eeUKrr4PD1Q==}
     engines: {node: '>=18'}
 
-  wrappy@1.0.2:
-    resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
-
   ws@8.18.3:
     resolution: {integrity: sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==}
     engines: {node: '>=10.0.0'}
@@ -3640,8 +3593,6 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
-
-  '@bcoe/v8-coverage@0.2.3': {}
 
   '@bcoe/v8-coverage@1.0.2': {}
 
@@ -4262,25 +4213,6 @@ snapshots:
     dependencies:
       vite: 5.4.19(@types/node@20.19.11)
       vue: 3.5.20(typescript@5.9.2)
-
-  '@vitest/coverage-v8@1.6.1(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))':
-    dependencies:
-      '@ampproject/remapping': 2.3.0
-      '@bcoe/v8-coverage': 0.2.3
-      debug: 4.4.1
-      istanbul-lib-coverage: 3.2.2
-      istanbul-lib-report: 3.0.1
-      istanbul-lib-source-maps: 5.0.6
-      istanbul-reports: 3.2.0
-      magic-string: 0.30.18
-      magicast: 0.3.5
-      picocolors: 1.1.1
-      std-env: 3.9.0
-      strip-literal: 2.1.1
-      test-exclude: 6.0.0
-      vitest: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
-    transitivePeerDependencies:
-      - supports-color
 
   '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
@@ -5012,8 +4944,6 @@ snapshots:
       jsonfile: 6.2.0
       universalify: 2.0.1
 
-  fs.realpath@1.0.0: {}
-
   fsevents@2.3.2:
     optional: true
 
@@ -5062,15 +4992,6 @@ snapshots:
       minipass: 7.1.2
       package-json-from-dist: 1.0.1
       path-scurry: 1.11.1
-
-  glob@7.2.3:
-    dependencies:
-      fs.realpath: 1.0.0
-      inflight: 1.0.6
-      inherits: 2.0.4
-      minimatch: 3.1.2
-      once: 1.4.0
-      path-is-absolute: 1.0.1
 
   globals@14.0.0: {}
 
@@ -5156,11 +5077,6 @@ snapshots:
   import-lazy@4.0.0: {}
 
   imurmurhash@0.1.4: {}
-
-  inflight@1.0.6:
-    dependencies:
-      once: 1.4.0
-      wrappy: 1.0.2
 
   inherits@2.0.4: {}
 
@@ -5505,10 +5421,6 @@ snapshots:
     dependencies:
       path-key: 4.0.0
 
-  once@1.4.0:
-    dependencies:
-      wrappy: 1.0.2
-
   onetime@5.1.2:
     dependencies:
       mimic-fn: 2.1.0
@@ -5600,8 +5512,6 @@ snapshots:
   path-browserify@1.0.1: {}
 
   path-exists@4.0.0: {}
-
-  path-is-absolute@1.0.1: {}
 
   path-key@3.1.1: {}
 
@@ -5891,10 +5801,6 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  strip-literal@2.1.1:
-    dependencies:
-      js-tokens: 9.0.1
-
   strip-literal@3.0.0:
     dependencies:
       js-tokens: 9.0.1
@@ -5916,12 +5822,6 @@ snapshots:
   symbol-tree@3.2.4: {}
 
   tabbable@6.2.0: {}
-
-  test-exclude@6.0.0:
-    dependencies:
-      '@istanbuljs/schema': 0.1.3
-      glob: 7.2.3
-      minimatch: 3.1.2
 
   test-exclude@7.0.1:
     dependencies:
@@ -6294,8 +6194,6 @@ snapshots:
       ansi-styles: 6.2.1
       string-width: 7.2.0
       strip-ansi: 7.1.0
-
-  wrappy@1.0.2: {}
 
   ws@8.18.3: {}
 

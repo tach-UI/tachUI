@@ -384,7 +384,13 @@ export class LayoutComponent
       case 'vstack': {
         // Render children normally but also make them available for DOM bridge processing
         const vstackRenderedChildren = this.children.map(child => {
-          const childResult = child.render()
+          // Auto-build if it's a ModifierBuilder
+          let componentToRender = child
+          if ('build' in child && typeof child.build === 'function') {
+            componentToRender = child.build()
+          }
+
+          const childResult = componentToRender.render()
           const resultArray = Array.isArray(childResult)
             ? childResult
             : [childResult]
@@ -429,7 +435,13 @@ export class LayoutComponent
 
       case 'hstack': {
         const hstackRenderedChildren = this.children.map(child => {
-          const childResult = child.render()
+          // Auto-build if it's a ModifierBuilder
+          let componentToRender = child
+          if ('build' in child && typeof child.build === 'function') {
+            componentToRender = child.build()
+          }
+
+          const childResult = componentToRender.render()
           const resultArray = Array.isArray(childResult)
             ? childResult
             : [childResult]
@@ -478,8 +490,14 @@ export class LayoutComponent
         let highestPriorityChild: ComponentInstance | null = null
 
         this.children.forEach(child => {
-          if ('modifiers' in child && Array.isArray(child.modifiers)) {
-            const layoutMod = child.modifiers.find(
+          // Auto-build if it's a ModifierBuilder for priority check
+          let componentToCheck = child
+          if ('build' in child && typeof child.build === 'function') {
+            componentToCheck = child.build()
+          }
+
+          if ('modifiers' in componentToCheck && Array.isArray(componentToCheck.modifiers)) {
+            const layoutMod = componentToCheck.modifiers.find(
               m =>
                 m.type === 'layout' &&
                 m.properties &&
@@ -490,7 +508,7 @@ export class LayoutComponent
               const priority = layoutMod.properties.layoutPriority as number
               if (priority > maxPriority) {
                 maxPriority = priority
-                highestPriorityChild = child
+                highestPriorityChild = componentToCheck
               }
             }
           }
@@ -528,15 +546,21 @@ export class LayoutComponent
 
         // Apply absolute positioning to children for z-stack
         const renderedChildren = this.children.flatMap((child, index) => {
-          const childNodes = child.render()
+          // Auto-build if it's a ModifierBuilder
+          let componentToRender = child
+          if ('build' in child && typeof child.build === 'function') {
+            componentToRender = child.build()
+          }
+
+          const childNodes = componentToRender.render()
           const nodeArray = Array.isArray(childNodes)
             ? childNodes
             : [childNodes]
 
           // Get layoutPriority from child's modifiers
           let childPriority = index // Default to index-based z-index
-          if ('modifiers' in child && Array.isArray(child.modifiers)) {
-            const layoutMod = child.modifiers.find(
+          if ('modifiers' in componentToRender && Array.isArray(componentToRender.modifiers)) {
+            const layoutMod = componentToRender.modifiers.find(
               m =>
                 m.type === 'layout' &&
                 m.properties &&
@@ -552,7 +576,7 @@ export class LayoutComponent
 
           return nodeArray.map(node => {
             if (node.type === 'element') {
-              const isHighestPriority = child === highestPriorityChild
+              const isHighestPriority = componentToRender === highestPriorityChild
               return {
                 ...node,
                 props: {

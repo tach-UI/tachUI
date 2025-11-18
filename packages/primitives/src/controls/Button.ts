@@ -272,12 +272,29 @@ export class EnhancedButton
         const hasModifierValue =
           currentValue && currentValue !== '' && currentValue !== 'inherit'
 
+        if (process.env.NODE_ENV === 'development' && cssProperty === 'font-family') {
+          console.log('[Button.applyButtonStyles] Font-family check:')
+          console.log('[Button.applyButtonStyles] property:', property, 'cssProperty:', cssProperty)
+          console.log('[Button.applyButtonStyles] currentValue:', currentValue)
+          console.log('[Button.applyButtonStyles] hasModifierValue:', hasModifierValue)
+          console.log('[Button.applyButtonStyles] will set to:', value)
+        }
+
         // Special handling for transform: Button state transforms should override modifier transforms
         if (cssProperty === 'transform') {
           element.style.setProperty(cssProperty, String(value))
         } else if (!hasModifierValue) {
           // For other properties, only apply Button styles if no modifier has set this property
           element.style.setProperty(cssProperty, String(value))
+          
+          if (process.env.NODE_ENV === 'development' && cssProperty === 'font-family') {
+            console.log('[Button.applyButtonStyles] Button SET font-family to:', String(value))
+            console.log('[Button.applyButtonStyles] Element after set:', element.style.fontFamily)
+          }
+        } else {
+          if (process.env.NODE_ENV === 'development' && cssProperty === 'font-family') {
+            console.log('[Button.applyButtonStyles] Button SKIPPED font-family (has modifier value):', currentValue)
+          }
         }
       }
     })
@@ -495,6 +512,37 @@ export class EnhancedButton
   }
 
   /**
+   * Check if the button has a shadow modifier applied
+   */
+  private hasShadowModifier(): boolean {
+    let modifiers = (this as any).modifiers
+
+    if (!modifiers && (this as any).modifierBuilder) {
+      modifiers = (this as any).modifierBuilder.modifiers
+    }
+
+    if (!modifiers && (this as any).modifiableComponent) {
+      modifiers = (this as any).modifiableComponent.modifiers
+    }
+
+    if (!modifiers || !Array.isArray(modifiers)) {
+      return false
+    }
+
+    const hasShadow = modifiers.some((modifier: any) => {
+      // Check both AppearanceModifier and ShadowModifier
+      if (modifier.type === 'appearance' || modifier.type === 'shadow' ||
+          modifier.constructor?.name === 'AppearanceModifier' ||
+          modifier.constructor?.name === 'ShadowModifier') {
+        return modifier.properties && modifier.properties.shadow !== undefined
+      }
+      return false
+    })
+
+    return hasShadow
+  }
+
+  /**
    * Get computed button styles based on variant, size, role, and state
    */
   // biome-ignore lint/suspicious/noExplicitAny: CSS styles require flexible property types
@@ -672,7 +720,11 @@ export class EnhancedButton
 
     // Always apply transform - use 'none' when not needed to properly clear previous values
     finalStyles.transform = transform !== undefined ? transform : 'none'
-    finalStyles.boxShadow = boxShadow
+
+    // Only apply boxShadow if no shadow modifier is present
+    if (!this.hasShadowModifier()) {
+      finalStyles.boxShadow = boxShadow
+    }
 
     finalStyles.transition = 'all 0.2s ease'
 

@@ -8,7 +8,7 @@ import {
   createGradientAsset,
 } from '../../src/gradients/index'
 import { gradientToCSS } from '../../src/gradients/css-generator'
-import { BackgroundModifier } from '../../src/modifiers/background'
+import { BackgroundModifier } from '@tachui/modifiers/appearance/background'
 import { createColorAsset } from '../../src/assets'
 import type { ModifierContext } from '../../src/modifiers/types'
 

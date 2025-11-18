@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { BackgroundModifier } from '../../src/modifiers/background'
+import { BackgroundModifier } from '@tachui/modifiers/appearance/background'
 import { LinearGradient } from '../../src/gradients/index'
 import { createColorAsset } from '../../src/assets'
 import type { ModifierContext } from '../../src/modifiers/types'
@@ -62,7 +62,7 @@ describe('BackgroundModifier', () => {
       background: '#FF0000',
     })
 
-    expect(modifier.priority).toBe(200) // ModifierPriority.APPEARANCE
+    expect(modifier.priority).toBe(95) // ModifierPriority.APPEARANCE (background)
     expect(modifier.type).toBe('background')
   })
 

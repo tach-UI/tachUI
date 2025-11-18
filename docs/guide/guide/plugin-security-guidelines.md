@@ -19,7 +19,7 @@ TachUI’s plugin architecture lets teams publish modifiers, components, and too
 ## Sanitise User Input
 
 - Call `stateModifier` or `createCustomModifier` with explicit sanitisation for any values that might be user-supplied.
-- Reuse helpers from `@tachui/core/modifiers/basic-sanitizer` or the security utilities in `@tachui/core/security` when dealing with HTML, URLs, or untrusted CSS.
+- Reuse helpers from `@tachui/modifiers/utility` (or the security utilities in `@tachui/core/security`) when dealing with HTML, URLs, or untrusted CSS.
 - Keep `STRICT_INPUT_SANITIZATION` enabled during development to surface warnings early.
 
 ## Run in Hardened Environments

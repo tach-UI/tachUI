@@ -5,15 +5,15 @@
  * Enables chaining modifiers on components similar to SwiftUI.
  */
 
-import type { Signal } from '@tachui/core/reactive/types'
+import type { Signal } from '@tachui/types/reactive'
 import type {
   ComponentInstance,
   ComponentProps,
   DOMNode,
-} from '@tachui/core/runtime/types'
+} from '@tachui/types/runtime'
 
 // Re-export for convenience
-export type { DOMNode } from '@tachui/core/runtime/types'
+export type { DOMNode } from '@tachui/types/runtime'
 // Temporary type definitions until we migrate all types
 export type Dimension = number | string | 'infinity'
 export interface StatefulBackgroundValue {
@@ -670,12 +670,12 @@ export interface ModifierBuilder<
   // Visual Effects Modifiers (Phase 2 - Epic: Butternut)
 
   // ============================================================================
-  // VISUAL EFFECTS METHODS MOVED TO @tachui/effects
+  // VISUAL EFFECTS METHODS MOVED TO @tachui/modifiers/effects
   // ============================================================================
   // Visual effects methods (filters, transforms, backdrop, hover) have been
-  // moved to @tachui/effects package. Import and use with .apply():
+  // moved to the @tachui/modifiers/effects entry point. Import and use with .apply():
   //
-  //   import { blur, scale, glassmorphism, hoverEffect } from '@tachui/effects'
+  //   import { blur, scale, glassmorphism, hoverEffect } from '@tachui/modifiers/effects'
   //   VStack().apply(blur(5)).apply(scale(1.1))
   //
   // This provides better tree-shaking and cleaner plugin boundaries.

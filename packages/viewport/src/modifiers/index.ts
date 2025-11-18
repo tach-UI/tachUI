@@ -5,7 +5,7 @@
  * visibility detection and responsive behavior.
  */
 
-import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import { registerModifierWithMetadata } from '@tachui/modifiers'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { TACHUI_PACKAGE_VERSION } from '../version'
 import { onAppear, onDisappear } from './lifecycle'

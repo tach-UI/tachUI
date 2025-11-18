@@ -61,15 +61,55 @@
       "import": "./dist/utility/index.js"
     },
     "./effects": {
-      "types": "./dist/effects.d.ts",
-      "import": "./dist/effects.js"
+      "types": "./dist/effects/index.d.ts",
+      "import": "./dist/effects/index.js"
+    },
+    "./effects/filters": {
+      "types": "./dist/effects/filters/index.d.ts",
+      "import": "./dist/effects/filters/index.js"
+    },
+    "./effects/transforms": {
+      "types": "./dist/effects/transforms/index.d.ts",
+      "import": "./dist/effects/transforms/index.js"
+    },
+    "./effects/shadows": {
+      "types": "./dist/effects/shadows/index.d.ts",
+      "import": "./dist/effects/shadows/index.js"
+    },
+    "./effects/backdrop": {
+      "types": "./dist/effects/backdrop/index.d.ts",
+      "import": "./dist/effects/backdrop/index.js"
+    },
+    "./preload/basic": {
+      "types": "./dist/preload/basic.d.ts",
+      "import": "./dist/preload/basic.js"
+    },
+    "./preload/effects": {
+      "types": "./dist/preload/effects.d.ts",
+      "import": "./dist/preload/effects.js"
+    },
+    "./preload/filters": {
+      "types": "./dist/preload/filters.d.ts",
+      "import": "./dist/preload/filters.js"
+    },
+    "./preload/shadows": {
+      "types": "./dist/preload/shadows.d.ts",
+      "import": "./dist/preload/shadows.js"
+    },
+    "./preload/transforms": {
+      "types": "./dist/preload/transforms.d.ts",
+      "import": "./dist/preload/transforms.js"
+    },
+    "./preload/backdrop": {
+      "types": "./dist/preload/backdrop.d.ts",
+      "import": "./dist/preload/backdrop.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
+    "build": "rm -rf dist tsconfig.build.tsbuildinfo && vite build --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "build:dev": "rm -rf dist && vite build --mode development --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "build:prod": "rm -rf dist && vite build --mode production --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "dev": "vite build --watch",
@@ -79,10 +119,12 @@
     "test:watch": "vitest",
     "test:ci": "vitest run",
     "type-check": "tsc --project tsconfig.type-check.json",
+    "verify:tree-shaking": "tsx scripts/verify-tree-shaking.ts",
     "clean": "rm -rf dist",
     "lint": "oxlint src"
   },
   "dependencies": {
+    "@tachui/types": "workspace:*",
     "@tachui/core": "workspace:*",
     "@tachui/registry": "workspace:*"
   },
@@ -121,7 +163,9 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/preload/*.js"
+  ],
   "publishConfig": {
     "access": "public"
   }

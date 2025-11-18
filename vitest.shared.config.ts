@@ -76,6 +76,14 @@ export default defineConfig({
     alias: [
       // Core packages - use src for consistent testing across root and packages
       {
+        find: '@tachui/types/',
+        replacement: path.resolve(__dirname, 'packages/types/src') + '/',
+      },
+      {
+        find: '@tachui/types',
+        replacement: path.resolve(__dirname, 'packages/types/src'),
+      },
+      {
         find: '@tachui/core/plugins',
         replacement: path.resolve(__dirname, 'packages/core/src/plugins'),
       },
@@ -135,11 +143,15 @@ export default defineConfig({
       },
       {
         find: '@tachui/modifiers',
-        replacement: path.resolve(__dirname, 'packages/modifiers/src'),
+        replacement: path.resolve(__dirname, 'packages/modifiers/src'), // Effects merged into modifiers
       },
       {
-        find: '@tachui/effects',
-        replacement: path.resolve(__dirname, 'packages/effects/src'),
+        find: '@tachui/modifiers/',
+        replacement: path.resolve(__dirname, 'packages/modifiers/src') + '/',
+      },
+      {
+        find: '@tachui/modifiers/effects',
+        replacement: path.resolve(__dirname, 'packages/modifiers/src/effects/index.ts'),
       },
       {
         find: '@tachui/flow-control',

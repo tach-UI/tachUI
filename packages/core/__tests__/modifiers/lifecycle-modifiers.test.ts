@@ -123,16 +123,6 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       expect(handler).toHaveBeenCalled()
     })
 
-    it.skip('should integrate with modifier builder', () => {
-      const handler = vi.fn()
-      const component = Text('Appearing text').fontSize(16).build()
-
-      // Apply onAppear modifier manually since it's been moved to @tachui/viewport
-      const onAppearModifier = onAppear(handler)
-      expect(onAppearModifier).toBeDefined()
-      expect(onAppearModifier.type).toBe('onAppear')
-      expect(typeof onAppearModifier.apply).toBe('function')
-    })
   })
 
   describe('onDisappear Modifier', () => {
@@ -162,19 +152,6 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       // Simulate element disappearing
       mockObserver.triggerIntersection(false)
       expect(handler).toHaveBeenCalled()
-    })
-
-    it.skip('should integrate with modifier builder', () => {
-      const handler = vi.fn()
-      const component = HTML.div({ children: 'Disappearing content' })
-        .backgroundColor('#f0f0f0')
-        .build()
-
-      // Apply onDisappear modifier manually since it's been moved to @tachui/viewport
-      const onDisappearModifier = onDisappear(handler)
-      expect(onDisappearModifier).toBeDefined()
-      expect(onDisappearModifier.type).toBe('onDisappear')
-      expect(typeof onDisappearModifier.apply).toBe('function')
     })
   })
 
@@ -220,22 +197,6 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       expect(operation).toHaveBeenCalled()
     })
 
-    it.skip('should integrate with modifier builder', () => {
-      const operation = vi.fn()
-      const component = Text('Task component')
-        .task(operation, { id: 'test-task', priority: 'background' })
-        .padding(16)
-        .build()
-
-      const lifecycleModifier = component.modifiers.find(
-        m => m.type === 'lifecycle'
-      )
-      expect(lifecycleModifier).toBeDefined()
-      expect(lifecycleModifier?.properties.task?.operation).toBe(operation)
-      expect(lifecycleModifier?.properties.task?.id).toBe('test-task')
-      expect(lifecycleModifier?.properties.task?.priority).toBe('background')
-    })
-
     it('should handle task priorities', () => {
       const priorities = [
         'background',
@@ -273,167 +234,7 @@ describe('Lifecycle Modifiers (Phase 6.1)', () => {
       expect(modifier.properties.refreshable?.isRefreshing).toBe(isRefreshing)
     })
 
-    it.skip('should integrate with modifier builder', () => {
-      const onRefresh = vi.fn().mockResolvedValue(undefined)
-      const [isRefreshing] = createSignal(false)
 
-      const component = HTML.div({ children: 'Refreshable content' })
-        .backgroundColor('#ffffff')
-        .padding(20)
-        .build()
-
-      // Apply refreshable modifier manually since it's been moved to @tachui/mobile
-      const refreshableModifier = refreshable(onRefresh, isRefreshing)
-      expect(refreshableModifier).toBeDefined()
-      expect(refreshableModifier.type).toBe('refreshable')
-      expect(typeof refreshableModifier.apply).toBe('function')
-    })
-
-    it.skip('should set up touch event listeners when applied', () => {
-      const onRefresh = vi.fn().mockResolvedValue(undefined)
-      const element = createMockElement()
-      element.parentElement = createMockElement()
-
-      const modifier = lifecycleModifiers.refreshable(onRefresh)
-      modifier.apply(
-        { type: 'element', tag: 'div', props: {} },
-        {
-          componentId: 'test-comp',
-          element,
-          phase: 'creation',
-        }
-      )
-
-      // Verify touch event listeners were added
-      expect(element.addEventListener).toHaveBeenCalledWith(
-        'touchstart',
-        expect.any(Function),
-        {
-          passive: false,
-        }
-      )
-      expect(element.addEventListener).toHaveBeenCalledWith(
-        'touchmove',
-        expect.any(Function),
-        {
-          passive: false,
-        }
-      )
-      expect(element.addEventListener).toHaveBeenCalledWith(
-        'touchend',
-        expect.any(Function)
-      )
-    })
-  })
-
-  describe('Combined Lifecycle Modifiers', () => {
-    it.skip('should support multiple lifecycle modifiers on same component', () => {
-      const onAppearHandler = vi.fn()
-      const onDisappearHandler = vi.fn()
-      const taskOperation = vi.fn()
-      const onRefresh = vi.fn().mockResolvedValue(undefined)
-
-      const component = HTML.div({ children: 'Multi-lifecycle component' })
-        .onAppear(onAppearHandler)
-        .onDisappear(onDisappearHandler)
-        .task(taskOperation, { id: 'multi-task' })
-        .refreshable(onRefresh)
-        .backgroundColor('#f8f9fa')
-        .padding(16)
-        .build()
-
-      const lifecycleModifiers = component.modifiers.filter(
-        m => m.type === 'lifecycle'
-      )
-      expect(lifecycleModifiers).toHaveLength(4)
-
-      // Verify each modifier has correct properties
-      const appearModifier = lifecycleModifiers.find(m => m.properties.onAppear)
-      const disappearModifier = lifecycleModifiers.find(
-        m => m.properties.onDisappear
-      )
-      const taskModifier = lifecycleModifiers.find(m => m.properties.task)
-      const refreshableModifier = lifecycleModifiers.find(
-        m => m.properties.refreshable
-      )
-
-      expect(appearModifier?.properties.onAppear).toBe(onAppearHandler)
-      expect(disappearModifier?.properties.onDisappear).toBe(onDisappearHandler)
-      expect(taskModifier?.properties.task?.operation).toBe(taskOperation)
-      expect(refreshableModifier?.properties.refreshable?.onRefresh).toBe(
-        onRefresh
-      )
-    })
-
-    it.skip('should work with other modifier types', () => {
-      const onAppearHandler = vi.fn()
-
-      const component = Text('Complex component')
-        .onAppear(onAppearHandler)
-        .fontSize(18)
-        .fontWeight('bold')
-        .backgroundColor('#007AFF')
-        .foregroundColor('#ffffff')
-        .padding(12)
-        .cornerRadius(8)
-        .onTap(() => console.log('Tapped!'))
-        .transition('all', 200)
-        .build()
-
-      const modifierTypes = component.modifiers.map(m => m.type)
-      expect(modifierTypes).toContain('lifecycle')
-      expect(modifierTypes).toContain('appearance')
-      expect(modifierTypes).toContain('padding')
-      expect(modifierTypes).toContain('interaction')
-      expect(modifierTypes).toContain('transition')
-    })
-  })
-
-  describe('SwiftUI Compatibility', () => {
-    it.skip('should match SwiftUI onAppear behavior patterns', () => {
-      // SwiftUI: .onAppear { /* action */ }
-      const onAppearAction = vi.fn()
-
-      const component = Text('SwiftUI-style onAppear')
-        .onAppear(onAppearAction)
-        .build()
-
-      const lifecycleModifier = component.modifiers.find(
-        m => m.type === 'lifecycle'
-      )
-      expect(lifecycleModifier?.properties.onAppear).toBe(onAppearAction)
-    })
-
-    it.skip('should match SwiftUI task behavior patterns', () => {
-      // SwiftUI: .task { await someAsyncOperation() }
-      const asyncOperation = vi.fn().mockResolvedValue(undefined)
-
-      const component = HTML.div({ children: 'Async task component' })
-        .task(asyncOperation, { priority: 'userInitiated' })
-        .build()
-
-      const lifecycleModifier = component.modifiers.find(
-        m => m.type === 'lifecycle'
-      )
-      expect(lifecycleModifier?.properties.task?.operation).toBe(asyncOperation)
-      expect(lifecycleModifier?.properties.task?.priority).toBe('userInitiated')
-    })
-
-    it.skip('should match SwiftUI refreshable behavior patterns', () => {
-      // SwiftUI: .refreshable { await refresh() }
-      const refreshOperation = vi.fn().mockResolvedValue(undefined)
-
-      const component = HTML.div({ children: 'Refreshable content' })
-        .refreshable(refreshOperation)
-        .build()
-
-      const lifecycleModifier = component.modifiers.find(
-        m => m.type === 'lifecycle'
-      )
-      expect(lifecycleModifier?.properties.refreshable?.onRefresh).toBe(
-        refreshOperation
-      )
-    })
   })
 
   describe('Error Handling and Edge Cases', () => {

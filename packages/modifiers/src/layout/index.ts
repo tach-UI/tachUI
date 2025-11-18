@@ -15,6 +15,8 @@ export * from './scale-effect'
 // Layout modifiers
 export * from './aspect-ratio'
 export * from './fixed-size'
+export * from './frame'
+export * from './resizable'
 
 // Positioning modifiers
 export * from './position'

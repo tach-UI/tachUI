@@ -5,9 +5,9 @@
  * with dynamic stylesheet generation and flexible styling options.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../base'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
+import type { ModifierContext } from '@tachui/types/modifiers'
 
 export interface PseudoElementStyles {
   content?: string // Content for pseudo-element (required)

@@ -6,6 +6,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./test/setup.ts'],
+    silent: true,
+    reporters: ['default'],
+    onConsoleLog: () => false, // Suppress all console.log output during tests
     exclude: [
       'node_modules/**',
       '**/node_modules/**',
@@ -24,8 +27,7 @@ export default defineConfig({
     alias: {
       '@tachui/core': resolve(__dirname, './src'),
       '@tachui/primitives': resolve(__dirname, '../primitives/dist'),
-      '@tachui/modifiers': resolve(__dirname, '../modifiers/src'),
-      '@tachui/effects': resolve(__dirname, '../effects/src'),
+      '@tachui/modifiers': resolve(__dirname, '../modifiers/src'), // Effects merged into modifiers
       '@tachui/viewport': resolve(__dirname, '../viewport/src'),
       '@tachui/mobile': resolve(__dirname, '../mobile/src'),
       '@tachui/registry': resolve(__dirname, '../registry/src'),

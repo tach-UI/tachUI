@@ -1162,7 +1162,14 @@ export function renderComponent(
 
     // Create reactive effect for component re-rendering
     const effect = createEffect(() => {
-      const renderResult = instance.render()
+      // Auto-build if it's a ModifierBuilder
+      let componentToRender = instance
+      if ('build' in instance && typeof instance.build === 'function') {
+        // This is a ModifierBuilder that hasn't been built yet - build it automatically
+        componentToRender = instance.build()
+      }
+
+      const renderResult = componentToRender.render()
       const nodes = Array.isArray(renderResult) ? renderResult : [renderResult]
 
       // Pre-populate node.element from key cache BEFORE reconciliation

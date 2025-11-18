@@ -8,6 +8,7 @@
 import type {
   CleanupFunction,
   Computation,
+  ComputationStateValue,
   Owner,
   ReactiveContext,
 } from './types'
@@ -127,7 +128,7 @@ export class ComputationImpl implements Computation {
   readonly fn: () => any
   readonly sources = new Set<any>() // Signals this computation depends on
   readonly observers = new Set<Computation>() // Computations that depend on this
-  state = ComputationState.Dirty
+  state: ComputationStateValue = ComputationState.Dirty
   value: any = undefined
 
   constructor(fn: () => any, owner: Owner | null = null) {

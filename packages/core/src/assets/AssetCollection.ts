@@ -63,6 +63,11 @@ export class AssetCollection {
                 // Default property access
                 return (target as any)[prop]
               },
+              has: (target, prop) => {
+                // Make 'resolve' check work with 'in' operator
+                if (prop === 'resolve') return true
+                return prop in target
+              },
             })
           }
 
@@ -93,6 +98,11 @@ export class AssetCollection {
                 // Default property access
                 return (target as any)[prop]
               },
+              has: (target, prop) => {
+                // Make 'resolve' check work with 'in' operator
+                if (prop === 'resolve') return true
+                return prop in target
+              },
             })
           }
 
@@ -121,6 +131,11 @@ export class AssetCollection {
 
                 // Default property access
                 return (target as any)[prop]
+              },
+              has: (target, prop) => {
+                // Make 'resolve' check work with 'in' operator
+                if (prop === 'resolve') return true
+                return prop in target
               },
             })
           }

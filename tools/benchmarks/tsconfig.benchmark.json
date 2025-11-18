@@ -9,9 +9,7 @@
       "@tachui/registry": ["../../packages/registry/src/index.ts"],
       "@tachui/registry/*": ["../../packages/registry/src/*"],
       "@tachui/modifiers": ["../../packages/modifiers/src/index.ts"],
-      "@tachui/modifiers/*": ["../../packages/modifiers/src/*"],
-      "@tachui/effects": ["../../packages/effects/src/index.ts"],
-      "@tachui/effects/*": ["../../packages/effects/src/*"],
+      "@tachui/modifiers/*": ["../../packages/modifiers/src/*"], // Effects merged into modifiers
       "@tachui/primitives": ["../../packages/primitives/src/index.ts"],
       "@tachui/primitives/*": ["../../packages/primitives/src/*"],
       "@tachui/forms": ["../../packages/forms/src/index.ts"],

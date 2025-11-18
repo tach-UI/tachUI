@@ -12,15 +12,15 @@ export default defineConfig(({ mode }) => ({
       formats: ['es'],
     },
     rollupOptions: {
-      external: [
-        '@tachui/core',
-        '@tachui/core/reactive',
-        '@tachui/core/reactive/types',
-        '@tachui/core/runtime/types',
-        '@tachui/core/modifiers/types',
-        '@tachui/core/constants/layout',
-        '@tachui/mobile',
-      ],
+      external: id =>
+        id === '@tachui/core' ||
+        id === '@tachui/core/reactive' ||
+        id === '@tachui/core/reactive/types' ||
+        id === '@tachui/core/runtime/types' ||
+        id === '@tachui/core/modifiers/types' ||
+        id === '@tachui/core/constants/layout' ||
+        id === '@tachui/mobile' ||
+        id.startsWith('@tachui/modifiers'),
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: '[name].js',

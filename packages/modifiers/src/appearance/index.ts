@@ -16,3 +16,5 @@ export * from './foreground'
 // Clipping modifiers
 export * from './clip-shape'
 export * from './clipped'
+
+// Note: reactive-factories are imported directly where needed to avoid naming conflicts

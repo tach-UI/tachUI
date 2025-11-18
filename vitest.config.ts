@@ -22,6 +22,7 @@ export default mergeConfig(
         '**/*.bench.ts',
         '**/*.spec.ts', // Playwright browser tests only
         'coverage/**',
+        '**/*stress*.test.ts',
       ],
     },
 

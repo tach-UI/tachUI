@@ -636,9 +636,10 @@ export class AppearanceModifier extends BaseModifier {
         if (
           typeof font.family === 'object' &&
           font.family !== null &&
-          'resolve' in font.family
+          typeof (font.family as any).resolve === 'function'
         ) {
-          styles.fontFamily = (font.family as any).resolve()
+          const resolved = (font.family as any).resolve()
+          styles.fontFamily = resolved
         } else {
           styles.fontFamily = font.family as string
         }
@@ -664,7 +665,7 @@ export class AppearanceModifier extends BaseModifier {
       if (border.style) styles.borderStyle = border.style
     }
 
-    // Shadow functionality moved to @tachui/effects package
+    // Shadow functionality moved to @tachui/modifiers/effects entry point
 
     // Clipped and Clip Shape modifiers moved to @tachui/modifiers package
 

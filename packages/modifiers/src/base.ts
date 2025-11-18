@@ -10,8 +10,8 @@ import {
   isSignal,
   getThemeSignal,
 } from '@tachui/core/reactive'
-import type { Signal } from '@tachui/core/reactive/types'
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { Signal } from '@tachui/types/reactive'
+import type { DOMNode } from '@tachui/types/runtime'
 import type {
   CSSStyleProperties,
   LifecycleModifierProps,
@@ -20,7 +20,7 @@ import type {
   ReactiveModifierProps,
   StyleComputationContext,
 } from './types'
-import { ModifierPriority } from '@tachui/core/modifiers/types'
+import { ModifierPriority } from '@tachui/types/modifiers'
 import {
   isInfinity,
   dimensionToCSS,
@@ -217,6 +217,12 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
           } else {
             // Handle static values
             const cssValue = this.toCSSValueForProperty(cssProperty, value)
+
+            if (process.env.NODE_ENV === 'development' && cssProperty === 'font-family') {
+              console.log('[AppearanceModifier.applyStyles] Setting font-family property:', cssProperty, 'value:', cssValue)
+              console.log('[AppearanceModifier.applyStyles] Element:', element)
+              console.log('[AppearanceModifier.applyStyles] Current computed font-family:', getComputedStyle(element).fontFamily)
+            }
 
             if (styleTarget.setProperty) {
               // Check if value contains !important and handle it properly
@@ -757,7 +763,14 @@ export class AppearanceModifier extends BaseModifier {
   readonly priority = ModifierPriority.APPEARANCE
 
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AppearanceModifier.apply] Called with properties:', Object.keys(this.properties))
+    }
+
     if (!node.element || !context.element) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AppearanceModifier.apply] Early return - no element', { hasNodeElement: !!node.element, hasContextElement: !!context.element })
+      }
       return
     }
 
@@ -776,7 +789,54 @@ export class AppearanceModifier extends BaseModifier {
     this.applyAssetBasedStyles(context.element, resolved)
 
     // Handle non-Asset styles normally
-    const styles = this.computeAppearanceStyles(resolved)
+    let styles = this.computeAppearanceStyles(resolved)
+    
+    // Merge font properties with existing element styles to prevent overwriting
+    if (styles.fontFamily || styles.fontSize || styles.fontWeight || styles.fontStyle) {
+      const element = context.element as HTMLElement
+      const currentStyles = element.style
+      const mergedStyles: Record<string, any> = { ...styles }
+      
+      // If this modifier doesn't have a font family, preserve the existing one
+      if (!styles.fontFamily && currentStyles.fontFamily) {
+        mergedStyles.fontFamily = currentStyles.fontFamily
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AppearanceModifier.apply] Preserved existing fontFamily:', currentStyles.fontFamily)
+        }
+      }
+      
+      // If this modifier doesn't have font-size, preserve the existing one
+      if (!styles.fontSize && currentStyles.fontSize) {
+        mergedStyles.fontSize = currentStyles.fontSize
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AppearanceModifier.apply] Preserved existing fontSize:', currentStyles.fontSize)
+        }
+      }
+      
+      // If this modifier doesn't have font-weight, preserve the existing one
+      if (!styles.fontWeight && currentStyles.fontWeight) {
+        mergedStyles.fontWeight = currentStyles.fontWeight
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AppearanceModifier.apply] Preserved existing fontWeight:', currentStyles.fontWeight)
+        }
+      }
+      
+      // If this modifier doesn't have font-style, preserve the existing one
+      if (!styles.fontStyle && currentStyles.fontStyle) {
+        mergedStyles.fontStyle = currentStyles.fontStyle
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AppearanceModifier.apply] Preserved existing fontStyle:', currentStyles.fontStyle)
+        }
+      }
+      
+      styles = mergedStyles
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AppearanceModifier.apply] Final merged styles:', styles)
+      console.log('[AppearanceModifier.apply] fontFamily in final styles?', 'fontFamily' in styles, 'fontFamily value:', styles.fontFamily)
+    }
+    
     this.applyStyles(context.element, styles)
 
     // Handle HTML attributes (ARIA, role, navigation, etc.)
@@ -842,6 +902,8 @@ export class AppearanceModifier extends BaseModifier {
   private computeAppearanceStyles(props: any): CSSStyleProperties {
     const styles: CSSStyleProperties = {}
 
+
+
     // Colors (skip Assets - they're handled reactively in applyAssetBasedStyles)
     if (props.foregroundColor && !this.isAsset(props.foregroundColor)) {
       styles.color = props.foregroundColor
@@ -853,6 +915,12 @@ export class AppearanceModifier extends BaseModifier {
 
     // Font
     if (props.font) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AppearanceModifier] Processing font, keys:', Object.keys(props.font))
+        console.log('[AppearanceModifier] font.family:', props.font.family)
+        console.log('[AppearanceModifier] font.size:', props.font.size)
+        console.log('[AppearanceModifier] font.weight:', props.font.weight)
+      }
       const font = props.font
       if (font.family) {
         // Handle FontAsset objects that need to be resolved
@@ -861,9 +929,22 @@ export class AppearanceModifier extends BaseModifier {
           font.family !== null &&
           'resolve' in font.family
         ) {
-          styles.fontFamily = (font.family as any).resolve()
+          const resolved = (font.family as any).resolve()
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AppearanceModifier] Resolved font.family:', resolved)
+          }
+          styles.fontFamily = resolved
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AppearanceModifier] Set styles.fontFamily to:', styles.fontFamily)
+          }
         } else {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AppearanceModifier] Using font.family as string:', font.family)
+          }
           styles.fontFamily = font.family as string
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AppearanceModifier] Set styles.fontFamily to:', styles.fontFamily)
+          }
         }
       }
       if (font.size) styles.fontSize = this.toCSSValue(font.size)
@@ -892,9 +973,14 @@ export class AppearanceModifier extends BaseModifier {
       const shadow = props.shadow
       const x = shadow.x || 0
       const y = shadow.y || 0
-      const radius = shadow.radius || 0
+      // Support both 'blur' and 'radius' for backward compatibility
+      const blur = shadow.blur !== undefined ? shadow.blur : (shadow.radius || 0)
+      const spread = shadow.spread || 0
       const color = shadow.color || 'rgba(0,0,0,0.25)'
-      styles.boxShadow = `${x}px ${y}px ${radius}px ${color}`
+      // CSS box-shadow: offset-x offset-y blur-radius spread-radius color
+      styles.boxShadow = spread !== 0
+        ? `${x}px ${y}px ${blur}px ${spread}px ${color}`
+        : `${x}px ${y}px ${blur}px ${color}`
     }
 
     // Clipped modifier (SwiftUI .clipped())
@@ -957,6 +1043,11 @@ export class AppearanceModifier extends BaseModifier {
 
     if (filters.length > 0) {
       styles.filter = filters.join(' ')
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AppearanceModifier.computeAppearanceStyles] Returning styles object:', styles)
+      console.log('[AppearanceModifier.computeAppearanceStyles] fontFamily in styles?', 'fontFamily' in styles, 'fontFamily value:', styles.fontFamily)
     }
 
     return styles

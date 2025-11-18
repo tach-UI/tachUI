@@ -1,5 +1,5 @@
 import { VStack, Text } from "@tachui/primitives";
-import { Assets } from "@tachui/core/assets";
+import { Assets } from "@tachui/core";
 import type { ComponentInstance } from "@tachui/core/runtime/types";
 export function Build(): ComponentInstance {
     return VStack({

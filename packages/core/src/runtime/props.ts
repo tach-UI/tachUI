@@ -5,10 +5,12 @@
  * and component composition patterns.
  */
 
+import type { ModifierBuilder } from '../modifiers/types'
 import { createComputed, createEffect, createSignal } from '../reactive'
 import type {
   ChildrenRenderer,
   ComponentChildren,
+  ComponentInstance,
   ComponentProps,
   ComponentRef,
   DOMNode,
@@ -255,9 +257,23 @@ export class ChildrenManager {
       } else if (Array.isArray(child)) {
         // Nested array of children
         nodes.push(...this.renderChildrenArray(child))
-      } else if (typeof child === 'object' && 'render' in child) {
-        // Component instance
-        const result = child.render()
+      } else if (isModifierBuilder(child)) {
+        // ModifierBuilder - build before rendering so auto-build logic always runs
+        const builtChild = child.build()
+        const result = builtChild.render()
+        if (Array.isArray(result)) {
+          nodes.push(...result)
+        } else {
+          nodes.push(result)
+        }
+      } else if (typeof child === 'object' && child !== null && 'render' in child) {
+        // Component instance - auto-build if it still exposes ModifierBuilder API
+        let componentToRender = child
+        if ('build' in child && typeof child.build === 'function') {
+          componentToRender = child.build()
+        }
+
+        const result = componentToRender.render()
         if (Array.isArray(result)) {
           nodes.push(...result)
         } else {
@@ -351,6 +367,22 @@ export function createPropsManager<P extends ComponentProps>(
  */
 export function createChildrenManager(initialChildren?: ComponentChildren): ChildrenManager {
   return new ChildrenManager(initialChildren)
+}
+
+function isModifierBuilder(
+  value: unknown
+): value is ModifierBuilder<ComponentInstance> {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const hasBuild = 'build' in value && typeof (value as any).build === 'function'
+  if (!hasBuild) {
+    return false
+  }
+
+  const hasRender = 'render' in value && typeof (value as any).render === 'function'
+  return !hasRender
 }
 
 /**

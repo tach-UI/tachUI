@@ -5,10 +5,11 @@
  * Handles CSS transforms while preserving existing transformations.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
+import type { ModifierContext } from '@tachui/types/modifiers'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
+import type { Signal } from '@tachui/types/reactive'
 
 export type ScaleAnchor =
   | 'center'
@@ -22,8 +23,8 @@ export type ScaleAnchor =
   | 'trailing'
 
 export interface ScaleEffectOptions {
-  x: number
-  y?: number
+  x: number | Signal<number>
+  y?: number | Signal<number>
   anchor?: ScaleAnchor
 }
 
@@ -206,8 +207,8 @@ export class ScaleEffectModifier extends BaseModifier<ScaleEffectOptions> {
  * ```
  */
 export function scaleEffect(
-  x: number,
-  y?: number,
+  x: number | Signal<number>,
+  y?: number | Signal<number>,
   anchor: ScaleAnchor = 'center'
 ): ScaleEffectModifier {
   return new ScaleEffectModifier({ x, y, anchor })

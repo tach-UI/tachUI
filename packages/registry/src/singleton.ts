@@ -101,12 +101,6 @@ class ModifierRegistryImpl implements ModifierRegistry {
     // Remove any lazy loader for this name since we now have the actual factory
     this.lazyLoaders.delete(name);
     this.loadingPromises.delete(name);
-
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `✅ Registered modifier '${name}' in registry ${this.instanceId} (total: ${this.modifiers.size})`,
-      );
-    }
   }
 
   registerLazy<TProps>(name: string, loader: ModifierLoader<TProps>): void {
@@ -123,10 +117,6 @@ class ModifierRegistryImpl implements ModifierRegistry {
     }
 
     this.lazyLoaders.set(name, loader);
-
-    // if (process.env.NODE_ENV === 'development') {
-    //   console.log(`📦 Registered lazy loader for modifier '${name}' in registry ${this.instanceId}`)
-    // }
   }
 
   get<TProps>(name: string): ModifierFactory<TProps> | undefined;
@@ -332,13 +322,6 @@ class ModifierRegistryImpl implements ModifierRegistry {
       ...this.featureFlags,
       ...flags,
     };
-
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `🎚️ Updated feature flags in registry ${this.instanceId}:`,
-        this.featureFlags,
-      );
-    }
   }
 
   /**
@@ -391,12 +374,6 @@ class ModifierRegistryImpl implements ModifierRegistry {
 
     if (!existing) {
       this.metadata.set(modifierMetadata.name, modifierMetadata);
-
-      if (process.env.NODE_ENV === "development") {
-        console.log(
-          `📝 Registered metadata for '${String(modifierMetadata.name)}' from ${modifierMetadata.plugin}`,
-        );
-      }
       return;
     }
 
@@ -426,11 +403,8 @@ class ModifierRegistryImpl implements ModifierRegistry {
     }
   }
 
-  private recordMetadataHistoryEntry(
-    metadata: ModifierMetadata,
-  ): void {
-    const entries =
-      this.metadataHistory.get(metadata.name) ?? [];
+  private recordMetadataHistoryEntry(metadata: ModifierMetadata): void {
+    const entries = this.metadataHistory.get(metadata.name) ?? [];
 
     const key = `${metadata.plugin}:${metadata.priority}`;
     const existingIndex = entries.findIndex(
@@ -510,10 +484,7 @@ class ModifierRegistryImpl implements ModifierRegistry {
    */
   getConflicts(): Map<string | symbol, ModifierMetadata[]> {
     return new Map(
-      Array.from(this.conflicts.entries(), ([key, value]) => [
-        key,
-        [...value],
-      ]),
+      Array.from(this.conflicts.entries(), ([key, value]) => [key, [...value]]),
     );
   }
 
@@ -554,9 +525,9 @@ function getGlobalRegistry(): ModifierRegistryImpl {
   if (!globalRegistryInstance) {
     globalRegistryInstance = new ModifierRegistryImpl();
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("🌟 Created global TachUI modifier registry singleton");
-    }
+    // if (process.env.NODE_ENV === "development") {
+    //   console.log("🌟 Created global TachUI modifier registry singleton");
+    // }
   }
 
   return globalRegistryInstance;
@@ -590,15 +561,4 @@ export function resetGlobalRegistry(): void {
     globalRegistryInstance.reset();
     globalRegistryInstance = null;
   }
-}
-
-/**
- * Development utility to check registry health
- */
-if (process.env.NODE_ENV === "development") {
-  // Expose diagnostics on the registry for debugging
-  (globalModifierRegistry as any).getDiagnostics = () =>
-    globalRegistryInstance?.getDiagnostics();
-
-  console.log("📤 Exported globalModifierRegistry from @tachui/registry");
 }

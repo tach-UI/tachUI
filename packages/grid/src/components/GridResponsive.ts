@@ -265,10 +265,12 @@ class GridCSSCache {
       // Update selector in cached result (selectors may differ between instances)
       return {
         ...cachedResult,
-        mediaQueries: cachedResult.mediaQueries.map(mq => ({
-          ...mq,
-          selector,
-        })),
+        mediaQueries: cachedResult.mediaQueries.map(
+          (mq: ResponsiveModifierResult['mediaQueries'][number]) => ({
+            ...mq,
+            selector,
+          })
+        ),
       }
     }
 
@@ -281,10 +283,12 @@ class GridCSSCache {
     // Cache the result (with generic selector that will be replaced)
     const cacheableResult = {
       ...result,
-      mediaQueries: result.mediaQueries.map(mq => ({
-        ...mq,
-        selector: '.cached-selector', // Placeholder selector for caching
-      })),
+      mediaQueries: result.mediaQueries.map(
+        (mq: ResponsiveModifierResult['mediaQueries'][number]) => ({
+          ...mq,
+          selector: '.cached-selector', // Placeholder selector for caching
+        })
+      ),
     }
 
     // Implement LRU cache eviction
@@ -387,13 +391,22 @@ export class GridResponsiveUtils {
     if (options.spacing) {
       if (this.isResponsiveValue(options.spacing)) {
         const processedSpacing: ResponsiveValue<string> = {}
-        Object.entries(options.spacing).forEach(([breakpoint, value]) => {
+        Object.entries(
+          options.spacing as Record<
+            BreakpointKey | 'base',
+            string | number | { horizontal?: number; vertical?: number }
+          >
+        ).forEach(([breakpoint, value]) => {
           processedSpacing[breakpoint as BreakpointKey] =
             this.normalizeSpacing(value)
         })
         config.gap = processedSpacing
       } else {
-        config.gap = { base: this.normalizeSpacing(options.spacing) }
+        const spacingValue = options.spacing as
+          | string
+          | number
+          | { horizontal?: number; vertical?: number }
+        config.gap = { base: this.normalizeSpacing(spacingValue) }
       }
     }
 

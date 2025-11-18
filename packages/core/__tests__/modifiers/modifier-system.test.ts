@@ -9,7 +9,7 @@ import { JSDOM } from 'jsdom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { HTML, Text } from '@tachui/primitives'
 // Import modifiers to ensure they are registered after registry.clear()
-import '@tachui/modifiers'
+import '@tachui/modifiers/preload/basic'
 import {
   Layout,
   // Component wrappers
@@ -120,7 +120,7 @@ describe('Modifier System', () => {
       const paddingModifier = layoutModifiers.padding(16)
 
       expect(frameModifier.type).toBe('layout')
-      expect(paddingModifier.type).toBe('layout')
+      expect(paddingModifier.type).toBe('padding')
     })
 
     it('should create appearance modifiers through functions', () => {
@@ -130,8 +130,8 @@ describe('Modifier System', () => {
         weight: 'bold',
       })
 
-      expect(colorModifier.type).toBe('appearance')
-      expect(fontModifier.type).toBe('appearance')
+      expect(colorModifier.type).toBe('foreground')
+      expect(fontModifier.type).toBe('typography')
     })
 
     it('should create interaction modifiers through functions', () => {
@@ -175,7 +175,7 @@ describe('Modifier System', () => {
 
       expect(result.modifiers).toHaveLength(3)
       expect(result.modifiers[0].type).toBe('padding')
-      expect(result.modifiers[1].type).toBe('appearance')
+      expect(result.modifiers[1].type).toBe('foreground')
       expect(result.modifiers[2].type).toBe('appearance')
     })
 
@@ -364,7 +364,7 @@ describe('Modifier System', () => {
 
       const conditional = conditionalModifier(condition, baseModifier)
 
-      expect(conditional.type).toBe('conditional-appearance')
+      expect(conditional.type).toBe('conditional-foreground')
     })
 
     it('should create class modifiers', () => {

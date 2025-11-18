@@ -5,7 +5,7 @@
  * touch gestures, pull-to-refresh, and mobile interactions.
  */
 
-import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import { registerModifierWithMetadata } from '@tachui/modifiers'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { TACHUI_PACKAGE_VERSION } from '../version'
 import { refreshable } from './gestures'

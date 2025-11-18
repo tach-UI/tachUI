@@ -99,7 +99,7 @@ describe('State Gradient Integration Tests', () => {
       const backgroundModifier = modifiedComponent.modifiers.find(
         m => m.type === 'background'
       )
-      expect(backgroundModifier?.priority).toBe(200)
+      expect(backgroundModifier?.priority).toBe(95)
     })
   })
 

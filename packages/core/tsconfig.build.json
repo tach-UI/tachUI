@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -14,9 +15,16 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,
+    "composite": true,
+    "declarationDir": "./dist",
+    "baseUrl": "../../",
     "outDir": "./dist",
     "rootDir": "./src",
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "paths": {
+      "@tachui/modifiers": ["./packages/modifiers/dist/index.d.ts"],
+      "@tachui/modifiers/*": ["./packages/modifiers/dist/*"]
+    }
   },
   "include": ["src/**/*", "src/globals.d.ts"],
   "exclude": [

@@ -5,13 +5,13 @@
  * overflow wrapping, and hyphenation control for enhanced typography.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
 import type {
   ModifierContext,
   ReactiveModifierProps,
-} from '@tachui/core/modifiers/types'
-import { ModifierPriority } from '@tachui/core/modifiers/types'
+} from '@tachui/types/modifiers'
+import { ModifierPriority } from '@tachui/types/modifiers'
 
 // ============================================================================
 // Line Clamp Modifier - Multi-line Text Truncation

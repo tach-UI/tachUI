@@ -5,22 +5,17 @@
  * Enables familiar APIs like `.frame(maxWidth: infinity)` for responsive layouts.
  */
 
+// Import types from @tachui/types
+import type { Dimension, InfinityValue } from '@tachui/types/layout'
+
+// Re-export types for backward compatibility
+export type { Dimension, InfinityValue }
+
 /**
  * Infinity constant representing unlimited space availability
  * Equivalent to SwiftUI's .infinity for frame dimensions
  */
 export const infinity = Symbol.for('tachui.infinity')
-
-/**
- * Type definition for the infinity constant
- */
-export type InfinityValue = typeof infinity
-
-/**
- * Dimension type that accepts numbers, strings, or infinity
- * Used throughout the modifier system for size-related properties
- */
-export type Dimension = number | string | InfinityValue
 
 /**
  * Layout patterns namespace for common SwiftUI-style layouts
@@ -102,7 +97,7 @@ export function dimensionToCSS(
   }
 
   // String values are passed through as-is (allows for custom units)
-  return value
+  return value as string
 }
 
 /**

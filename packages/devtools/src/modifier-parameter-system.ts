@@ -250,7 +250,7 @@ export class ModifierParameterRegistry {
   private registerEffectsModifiers() {
     this.register({
       name: 'shadow',
-      plugin: '@tachui/effects',
+      plugin: '@tachui/modifiers/effects',
       category: 'appearance',
       description: 'Adds a drop shadow to the element',
       parameters: [
@@ -262,7 +262,7 @@ export class ModifierParameterRegistry {
           defaultValue: "'rgba(0, 0, 0, 0.3)'",
           examples: ["'rgba(0, 0, 0, 0.5)'", "'#333'"],
           category: 'appearance',
-          plugin: '@tachui/effects',
+          plugin: '@tachui/modifiers/effects',
         },
         {
           name: 'radius',
@@ -273,7 +273,7 @@ export class ModifierParameterRegistry {
           examples: ['5', '10', '0'],
           validation: { min: 0, max: 50 },
           category: 'appearance',
-          plugin: '@tachui/effects',
+          plugin: '@tachui/modifiers/effects',
         },
         {
           name: 'x',
@@ -283,7 +283,7 @@ export class ModifierParameterRegistry {
           defaultValue: 0,
           examples: ['2', '-2', '0'],
           category: 'appearance',
-          plugin: '@tachui/effects',
+          plugin: '@tachui/modifiers/effects',
         },
         {
           name: 'y',
@@ -293,7 +293,7 @@ export class ModifierParameterRegistry {
           defaultValue: 2,
           examples: ['4', '-4', '0'],
           category: 'appearance',
-          plugin: '@tachui/effects',
+          plugin: '@tachui/modifiers/effects',
         },
       ],
       usage: {
@@ -310,7 +310,7 @@ export class ModifierParameterRegistry {
 
     this.register({
       name: 'hover',
-      plugin: '@tachui/effects',
+      plugin: '@tachui/modifiers/effects',
       category: 'interaction',
       description: 'Applies styles on hover state',
       parameters: [
@@ -324,7 +324,7 @@ export class ModifierParameterRegistry {
             'scale(1.1).shadow({ radius: 10 })',
           ],
           category: 'interaction',
-          plugin: '@tachui/effects',
+          plugin: '@tachui/modifiers/effects',
         },
       ],
       usage: {

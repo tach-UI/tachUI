@@ -37,7 +37,12 @@ export function createOptimizedConcatenation(
     component: left,
     modifiers: (left as any).modifiers || [],
     render: () => {
-      const rendered = left.render()
+      // Auto-build if it's a ModifierBuilder
+      let componentToRender = left
+      if ('build' in left && typeof left.build === 'function') {
+        componentToRender = left.build()
+      }
+      const rendered = componentToRender.render()
       return Array.isArray(rendered) ? rendered[0] : rendered
     },
   }
@@ -47,7 +52,12 @@ export function createOptimizedConcatenation(
     component: right,
     modifiers: (right as any).modifiers || [],
     render: () => {
-      const rendered = right.render()
+      // Auto-build if it's a ModifierBuilder
+      let componentToRender = right
+      if ('build' in right && typeof right.build === 'function') {
+        componentToRender = right.build()
+      }
+      const rendered = componentToRender.render()
       return Array.isArray(rendered) ? rendered[0] : rendered
     },
   }
@@ -63,8 +73,18 @@ export function createOptimizedConcatenation(
     optimized: true,
     concatenationType: 'full',
     render: (() => {
-      const leftElement = left.render()
-      const rightElement = right.render()
+      // Auto-build if it's a ModifierBuilder
+      let leftToRender = left
+      if ('build' in left && typeof left.build === 'function') {
+        leftToRender = left.build()
+      }
+      let rightToRender = right
+      if ('build' in right && typeof right.build === 'function') {
+        rightToRender = right.build()
+      }
+
+      const leftElement = leftToRender.render()
+      const rightElement = rightToRender.render()
 
       const domNode: DOMNode = {
         type: 'element',

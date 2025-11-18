@@ -25,6 +25,8 @@
 
     "baseUrl": ".",
     "paths": {
+      "@tachui/types": ["./packages/types/dist/index.d.ts"],
+      "@tachui/types/*": ["./packages/types/dist/*"],
       "@tachui/core": ["./packages/core/dist/index.d.ts"],
       "@tachui/core/*": ["./packages/core/dist/*"],
       "@tachui/primitives": ["./packages/primitives/dist/index.d.ts"],
@@ -37,8 +39,9 @@
       "@tachui/symbols/*": ["./packages/symbols/dist/*"],
       "@tachui/mobile": ["./packages/mobile/dist/index.d.ts"],
       "@tachui/mobile/*": ["./packages/mobile/dist/*"],
-      "@tachui/effects": ["./packages/effects/dist/index.d.ts"],
-      "@tachui/effects/*": ["./packages/effects/dist/*"],
+      "@tachui/responsive": ["./packages/responsive/dist/index.d.ts"],
+      "@tachui/responsive/*": ["./packages/responsive/dist/*"],
+
       "@tachui/devtools": ["./packages/devtools/dist/index.d.ts"],
       "@tachui/devtools/*": ["./packages/devtools/dist/*"],
       "@tachui/cli": ["./packages/cli/dist/index.d.ts"],
@@ -46,11 +49,19 @@
       "@tachui/eslint-plugin": ["./packages/eslint-plugin-tachui/dist/index.d.ts"],
       "@tachui/eslint-plugin/*": ["./packages/eslint-plugin-tachui/dist/*"],
       "@tachui/registry": ["./packages/registry/dist/index.d.ts"],
-      "@tachui/registry/*": ["./packages/registry/dist/*"]
+      "@tachui/registry/*": ["./packages/registry/dist/*"],
+      "@tachui/modifiers": [
+        "./packages/modifiers/dist/index.d.ts"
+      ],
+      "@tachui/modifiers/*": [
+        "./packages/modifiers/dist/*"
+      ]
     }
   },
   "include": [],
   "references": [
+    { "path": "./packages/types" },
+    { "path": "./packages/modifiers" },
     { "path": "./packages/core" },
     { "path": "./packages/registry" },
     { "path": "./packages/primitives" },
@@ -58,7 +69,7 @@
     { "path": "./packages/navigation" },
     { "path": "./packages/symbols" },
     { "path": "./packages/mobile" },
-    { "path": "./packages/effects" },
+    { "path": "./packages/responsive" },
     { "path": "./packages/devtools" },
     { "path": "./packages/cli" },
     { "path": "./packages/eslint-plugin-tachui" }

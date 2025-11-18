@@ -17,14 +17,23 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,
+    "composite": true,
     "outDir": "./dist",
     "rootDir": "./src",
 
     "baseUrl": ".",
     "paths": {
-      "@tachui/core": ["../../core/src"]
+      "@tachui/core": ["../core/dist/index.d.ts"],
+      "@tachui/core/*": ["../core/dist/*"],
+      "@tachui/core/gradients": ["../core/dist/gradients/index.d.ts"],
+      "@tachui/core/gradients/*": ["../core/dist/gradients/*"],
+      "@tachui/core/assets": ["../core/dist/assets/index.d.ts"],
+      "@tachui/core/assets/*": ["../core/dist/assets/*"]
     }
   },
+  "references": [
+    { "path": "../core" }
+  ],
   "include": ["src/**/*"],
   "exclude": [
     "__tests__/**/*",

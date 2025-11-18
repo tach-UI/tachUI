@@ -29,7 +29,6 @@
 - [ ] @tachui/cli
 - [ ] @tachui/data
 - [ ] @tachui/devtools
-- [ ] @tachui/effects
 - [ ] @tachui/flow-control
 - [ ] @tachui/forms
 - [ ] @tachui/grid

@@ -295,10 +295,12 @@ describe('Event Modifiers - Epic: Butternut Phase 1', () => {
         .build()
 
       expect(component.modifiers).toHaveLength(4)
-      expect(component.modifiers[0].type).toBe('interaction')
-      expect(component.modifiers[1].type).toBe('interaction')
-      expect(component.modifiers[2].type).toBe('interaction')
-      expect(component.modifiers[3].type).toBe('interaction')
+      expect(component.modifiers.map(modifier => modifier.type)).toEqual([
+        'onFocus',
+        'onBlur',
+        'onKeyDown',
+        'interaction',
+      ])
     })
 
     it('should provide TypeScript support for all new modifiers', () => {

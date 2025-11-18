@@ -10,15 +10,15 @@ import type { ComponentInstance, ComponentProps } from '../runtime/types'
 import type { StatefulBackgroundValue } from '../gradients/types'
 import type { ColorValue } from './types'
 import type { FontAsset } from '../assets/FontAsset'
-import {
-  AnimationModifier,
-  AppearanceModifier,
-  InteractionModifier,
-  LayoutModifier,
-  LifecycleModifier,
-  ResizableModifier,
-} from './base'
-import { BackgroundModifier } from './background'
+import { AppearanceModifier } from './base'
+import type { InteractionModifier } from './base'
+
+// All modifier factories now loaded via registry delegation
+// Import the preload entry points in your app to register modifiers:
+// import '@tachui/modifiers/preload/basic'
+// import '@tachui/modifiers/preload/effects'
+// etc.
+
 
 // Dynamic imports for effects and modifiers to avoid circular dependencies
 // (Removed lazy loading functions - using direct modifier classes instead)
@@ -52,8 +52,8 @@ import { BackgroundModifier } from './background'
 //   paddingVertical,
 // } from '@tachui/modifiers'
 
-// All modifiers moved to @tachui/modifiers and @tachui/effects
-// Available via Proxy when respective packages are imported
+// All modifiers moved to @tachui/modifiers (core) and @tachui/modifiers/effects
+// Available via Proxy when respective entry points are imported
 import type {
   AnimationModifierProps,
   AppearanceModifierProps,
@@ -65,6 +65,34 @@ import type {
 // Responsive functionality moved to @tachui/responsive package
 import { globalModifierRegistry } from '@tachui/registry'
 import { createModifiableComponent } from './registry'
+
+// AsHTMLOptions type - keeping the type import for API surface
+export type AsHTMLOptions = {
+  sanitize?: boolean
+  allowedTags?: string[]
+  allowedAttributes?: Record<string, string[]>
+}
+
+const EVENT_MODIFIER_TYPES = new Set([
+  'onFocus',
+  'onBlur',
+  'onKeyDown',
+  'onKeyUp',
+  'onKeyPress',
+  'onScroll',
+  'onWheel',
+  'onInput',
+  'onChange',
+  'onCopy',
+  'onCut',
+  'onPaste',
+  'onSelect',
+  'onTouchStart',
+  'onTouchMove',
+  'onTouchEnd',
+  'onSwipeLeft',
+  'onSwipeRight',
+])
 
 // Registry bridge to handle potential instance isolation
 let externalRegistry: any = null
@@ -111,89 +139,31 @@ function createRegistryModifier(name: string, ..._args: any[]): Modifier {
       return modifier as Modifier
     } catch (error) {
       console.warn(`Error creating modifier '${name}':`, error)
+      throw error
     }
   }
 
-  // RESILIENCE FIX: Return a lazy modifier that will retry lookup on first use
-  if (['padding', 'margin', 'width', 'height', 'maxWidth', 'minWidth', 'maxHeight', 'minHeight', 'size', 'borderBottom', 'borderTop', 'borderLeft', 'borderRight', 'position', 'zIndex', 'textShadow', 'shadow', 'blur', 'brightness', 'contrast', 'responsive'].includes(name)) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(`🔧 Modifier '${name}' not found, creating lazy modifier that will retry lookup`)
-    }
-    return createLazyModifier(name, _args)
-  }
-
-  // No fallback - modifier must be registered in @tachui/modifiers or @tachui/effects
   throw new Error(
     `Modifier '${name}' not found in registry. ` +
-    `Import @tachui/modifiers or @tachui/effects to register modifiers.`
+    `Import @tachui/modifiers or @tachui/modifiers/effects to register modifiers.`
   )
-}
-
-/**
- * Creates a lazy modifier that will retry registry lookup when actually applied
- * This provides resilience against import order issues
- */
-function createLazyModifier(name: string, args: any[]): Modifier {
-  return {
-    type: 'lazy' as any,
-    priority: 50,
-    properties: { name, args },
-    apply: (node: any, context: any) => {
-      // Retry registry lookup at apply time
-      const activeRegistry = getActiveRegistry()
-
-      try {
-        // Try to get the factory synchronously first
-        let factory = activeRegistry.get(name) as any
-
-        // If we got a Promise, we need to handle it synchronously
-        // This shouldn't happen in normal cases, but let's handle it
-        if (factory && typeof factory.then === 'function') {
-          console.warn(`Lazy modifier '${name}' returned a Promise synchronously - this should not happen`)
-          factory = null
-        }
-
-        if (factory) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ Lazy modifier '${name}' found factory on apply, using real modifier`)
-          }
-          try {
-            const realModifier = (factory as any).apply(null, args as any)
-            if (realModifier && realModifier.apply) {
-              return realModifier.apply(node, context)
-            }
-          } catch (error) {
-            console.warn(`Error applying lazy modifier '${name}':`, error)
-          }
-        }
-      } catch (error) {
-        console.warn(`Error loading lazy modifier '${name}':`, error)
-      }
-
-      // Still not found - throw error
-      throw new Error(
-        `Lazy modifier '${name}' still not found at apply time. ` +
-        `Ensure @tachui/modifiers or @tachui/effects is imported before using this modifier.`
-      )
-    }
-  }
 }
 
 // position and zIndex have been migrated to @tachui/modifiers/layout
 // AriaModifier and TabIndexModifier have been moved to @tachui/modifiers
 // import { AriaModifier, TabIndexModifier } from './attributes'
-// BackdropFilterModifier moved to @tachui/effects
+// BackdropFilterModifier moved to @tachui/modifiers/effects entry point
 // Pseudo-element modifiers moved to @tachui/modifiers package
 // Temporarily commented out to resolve circular dependency during build
-// Filter modifiers moved to @tachui/effects
+// Filter modifiers moved to @tachui/modifiers/effects
 // import {
 //   textShadow,
 //   shadow as shadowModifier,
 //   shadows as shadowsModifier,
 //   shadowPreset,
 // } from '@tachui/modifiers'
-// Transform modifiers moved to @tachui/effects
-// Interactive effects moved to @tachui/effects
+// Transform modifiers moved to @tachui/modifiers/effects
+// Interactive effects moved to @tachui/modifiers/effects
 // import {
 //   transition as transitionModifier,
 //   fadeTransition,
@@ -206,17 +176,6 @@ function createLazyModifier(name: string, args: any[]): Modifier {
 // Transition and scroll modifiers moved to @tachui/modifiers
 // Available via Proxy when @tachui/modifiers is imported
 
-// Import CSS modifier functions with aliases to avoid naming conflicts
-import {
-  css as cssModifier,
-  cssProperty as cssPropertyModifier,
-  cssVariable as cssVariableModifier,
-  cssVendor as cssVendorModifier,
-} from './css'
-
-import { asHTML } from './as-html'
-import type { AsHTMLOptions } from './as-html'
-import { interactionModifiers } from './core'
 // Attribute modifiers have been moved to @tachui/modifiers
 // import { id, data, aria, tabIndex } from '@tachui/modifiers'
 
@@ -251,14 +210,14 @@ export class ModifierBuilderImpl<
       if (height !== undefined) frameProps.height = height
     }
 
-    this.modifiers.push(new LayoutModifier({ frame: frameProps }))
+    this.modifiers.push(createRegistryModifier('frame', frameProps))
     return this as unknown as ModifierBuilder<T>
   }
 
   // margin() moved to @tachui/modifiers - available via Proxy when imported
 
   layoutPriority(priority: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new LayoutModifier({ layoutPriority: priority }))
+    this.modifiers.push(createRegistryModifier('layoutPriority', priority))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -296,32 +255,8 @@ export class ModifierBuilderImpl<
   // Utility modifiers moved to @tachui/modifiers:
   // cursor(), overflowX(), overflowY(), outline(), outlineOffset(), display()
 
-  // Raw CSS modifiers - using imported functions from ./css
-  css(properties: {
-    [property: string]: string | number | undefined
-  }): ModifierBuilder<T> {
-    this.modifiers.push(cssModifier(properties))
-    return this as unknown as ModifierBuilder<T>
-  }
-
-  cssProperty(property: string, value: string | number): ModifierBuilder<T> {
-    this.modifiers.push(cssPropertyModifier(property, value))
-    return this as unknown as ModifierBuilder<T>
-  }
-
-  cssVariable(name: string, value: string | number): ModifierBuilder<T> {
-    this.modifiers.push(cssVariableModifier(name, value))
-    return this as unknown as ModifierBuilder<T>
-  }
-
-  cssVendor(
-    prefix: 'webkit' | 'moz' | 'ms' | 'o',
-    property: string,
-    value: string | number
-  ): ModifierBuilder<T> {
-    this.modifiers.push(cssVendorModifier(prefix, property, value))
-    return this as unknown as ModifierBuilder<T>
-  }
+  // Raw CSS modifiers moved to @tachui/modifiers/utility
+  // Import { css } from '@tachui/modifiers/utility' and apply explicitly.
 
   // textCase(), textDecoration(), and aspectRatio() moved to @tachui/modifiers
   // Available via Proxy when @tachui/modifiers is imported
@@ -340,32 +275,26 @@ export class ModifierBuilderImpl<
     x: number | Signal<number>,
     y: number | Signal<number>
   ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new LayoutModifier({
-        position: {
-          x,
-          y,
-        },
-      })
-    )
+    this.modifiers.push(createRegistryModifier('absolutePosition', x, y))
     return this as unknown as ModifierBuilder<T>
   }
 
   // Appearance modifiers
   foregroundColor(color: ColorValue): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ foregroundColor: color }))
+    this.modifiers.push(createRegistryModifier('foregroundColor', color))
     return this as unknown as ModifierBuilder<T>
   }
 
   backgroundColor(color: ColorValue): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ backgroundColor: color }))
+    this.modifiers.push(createRegistryModifier('backgroundColor', color))
     return this as unknown as ModifierBuilder<T>
   }
 
   background(
     value: StatefulBackgroundValue | Signal<string>
   ): ModifierBuilder<T> {
-    this.modifiers.push(new BackgroundModifier({ background: value as any }))
+    const modifier = createRegistryModifier('background', value as any)
+    this.modifiers.push(modifier)
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -378,42 +307,64 @@ export class ModifierBuilderImpl<
 
     if (typeof sizeOrOptions === 'object') {
       fontProps = sizeOrOptions
+
+      if (fontProps.family !== undefined) {
+        this.modifiers.push(
+          createRegistryModifier('fontFamily', fontProps.family)
+        )
+      }
+      if (fontProps.size !== undefined) {
+        this.modifiers.push(createRegistryModifier('fontSize', fontProps.size))
+      }
+      if (fontProps.weight !== undefined) {
+        this.modifiers.push(createRegistryModifier('fontWeight', fontProps.weight))
+      }
+      if (fontProps.style !== undefined) {
+        this.modifiers.push(createRegistryModifier('fontStyle', fontProps.style))
+      }
     } else {
       fontProps = sizeOrOptions !== undefined ? { size: sizeOrOptions } : {}
+      if (
+        typeof sizeOrOptions === 'string' &&
+        sizeOrOptions.startsWith('.')
+      ) {
+        this.modifiers.push(createRegistryModifier('fontPreset', sizeOrOptions))
+      } else if (fontProps.size !== undefined) {
+        this.modifiers.push(createRegistryModifier('fontSize', fontProps.size))
+      }
     }
 
-    this.modifiers.push(new AppearanceModifier({ font: fontProps }))
     return this as unknown as ModifierBuilder<T>
   }
 
   fontWeight(
     weight: NonNullable<AppearanceModifierProps['font']>['weight']
   ): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ font: { weight } }))
+    this.modifiers.push(createRegistryModifier('fontWeight', weight))
     return this as unknown as ModifierBuilder<T>
   }
 
   fontSize(
     size: number | string | Signal<number> | Signal<string>
   ): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ font: { size } }))
+    this.modifiers.push(createRegistryModifier('fontSize', size))
     return this as unknown as ModifierBuilder<T>
   }
 
   fontFamily(
     family: string | FontAsset | Signal<string | FontAsset>
   ): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ font: { family } }))
+    this.modifiers.push(createRegistryModifier('fontFamily', family))
     return this as unknown as ModifierBuilder<T>
   }
 
   opacity(value: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ opacity: value }))
+    this.modifiers.push(createRegistryModifier('opacity', value))
     return this as unknown as ModifierBuilder<T>
   }
 
   cornerRadius(radius: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ cornerRadius: radius }))
+    this.modifiers.push(createRegistryModifier('cornerRadius', radius))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -435,60 +386,60 @@ export class ModifierBuilderImpl<
       }
     }
 
-    this.modifiers.push(new AppearanceModifier({ border: borderProps }))
+    this.modifiers.push(createRegistryModifier('border', borderProps))
     return this as unknown as ModifierBuilder<T>
   }
 
   borderWidth(width: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ border: { width } }))
+    this.modifiers.push(createRegistryModifier('border', { width }))
     return this as unknown as ModifierBuilder<T>
   }
 
-  // Shadow functionality moved to @tachui/effects package
+  // Shadow functionality moved to @tachui/modifiers/effects entry point
 
   // Visual Effects Modifiers (Phase 2 - Epic: Butternut)
   blur(radius: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ blur: radius }))
+    this.modifiers.push(createRegistryModifier('blur', radius))
     return this as unknown as ModifierBuilder<T>
   }
 
   brightness(amount: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ brightness: amount }))
+    this.modifiers.push(createRegistryModifier('brightness', amount))
     return this as unknown as ModifierBuilder<T>
   }
 
   contrast(amount: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ contrast: amount }))
+    this.modifiers.push(createRegistryModifier('contrast', amount))
     return this as unknown as ModifierBuilder<T>
   }
 
   saturation(amount: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ saturation: amount }))
+    this.modifiers.push(createRegistryModifier('saturation', amount))
     return this as unknown as ModifierBuilder<T>
   }
 
   hueRotation(angle: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ hueRotation: angle }))
+    this.modifiers.push(createRegistryModifier('hueRotation', angle))
     return this as unknown as ModifierBuilder<T>
   }
 
   grayscale(amount: number | Signal<number>): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ grayscale: amount }))
+    this.modifiers.push(createRegistryModifier('grayscale', amount))
     return this as unknown as ModifierBuilder<T>
   }
 
   colorInvert(amount: number | Signal<number> = 1.0): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ colorInvert: amount }))
+    this.modifiers.push(createRegistryModifier('colorInvert', amount))
     return this as unknown as ModifierBuilder<T>
   }
 
   // ============================================================================
-  // VISUAL EFFECTS MOVED TO @tachui/effects PACKAGE
+  // VISUAL EFFECTS MOVED TO @tachui/modifiers/effects ENTRY
   // ============================================================================
   //
-  // Visual effects have been extracted to @tachui/effects for better tree-shaking
+  // Visual effects have been extracted to @tachui/modifiers/effects for better tree-shaking
 
-  // Visual effects methods removed - use @tachui/effects package
+  // Visual effects methods removed - use @tachui/modifiers/effects
 
   // Advanced gesture and interaction modifiers moved to @tachui/modifiers
   // Available via Proxy when @tachui/modifiers is imported:
@@ -498,11 +449,7 @@ export class ModifierBuilderImpl<
     gesture: any,
     including?: ('all' | 'subviews' | 'none')[]
   ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new InteractionModifier({
-        highPriorityGesture: { gesture, including },
-      })
-    )
+    this.modifiers.push(createRegistryModifier('highPriorityGesture', gesture, including))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -510,11 +457,7 @@ export class ModifierBuilderImpl<
     gesture: any,
     including?: ('all' | 'subviews' | 'none')[]
   ): ModifierBuilder<T> {
-    this.modifiers.push(
-      new InteractionModifier({
-        simultaneousGesture: { gesture, including },
-      })
-    )
+    this.modifiers.push(createRegistryModifier('simultaneousGesture', gesture, including))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -522,12 +465,12 @@ export class ModifierBuilderImpl<
 
   // Animation modifiers
   transform(value: string | Signal<string>): ModifierBuilder<T> {
-    this.modifiers.push(new AnimationModifier({ transform: value }))
+    this.modifiers.push(createRegistryModifier('transform', value))
     return this as unknown as ModifierBuilder<T>
   }
 
-  animation(options: AnimationModifierProps['animation']): ModifierBuilder<T> {
-    this.modifiers.push(new AnimationModifier({ animation: options }))
+  animation(options?: AnimationModifierProps['animation']): ModifierBuilder<T> {
+    this.modifiers.push(createRegistryModifier('animation', options))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -540,12 +483,10 @@ export class ModifierBuilderImpl<
     }
   ): ModifierBuilder<T> {
     this.modifiers.push(
-      new LifecycleModifier({
-        task: {
-          operation,
-          id: options?.id,
-          priority: options?.priority || 'default',
-        },
+      createRegistryModifier('task', {
+        operation,
+        id: options?.id,
+        priority: options?.priority || 'default',
       })
     )
     return this as unknown as ModifierBuilder<T>
@@ -591,7 +532,7 @@ export class ModifierBuilderImpl<
 
   // Resizable modifier for images
   resizable(): ModifierBuilder<T> {
-    this.modifiers.push(new ResizableModifier({}))
+    this.modifiers.push(createRegistryModifier('resizable'))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -620,82 +561,82 @@ export class ModifierBuilderImpl<
 
   // Interaction modifiers
   onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(interactionModifiers.onTap(handler))
+    this.modifiers.push(createRegistryModifier('onTap', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
-    this.modifiers.push(interactionModifiers.onFocus(handler))
+    this.modifiers.push(createRegistryModifier('onFocus', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onBlur: handler }))
+    this.modifiers.push(createRegistryModifier('onBlur', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onKeyDown(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onKeyDown: handler }))
+    this.modifiers.push(createRegistryModifier('onKeyDown', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onScroll(handler: (event: Event) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onScroll: handler }))
+    this.modifiers.push(createRegistryModifier('onScroll', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onKeyPress(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onKeyPress: handler }))
+    this.modifiers.push(createRegistryModifier('onKeyPress', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onKeyUp(handler: (event: KeyboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onKeyUp: handler }))
+    this.modifiers.push(createRegistryModifier('onKeyUp', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onDoubleClick(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onDoubleClick: handler }))
+    this.modifiers.push(createRegistryModifier('onDoubleClick', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onContextMenu(handler: (event: MouseEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onContextMenu: handler }))
+    this.modifiers.push(createRegistryModifier('onContextMenu', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onWheel(handler: (event: WheelEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onWheel: handler }))
+    this.modifiers.push(createRegistryModifier('onWheel', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onInput(handler: (event: InputEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onInput: handler }))
+    this.modifiers.push(createRegistryModifier('onInput', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onChange(handler: (value: any, event?: Event) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onChange: handler }))
+    this.modifiers.push(createRegistryModifier('onChange', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onCopy(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onCopy: handler }))
+    this.modifiers.push(createRegistryModifier('onCopy', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onCut(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onCut: handler }))
+    this.modifiers.push(createRegistryModifier('onCut', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onPaste(handler: (event: ClipboardEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onPaste: handler }))
+    this.modifiers.push(createRegistryModifier('onPaste', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onSelect(handler: (event: Event) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onSelect: handler }))
+    this.modifiers.push(createRegistryModifier('onSelect', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -742,13 +683,13 @@ export class ModifierBuilderImpl<
 
   // State modifiers
   disabled(isDisabled: boolean | Signal<boolean> = true): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ disabled: isDisabled }))
+    this.modifiers.push(createRegistryModifier('disabled', isDisabled))
     return this as unknown as ModifierBuilder<T>
   }
 
-  // HTML Content Rendering (Text components only)
   asHTML(options?: AsHTMLOptions): ModifierBuilder<T> {
-    this.modifiers.push(asHTML(options))
+    const modifier = createRegistryModifier('asHTML', options)
+    this.modifiers.push(modifier)
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -868,6 +809,14 @@ export class ModifierBuilderImpl<
             }
           }
         })
+      } else if (EVENT_MODIFIER_TYPES.has(modifier.type)) {
+        const eventModifier = modifier as any
+        const props = eventModifier.properties || {}
+        Object.entries(props).forEach(([key, value]) => {
+          if (typeof value === 'function') {
+            component.props[key] = value
+          }
+        })
       } else if (modifier.type === 'interaction') {
         const interactionModifier = modifier as InteractionModifier
         const props = interactionModifier.properties as any // Extended properties for swipe gestures
@@ -953,6 +902,27 @@ export class ModifierBuilderImpl<
         if (props.navigationBarItems !== undefined) {
           component.props.navigationBarItems = props.navigationBarItems
         }
+      } else if (modifier.type === 'foreground') {
+        const foregroundModifier = modifier as any
+        const props = foregroundModifier.properties || {}
+        if (props.color !== undefined) {
+          if (!component.props.style) {
+            component.props.style = {}
+          }
+          component.props.style.color = props.color
+        }
+      } else if (modifier.type === 'background') {
+        const backgroundModifier = modifier as any
+        const props = backgroundModifier.properties || {}
+        if (props.background !== undefined) {
+          if (!component.props.style) {
+            component.props.style = {}
+          }
+          component.props.style.background = props.background
+          if (typeof props.background === 'string') {
+            component.props.style.backgroundColor = props.background
+          }
+        }
       } else if (modifier.type === 'transition') {
         const transitionModifier = modifier as any // TransitionModifier
         const props = transitionModifier.properties
@@ -1008,80 +978,65 @@ export class ModifierBuilderImpl<
 
   // Individual ARIA methods for better developer experience
   role(value: string): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ role: value }))
+    this.modifiers.push(createRegistryModifier('role', value))
     return this as unknown as ModifierBuilder<T>
   }
 
   ariaLabel(value: string): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ 'aria-label': value }))
+    this.modifiers.push(createRegistryModifier('ariaLabel', value))
     return this as unknown as ModifierBuilder<T>
   }
 
   ariaLive(value: 'off' | 'polite' | 'assertive'): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ 'aria-live': value }))
+    this.modifiers.push(createRegistryModifier('ariaLive', value))
     return this as unknown as ModifierBuilder<T>
   }
 
   ariaDescribedBy(value: string): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ 'aria-describedby': value }))
+    this.modifiers.push(createRegistryModifier('ariaDescribedBy', value))
     return this as unknown as ModifierBuilder<T>
   }
 
   ariaModal(value: boolean): ModifierBuilder<T> {
-    this.modifiers.push(
-      new AppearanceModifier({ 'aria-modal': value.toString() })
-    )
+    this.modifiers.push(createRegistryModifier('ariaModal', value))
     return this as unknown as ModifierBuilder<T>
   }
 
   // Touch and gesture events
   onTouchStart(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onTouchStart: handler }))
+    this.modifiers.push(createRegistryModifier('onTouchStart', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onTouchMove(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onTouchMove: handler }))
+    this.modifiers.push(createRegistryModifier('onTouchMove', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onTouchEnd(handler: (event: TouchEvent) => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onTouchEnd: handler }))
+    this.modifiers.push(createRegistryModifier('onTouchEnd', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   // Swipe gestures (simplified implementations)
   onSwipeLeft(handler: () => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onSwipeLeft: handler }))
+    this.modifiers.push(createRegistryModifier('onSwipeLeft', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   onSwipeRight(handler: () => void): ModifierBuilder<T> {
-    this.modifiers.push(new InteractionModifier({ onSwipeRight: handler }))
+    this.modifiers.push(createRegistryModifier('onSwipeRight', handler))
     return this as unknown as ModifierBuilder<T>
   }
 
   // Navigation methods - these delegate to the navigation package functions
   navigationTitle(title: string): ModifierBuilder<T> {
-    // Add a modifier that will be handled by the navigation system
-    // navigationTitle should provide heading semantics
-    this.modifiers.push(
-      new AppearanceModifier({
-        navigationTitle: title,
-        role: 'heading',
-      })
-    )
+    this.modifiers.push(createRegistryModifier('navigationTitle', title))
     return this as unknown as ModifierBuilder<T>
   }
 
   navigationBarHidden(hidden: boolean = true): ModifierBuilder<T> {
-    // navigationBarHidden should hide from screen readers
-    this.modifiers.push(
-      new AppearanceModifier({
-        navigationBarHidden: hidden,
-        'aria-hidden': hidden.toString(),
-      })
-    )
+    this.modifiers.push(createRegistryModifier('navigationBarHidden', hidden))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1089,7 +1044,7 @@ export class ModifierBuilderImpl<
     leading?: ComponentInstance | ComponentInstance[]
     trailing?: ComponentInstance | ComponentInstance[]
   }): ModifierBuilder<T> {
-    this.modifiers.push(new AppearanceModifier({ navigationBarItems: options }))
+    this.modifiers.push(createRegistryModifier('navigationBarItems', options))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1099,7 +1054,7 @@ export class ModifierBuilderImpl<
 
   transitions(config: any): ModifierBuilder<T> {
     // Placeholder - implement with proper transition system
-    this.modifiers.push(new AnimationModifier({ transitions: config }))
+    this.modifiers.push(createRegistryModifier('transitions', config))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1159,17 +1114,7 @@ export class ModifierBuilderImpl<
       | 'bottomLeading'
       | 'bottomTrailing'
   ): ModifierBuilder<T> {
-    // Use AnimationModifier for transform effects to maintain compatibility
-    // The actual transform will be handled by the modifier's apply method
-    this.modifiers.push(
-      new AnimationModifier({
-        scaleEffect: {
-          x,
-          y: y ?? x, // Default to uniform scaling
-          anchor: anchor ?? 'center',
-        },
-      })
-    )
+    this.modifiers.push(createRegistryModifier('scaleEffect', x, y, anchor))
     return this as unknown as ModifierBuilder<T>
   }
 
@@ -1278,6 +1223,6 @@ export const modifierUtils = {
    * Create a padding modifier with all sides
    */
   paddingAll(value: number): Modifier {
-    return new LayoutModifier({ padding: value })
+    return createRegistryModifier('padding', { all: value })
   },
 }

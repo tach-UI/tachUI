@@ -11,8 +11,11 @@ const packageAlias = (pkg: string) =>
 const aliasEntries = [
   ['@tachui/core', packageAlias('core')],
   ['@tachui/primitives', packageAlias('primitives')],
-  ['@tachui/modifiers', packageAlias('modifiers')],
-  ['@tachui/effects', packageAlias('effects')],
+  ['@tachui/modifiers', packageAlias('modifiers')], // Effects merged into modifiers
+  [
+    '@tachui/modifiers/effects',
+    path.resolve(workspaceRoot, 'packages/modifiers/src/effects/index.ts'),
+  ],
   ['@tachui/flow-control', packageAlias('flow-control')],
   ['@tachui/responsive', packageAlias('responsive')],
   ['@tachui/registry', packageAlias('registry')],
@@ -27,10 +30,10 @@ export default defineConfig(({ mode }) => ({
     dedupe: [
       '@tachui/core',
       '@tachui/primitives',
-      '@tachui/modifiers',
+      '@tachui/modifiers', // Effects merged into modifiers
+      '@tachui/modifiers/effects',
       '@tachui/flow-control',
       '@tachui/responsive',
-      '@tachui/effects',
       '@tachui/registry',
     ],
     alias: aliasEntries.map(([find, replacement]) => ({ find, replacement })),
@@ -61,7 +64,7 @@ export default defineConfig(({ mode }) => ({
         format: 'es',
          manualChunks: id => {
            // Bundle all tachui packages that use the registry together to prevent fragmentation
-           if (id.includes('@tachui/core') || id.includes('@tachui/symbols') || id.includes('@tachui/registry') || id.includes('@tachui/modifiers') || id.includes('@tachui/effects') || id.includes('@tachui/responsive') || id.includes('@tachui/mobile')) {
+           if (id.includes('@tachui/core') || id.includes('@tachui/symbols') || id.includes('@tachui/registry') || id.includes('@tachui/modifiers') || id.includes('@tachui/modifiers/effects') || id.includes('@tachui/responsive') || id.includes('@tachui/mobile')) {
              return 'tachui'
            }
            // Keep lucide bundled since @tachui/symbols depends on it
@@ -114,7 +117,7 @@ export default defineConfig(({ mode }) => ({
     host: '0.0.0.0',
   },
     optimizeDeps: {
-      include: ['@tachui/core', '@tachui/symbols', '@tachui/registry', '@tachui/modifiers', '@tachui/effects'],
+      include: ['@tachui/core', '@tachui/symbols', '@tachui/registry', '@tachui/modifiers', '@tachui/modifiers/effects'],
       exclude: ['typescript', '@typescript-eslint/parser', '@typescript-eslint/eslint-plugin', '@tachui/responsive', '@tachui/mobile'],
     },
 }))

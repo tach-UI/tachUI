@@ -16,7 +16,7 @@ import {
 } from '../src/navigation-modifiers'
 
 // Import modifiers package to trigger auto-registration
-import '@tachui/modifiers'
+import '@tachui/modifiers/preload/basic'
 
 describe('Navigation Accessibility - WCAG 2.1 AA Compliance', () => {
   let mockDestination: any

@@ -12,6 +12,7 @@ export * from './html'
 
 // ARIA accessibility attributes
 export * from './aria'
+export * from './accessibility'
 
 // CSS custom properties and design tokens
 export * from './css-properties'

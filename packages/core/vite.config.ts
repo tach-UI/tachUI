@@ -38,6 +38,10 @@ export default defineConfig(({ mode }) => ({
         'validation/index': resolve(__dirname, 'src/validation/index.ts'),
         'assets/index': resolve(__dirname, 'src/assets/index.ts'),
         'gradients/index': resolve(__dirname, 'src/gradients/index.ts'),
+        'gradients/css-generator': resolve(
+          __dirname,
+          'src/gradients/css-generator.ts'
+        ),
         'css-classes/index': resolve(__dirname, 'src/css-classes/index.ts'),
       },
       name: 'TachUICore',
