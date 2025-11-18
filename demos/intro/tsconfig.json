@@ -21,7 +21,9 @@
       "@tachui/core": ["../../packages/core/dist/index.d.ts"],
       "@tachui/core/*": ["../../packages/core/dist/*"],
       "@tachui/responsive": ["../../packages/responsive/dist/index.d.ts"],
-      "@tachui/responsive/*": ["../../packages/responsive/dist/*"]
+      "@tachui/responsive/*": ["../../packages/responsive/dist/*"],
+      "@tachui/modifiers": ["../../packages/modifiers/dist/index.d.ts"],
+      "@tachui/modifiers/*": ["../../packages/modifiers/dist/*"]
     }
   },
   "include": ["src/**/*", "vite.config.ts", "../../packages/core/dist/**/*.d.ts"],
