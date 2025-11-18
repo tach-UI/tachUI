@@ -63,7 +63,6 @@ jobs:
           pnpm build:modifiers
           pnpm build:primitives
           pnpm build:responsive
-          pnpm build:effects
           pnpm build:symbols
           pnpm build:devtools
           pnpm build:data
