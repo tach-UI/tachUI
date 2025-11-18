@@ -119,6 +119,7 @@
     "test:watch": "vitest",
     "test:ci": "vitest run",
     "type-check": "tsc --project tsconfig.type-check.json",
+    "verify:tree-shaking": "tsx scripts/verify-tree-shaking.ts",
     "clean": "rm -rf dist",
     "lint": "oxlint src"
   },

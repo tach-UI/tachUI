@@ -244,16 +244,16 @@ Text('Optimized')
   .build()
 ```
 
-## Auto-Registration
+## Registering Modifiers
 
-All modifiers are automatically registered when you import the package:
+Import the segmented preloads to register the modifier sets you need:
 
-```typescript
-// This happens automatically on import
-import '@tachui/modifiers' // Registers all 200+ modifiers
+```ts
+// Register core modifier families
+import '@tachui/modifiers/preload/basic'
 
-// Modifiers become available on all components
-Text('Auto-registered').modifier.padding(16).build()
+// Register visual effects (optional)
+import '@tachui/modifiers/preload/effects'
 ```
 
 ## Integration Examples
