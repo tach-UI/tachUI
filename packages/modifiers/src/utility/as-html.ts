@@ -12,8 +12,8 @@ import { BaseModifier } from '../basic/base'
 import type {
   DOMNode,
   ComponentInstance,
-} from '@tachui/core/runtime/types'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
+} from '@tachui/types/runtime'
+import type { ModifierContext } from '@tachui/types/modifiers'
 import { BasicSanitizer, type BasicSanitizerOptions } from './basic-sanitizer'
 import { AsHTMLValidator } from './as-html-validator'
 

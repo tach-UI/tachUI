@@ -62,6 +62,5 @@ IconSetRegistry.register(introIcons)
 IconSetRegistry.setDefault('intro')
 
 // Log for debugging
-console.log('Registered IntroIconSet with icons:', introIcons.listIcons())
 
 export { IntroIconSet }

@@ -5,10 +5,10 @@
  * and enhanced cursor styling with complete CSS cursor support.
  */
 
-import type { Signal } from '@tachui/core/reactive/types'
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { Signal } from '@tachui/types/reactive'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
-import type { ModifierContext, ReactiveModifierProps } from '@tachui/core/modifiers/types'
+import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
 
 // ============================================================================
 // Cursor System

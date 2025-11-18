@@ -6,7 +6,7 @@
 
 import { BaseModifier } from '../base'
 import type { ModifierContext } from '../types'
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 
 export type OverlayAlignment =
   | 'center'

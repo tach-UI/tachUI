@@ -1,5 +1,5 @@
 import { AppearanceModifier } from '@tachui/core/modifiers'
-import type { Signal } from '@tachui/core/reactive/types'
+import type { Signal } from '@tachui/types/reactive'
 
 export function opacity(value: number | Signal<number>) {
   return new AppearanceModifier({ opacity: value })

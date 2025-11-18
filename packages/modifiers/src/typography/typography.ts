@@ -5,8 +5,8 @@
  */
 
 import { BaseModifier } from '../basic/base'
-import type { ModifierContext, FontWeight } from '@tachui/core/modifiers/types'
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { ModifierContext, FontWeight } from '@tachui/types/modifiers'
+import type { DOMNode } from '@tachui/types/runtime'
 import type {
   Asset,
   ColorAssetProxy,

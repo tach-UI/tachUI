@@ -19,8 +19,8 @@ export type {
   ReactiveModifierProps,
   CSSStyleProperties,
   ModifierApplicationOptions,
-} from '@tachui/core/modifiers/types'
-export { ModifierPriority } from '@tachui/core/modifiers/types'
+} from '@tachui/types/modifiers'
+export { ModifierPriority } from '@tachui/types/modifiers'
 
 // Export all basic modifiers (already registered by basic preload)
 export * from './basic'

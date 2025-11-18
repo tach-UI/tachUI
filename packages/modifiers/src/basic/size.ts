@@ -5,7 +5,7 @@
  * with support for SwiftUI-style infinity constants.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import type { Dimension } from '@tachui/core/constants/layout'
 import {
   dimensionToCSS,
@@ -16,7 +16,7 @@ import { BaseModifier } from './base'
 import type {
   ModifierContext,
   ReactiveModifierProps,
-} from '@tachui/core/modifiers/types'
+} from '@tachui/types/modifiers'
 
 export interface SizeOptions {
   width?: Dimension

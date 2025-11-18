@@ -3,7 +3,7 @@
  */
 
 import { LifecycleModifier } from '@tachui/core/modifiers'
-import type { LifecycleModifierProps, Modifier } from '@tachui/core/modifiers/types'
+import type { LifecycleModifierProps, Modifier } from '@tachui/types/modifiers'
 
 export function task(
   options: NonNullable<LifecycleModifierProps['task']>

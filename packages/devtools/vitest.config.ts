@@ -7,7 +7,9 @@ export default mergeConfig(
     test: {
       setupFiles: ['__tests__/setup.ts'],
       include: ['__tests__/**/*.test.ts'],
+      silent: true,
     },
+    onConsoleLog: () => false,
     resolve: {
       alias: {
         '@tachui/devtools': './src',

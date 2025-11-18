@@ -5,12 +5,12 @@
  * full type safety, validation, and development warnings for accessibility compliance.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
 import type {
   ModifierContext,
   ReactiveModifierProps,
-} from '@tachui/core/modifiers/types'
+} from '@tachui/types/modifiers'
 
 // =============================================================================
 // ARIA Attributes Modifier - Accessibility Attributes

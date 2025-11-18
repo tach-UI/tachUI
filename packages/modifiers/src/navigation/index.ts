@@ -3,7 +3,7 @@
  */
 
 import { AppearanceModifier } from '@tachui/core/modifiers'
-import type { Modifier } from '@tachui/core/modifiers/types'
+import type { Modifier } from '@tachui/types/modifiers'
 import type { ComponentInstance } from '@tachui/core'
 
 export function navigationTitle(title: string): Modifier {

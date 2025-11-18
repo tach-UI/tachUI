@@ -6,7 +6,7 @@
  */
 
 import { BaseModifier } from '../base'
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import type { ModifierContext } from '../types'
 
 // Simple signal-like interface for reactive values

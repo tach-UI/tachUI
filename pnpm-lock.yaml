@@ -220,10 +220,16 @@ importers:
       '@tachui/registry':
         specifier: workspace:*
         version: link:../registry
+      '@tachui/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@playwright/test':
         specifier: ^1.55.0
         version: 1.55.0
+      '@tachui/modifiers':
+        specifier: workspace:*
+        version: link:../modifiers
       '@types/jsdom':
         specifier: ^21.1.6
         version: 21.1.7
@@ -480,6 +486,9 @@ importers:
       '@tachui/registry':
         specifier: workspace:*
         version: link:../registry
+      '@tachui/types':
+        specifier: workspace:*
+        version: link:../types
     devDependencies:
       '@types/jsdom':
         specifier: ^21.1.6
@@ -638,6 +647,12 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@20.19.11)(jsdom@23.2.0)(tsx@4.20.5)(yaml@2.8.1)
+
+  packages/types:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.2
 
   packages/viewport:
     dependencies:

@@ -6,6 +6,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./test/setup.ts'],
+    silent: true,
+    reporters: ['default'],
+    onConsoleLog: () => false, // Suppress all console.log output during tests
     exclude: [
       'node_modules/**',
       '**/node_modules/**',

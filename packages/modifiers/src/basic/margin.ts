@@ -66,12 +66,12 @@ export type MarginOptions =
       left?: never
     }
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from './base'
 import type {
   ModifierContext,
   ReactiveModifierProps,
-} from '@tachui/core/modifiers/types'
+} from '@tachui/types/modifiers'
 import { isSignal, isComputed } from '@tachui/core/reactive'
 
 export type ReactiveMarginOptions = ReactiveModifierProps<MarginOptions>

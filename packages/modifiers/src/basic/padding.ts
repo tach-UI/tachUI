@@ -5,12 +5,12 @@
  * CSS-in-JS support, reactive values, design system presets, and RTL awareness.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from './base'
 import type {
   ModifierContext,
   ReactiveModifierProps,
-} from '@tachui/core/modifiers/types'
+} from '@tachui/types/modifiers'
 import { isSignal, isComputed } from '@tachui/core/reactive'
 
 // Comprehensive CSS-compatible padding values including modern CSS units

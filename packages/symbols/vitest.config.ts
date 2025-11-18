@@ -1,18 +1,19 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, mergeConfig } from 'vitest/config'
 import sharedConfig from '../../vitest.shared.config'
 
-export default defineConfig({
-  ...sharedConfig,
-  test: {
-    ...sharedConfig.test,
-    setupFiles: ['./__tests__/setup.ts'],
+export default mergeConfig(
+  sharedConfig,
+  defineConfig({
     logLevel: 'silent',
-  },
-  resolve: {
-    ...sharedConfig.resolve,
-    alias: {
-      ...sharedConfig.resolve?.alias,
-      '@tachui/symbols': './src',
+    test: {
+      setupFiles: ['./__tests__/setup.ts'],
+      silent: true,
     },
-  },
-})
+    onConsoleLog: () => false,
+    resolve: {
+      alias: {
+        '@tachui/symbols': './src',
+      },
+    },
+  })
+)

@@ -6,7 +6,9 @@ export default mergeConfig(
   defineConfig({
     test: {
       setupFiles: ['__tests__/setup.ts'],
+      silent: true,
     },
+    onConsoleLog: () => false,
     resolve: {
       alias: {
         '@tachui/responsive': './src',

@@ -7,7 +7,7 @@
  */
 
 import { LayoutModifier } from '@tachui/core/modifiers'
-import type { Signal } from '@tachui/core/reactive/types'
+import type { Signal } from '@tachui/types/reactive'
 
 export function frame(options: any): LayoutModifier {
   return new LayoutModifier({ frame: options })

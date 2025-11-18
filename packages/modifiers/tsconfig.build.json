@@ -17,6 +17,7 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,
+    "composite": true,
     "outDir": "./dist",
     "rootDir": "./src",
 
@@ -30,6 +31,9 @@
       "@tachui/core/assets/*": ["../core/dist/assets/*"]
     }
   },
+  "references": [
+    { "path": "../core" }
+  ],
   "include": ["src/**/*"],
   "exclude": [
     "__tests__/**/*",

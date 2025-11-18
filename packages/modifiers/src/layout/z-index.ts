@@ -4,9 +4,9 @@
  * CSS z-index property modifier with enhanced validation and stacking context utilities.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
+import type { ModifierContext } from '@tachui/types/modifiers'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 
 export interface ZIndexOptions {

@@ -5,15 +5,15 @@
  * Enables chaining modifiers on components similar to SwiftUI.
  */
 
-import type { Signal } from '@tachui/core/reactive/types'
+import type { Signal } from '@tachui/types/reactive'
 import type {
   ComponentInstance,
   ComponentProps,
   DOMNode,
-} from '@tachui/core/runtime/types'
+} from '@tachui/types/runtime'
 
 // Re-export for convenience
-export type { DOMNode } from '@tachui/core/runtime/types'
+export type { DOMNode } from '@tachui/types/runtime'
 // Temporary type definitions until we migrate all types
 export type Dimension = number | string | 'infinity'
 export interface StatefulBackgroundValue {

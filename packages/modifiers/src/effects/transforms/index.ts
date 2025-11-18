@@ -5,9 +5,9 @@
  * scale, rotate, translate, skew, perspective, and matrix transforms.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
-import type { ModifierContext, ReactiveModifierProps } from '@tachui/core/modifiers/types'
+import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
 
 export interface TransformConfig {
   scale?: number | { x?: number; y?: number }

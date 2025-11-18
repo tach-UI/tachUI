@@ -101,6 +101,8 @@ Text('Hello tachUI')
   .build()
 ```
 
+> **Modifier registration:** Starting in 0.8.0 the concrete modifier implementations live in `@tachui/modifiers`. Import `@tachui/modifiers/preload/basic` (and optional bundles like `preload/effects`) once during app bootstrap so the builder proxy in `@tachui/core` can resolve the modifier factories from the shared registry.
+
 ### Available Modifiers
 
 - **Layout**: `.frame()`, `.padding()`, `.margin()`, `.position()`

@@ -175,7 +175,7 @@ describe('Modifier System', () => {
 
       expect(result.modifiers).toHaveLength(3)
       expect(result.modifiers[0].type).toBe('padding')
-      expect(result.modifiers[1].type).toBe('appearance')
+      expect(result.modifiers[1].type).toBe('foreground')
       expect(result.modifiers[2].type).toBe('appearance')
     })
 

@@ -180,6 +180,7 @@
     "generate-modifier-types:monorepo": "tsx --tsconfig ./tsconfig.typegen.json ./scripts/generate-types-monorepo.ts"
   },
   "dependencies": {
+    "@tachui/types": "workspace:*",
     "@tachui/registry": "workspace:*"
   },
   "devDependencies": {

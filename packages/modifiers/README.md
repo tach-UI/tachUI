@@ -14,7 +14,17 @@ npm install @tachui/modifiers@0.8.0-alpha
 pnpm add @tachui/modifiers@0.8.0-alpha
 ```
 
-The modifiers package is automatically imported when you use `@tachui/core` and registers all modifiers globally.
+> **Important:** Modifier factories now register themselves through preload entry points. Import one of the preload bundles once at app startup to make every modifier available through `Component.modifier`.
+
+```ts
+// Register the 80+ core modifiers
+import '@tachui/modifiers/preload/basic'
+
+// Register optional effect bundles as needed
+import '@tachui/modifiers/preload/effects'
+```
+
+This keeps `@tachui/core` lean while allowing applications to opt into only the modifier sets they need.
 
 ## Categories
 

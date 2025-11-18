@@ -2,7 +2,7 @@
  * Convenience factories for common accessibility helpers.
  */
 
-import type { Modifier } from '@tachui/core/modifiers/types'
+import type { Modifier } from '@tachui/types/modifiers'
 import { aria } from './aria'
 
 export function role(value: string): Modifier {

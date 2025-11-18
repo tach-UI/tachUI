@@ -1,0 +1,56 @@
+{
+  "name": "@tachui/types",
+  "version": "0.8.0-alpha",
+  "description": "Type definitions for tachUI framework",
+  "type": "module",
+  "main": "./dist/index.d.ts",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./modifiers": {
+      "types": "./dist/modifiers.d.ts",
+      "import": "./dist/modifiers.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
+    },
+    "./reactive": {
+      "types": "./dist/reactive.d.ts",
+      "import": "./dist/reactive.js"
+    },
+    "./layout": {
+      "types": "./dist/layout.d.ts",
+      "import": "./dist/layout.js"
+    },
+    "./gradients": {
+      "types": "./dist/gradients.d.ts",
+      "import": "./dist/gradients.js"
+    },
+    "./assets": {
+      "types": "./dist/assets.d.ts",
+      "import": "./dist/assets.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "rm -rf dist tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json && node scripts/create-js-stubs.js",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "tachui",
+    "types",
+    "typescript",
+    "framework"
+  ],
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}

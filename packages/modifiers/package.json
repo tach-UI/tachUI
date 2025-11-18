@@ -109,7 +109,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
+    "build": "rm -rf dist tsconfig.build.tsbuildinfo && vite build --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "build:dev": "rm -rf dist && vite build --mode development --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "build:prod": "rm -rf dist && vite build --mode production --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "dev": "vite build --watch",
@@ -124,6 +124,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
+    "@tachui/types": "workspace:*",
     "@tachui/core": "workspace:*",
     "@tachui/registry": "workspace:*"
   },

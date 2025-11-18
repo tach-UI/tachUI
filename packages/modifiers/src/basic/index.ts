@@ -87,6 +87,15 @@ import {
   foregroundColor,
   gradientText,
 } from '../appearance'
+import {
+  cornerRadius,
+  opacity,
+  fontFamilyModifier,
+  fontSizeModifier,
+  fontWeightModifier,
+  fontStyleModifier,
+  fontPreset,
+} from '../appearance/reactive-factories'
 
 import {
   typography,
@@ -165,7 +174,13 @@ import {
   overflowY,
   outline,
   outlineOffset,
+  asHTML,
 } from '../utility'
+import {
+  navigationTitle,
+  navigationBarHidden,
+  navigationBarItems,
+} from '../navigation'
 
 import {
   aria,
@@ -175,6 +190,11 @@ import {
   id,
   data,
   tabIndex,
+  ariaLabel,
+  ariaLive,
+  ariaDescribedBy,
+  ariaModal,
+  role,
 } from '../attributes'
 
 import {
@@ -258,8 +278,15 @@ export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]
   ['borderRight', borderRight],
   ['clipShape', clipShape],
   ['clipped', clipped],
+  ['cornerRadius', cornerRadius],
   ['foregroundColor', foregroundColor],
   ['gradientText', gradientText],
+  ['opacity', opacity],
+  ['fontFamily', fontFamilyModifier],
+  ['fontSize', fontSizeModifier],
+  ['fontWeight', fontWeightModifier],
+  ['fontStyle', fontStyleModifier],
+  ['fontPreset', fontPreset],
 
   // Typography
   ['typography', typography],
@@ -336,6 +363,10 @@ export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]
   ['overflowY', overflowY],
   ['outline', outline],
   ['outlineOffset', outlineOffset],
+  ['asHTML', asHTML],
+  ['navigationTitle', navigationTitle],
+  ['navigationBarHidden', navigationBarHidden],
+  ['navigationBarItems', navigationBarItems],
   ['animation', animationModifier],
   ['transform', transformModifier],
   ['transitions', transitionsModifier],
@@ -343,6 +374,11 @@ export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]
 
   // Attributes
   ['aria', aria],
+  ['ariaLabel', ariaLabel],
+  ['ariaLive', ariaLive],
+  ['ariaDescribedBy', ariaDescribedBy],
+  ['ariaModal', ariaModal],
+  ['role', role],
   ['customProperties', customProperties],
   ['customProperty', customProperty],
   ['cssVariables', cssVariables],

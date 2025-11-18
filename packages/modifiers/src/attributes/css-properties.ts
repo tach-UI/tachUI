@@ -5,12 +5,12 @@
  * scoping control, theme integration, and design system token support.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
 import type {
   ModifierContext,
   ReactiveModifierProps,
-} from '@tachui/core/modifiers/types'
+} from '@tachui/types/modifiers'
 
 // =============================================================================
 // CSS Custom Properties Modifier

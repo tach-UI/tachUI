@@ -5,11 +5,11 @@
  * implementations - production-ready browser support with enhanced developer experience.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
-import type { ModifierContext, ReactiveModifierProps } from '@tachui/core/modifiers/types'
+import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
 import type { ColorValue } from '@tachui/core'
-import { ModifierPriority } from '@tachui/core/modifiers/types'
+import { ModifierPriority } from '@tachui/types/modifiers'
 
 // ============================================================================
 // Enhanced Backdrop Filter Configuration

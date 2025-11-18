@@ -25,6 +25,8 @@
 
     "baseUrl": ".",
     "paths": {
+      "@tachui/types": ["./packages/types/dist/index.d.ts"],
+      "@tachui/types/*": ["./packages/types/dist/*"],
       "@tachui/core": ["./packages/core/dist/index.d.ts"],
       "@tachui/core/*": ["./packages/core/dist/*"],
       "@tachui/primitives": ["./packages/primitives/dist/index.d.ts"],
@@ -49,18 +51,17 @@
       "@tachui/registry": ["./packages/registry/dist/index.d.ts"],
       "@tachui/registry/*": ["./packages/registry/dist/*"],
       "@tachui/modifiers": [
-        "./packages/modifiers/dist/index.d.ts",
-        "./packages/modifiers/src/index.ts"
+        "./packages/modifiers/dist/index.d.ts"
       ],
       "@tachui/modifiers/*": [
-        "./packages/modifiers/dist/*",
-        "./packages/modifiers/src/*/index.ts",
-        "./packages/modifiers/src/*"
+        "./packages/modifiers/dist/*"
       ]
     }
   },
   "include": [],
   "references": [
+    { "path": "./packages/types" },
+    { "path": "./packages/modifiers" },
     { "path": "./packages/core" },
     { "path": "./packages/registry" },
     { "path": "./packages/primitives" },

@@ -5,11 +5,11 @@
  * inset shadows, multiple shadows, and filter-based drop shadows with SwiftUI compatibility.
  */
 
-import type { Signal } from '@tachui/core/reactive/types'
+import type { Signal } from '@tachui/types/reactive'
 import { isSignal, isComputed, createEffect } from '@tachui/core/reactive'
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
-import type { ModifierContext, ReactiveModifierProps } from '@tachui/core/modifiers/types'
+import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
 
 // ============================================================================
 // Shadow Configuration Types

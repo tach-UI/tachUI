@@ -5,7 +5,7 @@
  * event-based builders inside @tachui/core can remain infrastructure-only.
  */
 
-import type { Signal } from '@tachui/core/reactive/types'
+import type { Signal } from '@tachui/types/reactive'
 import { InteractionModifier } from '../base'
 
 type GestureInclusion = Array<'all' | 'subviews' | 'none'>

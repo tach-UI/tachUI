@@ -5,9 +5,9 @@
  * contrast, saturation, and other visual effects for enhanced styling.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
-import type { ModifierContext, ReactiveModifierProps } from '@tachui/core/modifiers/types'
+import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
 
 export interface FilterConfig {
   blur?: number // Blur radius in pixels

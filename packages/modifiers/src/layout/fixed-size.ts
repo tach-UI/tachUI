@@ -5,9 +5,9 @@
  * beyond their intrinsic content size in specified dimensions.
  */
 
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
+import type { ModifierContext } from '@tachui/types/modifiers'
 
 export interface FixedSizeOptions {
   horizontal: boolean

@@ -76,6 +76,14 @@ export default defineConfig({
     alias: [
       // Core packages - use src for consistent testing across root and packages
       {
+        find: '@tachui/types/',
+        replacement: path.resolve(__dirname, 'packages/types/src') + '/',
+      },
+      {
+        find: '@tachui/types',
+        replacement: path.resolve(__dirname, 'packages/types/src'),
+      },
+      {
         find: '@tachui/core/plugins',
         replacement: path.resolve(__dirname, 'packages/core/src/plugins'),
       },

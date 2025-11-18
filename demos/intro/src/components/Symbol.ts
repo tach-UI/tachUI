@@ -36,7 +36,9 @@ export function Symbol(iconName: string, props: SymbolProps = {}): ComponentInst
 
   const svg = iconData[iconName]
   if (!svg) {
-    console.warn(`Icon "${iconName}" not found`)
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`Icon "${iconName}" not found`)
+    }
     return createComponent('div', { style: { display: 'none' } }, [])
   }
 

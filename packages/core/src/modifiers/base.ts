@@ -630,18 +630,8 @@ export class AppearanceModifier extends BaseModifier {
 
     // Font
     if (props.font) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[CORE AppearanceModifier] Processing font:', props.font)
-        if (props.font.family === undefined) {
-          console.log('[CORE AppearanceModifier] ⚠️ Font modifier WITHOUT family')
-        }
-      }
       const font = props.font
       if (font.family) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[CORE AppearanceModifier] font.family value:', font.family)
-          console.log('[CORE AppearanceModifier] typeof font.family:', typeof font.family)
-        }
         // Handle FontAsset objects that need to be resolved
         if (
           typeof font.family === 'object' &&
@@ -649,18 +639,10 @@ export class AppearanceModifier extends BaseModifier {
           typeof (font.family as any).resolve === 'function'
         ) {
           const resolved = (font.family as any).resolve()
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[CORE AppearanceModifier] ✅ Resolved FontAsset to:', resolved)
-          }
           styles.fontFamily = resolved
         } else {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[CORE AppearanceModifier] Using font.family as string:', font.family)
-          }
           styles.fontFamily = font.family as string
         }
-      } else if (process.env.NODE_ENV === 'development') {
-        console.log('[CORE AppearanceModifier] ⚠️ font.family is falsy:', font.family)
       }
       if (font.size) styles.fontSize = this.toCSSValue(font.size)
       if (font.weight) styles.fontWeight = String(font.weight)

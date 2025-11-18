@@ -1091,7 +1091,7 @@
           HStack({
             spacing: 20,
             children: [
-              Button('Get Started', () => console.log('Get Started clicked'))
+              Button('Get Started', () => {})
                                 .backgroundColor(Assets.primaryPurple)
                 .foregroundColor(Assets.textWhite)
                 .padding({ horizontal: 30, vertical: 15 })
@@ -1099,7 +1099,7 @@
                 .font({ weight: '600', family: '"Dosis", sans-serif' })
                 .build(),
 
-              Button('View Components', () => console.log('View Components clicked'))
+              Button('View Components', () => {})
                                 .backgroundColor('hsla(0, 0%, 100%, 0.1)')
                 .foregroundColor(Assets.textWhite)
                 .padding({ horizontal: 28, vertical: 13 })

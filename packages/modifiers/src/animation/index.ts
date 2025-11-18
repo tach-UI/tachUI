@@ -3,8 +3,8 @@
  */
 
 import { AnimationModifier } from '@tachui/core/modifiers'
-import type { AnimationModifierProps, Modifier } from '@tachui/core/modifiers/types'
-import type { Signal } from '@tachui/core/reactive/types'
+import type { AnimationModifierProps, Modifier } from '@tachui/types/modifiers'
+import type { Signal } from '@tachui/types/reactive'
 
 type TransitionConfig = NonNullable<AnimationModifierProps['transition']>
 type AnimationConfig = NonNullable<AnimationModifierProps['animation']>

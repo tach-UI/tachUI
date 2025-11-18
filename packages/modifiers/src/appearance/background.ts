@@ -6,8 +6,8 @@
 
 import { BaseModifier } from '../basic/base'
 import { createEffect, getThemeSignal } from '@tachui/core/reactive'
-import type { ModifierContext } from '@tachui/core/modifiers/types'
-import type { DOMNode } from '@tachui/core/runtime/types'
+import type { ModifierContext } from '@tachui/types/modifiers'
+import type { DOMNode } from '@tachui/types/runtime'
 import type { GradientDefinition } from '@tachui/core/gradients'
 import type {
   StatefulBackgroundValue,
