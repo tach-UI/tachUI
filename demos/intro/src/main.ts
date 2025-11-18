@@ -1,6 +1,6 @@
 // Import modifiers FIRST to register basic modifiers AND effects (effects merged into modifiers)
-import '@tachui/modifiers'
-import '@tachui/modifiers/effects'
+import '@tachui/modifiers/preload/basic'
+import '@tachui/modifiers/preload/effects'
 // Import responsive system to register responsive modifiers
 import '@tachui/responsive'
 import { mountRoot, setTheme, detectSystemTheme } from '@tachui/core'

@@ -9,7 +9,7 @@ import { JSDOM } from 'jsdom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { HTML, Text } from '@tachui/primitives'
 // Import modifiers to ensure they are registered after registry.clear()
-import '@tachui/modifiers'
+import '@tachui/modifiers/preload/basic'
 import {
   Layout,
   // Component wrappers

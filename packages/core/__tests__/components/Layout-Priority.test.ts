@@ -13,8 +13,7 @@ import { layoutModifiers } from '../../src/modifiers/presets'
 import { createSignal } from '../../src/reactive'
 
 // Import plugin packages to trigger auto-registration
-// Effects merged into @tachui/modifiers - effects auto-register when @tachui/modifiers is imported
-import '@tachui/modifiers'
+import '@tachui/modifiers/preload/basic'
 
 // Mock DOM environment
 function createMockElement(tagName: string = 'div'): HTMLElement {

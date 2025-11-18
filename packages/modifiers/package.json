@@ -161,7 +161,9 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/preload/*.js"
+  ],
   "publishConfig": {
     "access": "public"
   }
