@@ -1,4 +1,4 @@
-import { VStack, HStack, Text, Button } from "@tachui/primitives";
+import { VStack, HStack, Text, Button, Spacer } from "@tachui/primitives";
 import { Assets, LinearGradient } from "@tachui/core";
 import type { ComponentInstance } from "@tachui/core/runtime/types";
 import { Symbol } from "@tachui/symbols";
@@ -20,9 +20,27 @@ export function Hero(): ComponentInstance {
                     VStack({
                         spacing: 8,
                         children: [
-                            Text("tachUI(isA: Framework)")
-                                .responsive({ fontSize: { base: "2rem", sm: "2.5rem", md: "3rem", lg: "3.5rem" },
+                            // Version Badge
+                            HStack({
+                                spacing: 12,
+                                children: [
+                                    Spacer(),
+
+                                    Text("🚀 v0.9.0 Just Released!")
+                                        .font({ size: "1.1rem", family: Assets.baseFont, weight: "700" })
+                                        .foregroundColor(Assets.accentOrange)
+                                        .backgroundColor(Assets.darkPurple)
+                                        .border({ width: 1, color: Assets.accentOrange, style: "solid" })
+                                        .cornerRadius(24)
+                                        .padding({ vertical: 10, horizontal: 20 }),
+                                ],
+                                alignment: "trailing",
                             })
+                                .width('100%')
+                                .offset(96, 32),
+
+                            Text("tachUI(isA: Framework)")
+                                .responsive({ fontSize: { base: "2rem", sm: "2.5rem", md: "3rem", lg: "3.5rem" } })
                                 .gradientText("linear-gradient(to bottom, hsla(0, 0%, 100%, 1) 0%, hsla(218, 100%, 94%, 1) 50%, hsla(225, 92%, 90%, 1) 100%)")
                                 .padding({ bottom: 8 }),
 
@@ -66,29 +84,13 @@ export function Hero(): ComponentInstance {
                         })
                         .base.paddingHorizontal(20)
                         .lg.paddingHorizontal("16rem"),
+
                     Text("TypeScript framework inspired by SwiftUI integrated with a fine-grained reactive core")
                         .font({ size: "1.25rem", family: Assets.baseFont, weight: "400" })
                         .textAlign("center")
                         .opacity(0.9)
                         .margin({ horizontal: "auto", vertical: 0 }),
-                    // Version Badge
-                    HStack({
-                        spacing: 12,
-                        children: [
-                            Symbol("rocket", { renderingMode: "monochrome", primaryColor: "hsl(142, 76%, 56%)", size: 24, weight: 600 }),
-                            Text("v0.9.0 Just Released!")
-                                .font({ size: "1.1rem", family: Assets.baseFont, weight: "700" })
-                                .foregroundColor("hsl(142, 76%, 56%)"),
-                        ],
-                        alignment: "center",
-                    })
-                        .backgroundColor("hsla(142, 76%, 36%, 0.15)")
-                        .border({ width: 1, color: "hsla(142, 76%, 46%, 0.4)", style: "solid" })
-                        .cornerRadius(24)
-                        .padding({ vertical: 10, horizontal: 20 })
-                        .marginTop(30)
-                        .marginBottom(20)
-                        .backdropFilter({ blur: 10 }),
+
                     VStack({
                         spacing: 8,
                         children: [
