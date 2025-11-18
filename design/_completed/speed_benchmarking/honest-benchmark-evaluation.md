@@ -203,7 +203,7 @@ This test expects `moved >= 2` but gets `moved = 0`, indicating keyed row reuse 
 - Cannot determine if TachUI is faster, slower, or comparable
 
 **Missing Files**:
-- `benchmarks/history/benchmark-*.json` - None found
+- `benchmarks/history/honest-benchmark-*.json` - None found
 - `benchmarks/history/latest.json` - None found
 - CI workflow for automated benchmarks - Not verified
 
@@ -509,7 +509,7 @@ The infrastructure is 70% there, but the critical piece - testing the actual fra
 
 ## References
 
-- **Design Doc**: `/Users/whoughton/Dev/tach-ui/design-docs/honest-benchmark.md`
+- **Design Doc**: `design-docs/honest-benchmark.md`
 - **Node Harness**: `packages/core/benchmarks/tachui-benchmarks.ts`
 - **Browser Harness**: `packages/core/benchmarks/public/benchmark.js`
 - **Browser Runner**: `packages/core/benchmarks/run-browser-benchmark.ts`

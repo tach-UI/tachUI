@@ -1,0 +1,1352 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>TachUI - SwiftUI for the Web</title>
+        <meta
+            name="description"
+            content="TypeScript framework with 95% SwiftUI API parity and fine-grained reactivity. Build modern web applications with familiar SwiftUI patterns."
+        />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://tachui.dev/" />
+        <meta property="og:title" content="TachUI - SwiftUI for the Web" />
+        <meta
+            property="og:description"
+            content="TypeScript framework with 95% SwiftUI API parity and fine-grained reactivity."
+        />
+        <meta property="og:image" content="https://tachui.dev/hero-image.jpg" />
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://tachui.dev/" />
+        <meta property="twitter:title" content="TachUI - SwiftUI for the Web" />
+        <meta
+            property="twitter:description"
+            content="TypeScript framework with 95% SwiftUI API parity and fine-grained reactivity."
+        />
+        <meta
+            property="twitter:image"
+            content="https://tachui.dev/hero-image.jpg"
+        />
+
+        <!-- Lucide Icons -->
+        <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Madimi+One&family=Dosis:wght@200..800&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    "Dosis",
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    "Segoe UI",
+                    "Roboto",
+                    "Helvetica Neue",
+                    Arial,
+                    sans-serif;
+                line-height: 1.6;
+                color: hsla(0, 0%, 20%, 1);
+                background: linear-gradient(
+                    135deg,
+                    hsla(263, 91%, 12%, 1) 0%,
+                    hsla(253, 89%, 26%, 1) 25%,
+                    hsla(251, 73%, 38%, 1) 50%,
+                    hsla(263, 70%, 50%, 1) 75%,
+                    hsla(251, 91%, 46%, 1) 100%
+                );
+                background-attachment: fixed;
+                min-height: 100vh;
+                position: relative;
+            }
+
+            body::before {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background:
+                    linear-gradient(
+                        90deg,
+                        transparent 0%,
+                        hsla(251, 91%, 66%, 0.1) 20%,
+                        transparent 40%
+                    ),
+                    linear-gradient(
+                        90deg,
+                        transparent 60%,
+                        hsla(251, 91%, 66%, 0.15) 80%,
+                        transparent 100%
+                    ),
+                    linear-gradient(
+                        0deg,
+                        transparent 0%,
+                        hsla(251, 91%, 66%, 0.05) 50%,
+                        transparent 100%
+                    );
+                pointer-events: none;
+                z-index: -1;
+            }
+
+            /* Typography - Headlines use Madimi One */
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
+                font-family: "Madimi One", cursive;
+                font-weight: normal;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 20px;
+            }
+
+            /* Header */
+            header {
+                background: hsla(263, 91%, 12%, 0.9);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid hsla(251, 91%, 66%, 0.3);
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+            }
+
+            nav {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                height: 60px;
+            }
+
+            .logo {
+                font-family: "Madimi One", cursive;
+                font-size: 24px;
+                font-weight: normal;
+                color: hsla(251, 91%, 66%, 1);
+                text-shadow: 0 0 10px hsla(251, 91%, 66%, 0.5);
+            }
+
+            .nav-links {
+                display: flex;
+                list-style: none;
+                gap: 30px;
+            }
+
+            .nav-links a {
+                text-decoration: none;
+                color: hsla(0, 0%, 100%, 0.9);
+                font-family: "Dosis", sans-serif;
+                font-weight: 500;
+                transition: color 0.2s;
+            }
+
+            .nav-links a:hover {
+                color: hsla(251, 91%, 66%, 1);
+                text-shadow: 0 0 8px hsla(251, 91%, 66%, 0.6);
+            }
+
+            .cta-button {
+                background: linear-gradient(135deg, hsla(251, 91%, 66%, 1), hsla(263, 70%, 50%, 1));
+                color: hsla(0, 0%, 100%, 1);
+                padding: 10px 20px;
+                border-radius: 2px;
+                text-decoration: none;
+                font-family: "Dosis", sans-serif;
+                font-weight: 600;
+                transition: all 0.2s;
+                box-shadow: 0 4px 15px hsla(251, 91%, 66%, 0.3);
+            }
+
+            .cta-button:hover {
+                background: linear-gradient(135deg, hsla(251, 91%, 76%, 1), hsla(251, 91%, 66%, 1));
+                transform: translateY(-1px);
+                box-shadow: 0 6px 20px hsla(251, 91%, 66%, 0.4);
+            }
+
+            /* Hero Section */
+            .hero {
+                background: linear-gradient(
+                    hsla(263, 91%, 12%, 0.7),
+                    hsla(263, 91%, 12%, 0.7)
+                );
+                color: hsla(0, 0%, 100%, 1);
+                text-align: center;
+                padding: 120px 0 80px;
+                margin-top: 60px;
+                position: relative;
+                min-height: 600px;
+            }
+
+            .hero h1 {
+                font-family: "Madimi One", cursive;
+                font-size: 3.5rem;
+                font-weight: normal;
+                margin-bottom: 8px;
+                text-shadow: 0 4px 20px hsla(251, 91%, 66%, 0.5);
+                background: linear-gradient(
+                    135deg,
+                    hsla(0, 0%, 100%, 1) 0%,
+                    hsla(220, 100%, 94%, 1) 50%,
+                    hsla(225, 94%, 90%, 1) 100%
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            .hero dd {
+                font-family: "Madimi One", cursive;
+                font-size: 2.5rem;
+                font-weight: normal;
+                margin-bottom: 4px;
+                color: hsla(35, 100%, 50%, 0.1);
+            }
+
+            .hero dd span {
+                text-shadow: 0 4px 20px hsla(251, 91%, 66%, 0.5);
+                background: linear-gradient(
+                    135deg,
+                    hsla(0, 0%, 100%, 1) 0%,
+                    hsla(220, 100%, 94%, 1) 50%,
+                    hsla(225, 94%, 90%, 1) 100%
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            .hero p {
+                font-family: "Dosis", sans-serif;
+                font-size: 1.25rem;
+                font-weight: 400;
+                margin-bottom: 40px;
+                opacity: 0.9;
+            }
+
+            .hero-buttons {
+                display: flex;
+                gap: 20px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .btn-primary {
+                background: linear-gradient(135deg, hsla(251, 91%, 66%, 1), hsla(263, 70%, 50%, 1));
+                color: hsla(0, 0%, 100%, 1);
+                padding: 15px 30px;
+                border-radius: 2px;
+                text-decoration: none;
+                font-family: "Dosis", sans-serif;
+                font-weight: 600;
+                transition: all 0.2s;
+                box-shadow: 0 6px 25px hsla(251, 91%, 66%, 0.4);
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 30px hsla(251, 91%, 66%, 0.5);
+                background: linear-gradient(135deg, hsla(251, 91%, 76%, 1), hsla(251, 91%, 66%, 1));
+            }
+
+            .btn-secondary {
+                background: hsla(0, 0%, 100%, 0.1);
+                color: hsla(0, 0%, 100%, 0.9);
+                border: 2px solid hsla(251, 91%, 66%, 0.6);
+                padding: 13px 28px;
+                border-radius: 2px;
+                text-decoration: none;
+                font-family: "Dosis", sans-serif;
+                font-weight: 600;
+                transition: all 0.2s;
+                backdrop-filter: blur(10px);
+            }
+
+            .btn-secondary:hover {
+                background: hsla(251, 91%, 66%, 0.2);
+                border-color: hsla(251, 91%, 66%, 0.8);
+                transform: translateY(-1px);
+            }
+
+            /* Features Section */
+            .features {
+                padding: 80px 0;
+                background: hsla(263, 91%, 12%, 0.8);
+                backdrop-filter: blur(10px);
+            }
+
+            .features h2 {
+                font-family: "Madimi One", cursive;
+                text-align: center;
+                font-size: 2.5rem;
+                font-weight: normal;
+                margin-bottom: 60px;
+                color: hsla(0, 0%, 100%, 1);
+                text-shadow: 0 2px 15px hsla(251, 91%, 66%, 0.4);
+            }
+
+            .features-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 40px;
+            }
+
+            .feature-card {
+                background: hsla(251, 91%, 66%, 0.1);
+                backdrop-filter: blur(15px);
+                border: 1px solid hsla(251, 91%, 66%, 0.3);
+                padding: 30px;
+                border-radius: 2px;
+                box-shadow: 0 8px 32px hsla(251, 91%, 66%, 0.15);
+                transition: all 0.3s ease;
+            }
+
+            .feature-card:hover {
+                transform: translateY(-5px);
+                background: hsla(251, 91%, 66%, 0.15);
+                border-color: hsla(251, 91%, 66%, 0.5);
+                box-shadow: 0 12px 40px hsla(251, 91%, 66%, 0.25);
+            }
+
+            .feature-icon {
+                width: 48px;
+                height: 48px;
+                margin-bottom: 20px;
+                color: hsla(251, 91%, 66%, 1);
+                filter: drop-shadow(0 4px 8px hsla(251, 91%, 66%, 0.3));
+            }
+
+            .feature-card h3 {
+                font-family: "Madimi One", cursive;
+                font-size: 1.25rem;
+                font-weight: normal;
+                margin-bottom: 15px;
+                color: hsla(0, 0%, 100%, 1);
+                text-shadow: 0 1px 8px hsla(251, 91%, 66%, 0.3);
+            }
+
+            .feature-card p {
+                font-family: "Dosis", sans-serif;
+                font-weight: 400;
+                color: hsla(0, 0%, 100%, 0.85);
+                line-height: 1.6;
+            }
+
+            /* Code Comparison */
+            .code-comparison {
+                padding: 80px 0;
+                background: transparent;
+            }
+
+            .code-comparison h2 {
+                font-family: "Madimi One", cursive;
+                text-align: center;
+                font-size: 2.5rem;
+                font-weight: normal;
+                margin-bottom: 60px;
+                color: hsla(0, 0%, 100%, 1);
+                text-shadow: 0 2px 15px hsla(251, 91%, 66%, 0.4);
+            }
+
+            .comparison-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 40px;
+                margin-bottom: 40px;
+            }
+
+            .code-block {
+                background: hsla(0, 0%, 12%, 0.9);
+                backdrop-filter: blur(15px);
+                border: 1px solid hsla(251, 91%, 66%, 0.3);
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 8px 32px hsla(251, 91%, 66%, 0.1);
+            }
+
+            .code-header {
+                background: hsla(251, 91%, 66%, 0.2);
+                color: hsla(0, 0%, 100%, 1);
+                padding: 15px 20px;
+                font-family: "Dosis", sans-serif;
+                font-weight: 600;
+                border-bottom: 1px solid hsla(251, 91%, 66%, 0.3);
+            }
+
+            .code-content {
+                padding: 20px;
+                overflow-x: auto;
+            }
+
+            .code-content pre {
+                color: hsla(0, 0%, 83%, 1);
+                font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
+            /* Architecture Section */
+            .architecture {
+                padding: 80px 0;
+                background: hsla(263, 91%, 12%, 0.8);
+                backdrop-filter: blur(10px);
+            }
+
+            .architecture h2 {
+                font-family: "Madimi One", cursive;
+                text-align: center;
+                font-size: 2.5rem;
+                font-weight: normal;
+                margin-bottom: 60px;
+                color: hsla(0, 0%, 100%, 1);
+                text-shadow: 0 2px 15px hsla(251, 91%, 66%, 0.4);
+            }
+
+            .package-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 30px;
+            }
+
+            .package-card {
+                background: hsla(251, 91%, 66%, 0.1);
+                backdrop-filter: blur(15px);
+                border: 1px solid hsla(251, 91%, 66%, 0.3);
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px hsla(251, 91%, 66%, 0.15);
+                transition: all 0.3s ease;
+            }
+
+            .package-card:hover {
+                background: hsla(251, 91%, 66%, 0.15);
+                border-color: hsla(251, 91%, 66%, 0.5);
+                transform: translateY(-2px);
+            }
+
+            .package-header {
+                display: flex;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+
+            .package-name {
+                font-family: "Madimi One", cursive;
+                font-size: 1.25rem;
+                font-weight: normal;
+                color: hsla(0, 0%, 100%, 1);
+                text-shadow: 0 1px 8px hsla(251, 91%, 66%, 0.3);
+            }
+
+            .package-size {
+                background: linear-gradient(135deg, hsla(251, 91%, 66%, 1), hsla(263, 70%, 50%, 1));
+                color: hsla(0, 0%, 100%, 1);
+                padding: 4px 8px;
+                border-radius: 6px;
+                font-family: "Dosis", sans-serif;
+                font-size: 0.85rem;
+                font-weight: 600;
+                margin-left: 10px;
+                box-shadow: 0 2px 8px hsla(251, 91%, 66%, 0.3);
+            }
+
+            .package-features {
+                list-style: none;
+            }
+
+            .package-features li {
+                padding: 8px 0;
+                font-family: "Dosis", sans-serif;
+                font-weight: 400;
+                color: hsla(0, 0%, 100%, 0.85);
+                border-bottom: 1px solid hsla(251, 91%, 66%, 0.2);
+            }
+
+            .package-features li:last-child {
+                border-bottom: none;
+            }
+
+            /* Performance Section */
+            .performance {
+                padding: 80px 0;
+                background: transparent;
+            }
+
+            .performance h2 {
+                font-family: "Madimi One", cursive;
+                text-align: center;
+                font-size: 2.5rem;
+                font-weight: normal;
+                margin-bottom: 60px;
+                color: hsla(0, 0%, 100%, 1);
+                text-shadow: 0 2px 15px hsla(251, 91%, 66%, 0.4);
+            }
+
+            .perf-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 30px;
+                text-align: center;
+            }
+
+            .perf-metric {
+                background: hsla(251, 91%, 66%, 0.1);
+                backdrop-filter: blur(15px);
+                border: 1px solid hsla(251, 91%, 66%, 0.3);
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px hsla(251, 91%, 66%, 0.15);
+                transition: all 0.3s ease;
+            }
+
+            .perf-metric:hover {
+                background: hsla(251, 91%, 66%, 0.15);
+                transform: translateY(-2px);
+            }
+
+            .perf-value {
+                font-family: "Madimi One", cursive;
+                font-size: 2rem;
+                font-weight: normal;
+                color: hsla(35, 100%, 50%, 1);
+                margin-bottom: 10px;
+                /*text-shadow: 0 2px 10px rgba(139, 92, 246, 0.4);*/
+            }
+
+            .perf-label {
+                font-family: "Dosis", sans-serif;
+                color: hsla(0, 0%, 100%, 0.85);
+                font-weight: 500;
+            }
+
+            /* Bundle Size Chart */
+            .bundle-chart {
+                background: hsla(251, 91%, 66%, 0.1);
+                backdrop-filter: blur(15px);
+                border: 1px solid hsla(251, 91%, 66%, 0.3);
+                padding: 40px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px hsla(251, 91%, 66%, 0.15);
+                margin-top: 40px;
+            }
+
+            .bundle-chart h3 {
+                font-family: "Madimi One", cursive;
+                text-align: center;
+                margin-bottom: 30px;
+                color: hsla(0, 0%, 100%, 1);
+                text-shadow: 0 1px 8px hsla(251, 91%, 66%, 0.3);
+            }
+
+            .bundle-bars {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .bundle-bar {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .bundle-label {
+                min-width: 150px;
+                font-family: "Dosis", sans-serif;
+                font-weight: 500;
+                color: hsla(0, 0%, 100%, 0.9);
+            }
+
+            .bundle-visual {
+                flex: 1;
+                height: 30px;
+                background: hsla(251, 91%, 66%, 0.2);
+                border-radius: 15px;
+                position: relative;
+                overflow: hidden;
+                border: 1px solid hsla(251, 91%, 66%, 0.3);
+            }
+
+            .bundle-fill {
+                height: 100%;
+                border-radius: 15px;
+                background: linear-gradient(90deg, hsla(251, 91%, 66%, 1), hsla(263, 70%, 50%, 1));
+                box-shadow: 0 0 15px hsla(251, 91%, 66%, 0.4);
+            }
+
+            .bundle-size {
+                font-family: "Dosis", sans-serif;
+                font-weight: 600;
+                color: hsla(251, 91%, 66%, 1);
+                text-shadow: 0 1px 8px hsla(251, 91%, 66%, 0.4);
+            }
+
+            /* Call to Action */
+            .cta {
+                background: hsla(263, 91%, 12%, 0.9);
+                backdrop-filter: blur(15px);
+                border-top: 1px solid hsla(251, 91%, 66%, 0.3);
+                color: hsla(0, 0%, 100%, 1);
+                text-align: center;
+                padding: 80px 0;
+                position: relative;
+            }
+
+            .cta h2 {
+                font-family: "Madimi One", cursive;
+                font-size: 2.5rem;
+                font-weight: normal;
+                margin-bottom: 20px;
+                text-shadow: 0 2px 15px hsla(251, 91%, 66%, 0.5);
+            }
+
+            .cta p {
+                font-family: "Dosis", sans-serif;
+                font-size: 1.25rem;
+                font-weight: 400;
+                margin-bottom: 40px;
+                opacity: 0.9;
+            }
+
+            /* Footer */
+            footer {
+                background: hsla(263, 91%, 12%, 0.95);
+                backdrop-filter: blur(15px);
+                border-top: 1px solid hsla(251, 91%, 66%, 0.3);
+                color: hsla(0, 0%, 100%, 1);
+                text-align: center;
+                padding: 40px 0;
+            }
+
+            .footer-links {
+                display: flex;
+                justify-content: center;
+                gap: 30px;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+            }
+
+            .footer-links a {
+                color: hsla(0, 0%, 100%, 1);
+                font-family: "Dosis", sans-serif;
+                font-weight: 400;
+                text-decoration: none;
+                transition: color 0.2s;
+            }
+
+            .footer-links a:hover {
+                color: hsla(251, 91%, 66%, 1);
+                text-shadow: 0 0 8px hsla(251, 91%, 66%, 0.6);
+            }
+
+            /* Responsive Design */
+            @media (max-width: 768px) {
+                .nav-links {
+                    display: none;
+                }
+
+                .hero h1 {
+                    font-size: 2.5rem;
+                }
+
+                .hero p {
+                    font-size: 1.1rem;
+                }
+
+                .hero-buttons {
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                .comparison-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .code-content pre {
+                    font-size: 12px;
+                }
+
+                .features h2,
+                .code-comparison h2,
+                .architecture h2,
+                .performance h2,
+                .cta h2 {
+                    font-size: 2rem;
+                }
+
+                .feature-card h3,
+                .package-name {
+                    font-size: 1.1rem;
+                }
+            }
+
+            /* Syntax highlighting */
+            .swift {
+                color: hsla(4, 100%, 72%, 1);
+            }
+            .typescript {
+                color: hsla(213, 100%, 74%, 1);
+            }
+            .keyword {
+                color: hsla(4, 100%, 72%, 1);
+            }
+            .string {
+                color: hsla(213, 100%, 84%, 1);
+            }
+            .comment {
+                color: hsla(220, 14%, 57%, 1);
+            }
+            .function {
+                color: hsla(267, 100%, 83%, 1);
+            }
+            .property {
+                color: hsla(213, 100%, 74%, 1);
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <nav class="container">
+                <div class="logo">tachUI</div>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#comparison">Comparison</a></li>
+                    <li><a href="#architecture">Architecture</a></li>
+                    <li><a href="#performance">Performance</a></li>
+                </ul>
+                <a href="#get-started" class="cta-button">Get Started</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <div class="container">
+                <dl style="padding: 0 16rem; text-align: left">
+                    <dt><h1>tachUI(isA: Framework)</h1></dt>
+                    <dd>• • <span>.writtenIn(TypeScript).first</span></dd>
+                    <dd>• • <span>.inspiredBy(SwiftUI)</span></dd>
+                    <dd>• • <span>.inspiredBy(SolidJS)</span></dd>
+                    <dd>• • <span>.forThe(Web).and(more)</span></dd>
+                </dl>
+                <p>
+                    TypeScript framework inspired by SwiftUI integrated with a
+                    fine-grained reactive core
+                </p>
+
+                <!-- Pre-release Notice -->
+                <div
+                    style="
+                        background: hsla(35, 100%, 50%, 0.15);
+                        border: 1px solid hsla(35, 100%, 50%, 0.4);
+                        border-radius: 2px;
+                        padding: 16px 20px;
+                        margin: 30px auto;
+                        max-width: 500px;
+                        backdrop-filter: blur(10px);
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                            justify-content: center;
+                        "
+                    >
+                        <i
+                            data-lucide="alert-triangle"
+                            style="
+                                width: 20px;
+                                height: 20px;
+                                color: hsl(35, 100%, 50%);
+                            "
+                        ></i>
+                        <span
+                            style="
+                                font-family: &quot;Dosis&quot;, sans-serif;
+                                font-size: 1.25rem;
+                                font-weight: 600;
+                                color: hsl(35, 100%, 50%);
+                            "
+                            >PRE-RELEASE / EARLY ACCESS / BLEEDING EDGE</span
+                        >
+                    </div>
+                    <p
+                        style="
+                            font-family: &quot;Dosis&quot;, sans-serif;
+                            font-size: 1.15rem;
+                            color: hsla(0, 0%, 100%, 0.85);
+                            margin-top: 8px;
+                            margin-bottom: 0;
+                            text-align: center;
+                            line-height: 1.4;
+                        "
+                    >
+                        This is a preview version released for early testing and
+                        community feedback. Features and APIs may change before
+                        the stable release.
+                    </p>
+                </div>
+
+                <div class="hero-buttons">
+                    <a href="#get-started" class="btn-primary">Get Started</a>
+                    <a
+                        href="https://github.com/whoughton/TachUI"
+                        class="btn-secondary"
+                        >View on GitHub</a
+                    >
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="features">
+            <div class="container">
+                <h2>Why TachUI?</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <i data-lucide="rocket" class="feature-icon"></i>
+                        <h3>iOS Developer Friendly</h3>
+                        <p>
+                            Familiar API patterns with 66 components and 130+
+                            modifiers. Identical syntax and concepts - iOS
+                            developers feel at home immediately with declarative
+                            UI patterns.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <i data-lucide="zap" class="feature-icon"></i>
+                        <h3>Fine-Grained Reactivity</h3>
+                        <p>
+                            SolidJS-inspired signals provide surgical DOM
+                            updates without virtual DOM overhead. Only changed
+                            properties trigger updates, not entire components.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <i data-lucide="package" class="feature-icon"></i>
+                        <h3>Plugin Architecture</h3>
+                        <p>
+                            Modular design scales from 60KB core to 150KB
+                            full-featured. Import only what you need - perfect
+                            for landing pages or complex applications.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <i data-lucide="palette" class="feature-icon"></i>
+                        <h3>Advanced Styling System</h3>
+                        <p>
+                            Comprehensive modifier system with visual effects,
+                            transforms, animations, and responsive design. Blur,
+                            scale, rotate - all reactive and performant.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <i data-lucide="compass" class="feature-icon"></i>
+                        <h3>Complete Navigation</h3>
+                        <p>
+                            Stack and tab navigation with routing, deep linking,
+                            and desktop multi-window support. NavigationStack,
+                            TabView, and WindowGroup with familiar iOS patterns.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <i data-lucide="file-text" class="feature-icon"></i>
+                        <h3>Rich Form System</h3>
+                        <p>
+                            25+ specialized form components with validation,
+                            formatting, and accessibility built-in. EmailField,
+                            CreditCardField, DatePicker with Luhn validation.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <i data-lucide="target" class="feature-icon"></i>
+                        <h3>TypeScript-First</h3>
+                        <p>
+                            Built with TypeScript from day one with strict type
+                            safety and excellent IDE support. Full intellisense
+                            and compile-time error checking.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <i data-lucide="settings" class="feature-icon"></i>
+                        <h3>Broad Testing</h3>
+                        <p>
+                            Comprehensive testing suite with 95%+ coverage,
+                            performance monitoring, and modern tooling. Built on
+                            Vite with lightning-fast development.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison" class="code-comparison">
+            <div class="container">
+                <h2>Familiar iOS Development Patterns</h2>
+                <div class="comparison-grid">
+                    <div class="code-block">
+                        <div class="code-header">SwiftUI (Swift)</div>
+                        <div class="code-content">
+                            <pre><code><span class="comment">// SwiftUI</span>
+<span class="keyword">VStack</span>(spacing: <span class="string">16</span>) {
+    <span class="function">Text</span>(<span class="string">"Welcome to TachUI"</span>)
+        .<span class="property">font</span>(.<span class="property">title</span>)
+        .<span class="property">fontWeight</span>(.<span class="property">bold</span>)
+        .<span class="property">foregroundColor</span>(.<span class="property">blue</span>)
+
+    <span class="function">AsyncImage</span>(url: <span class="function">URL</span>(string: <span class="string">"/hero.jpg"</span>)) { image in
+        image
+            .<span class="property">resizable</span>()
+            .<span class="property">aspectRatio</span>(<span class="string">16/9</span>, contentMode: .<span class="property">fit</span>)
+            .<span class="property">cornerRadius</span>(<span class="string">12</span>)
+    }
+
+    <span class="function">Button</span>(<span class="string">"Get Started"</span>) {
+        <span class="function">handleAction</span>()
+    }
+    .<span class="property">buttonStyle</span>(.<span class="property">borderedProminent</span>)
+}
+.<span class="property">padding</span>()
+.<span class="property">navigationTitle</span>(<span class="string">"Home"</span>)</code></pre>
+                        </div>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">TachUI (TypeScript)</div>
+                        <div class="code-content">
+                            <pre><code><span class="comment">// TachUI - identical patterns</span>
+<span class="function">VStack</span>({
+  children: [
+    <span class="function">Text</span>(<span class="string">'Welcome to TachUI'</span>)
+      .<span class="property">modifier</span>
+      .<span class="property">font</span>({ size: <span class="string">'title'</span> })
+      .<span class="property">fontWeight</span>(<span class="string">'bold'</span>)
+      .<span class="property">foregroundColor</span>(<span class="string">'blue'</span>)
+      .<span class="property">build</span>(),
+
+    <span class="function">Image</span>(<span class="string">'/hero.jpg'</span>)
+      .<span class="property">modifier</span>
+      .<span class="property">resizable</span>()
+      .<span class="property">aspectRatio</span>(<span class="string">16/9</span>, <span class="string">'fit'</span>)
+      .<span class="property">cornerRadius</span>(<span class="string">12</span>)
+      .<span class="property">build</span>(),
+
+    <span class="function">Button</span>(<span class="string">'Get Started'</span>, handleAction)
+      .<span class="property">modifier</span>
+      .<span class="property">buttonStyle</span>(<span class="string">'borderedProminent'</span>)
+      .<span class="property">build</span>()
+  ],
+  spacing: <span class="string">16</span>
+})
+  .<span class="property">modifier</span>
+  .<span class="property">padding</span>()
+  .<span class="property">navigationTitle</span>(<span class="string">'Home'</span>)
+  .<span class="property">build</span>()</code></pre>
+                        </div>
+                    </div>
+                </div>
+                <p
+                    style="
+                        text-align: center;
+                        font-size: 1.1rem;
+                        color: hsla(0, 0%, 100%, 0.8);
+                    "
+                >
+                    <strong
+                        >Perfect for iOS developers transitioning to web
+                        development.</strong
+                    ><br />
+                    Your iOS development knowledge transfers directly - no new
+                    patterns to learn.
+                </p>
+            </div>
+        </section>
+
+        <section id="architecture" class="architecture">
+            <div class="container">
+                <h2>Modular Architecture</h2>
+                <div class="package-grid">
+                    <div class="package-card">
+                        <div class="package-header">
+                            <div class="package-name">@tachui/core</div>
+                            <div class="package-size">60KB</div>
+                        </div>
+                        <ul class="package-features">
+                            <li>
+                                <strong>33 essential components</strong> - Text,
+                                Button, Image, VStack, HStack, List
+                            </li>
+                            <li>
+                                <strong>130+ modifiers</strong> - Layout,
+                                styling, interaction, animation
+                            </li>
+                            <li>
+                                <strong>Reactive system</strong> - Fine-grained
+                                signals with automatic cleanup
+                            </li>
+                            <li>
+                                <strong>Desktop support</strong> - Window
+                                management and multi-viewport apps (to come...)
+                            </li>
+                            <li>
+                                <strong>Perfect for:</strong> Landing pages,
+                                blogs, simple applications
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="package-card">
+                        <div class="package-header">
+                            <div class="package-name">@tachui/navigation</div>
+                            <div class="package-size">+25KB</div>
+                        </div>
+                        <ul class="package-features">
+                            <li>
+                                <strong>9 navigation components</strong> -
+                                NavigationStack, TabView, NavigationLink
+                            </li>
+                            <li>
+                                <strong>SwiftUI routing</strong> - Path-based
+                                navigation with type safety
+                            </li>
+                            <li>
+                                <strong>Multi-platform</strong> - Adaptive
+                                navigation for mobile and desktop
+                            </li>
+                            <li>
+                                <strong>Deep linking</strong> - URL-based
+                                navigation state
+                            </li>
+                            <li>
+                                <strong>Perfect for:</strong> Single-page
+                                applications, mobile apps
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="package-card">
+                        <div class="package-header">
+                            <div class="package-name">@tachui/forms</div>
+                            <div class="package-size">+35KB</div>
+                        </div>
+                        <ul class="package-features">
+                            <li>
+                                <strong>24 specialized components</strong> -
+                                EmailField, CreditCardField, DatePicker
+                            </li>
+                            <li>
+                                <strong>Advanced validation</strong> - Built-in
+                                rules, custom validators
+                            </li>
+                            <li>
+                                <strong>Real-time feedback</strong> - Instant
+                                validation and formatting
+                            </li>
+                            <li>
+                                <strong>Accessibility</strong> - ARIA compliance
+                                and keyboard navigation
+                            </li>
+                            <li>
+                                <strong>Perfect for:</strong> Data-heavy
+                                applications, complex forms
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bundle-chart">
+                    <h3>Bundle Size Scaling</h3>
+                    <div class="bundle-bars">
+                        <div class="bundle-bar">
+                            <div class="bundle-label">Core Only</div>
+                            <div class="bundle-visual">
+                                <div
+                                    class="bundle-fill"
+                                    style="width: 40%"
+                                ></div>
+                            </div>
+                            <div class="bundle-size">~60KB</div>
+                        </div>
+                        <div class="bundle-bar">
+                            <div class="bundle-label">Core + Navigation</div>
+                            <div class="bundle-visual">
+                                <div
+                                    class="bundle-fill"
+                                    style="width: 56%"
+                                ></div>
+                            </div>
+                            <div class="bundle-size">~85KB</div>
+                        </div>
+                        <div class="bundle-bar">
+                            <div class="bundle-label">Core + Forms</div>
+                            <div class="bundle-visual">
+                                <div
+                                    class="bundle-fill"
+                                    style="width: 63%"
+                                ></div>
+                            </div>
+                            <div class="bundle-size">~95KB</div>
+                        </div>
+                        <div class="bundle-bar">
+                            <div class="bundle-label">Full Framework</div>
+                            <div class="bundle-visual">
+                                <div
+                                    class="bundle-fill"
+                                    style="width: 100%"
+                                ></div>
+                            </div>
+                            <div class="bundle-size">~150KB</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="performance" class="performance">
+            <div class="container">
+                <h2>Performance-First Architecture</h2>
+                <div class="perf-grid">
+                    <div class="perf-metric">
+                        <div class="perf-value">95%</div>
+                        <div class="perf-label">iOS API Compatibility</div>
+                    </div>
+                    <div class="perf-metric">
+                        <div class="perf-value">66</div>
+                        <div class="perf-label">Total Components</div>
+                    </div>
+                    <div class="perf-metric">
+                        <div class="perf-value">130+</div>
+                        <div class="perf-label">Modifiers Available</div>
+                    </div>
+                    <div class="perf-metric">
+                        <div class="perf-value">95%+</div>
+                        <div class="perf-label">Test Coverage</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 60px; text-align: center">
+                    <h3
+                        style="
+                            margin-bottom: 30px;
+                            color: hsla(0, 0%, 100%, 1);
+                            text-shadow: 0 2px 15px hsla(251, 91%, 66%, 0.4);
+                        "
+                    >
+                        Why TachUI is Fast
+                    </h3>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <h4
+                                style="
+                                    margin-bottom: 15px;
+                                    color: hsla(35, 100%, 50%, 1);
+                                    /*text-shadow: 0 1px 8px rgba(139, 92, 246, 0.4);*/
+                                "
+                            >
+                                Fine-Grained Updates
+                            </h4>
+                            <p>
+                                Only changed properties trigger DOM updates, not
+                                entire components. Surgical precision eliminates
+                                unnecessary work.
+                            </p>
+                        </div>
+                        <div class="feature-card">
+                            <h4
+                                style="
+                                    margin-bottom: 15px;
+                                    color: hsla(35, 100%, 50%, 1);
+                                    /*text-shadow: 0 1px 8px rgba(139, 92, 246, 0.4);*/
+                                "
+                            >
+                                Zero Virtual DOM
+                            </h4>
+                            <p>
+                                Direct DOM manipulation eliminates
+                                reconciliation overhead. No diffing algorithms
+                                or virtual DOM tree traversal.
+                            </p>
+                        </div>
+                        <div class="feature-card">
+                            <h4
+                                style="
+                                    margin-bottom: 15px;
+                                    color: hsla(35, 100%, 50%, 1);
+                                    /*text-shadow: 0 1px 8px rgba(139, 92, 246, 0.4);*/
+                                "
+                            >
+                                Compile-Time Optimized
+                            </h4>
+                            <p>
+                                Build-time optimizations eliminate runtime
+                                bloat. Tree-shaking ensures you only ship what
+                                you use.
+                            </p>
+                        </div>
+                        <div class="feature-card">
+                            <h4
+                                style="
+                                    margin-bottom: 15px;
+                                    color: hsla(35, 100%, 50%, 1);
+                                    /*text-shadow: 0 1px 8px rgba(139, 92, 246, 0.4);*/
+                                "
+                            >
+                                Memory Efficient
+                            </h4>
+                            <p>
+                                Automatic cleanup and minimal memory footprint.
+                                Smart garbage collection prevents memory leaks.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="get-started" class="cta">
+            <div class="container">
+                <h2>Ready to Build Something Amazing?</h2>
+                <p>
+                    Start building applications with familiar SwiftUI patterns
+                </p>
+                <div class="hero-buttons">
+                    <a
+                        href="https://tachui.dev/guide/getting-started"
+                        class="btn-primary"
+                        >Get Started</a
+                    >
+                    <a
+                        href="https://tachui.dev/sheets/components-reference"
+                        class="btn-secondary"
+                        >View Components</a
+                    >
+                </div>
+
+                <div
+                    style="
+                        margin-top: 40px;
+                        background: hsla(251, 91%, 66%, 0.15);
+                        backdrop-filter: blur(15px);
+                        border: 1px solid hsla(251, 91%, 66%, 0.3);
+                        padding: 20px;
+                        border-radius: 2px;
+                        text-align: left;
+                        max-width: 600px;
+                        margin-left: auto;
+                        margin-right: auto;
+                    "
+                >
+                    <div
+                        style="
+                            font-weight: 600;
+                            margin-bottom: 10px;
+                            color: hsla(251, 91%, 66%, 1);
+                            text-shadow: 0 1px 8px hsla(251, 91%, 66%, 0.4);
+                        "
+                    >
+                        Quick Start:
+                    </div>
+                    <code
+                        style="
+                            font-family: Monaco, monospace;
+                            font-size: 14px;
+                            line-height: 1.5;
+                            color: hsla(0, 0%, 100%, 0.9);
+                        "
+                    >
+                        # Install TachUI CLI globally<br />
+                        npm install -g @tachui/cli<br />
+                        tacho init my-app<br /><br />
+                        # Or add to existing project<br />
+                        npm install @tachui/core
+                    </code>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="container">
+                <div class="footer-links">
+                    <a href="https://tachui.dev/guide/">Documentation</a>
+                    <a href="https://tachui.dev/api/">API Reference</a>
+                    <a href="https://tachui.dev/examples/">Examples</a>
+                    <a href="https://github.com/whoughton/TachUI">GitHub</a>
+                    <a href="https://github.com/whoughton/TachUI/issues"
+                        >Issues</a
+                    >
+                </div>
+                <p>&copy; 2025 TachUI Team. Released under the MIT License.</p>
+                <p style="margin-top: 10px; font-size: 14px; opacity: 0.8">
+                    <strong>Latest Release:</strong> v1.4 •
+                    <strong>Components:</strong> 66 •
+                    <strong>Modifiers:</strong> 130+ •
+                    <strong>iOS Compatibility:</strong> 95% •
+                    <strong>Test Coverage:</strong> 95%+
+                </p>
+                <p
+                    style="
+                        margin-top: 15px;
+                        font-size: 12px;
+                        opacity: 0.6;
+                        font-family: &quot;Dosis&quot;, sans-serif;
+                        font-weight: 300;
+                    "
+                >
+                    SwiftUI is a trademark of Apple Inc. TachUI is not
+                    affiliated with, endorsed by, or sponsored by Apple Inc.
+                </p>
+            </div>
+        </footer>
+
+        <script>
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+                anchor.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(
+                        this.getAttribute("href"),
+                    );
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                        });
+                    }
+                });
+            });
+
+            // Add scroll effect to header
+            window.addEventListener("scroll", () => {
+                const header = document.querySelector("header");
+                if (window.scrollY > 100) {
+                    header.style.background = "hsla(263, 91%, 12%, 0.95)";
+                } else {
+                    header.style.background = "hsla(263, 91%, 12%, 0.9)";
+                }
+            });
+
+            // Initialize Lucide icons
+            document.addEventListener("DOMContentLoaded", () => {
+                lucide.createIcons();
+            });
+        </script>
+    </body>
+</html>
