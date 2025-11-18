@@ -200,8 +200,6 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
     })
   }
 
-  private resolveValue<T>(value: Signal<T>): T
-  private resolveValue<T>(value: T): T
   private resolveValue<T>(value: T | Signal<T>): T {
     return isSignal(value) ? value() : value
   }

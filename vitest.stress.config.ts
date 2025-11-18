@@ -1,17 +1,13 @@
 import { defineConfig, mergeConfig } from 'vitest/config'
 import sharedConfig from './vitest.shared.config'
 
+const stressPatterns = ['packages/**/__tests__/**/*stress*.test.ts']
+
 export default mergeConfig(
   sharedConfig,
   defineConfig({
     test: {
-      // Root-specific test patterns - discover all package tests
-      include: [
-        'packages/**/__tests__/**/*.test.ts',
-        'packages/**/__tests__/**/*.test.tsx',
-      ],
-
-      // Remove CLI exclusion - include all packages for consistent totals
+      include: stressPatterns,
       exclude: [
         'node_modules/**',
         '**/node_modules/**',
@@ -20,12 +16,10 @@ export default mergeConfig(
         'build/**',
         'benchmarks/**',
         '**/*.bench.ts',
-        '**/*.spec.ts', // Playwright browser tests only
+        '**/*.spec.ts',
         'coverage/**',
-        '**/*stress*.test.ts',
       ],
+      testTimeout: 20000,
     },
-
-    // Root uses shared aliases - no overrides needed
   })
 )
