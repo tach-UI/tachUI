@@ -3,8 +3,8 @@ title: tachUI
 ---
 
 <DocHero
-  title="SwiftUI superpowers for the web"
-  description="tachUI pairs SolidJS-style reactivity with SwiftUI ergonomics so you can ship interactive web apps without re-learning everything you love about declarative UI."
+  title="Declarative superpowers for the web"
+  description="tachUI pairs SolidJS-style reactivity with SwiftUI ergonomics so you can ship interactive web apps without re-learning everything you love about declarative UI development."
 >
   <template #actions>
     <a class="tach-button" href="/docs/guide/getting-started">Get started</a>

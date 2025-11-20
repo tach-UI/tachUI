@@ -165,6 +165,15 @@ export default defineConfig({
   head: [
     ['meta', { property: 'og:title', content: 'tachUI Documentation' }],
     ['meta', { property: 'og:description', content: 'tachUI developer documentation for the SwiftUI-inspired web framework.' }],
+    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
+    ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
+    [
+      'link',
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=Inconsolata:wght@400;500;600&display=swap',
+      },
+    ],
   ],
   themeConfig: {
     search: {

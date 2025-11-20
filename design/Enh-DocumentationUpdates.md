@@ -627,6 +627,18 @@ Before declaring docs ready for a tagged release:
 - [x] Implement component gallery with 71+ components
 - [x] Create modifier playground and documentation
 
+#### **Phase 2.5: Content Depth & Completeness 🔄 (Immediate Next)**
+**Focus**: Stubs → full depth (quality 7/10, completeness 5/10).
+
+- [ ] Expand Top 7 pkgs: JSX ex (tested), API tables (Typedoc), troubleshooting, patterns (core: signals; nav: sheets gap)
+- [ ] Gen 11 pkgs (/data,/grid,etc.): overviews/installs/guides from code
+- [ ] Typedoc full: `pnpm docs:api` → /api/
+- [ ] Cheatsheets: all-modifiers/components/chains/snippets
+- [ ] Validate: `pnpm test:docs-examples` CI for embeds
+- [ ] Audit: paths (beginner→adv), mobile/sidebar
+
+**Timeline**: 1-2 days → P3 ready.
+
 ### Phase 3: Interactive Features & Enhancement (Weeks 5-6)
 
 **Primary Focus**: Add interactive elements and advanced content
