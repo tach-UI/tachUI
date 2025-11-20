@@ -9,7 +9,7 @@ title: '@tachui/modifiers'
 ## Install
 
 ```bash
-pnpm add @tachui/modifiers@0.8.0-alpha
+pnpm add @tachui/modifiers@0.9.0
 ```
 
 ## Categories

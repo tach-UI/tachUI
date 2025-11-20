@@ -9,7 +9,7 @@ Foundation components such as stacks, text, images, scroll views, lists, spacers
 ## Install
 
 ```bash
-pnpm add @tachui/primitives@0.8.0-alpha
+pnpm add @tachui/primitives@0.9.0
 ```
 
 ## Coverage

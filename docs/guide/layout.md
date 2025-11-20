@@ -158,7 +158,7 @@ HStack({
 **HStack Properties:**
 - `children: ComponentInstance[]` - Array of child components  
 - `spacing: number` - Space between children (default: 0)
-- `alignment: 'top' | 'center' | 'bottom'` - Vertical alignment
+- `alignment: 'top' | 'center' | 'bottom' | 'leading' | 'trailing' | 'left' | 'right'` - Vertical alignment (top/center/bottom) or horizontal alignment (leading/trailing/left/right)
 
 ### ZStack (Z-Index Stack)
 

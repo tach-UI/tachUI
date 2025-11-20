@@ -15,7 +15,7 @@ This app serves as a **comprehensive showcase** of TachUI features:
 
 ## 🚀 Features Demonstrated
 
-**Built with tachUI v0.8.0-alpha** - Showcasing the framework's production-ready architecture with 70+ components, 258 modifiers, and 99.6% test pass rate.
+**Built with tachUI v0.9.0** - Showcasing the framework's production-ready architecture with 70+ components, 258 modifiers, and 99.6% test pass rate.
 
 ### Core TachUI Components Used
 - **VStack/HStack**: Complex layout hierarchies

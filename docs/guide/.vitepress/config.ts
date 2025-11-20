@@ -50,7 +50,7 @@ const packagesSidebar = [
     text: 'Overview',
     items: [
       { text: 'Why Packages', link: '/packages/index' },
-      { text: 'Publishing & Versioning', link: '/structure/core' },
+      { text: 'Publishing & Versioning', link: '/guide/publishing' },
     ],
   },
   {
@@ -76,6 +76,17 @@ const packagesSidebar = [
       { text: '@tachui/forms', link: '/packages/forms/' },
       { text: '@tachui/grid', link: '/packages/grid/' },
       { text: '@tachui/data', link: '/packages/data/' },
+      { text: '@tachui/flow-control', link: '/packages/flow-control/' },
+      { text: '@tachui/mobile', link: '/packages/mobile/' },
+      { text: '@tachui/responsive', link: '/packages/responsive/' },
+      { text: '@tachui/viewport', link: '/packages/viewport/' },
+    ],
+  },
+  {
+    text: 'Development Tools',
+    items: [
+      { text: '@tachui/cli', link: '/packages/cli/' },
+      { text: '@tachui/devtools', link: '/packages/devtools/' },
     ],
   },
 ]

@@ -389,7 +389,7 @@ const horizontalLayout = HStack({
     Text('Right'),
   ],
   spacing: 12,
-  alignment: 'center', // 'top' | 'center' | 'bottom'
+  alignment: 'center', // 'top' | 'center' | 'bottom' | 'leading' | 'trailing' | 'left' | 'right'
 })
   .padding(16)
   

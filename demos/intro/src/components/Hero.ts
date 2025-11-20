@@ -34,7 +34,7 @@ export function Hero(): ComponentInstance {
                                         .cornerRadius(24)
                                         .padding({ vertical: 10, horizontal: 20 }),
                                 ],
-                                alignment: "trailing",
+                                alignment: "right",
                             })
                                 .width('100%')
                                 .offset(96, 32),

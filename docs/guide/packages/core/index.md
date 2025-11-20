@@ -9,7 +9,7 @@ title: '@tachui/core'
 ## Install
 
 ```bash
-pnpm add @tachui/core@0.8.0-alpha
+pnpm add @tachui/core@0.9.0
 ```
 
 ## Highlights

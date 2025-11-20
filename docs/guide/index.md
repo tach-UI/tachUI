@@ -7,7 +7,7 @@ title: tachUI
   description="tachUI pairs SolidJS-style reactivity with SwiftUI ergonomics so you can ship interactive web apps without re-learning everything you love about declarative UI development."
 >
   <template #actions>
-    <a class="tach-button" href="/docs/guide/getting-started">Get started</a>
+    <a class="tach-button" href="/guide/quick-start">Get started</a>
     <a class="tach-button secondary" href="/docs/showcase">Explore showcase</a>
     <a class="tach-button ghost" href="/docs/roadmap">Roadmap</a>
   </template>
@@ -23,7 +23,7 @@ title: tachUI
   <a class="tach-stat-link" href="/docs/packages/">
     <DocStat value="16" label="Packages" />
   </a>
-  <DocStat value="4,774" label="Tests" />
+  <DocStat value="4,700+" label="Tests" />
 </div>
 
 ## Why tachUI
