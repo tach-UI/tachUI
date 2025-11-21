@@ -113,7 +113,13 @@ async function runBrowserBenchmarks() {
     loader: {
       '.ts': 'ts',
     },
-    external: ['node:module'],
+    external: [
+      'node:module',
+      '@tachui/types',
+      '@tachui/types/*',
+      'node:*',
+      '@playwright/test'
+    ],
     alias: workspaceAliases,
   })
 
