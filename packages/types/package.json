@@ -38,6 +38,7 @@
   "files": [
     "dist"
   ],
+  "private": true,
   "sideEffects": false,
   "scripts": {
     "build": "rm -rf dist tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json && node scripts/create-js-stubs.js",

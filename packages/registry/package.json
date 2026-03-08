@@ -39,6 +39,7 @@
     "modifiers",
     "singleton"
   ],
+  "private": true,
   "author": "tachUI Team",
   "license": "MPL-2.0",
   "repository": {
