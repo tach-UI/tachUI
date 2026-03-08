@@ -48,6 +48,7 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "private": true,
   "publishConfig": {
     "access": "public"
   }
