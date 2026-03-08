@@ -69,6 +69,9 @@ benchmarks/history/*.json
 .serena
 .claude
 
+# Planning docs
+planning/
+
 # VitePress cache and temporary files
 **/.vitepress/cache/
 **/.vitepress/dist/
