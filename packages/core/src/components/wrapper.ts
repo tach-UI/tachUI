@@ -67,7 +67,7 @@ export interface VStackLayoutProps extends BaseLayoutProps {
 
 export interface HStackLayoutProps extends BaseLayoutProps {
   spacing?: number
-  alignment?: 'top' | 'center' | 'bottom'
+  alignment?: 'top' | 'center' | 'bottom' | 'leading' | 'trailing' | 'left' | 'right'
 }
 
 export interface ZStackLayoutProps extends BaseLayoutProps {
@@ -448,6 +448,18 @@ export class LayoutComponent
           return resultArray
         })
         const hstackFlattened = hstackRenderedChildren.flat()
+        const horizontalAlignment =
+          alignment === 'leading' || alignment === 'left'
+            ? 'flex-start'
+            : alignment === 'trailing' || alignment === 'right'
+              ? 'flex-end'
+              : undefined
+        const verticalAlignment =
+          alignment === 'top'
+            ? 'flex-start'
+            : alignment === 'bottom'
+              ? 'flex-end'
+              : 'center'
 
         const element = {
           type: 'element' as const,
@@ -458,12 +470,10 @@ export class LayoutComponent
               display: 'flex',
               flexDirection: 'row',
               gap: spacing ? `${spacing}px` : '0',
-              alignItems:
-                alignment === 'top'
-                  ? 'flex-start'
-                  : alignment === 'bottom'
-                    ? 'flex-end'
-                    : 'center',
+              alignItems: verticalAlignment,
+              ...(horizontalAlignment
+                ? { justifyContent: horizontalAlignment }
+                : {}),
             },
             // Add debug attributes
             ...(debugManager.isEnabled() && {

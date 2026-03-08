@@ -1,27 +1,15 @@
 {
-  "name": "docs",
-  "version": "0.1.0",
-  "description": "tachUI Documentation Site",
+  "name": "@tachui/docs",
+  "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vitepress dev",
-    "build": "vitepress build",
-    "preview": "vitepress preview",
-    "docs:generate": "typedoc --options ../../typedoc.json"
+    "dev": "vitepress dev .",
+    "build": "vitepress build .",
+    "preview": "vitepress preview ."
   },
   "dependencies": {
-    "@tachui/core": "workspace:*",
-    "vue": "^3.4.0"
-  },
-  "devDependencies": {
     "vitepress": "^1.6.4",
-    "typescript": "^5.2.0"
-  },
-  "author": "tachUI Team",
-  "license": "MPL-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/tach-UI/tachUI",
-    "directory": "docs/guide"
+    "vue": "^3.5.11"
   }
 }

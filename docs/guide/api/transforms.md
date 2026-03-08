@@ -22,23 +22,20 @@ import { Text, Button } from '@tachui/core'
 
 // Basic rotation
 Text("Rotated Text")
-  .modifier
   .rotationEffect(45) // 45 degrees
-  .build()
+  
 
 // Rotation with custom anchor
 Button("Corner Rotate")
-  .modifier
   .rotationEffect(30, 'topLeading')
-  .build()
+  
 
 // Reactive rotation
 const [angle, setAngle] = createSignal(0)
 
 Text("Dynamic Rotation")
-  .modifier
   .rotationEffect(angle)
-  .build()
+  
 ```
 
 #### Parameters
@@ -61,21 +58,18 @@ import { Image, VStack } from '@tachui/core'
 
 // Uniform scaling
 Image({ src: 'logo.png' })
-  .modifier
   .scaleEffect(1.2)
-  .build()
+  
 
 // Non-uniform scaling
 VStack()
-  .modifier
   .scaleEffect(1.5, 0.8) // Wide and short
-  .build()
+  
 
 // Scale from corner
 Button("Scale from Corner")
-  .modifier
   .scaleEffect(1.1, 1.1, 'topLeading')
-  .build()
+  
 ```
 
 ### `.offset(x, y?)`
@@ -87,24 +81,21 @@ import { Text } from '@tachui/core'
 
 // Horizontal offset only
 Text("Shifted Right")
-  .modifier
   .offset(20)
-  .build()
+  
 
 // Both X and Y offset
 Text("Diagonal Shift")
-  .modifier
   .offset(15, -10)
-  .build()
+  
 
 // Reactive offset
 const [x, setX] = createSignal(0)
 const [y, setY] = createSignal(0)
 
 Text("Dynamic Position")
-  .modifier
   .offset(x, y)
-  .build()
+  
 ```
 
 ## Direct Transform Functions
@@ -117,16 +108,14 @@ Apply raw CSS transform string for maximum control.
 import { VStack } from '@tachui/core'
 
 VStack()
-  .modifier
   .transform('rotate(45deg) scale(1.2) translateX(10px)')
-  .build()
+  
 
 // 3D transforms
 VStack()
-  .modifier
   .transform('rotateX(45deg) rotateY(30deg) translateZ(50px)')
   .perspective(1000)
-  .build()
+  
 ```
 
 ### Individual Transform Functions
@@ -136,19 +125,16 @@ import { Button, Text } from '@tachui/core'
 
 // Individual transform functions
 Button("Scaled")
-  .modifier
   .scale(1.2) // Uniform scale
-  .build()
+  
 
 Button("Rotated")
-  .modifier
   .rotate(30) // 30 degrees
-  .build()
+  
 
 Text("Translated")
-  .modifier
   .translate({ x: 20, y: -10 })
-  .build()
+  
 ```
 
 ## 3D Transforms
@@ -162,13 +148,12 @@ import { VStack, Text } from '@tachui/core'
 
 // 3D card flip effect
 VStack([
-  Text("Front").build(),
-  Text("Back").transform('rotateY(180deg)').build()
+  Text("Front"),
+  Text("Back").transform('rotateY(180deg)')
 ])
-.modifier
 .perspective(1000)
 .transform('rotateY(45deg)')
-.build()
+
 ```
 
 ### 3D Transform Examples
@@ -178,17 +163,15 @@ import { Button } from '@tachui/core'
 
 // 3D rotation
 Button("3D Rotate")
-  .modifier
   .perspective(800)
   .transform('rotateX(45deg) rotateY(30deg)')
-  .build()
+  
 
 // 3D translation
 Button("3D Translate")
-  .modifier
   .perspective(1200)
   .transform('translateZ(50px) rotateX(20deg)')
-  .build()
+  
 ```
 
 ## Transform Chaining
@@ -200,20 +183,18 @@ import { VStack } from '@tachui/core'
 
 // Method chaining
 VStack()
-  .modifier
   .rotationEffect(30)
   .scaleEffect(1.2)
   .offset(10, -5)
-  .build()
+  
 
 // Complex transform combination
 VStack()
-  .modifier
   .perspective(1000)
   .transform('rotateX(15deg)')
   .scale(1.1)
   .translate({ x: 20, y: 0 })
-  .build()
+  
 ```
 
 ## Transform with Transitions
@@ -224,22 +205,20 @@ Animate transforms smoothly with transition modifiers:
 import { Button } from '@tachui/core'
 
 Button("Smooth Transform")
-  .modifier
   .rotationEffect(0) // Initial state
   .transition('transform', 300, 'ease-out')
   .onTap(() => {
     // Animate to rotated state
     // This would typically be handled by reactive state
   })
-  .build()
+  
 
 // Transform transition presets
 Button("Transform Transition")
-  .modifier
   .transformTransition(400) // 400ms transform transition
   .scaleEffect(1)
   .hoverEffect('scale') // Will animate smoothly
-  .build()
+  
 ```
 
 ## Performance Optimization
@@ -289,11 +268,10 @@ const FlipCard = () => {
   const backTransform = () => isFlipped() ? 'rotateY(0deg)' : 'rotateY(-180deg)'
   
   return VStack()
-    .modifier
     .perspective(1000)
     .css({ position: 'relative' })
     .onTap(() => setFlipped(!isFlipped()))
-    .build()
+    
 }
 ```
 
@@ -313,9 +291,8 @@ createEffect(() => {
 
 const ParallaxElement = () =>
   VStack()
-    .modifier
     .transform(() => `translateY(${scrollY() * 0.5}px)`) // Parallax factor
-    .build()
+    
 ```
 
 ### Loading Spinner
@@ -325,7 +302,6 @@ import { VStack } from '@tachui/core'
 
 const Spinner = () =>
   VStack()
-    .modifier
     .css({
       width: '40px',
       height: '40px',
@@ -334,7 +310,7 @@ const Spinner = () =>
       borderRadius: '50%',
       animation: 'spin 1s linear infinite'
     })
-    .build()
+    
 
 // CSS animation would be defined globally
 const spinnerCSS = `
@@ -354,30 +330,27 @@ import { Button } from '@tachui/core'
 
 // Scale on hover
 Button("Hover Scale")
-  .modifier
   .transition('transform', 200, 'ease-out')
   .hover({
     transform: 'scale(1.05)'
   })
-  .build()
+  
 
 // Rotate on hover
 Button("Hover Rotate")
-  .modifier
   .hoverWithTransition({
     transform: 'rotate(5deg) scale(1.02)'
   }, 300)
-  .build()
+  
 
 // 3D hover effect
 Button("3D Hover")
-  .modifier
   .perspective(1000)
   .transformTransition(250)
   .hover({
     transform: 'rotateX(10deg) translateZ(10px)'
   })
-  .build()
+  
 ```
 
 ## Browser Support
@@ -403,21 +376,19 @@ const FadeInUp = (children: any) => {
   })
   
   return VStack(children)
-    .modifier
     .transform(() => isVisible() ? 'translateY(0)' : 'translateY(20px)')
     .opacity(() => isVisible() ? 1 : 0)
     .transition('all', 300, 'ease-out')
-    .build()
+    
 }
 
 // Scale in
 const ScaleIn = (children: any) => {
   return VStack(children)
-    .modifier
     .scaleEffect(() => isVisible() ? 1 : 0.8)
     .opacity(() => isVisible() ? 1 : 0)
     .transition('all', 250, 'ease-out')
-    .build()
+    
 }
 ```
 
@@ -429,11 +400,10 @@ import { Button, createSignal } from '@tachui/core'
 const [rotation, setRotation] = createSignal(0)
 
 Button("Click to Rotate")
-  .modifier
   .rotationEffect(rotation)
   .transition('transform', 300, 'ease-out')
   .onTap(() => setRotation(rotation() + 90))
-  .build()
+  
 ```
 
 ## Integration with Layout
@@ -447,13 +417,11 @@ import { HStack, VStack, Text } from '@tachui/core'
 HStack([
   Text("Before"),
   Text("Transformed")
-    .modifier
     .rotationEffect(45)
     .scaleEffect(1.2)
-    .build(),
+    ,
   Text("After") // Stays in original position
 ])
-.modifier
 .gap(20)
-.build()
+
 ```

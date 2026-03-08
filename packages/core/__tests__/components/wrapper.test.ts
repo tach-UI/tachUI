@@ -436,6 +436,26 @@ describe('Layout Components', () => {
 
       expect(hstack).toBeDefined()
     })
+
+    it('should align horizontally with leading/trailing values', () => {
+      const leadingStack = Layout.HStack({
+        children: [],
+        alignment: 'leading',
+      })
+      const [leadingElement] = leadingStack.render()
+
+      expect(leadingElement.props?.style?.justifyContent).toBe('flex-start')
+      expect(leadingElement.props?.style?.alignItems).toBe('center')
+
+      const trailingStack = Layout.HStack({
+        children: [],
+        alignment: 'trailing',
+      })
+      const [trailingElement] = trailingStack.render()
+
+      expect(trailingElement.props?.style?.justifyContent).toBe('flex-end')
+      expect(trailingElement.props?.style?.alignItems).toBe('center')
+    })
   })
 
   describe('ZStack', () => {

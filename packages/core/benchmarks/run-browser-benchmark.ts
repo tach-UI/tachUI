@@ -49,6 +49,21 @@ if (fs.existsSync(registrySourceEntry)) {
   workspaceAliases['@tachui/registry'] = registrySourceEntry
 }
 
+// @tachui/types is type-only (.d.ts). Alias each sub-path to its source .ts
+// file so esbuild bundles it directly (all types are stripped, yielding an
+// empty module) instead of leaving unresolvable bare specifiers in the output.
+const TYPES_SRC = path.resolve(PACKAGES_DIR, 'types/src')
+for (const sub of ['reactive', 'modifiers', 'runtime', 'gradients', 'assets', 'layout']) {
+  const entry = path.resolve(TYPES_SRC, `${sub}.ts`)
+  if (fs.existsSync(entry)) {
+    workspaceAliases[`@tachui/types/${sub}`] = entry
+  }
+}
+const typesIndex = path.resolve(TYPES_SRC, 'index.ts')
+if (fs.existsSync(typesIndex)) {
+  workspaceAliases['@tachui/types'] = typesIndex
+}
+
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
   '.js': 'application/javascript',
@@ -113,7 +128,11 @@ async function runBrowserBenchmarks() {
     loader: {
       '.ts': 'ts',
     },
-    external: ['node:module'],
+    external: [
+      'node:module',
+      'node:*',
+      '@playwright/test'
+    ],
     alias: workspaceAliases,
   })
 
@@ -179,9 +198,9 @@ async function runBrowserBenchmarks() {
 
     await captureMemory('warmup')
     console.log('🚀 Launching Chromium and navigating to benchmark page…')
-  await page.goto(`http://127.0.0.1:${DEFAULT_PORT}/`, { waitUntil: 'networkidle' })
+  await page.goto(`http://127.0.0.1:${DEFAULT_PORT}/`, { waitUntil: 'load' })
   await page.waitForFunction(() => (window as any).benchmarkRunner !== undefined, {
-    timeout: 15_000,
+    timeout: 30_000,
   })
 
     console.log('🏃‍♂️ Running complete browser benchmark suite…')

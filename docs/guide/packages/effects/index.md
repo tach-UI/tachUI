@@ -1,0 +1,1 @@
+# Effects Modifiers (Redirect)\n\nEffects live in [@tachui/modifiers](modifiers/): shadows, blur, transform, backdrop filters, etc.\n\nExamples:\n```tsx\ndiv().shadow('0 4px 8px rgba(0,0,0,0.1)').blur(4)\n```\nSee [modifiers/effects](/packages/modifiers/#effects).

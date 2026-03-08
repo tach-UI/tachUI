@@ -29,7 +29,7 @@ export interface VStackLayoutProps extends BaseLayoutProps {
 }
 export interface HStackLayoutProps extends BaseLayoutProps {
     spacing?: number;
-    alignment?: 'top' | 'center' | 'bottom';
+    alignment?: 'top' | 'center' | 'bottom' | 'leading' | 'trailing' | 'left' | 'right';
 }
 export interface ZStackLayoutProps extends BaseLayoutProps {
     alignment?: 'topLeading' | 'top' | 'topTrailing' | 'leading' | 'center' | 'trailing' | 'bottomLeading' | 'bottom' | 'bottomTrailing';

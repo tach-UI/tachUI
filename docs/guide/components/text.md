@@ -20,7 +20,7 @@ The Text component displays text content with full support for:
 import { Text } from '@tachui/primitives'
 
 // Static text
-Text('Hello, World!').build()
+Text('Hello, World!')
 ```
 
 ### Reactive Text
@@ -32,7 +32,7 @@ import { createSignal } from '@tachui/core'
 const [message, setMessage] = createSignal('Initial message')
 
 // Reactive text that updates automatically
-Text(message).foregroundColor('#333').build()
+Text(message).foregroundColor('#333')
 
 // Update the text
 setMessage('Updated message!')
@@ -43,7 +43,7 @@ setMessage('Updated message!')
 ```typescript
 const currentTime = () => new Date().toLocaleTimeString()
 
-Text(currentTime).font({ family: 'monospace', size: 16 }).build()
+Text(currentTime).font({ family: 'monospace', size: 16 })
 ```
 
 ## Typography Presets
@@ -54,18 +54,18 @@ TachUI provides built-in typography presets that follow system design patterns:
 import { TextStyles } from '@tachui/primitives'
 
 // Large title
-TextStyles.LargeTitle('Welcome').foregroundColor('#000').build()
+TextStyles.LargeTitle('Welcome').foregroundColor('#000')
 
 // Regular title
-TextStyles.Title('Section Title').build()
+TextStyles.Title('Section Title')
 
 // Body text
 TextStyles.Body(
   'This is body text with proper line height and sizing.'
-).build()
+)
 
 // Caption text
-TextStyles.Caption('Small caption text').opacity(0.7).build()
+TextStyles.Caption('Small caption text').opacity(0.7)
 ```
 
 ### Available Typography Presets
@@ -92,26 +92,26 @@ TextStyles.Caption('Small caption text').opacity(0.7).build()
 import { TextFormat } from '@tachui/primitives'
 
 // Bold text
-TextFormat.bold('Important message').build()
+TextFormat.bold('Important message')
 
 // Italic text
-TextFormat.italic('Emphasized text').build()
+TextFormat.italic('Emphasized text')
 
 // Underlined text
-TextFormat.underline('Underlined text').build()
+TextFormat.underline('Underlined text')
 
 // Monospace text
 TextFormat.monospace('code snippet')
   .backgroundColor('#f5f5f5')
   .padding(4)
-  .build()
+  
 
 // Multiple formatting options
 TextFormat.formatted('Multi-formatted text', {
   bold: true,
   italic: true,
   underline: true,
-}).build()
+})
 ```
 
 ### Manual Font Styling
@@ -125,7 +125,7 @@ Text('Custom styled text')
     style: 'italic',
     variant: 'small-caps',
   })
-  .build()
+  
 ```
 
 ## Advanced Text Properties
@@ -137,7 +137,7 @@ Text('Centered text')
   .textAlign('center')
   .textDecoration('underline')
   .textTransform('uppercase')
-  .build()
+  
 ```
 
 ### Line Spacing and Letter Spacing
@@ -147,7 +147,7 @@ Text('Spaced text with custom typography')
   .lineHeight(1.8)
   .letterSpacing('2px')
   .wordSpacing('4px')
-  .build()
+  
 ```
 
 ### Line Limiting and Truncation
@@ -164,7 +164,7 @@ Text('This is a very long text that will be truncated after three lines...')
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   })
-  .build()
+  
 ```
 
 ## Accessibility
@@ -177,16 +177,16 @@ Text('Page Title')
   .accessibilityRole('heading')
   .accessibilityLevel(1)
   .font(Typography.largeTitle)
-  .build()
+  
 
 // Label text
-Text('Username:').accessibilityRole('label').build()
+Text('Username:').accessibilityRole('label')
 ```
 
 ### Accessibility Labels
 
 ```typescript
-Text('👍').accessibilityLabel('Thumbs up emoji').build()
+Text('👍').accessibilityLabel('Thumbs up emoji')
 ```
 
 ## Interactive Text
@@ -203,7 +203,7 @@ Text('Click me')
   .textDecoration('underline')
   .cursor('pointer')
   .onTap(handleClick)
-  .build()
+  
 ```
 
 ### Long Press Support
@@ -213,7 +213,7 @@ const handleLongPress = () => {
   console.log('Long press detected')
 }
 
-Text('Long press me').onLongPress(handleLongPress).build()
+Text('Long press me').onLongPress(handleLongPress)
 ```
 
 ## Responsive Typography
@@ -230,7 +230,7 @@ Text('Responsive text')
     size: () => (isMobile() ? 16 : 20),
     weight: '400',
   })
-  .build()
+  
 ```
 
 ### Responsive Line Height
@@ -238,7 +238,7 @@ Text('Responsive text')
 ```typescript
 Text('Text with responsive line height')
   .lineHeight(() => (isMobile() ? 1.4 : 1.6))
-  .build()
+  
 ```
 
 ## Color and Background
@@ -247,14 +247,14 @@ Text('Text with responsive line height')
 
 ```typescript
 // Static color
-Text('Colored text').foregroundColor('#FF6B6B').build()
+Text('Colored text').foregroundColor('#FF6B6B')
 
 // Reactive color
 const [isDark, setIsDark] = createSignal(false)
 
 Text('Theme-aware text')
   .foregroundColor(() => (isDark() ? '#FFFFFF' : '#000000'))
-  .build()
+  
 ```
 
 ### Background Colors
@@ -264,7 +264,7 @@ Text('Text with background')
   .backgroundColor('#FFE66D')
   .padding(8)
   .cornerRadius(4)
-  .build()
+  
 ```
 
 ## Layout Integration
@@ -275,19 +275,19 @@ Text('Text with background')
 import { VStack, HStack } from '@tachui/primitives'
 
 VStack([
-  TextStyles.Title('Article Title').textAlign('center').build(),
+  TextStyles.Title('Article Title').textAlign('center'),
 
   HStack([
-    TextStyles.Caption('By Author').opacity(0.7).build(),
+    TextStyles.Caption('By Author').opacity(0.7),
 
     Spacer(),
 
-    TextStyles.Caption('2 min read').opacity(0.7).build(),
+    TextStyles.Caption('2 min read').opacity(0.7),
   ]),
 
   TextStyles.Body('Article content goes here...')
     .lineHeight(1.6)
-    .build(),
+    ,
 ])
 ```
 
@@ -301,18 +301,18 @@ const ArticleHeader = (title: string, author: string, date: string) =>
     TextStyles.LargeTitle(title)
       .textAlign('center')
       .marginBottom(16)
-      .build(),
+      ,
 
     HStack([
-      TextStyles.Subheadline(`By ${author}`).opacity(0.8).build(),
+      TextStyles.Subheadline(`By ${author}`).opacity(0.8),
 
-      TextStyles.Subheadline(' • ').opacity(0.5).build(),
+      TextStyles.Subheadline(' • ').opacity(0.5),
 
-      TextStyles.Subheadline(date).opacity(0.8).build(),
+      TextStyles.Subheadline(date).opacity(0.8),
     ])
       .justifyContent('center')
       .marginBottom(24)
-      .build(),
+      ,
   ])
 ```
 
@@ -328,7 +328,7 @@ const CodeBlock = (code: string) =>
     .fontSize(14)
     .lineHeight(1.5)
     .overflowX('auto')
-    .build()
+    
 ```
 
 ### Badge/Tag
@@ -344,7 +344,7 @@ const Badge = (text: string, color: string = '#007AFF') =>
     .fontWeight('600')
     .textTransform('uppercase')
     .letterSpacing('0.5px')
-    .build()
+    
 ```
 
 ### Link Text
@@ -357,7 +357,7 @@ const LinkText = (text: string, url: string) =>
     .cursor('pointer')
     .onTap(() => window.open(url, '_blank'))
     .onHover(hovered => (hovered ? { opacity: 0.7 } : { opacity: 1 }))
-    .build()
+    
 ```
 
 ## Performance Considerations
@@ -377,7 +377,7 @@ const formattedText = createMemo(() =>
     .join(', ')
 )
 
-Text(formattedText).build()
+Text(formattedText)
 ```
 
 ### Large Text Lists
@@ -391,7 +391,7 @@ const LargeTextList = ({ items }: { items: string[] }) =>
   List({
     data: items,
     renderItem: (text, index) =>
-      TextStyles.Body(text).padding(8).build(),
+      TextStyles.Body(text).padding(8),
   })
 ```
 
@@ -479,7 +479,7 @@ The Text component supports secure HTML content rendering through the `.asHTML()
 import { Text } from '@tachui/primitives'
 
 // Simple HTML content
-Text('<p>Welcome to <strong>TachUI</strong>!</p>').asHTML().build()
+Text('<p>Welcome to <strong>TachUI</strong>!</p>').asHTML()
 
 // Rich content with styling
 Text(`
@@ -500,7 +500,7 @@ Text(`
   .padding(20)
   .backgroundColor('#F8F9FA')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 #### Security Features
@@ -511,10 +511,10 @@ The `.asHTML()` modifier automatically protects against common XSS attacks:
 // Dangerous content is automatically sanitized
 Text('<script>alert("xss")</script><p>Safe content</p>')
   .asHTML()
-  .build()
+  
 // Result: '<p>Safe content</p>' (script removed)
 
-Text('<img src="x" onerror="alert(1)" alt="Image">').asHTML().build()
+Text('<img src="x" onerror="alert(1)" alt="Image">').asHTML()
 // Result: '<img src="x" alt="Image">' (event handler removed)
 ```
 
@@ -528,7 +528,7 @@ Text(userGeneratedContent)
   .asHTML({
     customSanitizer: (html: string) => DOMPurify.sanitize(html),
   })
-  .build()
+  
 
 // Restrict to specific tags
 Text(blogContent)
@@ -539,7 +539,7 @@ Text(blogContent)
       a: ['href', 'target', 'rel'],
     },
   })
-  .build()
+  
 ```
 
 #### Content Types and Security Levels
@@ -551,7 +551,7 @@ Text(userComment)
     allowedTags: ['p', 'strong', 'em', 'br'],
     allowedAttributes: {},
   })
-  .build()
+  
 
 // Editorial content - Balanced security
 Text(articleContent)
@@ -562,7 +562,7 @@ Text(articleContent)
       a: ['href', 'target', 'rel'],
     },
   })
-  .build()
+  
 
 // Trusted server content - Skip sanitization (use with caution)
 Text(trustedTemplate)
@@ -570,7 +570,7 @@ Text(trustedTemplate)
     skipSanitizer: true,
     __suppressWarnings: true,
   })
-  .build()
+  
 ```
 
 For comprehensive documentation on secure HTML rendering, see the [HTML Content Security Guide](../guide/html-content-security.md).
@@ -595,7 +595,7 @@ For comprehensive documentation on secure HTML rendering, see the [HTML Content 
 ### Styling Not Applied
 
 - Remember that styling is applied through the modifier system
-- Use `.modifier` before applying styles
+- Chain modifiers directly on the component (for example, `Text('Title').fontSize(24).fontWeight('bold')`)
 
 ### Poor Performance with Large Text
 

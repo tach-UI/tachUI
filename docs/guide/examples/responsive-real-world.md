@@ -27,7 +27,7 @@ const BlogApp = () => {
     base: { minHeight: '100vh', backgroundColor: '#f8f9fa' },
     md: { backgroundColor: '#ffffff' }
   })
-  .build()
+  
 }
 ```
 
@@ -46,7 +46,7 @@ const BlogHeader = () => {
           base: { width: 32, height: 32 },
           md: { width: 40, height: 40 }
         })
-        .build(),
+        ,
       
       Text("TechBlog")
         .responsive({
@@ -59,24 +59,24 @@ const BlogHeader = () => {
             fontSize: 24
           }
         })
-        .build()
+        
     ])
     .alignItems('center')
     .gap({ base: 8, md: 12 })
-    .build(),
+    ,
     
     // Desktop Navigation
     HStack([
-      Link("Home").fontSize(16).color('#2c3e50').build(),
-      Link("Articles").fontSize(16).color('#2c3e50').build(),
-      Link("About").fontSize(16).color('#2c3e50').build(),
-      Link("Contact").fontSize(16).color('#2c3e50').build()
+      Link("Home").fontSize(16).color('#2c3e50'),
+      Link("Articles").fontSize(16).color('#2c3e50'),
+      Link("About").fontSize(16).color('#2c3e50'),
+      Link("Contact").fontSize(16).color('#2c3e50')
     ])
     .responsive({
       base: { display: 'none' },     // Hidden on mobile
       md: { display: 'flex', gap: 32 }
     })
-    .build(),
+    ,
     
     // Mobile Menu Button
     Button("☰")
@@ -89,7 +89,7 @@ const BlogHeader = () => {
         },
         md: { display: 'none' }       // Hidden on desktop
       })
-      .build()
+      
   ])
   .justifyContent('space-between')
   .alignItems('center')
@@ -104,7 +104,7 @@ const BlogHeader = () => {
     }
   })
   .backgroundColor('#ffffff')
-  .build()
+  
 }
 ```
 
@@ -142,7 +142,7 @@ const BlogMainContent = () => {
         lg: { width: 'calc(75% - 2rem)' }
       })
       .gap({ base: 24, md: 32 })
-      .build(),
+      ,
       
       // Sidebar
       BlogSidebar()
@@ -155,7 +155,7 @@ const BlogMainContent = () => {
             width: 'calc(25% - 2rem)'
           }
         })
-        .build()
+        
     ])
     .responsive({
       base: { flexDirection: 'column' },
@@ -165,7 +165,7 @@ const BlogMainContent = () => {
         gap: '4rem'
       }
     })
-    .build()
+    
   )
 }
 
@@ -186,7 +186,7 @@ const FeaturedArticle = (article: Article) => {
         }
       })
       .borderRadius(12)
-      .build(),
+      ,
     
     VStack([
       Text(article.title)
@@ -207,7 +207,7 @@ const FeaturedArticle = (article: Article) => {
           }
         })
         .color('#2c3e50')
-        .build(),
+        ,
       
       Text(article.excerpt)
         .responsive({
@@ -222,33 +222,33 @@ const FeaturedArticle = (article: Article) => {
             marginBottom: 20
           }
         })
-        .build(),
+        ,
       
       HStack([
         Text(article.date)
           .fontSize({ base: 14, md: 16 })
           .color('#6c757d')
-          .build(),
+          ,
         
         Text("•")
           .color('#6c757d')
-          .build(),
+          ,
         
         Text(article.readTime)
           .fontSize({ base: 14, md: 16 })
           .color('#6c757d')
-          .build()
+          
       ])
       .gap(8)
-      .build()
+      
     ])
     .padding({ base: 16, md: 20 })
-    .build()
+    
   ])
   .backgroundColor('#ffffff')
   .borderRadius(16)
   .boxShadow('0 4px 12px rgba(0,0,0,0.1)')
-  .build()
+  
 }
 
 const ArticleGrid = (articles: Article[]) => {
@@ -265,7 +265,7 @@ const ArticleGrid = (articles: Article[]) => {
     articles.map(article => ArticleCard(article))
   )
   .apply(gridModifier)
-  .build()
+  
 }
 
 const ArticleCard = (article: Article) => {
@@ -278,7 +278,7 @@ const ArticleCard = (article: Article) => {
       })
       .objectFit('cover')
       .borderRadius({ base: 8, md: 12 })
-      .build(),
+      ,
     
     VStack([
       Text(article.title)
@@ -295,30 +295,30 @@ const ArticleCard = (article: Article) => {
           }
         })
         .color('#2c3e50')
-        .build(),
+        ,
       
       Text(article.excerpt)
         .fontSize({ base: 14, md: 16 })
         .lineHeight(1.5)
         .color('#6c757d')
         .marginBottom({ base: 12, md: 16 })
-        .build(),
+        ,
       
       HStack([
-        Text(article.date).fontSize(12).color('#6c757d').build(),
-        Text("•").color('#6c757d').build(),
-        Text(article.readTime).fontSize(12).color('#6c757d').build()
+        Text(article.date).fontSize(12).color('#6c757d'),
+        Text("•").color('#6c757d'),
+        Text(article.readTime).fontSize(12).color('#6c757d')
       ])
       .gap(6)
-      .build()
+      
     ])
     .padding({ base: 12, md: 16 })
-    .build()
+    
   ])
   .backgroundColor('#ffffff')
   .borderRadius({ base: 12, md: 16 })
   .boxShadow('0 2px 8px rgba(0,0,0,0.1)')
-  .build()
+  
 }
 ```
 
@@ -333,20 +333,20 @@ const BlogSidebar = () => {
         .fontSize(18)
         .fontWeight('600')
         .marginBottom(12)
-        .build(),
+        ,
       
       // Search input would go here
       Text("Search functionality...")
         .fontSize(14)
         .color('#6c757d')
-        .build()
+        
     ])
     .padding(20)
     .backgroundColor('#ffffff')
     .borderRadius(12)
     .boxShadow('0 2px 8px rgba(0,0,0,0.1)')
     .marginBottom(24)
-    .build(),
+    ,
     
     // Categories
     VStack([
@@ -354,7 +354,7 @@ const BlogSidebar = () => {
         .fontSize(18)
         .fontWeight('600')
         .marginBottom(12)
-        .build(),
+        ,
       
       VStack([
         SidebarLink("Web Development", 23),
@@ -364,15 +364,15 @@ const BlogSidebar = () => {
         SidebarLink("TypeScript", 8)
       ])
       .gap(8)
-      .build()
+      
     ])
     .padding(20)
     .backgroundColor('#ffffff')
     .borderRadius(12)
     .boxShadow('0 2px 8px rgba(0,0,0,0.1)')
-    .build()
+    
   ])
-  .build()
+  
 }
 
 const SidebarLink = (title: string, count: number) => {
@@ -380,17 +380,17 @@ const SidebarLink = (title: string, count: number) => {
     Text(title)
       .fontSize(14)
       .color('#2c3e50')
-      .build(),
+      ,
     
     Text(`(${count})`)
       .fontSize(12)
       .color('#6c757d')
-      .build()
+      
   ])
   .justifyContent('space-between')
   .padding(8)
   .borderRadius(6)
-  .build()
+  
 }
 ```
 
@@ -418,7 +418,7 @@ const ProductPage = ({ product }: { product: Product }) => {
             base: { width: '100%' },
             lg: { width: '55%' }
           })
-          .build(),
+          ,
         
         // Product details
         ProductDetails(product)
@@ -426,7 +426,7 @@ const ProductPage = ({ product }: { product: Product }) => {
             base: { width: '100%' },
             lg: { width: '40%' }
           })
-          .build()
+          
       ])
       .responsive({
         base: { 
@@ -439,13 +439,13 @@ const ProductPage = ({ product }: { product: Product }) => {
           alignItems: 'flex-start'
         }
       })
-      .build(),
+      ,
       
       // Product tabs (description, reviews, etc.)
       ProductTabs(product)
     ])
     .gap({ base: 24, md: 32, lg: 40 })
-    .build()
+    
   )
 }
 ```
@@ -476,7 +476,7 @@ const ProductImageGallery = (images: string[]) => {
         }
       })
       .borderRadius(12)
-      .build(),
+      ,
     
     // Thumbnail navigation
     HStack(
@@ -498,7 +498,7 @@ const ProductImageGallery = (images: string[]) => {
           .borderWidth(selectedImage() === index ? 2 : 0)
           .borderColor('#007bff')
           .onClick(() => setSelectedImage(index))
-          .build()
+          
       )
     )
     .responsive({
@@ -513,9 +513,9 @@ const ProductImageGallery = (images: string[]) => {
       }
     })
     .marginTop({ base: 12, md: 16 })
-    .build()
+    
   ])
-  .build()
+  
 }
 ```
 
@@ -543,7 +543,7 @@ const ProductDetails = (product: Product) => {
         }
       })
       .color('#2c3e50')
-      .build(),
+      ,
     
     // Price
     HStack([
@@ -554,20 +554,20 @@ const ProductDetails = (product: Product) => {
           lg: { fontSize: 36 }
         })
         .color('#e74c3c')
-        .build(),
+        ,
       
       ...(product.originalPrice ? [
         Text(`$${product.originalPrice}`)
           .fontSize({ base: 18, md: 20 })
           .color('#6c757d')
           .textDecoration('line-through')
-          .build()
+          
       ] : [])
     ])
     .alignItems('baseline')
     .gap(12)
     .marginBottom({ base: 16, md: 20 })
-    .build(),
+    ,
     
     // Product description
     Text(product.description)
@@ -583,7 +583,7 @@ const ProductDetails = (product: Product) => {
         }
       })
       .color('#495057')
-      .build(),
+      ,
     
     // Options (size, color, etc.)
     ProductOptions(product.options),
@@ -595,19 +595,19 @@ const ProductDetails = (product: Product) => {
         Text("Quantity:")
           .fontSize({ base: 16, md: 18 })
           .fontWeight('600')
-          .build(),
+          ,
         
         // Quantity controls would go here
         Text("1") // Placeholder
           .padding(8)
           .border('1px solid #dee2e6')
           .borderRadius(4)
-          .build()
+          
       ])
       .alignItems('center')
       .gap(12)
       .marginBottom({ base: 16, md: 20 })
-      .build(),
+      ,
       
       // Add to cart button
       Button("Add to Cart")
@@ -627,7 +627,7 @@ const ProductDetails = (product: Product) => {
         .color('#ffffff')
         .borderRadius(8)
         .marginBottom({ base: 12, md: 16 })
-        .build(),
+        ,
       
       // Buy now button
       Button("Buy Now")
@@ -646,18 +646,18 @@ const ProductDetails = (product: Product) => {
         .backgroundColor('#28a745')
         .color('#ffffff')
         .borderRadius(8)
-        .build()
+        
     ])
     .padding({ base: 20, md: 24 })
     .backgroundColor('#f8f9fa')
     .borderRadius(12)
-    .build()
+    
   ])
   .responsive({
     base: { padding: 0 },
     lg: { paddingLeft: 24 }
   })
-  .build()
+  
 }
 ```
 
@@ -692,7 +692,7 @@ const DashboardApp = () => {
           height: '100vh'
         }
       })
-      .build(),
+      ,
     
     // Main content
     VStack([
@@ -706,10 +706,10 @@ const DashboardApp = () => {
       base: { width: '100%' },
       lg: { width: 'calc(100% - 250px)' }
     })
-    .build()
+    
   ])
   .backgroundColor('#f8f9fa')
-  .build()
+  
 }
 ```
 
@@ -738,7 +738,7 @@ const MetricsGrid = () => {
   )
   .apply(gridModifier)
   .marginBottom({ base: 24, md: 32 })
-  .build()
+  
 }
 
 const MetricCard = (metric: Metric) => {
@@ -747,7 +747,7 @@ const MetricCard = (metric: Metric) => {
       .fontSize({ base: 14, md: 16 })
       .color('#6c757d')
       .marginBottom({ base: 8, md: 12 })
-      .build(),
+      ,
     
     HStack([
       Text(metric.value)
@@ -757,17 +757,17 @@ const MetricCard = (metric: Metric) => {
           lg: { fontSize: 32 }
         })
         .color('#2c3e50')
-        .build(),
+        ,
       
       Text(metric.change)
         .fontSize({ base: 12, md: 14 })
         .color(metric.positive ? '#28a745' : '#dc3545')
         .fontWeight('600')
-        .build()
+        
     ])
     .justifyContent('space-between')
     .alignItems('baseline')
-    .build()
+    
   ])
   .responsive({
     base: { 
@@ -783,7 +783,7 @@ const MetricCard = (metric: Metric) => {
   })
   .borderRadius({ base: 8, md: 12 })
   .boxShadow('0 2px 4px rgba(0,0,0,0.1)')
-  .build()
+  
 }
 ```
 
@@ -806,16 +806,16 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
                 .fontWeight('600')
                 .color('#6c757d')
                 .width('40%')
-                .build(),
+                ,
               
               Text(row[column.key])
                 .fontSize(14)
                 .color('#2c3e50')
                 .flex(1)
-                .build()
+                
             ])
             .marginBottom(8)
-            .build()
+            
           )
         )
         .padding(16)
@@ -823,10 +823,10 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
         .borderRadius(8)
         .marginBottom(12)
         .boxShadow('0 2px 4px rgba(0,0,0,0.1)')
-        .build()
+        
       )
     )
-    .build()
+    
   }
 
   // Table layout for desktop
@@ -840,12 +840,12 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
           .color('#495057')
           .padding({ base: 8, md: 12 })
           .flex(1)
-          .build()
+          
       )
     )
     .backgroundColor('#f8f9fa')
     .borderRadius(8)
-    .build(),
+    ,
     
     // Table rows
     VStack(
@@ -857,19 +857,19 @@ const ResponsiveDataTable = ({ data, columns }: { data: any[], columns: Column[]
               .color('#2c3e50')
               .padding({ base: 8, md: 12 })
               .flex(1)
-              .build()
+              
           )
         )
         .borderBottom('1px solid #e9ecef')
-        .build()
+        
       )
     )
     .backgroundColor('#ffffff')
     .borderRadius(8)
     .boxShadow('0 2px 4px rgba(0,0,0,0.1)')
-    .build()
+    
   ])
-  .build()
+  
 }
 ```
 
@@ -908,7 +908,7 @@ const HeroSection = () => {
             }
           })
           .color('#2c3e50')
-          .build(),
+          ,
         
         Text("The modern framework for creating responsive, performant web applications with TypeScript.")
           .responsive({
@@ -929,7 +929,7 @@ const HeroSection = () => {
               marginBottom: 40
             }
           })
-          .build(),
+          ,
         
         // CTA buttons
         HStack([
@@ -948,7 +948,7 @@ const HeroSection = () => {
             .backgroundColor('#007bff')
             .color('#ffffff')
             .borderRadius(8)
-            .build(),
+            ,
           
           Button("View Demo")
             .responsive({
@@ -966,7 +966,7 @@ const HeroSection = () => {
             .color('#007bff')
             .border('2px solid #007bff')
             .borderRadius(8)
-            .build()
+            
         ])
         .responsive({
           base: { 
@@ -980,7 +980,7 @@ const HeroSection = () => {
             alignItems: 'center'
           }
         })
-        .build()
+        
       ])
       .responsive({
         base: { 
@@ -992,7 +992,7 @@ const HeroSection = () => {
           alignItems: 'flex-start'
         }
       })
-      .build(),
+      ,
       
       // Hero image/illustration
       Image('/hero-illustration.svg')
@@ -1006,7 +1006,7 @@ const HeroSection = () => {
             height: 400
           }
         })
-        .build()
+        
     ])
     .responsive({
       base: { 
@@ -1023,7 +1023,7 @@ const HeroSection = () => {
         minHeight: '80vh'
       }
     })
-    .build()
+    
   )
 }
 ```
@@ -1056,7 +1056,7 @@ const ReactiveMetricCard = ({ metric }: { metric: Signal<Metric> }) => {
       .fontSize({ base: 14, md: 16 })
       .color('#6c757d')
       .marginBottom({ base: 8, md: 12 })
-      .build(),
+      ,
     
     Text(currentMetric.value)
       .responsive({
@@ -1069,7 +1069,7 @@ const ReactiveMetricCard = ({ metric }: { metric: Signal<Metric> }) => {
         md: { fontSize: 28 },
         lg: { fontSize: 32 }
       })
-      .build()
+      
   ])
   .responsive({
     base: { padding: 16, backgroundColor: '#ffffff' },
@@ -1078,7 +1078,7 @@ const ReactiveMetricCard = ({ metric }: { metric: Signal<Metric> }) => {
   })
   .borderRadius({ base: 8, md: 12 })
   .boxShadow('0 2px 4px rgba(0,0,0,0.1)')
-  .build()
+  
 }
 
 // Example: Theme-reactive blog card
@@ -1102,7 +1102,7 @@ const ThemeAwareBlogCard = ({ article }: { article: Article }) => {
         md: { height: 180 },
         lg: { height: 200 }
       })
-      .build(),
+      ,
     
     Text(article.title)
       .responsive({
@@ -1113,7 +1113,7 @@ const ThemeAwareBlogCard = ({ article }: { article: Article }) => {
         },
         md: { fontSize: 20, marginBottom: 12 }
       })
-      .build()
+      
   ])
   .responsive({
     base: { 
@@ -1123,7 +1123,7 @@ const ThemeAwareBlogCard = ({ article }: { article: Article }) => {
     md: { padding: 16 }
   })
   .borderRadius({ base: 12, md: 16 })
-  .build()
+  
 }
 ```
 

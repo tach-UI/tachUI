@@ -22,7 +22,7 @@ const ResponsiveCards = LazyVGrid({
       Image({ src: article.thumbnail, alt: article.title })
         .aspectRatio(16/9, 'fill')
         .cornerRadius(12, [true, true, false, false]) // Top corners only
-        .build(),
+        ,
       
       VStack([
         Text(article.category)
@@ -30,21 +30,21 @@ const ResponsiveCards = LazyVGrid({
           .fontWeight('bold')
           .foregroundColor('#007bff')
           .textTransform('uppercase')
-          .build(),
+          ,
         
         Text(article.title)
           .fontSize(18)
           .fontWeight('bold')
           .lineClamp(2)
           .marginVertical(8)
-          .build(),
+          ,
         
         Text(article.excerpt)
           .fontSize(14)
           .foregroundColor('#666666')
           .lineClamp(3)
           .marginBottom(16)
-          .build(),
+          ,
         
         Button({
           title: 'Read More',
@@ -54,22 +54,22 @@ const ResponsiveCards = LazyVGrid({
           .foregroundColor('#ffffff')
           .padding(12, 24)
           .cornerRadius(6)
-          .build()
+          
       ])
       .padding(16)
-      .build()
+      
     ])
     .backgroundColor('#ffffff')
     .cornerRadius(12)
     .shadow({ x: 0, y: 4, blur: 12, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
   )
 })
   .responsive()
   .small({ padding: 12 })    // Mobile: smaller padding
   .medium({ padding: 16 })   // Tablet: medium padding
   .large({ padding: 24 })    // Desktop: larger padding
-  .build()
+  
 ```
 
 ### 2. Progressive Enhancement Grid
@@ -104,7 +104,7 @@ const ProgressiveGrid = LazyVGrid({
     // Desktop: Show all 3 columns
     css: { 'grid-template-columns': 'repeat(3, 1fr)' }
   })
-  .build()
+  
 ```
 
 ### 3. Responsive Dashboard Layout
@@ -130,7 +130,7 @@ const ResponsiveDashboard = () => {
           .fontSize(28)
           .fontWeight('bold')
           .padding(16)
-          .build()
+          
       ]),
       
       GridRow([
@@ -143,7 +143,7 @@ const ResponsiveDashboard = () => {
         .width(250)
         .backgroundColor('#f8f9fa')
         .padding(16)
-        .build(),
+        ,
         
         // Main stats
         LazyVGrid({
@@ -160,14 +160,14 @@ const ResponsiveDashboard = () => {
           .backgroundColor('#ffffff')
           .padding(16)
           .cornerRadius(8)
-          .build()
+          
       ]),
       
       GridRow([
         null, // Skip sidebar column
         ChartWidget()
           .gridColumnSpan(2)
-          .build()
+          
       ])
     ]
   })
@@ -204,46 +204,46 @@ const MasonryGrid = LazyVGrid({
         .aspectRatio(post.aspectRatio || 1.5, 'fill')
         .cornerRadius(8)
         .marginBottom(12)
-        .build(),
+        ,
       
       Text(post.title)
         .fontSize(16)
         .fontWeight('bold')
         .lineClamp(post.image ? 2 : 4)
         .marginBottom(8)
-        .build(),
+        ,
       
       Text(post.excerpt)
         .fontSize(14)
         .foregroundColor('#666666')
         .lineClamp(contentHeight > 200 ? 6 : 3)
         .marginBottom(12)
-        .build(),
+        ,
       
       HStack([
         Image({ src: post.author.avatar, alt: post.author.name })
           .frame(24, 24)
           .cornerRadius(12)
-          .build(),
+          ,
         
         Text(post.author.name)
           .fontSize(12)
           .foregroundColor('#666666')
-          .build(),
+          ,
         
         Spacer(),
         
         Text(post.date)
           .fontSize(12)
           .foregroundColor('#999999')
-          .build()
+          
       ])
     ])
     .padding(16)
     .backgroundColor('#ffffff')
     .cornerRadius(12)
     .shadow({ x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
   })
 })
 ```
@@ -268,7 +268,7 @@ const MagazineLayout = LazyVGrid({
     HeroArticle(featuredArticle)
       .gridColumnSpan(2)
       .gridRowSpan(2)
-      .build(),
+      ,
     
     // Secondary articles (right column)
     ...secondaryArticles.slice(0, 2).map(article => 
@@ -278,7 +278,7 @@ const MagazineLayout = LazyVGrid({
     // Ad banner (full width)
     AdBanner()
       .gridColumnSpan(4)
-      .build(),
+      ,
     
     // Regular articles (1 column each)
     ...regularArticles.map(article => 
@@ -291,7 +291,7 @@ const MagazineLayout = LazyVGrid({
       .backgroundColor('#f8f9fa')
       .padding(24)
       .cornerRadius(8)
-      .build(),
+      ,
     
     // More regular articles
     ...moreArticles.map(article => 
@@ -330,28 +330,28 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
         Image({ src: product.image, alt: product.name })
           .frame(120, 120)
           .cornerRadius(8)
-          .build(),
+          ,
         
         VStack([
           Text(product.name)
             .fontSize(18)
             .fontWeight('bold')
             .marginBottom(8)
-            .build(),
+            ,
           
           Text(product.description)
             .fontSize(14)
             .foregroundColor('#666666')
             .lineClamp(2)
             .marginBottom(8)
-            .build(),
+            ,
           
           HStack([
             Text(`$${product.price}`)
               .fontSize(16)
               .fontWeight('bold')
               .foregroundColor('#28a745')
-              .build(),
+              ,
             
             Spacer(),
             
@@ -363,17 +363,17 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
               .foregroundColor('#ffffff')
               .padding(8, 16)
               .cornerRadius(4)
-              .build()
+              
           ])
         ])
         .flex(1)
         .padding(16)
-        .build()
+        
       ])
       .backgroundColor('#ffffff')
       .cornerRadius(8)
       .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-      .build()
+      
     } else {
       // Grid view: vertical card layout
       return VStack([
@@ -381,7 +381,7 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
           .aspectRatio(1, 'fill')
           .cornerRadius(8)
           .marginBottom(12)
-          .build(),
+          ,
         
         Text(product.name)
           .fontSize(16)
@@ -389,7 +389,7 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
           .lineClamp(2)
           .marginBottom(8)
           .textAlign('center')
-          .build(),
+          ,
         
         Text(`$${product.price}`)
           .fontSize(18)
@@ -397,7 +397,7 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
           .foregroundColor('#28a745')
           .marginBottom(12)
           .textAlign('center')
-          .build(),
+          ,
         
         Button({
           title: 'Add to Cart',
@@ -407,13 +407,13 @@ const ProductGrid = (products: Product[], state: ProductGridState) => {
           .foregroundColor('#ffffff')
           .padding(10, 20)
           .cornerRadius(4)
-          .build()
+          
       ])
       .padding(16)
       .backgroundColor('#ffffff')
       .cornerRadius(8)
       .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-      .build()
+      
     }
   }
   
@@ -445,19 +445,19 @@ const TimelineGrid = LazyHGrid({
         Text(event.date.day)
           .fontSize(24)
           .fontWeight('bold')
-          .build(),
+          ,
         
         Text(event.date.month)
           .fontSize(12)
           .textTransform('uppercase')
           .foregroundColor('#666666')
-          .build()
+          
       ])
       .padding(12)
       .backgroundColor('#f8f9fa')
       .cornerRadius(8)
       .marginBottom(12)
-      .build(),
+      ,
       
       // Event content
       VStack([
@@ -466,23 +466,23 @@ const TimelineGrid = LazyHGrid({
           .fontWeight('bold')
           .lineClamp(2)
           .marginBottom(8)
-          .build(),
+          ,
         
         Text(event.description)
           .fontSize(14)
           .foregroundColor('#666666')
           .lineClamp(3)
-          .build()
+          
       ])
       .padding(16)
       .backgroundColor('#ffffff')
       .cornerRadius(8)
       .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-      .build()
+      
     ])
     .minWidth(250)
     .maxWidth(300)
-    .build()
+    
   )
 })
   .responsive()
@@ -490,7 +490,7 @@ const TimelineGrid = LazyHGrid({
     // Mobile: Show fewer items, larger touch targets
     css: { 'min-width': '280px' }
   })
-  .build()
+  
 ```
 
 ## Performance Optimization Patterns
@@ -521,7 +521,7 @@ const VirtualizedGrid = (items: Item[], windowSize: number = 50) => {
       const newStartIndex = Math.floor(scrollTop / itemHeight)
       setStartIndex(newStartIndex)
     })
-    .build()
+    
 }
 ```
 
@@ -557,7 +557,7 @@ const LazyLoadingGrid = (items: Item[]) => {
         .gridColumnSpan(3)
         .padding(20)
         .textAlign('center')
-        .build()
+        
     ].filter(Boolean)
   })
     .onScroll((event) => {
@@ -568,7 +568,7 @@ const LazyLoadingGrid = (items: Item[]) => {
         loadMoreItems()
       }
     })
-    .build()
+    
 }
 ```
 
@@ -598,7 +598,7 @@ const ResponsiveImageGrid = (images: ImageData[]) => {
       })
       .aspectRatio(image.aspectRatio || 1, 'fill')
       .cornerRadius(8)
-      .build()
+      
     )
   })
 }
@@ -625,7 +625,7 @@ const StaggeredGrid = LazyVGrid({
         easing: 'ease-out',
         delay: index * 50 // Stagger by 50ms per item
       })
-      .build()
+      
   )
 })
 ```
@@ -653,7 +653,7 @@ const FilterableGrid = (items: Item[], activeFilter: string) => {
           duration: 250,
           easing: 'ease-out'
         })
-        .build()
+        
     )
   })
 }
@@ -703,7 +703,7 @@ const AccessibleGrid = LazyVGrid({
           viewProduct(product)
         }
       })
-      .build()
+      
   )
 })
 ```
@@ -719,26 +719,26 @@ const ScreenReaderGrid = LazyVGrid({
       Text(`Article ${index + 1} of ${articles.length}`)
         .fontSize(0) // Visually hidden but available to screen readers
         .aria({ 'aria-hidden': false })
-        .build(),
+        ,
       
       Text(article.title)
         .fontSize(18)
         .fontWeight('bold')
         .marginBottom(8)
-        .build(),
+        ,
       
       Text(article.summary)
         .fontSize(14)
         .foregroundColor('#666666')
         .lineClamp(3)
-        .build()
+        
     ])
     .aria({
       role: 'article',
       'aria-labelledby': `article-${article.id}-title`,
       'aria-describedby': `article-${article.id}-summary`
     })
-    .build()
+    
   )
 })
 ```

@@ -166,7 +166,7 @@ function TodoApp() {
             .fontWeight('bold')
             .foregroundColor('#2c3e50')
             .textAlign('center')
-            .build(),
+            ,
           
           Text(() => {
             const { total, active, completed } = stats()
@@ -175,12 +175,12 @@ function TodoApp() {
             .fontSize(14)
             .foregroundColor('#7f8c8d')
             .textAlign('center')
-            .build()
+            
         ],
         spacing: 8
       })
       .padding({ bottom: 24 })
-      .build(),
+      ,
       
       // Add todo form
       Form({
@@ -194,7 +194,7 @@ function TodoApp() {
                 .border(1, '#ddd')
                 .cornerRadius(8)
                 .fontSize(16)
-                .build(),
+                ,
               
               Button("Add", addTodo)
                 .backgroundColor('#3498db')
@@ -203,7 +203,7 @@ function TodoApp() {
                 .cornerRadius(8)
                 .disabled(() => !newTodoText().trim())
                 .fontWeight('600')
-                .build()
+                
             ],
             spacing: 12,
             alignment: 'center'
@@ -211,7 +211,7 @@ function TodoApp() {
         ]
       })
       .padding({ bottom: 24 })
-      .build(),
+      ,
       
       // Search and filters
       VStack({
@@ -222,7 +222,7 @@ function TodoApp() {
             .border(1, '#ddd')
             .cornerRadius(6)
             .backgroundColor('#f8f9fa')
-            .build(),
+            ,
           
           // Filter buttons
           HStack({
@@ -241,7 +241,7 @@ function TodoApp() {
                   .padding({ horizontal: 16, vertical: 8 })
                   .cornerRadius(6)
                   .fontSize(14)
-                  .build()
+                  
               ),
               
               // Bulk actions
@@ -252,7 +252,7 @@ function TodoApp() {
                 .cornerRadius(6)
                 .fontSize(14)
                 .disabled(() => todos().length === 0)
-                .build(),
+                ,
               
               Button("Clear Completed", clearCompleted)
                 .backgroundColor('#e74c3c')
@@ -261,7 +261,7 @@ function TodoApp() {
                 .cornerRadius(6)
                 .fontSize(14)
                 .disabled(() => stats().completed === 0)
-                .build()
+                
             ],
             spacing: 8,
             alignment: 'center'
@@ -270,7 +270,7 @@ function TodoApp() {
         spacing: 16
       })
       .padding({ bottom: 24 })
-      .build(),
+      ,
       
       // Todo list
       VStack({
@@ -291,7 +291,7 @@ function TodoApp() {
               .padding(40)
               .backgroundColor('#f8f9fa')
               .cornerRadius(8)
-              .build()
+              
             : null,
           
           ...filteredTodos().map(todo => TodoItem({ 
@@ -311,7 +311,7 @@ function TodoApp() {
   .padding(24)
   .backgroundColor('#ffffff')
   .minHeight('100vh')
-  .build()
+  
 }
 
 // Todo item component
@@ -367,7 +367,7 @@ function TodoItem({
             .height(20)
             .backgroundColor(priorityColors[todo.priority])
             .cornerRadius(2)
-            .build(),
+            ,
           
           // Checkbox
           Toggle({
@@ -385,7 +385,7 @@ function TodoItem({
                   .padding(8)
                   .border(1, '#3498db')
                   .cornerRadius(4)
-                  .build(),
+                  ,
                 
                 Button("Save", saveEdit)
                   .backgroundColor('#27ae60')
@@ -393,7 +393,7 @@ function TodoItem({
                   .padding({ horizontal: 12, vertical: 6 })
                   .cornerRadius(4)
                   .fontSize(12)
-                  .build(),
+                  ,
                 
                 Button("Cancel", cancelEdit)
                   .backgroundColor('#95a5a6')
@@ -401,7 +401,7 @@ function TodoItem({
                   .padding({ horizontal: 12, vertical: 6 })
                   .cornerRadius(4)
                   .fontSize(12)
-                  .build()
+                  
               ],
               spacing: 8,
               alignment: 'center'
@@ -415,7 +415,7 @@ function TodoItem({
                   .foregroundColor(() => todo.completed ? '#7f8c8d' : '#2c3e50')
                   .textDecoration(() => todo.completed ? 'line-through' : 'none')
                   .onTap(startEdit)
-                  .build(),
+                  ,
                 
                 // Priority selector
                 HStack({
@@ -432,7 +432,7 @@ function TodoItem({
                       .cornerRadius(12)
                       .fontSize(10)
                       .fontWeight('bold')
-                      .build()
+                      
                   ),
                   spacing: 4,
                   alignment: 'center'
@@ -444,7 +444,7 @@ function TodoItem({
                   .padding({ horizontal: 12, vertical: 6 })
                   .cornerRadius(4)
                   .fontSize(12)
-                  .build()
+                  
               ],
               spacing: 12,
               alignment: 'center'
@@ -459,7 +459,7 @@ function TodoItem({
         .fontSize(11)
         .foregroundColor('#bdc3c7')
         .padding({ left: 32, top: 4 })
-        .build()
+        
     ],
     spacing: 0,
     alignment: 'stretch'
@@ -472,7 +472,7 @@ function TodoItem({
     { x: 0, y: 1, radius: 2, color: 'rgba(0,0,0,0.05)' } :
     { x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' }
   )
-  .build()
+  
 }
 
 // Render the app
@@ -662,7 +662,7 @@ function DragDropTodos() {
         .onDragStart(() => handleDragStart(index))
         .onDrop(() => handleDrop(index))
         .opacity(() => draggedIndex() === index ? 0.5 : 1)
-        .build()
+        
     )
   })
 }

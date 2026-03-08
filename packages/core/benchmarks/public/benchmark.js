@@ -1,6 +1,23 @@
 var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+
+// src/reactive/types.ts
+var types_exports = {};
+__reExport(types_exports, reactive_star);
+import * as reactive_star from "@tachui/types/reactive";
 
 // src/reactive/context.ts
 var computationIdCounter = 0;
@@ -81,7 +98,7 @@ var ComputationImpl = class {
     // Signals this computation depends on
     __publicField(this, "observers", /* @__PURE__ */ new Set());
     // Computations that depend on this
-    __publicField(this, "state", 2 /* Dirty */);
+    __publicField(this, "state", types_exports.ComputationState.Dirty);
     __publicField(this, "value");
     this.id = ++computationIdCounter;
     this.fn = fn;
@@ -91,7 +108,7 @@ var ComputationImpl = class {
     }
   }
   execute() {
-    if (this.state === 3 /* Disposed */) {
+    if (this.state === types_exports.ComputationState.Disposed) {
       return this.value;
     }
     for (const source of this.sources) {
@@ -104,11 +121,11 @@ var ComputationImpl = class {
     const prevComputation = reactiveContext.currentComputation;
     reactiveContext.currentComputation = this;
     try {
-      this.state = 0 /* Clean */;
+      this.state = types_exports.ComputationState.Clean;
       this.value = this.fn();
       return this.value;
     } catch (error) {
-      this.state = 3 /* Disposed */;
+      this.state = types_exports.ComputationState.Disposed;
       if (typeof process === "undefined" || true) {
         console.error("Error in computation:", error);
       }
@@ -118,8 +135,8 @@ var ComputationImpl = class {
     }
   }
   dispose() {
-    if (this.state === 3 /* Disposed */) return;
-    this.state = 3 /* Disposed */;
+    if (this.state === types_exports.ComputationState.Disposed) return;
+    this.state = types_exports.ComputationState.Disposed;
     for (const source of this.sources) {
       if (source && typeof source === "object" && "removeObserver" in source) {
         ;
@@ -469,11 +486,11 @@ var ComputedImpl = class extends ComputationImpl {
    */
   getValue() {
     const computation = getCurrentComputation();
-    if (computation && computation.state !== 3 /* Disposed */) {
+    if (computation && computation.state !== types_exports.ComputationState.Disposed) {
       this.observers.add(computation);
       computation.sources.add(this);
     }
-    if (this.state === 2 /* Dirty */ || !this._hasValue) {
+    if (this.state === types_exports.ComputationState.Dirty || !this._hasValue) {
       this.execute();
       this._hasValue = true;
     }
@@ -483,7 +500,7 @@ var ComputedImpl = class extends ComputationImpl {
    * Get the current value without tracking dependency
    */
   peek() {
-    if (this.state === 2 /* Dirty */ || !this._hasValue) {
+    if (this.state === types_exports.ComputationState.Dirty || !this._hasValue) {
       this.execute();
       this._hasValue = true;
     }
@@ -503,11 +520,11 @@ var ComputedImpl = class extends ComputationImpl {
     const result = super.execute();
     if (!this._hasValue || !this.equalsFn(previousValue, result)) {
       for (const observer of this.observers) {
-        if (observer.state !== 3 /* Disposed */) {
-          observer.state = 2 /* Dirty */;
+        if (observer.state !== types_exports.ComputationState.Disposed) {
+          observer.state = types_exports.ComputationState.Dirty;
           if ("execute" in observer && typeof observer.execute === "function") {
             queueMicrotask(() => {
-              if (observer.state === 2 /* Dirty */) {
+              if (observer.state === types_exports.ComputationState.Dirty) {
                 observer.execute();
               }
             });
@@ -540,7 +557,7 @@ var ComputedImpl = class extends ComputationImpl {
     this.observers.clear();
     this._hasValue = false;
     this._error = null;
-    this.state = 3 /* Disposed */;
+    this.state = types_exports.ComputationState.Disposed;
   }
   /**
    * Dispose the computed value
@@ -769,7 +786,7 @@ var EnhancedSignalImpl = class {
    */
   getValue() {
     const computation = getCurrentComputation();
-    if (computation && computation.state !== 3 /* Disposed */) {
+    if (computation && computation.state !== types_exports.ComputationState.Disposed) {
       this.observers.add(computation);
       computation.sources.add(this);
     }
@@ -801,8 +818,8 @@ var EnhancedSignalImpl = class {
    */
   notify() {
     for (const observer of this.observers) {
-      if (observer.state !== 3 /* Disposed */) {
-        observer.state = 2 /* Dirty */;
+      if (observer.state !== types_exports.ComputationState.Disposed) {
+        observer.state = types_exports.ComputationState.Dirty;
         if ("type" in observer && "priority" in observer) {
           this.scheduler.schedule(observer);
         }
@@ -858,7 +875,7 @@ var SignalImpl = class {
    */
   getValue() {
     const computation = getCurrentComputation();
-    if (computation && computation.state !== 3 /* Disposed */) {
+    if (computation && computation.state !== types_exports.ComputationState.Disposed) {
       this.observers.add(computation);
       computation.sources.add(this);
     } else {
@@ -888,8 +905,8 @@ var SignalImpl = class {
    */
   notify() {
     for (const observer of this.observers) {
-      if (observer.state !== 3 /* Disposed */) {
-        observer.state = 2 /* Dirty */;
+      if (observer.state !== types_exports.ComputationState.Disposed) {
+        observer.state = types_exports.ComputationState.Dirty;
         scheduleUpdate(observer);
       } else {
       }
@@ -929,7 +946,7 @@ function flushUpdates() {
       const computations = Array.from(updateQueue).sort((a, b) => a.id - b.id);
       updateQueue.clear();
       for (const computation of computations) {
-        if (computation.state === 2 /* Dirty */) {
+        if (computation.state === types_exports.ComputationState.Dirty) {
           computation.execute();
         }
       }
@@ -1130,9 +1147,6 @@ var themeComputed = createComputed(() => {
   }
   return theme;
 });
-function getThemeSignal() {
-  return themeComputed;
-}
 function detectSystemTheme() {
   if (typeof window !== "undefined" && window.matchMedia) {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -1461,8 +1475,20 @@ var ChildrenManager = class {
         }
       } else if (Array.isArray(child)) {
         nodes.push(...this.renderChildrenArray(child));
-      } else if (typeof child === "object" && "render" in child) {
-        const result = child.render();
+      } else if (isModifierBuilder(child)) {
+        const builtChild = child.build();
+        const result = builtChild.render();
+        if (Array.isArray(result)) {
+          nodes.push(...result);
+        } else {
+          nodes.push(result);
+        }
+      } else if (typeof child === "object" && child !== null && "render" in child) {
+        let componentToRender = child;
+        if ("build" in child && typeof child.build === "function") {
+          componentToRender = child.build();
+        }
+        const result = componentToRender.render();
         if (Array.isArray(result)) {
           nodes.push(...result);
         } else {
@@ -1523,6 +1549,17 @@ var RefManager = class {
     };
   }
 };
+function isModifierBuilder(value) {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const hasBuild = "build" in value && typeof value.build === "function";
+  if (!hasBuild) {
+    return false;
+  }
+  const hasRender = "render" in value && typeof value.render === "function";
+  return !hasRender;
+}
 var propsUtils = {
   /**
    * Compare props for changes
@@ -1814,1068 +1851,6 @@ function generateComponentId() {
   return `component_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-// src/constants/layout.ts
-var infinity = Symbol.for("tachui.infinity");
-function isInfinity(value) {
-  return value === infinity;
-}
-function dimensionToCSS(value) {
-  if (value === void 0) {
-    return void 0;
-  }
-  if (value === infinity) {
-    return "100%";
-  }
-  if (typeof value === "number") {
-    return `${value}px`;
-  }
-  return value;
-}
-function shouldExpandForInfinity(options) {
-  const expandWidth = options.width === infinity || options.maxWidth === infinity;
-  const expandHeight = options.height === infinity || options.maxHeight === infinity;
-  const cssProps = {};
-  if (expandWidth) {
-    Object.assign(cssProps, {
-      flexGrow: "1 !important",
-      flexShrink: "1 !important",
-      flexBasis: "0% !important",
-      alignSelf: "stretch !important"
-      // Override parent's align-items constraint
-    });
-  }
-  if (expandHeight) {
-    Object.assign(cssProps, {
-      flexGrow: "1 !important",
-      flexShrink: "1 !important",
-      flexBasis: "0% !important",
-      alignSelf: "stretch !important"
-      // Override parent's align-items constraint
-    });
-  }
-  return {
-    expandWidth,
-    expandHeight,
-    cssProps
-  };
-}
-
-// src/modifiers/base.ts
-var BaseModifier = class {
-  constructor(properties) {
-    this.properties = properties;
-  }
-  /**
-   * Helper to resolve reactive properties
-   */
-  resolveReactiveProps(props, context) {
-    const resolved = {};
-    for (const [key, value] of Object.entries(props)) {
-      if (isSignal(value) || isComputed(value)) {
-        resolved[key] = value;
-      } else {
-        resolved[key] = value;
-      }
-    }
-    return resolved;
-  }
-  /**
-   * Apply a single style change to an element with reactive support
-   */
-  applyStyleChange(element, property, value) {
-    if (element instanceof HTMLElement) {
-      const cssProperty2 = this.toCSSProperty(property);
-      if (isSignal(value) || isComputed(value)) {
-        createEffect(() => {
-          const currentValue = value();
-          const cssValue = String(currentValue);
-          if (cssValue.includes("!important")) {
-            const actualValue = cssValue.replace(/\s*!important\s*$/, "").trim();
-            element.style.setProperty(cssProperty2, actualValue, "important");
-          } else {
-            element.style.setProperty(cssProperty2, cssValue);
-          }
-        });
-      } else {
-        const cssValue = String(value);
-        if (cssValue.includes("!important")) {
-          const actualValue = cssValue.replace(/\s*!important\s*$/, "").trim();
-          element.style.setProperty(cssProperty2, actualValue, "important");
-        } else {
-          element.style.setProperty(cssProperty2, cssValue);
-        }
-      }
-    }
-  }
-  /**
-   * Convert camelCase property to CSS kebab-case
-   */
-  toCSSProperty(property) {
-    return property.replace(/([A-Z])/g, "-$1").toLowerCase();
-  }
-  /**
-   * Convert value to CSS value string
-   */
-  toCSSValue(value) {
-    if (typeof value === "number") {
-      return `${value}px`;
-    }
-    return String(value);
-  }
-  /**
-   * Convert value to CSS value string with property-specific handling
-   */
-  toCSSValueForProperty(property, value) {
-    if (typeof value === "number") {
-      const unitlessProperties = [
-        "opacity",
-        "z-index",
-        "line-height",
-        "flex-grow",
-        "flex-shrink",
-        "order",
-        "column-count",
-        "font-weight"
-      ];
-      if (unitlessProperties.includes(property)) {
-        return String(value);
-      }
-      return `${value}px`;
-    }
-    const passthroughProperties = [
-      "filter",
-      // CSS filter strings should not be processed
-      "transform",
-      // CSS transform strings
-      "clip-path"
-      // CSS clip-path strings
-    ];
-    if (passthroughProperties.includes(property)) {
-      return String(value);
-    }
-    return String(value);
-  }
-  /**
-   * Apply multiple CSS properties to an element with reactive support
-   */
-  applyStyles(element, styles) {
-    if (element instanceof HTMLElement || element.style) {
-      const styleTarget = element instanceof HTMLElement ? element.style : element.style;
-      for (const [property, value] of Object.entries(styles)) {
-        if (value !== void 0) {
-          const cssProperty2 = this.toCSSProperty(property);
-          if (isSignal(value) || isComputed(value)) {
-            createEffect(() => {
-              const currentValue = value();
-              const cssValue = this.toCSSValueForProperty(
-                cssProperty2,
-                currentValue
-              );
-              if (styleTarget.setProperty) {
-                if (typeof cssValue === "string" && cssValue.includes("!important")) {
-                  const actualValue = cssValue.replace(/\s*!important\s*$/, "").trim();
-                  styleTarget.setProperty(cssProperty2, actualValue, "important");
-                } else {
-                  styleTarget.setProperty(cssProperty2, cssValue);
-                }
-              } else {
-                ;
-                styleTarget[cssProperty2] = cssValue;
-              }
-            });
-          } else {
-            const cssValue = this.toCSSValueForProperty(cssProperty2, value);
-            if (styleTarget.setProperty) {
-              if (typeof cssValue === "string" && cssValue.includes("!important")) {
-                const actualValue = cssValue.replace(/\s*!important\s*$/, "").trim();
-                styleTarget.setProperty(cssProperty2, actualValue, "important");
-              } else {
-                styleTarget.setProperty(cssProperty2, cssValue);
-              }
-            } else {
-              ;
-              styleTarget[cssProperty2] = cssValue;
-            }
-          }
-        }
-      }
-    }
-  }
-  /**
-   * Add CSS classes to an element
-   */
-  addClasses(element, classes) {
-    if (element instanceof HTMLElement) {
-      element.classList.add(...classes);
-    }
-  }
-  /**
-   * Remove CSS classes from an element
-   */
-  removeClasses(element, classes) {
-    if (element instanceof HTMLElement) {
-      element.classList.remove(...classes);
-    }
-  }
-  /**
-   * Create a style computation context
-   */
-  createStyleContext(componentId, element, modifiers) {
-    return {
-      componentId,
-      element,
-      modifiers,
-      signals: /* @__PURE__ */ new Set(),
-      cleanup: []
-    };
-  }
-};
-var LayoutModifier = class extends BaseModifier {
-  constructor() {
-    super(...arguments);
-    __publicField(this, "type", "layout");
-    __publicField(this, "priority", 100 /* LAYOUT */);
-  }
-  apply(node, context) {
-    if (!node.element || !context.element) return;
-    const styleContext = this.createStyleContext(
-      context.componentId,
-      context.element,
-      []
-    );
-    const styles = this.computeLayoutStyles(
-      this.properties,
-      styleContext
-    );
-    this.applyStyles(context.element, styles);
-    const props = this.properties;
-    if (props.position && context.element instanceof HTMLElement) {
-      this.applyAbsolutePosition(context.element, props.position);
-    }
-    return void 0;
-  }
-  // Layout modifier implementations have been migrated to @tachui/modifiers/layout
-  applyAbsolutePosition(element, position) {
-    const { x, y } = position;
-    const currentX = x ?? "auto";
-    const currentY = y ?? "auto";
-    element.style.left = this.toCSSValue(currentX);
-    element.style.top = this.toCSSValue(currentY);
-  }
-  computeLayoutStyles(props, _context) {
-    const styles = {};
-    if (props.frame) {
-      const frame2 = props.frame;
-      const infinityResult = shouldExpandForInfinity(frame2);
-      Object.assign(styles, infinityResult.cssProps);
-      if (frame2.width !== void 0) {
-        const cssValue = dimensionToCSS(frame2.width);
-        if (cssValue !== void 0 && !isInfinity(frame2.width) && !infinityResult.expandWidth) {
-          styles.width = cssValue;
-        }
-      }
-      if (frame2.height !== void 0) {
-        const cssValue = dimensionToCSS(frame2.height);
-        if (cssValue !== void 0 && !isInfinity(frame2.height) && !infinityResult.expandHeight) {
-          styles.height = cssValue;
-        }
-      }
-      if (frame2.minWidth !== void 0) {
-        const cssValue = dimensionToCSS(frame2.minWidth);
-        if (cssValue !== void 0) {
-          styles.minWidth = cssValue;
-        }
-      }
-      if (frame2.maxWidth !== void 0 && !isInfinity(frame2.maxWidth)) {
-        const cssValue = dimensionToCSS(frame2.maxWidth);
-        if (cssValue !== void 0) {
-          styles.maxWidth = cssValue;
-        }
-      } else if (isInfinity(frame2.maxWidth)) {
-        styles.maxWidth = "none";
-        styles.flexGrow = "1 !important";
-        styles.flexShrink = "1 !important";
-        styles.flexBasis = "0% !important";
-        styles.alignSelf = "stretch !important";
-      }
-      if (frame2.minHeight !== void 0) {
-        const cssValue = dimensionToCSS(frame2.minHeight);
-        if (cssValue !== void 0) {
-          styles.minHeight = cssValue;
-        }
-      }
-      if (frame2.maxHeight !== void 0 && !isInfinity(frame2.maxHeight)) {
-        const cssValue = dimensionToCSS(frame2.maxHeight);
-        if (cssValue !== void 0) {
-          styles.maxHeight = cssValue;
-        }
-      } else if (isInfinity(frame2.maxHeight)) {
-        styles.maxHeight = "none";
-        styles.flexGrow = "1 !important";
-        styles.flexShrink = "1 !important";
-        styles.flexBasis = "0% !important";
-        styles.alignSelf = "stretch !important";
-      }
-    }
-    if (props.padding !== void 0) {
-      if (typeof props.padding === "number") {
-        styles.padding = this.toCSSValue(props.padding);
-      } else {
-        const p = props.padding;
-        if (p.top !== void 0) styles.paddingTop = this.toCSSValue(p.top);
-        if (p.right !== void 0)
-          styles.paddingRight = this.toCSSValue(p.right);
-        if (p.bottom !== void 0)
-          styles.paddingBottom = this.toCSSValue(p.bottom);
-        if (p.left !== void 0) styles.paddingLeft = this.toCSSValue(p.left);
-      }
-    }
-    if (props.margin !== void 0) {
-      if (typeof props.margin === "number") {
-        styles.margin = this.toCSSValue(props.margin);
-      } else {
-        const m = props.margin;
-        if (m.top !== void 0) styles.marginTop = this.toCSSValue(m.top);
-        if (m.right !== void 0) styles.marginRight = this.toCSSValue(m.right);
-        if (m.bottom !== void 0)
-          styles.marginBottom = this.toCSSValue(m.bottom);
-        if (m.left !== void 0) styles.marginLeft = this.toCSSValue(m.left);
-      }
-    }
-    if (props.alignment) {
-      switch (props.alignment) {
-        case "leading":
-          styles.textAlign = "left";
-          styles.alignItems = "flex-start";
-          break;
-        case "center":
-          styles.textAlign = "center";
-          styles.alignItems = "center";
-          break;
-        case "trailing":
-          styles.textAlign = "right";
-          styles.alignItems = "flex-end";
-          break;
-        case "top":
-          styles.alignItems = "flex-start";
-          break;
-        case "bottom":
-          styles.alignItems = "flex-end";
-          break;
-      }
-    }
-    if (props.layoutPriority !== void 0) {
-      const priority = Number(props.layoutPriority);
-      if (priority > 0) {
-        styles.flexShrink = "0";
-        styles.flexGrow = String(Math.max(1, priority / 10));
-        styles.zIndex = String(priority);
-        styles.gridRowEnd = `span ${String(Math.min(10, Math.max(1, Math.ceil(priority / 10))))}`;
-        styles.gridColumnEnd = `span ${String(Math.min(10, Math.max(1, Math.ceil(priority / 10))))}`;
-      } else if (priority === 0) {
-        styles.flexShrink = "1";
-        styles.flexGrow = "1";
-      } else {
-        styles.flexShrink = String(Math.abs(priority));
-        styles.flexGrow = "0";
-        styles.zIndex = String(priority);
-      }
-      if (styles && typeof styles === "object" && "setProperty" in styles) {
-        ;
-        styles.setProperty("--layout-priority", String(priority));
-      }
-    }
-    if (props.offset) {
-    }
-    if (props.aspectRatio) {
-      const { ratio, contentMode } = props.aspectRatio;
-      if (ratio !== void 0) {
-        styles.aspectRatio = typeof ratio === "number" ? String(ratio) : ratio;
-        if (contentMode === "fill") {
-          styles.objectFit = "cover";
-        } else {
-          styles.objectFit = "contain";
-        }
-      }
-    }
-    if (props.fixedSize) {
-      const { horizontal, vertical } = props.fixedSize;
-      if (horizontal) {
-        styles.flexShrink = "0";
-        styles.width = "max-content";
-      }
-      if (vertical) {
-        styles.flexShrink = "0";
-        styles.height = "max-content";
-      }
-    }
-    return styles;
-  }
-};
-var AppearanceModifier = class extends BaseModifier {
-  constructor() {
-    super(...arguments);
-    __publicField(this, "type", "appearance");
-    __publicField(this, "priority", 200 /* APPEARANCE */);
-  }
-  apply(node, context) {
-    if (!node.element || !context.element) {
-      return;
-    }
-    const styleContext = this.createStyleContext(
-      context.componentId,
-      context.element,
-      []
-    );
-    const resolved = this.resolveReactiveProps(
-      this.properties,
-      styleContext
-    );
-    this.applyAssetBasedStyles(context.element, resolved);
-    const styles = this.computeAppearanceStyles(resolved);
-    this.applyStyles(context.element, styles);
-    this.applyAttributes(context.element, resolved);
-    return void 0;
-  }
-  /**
-   * Apply Asset-based styles with theme reactivity
-   */
-  applyAssetBasedStyles(element, props) {
-    const themeSignal = getThemeSignal();
-    if (props.foregroundColor && this.isAsset(props.foregroundColor)) {
-      createEffect(() => {
-        themeSignal();
-        const resolvedColor = props.foregroundColor.resolve();
-        this.applyStyleChange(element, "color", resolvedColor);
-      });
-    }
-    if (props.backgroundColor && this.isAsset(props.backgroundColor)) {
-      createEffect(() => {
-        themeSignal();
-        const resolvedColor = props.backgroundColor.resolve();
-        this.applyStyleChange(element, "backgroundColor", resolvedColor);
-      });
-    }
-    if (props.border?.color && this.isAsset(props.border.color)) {
-      createEffect(() => {
-        themeSignal();
-        const resolvedColor = props.border.color.resolve();
-        this.applyStyleChange(element, "borderColor", resolvedColor);
-      });
-    }
-  }
-  /**
-   * Check if a value is an Asset object (including Asset proxies)
-   */
-  isAsset(value) {
-    return value !== null && value !== void 0 && typeof value === "object" && "resolve" in value && typeof value.resolve === "function";
-  }
-  computeAppearanceStyles(props) {
-    const styles = {};
-    if (props.foregroundColor && !this.isAsset(props.foregroundColor)) {
-      styles.color = props.foregroundColor;
-    }
-    if (props.backgroundColor && !this.isAsset(props.backgroundColor)) {
-      styles.backgroundColor = props.backgroundColor;
-    }
-    if (props.opacity !== void 0) styles.opacity = props.opacity;
-    if (props.font) {
-      const font = props.font;
-      if (font.family) {
-        if (typeof font.family === "object" && font.family !== null && "resolve" in font.family) {
-          styles.fontFamily = font.family.resolve();
-        } else {
-          styles.fontFamily = font.family;
-        }
-      }
-      if (font.size) styles.fontSize = this.toCSSValue(font.size);
-      if (font.weight) styles.fontWeight = String(font.weight);
-      if (font.style) styles.fontStyle = font.style;
-    }
-    if (props.cornerRadius !== void 0) {
-      styles.borderRadius = this.toCSSValue(props.cornerRadius);
-    }
-    if (props.border) {
-      const border2 = props.border;
-      if (border2.width !== void 0)
-        styles.borderWidth = this.toCSSValue(border2.width);
-      if (border2.color && !this.isAsset(border2.color)) {
-        styles.borderColor = border2.color;
-      }
-      if (border2.style) styles.borderStyle = border2.style;
-    }
-    const filters = [];
-    if (props.blur !== void 0) {
-      filters.push(`blur(${props.blur}px)`);
-    }
-    if (props.brightness !== void 0) {
-      filters.push(`brightness(${props.brightness})`);
-    }
-    if (props.contrast !== void 0) {
-      filters.push(`contrast(${props.contrast})`);
-    }
-    if (props.saturation !== void 0) {
-      filters.push(`saturate(${props.saturation})`);
-    }
-    if (props.hueRotation !== void 0) {
-      filters.push(`hue-rotate(${props.hueRotation}deg)`);
-    }
-    if (props.grayscale !== void 0) {
-      filters.push(`grayscale(${props.grayscale})`);
-    }
-    if (props.colorInvert !== void 0) {
-      filters.push(`invert(${props.colorInvert})`);
-    }
-    if (filters.length > 0) {
-      styles.filter = filters.join(" ");
-    }
-    return styles;
-  }
-  /**
-   * Apply HTML attributes (ARIA, role, data attributes, etc.)
-   */
-  applyAttributes(element, props) {
-    if (!element) return;
-    const component = this.findComponentFromElement(element);
-    if (props.role !== void 0) {
-      element.setAttribute("role", String(props.role));
-      if (component?.props) {
-        component.props.role = String(props.role);
-      }
-    }
-    if (props["aria-label"] !== void 0) {
-      element.setAttribute("aria-label", String(props["aria-label"]));
-      if (component?.props) {
-        component.props["aria-label"] = String(props["aria-label"]);
-      }
-    }
-    if (props["aria-live"] !== void 0) {
-      element.setAttribute("aria-live", String(props["aria-live"]));
-      if (component?.props) {
-        component.props["aria-live"] = String(props["aria-live"]);
-      }
-    }
-    if (props["aria-describedby"] !== void 0) {
-      element.setAttribute(
-        "aria-describedby",
-        String(props["aria-describedby"])
-      );
-      if (component?.props) {
-        component.props["aria-describedby"] = String(props["aria-describedby"]);
-      }
-    }
-    if (props["aria-modal"] !== void 0) {
-      element.setAttribute("aria-modal", String(props["aria-modal"]));
-      if (component?.props) {
-        component.props["aria-modal"] = String(props["aria-modal"]);
-      }
-    }
-    if (props["aria-hidden"] !== void 0) {
-      element.setAttribute("aria-hidden", String(props["aria-hidden"]));
-      if (component?.props) {
-        component.props["aria-hidden"] = String(props["aria-hidden"]);
-      }
-    }
-    if (props.navigationTitle !== void 0) {
-      element.setAttribute(
-        "data-navigation-title",
-        String(props.navigationTitle)
-      );
-      if (component?.props) {
-        component.props.navigationTitle = String(props.navigationTitle);
-      }
-    }
-    if (props.navigationBarHidden !== void 0) {
-      element.setAttribute(
-        "data-navigation-bar-hidden",
-        String(props.navigationBarHidden)
-      );
-      if (component?.props) {
-        component.props.navigationBarHidden = props.navigationBarHidden;
-      }
-      if (props.navigationBarHidden) {
-        element.setAttribute("aria-hidden", "true");
-        if (component?.props) {
-          component.props["aria-hidden"] = "true";
-        }
-      }
-    }
-    if (props.navigationBarItems !== void 0) {
-      element.setAttribute(
-        "data-navigation-bar-items",
-        JSON.stringify(props.navigationBarItems)
-      );
-      if (component?.props) {
-        component.props.navigationBarItems = props.navigationBarItems;
-      }
-    }
-  }
-  findComponentFromElement(element) {
-    return element._tachui_component || null;
-  }
-};
-var InteractionModifier = class extends BaseModifier {
-  constructor() {
-    super(...arguments);
-    __publicField(this, "type", "interaction");
-    __publicField(this, "priority", 300 /* INTERACTION */);
-  }
-  apply(_node, context) {
-    if (!context.element) return;
-    const props = this.properties;
-    if (props.onTap) {
-      context.element.addEventListener("click", props.onTap);
-    }
-    if (props.onHover) {
-      context.element.addEventListener("mouseenter", () => props.onHover(true));
-      context.element.addEventListener("mouseleave", () => props.onHover(false));
-    }
-    if (props.onMouseEnter) {
-      context.element.addEventListener("mouseenter", props.onMouseEnter);
-    }
-    if (props.onMouseLeave) {
-      context.element.addEventListener("mouseleave", props.onMouseLeave);
-    }
-    if (props.onMouseDown) {
-      context.element.addEventListener("mousedown", props.onMouseDown);
-    }
-    if (props.onMouseUp) {
-      context.element.addEventListener("mouseup", props.onMouseUp);
-    }
-    if (props.onDragStart) {
-      context.element.addEventListener("dragstart", props.onDragStart);
-    }
-    if (props.onDragOver) {
-      context.element.addEventListener("dragover", props.onDragOver);
-    }
-    if (props.onDragLeave) {
-      context.element.addEventListener("dragleave", props.onDragLeave);
-    }
-    if (props.onDrop) {
-      context.element.addEventListener("drop", props.onDrop);
-    }
-    if (props.onDoubleClick) {
-      context.element.addEventListener("dblclick", props.onDoubleClick);
-    }
-    if (props.onContextMenu) {
-      context.element.addEventListener("contextmenu", props.onContextMenu);
-    }
-    if (props.onFocus) {
-      context.element.addEventListener("focus", () => props.onFocus(true));
-      context.element.addEventListener("blur", () => props.onFocus(false));
-    }
-    if (props.onBlur) {
-      context.element.addEventListener("blur", () => props.onBlur(false));
-    }
-    if (props.onKeyPress) {
-      context.element.addEventListener("keypress", props.onKeyPress);
-    }
-    if (props.onKeyDown) {
-      context.element.addEventListener("keydown", props.onKeyDown);
-    }
-    if (props.onKeyUp) {
-      context.element.addEventListener("keyup", props.onKeyUp);
-    }
-    if (props.onTouchStart) {
-      context.element.addEventListener("touchstart", props.onTouchStart, {
-        passive: true
-      });
-    }
-    if (props.onTouchMove) {
-      context.element.addEventListener("touchmove", props.onTouchMove, {
-        passive: true
-      });
-    }
-    if (props.onTouchEnd) {
-      context.element.addEventListener("touchend", props.onTouchEnd, {
-        passive: true
-      });
-    }
-    if (props.onTouchCancel) {
-      context.element.addEventListener("touchcancel", props.onTouchCancel, {
-        passive: true
-      });
-    }
-    if (props.onSwipeLeft || props.onSwipeRight) {
-      let startX = 0;
-      let startY = 0;
-      context.element.addEventListener(
-        "touchstart",
-        (e) => {
-          const touchEvent = e;
-          const touch = touchEvent.touches[0];
-          startX = touch.clientX;
-          startY = touch.clientY;
-        },
-        { passive: true }
-      );
-      context.element.addEventListener(
-        "touchend",
-        (e) => {
-          const touchEvent = e;
-          const touch = touchEvent.changedTouches[0];
-          const deltaX = touch.clientX - startX;
-          const deltaY = touch.clientY - startY;
-          const minSwipeDistance = 50;
-          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
-            if (deltaX < 0 && props.onSwipeLeft) {
-              props.onSwipeLeft();
-            } else if (deltaX > 0 && props.onSwipeRight) {
-              props.onSwipeRight();
-            }
-          }
-        },
-        { passive: true }
-      );
-    }
-    if (props.onScroll) {
-      context.element.addEventListener("scroll", props.onScroll, {
-        passive: true
-      });
-    }
-    if (props.onWheel) {
-      context.element.addEventListener("wheel", props.onWheel, {
-        passive: false
-      });
-    }
-    if (props.onInput) {
-      context.element.addEventListener("input", props.onInput);
-    }
-    if (props.onChange) {
-      context.element.addEventListener("change", (event) => {
-        const target = event.target;
-        const value = target.value || target.textContent || "";
-        props.onChange(value, event);
-      });
-    }
-    if (props.onCopy) {
-      context.element.addEventListener("copy", props.onCopy);
-    }
-    if (props.onCut) {
-      context.element.addEventListener("cut", props.onCut);
-    }
-    if (props.onPaste) {
-      context.element.addEventListener("paste", props.onPaste);
-    }
-    if (props.onSelect) {
-      context.element.addEventListener("select", props.onSelect);
-    }
-    if (props.disabled !== void 0) {
-      if (context.element instanceof HTMLElement) {
-        if (props.disabled) {
-          context.element.setAttribute("disabled", "true");
-          context.element.style.pointerEvents = "none";
-          context.element.style.opacity = "0.6";
-        } else {
-          context.element.removeAttribute("disabled");
-          context.element.style.pointerEvents = "";
-          context.element.style.opacity = "";
-        }
-      }
-    }
-    if (props.draggable !== void 0) {
-      if (context.element instanceof HTMLElement) {
-        context.element.draggable = props.draggable;
-      }
-    }
-    if (props.accessibilityLabel) {
-      context.element.setAttribute("aria-label", props.accessibilityLabel);
-    }
-    if (props.accessibilityHint) {
-      context.element.setAttribute("aria-describedby", props.accessibilityHint);
-    }
-    return void 0;
-  }
-};
-var AnimationModifier = class extends BaseModifier {
-  constructor() {
-    super(...arguments);
-    __publicField(this, "type", "animation");
-    __publicField(this, "priority", 400 /* ANIMATION */);
-  }
-  apply(_node, context) {
-    if (!context.element) return;
-    const props = this.properties;
-    if (props.transition) {
-      const t = props.transition;
-      const property = t.property || "all";
-      const duration = t.duration || 300;
-      const easing = t.easing || "ease";
-      const delay = t.delay || 0;
-      if (context.element instanceof HTMLElement) {
-        context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`;
-      }
-    }
-    if (props.animation && context.element instanceof HTMLElement) {
-      const anim = props.animation;
-      if (anim.keyframes) {
-        const keyframeName = `tachui-animation-${context.componentId}-${Date.now()}`;
-        const keyframeRule = this.createKeyframeRule(
-          keyframeName,
-          anim.keyframes
-        );
-        this.addKeyframesToStylesheet(keyframeRule);
-        const duration = anim.duration || 1e3;
-        const easing = anim.easing || "ease";
-        const iterations = anim.iterations || 1;
-        const direction = anim.direction || "normal";
-        context.element.style.animation = `${keyframeName} ${duration}ms ${easing} ${iterations} ${direction}`;
-      }
-    }
-    if (props.transform && context.element instanceof HTMLElement) {
-      if (isSignal(props.transform) || isComputed(props.transform)) {
-        createEffect(() => {
-          const transformValue = props.transform();
-          if (context.element instanceof HTMLElement) {
-            context.element.style.transform = transformValue;
-          }
-        });
-      } else {
-        context.element.style.transform = props.transform;
-      }
-    }
-    if (props.scaleEffect && context.element instanceof HTMLElement) {
-      const { x, y, anchor } = props.scaleEffect;
-      const scaleY = y ?? x;
-      const anchorOrigins = {
-        center: "50% 50%",
-        top: "50% 0%",
-        topLeading: "0% 0%",
-        topTrailing: "100% 0%",
-        bottom: "50% 100%",
-        bottomLeading: "0% 100%",
-        bottomTrailing: "100% 100%",
-        leading: "0% 50%",
-        trailing: "100% 50%"
-      };
-      const transformOrigin = anchorOrigins[anchor || "center"] || "50% 50%";
-      context.element.style.transformOrigin = transformOrigin;
-      const scaleTransform = `scale(${x}, ${scaleY})`;
-      const existingTransform = context.element.style.transform || "";
-      const existingTransforms = existingTransform.replace(/\s*scale[XYZ3d]*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
-      const newTransform = existingTransforms ? `${existingTransforms} ${scaleTransform}`.trim() : scaleTransform;
-      context.element.style.transform = newTransform;
-    }
-    return void 0;
-  }
-  createKeyframeRule(name, keyframes) {
-    let rule = `@keyframes ${name} {
-`;
-    for (const [percentage, styles] of Object.entries(keyframes)) {
-      rule += `  ${percentage} {
-`;
-      for (const [property, value] of Object.entries(styles)) {
-        const cssProperty2 = this.toCSSProperty(property);
-        rule += `    ${cssProperty2}: ${value};
-`;
-      }
-      rule += `  }
-`;
-    }
-    rule += "}";
-    return rule;
-  }
-  addKeyframesToStylesheet(rule) {
-    let stylesheet = document.querySelector(
-      "#tachui-animations"
-    );
-    if (!stylesheet) {
-      stylesheet = document.createElement("style");
-      stylesheet.id = "tachui-animations";
-      document.head.appendChild(stylesheet);
-    }
-    stylesheet.appendChild(document.createTextNode(rule));
-  }
-};
-var LifecycleModifier = class extends BaseModifier {
-  constructor() {
-    super(...arguments);
-    __publicField(this, "type", "lifecycle");
-    __publicField(this, "priority", 500 /* CUSTOM */);
-    __publicField(this, "activeAbortController");
-  }
-  apply(_node, context) {
-    if (!context.element) return;
-    const props = this.properties;
-    if (this.activeAbortController) {
-      this.activeAbortController.abort();
-    }
-    if (props.task) {
-      this.setupTask(context, props.task);
-    }
-    if (props.onAppear || props.onDisappear) {
-      this.setupViewportObserver(context, props);
-    }
-    return void 0;
-  }
-  setupTask(_context, task) {
-    if (!task) return;
-    this.activeAbortController = new AbortController();
-    const { signal } = this.activeAbortController;
-    const executeTask = async () => {
-      try {
-        if (signal.aborted) return;
-        const result = task.operation();
-        if (result instanceof Promise) {
-          await result;
-        }
-      } catch (error) {
-        if (signal.aborted) return;
-        console.error("TachUI Task Error:", error);
-      }
-    };
-    executeTask();
-    this.addCleanup(() => {
-      if (this.activeAbortController) {
-        this.activeAbortController.abort();
-      }
-    });
-  }
-  setupViewportObserver(context, props) {
-    if (!context.element) return;
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && props.onAppear) {
-          props.onAppear();
-        } else if (!entry.isIntersecting && props.onDisappear) {
-          props.onDisappear();
-        }
-      });
-    });
-    observer.observe(context.element);
-    this.addCleanup(() => {
-      observer.disconnect();
-    });
-  }
-  addCleanup(cleanup) {
-    if (!this.properties._cleanupFunctions) {
-      ;
-      this.properties._cleanupFunctions = [];
-    }
-    ;
-    this.properties._cleanupFunctions.push(cleanup);
-  }
-};
-
-// src/gradients/css-generator.ts
-var POSITION_MAP = {
-  "center": "center",
-  "top": "top",
-  "bottom": "bottom",
-  "leading": "left",
-  "trailing": "right"
-};
-function resolveColor(color) {
-  if (typeof color === "string") {
-    return color;
-  }
-  return color.resolve();
-}
-function formatColorStops(colors, stops) {
-  return colors.map((color, index) => {
-    const resolvedColor = resolveColor(color);
-    if (stops && stops[index] !== void 0) {
-      return `${resolvedColor} ${stops[index]}%`;
-    }
-    return resolvedColor;
-  }).join(", ");
-}
-function formatPosition(center) {
-  if (Array.isArray(center)) {
-    return `${center[0]}% ${center[1]}%`;
-  }
-  return POSITION_MAP[center] || center;
-}
-function calculateDirection(startPoint, endPoint, angle) {
-  if (angle !== void 0) {
-    return `${angle}deg`;
-  }
-  const directionKey = `${startPoint}-${endPoint}`;
-  const directionMappings = {
-    "top-bottom": "to bottom",
-    "bottom-top": "to top",
-    "leading-trailing": "to right",
-    "trailing-leading": "to left",
-    "topLeading-bottomTrailing": "to bottom right",
-    "topTrailing-bottomLeading": "to bottom left",
-    "bottomLeading-topTrailing": "to top right",
-    "bottomTrailing-topLeading": "to top left"
-  };
-  return directionMappings[directionKey] || "to bottom";
-}
-function generateLinearGradientCSS(options) {
-  const direction = calculateDirection(options.startPoint, options.endPoint, options.angle);
-  const colorStops = formatColorStops(options.colors, options.stops);
-  return `linear-gradient(${direction}, ${colorStops})`;
-}
-function generateRadialGradientCSS(options) {
-  const shape = options.shape || "circle";
-  const position = formatPosition(options.center);
-  const colorStops = formatColorStops(options.colors, options.stops);
-  let sizeSpec;
-  if (shape === "circle") {
-    sizeSpec = `${options.endRadius}px`;
-  } else {
-    sizeSpec = `${options.endRadius}px ${options.endRadius}px`;
-  }
-  return `radial-gradient(${shape} ${sizeSpec} at ${position}, ${colorStops})`;
-}
-function generateAngularGradientCSS(options) {
-  const position = formatPosition(options.center);
-  const fromAngle = `from ${options.startAngle}deg`;
-  const colorStops = formatColorStops(options.colors, options.stops);
-  return `conic-gradient(${fromAngle} at ${position}, ${colorStops})`;
-}
-function generateConicGradientCSS(options) {
-  const position = formatPosition(options.center);
-  const fromAngle = `from ${options.startAngle}deg`;
-  const colorStops = formatColorStops(options.colors, options.stops);
-  return `conic-gradient(${fromAngle} at ${position}, ${colorStops})`;
-}
-function generateRepeatingLinearGradientCSS(options) {
-  const colorStops = options.colors.map((color, index) => {
-    const resolvedColor = resolveColor(color);
-    const stop = options.colorStops[index] || `${index * 10}px`;
-    return `${resolvedColor} ${stop}`;
-  }).join(", ");
-  return `repeating-linear-gradient(${options.direction}, ${colorStops})`;
-}
-function generateRepeatingRadialGradientCSS(options) {
-  const shape = options.shape || "circle";
-  const position = formatPosition(options.center);
-  const colorStops = options.colors.map((color, index) => {
-    const resolvedColor = resolveColor(color);
-    const stop = options.colorStops[index] || `${index * 10}px`;
-    return `${resolvedColor} ${stop}`;
-  }).join(", ");
-  return `repeating-radial-gradient(${shape} at ${position}, ${colorStops})`;
-}
-function generateEllipticalGradientCSS(options) {
-  const position = formatPosition(options.center);
-  const colorStops = formatColorStops(options.colors, options.stops);
-  return `radial-gradient(ellipse ${options.radiusX}px ${options.radiusY}px at ${position}, ${colorStops})`;
-}
-function gradientToCSS(gradient) {
-  switch (gradient.type) {
-    case "linear":
-      return generateLinearGradientCSS(gradient.options);
-    case "radial":
-      return generateRadialGradientCSS(gradient.options);
-    case "angular":
-      return generateAngularGradientCSS(gradient.options);
-    case "conic":
-      return generateConicGradientCSS(gradient.options);
-    case "repeating-linear":
-      return generateRepeatingLinearGradientCSS(gradient.options);
-    case "repeating-radial":
-      return generateRepeatingRadialGradientCSS(gradient.options);
-    case "elliptical":
-      return generateEllipticalGradientCSS(gradient.options);
-    default:
-      throw new Error(`Unknown gradient type: ${gradient.type}`);
-  }
-}
-
 // ../registry/src/singleton.ts
 var globalRegistryInstance = null;
 var _ModifierRegistryImpl = class _ModifierRegistryImpl {
@@ -2935,11 +1910,6 @@ var _ModifierRegistryImpl = class _ModifierRegistryImpl {
     this.modifiers.set(name, factory);
     this.lazyLoaders.delete(name);
     this.loadingPromises.delete(name);
-    if (true) {
-      console.log(
-        `\u2705 Registered modifier '${name}' in registry ${this.instanceId} (total: ${this.modifiers.size})`
-      );
-    }
   }
   registerLazy(name, loader) {
     _ModifierRegistryImpl.validateModifierName(name);
@@ -3105,12 +2075,6 @@ var _ModifierRegistryImpl = class _ModifierRegistryImpl {
       ...this.featureFlags,
       ...flags
     };
-    if (true) {
-      console.log(
-        `\u{1F39A}\uFE0F Updated feature flags in registry ${this.instanceId}:`,
-        this.featureFlags
-      );
-    }
   }
   /**
    * Get current feature flags
@@ -3154,11 +2118,6 @@ var _ModifierRegistryImpl = class _ModifierRegistryImpl {
     this.recordMetadataHistoryEntry(modifierMetadata);
     if (!existing) {
       this.metadata.set(modifierMetadata.name, modifierMetadata);
-      if (true) {
-        console.log(
-          `\u{1F4DD} Registered metadata for '${String(modifierMetadata.name)}' from ${modifierMetadata.plugin}`
-        );
-      }
       return;
     }
     if (samePlugin) {
@@ -3180,19 +2139,19 @@ var _ModifierRegistryImpl = class _ModifierRegistryImpl {
       );
     }
   }
-  recordMetadataHistoryEntry(metadata14) {
-    const entries = this.metadataHistory.get(metadata14.name) ?? [];
-    const key = `${metadata14.plugin}:${metadata14.priority}`;
+  recordMetadataHistoryEntry(metadata) {
+    const entries = this.metadataHistory.get(metadata.name) ?? [];
+    const key = `${metadata.plugin}:${metadata.priority}`;
     const existingIndex = entries.findIndex(
       (entry) => `${entry.plugin}:${entry.priority}` === key
     );
     if (existingIndex >= 0) {
-      entries[existingIndex] = metadata14;
+      entries[existingIndex] = metadata;
     } else {
-      entries.push(metadata14);
+      entries.push(metadata);
     }
-    this.metadataHistory.set(metadata14.name, entries);
-    this.refreshConflictsFor(metadata14.name, entries);
+    this.metadataHistory.set(metadata.name, entries);
+    this.refreshConflictsFor(metadata.name, entries);
   }
   refreshConflictsFor(name, entries) {
     const conflictsForName = [];
@@ -3241,27 +2200,24 @@ var _ModifierRegistryImpl = class _ModifierRegistryImpl {
    */
   getConflicts() {
     return new Map(
-      Array.from(this.conflicts.entries(), ([key, value]) => [
-        key,
-        [...value]
-      ])
+      Array.from(this.conflicts.entries(), ([key, value]) => [key, [...value]])
     );
   }
-  registerPlugin(metadata14) {
-    if (!metadata14.name || !metadata14.version) {
+  registerPlugin(metadata) {
+    if (!metadata.name || !metadata.version) {
       throw new Error("Plugin must define both name and version");
     }
-    if (!metadata14.author) {
+    if (!metadata.author) {
       throw new Error(
-        `Plugin '${metadata14.name}' must include an author or organization`
+        `Plugin '${metadata.name}' must include an author or organization`
       );
     }
-    if (!metadata14.verified && true) {
+    if (!metadata.verified && true) {
       console.warn(
-        `\u26A0\uFE0F Registering unverified plugin '${metadata14.name}'. Install plugins from trusted sources.`
+        `\u26A0\uFE0F Registering unverified plugin '${metadata.name}'. Install plugins from trusted sources.`
       );
     }
-    this.plugins.set(metadata14.name, metadata14);
+    this.plugins.set(metadata.name, metadata);
   }
   getPluginInfo(name) {
     return this.plugins.get(name);
@@ -3285,768 +2241,10 @@ var ModifierRegistryImpl = _ModifierRegistryImpl;
 function getGlobalRegistry() {
   if (!globalRegistryInstance) {
     globalRegistryInstance = new ModifierRegistryImpl();
-    if (true) {
-      console.log("\u{1F31F} Created global TachUI modifier registry singleton");
-    }
   }
   return globalRegistryInstance;
 }
 var globalModifierRegistry = getGlobalRegistry();
-if (true) {
-  globalModifierRegistry.getDiagnostics = () => globalRegistryInstance?.getDiagnostics();
-  console.log("\u{1F4E4} Exported globalModifierRegistry from @tachui/registry");
-}
-
-// src/modifiers/background.ts
-var BackgroundModifier = class extends BaseModifier {
-  constructor(options) {
-    super(options);
-    __publicField(this, "type", "background");
-    __publicField(this, "priority", 200 /* APPEARANCE */);
-    __publicField(this, "cleanupFunctions", []);
-  }
-  apply(_node, context) {
-    if (!context.element) return;
-    this.cleanupFunctions.forEach((cleanup) => cleanup());
-    this.cleanupFunctions = [];
-    const background2 = this.properties.background;
-    if (this.isStateGradient(background2) && context.element instanceof HTMLElement) {
-      this.setupStateGradient(
-        context.element,
-        background2
-      );
-    } else if (this.isStateGradient(background2)) {
-      const styles = this.computeBackgroundStyles(this.properties);
-      this.applyStyles(context.element, styles);
-    } else {
-      const styles = this.computeBackgroundStyles(this.properties);
-      this.applyStyles(context.element, styles);
-    }
-    return void 0;
-  }
-  isStateGradient(background2) {
-    return background2 && typeof background2 === "object" && "default" in background2 && !("type" in background2) && !("resolve" in background2);
-  }
-  setupStateGradient(element, stateGradient) {
-    const defaultBackground = this.resolveBackground(stateGradient.default);
-    element.style.background = defaultBackground;
-    if (stateGradient.animation) {
-      const {
-        duration = 200,
-        easing = "ease-out",
-        delay = 0
-      } = stateGradient.animation;
-      element.style.cssText += `transition: background ${duration}ms ${easing} ${delay}ms`;
-    }
-    if (stateGradient.hover) {
-      this.addHoverListeners(element, stateGradient);
-    }
-    if (stateGradient.active) {
-      this.addActiveListeners(element, stateGradient);
-    }
-    if (stateGradient.focus) {
-      this.addFocusListeners(element, stateGradient);
-    }
-    if (stateGradient.disabled) {
-      this.addDisabledObserver(element, stateGradient);
-    }
-  }
-  addHoverListeners(element, stateGradient) {
-    const onMouseEnter = () => {
-      if (!this.isDisabled(element)) {
-        element.style.background = this.resolveBackground(stateGradient.hover);
-      }
-    };
-    const onMouseLeave = () => {
-      const nextState = this.getHighestPriorityState(element, stateGradient);
-      element.style.background = this.resolveBackground(nextState);
-    };
-    element.addEventListener("mouseenter", onMouseEnter);
-    element.addEventListener("mouseleave", onMouseLeave);
-    this.cleanupFunctions.push(() => {
-      element.removeEventListener("mouseenter", onMouseEnter);
-      element.removeEventListener("mouseleave", onMouseLeave);
-    });
-  }
-  addActiveListeners(element, stateGradient) {
-    const onMouseDown = () => {
-      if (!this.isDisabled(element)) {
-        element.style.background = this.resolveBackground(stateGradient.active);
-      }
-    };
-    const onMouseUp = () => {
-      const nextState = this.getMouseInteractionState(element, stateGradient);
-      element.style.background = this.resolveBackground(nextState);
-    };
-    element.addEventListener("mousedown", onMouseDown);
-    element.addEventListener("mouseup", onMouseUp);
-    this.cleanupFunctions.push(() => {
-      element.removeEventListener("mousedown", onMouseDown);
-      element.removeEventListener("mouseup", onMouseUp);
-    });
-  }
-  addFocusListeners(element, stateGradient) {
-    const onFocus = () => {
-      if (!this.isDisabled(element)) {
-        element.style.background = this.resolveBackground(stateGradient.focus);
-      }
-    };
-    const onBlur = () => {
-      if (!this.isDisabled(element)) {
-        const nextState = this.getHighestPriorityState(element, stateGradient);
-        element.style.background = this.resolveBackground(nextState);
-      }
-    };
-    element.addEventListener("focus", onFocus);
-    element.addEventListener("blur", onBlur);
-    this.cleanupFunctions.push(() => {
-      element.removeEventListener("focus", onFocus);
-      element.removeEventListener("blur", onBlur);
-    });
-  }
-  addDisabledObserver(element, stateGradient) {
-    const observer = new MutationObserver(() => {
-      if (this.isDisabled(element)) {
-        element.style.background = this.resolveBackground(
-          stateGradient.disabled
-        );
-      } else {
-        const nextState = this.getHighestPriorityState(element, stateGradient);
-        element.style.background = this.resolveBackground(nextState);
-      }
-    });
-    observer.observe(element, {
-      attributes: true,
-      attributeFilter: ["disabled"]
-    });
-    this.cleanupFunctions.push(() => {
-      observer.disconnect();
-    });
-  }
-  getMouseInteractionState(element, stateGradient) {
-    const isDisabled = this.isDisabled(element);
-    const hasFocus = element.matches(":focus");
-    const hasHover = element.matches(":hover");
-    if (isDisabled && stateGradient.disabled) {
-      return stateGradient.disabled;
-    }
-    if (hasHover && stateGradient.hover) {
-      return stateGradient.hover;
-    }
-    if (hasFocus && stateGradient.focus) {
-      return stateGradient.focus;
-    }
-    return stateGradient.default;
-  }
-  getHighestPriorityState(element, stateGradient) {
-    const isDisabled = this.isDisabled(element);
-    const hasFocus = element.matches(":focus");
-    const hasHover = element.matches(":hover");
-    if (isDisabled && stateGradient.disabled) {
-      return stateGradient.disabled;
-    }
-    if (hasFocus && stateGradient.focus) {
-      return stateGradient.focus;
-    }
-    if (hasHover && stateGradient.hover) {
-      return stateGradient.hover;
-    }
-    return stateGradient.default;
-  }
-  isDisabled(element) {
-    const hasDisabledAttr = element.hasAttribute("disabled");
-    if (hasDisabledAttr === false) {
-      return false;
-    }
-    return hasDisabledAttr || element.matches && element.matches(":disabled");
-  }
-  resolveBackground(background2) {
-    if (background2 === null || background2 === void 0) {
-      return "transparent";
-    }
-    if (typeof background2 === "object" && background2 !== null && "type" in background2 && "options" in background2) {
-      const cssResult = gradientToCSS(background2);
-      return cssResult;
-    } else if (typeof background2 === "object" && background2 !== null && "resolve" in background2) {
-      return background2.resolve();
-    } else {
-      return String(background2);
-    }
-  }
-  computeBackgroundStyles(props) {
-    const styles = {};
-    if (props.background !== void 0) {
-      if (this.isStateGradient(props.background)) {
-        const stateGradient = props.background;
-        styles.background = this.resolveBackground(stateGradient.default);
-      } else {
-        styles.background = this.resolveBackground(
-          props.background
-        );
-      }
-    }
-    return styles;
-  }
-};
-function background(value) {
-  return new BackgroundModifier({ background: value });
-}
-var backgroundMetadata = {
-  category: "appearance",
-  priority: 200 /* APPEARANCE */,
-  signature: "(value: string | GradientDefinition | Asset | StateGradientOptions) => Modifier",
-  description: "Applies a background fill supporting solid colors, gradients, assets, or state-driven variants."
-};
-
-// src/modifiers/padding.ts
-var metadata = {
-  category: "layout",
-  priority: 100 /* LAYOUT */,
-  signature: '(value: LayoutModifierProps["padding"]) => Modifier',
-  description: "Applies padding to all sides or specific edges of a component."
-};
-var paddingFactory = (value) => {
-  return new LayoutModifier({ padding: value });
-};
-function padding(value) {
-  return paddingFactory(value);
-}
-
-// src/modifiers/margin.ts
-var metadata2 = {
-  category: "layout",
-  priority: 100 /* LAYOUT */,
-  signature: '(value: LayoutModifierProps["margin"]) => Modifier',
-  description: "Sets the outer margin for a component with support for per-edge values."
-};
-var marginFactory = (value) => {
-  return new LayoutModifier({ margin: value });
-};
-function margin(value) {
-  return marginFactory(value);
-}
-
-// src/modifiers/frame.ts
-var metadata3 = {
-  category: "layout",
-  priority: 100 /* LAYOUT */,
-  signature: "(width?: Dimension, height?: Dimension, options?: FrameOptions) => Modifier",
-  description: "Constrains a component to the specified width and height with optional min/max constraints."
-};
-var frameFactory = (width, height, options) => {
-  const frameConfig = {
-    width,
-    height
-  };
-  if (options) {
-    Object.assign(frameConfig, options);
-  }
-  return new LayoutModifier({
-    frame: frameConfig
-  });
-};
-function frame(width, height, options) {
-  return frameFactory(width, height, options);
-}
-
-// src/modifiers/alignment.ts
-var metadata4 = {
-  category: "layout",
-  priority: 100 /* LAYOUT */,
-  signature: '(value: LayoutModifierProps["alignment"]) => Modifier',
-  description: "Sets the alignment hint for stack and container layouts."
-};
-var alignmentFactory = (value) => {
-  return new LayoutModifier({ alignment: value });
-};
-function alignment(value) {
-  return alignmentFactory(value);
-}
-
-// src/modifiers/layout-priority.ts
-var metadata5 = {
-  category: "layout",
-  priority: 100 /* LAYOUT */,
-  signature: "(value: number | Signal<number>) => Modifier",
-  description: "Hints layout engines to prefer this component when resolving flexible sizing."
-};
-var layoutPriorityFactory = (value) => {
-  return new LayoutModifier({ layoutPriority: value });
-};
-function layoutPriority(value) {
-  return layoutPriorityFactory(value);
-}
-
-// src/modifiers/foreground-color.ts
-var metadata6 = {
-  category: "appearance",
-  priority: 200 /* APPEARANCE */,
-  signature: "(color: string | Asset | Signal<string | Asset>) => Modifier",
-  description: "Sets the foreground (text) color for a component."
-};
-var foregroundColorFactory = (color) => {
-  return new AppearanceModifier({ foregroundColor: color });
-};
-function foregroundColor(color) {
-  return foregroundColorFactory(color);
-}
-
-// src/modifiers/background-color.ts
-var metadata7 = {
-  category: "appearance",
-  priority: 200 /* APPEARANCE */,
-  signature: "(color: string | Asset | Signal<string | Asset>) => Modifier",
-  description: "Sets the background color for a component."
-};
-var backgroundColorFactory = (color) => {
-  return new AppearanceModifier({ backgroundColor: color });
-};
-function backgroundColor(color) {
-  return backgroundColorFactory(color);
-}
-
-// src/modifiers/font-size.ts
-var metadata8 = {
-  category: "appearance",
-  priority: 200 /* APPEARANCE */,
-  signature: "(size: number | string | Signal<number | string>) => Modifier",
-  description: "Sets the font size while preserving reactive bindings."
-};
-var fontSizeFactory = (size) => {
-  return new AppearanceModifier({ font: { size } });
-};
-function fontSize(size) {
-  return fontSizeFactory(size);
-}
-
-// src/modifiers/font-weight.ts
-var metadata9 = {
-  category: "appearance",
-  priority: 200 /* APPEARANCE */,
-  signature: '(weight: AppearanceModifierProps["font"]["weight"]) => Modifier',
-  description: "Sets the font weight for typographic styling."
-};
-var fontWeightFactory = (weight) => {
-  return new AppearanceModifier({ font: { weight } });
-};
-function fontWeight(weight) {
-  return fontWeightFactory(weight);
-}
-
-// src/modifiers/font-family.ts
-var metadata10 = {
-  category: "appearance",
-  priority: 200 /* APPEARANCE */,
-  signature: "(family: string | FontAsset | Signal<string | FontAsset>) => Modifier",
-  description: "Sets the font family on text-based components."
-};
-var fontFamilyFactory = (family) => {
-  return new AppearanceModifier({ font: { family } });
-};
-function fontFamily(family) {
-  return fontFamilyFactory(family);
-}
-
-// src/modifiers/opacity.ts
-var metadata11 = {
-  category: "appearance",
-  priority: 200 /* APPEARANCE */,
-  signature: "(value: number | Signal<number>) => Modifier",
-  description: "Adjusts component opacity while respecting reactive updates."
-};
-var opacityFactory = (value) => {
-  return new AppearanceModifier({ opacity: value });
-};
-function opacity(value) {
-  return opacityFactory(value);
-}
-
-// src/modifiers/corner-radius.ts
-var metadata12 = {
-  category: "appearance",
-  priority: 200 /* APPEARANCE */,
-  signature: "(radius: number | Signal<number>) => Modifier",
-  description: "Rounds the corners of the component using border-radius."
-};
-var cornerRadiusFactory = (radius) => {
-  return new AppearanceModifier({ cornerRadius: radius });
-};
-function cornerRadius(radius) {
-  return cornerRadiusFactory(radius);
-}
-
-// src/modifiers/border.ts
-var metadata13 = {
-  category: "appearance",
-  priority: 200 /* APPEARANCE */,
-  signature: '(widthOrOptions: number | Signal<number> | AppearanceModifierProps["border"], color?: string | Asset, style?: "solid" | "dashed" | "dotted") => Modifier',
-  description: "Applies a stroke around the component with optional width, color, and style control."
-};
-var borderFactory = (widthOrOptions, color, style = "solid") => {
-  let borderProps;
-  if (typeof widthOrOptions === "object" && widthOrOptions !== null) {
-    borderProps = widthOrOptions;
-  } else {
-    borderProps = {
-      width: widthOrOptions,
-      color,
-      style
-    };
-  }
-  return new AppearanceModifier({ border: borderProps });
-};
-function border(widthOrOptions, color, style = "solid") {
-  return borderFactory(widthOrOptions, color, style);
-}
-
-// src/modifiers/presets.ts
-var layoutModifiers = {
-  /**
-   * Set foreground (text) color
-   */
-  foregroundColor(color) {
-    return foregroundColor(color);
-  },
-  /**
-   * Set frame dimensions with support for infinity
-   */
-  frame(width, height, options) {
-    return frame(width, height, options);
-  },
-  /**
-   * Set padding on all sides
-   */
-  padding(value) {
-    return padding(value);
-  },
-  /**
-   * Set margin on all sides
-   */
-  margin(value) {
-    return margin(value);
-  },
-  /**
-   * Set content alignment
-   */
-  alignment(value) {
-    return alignment(value);
-  },
-  /**
-   * Set layout priority for ZStack container sizing and flexible layout
-   * Higher priority views determine container size in ZStack
-   */
-  layoutPriority(priority) {
-    return layoutPriority(priority);
-  }
-};
-var appearanceModifiers = {
-  /**
-   * Set foreground (text) color
-   */
-  foregroundColor(color) {
-    return foregroundColor(color);
-  },
-  /**
-   * Set background color
-   */
-  backgroundColor(color) {
-    return backgroundColor(color);
-  },
-  /**
-   * Set background (supports gradients)
-   */
-  background(value) {
-    return background(value);
-  },
-  /**
-   * Set font properties
-   */
-  font(options) {
-    return new AppearanceModifier({ font: options });
-  },
-  /**
-   * Set font size
-   */
-  fontSize(size) {
-    return fontSize(size);
-  },
-  /**
-   * Set font weight
-   */
-  fontWeight(weight) {
-    return fontWeight(weight);
-  },
-  /**
-   * Set font family
-   */
-  fontFamily(family) {
-    return fontFamily(family);
-  },
-  /**
-   * Set opacity
-   */
-  opacity(value) {
-    return opacity(value);
-  },
-  /**
-   * Set corner radius (enhanced)
-   */
-  cornerRadius(radius) {
-    return cornerRadius(radius);
-  },
-  /**
-   * Set border
-   */
-  border(width, color = "#000000", style = "solid") {
-    return border(
-      width,
-      color,
-      style
-    );
-  },
-  /**
-   * Set detailed border properties
-   */
-  borderDetailed(options) {
-    return new AppearanceModifier({ border: options });
-  }
-  // Shadow functionality moved to @tachui/modifiers/effects entry point
-};
-var interactionModifiers = {
-  /**
-   * Add tap handler
-   */
-  onTap(handler) {
-    return new InteractionModifier({ onTap: handler });
-  },
-  /**
-   * Add hover handler
-   */
-  onHover(handler) {
-    return new InteractionModifier({ onHover: handler });
-  },
-  /**
-   * Add focus handler
-   */
-  onFocus(handler) {
-    return new InteractionModifier({ onFocus: handler });
-  },
-  /**
-   * Set disabled state
-   */
-  disabled(isDisabled = true) {
-    return new InteractionModifier({ disabled: isDisabled });
-  },
-  /**
-   * Set accessibility label
-   */
-  accessibilityLabel(label) {
-    return new InteractionModifier({ accessibilityLabel: label });
-  },
-  /**
-   * Set accessibility hint
-   */
-  accessibilityHint(hint) {
-    return new InteractionModifier({ accessibilityHint: hint });
-  }
-};
-var animationModifiers = {
-  /**
-   * Add transition
-   */
-  transition(property = "all", duration = 300, easing = "ease", delay = 0) {
-    return new AnimationModifier({
-      transition: { property, duration, easing, delay }
-    });
-  },
-  /**
-   * Add detailed transition
-   */
-  transitionDetailed(options) {
-    return new AnimationModifier({ transition: options });
-  },
-  /**
-   * Add animation
-   */
-  animation(options) {
-    return new AnimationModifier({ animation: options });
-  },
-  /**
-   * Add fade in animation
-   */
-  fadeIn(duration = 300) {
-    return new AnimationModifier({
-      animation: {
-        keyframes: {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" }
-        },
-        duration,
-        easing: "ease-out"
-      }
-    });
-  },
-  /**
-   * Add fade out animation
-   */
-  fadeOut(duration = 300) {
-    return new AnimationModifier({
-      animation: {
-        keyframes: {
-          "0%": { opacity: "1" },
-          "100%": { opacity: "0" }
-        },
-        duration,
-        easing: "ease-in"
-      }
-    });
-  },
-  /**
-   * Add slide in animation
-   */
-  slideIn(direction = "up", duration = 300, distance = 20) {
-    const transforms = {
-      up: [`translateY(${distance}px)`, "translateY(0)"],
-      down: [`translateY(-${distance}px)`, "translateY(0)"],
-      left: [`translateX(${distance}px)`, "translateX(0)"],
-      right: [`translateX(-${distance}px)`, "translateX(0)"]
-    };
-    const [from, to] = transforms[direction];
-    return new AnimationModifier({
-      animation: {
-        keyframes: {
-          "0%": { transform: from, opacity: "0" },
-          "100%": { transform: to, opacity: "1" }
-        },
-        duration,
-        easing: "ease-out"
-      }
-    });
-  },
-  /**
-   * Add scale animation
-   */
-  scaleAnimation(from = 0.8, to = 1, duration = 300) {
-    return new AnimationModifier({
-      animation: {
-        keyframes: {
-          "0%": { transform: `scale(${from})`, opacity: "0" },
-          "100%": { transform: `scale(${to})`, opacity: "1" }
-        },
-        duration,
-        easing: "ease-out"
-      }
-    });
-  }
-};
-var lifecycleModifiers = {
-  /**
-   * Execute handler when component appears in viewport
-   */
-  onAppear(handler) {
-    return new LifecycleModifier({ onAppear: handler });
-  },
-  /**
-   * Execute handler when component disappears from viewport
-   */
-  onDisappear(handler) {
-    return new LifecycleModifier({ onDisappear: handler });
-  },
-  /**
-   * Execute async task with automatic cancellation on component unmount
-   */
-  task(operation, options) {
-    return new LifecycleModifier({
-      task: {
-        operation,
-        id: options?.id,
-        priority: options?.priority || "default"
-      }
-    });
-  },
-  /**
-   * Add pull-to-refresh functionality
-   */
-  refreshable(onRefresh, isRefreshing) {
-    return new LifecycleModifier({
-      refreshable: {
-        onRefresh,
-        isRefreshing
-      }
-    });
-  }
-};
-var presetModifiers = {
-  /**
-   * Card-like appearance
-   */
-  card(padding2 = 16) {
-    return [
-      appearanceModifiers.backgroundColor("#ffffff"),
-      appearanceModifiers.cornerRadius(8),
-      // shadow moved to @tachui/modifiers/effects entry point
-      layoutModifiers.padding(padding2)
-    ];
-  },
-  /**
-   * Button-like appearance
-   */
-  button(backgroundColor2 = "#007AFF", textColor = "#ffffff") {
-    return [
-      appearanceModifiers.backgroundColor(backgroundColor2),
-      appearanceModifiers.foregroundColor(textColor),
-      appearanceModifiers.cornerRadius(6),
-      layoutModifiers.padding(12),
-      // Simplified to single value for now
-      interactionModifiers.onHover((_hovered) => {
-      }),
-      animationModifiers.transition("all", 150)
-    ];
-  },
-  /**
-   * Input field appearance
-   */
-  input() {
-    return [
-      appearanceModifiers.border(1, "#d1d5db"),
-      appearanceModifiers.cornerRadius(4),
-      layoutModifiers.padding(8),
-      animationModifiers.transition("border-color", 150),
-      interactionModifiers.onFocus((_focused) => {
-      })
-    ];
-  },
-  /**
-   * Typography presets
-   */
-  typography: {
-    title: () => [
-      appearanceModifiers.fontSize(24),
-      appearanceModifiers.fontWeight("bold")
-    ],
-    heading: () => [
-      appearanceModifiers.fontSize(20),
-      appearanceModifiers.fontWeight("600")
-    ],
-    body: () => [
-      appearanceModifiers.fontSize(16),
-      appearanceModifiers.fontWeight("normal")
-    ],
-    caption: () => [
-      appearanceModifiers.fontSize(12),
-      appearanceModifiers.fontWeight("normal"),
-      appearanceModifiers.opacity(0.7)
-    ]
-  }
-};
-var coreModifiers = {
-  ...layoutModifiers,
-  ...appearanceModifiers,
-  ...interactionModifiers,
-  ...animationModifiers,
-  ...lifecycleModifiers,
-  presets: presetModifiers
-};
 
 // src/modifiers/registry.ts
 var RegistryAdapter = class {
@@ -4246,11 +2444,6 @@ var _SemanticRoleManager = class _SemanticRoleManager {
       return;
     }
     element.setAttribute("role", semanticInfo.role);
-    if (config.warnOnSemanticIssues && true) {
-      console.info(
-        `Applied semantic role '${semanticInfo.role}' to tag '${tag}'`
-      );
-    }
   }
   /**
    * Get semantic role information for a tag
@@ -4642,14 +2835,14 @@ var DOMRenderer = class {
     });
     node.__appliedProps = { ...newProps };
     if ("componentMetadata" in node && node.componentMetadata) {
-      const metadata14 = node.componentMetadata;
-      if (metadata14.overriddenTo && metadata14.originalType) {
+      const metadata = node.componentMetadata;
+      if (metadata.overriddenTo && metadata.originalType) {
         if (node.tag) {
           try {
             semanticRoleManager.processElementNode(
               element,
               node.tag,
-              metadata14,
+              metadata,
               newProps?.["aria"] || void 0
             );
           } catch (error) {
@@ -4760,9 +2953,9 @@ var DOMRenderer = class {
     let componentType = node.tag || "element";
     let debugLabel;
     if ("componentMetadata" in node && node.componentMetadata) {
-      const metadata14 = node.componentMetadata;
-      if (metadata14.type) {
-        componentType = metadata14.type;
+      const metadata = node.componentMetadata;
+      if (metadata.type) {
+        componentType = metadata.type;
       }
     }
     if (node.props && "data-tachui-label" in node.props) {
@@ -5329,7 +3522,11 @@ function renderComponent(instance, container) {
       }
     };
     const effect = createEffect(() => {
-      const renderResult = instance.render();
+      let componentToRender = instance;
+      if ("build" in instance && typeof instance.build === "function") {
+        componentToRender = instance.build();
+      }
+      const renderResult = componentToRender.render();
       const nodes = Array.isArray(renderResult) ? renderResult : [renderResult];
       nodes.forEach(populateFromCache);
       const removalSet = new Set(currentNodes);

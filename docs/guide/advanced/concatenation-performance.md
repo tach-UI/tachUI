@@ -202,7 +202,6 @@ Apply modifiers efficiently in concatenated components:
 // ✅ Good: Single modifier application
 const styledContent = Text("Important:")
   .concat(Text(" Read this message"))
-  .modifier
   .color('#dc3545')
   .fontWeight('bold')
   .padding(16)

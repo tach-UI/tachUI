@@ -268,25 +268,25 @@ animations/
 **Available Animation Effects:**
 ```typescript
 // Bounce effect
-Symbol("heart").symbolEffect("bounce").build()
+Symbol("heart").symbolEffect("bounce")
 
 // Pulse with custom intensity  
-Symbol("star").symbolEffect("pulse", 0.8).build()
+Symbol("star").symbolEffect("pulse", 0.8)
 
 // Wiggle with custom speed
-Symbol("bell").symbolEffect("wiggle").effectSpeed(2).build()
+Symbol("bell").symbolEffect("wiggle").effectSpeed(2)
 
 // Rotate continuous
-Symbol("gear").symbolEffect("rotate").build()
+Symbol("gear").symbolEffect("rotate")
 
 // Breathe with scale and opacity
-Symbol("circle").symbolEffect("breathe").build()
+Symbol("circle").symbolEffect("breathe")
 
 // Shake with distance control
-Symbol("warning").symbolEffect("shake").build()
+Symbol("warning").symbolEffect("shake")
 
 // Glow with intensity control
-Symbol("lightbulb").symbolEffect("glow").build()
+Symbol("lightbulb").symbolEffect("glow")
 ```
 
 ---
@@ -354,25 +354,22 @@ modifiers/
 ```typescript
 // Shorthand modifiers
 Symbol("heart")
-  .modifier
   .filled()           // .variant("filled")
   .scaleLarge()       // .scale("large") 
   .weightBold()       // .weight("bold")
   .bounce()           // .symbolEffect("bounce")
   .foregroundColor(Assets.systemRed)
-  .build()
+  
 
 // Rendering mode modifiers
 Symbol("star")
-  .modifier
   .palette("#FFD700", "#FFA500") // Primary and secondary colors
-  .build()
+  
 
 // Accessibility modifiers  
 Symbol("settings")
-  .modifier
   .accessibilityLabel("Open Settings")
-  .build()
+  
 ```
 
 ---
@@ -596,7 +593,7 @@ import { IconSetRegistry, CustomIconSetBuilder } from '@tachui/symbols'
 const customIcons = new CustomIconSetBuilder()
   .addIcon("my-icon", svgData)
   .addCategory("custom", ["my-icon"])
-  .build()
+  
 
 IconSetRegistry.register(customIcons)
 const customSymbol = Symbol("my-icon", { iconSet: "custom" })
@@ -631,7 +628,6 @@ const advancedSymbol = Symbol("star", {
 ```typescript
 // Using symbol-specific modifiers
 const styledSymbol = Symbol("heart")
-  .modifier
   .filled()                    // variant("filled")
   .scaleLarge()               // scale("large")
   .weightBold()               // weight("bold")
@@ -639,7 +635,7 @@ const styledSymbol = Symbol("heart")
   .palette("#FF0000", "#FF9999") // Multi-color rendering
   .foregroundColor("#FF0000") // Core TachUI modifier
   .padding(16)                // Core TachUI modifier
-  .build()
+  
 ```
 
 ---
@@ -700,7 +696,7 @@ const ProductCard = (product) => VStack([
   Symbol("heart", {
     variant: () => product.isFavorited() ? "filled" : "none",
     primaryColor: () => product.isFavorited() ? Assets.systemRed : Assets.systemGray
-  }).onTap(() => product.toggleFavorite()).build(),
+  }).onTap(() => product.toggleFavorite()),
   
   Text(product.name),
   Text(`$${product.price}`)
@@ -709,18 +705,16 @@ const ProductCard = (product) => VStack([
 // Navigation application  
 const NavigationBar = () => HStack([
   Symbol("chevron.left")
-    .modifier
     .onTap(() => navigation.back())
     .accessibilityLabel("Go back")
-    .build(),
+    ,
     
-  Text("Settings").layoutPriority(1).build(),
+  Text("Settings").layoutPriority(1),
   
   Symbol("gear")
-    .modifier  
     .onTap(() => showSettingsMenu())
     .accessibilityLabel("More options")
-    .build()
+    
 ])
 
 // Dashboard with status indicators
