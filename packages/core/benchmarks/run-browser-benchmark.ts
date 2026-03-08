@@ -185,9 +185,9 @@ async function runBrowserBenchmarks() {
 
     await captureMemory('warmup')
     console.log('🚀 Launching Chromium and navigating to benchmark page…')
-  await page.goto(`http://127.0.0.1:${DEFAULT_PORT}/`, { waitUntil: 'networkidle' })
+  await page.goto(`http://127.0.0.1:${DEFAULT_PORT}/`, { waitUntil: 'load' })
   await page.waitForFunction(() => (window as any).benchmarkRunner !== undefined, {
-    timeout: 15_000,
+    timeout: 30_000,
   })
 
     console.log('🏃‍♂️ Running complete browser benchmark suite…')
