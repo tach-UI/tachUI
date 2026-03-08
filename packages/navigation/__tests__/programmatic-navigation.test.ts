@@ -355,18 +355,19 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
     it('handles storage errors gracefully', () => {
       const manager = new NavigationPersistenceManager()
 
-      // Mock storage error
-      const originalSetItem = localStorage.setItem
-      localStorage.setItem = vi.fn(() => {
-        throw new Error('Storage quota exceeded')
+      // Mock storage error — jsdom's localStorage is a proxy, so stub the global
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn().mockReturnValue(null),
+        setItem: vi.fn(() => { throw new Error('Storage quota exceeded') }),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
       })
 
       expect(() =>
         manager.saveState('test', { path: '/home', timestamp: Date.now() })
       ).not.toThrow()
 
-      // Restore
-      localStorage.setItem = originalSetItem
+      vi.unstubAllGlobals()
     })
   })
 
@@ -508,10 +509,12 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
     })
 
     it('handles persistence storage failures', () => {
-      // Mock localStorage failure
-      const originalSetItem = localStorage.setItem
-      localStorage.setItem = vi.fn(() => {
-        throw new Error('Storage failed')
+      // Mock localStorage failure — jsdom's localStorage is a proxy, so stub the global
+      vi.stubGlobal('localStorage', {
+        getItem: vi.fn().mockReturnValue(null),
+        setItem: vi.fn(() => { throw new Error('Storage failed') }),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
       })
 
       expect(() =>
@@ -521,8 +524,7 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
         })
       ).not.toThrow()
 
-      // Restore
-      localStorage.setItem = originalSetItem
+      vi.unstubAllGlobals()
     })
 
     it('handles malformed deep links', () => {
