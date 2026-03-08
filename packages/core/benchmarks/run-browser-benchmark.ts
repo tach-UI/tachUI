@@ -49,6 +49,21 @@ if (fs.existsSync(registrySourceEntry)) {
   workspaceAliases['@tachui/registry'] = registrySourceEntry
 }
 
+// @tachui/types is type-only (.d.ts). Alias each sub-path to its source .ts
+// file so esbuild bundles it directly (all types are stripped, yielding an
+// empty module) instead of leaving unresolvable bare specifiers in the output.
+const TYPES_SRC = path.resolve(PACKAGES_DIR, 'types/src')
+for (const sub of ['reactive', 'modifiers', 'runtime', 'gradients', 'assets', 'layout']) {
+  const entry = path.resolve(TYPES_SRC, `${sub}.ts`)
+  if (fs.existsSync(entry)) {
+    workspaceAliases[`@tachui/types/${sub}`] = entry
+  }
+}
+const typesIndex = path.resolve(TYPES_SRC, 'index.ts')
+if (fs.existsSync(typesIndex)) {
+  workspaceAliases['@tachui/types'] = typesIndex
+}
+
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
   '.js': 'application/javascript',
@@ -115,8 +130,6 @@ async function runBrowserBenchmarks() {
     },
     external: [
       'node:module',
-      '@tachui/types',
-      '@tachui/types/*',
       'node:*',
       '@playwright/test'
     ],
