@@ -82,6 +82,10 @@ function unmountMountedNode(node: MountedNode): void {
   mountedNodes.delete(node)
 }
 
+function flushAsync(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0))
+}
+
 describe('modifier lifecycle cleanup', () => {
   let registry: ModifierRegistry
 
@@ -199,6 +203,37 @@ describe('modifier lifecycle cleanup', () => {
 
       unmountMountedNode(mountedB)
       expect(getSubscriberCount(itemB)).toBe(baselineB)
+    })
+
+    it('non-root applyModifiersToNode path cleans subscriptions on DOM removal', async () => {
+      const [opacity] = createSignal(0.5)
+      const baseline = getSubscriberCount(opacity)
+      const element = document.createElement('div')
+      document.body.appendChild(element)
+
+      const node = h('div')
+      node.element = element
+      const factory = registry.get('opacity')
+      if (!factory) {
+        throw new Error('Missing modifier factory: opacity')
+      }
+
+      applyModifiersToNode(
+        node,
+        [(factory as (...args: any[]) => any)(opacity)],
+        {
+          componentId: 'non-root-cleanup-test',
+          element,
+          phase: 'creation',
+        }
+      )
+
+      expect(getSubscriberCount(opacity)).toBe(baseline + 1)
+
+      element.remove()
+      await flushAsync()
+
+      expect(getSubscriberCount(opacity)).toBe(baseline)
     })
   })
 

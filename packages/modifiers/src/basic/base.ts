@@ -28,6 +28,24 @@ import {
   shouldExpandForInfinity,
 } from '@tachui/core/constants/layout'
 
+const modifierInstanceIdSymbol = Symbol.for('tachui.modifier.instanceId')
+let modifierInstanceIdCounter = 0
+
+function getModifierInstanceId(modifier: object): number {
+  const existingId = (modifier as any)[modifierInstanceIdSymbol]
+  if (typeof existingId === 'number') return existingId
+
+  modifierInstanceIdCounter += 1
+  const nextId = modifierInstanceIdCounter
+  Object.defineProperty(modifier, modifierInstanceIdSymbol, {
+    value: nextId,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  })
+  return nextId
+}
+
 /**
  * Abstract base modifier class
  */
@@ -218,9 +236,11 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
           // Handle reactive values (signals and computed)
           if (isSignal(value) || isComputed(value)) {
             const signalValue = value as (() => any)
+            const modifierInstanceId = getModifierInstanceId(this)
             bindReactiveStyle({
               element,
               accessor: signalValue,
+              updaterId: `${modifierInstanceId}:${cssProperty}`,
               updater: currentValue => {
                 const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
                 applyStyleValue(cssProperty, cssValue)
