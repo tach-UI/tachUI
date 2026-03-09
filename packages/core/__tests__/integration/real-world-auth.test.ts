@@ -10,7 +10,7 @@
  * - Logout and session cleanup
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   RealWorldScenarioTester,
   ScenarioPatterns,
@@ -48,10 +48,32 @@ const mockAuthData = {
 
 describe('Phase 4.3: User Authentication and Session Management Real-World Scenarios', () => {
   let tester: RealWorldScenarioTester
+  const createStorageMock = () => {
+    const store = new Map<string, string>()
+    return {
+      getItem: vi.fn((key: string) => store.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        store.set(String(key), String(value))
+      }),
+      removeItem: vi.fn((key: string) => {
+        store.delete(String(key))
+      }),
+      clear: vi.fn(() => {
+        store.clear()
+      }),
+      key: vi.fn((index: number) => Array.from(store.keys())[index] ?? null),
+      get length() {
+        return store.size
+      },
+    }
+  }
 
   beforeEach(() => {
     // Clear DOM and set up test root
     document.body.innerHTML = '<div id="test-app-root"></div>'
+
+    vi.stubGlobal('localStorage', createStorageMock())
+    vi.stubGlobal('sessionStorage', createStorageMock())
     
     tester = new RealWorldScenarioTester({
       enableMemoryTracking: true,
@@ -66,6 +88,7 @@ describe('Phase 4.3: User Authentication and Session Management Real-World Scena
     // Clear any stored session data
     localStorage.clear()
     sessionStorage.clear()
+    vi.unstubAllGlobals()
   })
 
   describe('Complete Authentication Flow', () => {
