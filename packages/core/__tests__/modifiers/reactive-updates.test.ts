@@ -46,7 +46,7 @@ describe('reactive modifier updates', () => {
     document.body.innerHTML = ''
     registry = createTestRegistry()
     registerBasicModifiers({ registry })
-    setExternalModifierRegistry(registry as any)
+    setExternalModifierRegistry(registry)
   })
 
   afterEach(() => {
