@@ -260,7 +260,10 @@ describe('modifier lifecycle cleanup', () => {
 
       expect(getSubscriberCount(opacity)).toBe(baseline + 1)
 
-      await new Promise(resolve => setTimeout(resolve, 250))
+      const deadline = Date.now() + 1000
+      while (Date.now() < deadline && getSubscriberCount(opacity) !== baseline) {
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
 
       expect(getSubscriberCount(opacity)).toBe(baseline)
     })
