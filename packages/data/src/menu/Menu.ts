@@ -165,6 +165,9 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
   private focusedIndex = -1
   private menuElement: HTMLElement | null = null
   private triggerElement: HTMLElement | null = null
+  private visibilityEffectInitialized = false
+  private hideFallbackTimeout: ReturnType<typeof setTimeout> | null = null
+  private pendingPositionTask: ReturnType<typeof setTimeout> | number | null = null
 
   constructor(props: MenuProps) {
     this.props = props
@@ -197,6 +200,23 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
           this.setupMenuAnimations(primaryElement)
         }
       },
+    })
+
+    this.cleanup.push(() => {
+      document.removeEventListener('keydown', this.handleKeyDown)
+      document.removeEventListener('click', this.handleClickOutside)
+      if (this.hideFallbackTimeout) {
+        clearTimeout(this.hideFallbackTimeout)
+        this.hideFallbackTimeout = null
+      }
+      if (this.pendingPositionTask !== null) {
+        if (typeof cancelAnimationFrame === 'function') {
+          cancelAnimationFrame(this.pendingPositionTask as number)
+        } else {
+          clearTimeout(this.pendingPositionTask as ReturnType<typeof setTimeout>)
+        }
+        this.pendingPositionTask = null
+      }
     })
   }
 
@@ -641,14 +661,121 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
     trigger.setAttribute('aria-expanded', String(this.isOpen()))
     trigger.setAttribute('data-menu-trigger', this.id) // ENHANCED: Add data attribute for lifecycle hooks
 
-    trigger.addEventListener('click', e => {
-      e.preventDefault()
-      e.stopPropagation()
-      this.setIsOpenValue(!this.isOpen())
-    })
+    if (!(trigger as any).__tachuiMenuClickBound) {
+      trigger.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        this.setIsOpenValue(!this.isOpen())
+      })
+      ;(trigger as any).__tachuiMenuClickBound = true
+    }
 
     this.triggerElement = trigger
     return trigger
+  }
+
+  private schedulePositionAndAnimation(menuEl: HTMLElement): void {
+    if (this.pendingPositionTask !== null) {
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.pendingPositionTask as number)
+      } else {
+        clearTimeout(this.pendingPositionTask as ReturnType<typeof setTimeout>)
+      }
+      this.pendingPositionTask = null
+    }
+
+    const execute = () => {
+      this.pendingPositionTask = null
+      if (!this.triggerElement || !menuEl.isConnected) {
+        return
+      }
+
+      const position = this.calculatePosition(this.triggerElement, menuEl)
+      menuEl.style.left = `${position.x}px`
+      menuEl.style.top = `${position.y}px`
+
+      AnimationManager.scaleIn(this, menuEl, this.props.animationDuration || 150)
+      this.focusedIndex = 0
+      FocusManager.focusWhenReady(this, '[role="menuitem"]', menuEl)
+    }
+
+    if (typeof requestAnimationFrame === 'function') {
+      this.pendingPositionTask = requestAnimationFrame(execute)
+    } else {
+      this.pendingPositionTask = setTimeout(execute, 0)
+    }
+  }
+
+  private ensureVisibilityEffect(): void {
+    if (this.visibilityEffectInitialized) return
+    this.visibilityEffectInitialized = true
+
+    const effect = createEffect(() => {
+      const isOpenValue = this.isOpen()
+
+      if (isOpenValue) {
+        // Show menu
+        const menu = this.createMenuContent()
+        const menuElement = menu.element as HTMLElement
+        if (menuElement) {
+          document.body.appendChild(menuElement)
+          this.menuElement = menuElement
+        }
+
+        if (this.menuElement) {
+          // Position after reflow so getBoundingClientRect() has final dimensions.
+          this.schedulePositionAndAnimation(this.menuElement)
+        }
+
+        // Add event listeners
+        document.addEventListener('keydown', this.handleKeyDown)
+        document.addEventListener('click', this.handleClickOutside)
+
+        // Update trigger aria-expanded
+        this.triggerElement?.setAttribute('aria-expanded', 'true')
+      } else {
+        // ENHANCED: Hide menu using transition event listener instead of setTimeout
+        if (this.menuElement) {
+          const menuEl = this.menuElement
+          menuEl.style.opacity = '0'
+          menuEl.style.transform = 'scale(0.95)'
+
+          // Use transition event listener for cleanup
+          const handleTransitionEnd = () => {
+            menuEl.removeEventListener('transitionend', handleTransitionEnd)
+            if (menuEl.parentNode) {
+              document.body.removeChild(menuEl)
+            }
+            if (this.menuElement === menuEl) {
+              this.menuElement = null
+            }
+          }
+          menuEl.addEventListener('transitionend', handleTransitionEnd)
+
+          // Fallback timeout in case transition doesn't fire (rare edge case)
+          if (this.hideFallbackTimeout) {
+            clearTimeout(this.hideFallbackTimeout)
+          }
+          this.hideFallbackTimeout = setTimeout(() => {
+            menuEl.removeEventListener('transitionend', handleTransitionEnd)
+            handleTransitionEnd()
+            this.hideFallbackTimeout = null
+          }, this.props.animationDuration || 150)
+        }
+
+        // Remove event listeners
+        document.removeEventListener('keydown', this.handleKeyDown)
+        document.removeEventListener('click', this.handleClickOutside)
+
+        // Update trigger aria-expanded
+        this.triggerElement?.setAttribute('aria-expanded', 'false')
+
+        // Reset focus index
+        this.focusedIndex = -1
+      }
+    })
+
+    this.cleanup.push(() => effect.dispose())
   }
 
   render(): DOMNode {
@@ -665,100 +792,7 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
       ;(container.element as HTMLElement).appendChild(trigger)
     }
 
-    // Create reactive effect for menu visibility
-    createEffect(() => {
-      const isOpenValue = this.isOpen()
-
-      if (isOpenValue) {
-        // Show menu
-        const menu = this.createMenuContent()
-        const menuElement = menu.element as HTMLElement
-        if (menuElement) {
-          document.body.appendChild(menuElement)
-          this.menuElement = menuElement
-        }
-
-        // ENHANCED: Position and animate menu using lifecycle hooks
-        if (this.triggerElement && this.menuElement) {
-          // Immediate positioning - no setTimeout needed
-          const position = this.calculatePosition(
-            this.triggerElement,
-            this.menuElement
-          )
-          this.menuElement.style.left = `${position.x}px`
-          this.menuElement.style.top = `${position.y}px`
-
-          // Use AnimationManager for smooth animation
-          AnimationManager.scaleIn(
-            this,
-            this.menuElement,
-            this.props.animationDuration || 150
-          )
-
-          // Use FocusManager for proper focus handling
-          this.focusedIndex = 0
-          FocusManager.focusWhenReady(
-            this,
-            '[role="menuitem"]',
-            this.menuElement
-          )
-        }
-
-        // Add event listeners
-        document.addEventListener('keydown', this.handleKeyDown)
-        document.addEventListener('click', this.handleClickOutside)
-
-        // Update trigger aria-expanded
-        this.triggerElement?.setAttribute('aria-expanded', 'true')
-      } else {
-        // ENHANCED: Hide menu using transition event listener instead of setTimeout
-        if (this.menuElement) {
-          this.menuElement.style.opacity = '0'
-          this.menuElement.style.transform = 'scale(0.95)'
-
-          // Use transition event listener for cleanup
-          const handleTransitionEnd = () => {
-            if (this.menuElement?.parentNode) {
-              document.body.removeChild(this.menuElement)
-              this.menuElement = null
-            }
-            this.menuElement?.removeEventListener(
-              'transitionend',
-              handleTransitionEnd
-            )
-          }
-          this.menuElement.addEventListener(
-            'transitionend',
-            handleTransitionEnd
-          )
-
-          // Fallback timeout in case transition doesn't fire (rare edge case)
-          const fallbackTimeout = setTimeout(() => {
-            this.menuElement?.removeEventListener(
-              'transitionend',
-              handleTransitionEnd
-            )
-            handleTransitionEnd()
-          }, this.props.animationDuration || 150)
-
-          // Store cleanup for fallback timeout
-          if (!this.cleanup) this.cleanup = []
-          this.cleanup.push(() => {
-            if (fallbackTimeout) clearTimeout(fallbackTimeout)
-          })
-        }
-
-        // Remove event listeners
-        document.removeEventListener('keydown', this.handleKeyDown)
-        document.removeEventListener('click', this.handleClickOutside)
-
-        // Update trigger aria-expanded
-        this.triggerElement?.setAttribute('aria-expanded', 'false')
-
-        // Reset focus index
-        this.focusedIndex = -1
-      }
-    })
+    this.ensureVisibilityEffect()
 
     return container
   }

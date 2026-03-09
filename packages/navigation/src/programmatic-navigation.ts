@@ -180,7 +180,13 @@ export class DeepLinkManager {
   }
 
   private sanitizeQueryToken(value: string): string {
-    const decoded = this.safeDecode(value)
+    let decoded = value
+    // Decode multiple passes to catch double-encoded control characters.
+    for (let i = 0; i < 2; i++) {
+      const next = this.safeDecode(decoded)
+      if (next === decoded) break
+      decoded = next
+    }
     const withoutControlChars = decoded.replace(/[\u0000-\u001F\u007F]/g, '')
     return withoutControlChars.length > 2048
       ? withoutControlChars.slice(0, 2048)
@@ -200,6 +206,15 @@ export class DeepLinkManager {
     }
 
     try {
+      const schemePrefix = url.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):/)
+      if (schemePrefix) {
+        const normalizedScheme = schemePrefix[1].toLowerCase()
+        if (normalizedScheme === 'javascript' || normalizedScheme === 'data') {
+          this.notifyInvalidLink(url, 'disallowed_scheme')
+          return null
+        }
+      }
+
       // Handle custom schemes like myapp://profile/123
       const match = url.match(/^([^:]+):\/\/(.*)/)
       if (!match) {
@@ -234,7 +249,11 @@ export class DeepLinkManager {
       const query: Record<string, string> = {}
       if (queryString) {
         queryString.split('&').forEach(param => {
-          const [rawKey, rawValue] = param.split('=')
+          const equalsIndex = param.indexOf('=')
+          const rawKey =
+            equalsIndex >= 0 ? param.slice(0, equalsIndex) : param
+          const rawValue =
+            equalsIndex >= 0 ? param.slice(equalsIndex + 1) : ''
           const key = this.sanitizeQueryToken(rawKey || '')
           const value = this.sanitizeQueryToken(rawValue || '')
           if (key) {

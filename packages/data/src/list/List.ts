@@ -535,24 +535,23 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
         mounted: false,
         cleanup: [],
         props: {},
-        render: () => [
-          h(
-            'div',
-            {
-              class: 'tachui-list-section-header',
-              style: {
-                padding: '8px 16px',
-                backgroundColor: '#f8f9fa',
-                fontWeight: '600',
-                fontSize: '14px',
-                color: '#666',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              },
+        render: () => {
+          const headerNode = h('div', {
+            class: 'tachui-list-section-header',
+            style: {
+              padding: '8px 16px',
+              backgroundColor: '#f8f9fa',
+              fontWeight: '600',
+              fontSize: '14px',
+              color: '#666',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
             },
-            section.header as string
-          ),
-        ],
+          })
+          const element = headerNode.element as HTMLElement
+          if (element) element.textContent = section.header as string
+          return [headerNode]
+        },
       }
     }
 
@@ -577,20 +576,19 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
         mounted: false,
         cleanup: [],
         props: {},
-        render: () => [
-          h(
-            'div',
-            {
-              class: 'tachui-list-section-footer',
-              style: {
-                padding: '8px 16px',
-                fontSize: '12px',
-                color: '#999',
-              },
+        render: () => {
+          const footerNode = h('div', {
+            class: 'tachui-list-section-footer',
+            style: {
+              padding: '8px 16px',
+              fontSize: '12px',
+              color: '#999',
             },
-            section.footer as string
-          ),
-        ],
+          })
+          const element = footerNode.element as HTMLElement
+          if (element) element.textContent = section.footer as string
+          return [footerNode]
+        },
       }
     }
 

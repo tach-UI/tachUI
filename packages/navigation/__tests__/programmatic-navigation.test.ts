@@ -439,16 +439,21 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
       const onInvalidLink = vi.fn()
       manager.setInvalidLinkHandler(onInvalidLink)
 
+      expect(manager.parseDeepLink('javascript:alert(1)')).toBeNull()
       expect(manager.parseDeepLink('javascript://alert(1)')).toBeNull()
       expect(manager.parseDeepLink('data://text/plain,hello')).toBeNull()
 
-      expect(onInvalidLink).toHaveBeenCalledTimes(2)
+      expect(onInvalidLink).toHaveBeenCalledTimes(3)
       expect(onInvalidLink).toHaveBeenNthCalledWith(
         1,
         expect.objectContaining({ reason: 'disallowed_scheme' })
       )
       expect(onInvalidLink).toHaveBeenNthCalledWith(
         2,
+        expect.objectContaining({ reason: 'disallowed_scheme' })
+      )
+      expect(onInvalidLink).toHaveBeenNthCalledWith(
+        3,
         expect.objectContaining({ reason: 'disallowed_scheme' })
       )
     })
@@ -480,11 +485,13 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
       const manager = new DeepLinkManager()
       const longValue = 'x'.repeat(2100)
       const result = manager.parseDeepLink(
-        `myapp://profile/123?name=abc%00def&bio=${longValue}`
+        `myapp://profile/123?name=abc%00def&double=%2500encoded&token=abc==&bio=${longValue}`
       )
 
       expect(result).toBeDefined()
       expect(result?.query.name).toBe('abcdef')
+      expect(result?.query.double).toBe('encoded')
+      expect(result?.query.token).toBe('abc==')
       expect(result?.query.bio.length).toBe(2048)
     })
   })
