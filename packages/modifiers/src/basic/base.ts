@@ -29,6 +29,7 @@ import {
 } from '@tachui/core/constants/layout'
 
 const modifierInstanceIdSymbol = Symbol.for('tachui.modifier.instanceId')
+const updaterScope = 'package'
 let modifierInstanceIdCounter = 0
 
 function getModifierInstanceId(modifier: object): number {
@@ -240,7 +241,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
             bindReactiveStyle({
               element,
               accessor: signalValue,
-              updaterId: `${modifierInstanceId}:${cssProperty}`,
+              updaterId: `${updaterScope}:${modifierInstanceId}:${cssProperty}`,
               updater: currentValue => {
                 const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
                 applyStyleValue(cssProperty, cssValue)

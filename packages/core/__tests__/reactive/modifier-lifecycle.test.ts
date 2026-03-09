@@ -235,6 +235,35 @@ describe('modifier lifecycle cleanup', () => {
 
       expect(getSubscriberCount(opacity)).toBe(baseline)
     })
+
+    it('non-root path cleans never-connected elements after grace period', async () => {
+      const [opacity] = createSignal(0.5)
+      const baseline = getSubscriberCount(opacity)
+      const element = document.createElement('div')
+
+      const node = h('div')
+      node.element = element
+      const factory = registry.get('opacity')
+      if (!factory) {
+        throw new Error('Missing modifier factory: opacity')
+      }
+
+      applyModifiersToNode(
+        node,
+        [(factory as (...args: any[]) => any)(opacity)],
+        {
+          componentId: 'non-root-never-connected-test',
+          element,
+          phase: 'creation',
+        }
+      )
+
+      expect(getSubscriberCount(opacity)).toBe(baseline + 1)
+
+      await new Promise(resolve => setTimeout(resolve, 250))
+
+      expect(getSubscriberCount(opacity)).toBe(baseline)
+    })
   })
 
   describe('Effect cleanup', () => {

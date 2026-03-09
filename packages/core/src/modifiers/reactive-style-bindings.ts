@@ -21,24 +21,80 @@ type ReactiveStyleBindingOptions = {
   updaterId: string
 }
 
-const unownedElementCleanupMap = new Map<Element, Set<CleanupFn>>()
-const unownedTrackedElements = new Set<Element>()
+const UNOWNED_NEVER_CONNECTED_GRACE_MS = 200
+
+const unownedElementCleanupMap = new WeakMap<Element, Set<CleanupFn>>()
+const unownedElementStateMap = new WeakMap<
+  Element,
+  { trackedAt: number; wasConnected: boolean }
+>()
+const unownedTrackedElements = new Set<WeakRef<Element>>()
 let unownedCleanupObserverInstalled = false
+let unownedCleanupSweepScheduled = false
+
+function runCleanupForElement(element: Element): void {
+  const cleanups = unownedElementCleanupMap.get(element)
+  cleanups?.forEach(cleanup => cleanup())
+  unownedElementCleanupMap.delete(element)
+  unownedElementStateMap.delete(element)
+}
+
+function sweepUnownedTrackedElements(): void {
+  const now = Date.now()
+  for (const ref of Array.from(unownedTrackedElements)) {
+    const element = ref.deref()
+    if (!element) {
+      unownedTrackedElements.delete(ref)
+      continue
+    }
+
+    const state = unownedElementStateMap.get(element)
+    const cleanups = unownedElementCleanupMap.get(element)
+    if (!state || !cleanups || cleanups.size === 0) {
+      unownedTrackedElements.delete(ref)
+      continue
+    }
+
+    if (element.isConnected) {
+      state.wasConnected = true
+      continue
+    }
+
+    if (state.wasConnected || now - state.trackedAt >= UNOWNED_NEVER_CONNECTED_GRACE_MS) {
+      runCleanupForElement(element)
+      unownedTrackedElements.delete(ref)
+    }
+  }
+}
+
+function ensureUnownedCleanupSweep(): void {
+  if (unownedCleanupSweepScheduled) return
+  if (typeof setTimeout !== 'function') return
+
+  unownedCleanupSweepScheduled = true
+  const tick = () => {
+    sweepUnownedTrackedElements()
+    if (unownedTrackedElements.size === 0) {
+      unownedCleanupSweepScheduled = false
+      return
+    }
+    setTimeout(tick, UNOWNED_NEVER_CONNECTED_GRACE_MS)
+  }
+  setTimeout(tick, UNOWNED_NEVER_CONNECTED_GRACE_MS)
+}
 
 function ensureUnownedCleanupObserver(): void {
   if (unownedCleanupObserverInstalled) return
-  if (typeof document === 'undefined' || !document.documentElement) return
+  if (
+    typeof document === 'undefined' ||
+    !document.documentElement ||
+    typeof MutationObserver === 'undefined'
+  ) {
+    return
+  }
 
   const observer = new MutationObserver(() => {
-    const elements = Array.from(unownedTrackedElements)
-    for (const element of elements) {
-      if (element.isConnected) continue
-
-      const cleanups = unownedElementCleanupMap.get(element)
-      cleanups?.forEach(cleanup => cleanup())
-      unownedElementCleanupMap.delete(element)
-      unownedTrackedElements.delete(element)
-    }
+    sweepUnownedTrackedElements()
   })
 
   observer.observe(document.documentElement, { childList: true, subtree: true })
@@ -50,10 +106,20 @@ function registerUnownedCleanup(
   cleanup: CleanupFn
 ): CleanupFn {
   ensureUnownedCleanupObserver()
+  ensureUnownedCleanupSweep()
+
   const existing = unownedElementCleanupMap.get(element) ?? new Set<CleanupFn>()
+  const hadExistingCleanups = existing.size > 0
   existing.add(cleanup)
   unownedElementCleanupMap.set(element, existing)
-  unownedTrackedElements.add(element)
+
+  if (!hadExistingCleanups) {
+    unownedElementStateMap.set(element, {
+      trackedAt: Date.now(),
+      wasConnected: element.isConnected,
+    })
+    unownedTrackedElements.add(new WeakRef(element))
+  }
 
   return () => {
     const current = unownedElementCleanupMap.get(element)
@@ -61,7 +127,7 @@ function registerUnownedCleanup(
     current.delete(cleanup)
     if (current.size === 0) {
       unownedElementCleanupMap.delete(element)
-      unownedTrackedElements.delete(element)
+      unownedElementStateMap.delete(element)
     }
   }
 }
