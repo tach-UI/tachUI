@@ -644,8 +644,18 @@ export class AppearanceModifier extends BaseModifier {
           styles.fontFamily = font.family as string
         }
       }
-      if (font.size !== undefined) styles.fontSize = font.size as any
-      if (font.weight !== undefined) styles.fontWeight = font.weight as any
+      if (font.size !== undefined) {
+        styles.fontSize =
+          isSignal(font.size) || isComputed(font.size)
+            ? (font.size as any)
+            : this.toCSSValue(font.size)
+      }
+      if (font.weight !== undefined) {
+        styles.fontWeight =
+          isSignal(font.weight) || isComputed(font.weight)
+            ? (font.weight as any)
+            : String(font.weight)
+      }
       if (font.style) styles.fontStyle = font.style
     }
 

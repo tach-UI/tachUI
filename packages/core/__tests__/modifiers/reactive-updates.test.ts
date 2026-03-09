@@ -1,34 +1,42 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { h } from '../../src/runtime'
 import { applyModifiersToNode, setExternalModifierRegistry } from '../../src/modifiers'
-import { createSignal, flushSync } from '../../src/reactive'
+import { createRoot, createSignal, flushSync } from '../../src/reactive'
 import { createTestRegistry } from '../../tools/testing/reactive-test-helpers'
 import { registerBasicModifiers } from '@tachui/modifiers'
 import type { ModifierRegistry } from '@tachui/registry'
 
 type RegisteredFactory = (...args: any[]) => any
+const testElements = new Set<HTMLElement>()
 
 function applyRegisteredModifiers(
   registry: ModifierRegistry,
   element: HTMLElement,
   modifierCalls: Array<{ name: string; args: any[] }>
 ): void {
-  const node = h('div')
-  node.element = element
+  createRoot(dispose => {
+    const node = h('div')
+    // Intentional low-level path: these tests target modifier re-application behavior directly.
+    node.element = element
 
-  const modifiers = modifierCalls.map(({ name, args }) => {
-    const factory = registry.get(name) as RegisteredFactory | undefined
-    if (!factory) {
-      throw new Error(`Missing modifier factory in test registry: ${name}`)
-    }
-    return factory(...args)
-  })
+    const modifiers = modifierCalls.map(({ name, args }) => {
+      const factory = registry.get(name) as RegisteredFactory | undefined
+      if (!factory) {
+        throw new Error(`Missing modifier factory in test registry: ${name}`)
+      }
+      return factory(...args)
+    })
 
-  applyModifiersToNode(node, modifiers, {
-    componentId: 'reactive-updates-test',
-    element,
-    phase: 'creation',
+    applyModifiersToNode(node, modifiers, {
+      componentId: `reactive-updates-test-${Math.random().toString(36).slice(2)}`,
+      element,
+      phase: 'creation',
+    })
+
+    // Tie reactive modifier effects to a disposable owner for test isolation.
+    ;(element as any).__testDisposer = dispose
   })
+  testElements.add(element)
 }
 
 describe('reactive modifier updates', () => {
@@ -37,8 +45,17 @@ describe('reactive modifier updates', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
     registry = createTestRegistry()
-    registerBasicModifiers({ registry: registry as any })
+    registerBasicModifiers({ registry })
     setExternalModifierRegistry(registry as any)
+  })
+
+  afterEach(() => {
+    testElements.forEach(element => {
+      ;(element as any).__testDisposer?.()
+      delete (element as any).__testDisposer
+    })
+    testElements.clear()
+    setExternalModifierRegistry(null)
   })
 
   describe('Appearance modifiers', () => {
@@ -84,7 +101,7 @@ describe('reactive modifier updates', () => {
 
     it('changing one appearance signal only updates that property', () => {
       const [color, setColor] = createSignal('#ff0000')
-      const [bgColor, _setBgColor] = createSignal('#00ff00')
+      const [bgColor] = createSignal('#00ff00')
       const element = document.createElement('div')
 
       applyRegisteredModifiers(registry, element, [
@@ -250,6 +267,7 @@ describe('reactive modifier updates', () => {
       element.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }))
       flushSync()
 
+      expect(hoverChanges.length).toBe(2)
       expect(hoverChanges).toEqual([true, false])
       expect(isHovered()).toBe(false)
     })
@@ -321,8 +339,8 @@ describe('reactive modifier updates', () => {
 
     it("changing one reactive modifier doesn't affect others on same component", () => {
       const [color, setColor] = createSignal('#222222')
-      const [opacity, _setOpacity] = createSignal(0.5)
-      const [width, _setWidth] = createSignal(120)
+      const [opacity] = createSignal(0.5)
+      const [width] = createSignal(120)
       const element = document.createElement('div')
 
       applyRegisteredModifiers(registry, element, [
