@@ -130,8 +130,9 @@ export async function expectUpdates<T>(
   const setSignal = typeof signal === 'function' ? signal : signal.set
   setSignal(newValue)
 
-  await Promise.resolve()
-  await Promise.resolve()
+  await new Promise<void>(resolve => {
+    setTimeout(resolve, 0)
+  })
 
   observers.forEach(observer => observer.disconnect())
   expect(mutationCount).toBe(expectedUpdateCount)
@@ -154,15 +155,16 @@ export function getSubscriberCount<T>(
 ): number {
   const getter = typeof signal === 'function' ? signal : signal.get
   const signalImpl = getSignalImpl(getter)
-  return signalImpl?.observers.size ?? 0
+  if (!signalImpl) {
+    throw new Error(
+      'getSubscriberCount expected a TachUI signal getter, but received an invalid signal handle.'
+    )
+  }
+  return signalImpl.observers.size
 }
 
 function ensureIntersectionObserverMock(): void {
   if (intersectionObserverPatched) return
-  if (typeof globalThis.IntersectionObserver !== 'undefined') {
-    intersectionObserverPatched = true
-    return
-  }
 
   class TestIntersectionObserver implements IntersectionObserver {
     readonly root = null

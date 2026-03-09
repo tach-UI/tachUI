@@ -28,6 +28,9 @@ describe('reactive-test-helpers', () => {
     await Promise.resolve()
     expect(spy.callCount).toBe(2)
     expect(spy.lastArgs).toEqual([16])
+    spy.reset()
+    expect(spy.callCount).toBe(0)
+    expect(spy.lastArgs).toEqual([])
 
     effect.dispose()
     component.component.dispose()
@@ -35,17 +38,17 @@ describe('reactive-test-helpers', () => {
 
   it('createReactiveTestComponent exposes signal, dom, and applied styles', async () => {
     const component = createReactiveTestComponent({
-      initialValue: '#112233',
-      styleProperty: 'color',
+      initialValue: 0.25,
+      styleProperty: 'opacity',
     })
 
-    expect(component.dom.style.getPropertyValue('color')).toBe('rgb(17, 34, 51)')
+    expect(component.dom.style.getPropertyValue('opacity')).toBe('0.25')
 
-    component.signal.set('#445566')
+    component.signal.set(0.75)
     await Promise.resolve()
 
     const styles = component.getAppliedStyles()
-    expect(styles.color).toBe('rgb(68, 85, 102)')
+    expect(styles.opacity).toBe('0.75')
 
     component.component.dispose()
   })
@@ -59,6 +62,16 @@ describe('reactive-test-helpers', () => {
     await expectUpdates(component.signal, 0.8, 1, [component])
     expect(component.dom.style.getPropertyValue('opacity')).toBe('0.8')
 
+    component.component.dispose()
+  })
+
+  it('expectUpdates throws when expected count does not match actual updates', async () => {
+    const component = createReactiveTestComponent({
+      initialValue: 0.2,
+      styleProperty: 'opacity',
+    })
+
+    await expect(expectUpdates(component.signal, 0.9, 2, [component])).rejects.toThrow()
     component.component.dispose()
   })
 
@@ -83,16 +96,25 @@ describe('reactive-test-helpers', () => {
       styleProperty: 'z-index',
     })
 
+    const baseline = getSubscriberCount(component.signal)
+    expect(baseline).toBeGreaterThanOrEqual(1)
+
     const effect = createEffect(() => {
       component.signal.get()
     })
 
-    expect(getSubscriberCount(component.signal)).toBe(2)
+    expect(getSubscriberCount(component.signal)).toBe(baseline + 1)
     effect.dispose()
-    expect(getSubscriberCount(component.signal)).toBe(1)
+    expect(getSubscriberCount(component.signal)).toBe(baseline)
 
     component.component.dispose()
     expect(getSubscriberCount(component.signal)).toBe(0)
+  })
+
+  it('getSubscriberCount throws for invalid non-signal getters', () => {
+    expect(() => getSubscriberCount((() => 42) as unknown as () => number)).toThrow(
+      /expected a TachUI signal getter/
+    )
   })
 
   it('simulateIntersection triggers observer callbacks in jsdom', () => {
