@@ -5,6 +5,7 @@ import {
   getSignalImpl,
   type SignalSetter,
 } from '../../src/reactive'
+import { getComputedImpl } from '../../src/reactive/computed'
 import { createIsolatedRegistry, type ModifierRegistry } from '@tachui/registry'
 
 type SignalHandle<T> = {
@@ -161,6 +162,20 @@ export function getSubscriberCount<T>(
     )
   }
   return signalImpl.observers.size
+}
+
+/**
+ * Dispose a computed accessor and release its upstream subscriptions.
+ * Throws when the provided accessor is not a TachUI computed signal.
+ */
+export function disposeComputed<T>(computed: () => T): void {
+  const impl = getComputedImpl(computed as any)
+  if (!impl) {
+    throw new Error(
+      'disposeComputed expected a TachUI computed accessor, but received an invalid accessor.'
+    )
+  }
+  impl.dispose()
 }
 
 function ensureIntersectionObserverMock(): void {
