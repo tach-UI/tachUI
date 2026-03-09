@@ -172,6 +172,33 @@ describe('EnhancedList', () => {
       const footer = list.createSectionFooter(sectionsWithFooters[0], 0)
       expect(footer).not.toBeNull()
     })
+
+    it('renders section header/footer strings as literal text', () => {
+      const payload = '<img onerror=alert(1) src=x>'
+      const renderItem = (item: any, _index: number) => Text(item.name)
+      const list = new EnhancedList({
+        sections: [
+          {
+            id: 'section-xss',
+            header: payload,
+            footer: payload,
+            items: sampleData.slice(0, 1),
+          },
+        ],
+        renderItem,
+      })
+
+      const header = list.createSectionHeader(list.sectionsSignal()[0], 0)
+      const footer = list.createSectionFooter(list.sectionsSignal()[0], 0)
+
+      const headerSerialized = JSON.stringify(header?.render?.() ?? [])
+      const footerSerialized = JSON.stringify(footer?.render?.() ?? [])
+
+      expect(headerSerialized).not.toContain(payload)
+      expect(headerSerialized).not.toContain('"tag":"img"')
+      expect(footerSerialized).not.toContain(payload)
+      expect(footerSerialized).not.toContain('"tag":"img"')
+    })
   })
 
   describe('Item Rendering', () => {
@@ -211,6 +238,22 @@ describe('EnhancedList', () => {
 
       const listItem = list.createListItem(sampleData[0], 0, false)
       expect(listItem).toBeDefined()
+    })
+
+    it('renders malicious string payloads as literal text, not HTML', () => {
+      const payload = '<img onerror=alert(1) src=x>'
+      const list = new EnhancedList({
+        data: sampleData,
+        renderItem: (() => payload) as any,
+      })
+
+      const listItem = list.createListItem(sampleData[0], 0, false)
+      const rendered = listItem.render()
+      const serialized = JSON.stringify(rendered)
+
+      expect(serialized).toContain('"type":"text"')
+      expect(serialized).toContain(payload)
+      expect(serialized).not.toContain('"type":"element","tag":"img"')
     })
   })
 

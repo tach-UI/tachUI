@@ -193,6 +193,36 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
   }
 
   /**
+   * Normalize item render output into safe DOM node payloads.
+   *
+   * Strings and primitives are always emitted as text nodes to avoid HTML
+   * interpretation in list item rendering.
+   */
+  private normalizeItemRenderOutput(itemContent: any): any[] {
+    if (itemContent && typeof itemContent.render === 'function') {
+      return this.flattenRenderResult(itemContent.render())
+    }
+
+    if (
+      itemContent === null ||
+      itemContent === undefined ||
+      itemContent === false
+    ) {
+      return []
+    }
+
+    if (
+      typeof itemContent === 'string' ||
+      typeof itemContent === 'number' ||
+      typeof itemContent === 'boolean'
+    ) {
+      return [{ type: 'text', text: String(itemContent) }]
+    }
+
+    return this.flattenRenderResult(itemContent)
+  }
+
+  /**
    * Resolve data from various input types
    */
   private resolveData(): T[] {
@@ -406,7 +436,7 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
               cursor: onItemTap ? 'pointer' : 'default',
             },
           },
-          ...this.flattenRenderResult(itemContent.render())
+          ...this.normalizeItemRenderOutput(itemContent)
         )
 
         // Add event handlers
@@ -505,24 +535,23 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
         mounted: false,
         cleanup: [],
         props: {},
-        render: () => [
-          h(
-            'div',
-            {
-              class: 'tachui-list-section-header',
-              style: {
-                padding: '8px 16px',
-                backgroundColor: '#f8f9fa',
-                fontWeight: '600',
-                fontSize: '14px',
-                color: '#666',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              },
+        render: () => {
+          const headerNode = h('div', {
+            class: 'tachui-list-section-header',
+            style: {
+              padding: '8px 16px',
+              backgroundColor: '#f8f9fa',
+              fontWeight: '600',
+              fontSize: '14px',
+              color: '#666',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
             },
-            section.header as string
-          ),
-        ],
+          })
+          const element = headerNode.element as HTMLElement
+          if (element) element.textContent = section.header as string
+          return [headerNode]
+        },
       }
     }
 
@@ -547,20 +576,19 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
         mounted: false,
         cleanup: [],
         props: {},
-        render: () => [
-          h(
-            'div',
-            {
-              class: 'tachui-list-section-footer',
-              style: {
-                padding: '8px 16px',
-                fontSize: '12px',
-                color: '#999',
-              },
+        render: () => {
+          const footerNode = h('div', {
+            class: 'tachui-list-section-footer',
+            style: {
+              padding: '8px 16px',
+              fontSize: '12px',
+              color: '#999',
             },
-            section.footer as string
-          ),
-        ],
+          })
+          const element = footerNode.element as HTMLElement
+          if (element) element.textContent = section.footer as string
+          return [footerNode]
+        },
       }
     }
 
