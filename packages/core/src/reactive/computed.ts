@@ -16,6 +16,7 @@ export interface ComputedOptions<T> {
   priority?: UpdatePriority
   debugName?: string
   onError?: (error: Error) => T // Error recovery function
+  releaseOnNoObservers?: boolean
 }
 
 /**
@@ -73,17 +74,26 @@ class ComputedImpl<T> extends ComputationImpl implements ReactiveNode {
    */
   removeObserver(computation: Computation): void {
     this.observers.delete(computation)
-    if (this.observers.size === 0) {
-      // Release upstream subscriptions when no observers remain.
-      for (const source of this.sources) {
-        if ('removeObserver' in source) {
-          ;(source as any).removeObserver(this)
-        }
-      }
-      this.sources.clear()
-      this._hasValue = false
-      this.state = ComputationState.Dirty
+    const shouldReleaseOnNoObservers =
+      this.options.releaseOnNoObservers === true
+    if (
+      shouldReleaseOnNoObservers &&
+      this.observers.size === 0 &&
+      computation.state === ComputationState.Disposed
+    ) {
+      this.releaseSources()
     }
+  }
+
+  releaseSources(): void {
+    for (const source of this.sources) {
+      if ('removeObserver' in source) {
+        ;(source as any).removeObserver(this)
+      }
+    }
+    this.sources.clear()
+    this._hasValue = false
+    this.state = ComputationState.Dirty
   }
 
   /**
@@ -234,6 +244,16 @@ export function isComputed<T = any>(value: any): value is Signal<T> {
  */
 export function getComputedImpl<T>(computed: Signal<T>): ComputedImpl<T> | null {
   return (computed as any)[Symbol.for('tachui.computed')] || null
+}
+
+export function releaseComputedSourcesIfUnobserved<T>(
+  computed: Signal<T>
+): void {
+  const impl = getComputedImpl(computed)
+  if (!impl || impl.observers.size !== 0) {
+    return
+  }
+  impl.releaseSources()
 }
 
 /**

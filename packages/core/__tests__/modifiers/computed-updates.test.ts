@@ -179,7 +179,7 @@ describe('computed modifier updates', () => {
   })
 
   describe('Batching with computed', () => {
-    it('batching two source updates runs computed once and applies once', async () => {
+    it('batching two source updates produces the correct final DOM value', async () => {
       const [a, setA] = createSignal(1)
       const [b, setB] = createSignal(3)
       const computedSize = createComputed(() => `${a() + b()}px`)
@@ -200,7 +200,7 @@ describe('computed modifier updates', () => {
       expect(element.style.fontSize).toBe('6px')
     })
 
-    it('changing only one dependency re-runs computed once', async () => {
+    it('changing one dependency updates the final DOM value', async () => {
       const [themeScale, setThemeScale] = createSignal(1)
       const [baseSize] = createSignal(12)
       const computedSize = createComputed(() => `${baseSize() * themeScale()}px`)

@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { registerBasicModifiers } from '@tachui/modifiers'
 import type { ModifierRegistry } from '@tachui/registry'
 import { h } from '../../src/runtime'
+import type { DOMNode } from '../../src/runtime/types'
 import { applyModifiersToNode } from '../../src/modifiers'
+import type { ModifierContext } from '../../src/modifiers/types'
+import { BaseModifier as CoreBaseModifier } from '../../src/modifiers/base'
 import {
   createComputed,
   createEffect,
@@ -10,8 +13,11 @@ import {
   createSignal,
   flushSync,
 } from '../../src/reactive'
-import { getComputedImpl } from '../../src/reactive/computed'
-import { createTestRegistry, getSubscriberCount } from '../../tools/testing/reactive-test-helpers'
+import {
+  createTestRegistry,
+  disposeComputed,
+  getSubscriberCount,
+} from '../../tools/testing/reactive-test-helpers'
 
 type ModifierCall = { name: string; args: any[] }
 type MountedNode = {
@@ -23,6 +29,16 @@ const mountedNodes = new Set<MountedNode>()
 let componentIdCounter = 0
 const runMemoryTests = process.env.FORCE_MEMORY_TESTS === 'true'
 const memoryIt = runMemoryTests ? it : it.skip
+
+class CoreWidthModifier extends CoreBaseModifier<{ value: any }> {
+  readonly type = 'coreWidth'
+  readonly priority = 100
+
+  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+    this.applyStyles(context.element, { width: this.properties.value })
+    return undefined
+  }
+}
 
 function mountWithModifiers(
   registry: ModifierRegistry,
@@ -61,8 +77,9 @@ function mountWithModifiers(
   return mounted
 }
 
-function flushAsync(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 0))
+function unmountMountedNode(node: MountedNode): void {
+  node.dispose()
+  mountedNodes.delete(node)
 }
 
 describe('modifier lifecycle cleanup', () => {
@@ -70,8 +87,10 @@ describe('modifier lifecycle cleanup', () => {
 
   beforeEach(() => {
     document.body.innerHTML = ''
+    componentIdCounter = 0
     registry = createTestRegistry()
     registerBasicModifiers({ registry })
+    registry.register('coreWidth', (value: any) => new CoreWidthModifier({ value }))
   })
 
   afterEach(() => {
@@ -104,6 +123,19 @@ describe('modifier lifecycle cleanup', () => {
       expect(getSubscriberCount(value)).toBe(baseline + 1)
     })
 
+    it('same signal across core and package modifiers creates one subscription', () => {
+      const [value] = createSignal(12)
+      const baseline = getSubscriberCount(value)
+      const element = document.createElement('div')
+
+      mountWithModifiers(registry, element, [
+        { name: 'coreWidth', args: [value] },
+        { name: 'fontSize', args: [value] },
+      ])
+
+      expect(getSubscriberCount(value)).toBe(baseline + 1)
+    })
+
     it('applying signal modifiers to N components creates N subscriptions', () => {
       const [color] = createSignal('#00ff00')
       const baseline = getSubscriberCount(color)
@@ -125,8 +157,7 @@ describe('modifier lifecycle cleanup', () => {
       const mounted = mountWithModifiers(registry, element, [{ name: 'opacity', args: [opacity] }])
 
       expect(getSubscriberCount(opacity)).toBe(baseline + 1)
-      mounted.dispose()
-      mountedNodes.delete(mounted)
+      unmountMountedNode(mounted)
       expect(getSubscriberCount(opacity)).toBe(baseline)
     })
 
@@ -137,8 +168,7 @@ describe('modifier lifecycle cleanup', () => {
         { name: 'width', args: [width] },
       ])
 
-      mounted.dispose()
-      mountedNodes.delete(mounted)
+      unmountMountedNode(mounted)
       expect(() => {
         setWidth(150)
         flushSync()
@@ -162,14 +192,12 @@ describe('modifier lifecycle cleanup', () => {
       expect(getSubscriberCount(itemA)).toBe(baselineA + 1)
       expect(getSubscriberCount(itemB)).toBe(baselineB + 1)
 
-      mountedA.dispose()
-      mountedNodes.delete(mountedA)
+      unmountMountedNode(mountedA)
 
       expect(getSubscriberCount(itemA)).toBe(baselineA)
       expect(getSubscriberCount(itemB)).toBe(baselineB + 1)
 
-      mountedB.dispose()
-      mountedNodes.delete(mountedB)
+      unmountMountedNode(mountedB)
       expect(getSubscriberCount(itemB)).toBe(baselineB)
     })
   })
@@ -202,8 +230,7 @@ describe('modifier lifecycle cleanup', () => {
           const mounted = mountWithModifiers(registry, document.createElement('div'), [
             { name: 'width', args: [value] },
           ])
-          mounted.dispose()
-          mountedNodes.delete(mounted)
+          unmountMountedNode(mounted)
         }
         for (let i = 0; i < 25; i += 1) {
           setValue(i)
@@ -223,16 +250,14 @@ describe('modifier lifecycle cleanup', () => {
       ])
 
       expect(getSubscriberCount(width)).toBe(baseline + 1)
-      first.dispose()
-      mountedNodes.delete(first)
+      unmountMountedNode(first)
       expect(getSubscriberCount(width)).toBe(baseline)
 
       const second = mountWithModifiers(registry, document.createElement('div'), [
         { name: 'width', args: [width] },
       ])
       expect(getSubscriberCount(width)).toBe(baseline + 1)
-      second.dispose()
-      mountedNodes.delete(second)
+      unmountMountedNode(second)
       expect(getSubscriberCount(width)).toBe(baseline)
     })
 
@@ -244,8 +269,7 @@ describe('modifier lifecycle cleanup', () => {
       ])
       expect(firstElement.style.opacity).toBe('0.4')
 
-      first.dispose()
-      mountedNodes.delete(first)
+      unmountMountedNode(first)
       setOpacity(0.9)
       flushSync()
 
@@ -255,8 +279,7 @@ describe('modifier lifecycle cleanup', () => {
       ])
       expect(secondElement.style.opacity).toBe('0.9')
 
-      second.dispose()
-      mountedNodes.delete(second)
+      unmountMountedNode(second)
     })
   })
 
@@ -273,8 +296,7 @@ describe('modifier lifecycle cleanup', () => {
       expect(getSubscriberCount(color)).toBe(baseline + 100)
 
       mounts.forEach(mounted => {
-        mounted.dispose()
-        mountedNodes.delete(mounted)
+        unmountMountedNode(mounted)
       })
 
       expect(getSubscriberCount(color)).toBe(baseline)
@@ -287,8 +309,7 @@ describe('modifier lifecycle cleanup', () => {
         { name: 'fontSize', args: [size] },
       ])
 
-      mounted.dispose()
-      mountedNodes.delete(mounted)
+      unmountMountedNode(mounted)
 
       for (let i = 0; i < 1000; i += 1) {
         setSize(10 + i)
@@ -307,22 +328,22 @@ describe('modifier lifecycle cleanup', () => {
       doubled()
 
       expect(getSubscriberCount(count)).toBe(baseline + 1)
-      getComputedImpl(doubled)?.dispose()
+      disposeComputed(doubled)
       expect(getSubscriberCount(count)).toBe(baseline)
     })
 
-    it('disposing component using computed also cleans computed subscriptions', async () => {
+    it('disposing component using computed also cleans computed subscriptions', () => {
       const [count, setCount] = createSignal(2)
       const baseline = getSubscriberCount(count)
-      const computedSize = createComputed(() => `${count() * 10}px`)
+      const computedSize = createComputed(() => `${count() * 10}px`, {
+        releaseOnNoObservers: true,
+      })
       const mounted = mountWithModifiers(registry, document.createElement('div'), [
         { name: 'fontSize', args: [computedSize] },
       ])
 
       expect(getSubscriberCount(count)).toBe(baseline + 1)
-      mounted.dispose()
-      mountedNodes.delete(mounted)
-      await flushAsync()
+      unmountMountedNode(mounted)
 
       expect(getSubscriberCount(count)).toBe(baseline)
       setCount(4)

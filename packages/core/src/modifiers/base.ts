@@ -9,7 +9,6 @@ import {
   getThemeSignal,
   isComputed,
   isSignal,
-  onCleanup,
 } from '../reactive'
 import type { DOMNode } from '../runtime/types'
 import type {
@@ -26,16 +25,8 @@ import {
   dimensionToCSS,
   shouldExpandForInfinity,
 } from '../constants/layout'
-
-type ReactiveStyleUpdater = (value: any) => void
-type ReactiveStyleBinding = {
-  effect: { dispose: () => void }
-  updaters: Set<ReactiveStyleUpdater>
-}
-const reactiveStyleBindings = new WeakMap<
-  Element,
-  Map<(() => any), ReactiveStyleBinding>
->()
+import { bindReactiveStyle } from './reactive-style-bindings'
+export { bindReactiveStyle } from './reactive-style-bindings'
 
 /**
  * Abstract base modifier class
@@ -204,45 +195,13 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
           // Handle reactive values (signals and computed)
           if (isSignal(value) || isComputed(value)) {
             const signalValue = value as (() => any)
-            const perElementBindings =
-              reactiveStyleBindings.get(element) ?? new Map()
-            if (!reactiveStyleBindings.has(element)) {
-              reactiveStyleBindings.set(element, perElementBindings)
-            }
-
-            let binding = perElementBindings.get(signalValue)
-            if (!binding) {
-              const updaters = new Set<ReactiveStyleUpdater>()
-              const effect = createEffect(() => {
-                const currentValue = signalValue()
-                updaters.forEach(updater => updater(currentValue))
-              })
-              binding = { effect, updaters }
-              perElementBindings.set(signalValue, binding)
-            }
-
-            const updater: ReactiveStyleUpdater = currentValue => {
-              const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
-              applyStyleValue(cssProperty, cssValue)
-            }
-            binding.updaters.add(updater)
-
-            // Ensure initial style application is synchronous on registration.
-            updater(signalValue())
-
-            onCleanup(() => {
-              const currentElementBindings = reactiveStyleBindings.get(element)
-              const currentBinding = currentElementBindings?.get(signalValue)
-              if (!currentBinding) return
-
-              currentBinding.updaters.delete(updater)
-              if (currentBinding.updaters.size === 0) {
-                currentBinding.effect.dispose()
-                currentElementBindings?.delete(signalValue)
-              }
-              if (currentElementBindings && currentElementBindings.size === 0) {
-                reactiveStyleBindings.delete(element)
-              }
+            bindReactiveStyle({
+              element,
+              accessor: signalValue,
+              updater: currentValue => {
+                const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
+                applyStyleValue(cssProperty, cssValue)
+              },
             })
           } else {
             // Handle static values
