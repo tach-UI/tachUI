@@ -6,10 +6,11 @@
 
 import {
   createEffect,
+  getThemeSignal,
   isComputed,
   isSignal,
-  getThemeSignal,
 } from '@tachui/core/reactive'
+import { bindReactiveStyle } from '@tachui/core/modifiers/base'
 import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
 import type {
@@ -26,6 +27,25 @@ import {
   dimensionToCSS,
   shouldExpandForInfinity,
 } from '@tachui/core/constants/layout'
+
+const modifierInstanceIdSymbol = Symbol.for('tachui.modifier.instanceId')
+const updaterScope = 'package'
+let modifierInstanceIdCounter = 0
+
+function getModifierInstanceId(modifier: object): number {
+  const existingId = (modifier as any)[modifierInstanceIdSymbol]
+  if (typeof existingId === 'number') return existingId
+
+  modifierInstanceIdCounter += 1
+  const nextId = modifierInstanceIdCounter
+  Object.defineProperty(modifier, modifierInstanceIdSymbol, {
+    value: nextId,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  })
+  return nextId
+}
 
 /**
  * Abstract base modifier class
@@ -194,66 +214,43 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
       const styleTarget =
         element instanceof HTMLElement ? element.style : (element as any).style
 
+      const applyStyleValue = (propertyName: string, cssValue: string): void => {
+        if (styleTarget.setProperty) {
+          if (
+            typeof cssValue === 'string' &&
+            cssValue.includes('!important')
+          ) {
+            const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
+            styleTarget.setProperty(propertyName, actualValue, 'important')
+          } else {
+            styleTarget.setProperty(propertyName, cssValue)
+          }
+        } else {
+          ;(styleTarget as any)[propertyName] = cssValue
+        }
+      }
+
       for (const [property, value] of Object.entries(styles)) {
         if (value !== undefined) {
           const cssProperty = this.toCSSProperty(property)
 
           // Handle reactive values (signals and computed)
           if (isSignal(value) || isComputed(value)) {
-            // Create reactive effect for this style property
-            createEffect(() => {
-              const currentValue = value()
-
-              // Debug: log what we got from the signal
-              if (property === 'color' || property === 'background') {
-                console.log(`[BaseModifier] Signal resolved for ${property}:`, {
-                  hasResolve: currentValue && typeof currentValue === 'object' && 'resolve' in currentValue,
-                  value: currentValue
-                })
-              }
-
-              const cssValue = this.toCSSValueForProperty(
-                cssProperty,
-                currentValue
-              )
-
-              if (styleTarget.setProperty) {
-                // Check if value contains !important and handle it properly
-                if (
-                  typeof cssValue === 'string' &&
-                  cssValue.includes('!important')
-                ) {
-                  const actualValue = cssValue
-                    .replace(/\s*!important\s*$/, '')
-                    .trim()
-                  styleTarget.setProperty(cssProperty, actualValue, 'important')
-                } else {
-                  styleTarget.setProperty(cssProperty, cssValue)
-                }
-              } else {
-                ;(styleTarget as any)[cssProperty] = cssValue
-              }
+            const signalValue = value as (() => any)
+            const modifierInstanceId = getModifierInstanceId(this)
+            bindReactiveStyle({
+              element,
+              accessor: signalValue,
+              updaterId: `${updaterScope}:${modifierInstanceId}:${cssProperty}`,
+              updater: currentValue => {
+                const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
+                applyStyleValue(cssProperty, cssValue)
+              },
             })
           } else {
             // Handle static values
             const cssValue = this.toCSSValueForProperty(cssProperty, value)
-
-            if (styleTarget.setProperty) {
-              // Check if value contains !important and handle it properly
-              if (
-                typeof cssValue === 'string' &&
-                cssValue.includes('!important')
-              ) {
-                const actualValue = cssValue
-                  .replace(/\s*!important\s*$/, '')
-                  .trim()
-                styleTarget.setProperty(cssProperty, actualValue, 'important')
-              } else {
-                styleTarget.setProperty(cssProperty, cssValue)
-              }
-            } else {
-              ;(styleTarget as any)[cssProperty] = cssValue
-            }
+            applyStyleValue(cssProperty, cssValue)
           }
         }
       }

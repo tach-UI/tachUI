@@ -4,7 +4,12 @@
  * Core modifier classes and utilities for the SwiftUI-inspired modifier system.
  */
 
-import { createEffect, isComputed, isSignal, getThemeSignal } from '../reactive'
+import {
+  createEffect,
+  getThemeSignal,
+  isComputed,
+  isSignal,
+} from '../reactive'
 import type { DOMNode } from '../runtime/types'
 import type {
   CSSStyleProperties,
@@ -20,6 +25,27 @@ import {
   dimensionToCSS,
   shouldExpandForInfinity,
 } from '../constants/layout'
+import { bindReactiveStyle } from './reactive-style-bindings'
+export { bindReactiveStyle } from './reactive-style-bindings'
+
+const modifierInstanceIdSymbol = Symbol.for('tachui.modifier.instanceId')
+const updaterScope = 'core'
+let modifierInstanceIdCounter = 0
+
+function getModifierInstanceId(modifier: object): number {
+  const existingId = (modifier as any)[modifierInstanceIdSymbol]
+  if (typeof existingId === 'number') return existingId
+
+  modifierInstanceIdCounter += 1
+  const nextId = modifierInstanceIdCounter
+  Object.defineProperty(modifier, modifierInstanceIdSymbol, {
+    value: nextId,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  })
+  return nextId
+}
 
 /**
  * Abstract base modifier class
@@ -165,57 +191,43 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
       const styleTarget =
         element instanceof HTMLElement ? element.style : (element as any).style
 
+      const applyStyleValue = (propertyName: string, cssValue: string): void => {
+        if (styleTarget.setProperty) {
+          if (
+            typeof cssValue === 'string' &&
+            cssValue.includes('!important')
+          ) {
+            const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
+            styleTarget.setProperty(propertyName, actualValue, 'important')
+          } else {
+            styleTarget.setProperty(propertyName, cssValue)
+          }
+        } else {
+          ;(styleTarget as any)[propertyName] = cssValue
+        }
+      }
+
       for (const [property, value] of Object.entries(styles)) {
         if (value !== undefined) {
           const cssProperty = this.toCSSProperty(property)
 
           // Handle reactive values (signals and computed)
           if (isSignal(value) || isComputed(value)) {
-            // Create reactive effect for this style property
-            createEffect(() => {
-              const currentValue = value()
-              const cssValue = this.toCSSValueForProperty(
-                cssProperty,
-                currentValue
-              )
-
-              if (styleTarget.setProperty) {
-                // Check if value contains !important and handle it properly
-                if (
-                  typeof cssValue === 'string' &&
-                  cssValue.includes('!important')
-                ) {
-                  const actualValue = cssValue
-                    .replace(/\s*!important\s*$/, '')
-                    .trim()
-                  styleTarget.setProperty(cssProperty, actualValue, 'important')
-                } else {
-                  styleTarget.setProperty(cssProperty, cssValue)
-                }
-              } else {
-                ;(styleTarget as any)[cssProperty] = cssValue
-              }
+            const signalValue = value as (() => any)
+            const modifierInstanceId = getModifierInstanceId(this)
+            bindReactiveStyle({
+              element,
+              accessor: signalValue,
+              updaterId: `${updaterScope}:${modifierInstanceId}:${cssProperty}`,
+              updater: currentValue => {
+                const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
+                applyStyleValue(cssProperty, cssValue)
+              },
             })
           } else {
             // Handle static values
             const cssValue = this.toCSSValueForProperty(cssProperty, value)
-
-            if (styleTarget.setProperty) {
-              // Check if value contains !important and handle it properly
-              if (
-                typeof cssValue === 'string' &&
-                cssValue.includes('!important')
-              ) {
-                const actualValue = cssValue
-                  .replace(/\s*!important\s*$/, '')
-                  .trim()
-                styleTarget.setProperty(cssProperty, actualValue, 'important')
-              } else {
-                styleTarget.setProperty(cssProperty, cssValue)
-              }
-            } else {
-              ;(styleTarget as any)[cssProperty] = cssValue
-            }
+            applyStyleValue(cssProperty, cssValue)
           }
         }
       }
@@ -644,8 +656,18 @@ export class AppearanceModifier extends BaseModifier {
           styles.fontFamily = font.family as string
         }
       }
-      if (font.size) styles.fontSize = this.toCSSValue(font.size)
-      if (font.weight) styles.fontWeight = String(font.weight)
+      if (font.size !== undefined) {
+        styles.fontSize =
+          isSignal(font.size) || isComputed(font.size)
+            ? (font.size as any)
+            : this.toCSSValue(font.size)
+      }
+      if (font.weight !== undefined) {
+        styles.fontWeight =
+          isSignal(font.weight) || isComputed(font.weight)
+            ? (font.weight as any)
+            : String(font.weight)
+      }
       if (font.style) styles.fontStyle = font.style
     }
 

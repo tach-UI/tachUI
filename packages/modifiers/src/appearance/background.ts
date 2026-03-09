@@ -5,7 +5,12 @@
  */
 
 import { BaseModifier } from '../basic/base'
-import { createEffect, getThemeSignal } from '@tachui/core/reactive'
+import {
+  createEffect,
+  getThemeSignal,
+  isComputed,
+  isSignal,
+} from '@tachui/core/reactive'
 import type { ModifierContext } from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/types/runtime'
 import type { GradientDefinition } from '@tachui/core/gradients'
@@ -31,6 +36,11 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     if (!context.element) return
 
     const backgroundValue = this.properties.background
+
+    if (isSignal(backgroundValue) || isComputed(backgroundValue)) {
+      this.applyStyles(context.element, { background: backgroundValue as any })
+      return undefined
+    }
 
     // Handle stateful gradients/backgrounds
     if (

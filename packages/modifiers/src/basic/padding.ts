@@ -196,6 +196,10 @@ export function padding(all: PaddingValue): PaddingModifier
 export function padding(
   optionsOrAll: ReactivePaddingOptions | PaddingValue
 ): PaddingModifier {
+  if (isSignal(optionsOrAll) || isComputed(optionsOrAll)) {
+    return new PaddingModifier({ all: optionsOrAll as unknown as PaddingValue })
+  }
+
   if (typeof optionsOrAll === 'number' || typeof optionsOrAll === 'string') {
     return new PaddingModifier({ all: optionsOrAll })
   }
