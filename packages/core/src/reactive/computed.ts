@@ -73,6 +73,17 @@ class ComputedImpl<T> extends ComputationImpl implements ReactiveNode {
    */
   removeObserver(computation: Computation): void {
     this.observers.delete(computation)
+    if (this.observers.size === 0) {
+      // Release upstream subscriptions when no observers remain.
+      for (const source of this.sources) {
+        if ('removeObserver' in source) {
+          ;(source as any).removeObserver(this)
+        }
+      }
+      this.sources.clear()
+      this._hasValue = false
+      this.state = ComputationState.Dirty
+    }
   }
 
   /**

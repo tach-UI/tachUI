@@ -6,9 +6,10 @@
 
 import {
   createEffect,
+  getThemeSignal,
   isComputed,
   isSignal,
-  getThemeSignal,
+  onCleanup,
 } from '@tachui/core/reactive'
 import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
@@ -26,6 +27,16 @@ import {
   dimensionToCSS,
   shouldExpandForInfinity,
 } from '@tachui/core/constants/layout'
+
+type ReactiveStyleUpdater = (value: any) => void
+type ReactiveStyleBinding = {
+  effect: { dispose: () => void }
+  updaters: Set<ReactiveStyleUpdater>
+}
+const reactiveStyleBindings = new WeakMap<
+  Element,
+  Map<(() => any), ReactiveStyleBinding>
+>()
 
 /**
  * Abstract base modifier class
@@ -194,66 +205,71 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
       const styleTarget =
         element instanceof HTMLElement ? element.style : (element as any).style
 
+      const applyStyleValue = (propertyName: string, cssValue: string): void => {
+        if (styleTarget.setProperty) {
+          if (
+            typeof cssValue === 'string' &&
+            cssValue.includes('!important')
+          ) {
+            const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
+            styleTarget.setProperty(propertyName, actualValue, 'important')
+          } else {
+            styleTarget.setProperty(propertyName, cssValue)
+          }
+        } else {
+          ;(styleTarget as any)[propertyName] = cssValue
+        }
+      }
+
       for (const [property, value] of Object.entries(styles)) {
         if (value !== undefined) {
           const cssProperty = this.toCSSProperty(property)
 
           // Handle reactive values (signals and computed)
           if (isSignal(value) || isComputed(value)) {
-            // Create reactive effect for this style property
-            createEffect(() => {
-              const currentValue = value()
+            const signalValue = value as (() => any)
+            const perElementBindings =
+              reactiveStyleBindings.get(element) ?? new Map()
+            if (!reactiveStyleBindings.has(element)) {
+              reactiveStyleBindings.set(element, perElementBindings)
+            }
 
-              // Debug: log what we got from the signal
-              if (property === 'color' || property === 'background') {
-                console.log(`[BaseModifier] Signal resolved for ${property}:`, {
-                  hasResolve: currentValue && typeof currentValue === 'object' && 'resolve' in currentValue,
-                  value: currentValue
-                })
+            let binding = perElementBindings.get(signalValue)
+            if (!binding) {
+              const updaters = new Set<ReactiveStyleUpdater>()
+              const effect = createEffect(() => {
+                const currentValue = signalValue()
+                updaters.forEach(updater => updater(currentValue))
+              })
+              binding = { effect, updaters }
+              perElementBindings.set(signalValue, binding)
+            }
+
+            const updater: ReactiveStyleUpdater = currentValue => {
+              const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
+              applyStyleValue(cssProperty, cssValue)
+            }
+            binding.updaters.add(updater)
+            updater(signalValue())
+
+            onCleanup(() => {
+              const currentElementBindings = reactiveStyleBindings.get(element)
+              const currentBinding = currentElementBindings?.get(signalValue)
+              if (!currentBinding) return
+
+              currentBinding.updaters.delete(updater)
+              if (currentBinding.updaters.size === 0) {
+                currentBinding.effect.dispose()
+                currentElementBindings?.delete(signalValue)
               }
-
-              const cssValue = this.toCSSValueForProperty(
-                cssProperty,
-                currentValue
-              )
-
-              if (styleTarget.setProperty) {
-                // Check if value contains !important and handle it properly
-                if (
-                  typeof cssValue === 'string' &&
-                  cssValue.includes('!important')
-                ) {
-                  const actualValue = cssValue
-                    .replace(/\s*!important\s*$/, '')
-                    .trim()
-                  styleTarget.setProperty(cssProperty, actualValue, 'important')
-                } else {
-                  styleTarget.setProperty(cssProperty, cssValue)
-                }
-              } else {
-                ;(styleTarget as any)[cssProperty] = cssValue
+              if (currentElementBindings && currentElementBindings.size === 0) {
+                reactiveStyleBindings.delete(element)
               }
             })
           } else {
             // Handle static values
             const cssValue = this.toCSSValueForProperty(cssProperty, value)
-
-            if (styleTarget.setProperty) {
-              // Check if value contains !important and handle it properly
-              if (
-                typeof cssValue === 'string' &&
-                cssValue.includes('!important')
-              ) {
-                const actualValue = cssValue
-                  .replace(/\s*!important\s*$/, '')
-                  .trim()
-                styleTarget.setProperty(cssProperty, actualValue, 'important')
-              } else {
-                styleTarget.setProperty(cssProperty, cssValue)
-              }
-            } else {
-              ;(styleTarget as any)[cssProperty] = cssValue
-            }
+            applyStyleValue(cssProperty, cssValue)
           }
         }
       }
