@@ -311,6 +311,89 @@ describe('Menu Component', () => {
 
       expect(menu.props.animationDuration).toBe(300)
     })
+
+    it('aligns to trigger right edge when menu would overflow viewport right', () => {
+      Object.defineProperty(window, 'innerWidth', { value: 300, writable: true })
+      Object.defineProperty(window, 'innerHeight', { value: 400, writable: true })
+
+      const items: MenuItem[] = [{ title: 'Item', action: vi.fn() }]
+      const menu = Menu({
+        items,
+        trigger: mockTrigger,
+        placement: 'bottom',
+        shift: false,
+      }) as any
+
+      const trigger = {
+        getBoundingClientRect: () => ({
+          top: 100,
+          left: 260,
+          bottom: 140,
+          right: 300,
+          width: 40,
+          height: 40,
+          x: 260,
+          y: 100,
+        }),
+      } as unknown as HTMLElement
+
+      const menuElement = {
+        getBoundingClientRect: () => ({
+          top: 0,
+          left: 0,
+          bottom: 80,
+          right: 120,
+          width: 120,
+          height: 80,
+          x: 0,
+          y: 0,
+        }),
+      } as unknown as HTMLElement
+
+      const position = menu.calculatePosition(trigger, menuElement)
+      expect(position.x).toBe(180)
+    })
+
+    it('opens upward when menu would overflow viewport bottom', () => {
+      Object.defineProperty(window, 'innerWidth', { value: 400, writable: true })
+      Object.defineProperty(window, 'innerHeight', { value: 220, writable: true })
+
+      const items: MenuItem[] = [{ title: 'Item', action: vi.fn() }]
+      const menu = Menu({
+        items,
+        trigger: mockTrigger,
+        placement: 'bottom',
+      }) as any
+
+      const trigger = {
+        getBoundingClientRect: () => ({
+          top: 190,
+          left: 120,
+          bottom: 210,
+          right: 180,
+          width: 60,
+          height: 20,
+          x: 120,
+          y: 190,
+        }),
+      } as unknown as HTMLElement
+
+      const menuElement = {
+        getBoundingClientRect: () => ({
+          top: 0,
+          left: 0,
+          bottom: 80,
+          right: 140,
+          width: 140,
+          height: 80,
+          x: 0,
+          y: 0,
+        }),
+      } as unknown as HTMLElement
+
+      const position = menu.calculatePosition(trigger, menuElement)
+      expect(position.y).toBe(106)
+    })
   })
 
   describe('Visibility Control', () => {

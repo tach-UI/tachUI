@@ -516,19 +516,46 @@ export class MenuComponent implements ComponentInstance<MenuProps> {
         break
     }
 
+    const placementIsVertical =
+      placement.startsWith('bottom') || placement.startsWith('top')
+    const placementIsHorizontal =
+      placement.startsWith('left') || placement.startsWith('right')
+
     // Handle flipping and shifting if enabled
     if (this.props.flip ?? true) {
-      if (
-        y + menuRect.height > viewport.height &&
-        triggerRect.top > menuRect.height
-      ) {
+      const overflowsBottom = y + menuRect.height > viewport.height
+      const overflowsTop = y < 0
+      const overflowsRight = x + menuRect.width > viewport.width
+      const overflowsLeft = x < 0
+
+      // For top/bottom placements, overflow on Y should open upward/downward.
+      if (overflowsBottom && placement.startsWith('bottom')) {
         y = triggerRect.top - menuRect.height - offset.y
+      } else if (overflowsTop && placement.startsWith('top')) {
+        y = triggerRect.bottom + offset.y
       }
-      if (
-        x + menuRect.width > viewport.width &&
-        triggerRect.left > menuRect.width
-      ) {
+
+      // For top/bottom placements, overflow on X should align to trigger edge.
+      if (overflowsRight && placementIsVertical) {
+        x = triggerRect.right - menuRect.width
+      } else if (overflowsLeft && placementIsVertical) {
+        x = triggerRect.left
+      }
+
+      // For left/right placements, horizontal overflow should flip sides.
+      if (overflowsRight && placement.startsWith('right')) {
         x = triggerRect.left - menuRect.width - offset.x
+      } else if (overflowsLeft && placement.startsWith('left')) {
+        x = triggerRect.right + offset.x
+      }
+
+      // For left/right placements, vertical overflow should move within trigger bounds.
+      if (placementIsHorizontal) {
+        if (overflowsBottom) {
+          y = triggerRect.bottom - menuRect.height
+        } else if (overflowsTop) {
+          y = triggerRect.top
+        }
       }
     }
 

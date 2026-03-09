@@ -193,6 +193,36 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
   }
 
   /**
+   * Normalize item render output into safe DOM node payloads.
+   *
+   * Strings and primitives are always emitted as text nodes to avoid HTML
+   * interpretation in list item rendering.
+   */
+  private normalizeItemRenderOutput(itemContent: any): any[] {
+    if (itemContent && typeof itemContent.render === 'function') {
+      return this.flattenRenderResult(itemContent.render())
+    }
+
+    if (
+      itemContent === null ||
+      itemContent === undefined ||
+      itemContent === false
+    ) {
+      return []
+    }
+
+    if (
+      typeof itemContent === 'string' ||
+      typeof itemContent === 'number' ||
+      typeof itemContent === 'boolean'
+    ) {
+      return [{ type: 'text', text: String(itemContent) }]
+    }
+
+    return this.flattenRenderResult(itemContent)
+  }
+
+  /**
    * Resolve data from various input types
    */
   private resolveData(): T[] {
@@ -406,7 +436,7 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
               cursor: onItemTap ? 'pointer' : 'default',
             },
           },
-          ...this.flattenRenderResult(itemContent.render())
+          ...this.normalizeItemRenderOutput(itemContent)
         )
 
         // Add event handlers

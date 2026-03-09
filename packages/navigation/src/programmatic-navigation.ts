@@ -126,6 +126,15 @@ export interface DeepLinkRoute {
   metadata?: Record<string, any>
 }
 
+export interface InvalidDeepLinkInfo {
+  url: string
+  reason:
+    | 'invalid_input'
+    | 'malformed_url'
+    | 'invalid_scheme'
+    | 'disallowed_scheme'
+}
+
 /**
  * Deep linking manager
  */
@@ -133,9 +142,49 @@ export class DeepLinkManager {
   private _routes: Map<string, DeepLinkRoute> = new Map()
   private _handlers: Map<string, Function> = new Map()
   private _baseURL: string = ''
+  private _allowedSchemes: Set<string> = new Set()
+  private _onInvalidLink?: (info: InvalidDeepLinkInfo) => void
 
   constructor(baseURL: string = '') {
     this._baseURL = baseURL
+  }
+
+  setInvalidLinkHandler(handler?: (info: InvalidDeepLinkInfo) => void): void {
+    this._onInvalidLink = handler
+  }
+
+  registerScheme(scheme: string): boolean {
+    if (!this.isValidScheme(scheme)) return false
+    this._allowedSchemes.add(scheme.toLowerCase())
+    return true
+  }
+
+  unregisterScheme(scheme: string): void {
+    if (!scheme) return
+    this._allowedSchemes.delete(scheme.toLowerCase())
+  }
+
+  private notifyInvalidLink(
+    url: string,
+    reason: InvalidDeepLinkInfo['reason']
+  ): void {
+    this._onInvalidLink?.({ url, reason })
+  }
+
+  private safeDecode(value: string): string {
+    try {
+      return decodeURIComponent(value)
+    } catch {
+      return value
+    }
+  }
+
+  private sanitizeQueryToken(value: string): string {
+    const decoded = this.safeDecode(value)
+    const withoutControlChars = decoded.replace(/[\u0000-\u001F\u007F]/g, '')
+    return withoutControlChars.length > 2048
+      ? withoutControlChars.slice(0, 2048)
+      : withoutControlChars
   }
 
   /**
@@ -145,23 +194,51 @@ export class DeepLinkManager {
    * @returns Parsed deep link data or null
    */
   parseDeepLink(url: string): any | null {
-    if (!url || typeof url !== 'string') return null
+    if (!url || typeof url !== 'string') {
+      this.notifyInvalidLink(String(url), 'invalid_input')
+      return null
+    }
 
     try {
       // Handle custom schemes like myapp://profile/123
       const match = url.match(/^([^:]+):\/\/(.*)/)
-      if (!match) return null
+      if (!match) {
+        this.notifyInvalidLink(url, 'malformed_url')
+        return null
+      }
 
-      const [, scheme, rest] = match
+      const [, rawScheme, rest] = match
+      const scheme = rawScheme.toLowerCase()
+
+      if (!this.isValidScheme(scheme)) {
+        this.notifyInvalidLink(url, 'invalid_scheme')
+        return null
+      }
+
+      if (scheme === 'javascript' || scheme === 'data') {
+        this.notifyInvalidLink(url, 'disallowed_scheme')
+        return null
+      }
+
+      if (
+        this._allowedSchemes.size > 0 &&
+        !this._allowedSchemes.has(scheme)
+      ) {
+        this.notifyInvalidLink(url, 'disallowed_scheme')
+        return null
+      }
+
       const [pathAndQuery] = rest.split('#') // Remove fragment
       const [fullPath, queryString] = pathAndQuery.split('?')
 
       const query: Record<string, string> = {}
       if (queryString) {
         queryString.split('&').forEach(param => {
-          const [key, value] = param.split('=')
+          const [rawKey, rawValue] = param.split('=')
+          const key = this.sanitizeQueryToken(rawKey || '')
+          const value = this.sanitizeQueryToken(rawValue || '')
           if (key) {
-            query[decodeURIComponent(key)] = decodeURIComponent(value || '')
+            query[key] = value
           }
         })
       }

@@ -212,6 +212,22 @@ describe('EnhancedList', () => {
       const listItem = list.createListItem(sampleData[0], 0, false)
       expect(listItem).toBeDefined()
     })
+
+    it('renders malicious string payloads as literal text, not HTML', () => {
+      const payload = '<img onerror=alert(1) src=x>'
+      const list = new EnhancedList({
+        data: sampleData,
+        renderItem: (() => payload) as any,
+      })
+
+      const listItem = list.createListItem(sampleData[0], 0, false)
+      const rendered = listItem.render()
+      const serialized = JSON.stringify(rendered)
+
+      expect(serialized).toContain('"type":"text"')
+      expect(serialized).toContain(payload)
+      expect(serialized).not.toContain('"type":"element","tag":"img"')
+    })
   })
 
   describe('Selection', () => {

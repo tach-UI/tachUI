@@ -433,6 +433,60 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
       expect(metadata?.scheme).toBe('myapp')
       expect(metadata?.path).toBe('/profile/123')
     })
+
+    it('rejects disallowed schemes and reports invalid links', () => {
+      const manager = new DeepLinkManager()
+      const onInvalidLink = vi.fn()
+      manager.setInvalidLinkHandler(onInvalidLink)
+
+      expect(manager.parseDeepLink('javascript://alert(1)')).toBeNull()
+      expect(manager.parseDeepLink('data://text/plain,hello')).toBeNull()
+
+      expect(onInvalidLink).toHaveBeenCalledTimes(2)
+      expect(onInvalidLink).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ reason: 'disallowed_scheme' })
+      )
+      expect(onInvalidLink).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ reason: 'disallowed_scheme' })
+      )
+    })
+
+    it('rejects URLs with unregistered schemes when allow-list is configured', () => {
+      const manager = new DeepLinkManager()
+      const onInvalidLink = vi.fn()
+      manager.setInvalidLinkHandler(onInvalidLink)
+      manager.registerScheme('myapp')
+
+      expect(manager.parseDeepLink('otherapp://profile/123')).toBeNull()
+      expect(onInvalidLink).toHaveBeenCalledWith({
+        url: 'otherapp://profile/123',
+        reason: 'disallowed_scheme',
+      })
+    })
+
+    it('accepts registered schemes when allow-list is configured', () => {
+      const manager = new DeepLinkManager()
+      manager.registerScheme('myapp')
+
+      const result = manager.parseDeepLink('myapp://profile/123')
+      expect(result).toBeDefined()
+      expect(result?.scheme).toBe('myapp')
+      expect(result?.path).toBe('/profile/123')
+    })
+
+    it('sanitizes query parameters by stripping control chars and truncating length', () => {
+      const manager = new DeepLinkManager()
+      const longValue = 'x'.repeat(2100)
+      const result = manager.parseDeepLink(
+        `myapp://profile/123?name=abc%00def&bio=${longValue}`
+      )
+
+      expect(result).toBeDefined()
+      expect(result?.query.name).toBe('abcdef')
+      expect(result?.query.bio.length).toBe(2048)
+    })
   })
 
   describe('Global Managers', () => {
