@@ -4,7 +4,11 @@ import type { ModifierRegistry } from '@tachui/registry'
 import { h } from '../../src/runtime'
 import type { DOMNode } from '../../src/runtime/types'
 import { applyModifiersToNode } from '../../src/modifiers'
-import { BaseModifier, bindReactiveStyle } from '../../src/modifiers/base'
+import {
+  BaseModifier,
+  bindReactiveStyle,
+  setReactiveStyleUpdaterErrorHandler,
+} from '../../src/modifiers/base'
 import type { ModifierContext } from '../../src/modifiers/types'
 import { batch, createRoot, createSignal, flushSync } from '../../src/reactive'
 import {
@@ -133,6 +137,7 @@ describe('reactive modifier stress', () => {
   afterEach(() => {
     mountedDisposers.forEach(dispose => dispose())
     mountedDisposers.clear()
+    setReactiveStyleUpdaterErrorHandler(null)
     vi.restoreAllMocks()
   })
 
@@ -486,6 +491,50 @@ describe('reactive modifier stress', () => {
       expect(safeElement.style.getPropertyValue('--throwing')).toBe('recovered')
       expect(getSubscriberCount(value)).toBe(baselineSubscribers)
       errorSpy.mockRestore()
+    })
+
+    it('surfaces updater errors through registered error handler', async () => {
+      const [value, setValue] = createSignal('ok')
+      const element = document.createElement('div')
+      const handledErrors: Array<{ updaterId: string; value: string }> = []
+      const fallbackLogSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
+
+      setReactiveStyleUpdaterErrorHandler((error, context) => {
+        expect(error).toBeInstanceOf(Error)
+        handledErrors.push({
+          updaterId: context.updaterId,
+          value: String(context.value),
+        })
+      })
+
+      mountWithModifiers(registry, element, [
+        {
+          name: 'stressStyle',
+          args: [
+            {
+              accessor: value,
+              cssProperty: '--throwing-hook',
+              updaterId: 'throwing-hook',
+              throwWhen: (current: string) => current === 'boom',
+            } satisfies StressStyleProps,
+          ],
+        },
+      ])
+
+      setValue('boom')
+      flushSync()
+      await waitForUpdate()
+
+      expect(handledErrors).toEqual([
+        {
+          updaterId: 'throwing-hook',
+          value: 'boom',
+        },
+      ])
+      expect(fallbackLogSpy).not.toHaveBeenCalled()
+      fallbackLogSpy.mockRestore()
     })
 
     it('isolates mount-time updater throws and keeps sibling updaters active', async () => {

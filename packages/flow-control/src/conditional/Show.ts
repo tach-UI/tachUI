@@ -35,6 +35,7 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
   public mounted = false
   public cleanup: (() => void)[] = []
   private readonly renderer = new DOMRenderer()
+  private currentBranchNodes: DOMNode[] = []
 
   constructor(props: ShowProps) {
     this.props = props
@@ -114,13 +115,15 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
         const content = condition ? children : fallback
 
         // Dispose previously rendered branch nodes/effects before swapping branches.
-        this.disposeNodes(containerNode.children ?? [])
+        this.disposeNodes(this.currentBranchNodes)
 
         if (content) {
           const rendered = content.render()
           const nodes = Array.isArray(rendered) ? rendered : [rendered]
+          this.currentBranchNodes = nodes
           containerNode.children = nodes
         } else {
+          this.currentBranchNodes = []
           containerNode.children = []
         }
 
@@ -136,13 +139,7 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
 
     this.cleanup = [disposeRoot]
 
-    const cleanup = () => {
-      this.disposeNodes(containerNode.children ?? [])
-      this.cleanup.forEach(fn => fn())
-      this.cleanup = []
-    }
-
-    containerNode.dispose = cleanup
+    containerNode.dispose = () => this.dispose()
 
     return [containerNode]
   }
@@ -154,15 +151,10 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
     container: HTMLElement,
     children: DOMNode[]
   ): void {
-    // Clear existing content
-    container.innerHTML = ''
-
-    children.forEach(child => {
-      const element = this.renderer.render(child)
-      if (element) {
-        container.appendChild(element)
-      }
-    })
+    const renderedChildren = children.map(
+      child => this.renderer.render(child) as Element | Text | Comment
+    )
+    container.replaceChildren(...renderedChildren)
   }
 
   private disposeNodes(nodes: DOMNode[]): void {
@@ -184,6 +176,8 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
    */
   dispose(): void {
     this.cleanup.forEach(fn => fn())
+    this.disposeNodes(this.currentBranchNodes)
+    this.currentBranchNodes = []
     this.cleanup = []
   }
 }

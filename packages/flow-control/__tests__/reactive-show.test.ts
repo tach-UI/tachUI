@@ -2,8 +2,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { batch, createComputed, createSignal, flushSync, type ComponentInstance, type DOMNode, DOMRenderer } from '@tachui/core'
 import { Text } from '@tachui/primitives'
 import { registerBasicModifiers } from '@tachui/modifiers'
-import { globalModifierRegistry } from '@tachui/registry'
-import { getSubscriberCount } from '../../core/tools/testing/reactive-test-helpers'
+import type { ModifierRegistry } from '@tachui/registry'
+import {
+  createTestRegistry,
+  getSubscriberCount,
+} from '../../core/tools/testing/reactive-test-helpers'
+import { setExternalModifierRegistry } from '../../core/src/modifiers'
 import { Show } from '../src/conditional/Show'
 
 function makeTextComponent(content: string | (() => string)): ComponentInstance {
@@ -54,17 +58,21 @@ async function waitForUpdate(frames = 2): Promise<void> {
 describe('Show reactive rendering depth', () => {
   let container: HTMLElement
   let renderer: DOMRenderer
+  let registry: ModifierRegistry
 
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)
     renderer = new DOMRenderer()
-    registerBasicModifiers({ registry: globalModifierRegistry })
+    registry = createTestRegistry()
+    registerBasicModifiers({ registry })
+    setExternalModifierRegistry(registry)
   })
 
   afterEach(() => {
     renderer.cleanup()
     container.remove()
+    setExternalModifierRegistry(null)
   })
 
   function renderToDOM(component: ComponentInstance): HTMLElement {

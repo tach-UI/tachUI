@@ -4,6 +4,14 @@ import { releaseComputedSourcesIfUnobserved } from '../reactive/computed'
 type ReactiveAccessor = () => any
 type ReactiveStyleUpdater = (value: any) => void
 type CleanupFn = () => void
+export type ReactiveStyleUpdaterErrorContext = {
+  updaterId: string
+  value: any
+}
+export type ReactiveStyleUpdaterErrorHandler = (
+  error: unknown,
+  context: ReactiveStyleUpdaterErrorContext
+) => void
 type ReactiveStyleBinding = {
   effect: { dispose: () => void }
   updaters: Map<string, ReactiveStyleUpdater>
@@ -21,6 +29,15 @@ type ReactiveStyleBindingOptions = {
   updaterId: string
 }
 
+let reactiveStyleUpdaterErrorHandler: ReactiveStyleUpdaterErrorHandler | null =
+  null
+
+export function setReactiveStyleUpdaterErrorHandler(
+  handler: ReactiveStyleUpdaterErrorHandler | null
+): void {
+  reactiveStyleUpdaterErrorHandler = handler
+}
+
 function runUpdaterSafely(
   updater: ReactiveStyleUpdater,
   value: any,
@@ -29,6 +46,11 @@ function runUpdaterSafely(
   try {
     updater(value)
   } catch (error) {
+    if (reactiveStyleUpdaterErrorHandler) {
+      reactiveStyleUpdaterErrorHandler(error, { updaterId, value })
+      return
+    }
+
     console.error(`Reactive style updater failed (${updaterId}):`, error)
   }
 }

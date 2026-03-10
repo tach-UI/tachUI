@@ -36,6 +36,28 @@ function trackedTextComponent(
   }
 }
 
+function disposableFallbackComponent(
+  label: string,
+  onDispose: () => void
+): ComponentInstance {
+  return {
+    type: 'component',
+    id: `fallback-${label}-${Math.random().toString(36).slice(2)}`,
+    mounted: false,
+    cleanup: [],
+    props: { label },
+    render: () => [
+      {
+        type: 'element',
+        tag: 'span',
+        props: {},
+        children: [{ type: 'text', text: label }],
+        dispose: onDispose,
+      } as DOMNode,
+    ],
+  }
+}
+
 async function waitForUpdate(frames = 2): Promise<void> {
   for (let i = 0; i < frames; i += 1) {
     await new Promise(resolve => setTimeout(resolve, 0))
@@ -259,6 +281,42 @@ describe('ForEach reactive rendering depth', () => {
       expect(getSubscriberCount(size0)).toBe(0)
       expect(getSubscriberCount(size1)).toBe(0)
       expect(getSubscriberCount(size2)).toBe(0)
+    })
+
+    it('disposes fallback nodes when swapping and rerendering empty branches', async () => {
+      const [items, setItems] = createSignal<ItemModel[]>([])
+      let fallbackDisposeCount = 0
+      const list = ForEach({
+        data: items,
+        getItemId: item => item.id,
+        children: item => Text(item.label).build(),
+        fallback: disposableFallbackComponent('No items', () => {
+          fallbackDisposeCount += 1
+        }),
+      })
+
+      const element = renderToDOM(list)
+      expect(element.textContent).toContain('No items')
+
+      setItems([{ id: 1, label: 'Row-1' }])
+      flushSync()
+      await waitForUpdate()
+      expect(fallbackDisposeCount).toBe(1)
+      expect(element.textContent).toContain('Row-1')
+
+      setItems([])
+      flushSync()
+      await waitForUpdate()
+      expect(element.textContent).toContain('No items')
+
+      setItems([])
+      flushSync()
+      await waitForUpdate()
+      expect(fallbackDisposeCount).toBe(2)
+
+      list.dispose()
+      componentsWithDispose.delete(list)
+      expect(fallbackDisposeCount).toBeGreaterThanOrEqual(2)
     })
   })
 

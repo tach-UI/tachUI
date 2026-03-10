@@ -139,6 +139,23 @@ export class ForEachComponent<T = any>
     return true
   }
 
+  private disposeDetachedChildren(
+    previousChildren: DOMNode[],
+    nextChildren: DOMNode[]
+  ): void {
+    if (previousChildren.length === 0) return
+    if (nextChildren.length === 0) {
+      this.disposeNodes(previousChildren)
+      return
+    }
+
+    const nextChildrenSet = new Set<DOMNode>(nextChildren)
+    const detachedChildren = previousChildren.filter(
+      child => !nextChildrenSet.has(child)
+    )
+    this.disposeNodes(detachedChildren)
+  }
+
   private renderChildren(): DOMNode[] {
     const data = this.dataSignal()
 
@@ -226,7 +243,9 @@ export class ForEachComponent<T = any>
     createRoot(dispose => {
       disposeRoot = dispose
       createEffect(() => {
+        const previousChildren = (containerNode.children ?? []) as DOMNode[]
         const newChildren = this.renderChildren()
+        this.disposeDetachedChildren(previousChildren, newChildren)
         containerNode.children = newChildren
 
         // Update DOM if already rendered

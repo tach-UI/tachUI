@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { Text } from '@tachui/primitives'
-import { globalModifierRegistry } from '@tachui/registry'
+import { globalModifierRegistry, type ModifierFactory } from '@tachui/registry'
 import { registerBasicModifiers } from '@tachui/modifiers'
 import { configureCore } from '../../src/config'
 import { resetProxyCache, applyModifiersToNode } from '../../src/modifiers'
@@ -32,11 +32,34 @@ function mountComponentModifiers(
 
 describe('proxy reactive modifier coverage', () => {
   const cleanupDisposers = new Set<() => void>()
+  let registryBaseline = new Map<string, ModifierFactory<any>>()
+
+  const restoreRegistryBaseline = (): void => {
+    globalModifierRegistry.clear()
+    registryBaseline.forEach((factory, name) => {
+      globalModifierRegistry.register(name, factory)
+    })
+  }
+
+  beforeAll(() => {
+    registerBasicModifiers({ registry: globalModifierRegistry })
+    registryBaseline = new Map(
+      globalModifierRegistry
+        .list()
+        .map(name => [name, globalModifierRegistry.get(name)] as const)
+        .filter(
+          (
+            entry
+          ): entry is readonly [string, ModifierFactory<any>] =>
+            typeof entry[1] === 'function'
+        )
+    )
+  })
 
   beforeEach(() => {
     document.body.innerHTML = ''
     configureCore({ proxyModifiers: true })
-    registerBasicModifiers({ registry: globalModifierRegistry })
+    restoreRegistryBaseline()
     resetProxyCache()
   })
 
@@ -46,6 +69,13 @@ describe('proxy reactive modifier coverage', () => {
     })
     cleanupDisposers.clear()
     configureCore({ proxyModifiers: true })
+    restoreRegistryBaseline()
+    resetProxyCache()
+  })
+
+  afterAll(() => {
+    restoreRegistryBaseline()
+    resetProxyCache()
   })
 
   describe('proxy resolves modifier names from registry', () => {
