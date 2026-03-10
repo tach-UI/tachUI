@@ -47,7 +47,7 @@ function makeContainer(children: ComponentInstance[]): ComponentInstance {
 
 async function waitForUpdate(frames = 2): Promise<void> {
   for (let i = 0; i < frames; i++) {
-    await new Promise(resolve => requestAnimationFrame(resolve))
+    await new Promise(resolve => setTimeout(resolve, 0))
   }
 }
 
@@ -59,10 +59,11 @@ describe('Show reactive rendering depth', () => {
     container = document.createElement('div')
     document.body.appendChild(container)
     renderer = new DOMRenderer()
-    registerBasicModifiers({ registry: globalModifierRegistry as any })
+    registerBasicModifiers({ registry: globalModifierRegistry })
   })
 
   afterEach(() => {
+    renderer.cleanup()
     container.remove()
   })
 
@@ -139,7 +140,7 @@ describe('Show reactive rendering depth', () => {
   })
 
   describe('Show with modifier-bearing children', () => {
-    it('pauses hidden child signal subscriptions while hidden', async () => {
+    it('stops tracking hidden child signals while hidden', async () => {
       const [visible, setVisible] = createSignal(false)
       const [childValue] = createSignal('child')
       const child = makeTextComponent(() => childValue())
@@ -332,6 +333,7 @@ describe('Show reactive rendering depth', () => {
       await waitForUpdate()
 
       const totalRenders = renderCounts.reduce((sum, entry) => sum + entry.count, 0)
+      // `visible` starts false and ends true in one batch, so each child render fn runs once.
       expect(totalRenders).toBe(50)
       expect(element.textContent).toContain('Item-0')
       expect(element.textContent).toContain('Item-49')

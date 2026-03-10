@@ -4,7 +4,7 @@
  * Reactive implementation that works with TachUI's reactive architecture
  */
 
-import { createEffect, isComputed, isSignal } from '@tachui/core'
+import { createEffect, createRoot } from '@tachui/core'
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import { DOMRenderer } from '@tachui/core'
 
@@ -34,6 +34,7 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
   public readonly props: ShowProps
   public mounted = false
   public cleanup: (() => void)[] = []
+  private readonly renderer = new DOMRenderer()
 
   constructor(props: ShowProps) {
     this.props = props
@@ -48,10 +49,10 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
 
     if (typeof when === 'boolean') {
       return when
-    } else if (typeof when === 'function') {
+    }
+
+    if (typeof when === 'function') {
       return when()
-    } else if (isSignal(when) || isComputed(when)) {
-      return (when as () => boolean)()
     }
 
     return false
@@ -77,11 +78,9 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
    * Render the Show component with self-contained reactivity like text() function
    */
   render(): DOMNode[] {
-    // Check if condition is reactive
     const { when } = this.props
 
-    const isReactive =
-      typeof when === 'function' || isSignal(when) || isComputed(when)
+    const isReactive = typeof when === 'function'
 
     if (!isReactive) {
       // Static condition - simple render
@@ -91,6 +90,9 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
       const rendered = content.render()
       return Array.isArray(rendered) ? rendered : [rendered]
     }
+
+    // Ensure prior render cleanups do not accumulate across repeated renders.
+    this.dispose()
 
     // Reactive condition - always create reactive container for consistency
     const containerNode: DOMNode = {
@@ -103,46 +105,36 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
       dispose: undefined,
     }
 
-    // Create reactive effect directly - no createRoot isolation
-    const effect = createEffect(() => {
-      // Directly call the when function to ensure reactive subscription
-      const { when } = this.props
-      let condition: boolean
+    let disposeRoot = () => {}
+    createRoot(dispose => {
+      disposeRoot = dispose
+      createEffect(() => {
+        const condition = this.evaluateCondition()
+        const { children, fallback } = this.props
+        const content = condition ? children : fallback
 
-      if (typeof when === 'boolean') {
-        condition = when
-      } else if (typeof when === 'function') {
-        // Call the signal directly - this is the key to reactive subscription
-        condition = when()
-      } else {
-        condition = false
-      }
+        // Dispose previously rendered branch nodes/effects before swapping branches.
+        this.disposeNodes(containerNode.children ?? [])
 
-      const { children, fallback } = this.props
-      const content = condition ? children : fallback
+        if (content) {
+          const rendered = content.render()
+          const nodes = Array.isArray(rendered) ? rendered : [rendered]
+          containerNode.children = nodes
+        } else {
+          containerNode.children = []
+        }
 
-      // Dispose previously rendered branch nodes/effects before swapping branches.
-      this.disposeNodes(containerNode.children ?? [])
-
-      if (content) {
-        const rendered = content.render()
-        const nodes = Array.isArray(rendered) ? rendered : [rendered]
-        containerNode.children = nodes
-      } else {
-        containerNode.children = []
-      }
-
-      // Update DOM if already rendered
-      if (
-        containerNode.element &&
-        containerNode.element instanceof HTMLElement
-      ) {
-        this.updateContainerDOM(containerNode.element, containerNode.children)
-      }
+        // Update DOM if already rendered
+        if (
+          containerNode.element &&
+          containerNode.element instanceof HTMLElement
+        ) {
+          this.updateContainerDOM(containerNode.element, containerNode.children)
+        }
+      })
     })
 
-    // Store cleanup like other components do
-    this.cleanup.push(() => effect.dispose())
+    this.cleanup = [disposeRoot]
 
     const cleanup = () => {
       this.disposeNodes(containerNode.children ?? [])
@@ -151,14 +143,6 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
     }
 
     containerNode.dispose = cleanup
-
-    // Initialize with current content
-    const initialContent = this.getContent()
-    if (initialContent) {
-      const rendered = initialContent.render()
-      const nodes = Array.isArray(rendered) ? rendered : [rendered]
-      containerNode.children = nodes
-    }
 
     return [containerNode]
   }
@@ -173,18 +157,10 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
     // Clear existing content
     container.innerHTML = ''
 
-    // Use TachUI's renderer to properly handle modifiers and reactivity
-    const renderer = new DOMRenderer()
-
-    // Render new content using TachUI's renderer which handles modifiers
     children.forEach(child => {
-      try {
-        const element = renderer.render(child)
-        if (element) {
-          container.appendChild(element)
-        }
-      } catch (error) {
-        console.error('Error rendering Show component child:', error)
+      const element = this.renderer.render(child)
+      if (element) {
+        container.appendChild(element)
       }
     })
   }
@@ -198,11 +174,7 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
       }
 
       if (typeof node.dispose === 'function') {
-        try {
-          node.dispose()
-        } catch (error) {
-          console.error('Show component child cleanup error:', error)
-        }
+        node.dispose()
       }
     })
   }
@@ -211,13 +183,7 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
    * Cleanup resources
    */
   dispose(): void {
-    this.cleanup.forEach(fn => {
-      try {
-        fn()
-      } catch (error) {
-        console.error('Show component cleanup error:', error)
-      }
-    })
+    this.cleanup.forEach(fn => fn())
     this.cleanup = []
   }
 }
