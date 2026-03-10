@@ -7,6 +7,7 @@ let modifierFnCache = new WeakMap<
   ComponentInstance,
   Map<PropertyKey, (...args: any[]) => any>
 >()
+let modifierFactoryCache = new WeakMap<ComponentInstance, Map<PropertyKey, unknown>>()
 let methodBindCache = new WeakMap<
   ComponentInstance,
   Map<PropertyKey, Function>
@@ -49,6 +50,7 @@ function ensureModifiable(component: ComponentInstance) {
 export function resetProxyCache() {
   proxyCache = new WeakMap()
   modifierFnCache = new WeakMap()
+  modifierFactoryCache = new WeakMap()
   methodBindCache = new WeakMap()
 }
 
@@ -66,6 +68,8 @@ export function createComponentProxy<T extends ComponentInstance>(
 
   const modifierCache = new Map<PropertyKey, (...args: any[]) => any>()
   modifierFnCache.set(component, modifierCache)
+  const factoryCache = new Map<PropertyKey, unknown>()
+  modifierFactoryCache.set(component, factoryCache)
 
   const methodCache = new Map<PropertyKey, Function>()
   methodBindCache.set(component, methodCache)
@@ -136,6 +140,14 @@ export function createComponentProxy<T extends ComponentInstance>(
       }
 
       if (typeof prop === 'string') {
+        const registryFactory = globalModifierRegistry.get(prop as any)
+        if (registryFactory && modifierCache.has(prop)) {
+          const cachedFactory = factoryCache.get(prop)
+          if (cachedFactory !== registryFactory) {
+            modifierCache.delete(prop)
+          }
+        }
+
         if (Reflect.has(target, prop)) {
           const directValue = Reflect.get(target, prop, target)
           if (typeof directValue !== 'function') {
@@ -167,6 +179,9 @@ export function createComponentProxy<T extends ComponentInstance>(
                 return result && result !== currentApi ? result : proxy
               }
               modifierCache.set(prop, applyBuilderModifier)
+              if (registryFactory) {
+                factoryCache.set(prop, registryFactory)
+              }
             }
             return modifierCache.get(prop)
           }
@@ -191,6 +206,9 @@ export function createComponentProxy<T extends ComponentInstance>(
               return proxy
             }
             modifierCache.set(prop, applyModifier)
+            if (registryFactory) {
+              factoryCache.set(prop, registryFactory)
+            }
           }
           return modifierCache.get(prop)
         }
