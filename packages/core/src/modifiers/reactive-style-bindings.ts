@@ -29,9 +29,7 @@ function runUpdaterSafely(
   try {
     updater(value)
   } catch (error) {
-    if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
-      console.error(`Reactive style updater failed (${updaterId}):`, error)
-    }
+    console.error(`Reactive style updater failed (${updaterId}):`, error)
   }
 }
 

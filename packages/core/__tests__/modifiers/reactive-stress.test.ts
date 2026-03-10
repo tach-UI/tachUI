@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { registerBasicModifiers } from '@tachui/modifiers'
 import type { ModifierRegistry } from '@tachui/registry'
 import { h } from '../../src/runtime'
@@ -42,6 +42,7 @@ class StressStyleModifier extends BaseModifier<StressStyleProps> {
     bindReactiveStyle({
       element: context.element,
       accessor: this.properties.accessor,
+      // Intentional for tests: explicit IDs let assertions target specific updater behavior.
       updaterId: this.properties.updaterId,
       updater: rawValue => {
         this.properties.spy?.track(this.properties.updaterId, rawValue)
@@ -132,6 +133,7 @@ describe('reactive modifier stress', () => {
   afterEach(() => {
     mountedDisposers.forEach(dispose => dispose())
     mountedDisposers.clear()
+    vi.restoreAllMocks()
   })
 
   describe('Volume', () => {
@@ -139,10 +141,12 @@ describe('reactive modifier stress', () => {
       const [size, setSize] = createSignal(10)
       const elements = Array.from({ length: 100 }, () => document.createElement('div'))
 
-      const start = performance.now()
       elements.forEach(element => {
         mountWithModifiers(registry, element, [{ name: 'width', args: [size] }])
       })
+
+      // Measure update path only for consistent comparison across volume tests.
+      const start = performance.now()
       setSize(22)
       flushSync()
       await waitForUpdate()
@@ -170,6 +174,7 @@ describe('reactive modifier stress', () => {
       }))
 
       mountWithModifiers(registry, element, calls)
+      // Measure update path only for consistent comparison across volume tests.
       const start = performance.now()
       signals.forEach(([, setter], index) => {
         setter(index + 100)
@@ -194,6 +199,7 @@ describe('reactive modifier stress', () => {
         mountWithModifiers(registry, element, [{ name: 'opacity', args: [shared] }])
       })
 
+      // Measure update path only for consistent comparison across volume tests.
       const start = performance.now()
       batch(() => {
         setShared(0.4)
@@ -343,6 +349,7 @@ describe('reactive modifier stress', () => {
       flushSync()
       await waitForUpdate()
 
+      // Map preserves insertion order; this verifies we keep registration order stable.
       expect(orderLog).toEqual(tokens)
       expect(element.style.getPropertyValue('--order')).toBe('m10:1')
       expect(orderSpy.callCount).toBe(10)
@@ -435,6 +442,7 @@ describe('reactive modifier stress', () => {
     it('catches failing updater errors and keeps other modifiers updating', async () => {
       const [value, setValue] = createSignal('safe')
       const safeElement = document.createElement('div')
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       mountWithModifiers(registry, safeElement, [
         {
@@ -468,6 +476,8 @@ describe('reactive modifier stress', () => {
       }).not.toThrow()
       await waitForUpdate()
       expect(safeElement.style.getPropertyValue('--safe')).toBe('boom')
+      expect(safeElement.style.getPropertyValue('--throwing')).toBe('safe')
+      expect(errorSpy).toHaveBeenCalled()
 
       setValue('recovered')
       flushSync()
@@ -475,6 +485,49 @@ describe('reactive modifier stress', () => {
       expect(safeElement.style.getPropertyValue('--safe')).toBe('recovered')
       expect(safeElement.style.getPropertyValue('--throwing')).toBe('recovered')
       expect(getSubscriberCount(value)).toBe(baselineSubscribers)
+      errorSpy.mockRestore()
+    })
+
+    it('isolates mount-time updater throws and keeps sibling updaters active', async () => {
+      const [value, setValue] = createSignal('boom')
+      const element = document.createElement('div')
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      expect(() => {
+        mountWithModifiers(registry, element, [
+          {
+            name: 'stressStyle',
+            args: [
+              {
+                accessor: value,
+                cssProperty: '--throwing-on-mount',
+                updaterId: 'throwing-on-mount',
+                throwWhen: (current: string) => current === 'boom',
+              } satisfies StressStyleProps,
+            ],
+          },
+          {
+            name: 'stressStyle',
+            args: [
+              {
+                accessor: value,
+                cssProperty: '--safe-on-mount',
+                updaterId: 'safe-on-mount',
+              } satisfies StressStyleProps,
+            ],
+          },
+        ])
+      }).not.toThrow()
+
+      expect(element.style.getPropertyValue('--safe-on-mount')).toBe('boom')
+      expect(errorSpy).toHaveBeenCalled()
+
+      setValue('recovered')
+      flushSync()
+      await waitForUpdate()
+      expect(element.style.getPropertyValue('--safe-on-mount')).toBe('recovered')
+      expect(element.style.getPropertyValue('--throwing-on-mount')).toBe('recovered')
+      errorSpy.mockRestore()
     })
   })
 })
