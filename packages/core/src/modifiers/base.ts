@@ -26,7 +26,12 @@ import {
   shouldExpandForInfinity,
 } from '../constants/layout'
 import { bindReactiveStyle } from './reactive-style-bindings'
-export { bindReactiveStyle } from './reactive-style-bindings'
+export {
+  bindReactiveStyle,
+  setReactiveStyleUpdaterErrorHandler,
+  type ReactiveStyleUpdaterErrorContext,
+  type ReactiveStyleUpdaterErrorHandler,
+} from './reactive-style-bindings'
 
 const modifierInstanceIdSymbol = Symbol.for('tachui.modifier.instanceId')
 const updaterScope = 'core'

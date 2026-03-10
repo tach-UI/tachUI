@@ -187,7 +187,13 @@ export class DeepLinkManager {
       if (next === decoded) break
       decoded = next
     }
-    const withoutControlChars = decoded.replace(/[\u0000-\u001F\u007F]/g, '')
+    const withoutControlChars = Array.from(decoded)
+      .filter(char => {
+        const codePoint = char.codePointAt(0)
+        if (codePoint === undefined) return false
+        return codePoint >= 0x20 && codePoint !== 0x7f
+      })
+      .join('')
     return withoutControlChars.length > 2048
       ? withoutControlChars.slice(0, 2048)
       : withoutControlChars

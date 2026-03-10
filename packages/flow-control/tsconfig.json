@@ -15,6 +15,22 @@
     "paths": {
       "@tachui/core": ["../core/src"],
       "@tachui/core/*": ["../core/src/*"],
+      "@tachui/registry": [
+        "../registry/dist/index.d.ts",
+        "../registry/src/index.ts"
+      ],
+      "@tachui/registry/*": [
+        "../registry/dist/*",
+        "../registry/src/*"
+      ],
+      "@tachui/primitives": [
+        "../primitives/dist/index.d.ts",
+        "../primitives/src/index.ts"
+      ],
+      "@tachui/primitives/*": [
+        "../primitives/dist/*",
+        "../primitives/src/*"
+      ],
       "@tachui/modifiers": [
         "../modifiers/dist/index.d.ts",
         "../modifiers/src/index.ts"

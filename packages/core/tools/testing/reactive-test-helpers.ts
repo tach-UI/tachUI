@@ -155,7 +155,7 @@ export function getSubscriberCount<T>(
   signal: (() => T) | SignalHandle<T>
 ): number {
   const getter = typeof signal === 'function' ? signal : signal.get
-  const signalImpl = getSignalImpl(getter)
+  const signalImpl = getSignalImpl(getter as any)
   if (!signalImpl) {
     throw new Error(
       'getSubscriberCount expected a TachUI signal getter, but received an invalid signal handle.'

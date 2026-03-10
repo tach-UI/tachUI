@@ -150,6 +150,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ci": "vitest run",
+    "test:stress": "sh -lc 'cd ../.. && pnpm vitest run --config vitest.stress.config.ts packages/core/__tests__/modifiers/reactive-stress.test.ts --maxWorkers 1'",
     "test:all": "vitest run --config vitest.all.config.ts",
     "bench": "vitest bench",
     "benchmark": "vitest run --config vitest.benchmark.config.ts benchmarks/full.bench.ts",

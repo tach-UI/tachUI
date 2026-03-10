@@ -4,6 +4,14 @@ import { releaseComputedSourcesIfUnobserved } from '../reactive/computed'
 type ReactiveAccessor = () => any
 type ReactiveStyleUpdater = (value: any) => void
 type CleanupFn = () => void
+export type ReactiveStyleUpdaterErrorContext = {
+  updaterId: string
+  value: any
+}
+export type ReactiveStyleUpdaterErrorHandler = (
+  error: unknown,
+  context: ReactiveStyleUpdaterErrorContext
+) => void
 type ReactiveStyleBinding = {
   effect: { dispose: () => void }
   updaters: Map<string, ReactiveStyleUpdater>
@@ -19,6 +27,45 @@ type ReactiveStyleBindingOptions = {
   accessor: ReactiveAccessor
   updater: ReactiveStyleUpdater
   updaterId: string
+}
+
+let reactiveStyleUpdaterErrorHandler: ReactiveStyleUpdaterErrorHandler | null =
+  null
+
+export function setReactiveStyleUpdaterErrorHandler(
+  handler: ReactiveStyleUpdaterErrorHandler | null
+): CleanupFn {
+  if (handler === null) {
+    reactiveStyleUpdaterErrorHandler = null
+    return () => {}
+  }
+
+  const previousHandler = reactiveStyleUpdaterErrorHandler
+  reactiveStyleUpdaterErrorHandler = (error, context) => {
+    previousHandler?.(error, context)
+    handler(error, context)
+  }
+
+  return () => {
+    reactiveStyleUpdaterErrorHandler = previousHandler
+  }
+}
+
+function runUpdaterSafely(
+  updater: ReactiveStyleUpdater,
+  value: any,
+  updaterId: string
+): void {
+  try {
+    updater(value)
+  } catch (error) {
+    if (reactiveStyleUpdaterErrorHandler) {
+      reactiveStyleUpdaterErrorHandler(error, { updaterId, value })
+      return
+    }
+
+    console.error(`Reactive style updater failed (${updaterId}):`, error)
+  }
 }
 
 const UNOWNED_NEVER_CONNECTED_GRACE_MS = 200
@@ -152,14 +199,16 @@ export function bindReactiveStyle({
     const updaters = new Map<string, ReactiveStyleUpdater>()
     const effect = createEffect(() => {
       const currentValue = accessor()
-      updaters.forEach(currentUpdater => currentUpdater(currentValue))
+      updaters.forEach((currentUpdater, currentUpdaterId) =>
+        runUpdaterSafely(currentUpdater, currentValue, currentUpdaterId)
+      )
     })
     binding = { effect, updaters }
     perElementBindings.set(accessor, binding)
   }
 
   binding.updaters.set(updaterId, updater)
-  updater(accessor())
+  runUpdaterSafely(updater, accessor(), updaterId)
 
   let unregisterUnownedCleanup: CleanupFn | null = null
   const removeUpdater = () => {
