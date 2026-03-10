@@ -21,6 +21,20 @@ type ReactiveStyleBindingOptions = {
   updaterId: string
 }
 
+function runUpdaterSafely(
+  updater: ReactiveStyleUpdater,
+  value: any,
+  updaterId: string
+): void {
+  try {
+    updater(value)
+  } catch (error) {
+    if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
+      console.error(`Reactive style updater failed (${updaterId}):`, error)
+    }
+  }
+}
+
 const UNOWNED_NEVER_CONNECTED_GRACE_MS = 200
 
 const unownedElementCleanupMap = new WeakMap<Element, Set<CleanupFn>>()
@@ -152,14 +166,16 @@ export function bindReactiveStyle({
     const updaters = new Map<string, ReactiveStyleUpdater>()
     const effect = createEffect(() => {
       const currentValue = accessor()
-      updaters.forEach(currentUpdater => currentUpdater(currentValue))
+      updaters.forEach((currentUpdater, currentUpdaterId) =>
+        runUpdaterSafely(currentUpdater, currentValue, currentUpdaterId)
+      )
     })
     binding = { effect, updaters }
     perElementBindings.set(accessor, binding)
   }
 
   binding.updaters.set(updaterId, updater)
-  updater(accessor())
+  runUpdaterSafely(updater, accessor(), updaterId)
 
   let unregisterUnownedCleanup: CleanupFn | null = null
   const removeUpdater = () => {
