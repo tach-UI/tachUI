@@ -4,7 +4,7 @@
  * Reactive implementation that works with TachUI's reactive architecture
  */
 
-import { createEffect, isComputed, isSignal } from '@tachui/core'
+import { createEffect, createRoot } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import type {
   ComponentInstance,
@@ -64,6 +64,11 @@ export class ForEachComponent<T = any>
   public props: ForEachInternalProps<T>
 
   private dataSignal: () => T[]
+  private readonly renderer = new DOMRenderer()
+  private itemNodeCache = new Map<
+    string | number,
+    { item: T; nodes: DOMNode[]; signature: string }
+  >()
 
   constructor(props: ForEachProps<T>) {
     // Determine data source - prefer 'data' property, fallback to 'items'
@@ -82,8 +87,8 @@ export class ForEachComponent<T = any>
     this.id = `foreach-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
     // Set up reactive data
-    this.dataSignal = isSignal(dataSource)
-      ? dataSource
+    this.dataSignal = typeof dataSource === 'function'
+      ? (dataSource as () => T[])
       : () => dataSource || []
   }
 
@@ -97,37 +102,100 @@ export class ForEachComponent<T = any>
   /**
    * Render children for current data
    */
+  private getItemKey(item: T, index: number): string | number {
+    if (typeof this.props.getItemId === 'function') {
+      return this.props.getItemId(item, index)
+    }
+    return index
+  }
+
+  private getItemSignature(item: T): string {
+    if (item === null || item === undefined) {
+      return String(item)
+    }
+
+    if (typeof item !== 'object') {
+      return String(item)
+    }
+
+    const record = item as Record<string, unknown>
+    const keys = Object.keys(record)
+    return keys
+      .map(key => `${key}:${String(record[key])}`)
+      .join('|')
+  }
+
   private renderChildren(): DOMNode[] {
     const data = this.dataSignal()
 
     // Handle empty data with fallback
     if (!data || data.length === 0) {
+      this.itemNodeCache.forEach(entry => this.disposeNodes(entry.nodes))
+      this.itemNodeCache.clear()
       if (this.props.fallback) {
         return this.flattenRenderResult(this.props.fallback.render())
       }
       return []
     }
 
-    return data.flatMap((item, index) => {
+    const nextCache = new Map<
+      string | number,
+      { item: T; nodes: DOMNode[]; signature: string }
+    >()
+    const renderedNodes: DOMNode[] = []
+
+    data.forEach((item, index) => {
+      const key = this.getItemKey(item, index)
+      const cached = this.itemNodeCache.get(key)
+      const signature = this.getItemSignature(item)
+
+      if (
+        cached &&
+        Object.is(cached.item, item) &&
+        cached.signature === signature
+      ) {
+        nextCache.set(key, cached)
+        renderedNodes.push(...cached.nodes)
+        return
+      }
+
+      if (cached) {
+        this.disposeNodes(cached.nodes)
+      }
+
       const children = this.props.renderItem(item, index)
       const childArray = Array.isArray(children) ? children : [children]
-      return childArray.flatMap(child =>
+      const nodes = childArray.flatMap(child =>
         this.flattenRenderResult(child.render())
-      )
+      ) as DOMNode[]
+
+      nextCache.set(key, { item, nodes, signature })
+      renderedNodes.push(...nodes)
     })
+
+    this.itemNodeCache.forEach((entry, key) => {
+      if (!nextCache.has(key)) {
+        this.disposeNodes(entry.nodes)
+      }
+    })
+
+    this.itemNodeCache = nextCache
+    return renderedNodes
   }
 
   /**
    * Render ForEach with reactive container pattern like Show component
    */
   render(): DOMNode[] {
-    // Check if data source is reactive
-    const isReactive = isSignal(this.props.data) || isComputed(this.props.data)
+    const isReactive = typeof this.props.data === 'function'
 
     if (!isReactive) {
       // Static data - simple render
       return this.renderChildren()
     }
+
+    // Ensure prior render cleanups do not accumulate across repeated renders.
+    this.dispose()
 
     // Reactive data - create reactive container
     const containerNode: DOMNode = {
@@ -140,33 +208,33 @@ export class ForEachComponent<T = any>
       dispose: undefined,
     }
 
-    // Create reactive effect directly - no createRoot isolation (like Show component)
-    const effect = createEffect(() => {
-      const newChildren = this.renderChildren()
-      containerNode.children = newChildren
+    let disposeRoot = () => {}
+    createRoot(dispose => {
+      disposeRoot = dispose
+      createEffect(() => {
+        const newChildren = this.renderChildren()
+        containerNode.children = newChildren
 
-      // Update DOM if already rendered
-      if (
-        containerNode.element &&
-        containerNode.element instanceof HTMLElement
-      ) {
-        this.updateContainerDOM(containerNode.element, newChildren)
-      }
+        // Update DOM if already rendered
+        if (
+          containerNode.element &&
+          containerNode.element instanceof HTMLElement
+        ) {
+          this.updateContainerDOM(containerNode.element, newChildren)
+        }
+      })
     })
 
-    // Store cleanup like other components do
-    this.cleanup.push(() => effect.dispose())
+    this.cleanup = [disposeRoot]
 
     const cleanup = () => {
+      this.disposeNodes(containerNode.children ?? [])
+      this.itemNodeCache.clear()
       this.cleanup.forEach(fn => fn())
       this.cleanup = []
     }
 
     containerNode.dispose = cleanup
-
-    // Initialize with current children
-    const initialChildren = this.renderChildren()
-    containerNode.children = initialChildren
 
     return [containerNode]
   }
@@ -181,18 +249,24 @@ export class ForEachComponent<T = any>
     // Clear existing content
     container.innerHTML = ''
 
-    // Use TachUI's renderer to properly handle modifiers and reactivity
-    const renderer = new DOMRenderer()
-
-    // Render new content using TachUI's renderer which handles modifiers
     children.forEach(child => {
-      try {
-        const element = renderer.render(child)
-        if (element) {
-          container.appendChild(element)
-        }
-      } catch (error) {
-        console.error('Error rendering ForEach component child:', error)
+      const element = this.renderer.render(child)
+      if (element) {
+        container.appendChild(element)
+      }
+    })
+  }
+
+  private disposeNodes(nodes: DOMNode[]): void {
+    nodes.forEach(node => {
+      if (!node) return
+
+      if (node.children && Array.isArray(node.children)) {
+        this.disposeNodes(node.children)
+      }
+
+      if (typeof node.dispose === 'function') {
+        node.dispose()
       }
     })
   }
@@ -201,13 +275,9 @@ export class ForEachComponent<T = any>
    * Cleanup resources
    */
   dispose(): void {
-    this.cleanup.forEach(fn => {
-      try {
-        fn()
-      } catch (error) {
-        console.error('ForEach component cleanup error:', error)
-      }
-    })
+    this.cleanup.forEach(fn => fn())
+    this.itemNodeCache.forEach(entry => this.disposeNodes(entry.nodes))
+    this.itemNodeCache.clear()
     this.cleanup = []
   }
 }
