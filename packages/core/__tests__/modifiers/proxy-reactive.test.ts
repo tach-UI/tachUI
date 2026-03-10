@@ -8,6 +8,9 @@ import { h } from '../../src/runtime'
 import { createRoot, createSignal, flushSync } from '../../src/reactive'
 import type { ComponentInstance } from '../../src/runtime/types'
 
+const LATE_REACTIVE_PROXY_MODIFIER = 'lateReactiveProxyModifier'
+const CACHE_INVALIDATE_MODIFIER = 'cacheInvalidateModifier'
+
 function mountComponentModifiers(
   component: ComponentInstance,
   element: HTMLElement,
@@ -28,16 +31,21 @@ function mountComponentModifiers(
 }
 
 describe('proxy reactive modifier coverage', () => {
+  const cleanupDisposers = new Set<() => void>()
+
   beforeEach(() => {
     document.body.innerHTML = ''
     configureCore({ proxyModifiers: true })
-    registerBasicModifiers({ registry: globalModifierRegistry as any })
+    registerBasicModifiers({ registry: globalModifierRegistry })
     resetProxyCache()
   })
 
   afterEach(() => {
-    configureCore({ proxyModifiers: false })
-    resetProxyCache()
+    cleanupDisposers.forEach(dispose => {
+      dispose()
+    })
+    cleanupDisposers.clear()
+    configureCore({ proxyModifiers: true })
   })
 
   describe('proxy resolves modifier names from registry', () => {
@@ -61,19 +69,18 @@ describe('proxy reactive modifier coverage', () => {
     })
 
     it('finds modifiers registered after proxy creation', () => {
-      const lateModifierName = `lateReactiveProxy_${Math.random().toString(36).slice(2)}`
       const component = Text('hi') as ComponentInstance & Record<string, unknown>
 
-      expect(component[lateModifierName]).toBeUndefined()
+      expect(component[LATE_REACTIVE_PROXY_MODIFIER]).toBeUndefined()
 
-      globalModifierRegistry.register(lateModifierName, () => ({
+      globalModifierRegistry.register(LATE_REACTIVE_PROXY_MODIFIER, () => ({
         type: 'appearance',
         priority: 100,
         properties: {},
         apply: (node: any) => node,
       }))
 
-      expect(typeof component[lateModifierName]).toBe('function')
+      expect(typeof component[LATE_REACTIVE_PROXY_MODIFIER]).toBe('function')
     })
   })
 
@@ -84,12 +91,14 @@ describe('proxy reactive modifier coverage', () => {
       const element = document.createElement('div')
 
       const dispose = mountComponentModifiers(built, element)
+      cleanupDisposers.add(dispose)
       expect(element.style.fontSize).toBe('14px')
 
       setSize(20)
       flushSync()
       expect(element.style.fontSize).toBe('20px')
       dispose()
+      cleanupDisposers.delete(dispose)
     })
 
     it('deep chain updates only reactive fontSize property', () => {
@@ -102,6 +111,7 @@ describe('proxy reactive modifier coverage', () => {
       const element = document.createElement('div')
 
       const dispose = mountComponentModifiers(built, element)
+      cleanupDisposers.add(dispose)
       const initialPadding = element.style.padding
       const initialColor = element.style.color
 
@@ -116,6 +126,7 @@ describe('proxy reactive modifier coverage', () => {
       expect(element.style.padding).toBe(initialPadding)
       expect(element.style.color).toBe(initialColor)
       dispose()
+      cleanupDisposers.delete(dispose)
     })
 
     it('returns same proxy reference across chained modifier calls', () => {
@@ -143,15 +154,19 @@ describe('proxy reactive modifier coverage', () => {
       const clone = original.clone()
 
       expect(typeof clone.fontSize).toBe('function')
+      // Clone keeps the same reactive signal source, so updates flow to cloned instances too.
+      expect(clone.modifiers[0]).toBe(original.modifiers[0])
 
       const element = document.createElement('div')
       const dispose = mountComponentModifiers(clone, element)
+      cleanupDisposers.add(dispose)
 
       expect(element.style.fontSize).toBe('12px')
       setSize(22)
       flushSync()
       expect(element.style.fontSize).toBe('22px')
       dispose()
+      cleanupDisposers.delete(dispose)
     })
   })
 
@@ -168,8 +183,7 @@ describe('proxy reactive modifier coverage', () => {
     })
 
     it('invalidates cache when modifier is re-registered', () => {
-      const name = `cacheInvalidate_${Math.random().toString(36).slice(2)}`
-      globalModifierRegistry.register(name, () => ({
+      globalModifierRegistry.register(CACHE_INVALIDATE_MODIFIER, () => ({
         type: 'appearance',
         priority: 100,
         properties: {},
@@ -177,17 +191,17 @@ describe('proxy reactive modifier coverage', () => {
       }))
 
       const component = Text('hi') as ComponentInstance & Record<string, unknown>
-      const firstRef = component[name]
+      const firstRef = component[CACHE_INVALIDATE_MODIFIER]
       expect(typeof firstRef).toBe('function')
 
-      globalModifierRegistry.register(name, () => ({
+      globalModifierRegistry.register(CACHE_INVALIDATE_MODIFIER, () => ({
         type: 'appearance',
         priority: 100,
         properties: {},
         apply: (node: any) => node,
       }))
 
-      const secondRef = component[name]
+      const secondRef = component[CACHE_INVALIDATE_MODIFIER]
       expect(typeof secondRef).toBe('function')
       expect(secondRef).not.toBe(firstRef)
     })
@@ -210,12 +224,14 @@ describe('proxy reactive modifier coverage', () => {
       const element = document.createElement('div')
 
       const dispose = mountComponentModifiers(built, element)
+      cleanupDisposers.add(dispose)
       expect(element.style.fontSize).toBe('11px')
 
       setSize(19)
       flushSync()
       expect(element.style.fontSize).toBe('19px')
       dispose()
+      cleanupDisposers.delete(dispose)
     })
   })
 })

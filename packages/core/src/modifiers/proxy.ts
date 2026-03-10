@@ -140,11 +140,15 @@ export function createComponentProxy<T extends ComponentInstance>(
       }
 
       if (typeof prop === 'string') {
-        const registryFactory = globalModifierRegistry.get(prop as any)
-        if (registryFactory && modifierCache.has(prop)) {
-          const cachedFactory = factoryCache.get(prop)
-          if (cachedFactory !== registryFactory) {
-            modifierCache.delete(prop)
+        let registryFactory: unknown
+        if (modifierCache.has(prop)) {
+          registryFactory = globalModifierRegistry.get(prop as any)
+          if (registryFactory) {
+            const cachedFactory = factoryCache.get(prop)
+            if (cachedFactory !== undefined && cachedFactory !== registryFactory) {
+              modifierCache.delete(prop)
+              factoryCache.delete(prop)
+            }
           }
         }
 
@@ -179,9 +183,10 @@ export function createComponentProxy<T extends ComponentInstance>(
                 return result && result !== currentApi ? result : proxy
               }
               modifierCache.set(prop, applyBuilderModifier)
-              if (registryFactory) {
-                factoryCache.set(prop, registryFactory)
-              }
+              factoryCache.set(
+                prop,
+                registryFactory ?? globalModifierRegistry.get(prop as any),
+              )
             }
             return modifierCache.get(prop)
           }
@@ -206,9 +211,10 @@ export function createComponentProxy<T extends ComponentInstance>(
               return proxy
             }
             modifierCache.set(prop, applyModifier)
-            if (registryFactory) {
-              factoryCache.set(prop, registryFactory)
-            }
+            factoryCache.set(
+              prop,
+              registryFactory ?? globalModifierRegistry.get(prop as any),
+            )
           }
           return modifierCache.get(prop)
         }
