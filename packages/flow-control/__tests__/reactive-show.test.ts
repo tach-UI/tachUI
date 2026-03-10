@@ -198,7 +198,7 @@ describe('Show reactive rendering depth', () => {
       const child = Text('multi')
         .fontSize(s1)
         .padding(s2)
-        .margin(s3)
+        .height(s3)
         .opacity(s4)
         .width(s5)
         .build()
@@ -207,17 +207,20 @@ describe('Show reactive rendering depth', () => {
       renderToDOM(show)
 
       let peakS1 = 0
+      let peakS3 = 0
       for (let i = 0; i < 10; i++) {
         setVisible(true)
         flushSync()
         await waitForUpdate()
         peakS1 = Math.max(peakS1, getSubscriberCount(s1))
+        peakS3 = Math.max(peakS3, getSubscriberCount(s3))
         setVisible(false)
         flushSync()
         await waitForUpdate()
       }
 
       expect(peakS1).toBeGreaterThan(0)
+      expect(peakS3).toBeGreaterThan(0)
       expect(getSubscriberCount(s1)).toBe(0)
       expect(getSubscriberCount(s2)).toBe(0)
       expect(getSubscriberCount(s3)).toBe(0)

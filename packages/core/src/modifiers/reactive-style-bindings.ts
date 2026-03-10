@@ -34,8 +34,21 @@ let reactiveStyleUpdaterErrorHandler: ReactiveStyleUpdaterErrorHandler | null =
 
 export function setReactiveStyleUpdaterErrorHandler(
   handler: ReactiveStyleUpdaterErrorHandler | null
-): void {
-  reactiveStyleUpdaterErrorHandler = handler
+): CleanupFn {
+  if (handler === null) {
+    reactiveStyleUpdaterErrorHandler = null
+    return () => {}
+  }
+
+  const previousHandler = reactiveStyleUpdaterErrorHandler
+  reactiveStyleUpdaterErrorHandler = (error, context) => {
+    previousHandler?.(error, context)
+    handler(error, context)
+  }
+
+  return () => {
+    reactiveStyleUpdaterErrorHandler = previousHandler
+  }
 }
 
 function runUpdaterSafely(

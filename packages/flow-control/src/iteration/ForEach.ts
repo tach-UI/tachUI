@@ -69,6 +69,7 @@ export class ForEachComponent<T = any>
   private dataSignal: () => T[]
   private readonly renderer = new DOMRenderer()
   private disposedNodes = new WeakSet<DOMNode>()
+  private fallbackNodes: DOMNode[] = []
   private itemNodeCache = new Map<
     string | number,
     { item: T; nodes: DOMNode[]; snapshot: ReadonlyArray<readonly [string, unknown]> }
@@ -139,23 +140,6 @@ export class ForEachComponent<T = any>
     return true
   }
 
-  private disposeDetachedChildren(
-    previousChildren: DOMNode[],
-    nextChildren: DOMNode[]
-  ): void {
-    if (previousChildren.length === 0) return
-    if (nextChildren.length === 0) {
-      this.disposeNodes(previousChildren)
-      return
-    }
-
-    const nextChildrenSet = new Set<DOMNode>(nextChildren)
-    const detachedChildren = previousChildren.filter(
-      child => !nextChildrenSet.has(child)
-    )
-    this.disposeNodes(detachedChildren)
-  }
-
   private renderChildren(): DOMNode[] {
     const data = this.dataSignal()
 
@@ -164,10 +148,20 @@ export class ForEachComponent<T = any>
       this.itemNodeCache.forEach(entry => this.disposeNodes(entry.nodes))
       this.itemNodeCache.clear()
       if (this.props.fallback) {
-        return this.flattenRenderResult(this.props.fallback.render())
+        const nextFallbackNodes = this.flattenRenderResult(
+          this.props.fallback.render()
+        ) as DOMNode[]
+        this.disposeNodes(this.fallbackNodes)
+        this.fallbackNodes = nextFallbackNodes
+        return nextFallbackNodes
       }
+      this.disposeNodes(this.fallbackNodes)
+      this.fallbackNodes = []
       return []
     }
+
+    this.disposeNodes(this.fallbackNodes)
+    this.fallbackNodes = []
 
     const nextCache = new Map<
       string | number,
@@ -243,9 +237,7 @@ export class ForEachComponent<T = any>
     createRoot(dispose => {
       disposeRoot = dispose
       createEffect(() => {
-        const previousChildren = (containerNode.children ?? []) as DOMNode[]
         const newChildren = this.renderChildren()
-        this.disposeDetachedChildren(previousChildren, newChildren)
         containerNode.children = newChildren
 
         // Update DOM if already rendered
@@ -303,6 +295,8 @@ export class ForEachComponent<T = any>
    */
   dispose(): void {
     this.cleanup.forEach(fn => fn())
+    this.disposeNodes(this.fallbackNodes)
+    this.fallbackNodes = []
     this.itemNodeCache.forEach(entry => this.disposeNodes(entry.nodes))
     this.itemNodeCache.clear()
     this.cleanup = []

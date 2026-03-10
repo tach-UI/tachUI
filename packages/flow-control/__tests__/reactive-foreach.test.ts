@@ -316,7 +316,7 @@ describe('ForEach reactive rendering depth', () => {
 
       list.dispose()
       componentsWithDispose.delete(list)
-      expect(fallbackDisposeCount).toBeGreaterThanOrEqual(2)
+      expect(fallbackDisposeCount).toBe(3)
     })
   })
 

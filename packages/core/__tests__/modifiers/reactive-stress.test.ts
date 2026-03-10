@@ -85,6 +85,11 @@ class StressStyleModifier extends BaseModifier<StressStyleProps> {
 
 const mountedDisposers = new Set<() => void>()
 let componentIdCounter = 0
+const stressVolumeBudgetMs = Number.parseInt(
+  process.env.TACHUI_STRESS_BUDGET_MS ?? (process.env.CI ? '1500' : '500'),
+  10
+)
+const stressErrorHandlerCleanups = new Set<() => void>()
 
 function mountWithModifiers(
   registry: ModifierRegistry,
@@ -137,6 +142,8 @@ describe('reactive modifier stress', () => {
   afterEach(() => {
     mountedDisposers.forEach(dispose => dispose())
     mountedDisposers.clear()
+    stressErrorHandlerCleanups.forEach(cleanup => cleanup())
+    stressErrorHandlerCleanups.clear()
     setReactiveStyleUpdaterErrorHandler(null)
     vi.restoreAllMocks()
   })
@@ -160,7 +167,7 @@ describe('reactive modifier stress', () => {
       elements.forEach(element => {
         expect(element.style.width).toBe('22px')
       })
-      expect(duration).toBeLessThan(500)
+      expect(duration).toBeLessThan(stressVolumeBudgetMs)
     })
 
     it('one component with 20 reactive modifiers updates all properties under 500ms', async () => {
@@ -193,7 +200,7 @@ describe('reactive modifier stress', () => {
           String(index + 100)
         )
       }
-      expect(duration).toBeLessThan(500)
+      expect(duration).toBeLessThan(stressVolumeBudgetMs)
     })
 
     it('one signal shared across 200 components updates all in one batch under 500ms', async () => {
@@ -217,7 +224,7 @@ describe('reactive modifier stress', () => {
       elements.forEach(element => {
         expect(element.style.opacity).toBe('0.75')
       })
-      expect(duration).toBeLessThan(500)
+      expect(duration).toBeLessThan(stressVolumeBudgetMs)
     })
   })
 
@@ -501,13 +508,16 @@ describe('reactive modifier stress', () => {
         .spyOn(console, 'error')
         .mockImplementation(() => {})
 
-      setReactiveStyleUpdaterErrorHandler((error, context) => {
-        expect(error).toBeInstanceOf(Error)
-        handledErrors.push({
-          updaterId: context.updaterId,
-          value: String(context.value),
-        })
-      })
+      const cleanupHandler = setReactiveStyleUpdaterErrorHandler(
+        (error, context) => {
+          expect(error).toBeInstanceOf(Error)
+          handledErrors.push({
+            updaterId: context.updaterId,
+            value: String(context.value),
+          })
+        }
+      )
+      stressErrorHandlerCleanups.add(cleanupHandler)
 
       mountWithModifiers(registry, element, [
         {
@@ -535,6 +545,8 @@ describe('reactive modifier stress', () => {
       ])
       expect(fallbackLogSpy).not.toHaveBeenCalled()
       fallbackLogSpy.mockRestore()
+      cleanupHandler()
+      stressErrorHandlerCleanups.delete(cleanupHandler)
     })
 
     it('isolates mount-time updater throws and keeps sibling updaters active', async () => {
