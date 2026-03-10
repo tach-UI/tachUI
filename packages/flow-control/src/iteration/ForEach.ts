@@ -19,7 +19,10 @@ import { DOMRenderer } from '@tachui/core'
  */
 export interface ForEachProps<T = any> {
   data?: T[] | Signal<T[]>
-  items?: T[] | Signal<T[]>  // Alternative property name for backward compatibility
+  /**
+   * @deprecated Use `data` instead.
+   */
+  items?: T[] | Signal<T[]> // Alternative property name for backward compatibility
   children: (item: T, index: number) => ComponentInstance | ComponentInstance[]
   getItemId?: (item: T, index: number) => string | number
   fallback?: ComponentInstance
@@ -65,9 +68,10 @@ export class ForEachComponent<T = any>
 
   private dataSignal: () => T[]
   private readonly renderer = new DOMRenderer()
+  private disposedNodes = new WeakSet<DOMNode>()
   private itemNodeCache = new Map<
     string | number,
-    { item: T; nodes: DOMNode[]; signature: string }
+    { item: T; nodes: DOMNode[]; snapshot: ReadonlyArray<readonly [string, unknown]> }
   >()
 
   constructor(props: ForEachProps<T>) {
@@ -109,20 +113,30 @@ export class ForEachComponent<T = any>
     return index
   }
 
-  private getItemSignature(item: T): string {
-    if (item === null || item === undefined) {
-      return String(item)
-    }
-
-    if (typeof item !== 'object') {
-      return String(item)
+  private createItemSnapshot(
+    item: T
+  ): ReadonlyArray<readonly [string, unknown]> {
+    if (item === null || item === undefined || typeof item !== 'object') {
+      return [['__value', item]]
     }
 
     const record = item as Record<string, unknown>
-    const keys = Object.keys(record)
-    return keys
-      .map(key => `${key}:${String(record[key])}`)
-      .join('|')
+    return Object.keys(record).map(key => [key, record[key]] as const)
+  }
+
+  private snapshotEquals(
+    previous: ReadonlyArray<readonly [string, unknown]>,
+    next: ReadonlyArray<readonly [string, unknown]>
+  ): boolean {
+    if (previous.length !== next.length) return false
+    for (let index = 0; index < previous.length; index += 1) {
+      const previousEntry = previous[index]
+      const nextEntry = next[index]
+      if (!previousEntry || !nextEntry) return false
+      if (previousEntry[0] !== nextEntry[0]) return false
+      if (!Object.is(previousEntry[1], nextEntry[1])) return false
+    }
+    return true
   }
 
   private renderChildren(): DOMNode[] {
@@ -140,19 +154,19 @@ export class ForEachComponent<T = any>
 
     const nextCache = new Map<
       string | number,
-      { item: T; nodes: DOMNode[]; signature: string }
+      { item: T; nodes: DOMNode[]; snapshot: ReadonlyArray<readonly [string, unknown]> }
     >()
     const renderedNodes: DOMNode[] = []
 
     data.forEach((item, index) => {
       const key = this.getItemKey(item, index)
       const cached = this.itemNodeCache.get(key)
-      const signature = this.getItemSignature(item)
+      const snapshot = this.createItemSnapshot(item)
 
       if (
         cached &&
         Object.is(cached.item, item) &&
-        cached.signature === signature
+        this.snapshotEquals(cached.snapshot, snapshot)
       ) {
         nextCache.set(key, cached)
         renderedNodes.push(...cached.nodes)
@@ -169,7 +183,7 @@ export class ForEachComponent<T = any>
         this.flattenRenderResult(child.render())
       ) as DOMNode[]
 
-      nextCache.set(key, { item, nodes, signature })
+      nextCache.set(key, { item, nodes, snapshot })
       renderedNodes.push(...nodes)
     })
 
@@ -225,13 +239,10 @@ export class ForEachComponent<T = any>
       })
     })
 
-    this.cleanup = [disposeRoot]
+    this.cleanup.push(disposeRoot)
 
     const cleanup = () => {
-      this.disposeNodes(containerNode.children ?? [])
-      this.itemNodeCache.clear()
-      this.cleanup.forEach(fn => fn())
-      this.cleanup = []
+      this.dispose()
     }
 
     containerNode.dispose = cleanup
@@ -246,20 +257,17 @@ export class ForEachComponent<T = any>
     container: HTMLElement,
     children: DOMNode[]
   ): void {
-    // Clear existing content
-    container.innerHTML = ''
-
-    children.forEach(child => {
-      const element = this.renderer.render(child)
-      if (element) {
-        container.appendChild(element)
-      }
-    })
+    const renderedChildren = children.map(
+      child => this.renderer.render(child) as Element | Text | Comment
+    )
+    container.replaceChildren(...renderedChildren)
   }
 
   private disposeNodes(nodes: DOMNode[]): void {
     nodes.forEach(node => {
       if (!node) return
+      if (this.disposedNodes.has(node)) return
+      this.disposedNodes.add(node)
 
       if (node.children && Array.isArray(node.children)) {
         this.disposeNodes(node.children)
@@ -279,6 +287,7 @@ export class ForEachComponent<T = any>
     this.itemNodeCache.forEach(entry => this.disposeNodes(entry.nodes))
     this.itemNodeCache.clear()
     this.cleanup = []
+    this.disposedNodes = new WeakSet<DOMNode>()
   }
 }
 

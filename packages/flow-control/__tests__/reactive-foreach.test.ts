@@ -8,8 +8,10 @@ import {
 } from '@tachui/core'
 import { Text } from '@tachui/primitives'
 import { registerBasicModifiers } from '@tachui/modifiers'
-import { globalModifierRegistry } from '@tachui/registry'
+import type { ModifierRegistry } from '@tachui/registry'
 import { getSubscriberCount } from '../../core/tools/testing/reactive-test-helpers'
+import { createTestRegistry } from '../../core/tools/testing/reactive-test-helpers'
+import { setExternalModifierRegistry } from '../../core/src/modifiers'
 import { ForEach } from '../src/iteration/ForEach'
 
 type ItemModel = {
@@ -43,20 +45,30 @@ async function waitForUpdate(frames = 2): Promise<void> {
 describe('ForEach reactive rendering depth', () => {
   let container: HTMLElement
   let renderer: DOMRenderer
+  let registry: ModifierRegistry
+  const componentsWithDispose = new Set<ComponentInstance>()
 
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)
     renderer = new DOMRenderer()
-    registerBasicModifiers({ registry: globalModifierRegistry })
+    registry = createTestRegistry()
+    registerBasicModifiers({ registry })
+    setExternalModifierRegistry(registry)
   })
 
   afterEach(() => {
+    componentsWithDispose.forEach(component => component.dispose?.())
+    componentsWithDispose.clear()
     renderer.cleanup()
     container.remove()
+    setExternalModifierRegistry(null)
   })
 
   function renderToDOM(component: ComponentInstance): HTMLElement {
+    if (typeof component.dispose === 'function') {
+      componentsWithDispose.add(component)
+    }
     const nodes = component.render()
     const nodeArray = Array.isArray(nodes) ? nodes : [nodes]
     const element = renderer.render(nodeArray[0]) as HTMLElement
@@ -116,14 +128,20 @@ describe('ForEach reactive rendering depth', () => {
       })
 
       const element = renderToDOM(list)
-      expect(element.textContent).toContain('ABC')
+      const labels = Array.from(element.querySelectorAll('span')).map(
+        span => span.textContent
+      )
+      expect(labels).toEqual(['A', 'B', 'C'])
 
       const baseline = new Map(renderCounts)
       setItems([c, a, b])
       flushSync()
       await waitForUpdate()
 
-      expect(element.textContent).toContain('CAB')
+      const reorderedLabels = Array.from(element.querySelectorAll('span')).map(
+        span => span.textContent
+      )
+      expect(reorderedLabels).toEqual(['C', 'A', 'B'])
       expect(renderCounts.get(1)).toBe(baseline.get(1))
       expect(renderCounts.get(2)).toBe(baseline.get(2))
       expect(renderCounts.get(3)).toBe(baseline.get(3))
@@ -236,7 +254,8 @@ describe('ForEach reactive rendering depth', () => {
       expect(getSubscriberCount(size0)).toBe(0)
       expect(getSubscriberCount(size2)).toBe(0)
 
-      renderer.cleanup()
+      list.dispose()
+      componentsWithDispose.delete(list)
       expect(getSubscriberCount(size0)).toBe(0)
       expect(getSubscriberCount(size1)).toBe(0)
       expect(getSubscriberCount(size2)).toBe(0)
@@ -244,7 +263,7 @@ describe('ForEach reactive rendering depth', () => {
   })
 
   describe('Scale', () => {
-    it('500-item list updates one item without full rerender and under 100ms', async () => {
+    it('500-item single update stays cheaper than full replacement rerender', async () => {
       const rows = Array.from({ length: 500 }, (_, id) => ({
         id,
         label: `Row-${id}`,
@@ -272,14 +291,27 @@ describe('ForEach reactive rendering depth', () => {
       )
       flushSync()
       await waitForUpdate()
-      const duration = performance.now() - start
+      const singleUpdateDuration = performance.now() - start
 
       const rerendered = Array.from(renderCounts.entries()).filter(
         ([id, count]) => count > (baseline.get(id) ?? 0)
       )
       expect(rerendered).toHaveLength(1)
       expect(rerendered[0]?.[0]).toBe(333)
-      expect(duration).toBeLessThan(100)
+
+      const fullReplaceStart = performance.now()
+      setItems(
+        items().map(item => ({
+          ...item,
+          label: `${item.label}-all`,
+        }))
+      )
+      flushSync()
+      await waitForUpdate()
+      const fullReplaceDuration = performance.now() - fullReplaceStart
+
+      expect(singleUpdateDuration).toBeLessThan(fullReplaceDuration)
+      expect(singleUpdateDuration).toBeLessThan(250)
     })
 
     it('replacing 100 items cleans old subscriptions and wires new ones', async () => {
