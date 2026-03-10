@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { batch, createComputed, createSignal, flushSync, type ComponentInstance, type DOMNode, DOMRenderer } from '@tachui/core'
+import { batch, createComputed, createSignal, flushSync, type ComponentInstance, type DOMNode, type Signal, DOMRenderer } from '@tachui/core'
 import { Text } from '@tachui/primitives'
 import { registerBasicModifiers } from '@tachui/modifiers'
 import type { ModifierRegistry } from '@tachui/registry'
@@ -9,6 +9,10 @@ import {
 } from '../../core/tools/testing/reactive-test-helpers'
 import { setExternalModifierRegistry } from '../../core/src/modifiers'
 import { Show } from '../src/conditional/Show'
+
+function asSignal<T>(accessor: () => T): Signal<T> {
+  return accessor as Signal<T>
+}
 
 function makeTextComponent(content: string | (() => string)): ComponentInstance {
   return {
@@ -171,7 +175,7 @@ describe('Show reactive rendering depth', () => {
     it('revealed modifier child reflects current signal value (no stale style)', async () => {
       const [visible, setVisible] = createSignal(false)
       const [fontSize, setFontSize] = createSignal(12)
-      const styledText = Text('styled').fontSize(fontSize).build()
+      const styledText = Text('styled').fontSize(asSignal(fontSize)).build()
       const show = Show({ when: visible, children: styledText })
 
       const element = renderToDOM(show)
@@ -196,11 +200,11 @@ describe('Show reactive rendering depth', () => {
       const [s5] = createSignal(100)
 
       const child = Text('multi')
-        .fontSize(s1)
-        .padding(s2)
-        .height(s3)
-        .opacity(s4)
-        .width(s5)
+        .fontSize(asSignal(s1))
+        .padding(asSignal(s2))
+        .height(asSignal(s3))
+        .opacity(asSignal(s4))
+        .width(asSignal(s5))
         .build()
 
       const show = Show({ when: visible, children: child })

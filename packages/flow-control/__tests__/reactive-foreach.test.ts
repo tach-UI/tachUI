@@ -4,6 +4,7 @@ import {
   flushSync,
   type ComponentInstance,
   type DOMNode,
+  type Signal,
   DOMRenderer,
 } from '@tachui/core'
 import { Text } from '@tachui/primitives'
@@ -17,6 +18,11 @@ import { ForEach } from '../src/iteration/ForEach'
 type ItemModel = {
   id: number
   label: string
+}
+type DisposableComponent = ComponentInstance & { dispose?: () => void }
+
+function asSignal<T>(accessor: () => T): Signal<T> {
+  return accessor as Signal<T>
 }
 
 function trackedTextComponent(
@@ -68,7 +74,7 @@ describe('ForEach reactive rendering depth', () => {
   let container: HTMLElement
   let renderer: DOMRenderer
   let registry: ModifierRegistry
-  const componentsWithDispose = new Set<ComponentInstance>()
+  const componentsWithDispose = new Set<DisposableComponent>()
 
   beforeEach(() => {
     container = document.createElement('div')
@@ -87,7 +93,7 @@ describe('ForEach reactive rendering depth', () => {
     setExternalModifierRegistry(null)
   })
 
-  function renderToDOM(component: ComponentInstance): HTMLElement {
+  function renderToDOM(component: DisposableComponent): HTMLElement {
     if (typeof component.dispose === 'function') {
       componentsWithDispose.add(component)
     }
@@ -224,7 +230,7 @@ describe('ForEach reactive rendering depth', () => {
       const list = ForEach({
         data: items,
         getItemId: item => item.id,
-        children: item => Text(item.label).fontSize(sharedSize).build(),
+        children: item => Text(item.label).fontSize(asSignal(sharedSize)).build(),
       })
 
       const element = renderToDOM(list)
@@ -256,8 +262,8 @@ describe('ForEach reactive rendering depth', () => {
       const list = ForEach({
         data: items,
         getItemId: item => item.id,
-        children: item => Text(item.label).fontSize(item.size).build(),
-      })
+        children: item => Text(item.label).fontSize(asSignal(item.size)).build(),
+      }) as DisposableComponent
 
       renderToDOM(list)
       await waitForUpdate()
@@ -276,7 +282,7 @@ describe('ForEach reactive rendering depth', () => {
       expect(getSubscriberCount(size0)).toBe(0)
       expect(getSubscriberCount(size2)).toBe(0)
 
-      list.dispose()
+      list.dispose?.()
       componentsWithDispose.delete(list)
       expect(getSubscriberCount(size0)).toBe(0)
       expect(getSubscriberCount(size1)).toBe(0)
@@ -293,7 +299,7 @@ describe('ForEach reactive rendering depth', () => {
         fallback: disposableFallbackComponent('No items', () => {
           fallbackDisposeCount += 1
         }),
-      })
+      }) as DisposableComponent
 
       const element = renderToDOM(list)
       expect(element.textContent).toContain('No items')
@@ -314,7 +320,7 @@ describe('ForEach reactive rendering depth', () => {
       await waitForUpdate()
       expect(fallbackDisposeCount).toBe(2)
 
-      list.dispose()
+      list.dispose?.()
       componentsWithDispose.delete(list)
       expect(fallbackDisposeCount).toBe(3)
     })
@@ -386,7 +392,7 @@ describe('ForEach reactive rendering depth', () => {
       const list = ForEach({
         data: items,
         getItemId: item => item.id,
-        children: item => Text(item.label).fontSize(item.size).build(),
+        children: item => Text(item.label).fontSize(asSignal(item.size)).build(),
       })
 
       renderToDOM(list)

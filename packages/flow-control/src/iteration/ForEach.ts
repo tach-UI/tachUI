@@ -14,15 +14,17 @@ import type {
 } from '@tachui/core'
 import { DOMRenderer } from '@tachui/core'
 
+type ListSource<T> = T[] | Signal<T[]> | (() => T[])
+
 /**
  * ForEach component properties
  */
 export interface ForEachProps<T = any> {
-  data?: T[] | Signal<T[]>
+  data?: ListSource<T>
   /**
    * @deprecated Use `data` instead.
    */
-  items?: T[] | Signal<T[]> // Alternative property name for backward compatibility
+  items?: ListSource<T> // Alternative property name for backward compatibility
   children: (item: T, index: number) => ComponentInstance | ComponentInstance[]
   getItemId?: (item: T, index: number) => string | number
   fallback?: ComponentInstance
@@ -34,7 +36,7 @@ export interface ForEachProps<T = any> {
  * ForEach component internal props that satisfy ComponentProps
  */
 interface ForEachInternalProps<T = any> extends ComponentProps {
-  data: T[] | Signal<T[]>
+  data: ListSource<T>
   renderItem: (
     item: T,
     index: number
@@ -47,7 +49,7 @@ interface ForEachInternalProps<T = any> extends ComponentProps {
  * For component alias (SolidJS-style compatibility)
  */
 export interface ForProps<T = any> {
-  each: T[] | Signal<T[]>
+  each: ListSource<T>
   children: (item: T, index: number) => ComponentInstance | ComponentInstance[]
   fallback?: ComponentInstance
   key?: string | number
