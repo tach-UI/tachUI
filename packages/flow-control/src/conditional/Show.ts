@@ -121,6 +121,9 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
       const { children, fallback } = this.props
       const content = condition ? children : fallback
 
+      // Dispose previously rendered branch nodes/effects before swapping branches.
+      this.disposeNodes(containerNode.children ?? [])
+
       if (content) {
         const rendered = content.render()
         const nodes = Array.isArray(rendered) ? rendered : [rendered]
@@ -142,6 +145,7 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
     this.cleanup.push(() => effect.dispose())
 
     const cleanup = () => {
+      this.disposeNodes(containerNode.children ?? [])
       this.cleanup.forEach(fn => fn())
       this.cleanup = []
     }
@@ -181,6 +185,24 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
         }
       } catch (error) {
         console.error('Error rendering Show component child:', error)
+      }
+    })
+  }
+
+  private disposeNodes(nodes: DOMNode[]): void {
+    nodes.forEach(node => {
+      if (!node) return
+
+      if (node.children && Array.isArray(node.children)) {
+        this.disposeNodes(node.children)
+      }
+
+      if (typeof node.dispose === 'function') {
+        try {
+          node.dispose()
+        } catch (error) {
+          console.error('Show component child cleanup error:', error)
+        }
       }
     })
   }
