@@ -128,10 +128,23 @@ export class EnhancedText
     super()
     this.id = `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
+    const defaultTag = this.resolveDefaultTag()
+
     // Process element override for tag specification enhancement
-    const override = processElementOverride('Text', 'span', this.props.element)
+    const override = processElementOverride(
+      'Text',
+      defaultTag,
+      this.props.element
+    )
     this.effectiveTag = override.tag
     this.validationResult = override.validation
+  }
+
+  private resolveDefaultTag(): string {
+    if (this.props.accessibilityRole === 'heading') {
+      return `h${this.props.accessibilityLevel ?? 2}`
+    }
+    return 'span'
   }
 
   /**

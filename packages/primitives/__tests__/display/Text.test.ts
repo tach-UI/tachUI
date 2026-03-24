@@ -375,8 +375,30 @@ describe('EnhancedText', () => {
         accessibilityLevel: 2,
       })
 
-      text.render()
-      // Test would verify role and aria-level are set
+      const rendered = text.render()
+      expect(rendered[0].tag).toBe('h2')
+    })
+
+    it('should default heading role to h2 when level is omitted', () => {
+      const text = new EnhancedText({
+        content: 'Section heading',
+        accessibilityRole: 'heading',
+      })
+
+      const rendered = text.render()
+      expect(rendered[0].tag).toBe('h2')
+    })
+
+    it('should preserve explicit element override over accessibility heading tag', () => {
+      const text = new EnhancedText({
+        content: 'Heading with explicit tag',
+        accessibilityRole: 'heading',
+        accessibilityLevel: 1,
+        element: 'h3',
+      })
+
+      const rendered = text.render()
+      expect(rendered[0].tag).toBe('h3')
     })
 
     it('should disable text selection', () => {
