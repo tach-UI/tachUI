@@ -1,17 +1,23 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createSignal } from '@tachui/core'
 import { HTML } from '@tachui/primitives'
 import { NavigationStack } from '../src/navigation-stack'
 import {
+  __resetDocumentHeadRuntimeForTests,
   DocumentHead,
   extractDocumentHeadFromComponent,
+  useDocumentMeta,
   withDocumentHead,
 } from '../src/document-head'
 
 describe('Document head metadata', () => {
   beforeEach(() => {
+    __resetDocumentHeadRuntimeForTests()
     document.title = 'Base Title'
     document.head
-      .querySelectorAll('meta[name="description"], link[rel="canonical"]')
+      .querySelectorAll(
+        'meta[name="description"], link[rel="canonical"], meta[property^="og:"]'
+      )
       .forEach(node => node.remove())
   })
 
@@ -68,5 +74,82 @@ describe('Document head metadata', () => {
     expect(extracted?.title).toBe('Page title')
     expect(extracted?.description).toBe('Page description')
   })
-})
 
+  it('keeps previous stack head active when newest stack is cleared', () => {
+    const stackOneRoot = withDocumentHead(HTML.div({ children: 'One' }).build(), {
+      title: 'Stack One',
+      titleTemplate: '%s — One',
+    })
+    const stackOne = NavigationStack(stackOneRoot) as any
+
+    expect(document.title).toBe('Stack One — One')
+
+    const stackTwoRoot = withDocumentHead(HTML.div({ children: 'Two' }).build(), {
+      title: 'Stack Two',
+      titleTemplate: '%s — Two',
+    })
+    const stackTwo = NavigationStack(stackTwoRoot) as any
+
+    expect(document.title).toBe('Stack Two — Two')
+
+    stackTwo._navigationCleanup?.()
+    expect(document.title).toBe('Stack One — One')
+
+    stackOne._navigationCleanup?.()
+    expect(document.title).toBe('Base Title')
+  })
+
+  it('applies useDocumentMeta reactively', async () => {
+    const [title, setTitle] = createSignal('Alpha')
+
+    useDocumentMeta({
+      title,
+      description: 'Reactive description',
+    })
+
+    expect(document.title).toBe('Alpha')
+    expect(
+      document.head
+        .querySelector('meta[name="description"]')
+        ?.getAttribute('content')
+    ).toBe('Reactive description')
+
+    setTitle('Beta')
+    await Promise.resolve()
+    expect(document.title).toBe('Beta')
+  })
+
+  it('restores static title when direct metadata has no title', () => {
+    useDocumentMeta({
+      title: 'Temporary',
+      description: 'Temporary description',
+    })
+    expect(document.title).toBe('Temporary')
+
+    useDocumentMeta({
+      description: 'Persistent description',
+    })
+
+    expect(document.title).toBe('Base Title')
+    expect(
+      document.head
+        .querySelector('meta[name="description"]')
+        ?.getAttribute('content')
+    ).toBe('Persistent description')
+  })
+
+  it('warns when titleTemplate does not include placeholder', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    useDocumentMeta({
+      title: 'Docs',
+      titleTemplate: 'Acme',
+    })
+
+    expect(warnSpy).toHaveBeenCalledOnce()
+    expect(warnSpy.mock.calls[0]?.[0]).toContain(
+      'titleTemplate should contain "%s"'
+    )
+    warnSpy.mockRestore()
+  })
+})

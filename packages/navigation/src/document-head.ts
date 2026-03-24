@@ -76,18 +76,24 @@ function mergeHead(
   base: ResolvedDocumentHead,
   next: ResolvedDocumentHead
 ): ResolvedDocumentHead {
+  const openGraph = {
+    title: next.openGraph?.title ?? base.openGraph?.title,
+    description: next.openGraph?.description ?? base.openGraph?.description,
+    url: next.openGraph?.url ?? base.openGraph?.url,
+    image: next.openGraph?.image ?? base.openGraph?.image,
+    type: next.openGraph?.type ?? base.openGraph?.type,
+  }
+
+  const hasOpenGraphValues = Object.values(openGraph).some(
+    value => value !== undefined
+  )
+
   return {
     title: next.title ?? base.title,
     titleTemplate: next.titleTemplate ?? base.titleTemplate,
     description: next.description ?? base.description,
     canonical: next.canonical ?? base.canonical,
-    openGraph: {
-      title: next.openGraph?.title ?? base.openGraph?.title,
-      description: next.openGraph?.description ?? base.openGraph?.description,
-      url: next.openGraph?.url ?? base.openGraph?.url,
-      image: next.openGraph?.image ?? base.openGraph?.image,
-      type: next.openGraph?.type ?? base.openGraph?.type,
-    },
+    openGraph: hasOpenGraphValues ? openGraph : undefined,
   }
 }
 
@@ -176,9 +182,13 @@ function upsertCanonical(doc: Document, href?: string) {
 class DocumentHeadRuntime {
   private staticTitle: string | undefined
   private navigationEffects = new Map<string, ReactiveEffect>()
+  private navigationHeads = new Map<string, ResolvedDocumentHead>()
+  private activeNavigationId: string | undefined
   private directEffect?: ReactiveEffect
+  private directHead: ResolvedDocumentHead = {}
 
   applyStack(navigationId: string, stack: NavigationStackEntry[]): void {
+    this.activeNavigationId = navigationId
     const existing = this.navigationEffects.get(navigationId)
     existing?.dispose()
 
@@ -192,7 +202,8 @@ class DocumentHeadRuntime {
         return mergeHead(acc, resolveHead(entryHead))
       }, {})
 
-      this.applyResolvedHead(merged)
+      this.navigationHeads.set(navigationId, merged)
+      this.applyCurrent()
     })
 
     this.navigationEffects.set(navigationId, effect)
@@ -202,14 +213,35 @@ class DocumentHeadRuntime {
     const effect = this.navigationEffects.get(navigationId)
     effect?.dispose()
     this.navigationEffects.delete(navigationId)
-    this.applyResolvedHead({})
+    this.navigationHeads.delete(navigationId)
+
+    if (this.activeNavigationId === navigationId) {
+      const lastActive = Array.from(this.navigationHeads.keys()).pop()
+      this.activeNavigationId = lastActive
+    }
+
+    this.applyCurrent()
   }
 
   applyDirect(config: DocumentHeadConfig): void {
     this.directEffect?.dispose()
     this.directEffect = createEffect(() => {
-      this.applyResolvedHead(resolveHead(config))
+      this.directHead = resolveHead(config)
+      this.applyCurrent()
     })
+  }
+
+  private applyCurrent(): void {
+    const activeHead = this.activeNavigationId
+      ? this.navigationHeads.get(this.activeNavigationId)
+      : undefined
+
+    if (activeHead) {
+      this.applyResolvedHead(activeHead)
+      return
+    }
+
+    this.applyResolvedHead(this.directHead)
   }
 
   private applyResolvedHead(head: ResolvedDocumentHead): void {
@@ -226,6 +258,11 @@ class DocumentHeadRuntime {
       if (template && template.includes('%s')) {
         doc.title = template.replace('%s', title)
       } else if (template) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            'DocumentHead titleTemplate should contain "%s" placeholder, e.g. "%s — Acme".'
+          )
+        }
         doc.title = `${template} ${title}`.trim()
       } else {
         doc.title = title
@@ -278,6 +315,17 @@ class DocumentHeadRuntime {
       head.openGraph?.type
     )
   }
+
+  resetForTests(): void {
+    this.navigationEffects.forEach(effect => effect.dispose())
+    this.navigationEffects.clear()
+    this.navigationHeads.clear()
+    this.activeNavigationId = undefined
+    this.directEffect?.dispose()
+    this.directEffect = undefined
+    this.directHead = {}
+    this.staticTitle = undefined
+  }
 }
 
 const runtime = new DocumentHeadRuntime()
@@ -318,4 +366,8 @@ export function DocumentHead<T extends object>(
     return withDocumentHead(content, config)
   }
   return new DocumentHeadMarker(config) as any
+}
+
+export function __resetDocumentHeadRuntimeForTests(): void {
+  runtime.resetForTests()
 }
