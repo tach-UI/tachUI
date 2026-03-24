@@ -58,4 +58,9 @@ console.log(tachui.getFeatureFlags())
   continue to register new modifiers using the existing APIs.
 - Cloning (`component.clone()`) returns a proxied instance when the feature flag
   is enabled.
-*** End Patch
+
+## ESLint enforcement
+
+Use `@tachui/eslint-plugin` with `@tachui/prefer-direct-modifiers` to catch legacy `.modifier.*` patterns and auto-fix them during migration.
+
+See: [`@tachui/eslint-plugin` package docs](/packages/eslint-plugin/)
