@@ -1,5 +1,5 @@
 ---
-title: '@tachui/primitives - Enhanced Documentation v0.9.0'
+title: '@tachui/primitives - Enhanced Documentation'
 ---
 
 # @tachui/primitives
@@ -9,7 +9,7 @@ Foundation UI components for tachUI - 71+ components including stacks, text, ima
 ## Install
 
 ```bash
-pnpm add @tachui/primitives@0.9.0
+pnpm add @tachui/primitives
 ```
 
 ## Component Categories

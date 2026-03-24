@@ -26,7 +26,7 @@ interface InitOptions {
   listTemplates?: boolean
 }
 
-function readCliVersion(packageRoot: string): string | null {
+export function readCliVersion(packageRoot: string): string | null {
   const packageJsonPath = join(packageRoot, 'package.json')
   if (!existsSync(packageJsonPath)) {
     return null
@@ -40,16 +40,18 @@ function readCliVersion(packageRoot: string): string | null {
   }
 }
 
-function isValidSemverLike(value: unknown): value is string {
-  return typeof value === 'string' && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(value)
+export function isValidSemverLike(value: unknown): value is string {
+  return typeof value === 'string' && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(value)
 }
 
-async function resolveLatestPublishedCoreVersion(): Promise<string | null> {
+export async function resolveLatestPublishedCoreVersion(): Promise<string | null> {
+  const registryLatestUrl =
+    process.env.TACHUI_CORE_LATEST_URL || 'https://registry.npmjs.org/@tachui/core/latest'
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 2500)
 
   try {
-    const response = await fetch('https://registry.npmjs.org/@tachui/core/latest', {
+    const response = await fetch(registryLatestUrl, {
       signal: controller.signal,
     })
     if (!response.ok) {
@@ -65,13 +67,34 @@ async function resolveLatestPublishedCoreVersion(): Promise<string | null> {
   }
 }
 
-async function resolveDefaultTachuiVersion(cliVersion: string | null): Promise<string> {
-  const registryVersion = await resolveLatestPublishedCoreVersion()
+interface ResolvedDefaultVersion {
+  version: string
+  source: 'registry' | 'compatibility-map'
+}
+
+export async function resolveDefaultTachuiVersion(
+  cliVersion: string | null,
+  resolveRegistryVersion: () => Promise<string | null> = resolveLatestPublishedCoreVersion
+): Promise<ResolvedDefaultVersion> {
+  const registryVersion = await resolveRegistryVersion()
   if (registryVersion) {
-    return registryVersion
+    return {
+      version: registryVersion,
+      source: 'registry',
+    }
   }
 
-  return resolveCoreVersionFromMap(cliVersion)
+  const mappedVersion = resolveCoreVersionFromMap(cliVersion)
+  if (mappedVersion) {
+    return {
+      version: mappedVersion,
+      source: 'compatibility-map',
+    }
+  }
+
+  throw new Error(
+    'Unable to determine a default @tachui/core version. Pass --tachui-version explicitly.'
+  )
 }
 
 function printTemplates(): void {
@@ -118,11 +141,20 @@ export const initCommand = new Command('init')
         return
       }
 
-      const defaultVersion = await resolveDefaultTachuiVersion(cliVersion)
+      const resolvedDefaultVersion = options?.tachuiVersion
+        ? null
+        : await resolveDefaultTachuiVersion(cliVersion)
+      if (resolvedDefaultVersion?.source === 'compatibility-map') {
+        console.log(
+          chalk.yellow(
+            'Warning: could not reach npm registry; using CLI compatibility map for default TachUI version.'
+          )
+        )
+      }
 
       let finalTarget = target
       let finalTemplateId = (options?.template || 'basic').toLowerCase()
-      let finalTachuiVersion = options?.tachuiVersion || defaultVersion
+      let finalTachuiVersion = options?.tachuiVersion || resolvedDefaultVersion?.version || ''
       let finalPackageManager = options?.packageManager || 'npm'
 
       if (!options?.yes) {
@@ -152,7 +184,10 @@ export const initCommand = new Command('init')
             name: 'tachuiVersion',
             message: 'TachUI version for generated dependencies:',
             initial: finalTachuiVersion,
-            validate: (value: string) => (value.trim().length > 0 ? true : 'Version is required'),
+            validate: (value: string) =>
+              isValidSemverLike(value.trim())
+                ? true
+                : 'Version must be a valid semver string (for example 0.8.8-alpha)',
           },
           {
             type: 'select',
@@ -187,6 +222,17 @@ export const initCommand = new Command('init')
 
       if (!finalTarget) {
         console.error(chalk.red('Project target is required'))
+        process.exit(1)
+      }
+
+      finalTachuiVersion = finalTachuiVersion.trim()
+
+      if (!isValidSemverLike(finalTachuiVersion)) {
+        console.error(
+          chalk.red(
+            `Invalid --tachui-version "${finalTachuiVersion}". Expected a semver value like 0.8.8-alpha.`
+          )
+        )
         process.exit(1)
       }
 

@@ -17,7 +17,7 @@ pnpm --dir "$ROOT_DIR" --filter @tachui/cli build
 if [[ -n "${TACHUI_VERSION:-}" ]]; then
   VERSION="$TACHUI_VERSION"
 else
-  VERSION="$(npm view @tachui/core version)"
+  VERSION="$(npm view @tachui/core version --fetch-timeout=5000)"
 fi
 
 if [[ -z "${VERSION}" ]]; then

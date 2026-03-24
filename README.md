@@ -7,7 +7,7 @@ cssclasses:
 
 > **SwiftUI-inspired web framework with fine-grained reactivity**
 
-[![Version](https://img.shields.io/badge/Version-0.8.0--alpha-orange)](https://github.com/tach-UI/tachUI/releases)
+[![Version](https://img.shields.io/badge/Version-0.8.8--alpha-orange)](https://github.com/tach-UI/tachUI/releases)
 [![License](https://img.shields.io/badge/License-MPL--2.0-blue)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-20+-green)](https://nodejs.org/)
@@ -18,9 +18,9 @@ cssclasses:
 
 ## Alpha Release - Welcome!
 
-**tachUI 0.8.0-alpha** represents a major architectural milestone! This release features complete modular restructuring with 15+ specialized packages and improved performance across the entire framework.
+**tachUI 0.8.8-alpha** represents a major architectural milestone! This release features complete modular restructuring with 15+ specialized packages and improved performance across the entire framework.
 
-### What's New in 0.8.0 Alpha
+### What's New in 0.8.8 Alpha
 
 - **Modular Architecture:** 15+ specialized packages (@tachui/primitives, @tachui/modifiers, etc.)
 - **200+ SwiftUI Modifiers:** Complete modifier system with chainable API
@@ -53,9 +53,9 @@ This alpha is ideal for:
 ### Installation
 
 ```bash
-npm install @tachui/core@0.8.0-alpha
+npm install @tachui/core
 # or
-pnpm add @tachui/core@0.8.0-alpha
+pnpm add @tachui/core
 ```
 
 ### Your First Component
@@ -367,7 +367,7 @@ Special thanks to the open source community for continuous inspiration and feedb
 
 ```bash
 # Install tachUI Alpha
-npm install @tachui/core@0.8.0-alpha
+npm install @tachui/core
 
 # Create your first SwiftUI-style component
 import { createSignal } from '@tachui/core'
@@ -376,6 +376,6 @@ import { VStack, Text, Button } from '@tachui/primitives'
 # Start building! 🎉
 ```
 
-**tachUI 0.8.0-alpha** - Modular architecture meets SwiftUI-inspired web development.
+**tachUI 0.8.8-alpha** - Modular architecture meets SwiftUI-inspired web development.
 
 [![Get Started](https://img.shields.io/badge/Get%20Started-Documentation-blue?style=for-the-badge)](./apps/docs/guide/getting-started.md) [![View Examples](https://img.shields.io/badge/View%20Examples-Live%20Demos-green?style=for-the-badge)](./apps/examples/) [![Join Community](https://img.shields.io/badge/Contribute-GitHub-purple?style=for-the-badge)](https://github.com/tach-UI/tachUI)

@@ -1,5 +1,5 @@
 ---
-title: '@tachui/core - Enhanced Documentation v0.9.0'
+title: '@tachui/core - Enhanced Documentation'
 ---
 
 # @tachui/core
@@ -9,7 +9,7 @@ title: '@tachui/core - Enhanced Documentation v0.9.0'
 ## Install
 
 ```bash
-pnpm add @tachui/core@0.9.0
+pnpm add @tachui/core
 ```
 
 ## Core Features
@@ -317,7 +317,7 @@ tachui.configure({
 
 ```bash
 # Update package versions
-pnpm add @tachui/core@0.9.0 @tachui/primitives@0.9.0 @tachui/modifiers@0.9.0
+pnpm add @tachui/core @tachui/primitives @tachui/modifiers
 
 # Update imports
 import { createSignal } from '@tachui/core'

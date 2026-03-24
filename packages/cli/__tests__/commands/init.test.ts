@@ -160,4 +160,48 @@ describe('TachUI CLI - Init Command', () => {
     expect(stdout).toContain('Project:')
     expect(await fsTestUtils.fileExists(path.join(tempDir, projectName, 'package.json'))).toBe(true)
   }, 120000)
+
+  it('rejects invalid tachui version from built dist entrypoint', async () => {
+    await execAsync('pnpm build', { cwd: cliPackageDir })
+
+    const distEntry = path.resolve(cliPackageDir, 'dist/index.js')
+    expect(existsSync(distEntry)).toBe(true)
+
+    const evalScript = [
+      "process.argv=['node','tacho','init','bad-version-app','--template','basic','--yes','--tachui-version','not-a-version'];",
+      "import('" + distEntry + "').then(m=>m.main());",
+    ].join('')
+
+    try {
+      await execAsync(`${process.execPath} -e "${evalScript}"`, { cwd: tempDir })
+      throw new Error('Expected dist entrypoint to reject invalid --tachui-version')
+    } catch (error: any) {
+      expect(error.stderr).toContain('Invalid --tachui-version')
+    }
+  }, 120000)
+
+  it('prints compatibility-map warning when registry is unavailable', async () => {
+    await execAsync('pnpm build', { cwd: cliPackageDir })
+
+    const distEntry = path.resolve(cliPackageDir, 'dist/index.js')
+    expect(existsSync(distEntry)).toBe(true)
+
+    const projectName = 'offline-fallback-app'
+    const evalScript = [
+      `process.argv=['node','tacho','init','${projectName}','--template','basic','--yes'];`,
+      `import('${distEntry}').then(m=>m.main());`,
+    ].join('')
+
+    const { stdout, stderr } = await execAsync(`${process.execPath} -e "${evalScript}"`, {
+      cwd: tempDir,
+      env: {
+        ...process.env,
+        TACHUI_CORE_LATEST_URL: 'http://127.0.0.1:9/unreachable',
+      },
+    })
+
+    expect(stderr).not.toContain('Error')
+    expect(stdout).toContain('Warning: could not reach npm registry')
+    expect(await fsTestUtils.fileExists(path.join(tempDir, projectName, 'package.json'))).toBe(true)
+  }, 120000)
 })

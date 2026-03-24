@@ -196,7 +196,7 @@ jobs:
           fi
 
   cli-init-smoke:
-    name: CLI Init Smoke
+    name: CLI Init Packed Smoke
     runs-on: ubuntu-latest
     needs: [lint, typecheck]
     steps:
@@ -216,8 +216,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run CLI init smoke test
-        run: ./tools/smoke-cli-init.sh
+      - name: Run CLI init packed smoke test
+        run: ./tools/smoke-cli-init-packed.sh
 
   docs:
     name: Build Documentation
