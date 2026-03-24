@@ -55,6 +55,8 @@ export default defineConfig({
       '**/integration/error-recovery.test.ts', // Flaky timing-sensitive error recovery tests
       // Exclude flaky memory tests that depend on GC timing
       '**/integration/foundation-demo.test.ts', // Memory leak tests with non-deterministic GC
+      '.github/demos/**',
+      'demos/**',
     ],
     followSymlinks: false,
     // Reduce timeout for CI to catch hanging tests faster

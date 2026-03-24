@@ -136,6 +136,16 @@ pnpm test
 pnpm build
 ```
 
+For publishable package changes (`packages/*`), add a changeset:
+
+```bash
+# Normal release note
+pnpm changeset
+
+# Explicit no-release exemption (required instead of labels)
+pnpm changeset --empty
+```
+
 ### 2. Commit Messages
 
 Use conventional commit format:
@@ -161,6 +171,7 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 - [ ] **Performance impact** considered and documented
 - [ ] **Linting and type checking** passes
 - [ ] **All tests pass**
+- [ ] **Changeset included** for publishable package changes (or explicit empty changeset exemption)
 
 ### 4. Review Process
 
@@ -168,6 +179,13 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 2. **Maintainer review** - We aim to review within 48 hours
 3. **Address feedback** - Work with reviewers to refine the PR
 4. **Final approval** - Maintainer approval required for merge
+
+### Changeset Policy
+
+- Publishable changes under `packages/*` require a changeset file in the PR.
+- No-release exemptions must use an explicit empty changeset (`pnpm changeset --empty`).
+- Labels/comments are not accepted as a no-release exemption.
+- Package README install snippets should be unpinned by default (for example `npm i @tachui/core`).
 
 ## Project Structure
 

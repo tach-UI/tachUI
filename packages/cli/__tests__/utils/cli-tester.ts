@@ -11,8 +11,11 @@ import path from 'path'
 import { tmpdir } from 'os'
 import { mkdtemp, rm } from 'fs/promises'
 import { existsSync } from 'fs'
+import { fileURLToPath } from 'url'
 
 const execAsync = promisify(exec)
+const thisFilePath = fileURLToPath(import.meta.url)
+const thisDir = path.dirname(thisFilePath)
 
 export interface CLITestResult {
   exitCode: number
@@ -37,7 +40,7 @@ export class CLITester {
   private readonly baseCommand: string[]
 
   constructor() {
-    const cliPath = path.resolve(__dirname, '../../bin/tacho.js')
+    const cliPath = path.resolve(thisDir, '../../bin/tacho.js')
     if (!existsSync(cliPath)) {
       throw new Error('CLI entry point not found. Ensure bin/tacho.js exists.')
     }
@@ -49,6 +52,14 @@ export class CLITester {
    */
   async createTempDir(): Promise<string> {
     this.tempDir = await mkdtemp(path.join(tmpdir(), 'tachui-cli-test-'))
+    return this.tempDir
+  }
+
+  getTempDir(): string {
+    if (!this.tempDir) {
+      throw new Error('Temporary test directory has not been created')
+    }
+
     return this.tempDir
   }
 

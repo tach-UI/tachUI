@@ -21,9 +21,9 @@ The tachUI symbols package provides a comprehensive icon system with 1000+ symbo
 ## Installation
 
 ```bash
-npm install @tachui/core@0.8.0-alpha @tachui/symbols@0.8.0-alpha
+npm install @tachui/core @tachui/symbols
 # or
-pnpm add @tachui/core@0.8.0-alpha @tachui/symbols@0.8.0-alpha
+pnpm add @tachui/core @tachui/symbols
 ```
 
 ### Using Modifiers
@@ -373,7 +373,7 @@ Check out complete examples:
 
 ## Requirements
 
-- **@tachui/core** ^0.1.0 or later
+- **@tachui/core** ^0.8.8-alpha or later
 - **TypeScript** 5.0+ (recommended)
 
 ## Contributing

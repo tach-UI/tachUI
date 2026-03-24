@@ -3,7 +3,14 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { CLITester, createCLITestEnvironment } from './utils/cli-tester'
+
+const testFilePath = fileURLToPath(import.meta.url)
+const cliPackageJsonPath = path.resolve(path.dirname(testFilePath), '../package.json')
+const cliVersion = JSON.parse(readFileSync(cliPackageJsonPath, 'utf8')).version as string
 
 describe('TachUI CLI - Main Entry Point', () => {
   let cliTester: CLITester
@@ -34,7 +41,7 @@ describe('TachUI CLI - Main Entry Point', () => {
       const version = await cliTester.testVersionCommand()
 
       // Should contain semantic version (may include banner)
-      expect(version).toContain('0.8.0-alpha')
+      expect(version).toContain(cliVersion)
       expect(version).toMatch(/\d+\.\d+\.\d+/)
     })
 

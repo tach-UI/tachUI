@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@tachui/core",
+      "@tachui/types",
+      "@tachui/registry"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "@tachui/docs",
+    "@tachui/demos",
+    "@tachui/intro-app",
+    "@tachui/calculator-app"
+  ]
+}

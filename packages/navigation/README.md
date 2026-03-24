@@ -21,9 +21,9 @@ The tachUI navigation package provides SwiftUI-compatible navigation components 
 ## Installation
 
 ```bash
-npm install @tachui/core@0.8.0-alpha @tachui/navigation@0.8.0-alpha
+npm install @tachui/core @tachui/navigation
 # or
-pnpm add @tachui/core@0.8.0-alpha @tachui/navigation@0.8.0-alpha
+pnpm add @tachui/core @tachui/navigation
 ```
 
 ## Quick Start
