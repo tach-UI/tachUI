@@ -115,21 +115,21 @@ For advanced components, use the plugin system to pay only for what you use:
 
 ### Available Plugins
 
-#### `@tachui/advanced-forms` - +42KB
+#### `@tachui/forms` - +42KB
 ```typescript
-npm install @tachui/advanced-forms
+npm install @tachui/forms
 
-import { DatePicker, Stepper, Slider } from '@tachui/advanced-forms'
+import { DatePicker, Stepper, Slider } from '@tachui/forms'
 ```
 - **Components**: DatePicker, Stepper, Slider
 - **Features**: Advanced form controls with validation
 - **Bundle Impact**: +42KB (51% under 85KB target)
 
-#### `@tachui/mobile-patterns` - +24KB
+#### `@tachui/mobile` - +24KB
 ```typescript
-npm install @tachui/mobile-patterns
+npm install @tachui/mobile
 
-import { ActionSheet, Alert } from '@tachui/mobile-patterns'
+import { ActionSheet, Alert } from '@tachui/mobile'
 ```
 - **Components**: ActionSheet, Alert
 - **Features**: Mobile-first UI patterns
@@ -165,24 +165,24 @@ pnpm migrate
 import { 
   Text, Button, Image,           // ✅ Available in minimal
   Form, TextField,               // ✅ Available in common (as BasicForm, BasicInput)
-  DatePicker,                    // ⚠️  Requires @tachui/advanced-forms plugin
-  ActionSheet                    // ⚠️  Requires @tachui/mobile-patterns plugin
+  DatePicker,                    // ⚠️  Requires @tachui/forms plugin
+  ActionSheet                    // ⚠️  Requires @tachui/mobile plugin
 } from '@tachui/core'
 ```
 
 #### Step 2: Choose Optimal Strategy
 Based on the above analysis:
 - **Base bundle**: `@tachui/core/common` (44KB)
-- **Add plugin**: `@tachui/advanced-forms` (+42KB)
-- **Add plugin**: `@tachui/mobile-patterns` (+24KB)
+- **Add plugin**: `@tachui/forms` (+42KB)
+- **Add plugin**: `@tachui/mobile` (+24KB)
 - **Total**: ~110KB (98.2% reduction vs 6.2MB)
 
 #### Step 3: Update Imports
 ```typescript
 // Optimized imports
 import { Text, Button, Image, BasicForm, BasicInput } from '@tachui/core/common'
-import { DatePicker } from '@tachui/advanced-forms'
-import { ActionSheet } from '@tachui/mobile-patterns'
+import { DatePicker } from '@tachui/forms'
+import { ActionSheet } from '@tachui/mobile'
 ```
 
 ## 📈 Performance Impact
@@ -244,18 +244,18 @@ import { Text, Button } from '@tachui/core/minimal'
 
 // Add features as needed
 import { BasicForm } from '@tachui/core/common'
-import { DatePicker } from '@tachui/advanced-forms' // Only when needed
+import { DatePicker } from '@tachui/forms' // Only when needed
 ```
 
 ### 2. Use Plugin Architecture
 For advanced components, prefer plugins over the full bundle:
 ```typescript
 // ❌ Don't do this for just DatePicker
-import { DatePicker } from '@tachui/advanced-forms' // Advanced form control
+import { DatePicker } from '@tachui/forms' // Advanced form control
 
 // ✅ Do this instead
 import { Text, Button } from '@tachui/core/common'  // 43.88KB
-import { DatePicker } from '@tachui/advanced-forms' // +42KB = ~86KB total
+import { DatePicker } from '@tachui/forms' // +42KB = ~86KB total
 ```
 
 ### 3. Leverage Tree Shaking

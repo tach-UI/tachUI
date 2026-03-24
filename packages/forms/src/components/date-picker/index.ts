@@ -1,7 +1,7 @@
 /**
  * Date Picker Component
  *
- * Rich calendar interface for date selection from @tachui/advanced-forms
+ * Rich calendar interface for date selection
  */
 
 // Import and re-export the complete DatePicker implementation

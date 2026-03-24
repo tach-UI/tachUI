@@ -196,7 +196,7 @@ Text input with validation and reactive updates.
 ### Basic Usage
 
 ```typescript
-import { TextField } from '@tachui/advanced-forms'
+import { TextField } from '@tachui/forms'
 
 const [text, setText] = createSignal('')
 
@@ -415,7 +415,7 @@ ZStack({
 Groups form elements with consistent styling.
 
 ```typescript
-import { Form, Section } from '@tachui/advanced-forms'
+import { Form, Section } from '@tachui/forms'
 
 Form({
   onSubmit: handleSubmit,
@@ -457,7 +457,7 @@ Toggle({
 Numeric input with slider interface.
 
 ```typescript
-import { Slider } from '@tachui/advanced-forms'
+import { Slider } from '@tachui/forms'
 
 const [volume, setVolume] = createSignal(50)
 

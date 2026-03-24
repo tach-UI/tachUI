@@ -372,8 +372,8 @@ import { State, Binding } from '@tachui/core'
 
 // Form components
 import { Picker, Toggle } from '@tachui/primitives'
-import { Form, Section } from '@tachui/advanced-forms'
-import { Slider } from '@tachui/advanced-forms'
+import { Form, Section } from '@tachui/forms'
+import { Slider } from '@tachui/forms'
 
 // Navigation components
 import { NavigationView, NavigationLink, TabView } from '@tachui/navigation'

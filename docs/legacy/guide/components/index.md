@@ -18,11 +18,11 @@ Interactive components for user interface:
 - **[Button](./button.md)** - Interactive buttons with press states and variants
 - **[Image](./image.md)** - 🖼️ **NEW**: Image display with loading states, content modes, and lazy loading
 - **[Symbol](../symbols/index.md)** - SwiftUI-inspired icon system with animations and rendering modes
-- **[Alert](./alert.md)** - Modal dialogs with backdrop and animations (from `@tachui/mobile-patterns`)
-- **[ActionSheet](./actionsheet.md)** - Mobile-style action selection (from `@tachui/mobile-patterns`)
+- **[Alert](./alert.md)** - Modal dialogs with backdrop and animations (from `@tachui/mobile`)
+- **[ActionSheet](./actionsheet.md)** - Mobile-style action selection (from `@tachui/mobile`)
 - **[Menu](./menu.md)** - Dropdown menus with keyboard navigation
-- **[DatePicker](./datepicker.md)** - Date and time selection (from `@tachui/advanced-forms`)
-- **[Stepper](./stepper.md)** - Numeric input with increment/decrement (from `@tachui/advanced-forms`)
+- **[DatePicker](./datepicker.md)** - Date and time selection (from `@tachui/forms`)
+- **[Stepper](./stepper.md)** - Numeric input with increment/decrement (from `@tachui/forms`)
 
 ## Dynamic Rendering
 
@@ -90,7 +90,7 @@ const DocumentWindows = WindowGroup({
 Components that respond to user interaction:
 
 ```typescript
-import { Alert, ActionSheet } from '@tachui/mobile-patterns'
+import { Alert, ActionSheet } from '@tachui/mobile'
 
 // Alert dialog
 Alert({

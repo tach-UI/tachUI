@@ -54,5 +54,5 @@ export type MobilePatternsComponent = keyof typeof COMPONENTS
  * Components are available as static exports for better tree-shaking.
  *
  * If dynamic loading is needed, import components individually:
- * const { ActionSheet } = await import('@tachui/mobile-patterns/ActionSheet')
+ * const { ActionSheet } = await import('@tachui/mobile/ActionSheet')
  */

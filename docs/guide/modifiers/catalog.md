@@ -71,37 +71,37 @@ Every modifier listed below comes directly from `design-docs/modifiers-0.9.md`, 
 | `aria`, `customProperties`, `customProperty`, `cssVariables`, `id`, `data`, `tabIndex` | Attributes | ARIA / data attributes | `@tachui/modifiers/attributes` |
 | `before`, `after`, `pseudoElements`, `iconBefore`, `iconAfter`, `lineBefore`, `lineAfter`, `quotes`, `underline`, `badge`, `tooltip`, `cornerRibbon`, `spinner` | Elements | Pseudo-element helpers | `@tachui/modifiers/elements` |
 
-## @tachui/effects · 75+ modifiers
+## @tachui/modifiers/effects · 75+ modifiers
 
 ### Shadows
 
 | Modifier | Category | Description | Package / Import |
 | --- | --- | --- | --- |
-| `shadow`, `shadows`, `insetShadow`, `shadowPreset`, `elevationShadow`, `glowEffect`, `neonEffect`, `neumorphism`, `neumorphismPressed`, `layeredShadow`, `textShadow`, `textShadowSubtle`, `textShadowStrong`, `textOutline`, `textEmbossed`, `textEngraved`, `swiftUIShadow`, `reactiveShadow`, `animatedShadow` | Shadow | Elevation/lighting effects | `@tachui/effects/shadows` |
+| `shadow`, `shadows`, `insetShadow`, `shadowPreset`, `elevationShadow`, `glowEffect`, `neonEffect`, `neumorphism`, `neumorphismPressed`, `layeredShadow`, `textShadow`, `textShadowSubtle`, `textShadowStrong`, `textOutline`, `textEmbossed`, `textEngraved`, `swiftUIShadow`, `reactiveShadow`, `animatedShadow` | Shadow | Elevation/lighting effects | `@tachui/modifiers/effects/shadows` |
 
 ### Filters
 
 | Modifier | Category | Description | Package / Import |
 | --- | --- | --- | --- |
-| `blur`, `brightness`, `contrast`, `filter`, `saturate`, `grayscale`, `sepia`, `hueRotate`, `invert`, `dropShadow`, `vintagePhoto`, `blackAndWhite`, `vibrant`, `warmTone`, `coolTone`, `faded`, `highKey`, `lowKey`, `softFocus`, `highContrastMode`, `subtleBlur`, `darkModeInvert`, `colorInvert`, `saturation`, `hueRotation` | Filter | CSS filter effects | `@tachui/effects/filters` |
+| `blur`, `brightness`, `contrast`, `filter`, `saturate`, `grayscale`, `sepia`, `hueRotate`, `invert`, `dropShadow`, `vintagePhoto`, `blackAndWhite`, `vibrant`, `warmTone`, `coolTone`, `faded`, `highKey`, `lowKey`, `softFocus`, `highContrastMode`, `subtleBlur`, `darkModeInvert`, `colorInvert`, `saturation`, `hueRotation` | Filter | CSS filter effects | `@tachui/modifiers/effects/filters` |
 
 ### Transforms
 
 | Modifier | Category | Description | Package / Import |
 | --- | --- | --- | --- |
-| `transform`, `scale`, `rotate`, `translate`, `skew`, `rotateX`, `rotateY`, `rotateZ`, `scale3d`, `translate3d`, `perspective`, `advancedTransform`, `matrix`, `matrix3d`, `rotate3d`, `scaleX`, `scaleY`, `scaleZ`, `translateX`, `translateY`, `translateZ`, `perspectiveOrigin`, `transformStyle`, `backfaceVisibility`, `offset` | Transform | 2D/3D transforms | `@tachui/effects/transforms` |
+| `transform`, `scale`, `rotate`, `translate`, `skew`, `rotateX`, `rotateY`, `rotateZ`, `scale3d`, `translate3d`, `perspective`, `advancedTransform`, `matrix`, `matrix3d`, `rotate3d`, `scaleX`, `scaleY`, `scaleZ`, `translateX`, `translateY`, `translateZ`, `perspectiveOrigin`, `transformStyle`, `backfaceVisibility`, `offset` | Transform | 2D/3D transforms | `@tachui/modifiers/effects/transforms` |
 
 ### Interactive cursors / hover
 
 | Modifier | Category | Description | Package / Import |
 | --- | --- | --- | --- |
-| `hover`, `cursor`, `hoverEffect`, `hoverWithTransition`, `conditionalHover`, `interactiveCursor`, `draggableCursor`, `textCursor`, `disabledCursor`, `loadingCursor`, `helpCursor`, `zoomCursor`, `buttonHover`, `cardHover`, `linkHover`, `imageHover` | Interaction | Cursor + hover FX | `@tachui/effects/effects` |
+| `hover`, `cursor`, `hoverEffect`, `hoverWithTransition`, `conditionalHover`, `interactiveCursor`, `draggableCursor`, `textCursor`, `disabledCursor`, `loadingCursor`, `helpCursor`, `zoomCursor`, `buttonHover`, `cardHover`, `linkHover`, `imageHover` | Interaction | Cursor + hover FX | `@tachui/modifiers/effects/effects` |
 
 ### Backdrop / glass
 
 | Modifier | Category | Description | Package / Import |
 | --- | --- | --- | --- |
-| `backdropFilter`, `glassmorphism`, `customGlassmorphism` | Backdrop | Frosted glass effects | `@tachui/effects/backdrop` |
+| `backdropFilter`, `glassmorphism`, `customGlassmorphism` | Backdrop | Frosted glass effects | `@tachui/modifiers/effects/backdrop` |
 
 ## @tachui/grid
 

@@ -1,7 +1,7 @@
 /**
  * Test Setup for Mobile Patterns Package
  *
- * Configures test environment for mobile-patterns components with full TachUI runtime
+ * Configures test environment for mobile components with full TachUI runtime
  */
 
 import { beforeAll, afterAll, vi } from 'vitest'

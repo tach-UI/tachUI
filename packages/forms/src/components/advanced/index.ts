@@ -1,7 +1,7 @@
 /**
  * Advanced Form Components
  *
- * Stepper and Slider components from @tachui/advanced-forms
+ * Stepper and Slider components
  */
 
 // Import and re-export the complete implementations

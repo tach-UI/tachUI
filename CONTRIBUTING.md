@@ -59,7 +59,7 @@ packages/
 ├── forms/             # Form components (@tachui/forms)
 ├── navigation/        # Navigation system (@tachui/navigation)
 ├── symbols/           # Icon system (@tachui/symbols)
-├── mobile-patterns/   # Mobile UI patterns (@tachui/mobile-patterns)
+├── mobile/            # Mobile UI patterns (@tachui/mobile)
 └── cli/              # Developer tooling (@tachui/cli)
 ```
 

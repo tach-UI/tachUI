@@ -9,7 +9,7 @@ The `Stepper` component offers precise numeric control through dedicated +/- but
 ## Basic Usage
 
 ```typescript
-import { Stepper } from '@tachui/advanced-forms'
+import { Stepper } from '@tachui/forms'
 import { createSignal } from '@tachui/core'
 
 function BasicExample() {
@@ -256,7 +256,7 @@ Pre-configured Stepper setups for common use cases:
 For shopping carts and item quantities:
 
 ```typescript
-import { StepperUtils } from '@tachui/advanced-forms'
+import { StepperUtils } from '@tachui/forms'
 
 function QuantityExample() {
   const [quantity, setQuantity] = createSignal(1)
@@ -543,7 +543,7 @@ Stepper({
 Create custom Stepper themes:
 
 ```typescript
-import { StepperStyles } from '@tachui/advanced-forms'
+import { StepperStyles } from '@tachui/forms'
 
 const customTheme = StepperStyles.createTheme({
   colors: {

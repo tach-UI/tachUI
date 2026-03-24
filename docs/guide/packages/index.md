@@ -19,7 +19,7 @@ tachUI ships as 16 focused packages so you can scale from the 16 KB runtime to t
 | `@tachui/data` | Lists, menus, data surfaces | ⚠️ Needs additional tests |
 | `@tachui/flow-control` | Show/When/Unless/ForEach conditional helpers | ✅ Stable |
 | `@tachui/responsive` | Breakpoints, media queries, responsive debugging | ✅ Stable |
-| `@tachui/effects` | Blur, transforms, filters, backdrop materials | ✅ Stable |
+| `@tachui/modifiers/effects` | Blur, transforms, filters, backdrop materials | ✅ Stable |
 | `@tachui/mobile` | ActionSheet, Alert, upcoming gestures | 🚧 |
 | `@tachui/viewport` | Multi-window / desktop scaffolding | ⚠️ Needs additional tests |
 | `@tachui/symbols` | Icon system + assets pipeline | ✅ Stable |

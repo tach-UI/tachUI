@@ -78,11 +78,11 @@ function recommendBundle(usedComponents, _usedModifiers) {
     let totalSize = 44 // Base core size
     
     if (usedComponents.some(c => ['DatePicker', 'Stepper', 'Slider'].includes(c))) {
-      pluginsNeeded.push('@tachui/advanced-forms (+42KB)')
+      pluginsNeeded.push('@tachui/forms (+42KB)')
       totalSize += 42
     }
     if (usedComponents.some(c => ['ActionSheet', 'Alert'].includes(c))) {
-      pluginsNeeded.push('@tachui/mobile-patterns (+24KB)')
+      pluginsNeeded.push('@tachui/mobile (+24KB)')
       totalSize += 24
     }
     
@@ -170,8 +170,8 @@ function analyzeBundles() {
     console.log('   • All bundle variants now deliver ~44KB (99.3% reduction from 6.2MB)')
     console.log()
     console.log('🔧 Advanced optimization: Plugin architecture for advanced components')
-    console.log('   • @tachui/advanced-forms: +42KB for DatePicker, Stepper, Slider')  
-    console.log('   • @tachui/mobile-patterns: +24KB for ActionSheet, Alert')
+    console.log('   • @tachui/forms: +42KB for DatePicker, Stepper, Slider')  
+    console.log('   • @tachui/mobile: +24KB for ActionSheet, Alert')
 
   } catch (error) {
     console.error('❌ Bundle analysis failed:', error.message)
