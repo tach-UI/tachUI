@@ -5,6 +5,7 @@
  */
 
 import type { Signal } from '../reactive/types'
+import { createEffect } from '../reactive'
 import type { DOMNode } from '../runtime/types'
 
 /**
@@ -62,16 +63,15 @@ export class DOMCSSClassApplicator implements CSSClassDOMApplicator {
    * Apply reactive CSS classes to a DOM element
    */
   applyReactiveCSSClasses(element: Element, classSignal: Signal<string>): (() => void) {
-    // Import createEffect dynamically to avoid circular dependencies
-    const createEffect = require('../reactive').createEffect
-    
     // Create effect to update classes when signal changes
-    const dispose = createEffect(() => {
+    const effect = createEffect(() => {
       const classString = classSignal()
       element.className = classString
     })
-    
-    return dispose
+
+    return () => {
+      effect.dispose()
+    }
   }
 
   /**
