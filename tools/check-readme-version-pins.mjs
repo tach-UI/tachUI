@@ -21,6 +21,7 @@ if (existsSync(allowlistPath)) {
   }
 }
 
+// Scope intentionally excludes docs/legacy to avoid blocking on historical snapshots.
 const readmeFiles = globSync(['README.md', 'packages/*/README.md', 'docs/guide/**/*.md'], {
   cwd: root,
   nodir: true,

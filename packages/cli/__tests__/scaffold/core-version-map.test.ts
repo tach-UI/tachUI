@@ -9,7 +9,12 @@ describe('core version compatibility map', () => {
   })
 
   it('supports stable semver in mapped ranges', () => {
-    expect(resolveCoreVersionFromMap('0.8.8')).toBe('0.8.8-alpha')
+    expect(resolveCoreVersionFromMap('0.8.8')).toBeNull()
+  })
+
+  it('correctly orders numeric prerelease identifiers', () => {
+    expect(resolveCoreVersionFromMap('0.8.10-alpha.2')).toBe('0.8.8-alpha')
+    expect(resolveCoreVersionFromMap('0.8.10-alpha.10')).toBe('0.8.8-alpha')
   })
 
   it('returns null for unknown or invalid versions', () => {

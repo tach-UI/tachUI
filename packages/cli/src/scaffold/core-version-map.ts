@@ -22,7 +22,9 @@ interface ParsedVersion {
 }
 
 function parseSemver(value: string): ParsedVersion | null {
-  const match = value.trim().match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?/)
+  const match = value.trim().match(
+    /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/
+  )
   if (!match) {
     return null
   }
@@ -35,11 +37,48 @@ function parseSemver(value: string): ParsedVersion | null {
   return { major, minor, patch, preRelease }
 }
 
+function comparePreReleaseIdentifier(left: string, right: string): number {
+  const leftNumeric = /^\d+$/.test(left)
+  const rightNumeric = /^\d+$/.test(right)
+
+  if (leftNumeric && rightNumeric) {
+    return Number(left) - Number(right)
+  }
+  if (leftNumeric && !rightNumeric) {
+    return -1
+  }
+  if (!leftNumeric && rightNumeric) {
+    return 1
+  }
+
+  if (left < right) return -1
+  if (left > right) return 1
+  return 0
+}
+
 function comparePreRelease(left: string | null, right: string | null): number {
   if (left === right) return 0
   if (left === null) return 1
   if (right === null) return -1
-  return left.localeCompare(right)
+
+  const leftIdentifiers = left.split('.')
+  const rightIdentifiers = right.split('.')
+  const maxLength = Math.max(leftIdentifiers.length, rightIdentifiers.length)
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const leftPart = leftIdentifiers[index]
+    const rightPart = rightIdentifiers[index]
+
+    if (leftPart === undefined) return -1
+    if (rightPart === undefined) return 1
+
+    const comparison = comparePreReleaseIdentifier(leftPart, rightPart)
+    if (comparison !== 0) {
+      return comparison
+    }
+  }
+
+  return 0
 }
 
 function compareSemver(left: ParsedVersion, right: ParsedVersion): number {
@@ -102,7 +141,9 @@ export function resolveCoreVersionFromMap(cliVersion: string | null): string | n
   }
 
   const parsed = parseSemver(cliVersion)
-  if (!parsed) {
+  if (!parsed || parsed.preRelease === null) {
+    // Compatibility map entries are explicitly maintained for prerelease CLI versions.
+    // Stable CLI builds should use registry resolution or an explicit --tachui-version.
     return null
   }
 

@@ -59,10 +59,53 @@ npm exec --yes \
 
 cd "$PROJECT_DIR"
 
-echo "[smoke-cli-init-packed] forcing generated app to use packed @tachui/core"
-npm pkg set dependencies.@tachui/core="file:$CORE_TGZ" >/dev/null
-npm pkg set dependencies.@tachui/registry="file:$REGISTRY_TGZ" >/dev/null
-npm pkg set dependencies.@tachui/types="file:$TYPES_TGZ" >/dev/null
+echo "[smoke-cli-init-packed] forcing generated app to use local packed @tachui/* tarballs when present"
+CORE_TGZ="$CORE_TGZ" \
+REGISTRY_TGZ="$REGISTRY_TGZ" \
+TYPES_TGZ="$TYPES_TGZ" \
+MODIFIERS_TGZ="$MODIFIERS_TGZ" \
+PRIMITIVES_TGZ="$PRIMITIVES_TGZ" \
+DEVTOOLS_TGZ="$DEVTOOLS_TGZ" \
+node <<'NODE'
+const fs = require('node:fs')
+
+const packageJsonPath = 'package.json'
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+
+const replacements = {
+  '@tachui/core': process.env.CORE_TGZ,
+  '@tachui/registry': process.env.REGISTRY_TGZ,
+  '@tachui/types': process.env.TYPES_TGZ,
+  '@tachui/modifiers': process.env.MODIFIERS_TGZ,
+  '@tachui/primitives': process.env.PRIMITIVES_TGZ,
+  '@tachui/devtools': process.env.DEVTOOLS_TGZ,
+}
+
+if (!packageJson.dependencies || typeof packageJson.dependencies !== 'object') {
+  packageJson.dependencies = {}
+}
+
+// Ensure core transitive runtime deps resolve from local tarballs in isolated CI/network environments.
+for (const forcedDependency of ['@tachui/core', '@tachui/registry', '@tachui/types']) {
+  const tgzPath = replacements[forcedDependency]
+  if (tgzPath) {
+    packageJson.dependencies[forcedDependency] = `file:${tgzPath}`
+  }
+}
+
+for (const section of ['dependencies', 'devDependencies']) {
+  const deps = packageJson[section]
+  if (!deps || typeof deps !== 'object') continue
+
+  for (const [name, tgzPath] of Object.entries(replacements)) {
+    if (deps[name] && tgzPath) {
+      deps[name] = `file:${tgzPath}`
+    }
+  }
+}
+
+fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
+NODE
 
 echo "[smoke-cli-init-packed] installing generated project dependencies"
 npm install

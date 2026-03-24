@@ -45,11 +45,13 @@ export function isValidSemverLike(value: unknown): value is string {
 }
 
 export async function resolveLatestPublishedCoreVersion(): Promise<string | null> {
+  const registryLatestUrl =
+    process.env.TACHUI_CORE_LATEST_URL || 'https://registry.npmjs.org/@tachui/core/latest'
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 2500)
 
   try {
-    const response = await fetch('https://registry.npmjs.org/@tachui/core/latest', {
+    const response = await fetch(registryLatestUrl, {
       signal: controller.signal,
     })
     if (!response.ok) {

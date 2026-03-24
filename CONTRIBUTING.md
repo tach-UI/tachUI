@@ -188,6 +188,17 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 - Package README install snippets should be unpinned by default (for example `npm i @tachui/core`).
 - Peer ranges currently use `<1.0.0` ceilings for selected packages. When `@tachui/core` reaches `1.0.0`, maintainers must coordinate a same-release peer range update across all affected packages.
 
+### Maintainer Coordination: Core 1.0 Peer Range Update
+
+At the first `@tachui/core@1.0.0` release, maintainers must ship coordinated peer range updates for all packages that currently declare `@tachui/core` or `@tachui/registry` with a `<1.0.0` upper bound.
+
+Minimum checklist for that release:
+
+- Update peer ranges in affected packages (for example `@tachui/forms`, `@tachui/navigation`, `@tachui/mobile`).
+- Include changesets for each affected package in the release PR.
+- Run `pnpm release:smoke` against local tarballs before publish.
+- Validate install compatibility with `@tachui/core@1.0.0` in a clean temp project.
+
 ## Project Structure
 
 ### Core Package (`@tachui/core`)
