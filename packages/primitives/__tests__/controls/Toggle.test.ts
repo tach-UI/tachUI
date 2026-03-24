@@ -140,10 +140,13 @@ describe('Toggle Component', () => {
 
     const rendered = toggle.render()
     const input = findElementByTag(rendered, 'input')
+    const labelElement = findElementByTag(rendered, 'label')
     const spans = findElementsByTag(rendered, 'span')
     const label = spans.find(span => typeof span.props?.id === 'string')
 
     expect(input).toBeDefined()
+    expect(labelElement).toBeDefined()
+    expect(labelElement?.props?.for).toBe(input.props?.id)
     expect(label).toBeDefined()
     expect(input.props?.id).toMatch(/-input$/)
     expect(label?.props?.id).toMatch(/-label$/)
@@ -160,10 +163,13 @@ describe('Toggle Component', () => {
 
     const rendered = toggle.render()
     const input = findElementByTag(rendered, 'input')
+    const labelElement = findElementByTag(rendered, 'label')
     const spans = findElementsByTag(rendered, 'span')
     const label = spans.find(span => typeof span.props?.id === 'string')
 
     expect(input).toBeDefined()
+    expect(labelElement).toBeDefined()
+    expect(labelElement?.props?.for).toBe(input.props?.id)
     expect(label).toBeDefined()
     expect(input.props?.['aria-labelledby']).toBe(label?.props?.id)
   })
@@ -181,6 +187,20 @@ describe('Toggle Component', () => {
     const input = findElementByTag(rendered, 'input')
 
     expect(input.props?.['aria-label']).toBe('Programmatic label')
+    expect(input.props?.['aria-labelledby']).toBeUndefined()
+  })
+
+  it('should not set naming attributes when both label and accessibilityLabel are absent', () => {
+    const [isOn, setIsOn] = createSignal(false)
+    const toggle = Toggle(isOn, {
+      onToggle: setIsOn,
+      variant: 'switch',
+    })
+
+    const rendered = toggle.render()
+    const input = findElementByTag(rendered, 'input')
+
+    expect(input.props?.['aria-label']).toBeUndefined()
     expect(input.props?.['aria-labelledby']).toBeUndefined()
   })
 

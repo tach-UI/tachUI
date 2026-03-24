@@ -294,7 +294,6 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
             border: '1px solid rgba(0,0,0,0.1)',
             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
           },
-          onClick: this.handleToggle,
         },
         // Switch thumb
         h('div', {
@@ -380,7 +379,6 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
             opacity: isDisabled ? 0.5 : 1,
             transition: 'all 0.2s ease',
           },
-          onClick: this.handleToggle,
         },
         ...(isOn
           ? [
@@ -465,7 +463,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
   /**
    * Render label content
    */
-  private renderLabel() {
+  private renderLabel(enableClickFallback = false) {
     const labelContent = this.resolveLabel()
     if (!labelContent) return null
 
@@ -480,7 +478,10 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
           color: this.isDisabled() ? '#9ca3af' : '#374151',
           cursor: this.isDisabled() ? 'not-allowed' : 'pointer',
         },
-        onClick: this.isDisabled() ? undefined : this.handleToggle,
+        onClick:
+          enableClickFallback && !this.isDisabled()
+            ? this.handleToggle
+            : undefined,
       },
       ...(typeof labelContent === 'string'
         ? [text(labelContent)]
@@ -490,12 +491,13 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
 
   render() {
     const {
+      variant = 'switch',
       labelPosition = 'trailing',
       spacing = 8,
       accessibilityHint,
     } = this.props
 
-    const label = this.renderLabel()
+    const label = this.renderLabel(variant === 'button')
     const control = this.renderToggleControl()
 
     // Arrange label and control based on position
@@ -506,18 +508,40 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
           ? [control, label]
           : [control]
 
+    const interactiveContent =
+      variant === 'button'
+        ? h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: label ? `${spacing}px` : '0',
+                cursor: this.isDisabled() ? 'not-allowed' : 'pointer',
+              },
+            },
+            ...children
+          )
+        : h(
+            'label',
+            {
+              for: this.getInputId(),
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: label ? `${spacing}px` : '0',
+                cursor: this.isDisabled() ? 'not-allowed' : 'pointer',
+              },
+            },
+            ...children
+          )
+
     return h(
       'div',
       {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: label ? `${spacing}px` : '0',
-          cursor: this.isDisabled() ? 'not-allowed' : 'pointer',
-        },
         'aria-describedby': accessibilityHint ? `${this.id}-hint` : undefined,
       },
-      ...children,
+      interactiveContent,
 
       // Accessibility hint
       ...(accessibilityHint
