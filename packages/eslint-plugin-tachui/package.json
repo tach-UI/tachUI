@@ -1,6 +1,6 @@
 {
   "name": "@tachui/eslint-plugin",
-  "version": "0.8.8",
+  "version": "0.8.9-alpha.0",
   "description": "ESLint rules for migrating tachUI modifiers to the direct call syntax",
   "homepage": "https://tachui.dev/",
   "type": "module",
