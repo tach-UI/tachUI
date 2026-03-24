@@ -25,7 +25,7 @@ Examples:
 npx @tachui/cli init my-app --template basic --yes
 npx @tachui/cli init my-app --template advanced --yes
 npx @tachui/cli init . --template basic --yes
-npx @tachui/cli init my-app --tachui-version 0.8.6-alpha --yes
+npx @tachui/cli init my-app --tachui-version 0.8.8-alpha --yes
 ```
 
 Options:
@@ -40,8 +40,9 @@ Notes:
 
 - `phase6` template naming has been removed. Use `advanced`.
 - `--yes` requires an explicit target, for example `init my-app --yes`.
-- By default, generated `@tachui/*` dependency versions are derived from the CLI package version.
-- This assumes TachUI packages are co-published at matching versions. Use `--tachui-version` to override.
+- By default, the CLI resolves `@tachui/core` from npm registry (`@tachui/core/latest`).
+- If registry resolution fails, the CLI falls back to an internal compatibility map.
+- `--tachui-version` always overrides the default resolution behavior.
 
 ## Development Server Path
 

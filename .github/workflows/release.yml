@@ -2,9 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
-      - 'v*.*.*-*'
+    branches: [main]
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '20'
@@ -12,7 +11,7 @@ env:
 
 jobs:
   release:
-    name: Release
+    name: Changesets Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -43,49 +42,14 @@ jobs:
       
       - name: Run tests
         run: pnpm test:ci
-      
-      - name: Generate API docs
-        run: pnpm docs:api
-      
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-      
-      - name: Update package versions
-        run: |
-          # Update root package version (skip if same version)
-          pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version || echo "Root package version unchanged"
-          
-          # Update all workspace packages with new structure (skip if same version)
-          for pkg in packages/*/package.json; do
-            if [ -f "$pkg" ]; then
-              cd "$(dirname "$pkg")" && (pnpm version ${{ steps.version.outputs.version }} --no-git-tag-version || echo "Package $(basename $(pwd)) version unchanged") && cd - > /dev/null
-            fi
-          done
-      
-      - name: Publish to npm
-        run: pnpm -r publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+
+      - name: Create Release PR or Publish
+        uses: changesets/action@v1
         with:
-          name: tachUI ${{ steps.version.outputs.version }}
-          body: |
-            ## tachUI ${{ steps.version.outputs.version }}
-            
-            This release includes updates across the tachUI framework packages.
-            
-            ### Installation
-            ```bash
-            npm install @tachui/core@${{ steps.version.outputs.version }}
-            ```
-            
-            ### Documentation
-            - [Getting Started](https://github.com/tach-UI/tachUI/blob/main/docs/guide/getting-started.md)
-            - [API Reference](https://github.com/tach-UI/tachUI/tree/main/docs/api)
-            - [Examples](https://github.com/tach-UI/tachUI/tree/main/apps/examples)
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
-          generate_release_notes: true
+          version: pnpm changeset:version
+          publish: pnpm release:publish
+          title: 'chore(release): version packages'
+          commit: 'chore(release): version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

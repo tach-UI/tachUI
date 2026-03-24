@@ -9,7 +9,7 @@
 
 The tachUI mobile package provides essential mobile UI components and interaction patterns. Currently focused on core modal components with plans for expanded mobile functionality in future releases.
 
-## Current Features (v0.8.6-alpha)
+## Current Features (v0.8.8-alpha)
 
 - 📱 **Core Modal Components** - ActionSheet and Alert with full modal system
 - 🎨 **Native Feel** - iOS and Android design system compatibility
@@ -29,9 +29,9 @@ The tachUI mobile package provides essential mobile UI components and interactio
 ## Installation
 
 ```bash
-npm install @tachui/core@0.8.6-alpha @tachui/mobile@0.8.6-alpha
+npm install @tachui/core @tachui/mobile
 # or
-pnpm add @tachui/core@0.8.6-alpha @tachui/mobile@0.8.6-alpha
+pnpm add @tachui/core @tachui/mobile
 ```
 
 ## Quick Start
@@ -398,7 +398,7 @@ Check out complete examples:
 
 ## Current Status
 
-**Version 0.8.6-alpha** - Core modal components (ActionSheet, Alert)
+**Version 0.8.8-alpha** - Core modal components (ActionSheet, Alert)
 
 - ✅ **ActionSheet**: Full implementation with animations, accessibility, responsive design
 - ✅ **Alert**: Complete modal system with reactive support and keyboard navigation
@@ -406,7 +406,7 @@ Check out complete examples:
 
 ## Requirements
 
-- **@tachui/core** ^0.8.6-alpha or later
+- **@tachui/core** ^0.8.8-alpha or later
 - **TypeScript** 5.0+ (recommended)
 
 ## Contributing

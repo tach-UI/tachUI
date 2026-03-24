@@ -1,6 +1,6 @@
 {
   "name": "@tachui/cli",
-  "version": "0.8.6-alpha",
+  "version": "0.8.8-alpha",
   "description": "Tacho CLI - Comprehensive developer tooling for tachUI",
   "homepage": "https://tachui.dev/",
   "type": "module",

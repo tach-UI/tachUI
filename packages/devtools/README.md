@@ -35,7 +35,7 @@ Development & debugging tools for the tachUI framework. Provides runtime inspect
 ## Installation
 
 ```bash
-pnpm add @tachui/devtools@0.8.6-alpha
+pnpm add @tachui/devtools
 ```
 
 ## Usage
@@ -175,7 +175,7 @@ pnpm lint
 - **Debug**: ~5KB
 - **Testing**: ~5KB
 
-### Bundle Optimization (New in 0.8.6-alpha)
+### Bundle Optimization (New in 0.8.8-alpha)
 
 Enhanced production bundling with environment-specific exports:
 

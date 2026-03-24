@@ -24,9 +24,9 @@ tachUI core provides a SwiftUI-inspired declarative framework for building web a
 ### Installation
 
 ```bash
-npm install @tachui/core@0.8.6-alpha
+npm install @tachui/core
 # or
-pnpm add @tachui/core@0.8.6-alpha
+pnpm add @tachui/core
 ```
 
 ### Basic Example
@@ -166,7 +166,7 @@ tachUI's architecture provides:
 - **Memory-safe cleanup** - WeakMap-based automatic cleanup
 - **Sub-millisecond updates** - Direct DOM manipulation
 
-### Concatenation Optimization (New in 0.8.6-alpha)
+### Concatenation Optimization (New in 0.8.8-alpha)
 
 Revolutionary bundle size reduction for component concatenation patterns:
 

@@ -1,6 +1,6 @@
 {
   "name": "@tachui/modifiers",
-  "version": "0.8.6-alpha",
+  "version": "0.8.8-alpha",
   "description": "Essential styling modifiers for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
