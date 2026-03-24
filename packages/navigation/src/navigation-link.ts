@@ -19,6 +19,8 @@ import { useNavigationEnvironmentContext } from './navigation-environment'
 import { createNavigationRouter } from './navigation-router'
 import type { NavigationDestination, NavigationLinkOptions } from './types'
 
+let hasWarnedMissingNavigationLinkPath = false
+
 /**
  * NavigationLink component factory
  *
@@ -77,7 +79,18 @@ export function NavigationLink(
   // Internal state for interaction
   const [isPressed, setIsPressed] = createSignal(false)
   const linkId = `nav-link-${Date.now()}-${Math.random()}`
-  const destinationPath = options.tag || `/destination-${Date.now()}`
+  const destinationPath = options.path || options.tag || '#'
+  if (
+    !options.path &&
+    !options.tag &&
+    !hasWarnedMissingNavigationLinkPath &&
+    process.env.NODE_ENV !== 'production'
+  ) {
+    hasWarnedMissingNavigationLinkPath = true
+    console.warn(
+      'NavigationLink: no path/tag provided; falling back to href="#".'
+    )
+  }
 
   // Convert label to component if string
   const labelComponent =
@@ -197,7 +210,6 @@ export function NavigationLink(
       // Handle blur for accessibility
       console.log('NavigationLink blurred')
     },
-    role: 'link',
     tabIndex: options.disabled ? -1 : 0,
     'aria-disabled': options.disabled ? 'true' : undefined,
     ...(options.accessibilityLabel && {

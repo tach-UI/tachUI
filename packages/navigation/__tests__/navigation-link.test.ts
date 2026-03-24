@@ -67,8 +67,13 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
         tag: '/details',
       })
 
-      expect((navLink as any).props?.role).toBe('link')
       expect((navLink as any).props?.href).toBe('/details')
+    })
+
+    it('falls back to stable hash href when no path/tag is provided', () => {
+      const navLink = NavigationLink(mockLabel, mockDestination)
+
+      expect((navLink as any).props?.href).toBe('#')
     })
   })
 
@@ -306,6 +311,28 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
         ctrlKey: false,
         shiftKey: false,
         altKey: false,
+        defaultPrevented: false,
+        preventDefault,
+      })
+
+      expect(preventDefault).not.toHaveBeenCalled()
+      expect(onTap).not.toHaveBeenCalled()
+    })
+
+    it('does not intercept alt-modified clicks so native link behavior can work', () => {
+      const onTap = vi.fn()
+      const navLink = NavigationLink(mockLabel, mockDestination, {
+        onTap,
+      })
+
+      const onClick = (navLink as any).props?.onClick as Function
+      const preventDefault = vi.fn()
+      onClick({
+        button: 0,
+        metaKey: false,
+        ctrlKey: false,
+        shiftKey: false,
+        altKey: true,
         defaultPrevented: false,
         preventDefault,
       })

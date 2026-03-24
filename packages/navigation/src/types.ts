@@ -84,6 +84,7 @@ export interface NavigationViewOptions {
  */
 export interface NavigationLinkOptions {
   isActive?: boolean | Binding<boolean>
+  path?: string
   tag?: string
   onTap?: () => void
   disabled?: boolean
