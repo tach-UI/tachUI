@@ -83,10 +83,18 @@ const packagesSidebar = [
     ],
   },
   {
+    text: 'Infrastructure',
+    items: [
+      { text: '@tachui/registry', link: '/packages/registry/' },
+      { text: '@tachui/types', link: '/packages/types/' },
+    ],
+  },
+  {
     text: 'Development Tools',
     items: [
       { text: '@tachui/cli', link: '/packages/cli/' },
       { text: '@tachui/devtools', link: '/packages/devtools/' },
+      { text: '@tachui/eslint-plugin', link: '/packages/eslint-plugin/' },
     ],
   },
 ]

@@ -3,6 +3,46 @@ import { Toggle } from '../../src/controls/Toggle'
 import { createSignal } from '@tachui/core'
 import { configureCore } from '@tachui/core'
 
+function findElementByTag(node: any, tag: string): any | null {
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const found = findElementByTag(item, tag)
+      if (found) return found
+    }
+    return null
+  }
+
+  if (!node || typeof node !== 'object') return null
+  if (node.tag === tag) return node
+  if (!Array.isArray(node.children)) return null
+
+  for (const child of node.children) {
+    const found = findElementByTag(child, tag)
+    if (found) return found
+  }
+
+  return null
+}
+
+function findElementsByTag(node: any, tag: string, output: any[] = []): any[] {
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      findElementsByTag(item, tag, output)
+    }
+    return output
+  }
+
+  if (!node || typeof node !== 'object') return output
+  if (node.tag === tag) output.push(node)
+  if (!Array.isArray(node.children)) return output
+
+  for (const child of node.children) {
+    findElementsByTag(child, tag, output)
+  }
+
+  return output
+}
+
 vi.mock('../../runtime/renderer', () => ({
   DOMRenderer: vi.fn().mockImplementation(() => ({
     render: vi.fn(),
@@ -88,6 +128,80 @@ describe('Toggle Component', () => {
 
     expect(leadingToggle).toBeDefined()
     expect(trailingToggle).toBeDefined()
+  })
+
+  it('should associate switch input with visible label text via aria-labelledby', () => {
+    const [isOn, setIsOn] = createSignal(false)
+    const toggle = Toggle(isOn, {
+      onToggle: setIsOn,
+      label: 'Enable notifications',
+      variant: 'switch',
+    })
+
+    const rendered = toggle.render()
+    const input = findElementByTag(rendered, 'input')
+    const labelElement = findElementByTag(rendered, 'label')
+    const spans = findElementsByTag(rendered, 'span')
+    const label = spans.find(span => typeof span.props?.id === 'string')
+
+    expect(input).toBeDefined()
+    expect(labelElement).toBeDefined()
+    expect(labelElement?.props?.for).toBe(input.props?.id)
+    expect(label).toBeDefined()
+    expect(input.props?.id).toMatch(/-input$/)
+    expect(label?.props?.id).toMatch(/-label$/)
+    expect(input.props?.['aria-labelledby']).toBe(label?.props?.id)
+  })
+
+  it('should associate checkbox input with visible label text via aria-labelledby', () => {
+    const [isOn, setIsOn] = createSignal(true)
+    const toggle = Toggle(isOn, {
+      onToggle: setIsOn,
+      label: 'Accept terms',
+      variant: 'checkbox',
+    })
+
+    const rendered = toggle.render()
+    const input = findElementByTag(rendered, 'input')
+    const labelElement = findElementByTag(rendered, 'label')
+    const spans = findElementsByTag(rendered, 'span')
+    const label = spans.find(span => typeof span.props?.id === 'string')
+
+    expect(input).toBeDefined()
+    expect(labelElement).toBeDefined()
+    expect(labelElement?.props?.for).toBe(input.props?.id)
+    expect(label).toBeDefined()
+    expect(input.props?.['aria-labelledby']).toBe(label?.props?.id)
+  })
+
+  it('should prefer explicit accessibilityLabel over aria-labelledby', () => {
+    const [isOn, setIsOn] = createSignal(false)
+    const toggle = Toggle(isOn, {
+      onToggle: setIsOn,
+      label: 'Visible label',
+      accessibilityLabel: 'Programmatic label',
+      variant: 'switch',
+    })
+
+    const rendered = toggle.render()
+    const input = findElementByTag(rendered, 'input')
+
+    expect(input.props?.['aria-label']).toBe('Programmatic label')
+    expect(input.props?.['aria-labelledby']).toBeUndefined()
+  })
+
+  it('should not set naming attributes when both label and accessibilityLabel are absent', () => {
+    const [isOn, setIsOn] = createSignal(false)
+    const toggle = Toggle(isOn, {
+      onToggle: setIsOn,
+      variant: 'switch',
+    })
+
+    const rendered = toggle.render()
+    const input = findElementByTag(rendered, 'input')
+
+    expect(input.props?.['aria-label']).toBeUndefined()
+    expect(input.props?.['aria-labelledby']).toBeUndefined()
   })
 
   it('should support disabled state', () => {

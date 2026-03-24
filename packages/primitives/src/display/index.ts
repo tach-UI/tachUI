@@ -4,12 +4,15 @@
 
 export {
   Text,
+  Heading,
   EnhancedText,
   TextFormat,
   TextStyles,
   Typography,
   type TextProps,
   type TextFormatting,
+  type HeadingProps,
+  type HeadingLevel,
 } from './Text'
 
 export {

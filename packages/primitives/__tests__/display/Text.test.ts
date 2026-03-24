@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TextProps } from '../../src/display/Text'
 import {
   EnhancedText,
+  Heading,
   Text,
   TextFormat,
   TextStyles,
@@ -348,6 +349,54 @@ describe('EnhancedText', () => {
   })
 
   describe('Accessibility', () => {
+    it('should provide heading shorthand helpers on Text for levels 1 through 6', () => {
+      const shorthandCases = [
+        { build: Text.H1, expectedTag: 'h1' },
+        { build: Text.H2, expectedTag: 'h2' },
+        { build: Text.H3, expectedTag: 'h3' },
+        { build: Text.H4, expectedTag: 'h4' },
+        { build: Text.H5, expectedTag: 'h5' },
+        { build: Text.H6, expectedTag: 'h6' },
+      ] as const
+
+      shorthandCases.forEach(({ build, expectedTag }) => {
+        const heading = build(`Title ${expectedTag}`)
+        const rendered = (heading as any).render()
+        expect(rendered[0].tag).toBe(expectedTag)
+      })
+    })
+
+    it('should provide dedicated Heading component API', () => {
+      const heading = Heading('Section title', { level: 3 })
+      const rendered = (heading as any).render()
+      expect(rendered[0].tag).toBe('h3')
+    })
+
+    it('should default Heading level to h2 when level is omitted', () => {
+      const warnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => undefined)
+
+      const heading = Heading('Section title')
+      const rendered = (heading as any).render()
+
+      expect(rendered[0].tag).toBe('h2')
+      expect(warnSpy).toHaveBeenCalled()
+
+      warnSpy.mockRestore()
+    })
+
+    it('should pass additional props through Heading helper', () => {
+      const heading = Heading('Styled heading', {
+        level: 4,
+        font: { weight: 'bold' },
+        debugLabel: 'heading-debug',
+      })
+
+      expect((heading as any).props?.font?.weight).toBe('bold')
+      expect((heading as any).props?.debugLabel).toBe('heading-debug')
+    })
+
     it('should apply accessibility label', () => {
       const text = new EnhancedText({
         content: 'Test',
@@ -368,15 +417,41 @@ describe('EnhancedText', () => {
       // Test would verify role is set
     })
 
-    it('should apply heading role with level', () => {
+    it('should map heading accessibility levels 1 through 6 to h1 through h6', () => {
+      const headingLevels: Array<1 | 2 | 3 | 4 | 5 | 6> = [1, 2, 3, 4, 5, 6]
+
+      headingLevels.forEach(level => {
+        const text = new EnhancedText({
+          content: `Heading ${level}`,
+          accessibilityRole: 'heading',
+          accessibilityLevel: level,
+        })
+
+        const rendered = text.render()
+        expect(rendered[0].tag).toBe(`h${level}`)
+      })
+    })
+
+    it('should default heading role to h2 when level is omitted', () => {
       const text = new EnhancedText({
-        content: 'Heading',
+        content: 'Section heading',
         accessibilityRole: 'heading',
-        accessibilityLevel: 2,
       })
 
-      text.render()
-      // Test would verify role and aria-level are set
+      const rendered = text.render()
+      expect(rendered[0].tag).toBe('h2')
+    })
+
+    it('should preserve explicit element override over accessibility heading tag', () => {
+      const text = new EnhancedText({
+        content: 'Heading with explicit tag',
+        accessibilityRole: 'heading',
+        accessibilityLevel: 1,
+        element: 'h3',
+      })
+
+      const rendered = text.render()
+      expect(rendered[0].tag).toBe('h3')
     })
 
     it('should disable text selection', () => {
@@ -546,6 +621,17 @@ describe('Text Factory Function', () => {
 })
 
 describe('TextStyles Presets', () => {
+  it('should create semantic heading elements from TextStyles.heading', () => {
+    const headingProps = TextStyles.heading(1)
+    const text = new EnhancedText({
+      content: 'Page title',
+      ...headingProps,
+    })
+    const rendered = text.render()
+
+    expect(rendered[0].tag).toBe('h1')
+  })
+
   it('should create LargeTitle text', () => {
     const text = TextStyles.LargeTitle('Large Title')
     expect(text).toBeDefined()

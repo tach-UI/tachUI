@@ -14,6 +14,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createSignal } from '@tachui/core'
 import {
   ActionSheet,
+  ActionSheetComponent,
   ActionSheetUtils,
   ActionSheetStyles,
 } from '../src/ActionSheet'
@@ -385,6 +386,92 @@ describe('ActionSheet Component', () => {
 
       expect(actionSheet).toBeDefined()
       // Accessibility attributes are set during rendering
+    })
+
+    it('should set dialog role and aria-modal on sheet content', () => {
+      const component = new ActionSheetComponent({
+        buttons: [{ label: 'OK', role: 'default', onPress: vi.fn() }],
+        isPresented: createSignal(true)[0],
+      })
+
+      const content = (component as any).createSheetContent()
+
+      expect(content.props?.role).toBe('dialog')
+      expect(content.props?.['aria-modal']).toBe('true')
+      expect(content.props?.['aria-label']).toBe('Action sheet')
+      expect(content.props?.tabindex).toBe('-1')
+    })
+
+    it('should use title for aria-labelledby when no explicit accessibilityLabel is provided', () => {
+      const component = new ActionSheetComponent({
+        title: 'Photo options',
+        message: 'Select one action',
+        buttons: [{ label: 'OK', role: 'default', onPress: vi.fn() }],
+        isPresented: createSignal(true)[0],
+      })
+
+      const content = (component as any).createSheetContent()
+
+      expect(content.props?.['aria-labelledby']).toBe(`${component.id}-title`)
+      expect(content.props?.['aria-describedby']).toBe(`${component.id}-message`)
+      expect(content.props?.['aria-label']).toBeUndefined()
+    })
+
+    it('should use explicit accessibilityLabel when provided', () => {
+      const component = new ActionSheetComponent({
+        title: 'Ignored title',
+        buttons: [{ label: 'OK', role: 'default', onPress: vi.fn() }],
+        isPresented: createSignal(true)[0],
+        accessibilityLabel: 'Photo action menu',
+      })
+
+      const content = (component as any).createSheetContent()
+
+      expect(content.props?.['aria-label']).toBe('Photo action menu')
+      expect(content.props?.['aria-labelledby']).toBeUndefined()
+    })
+
+    it('should keep aria-describedby when accessibilityLabel and message are both provided', () => {
+      const component = new ActionSheetComponent({
+        message: 'Choose an option',
+        buttons: [{ label: 'OK', role: 'default', onPress: vi.fn() }],
+        isPresented: createSignal(true)[0],
+        accessibilityLabel: 'Action menu',
+      })
+
+      const content = (component as any).createSheetContent()
+
+      expect(content.props?.['aria-label']).toBe('Action menu')
+      expect(content.props?.['aria-describedby']).toBe(`${component.id}-message`)
+    })
+
+    it('should mark overlay as presentation for assistive technologies', () => {
+      const component = new ActionSheetComponent({
+        buttons: [{ label: 'OK', role: 'default', onPress: vi.fn() }],
+        isPresented: createSignal(true)[0],
+      })
+
+      const overlay = (component as any).createOverlay()
+
+      expect(overlay.props?.role).toBe('presentation')
+      expect(overlay.props?.['aria-hidden']).toBe('true')
+    })
+
+    it('should move focus to first actionable button when opened', () => {
+      const component = new ActionSheetComponent({
+        buttons: [{ label: 'OK', role: 'default', onPress: vi.fn() }],
+        isPresented: createSignal(true)[0],
+      })
+
+      const buttonElement = { focus: vi.fn() }
+      ;(component as any).sheetElement = {
+        querySelector: vi.fn(() => buttonElement),
+        focus: vi.fn(),
+      }
+
+      ;(component as any).focusDialogOnOpen()
+
+      expect(buttonElement.focus).toHaveBeenCalledTimes(1)
     })
   })
 

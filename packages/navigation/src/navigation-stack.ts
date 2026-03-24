@@ -10,6 +10,11 @@ import { createEffect, createSignal, isBinding } from '@tachui/core'
 import { HStack, HTML, Text, Button, VStack } from '@tachui/primitives'
 import { _setCurrentNavigationContext } from './navigation-view'
 import { _setNavigationEnvironmentContext } from './navigation-environment'
+import {
+  applyDocumentHeadForStack,
+  clearDocumentHeadForNavigation,
+  extractDocumentHeadFromComponent,
+} from './document-head'
 import { NavigationPath, createNavigationPath } from './navigation-path'
 import type {
   NavigationContext,
@@ -84,6 +89,9 @@ class NavigationStackContext implements NavigationContext {
       path,
       component,
       title,
+      metadata: {
+        documentHead: extractDocumentHeadFromComponent(component),
+      },
       timestamp: Date.now(),
     }
 
@@ -145,6 +153,9 @@ class NavigationStackContext implements NavigationContext {
         path,
         component,
         title,
+        metadata: {
+          documentHead: extractDocumentHeadFromComponent(component),
+        },
         timestamp: Date.now(),
       }
 
@@ -172,6 +183,9 @@ class NavigationStackContext implements NavigationContext {
       path,
       component,
       title,
+      metadata: {
+        documentHead: extractDocumentHeadFromComponent(component),
+      },
       timestamp: Date.now(),
     }
 
@@ -238,6 +252,7 @@ export function NavigationStack(
   // Create navigation context
   const navigationContext = new NavigationStackContext(navigationId, stack => {
     setNavigationStack(stack)
+    applyDocumentHeadForStack(navigationId, stack)
 
     // Update current title
     const currentEntry = stack[stack.length - 1]
@@ -387,6 +402,7 @@ export function NavigationStack(
 
   // Set up cleanup
   const cleanup = () => {
+    clearDocumentHeadForNavigation(navigationId)
     // Clear context if this was the current one
     if (_setCurrentNavigationContext) {
       _setCurrentNavigationContext(null)

@@ -105,6 +105,8 @@ export {
   NavigationViewBuilder,
 } from './navigation-view'
 
+export { DocumentHead, withDocumentHead, useDocumentMeta } from './document-head'
+
 // TabView exports are already included above - no duplicates needed
 
 // Router and Navigation Management
@@ -176,6 +178,8 @@ export type {
   TabCoordinator,
   URLComponents,
   NavigationCoordinator,
+  DocumentHeadConfig,
+  DocumentHeadValue,
   DeepLinkConfig,
   NavigationPersistenceConfig,
   NavigationGestureConfig,

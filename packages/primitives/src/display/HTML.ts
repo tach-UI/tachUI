@@ -68,6 +68,24 @@ export const HTML = {
   },
 
   /**
+   * Create an anchor element with modifier support
+   */
+  a: (
+    props: { children?: any; href?: string; onClick?: (event: MouseEvent) => void } = {}
+  ) => {
+    const component = new ElementComponent(
+      props,
+      'a',
+      props.children ? String(props.children) : undefined,
+      {
+        href: props.href,
+        onclick: props.onClick,
+      }
+    )
+    return withModifiers(component)
+  },
+
+  /**
    * Create a paragraph element with modifier support
    */
   p: (props: { children?: any } = {}) => {

@@ -11,6 +11,11 @@ import { Button, HStack, HTML, Text, VStack } from '@tachui/primitives'
 import { NavigationManagerSingleton } from './navigation-manager'
 import { createNavigationRouter } from './navigation-router'
 import { _setNavigationEnvironmentContext } from './navigation-environment'
+import {
+  applyDocumentHeadForStack,
+  clearDocumentHeadForNavigation,
+  extractDocumentHeadFromComponent,
+} from './document-head'
 import type {
   NavigationBarConfig,
   NavigationComponent,
@@ -59,6 +64,9 @@ class NavigationContextImpl implements NavigationContext {
       path,
       component,
       title,
+      metadata: {
+        documentHead: extractDocumentHeadFromComponent(component),
+      },
       timestamp: Date.now(),
     }
 
@@ -120,6 +128,9 @@ class NavigationContextImpl implements NavigationContext {
         path,
         component,
         title,
+        metadata: {
+          documentHead: extractDocumentHeadFromComponent(component),
+        },
         timestamp: Date.now(),
       }
 
@@ -147,6 +158,9 @@ class NavigationContextImpl implements NavigationContext {
       path,
       component,
       title,
+      metadata: {
+        documentHead: extractDocumentHeadFromComponent(component),
+      },
       timestamp: Date.now(),
     }
 
@@ -198,6 +212,7 @@ export function NavigationView(
   // Create navigation context
   const navigationContext = new NavigationContextImpl(navigationId, stack => {
     setNavigationStack(stack)
+    applyDocumentHeadForStack(navigationId, stack)
 
     // Update current title
     const currentEntry = stack[stack.length - 1]
@@ -316,6 +331,7 @@ export function NavigationView(
   // Set up cleanup
   const cleanup = () => {
     NavigationManagerSingleton.getInstance().unregisterRouter(navigationId)
+    clearDocumentHeadForNavigation(navigationId)
     // Clear context if this was the current one
     if (_currentNavigationContext === navigationContext) {
       _setCurrentNavigationContext(null)

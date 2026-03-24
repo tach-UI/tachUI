@@ -132,6 +132,31 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
     }
   }
 
+  private getInputId(): string {
+    return `${this.id}-input`
+  }
+
+  private getLabelId(): string {
+    return `${this.id}-label`
+  }
+
+  private getInputAccessibilityProps() {
+    const labelContent = this.resolveLabel()
+    const hasLabel = labelContent !== null
+
+    return {
+      id: this.getInputId(),
+      'aria-label': this.props.accessibilityLabel,
+      'aria-labelledby':
+        this.props.accessibilityLabel || !hasLabel
+          ? undefined
+          : this.getLabelId(),
+      'aria-describedby': this.props.accessibilityHint
+        ? `${this.id}-hint`
+        : undefined,
+    }
+  }
+
   /**
    * Helper to render component content safely
    */
@@ -213,6 +238,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
     const thumbTransform = isOn
       ? `translateX(${parseInt(sizeStyles.width) - parseInt(sizeStyles.thumbSize) - 2}px)`
       : 'translateX(2px)'
+    const inputAccessibilityProps = this.getInputAccessibilityProps()
 
     return h(
       'div',
@@ -236,6 +262,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
           }
         },
         type: 'checkbox',
+        id: inputAccessibilityProps.id,
         checked: isOn,
         disabled: isDisabled,
         style: {
@@ -246,10 +273,9 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
           margin: 0,
           cursor: isDisabled ? 'not-allowed' : 'pointer',
         },
-        'aria-label': this.props.accessibilityLabel,
-        'aria-describedby': this.props.accessibilityHint
-          ? `${this.id}-hint`
-          : undefined,
+        'aria-label': inputAccessibilityProps['aria-label'],
+        'aria-labelledby': inputAccessibilityProps['aria-labelledby'],
+        'aria-describedby': inputAccessibilityProps['aria-describedby'],
       }),
 
       // Switch track
@@ -268,7 +294,6 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
             border: '1px solid rgba(0,0,0,0.1)',
             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
           },
-          onClick: this.handleToggle,
         },
         // Switch thumb
         h('div', {
@@ -297,6 +322,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
     const isDisabled = this.isDisabled()
     const sizeStyles = this.getSizeStyles()
     const { color = '#007AFF' } = this.props
+    const inputAccessibilityProps = this.getInputAccessibilityProps()
 
     return h(
       'div',
@@ -320,6 +346,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
           }
         },
         type: 'checkbox',
+        id: inputAccessibilityProps.id,
         checked: isOn,
         disabled: isDisabled,
         style: {
@@ -330,6 +357,9 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
           margin: 0,
           cursor: isDisabled ? 'not-allowed' : 'pointer',
         },
+        'aria-label': inputAccessibilityProps['aria-label'],
+        'aria-labelledby': inputAccessibilityProps['aria-labelledby'],
+        'aria-describedby': inputAccessibilityProps['aria-describedby'],
       }),
 
       // Checkbox visual
@@ -349,7 +379,6 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
             opacity: isDisabled ? 0.5 : 1,
             transition: 'all 0.2s ease',
           },
-          onClick: this.handleToggle,
         },
         ...(isOn
           ? [
@@ -434,7 +463,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
   /**
    * Render label content
    */
-  private renderLabel() {
+  private renderLabel(enableClickFallback = false) {
     const labelContent = this.resolveLabel()
     if (!labelContent) return null
 
@@ -443,12 +472,16 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
     return h(
       'span',
       {
+        id: this.getLabelId(),
         style: {
           fontSize: sizeStyles.fontSize,
           color: this.isDisabled() ? '#9ca3af' : '#374151',
           cursor: this.isDisabled() ? 'not-allowed' : 'pointer',
         },
-        onClick: this.isDisabled() ? undefined : this.handleToggle,
+        onClick:
+          enableClickFallback && !this.isDisabled()
+            ? this.handleToggle
+            : undefined,
       },
       ...(typeof labelContent === 'string'
         ? [text(labelContent)]
@@ -458,12 +491,13 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
 
   render() {
     const {
+      variant = 'switch',
       labelPosition = 'trailing',
       spacing = 8,
       accessibilityHint,
     } = this.props
 
-    const label = this.renderLabel()
+    const label = this.renderLabel(variant === 'button')
     const control = this.renderToggleControl()
 
     // Arrange label and control based on position
@@ -474,18 +508,40 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
           ? [control, label]
           : [control]
 
+    const interactiveContent =
+      variant === 'button'
+        ? h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: label ? `${spacing}px` : '0',
+                cursor: this.isDisabled() ? 'not-allowed' : 'pointer',
+              },
+            },
+            ...children
+          )
+        : h(
+            'label',
+            {
+              for: this.getInputId(),
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: label ? `${spacing}px` : '0',
+                cursor: this.isDisabled() ? 'not-allowed' : 'pointer',
+              },
+            },
+            ...children
+          )
+
     return h(
       'div',
       {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: label ? `${spacing}px` : '0',
-          cursor: this.isDisabled() ? 'not-allowed' : 'pointer',
-        },
         'aria-describedby': accessibilityHint ? `${this.id}-hint` : undefined,
       },
-      ...children,
+      interactiveContent,
 
       // Accessibility hint
       ...(accessibilityHint

@@ -41,6 +41,7 @@ describe('SpacerComponent', () => {
       expect(result).toBeDefined()
       expect(result.type).toBe('element')
       expect(result.tag).toBe('div')
+      expect(result.props['aria-hidden']).toBe('true')
       expect(result.props.style).toEqual({
         flexGrow: '1',
         flexShrink: '1',
@@ -82,6 +83,7 @@ describe('SpacerComponent', () => {
       const result = spacer.render()
       const style = result.props.style
 
+      expect(result.props['aria-hidden']).toBe('true')
       expect(style.flexGrow).toBe('1')
       expect(style.flexShrink).toBe('1')
       expect(style.flexBasis).toBe('0')

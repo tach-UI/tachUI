@@ -314,8 +314,12 @@ export class ActionSheetComponent
   }
 
   private createSheetContent(): DOMNode {
+    const dialogAccessibilityProps = this.getDialogAccessibilityProps()
+
     const content = h('div', {
       'data-actionsheet-content': this.id, // ENHANCED: Add data attribute for lifecycle hooks
+      ...dialogAccessibilityProps,
+      tabindex: '-1',
       style: {
         backgroundColor: this.theme.colors.background,
         borderRadius: `${this.theme.spacing.borderRadius}px`,
@@ -343,6 +347,7 @@ export class ActionSheetComponent
       if (headerDOM) {
         if (this.props.title) {
           const title = h('div', {
+            id: `${this.id}-title`,
             style: {
               fontSize: `${this.theme.typography.titleSize}px`,
               fontWeight: this.theme.typography.titleWeight,
@@ -361,6 +366,7 @@ export class ActionSheetComponent
 
         if (this.props.message) {
           const message = h('div', {
+            id: `${this.id}-message`,
             style: {
               fontSize: `${this.theme.typography.messageSize}px`,
               color: this.theme.colors.text,
@@ -415,6 +421,71 @@ export class ActionSheetComponent
     }
 
     return content
+  }
+
+  private getDialogAccessibilityProps(): Record<string, string> {
+    const accessibilityProps: Record<string, string> = {
+      role: 'dialog',
+      'aria-modal': 'true',
+    }
+
+    if (this.props.message) {
+      accessibilityProps['aria-describedby'] = `${this.id}-message`
+    }
+
+    const explicitLabel = this.props.accessibilityLabel?.trim()
+    if (explicitLabel) {
+      accessibilityProps['aria-label'] = explicitLabel
+      return accessibilityProps
+    }
+
+    if (this.props.title) {
+      accessibilityProps['aria-labelledby'] = `${this.id}-title`
+      return accessibilityProps
+    }
+
+    accessibilityProps['aria-label'] = 'Action sheet'
+    return accessibilityProps
+  }
+
+  private createOverlay(): DOMNode {
+    return h('div', {
+      'data-actionsheet-overlay': this.id, // ENHANCED: Add data attribute for lifecycle hooks
+      role: 'presentation',
+      'aria-hidden': 'true',
+      style: {
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        right: '0',
+        bottom: '0',
+        backgroundColor: this.theme.colors.overlay,
+        opacity: '0',
+        transition: `opacity ${this.theme.animation.duration}ms ${this.theme.animation.easing}`,
+      },
+      onclick: () => {
+        if (this.allowsBackdropDismissal() && !this.isAnimating) {
+          this.dismiss()
+        }
+      },
+    })
+  }
+
+  private focusDialogOnOpen(): void {
+    if (!this.sheetElement) return
+
+    const firstFocusableButton = this.sheetElement.querySelector(
+      'button:not([disabled])'
+    ) as HTMLElement | null
+
+    if (firstFocusableButton && typeof firstFocusableButton.focus === 'function') {
+      firstFocusableButton.focus()
+      return
+    }
+
+    if (typeof this.sheetElement.focus === 'function') {
+      this.sheetElement.focus()
+    }
   }
 
   private createSheetPresentation(): DOMNode {
@@ -538,6 +609,9 @@ export class ActionSheetComponent
       // Use requestAnimationFrame for reliable DOM-ready animation trigger
       requestAnimationFrame(() => {
         if (this.sheetElement) {
+          let isCompleted = false
+          let fallbackTimeout: ReturnType<typeof setTimeout> | undefined
+
           if (presentationStyle === 'sheet') {
             this.sheetElement.style.transform = 'translateY(0)'
           } else {
@@ -547,7 +621,15 @@ export class ActionSheetComponent
 
           // Use transition event listener for completion
           const handleTransitionEnd = () => {
+            if (isCompleted) return
+            isCompleted = true
+
+            if (fallbackTimeout) {
+              clearTimeout(fallbackTimeout)
+            }
+
             this.isAnimating = false
+            this.focusDialogOnOpen()
             this.sheetElement?.removeEventListener(
               'transitionend',
               handleTransitionEnd
@@ -560,7 +642,7 @@ export class ActionSheetComponent
           )
 
           // Fallback timeout
-          const fallbackTimeout = setTimeout(
+          fallbackTimeout = setTimeout(
             handleTransitionEnd,
             this.theme.animation.duration
           )
@@ -594,24 +676,7 @@ export class ActionSheetComponent
     })
 
     // Overlay
-    const overlay = h('div', {
-      'data-actionsheet-overlay': this.id, // ENHANCED: Add data attribute for lifecycle hooks
-      style: {
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        right: '0',
-        bottom: '0',
-        backgroundColor: this.theme.colors.overlay,
-        opacity: '0',
-        transition: `opacity ${this.theme.animation.duration}ms ${this.theme.animation.easing}`,
-      },
-      onclick: () => {
-        if (this.allowsBackdropDismissal() && !this.isAnimating) {
-          this.dismiss()
-        }
-      },
-    })
+    const overlay = this.createOverlay()
 
     this.overlayElement = overlay.element as HTMLElement
 

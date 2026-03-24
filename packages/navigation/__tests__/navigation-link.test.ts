@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { HTML, Text } from '@tachui/primitives'
 import {
+  __resetNavigationLinkWarnForTests,
   NavigationLink,
   NavigationIconLink,
   NavigationListLink,
@@ -24,6 +25,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
   let mockComponentLabel: any
 
   beforeEach(() => {
+    __resetNavigationLinkWarnForTests()
     mockDestination = () =>
       HTML.div({ children: 'Detail View' }).build()
     mockLabel = 'Go to Details'
@@ -60,6 +62,20 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
       const navLink = NavigationLink(mockLabel, mockDestination)
 
       expect(navLink).toBeDefined()
+    })
+
+    it('renders crawlable anchor semantics with href', () => {
+      const navLink = NavigationLink(mockLabel, mockDestination, {
+        tag: '/details',
+      })
+
+      expect((navLink as any).props?.href).toBe('/details')
+    })
+
+    it('falls back to stable hash href when no path/tag is provided', () => {
+      const navLink = NavigationLink(mockLabel, mockDestination)
+
+      expect((navLink as any).props?.href).toBe('#')
     })
   })
 
@@ -258,6 +274,73 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
 
       expect(navLink).toBeDefined()
       expect((navLink as any)._navigationLink.type).toBe('NavigationLink')
+      expect((navLink as any).props?.['aria-disabled']).toBe('true')
+    })
+
+    it('intercepts primary clicks for client-side navigation', () => {
+      const onTap = vi.fn()
+      const navLink = NavigationLink(mockLabel, mockDestination, {
+        onTap,
+      })
+
+      const onClick = (navLink as any).props?.onClick as Function
+      const preventDefault = vi.fn()
+      onClick({
+        button: 0,
+        metaKey: false,
+        ctrlKey: false,
+        shiftKey: false,
+        altKey: false,
+        defaultPrevented: false,
+        preventDefault,
+      })
+
+      expect(preventDefault).toHaveBeenCalled()
+      expect(onTap).toHaveBeenCalled()
+    })
+
+    it('does not intercept modified clicks so native link behavior can work', () => {
+      const onTap = vi.fn()
+      const navLink = NavigationLink(mockLabel, mockDestination, {
+        onTap,
+      })
+
+      const onClick = (navLink as any).props?.onClick as Function
+      const preventDefault = vi.fn()
+      onClick({
+        button: 0,
+        metaKey: true,
+        ctrlKey: false,
+        shiftKey: false,
+        altKey: false,
+        defaultPrevented: false,
+        preventDefault,
+      })
+
+      expect(preventDefault).not.toHaveBeenCalled()
+      expect(onTap).not.toHaveBeenCalled()
+    })
+
+    it('does not intercept alt-modified clicks so native link behavior can work', () => {
+      const onTap = vi.fn()
+      const navLink = NavigationLink(mockLabel, mockDestination, {
+        onTap,
+      })
+
+      const onClick = (navLink as any).props?.onClick as Function
+      const preventDefault = vi.fn()
+      onClick({
+        button: 0,
+        metaKey: false,
+        ctrlKey: false,
+        shiftKey: false,
+        altKey: true,
+        defaultPrevented: false,
+        preventDefault,
+      })
+
+      expect(preventDefault).not.toHaveBeenCalled()
+      expect(onTap).not.toHaveBeenCalled()
     })
 
     it('supports navigation with data passing', () => {

@@ -68,6 +68,28 @@ export interface NavigationContext {
 }
 
 /**
+ * Reactive string-like input for head metadata
+ */
+export type DocumentHeadValue = string | Accessor<string>
+
+/**
+ * Per-view head metadata configuration
+ */
+export interface DocumentHeadConfig {
+  title?: DocumentHeadValue
+  titleTemplate?: DocumentHeadValue
+  description?: DocumentHeadValue
+  canonical?: DocumentHeadValue
+  openGraph?: {
+    title?: DocumentHeadValue
+    description?: DocumentHeadValue
+    url?: DocumentHeadValue
+    image?: DocumentHeadValue
+    type?: DocumentHeadValue
+  }
+}
+
+/**
  * NavigationView configuration options
  */
 export interface NavigationViewOptions {
@@ -84,6 +106,7 @@ export interface NavigationViewOptions {
  */
 export interface NavigationLinkOptions {
   isActive?: boolean | Binding<boolean>
+  path?: string
   tag?: string
   onTap?: () => void
   disabled?: boolean
