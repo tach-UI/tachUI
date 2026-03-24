@@ -80,6 +80,8 @@ const packagesSidebar = [
       { text: '@tachui/mobile', link: '/packages/mobile/' },
       { text: '@tachui/responsive', link: '/packages/responsive/' },
       { text: '@tachui/viewport', link: '/packages/viewport/' },
+      { text: '@tachui/registry', link: '/packages/registry/' },
+      { text: '@tachui/types', link: '/packages/types/' },
     ],
   },
   {
@@ -87,6 +89,7 @@ const packagesSidebar = [
     items: [
       { text: '@tachui/cli', link: '/packages/cli/' },
       { text: '@tachui/devtools', link: '/packages/devtools/' },
+      { text: '@tachui/eslint-plugin', link: '/packages/eslint-plugin/' },
     ],
   },
 ]
