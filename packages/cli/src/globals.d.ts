@@ -2,10 +2,8 @@
  * Global type definitions for TachUI CLI
  */
 
-declare global {
-  // Development flag for debug builds
-  var __DEV__: boolean
-}
+// Development flag for debug builds
+declare var __DEV__: boolean
 
 declare module '@tachui/devtools' {
   export interface ModifierParameterEntry {
@@ -66,6 +64,3 @@ declare module '@tachui/core/modifiers/type-generator' {
     conflicts: ModifierMetadataSnapshotConflict[]
   }
 }
-
-// This file needs to export something to be treated as a module
-export {}
