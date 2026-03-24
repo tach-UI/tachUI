@@ -64,6 +64,3 @@ declare module '@tachui/core/modifiers/type-generator' {
     conflicts: ModifierMetadataSnapshotConflict[]
   }
 }
-
-// This file needs to export something to be treated as a module
-export {}
