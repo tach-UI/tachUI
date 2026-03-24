@@ -21,5 +21,8 @@
     "@tachui/types": "0.8.9",
     "@tachui/viewport": "0.8.9"
   },
-  "changesets": []
+  "changesets": [
+    "early-deers-pull",
+    "nice-eggs-prove"
+  ]
 }
