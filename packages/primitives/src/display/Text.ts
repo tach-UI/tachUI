@@ -98,7 +98,7 @@ type TextComponent = ModifiableComponentWithModifiers<TextProps> &
   Concatenatable<TextProps>
 type HeadingAdditionalProps = Omit<
   Partial<TextProps>,
-  'accessibilityRole' | 'accessibilityLevel'
+  'content' | 'accessibilityRole' | 'accessibilityLevel'
 >
 
 export interface HeadingProps extends HeadingAdditionalProps {
@@ -298,6 +298,11 @@ export function Heading(
   content?: TextContent,
   options: HeadingProps = {}
 ): TextComponent {
+  if (options.level === undefined && process.env.NODE_ENV !== 'production') {
+    console.warn(
+      'Heading: no level provided, defaulting to level 2. Pass { level: 1 } for primary page headings.'
+    )
+  }
   const { level = 2, ...additionalProps } = options
   return createHeadingWithLevel(level)(content, additionalProps)
 }

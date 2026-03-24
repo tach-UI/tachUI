@@ -349,16 +349,52 @@ describe('EnhancedText', () => {
   })
 
   describe('Accessibility', () => {
-    it('should provide heading shorthand helpers on Text', () => {
-      const heading = Text.H1('Main title')
-      const rendered = (heading as any).render()
-      expect(rendered[0].tag).toBe('h1')
+    it('should provide heading shorthand helpers on Text for levels 1 through 6', () => {
+      const shorthandCases = [
+        { build: Text.H1, expectedTag: 'h1' },
+        { build: Text.H2, expectedTag: 'h2' },
+        { build: Text.H3, expectedTag: 'h3' },
+        { build: Text.H4, expectedTag: 'h4' },
+        { build: Text.H5, expectedTag: 'h5' },
+        { build: Text.H6, expectedTag: 'h6' },
+      ] as const
+
+      shorthandCases.forEach(({ build, expectedTag }) => {
+        const heading = build(`Title ${expectedTag}`)
+        const rendered = (heading as any).render()
+        expect(rendered[0].tag).toBe(expectedTag)
+      })
     })
 
     it('should provide dedicated Heading component API', () => {
       const heading = Heading('Section title', { level: 3 })
       const rendered = (heading as any).render()
       expect(rendered[0].tag).toBe('h3')
+    })
+
+    it('should default Heading level to h2 when level is omitted', () => {
+      const warnSpy = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => undefined)
+
+      const heading = Heading('Section title')
+      const rendered = (heading as any).render()
+
+      expect(rendered[0].tag).toBe('h2')
+      expect(warnSpy).toHaveBeenCalled()
+
+      warnSpy.mockRestore()
+    })
+
+    it('should pass additional props through Heading helper', () => {
+      const heading = Heading('Styled heading', {
+        level: 4,
+        font: { weight: 'bold' },
+        debugLabel: 'heading-debug',
+      })
+
+      expect((heading as any).props?.font?.weight).toBe('bold')
+      expect((heading as any).props?.debugLabel).toBe('heading-debug')
     })
 
     it('should apply accessibility label', () => {
