@@ -80,6 +80,11 @@ const packagesSidebar = [
       { text: '@tachui/mobile', link: '/packages/mobile/' },
       { text: '@tachui/responsive', link: '/packages/responsive/' },
       { text: '@tachui/viewport', link: '/packages/viewport/' },
+    ],
+  },
+  {
+    text: 'Infrastructure',
+    items: [
       { text: '@tachui/registry', link: '/packages/registry/' },
       { text: '@tachui/types', link: '/packages/types/' },
     ],
