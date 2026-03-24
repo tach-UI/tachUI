@@ -79,7 +79,9 @@ export function NavigationLink(
   // Internal state for interaction
   const [isPressed, setIsPressed] = createSignal(false)
   const linkId = `nav-link-${Date.now()}-${Math.random()}`
-  const destinationPath = options.path || options.tag || '#'
+  const fallbackDestinationPath = `/destination-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  const destinationPath = options.path || options.tag || fallbackDestinationPath
+  const href = options.path || options.tag || '#'
   if (
     !options.path &&
     !options.tag &&
@@ -182,7 +184,7 @@ export function NavigationLink(
       userSelect: 'none',
       transition: 'all 0.1s ease-in-out',
     },
-    href: destinationPath,
+    href,
     onClick: options.disabled
       ? (e: MouseEvent) => {
           e.preventDefault()
@@ -337,6 +339,10 @@ export function NavigationLink(
   }
 
   return finalLink
+}
+
+export function __resetNavigationLinkWarnForTests(): void {
+  hasWarnedMissingNavigationLinkPath = false
 }
 
 /**

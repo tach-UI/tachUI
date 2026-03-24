@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { HTML, Text } from '@tachui/primitives'
 import {
+  __resetNavigationLinkWarnForTests,
   NavigationLink,
   NavigationIconLink,
   NavigationListLink,
@@ -24,6 +25,7 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
   let mockComponentLabel: any
 
   beforeEach(() => {
+    __resetNavigationLinkWarnForTests()
     mockDestination = () =>
       HTML.div({ children: 'Detail View' }).build()
     mockLabel = 'Go to Details'
