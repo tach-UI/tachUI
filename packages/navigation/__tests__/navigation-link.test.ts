@@ -61,6 +61,15 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
 
       expect(navLink).toBeDefined()
     })
+
+    it('renders crawlable anchor semantics with href', () => {
+      const navLink = NavigationLink(mockLabel, mockDestination, {
+        tag: '/details',
+      })
+
+      expect((navLink as any).props?.role).toBe('link')
+      expect((navLink as any).props?.href).toBe('/details')
+    })
   })
 
   describe('SwiftUI Compatibility', () => {
@@ -258,6 +267,51 @@ describe('NavigationLink - SwiftUI Compatible Navigation Links', () => {
 
       expect(navLink).toBeDefined()
       expect((navLink as any)._navigationLink.type).toBe('NavigationLink')
+      expect((navLink as any).props?.['aria-disabled']).toBe('true')
+    })
+
+    it('intercepts primary clicks for client-side navigation', () => {
+      const onTap = vi.fn()
+      const navLink = NavigationLink(mockLabel, mockDestination, {
+        onTap,
+      })
+
+      const onClick = (navLink as any).props?.onClick as Function
+      const preventDefault = vi.fn()
+      onClick({
+        button: 0,
+        metaKey: false,
+        ctrlKey: false,
+        shiftKey: false,
+        altKey: false,
+        defaultPrevented: false,
+        preventDefault,
+      })
+
+      expect(preventDefault).toHaveBeenCalled()
+      expect(onTap).toHaveBeenCalled()
+    })
+
+    it('does not intercept modified clicks so native link behavior can work', () => {
+      const onTap = vi.fn()
+      const navLink = NavigationLink(mockLabel, mockDestination, {
+        onTap,
+      })
+
+      const onClick = (navLink as any).props?.onClick as Function
+      const preventDefault = vi.fn()
+      onClick({
+        button: 0,
+        metaKey: true,
+        ctrlKey: false,
+        shiftKey: false,
+        altKey: false,
+        defaultPrevented: false,
+        preventDefault,
+      })
+
+      expect(preventDefault).not.toHaveBeenCalled()
+      expect(onTap).not.toHaveBeenCalled()
     })
 
     it('supports navigation with data passing', () => {

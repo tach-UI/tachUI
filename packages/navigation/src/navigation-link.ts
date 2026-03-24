@@ -77,6 +77,7 @@ export function NavigationLink(
   // Internal state for interaction
   const [isPressed, setIsPressed] = createSignal(false)
   const linkId = `nav-link-${Date.now()}-${Math.random()}`
+  const destinationPath = options.tag || `/destination-${Date.now()}`
 
   // Convert label to component if string
   const labelComponent =
@@ -96,11 +97,19 @@ export function NavigationLink(
     }
 
     // Perform navigation
-    const destinationPath = options.tag || `/destination-${Date.now()}`
     const destinationTitle =
       extractTitleFromComponent(labelComponent) || 'Details'
 
     navigation.push(destination, destinationPath, destinationTitle)
+  }
+
+  const shouldHandleClientNavigation = (event: MouseEvent): boolean => {
+    if (event.defaultPrevented) return false
+    if (event.button !== 0) return false
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return false
+    }
+    return true
   }
 
   // Handle programmatic activation
@@ -148,7 +157,7 @@ export function NavigationLink(
   }
 
   // Create navigation link as modifiable component with proper modifier support
-  const navigationLink = HTML.div({
+  const navigationLink = HTML.a({
     children: [labelComponent],
   })
 
@@ -160,11 +169,22 @@ export function NavigationLink(
       userSelect: 'none',
       transition: 'all 0.1s ease-in-out',
     },
-    onClick: options.disabled ? undefined : handleNavigation,
+    href: destinationPath,
+    onClick: options.disabled
+      ? (e: MouseEvent) => {
+          e.preventDefault()
+        }
+      : (e: MouseEvent) => {
+          if (!shouldHandleClientNavigation(e)) {
+            return
+          }
+          e.preventDefault()
+          handleNavigation()
+        },
     onKeyDown: options.disabled
       ? undefined
       : (e: KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
+          if (e.key === ' ') {
             e.preventDefault()
             handleNavigation()
           }
@@ -177,8 +197,9 @@ export function NavigationLink(
       // Handle blur for accessibility
       console.log('NavigationLink blurred')
     },
-    role: 'button',
+    role: 'link',
     tabIndex: options.disabled ? -1 : 0,
+    'aria-disabled': options.disabled ? 'true' : undefined,
     ...(options.accessibilityLabel && {
       'aria-label': options.accessibilityLabel,
     }),
@@ -250,9 +271,6 @@ export function NavigationLink(
 
   // Add gesture handling without Button dependency
   if (!options.disabled) {
-    // Click handling
-    ;(finalLink as any).onClick = handleNavigation
-
     // Press state handling for visual feedback
     ;(finalLink as any).onMouseDown = (e: MouseEvent) => {
       e.preventDefault()
