@@ -1,5 +1,15 @@
 # @tachui/data
 
+## 0.8.9
+
+### Patch Changes
+
+- Updated dependencies [[`5d3fb03`](https://github.com/tach-UI/tachUI/commit/5d3fb03c5ec91e344c0625bab8c48a2ea5bcee34)]:
+  - @tachui/core@0.8.9
+  - @tachui/mobile@0.8.9
+  - @tachui/primitives@0.8.9
+  - @tachui/flow-control@0.8.9
+
 ## 0.8.8
 
 ### Patch Changes

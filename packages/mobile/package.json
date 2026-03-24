@@ -1,6 +1,6 @@
 {
   "name": "@tachui/mobile",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Mobile UI components for TachUI - Modal components (ActionSheet, Alert) and enhanced scrolling (ScrollView) with mobile optimizations",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -35,8 +35,8 @@
     "type-check": "tsc --project tsconfig.type-check.json"
   },
   "peerDependencies": {
-    "@tachui/core": ">=0.8.8",
-    "@tachui/registry": ">=0.8.8"
+    "@tachui/core": ">=0.8.9",
+    "@tachui/registry": ">=0.8.9"
   },
   "devDependencies": {
     "@tachui/core": "workspace:*",
