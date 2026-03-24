@@ -399,6 +399,7 @@ describe('ActionSheet Component', () => {
       expect(content.props?.role).toBe('dialog')
       expect(content.props?.['aria-modal']).toBe('true')
       expect(content.props?.['aria-label']).toBe('Action sheet')
+      expect(content.props?.tabindex).toBe('-1')
     })
 
     it('should use title for aria-labelledby when no explicit accessibilityLabel is provided', () => {
@@ -430,6 +431,20 @@ describe('ActionSheet Component', () => {
       expect(content.props?.['aria-labelledby']).toBeUndefined()
     })
 
+    it('should keep aria-describedby when accessibilityLabel and message are both provided', () => {
+      const component = new ActionSheetComponent({
+        message: 'Choose an option',
+        buttons: [{ label: 'OK', role: 'default', onPress: vi.fn() }],
+        isPresented: createSignal(true)[0],
+        accessibilityLabel: 'Action menu',
+      })
+
+      const content = (component as any).createSheetContent()
+
+      expect(content.props?.['aria-label']).toBe('Action menu')
+      expect(content.props?.['aria-describedby']).toBe(`${component.id}-message`)
+    })
+
     it('should mark overlay as presentation for assistive technologies', () => {
       const component = new ActionSheetComponent({
         buttons: [{ label: 'OK', role: 'default', onPress: vi.fn() }],
@@ -440,6 +455,23 @@ describe('ActionSheet Component', () => {
 
       expect(overlay.props?.role).toBe('presentation')
       expect(overlay.props?.['aria-hidden']).toBe('true')
+    })
+
+    it('should move focus to first actionable button when opened', () => {
+      const component = new ActionSheetComponent({
+        buttons: [{ label: 'OK', role: 'default', onPress: vi.fn() }],
+        isPresented: createSignal(true)[0],
+      })
+
+      const buttonElement = { focus: vi.fn() }
+      ;(component as any).sheetElement = {
+        querySelector: vi.fn(() => buttonElement),
+        focus: vi.fn(),
+      }
+
+      ;(component as any).focusDialogOnOpen()
+
+      expect(buttonElement.focus).toHaveBeenCalledTimes(1)
     })
   })
 

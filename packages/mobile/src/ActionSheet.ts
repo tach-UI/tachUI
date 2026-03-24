@@ -319,6 +319,7 @@ export class ActionSheetComponent
     const content = h('div', {
       'data-actionsheet-content': this.id, // ENHANCED: Add data attribute for lifecycle hooks
       ...dialogAccessibilityProps,
+      tabindex: '-1',
       style: {
         backgroundColor: this.theme.colors.background,
         borderRadius: `${this.theme.spacing.borderRadius}px`,
@@ -470,6 +471,23 @@ export class ActionSheetComponent
     })
   }
 
+  private focusDialogOnOpen(): void {
+    if (!this.sheetElement) return
+
+    const firstFocusableButton = this.sheetElement.querySelector(
+      'button:not([disabled])'
+    ) as HTMLElement | null
+
+    if (firstFocusableButton && typeof firstFocusableButton.focus === 'function') {
+      firstFocusableButton.focus()
+      return
+    }
+
+    if (typeof this.sheetElement.focus === 'function') {
+      this.sheetElement.focus()
+    }
+  }
+
   private createSheetPresentation(): DOMNode {
     const presentationStyle = this.getPresentationStyle()
 
@@ -591,6 +609,9 @@ export class ActionSheetComponent
       // Use requestAnimationFrame for reliable DOM-ready animation trigger
       requestAnimationFrame(() => {
         if (this.sheetElement) {
+          let isCompleted = false
+          let fallbackTimeout: ReturnType<typeof setTimeout> | undefined
+
           if (presentationStyle === 'sheet') {
             this.sheetElement.style.transform = 'translateY(0)'
           } else {
@@ -600,7 +621,15 @@ export class ActionSheetComponent
 
           // Use transition event listener for completion
           const handleTransitionEnd = () => {
+            if (isCompleted) return
+            isCompleted = true
+
+            if (fallbackTimeout) {
+              clearTimeout(fallbackTimeout)
+            }
+
             this.isAnimating = false
+            this.focusDialogOnOpen()
             this.sheetElement?.removeEventListener(
               'transitionend',
               handleTransitionEnd
@@ -613,7 +642,7 @@ export class ActionSheetComponent
           )
 
           // Fallback timeout
-          const fallbackTimeout = setTimeout(
+          fallbackTimeout = setTimeout(
             handleTransitionEnd,
             this.theme.animation.duration
           )
