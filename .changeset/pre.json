@@ -1,0 +1,25 @@
+{
+  "mode": "pre",
+  "tag": "alpha",
+  "initialVersions": {
+    "@tachui/docs": "0.8.8-alpha",
+    "@tachui/cli": "0.8.9",
+    "@tachui/core": "0.8.9",
+    "@tachui/data": "0.8.9",
+    "@tachui/devtools": "0.8.9",
+    "@tachui/eslint-plugin": "0.8.8",
+    "@tachui/flow-control": "0.8.9",
+    "@tachui/forms": "0.8.9",
+    "@tachui/grid": "0.8.9",
+    "@tachui/mobile": "0.8.9",
+    "@tachui/modifiers": "0.8.9",
+    "@tachui/navigation": "0.8.9",
+    "@tachui/primitives": "0.8.9",
+    "@tachui/registry": "0.8.9",
+    "@tachui/responsive": "0.8.9",
+    "@tachui/symbols": "0.8.9",
+    "@tachui/types": "0.8.9",
+    "@tachui/viewport": "0.8.9"
+  },
+  "changesets": []
+}
