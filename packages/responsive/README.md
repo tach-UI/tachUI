@@ -9,9 +9,9 @@ The `@tachui/responsive` package provides comprehensive responsive design capabi
 ## Installation
 
 ```bash
-npm install @tachui/responsive@0.8.0-alpha
+npm install @tachui/responsive@0.8.6-alpha
 # or
-pnpm add @tachui/responsive@0.8.0-alpha
+pnpm add @tachui/responsive@0.8.6-alpha
 ```
 
 ## Core Features

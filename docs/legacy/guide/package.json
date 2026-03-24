@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "0.1.0",
+  "version": "0.8.6-alpha",
   "description": "tachUI Documentation Site",
   "type": "module",
   "scripts": {

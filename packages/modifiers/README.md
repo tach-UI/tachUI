@@ -9,9 +9,9 @@ The `@tachui/modifiers` package is the heart of tachUI's declarative styling sys
 ## Installation
 
 ```bash
-npm install @tachui/modifiers@0.8.0-alpha
+npm install @tachui/modifiers@0.8.6-alpha
 # or
-pnpm add @tachui/modifiers@0.8.0-alpha
+pnpm add @tachui/modifiers@0.8.6-alpha
 ```
 
 > **Important:** Modifier factories now register themselves through preload entry points. Import one of the preload bundles once at app startup to make every modifier available through `Component.modifier`.

@@ -9,9 +9,9 @@ The `@tachui/grid` package provides powerful grid layout components that bring C
 ## Installation
 
 ```bash
-npm install @tachui/grid@0.8.0-alpha
+npm install @tachui/grid@0.8.6-alpha
 # or
-pnpm add @tachui/grid@0.8.0-alpha
+pnpm add @tachui/grid@0.8.6-alpha
 ```
 
 ## Components

@@ -1,7 +1,7 @@
 {
   "name": "@tachui/docs",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.8.6-alpha",
   "type": "module",
   "scripts": {
     "dev": "vitepress dev .",

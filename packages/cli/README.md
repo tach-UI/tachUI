@@ -25,7 +25,7 @@ Examples:
 npx @tachui/cli init my-app --template basic --yes
 npx @tachui/cli init my-app --template advanced --yes
 npx @tachui/cli init . --template basic --yes
-npx @tachui/cli init my-app --tachui-version 0.8.0-alpha --yes
+npx @tachui/cli init my-app --tachui-version 0.8.6-alpha --yes
 ```
 
 Options:

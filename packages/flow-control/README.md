@@ -9,9 +9,9 @@ The `@tachui/flow-control` package provides essential components for controlling
 ## Installation
 
 ```bash
-npm install @tachui/flow-control@0.8.0-alpha
+npm install @tachui/flow-control@0.8.6-alpha
 # or
-pnpm add @tachui/flow-control@0.8.0-alpha
+pnpm add @tachui/flow-control@0.8.6-alpha
 ```
 
 ## Components

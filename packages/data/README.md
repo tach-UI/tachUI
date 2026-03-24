@@ -21,9 +21,9 @@ The tachUI data package provides essential components for displaying and organiz
 ## Installation
 
 ```bash
-npm install @tachui/core@0.8.0-alpha @tachui/data@0.8.0-alpha
+npm install @tachui/core@0.8.6-alpha @tachui/data@0.8.6-alpha
 # or
-pnpm add @tachui/core@0.8.0-alpha @tachui/data@0.8.0-alpha
+pnpm add @tachui/core@0.8.6-alpha @tachui/data@0.8.6-alpha
 ```
 
 ## Quick Start

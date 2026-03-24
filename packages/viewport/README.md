@@ -22,9 +22,9 @@ The tachUI viewport package provides comprehensive viewport and window managemen
 ## Installation
 
 ```bash
-npm install @tachui/core@0.8.0-alpha @tachui/viewport@0.8.0-alpha
+npm install @tachui/core@0.8.6-alpha @tachui/viewport@0.8.6-alpha
 # or
-pnpm add @tachui/core@0.8.0-alpha @tachui/viewport@0.8.0-alpha
+pnpm add @tachui/core@0.8.6-alpha @tachui/viewport@0.8.6-alpha
 ```
 
 ## Quick Start
