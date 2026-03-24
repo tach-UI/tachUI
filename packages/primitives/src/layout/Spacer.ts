@@ -51,6 +51,7 @@ export class SpacerComponent
     // Create a div element that acts as a flexible spacer
     const element = h('div', {
       className: classString,
+      'aria-hidden': 'true',
       style: {
         // Core flex properties for expansion
         flexGrow: '1',
