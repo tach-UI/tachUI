@@ -1,5 +1,5 @@
 ---
-title: '@tachui/modifiers - Enhanced Documentation v0.9.0'
+title: '@tachui/modifiers - Enhanced Documentation'
 ---
 
 # @tachui/modifiers
@@ -9,7 +9,7 @@ title: '@tachui/modifiers - Enhanced Documentation v0.9.0'
 ## Install
 
 ```bash
-pnpm add @tachui/modifiers@0.9.0
+pnpm add @tachui/modifiers
 ```
 
 ## Modifier Categories
@@ -708,7 +708,7 @@ const CustomCard = createComponent<CustomCardProps>('CustomCard', props => {
 
 ```bash
 # Update package
-pnpm add @tachui/modifiers@0.9.0
+pnpm add @tachui/modifiers
 
 # Update modifier usage (NEW SYNTAX)
 Text('Hello')

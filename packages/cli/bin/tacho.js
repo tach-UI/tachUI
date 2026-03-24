@@ -1,19 +1,21 @@
 #!/usr/bin/env node
 
+import { realpathSync } from 'node:fs'
+import { dirname } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
+const binRealPath = realpathSync(fileURLToPath(import.meta.url))
+const binDirUrl = pathToFileURL(`${dirname(binRealPath)}/`)
+
 const moduleCandidates = [
-  new URL('../dist/index.js', import.meta.url).href,
-  new URL('../dist/cli/src/index.js', import.meta.url).href,
+  new URL('../dist/index.js', binDirUrl).href,
+  new URL('../dist/cli/src/index.js', binDirUrl).href,
 ]
 
 const isMissingModule = (error, candidate) => {
   if (!error) return false
-  if (error.code === 'ERR_MODULE_NOT_FOUND') {
-    return true
-  }
-  return (
-    typeof error.message === 'string' &&
-    error.message.includes(candidate)
-  )
+  if (error.code !== 'ERR_MODULE_NOT_FOUND') return false
+  return typeof error.message === 'string' && error.message.includes(candidate)
 }
 
 async function start() {
@@ -40,7 +42,7 @@ async function startFromSource() {
     // Register TSX loader so we can import TypeScript sources without building
     await import('tsx/esm')
     const { main } = await import(
-      new URL('../src/index.ts', import.meta.url).href
+      new URL('../src/index.ts', binDirUrl).href
     )
 
     if (typeof main !== 'function') {

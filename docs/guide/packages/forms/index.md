@@ -19,7 +19,7 @@ Rich form components (inputs, selection controls, formatting helpers) with a val
 - Example-rich docs plus CLI templates.
 
 ```bash
-pnpm add @tachui/forms@0.9.0
+pnpm add @tachui/forms
 ```
 
 See also: [Validation guide](/guide/validation).

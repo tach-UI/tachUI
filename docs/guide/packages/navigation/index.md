@@ -17,7 +17,7 @@ Provides NavigationStack, NavigationLink, TabView, deep linking, and route utili
 ## Install
 
 ```bash
-pnpm add @tachui/navigation@0.9.0
+pnpm add @tachui/navigation
 ```
 
 Follow progress via the [Phase 2 navigation enhancement design doc](/design-docs/Enh-NavigationPlugin.md).

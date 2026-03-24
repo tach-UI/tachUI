@@ -1,9 +1,19 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 function isPackageRoot(path: string): boolean {
-  return existsSync(resolve(path, 'package.json')) && existsSync(resolve(path, 'templates'))
+  const packageJsonPath = resolve(path, 'package.json')
+  if (!existsSync(packageJsonPath) || !existsSync(resolve(path, 'templates'))) {
+    return false
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { name?: unknown }
+    return parsed.name === '@tachui/cli'
+  } catch {
+    return false
+  }
 }
 
 export function resolvePackageRoot(moduleUrl: string): string {

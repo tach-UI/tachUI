@@ -186,6 +186,7 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 - No-release exemptions must use an explicit empty changeset (`pnpm changeset --empty`).
 - Labels/comments are not accepted as a no-release exemption.
 - Package README install snippets should be unpinned by default (for example `npm i @tachui/core`).
+- Peer ranges currently use `<1.0.0` ceilings for selected packages. When `@tachui/core` reaches `1.0.0`, maintainers must coordinate a same-release peer range update across all affected packages.
 
 ## Project Structure
 

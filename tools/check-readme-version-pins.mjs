@@ -21,7 +21,11 @@ if (existsSync(allowlistPath)) {
   }
 }
 
-const readmeFiles = globSync('packages/*/README.md', { cwd: root, nodir: true })
+const readmeFiles = globSync(['README.md', 'packages/*/README.md', 'docs/guide/**/*.md'], {
+  cwd: root,
+  nodir: true,
+  ignore: ['docs/guide/.vitepress/**', 'docs/public/**'],
+})
 const pinnedRegex = /@tachui\/[a-z0-9-]+@(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/g
 const violations = []
 
@@ -34,7 +38,7 @@ for (const relativeFile of readmeFiles) {
 }
 
 if (violations.length > 0) {
-  console.error('Pinned package versions are disallowed in package READMEs unless allowlisted.')
+  console.error('Pinned package versions are disallowed in docs unless allowlisted.')
   for (const violation of violations) {
     console.error(`- ${violation.file}: ${violation.match}`)
   }
