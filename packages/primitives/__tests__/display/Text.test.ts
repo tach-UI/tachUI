@@ -368,15 +368,19 @@ describe('EnhancedText', () => {
       // Test would verify role is set
     })
 
-    it('should apply heading role with level', () => {
-      const text = new EnhancedText({
-        content: 'Heading',
-        accessibilityRole: 'heading',
-        accessibilityLevel: 2,
-      })
+    it('should map heading accessibility levels 1 through 6 to h1 through h6', () => {
+      const headingLevels: Array<1 | 2 | 3 | 4 | 5 | 6> = [1, 2, 3, 4, 5, 6]
 
-      const rendered = text.render()
-      expect(rendered[0].tag).toBe('h2')
+      headingLevels.forEach(level => {
+        const text = new EnhancedText({
+          content: `Heading ${level}`,
+          accessibilityRole: 'heading',
+          accessibilityLevel: level,
+        })
+
+        const rendered = text.render()
+        expect(rendered[0].tag).toBe(`h${level}`)
+      })
     })
 
     it('should default heading role to h2 when level is omitted', () => {
@@ -568,6 +572,17 @@ describe('Text Factory Function', () => {
 })
 
 describe('TextStyles Presets', () => {
+  it('should create semantic heading elements from TextStyles.heading', () => {
+    const headingProps = TextStyles.heading(1)
+    const text = new EnhancedText({
+      content: 'Page title',
+      ...headingProps,
+    })
+    const rendered = text.render()
+
+    expect(rendered[0].tag).toBe('h1')
+  })
+
   it('should create LargeTitle text', () => {
     const text = TextStyles.LargeTitle('Large Title')
     expect(text).toBeDefined()
