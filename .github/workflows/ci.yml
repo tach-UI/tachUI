@@ -145,6 +145,30 @@ jobs:
             exit 1
           fi
 
+  cli-init-smoke:
+    name: CLI Init Smoke
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run CLI init smoke test
+        run: ./tools/smoke-cli-init.sh
+
   docs:
     name: Build Documentation
     runs-on: ubuntu-latest

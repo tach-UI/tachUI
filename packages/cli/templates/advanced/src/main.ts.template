@@ -1,0 +1,4 @@
+import { mount } from '@tachui/core'
+import { App } from './App'
+
+mount('#app', App())

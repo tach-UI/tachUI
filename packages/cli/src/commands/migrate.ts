@@ -207,7 +207,7 @@ The following items may need manual attention:
 1. Add necessary TachUI imports
 2. Test component functionality
 3. Add modifiers for styling
-4. Consider using Phase 6 features:
+4. Consider using advanced TachUI state features:
    - @State for reactive local state
    - @ObservedObject for complex objects
    - Lifecycle modifiers (onAppear, task)
@@ -216,7 +216,7 @@ The following items may need manual attention:
 ## TachUI Resources
 
 - [Getting Started Guide](https://github.com/whoughton/TachUI/blob/main/docs/guide/getting-started-complete.md)
-- [Phase 6 Features](https://github.com/whoughton/TachUI/blob/main/docs/api/phase-6-features.md)
+- [State Management Guide](https://github.com/tach-UI/tachUI/tree/main/docs/guide)
 - [Component Examples](https://github.com/whoughton/TachUI/tree/main/examples)
 `
 }
@@ -381,7 +381,7 @@ export const migrateCommand = new Command('migrate')
       console.log(chalk.gray('1. Review migrated components'))
       console.log(chalk.gray('2. Add TachUI modifiers for styling'))
       console.log(chalk.gray('3. Test component functionality'))
-      console.log(chalk.gray('4. Consider Phase 6 features (@State, lifecycle modifiers)'))
+      console.log(chalk.gray('4. Consider advanced features (@State, lifecycle modifiers)'))
       console.log(chalk.gray('5. Run: tacho dev'))
 
       console.log(`\n${chalk.green('Migration complete! 🎉')}`)

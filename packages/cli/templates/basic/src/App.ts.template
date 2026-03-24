@@ -1,0 +1,35 @@
+import { Button, Layout, Text } from '@tachui/core'
+
+export function App() {
+  return Layout.VStack({
+    children: [
+      Text('Welcome to TachUI')
+        .fontSize(30)
+        .fontWeight('bold')
+        .margin({ bottom: 12 })
+        .build(),
+
+      Text('Your starter app is ready.')
+        .fontSize(18)
+        .foregroundColor('#666')
+        .margin({ bottom: 24 })
+        .build(),
+
+      Button({
+        title: 'Get Started',
+        onTap: () => console.log('TachUI starter ready'),
+      })
+        .backgroundColor('#0a84ff')
+        .foregroundColor('#fff')
+        .padding(12, 20)
+        .cornerRadius(10)
+        .build(),
+    ],
+    spacing: 0,
+    alignment: 'center',
+  })
+    .frame(undefined, '100vh')
+    .justifyContent('center')
+    .alignItems('center')
+    .build()
+}

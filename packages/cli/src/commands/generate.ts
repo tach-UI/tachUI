@@ -1,7 +1,7 @@
 /**
  * Tacho CLI - Generate Command
  *
- * Code generation and scaffolding for TachUI components with Phase 6 patterns
+ * Code generation and scaffolding for TachUI components with advanced patterns
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'

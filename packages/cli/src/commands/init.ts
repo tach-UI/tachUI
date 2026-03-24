@@ -1,759 +1,196 @@
 /**
  * Tacho CLI - Init Command
  *
- * Initialize new TachUI projects with smart templates and Phase 6 features
+ * Initialize new TachUI projects from file-based templates.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { basename, join } from 'node:path'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import ora from 'ora'
 import prompts from 'prompts'
+import { createProject } from '../scaffold/create-project.js'
+import { resolvePackageRoot } from '../scaffold/package-root.js'
+import { getTemplateDefinition, listTemplateDefinitions } from '../scaffold/templates.js'
+import { validateProjectName } from '../scaffold/validators.js'
 
-interface ProjectTemplate {
-  name: string
-  description: string
-  features: string[]
-  files: { [path: string]: string }
+type PackageManager = 'npm' | 'pnpm'
+
+interface InitOptions {
+  template?: string
+  yes?: boolean
+  tachuiVersion?: string
+  packageManager?: PackageManager
+  listTemplates?: boolean
 }
 
-const templates: Record<string, ProjectTemplate> = {
-  basic: {
-    name: 'Basic TachUI App',
-    description: 'Simple TachUI application with core components',
-    features: ['Text & Button components', 'Layout system', 'Modifiers'],
-    files: {
-      'package.json': JSON.stringify(
-        {
-          name: '{projectName}',
-          version: '1.0.0',
-          description: 'TachUI application',
-          type: 'module',
-          scripts: {
-            dev: 'vite',
-            build: 'vite build',
-            preview: 'vite preview',
-            typecheck: 'tsc --noEmit',
-          },
-          dependencies: {
-            '@tachui/core': '^0.1.0',
-            '@tachui/forms': '^0.1.0',
-          },
-          devDependencies: {
-            vite: '^5.0.0',
-            typescript: '^5.0.0',
-            '@types/node': '^20.0.0',
-          },
-        },
-        null,
-        2
-      ),
-
-      'vite.config.ts': `import { defineConfig } from 'vite'
-
-export default defineConfig({
-  server: {
-    port: 3000,
-    open: true
-  },
-  build: {
-    target: 'es2020'
+function readCliVersion(packageRoot: string): string {
+  const packageJsonPath = join(packageRoot, 'package.json')
+  if (!existsSync(packageJsonPath)) {
+    return 'latest'
   }
-})`,
 
-      'tsconfig.json': JSON.stringify(
-        {
-          compilerOptions: {
-            target: 'ES2020',
-            module: 'ESNext',
-            moduleResolution: 'bundler',
-            allowSyntheticDefaultImports: true,
-            esModuleInterop: true,
-            jsx: 'preserve',
-            declaration: true,
-            strict: true,
-            skipLibCheck: true,
-            forceConsistentCasingInFileNames: true,
-          },
-          include: ['src/**/*'],
-          exclude: ['node_modules', 'dist'],
-        },
-        null,
-        2
-      ),
-
-      'src/main.ts': `import { mount } from '@tachui/core'
-import { App } from './App'
-
-// Mount the app
-mount('#app', App())`,
-
-      'src/App.ts': `import { Layout, Text, Button } from '@tachui/core'
-
-export function App() {
-  return Layout.VStack({
-    children: [
-      Text('Welcome to TachUI!')
-        .fontSize(32)
-        .fontWeight('bold')
-        .foregroundColor('#007AFF')
-        .margin({ bottom: 16 })
-        .build(),
-      
-      Text('SwiftUI-inspired web development')
-        .fontSize(18)
-        .foregroundColor('#666')
-        .margin({ bottom: 24 })
-        .build(),
-      
-      Button({
-        title: 'Get Started',
-        onTap: () => console.log('Hello TachUI!')
-      })
-      .backgroundColor('#007AFF')
-      .foregroundColor('#ffffff')
-      .padding(16, 32)
-      .cornerRadius(8)
-      .build()
-    ],
-    spacing: 0,
-    alignment: 'center'
-  })
-  .frame(undefined, '100vh')
-  .justifyContent('center')
-  .alignItems('center')
-  .backgroundColor('#f5f5f7')
-  .build()
-}`,
-
-      'index.html': `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{projectName}</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-  </style>
-</head>
-<body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.ts"></script>
-</body>
-</html>`,
-
-      'README.md': `# {projectName}
-
-A TachUI application built with SwiftUI-inspired components and reactive architecture.
-
-## Getting Started
-
-\`\`\`bash
-npm install
-npm run dev
-\`\`\`
-
-## Available Scripts
-
-- \`npm run dev\` - Start development server
-- \`npm run build\` - Build for production
-- \`npm run preview\` - Preview production build
-- \`npm run typecheck\` - Type check without building
-
-## Learn More
-
-- [TachUI Documentation](https://github.com/whoughton/TachUI)
-- [TachUI Examples](https://github.com/whoughton/TachUI/tree/main/examples)
-`,
-    },
-  },
-
-  phase6: {
-    name: 'Phase 6 Features App',
-    description: 'Complete app with state management, lifecycle, and navigation',
-    features: [
-      '@State & @ObservedObject',
-      'Lifecycle modifiers',
-      'NavigationView & TabView',
-      'Real-world patterns',
-    ],
-    files: {
-      'package.json': JSON.stringify(
-        {
-          name: '{projectName}',
-          version: '1.0.0',
-          description: 'TachUI Phase 6 application with advanced features',
-          type: 'module',
-          scripts: {
-            dev: 'vite',
-            build: 'vite build',
-            preview: 'vite preview',
-            typecheck: 'tsc --noEmit',
-          },
-          dependencies: {
-            '@tachui/core': '^0.1.0',
-            '@tachui/forms': '^0.1.0',
-          },
-          devDependencies: {
-            vite: '^5.0.0',
-            typescript: '^5.0.0',
-            '@types/node': '^20.0.0',
-          },
-        },
-        null,
-        2
-      ),
-
-      'vite.config.ts': `import { defineConfig } from 'vite'
-
-export default defineConfig({
-  server: {
-    port: 3000,
-    open: true
-  },
-  build: {
-    target: 'es2020'
-  }
-})`,
-
-      'tsconfig.json': JSON.stringify(
-        {
-          compilerOptions: {
-            target: 'ES2020',
-            module: 'ESNext',
-            moduleResolution: 'bundler',
-            allowSyntheticDefaultImports: true,
-            esModuleInterop: true,
-            jsx: 'preserve',
-            declaration: true,
-            strict: true,
-            skipLibCheck: true,
-            forceConsistentCasingInFileNames: true,
-          },
-          include: ['src/**/*'],
-          exclude: ['node_modules', 'dist'],
-        },
-        null,
-        2
-      ),
-
-      'src/main.ts': `import { mount } from '@tachui/core'
-import { App } from './App'
-
-// Mount the app
-mount('#app', App())`,
-
-      'src/App.ts': `import { TabView, createTabItem } from '@tachui/core/navigation'
-import { State } from '@tachui/core/state'
-import { HomeScreen } from './screens/HomeScreen'
-import { TodoScreen } from './screens/TodoScreen'
-import { SettingsScreen } from './screens/SettingsScreen'
-
-export function App() {
-  const selectedTab = State('home')
-  
-  const tabs = [
-    createTabItem(
-      'home',
-      'Home',
-      HomeScreen(),
-      { icon: '🏠' }
-    ),
-    createTabItem(
-      'todos',
-      'Todos',
-      TodoScreen(),
-      { icon: '📝' }
-    ),
-    createTabItem(
-      'settings',
-      'Settings', 
-      SettingsScreen(),
-      { icon: '⚙️' }
-    )
-  ]
-  
-  return TabView(tabs, {
-    selection: selectedTab.projectedValue,
-    tabPlacement: 'bottom',
-    accentColor: '#007AFF'
-  })
-}`,
-
-      'src/screens/HomeScreen.ts': `import { Layout, Text, Button } from '@tachui/core'
-import { State } from '@tachui/core/state'
-
-export function HomeScreen() {
-  const welcomeMessage = State('Welcome to TachUI Phase 6!')
-  const clickCount = State(0)
-  
-  return Layout.VStack({
-    children: [
-      Text(() => welcomeMessage.wrappedValue)
-        .fontSize(28)
-        .fontWeight('bold')
-        .foregroundColor('#007AFF')
-        .textAlign('center')
-        .margin({ bottom: 24 })
-        .build(),
-      
-      Text('This app demonstrates all Phase 6 features:')
-        .fontSize(18)
-        .foregroundColor('#333')
-        .margin({ bottom: 16 })
-        .build(),
-      
-      Layout.VStack({
-        children: [
-          Text('✅ @State reactive property wrapper'),
-          Text('✅ Lifecycle modifiers (onAppear, task)'),
-          Text('✅ TabView navigation system'),
-          Text('✅ Real-world component patterns')
-        ].map(text => 
-          text.fontSize(16)
-            .foregroundColor('#666')
-            .padding({ vertical: 4 })
-            .build()
-        ),
-        spacing: 4,
-        alignment: 'leading'
-      }),
-      
-      Button({
-        title: \`Clicked \${() => clickCount.wrappedValue} times\`,
-        onTap: () => clickCount.wrappedValue++
-      })
-      .backgroundColor('#007AFF')
-      .foregroundColor('#ffffff')
-      .padding(16, 24)
-      .cornerRadius(8)
-      .margin({ top: 32 })
-      .build()
-    ],
-    spacing: 0,
-    alignment: 'center'
-  })
-  .padding(24)
-  .onAppear(() => {
-    console.log('Home screen appeared!')
-  })
-  .task(async () => {
-    // Simulate loading welcome message
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    welcomeMessage.wrappedValue = 'Welcome to TachUI Phase 6! 🚀'
-  })
-  .build()
-}`,
-
-      'src/screens/TodoScreen.ts': `import { Layout, Text, Button } from '@tachui/core'
-import { TextField } from '@tachui/forms'
-import { State, ObservableObjectBase, ObservedObject } from '@tachui/core/state'
-
-class TodoItem extends ObservableObjectBase {
-  constructor(
-    public id: string,
-    private _text: string,
-    private _completed: boolean = false
-  ) {
-    super()
-  }
-  
-  get text() { return this._text }
-  set text(value: string) {
-    this._text = value
-    this.notifyChange()
-  }
-  
-  get completed() { return this._completed }
-  set completed(value: boolean) {
-    this._completed = value
-    this.notifyChange()
-  }
-  
-  toggle() {
-    this.completed = !this.completed
+  try {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+    return typeof packageJson.version === 'string' ? packageJson.version : 'latest'
+  } catch {
+    return 'latest'
   }
 }
 
-class TodoStore extends ObservableObjectBase {
-  private _items: TodoItem[] = []
-  
-  get items() { return this._items }
-  
-  addItem(text: string) {
-    const item = new TodoItem(Date.now().toString(), text)
-    this._items.push(item)
-    this.notifyChange()
+function printTemplates(): void {
+  console.log(chalk.cyan('\nAvailable templates:\n'))
+  for (const template of listTemplateDefinitions()) {
+    console.log(`${chalk.green(template.id)} - ${template.description}`)
   }
-  
-  removeItem(id: string) {
-    this._items = this._items.filter(item => item.id !== id)
-    this.notifyChange()
-  }
-  
-  get completedCount() {
-    return this._items.filter(item => item.completed).length
-  }
+  console.log('')
 }
 
-export function TodoScreen() {
-  const todoStore = ObservedObject(new TodoStore())
-  const newTodoText = State('')
-  
-  const addTodo = () => {
-    if (newTodoText.wrappedValue.trim()) {
-      todoStore.wrappedValue.addItem(newTodoText.wrappedValue)
-      newTodoText.wrappedValue = ''
-    }
-  }
-  
-  return Layout.VStack({
-    children: [
-      Text('My Todos')
-        .fontSize(28)
-        .fontWeight('bold')
-        .margin({ bottom: 16 })
-        .build(),
-      
-      Text(() => \`\${todoStore.wrappedValue.completedCount} of \${todoStore.wrappedValue.items.length} completed\`)
-        .fontSize(16)
-        .foregroundColor('#666')
-        .margin({ bottom: 20 })
-        .build(),
-      
-      Layout.HStack({
-        children: [
-          TextField({
-            placeholder: 'Enter new todo',
-            text: newTodoText.projectedValue
-          })
-          .flexGrow(1)
-          .build(),
-          
-          Button({
-            title: 'Add',
-            onTap: addTodo
-          })
-          .backgroundColor('#007AFF')
-          .foregroundColor('#ffffff')
-          .padding(8, 16)
-          .cornerRadius(6)
-          .build()
-        ],
-        spacing: 12
-      }),
-      
-      Layout.VStack({
-        children: todoStore.wrappedValue.items.map(item => {
-          const observedItem = ObservedObject(item)
-          
-          return Layout.HStack({
-            children: [
-              Button({
-                title: observedItem.wrappedValue.completed ? '✅' : '⬜',
-                onTap: () => observedItem.wrappedValue.toggle()
-              })
-              .backgroundColor('transparent')
-              .border(0)
-              .padding(0)
-              .build(),
-              
-              Text(() => observedItem.wrappedValue.text)
-                .fontSize(16)
-                .foregroundColor(observedItem.wrappedValue.completed ? '#999' : '#333')
-                .textDecoration(observedItem.wrappedValue.completed ? 'line-through' : 'none')
-                .flexGrow(1)
-                .build(),
-              
-              Button({
-                title: '🗑️',
-                onTap: () => todoStore.wrappedValue.removeItem(observedItem.wrappedValue.id)
-              })
-              .backgroundColor('transparent')
-              .border(0)
-              .padding(0)
-              .build()
-            ],
-            spacing: 12,
-            alignment: 'center'
-          })
-          .backgroundColor('#f8f9fa')
-          .padding(12)
-          .cornerRadius(8)
-          .margin({ bottom: 8 })
-          .build()
-        }),
-        spacing: 0
-      })
-      .margin({ top: 20 })
-      .build()
-    ],
-    spacing: 0
-  })
-  .padding(24)
-  .build()
-}`,
+function resolveInstallCommand(packageManager: PackageManager): string {
+  return packageManager === 'pnpm' ? 'pnpm install' : 'npm install'
+}
 
-      'src/screens/SettingsScreen.ts': `import { Layout, Text } from '@tachui/core'
-import { State } from '@tachui/core/state'
+function resolveDevCommand(packageManager: PackageManager): string {
+  return packageManager === 'pnpm' ? 'pnpm dev' : 'npm run dev'
+}
 
-export function SettingsScreen() {
-  const version = State('1.0.0')
-  
-  return Layout.VStack({
-    children: [
-      Text('Settings')
-        .fontSize(28)
-        .fontWeight('bold')
-        .margin({ bottom: 32 })
-        .build(),
-      
-      Layout.VStack({
-        children: [
-          Text('App Information')
-            .fontSize(20)
-            .fontWeight('semibold')
-            .margin({ bottom: 16 })
-            .build(),
-          
-          Layout.HStack({
-            children: [
-              Text('Version:')
-                .fontSize(16)
-                .foregroundColor('#666')
-                .build(),
-              
-              Text(() => version.wrappedValue)
-                .fontSize(16)
-                .fontWeight('medium')
-                .build()
-            ],
-            spacing: 8,
-            alignment: 'center'
-          }),
-          
-          Layout.HStack({
-            children: [
-              Text('Framework:')
-                .fontSize(16)
-                .foregroundColor('#666')
-                .build(),
-              
-              Text('TachUI Phase 6')
-                .fontSize(16)
-                .fontWeight('medium')
-                .build()
-            ],
-            spacing: 8,
-            alignment: 'center'
-          }),
-          
-          Text('Built with SwiftUI-inspired components and reactive state management')
-            .fontSize(14)
-            .foregroundColor('#999')
-            .textAlign('center')
-            .margin({ top: 24 })
-            .build()
-        ],
-        spacing: 12,
-        alignment: 'leading'
-      })
-    ],
-    spacing: 0
-  })
-  .padding(24)
-  .build()
-}`,
-
-      'index.html': `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{projectName}</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #f5f5f7;
-    }
-  </style>
-</head>
-<body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.ts"></script>
-</body>
-</html>`,
-
-      'README.md': `# {projectName}
-
-A complete TachUI application showcasing Phase 6 features:
-
-- **@State**: Reactive local state management
-- **@ObservedObject**: External object observation
-- **Lifecycle Modifiers**: onAppear, task, refreshable
-- **Navigation**: TabView with multiple screens
-- **Real-world Patterns**: Todo app with persistent state
-
-## Getting Started
-
-\`\`\`bash
-npm install
-npm run dev
-\`\`\`
-
-## Features Demonstrated
-
-### State Management
-- Local reactive state with \`@State\`
-- Observable objects with \`@ObservedObject\`
-- Property wrapper patterns from SwiftUI
-
-### Lifecycle Management
-- \`onAppear\` for component initialization
-- \`task\` for async operations with automatic cancellation
-- Component lifecycle integration
-
-### Navigation System
-- \`TabView\` for tab-based navigation
-- Multiple screens with state preservation
-- SwiftUI-style navigation patterns
-
-### Real-world Patterns
-- Todo application with CRUD operations
-- Observable data models
-- Reactive UI updates
-- Component composition
-
-## Available Scripts
-
-- \`npm run dev\` - Start development server
-- \`npm run build\` - Build for production  
-- \`npm run preview\` - Preview production build
-- \`npm run typecheck\` - Type check without building
-
-## Learn More
-
-- [TachUI Documentation](https://github.com/whoughton/TachUI)
-- [Phase 6 Features Guide](https://github.com/whoughton/TachUI/blob/main/docs/api/phase-6-features.md)
-`,
-    },
-  },
+function validateTargetToProjectName(target: string, cwd: string): string | null {
+  const projectName = target === '.' ? basename(cwd) : basename(target)
+  return validateProjectName(projectName)
 }
 
 export const initCommand = new Command('init')
   .description('Initialize a new TachUI project')
-  .argument('[project-name]', 'Project name')
-  .option('-t, --template <template>', 'Project template (basic, phase6)', 'basic')
-  .option('-y, --yes', 'Skip prompts and use defaults')
-  .action(async (projectName?: string, options?: { template?: string; yes?: boolean }) => {
+  .argument('[target]', 'Project directory name (use "." for current directory)')
+  .option('-t, --template <template>', 'Project template (basic, advanced)', 'basic')
+  .option('-y, --yes', 'Skip prompts and use provided options')
+  .option('--tachui-version <version>', 'TachUI package version to scaffold')
+  .option(
+    '--package-manager <packageManager>',
+    'Package manager for next-step instructions (npm, pnpm)',
+    'npm'
+  )
+  .option('--list-templates', 'List available templates')
+  .action(async (target?: string, options?: InitOptions) => {
     try {
-      let finalProjectName = projectName
-      let selectedTemplate = options?.template || 'basic'
+      const packageRoot = resolvePackageRoot(import.meta.url)
+      const templatesRoot = join(packageRoot, 'templates')
+      const defaultVersion = readCliVersion(packageRoot)
 
-      // Interactive prompts if not using --yes flag
+      if (options?.listTemplates) {
+        printTemplates()
+        return
+      }
+
+      let finalTarget = target
+      let finalTemplateId = (options?.template || 'basic').toLowerCase()
+      let finalTachuiVersion = options?.tachuiVersion || defaultVersion
+      let finalPackageManager = options?.packageManager || 'npm'
+
       if (!options?.yes) {
-        const response = await prompts([
+        const responses = await prompts([
           {
             type: 'text',
-            name: 'projectName',
-            message: 'Project name:',
-            initial: projectName || 'my-tachui-app',
-            validate: (value) => (value.length > 0 ? true : 'Project name is required'),
+            name: 'target',
+            message: 'Project directory:',
+            initial: finalTarget || 'my-tachui-app',
+            validate: (value: string) => {
+              const result = validateTargetToProjectName(value, process.cwd())
+              return result ?? true
+            },
           },
           {
             type: 'select',
             name: 'template',
             message: 'Choose a template:',
-            choices: Object.entries(templates).map(([key, template]) => ({
+            choices: listTemplateDefinitions().map(template => ({
               title: template.name,
               description: template.description,
-              value: key,
+              value: template.id,
             })),
-            initial: selectedTemplate === 'phase6' ? 1 : 0,
+          },
+          {
+            type: 'text',
+            name: 'tachuiVersion',
+            message: 'TachUI version for generated dependencies:',
+            initial: finalTachuiVersion,
+            validate: (value: string) => (value.trim().length > 0 ? true : 'Version is required'),
+          },
+          {
+            type: 'select',
+            name: 'packageManager',
+            message: 'Package manager:',
+            choices: [
+              { title: 'npm', value: 'npm' },
+              { title: 'pnpm', value: 'pnpm' },
+            ],
+            initial: finalPackageManager === 'pnpm' ? 1 : 0,
           },
         ])
 
-        if (!response.projectName) {
+        if (!responses.target) {
           console.log(chalk.yellow('Operation cancelled'))
           return
         }
 
-        finalProjectName = response.projectName
-        selectedTemplate = response.template
-      }
-
-      if (!finalProjectName) {
-        console.error(chalk.red('Project name is required'))
-        process.exit(1)
-      }
-
-      const template = templates[selectedTemplate]
-      if (!template) {
-        console.error(chalk.red(`Template "${selectedTemplate}" not found`))
-        process.exit(1)
-      }
-
-      const projectPath = resolve(finalProjectName)
-
-      // Check if directory already exists
-      if (existsSync(projectPath)) {
-        console.error(chalk.red(`Directory "${finalProjectName}" already exists`))
-        process.exit(1)
-      }
-
-      const spinner = ora('Creating TachUI project...').start()
-
-      // Create project directory
-      mkdirSync(projectPath, { recursive: true })
-
-      // Create all template files
-      for (const [filePath, content] of Object.entries(template.files)) {
-        const fullPath = join(projectPath, filePath)
-        const dir = fullPath.substring(0, fullPath.lastIndexOf('/'))
-
-        // Create directory if it doesn't exist
-        if (dir !== projectPath) {
-          mkdirSync(dir, { recursive: true })
+        if (!responses.template || !responses.tachuiVersion || !responses.packageManager) {
+          console.log(chalk.yellow('Operation cancelled'))
+          return
         }
 
-        // Replace template variables
-        const processedContent = content.replace(/{projectName}/g, finalProjectName)
-
-        writeFileSync(fullPath, processedContent)
+        finalTarget = responses.target
+        finalTemplateId = responses.template
+        finalTachuiVersion = responses.tachuiVersion
+        finalPackageManager = responses.packageManager
+      } else if (!finalTarget) {
+        console.error(chalk.red('Project target is required when using --yes'))
+        process.exit(1)
       }
 
-      spinner.succeed('TachUI project created successfully!')
+      if (!finalTarget) {
+        console.error(chalk.red('Project target is required'))
+        process.exit(1)
+      }
 
-      // Success message with features
+      const template = getTemplateDefinition(finalTemplateId)
+      if (!template) {
+        const available = listTemplateDefinitions()
+          .map(item => item.id)
+          .join(', ')
+        console.error(chalk.red(`Unknown template "${finalTemplateId}". Available templates: ${available}`))
+        process.exit(1)
+      }
+
+      const packageManager: PackageManager = finalPackageManager === 'pnpm' ? 'pnpm' : 'npm'
+      const spinner = ora('Creating TachUI project...').start()
+      const result = createProject({
+        cwd: process.cwd(),
+        target: finalTarget,
+        tachuiVersion: finalTachuiVersion,
+        template,
+        templatesRoot,
+      })
+
+      spinner.succeed('Project created successfully')
+
+      const installCommand = resolveInstallCommand(packageManager)
+      const devCommand = resolveDevCommand(packageManager)
+      const cdLine = finalTarget === '.' ? null : `cd ${finalTarget}`
+
       console.log(`
-${chalk.green('✅ Project created:')} ${chalk.cyan(finalProjectName)}
-${chalk.green('📁 Location:')} ${projectPath}
-${chalk.green('🎨 Template:')} ${template.name}
+${chalk.green('Project:')} ${chalk.cyan(result.projectName)}
+${chalk.green('Location:')} ${result.projectPath}
+${chalk.green('Template:')} ${template.name}
+${chalk.green('TachUI version:')} ${finalTachuiVersion}
+${chalk.green('Files created:')} ${result.createdFiles}
 
-${chalk.yellow('Features included:')}
-${template.features.map((feature) => `  • ${feature}`).join('\n')}
+${chalk.yellow('Included features:')}
+${template.features.map(feature => `  - ${feature}`).join('\n')}
 
 ${chalk.yellow('Next steps:')}
-  cd ${finalProjectName}
-  npm install
-  npm run dev
-
-${chalk.green('Happy coding with TachUI! 🚀')}
+${cdLine ? `  ${cdLine}\n` : ''}  ${installCommand}
+  ${devCommand}
 `)
     } catch (error) {
       console.error(chalk.red('Error creating project:'), (error as Error).message)

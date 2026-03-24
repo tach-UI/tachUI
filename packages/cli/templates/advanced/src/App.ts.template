@@ -1,0 +1,54 @@
+import { Button, Layout, Text } from '@tachui/core'
+import { State } from '@tachui/core/state'
+
+export function App() {
+  const count = State(0)
+
+  return Layout.VStack({
+    children: [
+      Text('TachUI Advanced Starter')
+        .fontSize(30)
+        .fontWeight('bold')
+        .margin({ bottom: 12 })
+        .build(),
+
+      Text(() => `Counter: ${count.wrappedValue}`)
+        .fontSize(20)
+        .margin({ bottom: 20 })
+        .build(),
+
+      Layout.HStack({
+        children: [
+          Button({
+            title: '-',
+            onTap: () => {
+              count.wrappedValue -= 1
+            },
+          })
+            .padding(10, 14)
+            .cornerRadius(8)
+            .build(),
+
+          Button({
+            title: '+',
+            onTap: () => {
+              count.wrappedValue += 1
+            },
+          })
+            .padding(10, 14)
+            .cornerRadius(8)
+            .build(),
+        ],
+        spacing: 12,
+        alignment: 'center',
+      })
+        .build(),
+    ],
+    spacing: 0,
+    alignment: 'center',
+  })
+    .frame(undefined, '100vh')
+    .justifyContent('center')
+    .alignItems('center')
+    .build()
+}

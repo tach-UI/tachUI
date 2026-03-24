@@ -5,7 +5,7 @@
  */
 
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import chalk from 'chalk'
 import { Command } from 'commander'
@@ -31,7 +31,7 @@ export const devCommand = new Command('dev')
       }
 
       // Check for TachUI dependency
-      const packageJson = require(packageJsonPath)
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
       const hasTachUI =
         packageJson.dependencies?.['@tachui/core'] || packageJson.devDependencies?.['@tachui/core']
 
@@ -123,7 +123,7 @@ export const devCommand = new Command('dev')
           console.log(chalk.gray('  • SwiftUI-style modifiers'))
           console.log(chalk.gray('  • Fine-grained reactivity'))
           console.log(chalk.gray('  • Direct DOM rendering'))
-          console.log(chalk.gray('  • Phase 6 state management'))
+          console.log(chalk.gray('  • Advanced state management'))
           console.log(chalk.gray('  • Navigation system'))
 
           console.log(chalk.yellow('\n💡 Tips:'))
