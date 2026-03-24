@@ -11,7 +11,6 @@ import { Command } from 'commander'
 import ora from 'ora'
 import prompts from 'prompts'
 import { createProject } from '../scaffold/create-project.js'
-import { resolveCoreVersionFromMap } from '../scaffold/core-version-map.js'
 import { resolvePackageRoot } from '../scaffold/package-root.js'
 import { getTemplateDefinition, listTemplateDefinitions } from '../scaffold/templates.js'
 import { validateProjectName } from '../scaffold/validators.js'
@@ -26,52 +25,18 @@ interface InitOptions {
   listTemplates?: boolean
 }
 
-function readCliVersion(packageRoot: string): string | null {
+function readCliVersion(packageRoot: string): string {
   const packageJsonPath = join(packageRoot, 'package.json')
   if (!existsSync(packageJsonPath)) {
-    return null
+    return 'latest'
   }
 
   try {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
-    return typeof packageJson.version === 'string' ? packageJson.version : null
+    return typeof packageJson.version === 'string' ? packageJson.version : 'latest'
   } catch {
-    return null
+    return 'latest'
   }
-}
-
-function isValidSemverLike(value: unknown): value is string {
-  return typeof value === 'string' && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(value)
-}
-
-async function resolveLatestPublishedCoreVersion(): Promise<string | null> {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 2500)
-
-  try {
-    const response = await fetch('https://registry.npmjs.org/@tachui/core/latest', {
-      signal: controller.signal,
-    })
-    if (!response.ok) {
-      return null
-    }
-
-    const body = (await response.json()) as { version?: unknown }
-    return isValidSemverLike(body.version) ? body.version : null
-  } catch {
-    return null
-  } finally {
-    clearTimeout(timeout)
-  }
-}
-
-async function resolveDefaultTachuiVersion(cliVersion: string | null): Promise<string> {
-  const registryVersion = await resolveLatestPublishedCoreVersion()
-  if (registryVersion) {
-    return registryVersion
-  }
-
-  return resolveCoreVersionFromMap(cliVersion)
 }
 
 function printTemplates(): void {
@@ -111,14 +76,12 @@ export const initCommand = new Command('init')
     try {
       const packageRoot = resolvePackageRoot(import.meta.url)
       const templatesRoot = join(packageRoot, 'templates')
-      const cliVersion = readCliVersion(packageRoot)
+      const defaultVersion = readCliVersion(packageRoot)
 
       if (options?.listTemplates) {
         printTemplates()
         return
       }
-
-      const defaultVersion = await resolveDefaultTachuiVersion(cliVersion)
 
       let finalTarget = target
       let finalTemplateId = (options?.template || 'basic').toLowerCase()
