@@ -19,9 +19,6 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
-    "@tachui/docs",
-    "@tachui/demos",
-    "@tachui/intro-app",
-    "@tachui/calculator-app"
+    "@tachui/docs"
   ]
 }
