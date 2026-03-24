@@ -19,8 +19,8 @@ const COMPONENT_CATEGORIES = {
   common: ['BasicForm', 'BasicInput', 'Toggle', 'Picker', 'Link', 'List', 'ScrollView', 'Section', 'Divider'],
   advanced: ['DatePicker', 'Stepper', 'Slider', 'ActionSheet', 'Alert', 'Menu'],
   plugins: {
-    '@tachui/advanced-forms': ['DatePicker', 'Stepper', 'Slider'],
-    '@tachui/mobile-patterns': ['ActionSheet', 'Alert']
+    '@tachui/forms': ['DatePicker', 'Stepper', 'Slider'],
+    '@tachui/mobile': ['ActionSheet', 'Alert']
   }
 }
 
@@ -146,7 +146,7 @@ function recommendBundle(analysis) {
     for (const [plugin, components] of Object.entries(COMPONENT_CATEGORIES.plugins)) {
       const usesPlugin = components.some(comp => usedComponents.includes(comp))
       if (usesPlugin) {
-        const pluginSize = plugin === '@tachui/advanced-forms' ? 42 : 24
+        const pluginSize = plugin === '@tachui/forms' ? 42 : 24
         pluginRecommendations.push(`${plugin} (+${pluginSize}KB)`)
         totalSize += pluginSize
       }

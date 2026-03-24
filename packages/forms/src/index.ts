@@ -1,7 +1,7 @@
 /**
  * TachUI Forms - Comprehensive Form Components and Validation
  *
- * Unified package combining all form functionality from @tachui/forms and @tachui/advanced-forms
+ * Unified package combining all form functionality from legacy split form packages
  * Provides 27 components with comprehensive validation and optimal tree-shaking
  */
 

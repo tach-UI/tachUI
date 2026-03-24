@@ -227,7 +227,7 @@ Extend tachUI with additional packages:
 - **[@tachui/forms](https://npm.im/@tachui/forms)** - Advanced form components
 - **[@tachui/navigation](https://npm.im/@tachui/navigation)** - Navigation and routing
 - **[@tachui/symbols](https://npm.im/@tachui/symbols)** - Icon system
-- **[@tachui/mobile-patterns](https://npm.im/@tachui/mobile-patterns)** - Mobile UI patterns
+- **[@tachui/mobile](https://npm.im/@tachui/mobile)** - Mobile UI patterns
 
 ## Documentation
 

@@ -9,7 +9,7 @@ The `DatePicker` component offers flexible date and time selection with support 
 ## Basic Usage
 
 ```typescript
-import { DatePicker } from '@tachui/advanced-forms'
+import { DatePicker } from '@tachui/forms'
 import { createSignal } from '@tachui/core'
 
 function BasicExample() {
@@ -202,7 +202,7 @@ Pre-configured DatePicker setups for common use cases:
 For selecting past dates (birth dates):
 
 ```typescript
-import { DatePickerUtils } from '@tachui/advanced-forms'
+import { DatePickerUtils } from '@tachui/forms'
 
 const [birthDate, setBirthDate] = createSignal(new Date('1990-01-01'))
 
@@ -394,7 +394,7 @@ function DateRangePicker() {
 Create a custom DatePicker theme:
 
 ```typescript
-import { DatePickerStyles } from '@tachui/advanced-forms'
+import { DatePickerStyles } from '@tachui/forms'
 
 const customTheme = DatePickerStyles.createTheme({
   colors: {

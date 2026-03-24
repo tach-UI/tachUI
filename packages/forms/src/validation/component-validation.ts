@@ -1,7 +1,7 @@
 /**
  * Forms Package Component Validation
  *
- * Validation for @tachui/advanced-forms components that registers with the Core
+ * Validation for @tachui/forms components that registers with the Core
  * validation system, following proper plugin architecture.
  */
 
@@ -41,7 +41,7 @@ export class FormsValidationError extends Error {
   getFormattedMessage(): string {
     const { component, suggestion, example, documentation } = this.context
 
-    let formatted = `❌ [@tachui/advanced-forms] ${component} Component Error: ${this.message}\n`
+    let formatted = `❌ [@tachui/forms] ${component} Component Error: ${this.message}\n`
 
     if (suggestion) {
       formatted += `\n💡 Suggestion: ${suggestion}\n`
@@ -73,7 +73,7 @@ export const FormsComponentValidation = {
           component: 'TextField',
           suggestion: 'Add name property: TextField({ name: "fieldName" })',
           documentation:
-            'https://docs.tachui.dev/advanced-forms/components/textfield',
+            'https://docs.tachui.dev/forms/components/textfield',
           example: {
             wrong: 'TextField()',
             correct: 'TextField({ name: "email", value: emailSignal })',
@@ -119,7 +119,7 @@ export const FormsComponentValidation = {
           component: 'EmailField',
           suggestion: 'Add name property: EmailField({ name: "email" })',
           documentation:
-            'https://docs.tachui.dev/advanced-forms/components/emailfield',
+            'https://docs.tachui.dev/forms/components/emailfield',
           example: {
             wrong: 'EmailField()',
             correct: 'EmailField({ name: "email", value: emailSignal })',
@@ -165,7 +165,7 @@ export const FormsComponentValidation = {
           component: 'PasswordField',
           suggestion: 'Add name property: PasswordField({ name: "password" })',
           documentation:
-            'https://docs.tachui.dev/advanced-forms/components/passwordfield',
+            'https://docs.tachui.dev/forms/components/passwordfield',
           example: {
             wrong: 'PasswordField()',
             correct:
@@ -213,7 +213,7 @@ export const FormsComponentValidation = {
           component: 'PhoneField',
           suggestion: 'Add name property: PhoneField({ name: "phone" })',
           documentation:
-            'https://docs.tachui.dev/advanced-forms/components/phonefield',
+            'https://docs.tachui.dev/forms/components/phonefield',
           example: {
             wrong: 'PhoneField()',
             correct: 'PhoneField({ name: "phone", format: "US" })',
@@ -259,7 +259,7 @@ export const FormsComponentValidation = {
           component: 'NumberField',
           suggestion: 'Add name property: NumberField({ name: "amount" })',
           documentation:
-            'https://docs.tachui.dev/advanced-forms/components/numberfield',
+            'https://docs.tachui.dev/forms/components/numberfield',
           example: {
             wrong: 'NumberField()',
             correct: 'NumberField({ name: "amount", min: 0, max: 100 })',
@@ -306,7 +306,7 @@ export const FormsComponentValidation = {
           suggestion:
             'Add name property: CreditCardField({ name: "cardNumber" })',
           documentation:
-            'https://docs.tachui.dev/advanced-forms/components/creditcardfield',
+            'https://docs.tachui.dev/forms/components/creditcardfield',
           example: {
             wrong: 'CreditCardField()',
             correct:
@@ -359,32 +359,32 @@ export const FormsComponentValidation = {
 export function createFormsValidators(): ComponentValidator[] {
   return [
     {
-      packageName: 'advanced-forms',
+      packageName: 'forms',
       componentName: 'TextField',
       validate: FormsComponentValidation.validateTextField,
     },
     {
-      packageName: 'advanced-forms',
+      packageName: 'forms',
       componentName: 'EmailField',
       validate: FormsComponentValidation.validateEmailField,
     },
     {
-      packageName: 'advanced-forms',
+      packageName: 'forms',
       componentName: 'PasswordField',
       validate: FormsComponentValidation.validatePasswordField,
     },
     {
-      packageName: 'advanced-forms',
+      packageName: 'forms',
       componentName: 'PhoneField',
       validate: FormsComponentValidation.validatePhoneField,
     },
     {
-      packageName: 'advanced-forms',
+      packageName: 'forms',
       componentName: 'NumberField',
       validate: FormsComponentValidation.validateNumberField,
     },
     {
-      packageName: 'advanced-forms',
+      packageName: 'forms',
       componentName: 'CreditCardField',
       validate: FormsComponentValidation.validateCreditCardField,
     },
@@ -410,13 +410,13 @@ export async function registerFormsValidators(): Promise<void> {
 
     if (process.env.NODE_ENV !== 'production') {
       console.info(
-        `🔍 [@tachui/advanced-forms] Registered ${validators.length} component validators`
+        `🔍 [@tachui/forms] Registered ${validators.length} component validators`
       )
     }
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn(
-        '⚠️ [@tachui/advanced-forms] Could not register validators with Core:',
+        '⚠️ [@tachui/forms] Could not register validators with Core:',
         error
       )
     }

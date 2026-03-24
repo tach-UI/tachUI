@@ -246,7 +246,7 @@ const buttonToggle = Toggle(isEnabled, {
 Numeric input with slider interface.
 
 ```typescript
-import { Slider } from '@tachui/advanced-forms'
+import { Slider } from '@tachui/forms'
 
 // Basic slider
 const [volume, setVolume] = createSignal(50)
@@ -298,7 +298,7 @@ const styledSlider = Slider(volume, {
 Form containers for organizing form elements.
 
 ```typescript
-import { Form, Section } from '@tachui/advanced-forms'
+import { Form, Section } from '@tachui/forms'
 
 // Form with validation
 const handleSubmit = (formData: any) => {

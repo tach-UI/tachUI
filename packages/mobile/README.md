@@ -80,7 +80,7 @@ const MyComponent = () => {
 ### Alert
 
 ```typescript
-import { Alert, useAlert } from '@tachui/mobile-patterns'
+import { Alert, useAlert } from '@tachui/mobile'
 
 const MyComponent = () => {
   const alert = useAlert()
@@ -119,7 +119,7 @@ const MyComponent = () => {
 Bottom sheet with multiple action options:
 
 ```typescript
-import { ActionSheet } from '@tachui/mobile-patterns'
+import { ActionSheet } from '@tachui/mobile'
 
 ActionSheet({
   title: 'Photo Options',
@@ -138,7 +138,7 @@ ActionSheet({
 Modal alerts with customizable buttons:
 
 ```typescript
-import { Alert } from '@tachui/mobile-patterns'
+import { Alert } from '@tachui/mobile'
 
 Alert({
   title: 'Network Error',
@@ -159,7 +159,7 @@ Swipe-to-reveal action buttons:
 
 ```typescript
 // Planned for v0.2.0
-import { SwipeActions, SwipeAction } from '@tachui/mobile-patterns'
+import { SwipeActions, SwipeAction } from '@tachui/mobile'
 
 SwipeActions({
   content: ListRow({ title: 'John Doe', subtitle: 'john@example.com' }),
@@ -194,7 +194,7 @@ Pull-down-to-refresh functionality:
 
 ```typescript
 // Planned for v0.2.0
-import { PullToRefresh } from '@tachui/mobile-patterns'
+import { PullToRefresh } from '@tachui/mobile'
 import { ScrollView } from '@tachui/core'
 
 PullToRefresh({
@@ -224,7 +224,7 @@ Both ActionSheet and Alert provide full modal systems with:
 ### ✅ Utility Functions
 
 ```typescript
-import { ActionSheetUtils, AlertUtils } from '@tachui/mobile-patterns'
+import { ActionSheetUtils, AlertUtils } from '@tachui/mobile'
 
 // Pre-configured action sheets
 const deleteConfirmation = ActionSheetUtils.deleteConfirmation(
@@ -248,7 +248,7 @@ const confirmAlert = AlertUtils.confirm(
 
 ```typescript
 // Planned for v0.2.0
-import { presentModal, dismissModal } from '@tachui/mobile-patterns'
+import { presentModal, dismissModal } from '@tachui/mobile'
 
 const presentSettings = () => {
   presentModal({
@@ -265,7 +265,7 @@ const presentSettings = () => {
 
 ```typescript
 // Planned for v0.2.0
-import { hapticFeedback } from '@tachui/mobile-patterns'
+import { hapticFeedback } from '@tachui/mobile'
 
 Button('Success Action', () => {
   // Perform action
@@ -277,7 +277,7 @@ Button('Success Action', () => {
 
 ```typescript
 // Planned for v0.2.0
-import { SafeAreaView } from '@tachui/mobile-patterns'
+import { SafeAreaView } from '@tachui/mobile'
 
 const app = SafeAreaView({
   children: [
@@ -292,7 +292,7 @@ const app = SafeAreaView({
 
 ```typescript
 // Planned for v0.2.0
-import { GestureRecognizer } from '@tachui/mobile-patterns'
+import { GestureRecognizer } from '@tachui/mobile'
 
 GestureRecognizer({
   content: MyView(),
@@ -319,7 +319,7 @@ GestureRecognizer({
 
 ```typescript
 // Planned for v0.3.0
-import { IOSActionSheet, IOSAlert } from '@tachui/mobile-patterns'
+import { IOSActionSheet, IOSAlert } from '@tachui/mobile'
 
 // iOS-specific styling and behavior
 IOSActionSheet({
@@ -334,7 +334,7 @@ IOSActionSheet({
 
 ```typescript
 // Planned for v0.3.0
-import { MaterialActionSheet, MaterialAlert } from '@tachui/mobile-patterns'
+import { MaterialActionSheet, MaterialAlert } from '@tachui/mobile'
 
 // Material Design styling
 MaterialActionSheet({
@@ -348,7 +348,7 @@ MaterialActionSheet({
 ## Animation and Transitions
 
 ```typescript
-import { createMobileTransition } from '@tachui/mobile-patterns'
+import { createMobileTransition } from '@tachui/mobile'
 
 const slideUpTransition = createMobileTransition({
   type: 'slide',
@@ -386,15 +386,15 @@ Mobile accessibility features:
 
 Check out complete examples:
 
-- **[Mobile App Demo](https://github.com/tach-UI/tachUI/tree/main/apps/examples/mobile-patterns/app)**
-- **[ActionSheet Gallery](https://github.com/tach-UI/tachUI/tree/main/apps/examples/mobile-patterns/actionsheet)**
-- **[Swipe Actions List](https://github.com/tach-UI/tachUI/tree/main/apps/examples/mobile-patterns/swipe-actions)**
+- **[Mobile App Demo](https://github.com/tach-UI/tachUI/tree/main/apps/examples/mobile/app)**
+- **[ActionSheet Gallery](https://github.com/tach-UI/tachUI/tree/main/apps/examples/mobile/actionsheet)**
+- **[Swipe Actions List](https://github.com/tach-UI/tachUI/tree/main/apps/examples/mobile/swipe-actions)**
 
 ## API Reference
 
-- **[ActionSheet API](https://github.com/tach-UI/tachUI/blob/main/docs/api/mobile-patterns/src/classes/ActionSheet.md)**
-- **[Alert API](https://github.com/tach-UI/tachUI/blob/main/docs/api/mobile-patterns/src/classes/Alert.md)**
-- **[SwipeActions API](https://github.com/tach-UI/tachUI/blob/main/docs/api/mobile-patterns/src/classes/SwipeActions.md)**
+- **[ActionSheet API](https://github.com/tach-UI/tachUI/blob/main/docs/api/mobile/src/classes/ActionSheet.md)**
+- **[Alert API](https://github.com/tach-UI/tachUI/blob/main/docs/api/mobile/src/classes/Alert.md)**
+- **[SwipeActions API](https://github.com/tach-UI/tachUI/blob/main/docs/api/mobile/src/classes/SwipeActions.md)**
 
 ## Current Status
 

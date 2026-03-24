@@ -9,7 +9,7 @@ Alert displays a modal dialog that appears above all other content, requiring us
 ## Basic Usage
 
 ```typescript
-import { Alert } from '@tachui/mobile-patterns'
+import { Alert } from '@tachui/mobile'
 import { createSignal } from '@tachui/core'
 
 function BasicAlert() {

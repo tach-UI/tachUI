@@ -9,7 +9,7 @@ The `ActionSheet` component provides a mobile-first approach to presenting multi
 ## Basic Usage
 
 ```typescript
-import { ActionSheet } from '@tachui/mobile-patterns'
+import { ActionSheet } from '@tachui/mobile'
 import { createSignal } from '@tachui/core'
 
 function BasicExample() {

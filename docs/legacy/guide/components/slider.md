@@ -4,10 +4,10 @@ The Slider component provides value selection within a range with SwiftUI-inspir
 
 ## Overview
 
-The Slider component is part of TachUI's advanced-forms plugin, providing consistent range selection interfaces for advanced form controls.
+The Slider component is part of TachUI's forms package, providing consistent range selection interfaces for advanced form controls.
 
 ```typescript
-import { Slider } from '@tachui/advanced-forms'
+import { Slider } from '@tachui/forms'
 
 Slider(value, {
   min: 0,

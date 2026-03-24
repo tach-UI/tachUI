@@ -266,7 +266,7 @@ const customToggle = Toggle(isEnabled, {
 
 ```typescript
 import { createSignal } from '@tachui/core'
-import { Slider } from '@tachui/advanced-forms'
+import { Slider } from '@tachui/forms'
 
 const [volume, setVolume] = createSignal(50)
 const [brightness, setBrightness] = createSignal(75)
@@ -457,8 +457,8 @@ const cardWithOverlay = ZStack({
 
 ```typescript
 import { Picker, Toggle, Button, VStack } from '@tachui/primitives'
-import { Form, Section } from '@tachui/advanced-forms'
-import { Slider } from '@tachui/advanced-forms'
+import { Form, Section } from '@tachui/forms'
+import { Slider } from '@tachui/forms'
 
 function UserRegistrationForm() {
   // Form state

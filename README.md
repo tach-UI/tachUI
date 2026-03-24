@@ -114,7 +114,7 @@ All the familiar SwiftUI components, optimized for web:
 
 - **TextField, Slider, Stepper, DatePicker** - Advanced form controls (`@tachui/forms`)
 - **NavigationView, NavigationLink, TabView** - Navigation system (`@tachui/navigation`)
-- **Alert, ActionSheet** - Mobile-first patterns (`@tachui/mobile-patterns`)
+- **Alert, ActionSheet** - Mobile-first patterns (`@tachui/mobile`)
 - **Symbol** - Icon system with Lucide integration (`@tachui/symbols`)
 
 #### **Data & Logic**
@@ -228,7 +228,6 @@ pnpm test
 │   ├── primitives/        # Foundation UI components (VStack, HStack, Text, Button, Image)
 │   ├── modifiers/         # 150+ chainable SwiftUI-style modifiers
 │   ├── flow-control/      # Conditional rendering (Show, ForEach, Unless, When)
-│   ├── effects/           # Visual effects and filters
 │   ├── forms/             # Advanced form components and validation
 │   ├── navigation/        # NavigationView, TabView, and routing utilities
 │   ├── grid/              # CSS Grid integration with responsive design

@@ -43,8 +43,8 @@ For optimal bundle sizes, import only the modifiers you need using granular impo
 ```typescript
 // Import only what you need (~2KB)
 import { padding, margin, size } from '@tachui/modifiers/basic'
-import { shadow } from '@tachui/effects/shadows'
-import { blur } from '@tachui/effects/filters'
+import { shadow } from '@tachui/modifiers/effects/shadows'
+import { blur } from '@tachui/modifiers/effects/filters'
 
 // Use directly
 Text("Hello").padding(16).shadow({ x: 0, y: 2, blur: 4 }).build()
@@ -53,9 +53,9 @@ Text("Hello").padding(16).shadow({ x: 0, y: 2, blur: 4 }).build()
 ### Visual Effects (Import specific effects)
 ```typescript
 // Import specific visual effects (~3KB total)
-import { shadow, glowEffect } from '@tachui/effects/shadows'
-import { blur, saturate } from '@tachui/effects/filters'
-import { hover, cursor } from '@tachui/effects/effects'
+import { shadow, glowEffect } from '@tachui/modifiers/effects/shadows'
+import { blur, saturate } from '@tachui/modifiers/effects/filters'
+import { hover, cursor } from '@tachui/modifiers/effects/effects'
 
 // Use specific effects
 Button("Click me")
@@ -85,7 +85,7 @@ Text("Title")
 // Import everything (not recommended for production)
 import { Text } from '@tachui/core'
 import * as Modifiers from '@tachui/modifiers'
-import * as Effects from '@tachui/effects'
+import * as Effects from '@tachui/modifiers/effects'
 
 // All modifiers available but larger bundle
 Text("Hello").padding(16).shadow({ x: 0, y: 2 }).build()

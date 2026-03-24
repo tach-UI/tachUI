@@ -407,7 +407,7 @@ $ npx tacho optimize migrate
   
 💡 Solutions:
   1. Switch to 'common-production' or 'complete-production' bundle
-  2. Install @tachui/advanced-forms plugin for DatePicker
+  2. Install @tachui/forms plugin for DatePicker
   3. Replace DatePicker with BasicInput for minimal bundle
 
 🔄 Automatic rollback initiated...

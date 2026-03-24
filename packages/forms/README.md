@@ -84,12 +84,12 @@ import { required, email } from '@tachui/forms/validation'
 
 ## Migration from v1.x
 
-### From @tachui/forms + @tachui/advanced-forms
+### From legacy split form packages
 
 ```typescript
 // Old approach (488KB total)
 import { TextField, Form } from '@tachui/forms'
-import { DatePicker, Stepper } from '@tachui/advanced-forms'
+import { DatePicker, Stepper } from '@tachui/forms'
 
 // New unified approach (390KB total)
 import { TextField, Form, DatePicker, Stepper } from '@tachui/forms'
