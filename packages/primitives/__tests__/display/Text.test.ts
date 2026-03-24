@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TextProps } from '../../src/display/Text'
 import {
   EnhancedText,
+  Heading,
   Text,
   TextFormat,
   TextStyles,
@@ -348,6 +349,18 @@ describe('EnhancedText', () => {
   })
 
   describe('Accessibility', () => {
+    it('should provide heading shorthand helpers on Text', () => {
+      const heading = Text.H1('Main title')
+      const rendered = (heading as any).render()
+      expect(rendered[0].tag).toBe('h1')
+    })
+
+    it('should provide dedicated Heading component API', () => {
+      const heading = Heading('Section title', { level: 3 })
+      const rendered = (heading as any).render()
+      expect(rendered[0].tag).toBe('h3')
+    })
+
     it('should apply accessibility label', () => {
       const text = new EnhancedText({
         content: 'Test',

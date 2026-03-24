@@ -172,6 +172,10 @@ Text('This is a very long text that will be truncated after three lines...')
 ### Semantic Roles
 
 ```typescript
+// Preferred: semantic heading helpers
+Heading('Page Title', { level: 1 })
+Text.H2('Section Title')
+
 // Heading text
 Text('Page Title')
   .accessibilityRole('heading')
@@ -404,6 +408,28 @@ Text(
   content: string | (() => string) | Signal<string>,
   props?: Omit<TextProps, 'content'>
 ): ModifiableComponent<TextProps>
+```
+
+### Heading Function
+
+```typescript
+Heading(
+  content: string | (() => string) | Signal<string>,
+  options?: Omit<TextProps, 'content' | 'accessibilityRole' | 'accessibilityLevel'> & {
+    level?: 1 | 2 | 3 | 4 | 5 | 6
+  }
+): ModifiableComponent<TextProps>
+```
+
+### Text Heading Shortcuts
+
+```typescript
+Text.H1('Page Title')
+Text.H2('Section Title')
+Text.H3('Subsection')
+Text.H4('Detail')
+Text.H5('Minor Heading')
+Text.H6('Micro Heading')
 ```
 
 ### TextProps Interface

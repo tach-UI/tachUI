@@ -91,6 +91,32 @@ export interface TextFormatting {
   smallCaps?: boolean
 }
 
+export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6
+
+type TextContent = string | (() => string) | Signal<string>
+type TextComponent = ModifiableComponentWithModifiers<TextProps> &
+  Concatenatable<TextProps>
+type HeadingAdditionalProps = Omit<
+  Partial<TextProps>,
+  'accessibilityRole' | 'accessibilityLevel'
+>
+
+export interface HeadingProps extends HeadingAdditionalProps {
+  level?: HeadingLevel
+}
+
+type TextWithHeadingShortcuts = ((
+  content?: TextContent,
+  additionalProps?: Partial<TextProps>
+) => TextComponent) & {
+  H1: (content?: TextContent, additionalProps?: HeadingAdditionalProps) => TextComponent
+  H2: (content?: TextContent, additionalProps?: HeadingAdditionalProps) => TextComponent
+  H3: (content?: TextContent, additionalProps?: HeadingAdditionalProps) => TextComponent
+  H4: (content?: TextContent, additionalProps?: HeadingAdditionalProps) => TextComponent
+  H5: (content?: TextContent, additionalProps?: HeadingAdditionalProps) => TextComponent
+  H6: (content?: TextContent, additionalProps?: HeadingAdditionalProps) => TextComponent
+}
+
 /**
  * Typography presets following SwiftUI patterns
  */
@@ -229,16 +255,51 @@ export class EnhancedText
 /**
  * Create enhanced Text component with modifier support and concatenation
  */
-export function Text(
-  content?: string | (() => string) | Signal<string>,
+function createText(
+  content?: TextContent,
   additionalProps?: Partial<TextProps>
-): ModifiableComponentWithModifiers<TextProps> & Concatenatable<TextProps> {
+): TextComponent {
   const props: TextProps = {
     content,
     ...additionalProps,
   }
   const component = createComponentInstance(EnhancedText, props)
   return withModifiers(component) as any
+}
+
+function createHeadingWithLevel(level: HeadingLevel) {
+  return (
+    content?: TextContent,
+    additionalProps?: HeadingAdditionalProps
+  ): TextComponent =>
+    createText(content, {
+      ...additionalProps,
+      accessibilityRole: 'heading',
+      accessibilityLevel: level,
+    })
+}
+
+/**
+ * Create enhanced Text component with heading shortcuts
+ */
+export const Text: TextWithHeadingShortcuts = Object.assign(createText, {
+  H1: createHeadingWithLevel(1),
+  H2: createHeadingWithLevel(2),
+  H3: createHeadingWithLevel(3),
+  H4: createHeadingWithLevel(4),
+  H5: createHeadingWithLevel(5),
+  H6: createHeadingWithLevel(6),
+})
+
+/**
+ * Create a semantic heading element using h1-h6 tags
+ */
+export function Heading(
+  content?: TextContent,
+  options: HeadingProps = {}
+): TextComponent {
+  const { level = 2, ...additionalProps } = options
+  return createHeadingWithLevel(level)(content, additionalProps)
 }
 
 /**
