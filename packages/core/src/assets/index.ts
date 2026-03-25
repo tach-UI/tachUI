@@ -38,7 +38,6 @@ export {
 // Convenience function for registering assets
 export function registerAsset(name: string, asset: Asset): void
 export function registerAsset(asset: Asset): void
-export function registerAsset(asset1: Asset, asset2: Asset, ...rest: Asset[]): void
 export function registerAsset(asset: Asset, name?: string): void
 export function registerAsset(...assets: [Asset, ...Asset[]]): void
 export function registerAsset(...args: unknown[]): void {

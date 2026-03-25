@@ -14,7 +14,6 @@ export * from './types';
 export { FontWeightPreset as FontWeight, FontWidth, SystemFonts, createSystemFont, createGoogleFont, createVariableFont, type FontAssetOptions, type FontWeightValue, type FontWidthValue } from './FontAsset';
 export declare function registerAsset(name: string, asset: Asset): void;
 export declare function registerAsset(asset: Asset): void;
-export declare function registerAsset(asset1: Asset, asset2: Asset, ...rest: Asset[]): void;
 export declare function registerAsset(asset: Asset, name?: string): void;
 export declare function registerAsset(...assets: [Asset, ...Asset[]]): void;
 export declare function createColorAsset(light: string, dark: string, name?: string): ColorAsset;

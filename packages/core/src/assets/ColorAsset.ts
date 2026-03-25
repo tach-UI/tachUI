@@ -240,11 +240,7 @@ export class ColorAsset extends Asset {
   }
 
   opacity(alpha: number): string {
-    if (!Number.isFinite(alpha)) {
-      const error = `ColorAsset.opacity(alpha) requires a finite number for asset "${this.name}"`
-      if (process.env.NODE_ENV === 'development') {
-        throw new Error(error)
-      }
+    if (!this.isFiniteInput(alpha, 'opacity(alpha)')) {
       return this.resolve()
     }
 
@@ -253,11 +249,7 @@ export class ColorAsset extends Asset {
   }
 
   saturate(amount: number): string {
-    if (!Number.isFinite(amount)) {
-      const error = `ColorAsset.saturate(amount) requires a finite number for asset "${this.name}"`
-      if (process.env.NODE_ENV === 'development') {
-        throw new Error(error)
-      }
+    if (!this.isFiniteInput(amount, 'saturate(amount)')) {
       return this.resolve()
     }
 
@@ -269,11 +261,7 @@ export class ColorAsset extends Asset {
     // `amount` is intentionally not CSS `filter: brightness(...)`.
     // It is a deterministic token transform in [-1, 1] where:
     // -1 lerps channels to black, 0 is unchanged, 1 lerps channels to white.
-    if (!Number.isFinite(amount)) {
-      const error = `ColorAsset.brighten(amount) requires a finite number for asset "${this.name}"`
-      if (process.env.NODE_ENV === 'development') {
-        throw new Error(error)
-      }
+    if (!this.isFiniteInput(amount, 'brighten(amount)')) {
       return this.resolve()
     }
 
@@ -284,11 +272,7 @@ export class ColorAsset extends Asset {
   contrast(amount: number): string {
     // Deterministic midpoint-pivot contrast transform in [-1, 1]:
     // x' = (x - 0.5) * (1 + amount) + 0.5 where x is channel/255.
-    if (!Number.isFinite(amount)) {
-      const error = `ColorAsset.contrast(amount) requires a finite number for asset "${this.name}"`
-      if (process.env.NODE_ENV === 'development') {
-        throw new Error(error)
-      }
+    if (!this.isFiniteInput(amount, 'contrast(amount)')) {
       return this.resolve()
     }
 
@@ -297,11 +281,7 @@ export class ColorAsset extends Asset {
   }
 
   rotateHue(degrees: number): string {
-    if (!Number.isFinite(degrees)) {
-      const error = `ColorAsset.rotateHue(degrees) requires a finite number for asset "${this.name}"`
-      if (process.env.NODE_ENV === 'development') {
-        throw new Error(error)
-      }
+    if (!this.isFiniteInput(degrees, 'rotateHue(degrees)')) {
       return this.resolve()
     }
 
@@ -333,6 +313,18 @@ export class ColorAsset extends Asset {
     }
   }
 
+  private isFiniteInput(value: number, methodSignature: string): boolean {
+    if (Number.isFinite(value)) {
+      return true
+    }
+
+    const error = `ColorAsset.${methodSignature} requires a finite number for asset "${this.name}"`
+    if (process.env.NODE_ENV === 'development') {
+      throw new Error(error)
+    }
+    return false
+  }
+
   private static clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value))
   }
@@ -355,7 +347,8 @@ export class ColorAsset extends Asset {
     const trimmed = color.trim()
     const alphaString = ColorAsset.formatAlpha(alpha)
 
-    if (ColorAsset.HEX_REGEX.test(trimmed)) {
+    const hexMatch = trimmed.match(ColorAsset.HEX_REGEX)
+    if (hexMatch) {
       const [r, g, b] = ColorAsset.parseHex(trimmed)
       return `rgba(${r}, ${g}, ${b}, ${alphaString})`
     }
@@ -430,6 +423,8 @@ export class ColorAsset extends Asset {
     const nextSaturation = ColorAsset.clamp(saturation, 0, 1)
     const [r, g, b] = ColorAsset.hslToRgb(hsla.h, nextSaturation, hsla.l)
 
+    // Note: `saturate(0)` can be a color-space round-trip (RGB->HSL->RGB) for
+    // non-HSL inputs, so exact channel identity is not guaranteed for every color.
     if (hsla.a < 1) {
       return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(hsla.a)})`
     }
