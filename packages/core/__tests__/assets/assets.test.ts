@@ -311,6 +311,15 @@ describe('Asset System', () => {
       expect(colorAsset.saturate(1)).toBe('#04FAFF')
     })
 
+    it('should match issue fixture for saturate(0.6)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(0.6)).toBe('#2CD4D7')
+    })
+
     it('should fully desaturate for saturate(-1)', () => {
       const colorAsset = ColorAsset.init({
         default: '#679B9C',
@@ -336,6 +345,67 @@ describe('Asset System', () => {
       })
 
       expect(colorAsset.saturate(0.5)).toBe('var(--primary-color)')
+    })
+
+    it('should resolve dark variant before applying saturation', () => {
+      const originalGetCurrentTheme = (ColorAsset as any).getCurrentTheme
+      ;(ColorAsset as any).getCurrentTheme = () => 'dark'
+
+      const colorAsset = ColorAsset.init({
+        default: '#ffffff',
+        light: '#ffffff',
+        dark: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(0.6)).toBe('#2CD4D7')
+
+      ;(ColorAsset as any).getCurrentTheme = originalGetCurrentTheme
+    })
+
+    it('should saturate rgb input', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'rgb(103, 155, 156)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(0.6)).toBe('#2CD4D7')
+    })
+
+    it('should saturate hsl input', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'hsl(181, 21%, 51%)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(0.6)).toBe('#2DD5D8')
+    })
+
+    it('should saturate hsla input while preserving alpha', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'hsla(181, 21%, 51%, 0.4)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(0.6)).toBe('rgba(45, 213, 216, 0.4)')
+    })
+
+    it('should saturate named colors in supported table', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'red',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(-0.5)).toBe('#BF4040')
+    })
+
+    it('should saturate 8-digit hex input while preserving alpha', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C80',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(0.6)).toBe('rgba(44, 212, 215, 0.502)')
     })
 
     it('should clamp saturation amount to -1..1 range', () => {

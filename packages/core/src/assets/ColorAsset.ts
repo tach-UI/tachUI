@@ -36,6 +36,8 @@ export class ColorAsset extends Asset {
     /^hsl\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*\)$/i
   private static readonly HSLA_REGEX =
     /^hsla\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]*\.?[0-9]+)\s*\)$/i
+  // Deliberately partial named-color mapping used for numeric saturation transforms.
+  // Unlisted CSS color names fall through and are returned unchanged by `saturate`.
   private static readonly NAMED_COLOR_RGB: Record<string, [number, number, number, number]> = {
     transparent: [0, 0, 0, 0],
     black: [0, 0, 0, 1],
@@ -369,6 +371,9 @@ export class ColorAsset extends Asset {
   private static applySaturation(color: string, amount: number): string {
     const hsla = ColorAsset.parseColorToHsla(color)
     if (!hsla) {
+      // Unlike `opacity` (which can use `color-mix` as a generic CSS fallback),
+      // saturation requires channel math; passthrough keeps unresolved tokens
+      // (e.g. CSS vars / unsupported named colors) stable instead of guessing.
       return color
     }
 
