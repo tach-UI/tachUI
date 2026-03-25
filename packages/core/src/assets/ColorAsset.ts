@@ -36,6 +36,31 @@ export class ColorAsset extends Asset {
     /^hsl\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*\)$/i
   private static readonly HSLA_REGEX =
     /^hsla\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]*\.?[0-9]+)\s*\)$/i
+  private static readonly NAMED_COLOR_RGB: Record<string, [number, number, number, number]> = {
+    transparent: [0, 0, 0, 0],
+    black: [0, 0, 0, 1],
+    white: [255, 255, 255, 1],
+    red: [255, 0, 0, 1],
+    green: [0, 128, 0, 1],
+    blue: [0, 0, 255, 1],
+    yellow: [255, 255, 0, 1],
+    cyan: [0, 255, 255, 1],
+    magenta: [255, 0, 255, 1],
+    gray: [128, 128, 128, 1],
+    grey: [128, 128, 128, 1],
+    orange: [255, 165, 0, 1],
+    purple: [128, 0, 128, 1],
+    pink: [255, 192, 203, 1],
+    brown: [165, 42, 42, 1],
+    navy: [0, 0, 128, 1],
+    teal: [0, 128, 128, 1],
+    lime: [0, 255, 0, 1],
+    olive: [128, 128, 0, 1],
+    maroon: [128, 0, 0, 1],
+    silver: [192, 192, 192, 1],
+    aqua: [0, 255, 255, 1],
+    fuchsia: [255, 0, 255, 1],
+  }
 
   constructor(options: ColorAssetOptions) {
     super(options.name)
@@ -225,6 +250,19 @@ export class ColorAsset extends Asset {
     return ColorAsset.applyAlpha(this.resolve(), clamped)
   }
 
+  saturate(amount: number): string {
+    if (!Number.isFinite(amount)) {
+      const error = `ColorAsset.saturate(amount) requires a finite number for asset "${this.name}"`
+      if (process.env.NODE_ENV === 'development') {
+        throw new Error(error)
+      }
+      return this.resolve()
+    }
+
+    const clamped = ColorAsset.clamp(amount, -1, 1)
+    return ColorAsset.applySaturation(this.resolve(), clamped)
+  }
+
   resolve(): string {
     // If we're inside a reactive computation (effect/computed), use reactive theme signal
     // Otherwise, use the static getCurrentTheme for backward compatibility with tests
@@ -303,8 +341,13 @@ export class ColorAsset extends Asset {
   }
 
   private static parseHex(hexColor: string): [number, number, number] {
+    const [r, g, b] = ColorAsset.parseHexWithAlpha(hexColor)
+    return [r, g, b]
+  }
+
+  private static parseHexWithAlpha(hexColor: string): [number, number, number, number] {
     const rawHex = hexColor.slice(1)
-    const normalizedHex =
+    const normalizedHex6 =
       rawHex.length === 3
         ? rawHex
             .split('')
@@ -314,9 +357,165 @@ export class ColorAsset extends Asset {
           ? rawHex.slice(0, 6)
           : rawHex
 
-    const r = Number.parseInt(normalizedHex.slice(0, 2), 16)
-    const g = Number.parseInt(normalizedHex.slice(2, 4), 16)
-    const b = Number.parseInt(normalizedHex.slice(4, 6), 16)
-    return [r, g, b]
+    const alpha =
+      rawHex.length === 8 ? Number.parseInt(rawHex.slice(6, 8), 16) / 255 : 1
+
+    const r = Number.parseInt(normalizedHex6.slice(0, 2), 16)
+    const g = Number.parseInt(normalizedHex6.slice(2, 4), 16)
+    const b = Number.parseInt(normalizedHex6.slice(4, 6), 16)
+    return [r, g, b, alpha]
+  }
+
+  private static applySaturation(color: string, amount: number): string {
+    const hsla = ColorAsset.parseColorToHsla(color)
+    if (!hsla) {
+      return color
+    }
+
+    const saturation =
+      amount >= 0
+        ? hsla.s + (1 - hsla.s) * amount
+        : hsla.s * (1 + amount)
+
+    const nextSaturation = ColorAsset.clamp(saturation, 0, 1)
+    const [r, g, b] = ColorAsset.hslToRgb(hsla.h, nextSaturation, hsla.l)
+
+    if (hsla.a < 1) {
+      return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(hsla.a)})`
+    }
+
+    return ColorAsset.rgbToHex(r, g, b)
+  }
+
+  private static parseColorToHsla(
+    color: string
+  ): { h: number; s: number; l: number; a: number } | null {
+    const trimmed = color.trim()
+
+    if (ColorAsset.HEX_REGEX.test(trimmed)) {
+      const [r, g, b, a] = ColorAsset.parseHexWithAlpha(trimmed)
+      const [h, s, l] = ColorAsset.rgbToHsl(r, g, b)
+      return { h, s, l, a }
+    }
+
+    const rgbMatch = trimmed.match(ColorAsset.RGB_REGEX)
+    if (rgbMatch) {
+      const [, r, g, b] = rgbMatch.map(Number)
+      const [h, s, l] = ColorAsset.rgbToHsl(r, g, b)
+      return { h, s, l, a: 1 }
+    }
+
+    const rgbaMatch = trimmed.match(ColorAsset.RGBA_REGEX)
+    if (rgbaMatch) {
+      const [, r, g, b, a] = rgbaMatch
+      const [h, s, l] = ColorAsset.rgbToHsl(Number(r), Number(g), Number(b))
+      return { h, s, l, a: Number(a) }
+    }
+
+    const hslMatch = trimmed.match(ColorAsset.HSL_REGEX)
+    if (hslMatch) {
+      const [, h, s, l] = hslMatch.map(Number)
+      return { h, s: s / 100, l: l / 100, a: 1 }
+    }
+
+    const hslaMatch = trimmed.match(ColorAsset.HSLA_REGEX)
+    if (hslaMatch) {
+      const [, h, s, l, a] = hslaMatch
+      return {
+        h: Number(h),
+        s: Number(s) / 100,
+        l: Number(l) / 100,
+        a: Number(a),
+      }
+    }
+
+    const named = ColorAsset.NAMED_COLOR_RGB[trimmed.toLowerCase()]
+    if (named) {
+      const [r, g, b, a] = named
+      const [h, s, l] = ColorAsset.rgbToHsl(r, g, b)
+      return { h, s, l, a }
+    }
+
+    return null
+  }
+
+  private static rgbToHsl(
+    red: number,
+    green: number,
+    blue: number
+  ): [number, number, number] {
+    const r = red / 255
+    const g = green / 255
+    const b = blue / 255
+
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    const delta = max - min
+
+    let h = 0
+    const l = (max + min) / 2
+    const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1))
+
+    if (delta !== 0) {
+      if (max === r) {
+        h = ((g - b) / delta) % 6
+      } else if (max === g) {
+        h = (b - r) / delta + 2
+      } else {
+        h = (r - g) / delta + 4
+      }
+      h *= 60
+      if (h < 0) {
+        h += 360
+      }
+    }
+
+    return [h, s, l]
+  }
+
+  private static hslToRgb(
+    hue: number,
+    saturation: number,
+    lightness: number
+  ): [number, number, number] {
+    const normalizedHue = ((hue % 360) + 360) % 360
+    const c = (1 - Math.abs(2 * lightness - 1)) * saturation
+    const x = c * (1 - Math.abs(((normalizedHue / 60) % 2) - 1))
+    const m = lightness - c / 2
+
+    let rPrime = 0
+    let gPrime = 0
+    let bPrime = 0
+
+    if (normalizedHue < 60) {
+      rPrime = c
+      gPrime = x
+    } else if (normalizedHue < 120) {
+      rPrime = x
+      gPrime = c
+    } else if (normalizedHue < 180) {
+      gPrime = c
+      bPrime = x
+    } else if (normalizedHue < 240) {
+      gPrime = x
+      bPrime = c
+    } else if (normalizedHue < 300) {
+      rPrime = x
+      bPrime = c
+    } else {
+      rPrime = c
+      bPrime = x
+    }
+
+    const red = Math.round((rPrime + m) * 255)
+    const green = Math.round((gPrime + m) * 255)
+    const blue = Math.round((bPrime + m) * 255)
+
+    return [red, green, blue]
+  }
+
+  private static rgbToHex(red: number, green: number, blue: number): string {
+    const toHex = (value: number): string => value.toString(16).padStart(2, '0')
+    return `#${toHex(red)}${toHex(green)}${toHex(blue)}`.toUpperCase()
   }
 }

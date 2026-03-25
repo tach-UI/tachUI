@@ -27,6 +27,7 @@ export declare class ColorAsset extends Asset {
     static validateColor(color: string): ColorValidationResult;
     static getCurrentTheme(): string;
     opacity(alpha: number): string;
+    saturate(amount: number): string;
     resolve(): string;
 }
 //# sourceMappingURL=ColorAsset.d.ts.map

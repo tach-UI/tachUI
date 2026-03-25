@@ -127,6 +127,8 @@ registerAsset('brandPrimary', brandPrimary)
 Assets.brandPrimary  // Auto-adapts
 Assets.brandPrimary.light  // Always light
 Assets.brandPrimary.dark   // Always dark
+Assets.brandPrimary.opacity(0.5)  // rgba(...) with 50% alpha
+Assets.brandPrimary.saturate(0.4) // More vivid color output
 ```
 
 ### Image Assets

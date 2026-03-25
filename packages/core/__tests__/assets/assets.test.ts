@@ -292,6 +292,89 @@ describe('Asset System', () => {
         process.env.NODE_ENV = previousNodeEnv
       }
     })
+
+    it('should keep the same color for saturate(0)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(0)).toBe('#679B9C')
+    })
+
+    it('should increase saturation for saturate(1)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(1)).toBe('#04FAFF')
+    })
+
+    it('should fully desaturate for saturate(-1)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(-1)).toBe('#828282')
+    })
+
+    it('should preserve alpha channel when saturating rgba colors', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'rgba(103, 155, 156, 0.4)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(0.5)).toBe('rgba(53, 203, 206, 0.4)')
+    })
+
+    it('should return unresolved value for unsupported color formats when saturating', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'var(--primary-color)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(0.5)).toBe('var(--primary-color)')
+    })
+
+    it('should clamp saturation amount to -1..1 range', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(2)).toBe('#04FAFF')
+      expect(colorAsset.saturate(-5)).toBe('#828282')
+    })
+
+    it('should not throw for invalid saturation amount outside development mode', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.saturate(Number.NaN)).toBe('#679B9C')
+      expect(colorAsset.saturate(Number.POSITIVE_INFINITY)).toBe('#679B9C')
+    })
+
+    it('should throw for invalid saturation amount in development mode', () => {
+      const previousNodeEnv = process.env.NODE_ENV
+      try {
+        process.env.NODE_ENV = 'development'
+
+        const colorAsset = ColorAsset.init({
+          default: '#679B9C',
+          name: 'testColor',
+        })
+
+        expect(() => colorAsset.saturate(Number.NaN)).toThrow(
+          'ColorAsset.saturate(amount) requires a finite number for asset "testColor"'
+        )
+      } finally {
+        process.env.NODE_ENV = previousNodeEnv
+      }
+    })
   })
 
   describe('ImageAsset', () => {
