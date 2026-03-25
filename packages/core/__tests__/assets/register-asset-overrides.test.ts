@@ -105,15 +105,15 @@ describe('registerAsset with name override', () => {
   test('should throw error for invalid arguments', () => {
     expect(() => {
       (registerAsset as any)()
-    }).toThrow()
+    }).toThrow('registerAsset requires at least one argument')
 
     expect(() => {
       (registerAsset as any)('string-only')
-    }).toThrow()
+    }).toThrow('registerAsset requires either (name, asset), (asset), (asset, overrideName), or (...assets)')
 
     expect(() => {
       (registerAsset as any)(123, 'invalid')
-    }).toThrow()
+    }).toThrow('registerAsset requires either (name, asset), (asset), (asset, overrideName), or (...assets)')
   })
 
   test('should register multiple assets in a single variadic call', () => {
@@ -148,14 +148,26 @@ describe('registerAsset with name override', () => {
       name: 'dazzle'
     })
 
+    const namesBefore = listAssetNames()
+
     expect(() => {
       (registerAsset as any)(firstAsset, secondAsset, 'not-an-asset')
     }).toThrow('registerAsset variadic argument at index 2 must be an Asset')
 
-    const registeredNames = listAssetNames()
-    expect(registeredNames).toContain('grayteal')
-    expect(registeredNames).toContain('dazzle')
-    expect(registeredNames).not.toContain('not-an-asset')
+    const namesAfter = listAssetNames()
+    expect(namesAfter).toEqual(namesBefore)
+  })
+
+  test('should support explicit undefined override argument', () => {
+    const asset = ColorAsset.init({
+      default: '#679B9C',
+      name: 'grayteal'
+    })
+
+    registerAsset(asset, undefined)
+
+    expect(listAssetNames()).toContain('grayteal')
+    expect(Assets.grayteal).toBeDefined()
   })
 
   test('should preserve duplicate-name overwrite semantics in variadic call', () => {

@@ -38,6 +38,7 @@ export {
 // Convenience function for registering assets
 export function registerAsset(name: string, asset: Asset): void
 export function registerAsset(asset: Asset): void
+export function registerAsset(asset1: Asset, asset2: Asset, ...rest: Asset[]): void
 export function registerAsset(asset: Asset, name?: string): void
 export function registerAsset(...assets: Asset[]): void
 export function registerAsset(...args: unknown[]): void {
@@ -58,16 +59,24 @@ export function registerAsset(...args: unknown[]): void {
     // New usage: registerAsset(asset) - uses asset.name
     globalAssets.add(firstArg.name, firstArg)
   } else if (firstArg instanceof Asset && secondArg === undefined && args.length === 2) {
-    // Compatibility with explicit undefined second argument
+    // Compatibility for explicit `registerAsset(asset, undefined)`.
     globalAssets.add(firstArg.name, firstArg)
   } else if (firstArg instanceof Asset && args.length > 1) {
-    // Variadic usage: registerAsset(asset1, asset2, ...)
+    // Variadic usage: registerAsset(asset1, asset2, ...). This branch executes
+    // only after all explicit two-argument signatures are exhausted.
+    const validatedAssets: Asset[] = []
+
+    // Validate first to keep batch registration atomic on failure.
     args.forEach((asset, index) => {
       if (!(asset instanceof Asset)) {
         throw new Error(
           `registerAsset variadic argument at index ${index} must be an Asset`
         )
       }
+      validatedAssets.push(asset)
+    })
+
+    validatedAssets.forEach((asset) => {
       globalAssets.add(asset.name, asset)
     })
   } else {
