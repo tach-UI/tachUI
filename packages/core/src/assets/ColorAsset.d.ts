@@ -28,6 +28,7 @@ export declare class ColorAsset extends Asset {
     static getCurrentTheme(): string;
     opacity(alpha: number): string;
     saturate(amount: number): string;
+    brighten(amount: number): string;
     resolve(): string;
 }
 //# sourceMappingURL=ColorAsset.d.ts.map

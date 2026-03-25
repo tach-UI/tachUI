@@ -14,6 +14,7 @@ export interface ColorAssetProxy extends ColorAsset {
     dark: string;
     opacity(alpha: number): string;
     saturate(amount: number): string;
+    brighten(amount: number): string;
     toString(): string;
     valueOf(): string;
 }

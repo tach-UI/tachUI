@@ -308,6 +308,27 @@ describe('Modifier System', () => {
       expect(element.style.color).toBe('rgb(4, 250, 255)')
     })
 
+    it('should accept ColorAsset.brighten output in background modifiers', () => {
+      const element = document.createElement('div')
+      const node = h('div')
+      node.element = element
+
+      const accent = ColorAsset.init({
+        default: '#679B9C',
+        name: 'accent',
+      })
+
+      const modifiers = [appearanceModifiers.backgroundColor(accent.brighten(0.6))]
+
+      applyModifiersToNode(node, modifiers, {
+        componentId: 'test',
+        element,
+        phase: 'creation',
+      })
+
+      expect(element.style.backgroundColor).toBe('rgb(194, 215, 215)')
+    })
+
     it('should handle event modifiers', () => {
       const element = document.createElement('div')
       const node = h('div')

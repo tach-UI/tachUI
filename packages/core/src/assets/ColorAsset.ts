@@ -265,6 +265,19 @@ export class ColorAsset extends Asset {
     return ColorAsset.applySaturation(this.resolve(), clamped)
   }
 
+  brighten(amount: number): string {
+    if (!Number.isFinite(amount)) {
+      const error = `ColorAsset.brighten(amount) requires a finite number for asset "${this.name}"`
+      if (process.env.NODE_ENV === 'development') {
+        throw new Error(error)
+      }
+      return this.resolve()
+    }
+
+    const clamped = ColorAsset.clamp(amount, -1, 1)
+    return ColorAsset.applyBrightness(this.resolve(), clamped)
+  }
+
   resolve(): string {
     // If we're inside a reactive computation (effect/computed), use reactive theme signal
     // Otherwise, use the static getCurrentTheme for backward compatibility with tests
@@ -390,6 +403,85 @@ export class ColorAsset extends Asset {
     }
 
     return ColorAsset.rgbToHex(r, g, b)
+  }
+
+  private static applyBrightness(color: string, amount: number): string {
+    const rgba = ColorAsset.parseColorToRgba(color)
+    if (!rgba) {
+      // Same fallback shape as `saturate`: brightness requires channel math, so
+      // unresolved tokens (e.g. CSS vars / unsupported named colors) pass through.
+      return color
+    }
+
+    // Deterministic model from Issue #99:
+    // a >= 0: c' = c + (255 - c) * a
+    // a < 0:  c' = c * (1 + a)
+    const brightenChannel = (channel: number): number => {
+      const next =
+        amount >= 0
+          ? channel + (255 - channel) * amount
+          : channel * (1 + amount)
+      return Math.round(ColorAsset.clamp(next, 0, 255))
+    }
+
+    const r = brightenChannel(rgba.r)
+    const g = brightenChannel(rgba.g)
+    const b = brightenChannel(rgba.b)
+
+    if (rgba.a < 1) {
+      return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(rgba.a)})`
+    }
+
+    return ColorAsset.rgbToHex(r, g, b)
+  }
+
+  private static parseColorToRgba(
+    color: string
+  ): { r: number; g: number; b: number; a: number } | null {
+    const trimmed = color.trim()
+
+    if (ColorAsset.HEX_REGEX.test(trimmed)) {
+      const [r, g, b, a] = ColorAsset.parseHexWithAlpha(trimmed)
+      return { r, g, b, a }
+    }
+
+    const rgbMatch = trimmed.match(ColorAsset.RGB_REGEX)
+    if (rgbMatch) {
+      const [, r, g, b] = rgbMatch.map(Number)
+      return { r, g, b, a: 1 }
+    }
+
+    const rgbaMatch = trimmed.match(ColorAsset.RGBA_REGEX)
+    if (rgbaMatch) {
+      const [, r, g, b, a] = rgbaMatch
+      return { r: Number(r), g: Number(g), b: Number(b), a: Number(a) }
+    }
+
+    const hslMatch = trimmed.match(ColorAsset.HSL_REGEX)
+    if (hslMatch) {
+      const [, h, s, l] = hslMatch.map(Number)
+      const [r, g, b] = ColorAsset.hslToRgb(h, s / 100, l / 100)
+      return { r, g, b, a: 1 }
+    }
+
+    const hslaMatch = trimmed.match(ColorAsset.HSLA_REGEX)
+    if (hslaMatch) {
+      const [, h, s, l, a] = hslaMatch
+      const [r, g, b] = ColorAsset.hslToRgb(
+        Number(h),
+        Number(s) / 100,
+        Number(l) / 100
+      )
+      return { r, g, b, a: Number(a) }
+    }
+
+    const named = ColorAsset.NAMED_COLOR_RGB[trimmed.toLowerCase()]
+    if (named) {
+      const [r, g, b, a] = named
+      return { r, g, b, a }
+    }
+
+    return null
   }
 
   private static parseColorToHsla(

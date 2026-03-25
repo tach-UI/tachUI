@@ -445,6 +445,146 @@ describe('Asset System', () => {
         process.env.NODE_ENV = previousNodeEnv
       }
     })
+
+    it('should match issue fixture for brighten(-1)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(-1)).toBe('#000000')
+    })
+
+    it('should keep the same color for brighten(0)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(0)).toBe('#679B9C')
+    })
+
+    it('should match issue fixture for brighten(0.6)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(0.6)).toBe('#C2D7D7')
+    })
+
+    it('should match issue fixture for brighten(1)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(1)).toBe('#FFFFFF')
+    })
+
+    it('should resolve dark variant before applying brightness', () => {
+      const originalGetCurrentTheme = (ColorAsset as any).getCurrentTheme
+      ;(ColorAsset as any).getCurrentTheme = () => 'dark'
+
+      const colorAsset = ColorAsset.init({
+        default: '#ffffff',
+        light: '#ffffff',
+        dark: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(0.6)).toBe('#C2D7D7')
+
+      ;(ColorAsset as any).getCurrentTheme = originalGetCurrentTheme
+    })
+
+    it('should brighten rgba input while preserving alpha', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'rgba(103, 155, 156, 0.4)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(0.6)).toBe('rgba(194, 215, 215, 0.4)')
+    })
+
+    it('should brighten hsl and hsla inputs', () => {
+      const hslAsset = ColorAsset.init({
+        default: 'hsl(180, 0%, 50%)',
+        name: 'hslColor',
+      })
+      const hslaAsset = ColorAsset.init({
+        default: 'hsla(180, 0%, 50%, 0.4)',
+        name: 'hslaColor',
+      })
+
+      expect(hslAsset.brighten(0.6)).toBe('#CCCCCC')
+      expect(hslaAsset.brighten(0.6)).toBe('rgba(204, 204, 204, 0.4)')
+    })
+
+    it('should brighten named colors in supported table', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'red',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(0.5)).toBe('#FF8080')
+    })
+
+    it('should brighten 8-digit hex input while preserving alpha', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C80',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(0.6)).toBe('rgba(194, 215, 215, 0.502)')
+    })
+
+    it('should return unresolved value for unsupported color formats when brightening', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'var(--primary-color)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(0.6)).toBe('var(--primary-color)')
+    })
+
+    it('should clamp brightness amount to -1..1 range', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(2)).toBe('#FFFFFF')
+      expect(colorAsset.brighten(-5)).toBe('#000000')
+    })
+
+    it('should not throw for invalid brightness amount outside development mode', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.brighten(Number.NaN)).toBe('#679B9C')
+      expect(colorAsset.brighten(Number.POSITIVE_INFINITY)).toBe('#679B9C')
+    })
+
+    it('should throw for invalid brightness amount in development mode', () => {
+      const previousNodeEnv = process.env.NODE_ENV
+      try {
+        process.env.NODE_ENV = 'development'
+
+        const colorAsset = ColorAsset.init({
+          default: '#679B9C',
+          name: 'testColor',
+        })
+
+        expect(() => colorAsset.brighten(Number.NaN)).toThrow(
+          'ColorAsset.brighten(amount) requires a finite number for asset "testColor"'
+        )
+      } finally {
+        process.env.NODE_ENV = previousNodeEnv
+      }
+    })
   })
 
   describe('ImageAsset', () => {
