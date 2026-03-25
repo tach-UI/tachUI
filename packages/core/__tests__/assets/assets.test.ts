@@ -585,6 +585,124 @@ describe('Asset System', () => {
         process.env.NODE_ENV = previousNodeEnv
       }
     })
+
+    it('should match issue fixture for rotateHue(0)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(0)).toBe('#679B9C')
+    })
+
+    it('should match issue fixture for rotateHue(120)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(120)).toBe('#9C679B')
+    })
+
+    it('should match issue fixture for rotateHue(240)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(240)).toBe('#9B9C67')
+    })
+
+    it('should match issue fixture for rotateHue(360)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(360)).toBe('#679B9C')
+    })
+
+    it('should normalize negative rotation to 0..359 range', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(-30)).toBe(colorAsset.rotateHue(330))
+      expect(colorAsset.rotateHue(-1)).toBe(colorAsset.rotateHue(359))
+    })
+
+    it('should normalize boundary values', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(359)).toBe('#679C9C')
+      expect(colorAsset.rotateHue(720)).toBe('#679B9C')
+    })
+
+    it('should resolve dark variant before applying hue rotation', () => {
+      const originalGetCurrentTheme = (ColorAsset as any).getCurrentTheme
+      ;(ColorAsset as any).getCurrentTheme = () => 'dark'
+
+      const colorAsset = ColorAsset.init({
+        default: '#ffffff',
+        light: '#ffffff',
+        dark: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(120)).toBe('#9C679B')
+
+      ;(ColorAsset as any).getCurrentTheme = originalGetCurrentTheme
+    })
+
+    it('should rotate rgba input while preserving alpha', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'rgba(103, 155, 156, 0.4)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(120)).toBe('rgba(156, 103, 155, 0.4)')
+    })
+
+    it('should return unresolved value for unsupported color formats when rotating hue', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'var(--primary-color)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(120)).toBe('var(--primary-color)')
+    })
+
+    it('should not throw for invalid rotateHue input outside development mode', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(Number.NaN)).toBe('#679B9C')
+      expect(colorAsset.rotateHue(Number.POSITIVE_INFINITY)).toBe('#679B9C')
+    })
+
+    it('should throw for invalid rotateHue input in development mode', () => {
+      const previousNodeEnv = process.env.NODE_ENV
+      try {
+        process.env.NODE_ENV = 'development'
+
+        const colorAsset = ColorAsset.init({
+          default: '#679B9C',
+          name: 'testColor',
+        })
+
+        expect(() => colorAsset.rotateHue(Number.NaN)).toThrow(
+          'ColorAsset.rotateHue(degrees) requires a finite number for asset "testColor"'
+        )
+      } finally {
+        process.env.NODE_ENV = previousNodeEnv
+      }
+    })
   })
 
   describe('ImageAsset', () => {

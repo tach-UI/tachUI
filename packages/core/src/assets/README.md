@@ -130,6 +130,7 @@ Assets.brandPrimary.dark   // Always dark
 Assets.brandPrimary.opacity(0.5)  // rgba(...) with 50% alpha
 Assets.brandPrimary.saturate(0.4) // More vivid color output
 Assets.brandPrimary.brighten(0.4) // Lighter color output
+Assets.brandPrimary.rotateHue(120) // Hue-rotated color output
 ```
 
 ### Image Assets

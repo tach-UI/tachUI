@@ -29,6 +29,7 @@ export declare class ColorAsset extends Asset {
     opacity(alpha: number): string;
     saturate(amount: number): string;
     brighten(amount: number): string;
+    rotateHue(degrees: number): string;
     resolve(): string;
 }
 //# sourceMappingURL=ColorAsset.d.ts.map

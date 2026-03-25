@@ -411,6 +411,7 @@ color.resolve()  // string - current theme variant
 color.opacity(0.4)   // string - rgba/hsla/color-mix output
 color.saturate(0.25) // string - color with adjusted saturation
 color.brighten(0.25) // string - color with adjusted brightness
+color.rotateHue(120) // string - color with rotated hue
 color.toString() // string - current theme variant (implicit conversion)
 ```
 

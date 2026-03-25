@@ -278,6 +278,20 @@ export class ColorAsset extends Asset {
     return ColorAsset.applyBrightness(this.resolve(), clamped)
   }
 
+  rotateHue(degrees: number): string {
+    if (!Number.isFinite(degrees)) {
+      const error = `ColorAsset.rotateHue(degrees) requires a finite number for asset "${this.name}"`
+      if (process.env.NODE_ENV === 'development') {
+        throw new Error(error)
+      }
+      return this.resolve()
+    }
+
+    // Normalize any finite numeric input into the canonical 0..359 range.
+    const normalizedDegrees = ((degrees % 360) + 360) % 360
+    return ColorAsset.applyHueRotation(this.resolve(), normalizedDegrees)
+  }
+
   resolve(): string {
     // If we're inside a reactive computation (effect/computed), use reactive theme signal
     // Otherwise, use the static getCurrentTheme for backward compatibility with tests
@@ -430,6 +444,24 @@ export class ColorAsset extends Asset {
 
     if (rgba.a < 1) {
       return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(rgba.a)})`
+    }
+
+    return ColorAsset.rgbToHex(r, g, b)
+  }
+
+  private static applyHueRotation(color: string, degrees: number): string {
+    const hsla = ColorAsset.parseColorToHsla(color)
+    if (!hsla) {
+      // Same fallback shape as `saturate`: hue rotation requires channel math, so
+      // unresolved tokens (e.g. CSS vars / unsupported named colors) pass through.
+      return color
+    }
+
+    const rotatedHue = (hsla.h + degrees) % 360
+    const [r, g, b] = ColorAsset.hslToRgb(rotatedHue, hsla.s, hsla.l)
+
+    if (hsla.a < 1) {
+      return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(hsla.a)})`
     }
 
     return ColorAsset.rgbToHex(r, g, b)
