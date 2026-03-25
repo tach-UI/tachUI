@@ -281,6 +281,21 @@ export class ColorAsset extends Asset {
     return ColorAsset.applyBrightness(this.resolve(), clamped)
   }
 
+  contrast(amount: number): string {
+    // Deterministic midpoint-pivot contrast transform in [-1, 1]:
+    // x' = (x - 0.5) * (1 + amount) + 0.5 where x is channel/255.
+    if (!Number.isFinite(amount)) {
+      const error = `ColorAsset.contrast(amount) requires a finite number for asset "${this.name}"`
+      if (process.env.NODE_ENV === 'development') {
+        throw new Error(error)
+      }
+      return this.resolve()
+    }
+
+    const clamped = ColorAsset.clamp(amount, -1, 1)
+    return ColorAsset.applyContrast(this.resolve(), clamped)
+  }
+
   rotateHue(degrees: number): string {
     if (!Number.isFinite(degrees)) {
       const error = `ColorAsset.rotateHue(degrees) requires a finite number for asset "${this.name}"`
@@ -447,6 +462,33 @@ export class ColorAsset extends Asset {
 
     // Output format is normalized for determinism:
     // `rgba(...)` when alpha is present, uppercase hex otherwise.
+    if (rgba.a < 1) {
+      return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(rgba.a)})`
+    }
+
+    return ColorAsset.rgbToHex(r, g, b)
+  }
+
+  private static applyContrast(color: string, amount: number): string {
+    const rgba = ColorAsset.parseColorToRgba(color)
+    if (!rgba) {
+      // Same fallback shape as saturation/brightness: contrast requires channel
+      // math, so unresolved tokens (e.g. CSS vars / unsupported named colors)
+      // pass through unchanged.
+      return color
+    }
+
+    const factor = 1 + amount
+    const contrastChannel = (channel: number): number => {
+      const normalized = channel / 255
+      const next = (normalized - 0.5) * factor + 0.5
+      return Math.round(ColorAsset.clamp(next, 0, 1) * 255)
+    }
+
+    const r = contrastChannel(rgba.r)
+    const g = contrastChannel(rgba.g)
+    const b = contrastChannel(rgba.b)
+
     if (rgba.a < 1) {
       return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(rgba.a)})`
     }

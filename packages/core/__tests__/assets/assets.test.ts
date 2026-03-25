@@ -586,6 +586,146 @@ describe('Asset System', () => {
       }
     })
 
+    it('should match issue fixture for contrast(-1)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(-1)).toBe('#808080')
+    })
+
+    it('should keep the same color for contrast(0)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(0)).toBe('#679B9C')
+    })
+
+    it('should match issue fixture for contrast(0.6)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(0.6)).toBe('#58ABAD')
+    })
+
+    it('should match issue fixture for contrast(1)', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(1)).toBe('#4FB6B9')
+    })
+
+    it('should resolve dark variant before applying contrast', () => {
+      const originalGetCurrentTheme = (ColorAsset as any).getCurrentTheme
+      ;(ColorAsset as any).getCurrentTheme = () => 'dark'
+
+      const colorAsset = ColorAsset.init({
+        default: '#ffffff',
+        light: '#ffffff',
+        dark: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(0.6)).toBe('#58ABAD')
+
+      ;(ColorAsset as any).getCurrentTheme = originalGetCurrentTheme
+    })
+
+    it('should apply contrast to rgb input', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'rgb(103, 155, 156)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(0.6)).toBe('#58ABAD')
+    })
+
+    it('should apply contrast to hsl and hsla inputs', () => {
+      const hslAsset = ColorAsset.init({
+        default: 'hsl(181, 21%, 51%)',
+        name: 'hslColor',
+      })
+      const hslaAsset = ColorAsset.init({
+        default: 'hsla(181, 21%, 51%, 0.4)',
+        name: 'hslaColor',
+      })
+
+      expect(hslAsset.contrast(0.6)).toBe('#5AABAD')
+      expect(hslaAsset.contrast(0.6)).toBe('rgba(90, 171, 173, 0.4)')
+    })
+
+    it('should apply contrast to named colors in supported table', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'red',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(-0.5)).toBe('#BF4040')
+    })
+
+    it('should apply contrast to 8-digit hex input while preserving alpha', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C80',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(0.6)).toBe('rgba(88, 171, 173, 0.502)')
+    })
+
+    it('should return unresolved value for unsupported color formats when applying contrast', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'var(--primary-color)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(0.6)).toBe('var(--primary-color)')
+    })
+
+    it('should clamp contrast amount to -1..1 range', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(2)).toBe('#4FB6B9')
+      expect(colorAsset.contrast(-5)).toBe('#808080')
+    })
+
+    it('should not throw for invalid contrast amount outside development mode', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(Number.NaN)).toBe('#679B9C')
+      expect(colorAsset.contrast(Number.POSITIVE_INFINITY)).toBe('#679B9C')
+    })
+
+    it('should throw for invalid contrast amount in development mode', () => {
+      const previousNodeEnv = process.env.NODE_ENV
+      try {
+        process.env.NODE_ENV = 'development'
+
+        const colorAsset = ColorAsset.init({
+          default: '#679B9C',
+          name: 'testColor',
+        })
+
+        expect(() => colorAsset.contrast(Number.NaN)).toThrow(
+          'ColorAsset.contrast(amount) requires a finite number for asset "testColor"'
+        )
+      } finally {
+        process.env.NODE_ENV = previousNodeEnv
+      }
+    })
+
     it('should match issue fixture for rotateHue(0)', () => {
       const colorAsset = ColorAsset.init({
         default: '#679B9C',

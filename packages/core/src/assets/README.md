@@ -130,6 +130,7 @@ Assets.brandPrimary.dark   // Always dark
 Assets.brandPrimary.opacity(0.5)  // rgba(...) with 50% alpha
 Assets.brandPrimary.saturate(0.4) // More vivid color output
 Assets.brandPrimary.brighten(0.4) // Lighter color output
+Assets.brandPrimary.contrast(0.6) // Midpoint-pivot contrast adjustment in [-1, 1]
 Assets.brandPrimary.rotateHue(120) // Hue-rotated color output
 // Note: color transforms return uppercase hex for opaque colors and rgba(...) when alpha is present
 ```
