@@ -465,6 +465,8 @@ export class ColorAsset extends Asset {
     const rotatedHue = (hsla.h + degrees) % 360
     const [r, g, b] = ColorAsset.hslToRgb(rotatedHue, hsla.s, hsla.l)
 
+    // Note: `rotateHue(0)` is a color-space round-trip (RGB->HSL->RGB) for
+    // non-HSL inputs, so exact channel identity is not guaranteed for every color.
     if (hsla.a < 1) {
       return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(hsla.a)})`
     }

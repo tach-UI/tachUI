@@ -628,6 +628,7 @@ describe('Asset System', () => {
         name: 'testColor',
       })
 
+      expect(colorAsset.rotateHue(-30)).toBe('#679C83')
       expect(colorAsset.rotateHue(-30)).toBe(colorAsset.rotateHue(330))
       expect(colorAsset.rotateHue(-1)).toBe(colorAsset.rotateHue(359))
     })
@@ -665,6 +666,47 @@ describe('Asset System', () => {
       })
 
       expect(colorAsset.rotateHue(120)).toBe('rgba(156, 103, 155, 0.4)')
+    })
+
+    it('should rotate rgb input', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'rgb(103, 155, 156)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(120)).toBe('#9C679B')
+    })
+
+    it('should rotate hsl and hsla inputs', () => {
+      const hslAsset = ColorAsset.init({
+        default: 'hsl(181, 21%, 51%)',
+        name: 'hslColor',
+      })
+      const hslaAsset = ColorAsset.init({
+        default: 'hsla(181, 21%, 51%, 0.4)',
+        name: 'hslaColor',
+      })
+
+      expect(hslAsset.rotateHue(120)).toBe('#9C689B')
+      expect(hslaAsset.rotateHue(120)).toBe('rgba(156, 104, 155, 0.4)')
+    })
+
+    it('should rotate named colors in supported table', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'red',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(120)).toBe('#00FF00')
+    })
+
+    it('should rotate 8-digit hex input while preserving alpha', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C80',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.rotateHue(120)).toBe('rgba(156, 103, 155, 0.502)')
     })
 
     it('should return unresolved value for unsupported color formats when rotating hue', () => {
