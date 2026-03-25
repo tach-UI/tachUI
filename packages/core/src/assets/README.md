@@ -34,6 +34,19 @@ export function MyComponent() {
 }
 ```
 
+### Batch Registration
+
+```typescript
+import { registerAsset, ColorAsset, createGoogleFont } from '@tachui/core/assets'
+
+registerAsset(
+  createGoogleFont('Nunito', [400, 700], 'nunito'),
+  createGoogleFont('Zilla Slab', [400, 700], 'zillaSlab'),
+  ColorAsset.init({ name: 'dazzle', default: '#EDEAE9' }),
+  ColorAsset.init({ name: 'industry', default: '#332A25' })
+)
+```
+
 ### Explicit Theme Access
 
 ```typescript
