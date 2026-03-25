@@ -260,6 +260,8 @@ export class ColorAsset extends Asset {
   }
 
   private static toColorMix(color: string, alpha: number): string {
+    // `color-mix` provides a robust fallback for named colors and CSS variables,
+    // but requires modern browser support.
     const percent = Number((alpha * 100).toFixed(2)).toString()
     return `color-mix(in srgb, ${color} ${percent}%, transparent)`
   }

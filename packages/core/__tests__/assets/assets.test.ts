@@ -167,6 +167,33 @@ describe('Asset System', () => {
       expect(colorAsset.opacity(0.33)).toBe('rgba(103, 155, 156, 0.33)')
     })
 
+    it('should generate rgba output from shorthand hex values', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#abc',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.opacity(0.33)).toBe('rgba(170, 187, 204, 0.33)')
+    })
+
+    it('should ignore existing alpha in 8-digit hex and apply provided alpha', () => {
+      const colorAsset = ColorAsset.init({
+        default: '#679B9C80',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.opacity(0.33)).toBe('rgba(103, 155, 156, 0.33)')
+    })
+
+    it('should convert rgb values to rgba values', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'rgb(103, 155, 156)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.opacity(0.33)).toBe('rgba(103, 155, 156, 0.33)')
+    })
+
     it('should replace alpha channel for rgba values', () => {
       const colorAsset = ColorAsset.init({
         default: 'rgba(103, 155, 156, 0.8)',
@@ -174,6 +201,15 @@ describe('Asset System', () => {
       })
 
       expect(colorAsset.opacity(0.33)).toBe('rgba(103, 155, 156, 0.33)')
+    })
+
+    it('should convert hsl values to hsla values', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'hsl(360, 100%, 50%)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.opacity(0.33)).toBe('hsla(360, 100%, 50%, 0.33)')
     })
 
     it('should replace alpha channel for hsla values', () => {
@@ -236,6 +272,7 @@ describe('Asset System', () => {
       })
 
       expect(colorAsset.opacity(Number.NaN)).toBe('#679B9C')
+      expect(colorAsset.opacity(Number.POSITIVE_INFINITY)).toBe('#679B9C')
     })
 
     it('should throw for invalid alpha in development mode', () => {
