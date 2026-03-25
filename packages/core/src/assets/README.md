@@ -133,6 +133,8 @@ Assets.brandPrimary.brighten(0.4) // Lighter color output
 Assets.brandPrimary.contrast(0.6) // Midpoint-pivot contrast adjustment in [-1, 1]
 Assets.brandPrimary.rotateHue(120) // Hue-rotated color output
 // Note: color transforms return uppercase hex for opaque colors and rgba(...) when alpha is present
+// Note: unlike CSS filter contrast(), TachUI contrast(0) is the identity baseline
+// Note: contrast(-1) collapses any opaque input to mid-gray (#808080)
 ```
 
 ### Image Assets

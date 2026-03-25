@@ -647,6 +647,15 @@ describe('Asset System', () => {
       expect(colorAsset.contrast(0.6)).toBe('#58ABAD')
     })
 
+    it('should apply contrast to rgba input while preserving alpha', () => {
+      const colorAsset = ColorAsset.init({
+        default: 'rgba(103, 155, 156, 0.4)',
+        name: 'testColor',
+      })
+
+      expect(colorAsset.contrast(0.6)).toBe('rgba(88, 171, 173, 0.4)')
+    })
+
     it('should apply contrast to hsl and hsla inputs', () => {
       const hslAsset = ColorAsset.init({
         default: 'hsl(181, 21%, 51%)',

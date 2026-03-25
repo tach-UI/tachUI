@@ -40,7 +40,7 @@ export function registerAsset(name: string, asset: Asset): void
 export function registerAsset(asset: Asset): void
 export function registerAsset(asset1: Asset, asset2: Asset, ...rest: Asset[]): void
 export function registerAsset(asset: Asset, name?: string): void
-export function registerAsset(...assets: Asset[]): void
+export function registerAsset(...assets: [Asset, ...Asset[]]): void
 export function registerAsset(...args: unknown[]): void {
   if (args.length === 0) {
     throw new Error('registerAsset requires at least one argument')
