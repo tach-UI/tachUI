@@ -408,8 +408,19 @@ const color: ColorAssetProxy = Assets.systemBlue
 color.light      // string - always light variant
 color.dark       // string - always dark variant  
 color.resolve()  // string - current theme variant
+color.opacity(0.4)   // string - rgba/hsla/color-mix output
+color.saturate(0.25) // string - color with adjusted saturation
+color.brighten(0.25) // string - color with adjusted brightness
+color.contrast(0.25) // string - color with midpoint-pivot contrast adjustment
+color.rotateHue(120) // string - color with rotated hue
 color.toString() // string - current theme variant (implicit conversion)
 ```
+
+Color transform output format is normalized for predictability:
+- opaque outputs return uppercase hex (for example, `#C2D7D7`)
+- alpha-bearing outputs return `rgba(...)`
+- `contrast(0)` is identity (unlike CSS `filter: contrast(1)`)
+- `contrast(-1)` maps opaque colors to `#808080`
 
 ## Implementation Details
 

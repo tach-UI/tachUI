@@ -105,14 +105,84 @@ describe('registerAsset with name override', () => {
   test('should throw error for invalid arguments', () => {
     expect(() => {
       (registerAsset as any)()
-    }).toThrow()
+    }).toThrow('registerAsset requires at least one argument')
 
     expect(() => {
       (registerAsset as any)('string-only')
-    }).toThrow()
+    }).toThrow('registerAsset requires either (name, asset), (asset), (asset, overrideName), or (...assets)')
 
     expect(() => {
       (registerAsset as any)(123, 'invalid')
-    }).toThrow()
+    }).toThrow('registerAsset requires either (name, asset), (asset), (asset, overrideName), or (...assets)')
+  })
+
+  test('should register multiple assets in a single variadic call', () => {
+    const asset1 = ColorAsset.init({
+      default: '#EDEAE9',
+      name: 'dazzle'
+    })
+    const asset2 = ColorAsset.init({
+      default: '#679B9C',
+      name: 'grayteal'
+    })
+    const asset3 = ColorAsset.init({
+      default: '#332A25',
+      name: 'industry'
+    })
+
+    registerAsset(asset1, asset2, asset3)
+
+    const registeredNames = listAssetNames()
+    expect(registeredNames).toContain('dazzle')
+    expect(registeredNames).toContain('grayteal')
+    expect(registeredNames).toContain('industry')
+  })
+
+  test('should fail fast for invalid entry in variadic call with index in message', () => {
+    const firstAsset = ColorAsset.init({
+      default: '#679B9C',
+      name: 'grayteal'
+    })
+    const secondAsset = ColorAsset.init({
+      default: '#EDEAE9',
+      name: 'dazzle'
+    })
+
+    const namesBefore = listAssetNames()
+
+    expect(() => {
+      (registerAsset as any)(firstAsset, secondAsset, 'not-an-asset')
+    }).toThrow('registerAsset variadic argument at index 2 must be an Asset')
+
+    const namesAfter = listAssetNames()
+    expect(namesAfter).toEqual(namesBefore)
+  })
+
+  test('should support explicit undefined override argument', () => {
+    const asset = ColorAsset.init({
+      default: '#679B9C',
+      name: 'grayteal'
+    })
+
+    registerAsset(asset, undefined)
+
+    expect(listAssetNames()).toContain('grayteal')
+    expect(Assets.grayteal).toBeDefined()
+  })
+
+  test('should preserve duplicate-name overwrite semantics in variadic call', () => {
+    const first = ColorAsset.init({
+      default: '#000000',
+      name: 'sharedName'
+    })
+    const second = ColorAsset.init({
+      default: '#FFFFFF',
+      name: 'sharedName'
+    })
+
+    registerAsset(first, second)
+
+    expect(listAssetNames()).toContain('sharedName')
+    expect(Assets.sharedName.resolve()).toBe('#FFFFFF')
   })
 })

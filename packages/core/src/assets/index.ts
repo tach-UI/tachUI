@@ -39,18 +39,49 @@ export {
 export function registerAsset(name: string, asset: Asset): void
 export function registerAsset(asset: Asset): void
 export function registerAsset(asset: Asset, name?: string): void
-export function registerAsset(nameOrAsset: string | Asset, assetOrName?: Asset | string): void {
-  if (typeof nameOrAsset === 'string' && assetOrName instanceof Asset) {
+export function registerAsset(...assets: [Asset, ...Asset[]]): void
+export function registerAsset(...args: unknown[]): void {
+  if (args.length === 0) {
+    throw new Error('registerAsset requires at least one argument')
+  }
+
+  const firstArg = args[0]
+  const secondArg = args[1]
+
+  if (typeof firstArg === 'string' && secondArg instanceof Asset && args.length === 2) {
     // Legacy usage: registerAsset(name, asset)
-    globalAssets.add(nameOrAsset, assetOrName)
-  } else if (nameOrAsset instanceof Asset && typeof assetOrName === 'string') {
+    globalAssets.add(firstArg, secondArg)
+  } else if (firstArg instanceof Asset && typeof secondArg === 'string' && args.length === 2) {
     // New usage: registerAsset(asset, overrideName)
-    globalAssets.add(assetOrName, nameOrAsset)
-  } else if (nameOrAsset instanceof Asset && assetOrName === undefined) {
+    globalAssets.add(secondArg, firstArg)
+  } else if (firstArg instanceof Asset && args.length === 1) {
     // New usage: registerAsset(asset) - uses asset.name
-    globalAssets.add(nameOrAsset.name, nameOrAsset)
+    globalAssets.add(firstArg.name, firstArg)
+  } else if (firstArg instanceof Asset && secondArg === undefined && args.length === 2) {
+    // Compatibility for explicit `registerAsset(asset, undefined)`.
+    globalAssets.add(firstArg.name, firstArg)
+  } else if (firstArg instanceof Asset && args.length > 1) {
+    // Variadic usage: registerAsset(asset1, asset2, ...). This branch executes
+    // only after all explicit two-argument signatures are exhausted.
+    const validatedAssets: Asset[] = []
+
+    // Validate first to keep batch registration atomic on failure.
+    args.forEach((asset, index) => {
+      if (!(asset instanceof Asset)) {
+        throw new Error(
+          `registerAsset variadic argument at index ${index} must be an Asset`
+        )
+      }
+      validatedAssets.push(asset)
+    })
+
+    validatedAssets.forEach((asset) => {
+      globalAssets.add(asset.name, asset)
+    })
   } else {
-    throw new Error('registerAsset requires either (name, asset), (asset), or (asset, overrideName)')
+    throw new Error(
+      'registerAsset requires either (name, asset), (asset), (asset, overrideName), or (...assets)'
+    )
   }
 }
 

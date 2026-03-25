@@ -34,6 +34,19 @@ export function MyComponent() {
 }
 ```
 
+### Batch Registration
+
+```typescript
+import { registerAsset, ColorAsset, createGoogleFont } from '@tachui/core/assets'
+
+registerAsset(
+  createGoogleFont('Nunito', [400, 700], 'nunito'),
+  createGoogleFont('Zilla Slab', [400, 700], 'zillaSlab'),
+  ColorAsset.init({ name: 'dazzle', default: '#EDEAE9' }),
+  ColorAsset.init({ name: 'industry', default: '#332A25' })
+)
+```
+
 ### Explicit Theme Access
 
 ```typescript
@@ -42,6 +55,23 @@ Text('Always Light').modifier.foregroundColor(Assets.primaryColor.light)
 
 // Always use dark variant
 Text('Always Dark').modifier.foregroundColor(Assets.primaryColor.dark)
+```
+
+### Color Alpha Convenience
+
+```typescript
+// Color-only alpha (keeps element opacity unchanged)
+Text('Tinted text')
+  .modifier
+  .foregroundColor(Assets.primaryColor.opacity(0.33))
+  .build()
+
+// Element-level alpha (affects the whole element)
+Text('Faded text')
+  .modifier
+  .foregroundColor(Assets.primaryColor)
+  .opacity(0.33)
+  .build()
 ```
 
 ### Image Assets
@@ -97,6 +127,14 @@ registerAsset('brandPrimary', brandPrimary)
 Assets.brandPrimary  // Auto-adapts
 Assets.brandPrimary.light  // Always light
 Assets.brandPrimary.dark   // Always dark
+Assets.brandPrimary.opacity(0.5)  // rgba(...) with 50% alpha
+Assets.brandPrimary.saturate(0.4) // More vivid color output
+Assets.brandPrimary.brighten(0.4) // Lighter color output
+Assets.brandPrimary.contrast(0.6) // Midpoint-pivot contrast adjustment in [-1, 1]
+Assets.brandPrimary.rotateHue(120) // Hue-rotated color output
+// Note: color transforms return uppercase hex for opaque colors and rgba(...) when alpha is present
+// Note: unlike CSS filter contrast(), TachUI contrast(0) is the identity baseline
+// Note: contrast(-1) collapses any opaque input to mid-gray (#808080)
 ```
 
 ### Image Assets

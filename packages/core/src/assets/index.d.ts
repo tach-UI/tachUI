@@ -15,6 +15,7 @@ export { FontWeightPreset as FontWeight, FontWidth, SystemFonts, createSystemFon
 export declare function registerAsset(name: string, asset: Asset): void;
 export declare function registerAsset(asset: Asset): void;
 export declare function registerAsset(asset: Asset, name?: string): void;
+export declare function registerAsset(...assets: [Asset, ...Asset[]]): void;
 export declare function createColorAsset(light: string, dark: string, name?: string): ColorAsset;
 export declare function createImageAsset(defaultPath: string, light?: string, dark?: string, name?: string, options?: {
     alt?: string;
