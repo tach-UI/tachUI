@@ -44,6 +44,23 @@ Text('Always Light').modifier.foregroundColor(Assets.primaryColor.light)
 Text('Always Dark').modifier.foregroundColor(Assets.primaryColor.dark)
 ```
 
+### Color Alpha Convenience
+
+```typescript
+// Color-only alpha (keeps element opacity unchanged)
+Text('Tinted text')
+  .modifier
+  .foregroundColor(Assets.primaryColor.opacity(0.33))
+  .build()
+
+// Element-level alpha (affects the whole element)
+Text('Faded text')
+  .modifier
+  .foregroundColor(Assets.primaryColor)
+  .opacity(0.33)
+  .build()
+```
+
 ### Image Assets
 
 ```typescript

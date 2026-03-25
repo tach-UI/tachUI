@@ -26,6 +26,16 @@ export class ColorAsset extends Asset {
   public readonly default: string
   public readonly light?: string
   public readonly dark?: string
+  private static readonly HEX_REGEX =
+    /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/
+  private static readonly RGB_REGEX =
+    /^rgb\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)$/i
+  private static readonly RGBA_REGEX =
+    /^rgba\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]*\.?[0-9]+)\s*\)$/i
+  private static readonly HSL_REGEX =
+    /^hsl\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*\)$/i
+  private static readonly HSLA_REGEX =
+    /^hsla\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]*\.?[0-9]+)\s*\)$/i
 
   constructor(options: ColorAssetOptions) {
     super(options.name)
@@ -87,16 +97,13 @@ export class ColorAsset extends Asset {
     const trimmed = color.trim()
 
     // Hex format validation
-    const hexRegex = /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$/
-    if (hexRegex.test(trimmed)) {
+    if (ColorAsset.HEX_REGEX.test(trimmed)) {
       return { isValid: true, format: 'hex' }
     }
 
     // RGB format validation
-    const rgbRegex =
-      /^rgb\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)$/
-    if (rgbRegex.test(trimmed)) {
-      const matches = trimmed.match(rgbRegex)!
+    if (ColorAsset.RGB_REGEX.test(trimmed)) {
+      const matches = trimmed.match(ColorAsset.RGB_REGEX)!
       const [, r, g, b] = matches.map(Number)
       if (r <= 255 && g <= 255 && b <= 255) {
         return { isValid: true, format: 'rgb' }
@@ -108,10 +115,8 @@ export class ColorAsset extends Asset {
     }
 
     // RGBA format validation
-    const rgbaRegex =
-      /^rgba\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]*\.?[0-9]+)\s*\)$/
-    if (rgbaRegex.test(trimmed)) {
-      const matches = trimmed.match(rgbaRegex)!
+    if (ColorAsset.RGBA_REGEX.test(trimmed)) {
+      const matches = trimmed.match(ColorAsset.RGBA_REGEX)!
       const [, r, g, b, a] = matches
       const numR = Number(r),
         numG = Number(g),
@@ -127,10 +132,8 @@ export class ColorAsset extends Asset {
     }
 
     // HSL format validation
-    const hslRegex =
-      /^hsl\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*\)$/
-    if (hslRegex.test(trimmed)) {
-      const matches = trimmed.match(hslRegex)!
+    if (ColorAsset.HSL_REGEX.test(trimmed)) {
+      const matches = trimmed.match(ColorAsset.HSL_REGEX)!
       const [, h, s, l] = matches.map(Number)
       if (h <= 360 && s <= 100 && l <= 100) {
         return { isValid: true, format: 'hsl' }
@@ -142,10 +145,8 @@ export class ColorAsset extends Asset {
     }
 
     // HSLA format validation
-    const hslaRegex =
-      /^hsla\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]*\.?[0-9]+)\s*\)$/
-    if (hslaRegex.test(trimmed)) {
-      const matches = trimmed.match(hslaRegex)!
+    if (ColorAsset.HSLA_REGEX.test(trimmed)) {
+      const matches = trimmed.match(ColorAsset.HSLA_REGEX)!
       const [, h, s, l, a] = matches
       const numH = Number(h),
         numS = Number(s),
@@ -211,6 +212,19 @@ export class ColorAsset extends Asset {
     return _getCurrentTheme()
   }
 
+  opacity(alpha: number): string {
+    if (!Number.isFinite(alpha)) {
+      const error = `ColorAsset.opacity(alpha) requires a finite number for asset "${this.name}"`
+      if (process.env.NODE_ENV === 'development') {
+        throw new Error(error)
+      }
+      return this.resolve()
+    }
+
+    const clamped = ColorAsset.clamp(alpha, 0, 1)
+    return ColorAsset.applyAlpha(this.resolve(), clamped)
+  }
+
   resolve(): string {
     // If we're inside a reactive computation (effect/computed), use reactive theme signal
     // Otherwise, use the static getCurrentTheme for backward compatibility with tests
@@ -232,5 +246,75 @@ export class ColorAsset extends Asset {
     } else {
       return this.light || this.default
     }
+  }
+
+  private static clamp(value: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, value))
+  }
+
+  private static formatAlpha(alpha: number): string {
+    if (alpha === 0 || alpha === 1) {
+      return String(alpha)
+    }
+    return Number(alpha.toFixed(4)).toString()
+  }
+
+  private static toColorMix(color: string, alpha: number): string {
+    const percent = Number((alpha * 100).toFixed(2)).toString()
+    return `color-mix(in srgb, ${color} ${percent}%, transparent)`
+  }
+
+  private static applyAlpha(color: string, alpha: number): string {
+    const trimmed = color.trim()
+    const alphaString = ColorAsset.formatAlpha(alpha)
+
+    if (ColorAsset.HEX_REGEX.test(trimmed)) {
+      const [r, g, b] = ColorAsset.parseHex(trimmed)
+      return `rgba(${r}, ${g}, ${b}, ${alphaString})`
+    }
+
+    const rgbMatch = trimmed.match(ColorAsset.RGB_REGEX)
+    if (rgbMatch) {
+      const [, r, g, b] = rgbMatch.map(Number)
+      return `rgba(${r}, ${g}, ${b}, ${alphaString})`
+    }
+
+    const rgbaMatch = trimmed.match(ColorAsset.RGBA_REGEX)
+    if (rgbaMatch) {
+      const [, r, g, b] = rgbaMatch.map(Number)
+      return `rgba(${r}, ${g}, ${b}, ${alphaString})`
+    }
+
+    const hslMatch = trimmed.match(ColorAsset.HSL_REGEX)
+    if (hslMatch) {
+      const [, h, s, l] = hslMatch.map(Number)
+      return `hsla(${h}, ${s}%, ${l}%, ${alphaString})`
+    }
+
+    const hslaMatch = trimmed.match(ColorAsset.HSLA_REGEX)
+    if (hslaMatch) {
+      const [, h, s, l] = hslaMatch.map(Number)
+      return `hsla(${h}, ${s}%, ${l}%, ${alphaString})`
+    }
+
+    return ColorAsset.toColorMix(trimmed, alpha)
+  }
+
+  private static parseHex(hexColor: string): [number, number, number] {
+    const rawHex = hexColor.slice(1)
+    const normalizedHex =
+      rawHex.length === 3
+        ? rawHex
+            .split('')
+            .map((digit) => `${digit}${digit}`)
+            .join('')
+        : rawHex.length === 8
+          ? rawHex.slice(0, 6)
+          : rawHex
+
+    const r = Number.parseInt(normalizedHex.slice(0, 2), 16)
+    const g = Number.parseInt(normalizedHex.slice(2, 4), 16)
+    const b = Number.parseInt(normalizedHex.slice(4, 6), 16)
+    return [r, g, b]
   }
 }

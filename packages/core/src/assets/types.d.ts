@@ -12,6 +12,7 @@ export type { Asset };
 export interface ColorAssetProxy extends ColorAsset {
     light: string;
     dark: string;
+    opacity(alpha: number): string;
     toString(): string;
     valueOf(): string;
 }
