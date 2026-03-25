@@ -415,6 +415,10 @@ color.rotateHue(120) // string - color with rotated hue
 color.toString() // string - current theme variant (implicit conversion)
 ```
 
+Color transform output format is normalized for predictability:
+- opaque outputs return uppercase hex (for example, `#C2D7D7`)
+- alpha-bearing outputs return `rgba(...)`
+
 ## Implementation Details
 
 The Assets system uses JavaScript Proxies to enable the clean dot notation API while providing automatic theme adaptation. Assets are resolved reactively based on the current theme, ensuring consistent appearance across your application.

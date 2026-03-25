@@ -266,6 +266,9 @@ export class ColorAsset extends Asset {
   }
 
   brighten(amount: number): string {
+    // `amount` is intentionally not CSS `filter: brightness(...)`.
+    // It is a deterministic token transform in [-1, 1] where:
+    // -1 lerps channels to black, 0 is unchanged, 1 lerps channels to white.
     if (!Number.isFinite(amount)) {
       const error = `ColorAsset.brighten(amount) requires a finite number for asset "${this.name}"`
       if (process.env.NODE_ENV === 'development') {
@@ -442,6 +445,8 @@ export class ColorAsset extends Asset {
     const g = brightenChannel(rgba.g)
     const b = brightenChannel(rgba.b)
 
+    // Output format is normalized for determinism:
+    // `rgba(...)` when alpha is present, uppercase hex otherwise.
     if (rgba.a < 1) {
       return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(rgba.a)})`
     }
@@ -521,26 +526,7 @@ export class ColorAsset extends Asset {
   ): { h: number; s: number; l: number; a: number } | null {
     const trimmed = color.trim()
 
-    if (ColorAsset.HEX_REGEX.test(trimmed)) {
-      const [r, g, b, a] = ColorAsset.parseHexWithAlpha(trimmed)
-      const [h, s, l] = ColorAsset.rgbToHsl(r, g, b)
-      return { h, s, l, a }
-    }
-
-    const rgbMatch = trimmed.match(ColorAsset.RGB_REGEX)
-    if (rgbMatch) {
-      const [, r, g, b] = rgbMatch.map(Number)
-      const [h, s, l] = ColorAsset.rgbToHsl(r, g, b)
-      return { h, s, l, a: 1 }
-    }
-
-    const rgbaMatch = trimmed.match(ColorAsset.RGBA_REGEX)
-    if (rgbaMatch) {
-      const [, r, g, b, a] = rgbaMatch
-      const [h, s, l] = ColorAsset.rgbToHsl(Number(r), Number(g), Number(b))
-      return { h, s, l, a: Number(a) }
-    }
-
+    // Preserve exact HSL/HSLA channels without an RGB round-trip.
     const hslMatch = trimmed.match(ColorAsset.HSL_REGEX)
     if (hslMatch) {
       const [, h, s, l] = hslMatch.map(Number)
@@ -558,14 +544,13 @@ export class ColorAsset extends Asset {
       }
     }
 
-    const named = ColorAsset.NAMED_COLOR_RGB[trimmed.toLowerCase()]
-    if (named) {
-      const [r, g, b, a] = named
-      const [h, s, l] = ColorAsset.rgbToHsl(r, g, b)
-      return { h, s, l, a }
+    const rgba = ColorAsset.parseColorToRgba(trimmed)
+    if (!rgba) {
+      return null
     }
 
-    return null
+    const [h, s, l] = ColorAsset.rgbToHsl(rgba.r, rgba.g, rgba.b)
+    return { h, s, l, a: rgba.a }
   }
 
   private static rgbToHsl(
