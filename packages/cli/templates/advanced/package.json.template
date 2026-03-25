@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tachui/core": "{{TACHUI_VERSION}}"
+    "@tachui/core": "{{TACHUI_VERSION}}",
+    "@tachui/modifiers": "{{TACHUI_VERSION}}",
+    "@tachui/primitives": "{{TACHUI_VERSION}}"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -1,4 +1,5 @@
-import { mount } from '@tachui/core'
+import { mountRoot } from '@tachui/core'
+import '@tachui/modifiers/preload/basic'
 import { App } from './App'
 
-mount('#app', App())
+mountRoot(() => App())
