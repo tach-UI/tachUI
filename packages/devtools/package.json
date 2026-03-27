@@ -1,6 +1,6 @@
 {
   "name": "@tachui/devtools",
-  "version": "0.8.13",
+  "version": "0.8.14",
   "description": "Development & debugging tools for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",

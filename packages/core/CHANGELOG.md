@@ -1,5 +1,19 @@
 # @tachui/core
 
+## 0.9.0
+
+### Minor Changes
+
+- [#112](https://github.com/tach-UI/tachUI/pull/112) [`8f5eeaa`](https://github.com/tach-UI/tachUI/commit/8f5eeaaa513e0ea581212599b2c115b149de71a8) Thanks [@whoughton](https://github.com/whoughton)! - Update `ZStack` to use content sizing by default so one child remains in normal document flow, preventing sibling overlap in common section-layout usage.
+
+  Add explicit `sizing` modes (`'content' | 'priority' | 'explicit'`) and `sizingChildIndex` for precise control.
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/types@0.9.0
+  - @tachui/registry@0.9.0
+
 ## 0.8.13
 
 ### Patch Changes
