@@ -438,6 +438,32 @@ describe('Image Factory Function', () => {
 
       expect(image).toBeDefined()
     })
+
+    it('should preserve existing modifiers when scaledToFit is called', () => {
+      const image = Image('test.jpg') as any
+      const sentinel = { type: 'sentinel' }
+      image.modifiers.push(sentinel)
+
+      const result = image.scaledToFit() as any
+      const modifierTypes = result.modifiers.map((m: any) => m.type)
+
+      expect(result).toBe(image)
+      expect(result.modifiers).toContain(sentinel)
+      expect(modifierTypes).toContain('aspectRatio')
+    })
+
+    it('should preserve existing modifiers when scaledToFill is called', () => {
+      const image = Image('test.jpg') as any
+      const sentinel = { type: 'sentinel' }
+      image.modifiers.push(sentinel)
+
+      const result = image.scaledToFill() as any
+      const modifierTypes = result.modifiers.map((m: any) => m.type)
+
+      expect(result).toBe(image)
+      expect(result.modifiers).toContain(sentinel)
+      expect(modifierTypes).toContain('aspectRatio')
+    })
   })
 })
 

@@ -407,43 +407,40 @@ export function Image(
   const component = new EnhancedImage(imageProps)
   const modifiableComponent = withModifiers(component) as any
 
-  // Add SwiftUI-style shorthands for aspect ratio
+  const resolveShorthandTarget = (candidate: any): any => {
+    if (candidate && Array.isArray(candidate.modifiers)) {
+      return candidate
+    }
+    if (
+      candidate?._modifiableComponent &&
+      Array.isArray(candidate._modifiableComponent.modifiers)
+    ) {
+      return candidate._modifiableComponent
+    }
+    if (Array.isArray(modifiableComponent?.modifiers)) {
+      return modifiableComponent
+    }
+    if (
+      modifiableComponent?._modifiableComponent &&
+      Array.isArray(modifiableComponent._modifiableComponent.modifiers)
+    ) {
+      return modifiableComponent._modifiableComponent
+    }
+    throw new Error('Image shorthand target is not modifiable')
+  }
+
+  // Add SwiftUI-style shorthands for aspect ratio.
+  // Important: mutate current modifier chain so call order is preserved.
   modifiableComponent.scaledToFit = function (): ImageWithShorthands {
-    // Create a new Image component with the same props but with aspectRatio modifier applied
-    const newComponent = new EnhancedImage({
-      ...imageProps,
-      aspectRatio: undefined,
-      contentMode: 'fit',
-    })
-    const newModifiableComponent = withModifiers(newComponent) as any
-
-    // Add the shorthand methods to the new component
-    newModifiableComponent.scaledToFit = modifiableComponent.scaledToFit
-    newModifiableComponent.scaledToFill = modifiableComponent.scaledToFill
-
-    // Apply aspectRatio modifier using the real implementation from @tachui/modifiers
-    newModifiableComponent.modifiers.push(aspectRatio(undefined, 'fit'))
-
-    return newModifiableComponent
+    const target = resolveShorthandTarget(this)
+    target.modifiers.push(aspectRatio(undefined, 'fit'))
+    return modifiableComponent
   }
 
   modifiableComponent.scaledToFill = function (): ImageWithShorthands {
-    // Create a new Image component with the same props but with aspectRatio modifier applied
-    const newComponent = new EnhancedImage({
-      ...imageProps,
-      aspectRatio: undefined,
-      contentMode: 'fill',
-    })
-    const newModifiableComponent = withModifiers(newComponent) as any
-
-    // Add the shorthand methods to the new component
-    newModifiableComponent.scaledToFit = modifiableComponent.scaledToFit
-    newModifiableComponent.scaledToFill = modifiableComponent.scaledToFill
-
-    // Apply aspectRatio modifier using the real implementation from @tachui/modifiers
-    newModifiableComponent.modifiers.push(aspectRatio(undefined, 'fill'))
-
-    return newModifiableComponent
+    const target = resolveShorthandTarget(this)
+    target.modifiers.push(aspectRatio(undefined, 'fill'))
+    return modifiableComponent
   }
 
   return modifiableComponent
