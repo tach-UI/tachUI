@@ -1,5 +1,15 @@
 # @tachui/forms
 
+## 1.0.0
+
+### Patch Changes
+
+- Updated dependencies [[`8f5eeaa`](https://github.com/tach-UI/tachUI/commit/8f5eeaaa513e0ea581212599b2c115b149de71a8), [`8f5eeaa`](https://github.com/tach-UI/tachUI/commit/8f5eeaaa513e0ea581212599b2c115b149de71a8)]:
+  - @tachui/modifiers@0.8.14
+  - @tachui/core@0.9.0
+  - @tachui/primitives@0.8.14
+  - @tachui/registry@0.9.0
+
 ## 0.8.13
 
 ### Patch Changes

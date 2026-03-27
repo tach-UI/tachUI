@@ -1,5 +1,18 @@
 # @tachui/modifiers
 
+## 0.8.14
+
+### Patch Changes
+
+- [#112](https://github.com/tach-UI/tachUI/pull/112) [`8f5eeaa`](https://github.com/tach-UI/tachUI/commit/8f5eeaaa513e0ea581212599b2c115b149de71a8) Thanks [@whoughton](https://github.com/whoughton)! - Fix `backgroundColor(ColorAsset)` theme reactivity so background colors update when the active theme changes, matching `foregroundColor` behavior.
+
+  Also adds regression test coverage for this asset path and preserves stateful background option routing.
+
+- Updated dependencies [[`8f5eeaa`](https://github.com/tach-UI/tachUI/commit/8f5eeaaa513e0ea581212599b2c115b149de71a8)]:
+  - @tachui/core@0.9.0
+  - @tachui/types@0.9.0
+  - @tachui/registry@0.9.0
+
 ## 0.8.13
 
 ### Patch Changes
