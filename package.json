@@ -1,6 +1,6 @@
 {
   "name": "tachui",
-  "version": "0.8.11",
+  "version": "0.8.12",
   "description": "A SwiftUI-inspired web framework with SolidJS-style reactivity",
   "private": true,
   "license": "MPL-2.0",
