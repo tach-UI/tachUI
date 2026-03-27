@@ -19,13 +19,13 @@ import { infinity } from '@tachui/core'
 Text("Full Width")
   .modifier
   .frame({ maxWidth: infinity })
-  .build()
+  
 
 // Fill both dimensions  
 Image("banner.jpg")
   .modifier
   .frame({ width: infinity, height: 200 })
-  .build()
+  
 ```
 
 ### Type Safety
@@ -51,25 +51,25 @@ import {
 Button("Continue")
   .modifier
   .apply(fillMaxWidth())
-  .build()
+  
 
 // Fill maximum height (maxHeight: infinity)
 ScrollView(content)
   .modifier
   .apply(fillMaxHeight())
-  .build()
+  
 
 // Fill both max dimensions
 Container()
   .modifier
   .apply(fillMaxSize())
-  .build()
+  
 
 // Expand to fill space (width: infinity, height: infinity)
 MainContent()
   .modifier
   .apply(expand())
-  .build()
+  
 ```
 
 ### Layout Pattern Utilities
@@ -86,25 +86,25 @@ import {
 Sidebar()
   .modifier
   .apply(fixedWidthExpandHeight(250))
-  .build()
+  
 
 // Header: full width, fixed height  
 Header()
   .modifier
   .apply(fixedHeightExpandWidth(60))
-  .build()
+  
 
 // Responsive card with constraints
 Card()
   .modifier
   .apply(responsive(320, 800, 200, 600))
-  .build()
+  
 
 // Flexible content that adapts
 Content()
   .modifier
   .apply(flexible())
-  .build()
+  
 ```
 
 ### SUI Compatibility (SUI = SwiftUI-inspired)
@@ -116,18 +116,18 @@ import { SUI, LayoutPatterns } from '@tachui/core'
 Text("Hello")
   .modifier
   .frame({ maxWidth: SUI.infinity })
-  .build()
+  
 
 // Layout patterns
 Button("Action")
   .modifier
   .apply(LayoutPatterns.fullWidthButton())
-  .build()
+  
 
 Sidebar()
   .modifier
   .apply(LayoutPatterns.sidebar(300))
-  .build()
+  
 ```
 
 ## Migration from Workarounds
@@ -140,7 +140,7 @@ Text("Content")
   .modifier
   .width('100%')
   .flexGrow(1)
-  .build()
+  
 
 HStack([
   Text("Left"),
@@ -156,13 +156,13 @@ HStack([
 Text("Content")
   .modifier
   .frame({ maxWidth: infinity })
-  .build()
+  
 
 Text("Centered")
   .modifier
   .frame({ maxWidth: infinity })
   .textAlign('center')
-  .build()
+  
 ```
 
 ## Common Patterns
@@ -175,13 +175,13 @@ VStack([
     .modifier
     .frame({ maxWidth: infinity })
     .backgroundColor('#007AFF')
-    .build(),
+    ,
     
   Button("Secondary Action")
     .modifier
     .frame({ maxWidth: infinity })
     .backgroundColor('#F2F2F2')
-    .build()
+    
 ])
 ```
 
@@ -192,12 +192,12 @@ HStack([
   Button("Cancel")
     .modifier
     .frame({ maxWidth: infinity })
-    .build(),
+    ,
     
   Button("OK")
     .modifier
     .frame({ maxWidth: infinity })
-    .build()
+    
 ])
 ```
 
@@ -208,24 +208,24 @@ VStack([
   Header()
     .modifier
     .apply(fixedHeightExpandWidth(60))
-    .build(),
+    ,
     
   HStack([
     Sidebar()
       .modifier
       .apply(fixedWidthExpandHeight(250))
-      .build(),
+      ,
       
     MainContent()
       .modifier
       .apply(expand())
-      .build()
+      
   ]),
   
   Footer()
     .modifier
     .apply(fixedHeightExpandWidth(40))
-    .build()
+    
 ])
 ```
 
@@ -243,7 +243,7 @@ ZStack([
       .modifier
       .apply(fullScreen())
       .backgroundColor('rgba(0,0,0,0.5)')
-      .build()
+      
   })
 ])
 ```
@@ -300,7 +300,7 @@ Text("Responsive")
   .frame({ 
     maxWidth: () => isMobile() ? infinity : 800
   })
-  .build()
+  
 ```
 
 ### Computed Dimensions
@@ -314,7 +314,7 @@ Content()
     width: infinity,
     maxWidth: () => containerWidth() * 0.8
   })
-  .build()
+  
 ```
 
 ### Animation Support
@@ -324,7 +324,7 @@ Text("Animated")
   .modifier
   .frame({ maxWidth: infinity })
   .transition({ property: 'all', duration: 300 })
-  .build()
+  
 ```
 
 ## Debugging

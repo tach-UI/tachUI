@@ -280,7 +280,7 @@ Navigation components work seamlessly with all TachUI Core components and the mo
 NavigationView(() => ContentView())
   .modifier.padding(16)
   .backgroundColor('#f5f5f5')
-  .build()
+  
 ```
 
 ## TypeScript Support

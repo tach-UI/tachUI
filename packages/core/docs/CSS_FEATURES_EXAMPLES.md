@@ -32,7 +32,7 @@ function GlassCard({ title, description, image }: CardProps) {
       .height('200px')
       .objectFit('cover')
       .borderRadius('12px 12px 0 0')
-      .build(),
+      ,
       
     VStack([
       Text(title)
@@ -41,18 +41,18 @@ function GlassCard({ title, description, image }: CardProps) {
         .fontWeight('600')
         .color('rgba(255, 255, 255, 0.9)')
         .marginBottom('8px')
-        .build(),
+        ,
         
       Text(description)
         .modifier
         .fontSize('14px')
         .color('rgba(255, 255, 255, 0.7)')
         .lineHeight('1.5')
-        .build()
+        
     ])
     .modifier
     .padding('20px')
-    .build()
+    
   ])
   .modifier
   .width('320px')
@@ -73,7 +73,7 @@ function GlassCard({ title, description, image }: CardProps) {
     boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
     backdropFilter: 'blur(25px) brightness(1.3) saturate(2.0)'
   }, 300)
-  .build()
+  
 }
 ```
 
@@ -102,7 +102,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
           scale: 1.05
         }
       }, 400)
-      .build(),
+      ,
       
     // Content Section
     VStack([
@@ -112,7 +112,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
         .fontWeight('bold')
         .color('#1a1a1a')
         .marginBottom('4px')
-        .build(),
+        ,
         
       Text(product.category)
         .modifier
@@ -121,7 +121,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
         .textTransform('uppercase')
         .letterSpacing('0.5px')
         .marginBottom('12px')
-        .build(),
+        ,
         
       Text(`$${product.price}`)
         .modifier
@@ -129,7 +129,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
         .fontWeight('bold')
         .gradientText('linear-gradient(45deg, #007AFF, #5856D6)')
         .marginBottom('16px')
-        .build(),
+        ,
         
       Button("Add to Cart", onAddToCart)
         .modifier
@@ -145,11 +145,11 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
           transform: { scale: 1.02 },
           boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)'
         }, 200)
-        .build()
+        
     ])
     .modifier
     .padding('16px')
-    .build()
+    
   ])
   .modifier
   .backgroundColor('white')
@@ -160,7 +160,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
     boxShadow: '0 8px 25px rgba(0, 0, 0, 0.12)',
     transform: { translateY: -2 }
   }, 250)
-  .build()
+  
 }
 ```
 
@@ -210,7 +210,7 @@ function PrimaryButton({ children, onClick, disabled = false }: ButtonProps) {
       opacity: 0,
       transition: 'opacity 200ms ease'
     })
-    .build()
+    
 }
 ```
 
@@ -256,7 +256,7 @@ function IconButton({ icon, onClick, variant = 'primary' }: IconButtonProps) {
       transform: 'translate(-50%, -50%)',
       transition: 'width 0.3s ease, height 0.3s ease'
     })
-    .build()
+    
 }
 ```
 
@@ -287,7 +287,7 @@ function GradientHero({ title, subtitle, ctaText, onCTAClick }: HeroProps) {
           rotateX: '2deg'
         }
       }, 400)
-      .build(),
+      ,
       
     Text(subtitle)
       .modifier
@@ -297,7 +297,7 @@ function GradientHero({ title, subtitle, ctaText, onCTAClick }: HeroProps) {
       .lineHeight('1.6')
       .maxWidth('600px')
       .marginBottom('40px')
-      .build(),
+      ,
       
     Button(ctaText, onCTAClick)
       .modifier
@@ -314,7 +314,7 @@ function GradientHero({ title, subtitle, ctaText, onCTAClick }: HeroProps) {
         boxShadow: '0 12px 40px rgba(0, 122, 255, 0.4)',
         background: 'linear-gradient(135deg, #0056CC, #4A4A8A)'
       }, 250)
-      .build()
+      
   ])
   .modifier
   .padding('80px 20px')
@@ -335,7 +335,7 @@ function GradientHero({ title, subtitle, ctaText, onCTAClick }: HeroProps) {
     animation: 'float 20s ease-in-out infinite',
     pointerEvents: 'none'
   })
-  .build()
+  
 }
 ```
 
@@ -354,7 +354,7 @@ function FloatingCardHero({ content }: HeroProps) {
         .fontWeight('bold')
         .gradientText('linear-gradient(45deg, #007AFF, #AF52DE)')
         .marginBottom('16px')
-        .build(),
+        ,
         
       Text("Experience the future of web design with our cutting-edge component library.")
         .modifier
@@ -363,7 +363,7 @@ function FloatingCardHero({ content }: HeroProps) {
         .lineHeight('1.6')
         .textAlign('center')
         .marginBottom('32px')
-        .build(),
+        ,
         
       HStack([
         Button("Get Started", () => {})
@@ -373,7 +373,7 @@ function FloatingCardHero({ content }: HeroProps) {
           .color('white')
           .borderRadius('8px')
           .hoverEffect('lift')
-          .build(),
+          ,
           
         Button("Learn More", () => {})
           .modifier
@@ -386,12 +386,12 @@ function FloatingCardHero({ content }: HeroProps) {
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
             borderColor: 'rgba(255, 255, 255, 0.5)'
           }, 200)
-          .build()
+          
       ])
       .modifier
       .gap('16px')
       .justifyContent('center')
-      .build()
+      
     ])
     .modifier
     .padding('48px 40px')
@@ -415,7 +415,7 @@ function FloatingCardHero({ content }: HeroProps) {
       },
       boxShadow: '0 30px 60px rgba(0, 0, 0, 0.15)'
     }, 400)
-    .build()
+    
   ])
   .modifier
   .minHeight('100vh')
@@ -424,7 +424,7 @@ function FloatingCardHero({ content }: HeroProps) {
   .justifyContent('center')
   .background('linear-gradient(135deg, #667eea 0%, #764ba2 100%)')
   .position('relative')
-  .build()
+  
 }
 ```
 
@@ -445,7 +445,7 @@ function GlassNavbar({ items, activeItem }: NavbarProps) {
       .fontSize('24px')
       .fontWeight('bold')
       .gradientText('linear-gradient(45deg, #007AFF, #5856D6)')
-      .build(),
+      ,
       
     // Navigation items
     HStack(
@@ -466,12 +466,12 @@ function GlassNavbar({ items, activeItem }: NavbarProps) {
               : 'rgba(255, 255, 255, 0.1)',
             color: '#007AFF'
           }, 150)
-          .build()
+          
       )
     )
     .modifier
     .gap('8px')
-    .build(),
+    ,
     
     // CTA Button
     Button("Sign In", () => {})
@@ -484,7 +484,7 @@ function GlassNavbar({ items, activeItem }: NavbarProps) {
       .fontWeight('600')
       .border('none')
       .hoverEffect('lift')
-      .build()
+      
   ])
   .modifier
   .padding('16px 32px')
@@ -503,7 +503,7 @@ function GlassNavbar({ items, activeItem }: NavbarProps) {
   .position('sticky')
   .top('0')
   .zIndex(1000)
-  .build()
+  
 }
 ```
 
@@ -542,29 +542,29 @@ function AnimatedTabs({ tabs, activeTab, onTabChange }: TabsProps) {
             borderRadius: '2px 2px 0 0',
             transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)'
           } : {})
-          .build()
+          
       )
     )
     .modifier
     .borderBottom('1px solid #e0e0e0')
-    .build(),
+    ,
     
     // Tab content
     VStack([
       Text(tabs.find(t => t.id === activeTab)?.content || "")
         .modifier
         .padding('24px 0')
-        .build()
+        
     ])
     .modifier
-    .build()
+    
   ])
   .modifier
   .backgroundColor('white')
   .borderRadius('12px')
   .boxShadow('0 4px 6px rgba(0, 0, 0, 0.05)')
   .overflow('hidden')
-  .build()
+  
 }
 ```
 
@@ -597,7 +597,7 @@ function BlurModal({ isOpen, onClose, title, children }: ModalProps) {
       .zIndex(999)
       .cursor('pointer')
       .onClick(onClose)
-      .build(),
+      ,
       
     // Modal content
     VStack([
@@ -608,7 +608,7 @@ function BlurModal({ isOpen, onClose, title, children }: ModalProps) {
           .fontSize('20px')
           .fontWeight('bold')
           .color('#1a1a1a')
-          .build(),
+          ,
           
         Button("×", onClose)
           .modifier
@@ -624,18 +624,18 @@ function BlurModal({ isOpen, onClose, title, children }: ModalProps) {
             backgroundColor: '#f0f0f0',
             color: '#333'
           }, 150)
-          .build()
+          
       ])
       .modifier
       .justifyContent('space-between')
       .alignItems('center')
       .marginBottom('24px')
-      .build(),
+      ,
       
       // Content
       VStack([children])
         .modifier
-        .build()
+        
     ])
     .modifier
     .maxWidth('500px')
@@ -659,10 +659,10 @@ function BlurModal({ isOpen, onClose, title, children }: ModalProps) {
     })
     .zIndex(1000)
     .overflow('auto')
-    .build()
+    
   ])
   .modifier
-  .build()
+  
 }
 ```
 
@@ -684,7 +684,7 @@ function NotificationToast({ message, type = 'info', isVisible }: ToastProps) {
       .modifier
       .fontSize('16px')
       .marginRight('12px')
-      .build(),
+      ,
       
     Text(message)
       .modifier
@@ -692,7 +692,7 @@ function NotificationToast({ message, type = 'info', isVisible }: ToastProps) {
       .color('white')
       .fontWeight('500')
       .flex('1')
-      .build()
+      
   ])
   .modifier
   .padding('16px 20px')
@@ -710,7 +710,7 @@ function NotificationToast({ message, type = 'info', isVisible }: ToastProps) {
   })
   .opacity(isVisible ? 1 : 0)
   .transition('all', 300, 'cubic-bezier(0.4, 0, 0.2, 1)')
-  .build()
+  
 }
 ```
 
@@ -744,7 +744,7 @@ function SkeletonCard() {
         background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
         animation: 'shimmer 1.5s infinite'
       })
-      .build(),
+      ,
       
     // Text skeletons
     VStack([
@@ -755,7 +755,7 @@ function SkeletonCard() {
         .backgroundColor('#f0f0f0')
         .borderRadius('4px')
         .marginBottom('8px')
-        .build(),
+        ,
         
       VStack([])
         .modifier
@@ -764,7 +764,7 @@ function SkeletonCard() {
         .backgroundColor('#f0f0f0')
         .borderRadius('4px')
         .marginBottom('16px')
-        .build(),
+        ,
         
       VStack([])
         .modifier
@@ -772,18 +772,18 @@ function SkeletonCard() {
         .height('40px')
         .backgroundColor('#f0f0f0')
         .borderRadius('6px')
-        .build()
+        
     ])
     .modifier
     .padding('16px')
-    .build()
+    
   ])
   .modifier
   .backgroundColor('white')
   .borderRadius('12px')
   .boxShadow('0 2px 8px rgba(0, 0, 0, 0.1)')
   .overflow('hidden')
-  .build()
+  
 }
 
 // CSS Animation (would be added to global styles)
@@ -833,7 +833,7 @@ function GlowSpinner({ size = 40 }: SpinnerProps) {
       backgroundColor: 'white',
       borderRadius: '50%'
     })
-    .build()
+    
 }
 
 // CSS Animation
@@ -905,7 +905,7 @@ function ThemeProvider({ theme, children }: ThemeProviderProps) {
       'transition-normal': '300ms ease',
       'transition-slow': '500ms ease'
     })
-    .build()
+    
 }
 ```
 
@@ -958,7 +958,7 @@ function ThemedButton({ children, variant = 'primary', ...props }: ThemedButtonP
       transform: { scale: 1.02 },
       filter: { brightness: variant === 'secondary' ? 1.1 : 0.9 }
     })
-    .build()
+    
 }
 ```
 
@@ -981,7 +981,7 @@ function MasonryGrid({ items }: MasonryGridProps) {
           .height('auto')
           .borderRadius('8px 8px 0 0')
           .objectFit('cover')
-          .build(),
+          ,
           
         VStack([
           Text(item.title)
@@ -989,18 +989,18 @@ function MasonryGrid({ items }: MasonryGridProps) {
             .fontSize('16px')
             .fontWeight('bold')
             .marginBottom('8px')
-            .build(),
+            ,
             
           Text(item.description)
             .modifier
             .fontSize('14px')
             .color('#666')
             .lineHeight('1.4')
-            .build()
+            
         ])
         .modifier
         .padding('16px')
-        .build()
+        
       ])
       .modifier
       .backgroundColor('white')
@@ -1019,7 +1019,7 @@ function MasonryGrid({ items }: MasonryGridProps) {
       .css({
         animationDelay: `${index * 100}ms`
       })
-      .build()
+      
     )
   )
   .modifier
@@ -1027,7 +1027,7 @@ function MasonryGrid({ items }: MasonryGridProps) {
   .gridTemplateColumns('repeat(auto-fill, minmax(280px, 1fr))')
   .gap('20px')
   .padding('20px')
-  .build()
+  
 }
 ```
 
@@ -1061,7 +1061,7 @@ function FloatingActionMenu({ actions, isOpen, onToggle }: FABProps) {
         })
         .transition('all', `${200 + index * 50}ms`, 'cubic-bezier(0.4, 0, 0.2, 1)')
         .hoverEffect('lift')
-        .build()
+        
     ),
     
     // Main FAB
@@ -1091,7 +1091,7 @@ function FloatingActionMenu({ actions, isOpen, onToggle }: FABProps) {
         },
         boxShadow: '0 8px 25px rgba(0, 122, 255, 0.4)'
       }, 200)
-      .build()
+      
   ])
   .modifier
   .position('fixed')
@@ -1102,7 +1102,7 @@ function FloatingActionMenu({ actions, isOpen, onToggle }: FABProps) {
   .flexDirection('column-reverse')
   .alignItems('center')
   .gap('12px')
-  .build()
+  
 }
 ```
 

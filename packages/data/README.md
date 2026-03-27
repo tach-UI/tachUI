@@ -47,7 +47,7 @@ const app = VStack({
       renderItem: item => Text(item.name),
     })
       .modifier.padding(16)
-      .build(),
+      ,
   ],
 })
 ```
@@ -73,7 +73,7 @@ const sectionedList = List({
   renderItem: item => Text(item.name),
   renderSectionHeader: section =>
     Text(section.header).modifier.fontWeight('bold'),
-}).build()
+})
 ```
 
 ### Contextual Menu
@@ -99,7 +99,7 @@ const menuItems = [
 const menu = Menu({
   items: menuItems,
   placement: 'bottom-start',
-}).build()
+})
 ```
 
 ## Components
@@ -116,7 +116,7 @@ import { List } from '@tachui/data'
 const list = List({
   data: items,
   renderItem: (item, index) => Text(`${index + 1}. ${item.name}`),
-}).build()
+})
 ```
 
 #### Virtual Scrolling
@@ -130,7 +130,7 @@ const virtualList = List({
     itemHeight: 50, // Fixed height for performance
     overscan: 5, // Extra items to render
   },
-}).build()
+})
 ```
 
 #### Sectioned List
@@ -155,7 +155,7 @@ const sectionedList = List({
     Text(section.header).modifier.fontWeight('bold'),
   renderSectionFooter: section =>
     section.footer ? Text(section.footer).modifier.fontSize(12) : undefined,
-}).build()
+})
 ```
 
 #### Selection Modes
@@ -169,7 +169,7 @@ const selectableList = List({
   onSelectionChange: selected => {
     console.log('Selected items:', selected)
   },
-}).build()
+})
 ```
 
 #### Swipe Actions
@@ -196,7 +196,7 @@ const swipeableList = List({
       onTap: () => deleteItem(item),
     },
   ],
-}).build()
+})
 ```
 
 ### Menu Component
@@ -216,7 +216,7 @@ const dropdownMenu = Menu({
     { id: 'exit', title: 'Exit', action: () => exitApp() },
   ],
   placement: 'bottom-start',
-}).build()
+})
 ```
 
 #### Nested Submenus
@@ -242,7 +242,7 @@ const nestedMenu = Menu({
       ],
     },
   ],
-}).build()
+})
 ```
 
 #### Menu with Icons and Shortcuts
@@ -268,7 +268,7 @@ const advancedMenu = Menu({
     },
   ],
   placement: 'bottom-end',
-}).build()
+})
 ```
 
 ## Advanced Features
@@ -288,7 +288,7 @@ const virtualList = List({
     overscan: 10, // Extra items to render
     threshold: 100, // Distance from viewport to trigger loading
   },
-}).build()
+})
 ```
 
 ### Infinite Scrolling
@@ -311,7 +311,7 @@ const infiniteList = List({
       setHasMore(newData.length > 0)
     },
   },
-}).build()
+})
 ```
 
 ### Reactive Data
@@ -327,7 +327,7 @@ const [items, setItems] = createSignal([
 const reactiveList = List({
   data: items, // Signal-based data
   renderItem: item => Text(item.name),
-}).build()
+})
 
 // Update data reactively
 setItems([...items(), { id: 3, name: 'Item 3' }])
@@ -342,7 +342,7 @@ const listWithIds = List({
   data: items,
   renderItem: item => Text(item.name),
   getItemId: (item, index) => item.id || `item-${index}`,
-}).build()
+})
 ```
 
 ## Performance Optimization
@@ -402,7 +402,7 @@ const typedList = List<CustomItem>({
   data: items,
   renderItem: item => Text(item.name),
   // TypeScript knows item is CustomItem
-}).build()
+})
 ```
 
 ## Browser Support

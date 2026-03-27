@@ -43,7 +43,7 @@ import '@tachui/modifiers' // Registers all modifiers
 import { Symbol } from '@tachui/symbols'
 
 // Now you can use modifiers
-Symbol('heart').modifier.padding(16).foregroundColor('#ff0000').build()
+Symbol('heart').modifier.padding(16).foregroundColor('#ff0000')
 ```
 
 ## Quick Start
@@ -59,22 +59,22 @@ const iconDemo = VStack({
   children: [
     HStack({
       children: [
-        Symbol('heart.fill').modifier.foregroundColor('red').size(24).build(),
+        Symbol('heart.fill').modifier.foregroundColor('red').size(24),
 
-        Text('Favorite').modifier.fontSize(16).build(),
+        Text('Favorite').modifier.fontSize(16),
       ],
       spacing: 8,
       alignment: 'center',
-    }).build(),
+    }),
 
     Symbol('star.circle')
       .modifier.size(48)
       .foregroundColor('#FFD700')
       .symbolRenderingMode('palette')
-      .build(),
+      ,
   ],
   spacing: 16,
-}).build()
+})
 ```
 
 ### Icon Variants
@@ -86,21 +86,21 @@ import { Symbol } from '@tachui/symbols'
 const iconStyles = VStack({
   children: [
     // Outlined (default)
-    Symbol('heart').modifier.size(32).build(),
+    Symbol('heart').modifier.size(32),
 
     // Filled
-    Symbol('heart.fill').modifier.size(32).foregroundColor('#ff4757').build(),
+    Symbol('heart.fill').modifier.size(32).foregroundColor('#ff4757'),
 
     // Circle variants
-    Symbol('heart.circle').modifier.size(32).build(),
+    Symbol('heart.circle').modifier.size(32),
 
     Symbol('heart.circle.fill')
       .modifier.size(32)
       .foregroundColor('#3742fa')
-      .build(),
+      ,
   ],
   spacing: 12,
-}).build()
+})
 ```
 
 ## Symbol System
@@ -161,7 +161,7 @@ Symbol('star.fill')
   .modifier.size(24) // Fixed size
   .symbolScale('small') // 'small' | 'medium' | 'large'
   .symbolWeight('regular') // 'ultralight' | 'thin' | 'light' | 'regular' | 'medium' | 'semibold' | 'bold' | 'heavy' | 'black'
-  .build()
+  
 ```
 
 ### Color and Rendering
@@ -170,7 +170,7 @@ Symbol('star.fill')
 Symbol('heart.fill')
   .modifier.foregroundColor('#ff4757')
   .symbolRenderingMode('monochrome') // 'monochrome' | 'multicolor' | 'hierarchical' | 'palette'
-  .build()
+  
 
 // Multi-color symbols
 Symbol('flag.fill')
@@ -178,7 +178,7 @@ Symbol('flag.fill')
   .primaryColor('#ff4757')
   .secondaryColor('#3742fa')
   .tertiaryColor('#2ed573')
-  .build()
+  
 ```
 
 ### Animation
@@ -191,7 +191,7 @@ Symbol('heart')
     repeating: true,
     speed: 'normal',
   })
-  .build()
+  
 ```
 
 ## Icon Categories
@@ -272,7 +272,7 @@ const [batteryLevel, setBatteryLevel] = createSignal(75)
 batterySymbol(() => batteryLevel())
   .modifier.size(24)
   .foregroundColor(() => (batteryLevel() < 25 ? 'red' : 'green'))
-  .build()
+  
 ```
 
 ### Symbol Collections
@@ -288,7 +288,7 @@ const toolbarSymbols = SymbolCollection({
   ],
   spacing: 16,
   size: 20
-}).build()
+})
 ```
 
 ### Accessibility
@@ -300,7 +300,7 @@ Symbol('heart.fill')
   .modifier.accessibilityLabel('Add to favorites')
   .accessibilityHint('Double tap to add this item to your favorites')
   .accessibilityRole('button')
-  .build()
+  
 ```
 
 ## Icon Search and Discovery
@@ -331,7 +331,7 @@ const iconBrowser = SymbolGrid({
   onSymbolTap: symbolName => {
     console.log(`Selected: ${symbolName}`)
   },
-}).build()
+})
 ```
 
 ## Styling and Theming
@@ -347,7 +347,7 @@ Symbol('star.fill')
   .cornerRadius(6)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
   .onTap(() => console.log('Star tapped!'))
-  .build()
+  
 ```
 
 ## Performance

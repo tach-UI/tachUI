@@ -73,14 +73,14 @@ const counterApp = VStack({
       .fontSize(24)
       .fontWeight('bold')
       .foregroundColor('#007AFF')
-      .build(),
+      ,
 
     Button('Increment', () => setCount(count() + 1))
       .backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding({ horizontal: 24, vertical: 12 })
       .cornerRadius(8)
-      .build(),
+      ,
   ],
   spacing: 16,
   alignment: 'center',
@@ -137,7 +137,7 @@ Text('Hello tachUI')
   .cornerRadius(12)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,122,255,0.2)' })
   .onTap(() => console.log('Tapped!'))
-  .build()
+  
 ```
 
 **Available Modifiers:**

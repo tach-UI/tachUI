@@ -30,7 +30,7 @@ export function MyComponent() {
     .modifier
     .foregroundColor(Assets.primaryColor)  // Auto-adapts to current theme
     .backgroundColor(Assets.backgroundColor)
-    .build()
+    
 }
 ```
 
@@ -64,14 +64,14 @@ Text('Always Dark').modifier.foregroundColor(Assets.primaryColor.dark)
 Text('Tinted text')
   .modifier
   .foregroundColor(Assets.primaryColor.opacity(0.33))
-  .build()
+  
 
 // Element-level alpha (affects the whole element)
 Text('Faded text')
   .modifier
   .foregroundColor(Assets.primaryColor)
   .opacity(0.33)
-  .build()
+  
 ```
 
 ### Image Assets
@@ -89,7 +89,7 @@ export function LogoComponent() {
   return Image(Assets.logo)  // Auto-adapts to current theme
     .modifier
     .frame(100, 50)
-    .build()
+    
 }
 ```
 

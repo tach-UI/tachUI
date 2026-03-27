@@ -26,7 +26,7 @@ const styledIcon = Image({ systemName: "star.fill" })
   .modifier
   .foregroundColor('#ff0000')
   .frame(24, 24)
-  .build()
+  
 
 // Reactive system name
 const [iconName, setIconName] = createSignal("heart")
@@ -98,7 +98,7 @@ const favoriteButton = Image({
   .modifier
   .foregroundColor(() => isBookmarked() ? '#ff0000' : '#666666')
   .scaleEffect(() => isBookmarked() ? 1.2 : 1.0)
-  .build()
+  
 ```
 
 ### State-Driven Appearance
@@ -124,7 +124,7 @@ const statusIcon = Image({ systemName })
       default: return '#007aff'
     }
   })
-  .build()
+  
 ```
 
 ## Migration and Utility Functions
@@ -221,9 +221,9 @@ const SystemIconButton = ({
       Image({ systemName, ...props })
         .modifier
         .frame(20, 20)
-        .build()
+        
     )
-    .build()
+    
 }
 
 // Usage
@@ -287,7 +287,7 @@ const AnimatedBookmark = () => {
       setIsBookmarked(!isBookmarked())
       setAnimationTrigger(animationTrigger() + 1)
     })
-    .build()
+    
 }
 ```
 
@@ -302,7 +302,7 @@ import { Symbol } from '@tachui/symbols'
 const icon = Symbol('heart')
   .modifier
   .foregroundColor('#ff0000')
-  .build()
+  
 ```
 
 **After:**
@@ -312,7 +312,7 @@ import { Image } from '@tachui/symbols'
 const icon = Image({ systemName: 'heart' })
   .modifier
   .foregroundColor('#ff0000')
-  .build()
+  
 ```
 
 ### From iOS/macOS SwiftUI
@@ -330,7 +330,7 @@ Image({ systemName: "heart.fill" })
   .modifier
   .foregroundColor('#ff0000')
   .frame(24, 24)
-  .build()
+  
 ```
 
 ## Error Handling

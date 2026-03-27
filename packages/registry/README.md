@@ -95,7 +95,7 @@ registerModifier('slideIn', ({ direction = 'left', duration = '0.3s' }) => ({
 }))
 
 // Usage in components
-// Text('Hello').slideIn({ direction: 'right', duration: '0.5s' }).build()
+// Text('Hello').slideIn({ direction: 'right', duration: '0.5s' })
 ```
 
 ### Plugin Development
