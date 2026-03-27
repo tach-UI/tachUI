@@ -485,6 +485,73 @@ describe('Layout Components', () => {
 
       expect(zstack).toBeDefined()
     })
+
+    it('uses content sizing by default (first child stays in flow)', () => {
+      const children = [
+        new TestComponent({ id: 'flow' }),
+        new TestComponent({ id: 'overlay' }),
+      ]
+      const [zstackNode] = Layout.ZStack({ children }).render()
+      const renderedChildren = zstackNode.children as any[]
+
+      expect(renderedChildren[0].props.style.position).toBe('relative')
+      expect(renderedChildren[1].props.style.position).toBe('absolute')
+    })
+
+    it('supports explicit priority sizing mode', () => {
+      const highPriority = new TestComponent({ id: 'high' }) as any
+      highPriority.modifiers = [
+        {
+          type: 'layout',
+          properties: { layoutPriority: 10 },
+        },
+      ]
+
+      const lowPriority = new TestComponent({ id: 'low' }) as any
+      lowPriority.modifiers = [
+        {
+          type: 'layout',
+          properties: { layoutPriority: 1 },
+        },
+      ]
+
+      const [zstackNode] = Layout.ZStack({
+        sizing: 'priority',
+        children: [lowPriority, highPriority],
+      }).render()
+      const renderedChildren = zstackNode.children as any[]
+
+      expect(renderedChildren[0].props.style.position).toBe('absolute')
+      expect(renderedChildren[1].props.style.position).toBe('relative')
+    })
+
+    it('supports explicit absolute-only sizing mode', () => {
+      const children = [new TestComponent({}), new TestComponent({})]
+      const [zstackNode] = Layout.ZStack({
+        sizing: 'explicit',
+        children,
+      }).render()
+      const renderedChildren = zstackNode.children as any[]
+
+      expect(renderedChildren[0].props.style.position).toBe('absolute')
+      expect(renderedChildren[1].props.style.position).toBe('absolute')
+    })
+
+    it('supports custom sizingChildIndex in content mode', () => {
+      const children = [
+        new TestComponent({ id: 'first' }),
+        new TestComponent({ id: 'second' }),
+      ]
+      const [zstackNode] = Layout.ZStack({
+        sizing: 'content',
+        sizingChildIndex: 1,
+        children,
+      }).render()
+      const renderedChildren = zstackNode.children as any[]
+
+      expect(renderedChildren[0].props.style.position).toBe('absolute')
+      expect(renderedChildren[1].props.style.position).toBe('relative')
+    })
   })
 })
 

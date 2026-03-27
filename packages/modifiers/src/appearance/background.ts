@@ -42,15 +42,6 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
       return undefined
     }
 
-    // Handle stateful gradients/backgrounds
-    if (
-      context.element instanceof HTMLElement &&
-      this.isStateGradientOption(backgroundValue)
-    ) {
-      this.applyStatefulBackground(context.element, backgroundValue)
-      return undefined
-    }
-
     // Handle theme-aware Assets (ColorAsset, etc.)
     if (this.isAssetValue(backgroundValue)) {
       this.applyColorAssetWithThemeReactivity(
@@ -58,6 +49,17 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
         'background',
         backgroundValue
       )
+      return undefined
+    }
+
+    // Handle stateful gradients/backgrounds.
+    // Important: this must run after asset detection because ColorAsset objects
+    // expose a "default" field and would otherwise be misclassified here.
+    if (
+      context.element instanceof HTMLElement &&
+      this.isStateGradientOption(backgroundValue)
+    ) {
+      this.applyStatefulBackground(context.element, backgroundValue)
       return undefined
     }
 
@@ -135,6 +137,12 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
   private isStateGradientOption(
     value: StatefulBackgroundValue
   ): value is StateGradientOptions {
+    // Defense-in-depth: apply() already checks assets first, but keep this guard
+    // to prevent asset-like objects from being misrouted if call ordering changes.
+    if (this.isAssetValue(value)) {
+      return false
+    }
+
     return (
       value !== null &&
       typeof value === 'object' &&

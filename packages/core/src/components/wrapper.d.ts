@@ -32,6 +32,8 @@ export interface HStackLayoutProps extends BaseLayoutProps {
     alignment?: 'top' | 'center' | 'bottom' | 'leading' | 'trailing' | 'left' | 'right';
 }
 export interface ZStackLayoutProps extends BaseLayoutProps {
+    sizing?: 'content' | 'priority' | 'explicit';
+    sizingChildIndex?: number;
     alignment?: 'topLeading' | 'top' | 'topTrailing' | 'leading' | 'center' | 'trailing' | 'bottomLeading' | 'bottom' | 'bottomTrailing';
 }
 /**
@@ -98,7 +100,7 @@ export declare const Layout: {
         modifier: ModifierBuilder<ModifiableComponent<ComponentProps & ElementOverrideProps & CSSClassesProps>>;
     };
     /**
-     * Z-index stack container (absolute positioning)
+     * Z-index stack container (content sizing by default)
      */
     ZStack: (props?: ZStackLayoutProps) => ModifiableComponent<ComponentProps & ElementOverrideProps & CSSClassesProps> & ModifierBuilder<ModifiableComponent<ComponentProps & ElementOverrideProps & CSSClassesProps>> & {
         modifier: ModifierBuilder<ModifiableComponent<ComponentProps & ElementOverrideProps & CSSClassesProps>>;

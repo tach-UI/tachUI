@@ -202,7 +202,7 @@ const NavigationBar = () =>
 
 ## ZStack
 
-Overlays child components with absolute positioning and z-index control.
+Overlays child components with z-index layering and flow-safe sizing by default.
 
 ### Basic Usage
 
@@ -224,6 +224,8 @@ ZStack({
 ```typescript
 interface ZStackProps {
   children?: ComponentInstance[]
+  sizing?: 'content' | 'priority' | 'explicit'
+  sizingChildIndex?: number
   alignment?: 'center' | 'top' | 'bottom' | 'leading' | 'trailing' | 
               'topLeading' | 'topTrailing' | 'bottomLeading' | 'bottomTrailing'
   debugLabel?: string
@@ -233,6 +235,8 @@ interface ZStackProps {
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `children` | `ComponentInstance[]` | `[]` | Array of child components (back to front) |
+| `sizing` | `'content' \\| 'priority' \\| 'explicit'` | `'content'` | Sizing strategy for container flow behavior |
+| `sizingChildIndex` | `number` | `0` | In `content` mode, which child stays in normal flow |
 | `alignment` | `ZStackAlignment` | `'center'` | Alignment of all children |
 | `debugLabel` | `string` | - | Debug identifier for development |
 
