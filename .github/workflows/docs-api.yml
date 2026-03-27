@@ -4,11 +4,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/**'
+      - 'packages/**/src/**'
+      - 'packages/**/README.md'
       - 'docs/**'
       - 'typedoc.json'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
       - '.github/workflows/docs-api.yml'
   workflow_dispatch:
 
