@@ -19,6 +19,10 @@ async function waitForEffects(): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, 0))
 }
 
+function expectColorValue(actual: string, hex: string, rgb: string): void {
+  expect([hex.toLowerCase(), rgb]).toContain(actual.toLowerCase())
+}
+
 describe('Background Modifier Theme Reactivity', () => {
   beforeEach(() => {
     setTheme('light')
@@ -39,11 +43,11 @@ describe('Background Modifier Theme Reactivity', () => {
     })
 
     await waitForEffects()
-    expect(cleanup.element.style.background).toBe('#EDEAE9')
+    expectColorValue(cleanup.element.style.background, '#EDEAE9', 'rgb(237, 234, 233)')
 
     setTheme('dark')
     await waitForEffects()
-    expect(cleanup.element.style.background).toBe('#332A25')
+    expectColorValue(cleanup.element.style.background, '#332A25', 'rgb(51, 42, 37)')
 
     cleanup.dispose()
   })
@@ -63,11 +67,11 @@ describe('Background Modifier Theme Reactivity', () => {
     })
 
     await waitForEffects()
-    expect(cleanup.element.style.color).toBe('#EDEAE9')
+    expectColorValue(cleanup.element.style.color, '#EDEAE9', 'rgb(237, 234, 233)')
 
     setTheme('dark')
     await waitForEffects()
-    expect(cleanup.element.style.color).toBe('#332A25')
+    expectColorValue(cleanup.element.style.color, '#332A25', 'rgb(51, 42, 37)')
 
     cleanup.dispose()
   })
