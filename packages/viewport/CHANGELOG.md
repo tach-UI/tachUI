@@ -1,5 +1,15 @@
 # @tachui/viewport
 
+## 0.8.13
+
+### Patch Changes
+
+- [#109](https://github.com/tach-UI/tachUI/pull/109) [`e02aee1`](https://github.com/tach-UI/tachUI/commit/e02aee14d816b6ccd78684528fdf4ce95e47714a) Thanks [@whoughton](https://github.com/whoughton)! - Release patch versions across all publishable TachUI packages to recover from broken cross-version dependency metadata and restore a coherent single-runtime install graph.
+
+- Updated dependencies [[`e02aee1`](https://github.com/tach-UI/tachUI/commit/e02aee14d816b6ccd78684528fdf4ce95e47714a)]:
+  - @tachui/core@0.8.13
+  - @tachui/modifiers@0.8.13
+
 ## 0.8.12
 
 ### Patch Changes
