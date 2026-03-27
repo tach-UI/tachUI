@@ -137,6 +137,8 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
   private isStateGradientOption(
     value: StatefulBackgroundValue
   ): value is StateGradientOptions {
+    // Defense-in-depth: apply() already checks assets first, but keep this guard
+    // to prevent asset-like objects from being misrouted if call ordering changes.
     if (this.isAssetValue(value)) {
       return false
     }
