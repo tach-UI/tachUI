@@ -1,6 +1,6 @@
 {
   "name": "@tachui/symbols",
-  "version": "0.8.14",
+  "version": "0.8.15",
   "description": "SwiftUI-inspired symbol/icon system for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -40,7 +40,7 @@
     "directory": "packages/symbols"
   },
   "peerDependencies": {
-    "@tachui/core": ">=0.8.14"
+    "@tachui/core": ">=0.8.15"
   },
   "dependencies": {
     "@tachui/modifiers": "workspace:*",
