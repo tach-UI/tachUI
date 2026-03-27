@@ -110,6 +110,11 @@ NODE
 echo "[smoke-cli-init-packed] installing generated project dependencies"
 npm install
 
+if [[ -z "${CORE_VERSION:-}" ]]; then
+  echo "[smoke-cli-init-packed] CORE_VERSION is not set"
+  exit 1
+fi
+
 echo "[smoke-cli-init-packed] verifying a single @tachui/core runtime version is installed"
 EXPECTED_CORE_VERSION="$CORE_VERSION" node <<'NODE'
 const { execSync } = require('node:child_process')

@@ -7,14 +7,29 @@ import { execSync } from 'node:child_process'
 const ROOT_DIR = process.cwd()
 const PACKAGES_DIR = join(ROOT_DIR, 'packages')
 const INTERNAL_SCOPE = '@tachui/'
-const DEP_SECTIONS_TO_CHECK = ['dependencies', 'optionalDependencies']
+const DEP_SECTIONS_TO_CHECK = ['dependencies', 'optionalDependencies', 'peerDependencies']
 
 function run(command) {
-  return execSync(command, {
-    cwd: ROOT_DIR,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim()
+  try {
+    return execSync(command, {
+      cwd: ROOT_DIR,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim()
+  } catch (error) {
+    const stderr =
+      typeof error === 'object' &&
+      error !== null &&
+      'stderr' in error &&
+      typeof error.stderr === 'string'
+        ? error.stderr.trim()
+        : ''
+
+    if (stderr) {
+      console.error(stderr)
+    }
+    throw error
+  }
 }
 
 function getPublishablePackages() {
@@ -44,12 +59,24 @@ function getPublishablePackages() {
 function packPackage(packageName, packDestination) {
   const output = run(`pnpm --filter ${packageName} pack --pack-destination "${packDestination}" --json`)
   const parsed = JSON.parse(output)
-  return parsed.filename
+  const packResult = Array.isArray(parsed) ? parsed[0] : parsed
+  const filename = packResult?.filename
+  if (typeof filename !== 'string' || filename.length === 0) {
+    throw new Error(`Failed to resolve packed tarball filename for ${packageName}`)
+  }
+  return filename
 }
 
 function readManifestFromPackedTarball(tarballPath) {
   const manifestJson = run(`tar -xOf "${tarballPath}" package/package.json`)
   return JSON.parse(manifestJson)
+}
+
+function isPeerDependencyVersionCompatible(depVersion, expectedVersion) {
+  if (depVersion === expectedVersion) return true
+  if (depVersion.includes(expectedVersion)) return true
+  if (depVersion === '*' || depVersion === 'latest') return true
+  return false
 }
 
 function main() {
@@ -78,7 +105,12 @@ function main() {
             continue
           }
 
-          if (depVersion !== expectedVersion) {
+          const isPeerDependency = section === 'peerDependencies'
+          const isValid = isPeerDependency
+            ? isPeerDependencyVersionCompatible(String(depVersion), expectedVersion)
+            : depVersion === expectedVersion
+
+          if (!isValid) {
             violations.push(
               `${pkg.name}@${pkg.version} ${section}.${depName}=${String(depVersion)} (expected ${expectedVersion})`
             )
