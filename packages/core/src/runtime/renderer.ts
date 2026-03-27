@@ -18,6 +18,8 @@ const debugManager = {
   addDebugAttributes: (..._args: any[]) => {},
 }
 
+const MANAGED_COMPONENT_ID_MARKER = '__tachuiManagedComponentId'
+
 /**
  * Direct DOM renderer for efficient DOM manipulation
  */
@@ -243,6 +245,7 @@ export class DOMRenderer {
     })
 
     // Attach stable component identity for lifecycle hook DOM association.
+    // Only remove the attribute later if TachUI explicitly managed it.
     const componentId = (node as any).componentId
     if (componentId) {
       const currentComponentId = element.getAttribute('data-component-id')
@@ -250,9 +253,13 @@ export class DOMRenderer {
         element.setAttribute('data-component-id', String(componentId))
         this.recordAttributeWrite()
       }
+      ;(element as any)[MANAGED_COMPONENT_ID_MARKER] = true
     } else if (element.hasAttribute('data-component-id')) {
-      element.removeAttribute('data-component-id')
-      this.recordAttributeRemoval()
+      if ((element as any)[MANAGED_COMPONENT_ID_MARKER] === true) {
+        element.removeAttribute('data-component-id')
+        this.recordAttributeRemoval()
+        ;(element as any)[MANAGED_COMPONENT_ID_MARKER] = false
+      }
     }
 
     ;(node as any).__appliedProps = { ...newProps }

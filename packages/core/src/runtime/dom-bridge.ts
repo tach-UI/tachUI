@@ -108,15 +108,6 @@ function findDOMElementsForComponent(component: ComponentInstance): Element[] {
     return Array.from(elementsWithComponentId)
   }
 
-  // Fallback: Search for root-mounted elements tracked with internal component id.
-  const elementsWithInternalComponentId = document.querySelectorAll('*')
-  const exactInternalMatches = Array.from(elementsWithInternalComponentId).filter(
-    element => (element as any)._componentId === component.id
-  )
-  if (exactInternalMatches.length > 0) {
-    return exactInternalMatches
-  }
-
   // No exact element association found - avoid heuristic element stealing.
   return []
 }

@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { Image } from '../../src/display/Image'
 import { ImageAsset, mountComponentTree, setTheme } from '@tachui/core'
 
+async function flushReactiveUpdates(): Promise<void> {
+  await new Promise<void>(resolve => queueMicrotask(resolve))
+  await new Promise<void>(resolve => setTimeout(resolve, 0))
+}
+
 describe('Image Component - ImageAsset DOM reactivity', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
@@ -27,7 +32,7 @@ describe('Image Component - ImageAsset DOM reactivity', () => {
     expect(img!.getAttribute('src')).toContain('/logo-light.png')
 
     setTheme('dark')
-    await new Promise(resolve => queueMicrotask(resolve))
+    await flushReactiveUpdates()
     expect(img!.getAttribute('src')).toContain('/logo-dark.png')
 
     cleanup()
