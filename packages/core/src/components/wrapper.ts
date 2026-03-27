@@ -71,6 +71,8 @@ export interface HStackLayoutProps extends BaseLayoutProps {
 }
 
 export interface ZStackLayoutProps extends BaseLayoutProps {
+  sizing?: 'content' | 'priority' | 'explicit'
+  sizingChildIndex?: number
   alignment?:
     | 'topLeading'
     | 'top'
@@ -495,34 +497,52 @@ export class LayoutComponent
       }
 
       case 'zstack': {
-        // Find the highest layoutPriority child to determine container size
+        const sizingMode =
+          this.layoutProps.sizing && ['content', 'priority', 'explicit'].includes(this.layoutProps.sizing)
+            ? this.layoutProps.sizing
+            : 'content'
+
+        // Content mode keeps one child in normal flow by default.
+        const requestedSizingIndex =
+          typeof this.layoutProps.sizingChildIndex === 'number' &&
+          Number.isInteger(this.layoutProps.sizingChildIndex)
+            ? this.layoutProps.sizingChildIndex
+            : 0
+        const contentSizingIndex =
+          this.children.length > 0
+            ? Math.min(Math.max(requestedSizingIndex, 0), this.children.length - 1)
+            : -1
+
+        // Priority mode preserves legacy layoutPriority sizing behavior.
         let maxPriority = -Infinity
         let highestPriorityChild: ComponentInstance | null = null
 
-        this.children.forEach(child => {
-          // Auto-build if it's a ModifierBuilder for priority check
-          let componentToCheck = child
-          if ('build' in child && typeof child.build === 'function') {
-            componentToCheck = child.build()
-          }
+        if (sizingMode === 'priority') {
+          this.children.forEach(child => {
+            // Auto-build if it's a ModifierBuilder for priority check
+            let componentToCheck = child
+            if ('build' in child && typeof child.build === 'function') {
+              componentToCheck = child.build()
+            }
 
-          if ('modifiers' in componentToCheck && Array.isArray(componentToCheck.modifiers)) {
-            const layoutMod = componentToCheck.modifiers.find(
-              m =>
-                m.type === 'layout' &&
-                m.properties &&
-                'layoutPriority' in m.properties &&
-                typeof m.properties.layoutPriority === 'number'
-            )
-            if (layoutMod) {
-              const priority = layoutMod.properties.layoutPriority as number
-              if (priority > maxPriority) {
-                maxPriority = priority
-                highestPriorityChild = componentToCheck
+            if ('modifiers' in componentToCheck && Array.isArray(componentToCheck.modifiers)) {
+              const layoutMod = componentToCheck.modifiers.find(
+                m =>
+                  m.type === 'layout' &&
+                  m.properties &&
+                  'layoutPriority' in m.properties &&
+                  typeof m.properties.layoutPriority === 'number'
+              )
+              if (layoutMod) {
+                const priority = layoutMod.properties.layoutPriority as number
+                if (priority > maxPriority) {
+                  maxPriority = priority
+                  highestPriorityChild = componentToCheck
+                }
               }
             }
-          }
-        })
+          })
+        }
 
         const container = h('div', {
           className: classString,
@@ -539,8 +559,8 @@ export class LayoutComponent
               : alignment.includes('bottom')
                 ? 'flex-end'
                 : 'center',
-            // Container sizes to the highest priority child
-            ...(highestPriorityChild
+            // Legacy priority mode sizes to the highest-priority child.
+            ...(sizingMode === 'priority' && highestPriorityChild
               ? {
                   minWidth: 'fit-content',
                   minHeight: 'fit-content',
@@ -586,15 +606,25 @@ export class LayoutComponent
 
           return nodeArray.map(node => {
             if (node.type === 'element') {
-              const isHighestPriority = componentToRender === highestPriorityChild
+              const isContentSizingChild = index === contentSizingIndex
+              const isPrioritySizingChild =
+                sizingMode === 'priority' &&
+                highestPriorityChild !== null &&
+                componentToRender === highestPriorityChild
+              const shouldKeepInFlow =
+                sizingMode === 'content'
+                  ? isContentSizingChild
+                  : sizingMode === 'priority'
+                    ? isPrioritySizingChild
+                    : false
+
               return {
                 ...node,
                 props: {
                   ...node.props,
                   style: {
                     ...node.props?.style,
-                    // Highest priority child determines container size
-                    ...(isHighestPriority
+                    ...(shouldKeepInFlow
                       ? {
                           position: 'relative',
                           zIndex: childPriority,
@@ -735,12 +765,20 @@ export const Layout = {
   },
 
   /**
-   * Z-index stack container (absolute positioning)
+   * Z-index stack container (content sizing by default)
    */
   ZStack: (props: ZStackLayoutProps = {}) => {
-    const { children = [], alignment = 'center', debugLabel } = props
+    const {
+      children = [],
+      alignment = 'center',
+      sizing = 'content',
+      sizingChildIndex = 0,
+      debugLabel,
+    } = props
     const component = new LayoutComponent(props, 'zstack', children, {
       alignment,
+      sizing,
+      sizingChildIndex,
       debugLabel,
     })
     return withModifiers(component)

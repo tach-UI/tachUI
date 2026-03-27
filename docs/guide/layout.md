@@ -235,6 +235,8 @@ Layout.ZStack({
 
 **ZStack Properties:** 
 - `children: ComponentInstance[]` - Array of child components
+- `sizing: 'content' | 'priority' | 'explicit'` - Container sizing behavior (default: `'content'`)
+- `sizingChildIndex: number` - In `content` mode, selects the in-flow sizing child (default: `0`)
 - `alignment: 'topLeading' | 'top' | 'topTrailing' | 'leading' | 'center' | 'trailing' | 'bottomLeading' | 'bottom' | 'bottomTrailing'`
 
 ### Layout Priority
