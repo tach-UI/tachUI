@@ -11,11 +11,11 @@ import {
   ImageStates,
   ImageUtils,
 } from '../../src/display/Image'
-import { createSignal } from '@tachui/core'
+import { createSignal, mountComponentTree } from '@tachui/core'
 
 // Mock DOM environment
 function createMockImage(): HTMLImageElement {
-  const img = document.createElement('img') as HTMLImageElement
+  const img = originalCreateElement.call(document, 'img') as HTMLImageElement
 
   // Mock loading behavior
   Object.defineProperty(img, 'src', {
@@ -439,30 +439,42 @@ describe('Image Factory Function', () => {
       expect(image).toBeDefined()
     })
 
-    it('should preserve existing modifiers when scaledToFit is called', () => {
-      const image = Image('test.jpg') as any
-      const sentinel = { type: 'sentinel' }
-      image.modifiers.push(sentinel)
+    it('should preserve frame when scaledToFit follows frame in the chain', () => {
+      const image = ((Image('test.jpg').frame(96, 96) as any).scaledToFit() as any).build()
+      const modifierTypes = image.modifiers.map((m: any) => m.type)
 
-      const result = image.scaledToFit() as any
-      const modifierTypes = result.modifiers.map((m: any) => m.type)
-
-      expect(result).toBe(image)
-      expect(result.modifiers).toContain(sentinel)
       expect(modifierTypes).toContain('aspectRatio')
+      expect(modifierTypes).toContain('layout')
+
+      const container = document.createElement('div')
+      const cleanup = mountComponentTree(image, container)
+      const img = container.querySelector('img') as HTMLImageElement
+
+      expect(img).not.toBeNull()
+      expect(img.style.width).toBe('96px')
+      expect(img.style.height).toBe('96px')
+      expect(img.style.objectFit).toBe('contain')
+
+      cleanup()
     })
 
-    it('should preserve existing modifiers when scaledToFill is called', () => {
-      const image = Image('test.jpg') as any
-      const sentinel = { type: 'sentinel' }
-      image.modifiers.push(sentinel)
+    it('should preserve frame when scaledToFill follows frame in the chain', () => {
+      const image = ((Image('test.jpg').frame(96, 96) as any).scaledToFill() as any).build()
+      const modifierTypes = image.modifiers.map((m: any) => m.type)
 
-      const result = image.scaledToFill() as any
-      const modifierTypes = result.modifiers.map((m: any) => m.type)
-
-      expect(result).toBe(image)
-      expect(result.modifiers).toContain(sentinel)
       expect(modifierTypes).toContain('aspectRatio')
+      expect(modifierTypes).toContain('layout')
+
+      const container = document.createElement('div')
+      const cleanup = mountComponentTree(image, container)
+      const img = container.querySelector('img') as HTMLImageElement
+
+      expect(img).not.toBeNull()
+      expect(img.style.width).toBe('96px')
+      expect(img.style.height).toBe('96px')
+      expect(img.style.objectFit).toBe('cover')
+
+      cleanup()
     })
   })
 })
