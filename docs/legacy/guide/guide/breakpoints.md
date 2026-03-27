@@ -36,7 +36,7 @@ Text("Responsive Text")
     xl: { fontSize: 28, padding: 24 },      // Desktop
     '2xl': { fontSize: 32, padding: 28 }    // Large screen
   })
-  .build()
+  
 ```
 
 ### Shorthand Modifiers
@@ -52,7 +52,7 @@ Text("Quick Responsive")
   .lg.fontSize(24)       // Large and up
   .xl.fontSize(28)       // Extra large and up
   ['2xl'].fontSize(32)   // 2XL and up (bracket notation for non-identifier keys)
-  .build()
+  
 ```
 
 ## Custom Breakpoint Configuration
@@ -88,7 +88,7 @@ Text("Custom Breakpoints")
     laptop: { fontSize: 22 },     // Custom 1200px+
     desktop: { fontSize: 26 }     // Custom 1440px+
   })
-  .build()
+  
 ```
 
 ### TypeScript Support
@@ -120,7 +120,7 @@ Text("Type-safe")
     desktop: { fontSize: 24 },  // ✅ Valid
     // laptop: { fontSize: 22 } // ❌ TypeScript error - not in CustomBreakpoints
   })
-  .build()
+  
 ```
 
 ## Breakpoint Presets
@@ -210,7 +210,7 @@ const MyComponent = () => {
   return Text(`Mobile: ${isMobile}, Desktop: ${isDesktop}`)
     .modifier
     .fontSize(isMobile ? 16 : 20)
-    .build()
+    
 }
 ```
 
@@ -240,7 +240,7 @@ Text("Mobile-First")
       // padding: 16 and color: '#333' remain from previous breakpoints
     }
   })
-  .build()
+  
 ```
 
 ### Breakpoint Resolution
@@ -317,7 +317,7 @@ Text("Design System")
     laptop: { padding: designSystem.spacing.laptop.md },
     desktop: { padding: designSystem.spacing.desktop.md }
   })
-  .build()
+  
 ```
 
 ### Team Configuration
@@ -344,13 +344,13 @@ const ResponsiveCard = () => {
       phone: { fontSize: 18, textAlign: 'center' },
       tablet: { fontSize: 22, textAlign: 'left' },
       desktop: { fontSize: 26, textAlign: 'left' }
-    }).build(),
+    }),
     
     Text("Card content...").responsive({
       phone: { fontSize: 14, lineHeight: 1.4 },
       tablet: { fontSize: 16, lineHeight: 1.5 },
       desktop: { fontSize: 18, lineHeight: 1.6 }
-    }).build()
+    })
   ])
   .modifier
   .responsive({
@@ -358,7 +358,7 @@ const ResponsiveCard = () => {
     tablet: { padding: 24, gap: 12 },
     desktop: { padding: 32, gap: 16 }
   })
-  .build()
+  
 }
 ```
 

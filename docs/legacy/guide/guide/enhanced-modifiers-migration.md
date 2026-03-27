@@ -22,7 +22,7 @@ You get these benefits immediately with no code changes:
 Button("Drag Handle", handleDrag)
   .modifier
   .cursor('grab') // ✨ New value now available
-  .build()
+  
 
 // Enhanced validation in development
 cursor('invalid-cursor') // ⚠️ Now warns in development mode
@@ -37,13 +37,13 @@ Enhance specific use cases as needed:
 Text("Card")
   .modifier
   .cornerRadius(8) // All corners the same
-  .build()
+  
 
 // After: Individual corner control
 Text("Card")
   .modifier
   .cornerRadius({ top: 12, bottom: 4 }) // ✨ Different top/bottom
-  .build()
+  
 ```
 
 ### Phase 3: Advanced Features
@@ -55,7 +55,7 @@ Adopt advanced features for sophisticated designs:
 Button("Action", handleClick)
   .modifier
   .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 
 // After: Multiple layered shadows
 Button("Action", handleClick)
@@ -65,7 +65,7 @@ Button("Action", handleClick)
     { x: 0, y: 4, blur: 6, color: 'rgba(0,0,0,0.1)' },
     { x: 0, y: 8, blur: 25, color: 'rgba(0,0,0,0.12)' }
   ])
-  .build()
+  
 ```
 
 ## Feature-by-Feature Migration
@@ -78,7 +78,7 @@ Button("Action", handleClick)
 Text("Rounded")
   .modifier
   .cornerRadius(10)
-  .build()
+  
 ```
 
 #### Enhanced Options
@@ -90,7 +90,7 @@ Text("Custom Corners")
     topLeft: 10,
     bottomRight: 5
   })
-  .build()
+  
 
 // ✨ New: SwiftUI terminology
 Text("iOS Style")
@@ -99,7 +99,7 @@ Text("iOS Style")
     topLeading: 10,    // More familiar for iOS developers
     bottomTrailing: 5
   })
-  .build()
+  
 
 // ✨ New: Shorthand properties
 Text("Grouped Corners")
@@ -108,7 +108,7 @@ Text("Grouped Corners")
     top: 8,    // topLeft and topRight
     bottom: 4  // bottomLeft and bottomRight
   })
-  .build()
+  
 ```
 
 ### cursor Enhancement
@@ -119,7 +119,7 @@ Text("Grouped Corners")
 Button("Click", handleClick)
   .modifier
   .cursor('pointer')
-  .build()
+  
 ```
 
 #### Enhanced Options
@@ -128,18 +128,18 @@ Button("Click", handleClick)
 Button("Drag Handle", handleDrag)
   .modifier
   .cursor('grab') // New value
-  .build()
+  
 
 Button("Dragging", handleDrag)
   .modifier
   .cursor('grabbing') // New value
-  .build()
+  
 
 // ✨ New: Custom cursors
 Image("custom-cursor")
   .modifier
   .cursor('url(custom.png), pointer') // Custom cursor with fallback
-  .build()
+  
 
 // ✨ New: Development validation
 cursor('invalid') // Warns in development mode
@@ -153,7 +153,7 @@ cursor('invalid') // Warns in development mode
 Button("Shadow", handleClick)
   .modifier
   .shadow({ x: 2, y: 4, blur: 8, color: 'rgba(0,0,0,0.2)' })
-  .build()
+  
 ```
 
 #### Enhanced Options
@@ -167,7 +167,7 @@ Button("Layered", handleClick)
     { x: 0, y: 1, blur: 3, color: 'rgba(0,0,0,0.1)' },
     { x: 0, y: 4, blur: 6, color: 'rgba(0,0,0,0.1)' }
   ])
-  .build()
+  
 
 // ✨ New: Text shadows
 import { textShadow } from '@tachui/core'
@@ -175,7 +175,7 @@ import { textShadow } from '@tachui/core'
 Text("Shadowed Text")
   .modifier
   .textShadow({ x: 1, y: 1, blur: 2, color: 'rgba(0,0,0,0.3)' })
-  .build()
+  
 
 // ✨ New: Material Design presets
 import { shadowPreset } from '@tachui/core'
@@ -183,7 +183,7 @@ import { shadowPreset } from '@tachui/core'
 Button("Material", handleClick)
   .modifier
   .shadowPreset('elevation-2')
-  .build()
+  
 
 // ✨ New: Advanced shadow features
 Button("Advanced", handleClick)
@@ -193,7 +193,7 @@ Button("Advanced", handleClick)
     color: 'rgba(0,122,255,0.3)',
     inset: false
   })
-  .build()
+  
 ```
 
 ### border Enhancement ✨ **Now Available**
@@ -206,7 +206,7 @@ All advanced border features are now part of the main border API! No separate im
 Button("Bordered", handleClick)
   .modifier
   .border(1, '#007AFF', 'solid')
-  .build()
+  
 ```
 
 #### Enhanced Features (Available Now)
@@ -218,7 +218,7 @@ Button("Custom Borders", handleClick)
     top: { width: 2, style: 'solid', color: '#007AFF' },
     bottom: { width: 1, style: 'dashed', color: '#FF3B30' }
   })
-  .build()
+  
 
 // ✨ SwiftUI terminology (LTR-aware)
 Button("Leading/Trailing", handleClick)
@@ -227,7 +227,7 @@ Button("Leading/Trailing", handleClick)
     leading: { width: 2, color: '#007AFF' },  // Maps to left
     trailing: { width: 1, color: '#FF3B30' }  // Maps to right
   })
-  .build()
+  
 
 // ✨ Shorthand properties
 Button("Shorthand", handleClick)
@@ -236,7 +236,7 @@ Button("Shorthand", handleClick)
     horizontal: { width: 2, color: '#007AFF' }, // Left + right
     vertical: { width: 1, color: '#FF3B30' }    // Top + bottom
   })
-  .build()
+  
 
 // ✨ Border direction functions
 Button("Direction Functions", handleClick)
@@ -244,7 +244,7 @@ Button("Direction Functions", handleClick)
   .borderTop(2, '#007AFF', 'solid')      // Top only
   .borderHorizontal(1, '#ddd')           // Left + right
   .borderLeading(3, '#34C759')           // SwiftUI leading
-  .build()
+  
 
 // ✨ Advanced features
 Button("Advanced", handleClick)
@@ -256,7 +256,7 @@ Button("Advanced", handleClick)
     radius: { topLeft: 8, topRight: 8 },               // Integrated corner radius
     style: 'solid'
   })
-  .build()
+  
 
 // ✨ Reactive values with Signals
 Button("Reactive", handleClick)
@@ -266,7 +266,7 @@ Button("Reactive", handleClick)
     color: () => theme().borderColor,
     style: 'dashed'
   })
-  .build()
+  
 ```
 
 ### scroll Enhancement
@@ -283,14 +283,14 @@ ScrollView([...])
     margin: { top: 10 },
     snap: { type: 'y mandatory', align: 'start' }
   })
-  .build()
+  
 
 // ✨ New: Individual scroll modifiers
 ScrollView([...])
   .modifier
   .scrollBehavior('smooth')
   .overscrollBehavior('contain')
-  .build()
+  
 ```
 
 ## Common Migration Patterns
@@ -305,7 +305,7 @@ const BasicCard = () => {
     .cornerRadius(8)
     .border(1, '#e0e0e0')
     .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
 }
 
 // After: Enhanced card with sophisticated styling
@@ -319,7 +319,7 @@ const EnhancedCard = () => {
       bottom: { width: 2, color: '#007AFF' }
     })
     .shadowPreset('elevation-2') // Material Design shadow
-    .build()
+    
 }
 ```
 
@@ -333,7 +333,7 @@ const BasicButton = () => {
     .cornerRadius(6)
     .cursor('pointer')
     .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
 }
 
 // After: Enhanced interactive button
@@ -349,7 +349,7 @@ const EnhancedButton = (isPressed: boolean) => {
         { x: 0, y: 4, blur: 8, color: 'rgba(0,0,0,0.15)' }
       ]
     )
-    .build()
+    
 }
 ```
 
@@ -362,7 +362,7 @@ const BasicInput = () => {
     .modifier
     .border(1, '#d1d5db')
     .cornerRadius(4)
-    .build()
+    
 }
 
 // After: Enhanced form with focus states
@@ -381,7 +381,7 @@ const EnhancedInput = (isFocused: boolean) => {
     .shadows(isFocused ? [
       { x: 0, y: 0, blur: 0, spread: 3, color: 'rgba(0,122,255,0.1)' }
     ] : [])
-    .build()
+    
 }
 ```
 
@@ -519,7 +519,7 @@ describe('Enhanced Modifiers Migration', () => {
     const component = Text("Test")
       .modifier
       .cornerRadius(10) // ✅ Existing API
-      .build()
+      
     
     expect(getComputedStyle(component).borderRadius).toBe('10px')
   })
@@ -528,7 +528,7 @@ describe('Enhanced Modifiers Migration', () => {
     const component = Text("Test")
       .modifier
       .cornerRadius({ topLeft: 10, bottomRight: 5 }) // ✨ Enhanced API
-      .build()
+      
     
     expect(getComputedStyle(component).borderTopLeftRadius).toBe('10px')
     expect(getComputedStyle(component).borderBottomRightRadius).toBe('5px')
@@ -568,13 +568,13 @@ Text("Test")
   .modifier
   .cornerRadius(10) // Old API
   .cornerRadius({ topLeft: 15 }) // New API - will override
-  .build()
+  
 
 // ✅ Solution: Use one API consistently
 Text("Test")
   .modifier
   .cornerRadius({ topLeft: 15, topRight: 10, bottomLeft: 10, bottomRight: 10 })
-  .build()
+  
 ```
 
 #### Issue 3: Performance Concerns

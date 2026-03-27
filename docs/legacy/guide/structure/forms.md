@@ -399,7 +399,7 @@ const signupForm = Form([
   .padding(20)
   .cornerRadius(8)
   .backgroundColor(Assets.systemBackground)
-  .build()
+  
 
 // Advanced form with custom validation
 import { FormState, createValidator } from '@tachui/forms'

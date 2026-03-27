@@ -60,7 +60,7 @@ const heartIcon = Image({ systemName: "heart.fill" })
   .modifier
   .foregroundColor('#ff0000')
   .scaleEffect(1.2)
-  .build()
+  
 
 // Reactive system names
 const [iconName, setIconName] = createSignal("heart")
@@ -249,7 +249,7 @@ const icon = Image({ systemName: "heart.fill" })
   .modifier
   .foregroundColor('#ff0000')
   .frame(24, 24)
-  .build()
+  
 ```
 
 ### Advanced Variant Handling
@@ -264,7 +264,7 @@ const styles = getVariantCSS(variant)
 const customSymbol = Symbol(lucideIcon)
   .modifier
   .css(styles)
-  .build()
+  
 ```
 
 ### Category-Based Discovery

@@ -110,10 +110,10 @@ Grid({
   justifyContent: 'space-between',
 
   children: [
-    Text('Header').modifier.gridArea('header').build(),
-    Text('Sidebar').modifier.gridArea('sidebar').build(),
-    Text('Content').modifier.gridArea('content').build(),
-    Text('Footer').modifier.gridArea('footer').build(),
+    Text('Header').modifier.gridArea('header'),
+    Text('Sidebar').modifier.gridArea('sidebar'),
+    Text('Content').modifier.gridArea('content'),
+    Text('Footer').modifier.gridArea('footer'),
   ],
 })
 ```
@@ -129,13 +129,13 @@ import { gridColumn, gridRow, gridArea } from '@tachui/grid'
 Text('Wide Item')
   .modifier.gridColumn('1 / 3') // Span from column 1 to 3
   .gridRow('2 / 4') // Span from row 2 to 4
-  .build()
+  
 
 // Named grid areas
-Text('Header').modifier.gridArea('header').build()
+Text('Header').modifier.gridArea('header')
 
 // Positioning with line numbers
-Text('Positioned Item').modifier.gridColumn(2).gridRow(1).build()
+Text('Positioned Item').modifier.gridColumn(2).gridRow(1)
 ```
 
 ## Responsive Grid Patterns
@@ -165,10 +165,10 @@ GridResponsive({
     ],
   },
   children: [
-    DashboardHeader().modifier.gridArea('header').build(),
-    StatsPanel().modifier.gridArea('stats').build(),
-    ChartWidget().modifier.gridArea('chart').build(),
-    Footer().modifier.gridArea('footer').build(),
+    DashboardHeader().modifier.gridArea('header'),
+    StatsPanel().modifier.gridArea('stats'),
+    ChartWidget().modifier.gridArea('chart'),
+    Footer().modifier.gridArea('footer'),
   ],
 })
 ```
@@ -215,7 +215,7 @@ VStack({
             .modifier.padding(16)
             .cornerRadius(8)
             .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
-            .build()
+            
         ),
       }),
     }),

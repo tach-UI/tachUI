@@ -41,7 +41,7 @@ function BasicExample() {
         onPress: () => setShowSheet(false)
       }
     ]
-  }).build()
+  })
 }
 ```
 
@@ -88,7 +88,7 @@ ActionSheet({
       onPress: () => shareItem()
     }
   ]
-}).build()
+})
 ```
 
 ### Destructive Role
@@ -111,7 +111,7 @@ ActionSheet({
       onPress: () => setShowSheet(false)
     }
   ]
-}).build()
+})
 ```
 
 ### Cancel Role
@@ -132,7 +132,7 @@ ActionSheet({
       onPress: () => setShowSheet(false)
     }
   ]
-}).build()
+})
 ```
 
 ## Presentation Styles
@@ -148,7 +148,7 @@ ActionSheet({
   isPresented: showSheet,
   presentationStyle: "adaptive", // Default
   buttons: [/* ... */]
-}).build()
+})
 ```
 
 ### Sheet Style
@@ -160,7 +160,7 @@ ActionSheet({
   isPresented: showSheet,
   presentationStyle: "sheet",
   buttons: [/* ... */]
-}).build()
+})
 ```
 
 ### Popover Style
@@ -172,7 +172,7 @@ ActionSheet({
   isPresented: showSheet,
   presentationStyle: "popover",
   buttons: [/* ... */]
-}).build()
+})
 ```
 
 ## Responsive Behavior
@@ -188,7 +188,7 @@ function ResponsiveActionSheet() {
       Button({
         title: "Show Actions",
         action: () => setShowSheet(true)
-      }).build(),
+      }),
 
       ActionSheet({
         title: "Responsive Actions",
@@ -216,9 +216,9 @@ function ResponsiveActionSheet() {
             onPress: () => setShowSheet(false)
           }
         ]
-      }).build()
+      })
     ]
-  }).build()
+  })
 }
 ```
 
@@ -258,7 +258,7 @@ function DismissalExample() {
         onPress: () => setShowSheet(false)
       }
     ]
-  }).build()
+  })
 }
 ```
 
@@ -282,7 +282,7 @@ ActionSheet({
       onPress: () => setShowSheet(false)
     }
   ]
-}).build()
+})
 ```
 
 ## ActionSheetUtils
@@ -314,7 +314,7 @@ function ConfirmationExample() {
     ...confirmProps,
     isPresented: showConfirm,
     onDismiss: () => setShowConfirm(false)
-  }).build()
+  })
 }
 ```
 
@@ -338,7 +338,7 @@ function DeleteExample() {
     ...deleteProps,
     isPresented: showDelete,
     onDismiss: () => setShowDelete(false)
-  }).build()
+  })
 }
 ```
 
@@ -380,7 +380,7 @@ function ShareExample() {
     ...shareProps,
     isPresented: showShare,
     onDismiss: () => setShowShare(false)
-  }).build()
+  })
 }
 ```
 
@@ -402,7 +402,7 @@ ActionSheet({
       onPress: () => deleteDocument()
     }
   ]
-}).build()
+})
 ```
 
 ### Keyboard Navigation
@@ -432,7 +432,7 @@ ActionSheet({
 .backgroundColor('rgba(0, 0, 0, 0.8)')
 .borderRadius(16)
 .shadow({ x: 0, y: 4, radius: 20, color: 'rgba(0,0,0,0.3)' })
-.build()
+
 ```
 
 ## Custom Theming

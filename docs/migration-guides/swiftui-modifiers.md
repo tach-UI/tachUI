@@ -60,33 +60,33 @@ This guide walks through upgrading projects from the legacy `.modifier.*` chaini
 const card = VStack({
   spacing: 8,
   children: [
-    Text('Balance').modifier.fontSize(16).fontWeight('bold').build(),
-    Text('$1,200').modifier.fontSize(32).color('#2563eb').build(),
+    Text('Balance').modifier.fontSize(16).fontWeight('bold'),
+    Text('$1,200').modifier.fontSize(32).color('#2563eb'),
   ],
 })
   .modifier.padding(20)
   .modifier.backgroundColor('#f8fafc')
   .modifier.cornerRadius(16)
-  .build()
+  
 
 // After
 const card = VStack({
   spacing: 8,
   children: [
-    Text('Balance').fontSize(16).fontWeight('bold').build(),
-    Text('$1,200').fontSize(32).color('#2563eb').build(),
+    Text('Balance').fontSize(16).fontWeight('bold'),
+    Text('$1,200').fontSize(32).color('#2563eb'),
   ],
 })
   .padding(20)
   .backgroundColor('#f8fafc')
   .cornerRadius(16)
-  .build()
+  
 ```
 
 ## Common Migration Questions
 
-- **Do I still need `.build()`?**  
-  Yes. Builders still require an explicit `build()` to produce the final component instance—only the intermediate `.modifier` access is removed.
+- **Do I still need a final build step?**  
+  No. Use direct modifier chaining on the component (`Text('x').padding(8)`); no explicit finalizer call is needed.
 
 - **What about custom modifiers?**  
   Export them via `@tachui/modifiers` (or your plugin package) and ensure they call `registerModifierWithMetadata`. Consumers can then call them directly on components.

@@ -141,12 +141,19 @@ export function resolveCoreVersionFromMap(cliVersion: string | null): string | n
   }
 
   const parsed = parseSemver(cliVersion)
-  if (!parsed || parsed.preRelease === null) {
-    // Compatibility map entries are explicitly maintained for prerelease CLI versions.
-    // Stable CLI builds should use registry resolution or an explicit --tachui-version.
+  if (!parsed) {
     return null
   }
 
+  if (parsed.preRelease === null) {
+    // Co-publish fallback for stable CLI releases.
+    return `${parsed.major}.${parsed.minor}.${parsed.patch}`
+  }
+
   const match = CORE_VERSION_COMPATIBILITY.find(entry => matchesRange(parsed, entry.cliRange))
-  return match?.coreVersion ?? null
+  if (match?.coreVersion) {
+    return match.coreVersion
+  }
+
+  return null
 }

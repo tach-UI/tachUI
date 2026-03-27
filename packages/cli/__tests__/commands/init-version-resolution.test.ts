@@ -47,6 +47,11 @@ describe('init version resolution helpers', () => {
     expect(mapResolved).toEqual({ version: '0.8.8-alpha', source: 'compatibility-map' })
   })
 
+  it('falls back to stable CLI version when registry is unavailable', async () => {
+    const mapResolved = await resolveDefaultTachuiVersion('0.8.11', async () => null)
+    expect(mapResolved).toEqual({ version: '0.8.11', source: 'compatibility-map' })
+  })
+
   it('throws when neither registry nor map can resolve a version', async () => {
     await expect(resolveDefaultTachuiVersion('9.9.9-alpha', async () => null)).rejects.toThrow(
       'Unable to determine a default @tachui/core version'

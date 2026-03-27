@@ -73,7 +73,7 @@ VStack({
 .padding(20)
 .backgroundColor('#ffffff')
 .cornerRadius(12)
-.build()
+
 ```
 
 **Legacy namespace syntax (deprecated):**
@@ -92,7 +92,7 @@ VStack({
 .padding(20)
 .backgroundColor('#ffffff')
 .cornerRadius(12)
-.build()
+
 ```
 
 **VStack Properties:**
@@ -113,7 +113,7 @@ HStack({
       .width(40)
       .height(40)
       .cornerRadius(20)
-      .build(),
+      ,
       
     VStack({
       children: [
@@ -141,7 +141,7 @@ HStack({
       .width(40)
       .height(40)
       .cornerRadius(20)
-      .build(),
+      ,
       
     VStack({
       children: [
@@ -178,7 +178,7 @@ ZStack({
       .width('100%')
       .height(300)
       .contentMode('cover')
-      .build(),
+      ,
       
     // Overlay content
     VStack({
@@ -188,14 +188,14 @@ ZStack({
           .fontSize(32)
           .fontWeight('bold')
           .foregroundColor('#ffffff')
-          .build(),
+          ,
           
         Text("Get started today")
           .modifier
           .fontSize(18)
           .foregroundColor('#ffffff')
           .opacity(0.9)
-          .build()
+          
       ],
       spacing: 8,
       alignment: 'center'
@@ -216,7 +216,7 @@ Layout.ZStack({
       .width('100%')
       .height(300)
       .contentMode('cover')
-      .build(),
+      ,
       
     // Overlay content
     VStack({
@@ -226,14 +226,14 @@ Layout.ZStack({
           .fontSize(32)
           .fontWeight('bold')
           .foregroundColor('#ffffff')
-          .build(),
+          ,
           
         Text("Get started today")
           .modifier
           .fontSize(18)
           .foregroundColor('#ffffff')
           .opacity(0.9)
-          .build()
+          
       ],
       spacing: 8,
       alignment: 'center'
@@ -258,17 +258,17 @@ HStack({
     Text("Fixed")
       .modifier
       .layoutPriority(0) // Fixed size
-      .build(),
+      ,
       
     Text("Flexible")
       .modifier  
       .layoutPriority(1) // Expands to fill space
-      .build(),
+      ,
       
     Button("Action", handleAction)
       .modifier
       .layoutPriority(0) // Fixed size
-      .build()
+      
   ],
   spacing: 12
 })
@@ -282,17 +282,17 @@ HStack({
     Text("Fixed")
       .modifier
       .layoutPriority(0) // Fixed size
-      .build(),
+      ,
       
     Text("Flexible")
       .modifier  
       .layoutPriority(1) // Expands to fill space
-      .build(),
+      ,
       
     Button("Action", handleAction)
       .modifier
       .layoutPriority(0) // Fixed size
-      .build()
+      
   ],
   spacing: 12
 })
@@ -309,7 +309,7 @@ The Spacer component fills available space in stack layouts, pushing other compo
 HStack({
   children: [
     Text("Left"),
-    Spacer().build(),
+    Spacer(),
     Text("Right")
   ]
 })
@@ -322,7 +322,7 @@ HStack({
 VStack({
   children: [
     Text("Header"),
-    Spacer(50).build(), // Minimum 50px
+    Spacer(50), // Minimum 50px
     Text("Footer")
   ]
 })
@@ -337,7 +337,7 @@ Spacer({
 })
 .modifier
 .backgroundColor('rgba(255, 0, 0, 0.1)') // Debug visualization
-.build()
+
 ```
 
 ### Spacer Properties
@@ -360,7 +360,7 @@ The Spacer component uses CSS flexbox properties to expand:
 HStack({
   children: [
     Button("Cancel", handleCancel),
-    Spacer().build(),
+    Spacer(),
     Button("Save", handleSave)
   ]
 })
@@ -370,9 +370,9 @@ HStack({
 ```typescript
 HStack({
   children: [
-    Spacer().build(),
+    Spacer(),
     Text("Centered Content"),
-    Spacer().build()
+    Spacer()
   ]
 })
 ```
@@ -382,9 +382,9 @@ HStack({
 HStack({
   children: [
     Button("1", action1),
-    Spacer().build(),
+    Spacer(),
     Button("2", action2),
-    Spacer().build(),
+    Spacer(),
     Button("3", action3)
   ]
 })
@@ -407,7 +407,7 @@ Spacer()
   .backgroundColor('#f0f0f0')
   .cornerRadius(4)
   .margin({ horizontal: 8 })
-  .build()
+  
 ```
 
 ## ScrollView Component
@@ -428,7 +428,7 @@ ScrollView({
 .modifier
 .height(400)
 .backgroundColor('#ffffff')
-.build()
+
 ```
 
 ### Horizontal ScrollView
@@ -445,7 +445,7 @@ ScrollView({
 })
 .modifier
 .height(200)
-.build()
+
 ```
 
 ### Pull to Refresh
@@ -558,7 +558,7 @@ List({
           .fontSize(16)
           .foregroundColor(todo.completed ? '#999' : '#333')
           .textDecoration(todo.completed ? 'line-through' : 'none')
-          .build()
+          
       ],
       spacing: 12,
       alignment: 'center'
@@ -567,7 +567,7 @@ List({
     .padding(16)
     .backgroundColor('#ffffff')
     .borderBottom(1, '#f0f0f0')
-    .build(),
+    ,
     
   getItemId: (todo) => todo.id,
   onItemTap: (todo) => console.log("Tapped:", todo.text)
@@ -605,7 +605,7 @@ List({
               .modifier
               .fontSize(14)
               .foregroundColor('#666')
-              .build()  
+                
           ],
           spacing: 4,
           alignment: 'leading'
@@ -620,7 +620,7 @@ List({
       .fontWeight('600')
       .padding(16, 12)
       .backgroundColor('#f8f9fa')
-      .build()
+      
 })
 ```
 
@@ -721,7 +721,7 @@ ForEach({
           .height(20)
           .backgroundColor(color.hex)
           .cornerRadius(4)
-          .build(),
+          ,
           
         Text(color.name)
       ],
@@ -788,7 +788,7 @@ function CardGrid({ items }) {
             ItemCard(item)
               .modifier
               .frame({ flex: 1 })
-              .build()
+              
           ),
           spacing: 16,
           alignment: 'top'
@@ -799,7 +799,7 @@ function CardGrid({ items }) {
   })
   .modifier
   .padding(16)
-  .build()
+  
 }
 ```
 
@@ -817,7 +817,7 @@ function SidebarLayout({ sidebar, content }) {
       .width(250)
       .backgroundColor('#f8f9fa')
       .padding(16)
-      .build(),
+      ,
       
       // Main content
       VStack({
@@ -826,7 +826,7 @@ function SidebarLayout({ sidebar, content }) {
       .modifier
       .frame({ flex: 1 })
       .padding(24)
-      .build()
+      
     ],
     spacing: 0,
     alignment: 'top'
@@ -906,12 +906,12 @@ HStack({
     SidebarComponent()
       .modifier
       .layoutPriority(0) // Fixed width
-      .build(),
+      ,
       
     MainContentComponent()
       .modifier
       .layoutPriority(1) // Fills remaining space
-      .build()
+      
   ]
 })
 ```
@@ -951,7 +951,7 @@ List({
     })
     .modifier
     .padding(40)
-    .build()
+    
 })
 ```
 

@@ -64,7 +64,7 @@ VStack({
         tablet: 20,
         desktop: 24,
       })
-      .build(),
+      ,
   ],
 })
 ```
@@ -88,7 +88,7 @@ Text('Adaptive Content')
     tablet: '80%',
     desktop: '60%',
   })
-  .build()
+  
 ```
 
 ### Layout Adaptations
@@ -121,7 +121,7 @@ Text('Responsive Typography')
     mobile: 'left',
     tablet: 'center',
   })
-  .build()
+  
 ```
 
 ## Responsive Components
@@ -238,11 +238,11 @@ ContainerQuery({
     children: [
       Text('Card expands when container is wide enough')
         .modifier.fontSize(18)
-        .build(),
+        ,
     ],
   })
     .modifier.container('cardContainer')
-    .build(),
+    ,
 })
 ```
 
@@ -348,7 +348,7 @@ const buttonStyles = createResponsiveStyles({
   },
 })
 
-Button('Responsive Button').modifier.css(buttonStyles()).build()
+Button('Responsive Button').modifier.css(buttonStyles())
 ```
 
 ## Performance Optimization
@@ -371,7 +371,7 @@ const fontSize = createMemo(() => {
   }
 })
 
-Text('Optimized Text').modifier.fontSize(fontSize).build()
+Text('Optimized Text').modifier.fontSize(fontSize)
 ```
 
 ### Lazy Loading
@@ -458,7 +458,7 @@ Text('Custom responsive')
     xl: 20,
     xxl: 24,
   })
-  .build()
+  
 ```
 
 ## Server-Side Rendering (SSR)
@@ -489,7 +489,7 @@ Text('Accessible responsive content')
     desktop: 18,
   })
   .accessibilityLabel(() => `Text size adapts to ${useBreakpoint()} screen`)
-  .build()
+  
 ```
 
 ## Browser Support

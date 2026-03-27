@@ -104,7 +104,7 @@ VStack({
 .backgroundColor('#f5f5f5')
 .cornerRadius(12)
 .shadow({ x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' })
-.build()
+
 ```
 
 ## HStack
@@ -150,9 +150,9 @@ import { HStack, Text, Button } from '@tachui/core'
 // Top alignment
 HStack({
   children: [
-    Text("Top").font({ size: 12 }).build(),
+    Text("Top").font({ size: 12 }),
     Button("Aligned"),
-    Text("Content").font({ size: 20 }).build()
+    Text("Content").font({ size: 20 })
   ],
   alignment: 'top'
 })
@@ -160,9 +160,9 @@ HStack({
 // Center alignment (default)
 HStack({
   children: [
-    Text("Center").font({ size: 12 }).build(), 
+    Text("Center").font({ size: 12 }), 
     Button("Aligned"),
-    Text("Content").font({ size: 20 }).build()
+    Text("Content").font({ size: 20 })
   ],
   alignment: 'center'
 })
@@ -170,9 +170,9 @@ HStack({
 // Bottom alignment
 HStack({
   children: [
-    Text("Bottom").font({ size: 12 }).build(),
+    Text("Bottom").font({ size: 12 }),
     Button("Aligned"), 
-    Text("Content").font({ size: 20 }).build()
+    Text("Content").font({ size: 20 })
   ],
   alignment: 'bottom'
 })
@@ -190,7 +190,7 @@ const NavigationBar = () =>
       Text("Page Title")
         .modifier
         .font({ size: 18, weight: 'bold' })
-        .build(),
+        ,
       Spacer(),
       Button("More")
     ],
@@ -200,7 +200,7 @@ const NavigationBar = () =>
   .padding({ horizontal: 16, vertical: 12 })
   .backgroundColor('white')
   .shadow({ x: 0, y: 1, blur: 2, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 ## ZStack
@@ -218,7 +218,7 @@ ZStack({
     Text("Overlay Text")               // Top layer
       .modifier
       .foregroundColor('white')
-      .build()
+      
   ]
 })
 ```
@@ -248,7 +248,7 @@ import { ZStack, Text, VStack } from '@tachui/core'
 // Center alignment (default)
 ZStack({
   children: [
-    VStack().backgroundColor('blue').size({ width: 200, height: 200 }).build(),
+    VStack().backgroundColor('blue').size({ width: 200, height: 200 }),
     Text("Centered")
   ],
   alignment: 'center'
@@ -257,7 +257,7 @@ ZStack({
 // Corner alignments
 ZStack({
   children: [
-    VStack().backgroundColor('blue').size({ width: 200, height: 200 }).build(),
+    VStack().backgroundColor('blue').size({ width: 200, height: 200 }),
     Text("Top Left")
   ],
   alignment: 'topLeading'
@@ -265,7 +265,7 @@ ZStack({
 
 ZStack({
   children: [
-    VStack().backgroundColor('blue').size({ width: 200, height: 200 }).build(), 
+    VStack().backgroundColor('blue').size({ width: 200, height: 200 }), 
     Text("Bottom Right")
   ],
   alignment: 'bottomTrailing'
@@ -292,14 +292,14 @@ const ImageCard = ({ src, title, description }: {
           height: '300px', 
           objectFit: 'cover' 
         })
-        .build(),
+        ,
       
       // Dark overlay
       VStack()
         .modifier
         .backgroundColor('rgba(0,0,0,0.4)')
         .css({ position: 'absolute', inset: '0' })
-        .build(),
+        ,
       
       // Content overlay
       VStack({
@@ -309,13 +309,13 @@ const ImageCard = ({ src, title, description }: {
             .font({ size: 24, weight: 'bold' })
             .foregroundColor('white')
             .textAlign('center')
-            .build(),
+            ,
           
           Text(description)
             .modifier
             .foregroundColor('rgba(255,255,255,0.9)')
             .textAlign('center')
-            .build(),
+            ,
           
           Button("Learn More")
             .modifier
@@ -324,7 +324,7 @@ const ImageCard = ({ src, title, description }: {
             .border({ width: 1, color: 'rgba(255,255,255,0.3)' })
             .cornerRadius(8)
             .padding({ horizontal: 20, vertical: 10 })
-            .build()
+            
         ],
         spacing: 12
       })
@@ -334,7 +334,7 @@ const ImageCard = ({ src, title, description }: {
   .modifier
   .cornerRadius(16)
   .overflow('hidden')
-  .build()
+  
 ```
 
 ## Layout Composition
@@ -355,7 +355,7 @@ const SidebarLayout = () =>
           Text("Navigation")
             .modifier
             .font({ size: 18, weight: 'bold' })
-            .build(),
+            ,
           
           Button("Home"),
           Button("About"), 
@@ -371,7 +371,7 @@ const SidebarLayout = () =>
       .width(200)
       .padding(16)
       .backgroundColor('#f5f5f5')
-      .build(),
+      ,
       
       // Main content
       VStack({
@@ -379,7 +379,7 @@ const SidebarLayout = () =>
           Text("Main Content Area")
             .modifier
             .font({ size: 24, weight: 'bold' })
-            .build(),
+            ,
           
           Text("This is the main content area")
         ],
@@ -388,12 +388,12 @@ const SidebarLayout = () =>
       .modifier
       .padding(24)
       .flexGrow(1)
-      .build()
+      
     ]
   })
   .modifier
   .css({ minHeight: '100vh' })
-  .build()
+  
 ```
 
 ### Card Grid
@@ -416,7 +416,7 @@ const CardGrid = ({ items }: { items: string[] }) => {
               Text(item)
                 .modifier
                 .font({ weight: 'bold' })
-                .build()
+                
             ]
           })
           .modifier
@@ -425,7 +425,7 @@ const CardGrid = ({ items }: { items: string[] }) => {
           .cornerRadius(8)
           .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
           .flexGrow(1)
-          .build()
+          
         ),
         spacing: 16
       })
@@ -434,7 +434,7 @@ const CardGrid = ({ items }: { items: string[] }) => {
   })
   .modifier
   .padding(16)
-  .build()
+  
 }
 ```
 
@@ -482,7 +482,7 @@ VStack({
 .xs(() => padding(8))
 .md(() => padding(16))
 .lg(() => padding(24))
-.build()
+
 ```
 
 ### Accessibility
@@ -500,7 +500,7 @@ VStack({
 })
 .modifier
 .aria({ role: 'section' })
-.build()
+
 ```
 
 ## Integration with Other Components
@@ -519,7 +519,7 @@ const ProfileForm = () =>
           Image({ src: 'avatar.jpg' })
             .modifier
             .css({ width: '80px', height: '80px', borderRadius: '50%' })
-            .build(),
+            ,
           
           VStack({
             children: [
@@ -556,7 +556,7 @@ const ProfileForm = () =>
   .modifier
   .padding(24)
   .maxWidth(400)
-  .build()
+  
 ```
 
 ## See Also

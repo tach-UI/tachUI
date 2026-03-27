@@ -40,7 +40,7 @@ export function MyComponent() {
     .modifier
     .foregroundColor(Assets.primaryColor)  // Auto-adapts to current theme
     .backgroundColor(Assets.backgroundColor)
-    .build()
+    
 }
 ```
 
@@ -74,7 +74,7 @@ export function LogoComponent() {
   return Image(Assets.logo)  // Auto-adapts to current theme
     .modifier
     .frame(100, 50)
-    .build()
+    
 }
 ```
 
@@ -193,7 +193,7 @@ registerAsset(inter)
 Text("Custom Typography")
   .modifier
   .font({ family: Assets.inter })
-  .build()
+  
 ```
 
 For comprehensive font documentation, see the [Font Assets Guide](./font-assets.md).

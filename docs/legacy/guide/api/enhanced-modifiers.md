@@ -27,12 +27,12 @@ import { cornerRadius } from '@tachui/core'
 Text("Rounded")
   .modifier
   .cornerRadius(10) // All corners
-  .build()
+  
 
 Text("Rounded with units")
   .modifier
   .cornerRadius('1rem') // CSS units supported
-  .build()
+  
 ```
 
 ### Object Configuration
@@ -47,7 +47,7 @@ Text("Custom Corners")
     bottomLeft: 5,
     bottomRight: 15
   })
-  .build()
+  
 
 // CSS units support
 Text("Mixed Units")
@@ -58,7 +58,7 @@ Text("Mixed Units")
     bottomLeft: '2rem',
     bottomRight: '5vh'
   })
-  .build()
+  
 ```
 
 ### Shorthand Properties
@@ -71,7 +71,7 @@ Text("Horizontal Control")
     top: 10,    // topLeft and topRight
     bottom: 5   // bottomLeft and bottomRight
   })
-  .build()
+  
 
 // Left and right shorthand
 Text("Vertical Control")
@@ -80,7 +80,7 @@ Text("Vertical Control")
     left: 10,   // topLeft and bottomLeft
     right: 5    // topRight and bottomRight
   })
-  .build()
+  
 ```
 
 ### SwiftUI Alignment Terminology
@@ -95,7 +95,7 @@ Text("SwiftUI Style")
     bottomLeading: 5,   // bottomLeft
     bottomTrailing: 10  // bottomRight
   })
-  .build()
+  
 ```
 
 ### Priority Resolution
@@ -110,7 +110,7 @@ Text("Priority Example")
     left: 8,
     bottomLeft: 20 // Overrides left for bottomLeft
   })
-  .build()
+  
 ```
 
 ### Type Reference
@@ -152,7 +152,7 @@ import { cursor } from '@tachui/core'
 Button("Click Me", handleClick)
   .modifier
   .cursor('pointer')
-  .build()
+  
 ```
 
 ### New Cursor Values
@@ -162,37 +162,37 @@ Button("Click Me", handleClick)
 Button("Drag Handle", handleDrag)
   .modifier
   .cursor('grab')     // For draggable elements
-  .build()
+  
 
 Button("Dragging", handleDrag)
   .modifier
   .cursor('grabbing') // During drag operation
-  .build()
+  
 
 Button("Zoom In", handleZoomIn)
   .modifier
   .cursor('zoom-in')
-  .build()
+  
 
 Button("Zoom Out", handleZoomOut)
   .modifier
   .cursor('zoom-out')
-  .build()
+  
 
 Button("Shortcut", handleShortcut)
   .modifier
   .cursor('alias')    // Shortcut/alias indication
-  .build()
+  
 
 Button("Select Cell", handleCellSelect)
   .modifier
   .cursor('cell')     // Table cell selection
-  .build()
+  
 
 Button("Copy Item", handleCopy)
   .modifier
   .cursor('copy')     // Copy operation
-  .build()
+  
 ```
 
 ### Custom Cursors
@@ -202,13 +202,13 @@ Button("Copy Item", handleCopy)
 Image("draggable.png")
   .modifier
   .cursor('url(custom-cursor.png), auto') // Custom cursor with fallback
-  .build()
+  
 
 // Multiple fallbacks
 Button("Custom Action", handleAction)
   .modifier
   .cursor('url(cursor.svg), url(cursor.png), pointer')
-  .build()
+  
 ```
 
 ### Complete Cursor Support
@@ -238,7 +238,7 @@ import { shadow } from '@tachui/core'
 Button("Drop Shadow", handleClick)
   .modifier
   .shadow({ x: 2, y: 4, blur: 8, color: 'rgba(0,0,0,0.2)' })
-  .build()
+  
 ```
 
 ### Multiple Shadows
@@ -254,7 +254,7 @@ Button("Layered Shadow", handleClick)
     { x: 0, y: 4, blur: 6, color: 'rgba(0,0,0,0.1)' },   // Medium
     { x: 0, y: 8, blur: 25, color: 'rgba(0,0,0,0.12)' }  // Large outer
   ])
-  .build()
+  
 ```
 
 ### Advanced Shadow Features
@@ -268,7 +268,7 @@ Button("Inset Shadow", handleClick)
     color: 'rgba(0,0,0,0.1)',
     inset: true
   })
-  .build()
+  
 
 // Spread parameter
 Button("Shadow with Spread", handleClick)
@@ -277,7 +277,7 @@ Button("Shadow with Spread", handleClick)
     x: 0, y: 4, blur: 12, spread: 2,
     color: 'rgba(0,122,255,0.3)'
   })
-  .build()
+  
 ```
 
 ### Text Shadows
@@ -289,7 +289,7 @@ import { textShadow } from '@tachui/core'
 Text("Shadowed Text")
   .modifier
   .textShadow({ x: 1, y: 1, blur: 2, color: 'rgba(0,0,0,0.3)' })
-  .build()
+  
 
 // Multiple text shadows
 Text("Multi-layered Text")
@@ -298,7 +298,7 @@ Text("Multi-layered Text")
     { x: 1, y: 1, blur: 2, color: 'rgba(0,0,0,0.3)' },
     { x: 2, y: 2, blur: 4, color: 'rgba(0,122,255,0.2)' }
   ])
-  .build()
+  
 ```
 
 ### Material Design Presets
@@ -310,28 +310,28 @@ import { shadowPreset } from '@tachui/core'
 Button("Elevation 1", handleClick)
   .modifier
   .shadowPreset('elevation-1')
-  .build()
+  
 
 Button("Elevation 2", handleClick)
   .modifier
   .shadowPreset('elevation-2')
-  .build()
+  
 
 // Custom depth presets
 Button("Small Depth", handleClick)
   .modifier
   .shadowPreset('depth-small')
-  .build()
+  
 
 Button("Medium Depth", handleClick)
   .modifier
   .shadowPreset('depth-medium')
-  .build()
+  
 
 Button("Large Depth", handleClick)
   .modifier
   .shadowPreset('depth-large')
-  .build()
+  
 ```
 
 ### Custom Shadow Presets
@@ -349,7 +349,7 @@ createShadowPreset('brand-shadow', [
 Button("Brand Shadow", handleClick)
   .modifier
   .shadowPreset('brand-shadow')
-  .build()
+  
 ```
 
 ### Type Reference
@@ -393,7 +393,7 @@ ScrollView([...])
       align: 'start'
     }
   })
-  .build()
+  
 ```
 
 ### Individual Scroll Modifiers
@@ -405,13 +405,13 @@ import { scrollBehavior, overscrollBehavior } from '@tachui/core'
 ScrollView([...])
   .modifier
   .scrollBehavior('smooth')
-  .build()
+  
 
 // Prevent scroll chaining
 ScrollView([...])
   .modifier
   .overscrollBehavior('contain')
-  .build()
+  
 ```
 
 ### Scroll Margin and Padding
@@ -423,7 +423,7 @@ ScrollView([...])
   .scroll({
     margin: { top: 10, bottom: 20 }
   })
-  .build()
+  
 
 // Shorthand margin
 ScrollView([...])
@@ -431,7 +431,7 @@ ScrollView([...])
   .scroll({
     margin: 15 // All sides
   })
-  .build()
+  
 
 // Scroll padding (inner spacing for containers)
 ScrollView([...])
@@ -439,7 +439,7 @@ ScrollView([...])
   .scroll({
     padding: { left: 5, right: 10 }
   })
-  .build()
+  
 ```
 
 ### Scroll Snap Behavior
@@ -454,7 +454,7 @@ ScrollView([...])
       align: 'start'        // Snap to start of elements
     }
   })
-  .build()
+  
 
 // Horizontal scroll snap with proximity
 ScrollView([...])
@@ -466,7 +466,7 @@ ScrollView([...])
       stop: 'always'        // Always stop at snap points
     }
   })
-  .build()
+  
 ```
 
 ### Overscroll Behavior
@@ -478,14 +478,14 @@ import { overscrollBehaviorX, overscrollBehaviorY } from '@tachui/core'
 ScrollView([...])
   .modifier
   .overscrollBehavior('contain')
-  .build()
+  
 
 // Control individual axes
 ScrollView([...])
   .modifier
   .overscrollBehaviorX('none')    // No horizontal overscroll
   .overscrollBehaviorY('auto')    // Default vertical overscroll
-  .build()
+  
 ```
 
 ### Type Reference
@@ -560,7 +560,7 @@ Text("Example")
   .cursor('pointer')     // ✅ Still works  
   .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' }) // ✅ Still works
   .border(1, '#007AFF')  // ✅ Still works
-  .build()
+  
 
 // Enhanced features are purely additive
 Text("Enhanced")
@@ -569,7 +569,7 @@ Text("Enhanced")
   .cursor('grab')                                  // ✨ New cursor value
   .shadows([shadow1, shadow2])                     // ✨ Multiple shadows
   .border({ leading: { width: 2, color: '#007AFF' } }) // ✨ Individual borders
-  .build()
+  
 ```
 
 ### Performance Considerations
@@ -634,7 +634,7 @@ shadowPreset('elevation-2') // Material Design integration
 Text("Modern Text")
   .modifier
   .textShadow({ x: 1, y: 1, blur: 2, color: 'rgba(0,0,0,0.3)' })
-  .build()
+  
   
 // Text remains readable even if text-shadow isn't supported
 ```
@@ -662,11 +662,11 @@ const Card = () => {
     Text("Card Title")
       .modifier
       .textShadow({ x: 0, y: 1, blur: 2, color: 'rgba(0,0,0,0.1)' })
-      .build(),
+      ,
     
     Text("Card content with enhanced styling")
       .modifier
-      .build()
+      
   ])
   .modifier
   .cornerRadius({ top: 12, bottom: 8 })
@@ -676,7 +676,7 @@ const Card = () => {
     bottom: { width: 2, color: '#007AFF' }
   })
   .shadowPreset('elevation-2')
-  .build()
+  
 }
 ```
 
@@ -694,7 +694,7 @@ const InteractiveButton = (isPressed: boolean) => {
       { x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' },
       { x: 0, y: 4, blur: 8, color: 'rgba(0,0,0,0.15)' }
     ])
-    .build()
+    
 }
 ```
 
@@ -718,7 +718,7 @@ const ResponsiveScrollContainer = (content: any[]) => {
       top: { width: 1, color: '#e0e0e0' },
       horizontal: { width: 1, color: '#f0f0f0' }
     })
-    .build()
+    
 }
 ```
 

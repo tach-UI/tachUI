@@ -32,7 +32,7 @@ const gradientButton = Button('Click Me', () => {
   .foregroundColor('white')
   .cornerRadius(8)
   .padding(16)
-  .build()
+  
 ```
 
 ### Diagonal Gradients
@@ -53,7 +53,7 @@ const heroCard = VStack({ children: [
   .foregroundColor('white')
   .padding(32)
   .cornerRadius(16)
-  .build()
+  
 ```
 
 ### Custom Angle Gradients
@@ -106,7 +106,7 @@ const themeGradient = createGradientAsset({
 const adaptiveCard = VStack({ children: [...] })
   .modifier
   .background(themeGradient)
-  .build()
+  
 ```
 
 ### Mixed Asset and Static Colors
@@ -173,7 +173,7 @@ const operatorButton = (symbol: string, action: () => void) =>
     .fontWeight('semibold')
     .frame(60, 60)
     .cornerRadius(30)
-    .build()
+    
 ```
 
 ### Card with Hover Gradient Transition
@@ -206,7 +206,7 @@ const interactiveCard = VStack({ children: [
     // Note: Advanced hover state transitions will be available in Version 1.3
     console.log('Card hovered:', isHovered)
   })
-  .build()
+  
 ```
 
 ## Performance Considerations
@@ -346,7 +346,7 @@ const interactiveButton = Button('Hover Me', () => {
   })
   .padding(12)
   .cornerRadius(6)
-  .build()
+  
 ```
 
 ### Card Hover Effects
@@ -374,7 +374,7 @@ const hoverCard = VStack({ children: [
   .padding(16)
   .cornerRadius(8)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 ### Form Input Focus States
@@ -400,7 +400,7 @@ const focusInput = TextField('Enter your name')
   .border({ width: 1, color: '#DDD', style: 'solid' })
   .cornerRadius(4)
   .padding(8)
-  .build()
+  
 ```
 
 ### Complete State Configuration
@@ -469,8 +469,8 @@ const primaryButtonGradient = StateGradient('primary-button', {
 })
 
 // Use across multiple components
-const button1 = Button('Save').background(primaryButtonGradient).build()
-const button2 = Button('Submit').background(primaryButtonGradient).build()
+const button1 = Button('Save').background(primaryButtonGradient)
+const button2 = Button('Submit').background(primaryButtonGradient)
 ```
 
 ### Animation Configurations
@@ -522,7 +522,7 @@ const radialButton = Button('Radial Effect')
       colors: ['#FF6B6B', '#4ECDC4', '#45B7D1']
     })
   )
-  .build()
+  
 ```
 
 ### AngularGradient
@@ -576,20 +576,20 @@ import {
 const button = Button('Click Me')
   .modifier
   .background(InteractiveGradientPresets.primaryButton())
-  .build()
+  
 
 // iOS-style gradients
 const iosButton = Button('iOS Style')
   .modifier
   .background(LinearGradientPresets.iosBlue())
-  .build()
+  
 
 // Component-specific presets
 const buttonGradients = GradientExamples.createComponentGradients('ios')
 const primaryBtn = Button('Primary')
   .modifier
   .background(buttonGradients.Button.primary)
-  .build()
+  
 ```
 
 ### Reactive Gradients
@@ -617,7 +617,7 @@ const progressBar = VStack([])
   .background(progressGradient)
   .height(20)
   .cornerRadius(10)
-  .build()
+  
 
 // Update progress
 progressSignal.value = 0.7 // Gradient updates automatically
@@ -720,7 +720,7 @@ const themedButton = Button('Themed')
   .background(iosGradients.Button.primary)
   .padding(12)
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ## API Reference

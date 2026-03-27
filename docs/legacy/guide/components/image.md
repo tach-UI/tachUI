@@ -69,7 +69,7 @@ VStack()
   .modifier
   .size({ width: 300, height: 200 })
   .backgroundColor('#f0f0f0')
-  .build()
+  
   .children([
     Image({ 
       src: 'wide-photo.jpg',
@@ -88,7 +88,7 @@ Image({
 })
 .modifier
 .size({ width: 200, height: 200 })
-.build()
+
 ```
 
 ### Aspect Fit
@@ -101,7 +101,7 @@ Image({
 })
 .modifier
 .size({ width: 300, height: 200 })
-.build()
+
 ```
 
 ### Aspect Fill
@@ -115,7 +115,7 @@ Image({
 .modifier
 .size({ width: 300, height: 200 })
 .overflow('hidden') // Hide cropped portions
-.build()
+
 ```
 
 ## Loading States
@@ -175,7 +175,7 @@ const ImageWithLoader = ({ src, alt }: { src: string, alt: string }) => {
           Text("Loading...")
             .modifier
             .opacity(0.6)
-            .build()
+            
         ]
       }),
       
@@ -189,7 +189,7 @@ const ImageWithLoader = ({ src, alt }: { src: string, alt: string }) => {
       .modifier
       .opacity(() => loadingState() === 'loaded' ? 1 : 0.5)
       .transition('opacity', 300)
-      .build(),
+      ,
       
       // Error message
       Show({
@@ -198,7 +198,7 @@ const ImageWithLoader = ({ src, alt }: { src: string, alt: string }) => {
           Text("Failed to load image")
             .modifier
             .foregroundColor('#ff4444')
-            .build()
+            
         ]
       })
     ]
@@ -224,7 +224,7 @@ const ImageGallery = ({ images }: { images: string[] }) =>
       .modifier
       .cornerRadius(8)
       .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-      .build()
+      
     ),
     spacing: 16
   })
@@ -294,7 +294,7 @@ const ResponsiveImage = ({ baseSrc, alt }: { baseSrc: string, alt: string }) => 
   .width('100%')
   .maxWidth('100%')
   .height('auto')
-  .build()
+  
 }
 ```
 
@@ -311,7 +311,7 @@ Image({ src: 'avatar.jpg', alt: 'User avatar' })
   .size({ width: 80, height: 80 })
   .cornerRadius(40) // Circular
   .border({ width: 2, color: '#ddd' })
-  .build()
+  
 
 // Hero image with overlay
 Image({ src: 'hero.jpg', alt: 'Hero image' })
@@ -328,7 +328,7 @@ Image({ src: 'hero.jpg', alt: 'Hero image' })
     inset: 0,
     background: 'linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.5))'
   })
-  .build()
+  
 
 // Image with hover effects
 Image({ src: 'photo.jpg', alt: 'Photo' })
@@ -339,7 +339,7 @@ Image({ src: 'photo.jpg', alt: 'Photo' })
     filter: 'brightness(1.1)'
   })
   .cursor('pointer')
-  .build()
+  
 ```
 
 ## Performance Optimization
@@ -373,7 +373,7 @@ Image({
 Image({ src: 'photo.jpg' })
   .modifier
   .size({ width: 300, height: 200 })
-  .build()
+  
 
 // ✅ Good - Use appropriate content mode
 Image({ 
@@ -420,7 +420,7 @@ Image({
   describedBy: 'infographic-description',
   role: 'img'
 })
-.build()
+
 ```
 
 ## Common Patterns
@@ -442,7 +442,7 @@ const ImageGallery = ({ images }: { images: Array<{src: string, alt: string}> })
       .modifier
       .css({ width: '100%', height: '300px' })
       .cornerRadius(12)
-      .build(),
+      ,
       
       // Thumbnail strip
       HStack({
@@ -457,7 +457,7 @@ const ImageGallery = ({ images }: { images: Array<{src: string, alt: string}> })
           .cornerRadius(8)
           .cursor('pointer')
           .hoverEffect('scale')
-          .build()
+          
         ),
         spacing: 8
       })
@@ -500,7 +500,7 @@ const Avatar = ({
       .cornerRadius(avatarSize / 2)
       .border({ width: 2, color: '#fff' })
       .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-      .build()
+      
     ] : [
       // Fallback to initials
       Text(name.split(' ').map(n => n[0]).join('').toUpperCase())
@@ -515,7 +515,7 @@ const Avatar = ({
           justifyContent: 'center'
         })
         .font({ size: avatarSize * 0.4, weight: 'bold' })
-        .build()
+        
     ]
   })
 }

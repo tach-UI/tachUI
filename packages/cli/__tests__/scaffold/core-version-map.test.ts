@@ -8,8 +8,9 @@ describe('core version compatibility map', () => {
     expect(resolveCoreVersionFromMap('0.8.6-alpha')).toBe('0.8.6-alpha')
   })
 
-  it('supports stable semver in mapped ranges', () => {
-    expect(resolveCoreVersionFromMap('0.8.8')).toBeNull()
+  it('supports stable semver via co-publish fallback', () => {
+    expect(resolveCoreVersionFromMap('0.8.8')).toBe('0.8.8')
+    expect(resolveCoreVersionFromMap('0.8.11')).toBe('0.8.11')
   })
 
   it('correctly orders numeric prerelease identifiers', () => {

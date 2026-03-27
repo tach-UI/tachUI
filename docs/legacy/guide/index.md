@@ -52,7 +52,7 @@ const CounterApp = () => {
         .fontSize(24)
         .fontWeight('bold')
         .foregroundColor('#007AFF')
-        .build(),
+        ,
 
       Button('Increment', () => setCount(count() + 1))
         .modifier
@@ -62,7 +62,7 @@ const CounterApp = () => {
         .cornerRadius(8)
         .scaleEffect(() => count() > 10 ? 1.1 : 1.0)
         .transition({ duration: 200 })
-        .build()
+        
     ],
     spacing: 16,
     alignment: 'center'
@@ -70,7 +70,7 @@ const CounterApp = () => {
     .modifier
     .padding(20)
     .frame({ maxWidth: 400 })
-    .build()
+    
 }
 ```
 
@@ -152,26 +152,26 @@ VStack({
       .font({ size: 'title' })
       .fontWeight('bold')
       .foregroundColor('blue')
-      .build(),
+      ,
 
     Image('/hero.jpg')
       .modifier
       .resizable()
       .aspectRatio(16/9, 'fit')
       .cornerRadius(12)
-      .build(),
+      ,
 
     Button('Get Started', handleAction)
       .modifier
       .buttonStyle('borderedProminent')
-      .build()
+      
   ],
   spacing: 16
 })
   .modifier
   .padding()
   .navigationTitle('Home')
-  .build()
+  
 ```
 
 ## Advanced Features
@@ -185,7 +185,7 @@ Image('/photo.jpg')
   .scaleEffect(() => isHovered() ? 1.05 : 1.0)
   .rotationEffect(5, 'center')
   .transition({ duration: 300 })
-  .build()
+  
 ```
 
 ### 🖥️ Multi-Window Desktop Apps
@@ -216,7 +216,7 @@ VStack({ children })
   .modifier
   .padding(() => isMobile() ? 16 : 24)
   .frame({ maxWidth: () => isDesktop() ? 800 : Infinity })
-  .build()
+  
 ```
 
 ## Migration & Compatibility
@@ -229,7 +229,7 @@ return <div onClick={() => setCount(c => c + 1)}>{count}</div>
 
 // TachUI - nearly identical
 const [count, setCount] = createSignal(0)
-return Text(() => count()).onTap(() => setCount(c => c + 1)).build()
+return Text(() => count()).onTap(() => setCount(c => c + 1))
 ```
 
 ### From SwiftUI
@@ -251,13 +251,13 @@ VStack({
       .modifier
       .font({ size: 'title' })
       .foregroundColor('blue')
-      .build()
+      
   ],
   spacing: 16
 })
   .modifier
   .padding()
-  .build()
+  
 ```
 
 ## Development Experience

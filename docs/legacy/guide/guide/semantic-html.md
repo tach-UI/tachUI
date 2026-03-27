@@ -222,7 +222,7 @@ const Navigation = () =>
   })
   .modifier
   .aria({ label: "Primary navigation" })
-  .build()
+  
 
 // Renders: <nav role="navigation" aria-label="Primary navigation">
 ```
@@ -244,7 +244,7 @@ const Breadcrumbs = () =>
   })
   .modifier
   .aria({ label: "Breadcrumb navigation" })
-  .build()
+  
 ```
 
 ### Skip Links (Accessibility)
@@ -261,7 +261,7 @@ const SkipLinks = () =>
   })
   .modifier
   .aria({ label: "Skip links" })
-  .build()
+  
 ```
 
 ## Content Organization
@@ -448,7 +448,7 @@ HStack({
   label: "Primary site navigation",
   role: "navigation" // Overrides automatic role if needed
 })
-.build()
+
 ```
 
 ### Skip Navigation
@@ -470,7 +470,7 @@ const SkipNavigation = () =>
     left: "-9999px", // Hidden by default
     "&:focus": { left: "0" } // Visible when focused
   })
-  .build()
+  
 ```
 
 ### Landmark Roles
@@ -489,7 +489,7 @@ HStack({
 })
 .modifier
 .aria({ role: "banner" }) // Specify page banner
-.build()
+
 ```
 
 ## SEO Optimization

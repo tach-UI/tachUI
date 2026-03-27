@@ -58,7 +58,7 @@ export const Counter = () => {
         .fontSize(24)
         .fontWeight('bold')
         .foregroundColor('#007AFF')
-        .build(),
+        ,
       
       Button("Increment")
         .modifier
@@ -68,7 +68,7 @@ export const Counter = () => {
         .cornerRadius(8)
         .padding({ horizontal: 16, vertical: 12 })
         .onTap(() => setCount(count() + 1))
-        .build()
+        
     ],
     spacing: 16,
     alignment: 'center'
@@ -77,7 +77,7 @@ export const Counter = () => {
   .padding(32)
   .backgroundColor('#f9f9f9')
   .cornerRadius(12)
-  .build()
+  
 }
 ```
 

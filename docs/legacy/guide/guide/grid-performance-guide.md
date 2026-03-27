@@ -98,19 +98,19 @@ const MemoizedProductCard = memo(({ product }: { product: Product }) =>
       .modifier
       .aspectRatio(1, 'fill')
       .cornerRadius(8)
-      .build(),
+      ,
     
     Text(product.name)
       .modifier
       .fontWeight('bold')
       .lineClamp(2)
-      .build()
+      
   ])
   .modifier
   .padding(12)
   .backgroundColor('#ffffff')
   .cornerRadius(8)
-  .build()
+  
 )
 
 // ✅ Use memoized components in grids
@@ -151,19 +151,19 @@ const VirtualGrid = ({ items }: { items: Item[] }) => {
     children: [
       // Spacer for items before visible range
       visibleRange.start > 0 && 
-        Spacer().height(visibleRange.start * itemHeight).build(),
+        Spacer().height(visibleRange.start * itemHeight),
       
       // Visible items
       ...visibleItems.map(item => ItemComponent(item)),
       
       // Spacer for items after visible range
       visibleRange.end < items.length &&
-        Spacer().height((items.length - visibleRange.end) * itemHeight).build()
+        Spacer().height((items.length - visibleRange.end) * itemHeight)
     ].filter(Boolean)
   })
     .modifier
     .onScroll(handleScroll)
-    .build()
+    
 }
 ```
 
@@ -217,7 +217,7 @@ const ProgressiveGrid = ({ initialItems }: { initialItems: Item[] }) => {
       hasMore && VStack([
         isLoading ? 
           LoadingSpinner() : 
-          Text('Load More').ref(loadMoreRef).build()
+          Text('Load More').ref(loadMoreRef)
       ])
     ]
   })
@@ -254,7 +254,7 @@ const OptimizedImageGrid = LazyVGrid({
     .modifier
     .aspectRatio(image.aspectRatio || 1, 'fill')
     .cornerRadius(8)
-    .build()
+    
   )
 })
 ```
@@ -432,12 +432,12 @@ const ProductGrid = ({ products }: { products: Product[] }) => {
         alt: product.name,
         loading: 'lazy'
       })
-      .aspectRatio(1, 'fill').cornerRadius(8).build(),
+      .aspectRatio(1, 'fill').cornerRadius(8),
       
-      Text(product.name).fontWeight('bold').lineClamp(2).build(),
-      Text(`$${product.price}`).foregroundColor('#28a745').build()
+      Text(product.name).fontWeight('bold').lineClamp(2),
+      Text(`$${product.price}`).foregroundColor('#28a745')
     ])
-    .padding(12).backgroundColor('#ffffff').cornerRadius(8).build()
+    .padding(12).backgroundColor('#ffffff').cornerRadius(8)
   ))
   
   return LazyVGrid({
@@ -451,7 +451,7 @@ const ProductGrid = ({ products }: { products: Product[] }) => {
   })
     .modifier
     .padding(16)
-    .build()
+    
 }
 ```
 
@@ -476,21 +476,21 @@ const SocialFeed = ({ initialPosts }: { initialPosts: Post[] }) => {
           alt: post.author.name,
           loading: 'lazy'
         })
-        .frame(40, 40).cornerRadius(20).build(),
+        .frame(40, 40).cornerRadius(20),
         
         VStack([
-          Text(post.author.name).fontWeight('bold').build(),
-          Text(post.timestamp).fontSize(12).foregroundColor('#666').build()
-        ]).flex(1).marginLeft(12).build()
+          Text(post.author.name).fontWeight('bold'),
+          Text(post.timestamp).fontSize(12).foregroundColor('#666')
+        ]).flex(1).marginLeft(12)
       ]),
       
       // Content
-      Text(post.content).marginVertical(12).build(),
+      Text(post.content).marginVertical(12),
       
       // Media (if present)
       post.image && VStack([
         // Placeholder while loading
-        !imageLoaded && Spacer().height(200).backgroundColor('#f0f0f0').build(),
+        !imageLoaded && Spacer().height(200).backgroundColor('#f0f0f0'),
         
         Image({ 
           src: post.image, 
@@ -502,7 +502,7 @@ const SocialFeed = ({ initialPosts }: { initialPosts: Post[] }) => {
         .cornerRadius(8)
         .opacity(imageLoaded ? 1 : 0)
         .onLoad(() => setImageLoaded(true))
-        .build()
+        
       ]),
       
       // Engagement
@@ -510,14 +510,14 @@ const SocialFeed = ({ initialPosts }: { initialPosts: Post[] }) => {
         Button({ title: '♥ Like', onTap: () => likePost(post.id) }),
         Button({ title: '💬 Comment', onTap: () => showComments(post.id) }),
         Button({ title: '🔄 Share', onTap: () => sharePost(post.id) })
-      ]).marginTop(12).build()
+      ]).marginTop(12)
     ])
     .modifier
     .padding(16)
     .backgroundColor('#ffffff')
     .cornerRadius(12)
     .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
   })
   
   return LazyVGrid({
@@ -541,9 +541,9 @@ const DashboardGrid = ({ widgets }: { widgets: Widget[] }) => {
   const MemoizedWidget = memo(({ widget }: { widget: Widget }) => {
     return VStack([
       HStack([
-        Text(widget.title).fontWeight('bold').build(),
+        Text(widget.title).fontWeight('bold'),
         Spacer(),
-        widget.loading && LoadingSpinner().frame(16, 16).build()
+        widget.loading && LoadingSpinner().frame(16, 16)
       ]),
       
       widget.data ? 
@@ -555,7 +555,7 @@ const DashboardGrid = ({ widgets }: { widgets: Widget[] }) => {
     .backgroundColor('#ffffff')
     .cornerRadius(8)
     .shadow({ x: 0, y: 1, blur: 3, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
   })
   
   return LazyVGrid({

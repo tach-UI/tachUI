@@ -385,7 +385,7 @@ VStack({
 .backgroundColor('#f8f9fa')
 .padding(16)
 .cornerRadius(8)
-.build()
+
 
 // Class precedence: tachUI classes, CSS classes, then modifiers
 // Result: <div class="tachui-vstack external-spacing custom-theme" style="background-color: #f8f9fa; padding: 16px; ...">

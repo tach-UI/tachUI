@@ -70,19 +70,19 @@ function CounterComponent(props: CounterComponentProps = {}): VStack {
         .modifier
         .backgroundColor('#007AFF')
         .foregroundColor('#FFFFFF')
-        .build(),
+        ,
         
       Button('Decrement', handleDecrement)
         .modifier
         .backgroundColor('#FF3B30')
         .foregroundColor('#FFFFFF')
         .disabled(count() === 0)
-        .build(),
+        ,
         
       Button('Reset', handleReset)
         .modifier
         .variant('outline')
-        .build()
+        
     ],
     spacing: 12
   })
@@ -124,7 +124,7 @@ Button('Hybrid Styling', handleClick, {
 .modifier
 .padding(12)
 .cornerRadius(8)
-.build()
+
 ```
 
 See the [CSS Classes API Reference](/api/css-classes) for complete documentation.
@@ -194,7 +194,7 @@ function LoginForm(props: LoginFormProps): VStack {
             .modifier
             .variant('outline')
             .disabled(isSubmitting())
-            .build(),
+            ,
             
           Button(
             () => isSubmitting() ? 'Submitting...' : 'Login',
@@ -204,7 +204,7 @@ function LoginForm(props: LoginFormProps): VStack {
             .variant('primary')
             .disabled(isSubmitting() || errors().length > 0)
             .loading(isSubmitting())
-            .build()
+            
         ],
         spacing: 12
       })
@@ -263,7 +263,7 @@ function AsyncButton(props: AsyncButtonProps): Button {
     .variant(getVariant())
     .disabled(isLoading())
     .loading(isLoading())
-    .build()
+    
 }
 ```
 
@@ -277,7 +277,7 @@ Button('Save', handleSave)
   .foregroundColor('#FFFFFF')
   .cornerRadius(8)
   .padding(12, 24)
-  .build()
+  
 
 // Danger button
 Button('Delete', handleDelete)
@@ -285,7 +285,7 @@ Button('Delete', handleDelete)
   .backgroundColor('#FF3B30')
   .foregroundColor('#FFFFFF')
   .fontWeight('bold')
-  .build()
+  
 
 // Outline button
 Button('Cancel', handleCancel)
@@ -293,14 +293,14 @@ Button('Cancel', handleCancel)
   .border(1, '#007AFF')
   .foregroundColor('#007AFF')
   .backgroundColor('transparent')
-  .build()
+  
 
 // Disabled state
 Button('Unavailable', undefined)
   .modifier
   .disabled(true)
   .opacity(0.6)
-  .build()
+  
 ```
 
 ## Accessibility
@@ -312,7 +312,7 @@ Button('Submit Form', handleSubmit)
   .accessibilityLabel('Submit the contact form')
   .accessibilityHint('Double-tap to submit your information')
   .accessibilityRole('button')
-  .build()
+  
 
 // Button with loading state
 Button(
@@ -322,7 +322,7 @@ Button(
   .modifier
   .accessibilityLabel(() => isLoading() ? 'Submitting form, please wait' : 'Submit form')
   .disabled(isLoading())
-  .build()
+  
 ```
 
 ## Best Practices
@@ -356,7 +356,7 @@ Button(
 )
   .modifier
   .disabled(isLoading())
-  .build()
+  
 
 // ❌ Avoid - No loading feedback
 Button('Save', handleSave) // User doesn't know if action is in progress
@@ -369,12 +369,12 @@ Button('Save', handleSave) // User doesn't know if action is in progress
 Button('Primary Action', handlePrimary)
   .modifier
   .variant('primary')
-  .build()
+  
 
 Button('Secondary Action', handleSecondary)
   .modifier
   .variant('outline')
-  .build()
+  
 ```
 
 ## Related Components

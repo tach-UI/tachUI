@@ -235,7 +235,7 @@ const styledInput = BasicInput({ text, setText })
   .background('#F0F0F0')
   .borderRadius(12)
   .width('300px')
-  .build()
+  
 ```
 
 ### Common Modifier Patterns
@@ -247,7 +247,7 @@ const roundedInput = BasicInput({ text, setText })
   .borderRadius(20)
   .padding(12, 16)
   .boxShadow('0 2px 4px rgba(0,0,0,0.1)')
-  .build()
+  
 
 // Full-width input with custom styling
 const fullWidthInput = BasicInput({ text, setText })
@@ -256,7 +256,7 @@ const fullWidthInput = BasicInput({ text, setText })
   .fontSize(18)
   .padding(14)
   .border('2px solid #E0E0E0')
-  .build()
+  
 
 // Compact input with minimal styling
 const compactInput = BasicInput({ text, setText })
@@ -264,7 +264,7 @@ const compactInput = BasicInput({ text, setText })
   .fontSize(14)
   .padding(8, 10)
   .height(32)
-  .build()
+  
 ```
 
 ## Event Handling

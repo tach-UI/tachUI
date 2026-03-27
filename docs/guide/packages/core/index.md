@@ -324,11 +324,11 @@ import { createSignal } from '@tachui/core'
 import { VStack, Text, Button } from '@tachui/primitives' 
 import '@tachui/modifiers/preload/basic'
 
-# New modifier syntax (NO .modifier or .build() needed)
+# New modifier syntax (NO .modifier or  needed)
 Text('Hello')
   .fontSize(16)           // Direct modifier call
   .fontWeight('bold')      // Chain modifiers
-// .build() not needed
+//  not needed
 ```
 
 ## Status

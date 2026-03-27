@@ -60,12 +60,12 @@ function ConditionalView(): VStack {
           .modifier
           .fontSize(18)
           .foregroundColor('#007AFF')
-          .build(),
+          ,
         fallback: Text("Now you don't!")
           .modifier
           .fontSize(18)
           .foregroundColor('#999')
-          .build()
+          
       }),
       
       Button(getButtonText, handleToggle)
@@ -74,7 +74,7 @@ function ConditionalView(): VStack {
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build()
+        
     ],
     spacing: 16
   })
@@ -105,12 +105,12 @@ function ConditionalView(): VStack {
           .modifier
           .fontSize(18)
           .foregroundColor('#22c55e')
-          .build(),
+          ,
         fallback: Text("Hidden state")
           .modifier
           .fontSize(18)
           .foregroundColor('#ef4444')
-          .build()
+          
       }),
       
       Button(getButtonText, handleToggle)
@@ -119,7 +119,7 @@ function ConditionalView(): VStack {
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build()
+        
     ],
     spacing: 16
   })
@@ -170,12 +170,12 @@ function UserProfile(): VStack {
               .fontSize(24)
               .fontWeight('bold')
               .foregroundColor('#1a1a1a')
-              .build(),
+              ,
             Text((): string => getUserEmail())
               .modifier
               .fontSize(16)
               .foregroundColor('#666')
-              .build()
+              
           ],
           spacing: 8,
           alignment: 'center'
@@ -187,13 +187,13 @@ function UserProfile(): VStack {
             .fontSize(16)
             .foregroundColor('#999')
             .textAlign('center')
-            .build(),
+            ,
           fallback: Text("Please log in")
             .modifier
             .fontSize(16)
             .foregroundColor('#FF3B30')
             .textAlign('center')
-            .build()
+            
         })
       })
     ],
@@ -252,7 +252,7 @@ AuthenticatedView({
         .modifier
         .fontSize(20)
         .fontWeight('bold')
-        .build(),
+        ,
       Button("Sign In", () => showLoginModal())
     ]
   })
@@ -338,7 +338,7 @@ Show({
     .modifier
     .textAlign('center')
     .foregroundColor('#999')
-    .build()
+    
 })
 
 // ❌ Avoid - No fallback for important states

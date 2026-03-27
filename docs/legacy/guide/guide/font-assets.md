@@ -38,7 +38,7 @@ registerAsset('myCustomFont', myFont)
 Text("Hello World")
   .modifier
   .font({ family: Assets.myCustomFont })
-  .build()
+  
 ```
 
 ### Using System Fonts
@@ -60,7 +60,7 @@ registerAsset('systemSerif', systemSerif)
 Text("Sans-serif text")
   .modifier
   .font({ family: Assets.systemSans })
-  .build()
+  
 ```
 
 ## Google Fonts Integration
@@ -103,7 +103,7 @@ TextStyles.Title("Beautiful Typography")
     family: Assets.inter,
     weight: '600'
   })
-  .build()
+  
 ```
 
 ## Variable Fonts
@@ -340,7 +340,7 @@ export const AppTypography = {
         family: Assets.displayFont,
         weight: '700'
       })
-      .build(),
+      ,
   
   // Body text uses brand font
   BodyText: (text: string) =>
@@ -351,7 +351,7 @@ export const AppTypography = {
         weight: '400'
       })
       .lineHeight(1.6)
-      .build(),
+      ,
   
   // Code uses monospace
   CodeBlock: (code: string) =>
@@ -365,7 +365,7 @@ export const AppTypography = {
       .foregroundColor('#d4d4d4')
       .padding(16)
       .cornerRadius(8)
-      .build()
+      
 }
 ```
 

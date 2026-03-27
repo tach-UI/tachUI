@@ -269,7 +269,7 @@ function ReactiveComponent() {
     .fontSize(fontSize)                // Computed signal for size
     .border(borderWidth, textColor)    // Multiple computed signals
     .opacity(createComputed(() => theme() === 'dark' ? 0.9 : 1.0))
-    .build()
+    
 }
 ```
 
@@ -301,7 +301,7 @@ Text("Advanced computed styling")
   .foregroundColor(dynamicStyles().textColor)
   .borderTop(1, dynamicStyles().borderColor)
   .cornerRadius(dynamicStyles().cornerRadius)
-  .build()
+  
 ```
 
 #### Computed Signal Features in Modifiers

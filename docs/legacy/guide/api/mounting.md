@@ -65,20 +65,20 @@ function App(): VStack {
         .modifier
         .fontSize(24)
         .fontWeight('bold')
-        .build(),
+        ,
         
       Text(() => `Counter: ${state().counter}`)
         .modifier
         .fontSize(18)
         .marginTop(8)
-        .build(),
+        ,
         
       Button('Click me', handleClick)
         .modifier
         .backgroundColor('#007AFF')
         .foregroundColor('#FFFFFF')
         .marginTop(16)
-        .build()
+        
     ],
     spacing: 8
   })

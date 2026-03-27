@@ -74,7 +74,7 @@ const HeroTitle = ({ children }: { children: string }) => {
     .mediaQuery('(prefers-color-scheme: dark)', { 
       color: '#ffffff' 
     })
-    .build()
+    
 }
 ```
 
@@ -140,9 +140,9 @@ const HeroSection = () => {
       .mediaQuery('(prefers-color-scheme: dark)', { 
         color: '#ffffff'     // dark:text-white
       })
-      .build()
+      
   ])
-  .build()
+  
 }
 ```
 
@@ -267,25 +267,25 @@ const BootstrapCard = () => {
               .fontSize(20)
               .fontWeight('500')
               .marginBottom(8)
-              .build(),
+              ,
             
             Text("Card content")
               .modifier
               .fontSize(16)
               .color('#6c757d')
-              .build()
+              
           ])
           .modifier
           .padding(20) // card-body padding
-          .build()
+          
         ])
         .modifier
         .backgroundColor('#ffffff')
         .border('1px solid rgba(0,0,0,.125)')
         .borderRadius(6) // Bootstrap card border-radius
-        .build()
+        
       ])
-      .build()
+      
     )
   )
 }
@@ -398,7 +398,7 @@ const ResponsiveButton = ({ children, disabled, onClick }: ButtonProps) => {
     })
     .disabled(disabled)
     .onClick(onClick)
-    .build()
+    
 }
 ```
 
@@ -537,7 +537,7 @@ const TachUIComponent = () => {
             fontSize: 40       // 2.5rem
           }
         })
-        .build()
+        
     ])
     .modifier
     .responsive({
@@ -553,7 +553,7 @@ const TachUIComponent = () => {
         padding: 48          // theme.spacing(6)
       }
     })
-    .build()
+    
   )
 }
 ```
@@ -634,7 +634,7 @@ const TachUIComponent = () => {
           fontSize: 28       // theme.fontSizes[5]
         }
       })
-      .build()
+      
   ])
   .modifier
   .responsive({
@@ -655,7 +655,7 @@ const TachUIComponent = () => {
   })
   .backgroundColor('#ffffff') // theme.colors.background
   .borderRadius(8)             // theme.radii[2]
-  .build()
+  
 }
 ```
 
@@ -721,7 +721,7 @@ const ResponsiveText = ({ size }: { size: keyof typeof typographyScale.base }) =
       md: { fontSize: typographyScale.md[size] },
       lg: { fontSize: typographyScale.lg[size] }
     })
-    .build()
+    
 }
 ```
 
@@ -754,7 +754,7 @@ const ResponsiveSpacing = ({ size }: { size: keyof typeof spacingScale.base }) =
       md: { padding: spacingScale.md[size] },
       lg: { padding: spacingScale.lg[size] }
     })
-    .build()
+    
 }
 ```
 
@@ -802,7 +802,7 @@ const ResponsiveGrid = ({ children }: { children: any[] }) => {
   return VStack(children)
     .modifier
     .apply(gridModifier)
-    .build()
+    
 }
 ```
 
@@ -845,7 +845,7 @@ const MigratedCard = () => {
   return VStack([
     MigratedButton(), // Uses migrated component
     LegacyText()      // Keep legacy until ready
-  ]).build()
+  ])
 }
 ```
 
@@ -862,7 +862,7 @@ const MigratedComponent = () => {
       base: { fontSize: 16, padding: 12 }, // Exact original values
       md: { fontSize: 20, padding: 16 }
     })
-    .build()
+    
 }
 ```
 

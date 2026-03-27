@@ -42,7 +42,7 @@ VStack({
       .margin({ vertical: 8 })
       .size({ width: 200, height: 50 })
       .position('relative')
-      .build(),
+      ,
   ],
 })
 ```
@@ -66,7 +66,7 @@ Text('Styled Text')
   .cornerRadius(8)
   .border(1, '#E5E5EA')
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 **Available Appearance Modifiers:**
@@ -87,7 +87,7 @@ Text('Styled Text')
   .lineHeight(1.4)
   .letterSpacing(0.5)
   .textTransform('uppercase')
-  .build()
+  
 ```
 
 **Available Typography Modifiers:**
@@ -106,7 +106,7 @@ Button('Interactive Button')
   .hover({ backgroundColor: '#0051D5' })
   .onTap(() => console.log('Tapped!'))
   .keyboardShortcut('Enter')
-  .build()
+  
 ```
 
 **Available Interaction Modifiers:**
@@ -130,7 +130,7 @@ VStack({
     align: 'center',
   })
   .gap(12)
-  .build()
+  
 ```
 
 **Available Layout-Specific Modifiers:**
@@ -152,7 +152,7 @@ Text('Conditional Style')
   .modifier.backgroundColor(() => (isActive() ? '#007AFF' : '#F2F2F7'))
   .foregroundColor(() => (isActive() ? 'white' : 'black'))
   .scale(() => (isActive() ? 1.05 : 1.0))
-  .build()
+  
 ```
 
 ### Custom Modifier Combinations
@@ -166,7 +166,7 @@ const cardStyle = (component: any) =>
     .cornerRadius(12)
     .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
     .border(1, 'rgba(0,0,0,0.05)')
-    .build()
+    
 
 // Apply to components
 const myCard = cardStyle(
@@ -183,7 +183,7 @@ Text('Responsive Text')
   .modifier.fontSize({ mobile: 14, tablet: 16, desktop: 18 })
   .padding({ mobile: 8, tablet: 12, desktop: 16 })
   .textAlign({ mobile: 'left', desktop: 'center' })
-  .build()
+  
 ```
 
 ## Modifier Categories by Package
@@ -239,7 +239,7 @@ From `@tachui/modifiers/utility`:
 const buttonStyle = Button('Example')
   .modifier.padding(16)
   .backgroundColor('#007AFF')
-  .build() // Cached modifier chain
+   // Cached modifier chain
 ```
 
 ### Batch Updates
@@ -251,7 +251,7 @@ Text('Optimized')
   .backgroundColor() // | Batched
   .cornerRadius(8) // | together
   .shadow() // /
-  .build()
+  
 ```
 
 ## Registering Modifiers
@@ -275,19 +275,19 @@ import { VStack, HStack, Text, Button } from '@tachui/primitives'
 
 VStack({
   children: [
-    Text('Title').modifier.font({ size: 24, weight: 'bold' }).build(),
+    Text('Title').modifier.font({ size: 24, weight: 'bold' }),
     HStack({
       children: [
-        Button('Cancel').modifier.backgroundColor('#8E8E93').build(),
-        Button('Save').modifier.backgroundColor('#007AFF').build(),
+        Button('Cancel').modifier.backgroundColor('#8E8E93'),
+        Button('Save').modifier.backgroundColor('#007AFF'),
       ],
     })
       .modifier.gap(12)
-      .build(),
+      ,
   ],
 })
   .modifier.padding(20)
-  .build()
+  
 ```
 
 ### With Effects
@@ -301,7 +301,7 @@ Text('Enhanced')
   .cornerRadius(12)
   .apply(shadow({ x: 0, y: 4, radius: 12, color: 'rgba(0,0,0,0.1)' }))
   .apply(blur(2))
-  .build()
+  
 ```
 
 ## Type Safety
@@ -314,7 +314,7 @@ Text('Type Safe')
   .modifier.padding(16) // ✓ number | PaddingConfig
   .backgroundColor() // ✓ string | ColorAsset
   .opacity() // ✓ number (0-1)
-  .build() // ✓ ComponentInstance
+   // ✓ ComponentInstance
 ```
 
 ## Browser Support

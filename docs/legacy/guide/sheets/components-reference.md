@@ -28,7 +28,7 @@ Text('Styled Text')
   .fontWeight('bold')
   .foregroundColor('#007AFF')
   .textAlign('center')
-  .build()
+  
 ```
 
 **Button** - Interactive button component with press states, multiple variants (filled, outlined, plain), haptic feedback, and support for loading/disabled states.
@@ -43,12 +43,12 @@ Button('Primary Action', handleAction)
   .foregroundColor('white')
   .padding(16)
   .cornerRadius(8)
-  .build()
+  
 
 // Reactive button state
 Button('Submit', handleSubmit)
   .disabled(() => !isFormValid())
-  .build()
+  
 ```
 
 **Image** - Enhanced image component with loading states, error handling, responsive sizing, and multiple content modes (fit, fill, stretch, center).
@@ -65,7 +65,7 @@ Image('/hero-image.jpg')
   .frame({ width: 300, height: 200 })
   .cornerRadius(12)
   .contentMode('cover')
-  .build()
+  
 
 // Image with error handling
 Image('/image.jpg', {
@@ -94,7 +94,7 @@ BasicInput({
   .padding(12)
   .border(1, '#E5E5E7')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### Interactive Controls
@@ -135,7 +135,7 @@ Slider({
   label: 'Brightness',
 })
   .frame({ width: 300 })
-  .build()
+  
 ```
 
 **Picker** - Selection component offering dropdown, wheel, and segmented variants for choosing from a list of predefined options.
@@ -237,7 +237,7 @@ Link({
   .foregroundColor('#007AFF')
   .textDecoration('none')
   .onHover(hovered => setHovered(hovered))
-  .build()
+  
 ```
 
 ### Modal & Overlay Components
@@ -319,7 +319,7 @@ Menu({
 Text('Right-click me')
   .modifier
   .onContextMenu(() => showContextMenu())
-  .build()
+  
 ```
 
 ### Layout Components
@@ -347,7 +347,7 @@ VStack({
   .padding(24)
   .backgroundColor('#F8F9FA')
   .cornerRadius(12)
-  .build()
+  
 ```
 
 **HStack** - Horizontal stack layout arranging child components in a row with configurable spacing and alignment options.
@@ -386,7 +386,7 @@ ScrollView({
   children: [...horizontalItems],
 })
   .frame({ height: 200 })
-  .build()
+  
 
 // With pull-to-refresh
 ScrollView({
@@ -436,7 +436,7 @@ Grid({
         .gridColumnSpan(3)
         .backgroundColor('#007AFF')
         .foregroundColor('white')
-        .build(),
+        ,
     ]),
     GridRow([Text('A1'), Text('B1'), Text('C1')]),
   ],
@@ -484,7 +484,7 @@ LazyHGrid({
     Image({ src: image.url, alt: image.title })
       .frame(150, 200)
       .cornerRadius(8)
-      .build()
+      
   ),
 })
 
@@ -526,7 +526,7 @@ Symbol('star', {
 })
   .foregroundColor('#FFD700')
   .scaleLarge()
-  .build()
+  
 
 // Advanced rendering modes
 Symbol('star', {
@@ -542,7 +542,7 @@ Symbol('heart', {
 })
   .foregroundColor(() => (isFavorited() ? '#ff0000' : '#999'))
   .onTap(() => setIsFavorited(!isFavorited()))
-  .build()
+  
 ```
 
 **Divider** - Visual separator component supporting horizontal and vertical orientations for content organization and UI structure.
@@ -552,10 +552,10 @@ Symbol('heart', {
 Divider()
 
 // Vertical divider
-Divider({ orientation: 'vertical' }).frame({ height: 40 }).build()
+Divider({ orientation: 'vertical' }).frame({ height: 40 })
 
 // Styled divider
-Divider().backgroundColor('#E5E5E7').frame({ height: 2 }).build()
+Divider().backgroundColor('#E5E5E7').frame({ height: 2 })
 ```
 
 ### List & Data Components
@@ -568,7 +568,7 @@ List({
   data: items,
   children: item => [
     Text(item.title),
-    Text(item.subtitle).foregroundColor('#666').build(),
+    Text(item.subtitle).foregroundColor('#666'),
   ],
 })
 
@@ -598,7 +598,7 @@ Show(() => isLoggedIn(), Text('Welcome back!'), Text('Please log in'))
 // With reactive condition
 Show(
   () => error() !== null,
-  Text(error()).foregroundColor('red').build()
+  Text(error()).foregroundColor('red')
 )
 
 // Alternative utilities
@@ -688,9 +688,9 @@ H1('Main Title')
   .fontSize(32)
   .fontWeight('bold')
   .marginBottom(16)
-  .build()
+  
 
-H2('Section Title').fontSize(24).foregroundColor('#333').build()
+H2('Section Title').fontSize(24).foregroundColor('#333')
 ```
 
 ## 🧭 Navigation Components (@tachui/navigation)
@@ -718,7 +718,7 @@ NavigationView({
 })
   .navigationTitle('My App')
   .navigationBarTitleDisplayMode('large')
-  .build()
+  
 ```
 
 **NavigationStack** - Modern SwiftUI NavigationStack with path-based navigation and type-safe routing.
@@ -733,7 +733,7 @@ NavigationStack({
 })
   .navigationDestination('settings', () => SettingsView())
   .navigationDestination('profile', () => ProfileView())
-  .build()
+  
 
 // Programmatic navigation
 setNavigationPath(['settings']) // Navigate to settings
@@ -761,7 +761,7 @@ NavigationLink(
   .padding(16)
   .backgroundColor('#F8F9FA')
   .cornerRadius(8)
-  .build()
+  
 
 // Variants
 NavigationIconLink('/settings', 'Settings', '/settings-icon.svg')
@@ -784,11 +784,11 @@ SimpleTabView({
   children: [
     VStack({ children: [Text('Home Content')] })
       .tabItem('Home', '/home-icon.svg')
-      .build(),
+      ,
 
     VStack({ children: [Text('Settings Content')] })
       .tabItem('Settings', '/settings-icon.svg')
-      .build(),
+      ,
   ],
 })
 ```
@@ -823,7 +823,7 @@ TabView({
   ],
 })
   .tabViewStyle('page') // Optional: page-style tabs
-  .build()
+  
 ```
 
 **EnhancedTabView** - Modern SwiftUI TabView with WWDC 2024-2025 features including floating tabs and user customization.
@@ -905,7 +905,7 @@ SomeView()
   })
   .toolbarBackground('#FFFFFF')
   .toolbarForegroundColor('#000000')
-  .build()
+  
 ```
 
 ## 📝 Forms Plugin Components (@tachui/forms)
@@ -1088,7 +1088,7 @@ const AppNavigation = () => {
   })
     .navigationDestination('settings', () => SettingsView())
     .navigationDestination('profile', () => ProfileView())
-    .build()
+    
 }
 ```
 

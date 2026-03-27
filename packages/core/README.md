@@ -44,14 +44,14 @@ const counterApp = VStack({
       .modifier.fontSize(24)
       .fontWeight('bold')
       .foregroundColor('#007AFF')
-      .build(),
+      ,
 
     Button('Increment', () => setCount(count() + 1))
       .modifier.backgroundColor('#007AFF')
       .foregroundColor('white')
       .padding({ horizontal: 24, vertical: 12 })
       .cornerRadius(8)
-      .build(),
+      ,
   ],
   spacing: 16,
   alignment: 'center',
@@ -98,7 +98,7 @@ Text('Hello tachUI')
   .cornerRadius(12)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,122,255,0.2)' })
   .onTap(() => console.log('Tapped!'))
-  .build()
+  
 ```
 
 > **Modifier registration:** Starting in 0.8.0 the concrete modifier implementations live in `@tachui/modifiers`. Import `@tachui/modifiers/preload/basic` (and optional bundles like `preload/effects`) once during app bootstrap so the builder proxy in `@tachui/core` can resolve the modifier factories from the shared registry.
@@ -153,7 +153,7 @@ interface MyComponentProps extends ComponentProps {
 const MyComponent = createComponent<MyComponentProps>('MyComponent', props => {
   return Text(props.title)
     .modifier.fontSize(props.count > 10 ? 20 : 16)
-    .build()
+    
 })
 ```
 
@@ -172,14 +172,14 @@ Revolutionary bundle size reduction for component concatenation patterns:
 
 ```typescript
 // Before: Uses full 87.76KB concatenation runtime
-Text('Hello').build().concat(Text('World').build())
+Text('Hello').concat(Text('World'))
 
 // After: Smart optimization with 94.9% bundle reduction
 // • Static patterns: 0KB runtime (compile-time concatenation)
 // • Dynamic patterns: 1.2-1.9KB selective runtime based on accessibility needs
 ```
 
-- **Automatic Detection**: TypeScript AST analysis finds `.build().concat()` patterns
+- **Automatic Detection**: TypeScript AST analysis finds `.concat()` patterns
 - **Smart Runtime Selection**: Minimal (1.18KB), ARIA (1.42KB), or Full (1.93KB) based on component needs
 - **CLI Integration**: Use `tachui analyze --concatenation` for optimization insights
 - **Production Ready**: 27 tests passing, handles 250+ files in <500ms

@@ -273,7 +273,7 @@ import { Colors } from './assets'
 **`.overlay(content, alignment?)`** - Layer content on top
 ```typescript
 .overlay(
-  Text("Caption").foregroundColor('white').build(),
+  Text("Caption").foregroundColor('white'),
   'bottomTrailing'
 )
 ```
@@ -524,7 +524,7 @@ Button('Click Me', handleClick)
   .cornerRadius(8)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
   .onHover((hovered) => setIsHovered(hovered))
-  .build()
+  
 ```
 
 **Responsive Card**:
@@ -536,7 +536,7 @@ VStack({ children })
   .backgroundColor('#FFFFFF')
   .cornerRadius(12)
   .shadow({ x: 0, y: 4, radius: 8, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 **Advanced Interactions**:
@@ -550,7 +550,7 @@ Text('Interactive Element')
   .keyboardShortcut('Enter', [], () => activate())
   .focused(isFocused)
   .allowsHitTesting(isEnabled)
-  .build()
+  
 ```
 
 **Visual Effects & Transforms**:
@@ -563,7 +563,7 @@ Image('/hero-image.jpg')
   .brightness(() => isDarkMode() ? 0.8 : 1.0)
   .saturation(() => isDisabled() ? 0.3 : 1.0)
   .transition({ property: 'all', duration: 300, easing: 'ease-out' })
-  .build()
+  
 
 // Glassmorphism effect
 VStack({ children })
@@ -572,7 +572,7 @@ VStack({ children })
   .blur(10)
   .border(1, 'rgba(255, 255, 255, 0.2)')
   .cornerRadius(16)
-  .build()
+  
 ```
 
 ## 💡 Best Practices

@@ -45,7 +45,7 @@ function BasicMenu() {
       .foregroundColor('#FFFFFF')
       .padding(12)
       .cornerRadius(8)
-      .build(),
+      ,
     items: menuItems,
     isOpen
   })
@@ -360,7 +360,7 @@ function ContextMenuExample() {
             handleContextMenu(e)
           }
         })
-        .build(),
+        ,
         
       // Position context menu manually
       Menu({
@@ -488,7 +488,7 @@ function NavigationMenu() {
       .modifier
       .backgroundColor('#007AFF')
       .foregroundColor('#FFFFFF')
-      .build(),
+      ,
     items: menuStructure,
     placement: "bottom-start"
   })

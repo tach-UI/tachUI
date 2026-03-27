@@ -254,7 +254,7 @@ const GradientCard = VStack({
     Text('Theme-Aware Card')
       .modifier
       .foregroundColor(Assets.textPrimary)
-      .build()
+      
   ]
 })
 .modifier
@@ -265,7 +265,7 @@ const GradientCard = VStack({
 }))
 .padding(20)
 .cornerRadius(16)
-.build()
+
 ```
 
 **Theme Switching Benefits:**
@@ -419,19 +419,19 @@ class BackgroundModifier extends BaseModifier<BackgroundOptions> {
 Button('Click', action)
   .modifier
   .background('#FF0000')
-  .build()
+  
 
 // Gradient background  
 Button('Click', action)
   .modifier
   .background(LinearGradient({ /* config */ }))
-  .build()
+  
 
 // Asset background
 Button('Click', action)
   .modifier
   .background(Assets.primaryGradient)
-  .build()
+  
 ```
 
 ## Modifier Builder Integration
@@ -469,7 +469,7 @@ const staticCard = VStack({ children: [...] })
   }))
   .padding(20)
   .cornerRadius(16)
-  .build()
+  
 
 // ColorAsset gradient (theme-aware)
 const themeCard = VStack({ children: [...] })
@@ -481,7 +481,7 @@ const themeCard = VStack({ children: [...] })
   }))
   .padding(20)
   .cornerRadius(16)
-  .build()
+  
 
 // Mixed approach for design flexibility
 const flexibleCard = VStack({ children: [...] })
@@ -498,7 +498,7 @@ const flexibleCard = VStack({ children: [...] })
   }))
   .padding(20)
   .cornerRadius(16)
-  .build()
+  
 ```
 
 ## Performance Considerations

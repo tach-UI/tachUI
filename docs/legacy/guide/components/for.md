@@ -58,13 +58,13 @@ function FruitList(): VStack {
             .padding(8)
             .backgroundColor('#f8f9fa')
             .cornerRadius(4)
-            .build(),
+            ,
         fallback: Text("No fruits available")  // Built-in empty state
           .modifier
           .fontSize(14)
           .foregroundColor('#999')
           .textAlign('center')
-          .build()
+          
       })
     ],
     spacing: 8
@@ -99,14 +99,14 @@ function DynamicList(): VStack {
                 .modifier
                 .flexGrow(1)
                 .fontSize(16)
-                .build(),
+                ,
               Button("Remove", (): void => removeItem(index))
                 .modifier
                 .backgroundColor('#FF3B30')
                 .foregroundColor('white')
                 .padding(8, 16)
                 .cornerRadius(6)
-                .build()
+                
             ],
             spacing: 12,
             alignment: 'center'
@@ -116,14 +116,14 @@ function DynamicList(): VStack {
             .backgroundColor('#ffffff')
             .cornerRadius(8)
             .shadow({ x: 0, y: 1, radius: 2, color: 'rgba(0,0,0,0.1)' })
-            .build(),
+            ,
         fallback: Text("No items yet - add some!")
           .modifier
           .textAlign('center')
           .foregroundColor('#999')
           .fontSize(16)
           .padding(32)
-          .build()
+          
       }),
       
       Button("Add Item", addItem)
@@ -133,7 +133,7 @@ function DynamicList(): VStack {
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build()
+        
     ],
     spacing: 12
   })
@@ -174,7 +174,7 @@ function UserList(): VStack {
         .fontWeight('bold')
         .marginBottom(16)
         .foregroundColor('#1a1a1a')
-        .build(),
+        ,
       
       For({
         each: users,
@@ -189,7 +189,7 @@ function UserList(): VStack {
                     .fontSize(20)
                     .fontWeight('bold')
                     .foregroundColor('white')
-                    .build()
+                    
                 ]
               })
                 .modifier
@@ -199,7 +199,7 @@ function UserList(): VStack {
                 .cornerRadius(25)
                 .justifyContent('center')
                 .alignItems('center')
-                .build(),
+                ,
               
               // User info
               VStack({
@@ -209,12 +209,12 @@ function UserList(): VStack {
                     .fontSize(16)
                     .fontWeight('600')
                     .foregroundColor('#1a1a1a')
-                    .build(),
+                    ,
                   Text(user.email)
                     .modifier
                     .fontSize(14)
                     .foregroundColor('#666')
-                    .build(),
+                    ,
                   Text(user.department)
                     .modifier
                     .fontSize(12)
@@ -223,14 +223,14 @@ function UserList(): VStack {
                     .backgroundColor('#f0f8ff')
                     .padding(4, 8)
                     .cornerRadius(4)
-                    .build()
+                    
                 ],
                 spacing: 4
               })
                 .modifier
                 .flexGrow(1)
                 .alignItems('flex-start')
-                .build()
+                
             ],
             spacing: 12,
             alignment: 'center'
@@ -241,7 +241,7 @@ function UserList(): VStack {
             .cornerRadius(8)
             .shadow({ x: 0, y: 1, radius: 3, color: 'rgba(0,0,0,0.1)' })
             .marginBottom(8)
-            .build(),
+            ,
         
         fallback: Text("No team members found")
           .modifier
@@ -249,7 +249,7 @@ function UserList(): VStack {
           .foregroundColor('#999')
           .fontSize(16)
           .padding(32)
-          .build()
+          
       })
     ],
     spacing: 8
@@ -286,7 +286,7 @@ function CategorizedItems(): VStack {
             .marginTop(category === categories()[0] ? 0 : 16)
             .marginBottom(8)
             .foregroundColor('#007AFF')
-            .build(),
+            ,
           
           For({
             each: category.items,
@@ -296,13 +296,13 @@ function CategorizedItems(): VStack {
                 .fontSize(16)
                 .marginLeft(16)
                 .marginBottom(4)
-                .build(),
+                ,
             fallback: Text("No items in this category")
               .modifier
               .fontSize(14)
               .foregroundColor('#999')
               .marginLeft(16)
-              .build()
+              
           })
         ]
       }),
@@ -312,7 +312,7 @@ function CategorizedItems(): VStack {
       .textAlign('center')
       .foregroundColor('#999')
       .padding(32)
-      .build()
+      
   })
 }
 ```
@@ -345,19 +345,19 @@ function FilteredProductList(): VStack {
             .modifier
             .backgroundColor(() => filter() === 'All' ? '#007AFF' : '#E5E5E7')
             .foregroundColor(() => filter() === 'All' ? 'white' : 'black')
-            .build(),
+            ,
           
           Button("Electronics", () => setFilter('Electronics'))
             .modifier
             .backgroundColor(() => filter() === 'Electronics' ? '#007AFF' : '#E5E5E7')
             .foregroundColor(() => filter() === 'Electronics' ? 'white' : 'black')
-            .build(),
+            ,
           
           Button("Clothing", () => setFilter('Clothing'))
             .modifier
             .backgroundColor(() => filter() === 'Clothing' ? '#007AFF' : '#E5E5E7')
             .foregroundColor(() => filter() === 'Clothing' ? 'white' : 'black')
-            .build()
+            
         ],
         spacing: 8
       }),
@@ -369,7 +369,7 @@ function FilteredProductList(): VStack {
         .foregroundColor('#666')
         .marginTop(16)
         .marginBottom(8)
-        .build(),
+        ,
       
       For({
         each: filteredProducts,
@@ -382,25 +382,25 @@ function FilteredProductList(): VStack {
                     .modifier
                     .fontSize(16)
                     .fontWeight('600')
-                    .build(),
+                    ,
                   Text(product.category)
                     .modifier
                     .fontSize(14)
                     .foregroundColor('#666')
-                    .build()
+                    
                 ]
               })
                 .modifier
                 .flexGrow(1)
                 .alignItems('flex-start')
-                .build(),
+                ,
               
               Text(`$${product.price}`)
                 .modifier
                 .fontSize(18)
                 .fontWeight('bold')
                 .foregroundColor('#007AFF')
-                .build()
+                
             ]
           })
             .modifier
@@ -409,14 +409,14 @@ function FilteredProductList(): VStack {
             .cornerRadius(8)
             .shadow({ x: 0, y: 1, radius: 2, color: 'rgba(0,0,0,0.1)' })
             .marginBottom(8)
-            .build(),
+            ,
         
         fallback: Text("No products match the current filter")
           .modifier
           .textAlign('center')
           .foregroundColor('#999')
           .padding(32)
-          .build()
+          
       })
     ]
   })
@@ -593,12 +593,12 @@ function DataList(): ComponentInstance {
         .modifier
         .textAlign('center')
         .foregroundColor('#999')
-        .build()
+        
     }),
     fallback: Text("Loading...")
       .modifier
       .textAlign('center')
-      .build()
+      
   })
 }
 ```
@@ -624,12 +624,12 @@ function SearchResults(): VStack {
             .modifier
             .textAlign('center')
             .foregroundColor('#999')
-            .build(),
+            ,
           fallback: Text("Enter a search term")
             .modifier
             .textAlign('center')
             .foregroundColor('#666')
-            .build()
+            
         })
       })
     ]

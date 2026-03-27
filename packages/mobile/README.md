@@ -73,7 +73,7 @@ const MyComponent = () => {
     })
   }
 
-  return Button('Show Options', showOptions).modifier.padding(16).build()
+  return Button('Show Options', showOptions).modifier.padding(16)
 }
 ```
 
@@ -108,7 +108,7 @@ const MyComponent = () => {
   return Button('Delete Item', showAlert)
     .modifier.backgroundColor('#ff3b30')
     .foregroundColor('white')
-    .build()
+    
 }
 ```
 
@@ -130,7 +130,7 @@ ActionSheet({
     { title: 'Cancel', role: 'cancel' },
   ],
   presentationStyle: 'sheet', // 'sheet' | 'popover' | 'adaptive'
-}).build()
+})
 ```
 
 ### ✅ Alert
@@ -148,7 +148,7 @@ Alert({
     { title: 'Cancel', role: 'cancel' },
   ],
   isPresented: createSignal(true),
-}).build()
+})
 ```
 
 ## Planned Components (Future Releases)
@@ -185,7 +185,7 @@ SwipeActions({
       action: () => deleteItem(),
     }),
   ],
-}).build()
+})
 ```
 
 ### 🚧 PullToRefresh
@@ -206,7 +206,7 @@ PullToRefresh({
       // Your content here
     ],
   }),
-}).build()
+})
 ```
 
 ## Advanced Patterns (Implemented)
@@ -285,7 +285,7 @@ const app = SafeAreaView({
   ],
 })
   .modifier.backgroundColor('#ffffff')
-  .build()
+  
 ```
 
 ### 🚧 Gesture Handling
@@ -310,7 +310,7 @@ GestureRecognizer({
       action: () => console.log('Swiped left'),
     },
   },
-}).build()
+})
 ```
 
 ## Platform Adaptations (Planned for Future Releases)
@@ -327,7 +327,7 @@ IOSActionSheet({
   actions: actions,
 })
   .modifier.iosStyle(true)
-  .build()
+  
 ```
 
 ### 🚧 Android-style Components
@@ -342,7 +342,7 @@ MaterialActionSheet({
   actions: actions,
 })
   .modifier.materialStyle(true)
-  .build()
+  
 ```
 
 ## Animation and Transitions
@@ -359,7 +359,7 @@ const slideUpTransition = createMobileTransition({
 
 ActionSheet({ actions })
   .modifier.presentationTransition(slideUpTransition)
-  .build()
+  
 ```
 
 ## Touch and Gesture Optimization

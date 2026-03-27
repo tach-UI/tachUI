@@ -43,7 +43,7 @@ ForEach({
       .modifier
       .fontSize(16)
       .padding(8)
-      .build()
+      
 })
 ```
 
@@ -70,7 +70,7 @@ function DynamicList(): VStack {
             .padding(8)
             .backgroundColor(index % 2 === 0 ? '#f5f5f5' : 'white')
             .cornerRadius(4)
-            .build()
+            
       }),
       
       Button("Add Item", addItem)
@@ -80,7 +80,7 @@ function DynamicList(): VStack {
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build()
+        
     ],
     spacing: 8
   })
@@ -106,7 +106,7 @@ function StateList(): VStack {
             .padding(8)
             .backgroundColor('#f8f9fa')
             .cornerRadius(4)
-            .build()
+            
       })
     ],
     spacing: 8
@@ -146,12 +146,12 @@ function UserList(): VStack {
                 .fontSize(18)
                 .fontWeight('bold')
                 .foregroundColor('#1a1a1a')
-                .build(),
+                ,
               Text(user.email)
                 .modifier
                 .fontSize(14)
                 .foregroundColor('#666')
-                .build(),
+                ,
               Text(user.role.toUpperCase())
                 .modifier
                 .fontSize(12)
@@ -160,7 +160,7 @@ function UserList(): VStack {
                 .backgroundColor('#f0f8ff')
                 .padding(4, 8)
                 .cornerRadius(4)
-                .build()
+                
             ],
             spacing: 4
           })
@@ -169,7 +169,7 @@ function UserList(): VStack {
             .backgroundColor('#ffffff')
             .cornerRadius(8)
             .shadow({ x: 0, y: 1, radius: 3, color: 'rgba(0,0,0,0.1)' })
-            .build(),
+            ,
         getItemId: (user: User): number => user.id  // Essential for efficient updates
       })
     ],
@@ -226,7 +226,7 @@ function TodoList(): VStack {
                 .modifier
                 .fontSize(18)
                 .padding(4)
-                .build(),
+                ,
               
               // Todo text
               Text(todo.text)
@@ -235,7 +235,7 @@ function TodoList(): VStack {
                 .textDecoration(todo.completed ? 'line-through' : 'none')
                 .foregroundColor(todo.completed ? '#999' : '#000')
                 .flexGrow(1)
-                .build(),
+                ,
               
               // Priority indicator
               Text(todo.priority.toUpperCase())
@@ -246,7 +246,7 @@ function TodoList(): VStack {
                 .padding(4, 8)
                 .backgroundColor(getPriorityColor(todo.priority) + '20')
                 .cornerRadius(4)
-                .build(),
+                ,
               
               // Remove button
               Button("×", () => removeTodo(todo.id))
@@ -254,7 +254,7 @@ function TodoList(): VStack {
                 .fontSize(18)
                 .foregroundColor('#FF3B30')
                 .padding(4)
-                .build()
+                
             ],
             spacing: 12,
             alignment: 'center'
@@ -265,7 +265,7 @@ function TodoList(): VStack {
             .cornerRadius(8)
             .shadow({ x: 0, y: 1, radius: 3, color: 'rgba(0,0,0,0.1)' })
             .marginBottom(8)
-            .build(),
+            ,
         getItemId: (todo) => todo.id
       })
     ]
@@ -359,7 +359,7 @@ function CategorizedList(): VStack {
             .fontSize(20)
             .fontWeight('bold')
             .marginBottom(8)
-            .build(),
+            ,
           
           ForEach({
             data: category.items,
@@ -534,13 +534,13 @@ function TodoList(): VStack {
               .fontSize(18)
               .foregroundColor('#999')
               .textAlign('center')
-              .build(),
+              ,
             Text("Add your first todo to get started")
               .modifier
               .fontSize(14)
               .foregroundColor('#666')
               .textAlign('center')
-              .build()
+              
           ]
         })
       })
@@ -568,7 +568,7 @@ function DataList(): ComponentInstance {
       .textAlign('center')
       .fontSize(16)
       .foregroundColor('#999')
-      .build()
+      
   })
 }
 ```
@@ -607,7 +607,7 @@ function GroupedList(): VStack {
             .fontWeight('bold')
             .marginTop(16)
             .marginBottom(8)
-            .build(),
+            ,
           
           ForEach({
             data: group.items,

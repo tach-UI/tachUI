@@ -580,7 +580,7 @@ Text('Optimized')
 Text('Less optimal')
   .modifier.fontSize(16)
   .modifier.fontWeight('medium')
-  .build()
+  
 ```
 
 ### Caching Modifiers
@@ -704,7 +704,7 @@ const CustomCard = createComponent<CustomCardProps>('CustomCard', props => {
 - **Enhanced**: 130+ modifiers available
 - **Improved**: Better TypeScript support with props validation
 - **Added**: Responsive modifier bundle
-- **Deprecated**: `.modifier()` and `.build()` chaining syntax
+- **Deprecated**: legacy `.modifier()` and explicit build-step syntax
 
 ```bash
 # Update package
@@ -720,7 +720,7 @@ Text('Hello')
 Text('Hello')
   .modifier.fontSize(16)
   .modifier.fontWeight('bold')
-  .build()
+  
 ```
 
 ### Deprecated Modifiers
@@ -732,13 +732,13 @@ Some modifiers have been renamed or replaced:
 Text('Hello')
   .modifier.textColor('#007AFF')
   .modifier.bgColor('#ffffff')
-  .build()
+  
 
 // NEW v0.9 syntax
 Text('Hello')
   .foregroundColor('#007AFF')
   .backgroundColor('#ffffff')
-  // .build() no longer needed
+  //  no longer needed
 ```
 
 ## Status

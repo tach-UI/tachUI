@@ -193,7 +193,7 @@ registerMyModifiers()
 The `ModifierBuilder` uses the registry to resolve modifier methods. When a user calls:
 
 ```typescript
-Text('Hello').myModifier(16, '#FF0000').build()
+Text('Hello').myModifier(16, '#FF0000')
 ```
 
 The builder:
@@ -280,7 +280,7 @@ describe('MyModifier Integration', () => {
   })
 
   it('should work with ModifierBuilder', () => {
-    const component = Text('Test').myModifier(16, '#FF0000').build()
+    const component = Text('Test').myModifier(16, '#FF0000')
 
     expect(component.modifiers).toHaveLength(1)
     expect(component.modifiers[0].type).toBe('myModifier')
@@ -411,15 +411,15 @@ Document your modifiers thoroughly:
  * @example
  * ```typescript
  * // Static usage
- * Text("Hello").myModifier(16, '#FF0000').build()
+ * Text("Hello").myModifier(16, '#FF0000')
  *
  * // Reactive usage
  * const size = signal(16)
  * const color = signal('#FF0000')
- * Text("Hello").myModifier(size, color).build()
+ * Text("Hello").myModifier(size, color)
  *
  * // Preset usage
- * Text("Hello").myModifierLarge().build()
+ * Text("Hello").myModifierLarge()
  * ```
  *
  * @param value The size value (supports reactive signals)

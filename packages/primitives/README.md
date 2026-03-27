@@ -61,7 +61,7 @@ ZStack({
       .modifier.padding(16)
       .backgroundColor('rgba(0,0,0,0.7)')
       .foregroundColor('white')
-      .build(),
+      ,
   ],
 })
 ```
@@ -101,14 +101,14 @@ Text('Hello, tachUI!')
   .modifier.font({ family: 'San Francisco', size: 18, weight: 600 })
   .foregroundColor('#007AFF')
   .textAlign('center')
-  .build()
+  
 ```
 
 **Advanced Text Features:**
 
 ```typescript
 // Multiline text with line clamping
-Text(longContent).modifier.lineClamp(3).wordBreak('break-word').build()
+Text(longContent).modifier.lineClamp(3).wordBreak('break-word')
 
 // Reactive text content
 const [count, setCount] = createSignal(0)
@@ -124,7 +124,7 @@ Image('/path/to/image.jpg')
   .modifier.size({ width: 200, height: 150 })
   .cornerRadius(8)
   .aspectRatio('cover')
-  .build()
+  
 ```
 
 **Image with Assets:**
@@ -135,7 +135,7 @@ import { Assets } from '@tachui/core'
 Image(Assets.profilePicture)
   .modifier.size({ width: 60, height: 60 })
   .cornerRadius(30)
-  .build()
+  
 ```
 
 #### HTML
@@ -163,7 +163,7 @@ Button('Click Me', () => {
   .backgroundColor('#007AFF')
   .foregroundColor('white')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 **Button States:**
@@ -174,7 +174,7 @@ Button('Stateful Button', handleClick)
   .hover({ backgroundColor: '#0051D5' })
   .active({ transform: 'scale(0.95)' })
   .disabled({ opacity: 0.5 })
-  .build()
+  
 ```
 
 #### Toggle
@@ -189,7 +189,7 @@ Toggle({
   onToggle: setIsEnabled,
 })
   .modifier.accentColor('#007AFF')
-  .build()
+  
 ```
 
 #### Picker
@@ -225,7 +225,7 @@ BasicInput({
   .modifier.padding(12)
   .border(1, '#E5E5EA')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 **Advanced Input Features:**
@@ -269,8 +269,8 @@ VStack({
     HStack({
       alignment: 'center',
       children: [
-        Image(Assets.logo).modifier.size({ width: 40, height: 40 }).build(),
-        Text('My App').modifier.font({ size: 24, weight: 'bold' }).build(),
+        Image(Assets.logo).modifier.size({ width: 40, height: 40 }),
+        Text('My App').modifier.font({ size: 24, weight: 'bold' }),
         Spacer(),
         Button('Menu', toggleMenu),
       ],
@@ -283,7 +283,7 @@ VStack({
         Text('Welcome to tachUI!')
           .modifier.font({ size: 18 })
           .textAlign('center')
-          .build(),
+          ,
 
         Divider(),
 
@@ -294,7 +294,7 @@ VStack({
             Button('Learn More', openDocs)
               .modifier.backgroundColor('transparent')
               .foregroundColor('#007AFF')
-              .build(),
+              ,
           ],
         }),
       ],
@@ -314,19 +314,19 @@ VStack({
         Image(item.image)
           .modifier.size({ mobile: 40, desktop: 60 })
           .cornerRadius({ mobile: 4, desktop: 8 })
-          .build(),
+          ,
 
         VStack({
           alignment: 'leading',
           children: [
             Text(item.title)
               .modifier.font({ size: { mobile: 16, desktop: 18 } })
-              .build(),
+              ,
 
             Text(item.description)
               .modifier.font({ size: { mobile: 14, desktop: 16 } })
               .opacity(0.7)
-              .build(),
+              ,
           ],
         }),
       ],
@@ -350,7 +350,7 @@ Button('Accessible Button', handleClick)
   .modifier.accessibilityLabel('Save document')
   .accessibilityRole('button')
   .accessibilityHint('Saves the current document')
-  .build()
+  
 ```
 
 ## Styling Integration
@@ -364,7 +364,7 @@ Text('Styled with modifiers')
   .modifier.apply(padding(16))
   .apply(margin({ vertical: 8 }))
   .apply(backgroundColor('#F2F2F7'))
-  .build()
+  
 ```
 
 ## Performance Characteristics
@@ -431,7 +431,7 @@ VStack({
           Image(userAvatar),
           Text(userName),
           Spacer(),
-          Text('>').modifier.opacity(0.5).build(),
+          Text('>').modifier.opacity(0.5),
         ],
       }),
     }),

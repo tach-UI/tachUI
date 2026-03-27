@@ -128,7 +128,7 @@ const DebuggableComponent = () => {
   return Text("Inspected Text")
     .modifier
     .fontSize(responsiveValue)
-    .build()
+    
 }
 ```
 
@@ -233,7 +233,7 @@ const MyComponent = () => {
     resolvedValue: useResponsiveValue(responsiveValue)()
   })
   
-  return Text("Logged component").build()
+  return Text("Logged component")
 }
 ```
 
@@ -299,7 +299,7 @@ const MyComponent = () => {
         fontSize: { base: 16, md: 20, lg: 24 },
         padding: { base: 8, md: 12, lg: 16 }
       })
-      .build()
+      
   })
 }
 ```
@@ -429,7 +429,7 @@ const ResponsiveBrowserComponent = () => {
     Text("Browser Compatibility")
       .modifier
       .fontSize({ base: 16, md: 20 })
-      .build(),
+      ,
     
     // Use grid if supported, fallback to flexbox
     ...(features.cssGrid ? [
@@ -443,7 +443,7 @@ const ResponsiveBrowserComponent = () => {
     base: { padding: 16 },
     md: { padding: 24 }
   })
-  .build()
+  
 }
 ```
 

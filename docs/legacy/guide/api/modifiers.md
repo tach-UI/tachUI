@@ -32,7 +32,7 @@ Text("Hello World")
   .backgroundColor('#F8F9FA')
   .cornerRadius(8)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 ## Optimized Imports & Tree-Shaking
@@ -47,7 +47,7 @@ import { shadow } from '@tachui/modifiers/effects/shadows'
 import { blur } from '@tachui/modifiers/effects/filters'
 
 // Use directly
-Text("Hello").padding(16).shadow({ x: 0, y: 2, blur: 4 }).build()
+Text("Hello").padding(16).shadow({ x: 0, y: 2, blur: 4 })
 ```
 
 ### Visual Effects (Import specific effects)
@@ -63,7 +63,7 @@ Button("Click me")
   .shadow({ x: 0, y: 2, blur: 4 })
   .hover(hoverEffect)
   .cursor('pointer')
-  .build()
+  
 ```
 
 ### Typography (Import only typography functions)
@@ -77,7 +77,7 @@ Text("Title")
   .font({ size: 24, weight: 'bold', family: 'Inter' })
   .textAlign('center')
   .lineClamp(2)
-  .build()
+  
 ```
 
 ### Full Import (Larger bundle - ~45KB)
@@ -88,7 +88,7 @@ import * as Modifiers from '@tachui/modifiers'
 import * as Effects from '@tachui/modifiers/effects'
 
 // All modifiers available but larger bundle
-Text("Hello").padding(16).shadow({ x: 0, y: 2 }).build()
+Text("Hello").padding(16).shadow({ x: 0, y: 2 })
 ```
 
 ### Bundle Size Comparison
@@ -110,15 +110,15 @@ Sets component dimensions with support for constraints.
 
 ```typescript
 // Basic frame
-Text("Content").frame(200, 100).build()
+Text("Content").frame(200, 100)
 
 // With constraints
 VStack().modifier
   .frame({ width: 300, maxHeight: 500, minWidth: 200 })
-  .build()
+  
 
 // Infinity support
-HStack().frame({ width: Infinity, height: 50 }).build()
+HStack().frame({ width: Infinity, height: 50 })
 ```
 
 **Parameters:**
@@ -213,8 +213,8 @@ type MarginOptions =
 Sets layout priority for ZStack sizing calculations.
 
 ```typescript
-VStack().layoutPriority(1).build()  // Higher priority
-Text("Content").layoutPriority(0).build()  // Lower priority
+VStack().layoutPriority(1)  // Higher priority
+Text("Content").layoutPriority(0)  // Lower priority
 ```
 
 ## SwiftUI-Style Modifiers
@@ -258,7 +258,7 @@ Image("/large-image.jpg")
   .modifier
   .frame(100, 100)
   .clipped()  // Hide overflow content
-  .build()
+  
 ```
 
 #### `.rotationEffect(angle, anchor?)`
@@ -328,10 +328,10 @@ Overlays content with alignment options.
 Image("/photo.jpg")
   .modifier
   .overlay(
-    Text("Caption").foregroundColor('white').build(),
+    Text("Caption").foregroundColor('white'),
     'bottomTrailing'
   )
-  .build()
+  
 ```
 
 **Alignment Options:**
@@ -828,7 +828,7 @@ Button("Hover me")
   .transform(() => isHovered() ? 'scale(1.05)' : 'scale(1)')
   .transition({ property: 'all', duration: 200 })
   .onHover(setIsHovered)
-  .build()
+  
 ```
 
 ## Navigation Modifiers
@@ -872,7 +872,7 @@ import { Text } from '@tachui/core'
 Text('<p>Hello <strong>world</strong>!</p>')
   .modifier
   .asHTML()
-  .build()
+  
 
 // Rich content example
 Text(`
@@ -891,7 +891,7 @@ Text(`
   .padding(20)
   .backgroundColor('#F8F9FA')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 #### Configuration Options
@@ -932,7 +932,7 @@ Text(userGeneratedContent)
   .asHTML({
     customSanitizer: (html: string) => DOMPurify.sanitize(html)
   })
-  .build()
+  
 
 // Custom allowed tags and attributes
 Text(articleContent)
@@ -944,7 +944,7 @@ Text(articleContent)
       'a': ['href', 'target', 'rel']
     }
   })
-  .build()
+  
 
 // Skip sanitization for trusted content (dangerous!)
 Text(trustedServerTemplate)
@@ -953,7 +953,7 @@ Text(trustedServerTemplate)
     skipSanitizer: true,
     __suppressWarnings: true  // Suppress development warnings
   })
-  .build()
+  
 ```
 
 #### Security Features
@@ -970,13 +970,13 @@ The `asHTML` modifier includes comprehensive security protection:
 **Blocked Content Examples:**
 ```typescript
 // All of these dangerous patterns are automatically removed:
-Text('<script>alert("xss")</script>').asHTML().build()
+Text('<script>alert("xss")</script>').asHTML()
 // Result: "" (script tags removed)
 
-Text('<img src="x" onerror="alert(1)">').asHTML().build()  
+Text('<img src="x" onerror="alert(1)">').asHTML()  
 // Result: '<img src="x">' (event handlers removed)
 
-Text('<a href="javascript:alert(1)">Link</a>').asHTML().build()
+Text('<a href="javascript:alert(1)">Link</a>').asHTML()
 // Result: '<a>Link</a>' (dangerous URLs removed)
 ```
 
@@ -987,13 +987,13 @@ Text('<a href="javascript:alert(1)">Link</a>').asHTML().build()
 Button("Click me")
   .modifier
   .asHTML() // Error: AsHTML modifier can only be applied to Text components
-  .build()
+  
 
 // ✅ Correct usage
 Text("<button>Safe HTML Button</button>")
   .modifier
   .asHTML()
-  .build()
+  
 ```
 
 #### Performance Considerations
@@ -1010,7 +1010,7 @@ Text(trustedContent)
     validateDOM: false,  // Skip DOM validation
     customPatterns: []   // Skip additional pattern checks
   })
-  .build()
+  
 ```
 
 #### Development Mode Features
@@ -1090,7 +1090,7 @@ Text(`Count: ${count()}`)
     transform: () => `rotate(${count() * 10}deg)`,
     filter: () => isActive() ? 'blur(0px)' : 'blur(2px)'
   })
-  .build()
+  
 ```
 
 ## Modifier Priority
@@ -1120,14 +1120,14 @@ Text('Content')
   .textAlign('center')        // Valid TextAlign value
   .fontSize(16)               // number type
   .fontWeight('600')          // Valid FontWeight
-  .build()
+  
 
 // ❌ TypeScript prevents errors
 Text('Content')
   .modifier
   .textAlign('invalid')       // Error: not a valid TextAlign
   .fontSize('16px')           // Error: must be number
-  .build()
+  
 ```
 
 ### Performance
@@ -1138,13 +1138,13 @@ const [theme, setTheme] = createSignal('light')
 Text('Content')
   .modifier
   .foregroundColor(() => theme() === 'dark' ? '#FFF' : '#000')  // Only updates when theme changes
-  .build()
+  
 
 // ❌ Avoid creating new objects in reactive contexts
 Text('Content')
   .modifier
   .font(() => ({ size: 16, weight: '400' }))  // Creates new object on every render
-  .build()
+  
 ```
 
 ### Readable Modifier Chains
@@ -1168,7 +1168,7 @@ Text('Title')
   
   // Effects
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 ## Examples
@@ -1204,7 +1204,7 @@ VStack({
 .onMouseDown(() => setIsPressed(true))
 .onMouseUp(() => setIsPressed(false))
 .onTap(() => console.log('Card clicked!'))
-.build()
+
 ```
 
 ### Responsive Layout
@@ -1225,7 +1225,7 @@ VStack()
     maxWidth: screenSize() === 'mobile' ? '100%' : 800,
     width: screenSize() === 'mobile' ? '100%' : 'auto'
   }))
-  .build()
+  
 ```
 
 ### Complex Visual Effects
@@ -1239,16 +1239,16 @@ Image('/hero-image.jpg')
   .overlay(
     VStack({
       children: [
-        Text('Hero Title').fontSize(32).fontWeight('bold').build(),
-        Text('Subtitle').fontSize(18).build()
+        Text('Hero Title').fontSize(32).fontWeight('bold'),
+        Text('Subtitle').fontSize(18)
       ]
-    }).foregroundColor('#FFFFFF').textAlign('center').build(),
+    }).foregroundColor('#FFFFFF').textAlign('center'),
     'center'
   )
   .css({
     backgroundImage: 'linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7))'
   })
-  .build()
+  
 ```
 
 ## Advanced Modifier System
@@ -1274,7 +1274,7 @@ Button("Hold for Action", () => {})
   .onContinuousHover('local', (coords) => {
     if (coords) setHoverPosition(coords)
   })
-  .build()
+  
 ```
 
 For more examples and patterns, see the [Examples](/examples/) section.

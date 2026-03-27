@@ -19,7 +19,7 @@ Image("my-photo.jpg")
   .modifier
   .resizable()
   .frame(200, 150)
-  .build()
+  
 ```
 
 ### CSS Equivalent
@@ -44,7 +44,7 @@ img {
 Text("Hello World")
   .modifier
   .textCase('uppercase')  // Same as .textTransform('uppercase')
-  .build()
+  
 ```
 
 ### Supported Values

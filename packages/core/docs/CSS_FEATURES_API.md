@@ -34,13 +34,13 @@ Scales an element uniformly or along specific axes.
 Text("Scaled Text")
   .modifier
   .scale(1.2)
-  .build()
+  
 
 // Axis-specific scaling
 Button("Stretched Button")
   .modifier
   .scale({ x: 1.3, y: 0.8 })
-  .build()
+  
 ```
 
 #### `rotate(angle: string)`
@@ -51,13 +51,13 @@ Rotates an element by the specified angle.
 Image("icon.png")
   .modifier
   .rotate('45deg')
-  .build()
+  
 
 // Negative rotation
 Text("Counter-clockwise")
   .modifier
   .rotate('-30deg')
-  .build()
+  
 ```
 
 #### `translate(offset: {x?: number | string, y?: number | string})`
@@ -69,13 +69,13 @@ Translates an element along the X and Y axes.
 Button("Moved Button")
   .modifier
   .translate({ x: 10, y: 20 })
-  .build()
+  
 
 // CSS units
 Text("Responsive Move")
   .modifier
   .translate({ x: '1rem', y: '50%' })
-  .build()
+  
 ```
 
 #### `skew(angles: {x?: string, y?: string})`
@@ -87,13 +87,13 @@ Skews an element along specified axes.
 Text("Skewed Text")
   .modifier
   .skew({ x: '10deg', y: '5deg' })
-  .build()
+  
 
 // Single axis
 Button("Slanted")
   .modifier
   .skew({ x: '15deg' })
-  .build()
+  
 ```
 
 ### 3D Transforms
@@ -108,7 +108,7 @@ Text("3D Rotation")
   .rotateX('45deg')
   .rotateY('30deg')
   .rotateZ('60deg')
-  .build()
+  
 ```
 
 #### `perspective(distance: number)`
@@ -121,7 +121,7 @@ VStack([
     .modifier
     .perspective(1000)
     .rotateX('30deg')
-    .build()
+    
 ])
 ```
 
@@ -157,7 +157,7 @@ Button("Interactive Button")
     rotate: '2deg',
     translate: { x: 5, y: 5 }
   })
-  .build()
+  
 
 // 3D Example
 Image("hero-image.jpg")
@@ -168,7 +168,7 @@ Image("hero-image.jpg")
     rotateY: '25deg',
     scale: 1.05
   })
-  .build()
+  
 ```
 
 ---
@@ -188,25 +188,25 @@ type SwiftUIHoverEffect = 'automatic' | 'highlight' | 'lift'
 Button("Auto Hover", handleClick)
   .modifier
   .hoverEffect('automatic')
-  .build()
+  
 
 // Highlight effect (background color change)
 Button("Highlight Hover", handleClick)
   .modifier
   .hoverEffect('highlight')
-  .build()
+  
 
 // Lift effect (scale and translate)
 Button("Lift Hover", handleClick)
   .modifier
   .hoverEffect('lift')
-  .build()
+  
 
 // Conditional hover
 Button("Conditional", handleClick)
   .modifier
   .hoverEffect('lift', isEnabled)
-  .build()
+  
 ```
 
 ### Custom CSS Hover Styles
@@ -234,7 +234,7 @@ Button("Custom Hover", handleClick)
     boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)',
     color: 'white'
   })
-  .build()
+  
 ```
 
 #### `hoverWithTransition(styles: HoverStyles, duration?: number)`
@@ -248,7 +248,7 @@ Button("Smooth Hover", handleClick)
     backgroundColor: '#34C759',
     transform: { scale: 1.02 }
   }, 150) // 150ms transition
-  .build()
+  
 ```
 
 ---
@@ -266,13 +266,13 @@ Declarative CSS transitions with SwiftUI-inspired configuration.
 Text("Smooth Opacity")
   .modifier
   .transition('opacity', 300, 'ease-out')
-  .build()
+  
 
 // With delay
 Button("Delayed Transition")
   .modifier
   .transition('transform', 200, 'ease-in-out', 100)
-  .build()
+  
 ```
 
 ### Complex Transitions
@@ -300,7 +300,7 @@ Button("Complex Transition", handleClick)
     transform: { duration: 300, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', delay: 50 },
     boxShadow: { duration: 250, easing: 'ease-in-out' }
   })
-  .build()
+  
 ```
 
 ---
@@ -333,20 +333,20 @@ VStack([
       brightness: 1.2,
       saturate: 1.5
     })
-    .build()
+    
 ])
 
 // String configuration
 Text("Custom Filter")
   .modifier
   .backdropFilter('blur(20px) hue-rotate(90deg)')
-  .build()
+  
 
 // With fallback for unsupported browsers
 Text("Safe Glass")
   .modifier
   .backdropFilter({ blur: 15 }, 'rgba(255, 255, 255, 0.8)')
-  .build()
+  
 ```
 
 #### `glassmorphism(blurAmount: number, backgroundColor?: string)`
@@ -359,7 +359,7 @@ VStack([
   Text("Glass Card")
     .modifier
     .glassmorphism(12)
-    .build()
+    
 ])
 
 // Custom background
@@ -367,7 +367,7 @@ VStack([
   Text("Tinted Glass")
     .modifier
     .glassmorphism(20, 'rgba(0, 122, 255, 0.1)')
-    .build()
+    
 ])
 ```
 
@@ -389,7 +389,7 @@ Image("photo.jpg")
   .saturate(1.3)
   .grayscale(0.5)
   .sepia(0.3)
-  .build()
+  
 ```
 
 ### Combined Filter Configuration
@@ -421,13 +421,13 @@ Image("processed-image.jpg")
     sepia: 0.2,
     hueRotate: '90deg'
   })
-  .build()
+  
 
 // String filter
 Image("custom-filter.jpg")
   .modifier
   .filter('grayscale(100%) invert(1)')
-  .build()
+  
 ```
 
 ---
@@ -445,19 +445,19 @@ Applies gradient text with proper webkit prefixes.
 Text("Gradient Heading")
   .modifier
   .gradientText('linear-gradient(45deg, #007AFF, #FF3B30)')
-  .build()
+  
 
 // Radial gradient text
 Text("Radial Text")
   .modifier
   .gradientText('radial-gradient(circle, #34C759, #007AFF)')
-  .build()
+  
 
 // Complex gradient
 Text("Rainbow Text")
   .modifier
   .gradientText('linear-gradient(45deg, #ff6b6b 0%, #4ecdc4 25%, #45b7d1 50%, #96ceb4 75%, #ffeaa7 100%)')
-  .build()
+  
 ```
 
 #### `backgroundClip(image: string, clip: string, color?: string)`
@@ -473,7 +473,7 @@ Text("Custom Clip")
     'text',
     'transparent'
   )
-  .build()
+  
 
 // Border box clipping
 VStack([])
@@ -483,7 +483,7 @@ VStack([])
     'border-box',
     'white'
   )
-  .build()
+  
 ```
 
 #### `backgroundImage(image: string)`
@@ -494,7 +494,7 @@ Sets background image without clipping.
 VStack([])
   .modifier
   .backgroundImage('linear-gradient(135deg, purple, pink)')
-  .build()
+  
 ```
 
 ---
@@ -535,7 +535,7 @@ Text("Featured Item")
     color: '#FFD60A',
     marginRight: 5
   })
-  .build()
+  
 
 // Decorative line
 Text("Underlined")
@@ -549,7 +549,7 @@ Text("Underlined")
     height: 2,
     backgroundColor: '#007AFF'
   })
-  .build()
+  
 ```
 
 #### `after(styles: PseudoElementStyles)`
@@ -572,7 +572,7 @@ Text("Tooltip")
     borderTop: '5px solid #333',
     transform: 'translateX(-50%)'
   })
-  .build()
+  
 ```
 
 ### Combined Pseudo-elements
@@ -600,7 +600,7 @@ Text("Enhanced Text")
       color: '#666'
     }
   })
-  .build()
+  
 ```
 
 ---
@@ -620,7 +620,7 @@ Matrix transforms and extended 3D capabilities.
 Text("Matrix Transform")
   .modifier
   .matrix([1, 0.5, -0.5, 1, 10, 20])
-  .build()
+  
 ```
 
 #### `matrix3d(values: [16 numbers])`
@@ -637,7 +637,7 @@ Text("3D Matrix")
     0, 0, 1, 0,
     10, 20, 5, 1
   ])
-  .build()
+  
 ```
 
 ### Advanced 3D Functions
@@ -650,7 +650,7 @@ Text("3D Matrix")
 Text("Custom 3D Rotation")
   .modifier
   .rotate3d(1, 1, 0, '45deg')
-  .build()
+  
 ```
 
 #### `scale3d(x: number, y: number, z: number)`
@@ -661,7 +661,7 @@ Text("Custom 3D Rotation")
 Text("3D Scale")
   .modifier
   .scale3d(1.2, 0.8, 1.5)
-  .build()
+  
 ```
 
 #### `translate3d(x?: number | string, y?: number | string, z?: number | string)`
@@ -672,21 +672,21 @@ Text("3D Scale")
 Text("3D Move")
   .modifier
   .translate3d(10, 20, 5)
-  .build()
+  
 ```
 
 ### Individual Axis Functions
 
 ```typescript
 // Individual scale functions
-Text("Scale X").modifier.scaleX(1.5).build()
-Text("Scale Y").modifier.scaleY(0.8).build()
-Text("Scale Z").modifier.scaleZ(2.0).build()
+Text("Scale X").modifier.scaleX(1.5)
+Text("Scale Y").modifier.scaleY(0.8)
+Text("Scale Z").modifier.scaleZ(2.0)
 
 // Individual translate functions
-Text("Move X").modifier.translateX(50).build()
-Text("Move Y").modifier.translateY('2rem').build()
-Text("Move Z").modifier.translateZ(10).build()
+Text("Move X").modifier.translateX(50)
+Text("Move Y").modifier.translateY('2rem')
+Text("Move Z").modifier.translateZ(10)
 ```
 
 ### 3D Properties
@@ -699,7 +699,7 @@ Sets the perspective origin for 3D transforms.
 Text("Custom Perspective")
   .modifier
   .perspectiveOrigin('top left')
-  .build()
+  
 ```
 
 #### `transformStyle(value: 'flat' | 'preserve-3d')`
@@ -710,7 +710,7 @@ Controls 3D transform style inheritance.
 VStack([])
   .modifier
   .transformStyle('preserve-3d')
-  .build()
+  
 ```
 
 #### `backfaceVisibility(value: 'visible' | 'hidden')`
@@ -721,7 +721,7 @@ Controls visibility of element's back face.
 Text("3D Card")
   .modifier
   .backfaceVisibility('hidden')
-  .build()
+  
 ```
 
 ### Complex Advanced Transforms
@@ -757,7 +757,7 @@ Text("Advanced 3D")
     rotateY: '45deg',
     translateZ: 20
   })
-  .build()
+  
 
 // Matrix configuration
 Text("Matrix Transform")
@@ -765,7 +765,7 @@ Text("Matrix Transform")
   .advancedTransform({
     matrix: [1, 0.5, -0.5, 1, 10, 20]
   })
-  .build()
+  
 ```
 
 ---
@@ -785,19 +785,19 @@ Creates a single CSS custom property.
 Text("Themed Text")
   .modifier
   .customProperty('text-color', '#007AFF')
-  .build()
+  
 
 // With prefix handling
 Text("Auto Prefix")
   .modifier
   .customProperty('--primary-color', '#FF3B30') // Prefix preserved
-  .build()
+  
 
 // Numeric values
 Text("Numeric Property")
   .modifier
   .customProperty('z-index', 999)
-  .build()
+  
 ```
 
 #### `cssVariables(variables: Record<string, string | number>)`
@@ -814,7 +814,7 @@ VStack([])
     'spacing': '8px',
     'border-radius': '12px'
   })
-  .build()
+  
 ```
 
 #### `customProperties(config: CSSCustomPropertiesConfig)`
@@ -838,7 +838,7 @@ VStack([])
     },
     scope: 'local'
   })
-  .build()
+  
 ```
 
 ### Theme Integration
@@ -858,7 +858,7 @@ VStack([])
     warning: '#FF9500',
     danger: '#FF3B30'
   })
-  .build()
+  
 
 // Creates:
 // --theme-color-primary: #007AFF
@@ -885,7 +885,7 @@ VStack([])
     'border-radius-md': '8px',
     'shadow-level': 3
   })
-  .build()
+  
 
 // Creates:
 // --token-spacing-xs: 4px
@@ -902,19 +902,19 @@ VStack([
   Text("Primary Text")
     .modifier
     .color('var(--theme-color-primary)')
-    .build(),
+    ,
     
   Text("Secondary Text")
     .modifier
     .color('var(--theme-color-secondary)')
-    .build()
+    
 ])
 .modifier
 .themeColors({
   primary: '#007AFF',
   secondary: '#5856D6'
 })
-.build()
+
 ```
 
 ---
@@ -962,12 +962,12 @@ VStack([
     .modifier
     .fontSize('24px')
     .fontWeight('bold')
-    .build(),
+    ,
     
   Text("Beautiful glassmorphism effect")
     .modifier
     .color('rgba(255, 255, 255, 0.8)')
-    .build()
+    
 ])
 .modifier
 .padding('24px')
@@ -979,7 +979,7 @@ VStack([
 .backgroundColor('rgba(255, 255, 255, 0.1)')
 .borderRadius('16px')
 .border('1px solid rgba(255, 255, 255, 0.2)')
-.build()
+
 ```
 
 ### Interactive Button
@@ -996,7 +996,7 @@ Button("Interactive Button", handleClick)
     transform: { scale: 1.05 },
     boxShadow: '0 8px 25px rgba(0, 122, 255, 0.3)'
   }, 200)
-  .build()
+  
 ```
 
 ### Gradient Text Hero
@@ -1008,7 +1008,7 @@ Text("Amazing Gradient Text")
   .fontWeight('bold')
   .gradientText('linear-gradient(45deg, #007AFF, #5856D6, #AF52DE)')
   .textAlign('center')
-  .build()
+  
 ```
 
 ### Complex 3D Card
@@ -1020,23 +1020,23 @@ VStack([
     .width('100%')
     .height('200px')
     .objectFit('cover')
-    .build(),
+    ,
     
   VStack([
     Text("Product Name")
       .modifier
       .fontSize('18px')
       .fontWeight('bold')
-      .build(),
+      ,
       
     Text("Product description goes here")
       .modifier
       .color('#666')
-      .build()
+      
   ])
   .modifier
   .padding('16px')
-  .build()
+  
 ])
 .modifier
 .backgroundColor('white')
@@ -1056,7 +1056,7 @@ VStack([
   },
   boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
 }, 300)
-.build()
+
 ```
 
 ---
@@ -1084,7 +1084,7 @@ Text("Element")
   })
   .backdropFilter({ blur: 10 })
   .gradientText('linear-gradient(45deg, blue, red)')
-  .build()
+  
 ```
 
 ### From Other Frameworks
