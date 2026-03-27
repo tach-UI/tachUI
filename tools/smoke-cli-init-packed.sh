@@ -110,6 +110,53 @@ NODE
 echo "[smoke-cli-init-packed] installing generated project dependencies"
 npm install
 
+if [[ -z "${CORE_VERSION:-}" ]]; then
+  echo "[smoke-cli-init-packed] CORE_VERSION is not set"
+  exit 1
+fi
+
+echo "[smoke-cli-init-packed] verifying a single @tachui/core runtime version is installed"
+EXPECTED_CORE_VERSION="$CORE_VERSION" node <<'NODE'
+const { execSync } = require('node:child_process')
+
+function collectCoreVersions(tree, versions) {
+  if (!tree || typeof tree !== 'object') return
+  const deps = tree.dependencies
+  if (!deps || typeof deps !== 'object') return
+
+  for (const [name, dep] of Object.entries(deps)) {
+    if (name === '@tachui/core' && dep && typeof dep === 'object' && typeof dep.version === 'string') {
+      versions.add(dep.version)
+    }
+    collectCoreVersions(dep, versions)
+  }
+}
+
+const expectedVersion = process.env.EXPECTED_CORE_VERSION
+const lsOutput = execSync('npm ls @tachui/core --all --json', { encoding: 'utf8' })
+const tree = JSON.parse(lsOutput)
+const versions = new Set()
+collectCoreVersions(tree, versions)
+
+if (versions.size !== 1 || !versions.has(expectedVersion)) {
+  console.error(
+    `[smoke-cli-init-packed] expected exactly one @tachui/core version (${expectedVersion}), found: ${Array.from(versions).join(', ')}`
+  )
+  process.exit(1)
+}
+NODE
+
+echo "[smoke-cli-init-packed] verifying built-in frame modifier registration"
+node --input-type=module <<'NODE'
+import '@tachui/modifiers'
+import { hasModifier } from '@tachui/registry'
+
+if (!hasModifier('frame')) {
+  console.error("[smoke-cli-init-packed] expected 'frame' to be registered in the global modifier registry")
+  process.exit(1)
+}
+NODE
+
 echo "[smoke-cli-init-packed] building generated project"
 npm run build
 

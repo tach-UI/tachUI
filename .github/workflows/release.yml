@@ -46,6 +46,9 @@ jobs:
       - name: Run tests
         run: pnpm test:ci
 
+      - name: Validate packed internal dependency graph
+        run: pnpm release:verify:internal-deps
+
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:
