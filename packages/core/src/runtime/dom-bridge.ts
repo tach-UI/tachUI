@@ -102,36 +102,22 @@ function findDOMElementsForComponent(component: ComponentInstance): Element[] {
     return existingElements
   }
 
-  // Fallback: Search for DOM elements by component ID or data attributes
+  // Prefer exact DOM association by stable component id marker.
   const elementsWithComponentId = document.querySelectorAll(`[data-component-id="${component.id}"]`)
   if (elementsWithComponentId.length > 0) {
     return Array.from(elementsWithComponentId)
   }
 
-  // Type-specific fallbacks for components that might not have proper ID tracking
-  if (component.id.startsWith('image-')) {
-    const allImages = document.querySelectorAll('img.tachui-image')
-    // Filter to only unassociated images to prevent stealing from other components
-    return Array.from(allImages).filter(img => 
-      !Array.from(componentElements.values()).flat().includes(img)
-    )
+  // Fallback: Search for root-mounted elements tracked with internal component id.
+  const elementsWithInternalComponentId = document.querySelectorAll('*')
+  const exactInternalMatches = Array.from(elementsWithInternalComponentId).filter(
+    element => (element as any)._componentId === component.id
+  )
+  if (exactInternalMatches.length > 0) {
+    return exactInternalMatches
   }
 
-  if (component.id.startsWith('text-')) {
-    const allTextElements = document.querySelectorAll('.tachui-text')
-    return Array.from(allTextElements).filter(el => 
-      !Array.from(componentElements.values()).flat().includes(el)
-    )
-  }
-
-  if (component.id.startsWith('vstack-') || component.id.startsWith('hstack-')) {
-    const allStackElements = document.querySelectorAll('.tachui-vstack, .tachui-hstack')
-    return Array.from(allStackElements).filter(el => 
-      !Array.from(componentElements.values()).flat().includes(el)
-    )
-  }
-
-  // No elements found
+  // No exact element association found - avoid heuristic element stealing.
   return []
 }
 

@@ -242,6 +242,19 @@ export class DOMRenderer {
       this.applyProp(element, key, value, container)
     })
 
+    // Attach stable component identity for lifecycle hook DOM association.
+    const componentId = (node as any).componentId
+    if (componentId) {
+      const currentComponentId = element.getAttribute('data-component-id')
+      if (currentComponentId !== String(componentId)) {
+        element.setAttribute('data-component-id', String(componentId))
+        this.recordAttributeWrite()
+      }
+    } else if (element.hasAttribute('data-component-id')) {
+      element.removeAttribute('data-component-id')
+      this.recordAttributeRemoval()
+    }
+
     ;(node as any).__appliedProps = { ...newProps }
 
     if ('componentMetadata' in node && (node as any).componentMetadata) {
