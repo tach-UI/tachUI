@@ -188,7 +188,7 @@ const TaskRow = (task) => {
         .onHover(true, {
           transform: 'scale(1.1)'
         })
-        .build(),
+        ,
 
       // Task text
       Text(task.text)
@@ -197,7 +197,7 @@ const TaskRow = (task) => {
         .foregroundColor(task.completed ? '#999' : '#333')
         .textDecoration(task.completed ? 'line-through' : 'none')
         .frame({ flex: 1 })
-        .build(),
+        ,
 
       // Remove button  
       Button("🗑️")
@@ -214,7 +214,7 @@ const TaskRow = (task) => {
           backgroundColor: '#ffebee'
         })
         .transition('all', 200)
-        .build()
+        
     ],
     alignment: 'center',
     spacing: 12
@@ -231,7 +231,7 @@ const TaskRow = (task) => {
     shadow: { x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' }
   })
   .transition('all', 200)
-  .build()
+  
 }
 
 const ProgressBar = () => {
@@ -244,25 +244,25 @@ const ProgressBar = () => {
             .fontSize(14)
             .fontWeight('500')
             .foregroundColor('#666')
-            .build(),
+            ,
 
           Elements.div()
             .modifier
             .frame({ flex: 1 })
-            .build(),
+            ,
 
           Text(() => `${completionPercentage()}%`)
             .modifier
             .fontSize(14)
             .fontWeight('600')
             .foregroundColor('#007AFF')
-            .build()
+            
         ],
         alignment: 'center'
       })
       .modifier
       .marginBottom(8)
-      .build(),
+      ,
 
       // Progress bar background
       Elements.div({
@@ -275,14 +275,14 @@ const ProgressBar = () => {
             .cornerRadius(3)
             .transition('width', 300)
             .width(() => `${completionPercentage()}%`)
-            .build()
+            
         ]
       })
       .modifier
       .backgroundColor('#f0f0f0')
       .height(6)
       .cornerRadius(3)
-      .build()
+      
     ],
     spacing: 0
   })
@@ -291,7 +291,7 @@ const ProgressBar = () => {
   .backgroundColor('#f8f9fa')
   .cornerRadius(8)
   .marginBottom(20)
-  .build()
+  
 }
 
 const AddTaskForm = () => {
@@ -320,7 +320,7 @@ const AddTaskForm = () => {
         outline: 'none'
       })
       .transition('border-color', 200)
-      .build(),
+      ,
 
       Button("Add Task")
         .modifier
@@ -337,14 +337,14 @@ const AddTaskForm = () => {
         })
         .transition('all', 200)
         .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0, 122, 255, 0.3)' })
-        .build()
+        
     ],
     spacing: 12,
     alignment: 'center'
   })
   .modifier
   .marginBottom(24)
-  .build()
+  
 }
 
 const StatsSection = () => {
@@ -357,20 +357,20 @@ const StatsSection = () => {
             .fontSize(24)
             .fontWeight('bold')
             .foregroundColor('#007AFF')
-            .build(),
+            ,
 
           Text("Active")
             .modifier
             .fontSize(14)
             .foregroundColor('#666')
-            .build()
+            
         ],
         alignment: 'center',
         spacing: 4
       })
       .modifier
       .frame({ flex: 1 })
-      .build(),
+      ,
 
       VStack({
         children: [
@@ -379,20 +379,20 @@ const StatsSection = () => {
             .fontSize(24)
             .fontWeight('bold')
             .foregroundColor('#28a745')
-            .build(),
+            ,
 
           Text("Completed")
             .modifier
             .fontSize(14)
             .foregroundColor('#666')
-            .build()
+            
         ],
         alignment: 'center',
         spacing: 4
       })
       .modifier
       .frame({ flex: 1 })
-      .build(),
+      ,
 
       VStack({
         children: [
@@ -401,20 +401,20 @@ const StatsSection = () => {
             .fontSize(24)
             .fontWeight('bold')
             .foregroundColor('#6c757d')
-            .build(),
+            ,
 
           Text("Total")
             .modifier
             .fontSize(14)
             .foregroundColor('#666')
-            .build()
+            
         ],
         alignment: 'center',
         spacing: 4
       })
       .modifier
       .frame({ flex: 1 })
-      .build()
+      
     ],
     alignment: 'center'
   })
@@ -424,7 +424,7 @@ const StatsSection = () => {
   .cornerRadius(12)
   .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
   .marginBottom(24)
-  .build()
+  
 }
 
 // Main App Component - Pure SwiftUI structure (exported for Tacho)
@@ -439,7 +439,7 @@ export function App() {
         .foregroundColor('#1a1a1a')
         .textAlign('center')
         .marginBottom(8)
-        .build(),
+        ,
 
       Text("Built with TachUI SwiftUI syntax")
         .modifier
@@ -447,7 +447,7 @@ export function App() {
         .foregroundColor('#666')
         .textAlign('center')
         .marginBottom(32)
-        .build(),
+        ,
 
       // Progress tracking
       ProgressBar(),
@@ -464,7 +464,7 @@ export function App() {
         spacing: 0
       })
       .modifier
-      .build()
+      
     ],
     spacing: 0,
     alignment: 'stretch'
@@ -475,7 +475,7 @@ export function App() {
   .padding(24)
   .minHeight('100vh')
   .backgroundColor('#fafafa')
-  .build()
+  
 }
 
 // Tacho automatically mounts this App component via src/main.ts
@@ -624,7 +624,7 @@ count.wrappedValue = 10 // Update triggers UI refresh
 Text(() => `Count: ${count.wrappedValue}`)
   .modifier
   .fontSize(18)
-  .build()
+  
 ```
 
 ### Component Composition with VStack/HStack
@@ -638,20 +638,20 @@ VStack({
       .modifier
       .fontSize(24)
       .fontWeight('bold')
-      .build(),
+      ,
     
     HStack({
       children: [
         Button("Cancel")
           .modifier
           .variant('outlined')
-          .build(),
+          ,
         
         Button("Save")
           .modifier
           .backgroundColor('#007AFF')
           .foregroundColor('#ffffff')
-          .build()
+          
       ],
       spacing: 12
     })
@@ -678,7 +678,7 @@ Button("Get Started")
   .onHover(true, { backgroundColor: '#0056b3' })
   .transition('all', 200)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0, 122, 255, 0.3)' })
-  .build()
+  
 ```
 
 ### Reactive UI Updates
@@ -694,7 +694,7 @@ VStack({
     Text("I'm visible!")
       .modifier
       .opacity(1)
-      .build()
+      
   ] : []
 })
 ```
@@ -941,7 +941,7 @@ export function UserProfile() {
       Button("Sign Out")
         .modifier
         .onTap(userService.signOut)
-        .build()
+        
     ]
   })
 }

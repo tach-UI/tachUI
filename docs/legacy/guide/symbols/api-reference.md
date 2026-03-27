@@ -233,7 +233,7 @@ Symbol('heart')
   .weightBold()
   .palette('#ff0000', '#ff6666')
   .bounce()
-  .build()
+  
 
 // Equivalent to:
 Symbol('heart', {

@@ -49,7 +49,7 @@ Text("Hello, World!")
   .fontSize(24)
   .fontWeight('bold')
   .foregroundColor('#007AFF')
-  .build()
+  
 
 // Reactive text with signal
 const [message, setMessage] = createSignal("Dynamic content")
@@ -57,7 +57,7 @@ Text(message)
   .modifier
   .fontSize(18)
   .italic()
-  .build()
+  
 
 // Dynamic text with state
 const [count, setCount] = createSignal(0)
@@ -65,7 +65,7 @@ Text(() => `Count: ${count()}`)
   .modifier
   .fontSize(18)
   .textAlign('center')
-  .build()
+  
 ```
 
 ### Typography Presets
@@ -97,7 +97,7 @@ Text("Styled Text")
   .letterSpacing(0.5)
   .lineLimit(3)
   .truncationMode('tail')
-  .build()
+  
 ```
 
 ### Text Properties
@@ -149,7 +149,7 @@ Button("Click Me", () => console.log("Clicked!"))
   .foregroundColor('#ffffff')
   .padding(12, 24)
   .cornerRadius(8)
-  .build()
+  
 
 // Button with reactive state
 const [isLoading, setIsLoading] = createSignal(false)
@@ -169,25 +169,25 @@ Pre-configured button styles following SwiftUI patterns:
 ButtonStyles.Filled("Save", handleSave)
   .modifier
   .cornerRadius(8)
-  .build()
+  
 
 // Outlined button  
 ButtonStyles.Outlined("Cancel", handleCancel)
   .modifier
   .cornerRadius(8)
-  .build()
+  
 
 // Destructive action
 ButtonStyles.Destructive("Delete", handleDelete)
   .modifier
   .cornerRadius(8)
-  .build()
+  
 
 // Plain text button
 ButtonStyles.Plain("Learn More", showDetails)
   .modifier
   .fontSize(16)
-  .build()
+  
 ```
 
 ### Button States and Interactions
@@ -202,7 +202,7 @@ Button("Interactive Button", handleClick)
   .onTouchStart(() => setIsPressed(true))
   .onTouchEnd(() => setIsPressed(false))
   .transition('all', 150)
-  .build()
+  
 ```
 
 ### Button Properties
@@ -247,7 +247,7 @@ TextField(email, setEmail, "Enter email address")
   .padding(12)
   .border(1, '#ddd')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ### TextField with State Binding
@@ -263,7 +263,7 @@ TextField(userEmail.projectedValue, "Email")
   .onFocus(true, {
     borderColor: '#007AFF'
   })
-  .build()
+  
 ```
 
 ### TextField Variants
@@ -299,7 +299,7 @@ TextField(email.projectedValue, "Email")
       console.log("Validation error:", result.message)
     }
   })
-  .build()
+  
 
 // Format phone numbers automatically
 const phone = State("")
@@ -308,7 +308,7 @@ TextField(phone.projectedValue, "Phone")
   .modifier
   .formatter(TextFieldFormatters.phone)
   .keyboardType('tel')
-  .build()
+  
 ```
 
 ### TextField Properties
@@ -362,7 +362,7 @@ Image("/path/to/image.jpg")
   .height(200)
   .cornerRadius(12)
   .contentMode('fit')
-  .build()
+  
 ```
 
 ### Responsive Images
@@ -373,7 +373,7 @@ Image("/hero-image.jpg")
   .width('100%')
   .aspectRatio(16/9)
   .contentMode('cover')
-  .build()
+  
 ```
 
 ### Progressive Loading
@@ -390,7 +390,7 @@ Image("/large-image.jpg")
   .onLoadingStateChange(setImageState)
   .opacity(() => imageState() === 'loaded' ? 1 : 0.7)
   .transition('opacity', 300)
-  .build()
+  
 ```
 
 ### Image Utilities
@@ -400,7 +400,7 @@ Image("/large-image.jpg")
 ImageUtils.progressive("/thumb.jpg", "/full.jpg")
   .modifier
   .aspectRatio(4/3)
-  .build()
+  
 
 // Responsive images
 ImageUtils.responsive([
@@ -462,7 +462,7 @@ function UserCard({ user }) {
             .width(40)
             .height(40)
             .cornerRadius(20)
-            .build(),
+            ,
             
           VStack({
             children: [
@@ -470,13 +470,13 @@ function UserCard({ user }) {
                 .modifier
                 .fontSize(18)
                 .fontWeight('600')
-                .build(),
+                ,
                 
               Text(user.email)
                 .modifier
                 .fontSize(14)
                 .foregroundColor('#666')
-                .build()
+                
             ],
             spacing: 2,
             alignment: 'leading'
@@ -492,7 +492,7 @@ function UserCard({ user }) {
           .modifier
           .fontSize(14)
           .lineHeight(1.4)
-          .build() : null,
+           : null,
       
       // Expand/collapse button
       Button(() => isExpanded() ? "Show Less" : "Show More", 
@@ -501,7 +501,7 @@ function UserCard({ user }) {
       .modifier
       .fontSize(14)
       .foregroundColor('#007AFF')
-      .build()
+      
     ],
     spacing: 12,
     alignment: 'stretch'
@@ -511,7 +511,7 @@ function UserCard({ user }) {
   .backgroundColor('#ffffff')
   .cornerRadius(12)
   .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 }
 
 // Modern clean syntax with updated API
@@ -591,12 +591,12 @@ Show({
     .modifier
     .fontSize(18)
     .foregroundColor('#007AFF')
-    .build(),
+    ,
   fallback: Text('Please sign in')
     .modifier
     .fontSize(18)
     .foregroundColor('#FF3B30')
-    .build()
+    
 })
 
 // With State Management
@@ -623,13 +623,13 @@ Show({
         .modifier
         .fontSize(24)
         .fontWeight('bold')
-        .build(),
+        ,
       
       Text(() => user().email)
         .modifier
         .fontSize(16)
         .foregroundColor('#666')
-        .build()
+        
     ],
     spacing: 8,
     alignment: 'center'
@@ -639,12 +639,12 @@ Show({
         .modifier
         .fontSize(16)
         .foregroundColor('#666')
-        .build()
+        
     : Text('No user found')
         .modifier
         .fontSize(16)
         .foregroundColor('#FF3B30')
-        .build()
+        
 })
 ```
 
@@ -701,7 +701,7 @@ ForEach({
       .modifier
       .fontSize(16)
       .padding(8)
-      .build()
+      
 })
 
 // With State Management
@@ -741,7 +741,7 @@ ForEach({
         Text(todo.text)
           .modifier
           .textDecoration(() => todo.completed ? 'line-through' : 'none')
-          .build()
+          
       ]
     }),
   getItemId: (todo) => todo.id  // Essential for efficient updates
@@ -765,7 +765,7 @@ For({
       .modifier
       .fontSize(16)
       .padding(8)
-      .build(),
+      ,
   fallback: Text("No items to display")  // Optional empty state
 })
 ```
@@ -787,7 +787,7 @@ For({
           .modifier
           .fontSize(16)
           .strikethrough(todo.completed)
-          .build(),
+          ,
         
         Button('Toggle', () => {
           const updatedTodos = todos().map(t => 
@@ -820,7 +820,7 @@ VStack({
       .modifier
       .fontSize(18)
       .fontWeight('bold')
-      .build(),
+      ,
     
     For({
       each: features,
@@ -829,7 +829,7 @@ VStack({
           .modifier
           .fontSize(14)
           .padding({ left: 16, bottom: 4 })
-          .build()
+          
     }),
     
     Button('Add Feature', addFeature)
@@ -838,7 +838,7 @@ VStack({
       .foregroundColor('white')
       .padding(12)
       .cornerRadius(8)
-      .build()
+      
   ],
   spacing: 16
 })
@@ -869,7 +869,7 @@ function TodoItem(props: TodoItemProps): ComponentInstance {
     .modifier
     .fontSize(16)
     .strikethrough(props.todo.completed)
-    .build()
+    
 }
 
 // Form-driven lists with two-way binding
@@ -897,14 +897,14 @@ function TodoApp(): VStack {
         .padding(12)
         .border(1, '#ddd')
         .cornerRadius(8)
-        .build(),
+        ,
       Button("Add", addTodo)
         .modifier
         .backgroundColor('#007AFF')
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build(),
+        ,
       ForEach({
         data: (): Todo[] => todos.wrappedValue,
         children: (todo: Todo): ComponentInstance => TodoItem({ todo }),
@@ -939,12 +939,12 @@ function ItemView(props: ItemViewProps): ComponentInstance {
         .modifier
         .fontSize(16)
         .fontWeight('bold')
-        .build(),
+        ,
       Text(`$${props.item.price}`)
         .modifier
         .fontSize(14)
         .foregroundColor('#007AFF')
-        .build()
+        
     ]
   })
 }
@@ -970,13 +970,13 @@ function FilteredList(): VStack {
         .padding(12)
         .border(1, '#ddd')
         .cornerRadius(8)
-        .build(),
+        ,
       Text((): string => `Showing ${filteredItems().length} of ${items().length} items`)
         .modifier
         .fontSize(14)
         .foregroundColor('#666')
         .marginVertical(8)
-        .build(),
+        ,
       ForEach({
         data: filteredItems,  // Reactive computed data
         children: (item: Item): ComponentInstance => ItemView({ item }),
@@ -1061,7 +1061,7 @@ VStack({
         .fontSize(16)
         .foregroundColor('#666')
         .textAlign('center')
-        .build()
+        
     })
   ]
 })
@@ -1088,7 +1088,7 @@ TextStyles.Headline("Section Title")
 TextStyles.Body("Content text")
 
 // ❌ Avoid - Manual font sizing
-Text("Title").fontSize(22).fontWeight('bold').build()
+Text("Title").fontSize(22).fontWeight('bold')
 ```
 
 ### 3. Use Semantic Button Variants
@@ -1099,7 +1099,7 @@ ButtonStyles.Destructive("Delete", handleDelete)
 ButtonStyles.Filled("Save", handleSave)
 
 // ❌ Avoid - Manual styling for common patterns
-Button("Delete").backgroundColor('red').build()
+Button("Delete").backgroundColor('red')
 ```
 
 ### 4. Handle Loading States
@@ -1118,7 +1118,7 @@ Button(() => isLoading() ? "Saving..." : "Save", async () => {
 })
 .modifier
 .disabled(isLoading)
-.build()
+
 ```
 
 ### 5. Use Proper Accessibility
@@ -1129,12 +1129,12 @@ Button("Save Document", handleSave)
   .modifier
   .accessibilityLabel("Save the current document")
   .accessibilityHint("Saves your work to the cloud")
-  .build()
+  
 
 Image("/profile.jpg")
   .modifier
   .accessibilityLabel("User profile photo")
-  .build()
+  
 ```
 
 ## Performance Tips
@@ -1179,7 +1179,7 @@ Form({
   .padding(20)
   .background('white')
   .cornerRadius(12)
-  .build()
+  
 ```
 
 ### Section Component
@@ -1197,7 +1197,7 @@ Section({
   .modifier
   .padding(16)
   .background('#f9f9f9')
-  .build()
+  
 ```
 
 ### Picker Component
@@ -1255,7 +1255,7 @@ Slider({
   .modifier
   .accentColor('#007AFF')
   .padding(16)
-  .build()
+  
 ```
 
 ### Toggle Component

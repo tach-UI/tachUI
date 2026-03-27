@@ -137,7 +137,7 @@ Text("Hello World")
     backdropFilter: 'blur(10px)',
     containerType: 'inline-size'
   })
-  .build()
+  
 ```
 
 ### Modifier Categories

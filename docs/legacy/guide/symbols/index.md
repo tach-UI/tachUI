@@ -39,7 +39,7 @@ const styledIcon = Symbol('star')
   .foregroundColor('#FFD700')
   .frame(32, 32)
   .padding(8)
-  .build()
+  
 ```
 
 ## Core Features
@@ -57,7 +57,7 @@ Symbol('heart', { variant: 'filled' })
 Symbol('heart')
   .modifier
   .filled()  // Equivalent to .variant('filled')
-  .build()
+  
 ```
 
 ### Symbol Scales
@@ -72,7 +72,7 @@ Symbol('star', { scale: 'large' })   // 32px
 Symbol('star')
   .modifier
   .scaleLarge()
-  .build()
+  
 ```
 
 ### Symbol Effects & Animations
@@ -101,7 +101,7 @@ Symbol('star', { effect: 'glow' })
 Symbol('heart')
   .modifier
   .bounce()
-  .build()
+  
 ```
 
 ### Reactive Properties
@@ -145,7 +145,7 @@ Symbol('heart', {
 Symbol('heart')
   .modifier
   .palette('#ff0000', '#00ff00', '#0000ff')
-  .build()
+  
 ```
 
 ### Accessibility
@@ -231,7 +231,7 @@ Symbol('heart')
   .cornerRadius(8)
   .shadow({ x: 0, y: 2, radius: 4 })
   .onTap(() => console.log('Tapped!'))
-  .build()
+  
 ```
 
 ### Layout Integration
@@ -245,16 +245,16 @@ const favoriteButton = VStack([
     .filled()
     .scaleLarge()
     .foregroundColor('#ff0000')
-    .build(),
+    ,
     
   Text('Favorite')
     .modifier
     .fontSize(12)
-    .build()
+    
 ])
 .modifier
 .padding(16)
-.build()
+
 ```
 
 ## API Reference
@@ -344,7 +344,7 @@ const favoriteButton = Symbol('heart', {
 .modifier
 .foregroundColor(() => isFavorited() ? '#ff0000' : '#999')
 .onTap(() => setIsFavorited(!isFavorited()))
-.build()
+
 ```
 
 ### Loading States
@@ -363,7 +363,7 @@ const refreshButton = Symbol(() => isLoading() ? 'loader' : 'refresh-cw', {
   await performRefresh()
   setIsLoading(false)
 })
-.build()
+
 ```
 
 ### Navigation Icons
@@ -373,22 +373,22 @@ const navigationBar = HStack([
   Symbol('home')
     .modifier
     .onTap(() => navigate('/'))
-    .build(),
+    ,
     
   Symbol('search')
     .modifier  
     .onTap(() => navigate('/search'))
-    .build(),
+    ,
     
   Symbol('user')
     .modifier
     .onTap(() => navigate('/profile'))
-    .build()
+    
 ])
 .modifier
 .justifyContent('space-around')
 .padding(16)
-.build()
+
 ```
 
 ## Best Practices
@@ -429,7 +429,7 @@ Symbol('heart', { variant: 'filled' })
   .modifier
   .foregroundColor('red')
   .frame(24, 24)
-  .build()
+  
 ```
 
 ### From Lucide React
@@ -444,5 +444,5 @@ Symbol('heart', { variant: 'filled' })
   .modifier
   .foregroundColor('red')
   .frame(24, 24)
-  .build()
+  
 ```

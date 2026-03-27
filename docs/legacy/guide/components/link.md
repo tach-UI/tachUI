@@ -16,7 +16,7 @@ import { Link } from '@tachui/core'
 function BasicExample() {
   return Link('Visit Example', 'https://example.com')
     .modifier
-    .build()
+    
 }
 ```
 
@@ -29,7 +29,7 @@ function BasicExample() {
   return Link({
     destination: 'https://example.com',
     children: 'Visit Example'
-  }).build()
+  })
 }
 ```
 
@@ -86,7 +86,7 @@ Automatically detected or explicitly set:
 
 ```typescript
 // SwiftUI API - Auto-detected as external
-Link('External Link', 'https://external.com').build()
+Link('External Link', 'https://external.com')
 
 // Object API - Explicitly external with options
 Link({
@@ -94,7 +94,7 @@ Link({
   children: 'Force External',
   routingMode: 'external',
   target: '_blank'
-}).build()
+})
 ```
 
 ### Internal Links
@@ -102,14 +102,14 @@ For same-domain navigation:
 
 ```typescript
 // SwiftUI API - Auto-detected as internal
-Link('Internal Page', '/internal-page').build()
+Link('Internal Page', '/internal-page')
 
 // Object API - Explicitly internal
 Link({
   destination: '/dashboard',
   children: 'Dashboard',
   routingMode: 'internal'
-}).build()
+})
 ```
 
 ### Single-Page App (SPA) Links
@@ -124,7 +124,7 @@ Link({
     console.log('Navigating to:', path)
     return true // Allow navigation
   }
-}).build()
+})
 ```
 
 ## Special Link Types
@@ -132,19 +132,19 @@ Link({
 ### Email Links
 ```typescript
 // SwiftUI API - Basic email link
-Link('Contact Support', 'mailto:support@example.com').build()
+Link('Contact Support', 'mailto:support@example.com')
 
 // Object API - Email with subject and body
 Link({
   destination: 'mailto:hello@example.com?subject=Hello&body=Message',
   children: 'Send Message'
-}).build()
+})
 ```
 
 ### Phone Links
 ```typescript
 // SwiftUI API
-Link('Call Us', 'tel:+1234567890').build()
+Link('Call Us', 'tel:+1234567890')
 ```
 
 ### Download Links
@@ -154,13 +154,13 @@ Link({
   destination: 'https://example.com/file.pdf',
   children: 'Download PDF',
   download: true
-}).build()
+})
 
 Link({
   destination: 'https://example.com/document.pdf',
   children: 'Download Document',
   download: 'my-document.pdf'
-}).build()
+})
 ```
 
 ## LinkUtils
@@ -174,7 +174,7 @@ import { LinkUtils } from '@tachui/core'
 function ExternalExample() {
   return Link({
     ...LinkUtils.external('https://example.com', 'Visit Website')
-  }).build()
+  })
   
   // Equivalent to:
   // destination: 'https://example.com'
@@ -191,7 +191,7 @@ function ExternalExample() {
 function InternalExample() {
   return Link({
     ...LinkUtils.internal('/dashboard', 'Go to Dashboard')
-  }).build()
+  })
   
   // Pre-configured: target '_self', routingMode 'internal'
 }
@@ -202,7 +202,7 @@ function InternalExample() {
 function SPAExample() {
   return Link({
     ...LinkUtils.spa('/profile', 'View Profile')
-  }).build()
+  })
   
   // Pre-configured: routingMode 'spa', accessibilityHint 'Navigates within the app'
 }
@@ -216,14 +216,14 @@ function EmailExample() {
       // Basic email
       Link({
         ...LinkUtils.email('support@example.com')
-      }).build(),
+      }),
       
       // Email with subject and body
       Link({
         ...LinkUtils.email('sales@example.com', 'Product Inquiry', 'I would like to know more about...', 'Contact Sales')
-      }).build()
+      })
     ]
-  }).build()
+  })
 }
 ```
 
@@ -232,7 +232,7 @@ function EmailExample() {
 function PhoneExample() {
   return Link({
     ...LinkUtils.phone('+1 (555) 123-4567', 'Call Support')
-  }).build()
+  })
   
   // Automatically formats phone number and adds accessibility
 }
@@ -243,7 +243,7 @@ function PhoneExample() {
 function DownloadExample() {
   return Link({
     ...LinkUtils.download('https://example.com/manual.pdf', 'user-manual.pdf', 'Download Manual')
-  }).build()
+  })
 }
 ```
 
@@ -254,20 +254,20 @@ function SocialExample() {
     children: [
       Link({
         ...LinkUtils.social.twitter('username')
-      }).build(),
+      }),
       
       Link({
         ...LinkUtils.social.github('username')
-      }).build(),
+      }),
       
       Link({
         ...LinkUtils.social.linkedin('profile')
-      }).build()
+      })
     ]
   })
   .modifier
   .gap(16)
-  .build()
+  
 }
 ```
 
@@ -278,13 +278,13 @@ function AppStoreExample() {
     children: [
       Link({
         ...LinkUtils.appStore.ios('123456789', 'Download iOS App')
-      }).build(),
+      }),
       
       Link({
         ...LinkUtils.appStore.android('com.example.app', 'Get Android App')
-      }).build()
+      })
     ]
-  }).build()
+  })
 }
 ```
 
@@ -297,17 +297,17 @@ Automatically determines routing based on URL characteristics:
 Link({
   destination: '/internal',        // → Internal routing
   routingMode: 'auto'
-}).build()
+})
 
 Link({
   destination: 'https://external.com', // → External routing
   routingMode: 'auto'
-}).build()
+})
 
 Link({
   destination: 'mailto:test@example.com', // → Special scheme (external)
   routingMode: 'auto'
-}).build()
+})
 ```
 
 ### Internal Mode
@@ -318,7 +318,7 @@ Link({
   destination: 'https://external.com', // Still navigates internally
   children: 'Internal Navigation',
   routingMode: 'internal'
-}).build()
+})
 ```
 
 ### External Mode
@@ -330,7 +330,7 @@ Link({
   children: 'External Navigation',
   routingMode: 'external',
   target: '_blank'
-}).build()
+})
 ```
 
 ### SPA Mode
@@ -346,7 +346,7 @@ Link({
     await myRouter.navigate(path)
     return true
   }
-}).build()
+})
 ```
 
 ## Event Handling
@@ -368,7 +368,7 @@ Link({
     await router.push(path)
     return true
   }
-}).build()
+})
 ```
 
 ### Click Callbacks
@@ -383,7 +383,7 @@ Link({
       timestamp: Date.now()
     })
   }
-}).build()
+})
 ```
 
 ## Reactive Properties
@@ -403,19 +403,19 @@ function ReactiveExample() {
         children: 'Reactive Link',
         target: linkTarget,
         disabled: isDisabled
-      }).build(),
+      }),
       
       Button({
         title: 'Toggle Target',
         action: () => setLinkTarget(prev => prev === '_self' ? '_blank' : '_self')
-      }).build(),
+      }),
       
       Button({
         title: 'Toggle Disabled',
         action: () => setIsDisabled(prev => !prev)
-      }).build()
+      })
     ]
-  }).build()
+  })
 }
 ```
 
@@ -436,7 +436,7 @@ Link({
   accessibilityLabel: 'Visit Example website',
   accessibilityHint: 'Opens in a new browser tab',
   disabled: false
-}).build()
+})
 ```
 
 ### Screen Reader Support
@@ -462,7 +462,7 @@ Link({
   destination: 'https://external.com',
   children: 'Secure External Link',
   target: '_blank'
-}).build()
+})
 ```
 
 ### Custom Security Attributes
@@ -471,7 +471,7 @@ Link({
   destination: 'https://untrusted.com',
   children: 'Untrusted Link',
   rel: 'nofollow noopener noreferrer'
-}).build()
+})
 ```
 
 ## Styling with Modifiers
@@ -491,7 +491,7 @@ Link({
 .backgroundColor('#F0F8FF')
 .borderRadius(8)
 .textDecoration('none')
-.build()
+
 ```
 
 ## Custom Theming
@@ -531,7 +531,7 @@ Link({
 .color('#FFFFFF')
 .borderRadius(8)
 .textDecoration('none')
-.build()
+
 
 // Subtle link
 Link({
@@ -541,7 +541,7 @@ Link({
 .modifier
 .color('#8E8E93')
 .fontSize(14)
-.build()
+
 
 // Destructive link
 Link({
@@ -550,7 +550,7 @@ Link({
 })
 .modifier
 .color('#FF3B30')
-.build()
+
 ```
 
 ## Best Practices
@@ -584,13 +584,13 @@ Make link purpose obvious:
 Link({
   destination: 'https://example.com/privacy',
   children: 'Read our Privacy Policy'
-}).build()
+})
 
 // Avoid - Generic link text
 Link({
   destination: 'https://example.com/privacy',
   children: 'Click here' // Not descriptive
-}).build()
+})
 ```
 
 ### 3. Use Appropriate Accessibility Labels
@@ -601,14 +601,14 @@ Link({
   children: 'Contact Support',
   accessibilityLabel: 'Send email to support team',
   accessibilityHint: 'Opens your email application'
-}).build()
+})
 
 // Good - External link indication
 Link({
   destination: 'https://external.com',
   children: 'External Resource',
   accessibilityHint: 'Opens in a new browser tab'
-}).build()
+})
 ```
 
 ### 4. Handle Navigation Gracefully
@@ -629,7 +629,7 @@ Link({
       return false
     }
   }
-}).build()
+})
 ```
 
 ### 5. Consider Mobile Usability
@@ -642,7 +642,7 @@ Link({
 .modifier
 .padding(12) // Adequate touch target
 .fontSize(16) // Readable text size
-.build()
+
 
 // Good - Mobile-specific behavior
 Link({
@@ -655,7 +655,7 @@ Link({
 .backgroundColor('#007AFF')
 .color('#FFFFFF')
 .borderRadius(8)
-.build()
+
 ```
 
 ## Performance Considerations

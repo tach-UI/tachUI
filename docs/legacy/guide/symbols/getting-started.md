@@ -30,7 +30,7 @@ const styledIcon = Symbol('heart')
   .foregroundColor('#ff0000')
   .frame(32, 32)
   .padding(8)
-  .build()
+  
 ```
 
 ## Making it Interactive
@@ -48,7 +48,7 @@ const interactiveHeart = Symbol('heart', {
 .modifier
 .foregroundColor(() => isFavorited() ? '#ff0000' : '#999')
 .onTap(() => setIsFavorited(!isFavorited()))
-.build()
+
 ```
 
 ## Animation Effects
@@ -62,7 +62,7 @@ const animatedStar = Symbol('star', {
 .modifier
 .foregroundColor('#FFD700')
 .scaleLarge()
-.build()
+
 ```
 
 ## Building a Component
@@ -80,18 +80,18 @@ const favoriteButton = VStack([
   .modifier
   .foregroundColor(() => isFavorited() ? '#ff0000' : '#666')
   .scaleLarge()
-  .build(),
+  ,
   
   Text(() => isFavorited() ? 'Favorited' : 'Favorite')
     .modifier
     .fontSize(12)
     .foregroundColor('#666')
-    .build()
+    
 ])
 .modifier
 .padding(16)
 .onTap(() => setIsFavorited(!isFavorited()))
-.build()
+
 ```
 
 ## Accessibility
@@ -105,7 +105,7 @@ const accessibleIcon = Symbol('heart', {
 })
 .modifier
 .foregroundColor('#ff0000')
-.build()
+
 ```
 
 ## Performance Tips
@@ -144,7 +144,7 @@ const [isPlaying, setIsPlaying] = createSignal(false)
 const playButton = Symbol(() => isPlaying() ? 'pause' : 'play')
   .modifier
   .onTap(() => setIsPlaying(!isPlaying()))
-  .build()
+  
 ```
 
 ### Loading Indicators
@@ -161,7 +161,7 @@ const refreshButton = Symbol(() => isLoading() ? 'loader' : 'refresh-cw', {
   await performAction()
   setIsLoading(false)
 })
-.build()
+
 ```
 
 ### Navigation Icons
@@ -171,21 +171,21 @@ const navbar = HStack([
   Symbol('home')
     .modifier
     .onTap(() => navigate('/'))
-    .build(),
+    ,
     
   Symbol('search')
     .modifier
     .onTap(() => navigate('/search'))
-    .build(),
+    ,
     
   Symbol('user')
     .modifier
     .onTap(() => navigate('/profile'))
-    .build()
+    
 ])
 .modifier
 .justifyContent('space-around')
-.build()
+
 ```
 
 ## Next Steps

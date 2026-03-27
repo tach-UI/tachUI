@@ -52,12 +52,12 @@ function CounterComponent(props: CounterComponentProps = {}): VStack {
       Text(() => `Count: ${count.wrappedValue}`)
         .modifier
         .fontSize(24)
-        .build(),
+        ,
         
       Text(() => message.wrappedValue)
         .modifier
         .fontSize(16)
-        .build(),
+        ,
         
       Button("Increment", handleIncrement)
     ],
@@ -438,7 +438,7 @@ function UserListComponent(props: UserListComponentProps = {}): VStack {
           .modifier
           .foregroundColor('#dc2626')
           .textAlign('center')
-          .build() : 
+           : 
         null,
         
       // Loading state
@@ -446,7 +446,7 @@ function UserListComponent(props: UserListComponentProps = {}): VStack {
         Text("Loading users...")
           .modifier
           .textAlign('center')
-          .build() :
+           :
         null,
       
       // User list
@@ -481,19 +481,19 @@ function UserCard(props: UserCardProps): HStack {
         .modifier
         .fontSize(16)
         .fontWeight(isSelected ? 'bold' : 'normal')
-        .build(),
+        ,
         
       Text(user.email)
         .modifier
         .fontSize(14)
         .foregroundColor('#666666')
-        .build(),
+        ,
         
       Button("Remove", handleRemove)
         .modifier
         .backgroundColor('#dc2626')
         .foregroundColor('#ffffff')
-        .build()
+        
     ],
     spacing: 12
   })
@@ -652,7 +652,7 @@ function ThemeAwareComponent(props: ThemeAwareComponentProps): Text {
     .fontSize(fontSize())
     .foregroundColor(colors.text)  
     .backgroundColor(colors.background)
-    .build()
+    
 }
 
 interface SettingsPanelProps {
@@ -732,7 +732,7 @@ function SettingsPanel(props: SettingsPanelProps = {}): VStack {
             .modifier
             .backgroundColor(currentSettings.notifications ? '#22c55e' : '#6b7280')
             .foregroundColor('#ffffff')
-            .build()
+            
         ]
       }),
       
@@ -775,7 +775,7 @@ function SettingsPanel(props: SettingsPanelProps = {}): VStack {
           .modifier
           .backgroundColor('#ef4444')
           .foregroundColor('#ffffff')
-          .build()
+          
       ] : [])
     ],
     spacing: 16

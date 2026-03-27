@@ -18,7 +18,7 @@ Text("Hello World")
   .padding(16)
   .backgroundColor('white')
   .cornerRadius(8)
-  .build()
+  
 ```
 
 ## Modifier Categories
@@ -43,7 +43,7 @@ Text("Responsive container")
     minHeight: 100,
     maxHeight: 400
   })
-  .build()
+  
 
 // Individual size properties
 Text("Fixed size")
@@ -52,7 +52,7 @@ Text("Fixed size")
   .height(150)
   .maxWidth(500)
   .minHeight(100)
-  .build()
+  
 ```
 
 **Available size modifiers:**
@@ -73,19 +73,19 @@ Control external spacing with type-safe margin options:
 Text("Equal margins")
   .modifier
   .margin({ all: 16 })
-  .build()
+  
 
 // Symmetric spacing
 Text("Symmetric margins")
   .modifier
   .margin({ vertical: 12, horizontal: 8 })
-  .build()
+  
 
 // Individual sides
 Text("Custom margins")
   .modifier
   .margin({ top: 8, bottom: 16, left: 12, right: 12 })
-  .build()
+  
 
 // Convenience methods
 Text("Quick margins")
@@ -94,7 +94,7 @@ Text("Quick margins")
   .marginBottom(24)
   .marginHorizontal(20)
   .marginVertical(12)
-  .build()
+  
 ```
 
 **Available margin modifiers:**
@@ -113,13 +113,13 @@ Control internal spacing (uses existing TachUI padding system):
 Text("Padded content")
   .modifier
   .padding(16)
-  .build()
+  
 
 // Detailed padding object
 Text("Custom padding")
   .modifier
   .padding({ top: 12, right: 16, bottom: 12, left: 16 })
-  .build()
+  
 ```
 
 #### Position Modifiers
@@ -131,14 +131,14 @@ Text("Custom padding")
 Text("Floating label")
   .modifier
   .offset(10, -5)  // x: 10px, y: -5px
-  .build()
+  
 
 // Reactive offset with signals
 const [xOffset, setXOffset] = createSignal(0)
 Text("Animated element")
   .modifier
   .offset(xOffset, 20)  // Responds to signal changes
-  .build()
+  
 ```
 
 #### Flexbox Modifiers
@@ -155,7 +155,7 @@ VStack({
 .justifyContent('center')
 .alignItems('stretch')
 .gap(16)
-.build()
+
 
 // Individual flexbox properties
 Text("Flexible item")
@@ -163,7 +163,7 @@ Text("Flexible item")
   .flexGrow(2)
   .flexShrink(0)
   .alignItems('center')
-  .build()
+  
 ```
 
 **Available flexbox modifiers:**
@@ -191,7 +191,7 @@ Text("Styled text")
     lineHeight: 1.5,
     color: '#1a1a1a'
   })
-  .build()
+  
 
 // Individual typography properties
 Text("Quick styling")
@@ -200,7 +200,7 @@ Text("Quick styling")
   .textTransform('capitalize')
   .letterSpacing('1px')
   .lineHeight(1.4)
-  .build()
+  
 ```
 
 **Available typography modifiers:**
@@ -231,7 +231,7 @@ Flexible border styling with directional support:
 Text("Bordered content")
   .modifier
   .border(1, '#e0e0e0', 'solid')
-  .build()
+  
 
 // Directional borders
 Text("Custom borders")
@@ -239,7 +239,7 @@ Text("Custom borders")
   .borderTop(2, '#007AFF')
   .borderBottom(1, '#f0f0f0')
   .borderLeft(3, '#34C759', 'dashed')
-  .build()
+  
 ```
 
 **Available border modifiers:**
@@ -265,7 +265,7 @@ Text("Interactive content")
   .position('relative')
   .zIndex(10)
   .display('flex')
-  .build()
+  
 ```
 
 **Available utility modifiers:**
@@ -291,7 +291,7 @@ Text("Cutting-edge styles")
     aspectRatio: '16/9',
     maskImage: 'linear-gradient(to bottom, black, transparent)'
   })
-  .build()
+  
 
 // CSS custom properties
 Text("Themed content")
@@ -302,14 +302,14 @@ Text("Themed content")
     backgroundColor: 'var(--primary-color)',
     padding: 'var(--spacing)'
   })
-  .build()
+  
 
 // Single CSS property
 Text("One-off styling")
   .modifier
   .cssProperty('backdrop-filter', 'blur(5px)')
   .cssProperty('scroll-snap-align', 'start')
-  .build()
+  
 ```
 
 **Available CSS modifiers:**
@@ -336,14 +336,14 @@ TachUI now includes three essential SwiftUI modifiers that were previously missi
 Text("Badge")
   .modifier
   .offset(10, -5)  // Move 10px right, 5px up
-  .build()
+  
 
 // Reactive offset for animations  
 const [x, setX] = createSignal(0)
 Text("Animated")
   .modifier
   .offset(x, 0)  // Responds to signal changes
-  .build()
+  
 ```
 
 **`.rotationEffect(angle, anchor)` - Element rotation**
@@ -352,13 +352,13 @@ Text("Animated")
 Image("/arrow.svg")
   .modifier
   .rotationEffect(45)  // 45 degrees clockwise
-  .build()
+  
 
 // Rotation with custom anchor point
 Text("Rotated corner")
   .modifier
   .rotationEffect(30, 'topLeading')  // Rotate around top-left
-  .build()
+  
 
 // Available anchor points: 
 // 'center', 'top', 'bottom', 'leading', 'trailing',
@@ -374,7 +374,7 @@ Text("Very long text that might overflow the container")
   .modifier
   .frame(200, 50)
   .clipped()  // Clips overflow content
-  .build()
+  
 
 // Common pattern: Clipped images
 Image("/large-photo.jpg")
@@ -382,7 +382,7 @@ Image("/large-photo.jpg")
   .frame(100, 100)
   .cornerRadius(8)
   .clipped()  // Ensures corners are properly rounded
-  .build()
+  
 ```
 
 ### Combining New Modifiers
@@ -398,7 +398,7 @@ VStack({
 .clipped()  // Ensure clean corners
 .offset(0, -10)  // Lift up slightly
 .rotationEffect(2, 'center')  // Subtle rotation
-.build()
+
 ```
 
 ## Advanced SwiftUI-Style Modifiers (Version 1.2) 🆕
@@ -413,13 +413,13 @@ TachUI now includes four additional essential SwiftUI modifiers for advanced lay
 Image("/video-thumbnail.jpg")
   .modifier
   .aspectRatio(16/9)  // Default 'fit' mode
-  .build()
+  
 
 // Square aspect ratio with fill mode
 Image("/profile-photo.jpg")
   .modifier
   .aspectRatio(1, 'fill')  // Crops to square
-  .build()
+  
 
 // Reactive aspect ratio
 const [isWidescreen, setWidescreen] = createSignal(false)
@@ -428,7 +428,7 @@ const aspectRatio = createComputed(() => isWidescreen() ? 21/9 : 16/9)
 Video("/movie.mp4")
   .modifier
   .aspectRatio(aspectRatio, 'fit')  // Responds to signal changes
-  .build()
+  
 ```
 
 **`.fixedSize(horizontal?, vertical?)` - Prevent size changes**
@@ -437,13 +437,13 @@ Video("/movie.mp4")
 Text("Never shrink this text")
   .modifier
   .fixedSize()  // Same as fixedSize(true, true)
-  .build()
+  
 
 // Prevent only horizontal shrinking
 Text("Long text that should not wrap")
   .modifier
   .fixedSize(true, false)  // Keep natural width
-  .build()
+  
 
 // Prevent only vertical shrinking  
 VStack({
@@ -451,7 +451,7 @@ VStack({
 })
 .modifier
 .fixedSize(false, true)  // Keep natural height
-.build()
+
 ```
 
 ### Advanced Content Clipping
@@ -463,13 +463,13 @@ Image("/avatar.jpg")
   .modifier
   .frame(80, 80)
   .clipShape('circle')
-  .build()
+  
 
 // Elliptical clipping with custom radii
 Image("/banner.jpg")
   .modifier
   .clipShape('ellipse', { radiusX: '60%', radiusY: '40%' })
-  .build()
+  
 
 // Rectangular clipping with inset
 VStack({
@@ -477,7 +477,7 @@ VStack({
 })
 .modifier
 .clipShape('rect', { inset: 10 })  // 10px inset on all sides
-.build()
+
 
 // Custom polygon shapes
 Image("/photo.jpg")
@@ -485,7 +485,7 @@ Image("/photo.jpg")
   .clipShape('polygon', { 
     points: '0% 0%, 100% 0%, 80% 100%, 20% 100%'  // Trapezoid
   })
-  .build()
+  
 ```
 
 ### Content Overlay System
@@ -507,10 +507,10 @@ Image("/product.jpg")
       .cornerRadius(4)
       .fontSize(12)
       .fontWeight('bold')
-      .build(),
+      ,
     'topTrailing'  // Position in top-right corner
   )
-  .build()
+  
 
 // Loading indicator overlay
 VStack({
@@ -525,17 +525,17 @@ VStack({
         .modifier
         .fontSize(14)
         .foregroundColor('#8E8E93')
-        .build()
+        
     ]
   })
   .modifier
   .backgroundColor('rgba(255,255,255,0.9)')
   .padding(20)
   .cornerRadius(12)
-  .build(),
+  ,
   'center'  // Center the loading indicator
 )
-.build()
+
 
 // Available alignment options:
 // 'center', 'top', 'bottom', 'leading', 'trailing'
@@ -558,7 +558,7 @@ Button("Click me")
         .foregroundColor('#FFFFFF')
         .padding(8)
         .cornerRadius(6)
-        .build()
+        
       : null,
     'top'
   )
@@ -566,7 +566,7 @@ Button("Click me")
     setShowNotification(true)
     setTimeout(() => setShowNotification(false), 2000)
   })
-  .build()
+  
 ```
 
 ### Complex Version 1.2 Combinations
@@ -588,12 +588,12 @@ function GalleryItem({ src }: { src: string }) {
           Text("♥")
             .modifier
             .fontSize(24)
-            .build(),
+            ,
           Text("Like")
             .modifier
             .fontSize(12)
             .fontWeight('bold')
-            .build()
+            
         ]
       })
       .modifier
@@ -603,11 +603,11 @@ function GalleryItem({ src }: { src: string }) {
       .cornerRadius(50)
       .opacity(() => isHovered() ? 1 : 0)
       .transition({ property: 'opacity', duration: 200 })
-      .build(),
+      ,
       'center'
     )
     .onHover(setIsHovered)
-    .build()
+    
 }
 ```
 
@@ -640,24 +640,24 @@ function ResponsiveCard() {
             .padding(16)
             .fontSize(18)
             .fontWeight('bold')
-            .build(),
+            ,
           'bottomLeading'
         )
-        .build(),
+        ,
       
       // Content that maintains size
       Text("This text never shrinks")
         .modifier
         .fixedSize(true, false)
         .padding(16)
-        .build()
+        
     ]
   })
   .modifier
   .backgroundColor('#FFFFFF')
   .cornerRadius(12)
   .clipped()  // Ensure clean rounded corners
-  .build()
+  
 }
 ```
 
@@ -694,7 +694,7 @@ Text("Reactive styling")
   .css({
     backdropFilter: () => isActive() ? 'blur(10px)' : 'blur(0px)'
   })
-  .build()
+  
 ```
 
 ### Computed Signal Modifiers 🆕
@@ -720,7 +720,7 @@ Text("Computed reactive styling")
   .fontSize(fontSize)                   // Computed signal for size
   .border(borderWidth, textColor)       // Multiple computed signals
   .opacity(createComputed(() => isDark() ? 0.9 : 1.0))  // Inline computed
-  .build()
+  
 ```
 
 #### Advanced Computed Examples
@@ -755,7 +755,7 @@ Text("Advanced computed styling")
   ))
   .borderTop(dynamicBorder().width, dynamicBorder().color)
   .cornerRadius(createComputed(() => resolvedTheme() === 'dark' ? 8 : 4))
-  .build()
+  
 ```
 
 #### Computed Signals in Multi-Property Modifiers
@@ -794,7 +794,7 @@ Text("Interactive Button")
       default: return '#007AFF'
     }
   }))
-  .build()
+  
 ```
 
 #### Computed Signal Features
@@ -819,7 +819,7 @@ Text("Content")
   .padding(16)
   .backgroundColor('#f0f0f0')
   .textAlign('center')
-  .build()
+  
 
 // ❌ Avoid - Don't use CSS for common properties
 Text("Content")
@@ -829,7 +829,7 @@ Text("Content")
     backgroundColor: '#f0f0f0',
     textAlign: 'center'
   })
-  .build()
+  
 ```
 
 ### 2. Use Multi-Property Modifiers
@@ -847,7 +847,7 @@ Text("Comprehensive styling")
     transform: 'uppercase'
   })
   .margin({ vertical: 12, horizontal: 8 })
-  .build()
+  
 
 // ❌ Verbose - Individual modifiers for everything
 Text("Verbose styling")
@@ -860,7 +860,7 @@ Text("Verbose styling")
   .marginBottom(12)
   .marginLeft(8)
   .marginRight(8)
-  .build()
+  
 ```
 
 ### 3. CSS Modifier for Edge Cases
@@ -878,7 +878,7 @@ Text("Modern UI")
     containerType: 'inline-size',
     scrollSnapAlign: 'start'
   })
-  .build()
+  
 ```
 
 ### 4. Performance Considerations
@@ -897,20 +897,20 @@ If you're using older TachUI modifier APIs, here's how to migrate:
 Text("Content")
   .modifier
   .marginTop(16)     // ❌ May not exist in older versions
-  .build()
+  
 
 // New API
 Text("Content")
   .modifier
   .marginTop(16)     // ✅ Now available
   .margin({ top: 16 }) // ✅ Alternative with multi-property
-  .build()
+  
 
 // For any missing properties
 Text("Content")
   .modifier
   .css({ marginTop: '16px' }) // ✅ Always works
-  .build()
+  
 ```
 
 ## Examples

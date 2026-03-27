@@ -93,7 +93,7 @@ const customIconSet = new CustomIconSetBuilder({
 })
 .addIcon({ name: 'logo', svg: '...' })
 .addVariant('logo', 'filled', '...')
-.build()
+
 ```
 
 ## 🚀 Performance Enhancements

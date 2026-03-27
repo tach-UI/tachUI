@@ -26,11 +26,11 @@ Text('Hello proxy mode')
   .fontSize(20)
   .foregroundColor('#007AFF')
   .padding(16)
-  .build()
+  
 ```
 
 All modifier calls still return the same proxied component, so existing chaining
-patterns (including `.build()`) continue to work.
+patterns (including direct chaining) continue to work.
 
 ## Toggling at runtime
 

@@ -446,7 +446,7 @@ const app = NavigationView([
   ])
 ]).modifier
   .navigationTitle("My App")
-  .build()
+  
 
 // TabView with multiple implementation options
 import { SimpleTabView, EnhancedTabView, AdvancedTabView } from '@tachui/navigation'
@@ -513,14 +513,14 @@ const navigationView = NavigationView(content)
   .navigationBarStyle("large")
   .navigationBarHidden(false)
   .navigationGesturesEnabled(true)
-  .build()
+  
 
 const tabView = EnhancedTabView(tabs)
   .modifier
   .tabBarStyle("prominent")
   .tabBarHidden(false)
   .selectedTab(activeTabIndex)
-  .build()
+  
 ```
 
 ---
@@ -600,7 +600,7 @@ const TabbedApp = () => EnhancedTabView({
   ]
 }).modifier
   .tabBarStyle("prominent")
-  .build()
+  
 ```
 
 ---

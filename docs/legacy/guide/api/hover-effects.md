@@ -24,25 +24,25 @@ import { Button, Text } from '@tachui/core'
 Button("Hover Me")
   .modifier
   .hoverEffect('automatic')
-  .build()
+  
 
 // Elevation effect with shadow
 Text("Lift Effect")
   .modifier
   .hoverEffect('lift')
-  .build()
+  
 
 // Subtle background highlight
 Button("Highlight")
   .modifier
   .hoverEffect('highlight')
-  .build()
+  
 
 // Scale transform only
 Text("Scale Only")
   .modifier
   .hoverEffect('scale')
-  .build()
+  
 ```
 
 #### Parameters
@@ -75,7 +75,7 @@ Button("Custom Hover")
     color: 'white',
     transform: 'scale(1.05) rotate(2deg)'
   })
-  .build()
+  
 
 // With custom transition timing
 VStack()
@@ -84,7 +84,7 @@ VStack()
     opacity: 0.8,
     filter: 'blur(1px)'
   }, 500) // 500ms transition
-  .build()
+  
 ```
 
 #### Parameters
@@ -106,7 +106,7 @@ Text("Smooth Transition")
     transform: 'translateX(10px)',
     color: '#EF4444'
   }, 300)
-  .build()
+  
 ```
 
 ### `.conditionalHover(condition, styles)`
@@ -124,7 +124,7 @@ Button("Conditional Hover")
     backgroundColor: '#10B981',
     transform: 'scale(1.1)'
   })
-  .build()
+  
 ```
 
 ## Hover Effect Presets
@@ -140,25 +140,25 @@ import { Button, Text, Image } from '@tachui/core'
 Button("Button Hover")
   .modifier
   .buttonHover() // Optimized for buttons
-  .build()
+  
 
 // Card hover effect
 VStack()
   .modifier
   .cardHover() // Shadow + lift for cards
-  .build()
+  
 
 // Link hover
 Text("Link")
   .modifier
   .linkHover() // Color + underline
-  .build()
+  
 
 // Image hover
 Image({ src: 'photo.jpg' })
   .modifier
   .imageHover() // Scale + overlay
-  .build()
+  
 ```
 
 ## Cursor Integration
@@ -172,13 +172,13 @@ Button("Interactive")
   .modifier
   .hoverEffect('automatic')
   .interactiveCursor() // Changes to pointer
-  .build()
+  
 
 Button("Loading")
   .modifier
   .hoverEffect('highlight')
   .loadingCursor() // Shows loading cursor
-  .build()
+  
 ```
 
 ## Performance Considerations
@@ -209,7 +209,7 @@ Button("Efficient")
   .modifier
   .transition('transform', 200, 'ease-out')
   .hoverEffect('scale')
-  .build()
+  
 
 // ✅ Multiple optimized properties
 .transitions([
@@ -229,7 +229,7 @@ Button("Accessible Hover")
   .hoverEffect('automatic') // Also applies on :focus
   .aria({ label: 'Interactive button' })
   .tabIndex(0)
-  .build()
+  
 ```
 
 ## Browser Support
@@ -250,17 +250,17 @@ const InteractiveCard = () =>
     Text("Card Title")
       .modifier
       .font({ size: 18, weight: 'bold' })
-      .build(),
+      ,
     
     Text("Card description with hover effects")
       .modifier
       .opacity(0.7)
-      .build(),
+      ,
     
     Button("Action")
       .modifier
       .buttonHover()
-      .build()
+      
   ])
   .modifier
   .cardHover()
@@ -268,7 +268,7 @@ const InteractiveCard = () =>
   .cornerRadius(12)
   .backgroundColor('white')
   .shadow({ x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 ### Animated Navigation
@@ -285,7 +285,7 @@ const NavItem = (title: string) =>
     }, 200)
     .cursor('pointer')
     .padding({ horizontal: 15, vertical: 8 })
-    .build()
+    
 
 const Navigation = () =>
   HStack([
@@ -295,7 +295,7 @@ const Navigation = () =>
   ])
   .modifier
   .gap(20)
-  .build()
+  
 ```
 
 ## Integration with Other Modifiers
@@ -314,5 +314,5 @@ Button("Complete Example")
   .padding({ horizontal: 20, vertical: 10 })
   .shadow({ x: 0, y: 2, blur: 4, color: 'rgba(0,0,0,0.1)' })
   .transition('all', 200, 'ease-out')
-  .build()
+  
 ```

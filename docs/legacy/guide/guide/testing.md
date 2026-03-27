@@ -104,7 +104,7 @@ describe('Text Component', () => {
       .fontSize(18)
       .fontWeight('bold')
       .foregroundColor('#007AFF')
-      .build()
+      
     
     expect(styledText.modifiers).toHaveLength(3)
     expect(styledText.modifiers[0].properties).toMatchObject({
@@ -136,13 +136,13 @@ describe('Button Component', () => {
       .modifier
       .variant('filled')
       .backgroundColor('#007AFF')
-      .build()
+      
     
     const outlinedButton = Button("Outlined")
       .modifier
       .variant('outlined')
       .borderColor('#007AFF')
-      .build()
+      
     
     expect(filledButton.modifiers).toContain(
       expect.objectContaining({
@@ -159,7 +159,7 @@ describe('Button Component', () => {
     const button = Button("Toggle")
       .modifier
       .disabled(isDisabled)
-      .build()
+      
     
     // Initially enabled
     expect(isDisabled()).toBe(false)
@@ -205,7 +205,7 @@ describe('Layout Components', () => {
       .backgroundColor('#f0f0f0')
       .padding(20)
       .cornerRadius(8)
-      .build()
+      
       
       expect(styledVStack.modifiers).toHaveLength(3)
     })
@@ -367,7 +367,7 @@ describe('Modifier Chaining', () => {
       .cornerRadius(8)
       .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
       .transition('all', 200)
-      .build()
+      
     
     expect(styledComponent.modifiers).toHaveLength(5)
     
@@ -385,7 +385,7 @@ describe('Modifier Chaining', () => {
       .backgroundColor('#007AFF')  // Appearance: priority 200
       .onTap(() => {})   // Interaction: priority 300
       .transition('all', 150)  // Animation: priority 400
-      .build()
+      
     
     const priorities = component.modifiers.map(m => m.priority)
     expect(priorities).toEqual([100, 200, 300, 400])
@@ -499,7 +499,7 @@ describe('Component Reactivity', () => {
     const reactiveComponent = Text(() => text())
       .modifier
       .foregroundColor(color)
-      .build()
+      
     
     // Initial state
     expect(reactiveComponent.props.content()).toBe('Initial')
@@ -545,13 +545,13 @@ function Card(props: { title: string; content: string; onClick?: () => void }) {
         .modifier
         .fontSize(18)
         .fontWeight('bold')
-        .build(),
+        ,
       
       Text(props.content)
         .modifier
         .fontSize(14)
         .foregroundColor('#666')
-        .build()
+        
     ],
     spacing: 8
   })
@@ -561,7 +561,7 @@ function Card(props: { title: string; content: string; onClick?: () => void }) {
   .cornerRadius(8)
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
   .onTap(props.onClick || (() => {}))
-  .build()
+  
 }
 
 describe('Custom Components', () => {
@@ -614,7 +614,7 @@ describe('Component Integration', () => {
           .fontSize(24)
           .fontWeight('bold')
           .textAlign('center')
-          .build(),
+          ,
         
         // Counter display
         Text(() => `Count: ${count()}`)
@@ -626,7 +626,7 @@ describe('Component Integration', () => {
           .padding(20)
           .cornerRadius(8)
           .textAlign('center')
-          .build(),
+          ,
         
         // Button row
         HStack({
@@ -637,7 +637,7 @@ describe('Component Integration', () => {
             .modifier
             .backgroundColor('#ff3b30')
             .foregroundColor('#ffffff')
-            .build(),
+            ,
             
             Button("Reset", {
               onClick: () => setCount(0)
@@ -645,7 +645,7 @@ describe('Component Integration', () => {
             .modifier
             .backgroundColor('#ff9500')
             .foregroundColor('#ffffff')
-            .build(),
+            ,
             
             Button("Increment", {
               onClick: () => setCount(c => c + 1)
@@ -653,7 +653,7 @@ describe('Component Integration', () => {
             .modifier
             .backgroundColor('#34c759')
             .foregroundColor('#ffffff')
-            .build()
+            
           ],
           spacing: 12
         }),
@@ -665,7 +665,7 @@ describe('Component Integration', () => {
         .modifier
         .backgroundColor(() => theme() === 'dark' ? '#ffffff' : '#000000')
         .foregroundColor(() => theme() === 'dark' ? '#000000' : '#ffffff')
-        .build()
+        
       ],
       spacing: 16
     })
@@ -673,7 +673,7 @@ describe('Component Integration', () => {
     .padding(20)
     .backgroundColor(() => theme() === 'dark' ? '#1a1a1a' : '#ffffff')
     .frame({ minHeight: '100vh' })
-    .build()
+    
     
     expect(app.props.children).toHaveLength(4)
     expect(count()).toBe(0)
@@ -715,7 +715,7 @@ it('should handle disabled state', () => {
   const button = Button("Test")
     .modifier
     .disabled(true)
-    .build()
+    
   
   expect(button.modifiers.some(m => m.properties.disabled)).toBe(true)
 })
@@ -814,7 +814,7 @@ describe('Debugging Example', () => {
     const component = Text("Debug me")
       .modifier
       .fontSize(16)
-      .build()
+      
     
     // Debug output
     console.log('Component:', component)

@@ -18,7 +18,7 @@ function BasicExample() {
   return DatePicker({
     title: "Birth Date",
     selection: birthDate
-  }).build()
+  })
 }
 ```
 
@@ -52,7 +52,7 @@ DatePicker({
   title: "Event Date",
   selection: eventDate,
   style: 'compact'
-}).build()
+})
 ```
 
 ### Wheel Style
@@ -64,7 +64,7 @@ DatePicker({
   selection: meetingTime,
   style: 'wheel',
   displayedComponents: 'dateAndTime'
-}).build()
+})
 ```
 
 ### Graphical Style
@@ -75,7 +75,7 @@ DatePicker({
   title: "Vacation Start",
   selection: vacationDate,
   style: 'graphical'
-}).build()
+})
 ```
 
 ## Display Components
@@ -88,7 +88,7 @@ DatePicker({
   title: "Birth Date",
   selection: birthDate,
   displayedComponents: 'date'
-}).build()
+})
 ```
 
 ### Time Only
@@ -99,7 +99,7 @@ DatePicker({
   title: "Meeting Time",
   selection: meetingTime,
   displayedComponents: 'time'
-}).build()
+})
 ```
 
 ### Date and Time
@@ -110,7 +110,7 @@ DatePicker({
   title: "Appointment",
   selection: appointmentDateTime,
   displayedComponents: 'dateAndTime'
-}).build()
+})
 ```
 
 ## Date Constraints
@@ -129,7 +129,7 @@ DatePicker({
   minimumDate: minDate,
   maximumDate: maxDate,
   style: 'graphical'
-}).build()
+})
 ```
 
 ### Reactive Constraints
@@ -146,7 +146,7 @@ DatePicker({
   selection: selectedDate,
   minimumDate: minDate,
   maximumDate: maxDate
-}).build()
+})
 ```
 
 ## Event Handling
@@ -165,7 +165,7 @@ DatePicker({
     // Perform additional actions
     setSelectedDate(newDate)
   }
-}).build()
+})
 ```
 
 ## Localization
@@ -178,7 +178,7 @@ DatePicker({
   title: "Fecha de Nacimiento",
   selection: birthDate,
   locale: 'es-ES'
-}).build()
+})
 ```
 
 ### Reactive Locale
@@ -191,7 +191,7 @@ DatePicker({
   title: "International Date",
   selection: selectedDate,
   locale: locale
-}).build()
+})
 ```
 
 ## DatePickerUtils
@@ -206,7 +206,7 @@ import { DatePickerUtils } from '@tachui/forms'
 
 const [birthDate, setBirthDate] = createSignal(new Date('1990-01-01'))
 
-DatePicker(DatePickerUtils.birthday(birthDate)).build()
+DatePicker(DatePickerUtils.birthday(birthDate))
 ```
 
 ### Meeting Time Picker
@@ -215,7 +215,7 @@ For scheduling future appointments:
 ```typescript
 const [meetingTime, setMeetingTime] = createSignal(new Date())
 
-DatePicker(DatePickerUtils.meetingTime(meetingTime)).build()
+DatePicker(DatePickerUtils.meetingTime(meetingTime))
 ```
 
 ### Deadline Picker
@@ -226,7 +226,7 @@ const [deadline, setDeadline] = createSignal(new Date())
 const startDate = new Date()
 const endDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) // 60 days
 
-DatePicker(DatePickerUtils.deadline(deadline, startDate, endDate)).build()
+DatePicker(DatePickerUtils.deadline(deadline, startDate, endDate))
 ```
 
 ### Time Only Picker
@@ -235,7 +235,7 @@ For selecting time without date:
 ```typescript
 const [selectedTime, setSelectedTime] = createSignal(new Date())
 
-DatePicker(DatePickerUtils.timeOnly(selectedTime)).build()
+DatePicker(DatePickerUtils.timeOnly(selectedTime))
 ```
 
 ## Styling with Modifiers
@@ -253,7 +253,7 @@ DatePicker({
 .backgroundColor('#F8F9FA')
 .cornerRadius(12)
 .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
-.build()
+
 ```
 
 ## Accessibility
@@ -267,7 +267,7 @@ DatePicker({
   selection: appointmentDate,
   accessibilityLabel: "Select appointment date",
   accessibilityHint: "Choose when you'd like to schedule your appointment"
-}).build()
+})
 ```
 
 ### Keyboard Navigation
@@ -295,7 +295,7 @@ function EventForm() {
         title: "Event Name",
         text: eventName,
         placeholder: "Enter event name"
-      }).build(),
+      }),
 
       DatePicker({
         title: "Start Date",
@@ -303,7 +303,7 @@ function EventForm() {
         displayedComponents: isAllDay() ? 'date' : 'dateAndTime',
         style: 'compact',
         minimumDate: new Date()
-      }).build(),
+      }),
 
       DatePicker({
         title: "End Date", 
@@ -311,18 +311,18 @@ function EventForm() {
         displayedComponents: isAllDay() ? 'date' : 'dateAndTime',
         style: 'compact',
         minimumDate: startDate() // End date must be after start date
-      }).build(),
+      }),
 
       Toggle({
         title: "All Day Event",
         isOn: isAllDay
-      }).build()
+      })
     ]
   })
   .modifier
   .gap(16)
   .padding(20)
-  .build()
+  
 }
 ```
 
@@ -339,18 +339,18 @@ function ResponsiveDatePicker() {
       Toggle({
         title: "Compact Mode",
         isOn: isCompact
-      }).build(),
+      }),
 
       DatePicker({
         title: "Responsive Picker",
         selection: selectedDate,
         style: isCompact() ? 'compact' : 'graphical'
-      }).build()
+      })
     ]
   })
   .modifier
   .gap(16)
-  .build()
+  
 }
 ```
 
@@ -369,22 +369,22 @@ function DateRangePicker() {
         selection: startDate,
         style: 'graphical',
         maximumDate: endDate()
-      }).build(),
+      }),
 
-      Divider({ orientation: 'vertical', length: 200 }).build(),
+      Divider({ orientation: 'vertical', length: 200 }),
 
       DatePicker({
         title: "End Date",
         selection: endDate,
         style: 'graphical',
         minimumDate: startDate()
-      }).build()
+      })
     ]
   })
   .modifier
   .gap(20)
   .alignItems('flex-start')
-  .build()
+  
 }
 ```
 

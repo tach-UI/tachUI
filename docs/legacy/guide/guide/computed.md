@@ -210,7 +210,7 @@ Text("Reactive themed text")
   .foregroundColor(textColor)  // Computed signal works directly
   .backgroundColor(bgColor)
   .padding(16)
-  .build()
+  
 ```
 
 ### Complex Theme System
@@ -246,7 +246,7 @@ VStack({
       .foregroundColor(themeColors().text)
       .fontSize(24)
       .fontWeight('bold')
-      .build(),
+      ,
       
     Button("Toggle Theme", () => {
       setTheme(theme() === 'dark' ? 'light' : 'dark')
@@ -255,13 +255,13 @@ VStack({
       .backgroundColor(themeColors().accent)
       .foregroundColor('#ffffff')
       .border(1, themeColors().border)
-      .build()
+      
   ]
 })
   .modifier
   .backgroundColor(themeColors().background)
   .padding(16)
-  .build()
+  
 ```
 
 ## Performance Patterns
@@ -302,13 +302,13 @@ VStack({
       .modifier
       .fontSize(18)
       .fontWeight('bold')
-      .build(),
+      ,
       
     Text(() => `${completionStats().completed} of ${completionStats().total} completed`)
       .modifier
       .fontSize(14)
       .foregroundColor('#666666')
-      .build()
+      
   ]
 })
 ```
@@ -357,9 +357,9 @@ VStack({
     ]}),
     HStack({ children: [
       Text("Total:")
-        .fontWeight('bold').build(),
+        .fontWeight('bold'),
       Text(() => `$${total().toFixed(2)}`)
-        .fontWeight('bold').build()
+        .fontWeight('bold')
     ]})
   ],
   spacing: 8
@@ -391,7 +391,7 @@ VStack({
   children: [
     () => parsedData().error ? 
       Text(`Error: ${parsedData().error}`)
-        .foregroundColor('#dc2626').build() :
+        .foregroundColor('#dc2626') :
       List({
         data: parsedData().items,
         renderItem: (item, index) => Text(item.name)

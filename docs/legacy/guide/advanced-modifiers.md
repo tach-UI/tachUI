@@ -26,7 +26,7 @@ Text("Interactive Content")
   .scaleEffect(() => isHovered() ? 1.05 : 1.0)  // Reactive scaling
   .rotationEffect(45, 'topLeading')  // Rotation with anchor
   .clipped()                         // Clip overflow
-  .build()
+  
 ```
 
 ### Layout & Sizing Modifiers
@@ -46,7 +46,7 @@ Image('/hero-image.jpg')
   .aspectRatio(16/9, 'fit')     // 16:9 aspect ratio
   .frame({ maxWidth: 600 })     // Responsive width
   .fixedSize(false, true)       // Allow horizontal flex
-  .build()
+  
 ```
 
 ### Visual Effects Modifiers
@@ -70,7 +70,7 @@ Image('/photo.jpg')
   .brightness(() => isDarkMode() ? 0.8 : 1.0)
   .saturation(() => isDisabled() ? 0.3 : 1.0)
   .transition({ property: 'all', duration: 300 })
-  .build()
+  
 
 // Glassmorphism effect
 VStack({ children })
@@ -79,7 +79,7 @@ VStack({ children })
   .blur(10)
   .border(1, 'rgba(255, 255, 255, 0.2)')
   .cornerRadius(16)
-  .build()
+  
 ```
 
 ### Shape & Clipping Modifiers
@@ -98,11 +98,11 @@ VStack({ children })
   .modifier
   .clipShape('circle')           // Circular clipping
   .overlay(
-    Text("Badge").foregroundColor('white').build(),
+    Text("Badge").foregroundColor('white'),
     'topTrailing'
   )
   .shadow({ x: 0, y: 4, radius: 8, color: 'rgba(0,0,0,0.1)' })
-  .build()
+  
 ```
 
 ### Advanced Gesture & Interaction Modifiers
@@ -127,7 +127,7 @@ Button('Action Button', handleAction)
   .keyboardShortcut('Enter', [], () => activate())
   .focused(() => isFocused())
   .focusable(true, ['activate', 'edit'])
-  .build()
+  
 ```
 
 ## Reactive Modifier System
@@ -144,7 +144,7 @@ Button('Interactive', () => setIsActive(!isActive()))
   .backgroundColor(() => isActive() ? '#007AFF' : '#F0F0F0')
   .opacity(() => isActive() ? 1.0 : 0.7)
   .transition({ property: 'all', duration: 200 })
-  .build()
+  
 ```
 
 ## Modifier Composition & Performance
@@ -162,7 +162,7 @@ Text('Styled Text')
   .shadow({ x: 0, y: 2, radius: 4, color: 'rgba(0,0,0,0.1)' })
   .onTap(handleTap)              // Interaction
   .transition({ duration: 200 }) // Animation
-  .build()
+  
 ```
 
 ### Performance Optimization
@@ -209,7 +209,7 @@ For projects using basic modifiers, the advanced system is fully backward compat
 
 ```typescript
 // Basic modifiers (still supported)
-Text('Hello').padding(16).build()
+Text('Hello').padding(16)
 
 // Advanced modifiers (new capabilities)
 Text('Hello')
@@ -217,7 +217,7 @@ Text('Hello')
   .padding(16)
   .scaleEffect(() => isHovered() ? 1.05 : 1.0)
   .blur(() => isLoading() ? 2 : 0)
-  .build()
+  
 ```
 
 ## Related Documentation

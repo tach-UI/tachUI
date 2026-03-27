@@ -23,7 +23,7 @@ function BasicExample() {
     onChange: (newValue) => {
       console.log("New quantity:", newValue)
     }
-  }).build()
+  })
 }
 ```
 
@@ -69,9 +69,9 @@ function SignalBindingExample() {
         value: count, // Automatic binding
         minimumValue: 0,
         maximumValue: 100
-      }).build()
+      })
     ]
-  }).build()
+  })
 }
 ```
 
@@ -93,7 +93,7 @@ function CustomActionsExample() {
       setValue(prev => Math.max(prev - 10, 0))
       console.log("Custom decrement by 10")
     }
-  }).build()
+  })
 }
 ```
 
@@ -108,7 +108,7 @@ Stepper({
   title: "Quantity",
   value: quantity,
   step: 1 // Default
-}).build()
+})
 
 // Larger steps  
 Stepper({
@@ -117,7 +117,7 @@ Stepper({
   step: 10,
   minimumValue: 0,
   maximumValue: 100
-}).build()
+})
 
 // Decimal steps
 Stepper({
@@ -126,7 +126,7 @@ Stepper({
   step: 0.5,
   minimumValue: 0,
   maximumValue: 5
-}).build()
+})
 ```
 
 ### Dynamic Steps
@@ -149,7 +149,7 @@ function DynamicStepExample() {
     step: dynamicStep(),
     minimumValue: 0,
     valueFormatter: (val) => `$${val.toFixed(2)}`
-  }).build()
+  })
 }
 ```
 
@@ -162,7 +162,7 @@ Numbers are automatically formatted with appropriate decimal places:
 Stepper({
   title: "Default Formatting",
   value: value // Displays integers as "5", decimals as "3.14"
-}).build()
+})
 ```
 
 ### Custom Formatters
@@ -176,7 +176,7 @@ Stepper({
   minimumValue: 0,
   maximumValue: 100,
   valueFormatter: (val) => `${val}%`
-}).build()
+})
 
 // Currency formatter
 Stepper({
@@ -187,7 +187,7 @@ Stepper({
     style: 'currency',
     currency: 'USD'
   }).format(val)
-}).build()
+})
 
 // Rating formatter
 Stepper({
@@ -197,7 +197,7 @@ Stepper({
   minimumValue: 0,
   maximumValue: 5,
   valueFormatter: (val) => `${val}/5 ⭐`
-}).build()
+})
 ```
 
 ## Bounds and Validation
@@ -218,7 +218,7 @@ function BoundsExample() {
       console.log(`Age updated to: ${newAge}`)
       // Value is automatically constrained to [0, 120]
     }
-  }).build()
+  })
 }
 ```
 
@@ -238,13 +238,13 @@ function BoundaryStatesExample() {
         minimumValue: 0,
         maximumValue: 100,
         step: 10
-      }).build(),
+      }),
       
       // Buttons will automatically disable at bounds:
       // - Decrement disabled when volume = 0
       // - Increment disabled when volume = 100
     ]
-  }).build()
+  })
 }
 ```
 
@@ -266,7 +266,7 @@ function QuantityExample() {
       console.log(`Quantity changed to: ${newQuantity}`)
       setQuantity(newQuantity)
     })
-  }).build()
+  })
   
   // Pre-configured: range 1-99, step 1, "Quantity" title
 }
@@ -283,7 +283,7 @@ function AgeExample() {
     ...StepperUtils.age(age, (newAge) => {
       updateProfile({ age: newAge })
     })
-  }).build()
+  })
   
   // Pre-configured: range 0-120, step 1, "Age" title
 }
@@ -300,7 +300,7 @@ function PercentageExample() {
     ...StepperUtils.percentage(completion, (percent) => {
       updateProgress(percent)
     })
-  }).build()
+  })
   
   // Pre-configured: range 0-100%, step 1, "75%" formatting
 }
@@ -317,7 +317,7 @@ function RatingExample() {
     ...StepperUtils.rating(rating, 5, 0.5, (newRating) => {
       submitRating(newRating)
     })
-  }).build()
+  })
   
   // Pre-configured: range 0-5, step 0.5, "4.0/5" formatting
 }
@@ -334,7 +334,7 @@ function PriceExample() {
     ...StepperUtils.price(price, '$', 0.01, 999.99, (newPrice) => {
       updateProductPrice(newPrice)
     })
-  }).build()
+  })
   
   // Pre-configured: range $0.00-$999.99, step $0.01, "$19.99" formatting
 }
@@ -351,7 +351,7 @@ function FontSizeExample() {
     ...StepperUtils.fontSize(fontSize, (newSize) => {
       updateTextSize(newSize)
     })
-  }).build()
+  })
   
   // Pre-configured: range 8-72pt, step 1, "16pt" formatting
 }
@@ -377,7 +377,7 @@ function LongPressExample() {
         console.log("Ended long press")
       }
     }
-  }).build()
+  })
   
   // Users can:
   // - Tap for single increment/decrement
@@ -396,7 +396,7 @@ function KeyboardExample() {
     title: "Keyboard accessible",
     value,
     accessibilityHint: "Use Tab to navigate, Enter or Space to activate buttons"
-  }).build()
+  })
   
   // Keyboard support:
   // - Tab/Shift+Tab: Navigate between buttons
@@ -421,24 +421,24 @@ function ShoppingCartItem({ product }) {
 
   return HStack({
     children: [
-      Image({ src: product.image }).build(),
+      Image({ src: product.image }),
       
       VStack({
         children: [
           Text(product.name),
           Text(`$${product.price.toFixed(2)}`),
         ]
-      }).build(),
+      }),
       
-      Spacer().build(),
+      Spacer(),
       
       Stepper({
         ...StepperUtils.quantity(quantity, updateCartQuantity)
-      }).build(),
+      }),
       
       Text(`Total: $${(product.price * quantity()).toFixed(2)}`)
     ]
-  }).build()
+  })
 }
 ```
 
@@ -457,11 +457,11 @@ function SettingsPanel() {
         .modifier
         .fontSize(20)
         .fontWeight('bold')
-        .build(),
+        ,
       
       Stepper({
         ...StepperUtils.fontSize(fontSize, setFontSize)
-      }).build(),
+      }),
       
       Stepper({
         title: "Volume",
@@ -471,7 +471,7 @@ function SettingsPanel() {
         step: 5,
         valueFormatter: (val) => `${val}%`,
         onChange: setVolume
-      }).build(),
+      }),
       
       Stepper({
         title: "Brightness", 
@@ -481,13 +481,13 @@ function SettingsPanel() {
         step: 10,
         valueFormatter: (val) => `${val}%`,
         onChange: setBrightness
-      }).build()
+      })
     ]
   })
   .modifier
   .gap(16)
   .padding(20)
-  .build()
+  
 }
 ```
 
@@ -504,7 +504,7 @@ Stepper({
   accessibilityHint: "Use increment and decrement buttons to adjust rating",
   incrementAccessibilityLabel: "Increase rating",
   decrementAccessibilityLabel: "Decrease rating"
-}).build()
+})
 ```
 
 ### Screen Reader Support
@@ -535,7 +535,7 @@ Stepper({
 .border('2px solid #007AFF')
 .cornerRadius(12)
 .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
-.build()
+
 ```
 
 ## Custom Theming
@@ -701,7 +701,7 @@ function RobustStepper() {
         return "0" // Fallback for invalid values
       }
     }
-  }).build()
+  })
 }
 ```
 

@@ -262,7 +262,7 @@ const complexNavigationLink = NavigationLinkBuilder()
   .badge('New')
   .accessibilityLabel('Open advanced settings')
   .onTap(() => analytics.track('advanced_settings'))
-  .build()
+  
 ```
 
 ## Testing NavigationLink

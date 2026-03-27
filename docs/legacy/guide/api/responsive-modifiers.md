@@ -74,7 +74,7 @@ Text("Responsive text")
     color: { base: '#333', md: '#000' },
     textAlign: 'center'  // Applied to all breakpoints
   })
-  .build()
+  
 ```
 
 **Parameters:**
@@ -109,7 +109,7 @@ Text("Full responsive example")
     alignItems: { base: 'stretch', md: 'center' },
     gap: { base: 8, md: 16 }
   })
-  .build()
+  
 ```
 
 ### .mediaQuery()
@@ -126,7 +126,7 @@ Text("Media query example")
   .mediaQuery('(orientation: landscape)', { fontSize: 18 })
   .mediaQuery('(prefers-color-scheme: dark)', { color: '#ffffff' })
   .mediaQuery('(min-width: 900px)', { fontSize: 20 })
-  .build()
+  
 ```
 
 **Parameters:**
@@ -186,7 +186,7 @@ Text("Shorthand responsive")
   .lg.fontWeight('bold') // lg and above
   .xl.fontSize(26)       // xl and above
   ['2xl'].fontSize(30)   // 2xl and above
-  .build()
+  
 ```
 
 **Chaining with other modifiers:**
@@ -201,7 +201,7 @@ Text("Mixed responsive and static")
   .lg.fontSize(22)         // Override fontSize at lg+
   .lg.fontWeight('bold')   // Add fontWeight at lg+
   .backgroundColor('#f5f5f5') // Static - applies to all breakpoints
-  .build()
+  
 ```
 
 ## Responsive Property Modifiers
@@ -341,7 +341,7 @@ const MyComponent = () => {
   return Text(`Current: ${currentBreakpoint}`)
     .modifier
     .fontSize(isMobile ? 16 : 20)
-    .build()
+    
 }
 ```
 
@@ -362,7 +362,7 @@ const MyComponent = () => {
     .modifier
     .color(isDarkMode() ? '#ffffff' : '#000000')
     .fontSize(isLandscape() ? 18 : 16)
-    .build()
+    
 }
 ```
 
@@ -391,7 +391,7 @@ const MyComponent = () => {
     .modifier
     .fontSize(fontSize())
     .padding(padding())
-    .build()
+    
 }
 ```
 
@@ -535,7 +535,7 @@ const MyComponent = () => {
   console.log(info.activeBreakpoint) // 'md'
   console.log(info.isResponsive)     // true
   
-  return Text("Inspected value").build()
+  return Text("Inspected value")
 }
 ```
 
@@ -574,7 +574,7 @@ items.map(item => useResponsiveValue({ base: item.size }))
 
 // ✅ Better: Pre-compute responsive values
 const responsiveSize = useResponsiveValue({ base: 16, md: 20 })
-items.map(item => Text(item.text).fontSize(responsiveSize()).build())
+items.map(item => Text(item.text).fontSize(responsiveSize()))
 ```
 
 ## Reactive Responsive Values
@@ -618,7 +618,7 @@ const ReactiveThemeComponent = () => {
         padding: 32
       }
     })
-    .build()
+    
 }
 ```
 
@@ -658,7 +658,7 @@ const DynamicResponsiveComponent = () => {
       )
     })
     .onClick(() => setIsActive(!isActive()))
-    .build()
+    
 }
 ```
 
@@ -698,7 +698,7 @@ const MixedReactiveComponent = () => {
         // padding and color inherited from md breakpoint
       }
     })
-    .build()
+    
 }
 ```
 
@@ -734,7 +734,7 @@ const ReactiveMediaQueryComponent = () => {
     .mediaQuery('(prefers-color-scheme: dark)', {
       backgroundColor: '#1a1a1a'    // Static dark mode background
     })
-    .build()
+    
 }
 ```
 
@@ -768,7 +768,7 @@ const OptimizedReactiveComponent = () => {
   return Text("Optimized Reactive Text")
     .modifier
     .responsive(responsiveConfig)    // Single reactive responsive config
-    .build()
+    
 }
 
 // ❌ Avoid: Creating reactive values in render
@@ -783,7 +783,7 @@ const UnoptimizedComponent = () => {
       // Bad: Creates new asset on every render  
       color: ColorAsset.init({ light: '#000', dark: '#fff' })
     })
-    .build()
+    
 }
 ```
 
@@ -806,7 +806,7 @@ const ResponsiveCard = ({ title, content, image }: CardProps) => {
         lg: { width: 400, height: 250 }
       })
       .borderRadius({ base: 8, md: 12 })
-      .build(),
+      ,
     
     // Title with responsive typography
     Text(title)
@@ -828,7 +828,7 @@ const ResponsiveCard = ({ title, content, image }: CardProps) => {
           marginBottom: 16
         }
       })
-      .build(),
+      ,
     
     // Content with responsive spacing
     Text(content)
@@ -849,7 +849,7 @@ const ResponsiveCard = ({ title, content, image }: CardProps) => {
           lineHeight: 1.6
         }
       })
-      .build()
+      
   ])
   .modifier
   .responsive({
@@ -876,7 +876,7 @@ const ResponsiveCard = ({ title, content, image }: CardProps) => {
     backgroundColor: '#1a1a1a',
     color: '#ffffff'
   })
-  .build()
+  
 }
 ```
 

@@ -30,7 +30,7 @@ Text("Welcome to TachUI")
     md: { fontSize: 32, padding: 24 },      // Tablet and up
     lg: { fontSize: 40, padding: 32 }       // Desktop and up
   })
-  .build()
+  
 ```
 
 ### Breakpoint Shorthand
@@ -44,7 +44,7 @@ Text("Responsive Title")
   .md.fontSize(32)     // Medium screens and up
   .lg.fontSize(40)     // Large screens and up
   .textAlign('center') // Applied to all breakpoints
-  .build()
+  
 ```
 
 ### Custom Media Queries
@@ -57,7 +57,7 @@ Text("Landscape Text")
   .fontSize(16)
   .mediaQuery('(orientation: landscape)', { fontSize: 18 })
   .mediaQuery('(prefers-color-scheme: dark)', { color: '#ffffff' })
-  .build()
+  
 ```
 
 ## Breakpoint System
@@ -85,7 +85,7 @@ Text("Mobile-First Text")
     md: { fontSize: 20 },                   // Overrides fontSize on md+
     lg: { fontSize: 24, fontWeight: 'bold' } // Adds fontWeight on lg+
   })
-  .build()
+  
 ```
 
 ## Responsive Layout Examples
@@ -108,7 +108,7 @@ const ResponsiveGrid = () => {
           md: { width: 'calc(50% - 1rem)' }, // 2 columns on tablet
           lg: { width: 'calc(33.333% - 1rem)' } // 3 columns on desktop
         })
-        .build()
+        
     )
   ])
   .modifier
@@ -116,7 +116,7 @@ const ResponsiveGrid = () => {
     base: { flexDirection: 'column', gap: '1rem' },
     md: { flexDirection: 'row', flexWrap: 'wrap' }
   })
-  .build()
+  
 }
 ```
 
@@ -129,20 +129,20 @@ import { HStack, VStack, Button } from '@tachui/core'
 
 const ResponsiveNav = () => {
   return HStack([
-    Text("Logo").fontSize(24).fontWeight('bold').build(),
+    Text("Logo").fontSize(24).fontWeight('bold'),
     
     // Desktop navigation - horizontal
     HStack([
-      Button("Home").build(),
-      Button("About").build(),
-      Button("Contact").build()
+      Button("Home"),
+      Button("About"),
+      Button("Contact")
     ])
     .modifier
     .responsive({
       base: { display: 'none' },  // Hidden on mobile
       lg: { display: 'flex' }     // Visible on desktop
     })
-    .build(),
+    ,
     
     // Mobile menu button
     Button("☰")
@@ -151,13 +151,13 @@ const ResponsiveNav = () => {
         base: { display: 'block' }, // Visible on mobile
         lg: { display: 'none' }     // Hidden on desktop
       })
-      .build()
+      
   ])
   .modifier
   .justifyContent('space-between')
   .alignItems('center')
   .padding({ base: 16, md: 24 })
-  .build()
+  
 }
 ```
 
@@ -171,7 +171,7 @@ Text("Orientation-aware")
   .fontSize(16)
   .mediaQuery('(orientation: portrait)', { fontSize: 18 })
   .mediaQuery('(orientation: landscape)', { fontSize: 14 })
-  .build()
+  
 ```
 
 ### Dark Mode Support
@@ -184,7 +184,7 @@ Text("Theme-aware text")
     color: '#ffffff',
     backgroundColor: '#1a1a1a'
   })
-  .build()
+  
 ```
 
 ### Accessibility Preferences
@@ -200,7 +200,7 @@ Button("Accessible Button")
     borderWidth: 2,
     borderColor: '#000000'
   })
-  .build()
+  
 ```
 
 ## Reactive Responsive Design
@@ -254,7 +254,7 @@ const ThemeAwareCard = () => {
         borderLeft: `4px solid ${brandColor.resolve()}` // Theme-aware border
       }
     })
-    .build()
+    
 }
 ```
 
@@ -305,7 +305,7 @@ const DynamicResponsiveComponent = () => {
       }
     })
     .onClick(() => setIsExpanded(!isExpanded()))
-    .build()
+    
 }
 ```
 
@@ -340,7 +340,7 @@ const MixedReactiveComponent = () => {
         // color and backgroundColor inherited from previous breakpoints
       }
     })
-    .build()
+    
 }
 ```
 
@@ -379,7 +379,7 @@ const ReactiveMediaQueryComponent = () => {
       filter: dynamicBlur,         // Reactive - dynamic blur effect
       transition: 'filter 0.3s ease'
     })
-    .build()
+    
 }
 ```
 
@@ -428,7 +428,7 @@ const RealTimeComponent = () => {
         padding: 20
       }
     })
-    .build()
+    
 }
 ```
 
@@ -466,7 +466,7 @@ const OptimizedComponent = () => {
       fontSize: responsiveSize,      // Reactive responsive object
       color: stableColor            // Stable reactive asset
     })
-    .build()
+    
 }
 ```
 
@@ -493,7 +493,7 @@ const ResponsiveComponent = () => {
   return Text(`Current breakpoint: ${currentBp}`)
     .modifier
     .fontSize(isMobile ? 16 : 20)
-    .build()
+    
 }
 ```
 
@@ -510,7 +510,7 @@ const DarkModeComponent = () => {
     .modifier
     .color(isDarkMode() ? '#ffffff' : '#000000')
     .fontSize(isLandscape() ? 18 : 16)
-    .build()
+    
 }
 ```
 
@@ -536,7 +536,7 @@ const ResponsiveValueComponent = () => {
     .modifier
     .fontSize(fontSize())
     .padding(padding())
-    .build()
+    
 }
 ```
 
@@ -578,7 +578,7 @@ Text("Content")
     md: { fontSize: 18, padding: 16 },      // Enhance for tablet
     lg: { fontSize: 20, padding: 20 }       // Enhance for desktop
   })
-  .build()
+  
 
 // ❌ Avoid: Desktop-first approach
 Text("Content")
@@ -588,7 +588,7 @@ Text("Content")
     md: { fontSize: 18, padding: 16 },      // Scale down
     base: { fontSize: 16, padding: 12 }     // Scale down more
   })
-  .build()
+  
 ```
 
 ### 2. Consistent Breakpoint Usage
@@ -624,7 +624,7 @@ Text("Main Heading")
     md: { fontSize: 32, lineHeight: 1.1 },    // Larger but proportional
     lg: { fontSize: 40, lineHeight: 1.0 }     // Desktop-appropriate size
   })
-  .build()
+  
 ```
 
 ### 4. Test Across Devices

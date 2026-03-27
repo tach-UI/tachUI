@@ -40,7 +40,7 @@ The most common pattern is reactive text that updates when data changes:
 const counterDisplay = Text(() => `Count: ${count()}`)
   .modifier
   .fontSize(18)
-  .build()
+  
 
 // ❌ Wrong: Snapshot value, won't update
 const counterDisplay = Text(`Count: ${count()}`)
@@ -65,7 +65,7 @@ const userProfile = Text(() => {
   .modifier
   .fontSize(16)
   .foregroundColor(() => loading() ? '#999' : '#000')
-  .build()
+  
 ```
 
 ### Reactive Styling
@@ -79,7 +79,7 @@ const button = Button('Toggle', () => setIsActive(!isActive()))
   .modifier
   .backgroundColor(() => isActive() ? '#007AFF' : '#ccc')
   .foregroundColor(() => isActive() ? 'white' : 'black')
-  .build()
+  
 ```
 
 ## Event Handling Patterns
@@ -390,7 +390,7 @@ function UserForm() {
       Button('Submit', handleSubmit)
         .modifier
         .backgroundColor('#007AFF')
-        .build()
+        
     ]
   })
 }

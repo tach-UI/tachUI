@@ -274,7 +274,7 @@ const complexTabView = createSimpleTabView()
   })
   .setSelection(selectedTab)
   .onSelectionChange(handleTabChange)
-  .build()
+  
 ```
 
 ## Performance Optimization

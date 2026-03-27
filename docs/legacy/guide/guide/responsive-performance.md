@@ -202,7 +202,7 @@ const OptimizedComponent = () => {
   return Text("Optimized component")
     .modifier
     .fontSize(isMobile() ? 16 : 20)
-    .build()
+    
 }
 ```
 
@@ -227,7 +227,7 @@ const OptimizedComponent = () => {
   return Text("Lazy loaded content")
     .modifier
     .fontSize(value)
-    .build()
+    
 }
 ```
 
@@ -253,7 +253,7 @@ const MemoryOptimizedComponent = () => {
   return Text("Memory optimized")
     .modifier
     .fontSize(bp.current() === 'base' ? 16 : 20)
-    .build()
+    
 }
 
 // Monitor memory usage
@@ -338,9 +338,9 @@ const BadComponent = ({ items }: { items: Item[] }) => {
         .modifier
         // Bad: Creates new responsive value for each item
         .fontSize({ base: 14, md: 16, lg: 18 })
-        .build()
+        
     )
-  ).build()
+  )
 }
 
 // ✅ Good: Reuse responsive values
@@ -353,9 +353,9 @@ const GoodComponent = ({ items }: { items: Item[] }) => {
       Text(item.name)
         .modifier
         .fontSize(responsiveFontSize) // Reuse the same object
-        .build()
+        
     )
-  ).build()
+  )
 }
 ```
 
@@ -372,7 +372,7 @@ const OptimizedComponent = () => {
   return Text("Optimized")
     .modifier
     .fontSize(fontSize)
-    .build()
+    
 }
 
 // ❌ Less optimal: Full responsive object for simple case
@@ -380,7 +380,7 @@ const LessOptimalComponent = () => {
   return Text("Less optimal")
     .modifier
     .fontSize({ base: 16, md: 20 })
-    .build()
+    
 }
 ```
 
@@ -398,7 +398,7 @@ const BatchedComponent = () => {
       padding: { base: 8, md: 12 },
       color: { base: '#333', md: '#000' }
     })
-    .build()
+    
 }
 
 // ❌ Less optimal: Individual responsive modifiers
@@ -408,7 +408,7 @@ const IndividualComponent = () => {
     .fontSize({ base: 16, md: 20 })
     .padding({ base: 8, md: 12 })
     .color({ base: '#333', md: '#000' })
-    .build()
+    
 }
 ```
 
@@ -424,14 +424,14 @@ Text("Optimized media query")
   .modifier
   .mediaQuery(MediaQueries.darkMode, { color: '#ffffff' })
   .mediaQuery(MediaQueries.reducedMotion, { transition: 'none' })
-  .build()
+  
 
 // ❌ Less optimal: Custom media queries (not cached)
 Text("Custom media query")
   .modifier
   .mediaQuery('(prefers-color-scheme: dark)', { color: '#ffffff' })
   .mediaQuery('(prefers-reduced-motion: reduce)', { transition: 'none' })
-  .build()
+  
 ```
 
 ### 5. Profile Responsive Performance

@@ -19,7 +19,7 @@ const title = Text("Welcome to TachUI")
   .fontWeight('bold')
   .foregroundColor('#1a1a1a')
   .textAlign('center')
-  .build()
+  
 
 // Dynamic text with signals
 const [count, setCount] = createSignal(0)
@@ -27,7 +27,7 @@ const counter = Text(() => `Count: ${count()}`)
   .fontSize(18)
   .foregroundColor('#007AFF')
   .fontWeight('500')
-  .build()
+  
 
 // Multi-line text with styling
 const description = Text("This is a longer description that demonstrates text wrapping and styling capabilities.")
@@ -36,7 +36,7 @@ const description = Text("This is a longer description that demonstrates text wr
   .foregroundColor('#666')
   .maxWidth(400)
   .textAlign('left')
-  .build()
+  
 ```
 
 #### Typography Presets
@@ -45,16 +45,16 @@ const description = Text("This is a longer description that demonstrates text wr
 // Using typography presets
 const headline = Text("Headline Text")
   .typography('headline')
-  .build()
+  
 
 const body = Text("Body text content")
   .typography('body')
-  .build()
+  
 
 const caption = Text("Caption text")
   .typography('caption')
   .foregroundColor('#888')
-  .build()
+  
 ```
 
 ### Enhanced Button Component Examples
@@ -73,7 +73,7 @@ const primaryButton = Button("Primary Action")
   .cornerRadius(8)
   .padding({ horizontal: 20, vertical: 12 })
   .onTap(() => console.log('Primary action!'))
-  .build()
+  
 
 // Secondary button
 const secondaryButton = Button("Secondary")
@@ -83,7 +83,7 @@ const secondaryButton = Button("Secondary")
   .foregroundColor('#007AFF')
   .cornerRadius(8)
   .padding({ horizontal: 20, vertical: 12 })
-  .build()
+  
 
 // Destructive button
 const deleteButton = Button("Delete")
@@ -93,7 +93,7 @@ const deleteButton = Button("Delete")
   .foregroundColor('#ffffff')
   .cornerRadius(6)
   .padding({ horizontal: 16, vertical: 10 })
-  .build()
+  
 ```
 
 #### Interactive Button States
@@ -116,7 +116,7 @@ const submitButton = Button(() => isLoading() ? "Loading..." : "Submit")
       setIsLoading(false)
     }
   })
-  .build()
+  
 
 // Toggle button
 const [isToggled, setIsToggled] = createSignal(false)
@@ -128,7 +128,7 @@ const toggleButton = Button(() => isToggled() ? "ON" : "OFF")
   .cornerRadius(20)
   .padding({ horizontal: 16, vertical: 8 })
   .onTap(() => setIsToggled(!isToggled()))
-  .build()
+  
 ```
 
 ### Enhanced Image Component Examples
@@ -144,7 +144,7 @@ const profilePicture = Image('user-avatar.jpg')
   .height(120)
   .cornerRadius(60)
   .border(2, '#007AFF')
-  .build()
+  
 
 // Dynamic image source
 const [selectedImage, setSelectedImage] = createSignal('default.jpg')
@@ -153,7 +153,7 @@ const dynamicImage = Image(() => selectedImage())
   .height(300)
   .cornerRadius(12)
   .transition('opacity', 300)
-  .build()
+  
 
 // Responsive image that adapts to container
 const responsiveImage = Image('hero-banner.jpg')
@@ -162,7 +162,7 @@ const responsiveImage = Image('hero-banner.jpg')
   .maxWidth(1200)
   .aspectRatio(16/9)
   .contentMode('cover')
-  .build()
+  
 ```
 
 #### Loading States and Progressive Loading
@@ -184,7 +184,7 @@ const loadingAwareImage = Image('large-photo.jpg')
     setHasError(true)
   })
   .opacity(() => isLoading() ? 0.7 : 1.0)
-  .build()
+  
 
 // Progressive loading for better UX
 const progressiveImage = ImageUtils.progressive(
@@ -195,7 +195,7 @@ const progressiveImage = ImageUtils.progressive(
 .height(600)
 .cornerRadius(16)
 .shadow({ x: 0, y: 8, radius: 24, color: 'rgba(0,0,0,0.15)' })
-.build()
+
 
 // Responsive image with multiple sources
 const responsiveHero = ImageUtils.responsive([
@@ -206,7 +206,7 @@ const responsiveHero = ImageUtils.responsive([
 .width('100%')
 .height(400)
 .contentMode('cover')
-.build()
+
 ```
 
 #### Content Modes and Aspect Ratios
@@ -219,28 +219,28 @@ const photoGallery = [
     .contentMode(ImageContentModes.fit)
     .frame(300, 200)
     .border(1, '#e0e0e0')
-    .build(),
+    ,
   
   // Aspect fill - fills container, may crop image
   Image('portrait.jpg')
     .contentMode(ImageContentModes.fill)
     .frame(300, 200)
     .cornerRadius(8)
-    .build(),
+    ,
   
   // Center - shows image at original size, centered
   Image('icon.png')
     .contentMode(ImageContentModes.center)
     .frame(100, 100)
     .backgroundColor('#f5f5f5')
-    .build(),
+    ,
   
   // Scale down - shrinks if needed, never enlarges
   Image('small-logo.png')
     .contentMode(ImageContentModes.scaleDown)
     .frame(200, 200)
     .backgroundColor('#ffffff')
-    .build()
+    
 ]
 
 // Aspect ratio controlled images
@@ -249,14 +249,14 @@ const instagramPost = Image('square-photo.jpg')
   .width('100%')
   .maxWidth(400)
   .cornerRadius(12)
-  .build()
+  
 
 const cinematicImage = Image('movie-still.jpg')
   .aspectRatio(21/9) // Ultra-wide cinematic
   .width('100%')
   .maxWidth(800)
   .cornerRadius(8)
-  .build()
+  
 ```
 
 #### Visual Effects and Filters
@@ -273,7 +273,7 @@ const interactiveImage = Image('hover-effect.jpg')
   .transition('all', 300, 'ease-out')
   .onHover(setIsHovered)
   .cornerRadius(12)
-  .build()
+  
 
 // Filter effects for mood/style
 const vintagePhoto = Image('old-photo.jpg')
@@ -282,7 +282,7 @@ const vintagePhoto = Image('old-photo.jpg')
   .border(8, '#8B4513')
   .cornerRadius(4)
   .shadow({ x: 0, y: 4, radius: 12, color: 'rgba(0,0,0,0.3)' })
-  .build()
+  
 
 const backgroundBlur = Image('background.jpg')
   .blur(8)
@@ -291,7 +291,7 @@ const backgroundBlur = Image('background.jpg')
   .width('100%')
   .height('100%')
   .zIndex(-1)
-  .build()
+  
 
 // Dynamic filter controls
 const [saturation, setSaturation] = createSignal(1.0)
@@ -299,7 +299,7 @@ const [brightness, setBrightness] = createSignal(1.0)
 const adjustableImage = Image('adjustable.jpg')
   .filter(() => `saturate(${saturation()}) brightness(${brightness()})`)
   .transition('filter', 200)
-  .build()
+  
 ```
 
 #### Performance Optimized Images
@@ -311,7 +311,7 @@ const lazyImage = Image('below-fold.jpg')
   .placeholder('lazy-placeholder.svg')
   .width(400)
   .height(300)
-  .build()
+  
 
 // High priority hero image
 const heroImage = Image('hero.jpg')
@@ -321,7 +321,7 @@ const heroImage = Image('hero.jpg')
   .width('100%')
   .height(500)
   .contentMode('cover')
-  .build()
+  
 
 // Cross-origin images with proper handling
 const externalImage = Image('https://external-cdn.com/image.jpg')
@@ -330,7 +330,7 @@ const externalImage = Image('https://external-cdn.com/image.jpg')
   .height(200)
   .placeholder('external-placeholder.jpg')
   .errorPlaceholder('external-error.svg')
-  .build()
+  
 ```
 
 #### Image Gallery Example
@@ -343,7 +343,7 @@ const imageGallery = VStack({
       .fontSize(24)
       .fontWeight('bold')
       .margin({ bottom: 20 })
-      .build(),
+      ,
     
     // Grid of images
     HStack({
@@ -363,7 +363,7 @@ const imageGallery = VStack({
             ? { x: 0, y: 8, radius: 16, color: 'rgba(0,122,255,0.3)' }
             : { x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' }
           )
-          .build()
+          
       ),
       spacing: 16,
       wrap: true
@@ -372,7 +372,7 @@ const imageGallery = VStack({
   spacing: 0
 })
 .padding(20)
-.build()
+
 ```
 
 ### Enhanced TextField Component Examples
@@ -391,7 +391,7 @@ const nameField = TextField(() => name())
   .border(1, '#ddd')
   .cornerRadius(8)
   .fontSize(16)
-  .build()
+  
 
 // Email input with validation
 const [email, setEmail] = createSignal("")
@@ -405,7 +405,7 @@ const emailField = TextField(() => email())
   .border(1, '#ddd')
   .cornerRadius(8)
   .focusBorderColor('#007AFF')
-  .build()
+  
 ```
 
 #### Advanced Input Patterns
@@ -433,7 +433,7 @@ const passwordField = TextField(() => password())
   .padding(12)
   .border(1, '#ddd')
   .cornerRadius(8)
-  .build()
+  
 
 // Multiline text area
 const [comment, setComment] = createSignal("")
@@ -447,7 +447,7 @@ const commentField = TextField(() => comment())
   .border(1, '#ddd')
   .cornerRadius(8)
   .resize('vertical')
-  .build()
+  
 
 // Number input with formatting
 const [price, setPrice] = createSignal("")
@@ -467,7 +467,7 @@ const priceField = TextField(() => price())
   .border(1, '#ddd')
   .cornerRadius(8)
   .textAlign('right')
-  .build()
+  
 ```
 
 ## Layout Components Examples
@@ -483,18 +483,18 @@ const profileCard = VStack({
     Text("John Doe")
       .fontSize(20)
       .fontWeight('bold')
-      .build(),
+      ,
     
     Text("Software Developer")
       .fontSize(16)
       .foregroundColor('#666')
-      .build(),
+      ,
     
     Button("Contact")
       .variant('outlined')
       .cornerRadius(6)
       .padding({ horizontal: 16, vertical: 8 })
-      .build()
+      
   ],
   spacing: 12,
   alignment: 'center'
@@ -503,7 +503,7 @@ const profileCard = VStack({
 .backgroundColor('#ffffff')
 .cornerRadius(12)
 .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
-.build()
+
 ```
 
 ### HStack (Horizontal Stack)
@@ -515,17 +515,17 @@ const navigationBar = HStack({
     Button("← Back")
       .variant('plain')
       .foregroundColor('#007AFF')
-      .build(),
+      ,
     
     Text("Profile")
       .fontSize(18)
       .fontWeight('600')
-      .build(),
+      ,
     
     Button("Edit")
       .variant('plain')
       .foregroundColor('#007AFF')
-      .build()
+      
   ],
   spacing: 16,
   alignment: 'center',
@@ -534,7 +534,7 @@ const navigationBar = HStack({
 .padding({ horizontal: 16, vertical: 12 })
 .backgroundColor('#f9f9f9')
 .borderBottom(1, '#e0e0e0')
-.build()
+
 ```
 
 ### ZStack (Layered Stack)
@@ -551,14 +551,14 @@ const heroSection = ZStack({
       .backgroundPosition('center')
       .width('100%')
       .height(300)
-      .build(),
+      ,
     
     // Overlay gradient
     HTML.div()
       .width('100%')
       .height(300)
       .background('linear-gradient(45deg, rgba(0,122,255,0.8), rgba(0,122,255,0.4))')
-      .build(),
+      ,
     
     // Content
     VStack({
@@ -568,14 +568,14 @@ const heroSection = ZStack({
           .fontWeight('bold')
           .foregroundColor('#ffffff')
           .textAlign('center')
-          .build(),
+          ,
         
         Text("SwiftUI-inspired web development")
           .fontSize(18)
           .foregroundColor('#ffffff')
           .textAlign('center')
           .opacity(0.9)
-          .build(),
+          ,
         
         Button("Get Started")
           .variant('filled')
@@ -584,7 +584,7 @@ const heroSection = ZStack({
           .cornerRadius(8)
           .padding({ horizontal: 24, vertical: 12 })
           .fontWeight('600')
-          .build()
+          
       ],
       spacing: 16,
       alignment: 'center'
@@ -595,7 +595,7 @@ const heroSection = ZStack({
 .width('100%')
 .cornerRadius(12)
 .overflow('hidden')
-.build()
+
 ```
 
 ## ScrollView and List Components
@@ -610,32 +610,32 @@ import { ScrollView, ScrollViewUtils, createSignal } from '@tachui/core'
 // Basic vertical scrolling
 const basicScroll = ScrollView({
   children: [
-    Text("Item 1").padding(16).build(),
-    Text("Item 2").padding(16).build(),
-    Text("Item 3").padding(16).build(),
-    Text("Item 4").padding(16).build(),
-    Text("Item 5").padding(16).build()
+    Text("Item 1").padding(16),
+    Text("Item 2").padding(16),
+    Text("Item 3").padding(16),
+    Text("Item 4").padding(16),
+    Text("Item 5").padding(16)
   ]
 })
 .frame(undefined, 400)
 .backgroundColor('#f9f9f9')
 .cornerRadius(8)
 .border(1, '#e0e0e0')
-.build()
+
 
 // Horizontal scrolling with spacing
 const horizontalScroll = ScrollView({
   children: [
-    Image('photo1.jpg').frame(200, 150).cornerRadius(8).build(),
-    Image('photo2.jpg').frame(200, 150).cornerRadius(8).build(),
-    Image('photo3.jpg').frame(200, 150).cornerRadius(8).build(),
-    Image('photo4.jpg').frame(200, 150).cornerRadius(8).build()
+    Image('photo1.jpg').frame(200, 150).cornerRadius(8),
+    Image('photo2.jpg').frame(200, 150).cornerRadius(8),
+    Image('photo3.jpg').frame(200, 150).cornerRadius(8),
+    Image('photo4.jpg').frame(200, 150).cornerRadius(8)
   ],
   direction: 'horizontal'
 })
 .frame(undefined, 170)
 .padding(16)
-.build()
+
 
 // Both directions scrolling for large content
 const bidirectionalScroll = ScrollView({
@@ -647,13 +647,13 @@ const bidirectionalScroll = ScrollView({
       .border(2, '#007AFF')
       .cornerRadius(12)
       .padding(20)
-      .build()
+      
   ],
   direction: 'both'
 })
 .frame(600, 400)
 .border(1, '#ddd')
-.build()
+
 ```
 
 #### Pull-to-Refresh and Edge Detection
@@ -667,11 +667,11 @@ const refreshableScroll = ScrollView({
   children: items().map(item => 
     HStack({
       children: [
-        Image(item.avatar).frame(40, 40).cornerRadius(20).build(),
+        Image(item.avatar).frame(40, 40).cornerRadius(20),
         VStack({
           children: [
-            Text(item.name).fontWeight('600').build(),
-            Text(item.message).fontSize(14).foregroundColor('#666').build()
+            Text(item.name).fontWeight('600'),
+            Text(item.message).fontSize(14).foregroundColor('#666')
           ],
           spacing: 4,
           alignment: 'leading'
@@ -684,7 +684,7 @@ const refreshableScroll = ScrollView({
     .backgroundColor('#ffffff')
     .cornerRadius(8)
     .shadow({ x: 0, y: 1, radius: 3, color: 'rgba(0,0,0,0.1)' })
-    .build()
+    
   ),
   direction: 'vertical',
   refreshControl: {
@@ -706,7 +706,7 @@ const refreshableScroll = ScrollView({
 .frame(undefined, 500)
 .backgroundColor('#f5f5f5')
 .cornerRadius(12)
-.build()
+
 
 // Edge detection and infinite loading
 const [hasMore, setHasMore] = createSignal(true)
@@ -738,7 +738,7 @@ const infiniteScroll = ScrollView({
   scrollEventThrottle: 16 // 60fps scroll events
 })
 .frame(undefined, 600)
-.build()
+
 ```
 
 #### Advanced ScrollView Patterns
@@ -756,7 +756,7 @@ const pagedScroll = ScrollViewUtils.paged(pagedContent)
 .frame(400, 300)
 .cornerRadius(16)
 .shadow({ x: 0, y: 8, radius: 24, color: 'rgba(0,0,0,0.15)' })
-.build()
+
 
 // Performance optimized for heavy content
 const heavyContentScroll = ScrollView({
@@ -768,32 +768,32 @@ const heavyContentScroll = ScrollView({
 })
 .frame(undefined, 400)
 .backgroundColor('#ffffff')
-.build()
+
 
 // Nested scrolling with proper behavior
 const nestedScroll = ScrollView({
   children: [
-    Text("Outer Scroll Content").padding(20).build(),
+    Text("Outer Scroll Content").padding(20),
     
     // Inner horizontal scroll
     ScrollView({
       children: [
-        HTML.div().width(200).height(100).backgroundColor('#ff6b6b').build(),
-        HTML.div().width(200).height(100).backgroundColor('#4ecdc4').build(),
-        HTML.div().width(200).height(100).backgroundColor('#45b7d1').build()
+        HTML.div().width(200).height(100).backgroundColor('#ff6b6b'),
+        HTML.div().width(200).height(100).backgroundColor('#4ecdc4'),
+        HTML.div().width(200).height(100).backgroundColor('#45b7d1')
       ],
       direction: 'horizontal'
     })
     .frame(undefined, 120)
     .backgroundColor('#f8f8f8')
     .cornerRadius(8)
-    .build(),
+    ,
     
-    Text("More outer content").padding(20).build()
+    Text("More outer content").padding(20)
   ]
 })
 .frame(undefined, 500)
-.build()
+
 ```
 
 ### List Component Examples
@@ -823,13 +823,13 @@ const basicList = List({
           .display('flex')
           .alignItems('center')
           .justifyContent('center')
-          .build(),
+          ,
         
         VStack({
           children: [
-            Text(user.name).fontWeight('600').fontSize(16).build(),
-            Text(user.email).fontSize(14).foregroundColor('#666').build(),
-            Text(user.role).fontSize(12).foregroundColor('#999').build()
+            Text(user.name).fontWeight('600').fontSize(16),
+            Text(user.email).fontSize(14).foregroundColor('#666'),
+            Text(user.role).fontSize(12).foregroundColor('#999')
           ],
           spacing: 2,
           alignment: 'leading'
@@ -841,11 +841,11 @@ const basicList = List({
     .padding(16)
     .backgroundColor('#ffffff')
     .borderRadius(8)
-    .build()
+    
 })
 .backgroundColor('#f5f5f5')
 .cornerRadius(12)
-.build()
+
 ```
 
 #### List with Selection and Interaction
@@ -871,13 +871,13 @@ const selectableList = List({
           .display('flex')
           .alignItems('center')
           .justifyContent('center')
-          .build(),
+          ,
         
         // User info
         VStack({
           children: [
-            Text(user.name).fontWeight('600').build(),
-            Text(user.email).fontSize(14).foregroundColor('#666').build()
+            Text(user.name).fontWeight('600'),
+            Text(user.email).fontSize(14).foregroundColor('#666')
           ],
           spacing: 4,
           alignment: 'leading'
@@ -889,7 +889,7 @@ const selectableList = List({
           .fontSize(14)
           .padding({ horizontal: 12, vertical: 6 })
           .onTap(() => viewUserDetails(user))
-          .build()
+          
       ],
       spacing: 12,
       alignment: 'center'
@@ -899,7 +899,7 @@ const selectableList = List({
     .border(1, isSelected ? '#007AFF' : '#e0e0e0')
     .cornerRadius(8)
     .transition('all', 200)
-    .build()
+    
   },
   selectionMode: selectionMode,
   selectedItems: selectedItems,
@@ -913,7 +913,7 @@ const selectableList = List({
 .backgroundColor('#f9f9f9')
 .cornerRadius(12)
 .padding(8)
-.build()
+
 ```
 
 #### Virtual Scrolling for Large Datasets
@@ -937,13 +937,13 @@ const virtualList = ListUtils.virtual(
           .width(40)
           .height(40)
           .cornerRadius(20)
-          .build(),
+          ,
         
         VStack({
           children: [
-            Text(`${user.name} (#${user.id})`).fontWeight('600').build(),
-            Text(user.email).fontSize(14).foregroundColor('#666').build(),
-            Text(`Last seen: ${user.lastSeen}`).fontSize(12).foregroundColor('#999').build()
+            Text(`${user.name} (#${user.id})`).fontWeight('600'),
+            Text(user.email).fontSize(14).foregroundColor('#666'),
+            Text(`Last seen: ${user.lastSeen}`).fontSize(12).foregroundColor('#999')
           ],
           spacing: 2,
           alignment: 'leading'
@@ -954,7 +954,7 @@ const virtualList = ListUtils.virtual(
     })
     .padding(12)
     .borderBottom(1, '#f0f0f0')
-    .build(),
+    ,
   {
     enabled: true,
     estimatedItemHeight: 70,
@@ -966,7 +966,7 @@ const virtualList = ListUtils.virtual(
 .backgroundColor('#ffffff')
 .border(1, '#e0e0e0')
 .cornerRadius(8)
-.build()
+
 ```
 
 #### Sectioned Lists
@@ -1015,12 +1015,12 @@ const sectionedList = ListUtils.sectioned(
           .display('flex')
           .alignItems('center')
           .justifyContent('center')
-          .build(),
+          ,
         
         VStack({
           children: [
-            Text(contact.name).fontWeight('600').fontSize(16).build(),
-            Text(contact.phone).fontSize(14).foregroundColor('#666').build()
+            Text(contact.name).fontWeight('600').fontSize(16),
+            Text(contact.phone).fontSize(14).foregroundColor('#666')
           ],
           spacing: 2,
           alignment: 'leading'
@@ -1031,7 +1031,7 @@ const sectionedList = ListUtils.sectioned(
           .fontSize(14)
           .padding({ horizontal: 12, vertical: 6 })
           .onTap(() => callContact(contact))
-          .build()
+          
       ],
       spacing: 12,
       alignment: 'center'
@@ -1039,11 +1039,11 @@ const sectionedList = ListUtils.sectioned(
     .padding(16)
     .backgroundColor('#ffffff')
     .borderBottom(1, '#f0f0f0')
-    .build()
+    
 )
 .backgroundColor('#f9f9f9')
 .cornerRadius(12)
-.build()
+
 ```
 
 #### ForEach Component for Dynamic Lists
@@ -1080,7 +1080,7 @@ const todoList = ForEachComponent({
           .justifyContent('center')
           .onTap(() => toggleTodo(todo.id))
           .cursor('pointer')
-          .build(),
+          ,
         
         // Todo content
         VStack({
@@ -1090,13 +1090,13 @@ const todoList = ForEachComponent({
               .fontWeight('500')
               .textDecoration(todo.completed ? 'line-through' : 'none')
               .foregroundColor(todo.completed ? '#999' : '#1a1a1a')
-              .build(),
+              ,
             
             Text(`Priority: ${todo.priority}`)
               .fontSize(12)
               .foregroundColor(priorityColors[todo.priority])
               .fontWeight('600')
-              .build()
+              
           ],
           spacing: 4,
           alignment: 'leading'
@@ -1109,7 +1109,7 @@ const todoList = ForEachComponent({
           .fontSize(14)
           .padding({ horizontal: 8, vertical: 4 })
           .onTap(() => deleteTodo(todo.id))
-          .build()
+          
       ],
       spacing: 12,
       alignment: 'center'
@@ -1119,14 +1119,14 @@ const todoList = ForEachComponent({
     .cornerRadius(8)
     .border(1, '#e0e0e0')
     .transition('all', 200)
-    .build()
+    
   },
   getItemId: (todo) => todo.id
 })
 .backgroundColor('#f5f5f5')
 .cornerRadius(12)
 .padding(8)
-.build()
+
 ```
 
 #### Advanced List Features
@@ -1168,7 +1168,7 @@ const advancedList = VStack({
           .border(1, '#ddd')
           .cornerRadius(8)
           .flex(1)
-          .build(),
+          ,
         
         Button(filter())
           .variant('outlined')
@@ -1179,7 +1179,7 @@ const advancedList = VStack({
             const next = (current + 1) % filters.length
             setFilter(filters[next])
           })
-          .build()
+          
       ],
       spacing: 12,
       alignment: 'center'
@@ -1197,7 +1197,7 @@ const advancedList = VStack({
             .foregroundColor('#999')
             .textAlign('center')
             .padding(40)
-            .build()
+            
         })
       ],
       fallback: () => [
@@ -1206,14 +1206,14 @@ const advancedList = VStack({
           .foregroundColor('#999')
           .textAlign('center')
           .padding(40)
-          .build()
+          
       ]
     })
   ],
   spacing: 16
 })
 .padding(16)
-.build()
+
 ```
 
 ## Real-World Component Combinations
@@ -1232,7 +1232,7 @@ const loginForm = VStack({
       .fontWeight('bold')
       .textAlign('center')
       .margin({ bottom: 32 })
-      .build(),
+      ,
     
     TextField(() => email())
       .placeholder("Email")
@@ -1244,7 +1244,7 @@ const loginForm = VStack({
       .border(1, '#e0e0e0')
       .cornerRadius(8)
       .focusBorderColor('#007AFF')
-      .build(),
+      ,
     
     TextField(() => password())
       .placeholder("Password")
@@ -1256,7 +1256,7 @@ const loginForm = VStack({
       .border(1, '#e0e0e0')
       .cornerRadius(8)
       .focusBorderColor('#007AFF')
-      .build(),
+      ,
     
     Button(() => isLoading() ? "Signing in..." : "Sign In")
       .variant('filled')
@@ -1275,7 +1275,7 @@ const loginForm = VStack({
           setIsLoading(false)
         }
       })
-      .build()
+      
   ],
   spacing: 16,
   alignment: 'stretch'
@@ -1285,7 +1285,7 @@ const loginForm = VStack({
 .backgroundColor('#ffffff')
 .cornerRadius(12)
 .shadow({ x: 0, y: 4, radius: 16, color: 'rgba(0,0,0,0.1)' })
-.build()
+
 ```
 
 ### Product Card Grid
@@ -1302,7 +1302,7 @@ const productGrid = VStack({
           height: 80
         })
         .cornerRadius(8)
-        .build(),
+        ,
         
         VStack({
           children: [
@@ -1310,14 +1310,14 @@ const productGrid = VStack({
               .fontSize(16)
               .fontWeight('600')
               .foregroundColor('#1a1a1a')
-              .build(),
+              ,
             
             Text(product.description)
               .fontSize(14)
               .foregroundColor('#666')
               .lineHeight(1.4)
               .numberOfLines(2)
-              .build(),
+              ,
             
             HStack({
               children: [
@@ -1325,7 +1325,7 @@ const productGrid = VStack({
                   .fontSize(18)
                   .fontWeight('bold')
                   .foregroundColor('#007AFF')
-                  .build(),
+                  ,
                 
                 Button("Add to Cart")
                   .variant('filled')
@@ -1334,7 +1334,7 @@ const productGrid = VStack({
                   .cornerRadius(6)
                   .padding({ horizontal: 12, vertical: 6 })
                   .fontSize(14)
-                  .build()
+                  
               ],
               spacing: 12,
               alignment: 'center',
@@ -1345,7 +1345,7 @@ const productGrid = VStack({
           alignment: 'leading'
         })
         .flex(1)
-        .build()
+        
       ],
       spacing: 16,
       alignment: 'top'
@@ -1355,12 +1355,12 @@ const productGrid = VStack({
     .cornerRadius(12)
     .border(1, '#f0f0f0')
     .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.05)' })
-    .build()
+    
   ),
   spacing: 16
 })
 .padding(16)
-.build()
+
 ```
 
 ## Performance Optimizations
@@ -1377,12 +1377,12 @@ const conditionalContent = Show({
     Text("Welcome back!")
       .fontSize(18)
       .fontWeight('500')
-      .build()
+      
   ],
   fallback: () => [
     Button("Sign In")
       .variant('outlined')
-      .build()
+      
   ]
 })
 
@@ -1395,21 +1395,21 @@ const todoList = ForEachComponent({
         Text(() => todo().title)
           .flex(1)
           .fontSize(16)
-          .build(),
+          ,
         
         Button("Complete")
           .variant('outlined')
           .fontSize(14)
           .padding({ horizontal: 8, vertical: 4 })
           .onTap(() => completeTodo(todo().id))
-          .build()
+          
       ],
       spacing: 12,
       alignment: 'center'
     })
     .padding(12)
     .borderBottom(1, '#f0f0f0')
-    .build(),
+    ,
   getItemId: (todo) => todo().id
 })
 ```
@@ -1425,12 +1425,12 @@ import { ScrollView, createSignal } from '@tachui/core'
 // Test basic scrolling behavior
 test('ScrollView handles vertical scrolling', () => {
   const content = Array.from({ length: 100 }, (_, i) => 
-    Text(`Item ${i + 1}`).padding(16).build()
+    Text(`Item ${i + 1}`).padding(16)
   )
   
   const scrollView = ScrollView({ children: content })
     .frame(300, 200)
-    .build()
+    
   
   const container = document.createElement('div')
   render(scrollView, container)
@@ -1544,7 +1544,7 @@ test('ScrollView with List maintains scroll position', () => {
     ]
   })
   .frame(300, 200)
-  .build()
+  
   
   const container = document.createElement('div')
   render(scrollableList, container)
@@ -1570,11 +1570,11 @@ const scrollViewBenchmark = {
   name: 'ScrollView with 1000 items',
   setup: () => {
     const items = Array.from({ length: 1000 }, (_, i) => 
-      Text(`Item ${i}`).padding(8).build()
+      Text(`Item ${i}`).padding(8)
     )
     return ScrollView({ children: items })
       .frame(300, 400)
-      .build()
+      
   },
   metrics: {
     renderTime: '< 50ms',
@@ -1625,7 +1625,7 @@ const usernameInput = BasicInput({
   .borderRadius(8)
   .fontSize(16)
   .width('300px')
-  .build()
+  
 ```
 
 ### Input Types and Validation
@@ -1658,7 +1658,7 @@ const emailInput = BasicInput({
   .borderRadius(6)
   .border(emailError() ? '2px solid #FF3B30' : '1px solid #D1D1D6')
   .fontSize(16)
-  .build()
+  
 
 // Password input with strength indicator
 const [password, setPassword] = createSignal('')
@@ -1683,7 +1683,7 @@ const passwordInput = BasicInput({
   .borderRadius(6)
   .fontSize(16)
   .width('100%')
-  .build()
+  
 ```
 
 ### Search Input with Debouncing
@@ -1727,7 +1727,7 @@ const searchInput = BasicInput({
   .backgroundColor('#F8F8F8')
   .fontSize(16)
   .width('100%')
-  .build()
+  
 ```
 
 ### Reactive Input Properties
@@ -1758,7 +1758,7 @@ const reactiveInput = BasicInput({
   .backgroundColor(() => isEditing() ? '#FFFFFF' : '#F5F5F5')
   .border(() => isEditing() ? '2px solid #007AFF' : '1px solid #D1D1D6')
   .cursor(() => isEditing() ? 'text' : 'pointer')
-  .build()
+  
 ```
 
 ### Form-like Input Groups
@@ -1791,7 +1791,7 @@ const contactForm = VStack([
     .fontSize(16)
     .width('100%')
     .marginBottom(12)
-    .build(),
+    ,
   
   // Last Name  
   BasicInput({
@@ -1805,7 +1805,7 @@ const contactForm = VStack([
     .fontSize(16)
     .width('100%')
     .marginBottom(12)
-    .build(),
+    ,
   
   // Phone with formatting
   BasicInput({
@@ -1823,7 +1823,7 @@ const contactForm = VStack([
     .fontSize(16)
     .width('100%')
     .marginBottom(12)
-    .build(),
+    ,
   
   // Submit button
   Button('Send Message', () => {
@@ -1841,11 +1841,11 @@ const contactForm = VStack([
     .foregroundColor('#FFFFFF')
     .fontSize(16)
     .fontWeight('600')
-    .build()
+    
 ])
   .padding(20)
   .maxWidth(400)
-  .build()
+  
 ```
 
 ### Utility Functions Examples
@@ -1867,7 +1867,7 @@ const searchInput = BasicInput(
   .width('100%')
   .padding(12, 16)
   .borderRadius(20)
-  .build()
+  
 
 // Email input utility  
 const emailInput = BasicInput(
@@ -1876,7 +1876,7 @@ const emailInput = BasicInput(
   .width('100%')
   .padding(12, 16)
   .borderRadius(8)
-  .build()
+  
 
 // Password input utility
 const passwordInput = BasicInput(
@@ -1885,7 +1885,7 @@ const passwordInput = BasicInput(
   .width('100%')
   .padding(12, 16)
   .borderRadius(8)
-  .build()
+  
 
 // Phone input utility
 const phoneInput = BasicInput(
@@ -1894,7 +1894,7 @@ const phoneInput = BasicInput(
   .width('100%')
   .padding(12, 16)
   .borderRadius(8)
-  .build()
+  
 ```
 
 ### Testing BasicInput Components

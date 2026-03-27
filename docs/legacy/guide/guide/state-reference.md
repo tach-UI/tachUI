@@ -78,12 +78,12 @@ function CounterComponent() {
       Text(() => `Count: ${count.wrappedValue}`)
         .modifier
         .fontSize(24)
-        .build(),
+        ,
         
       Text(() => message.wrappedValue)
         .modifier
         .fontSize(16)
-        .build(),
+        ,
         
       Button("Increment", () => {
         count.wrappedValue += 1
@@ -196,7 +196,7 @@ function CustomSlider({ value, min = 0, max = 100 }) {
   })
   .modifier
   .width('100%')
-  .build()
+  
 }
 
 // Usage
@@ -288,7 +288,7 @@ function UserListComponent() {
         Text("Loading users...")
           .modifier
           .textAlign('center')
-          .build() :
+           :
         null,
       
       // User list
@@ -496,7 +496,7 @@ function ThemeAwareComponent() {
     .fontSize(fontSize())
     .foregroundColor(theme() === 'dark' ? '#ffffff' : '#000000')  
     .backgroundColor(theme() === 'dark' ? '#000000' : '#ffffff')
-    .build()
+    
 }
 
 function SettingsPanel() {
@@ -602,11 +602,11 @@ function ShoppingApp() {
               Text("Total:")
                 .modifier
                 .fontWeight('bold')
-                .build(),
+                ,
               Text(() => `$${total().toFixed(2)}`)
                 .modifier
                 .fontWeight('bold')
-                .build()
+                
             ]
           })
         ],
@@ -659,7 +659,7 @@ function SyncedComponent() {
       )
       .modifier
       .disabled(isSyncing)
-      .build(),
+      ,
       
       DataList({ data: localData.projectedValue })
     ]
@@ -746,13 +746,13 @@ function HeaderComponent() {
       Button("← Back", () => navStore.goBack())
         .modifier
         .disabled(!navStore.canGoBack)
-        .build(),
+        ,
         
       Text(() => navStore.currentRoute)
         .modifier
         .frame({ flex: 1 })
         .textAlign('center')
-        .build(),
+        ,
         
       () => userStore.isAuthenticated ?
         Button("Sign Out", () => userStore.signOut()) :

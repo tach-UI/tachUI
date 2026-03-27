@@ -20,7 +20,7 @@ function BasicAlert() {
       Button("Show Alert")
         .modifier
         .onTap(() => setShowAlert(true))
-        .build(),
+        ,
         
       Alert({
         title: "Confirmation",

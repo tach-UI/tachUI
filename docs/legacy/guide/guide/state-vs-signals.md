@@ -65,12 +65,12 @@ function Counter(): VStack {
       Text(() => `Count: ${count.wrappedValue}`)
         .modifier
         .fontSize(18)
-        .build(),
+        ,
       Button("Increment", handleIncrement)
         .modifier
         .backgroundColor('#007AFF')
         .foregroundColor('#ffffff')
-        .build()
+        
     ],
     spacing: 16
   })
@@ -95,12 +95,12 @@ function Counter(): VStack {
       Text(() => `Count: ${count()}`)
         .modifier
         .fontSize(18)
-        .build(),
+        ,
       Button("Increment", handleIncrement)
         .modifier
         .backgroundColor('#007AFF')
         .foregroundColor('#ffffff')
-        .build()
+        
     ],
     spacing: 16
   })
@@ -154,20 +154,20 @@ function UserForm(): Form {
         .padding(12)
         .border(1, '#ddd')
         .cornerRadius(8)
-        .build(),
+        ,
       TextField(email.projectedValue, "Email")
         .modifier
         .padding(12)
         .border(1, '#ddd')
         .cornerRadius(8)
-        .build(),
+        ,
       Button("Submit", handleSubmit)
         .modifier
         .backgroundColor('#007AFF')
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build()
+        
     ],
     spacing: 16
   })
@@ -306,12 +306,12 @@ function LoginViewWithState(): VStack {
           .modifier
           .fontSize(18)
           .foregroundColor('#22c55e')
-          .build(),
+          ,
         fallback: Text("Please log in")
           .modifier
           .fontSize(18)
           .foregroundColor('#ef4444')
-          .build()
+          
       }),
       Button("Toggle", handleToggle)
         .modifier
@@ -319,7 +319,7 @@ function LoginViewWithState(): VStack {
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build()
+        
     ],
     spacing: 16
   })
@@ -341,12 +341,12 @@ function LoginViewWithSignals(): VStack {
           .modifier
           .fontSize(18)
           .foregroundColor('#22c55e')
-          .build(),
+          ,
         fallback: Text("Please log in")
           .modifier
           .fontSize(18)
           .foregroundColor('#ef4444')
-          .build()
+          
       }),
       Button("Toggle", handleToggle)
         .modifier
@@ -354,7 +354,7 @@ function LoginViewWithSignals(): VStack {
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build()
+        
     ],
     spacing: 16
   })
@@ -385,7 +385,7 @@ function TodoItem(props: TodoItemProps): ComponentInstance {
     .modifier
     .fontSize(16)
     .padding(8)
-    .build()
+    
 }
 
 // With State Management - full TypeScript
@@ -419,7 +419,7 @@ function TodoListWithState(): VStack {
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build()
+        
     ],
     spacing: 16
   })
@@ -456,7 +456,7 @@ function TodoListWithSignals(): VStack {
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build()
+        
     ],
     spacing: 16
   })
@@ -568,20 +568,20 @@ function HybridComponent(): VStack {
         .padding(12)
         .border(1, '#ddd')
         .cornerRadius(8)
-        .build(),
+        ,
       Button("Add", handleAddItem)
         .modifier
         .backgroundColor('#007AFF')
         .foregroundColor('#ffffff')
         .padding(12, 24)
         .cornerRadius(8)
-        .build(),
+        ,
       Text((): string => `Total items: ${itemCount()}`)
         .modifier
         .fontSize(16)
         .fontWeight('600')
         .foregroundColor('#666')
-        .build()
+        
     ],
     spacing: 16
   })

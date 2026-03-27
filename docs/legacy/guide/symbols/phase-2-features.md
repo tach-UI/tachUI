@@ -241,7 +241,7 @@ const myIconSet = new CustomIconSetBuilder({
   }
 })
 .addVariant('custom-star', 'filled', '<path d="..." fill="currentColor"/>')
-.build()
+
 
 // Register the custom icon set
 IconSetRegistry.register(myIconSet)

@@ -112,12 +112,12 @@ Text('Hello World')
   .offset(10, 20)
   .saturation(0.8)
   .colorInvert()
-  .build()
+  
 ```
 
 ### Key Differences
 
-1. **Method Chaining**: TachUI uses `.modifier` property for chaining, ending with `.build()`
+1. **Method Chaining**: TachUI uses direct modifier chaining with no final build call
 2. **Anchor Points**: TachUI uses string literals instead of SwiftUI enums
 3. **Positioning**: `offset()` uses relative positioning via transforms (same as SwiftUI)
 
@@ -148,7 +148,7 @@ Text('Typed')
   .modifier
   .scaleEffect(1.5, 2.0, 'topLeading')  // ✅ Valid anchor
   .scaleEffect(1.5, 2.0, 'invalid')     // ❌ Type error
-  .build()
+  
 ```
 
 ## Complete API Coverage
