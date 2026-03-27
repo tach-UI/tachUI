@@ -74,6 +74,8 @@ function readManifestFromPackedTarball(tarballPath) {
 
 function isPeerDependencyVersionCompatible(depVersion, expectedVersion) {
   if (depVersion === expectedVersion) return true
+  // Intentional heuristic: this guard is meant to catch obvious cross-version drift
+  // in packed manifests. It is not a full semver range parser/evaluator.
   if (depVersion.includes(expectedVersion)) return true
   if (depVersion === '*' || depVersion === 'latest') return true
   return false
