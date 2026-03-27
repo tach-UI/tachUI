@@ -49,6 +49,9 @@ jobs:
       - name: Enforce changeset requirement for publishable changes
         run: pnpm ci:check-changesets
 
+      - name: Enforce publishable version-line consistency
+        run: pnpm ci:check-version-line
+
   readme-version-policy:
     name: README Version Policy
     if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'
