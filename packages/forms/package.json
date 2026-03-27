@@ -1,6 +1,6 @@
 {
   "name": "@tachui/forms",
-  "version": "0.8.12",
+  "version": "0.8.13",
   "description": "Unified form components and validation system for tachUI",
   "type": "module",
   "main": "./dist/index.js",
@@ -42,7 +42,7 @@
     }
   },
   "peerDependencies": {
-    "@tachui/core": ">=0.8.12"
+    "@tachui/core": ">=0.8.13"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
