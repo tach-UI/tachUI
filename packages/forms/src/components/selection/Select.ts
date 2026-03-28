@@ -137,8 +137,13 @@ export const Select: Component<SelectProps> = props => {
   }
 
   // Handle dropdown toggle
+  const resolveDisabled = () =>
+    typeof disabled === 'function' ? (disabled as () => boolean)() : disabled
+  const disabledBinding =
+    typeof disabled === 'function' ? (disabled as () => boolean) : () => disabled
+
   const toggleDropdown = () => {
-    if (disabled) return
+    if (resolveDisabled()) return
 
     const newOpen = !isOpen()
     setIsOpen(newOpen)
@@ -306,7 +311,7 @@ export const Select: Component<SelectProps> = props => {
             ? 'validating'
             : 'valid',
         'data-open': isOpen(),
-        'data-disabled': disabled,
+        'data-disabled': disabledBinding,
         'data-multiple': multiple,
         'data-searchable': searchable,
       },
@@ -344,7 +349,7 @@ export const Select: Component<SelectProps> = props => {
           tag: 'div',
           props: {
             id: restProps.id || name,
-            tabindex: disabled ? -1 : 0,
+            tabindex: () => (disabledBinding() ? -1 : 0),
             role: 'combobox',
             'aria-expanded': isOpen(),
             'aria-haspopup': 'listbox',
@@ -362,7 +367,7 @@ export const Select: Component<SelectProps> = props => {
             onblur: handleBlur,
             'data-tachui-select-trigger': true,
             'data-focused': focused(),
-            'data-disabled': disabled,
+            'data-disabled': disabledBinding,
             'data-error': !!errorMessage,
           },
           children: [

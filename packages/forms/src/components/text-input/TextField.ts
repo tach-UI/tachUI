@@ -47,6 +47,7 @@ export const TextField: Component<TextFieldProps> = props => {
     autocomplete,
     spellcheck = true,
     disabled = false,
+    readOnly = false,
     required = false,
     validation,
     value: controlledValue,
@@ -74,6 +75,7 @@ export const TextField: Component<TextFieldProps> = props => {
     text: textSignal,
     placeholderSignal,
     disabledSignal,
+    readOnlySignal,
 
     ...restProps
   } = props
@@ -96,6 +98,7 @@ export const TextField: Component<TextFieldProps> = props => {
   const [currentText, setCurrentText] = createSignal('')
   const [currentPlaceholder, setCurrentPlaceholder] = createSignal('')
   const [currentDisabled, setCurrentDisabled] = createSignal(false)
+  const [currentReadOnly, setCurrentReadOnly] = createSignal(false)
 
   // Set up reactive updates for signal-based props
   createEffect(() => {
@@ -117,6 +120,12 @@ export const TextField: Component<TextFieldProps> = props => {
   createEffect(() => {
     if (disabledSignal) {
       setCurrentDisabled(resolveValue(disabledSignal, false))
+    }
+  })
+
+  createEffect(() => {
+    if (readOnlySignal) {
+      setCurrentReadOnly(resolveValue(readOnlySignal, false))
     }
   })
 
@@ -241,7 +250,16 @@ export const TextField: Component<TextFieldProps> = props => {
   const currentPlaceholderValue = placeholderSignal
     ? currentPlaceholder()
     : placeholder
-  const isDisabled = disabledSignal ? currentDisabled() : disabled
+  const disabledBinding = disabledSignal
+    ? currentDisabled
+    : typeof disabled === 'function'
+      ? (disabled as () => boolean)
+      : () => disabled
+  const readOnlyBinding = readOnlySignal
+    ? currentReadOnly
+    : typeof readOnly === 'function'
+      ? (readOnly as () => boolean)
+      : () => readOnly
   const displayValue = textSignal ? currentText() : field.value() || ''
   const formattedDisplayValue = formatValue(displayValue)
 
@@ -251,7 +269,8 @@ export const TextField: Component<TextFieldProps> = props => {
     name,
     value: formattedDisplayValue,
     placeholder: currentPlaceholderValue,
-    disabled: isDisabled,
+    disabled: disabledBinding,
+    readOnly: readOnlyBinding,
     required,
     minlength: minLength,
     maxlength: maxLength,

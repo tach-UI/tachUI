@@ -9,6 +9,7 @@ import type {
   ComponentChildren,
   ComponentInstance,
   ComponentProps,
+  Signal,
 } from '@tachui/core'
 
 /**
@@ -125,7 +126,8 @@ export interface BaseFieldProps extends ComponentProps {
   name: string
   label?: string
   placeholder?: string
-  disabled?: boolean
+  disabled?: boolean | Signal<boolean>
+  readOnly?: boolean | Signal<boolean>
   required?: boolean
   validation?: FieldValidation
   value?: any
@@ -241,6 +243,7 @@ export interface TextFieldProps extends BaseFieldProps {
   text?: string | (() => string) // Signal support
   placeholderSignal?: string | (() => string) // Signal support
   disabledSignal?: boolean | (() => boolean) // Signal support
+  readOnlySignal?: boolean | (() => boolean) // Signal support
 }
 
 /**
