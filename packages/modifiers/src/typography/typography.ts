@@ -8,6 +8,7 @@ import { BaseModifier } from '../basic/base'
 import type { ModifierContext, FontWeight } from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/types/runtime'
 import { isComputed, isSignal } from '@tachui/core/reactive'
+import { bindReactiveStyle } from '@tachui/core/modifiers/base'
 import type {
   Asset,
   ColorAssetProxy,
@@ -56,6 +57,25 @@ export interface TypographyOptions {
   overflow?: 'visible' | 'hidden' | 'scroll' | 'auto'
 }
 
+const typographyUpdaterScope = 'typography'
+const typographyInstanceIdSymbol = Symbol.for('tachui.typography.instanceId')
+let typographyInstanceIdCounter = 0
+
+function getTypographyInstanceId(modifier: object): number {
+  const existingId = (modifier as any)[typographyInstanceIdSymbol]
+  if (typeof existingId === 'number') return existingId
+
+  typographyInstanceIdCounter += 1
+  const nextId = typographyInstanceIdCounter
+  Object.defineProperty(modifier, typographyInstanceIdSymbol, {
+    value: nextId,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  })
+  return nextId
+}
+
 export class TypographyModifier extends BaseModifier<TypographyOptions> {
   readonly type = 'typography'
   readonly priority = 30
@@ -65,8 +85,60 @@ export class TypographyModifier extends BaseModifier<TypographyOptions> {
 
     const styles = this.computeTypographyStyles(this.properties)
     this.applyStyles(context.element, styles)
+    this.applyImportantTextStyle(
+      context.element,
+      'text-transform',
+      this.properties.transform
+    )
+    this.applyImportantTextStyle(
+      context.element,
+      'text-decoration',
+      this.properties.decoration
+    )
 
     return undefined
+  }
+
+  private applyImportantTextStyle(
+    element: Element,
+    propertyName: 'text-transform' | 'text-decoration',
+    value: unknown
+  ): void {
+    if (value === undefined) return
+
+    const styleTarget = (element as any).style
+    if (!styleTarget) return
+
+    const applyValue = (nextValue: unknown): void => {
+      const cssValue = String(nextValue)
+
+      if (styleTarget.setProperty) {
+        styleTarget.setProperty(propertyName, cssValue, 'important')
+        return
+      }
+
+      const camelCase = propertyName.replace(/-([a-z])/g, (_m, letter) =>
+        letter.toUpperCase()
+      )
+      styleTarget[camelCase] = cssValue
+    }
+
+    if (isSignal(value) || isComputed(value)) {
+      const signalValue = value as (() => unknown)
+      const modifierInstanceId = getTypographyInstanceId(this)
+
+      bindReactiveStyle({
+        element,
+        accessor: signalValue,
+        updaterId: `${typographyUpdaterScope}:${modifierInstanceId}:${propertyName}`,
+        updater: currentValue => {
+          applyValue(currentValue)
+        },
+      })
+      return
+    }
+
+    applyValue(value)
   }
 
   private computeTypographyStyles(props: TypographyOptions) {
@@ -121,16 +193,8 @@ export class TypographyModifier extends BaseModifier<TypographyOptions> {
     if (props.align !== undefined) {
       styles.textAlign = props.align
     }
-    if (props.transform !== undefined) {
-      styles.textTransform = isReactive(props.transform)
-        ? (props.transform as any)
-        : `${props.transform} !important`
-    }
-    if (props.decoration !== undefined) {
-      styles.textDecoration = isReactive(props.decoration)
-        ? (props.decoration as any)
-        : `${props.decoration} !important`
-    }
+    // text-transform and text-decoration are handled with explicit !important
+    // in applyImportantTextStyle() to keep static and reactive paths consistent.
     if (props.variant !== undefined) {
       styles.fontVariant = props.variant
     }

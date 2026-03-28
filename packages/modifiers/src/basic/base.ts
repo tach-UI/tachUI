@@ -166,6 +166,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
         'opacity',
         'z-index',
         'line-height',
+        // Numeric `flex` is shorthand for flex-grow and must stay unitless.
         'flex',
         'flex-grow',
         'flex-shrink',

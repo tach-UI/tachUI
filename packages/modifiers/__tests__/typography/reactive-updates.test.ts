@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSignal, flushSync } from '@tachui/core/reactive'
 import type { ModifierContext } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
@@ -7,6 +7,7 @@ import {
   lineHeight,
   textDecoration,
   textTransform,
+  typography,
   wordSpacing,
 } from '../../src/typography/typography'
 
@@ -100,5 +101,72 @@ describe('Typography Reactive Updates', () => {
     setTransform('lowercase')
     flushSync()
     expect(mockElement.style.textTransform).toBe('lowercase')
+  })
+
+  it('applies !important for static text transform and text decoration', () => {
+    const element = document.createElement('div')
+    const context = { element } as ModifierContext
+    const setPropertySpy = vi.spyOn(element.style, 'setProperty')
+
+    typography({ transform: 'uppercase', decoration: 'underline' }).apply(
+      {} as DOMNode,
+      context
+    )
+
+    expect(element.style.getPropertyValue('text-transform')).toBe('uppercase')
+    expect(element.style.getPropertyValue('text-decoration')).toBe('underline')
+    expect(setPropertySpy).toHaveBeenCalledWith(
+      'text-transform',
+      'uppercase',
+      'important'
+    )
+    expect(setPropertySpy).toHaveBeenCalledWith(
+      'text-decoration',
+      'underline',
+      'important'
+    )
+  })
+
+  it('applies !important for reactive text transform and text decoration updates', () => {
+    const element = document.createElement('div')
+    const context = { element } as ModifierContext
+    const setPropertySpy = vi.spyOn(element.style, 'setProperty')
+    const [transform, setTransform] = createSignal('uppercase')
+    const [decoration, setDecoration] = createSignal('underline')
+
+    typography({
+      transform: transform as unknown as any,
+      decoration: decoration as unknown as any,
+    }).apply({} as DOMNode, context)
+
+    expect(element.style.getPropertyValue('text-transform')).toBe('uppercase')
+    expect(element.style.getPropertyValue('text-decoration')).toBe('underline')
+    expect(setPropertySpy).toHaveBeenCalledWith(
+      'text-transform',
+      'uppercase',
+      'important'
+    )
+    expect(setPropertySpy).toHaveBeenCalledWith(
+      'text-decoration',
+      'underline',
+      'important'
+    )
+
+    setTransform('lowercase')
+    setDecoration('line-through')
+    flushSync()
+
+    expect(element.style.getPropertyValue('text-transform')).toBe('lowercase')
+    expect(element.style.getPropertyValue('text-decoration')).toBe('line-through')
+    expect(setPropertySpy).toHaveBeenCalledWith(
+      'text-transform',
+      'lowercase',
+      'important'
+    )
+    expect(setPropertySpy).toHaveBeenCalledWith(
+      'text-decoration',
+      'line-through',
+      'important'
+    )
   })
 })
