@@ -6,7 +6,7 @@
  */
 
 import type { Signal } from '@tachui/types/reactive'
-import { isSignal, isComputed, createEffect } from '@tachui/core/reactive'
+import { isSignal, isComputed, createEffect, getThemeSignal } from '@tachui/core/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
 import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
@@ -105,10 +105,15 @@ export class ShadowModifier extends BaseModifier<ShadowOptions> {
     const hasReactiveValues = Object.values(config).some(
       value => isSignal(value) || isComputed(value)
     )
+    const hasThemeReactiveAssetColor = this.isThemeReactiveAsset(config.color)
 
-    if (hasReactiveValues) {
+    if (hasReactiveValues || hasThemeReactiveAssetColor) {
       // Create reactive effect for shadow
+      const themeSignal = hasThemeReactiveAssetColor ? getThemeSignal() : null
       createEffect(() => {
+        if (themeSignal) {
+          themeSignal()
+        }
         const shadowValue = this.generateShadowCSS(config)
         this.applyStyleChange(element, 'boxShadow', shadowValue)
       })
@@ -127,10 +132,17 @@ export class ShadowModifier extends BaseModifier<ShadowOptions> {
     const hasReactiveValues = configs.some(config =>
       Object.values(config).some(value => isSignal(value) || isComputed(value))
     )
+    const hasThemeReactiveAssetColor = configs.some(config =>
+      this.isThemeReactiveAsset(config.color)
+    )
 
-    if (hasReactiveValues) {
+    if (hasReactiveValues || hasThemeReactiveAssetColor) {
       // Create reactive effect for multiple shadows
+      const themeSignal = hasThemeReactiveAssetColor ? getThemeSignal() : null
       createEffect(() => {
+        if (themeSignal) {
+          themeSignal()
+        }
         const shadowValues = configs
           .map(config => this.generateShadowCSS(config))
           .join(', ')
@@ -168,6 +180,15 @@ export class ShadowModifier extends BaseModifier<ShadowOptions> {
       return (value as any).resolve()
     }
     return value !== undefined ? value : defaultValue
+  }
+
+  private isThemeReactiveAsset(value: unknown): value is { resolve: () => string } {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'resolve' in value &&
+      typeof (value as { resolve?: unknown }).resolve === 'function'
+    )
   }
 }
 
@@ -221,10 +242,15 @@ export class TextShadowModifier extends BaseModifier<TextShadowOptions> {
     const hasReactiveValues = Object.values(config).some(
       value => isSignal(value) || isComputed(value)
     )
+    const hasThemeReactiveAssetColor = this.isThemeReactiveAsset(config.color)
 
-    if (hasReactiveValues) {
+    if (hasReactiveValues || hasThemeReactiveAssetColor) {
       // Create reactive effect for text shadow
+      const themeSignal = hasThemeReactiveAssetColor ? getThemeSignal() : null
       createEffect(() => {
+        if (themeSignal) {
+          themeSignal()
+        }
         const shadowValue = this.generateTextShadowCSS(config)
         this.applyStyleChange(element, 'textShadow', shadowValue)
       })
@@ -243,10 +269,17 @@ export class TextShadowModifier extends BaseModifier<TextShadowOptions> {
     const hasReactiveValues = configs.some(config =>
       Object.values(config).some(value => isSignal(value) || isComputed(value))
     )
+    const hasThemeReactiveAssetColor = configs.some(config =>
+      this.isThemeReactiveAsset(config.color)
+    )
 
-    if (hasReactiveValues) {
+    if (hasReactiveValues || hasThemeReactiveAssetColor) {
       // Create reactive effect for multiple text shadows
+      const themeSignal = hasThemeReactiveAssetColor ? getThemeSignal() : null
       createEffect(() => {
+        if (themeSignal) {
+          themeSignal()
+        }
         const shadowValues = configs
           .map(config => this.generateTextShadowCSS(config))
           .join(', ')
@@ -280,6 +313,15 @@ export class TextShadowModifier extends BaseModifier<TextShadowOptions> {
       return (value as any).resolve()
     }
     return value !== undefined ? value : defaultValue
+  }
+
+  private isThemeReactiveAsset(value: unknown): value is { resolve: () => string } {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'resolve' in value &&
+      typeof (value as { resolve?: unknown }).resolve === 'function'
+    )
   }
 }
 
@@ -333,10 +375,15 @@ export class DropShadowModifier extends BaseModifier<DropShadowOptions> {
     const hasReactiveValues = Object.values(config).some(
       value => isSignal(value) || isComputed(value)
     )
+    const hasThemeReactiveAssetColor = this.isThemeReactiveAsset(config.color)
 
-    if (hasReactiveValues) {
+    if (hasReactiveValues || hasThemeReactiveAssetColor) {
       // Create reactive effect for drop shadow
+      const themeSignal = hasThemeReactiveAssetColor ? getThemeSignal() : null
       createEffect(() => {
+        if (themeSignal) {
+          themeSignal()
+        }
         const shadowValue = this.generateDropShadowCSS(config)
         this.applyFilterDropShadow(element, shadowValue)
       })
@@ -355,10 +402,17 @@ export class DropShadowModifier extends BaseModifier<DropShadowOptions> {
     const hasReactiveValues = configs.some(config =>
       Object.values(config).some(value => isSignal(value) || isComputed(value))
     )
+    const hasThemeReactiveAssetColor = configs.some(config =>
+      this.isThemeReactiveAsset(config.color)
+    )
 
-    if (hasReactiveValues) {
+    if (hasReactiveValues || hasThemeReactiveAssetColor) {
       // Create reactive effect for multiple drop shadows
+      const themeSignal = hasThemeReactiveAssetColor ? getThemeSignal() : null
       createEffect(() => {
+        if (themeSignal) {
+          themeSignal()
+        }
         const shadowValues = configs
           .map(config => `drop-shadow(${this.generateDropShadowCSS(config)})`)
           .join(' ')
@@ -407,6 +461,15 @@ export class DropShadowModifier extends BaseModifier<DropShadowOptions> {
       return (value as any).resolve()
     }
     return value !== undefined ? value : defaultValue
+  }
+
+  private isThemeReactiveAsset(value: unknown): value is { resolve: () => string } {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'resolve' in value &&
+      typeof (value as { resolve?: unknown }).resolve === 'function'
+    )
   }
 }
 

@@ -6,8 +6,9 @@
  */
 
 import { JSDOM } from 'jsdom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createSignal } from '@tachui/core/reactive'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ColorAsset } from '@tachui/core/assets'
+import { createRoot, createSignal, flushSync, setTheme } from '@tachui/core/reactive'
 import type { ModifierContext } from '@tachui/core/modifiers/types'
 import {
   ShadowModifier,
@@ -61,10 +62,21 @@ const createMockContext = (element?: Element): ModifierContext => ({
   modifiers: [],
 })
 
+const testDisposers: Array<() => void> = []
+
 describe('Shadow Modifiers', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
     vi.clearAllMocks()
+    setTheme('light')
+  })
+
+  afterEach(() => {
+    while (testDisposers.length > 0) {
+      const dispose = testDisposers.pop()
+      dispose?.()
+    }
+    setTheme('light')
   })
 
   // ============================================================================
@@ -178,21 +190,63 @@ describe('Shadow Modifiers', () => {
 
       modifier.apply({} as any, context)
 
-      // Verify that reactive system was set up (shadow should be applied)
-      expect(element.style.boxShadow).toContain('0px 2px')
+      expect(element.style.boxShadow).toBe('0px 2px 4px 0px rgba(0,0,0,0.1)')
 
-      // The exact reactive behavior depends on the effect scheduler
-      // For this test, we verify the setup works without relying on timing
-      expect(blur()).toBe(4)
-      expect(color()).toBe('rgba(0,0,0,0.1)')
-
-      // Change reactive values
       setBlur(8)
       setColor('rgba(255,0,0,0.2)')
+      flushSync()
 
-      // Verify signals updated
-      expect(blur()).toBe(8)
-      expect(color()).toBe('rgba(255,0,0,0.2)')
+      expect(element.style.boxShadow).toBe('0px 2px 8px 0px rgba(255,0,0,0.2)')
+    })
+
+    it('reacts to x/y offset and spread signal updates', () => {
+      const element = createMockElement()
+      const context = createMockContext(element)
+      const [x, setX] = createSignal(1)
+      const [y, setY] = createSignal(2)
+      const [spread, setSpread] = createSignal(0)
+
+      const modifier = new ShadowModifier({
+        shadow: { x, y, blur: 4, spread, color: 'rgba(0,0,0,0.2)' },
+      })
+
+      modifier.apply({} as any, context)
+      expect(element.style.boxShadow).toBe('1px 2px 4px 0px rgba(0,0,0,0.2)')
+
+      setX(6)
+      setY(7)
+      setSpread(3)
+      flushSync()
+
+      expect(element.style.boxShadow).toBe('6px 7px 4px 3px rgba(0,0,0,0.2)')
+    })
+
+    it('re-resolves ColorAsset shadow color when theme changes', async () => {
+      const cleanup = createRoot(dispose => {
+        const element = createMockElement()
+        const context = createMockContext(element)
+        const asset = ColorAsset.init({
+          name: 'shadowColorAsset',
+          default: '#EDEAE9',
+          light: '#EDEAE9',
+          dark: '#332A25',
+        })
+
+        const modifier = new ShadowModifier({
+          shadow: { x: 0, y: 2, blur: 4, color: asset as unknown as string },
+        })
+
+        modifier.apply({} as any, context)
+        return { dispose, element }
+      })
+      testDisposers.push(cleanup.dispose)
+
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(cleanup.element.style.boxShadow).toContain('#EDEAE9')
+
+      setTheme('dark')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(cleanup.element.style.boxShadow).toContain('#332A25')
     })
   })
 
@@ -256,27 +310,23 @@ describe('Shadow Modifiers', () => {
       const context = createMockContext(element)
       const [x, setX] = createSignal(1)
       const [y, setY] = createSignal(1)
+      const [blur, setBlur] = createSignal(2)
+      const [color, setColor] = createSignal('rgba(0,0,0,0.5)')
 
       const modifier = new TextShadowModifier({
-        textShadow: { x, y, blur: 2, color: 'rgba(0,0,0,0.5)' },
+        textShadow: { x, y, blur, color },
       })
 
       modifier.apply({} as any, context)
+      expect(element.style.textShadow).toBe('1px 1px 2px rgba(0,0,0,0.5)')
 
-      // Verify that reactive system was set up
-      expect(element.style.textShadow).toContain('1px 1px')
-
-      // Verify signals work
-      expect(x()).toBe(1)
-      expect(y()).toBe(1)
-
-      // Change reactive values
       setX(2)
       setY(3)
+      setBlur(5)
+      setColor('rgba(255,0,0,0.4)')
+      flushSync()
 
-      // Verify signals updated
-      expect(x()).toBe(2)
-      expect(y()).toBe(3)
+      expect(element.style.textShadow).toBe('2px 3px 5px rgba(255,0,0,0.4)')
     })
   })
 
@@ -351,6 +401,28 @@ describe('Shadow Modifiers', () => {
 
       expect(element.style.filter).toBe(
         'drop-shadow(0px 1px 3px rgba(0,0,0,0.12)) drop-shadow(0px 1px 2px rgba(0,0,0,0.24))'
+      )
+    })
+
+    it('reacts to blur/color signal updates for filter drop-shadow', () => {
+      const element = createMockElement()
+      const context = createMockContext(element)
+      const [blur, setBlur] = createSignal(8)
+      const [color, setColor] = createSignal('rgba(0,0,0,0.2)')
+
+      const modifier = new DropShadowModifier({
+        dropShadow: { x: 0, y: 4, blur, color },
+      })
+
+      modifier.apply({} as any, context)
+      expect(element.style.filter).toBe('drop-shadow(0px 4px 8px rgba(0,0,0,0.2))')
+
+      setBlur(2)
+      setColor('rgba(255,0,0,0.3)')
+      flushSync()
+
+      expect(element.style.filter).toContain(
+        'drop-shadow(0px 4px 2px rgba(255,0,0,0.3))'
       )
     })
   })
