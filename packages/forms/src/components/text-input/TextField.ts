@@ -100,6 +100,16 @@ export const TextField: Component<TextFieldProps> = props => {
   const [currentDisabled, setCurrentDisabled] = createSignal(false)
   const [currentReadOnly, setCurrentReadOnly] = createSignal(false)
 
+  if (
+    disabledSignal !== undefined &&
+    typeof process !== 'undefined' &&
+    process.env.NODE_ENV === 'development'
+  ) {
+    console.warn(
+      'TextField: `disabledSignal` is deprecated. Prefer `disabled` with a Signal<boolean>.'
+    )
+  }
+
   // Set up reactive updates for signal-based props
   createEffect(() => {
     if (textSignal) {

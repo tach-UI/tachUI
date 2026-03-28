@@ -73,8 +73,6 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
   private sliderElement: HTMLInputElement | null = null
   private isDragging: () => boolean
   private setIsDragging: (dragging: boolean) => boolean
-  private currentDisabled: () => boolean
-  private setCurrentDisabled: (disabled: boolean) => boolean
 
   constructor(public props: SliderProps) {
     this.id = `slider-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -84,10 +82,6 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
     this.isDragging = dragging
     this.setIsDragging = setDragging
 
-    const [disabled, setDisabled] = createSignal(this.isDisabled())
-    this.currentDisabled = disabled
-    this.setCurrentDisabled = setDisabled
-
     // Handle value changes reactively
     createEffect(() => {
       const currentValue = this.getValue()
@@ -95,11 +89,6 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
         this.sliderElement.value = String(currentValue)
         this.updateTrackFill()
       }
-    })
-
-    // Keep disabled state reactive for DOM bindings and handlers.
-    createEffect(() => {
-      this.setCurrentDisabled(this.isDisabled())
     })
   }
 
@@ -121,7 +110,6 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
     const { disabled } = this.props
     if (typeof disabled === 'boolean') return disabled
     if (typeof disabled === 'function') return (disabled as () => boolean)()
-    if (isSignal(disabled)) return (disabled as () => boolean)()
     return false
   }
 
@@ -407,7 +395,7 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
 
     const currentValue = this.getValue()
     const variantStyles = this.getVariantStyles()
-    const isDisabled = this.currentDisabled()
+    const isDisabled = this.isDisabled()
 
     // Slider CSS styles
     const sliderStyles = {
@@ -528,7 +516,7 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
           max: String(max),
           step: String(step),
           value: String(currentValue),
-          disabled: this.currentDisabled,
+          disabled: this.props.disabled ?? false,
           orient: vertical ? 'vertical' : undefined,
           style: sliderStyles,
           'aria-label': accessibilityLabel,

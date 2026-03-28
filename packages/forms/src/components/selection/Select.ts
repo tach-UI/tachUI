@@ -60,6 +60,7 @@ export const Select: Component<SelectProps> = props => {
   const [focused, setFocused] = createSignal(false)
   const [searchQuery, setSearchQuery] = createSignal('')
   const [highlightedIndex, setHighlightedIndex] = createSignal(-1)
+  const [currentTabIndex, setCurrentTabIndex] = createSignal(0)
   const [loading] = createSignal(false)
 
   // Sync with controlled value
@@ -141,6 +142,10 @@ export const Select: Component<SelectProps> = props => {
     typeof disabled === 'function' ? (disabled as () => boolean)() : disabled
   const disabledBinding =
     typeof disabled === 'function' ? (disabled as () => boolean) : () => disabled
+
+  createEffect(() => {
+    setCurrentTabIndex(resolveDisabled() ? -1 : 0)
+  })
 
   const toggleDropdown = () => {
     if (resolveDisabled()) return
@@ -349,7 +354,7 @@ export const Select: Component<SelectProps> = props => {
           tag: 'div',
           props: {
             id: restProps.id || name,
-            tabindex: () => (disabledBinding() ? -1 : 0),
+            tabindex: currentTabIndex,
             role: 'combobox',
             'aria-expanded': isOpen(),
             'aria-haspopup': 'listbox',
