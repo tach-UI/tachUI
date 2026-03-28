@@ -2,8 +2,9 @@
  * Tests for Enhanced Text Component (Phase 5.1)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TextProps } from '../../src/display/Text'
+import { HStack, VStack, ZStack } from '../../src'
 import {
   EnhancedText,
   Heading,
@@ -12,7 +13,10 @@ import {
   TextStyles,
   Typography,
 } from '../../src/display/Text'
-import { createSignal } from '@tachui/core'
+import { createSignal, mountComponentTree } from '@tachui/core'
+
+const nativeCreateElement = document.createElement.bind(document)
+let createElementSpy: ReturnType<typeof vi.spyOn> | undefined
 
 // Mock DOM environment
 function createMockTextElement(): HTMLElement {
@@ -32,21 +36,25 @@ function createMockTextElement(): HTMLElement {
 
 // Mock document methods
 beforeEach(() => {
-  global.document = {
-    ...global.document,
-    createElement: vi.fn((tagName: string) => {
+  createElementSpy = vi
+    .spyOn(document, 'createElement')
+    .mockImplementation((tagName: string) => {
       if (tagName === 'span') {
         return createMockTextElement()
       }
-      return {
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        style: {},
-        setAttribute: vi.fn(),
-      }
-    }),
-  }
+      return nativeCreateElement(tagName)
+    })
 })
+
+afterEach(() => {
+  createElementSpy?.mockRestore()
+  createElementSpy = undefined
+})
+
+async function flushReactiveUpdates(): Promise<void> {
+  await new Promise<void>(resolve => queueMicrotask(resolve))
+  await new Promise<void>(resolve => setTimeout(resolve, 0))
+}
 
 describe('EnhancedText', () => {
   describe('Basic Functionality', () => {
@@ -508,7 +516,7 @@ describe('EnhancedText', () => {
     })
   })
 
-  describe('Reactive Updates', () => {
+describe('Reactive Updates', () => {
     it('should update content when signal changes', () => {
       const [content, setContent] = createSignal('Initial')
       const text = new EnhancedText({ content })
@@ -532,6 +540,137 @@ describe('EnhancedText', () => {
       text.render()
       // Test that reactive color updates work
     })
+  })
+})
+
+describe('DOM Signal Reactivity', () => {
+  beforeEach(() => {
+    createElementSpy?.mockRestore()
+    document.body.innerHTML = ''
+  })
+
+  it('reflects Text(Signal<string>) updates in textContent', async () => {
+    const [content, setContent] = createSignal('Initial value')
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    const cleanup = mountComponentTree(Text(content) as any, container)
+    await flushReactiveUpdates()
+
+    const textElement = container.querySelector('.tachui-text')
+    expect(textElement).not.toBeNull()
+    expect(textElement!.textContent).toBe('Initial value')
+
+    setContent('Updated value')
+    await flushReactiveUpdates()
+    expect(textElement!.textContent).toBe('Updated value')
+
+    cleanup()
+  })
+
+  it('preserves style modifiers when reactive content updates', async () => {
+    const [content, setContent] = createSignal('Styled start')
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    const cleanup = mountComponentTree(
+      Text(content).padding(6).margin(4) as any,
+      container
+    )
+    await flushReactiveUpdates()
+
+    const textElement = container.querySelector('.tachui-text') as HTMLElement
+    expect(textElement).not.toBeNull()
+    expect(textElement.style.padding).toBe('6px')
+    expect(textElement.style.margin).toBe('4px')
+
+    setContent('Styled update')
+    await flushReactiveUpdates()
+
+    expect(textElement.textContent).toBe('Styled update')
+    expect(textElement.style.padding).toBe('6px')
+    expect(textElement.style.margin).toBe('4px')
+
+    cleanup()
+  })
+
+  it('applies the last value after rapid successive signal updates', async () => {
+    const [content, setContent] = createSignal('Start')
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    const cleanup = mountComponentTree(Text(content) as any, container)
+    await flushReactiveUpdates()
+
+    const textElement = container.querySelector('.tachui-text')
+    expect(textElement).not.toBeNull()
+
+    setContent('Second')
+    setContent('Third')
+    setContent('Final')
+    await flushReactiveUpdates()
+
+    expect(textElement!.textContent).toBe('Final')
+
+    cleanup()
+  })
+
+  it('updates from non-empty to empty signal content', async () => {
+    const [content, setContent] = createSignal('Non-empty')
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    const cleanup = mountComponentTree(Text(content) as any, container)
+    await flushReactiveUpdates()
+
+    const textElement = container.querySelector('.tachui-text')
+    expect(textElement).not.toBeNull()
+    expect(textElement!.textContent).toBe('Non-empty')
+
+    setContent('')
+    await flushReactiveUpdates()
+
+    expect(textElement!.textContent).toBe('')
+
+    cleanup()
+  })
+
+  it('propagates Text signal updates inside VStack, HStack, and ZStack', async () => {
+    const stackFactories = [
+      { name: 'VStack', create: VStack },
+      { name: 'HStack', create: HStack },
+      { name: 'ZStack', create: ZStack },
+    ] as const
+
+    for (const { name, create } of stackFactories) {
+      const [content, setContent] = createSignal(`${name} start`)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const cleanup = mountComponentTree(
+        create({
+          children: [Text('Before'), Text(content), Text('After')],
+        }) as any,
+        container
+      )
+      await flushReactiveUpdates()
+
+      let targetText = Array.from(container.querySelectorAll('.tachui-text')).find(
+        node => node.textContent === `${name} start`
+      )
+      expect(targetText).toBeTruthy()
+
+      setContent(`${name} updated`)
+      await flushReactiveUpdates()
+
+      targetText = Array.from(container.querySelectorAll('.tachui-text')).find(
+        node => node.textContent === `${name} updated`
+      )
+      expect(targetText).toBeTruthy()
+
+      cleanup()
+      container.remove()
+    }
   })
 })
 
