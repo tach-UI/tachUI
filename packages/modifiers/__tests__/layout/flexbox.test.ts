@@ -6,8 +6,10 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest'
+import { createSignal, flushSync } from '@tachui/core/reactive'
 import {
   FlexboxModifier,
+  flex,
   flexbox,
   flexGrow,
   flexShrink,
@@ -16,6 +18,8 @@ import {
   alignItems,
   alignSelf,
   gap,
+  rowGap,
+  columnGap,
   flexDirection,
   flexWrap,
   flexboxPresets,
@@ -562,6 +566,94 @@ describe('Enhanced Flexbox Modifier System', () => {
       expect(mockElement.style.flexBasis).toBe('fit-content')
       expect(mockElement.style.justifyContent).toBe('space-evenly')
       expect(mockElement.style.alignItems).toBe('first baseline')
+    })
+  })
+
+  describe('Reactive Support', () => {
+    it('updates flex-direction and flex-wrap from signal values', () => {
+      const [direction, setDirection] = createSignal<'row' | 'column'>('row')
+      const [wrapValue, setWrapValue] = createSignal<'nowrap' | 'wrap'>('nowrap')
+
+      const directionModifier = flexDirection(direction as unknown as any)
+      directionModifier.apply({} as DOMNode, mockContext)
+      const wrapModifier = flexWrap(wrapValue as unknown as any)
+      wrapModifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.flexDirection).toBe('row')
+      expect(mockElement.style.flexWrap).toBe('nowrap')
+
+      setDirection('column')
+      setWrapValue('wrap')
+      flushSync()
+
+      expect(mockElement.style.flexDirection).toBe('column')
+      expect(mockElement.style.flexWrap).toBe('wrap')
+    })
+
+    it('updates alignment and spacing modifiers from signal values', () => {
+      const [justify, setJustify] = createSignal<'center' | 'space-between'>(
+        'center'
+      )
+      const [items, setItems] = createSignal<'stretch' | 'center'>('stretch')
+      const [self, setSelf] = createSignal<'auto' | 'flex-end'>('auto')
+      const [gapValue, setGapValue] = createSignal(8)
+      const [rowGapValue, setRowGapValue] = createSignal(4)
+      const [columnGapValue, setColumnGapValue] = createSignal(10)
+
+      justifyContent(justify as unknown as any).apply({} as DOMNode, mockContext)
+      alignItems(items as unknown as any).apply({} as DOMNode, mockContext)
+      alignSelf(self as unknown as any).apply({} as DOMNode, mockContext)
+      gap(gapValue as unknown as any).apply({} as DOMNode, mockContext)
+      rowGap(rowGapValue as unknown as any).apply({} as DOMNode, mockContext)
+      columnGap(columnGapValue as unknown as any).apply(
+        {} as DOMNode,
+        mockContext
+      )
+
+      expect(mockElement.style.justifyContent).toBe('center')
+      expect(mockElement.style.alignItems).toBe('stretch')
+      expect(mockElement.style.alignSelf).toBe('auto')
+      expect(mockElement.style.gap).toBe('8px')
+      expect(mockElement.style.rowGap).toBe('4px')
+      expect(mockElement.style.columnGap).toBe('10px')
+
+      setJustify('space-between')
+      setItems('center')
+      setSelf('flex-end')
+      setGapValue(20)
+      setRowGapValue(11)
+      setColumnGapValue(14)
+      flushSync()
+
+      expect(mockElement.style.justifyContent).toBe('space-between')
+      expect(mockElement.style.alignItems).toBe('center')
+      expect(mockElement.style.alignSelf).toBe('flex-end')
+      expect(mockElement.style.gap).toBe('20px')
+      expect(mockElement.style.rowGap).toBe('11px')
+      expect(mockElement.style.columnGap).toBe('14px')
+    })
+
+    it('updates flex, flexGrow, and flexShrink from signal values', () => {
+      const [flexValue, setFlexValue] = createSignal<number | string>(1)
+      const [grow, setGrow] = createSignal(1)
+      const [shrink, setShrink] = createSignal(1)
+
+      flex(flexValue as unknown as any).apply({} as DOMNode, mockContext)
+      flexGrow(grow as unknown as any).apply({} as DOMNode, mockContext)
+      flexShrink(shrink as unknown as any).apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.flex).toBe('1')
+      expect(mockElement.style.flexGrow).toBe('1')
+      expect(mockElement.style.flexShrink).toBe('1')
+
+      setFlexValue('2 1 auto')
+      setGrow(3)
+      setShrink(0)
+      flushSync()
+
+      expect(mockElement.style.flex).toBe('2 1 auto')
+      expect(mockElement.style.flexGrow).toBe('3')
+      expect(mockElement.style.flexShrink).toBe('0')
     })
   })
 })

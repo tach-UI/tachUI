@@ -8,19 +8,20 @@
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
 import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
+import { createEffect, isComputed, isSignal } from '@tachui/core/reactive'
 
 export interface TransformConfig {
   scale?: number | { x?: number; y?: number }
-  rotate?: string
+  rotate?: string | number
   translate?: { x?: number | string; y?: number | string }
-  skew?: { x?: string; y?: string }
+  skew?: { x?: string | number; y?: string | number }
   perspective?: number
 }
 
 export interface Transform3DConfig extends TransformConfig {
-  rotateX?: string
-  rotateY?: string
-  rotateZ?: string
+  rotateX?: string | number
+  rotateY?: string | number
+  rotateZ?: string | number
   translate?: { x?: number | string; y?: number | string; z?: number | string }
   translateZ?: number | string
   scaleZ?: number
@@ -41,24 +42,56 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
   readonly priority = 45
 
   constructor(options: ReactiveTransformOptions) {
-    const resolvedOptions: ModifierTransformOptions = {}
-    for (const [key, value] of Object.entries(options)) {
-      if (typeof value === 'function' && 'peek' in value) {
-        ;(resolvedOptions as any)[key] = (value as any).peek()
-      } else {
-        ;(resolvedOptions as any)[key] = value
-      }
-    }
-    super(resolvedOptions)
+    super(options as ModifierTransformOptions)
   }
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
-    const styles = this.computeTransformStyles(this.properties)
-    this.applyStyles(context.element, styles)
+    if (this.hasReactiveValues(this.properties)) {
+      createEffect(() => {
+        const styles = this.computeTransformStyles(
+          this.resolveTransformOptions(this.properties)
+        )
+        this.applyStyles(context.element!, styles)
+      })
+    } else {
+      const styles = this.computeTransformStyles(this.properties)
+      this.applyStyles(context.element, styles)
+    }
 
     return undefined
+  }
+
+  private hasReactiveValues(value: unknown): boolean {
+    if (isSignal(value) || isComputed(value)) return true
+    if (Array.isArray(value)) {
+      return value.some(item => this.hasReactiveValues(item))
+    }
+    if (value && typeof value === 'object') {
+      return Object.values(value).some(item => this.hasReactiveValues(item))
+    }
+    return false
+  }
+
+  private resolveTransformOptions(
+    props: ModifierTransformOptions
+  ): ModifierTransformOptions {
+    const resolveValue = (value: unknown): any => {
+      if (isSignal(value) || isComputed(value)) return value()
+      if (Array.isArray(value)) return value.map(item => resolveValue(item))
+      if (value && typeof value === 'object') {
+        return Object.fromEntries(
+          Object.entries(value).map(([key, nestedValue]) => [
+            key,
+            resolveValue(nestedValue),
+          ])
+        )
+      }
+      return value
+    }
+
+    return resolveValue(props) as ModifierTransformOptions
   }
 
   private computeTransformStyles(props: ModifierTransformOptions) {
@@ -106,18 +139,18 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
 
     // Handle rotate (2D)
     if (config.rotate !== undefined) {
-      transforms.push(`rotate(${config.rotate})`)
+      transforms.push(`rotate(${this.formatAngle(config.rotate)})`)
     }
 
     // Handle 3D rotations
     if ('rotateX' in config && config.rotateX !== undefined) {
-      transforms.push(`rotateX(${config.rotateX})`)
+      transforms.push(`rotateX(${this.formatAngle(config.rotateX)})`)
     }
     if ('rotateY' in config && config.rotateY !== undefined) {
-      transforms.push(`rotateY(${config.rotateY})`)
+      transforms.push(`rotateY(${this.formatAngle(config.rotateY)})`)
     }
     if ('rotateZ' in config && config.rotateZ !== undefined) {
-      transforms.push(`rotateZ(${config.rotateZ})`)
+      transforms.push(`rotateZ(${this.formatAngle(config.rotateZ)})`)
     }
 
     // Handle translate
@@ -145,11 +178,13 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
     // Handle skew
     if (config.skew !== undefined) {
       if (config.skew.x !== undefined && config.skew.y !== undefined) {
-        transforms.push(`skew(${config.skew.x}, ${config.skew.y})`)
+        transforms.push(
+          `skew(${this.formatAngle(config.skew.x)}, ${this.formatAngle(config.skew.y)})`
+        )
       } else if (config.skew.x !== undefined) {
-        transforms.push(`skewX(${config.skew.x})`)
+        transforms.push(`skewX(${this.formatAngle(config.skew.x)})`)
       } else if (config.skew.y !== undefined) {
-        transforms.push(`skewY(${config.skew.y})`)
+        transforms.push(`skewY(${this.formatAngle(config.skew.y)})`)
       }
     }
 
@@ -159,6 +194,13 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
   private formatLength(value: number | string): string {
     if (typeof value === 'number') {
       return `${value}px`
+    }
+    return value
+  }
+
+  private formatAngle(value: number | string): string {
+    if (typeof value === 'number') {
+      return `${value}deg`
     }
     return value
   }
@@ -226,24 +268,56 @@ export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTran
   readonly priority = 45
 
   constructor(options: ReactiveAdvancedTransformOptions) {
-    const resolvedOptions: ModifierAdvancedTransformOptions = {}
-    for (const [key, value] of Object.entries(options)) {
-      if (typeof value === 'function' && 'peek' in value) {
-        ;(resolvedOptions as any)[key] = (value as any).peek()
-      } else {
-        ;(resolvedOptions as any)[key] = value
-      }
-    }
-    super(resolvedOptions)
+    super(options as ModifierAdvancedTransformOptions)
   }
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
-    const styles = this.computeAdvancedTransformStyles(this.properties)
-    this.applyStyles(context.element, styles)
+    if (this.hasReactiveValues(this.properties)) {
+      createEffect(() => {
+        const styles = this.computeAdvancedTransformStyles(
+          this.resolveAdvancedTransformOptions(this.properties)
+        )
+        this.applyStyles(context.element!, styles)
+      })
+    } else {
+      const styles = this.computeAdvancedTransformStyles(this.properties)
+      this.applyStyles(context.element, styles)
+    }
 
     return undefined
+  }
+
+  private hasReactiveValues(value: unknown): boolean {
+    if (isSignal(value) || isComputed(value)) return true
+    if (Array.isArray(value)) {
+      return value.some(item => this.hasReactiveValues(item))
+    }
+    if (value && typeof value === 'object') {
+      return Object.values(value).some(item => this.hasReactiveValues(item))
+    }
+    return false
+  }
+
+  private resolveAdvancedTransformOptions(
+    props: ModifierAdvancedTransformOptions
+  ): ModifierAdvancedTransformOptions {
+    const resolveValue = (value: unknown): any => {
+      if (isSignal(value) || isComputed(value)) return value()
+      if (Array.isArray(value)) return value.map(item => resolveValue(item))
+      if (value && typeof value === 'object') {
+        return Object.fromEntries(
+          Object.entries(value).map(([key, nestedValue]) => [
+            key,
+            resolveValue(nestedValue),
+          ])
+        )
+      }
+      return value
+    }
+
+    return resolveValue(props) as ModifierAdvancedTransformOptions
   }
 
   private computeAdvancedTransformStyles(
@@ -394,7 +468,7 @@ export function scale(
  * .rotate('0.5turn')
  * ```
  */
-export function rotate(angle: string): TransformModifier {
+export function rotate(angle: string | number): TransformModifier {
   return new TransformModifier({ transform: { rotate: angle } })
 }
 
@@ -423,7 +497,10 @@ export function translate(offset: {
  * .skew({ x: '20deg' })  // Only X axis
  * ```
  */
-export function skew(angles: { x?: string; y?: string }): TransformModifier {
+export function skew(angles: {
+  x?: string | number
+  y?: string | number
+}): TransformModifier {
   return new TransformModifier({ transform: { skew: angles } })
 }
 
@@ -440,7 +517,7 @@ export function skew(angles: { x?: string; y?: string }): TransformModifier {
  * .rotateX('1rad')
  * ```
  */
-export function rotateX(angle: string): TransformModifier {
+export function rotateX(angle: string | number): TransformModifier {
   return new TransformModifier({ transform: { rotateX: angle } })
 }
 
@@ -453,7 +530,7 @@ export function rotateX(angle: string): TransformModifier {
  * .rotateY('-45deg')
  * ```
  */
-export function rotateY(angle: string): TransformModifier {
+export function rotateY(angle: string | number): TransformModifier {
   return new TransformModifier({ transform: { rotateY: angle } })
 }
 
@@ -466,7 +543,7 @@ export function rotateY(angle: string): TransformModifier {
  * .rotateZ('0.25turn')
  * ```
  */
-export function rotateZ(angle: string): TransformModifier {
+export function rotateZ(angle: string | number): TransformModifier {
   return new TransformModifier({ transform: { rotateZ: angle } })
 }
 

@@ -166,6 +166,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
         'opacity',
         'z-index',
         'line-height',
+        'flex',
         'flex-grow',
         'flex-shrink',
         'order',

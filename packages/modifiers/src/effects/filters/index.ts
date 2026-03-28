@@ -8,18 +8,19 @@
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
 import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
+import { createEffect, isComputed, isSignal } from '@tachui/core/reactive'
 
 export interface FilterConfig {
   blur?: number // Blur radius in pixels
   brightness?: number // Brightness multiplier (1 = normal, >1 brighter, <1 darker)
   contrast?: number // Contrast multiplier (1 = normal, >1 more contrast, <1 less contrast)
   saturate?: number // Saturation multiplier (1 = normal, >1 more saturated, 0 = grayscale)
-  sepia?: number // Sepia effect (0-1, where 1 is full sepia)
-  hueRotate?: string // Hue rotation (e.g., '90deg', '0.25turn')
-  invert?: number // Invert colors (0-1, where 1 is full invert)
+  sepia?: number | boolean // Sepia effect (0-1, where 1 is full sepia)
+  hueRotate?: string | number // Hue rotation (e.g., '90deg', '0.25turn', 90)
+  invert?: number | boolean // Invert colors (0-1, where 1 is full invert)
   opacity?: number // Opacity filter (0-1, alternative to CSS opacity)
   dropShadow?: string // Drop shadow filter (e.g., '2px 2px 4px rgba(0,0,0,0.5)')
-  grayscale?: number // Grayscale effect (0-1, where 1 is full grayscale)
+  grayscale?: number | boolean // Grayscale effect (0-1, where 1 is full grayscale)
 }
 
 export interface FilterOptions {
@@ -33,24 +34,54 @@ export class FilterModifier extends BaseModifier<FilterOptions> {
   readonly priority = 30
 
   constructor(options: ReactiveFilterOptions) {
-    const resolvedOptions: FilterOptions = {}
-    for (const [key, value] of Object.entries(options)) {
-      if (typeof value === 'function' && 'peek' in value) {
-        ;(resolvedOptions as any)[key] = (value as any).peek()
-      } else {
-        ;(resolvedOptions as any)[key] = value
-      }
-    }
-    super(resolvedOptions)
+    super(options as FilterOptions)
   }
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
-    const styles = this.computeFilterStyles(this.properties)
-    this.applyStyles(context.element, styles)
+    if (this.hasReactiveValues(this.properties.filter)) {
+      createEffect(() => {
+        const styles = this.computeFilterStyles(
+          this.resolveFilterOptions(this.properties)
+        )
+        this.applyStyles(context.element!, styles)
+      })
+    } else {
+      const styles = this.computeFilterStyles(this.properties)
+      this.applyStyles(context.element, styles)
+    }
 
     return undefined
+  }
+
+  private hasReactiveValues(value: unknown): boolean {
+    if (isSignal(value) || isComputed(value)) return true
+    if (Array.isArray(value)) {
+      return value.some(item => this.hasReactiveValues(item))
+    }
+    if (value && typeof value === 'object') {
+      return Object.values(value).some(item => this.hasReactiveValues(item))
+    }
+    return false
+  }
+
+  private resolveFilterOptions(props: FilterOptions): FilterOptions {
+    const resolveValue = (value: unknown): any => {
+      if (isSignal(value) || isComputed(value)) return value()
+      if (Array.isArray(value)) return value.map(item => resolveValue(item))
+      if (value && typeof value === 'object') {
+        return Object.fromEntries(
+          Object.entries(value).map(([key, nestedValue]) => [
+            key,
+            resolveValue(nestedValue),
+          ])
+        )
+      }
+      return value
+    }
+
+    return resolveValue(props) as FilterOptions
   }
 
   private computeFilterStyles(props: FilterOptions) {
@@ -86,13 +117,13 @@ export class FilterModifier extends BaseModifier<FilterOptions> {
           filters.push(`saturate(${value})`)
           break
         case 'sepia':
-          filters.push(`sepia(${value})`)
+          filters.push(`sepia(${this.normalizeToggleValue(value)})`)
           break
         case 'hueRotate':
-          filters.push(`hue-rotate(${value})`)
+          filters.push(`hue-rotate(${this.normalizeHueRotate(value)})`)
           break
         case 'invert':
-          filters.push(`invert(${value})`)
+          filters.push(`invert(${this.normalizeToggleValue(value)})`)
           break
         case 'opacity':
           filters.push(`opacity(${value})`)
@@ -101,12 +132,22 @@ export class FilterModifier extends BaseModifier<FilterOptions> {
           filters.push(`drop-shadow(${value})`)
           break
         case 'grayscale':
-          filters.push(`grayscale(${value})`)
+          filters.push(`grayscale(${this.normalizeToggleValue(value)})`)
           break
       }
     })
 
     return filters.join(' ')
+  }
+
+  private normalizeHueRotate(value: unknown): string {
+    if (typeof value === 'number') return `${value}deg`
+    return String(value)
+  }
+
+  private normalizeToggleValue(value: unknown): number | string {
+    if (typeof value === 'boolean') return value ? 1 : 0
+    return value as number | string
   }
 }
 
@@ -194,7 +235,7 @@ export function saturate(value: number): FilterModifier {
  * .grayscale(0)      // No grayscale (full color)
  * ```
  */
-export function grayscale(value: number): FilterModifier {
+export function grayscale(value: number | boolean): FilterModifier {
   return new FilterModifier({ filter: { grayscale: value } })
 }
 
@@ -208,7 +249,7 @@ export function grayscale(value: number): FilterModifier {
  * .sepia(0)        // No sepia effect
  * ```
  */
-export function sepia(value: number): FilterModifier {
+export function sepia(value: number | boolean): FilterModifier {
   return new FilterModifier({ filter: { sepia: value } })
 }
 
@@ -222,7 +263,7 @@ export function sepia(value: number): FilterModifier {
  * .hueRotate('180deg')    // Half rotation (complementary colors)
  * ```
  */
-export function hueRotate(angle: string): FilterModifier {
+export function hueRotate(angle: string | number): FilterModifier {
   return new FilterModifier({ filter: { hueRotate: angle } })
 }
 
@@ -264,7 +305,7 @@ export function backdropFilter(config: FilterConfig | string): FilterModifier {
  * .invert(0)       // No inversion (normal colors)
  * ```
  */
-export function invert(value: number): FilterModifier {
+export function invert(value: number | boolean): FilterModifier {
   return new FilterModifier({ filter: { invert: value } })
 }
 

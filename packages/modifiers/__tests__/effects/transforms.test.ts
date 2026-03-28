@@ -3,6 +3,9 @@
  */
 
 import { describe, it, expect } from 'vitest'
+import { createSignal, flushSync } from '@tachui/core/reactive'
+import type { ModifierContext } from '@tachui/core/modifiers/types'
+import type { DOMNode } from '@tachui/core/runtime/types'
 import {
   TransformModifier,
   AdvancedTransformModifier,
@@ -19,7 +22,42 @@ import {
   offset,
 } from '../../src/effects/transforms'
 
+class MockElement {
+  style: {
+    [key: string]: string
+    setProperty: (property: string, value: string) => void
+  }
+
+  constructor() {
+    this.style = new Proxy({} as any, {
+      set: (target, prop, value) => {
+        target[prop] = value
+        return true
+      },
+      get: (target, prop) => {
+        if (prop === 'setProperty') {
+          return (property: string, value: string) => {
+            target[property] = value
+          }
+        }
+        return target[prop] || ''
+      },
+    })
+  }
+}
+
 describe('Transform Effects', () => {
+  const createContext = (): {
+    element: MockElement
+    context: ModifierContext
+  } => {
+    const element = new MockElement()
+    return {
+      element,
+      context: { element: element as unknown as HTMLElement },
+    }
+  }
+
   describe('TransformModifier', () => {
     it('should create transform modifier', () => {
       const modifier = new TransformModifier({
@@ -118,6 +156,82 @@ describe('Transform Effects', () => {
 
       expect(modifier).toBeDefined()
       expect(modifier.type).toBe('transform')
+    })
+  })
+
+  describe('Reactive Support', () => {
+    it('updates rotate() transform from signal values', () => {
+      const [angle, setAngle] = createSignal(15)
+      const modifier = rotate(angle as unknown as any)
+      const { element, context } = createContext()
+      modifier.apply({} as DOMNode, context)
+
+      expect(element.style.transform).toContain('rotate(15deg)')
+      setAngle(75)
+      flushSync()
+      expect(element.style.transform).toContain('rotate(75deg)')
+    })
+
+    it('updates skew(x,y) transform from signal values', () => {
+      const [x, setX] = createSignal(10)
+      const [y, setY] = createSignal(20)
+      const modifier = skew({
+        x: x as unknown as any,
+        y: y as unknown as any,
+      })
+      const { element, context } = createContext()
+      modifier.apply({} as DOMNode, context)
+
+      expect(element.style.transform).toContain('skew(10deg, 20deg)')
+      setX(25)
+      setY(5)
+      flushSync()
+      expect(element.style.transform).toContain('skew(25deg, 5deg)')
+    })
+
+    it('supports skewX and skewY paths from reactive skew config', () => {
+      const [x, setX] = createSignal(12)
+      const xOnly = skew({ x: x as unknown as any })
+      const xCtx = createContext()
+      xOnly.apply({} as DOMNode, xCtx.context)
+      expect(xCtx.element.style.transform).toContain('skewX(12deg)')
+      setX(30)
+      flushSync()
+      expect(xCtx.element.style.transform).toContain('skewX(30deg)')
+
+      const [y, setY] = createSignal(8)
+      const yOnly = skew({ y: y as unknown as any })
+      const yCtx = createContext()
+      yOnly.apply({} as DOMNode, yCtx.context)
+      expect(yCtx.element.style.transform).toContain('skewY(8deg)')
+      setY(18)
+      flushSync()
+      expect(yCtx.element.style.transform).toContain('skewY(18deg)')
+    })
+
+    it('composes multiple reactive transforms without clobbering siblings', () => {
+      const [angle, setAngle] = createSignal(10)
+      const [skewX, setSkewX] = createSignal(5)
+
+      const modifier = transform({
+        rotate: angle as unknown as any,
+        skew: { x: skewX as unknown as any },
+      })
+      const { element, context } = createContext()
+      modifier.apply({} as DOMNode, context)
+
+      expect(element.style.transform).toContain('rotate(10deg)')
+      expect(element.style.transform).toContain('skewX(5deg)')
+
+      setAngle(45)
+      flushSync()
+      expect(element.style.transform).toContain('rotate(45deg)')
+      expect(element.style.transform).toContain('skewX(5deg)')
+
+      setSkewX(15)
+      flushSync()
+      expect(element.style.transform).toContain('rotate(45deg)')
+      expect(element.style.transform).toContain('skewX(15deg)')
     })
   })
 })
