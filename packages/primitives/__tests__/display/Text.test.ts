@@ -56,6 +56,9 @@ async function flushReactiveUpdates(): Promise<void> {
   await new Promise<void>(resolve => setTimeout(resolve, 0))
 }
 
+// Text renders with a stable framework class used by runtime/style integration.
+const TEXT_CLASS_SELECTOR = '.tachui-text'
+
 describe('EnhancedText', () => {
   describe('Basic Functionality', () => {
     it('should create text component with string content', () => {
@@ -516,7 +519,7 @@ describe('EnhancedText', () => {
     })
   })
 
-describe('Reactive Updates', () => {
+  describe('Reactive Updates', () => {
     it('should update content when signal changes', () => {
       const [content, setContent] = createSignal('Initial')
       const text = new EnhancedText({ content })
@@ -544,42 +547,59 @@ describe('Reactive Updates', () => {
 })
 
 describe('DOM Signal Reactivity', () => {
+  const domCleanups: Array<() => void> = []
+  const domContainers: HTMLElement[] = []
+
   beforeEach(() => {
     createElementSpy?.mockRestore()
     document.body.innerHTML = ''
+  })
+
+  afterEach(() => {
+    while (domCleanups.length > 0) {
+      const cleanup = domCleanups.pop()
+      cleanup?.()
+    }
+
+    while (domContainers.length > 0) {
+      const container = domContainers.pop()
+      container?.remove()
+    }
   })
 
   it('reflects Text(Signal<string>) updates in textContent', async () => {
     const [content, setContent] = createSignal('Initial value')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(Text(content) as any, container)
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
-    const textElement = container.querySelector('.tachui-text')
+    const textElement = container.querySelector(TEXT_CLASS_SELECTOR)
     expect(textElement).not.toBeNull()
     expect(textElement!.textContent).toBe('Initial value')
 
     setContent('Updated value')
     await flushReactiveUpdates()
     expect(textElement!.textContent).toBe('Updated value')
-
-    cleanup()
   })
 
   it('preserves style modifiers when reactive content updates', async () => {
     const [content, setContent] = createSignal('Styled start')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(
       Text(content).padding(6).margin(4) as any,
       container
     )
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
-    const textElement = container.querySelector('.tachui-text') as HTMLElement
+    const textElement = container.querySelector(TEXT_CLASS_SELECTOR) as HTMLElement
     expect(textElement).not.toBeNull()
     expect(textElement.style.padding).toBe('6px')
     expect(textElement.style.margin).toBe('4px')
@@ -590,19 +610,19 @@ describe('DOM Signal Reactivity', () => {
     expect(textElement.textContent).toBe('Styled update')
     expect(textElement.style.padding).toBe('6px')
     expect(textElement.style.margin).toBe('4px')
-
-    cleanup()
   })
 
   it('applies the last value after rapid successive signal updates', async () => {
     const [content, setContent] = createSignal('Start')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(Text(content) as any, container)
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
-    const textElement = container.querySelector('.tachui-text')
+    const textElement = container.querySelector(TEXT_CLASS_SELECTOR)
     expect(textElement).not.toBeNull()
 
     setContent('Second')
@@ -611,19 +631,19 @@ describe('DOM Signal Reactivity', () => {
     await flushReactiveUpdates()
 
     expect(textElement!.textContent).toBe('Final')
-
-    cleanup()
   })
 
   it('updates from non-empty to empty signal content', async () => {
     const [content, setContent] = createSignal('Non-empty')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(Text(content) as any, container)
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
-    const textElement = container.querySelector('.tachui-text')
+    const textElement = container.querySelector(TEXT_CLASS_SELECTOR)
     expect(textElement).not.toBeNull()
     expect(textElement!.textContent).toBe('Non-empty')
 
@@ -631,8 +651,6 @@ describe('DOM Signal Reactivity', () => {
     await flushReactiveUpdates()
 
     expect(textElement!.textContent).toBe('')
-
-    cleanup()
   })
 
   it('propagates Text signal updates inside VStack, HStack, and ZStack', async () => {
@@ -646,6 +664,7 @@ describe('DOM Signal Reactivity', () => {
       const [content, setContent] = createSignal(`${name} start`)
       const container = document.createElement('div')
       document.body.appendChild(container)
+      domContainers.push(container)
 
       const cleanup = mountComponentTree(
         create({
@@ -653,9 +672,10 @@ describe('DOM Signal Reactivity', () => {
         }) as any,
         container
       )
+      domCleanups.push(cleanup)
       await flushReactiveUpdates()
 
-      let targetText = Array.from(container.querySelectorAll('.tachui-text')).find(
+      let targetText = Array.from(container.querySelectorAll(TEXT_CLASS_SELECTOR)).find(
         node => node.textContent === `${name} start`
       )
       expect(targetText).toBeTruthy()
@@ -663,13 +683,10 @@ describe('DOM Signal Reactivity', () => {
       setContent(`${name} updated`)
       await flushReactiveUpdates()
 
-      targetText = Array.from(container.querySelectorAll('.tachui-text')).find(
+      targetText = Array.from(container.querySelectorAll(TEXT_CLASS_SELECTOR)).find(
         node => node.textContent === `${name} updated`
       )
       expect(targetText).toBeTruthy()
-
-      cleanup()
-      container.remove()
     }
   })
 })
