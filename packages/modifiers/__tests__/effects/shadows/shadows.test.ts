@@ -246,11 +246,21 @@ describe('Shadow Modifiers', () => {
       testDisposers.push(cleanup.dispose)
 
       await waitForEffects()
-      expect(cleanup.element.style.boxShadow).toContain('#EDEAE9')
+      expect(cleanup.element.style.boxShadow).toBe(
+        '0px 2px 4px 0px #EDEAE9'
+      )
 
       setTheme('dark')
       await waitForEffects()
-      expect(cleanup.element.style.boxShadow).toContain('#332A25')
+      expect(cleanup.element.style.boxShadow).toBe(
+        '0px 2px 4px 0px #332A25'
+      )
+
+      setTheme('light')
+      await waitForEffects()
+      expect(cleanup.element.style.boxShadow).toBe(
+        '0px 2px 4px 0px #EDEAE9'
+      )
     })
 
     it('re-resolves ColorAsset in multiple shadow array on theme change', async () => {
@@ -277,11 +287,21 @@ describe('Shadow Modifiers', () => {
       testDisposers.push(cleanup.dispose)
 
       await waitForEffects()
-      expect(cleanup.element.style.boxShadow).toContain('#EDEAE9')
+      expect(cleanup.element.style.boxShadow).toBe(
+        '0px 2px 4px 0px #EDEAE9, 0px 0px 1px 0px rgba(0,0,0,0.12)'
+      )
 
       setTheme('dark')
       await waitForEffects()
-      expect(cleanup.element.style.boxShadow).toContain('#332A25')
+      expect(cleanup.element.style.boxShadow).toBe(
+        '0px 2px 4px 0px #332A25, 0px 0px 1px 0px rgba(0,0,0,0.12)'
+      )
+
+      setTheme('light')
+      await waitForEffects()
+      expect(cleanup.element.style.boxShadow).toBe(
+        '0px 2px 4px 0px #EDEAE9, 0px 0px 1px 0px rgba(0,0,0,0.12)'
+      )
     })
   })
 
@@ -385,11 +405,15 @@ describe('Shadow Modifiers', () => {
       testDisposers.push(cleanup.dispose)
 
       await waitForEffects()
-      expect(cleanup.element.style.textShadow).toContain('#EDEAE9')
+      expect(cleanup.element.style.textShadow).toBe('1px 1px 2px #EDEAE9')
 
       setTheme('dark')
       await waitForEffects()
-      expect(cleanup.element.style.textShadow).toContain('#332A25')
+      expect(cleanup.element.style.textShadow).toBe('1px 1px 2px #332A25')
+
+      setTheme('light')
+      await waitForEffects()
+      expect(cleanup.element.style.textShadow).toBe('1px 1px 2px #EDEAE9')
     })
 
     it('re-resolves ColorAsset in multiple textShadow array on theme change', async () => {
@@ -416,11 +440,21 @@ describe('Shadow Modifiers', () => {
       testDisposers.push(cleanup.dispose)
 
       await waitForEffects()
-      expect(cleanup.element.style.textShadow).toContain('#EDEAE9')
+      expect(cleanup.element.style.textShadow).toBe(
+        '1px 1px 2px #EDEAE9, -1px -1px 1px rgba(0,0,0,0.2)'
+      )
 
       setTheme('dark')
       await waitForEffects()
-      expect(cleanup.element.style.textShadow).toContain('#332A25')
+      expect(cleanup.element.style.textShadow).toBe(
+        '1px 1px 2px #332A25, -1px -1px 1px rgba(0,0,0,0.2)'
+      )
+
+      setTheme('light')
+      await waitForEffects()
+      expect(cleanup.element.style.textShadow).toBe(
+        '1px 1px 2px #EDEAE9, -1px -1px 1px rgba(0,0,0,0.2)'
+      )
     })
   })
 
@@ -550,6 +584,12 @@ describe('Shadow Modifiers', () => {
       expect(cleanup.element.style.filter).toBe(
         'drop-shadow(0px 4px 8px #332A25)'
       )
+
+      setTheme('light')
+      await waitForEffects()
+      expect(cleanup.element.style.filter).toBe(
+        'drop-shadow(0px 4px 8px #EDEAE9)'
+      )
     })
 
     it('re-resolves ColorAsset in multiple dropShadow array on theme change', async () => {
@@ -576,11 +616,21 @@ describe('Shadow Modifiers', () => {
       testDisposers.push(cleanup.dispose)
 
       await waitForEffects()
-      expect(cleanup.element.style.filter).toContain('#EDEAE9')
+      expect(cleanup.element.style.filter).toBe(
+        'drop-shadow(0px 4px 8px #EDEAE9) drop-shadow(0px 1px 2px rgba(0,0,0,0.2))'
+      )
 
       setTheme('dark')
       await waitForEffects()
-      expect(cleanup.element.style.filter).toContain('#332A25')
+      expect(cleanup.element.style.filter).toBe(
+        'drop-shadow(0px 4px 8px #332A25) drop-shadow(0px 1px 2px rgba(0,0,0,0.2))'
+      )
+
+      setTheme('light')
+      await waitForEffects()
+      expect(cleanup.element.style.filter).toBe(
+        'drop-shadow(0px 4px 8px #EDEAE9) drop-shadow(0px 1px 2px rgba(0,0,0,0.2))'
+      )
     })
   })
 
