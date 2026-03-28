@@ -64,6 +64,10 @@ const createMockContext = (element?: Element): ModifierContext => ({
 
 const testDisposers: Array<() => void> = []
 
+async function waitForEffects(): Promise<void> {
+  await new Promise(resolve => setTimeout(resolve, 0))
+}
+
 describe('Shadow Modifiers', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
@@ -241,11 +245,42 @@ describe('Shadow Modifiers', () => {
       })
       testDisposers.push(cleanup.dispose)
 
-      await new Promise(resolve => setTimeout(resolve, 0))
+      await waitForEffects()
       expect(cleanup.element.style.boxShadow).toContain('#EDEAE9')
 
       setTheme('dark')
-      await new Promise(resolve => setTimeout(resolve, 0))
+      await waitForEffects()
+      expect(cleanup.element.style.boxShadow).toContain('#332A25')
+    })
+
+    it('re-resolves ColorAsset in multiple shadow array on theme change', async () => {
+      const cleanup = createRoot(dispose => {
+        const element = createMockElement()
+        const context = createMockContext(element)
+        const asset = ColorAsset.init({
+          name: 'shadowArrayColorAsset',
+          default: '#EDEAE9',
+          light: '#EDEAE9',
+          dark: '#332A25',
+        })
+
+        const modifier = new ShadowModifier({
+          shadow: [
+            { x: 0, y: 2, blur: 4, color: asset as unknown as string },
+            { x: 0, y: 0, blur: 1, color: 'rgba(0,0,0,0.12)' },
+          ],
+        })
+
+        modifier.apply({} as any, context)
+        return { dispose, element }
+      })
+      testDisposers.push(cleanup.dispose)
+
+      await waitForEffects()
+      expect(cleanup.element.style.boxShadow).toContain('#EDEAE9')
+
+      setTheme('dark')
+      await waitForEffects()
       expect(cleanup.element.style.boxShadow).toContain('#332A25')
     })
   })
@@ -327,6 +362,65 @@ describe('Shadow Modifiers', () => {
       flushSync()
 
       expect(element.style.textShadow).toBe('2px 3px 5px rgba(255,0,0,0.4)')
+    })
+
+    it('re-resolves ColorAsset textShadow color when theme changes', async () => {
+      const cleanup = createRoot(dispose => {
+        const element = createMockElement()
+        const context = createMockContext(element)
+        const asset = ColorAsset.init({
+          name: 'textShadowColorAsset',
+          default: '#EDEAE9',
+          light: '#EDEAE9',
+          dark: '#332A25',
+        })
+
+        const modifier = new TextShadowModifier({
+          textShadow: { x: 1, y: 1, blur: 2, color: asset as unknown as string },
+        })
+
+        modifier.apply({} as any, context)
+        return { dispose, element }
+      })
+      testDisposers.push(cleanup.dispose)
+
+      await waitForEffects()
+      expect(cleanup.element.style.textShadow).toContain('#EDEAE9')
+
+      setTheme('dark')
+      await waitForEffects()
+      expect(cleanup.element.style.textShadow).toContain('#332A25')
+    })
+
+    it('re-resolves ColorAsset in multiple textShadow array on theme change', async () => {
+      const cleanup = createRoot(dispose => {
+        const element = createMockElement()
+        const context = createMockContext(element)
+        const asset = ColorAsset.init({
+          name: 'textShadowArrayColorAsset',
+          default: '#EDEAE9',
+          light: '#EDEAE9',
+          dark: '#332A25',
+        })
+
+        const modifier = new TextShadowModifier({
+          textShadow: [
+            { x: 1, y: 1, blur: 2, color: asset as unknown as string },
+            { x: -1, y: -1, blur: 1, color: 'rgba(0,0,0,0.2)' },
+          ],
+        })
+
+        modifier.apply({} as any, context)
+        return { dispose, element }
+      })
+      testDisposers.push(cleanup.dispose)
+
+      await waitForEffects()
+      expect(cleanup.element.style.textShadow).toContain('#EDEAE9')
+
+      setTheme('dark')
+      await waitForEffects()
+      expect(cleanup.element.style.textShadow).toContain('#332A25')
     })
   })
 
@@ -421,9 +515,72 @@ describe('Shadow Modifiers', () => {
       setColor('rgba(255,0,0,0.3)')
       flushSync()
 
-      expect(element.style.filter).toContain(
+      expect(element.style.filter).toBe(
         'drop-shadow(0px 4px 2px rgba(255,0,0,0.3))'
       )
+    })
+
+    it('re-resolves ColorAsset dropShadow color when theme changes', async () => {
+      const cleanup = createRoot(dispose => {
+        const element = createMockElement()
+        const context = createMockContext(element)
+        const asset = ColorAsset.init({
+          name: 'dropShadowColorAsset',
+          default: '#EDEAE9',
+          light: '#EDEAE9',
+          dark: '#332A25',
+        })
+
+        const modifier = new DropShadowModifier({
+          dropShadow: { x: 0, y: 4, blur: 8, color: asset as unknown as string },
+        })
+
+        modifier.apply({} as any, context)
+        return { dispose, element }
+      })
+      testDisposers.push(cleanup.dispose)
+
+      await waitForEffects()
+      expect(cleanup.element.style.filter).toBe(
+        'drop-shadow(0px 4px 8px #EDEAE9)'
+      )
+
+      setTheme('dark')
+      await waitForEffects()
+      expect(cleanup.element.style.filter).toBe(
+        'drop-shadow(0px 4px 8px #332A25)'
+      )
+    })
+
+    it('re-resolves ColorAsset in multiple dropShadow array on theme change', async () => {
+      const cleanup = createRoot(dispose => {
+        const element = createMockElement()
+        const context = createMockContext(element)
+        const asset = ColorAsset.init({
+          name: 'dropShadowArrayColorAsset',
+          default: '#EDEAE9',
+          light: '#EDEAE9',
+          dark: '#332A25',
+        })
+
+        const modifier = new DropShadowModifier({
+          dropShadow: [
+            { x: 0, y: 4, blur: 8, color: asset as unknown as string },
+            { x: 0, y: 1, blur: 2, color: 'rgba(0,0,0,0.2)' },
+          ],
+        })
+
+        modifier.apply({} as any, context)
+        return { dispose, element }
+      })
+      testDisposers.push(cleanup.dispose)
+
+      await waitForEffects()
+      expect(cleanup.element.style.filter).toContain('#EDEAE9')
+
+      setTheme('dark')
+      await waitForEffects()
+      expect(cleanup.element.style.filter).toContain('#332A25')
     })
   })
 
