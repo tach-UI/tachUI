@@ -4,7 +4,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ImageLoadingState, ImageProps } from '../../src/display/Image'
-import { VStack } from '../../src'
+import { HStack, VStack, ZStack } from '../../src'
 import {
   EnhancedImage,
   Image,
@@ -494,36 +494,54 @@ describe('Image Factory Function', () => {
 })
 
 describe('DOM Signal Reactivity', () => {
+  const domCleanups: Array<() => void> = []
+  const domContainers: HTMLElement[] = []
+
   beforeEach(() => {
     createElementSpy?.mockRestore()
     document.body.innerHTML = ''
+  })
+
+  afterEach(() => {
+    while (domCleanups.length > 0) {
+      const cleanup = domCleanups.pop()
+      cleanup?.()
+    }
+
+    while (domContainers.length > 0) {
+      const container = domContainers.pop()
+      container?.remove()
+    }
   })
 
   it('updates mounted img src when src signal changes', async () => {
     const [src, setSrc] = createSignal('initial.jpg')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(Image(src) as any, container)
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
     const img = container.querySelector('img')
     expect(img).not.toBeNull()
+    // JSDOM can normalize relative image src values to absolute URLs.
     expect(img!.getAttribute('src')).toContain('initial.jpg')
 
     setSrc('updated.jpg')
     await flushReactiveUpdates()
     expect(img!.getAttribute('src')).toContain('updated.jpg')
-
-    cleanup()
   })
 
   it('applies final src value after rapid updates', async () => {
     const [src, setSrc] = createSignal('first.jpg')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(Image(src) as any, container)
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
     const img = container.querySelector('img')
@@ -535,16 +553,16 @@ describe('DOM Signal Reactivity', () => {
     await flushReactiveUpdates()
 
     expect(img!.getAttribute('src')).toContain('final.jpg')
-
-    cleanup()
   })
 
   it('updates src from valid value to empty string', async () => {
     const [src, setSrc] = createSignal('filled.jpg')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(Image(src) as any, container)
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
     const img = container.querySelector('img')
@@ -554,19 +572,19 @@ describe('DOM Signal Reactivity', () => {
     setSrc('')
     await flushReactiveUpdates()
     expect(img!.getAttribute('src')).toBe('')
-
-    cleanup()
   })
 
   it('updates mounted img alt when alt signal changes', async () => {
     const [alt, setAlt] = createSignal('Initial alt')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(
       Image('test.jpg', { alt: alt as unknown as string }) as any,
       container
     )
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
     const img = container.querySelector('img') as HTMLImageElement
@@ -576,8 +594,6 @@ describe('DOM Signal Reactivity', () => {
     setAlt('Updated alt')
     await flushReactiveUpdates()
     expect(img.alt).toBe('Updated alt')
-
-    cleanup()
   })
 
   it('updates both src and alt when both are signals', async () => {
@@ -585,11 +601,13 @@ describe('DOM Signal Reactivity', () => {
     const [alt, setAlt] = createSignal('Combo initial alt')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(
       Image(src, { alt: alt as unknown as string }) as any,
       container
     )
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
     const img = container.querySelector('img') as HTMLImageElement
@@ -603,19 +621,19 @@ describe('DOM Signal Reactivity', () => {
 
     expect(img.getAttribute('src')).toContain('combo-updated.jpg')
     expect(img.alt).toBe('Combo updated alt')
-
-    cleanup()
   })
 
   it('preserves frame dimensions when src signal changes', async () => {
     const [src, setSrc] = createSignal('frame-initial.jpg')
     const container = document.createElement('div')
     document.body.appendChild(container)
+    domContainers.push(container)
 
     const cleanup = mountComponentTree(
       Image(src).scaledToFit().frame(96, 96) as any,
       container
     )
+    domCleanups.push(cleanup)
     await flushReactiveUpdates()
 
     const img = container.querySelector('img') as HTMLImageElement
@@ -630,32 +648,43 @@ describe('DOM Signal Reactivity', () => {
     expect(img.style.width).toBe('96px')
     expect(img.style.height).toBe('96px')
     expect(img.getAttribute('src')).toContain('frame-updated.jpg')
-
-    cleanup()
   })
 
-  it('propagates src signal updates for Image inside VStack', async () => {
-    const [src, setSrc] = createSignal('stack-initial.jpg')
-    const container = document.createElement('div')
-    document.body.appendChild(container)
+  it('propagates src and alt signal updates for Image inside stacks', async () => {
+    const stackFactories = [
+      { name: 'VStack', create: VStack },
+      { name: 'HStack', create: HStack },
+      { name: 'ZStack', create: ZStack },
+    ] as const
 
-    const cleanup = mountComponentTree(
-      VStack({
-        children: [Image(src, { alt: 'Stack image' })],
-      }) as any,
-      container
-    )
-    await flushReactiveUpdates()
+    for (const { name, create } of stackFactories) {
+      const [src, setSrc] = createSignal(`${name.toLowerCase()}-initial.jpg`)
+      const [alt, setAlt] = createSignal(`${name} initial alt`)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      domContainers.push(container)
 
-    const img = container.querySelector('img')
-    expect(img).not.toBeNull()
-    expect(img!.getAttribute('src')).toContain('stack-initial.jpg')
+      const cleanup = mountComponentTree(
+        create({
+          children: [Image(src, { alt: alt as unknown as string })],
+        }) as any,
+        container
+      )
+      domCleanups.push(cleanup)
+      await flushReactiveUpdates()
 
-    setSrc('stack-updated.jpg')
-    await flushReactiveUpdates()
-    expect(img!.getAttribute('src')).toContain('stack-updated.jpg')
+      const img = container.querySelector('img') as HTMLImageElement
+      expect(img).not.toBeNull()
+      expect(img.getAttribute('src')).toContain(`${name.toLowerCase()}-initial.jpg`)
+      expect(img.alt).toBe(`${name} initial alt`)
 
-    cleanup()
+      setSrc(`${name.toLowerCase()}-updated.jpg`)
+      setAlt(`${name} updated alt`)
+      await flushReactiveUpdates()
+
+      expect(img.getAttribute('src')).toContain(`${name.toLowerCase()}-updated.jpg`)
+      expect(img.alt).toBe(`${name} updated alt`)
+    }
   })
 })
 
