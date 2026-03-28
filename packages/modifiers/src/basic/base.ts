@@ -145,6 +145,18 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
   }
 
   /**
+   * Runtime check for asset-like values that resolve to a concrete CSS value.
+   */
+  protected isAssetValue(value: unknown): value is { resolve: () => string } {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'resolve' in value &&
+      typeof (value as { resolve?: unknown }).resolve === 'function'
+    )
+  }
+
+  /**
    * Convert value to CSS value string with property-specific handling
    */
   protected toCSSValueForProperty(property: string, value: any): string {
@@ -170,12 +182,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
 
     // Resolve ColorAssets and other assets with .resolve() method
     // This must happen inside the reactive effect for theme reactivity
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'resolve' in value &&
-      typeof value.resolve === 'function'
-    ) {
+    if (this.isAssetValue(value)) {
       const resolved = value.resolve()
       // Removed verbose logging - enable if debugging asset resolution
       // console.log('toCSSValueForProperty resolving asset:', { property, value, resolved })

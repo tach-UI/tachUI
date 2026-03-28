@@ -57,16 +57,6 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
     return undefined
   }
 
-  private isAssetValue(value: unknown): value is { resolve: () => string } {
-    return (
-      value !== null &&
-      value !== undefined &&
-      typeof value === 'object' &&
-      'resolve' in value &&
-      typeof (value as { resolve?: unknown }).resolve === 'function'
-    )
-  }
-
   private applyAssetColorThemeReactivity(
     element: Element,
     props: BorderOptions
