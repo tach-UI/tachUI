@@ -78,9 +78,9 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
 
     const themeSignal = getThemeSignal()
 
-    Object.entries(assetColorStyles).forEach(([property, asset]) => {
-      createEffect(() => {
-        themeSignal()
+    createEffect(() => {
+      themeSignal()
+      Object.entries(assetColorStyles).forEach(([property, asset]) => {
         this.applyStyleChange(element, property, asset.resolve())
       })
     })
@@ -91,12 +91,7 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
   ): Record<string, { resolve: () => string }> {
     const styles: Record<string, { resolve: () => string }> = {}
     const resolvedSides = this.resolveBorderSides(props)
-    const hasSpecificSides =
-      resolvedSides.top ||
-      resolvedSides.right ||
-      resolvedSides.bottom ||
-      resolvedSides.left ||
-      props.all
+    const hasSpecificSides = this.hasSpecificSides(props, resolvedSides)
 
     if (!hasSpecificSides && this.isAssetValue(props.color)) {
       styles.borderColor = props.color
@@ -122,17 +117,25 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
     return styles
   }
 
+  private hasSpecificSides(
+    props: BorderOptions,
+    resolvedSides: ReturnType<BorderModifier['resolveBorderSides']>
+  ): boolean {
+    return Boolean(
+      resolvedSides.top ||
+        resolvedSides.right ||
+        resolvedSides.bottom ||
+        resolvedSides.left ||
+        props.all
+    )
+  }
+
   private computeBorderStyles(props: BorderOptions) {
     const styles: Record<string, any> = {}
 
     const resolvedSides = this.resolveBorderSides(props)
 
-    const hasSpecificSides =
-      resolvedSides.top ||
-      resolvedSides.right ||
-      resolvedSides.bottom ||
-      resolvedSides.left ||
-      props.all
+    const hasSpecificSides = this.hasSpecificSides(props, resolvedSides)
     if (
       !hasSpecificSides &&
       (props.width !== undefined ||
@@ -141,14 +144,21 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
     ) {
       if (props.width !== undefined)
         styles.borderWidth = this.formatBorderWidth(props.width)
-      if (props.color !== undefined) styles.borderColor = props.color
+      if (props.color !== undefined && !this.isAssetValue(props.color)) {
+        styles.borderColor = props.color
+      }
       if (props.style !== undefined) styles.borderStyle = props.style
     }
 
     if (props.all !== undefined) {
       if (props.all.width !== undefined)
         styles.borderWidth = this.formatBorderWidth(props.all.width)
-      if (props.all.color !== undefined) styles.borderColor = props.all.color
+      if (
+        props.all.color !== undefined &&
+        !this.isAssetValue(props.all.color)
+      ) {
+        styles.borderColor = props.all.color
+      }
       if (props.all.style !== undefined) styles.borderStyle = props.all.style
     }
 
@@ -185,7 +195,7 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
     if (side.width !== undefined) {
       styles[`border${sideName}Width`] = this.formatBorderWidth(side.width)
     }
-    if (side.color !== undefined) {
+    if (side.color !== undefined && !this.isAssetValue(side.color)) {
       styles[`border${sideName}Color`] = side.color
     }
     if (side.style !== undefined) {

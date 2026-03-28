@@ -31,6 +31,7 @@ async function waitForEffects(): Promise<void> {
 describe('Border Modifier Reactivity', () => {
   beforeEach(() => {
     setTheme('light')
+    flushSync()
   })
 
   afterEach(() => {
@@ -39,6 +40,7 @@ describe('Border Modifier Reactivity', () => {
       dispose?.()
     }
     setTheme('light')
+    flushSync()
   })
 
   it('updates border color when color signal changes', () => {
@@ -153,7 +155,47 @@ describe('Border Modifier Reactivity', () => {
     )
   })
 
+  it('updates signal color and signal width together without clobbering', () => {
+    const [color, setColor] = createSignal('#112233')
+    const [width, setWidth] = createSignal(1)
+
+    const cleanup = createRoot(dispose => {
+      const element = document.createElement('div')
+      applyModifierToElement(
+        border({
+          width,
+          style: 'solid',
+          color: color as unknown as string,
+        } as any),
+        element
+      )
+      return { dispose, element }
+    })
+    testDisposers.push(cleanup.dispose)
+
+    expect(cleanup.element.style.getPropertyValue('border-width')).toBe('1px')
+    expectColorValue(
+      cleanup.element.style.getPropertyValue('border-color'),
+      '#112233',
+      'rgb(17, 34, 51)'
+    )
+
+    setWidth(4)
+    setColor('#334455')
+    flushSync()
+
+    expect(cleanup.element.style.getPropertyValue('border-width')).toBe('4px')
+    expectColorValue(
+      cleanup.element.style.getPropertyValue('border-color'),
+      '#334455',
+      'rgb(51, 68, 85)'
+    )
+  })
+
   it('re-resolves ColorAsset border color when theme changes', async () => {
+    setTheme('dark')
+    await waitForEffects()
+
     const cleanup = createRoot(dispose => {
       const element = document.createElement('div')
       const asset = ColorAsset.init({
@@ -179,16 +221,60 @@ describe('Border Modifier Reactivity', () => {
     await waitForEffects()
     expectColorValue(
       cleanup.element.style.getPropertyValue('border-color'),
-      '#EDEAE9',
-      'rgb(237, 234, 233)'
+      '#332A25',
+      'rgb(51, 42, 37)'
     )
 
-    setTheme('dark')
+    setTheme('light')
     await waitForEffects()
     expectColorValue(
       cleanup.element.style.getPropertyValue('border-color'),
+      '#EDEAE9',
+      'rgb(237, 234, 233)'
+    )
+  })
+
+  it('re-resolves side-specific ColorAsset border color when theme changes', async () => {
+    setTheme('dark')
+    await waitForEffects()
+
+    const cleanup = createRoot(dispose => {
+      const element = document.createElement('div')
+      const asset = ColorAsset.init({
+        name: 'topBorderAsset',
+        default: '#EDEAE9',
+        light: '#EDEAE9',
+        dark: '#332A25',
+      })
+
+      applyModifierToElement(
+        border({
+          top: {
+            width: 1,
+            style: 'solid',
+            color: asset as unknown as string,
+          },
+        } as any),
+        element
+      )
+
+      return { dispose, element }
+    })
+    testDisposers.push(cleanup.dispose)
+
+    await waitForEffects()
+    expectColorValue(
+      cleanup.element.style.getPropertyValue('border-top-color'),
       '#332A25',
       'rgb(51, 42, 37)'
+    )
+
+    setTheme('light')
+    await waitForEffects()
+    expectColorValue(
+      cleanup.element.style.getPropertyValue('border-top-color'),
+      '#EDEAE9',
+      'rgb(237, 234, 233)'
     )
   })
 })
