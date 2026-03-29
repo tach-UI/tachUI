@@ -1,5 +1,15 @@
 # @tachui/core
 
+## 0.8.17
+
+### Patch Changes
+
+- [#138](https://github.com/tach-UI/tachUI/pull/138) [`e982ab2`](https://github.com/tach-UI/tachUI/commit/e982ab26f9012c610b9cb0bff78840dc26771d40) Thanks [@whoughton](https://github.com/whoughton)! - Add template SVG rendering mode to `Image` with secure inline SVG sanitization, reactive themed source updates, and accessibility parity for template-rendered images.
+
+- Updated dependencies []:
+  - @tachui/types@0.8.17
+  - @tachui/registry@0.8.17
+
 ## 0.8.16
 
 ### Patch Changes
