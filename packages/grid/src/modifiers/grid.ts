@@ -46,7 +46,7 @@ export class GridColumnSpanModifier extends BaseModifier<{
 
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
     const element = context.element || node.element
-    if (!element) {
+    if (!element || !(element instanceof Element)) {
       return undefined
     }
 
@@ -97,7 +97,7 @@ export class GridRowSpanModifier extends BaseModifier<{
 
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
     const element = context.element || node.element
-    if (!element) {
+    if (!element || !(element instanceof Element)) {
       return undefined
     }
 
