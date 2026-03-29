@@ -6,6 +6,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createSignal } from '@tachui/core/reactive'
 import {
   OverlayModifier,
   overlay,
@@ -64,6 +65,10 @@ const createMockComponent = (elementType = 'span') => ({
 const mockConsole = {
   warn: vi.fn(),
   error: vi.fn(),
+}
+
+async function flushReactiveUpdates(): Promise<void> {
+  await new Promise<void>(resolve => queueMicrotask(resolve))
 }
 
 describe('Overlay Modifier', () => {
@@ -536,6 +541,71 @@ describe('Overlay Modifier', () => {
 
       expect(duration).toBeLessThan(50) // Should complete within 50ms
       expect(complexComponent.render).toHaveBeenCalledTimes(iterations)
+    })
+  })
+
+  describe('Signal Reactivity', () => {
+    it('updates side positioning when side signal changes', async () => {
+      const [side, setSide] = createSignal<'top' | 'bottom'>('top')
+      const modifier = new OverlayModifier({
+        content: mockComponent,
+        side,
+      })
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.top).toBe('0px')
+      expect(overlayContainer.style.left).toBe('50%')
+
+      setSide('bottom')
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.style.top).toBe('')
+      expect(overlayContainer.style.bottom).toBe('0px')
+      expect(overlayContainer.style.left).toBe('50%')
+    })
+
+    it('updates side offset when offset signal changes', async () => {
+      const [offset, setOffset] = createSignal(8)
+      const modifier = new OverlayModifier({
+        content: mockComponent,
+        side: 'top',
+        offset,
+      })
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.top).toBe('8px')
+
+      setOffset(24)
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.style.top).toBe('24px')
+    })
+
+    it('toggles overlay visibility when enabled signal changes', async () => {
+      const [enabled, setEnabled] = createSignal(true)
+      const modifier = new OverlayModifier({
+        content: mockComponent,
+        enabled,
+      })
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.display).toBe('')
+
+      setEnabled(false)
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.style.display).toBe('none')
+
+      setEnabled(true)
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.style.display).toBe('')
     })
   })
 })

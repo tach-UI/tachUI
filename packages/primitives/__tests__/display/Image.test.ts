@@ -17,13 +17,17 @@ import { createSignal, mountComponentTree } from '@tachui/core'
 // Mock DOM environment
 function createMockImage(): HTMLImageElement {
   const img = originalCreateElement.call(document, 'img') as HTMLImageElement
+  let pendingRequestId = 0
 
   // Mock loading behavior
   Object.defineProperty(img, 'src', {
     set(value: string) {
       img.setAttribute('src', value)
+      pendingRequestId += 1
+      const requestId = pendingRequestId
       // Simulate loading
       setTimeout(() => {
+        if (requestId !== pendingRequestId) return
         if (value.includes('error')) {
           img.dispatchEvent(new Event('error'))
         } else {
@@ -61,6 +65,10 @@ afterEach(() => {
 async function flushReactiveUpdates(): Promise<void> {
   await new Promise<void>(resolve => queueMicrotask(resolve))
   await new Promise<void>(resolve => setTimeout(resolve, 0))
+}
+
+async function waitForImageEventCycle(): Promise<void> {
+  await new Promise<void>(resolve => setTimeout(resolve, 20))
 }
 
 describe('EnhancedImage', () => {
@@ -685,6 +693,148 @@ describe('DOM Signal Reactivity', () => {
       expect(img.getAttribute('src')).toContain(`${name.toLowerCase()}-updated.jpg`)
       expect(img.alt).toBe(`${name} updated alt`)
     }
+  })
+
+  describe('Loading state transitions', () => {
+    it('resets loading state to loading when src changes during in-flight load', async () => {
+      const [src, setSrc] = createSignal('first.jpg')
+      const transitions: ImageLoadingState[] = []
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      domContainers.push(container)
+
+      const cleanup = mountComponentTree(
+        Image(src, {
+          onLoadingStateChange: state => transitions.push(state),
+        }) as any,
+        container
+      )
+      domCleanups.push(cleanup)
+      await flushReactiveUpdates()
+
+      setSrc('second.jpg')
+      await flushReactiveUpdates()
+
+      expect(transitions.at(-1)).toBe('loading')
+    })
+
+    it('transitions from loading to error when src changes to an error URL', async () => {
+      const [src, setSrc] = createSignal('valid.jpg')
+      const transitions: ImageLoadingState[] = []
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      domContainers.push(container)
+
+      const cleanup = mountComponentTree(
+        Image(src, {
+          onLoadingStateChange: state => transitions.push(state),
+        }) as any,
+        container
+      )
+      domCleanups.push(cleanup)
+      await flushReactiveUpdates()
+
+      const img = container.querySelector('img') as HTMLImageElement
+      expect(img).not.toBeNull()
+      img.dispatchEvent(new Event('load'))
+      await flushReactiveUpdates()
+
+      setSrc('error.jpg')
+      await flushReactiveUpdates()
+      img.dispatchEvent(new Event('error'))
+      await flushReactiveUpdates()
+
+      expect(transitions.slice(-2)).toEqual(['loading', 'error'])
+    })
+
+    it('recovers from error to loaded when src changes back to a valid URL', async () => {
+      const [src, setSrc] = createSignal('error.jpg')
+      const transitions: ImageLoadingState[] = []
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      domContainers.push(container)
+
+      const cleanup = mountComponentTree(
+        Image(src, {
+          onLoadingStateChange: state => transitions.push(state),
+        }) as any,
+        container
+      )
+      domCleanups.push(cleanup)
+      await flushReactiveUpdates()
+
+      const img = container.querySelector('img') as HTMLImageElement
+      expect(img).not.toBeNull()
+      img.dispatchEvent(new Event('error'))
+      await flushReactiveUpdates()
+
+      setSrc('recovered.jpg')
+      await flushReactiveUpdates()
+      img.dispatchEvent(new Event('load'))
+      await flushReactiveUpdates()
+
+      expect(transitions).toContain('error')
+      expect(transitions.slice(-2)).toEqual(['loading', 'loaded'])
+    })
+
+    it('respects external loadingState signal when src changes', async () => {
+      const [src, setSrc] = createSignal('first.jpg')
+      const [externalLoadingState, setExternalLoadingState] =
+        createSignal<ImageLoadingState>('idle')
+      const onLoadingStateChange = vi.fn()
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      domContainers.push(container)
+
+      const cleanup = mountComponentTree(
+        Image(src, {
+          loadingState: externalLoadingState,
+          onLoadingStateChange,
+        }) as any,
+        container
+      )
+      domCleanups.push(cleanup)
+      await flushReactiveUpdates()
+
+      setSrc('second.jpg')
+      await flushReactiveUpdates()
+      await waitForImageEventCycle()
+
+      expect(externalLoadingState()).toBe('idle')
+      expect(onLoadingStateChange).not.toHaveBeenCalled()
+
+      setExternalLoadingState('loading')
+      expect(externalLoadingState()).toBe('loading')
+    })
+
+    it('fires onLoadingStateChange callback for each transition', async () => {
+      const [src, setSrc] = createSignal('first.jpg')
+      const transitions: ImageLoadingState[] = []
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      domContainers.push(container)
+
+      const cleanup = mountComponentTree(
+        Image(src, {
+          onLoadingStateChange: state => transitions.push(state),
+        }) as any,
+        container
+      )
+      domCleanups.push(cleanup)
+      await flushReactiveUpdates()
+
+      const img = container.querySelector('img') as HTMLImageElement
+      expect(img).not.toBeNull()
+      img.dispatchEvent(new Event('load'))
+      await flushReactiveUpdates()
+
+      setSrc('second.jpg')
+      await flushReactiveUpdates()
+      img.dispatchEvent(new Event('load'))
+      await flushReactiveUpdates()
+
+      expect(transitions).toEqual(['loading', 'loaded', 'loading', 'loaded'])
+    })
   })
 })
 

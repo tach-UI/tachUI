@@ -12,6 +12,7 @@ import type {
 } from '@tachui/core'
 import { createEffect, createSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
+import { isSignal, isComputed } from '@tachui/core/reactive'
 import { h } from '@tachui/core'
 import type { ComponentInstance, ComponentProps } from '@tachui/core'
 import { withModifiers } from '@tachui/core'
@@ -150,6 +151,10 @@ export class EnhancedImage
    * Set loading state and notify callback
    */
   private setLoadingStateWithCallback(state: ImageLoadingState): void {
+    if (this.props.loadingState) {
+      return
+    }
+
     this.setLoadingState(state)
 
     if (this.props.onLoadingStateChange) {
@@ -167,25 +172,23 @@ export class EnhancedImage
     this.effectiveTag = override.tag
     this.validationResult = override.validation
 
-    // Create loading state signal
-    const initialState: ImageLoadingState = this.props.src ? 'idle' : 'error'
-    const [loadingStateSignal, setLoadingState] =
-      createSignal<ImageLoadingState>(initialState)
-    this.loadingStateSignal = loadingStateSignal
-    this.setLoadingState = setLoadingState
+    // Create loading state signal (or honor external state signal override)
+    if (this.props.loadingState) {
+      this.loadingStateSignal = this.props.loadingState
+      this.setLoadingState = () => this.loadingStateSignal()
+    } else {
+      const initialState: ImageLoadingState = this.props.src ? 'idle' : 'error'
+      const [loadingStateSignal, setLoadingState] =
+        createSignal<ImageLoadingState>(initialState)
+      this.loadingStateSignal = loadingStateSignal
+      this.setLoadingState = setLoadingState
+    }
 
     // ENHANCED: Set up lifecycle hooks for reliable DOM access
     useLifecycle(this, {
       onDOMReady: (_elements, primaryElement) => {
-        // Set up ImageAsset reactivity when DOM is ready
-        if (
-          isImageAssetLike(this.props.src) &&
-          primaryElement instanceof HTMLImageElement
-        ) {
-          this.setupImageAssetReactivityForDOMElement(
-            this.props.src,
-            primaryElement
-          )
+        if (primaryElement instanceof HTMLImageElement) {
+          this.setupLoadingStateReactivityForDOMElement(primaryElement)
         }
       },
     })
@@ -285,6 +288,57 @@ export class EnhancedImage
 
     // Add cleanup
     this.cleanup.push(() => effect.dispose())
+  }
+
+  private setupLoadingStateReactivityForDOMElement(
+    domElement: HTMLImageElement
+  ): void {
+    const onLoad = (event: Event): void => {
+      this.setLoadingStateWithCallback('loaded')
+      this.props.onLoad?.(event)
+    }
+
+    const onError = (event: Event): void => {
+      this.setLoadingStateWithCallback('error')
+      this.props.onError?.(event)
+    }
+
+    domElement.addEventListener('load', onLoad)
+    domElement.addEventListener('error', onError)
+    this.cleanup.push(() => {
+      domElement.removeEventListener('load', onLoad)
+      domElement.removeEventListener('error', onError)
+    })
+
+    const updateSource = (nextSrc: string | undefined): void => {
+      if (!nextSrc) {
+        domElement.src = ''
+        this.setLoadingStateWithCallback('error')
+        return
+      }
+
+      this.props.onLoadStart?.()
+      this.setLoadingStateWithCallback('loading')
+      domElement.src = nextSrc
+    }
+
+    if (isImageAssetLike(this.props.src)) {
+      this.setupImageAssetReactivityForDOMElement(this.props.src, domElement)
+      return
+    }
+
+    const reactiveSrc = this.props.src
+    if (isSignal(reactiveSrc) || isComputed(reactiveSrc)) {
+      const effect = createEffect(() => {
+        updateSource(reactiveSrc())
+      })
+      this.cleanup.push(() => effect.dispose())
+      return
+    }
+
+    updateSource(
+      typeof this.props.src === 'string' ? this.props.src : undefined
+    )
   }
 
   // ============================================================================

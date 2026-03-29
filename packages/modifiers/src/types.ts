@@ -592,7 +592,7 @@ export interface ModifierBuilder<
   ): ModifierBuilder<T>
   overlay(
     content: any,
-    alignment?:
+    alignmentOrOptions?:
       | 'center'
       | 'top'
       | 'bottom'
@@ -602,6 +602,41 @@ export interface ModifierBuilder<
       | 'topTrailing'
       | 'bottomLeading'
       | 'bottomTrailing'
+      | {
+          alignment?:
+            | 'center'
+            | 'top'
+            | 'bottom'
+            | 'leading'
+            | 'trailing'
+            | 'topLeading'
+            | 'topTrailing'
+            | 'bottomLeading'
+            | 'bottomTrailing'
+            | Signal<
+                | 'center'
+                | 'top'
+                | 'bottom'
+                | 'leading'
+                | 'trailing'
+                | 'topLeading'
+                | 'topTrailing'
+                | 'bottomLeading'
+                | 'bottomTrailing'
+              >
+          side?:
+            | 'center'
+            | 'top'
+            | 'bottom'
+            | 'leading'
+            | 'trailing'
+            | Signal<'center' | 'top' | 'bottom' | 'leading' | 'trailing'>
+          offset?:
+            | number
+            | { x?: number; y?: number }
+            | Signal<number | { x?: number; y?: number }>
+          enabled?: boolean | Signal<boolean>
+        }
   ): ModifierBuilder<T>
 
   // Phase 3 SwiftUI modifiers - Critical Transform Modifiers
