@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSignal } from '@tachui/core'
+import { createRoot, flushSync } from '@tachui/core/reactive'
 import { HTML } from '@tachui/primitives'
 import { NavigationStack } from '../src/navigation-stack'
 import {
@@ -11,9 +12,20 @@ import {
 } from '../src/document-head'
 
 describe('Document head metadata', () => {
+  const disposers = new Set<() => void>()
+
   async function flushReactiveUpdates(): Promise<void> {
+    flushSync()
     await Promise.resolve()
-    await Promise.resolve()
+  }
+
+  function applyDirectMeta(config: Parameters<typeof useDocumentMeta>[0]): void {
+    const dispose = createRoot(dispose => {
+      useDocumentMeta(config)
+      return dispose
+    })
+    disposers.add(dispose)
+    flushSync()
   }
 
   beforeEach(() => {
@@ -24,6 +36,11 @@ describe('Document head metadata', () => {
         'meta[name="description"], link[rel="canonical"], meta[property^="og:"], meta[data-tachui-meta-managed="true"]'
       )
       .forEach(node => node.remove())
+  })
+
+  afterEach(() => {
+    disposers.forEach(dispose => dispose())
+    disposers.clear()
   })
 
   it('cascades metadata from root to active stack entry', () => {
@@ -107,7 +124,7 @@ describe('Document head metadata', () => {
   it('applies useDocumentMeta reactively', async () => {
     const [title, setTitle] = createSignal('Alpha')
 
-    useDocumentMeta({
+    applyDirectMeta({
       title,
       description: 'Reactive description',
     })
@@ -120,18 +137,18 @@ describe('Document head metadata', () => {
     ).toBe('Reactive description')
 
     setTitle('Beta')
-    await Promise.resolve()
+    await flushReactiveUpdates()
     expect(document.title).toBe('Beta')
   })
 
   it('restores static title when direct metadata has no title', () => {
-    useDocumentMeta({
+    applyDirectMeta({
       title: 'Temporary',
       description: 'Temporary description',
     })
     expect(document.title).toBe('Temporary')
 
-    useDocumentMeta({
+    applyDirectMeta({
       description: 'Persistent description',
     })
 
@@ -146,7 +163,7 @@ describe('Document head metadata', () => {
   it('warns when titleTemplate does not include placeholder', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
-    useDocumentMeta({
+    applyDirectMeta({
       title: 'Docs',
       titleTemplate: 'Acme',
     })
@@ -163,7 +180,7 @@ describe('Document head metadata', () => {
       { name: 'robots', content: 'index,follow' },
     ])
 
-    useDocumentMeta({ meta })
+    applyDirectMeta({ meta })
     await flushReactiveUpdates()
 
     expect(
@@ -201,7 +218,7 @@ describe('Document head metadata', () => {
       { property: 'theme-color', content: '#111111' },
     ])
 
-    useDocumentMeta({ meta })
+    applyDirectMeta({ meta })
     await flushReactiveUpdates()
 
     setMeta([
@@ -234,7 +251,7 @@ describe('Document head metadata', () => {
       { name: 'robots', content: 'index,follow' },
     ])
 
-    useDocumentMeta({
+    applyDirectMeta({
       title,
       meta,
     })
@@ -250,5 +267,78 @@ describe('Document head metadata', () => {
         .querySelector('meta[name="robots"]')
         ?.getAttribute('content')
     ).toBe('noindex,nofollow')
+  })
+
+  it('supports reactive meta field accessors in array entries', async () => {
+    const [description, setDescription] = createSignal('description-a')
+    const [themeColor, setThemeColor] = createSignal('#111111')
+    const meta = [
+      { name: 'description', content: description },
+      { property: 'theme-color', content: themeColor },
+    ]
+
+    applyDirectMeta({ meta })
+    await flushReactiveUpdates()
+
+    expect(
+      document.head
+        .querySelector('meta[name="description"]')
+        ?.getAttribute('content')
+    ).toBe('description-a')
+    expect(
+      document.head
+        .querySelector('meta[property="theme-color"]')
+        ?.getAttribute('content')
+    ).toBe('#111111')
+
+    setDescription('description-b')
+    setThemeColor('#222222')
+    await flushReactiveUpdates()
+
+    expect(
+      document.head
+        .querySelector('meta[name="description"]')
+        ?.getAttribute('content')
+    ).toBe('description-b')
+    expect(
+      document.head
+        .querySelector('meta[property="theme-color"]')
+        ?.getAttribute('content')
+    ).toBe('#222222')
+  })
+
+  it('clears managed meta tags when setMeta([]) is applied', async () => {
+    const [meta, setMeta] = createSignal([
+      { name: 'robots', content: 'index,follow' },
+      { property: 'theme-color', content: '#111111' },
+    ])
+
+    applyDirectMeta({ meta })
+    await flushReactiveUpdates()
+    expect(
+      document.head.querySelectorAll('meta[data-tachui-meta-managed="true"]')
+    ).toHaveLength(2)
+
+    setMeta([])
+    await flushReactiveUpdates()
+
+    expect(
+      document.head.querySelectorAll('meta[data-tachui-meta-managed="true"]')
+    ).toHaveLength(0)
+    expect(document.head.querySelector('meta[name="robots"]')).toBeNull()
+    expect(document.head.querySelector('meta[property="theme-color"]')).toBeNull()
+  })
+
+  it('warns when a meta entry has no identifier fields', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    applyDirectMeta({
+      meta: [{ content: 'missing-key' } as any],
+    })
+    await flushReactiveUpdates()
+
+    expect(warnSpy).toHaveBeenCalled()
+    expect(warnSpy.mock.calls[0]?.[0]).toContain('missing name/property/httpEquiv/charset')
+    warnSpy.mockRestore()
   })
 })

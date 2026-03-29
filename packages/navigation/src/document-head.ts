@@ -89,10 +89,11 @@ function resolveMetaTags(
   if (value === undefined || value === null) return undefined
 
   const rawMeta = typeof value === 'function' ? value() : value
-  if (!Array.isArray(rawMeta) || rawMeta.length === 0) return undefined
+  if (!Array.isArray(rawMeta)) return undefined
+  if (rawMeta.length === 0) return []
 
   const resolved = rawMeta
-    .map(entry => {
+    .map((entry, index) => {
       const metaTag: ResolvedMetaTag = {
         name: resolveValue(entry.name),
         property: resolveValue(entry.property),
@@ -107,11 +108,17 @@ function resolveMetaTags(
         Boolean(metaTag.httpEquiv) ||
         Boolean(metaTag.charset)
 
+      if (!hasIdentifier && process.env.NODE_ENV !== 'production') {
+        console.warn(
+          `DocumentHead meta entry at index ${index} is missing name/property/httpEquiv/charset and was ignored.`
+        )
+      }
+
       return hasIdentifier ? metaTag : undefined
     })
     .filter((entry): entry is ResolvedMetaTag => Boolean(entry))
 
-  return resolved.length > 0 ? resolved : undefined
+  return resolved
 }
 
 function mergeHead(
@@ -135,7 +142,7 @@ function mergeHead(
     titleTemplate: next.titleTemplate ?? base.titleTemplate,
     description: next.description ?? base.description,
     canonical: next.canonical ?? base.canonical,
-    meta: next.meta ?? base.meta,
+    meta: next.meta !== undefined ? next.meta : base.meta,
     openGraph: hasOpenGraphValues ? openGraph : undefined,
   }
 }
@@ -223,37 +230,88 @@ function upsertCanonical(doc: Document, href?: string) {
 }
 
 const MANAGED_META_ATTRIBUTE = 'data-tachui-meta-managed'
+const MANAGED_META_KEY_ATTRIBUTE = 'data-tachui-meta-key'
+
+function getMetaTagKey(tag: ResolvedMetaTag): string | undefined {
+  if (tag.charset) return `charset:${tag.charset}`
+  if (tag.name) return `name:${tag.name}`
+  if (tag.property) return `property:${tag.property}`
+  if (tag.httpEquiv) return `httpEquiv:${tag.httpEquiv}`
+  return undefined
+}
+
+function applyMetaTagAttributes(element: HTMLMetaElement, tag: ResolvedMetaTag): void {
+  element.removeAttribute('charset')
+  element.removeAttribute('name')
+  element.removeAttribute('property')
+  element.removeAttribute('http-equiv')
+
+  if (tag.charset) {
+    element.setAttribute('charset', tag.charset)
+  }
+  if (tag.name) {
+    element.setAttribute('name', tag.name)
+  }
+  if (tag.property) {
+    element.setAttribute('property', tag.property)
+  }
+  if (tag.httpEquiv) {
+    element.setAttribute('http-equiv', tag.httpEquiv)
+  }
+
+  if (tag.content !== undefined) {
+    element.setAttribute('content', tag.content)
+  } else {
+    element.removeAttribute('content')
+  }
+}
 
 function syncManagedMetaTags(doc: Document, metaTags?: ResolvedMetaTag[]): void {
-  doc.head
-    .querySelectorAll(`meta[${MANAGED_META_ATTRIBUTE}="true"]`)
-    .forEach(node => node.remove())
+  const existingManaged = Array.from(
+    doc.head.querySelectorAll(`meta[${MANAGED_META_ATTRIBUTE}="true"]`)
+  ) as HTMLMetaElement[]
+  const existingByKey = new Map<string, HTMLMetaElement>()
 
-  if (!metaTags || metaTags.length === 0) {
+  for (const element of existingManaged) {
+    const key = element.getAttribute(MANAGED_META_KEY_ATTRIBUTE)
+    if (!key) {
+      element.remove()
+      continue
+    }
+    if (existingByKey.has(key)) {
+      element.remove()
+      continue
+    }
+    existingByKey.set(key, element)
+  }
+
+  if (!metaTags) {
     return
   }
 
+  const nextKeys = new Set<string>()
   for (const tag of metaTags) {
-    const element = doc.createElement('meta')
-    element.setAttribute(MANAGED_META_ATTRIBUTE, 'true')
+    const key = getMetaTagKey(tag)
+    if (!key) {
+      continue
+    }
+    nextKeys.add(key)
 
-    if (tag.charset) {
-      element.setAttribute('charset', tag.charset)
-    }
-    if (tag.name) {
-      element.setAttribute('name', tag.name)
-    }
-    if (tag.property) {
-      element.setAttribute('property', tag.property)
-    }
-    if (tag.httpEquiv) {
-      element.setAttribute('http-equiv', tag.httpEquiv)
-    }
-    if (tag.content) {
-      element.setAttribute('content', tag.content)
+    let element = existingByKey.get(key)
+    if (!element) {
+      element = doc.createElement('meta')
+      element.setAttribute(MANAGED_META_ATTRIBUTE, 'true')
+      element.setAttribute(MANAGED_META_KEY_ATTRIBUTE, key)
+      doc.head.appendChild(element)
     }
 
-    doc.head.appendChild(element)
+    applyMetaTagAttributes(element, tag)
+  }
+
+  for (const [key, element] of existingByKey) {
+    if (!nextKeys.has(key)) {
+      element.remove()
+    }
   }
 }
 
