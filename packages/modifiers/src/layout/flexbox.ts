@@ -12,6 +12,7 @@ import type {
   ModifierContext,
   ReactiveModifierProps,
 } from '@tachui/types/modifiers'
+import { isComputed, isSignal } from '@tachui/core/reactive'
 
 // Modern CSS-compatible flex values with comprehensive unit support
 export type FlexValue =
@@ -122,6 +123,7 @@ export class FlexboxModifier extends BaseModifier<FlexboxOptions> {
 
   private computeFlexboxStyles(props: FlexboxOptions) {
     const styles: Record<string, string> = {}
+    const isReactive = (value: unknown) => isSignal(value) || isComputed(value)
 
     // Enhanced value formatter with comprehensive CSS unit support
     const formatValue = (value: FlexValue | string | number): string => {
@@ -160,17 +162,26 @@ export class FlexboxModifier extends BaseModifier<FlexboxOptions> {
 
     // Core flex properties with enhanced handling
     if (props.flexGrow !== undefined) {
-      styles.flexGrow = props.flexGrow.toString()
+      styles.flexGrow = isReactive(props.flexGrow)
+        ? (props.flexGrow as any)
+        : props.flexGrow.toString()
     }
     if (props.flexShrink !== undefined) {
-      styles.flexShrink = props.flexShrink.toString()
+      styles.flexShrink = isReactive(props.flexShrink)
+        ? (props.flexShrink as any)
+        : props.flexShrink.toString()
     }
     if (props.flexBasis !== undefined) {
-      styles.flexBasis = formatValue(props.flexBasis)
+      styles.flexBasis = isReactive(props.flexBasis)
+        ? (props.flexBasis as any)
+        : formatValue(props.flexBasis)
     }
     if (props.flex !== undefined) {
-      styles.flex =
-        typeof props.flex === 'number' ? props.flex.toString() : props.flex
+      styles.flex = isReactive(props.flex)
+        ? (props.flex as any)
+        : typeof props.flex === 'number'
+          ? props.flex.toString()
+          : props.flex
     }
 
     // Container alignment properties
@@ -202,13 +213,19 @@ export class FlexboxModifier extends BaseModifier<FlexboxOptions> {
 
     // Gap properties with enhanced support
     if (props.gap !== undefined) {
-      styles.gap = formatValue(props.gap)
+      styles.gap = isReactive(props.gap)
+        ? (props.gap as any)
+        : formatValue(props.gap)
     }
     if (props.rowGap !== undefined) {
-      styles.rowGap = formatValue(props.rowGap)
+      styles.rowGap = isReactive(props.rowGap)
+        ? (props.rowGap as any)
+        : formatValue(props.rowGap)
     }
     if (props.columnGap !== undefined) {
-      styles.columnGap = formatValue(props.columnGap)
+      styles.columnGap = isReactive(props.columnGap)
+        ? (props.columnGap as any)
+        : formatValue(props.columnGap)
     }
 
     // Modern CSS Grid alignment support
@@ -302,6 +319,10 @@ export function flexBasis(value: FlexboxOptions['flexBasis']): FlexboxModifier {
   return new FlexboxModifier({ flexBasis: value })
 }
 
+export function flex(value: FlexboxOptions['flex']): FlexboxModifier {
+  return new FlexboxModifier({ flex: value })
+}
+
 /**
  * Convenience function for justify-content
  *
@@ -357,6 +378,14 @@ export function alignSelf(value: FlexboxOptions['alignSelf']): FlexboxModifier {
  */
 export function gap(value: FlexValue): FlexboxModifier {
   return new FlexboxModifier({ gap: value })
+}
+
+export function rowGap(value: FlexValue): FlexboxModifier {
+  return new FlexboxModifier({ rowGap: value })
+}
+
+export function columnGap(value: FlexValue): FlexboxModifier {
+  return new FlexboxModifier({ columnGap: value })
 }
 
 /**

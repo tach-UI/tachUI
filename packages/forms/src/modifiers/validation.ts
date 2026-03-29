@@ -1,6 +1,7 @@
 import type { Modifier, ModifierContext } from '@tachui/core/modifiers/types'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import { createEffect, isComputed, isSignal, type Signal } from '@tachui/core'
 import { validateValue } from '../validation'
 import type { ValidationResult, ValidationRule } from '../types'
 
@@ -9,23 +10,38 @@ const validationPriority = 74
 type ValidationArgs =
   | ValidationRule[]
   | ValidationRule
+  | Signal<ValidationRule[]>
+  | Signal<ValidationRule>
+  | Signal<ValidationRule[] | ValidationRule>
 
 interface ValidationProperties {
   rules: ValidationRule[]
 }
 
 const validationHandlers = new WeakMap<Element, (event?: Event) => void>()
+const validationDisposers = new WeakMap<Element, () => void>()
+
+function isReactiveRuleInput(
+  value: ValidationArgs
+): value is Signal<ValidationRule[] | ValidationRule> {
+  return isSignal(value) || isComputed(value)
+}
 
 function normalizeRules(input: ValidationArgs[]): ValidationRule[] {
   const flattened: ValidationRule[] = []
   input.forEach(entry => {
-    if (Array.isArray(entry)) {
-      flattened.push(...entry)
+    const resolvedEntry = isReactiveRuleInput(entry) ? entry() : entry
+    if (Array.isArray(resolvedEntry)) {
+      flattened.push(...resolvedEntry)
     } else {
-      flattened.push(entry)
+      flattened.push(resolvedEntry)
     }
   })
   return flattened
+}
+
+function hasReactiveRuleInput(input: ValidationArgs[]): boolean {
+  return input.some(entry => isReactiveRuleInput(entry))
 }
 
 function applyValidationResult(
@@ -73,26 +89,41 @@ function createValidationHandler(
 }
 
 function createValidationModifier(
-  rules: ValidationRule[],
+  rulesInput: ValidationArgs[],
 ): Modifier {
-  const normalizedRules = rules.length
-    ? rules
-    : (['required'] as ValidationRule[])
-
   return {
     type: 'forms:validation',
     priority: validationPriority,
-    properties: { rules: normalizedRules } satisfies ValidationProperties,
+    properties: {
+      get rules() {
+        const resolved = normalizeRules(rulesInput)
+        return resolved.length ? resolved : (['required'] as ValidationRule[])
+      },
+    } as ValidationProperties,
     apply(node: any, context: ModifierContext) {
       const element = (context.element ?? node) as Element | undefined
       if (!element) return node
 
-      const handler = createValidationHandler(element, normalizedRules)
+      const buildRules = (): ValidationRule[] => {
+        const resolved = normalizeRules(rulesInput)
+        return resolved.length ? resolved : (['required'] as ValidationRule[])
+      }
+
+      const handler = () => {
+        const currentRules = buildRules()
+        const run = createValidationHandler(element, currentRules)
+        run()
+      }
 
       const existing = validationHandlers.get(element)
       if (existing) {
         element.removeEventListener('blur', existing)
         element.removeEventListener('input', existing)
+      }
+      const existingDispose = validationDisposers.get(element)
+      if (existingDispose) {
+        existingDispose()
+        validationDisposers.delete(element)
       }
 
       element.addEventListener('blur', handler)
@@ -100,6 +131,11 @@ function createValidationModifier(
       validationHandlers.set(element, handler)
 
       handler()
+
+      if (hasReactiveRuleInput(rulesInput)) {
+        const effect = createEffect(handler)
+        validationDisposers.set(element, () => effect.dispose())
+      }
 
       return node
     },
@@ -117,8 +153,7 @@ const VALIDATION_METADATA = {
 export function validation(
   ...rules: ValidationArgs[]
 ): Modifier {
-  const normalized = normalizeRules(rules)
-  return createValidationModifier(normalized)
+  return createValidationModifier(rules)
 }
 
 export function registerValidationModifier(
@@ -126,7 +161,7 @@ export function registerValidationModifier(
   plugin?: PluginInfo,
 ): void {
   const factory = (...rules: ValidationArgs[]) =>
-    createValidationModifier(normalizeRules(rules))
+    createValidationModifier(rules)
 
   registerModifierWithMetadata(
     'validation',

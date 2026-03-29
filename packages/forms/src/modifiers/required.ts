@@ -1,16 +1,31 @@
 import type { Modifier, ModifierContext } from '@tachui/core/modifiers/types'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import { createEffect, isComputed, isSignal, type Signal } from '@tachui/core'
 
 const requiredPriority = 72
 
 interface RequiredModifierOptions {
+  message?: string | Signal<string>
+  enabled?: boolean | Signal<boolean>
+}
+
+type RequiredInput = boolean | string | RequiredModifierOptions
+interface ResolvedRequiredOptions {
   message?: string
   enabled?: boolean
 }
+const requiredDisposers = new WeakMap<Element, () => void>()
+
+function resolveReactive<T>(value: T | Signal<T>): T {
+  if (isSignal(value) || isComputed(value)) {
+    return (value as Signal<T>)()
+  }
+  return value as T
+}
 
 function normalizeOptions(
-  value?: boolean | string | RequiredModifierOptions,
+  value?: RequiredInput,
 ): RequiredModifierOptions {
   if (typeof value === 'boolean') {
     return { enabled: value }
@@ -27,9 +42,36 @@ function normalizeOptions(
   return normalized
 }
 
+function resolveOptions(
+  value?: RequiredInput,
+): ResolvedRequiredOptions {
+  const normalized = normalizeOptions(value)
+  return {
+    enabled:
+      normalized.enabled === undefined
+        ? undefined
+        : resolveReactive(normalized.enabled),
+    message:
+      normalized.message === undefined
+        ? undefined
+        : resolveReactive(normalized.message),
+  }
+}
+
+function hasReactiveOptions(value?: RequiredInput): boolean {
+  if (isSignal(value) || isComputed(value)) return true
+  if (!value || typeof value !== 'object') return false
+  return (
+    isSignal(value.enabled) ||
+    isComputed(value.enabled) ||
+    isSignal(value.message) ||
+    isComputed(value.message)
+  )
+}
+
 function applyRequired(
   element: Element,
-  { enabled, message }: RequiredModifierOptions,
+  { enabled, message }: ResolvedRequiredOptions,
 ): void {
   if (!(element instanceof HTMLElement)) return
 
@@ -57,18 +99,30 @@ function applyRequired(
 }
 
 function createRequiredModifier(
-  options?: boolean | string | RequiredModifierOptions,
+  options?: RequiredInput,
 ): Modifier {
-  const normalized = normalizeOptions(options)
   return {
     type: 'forms:required',
     priority: requiredPriority,
-    properties: normalized,
+    properties: normalizeOptions(options),
     apply(node: any, context: ModifierContext) {
       const element = (context.element ?? node) as Element | undefined
       if (!element) return node
 
-      applyRequired(element, normalized)
+      const applyCurrent = () => applyRequired(element, resolveOptions(options))
+
+      const previousDispose = requiredDisposers.get(element)
+      if (previousDispose) {
+        previousDispose()
+        requiredDisposers.delete(element)
+      }
+
+      applyCurrent()
+
+      if (hasReactiveOptions(options)) {
+        const effect = createEffect(applyCurrent)
+        requiredDisposers.set(element, () => effect.dispose())
+      }
       return node
     },
   }
@@ -83,7 +137,7 @@ const REQUIRED_METADATA = {
 }
 
 export function required(
-  options?: boolean | string | RequiredModifierOptions,
+  options?: RequiredInput,
 ): Modifier {
   return createRequiredModifier(options)
 }
@@ -92,7 +146,7 @@ export function registerRequiredModifier(
   registry?: ModifierRegistry,
   plugin?: PluginInfo,
 ): void {
-  const factory = (options?: boolean | string | RequiredModifierOptions) =>
+  const factory = (options?: RequiredInput) =>
     createRequiredModifier(options)
 
   registerModifierWithMetadata(

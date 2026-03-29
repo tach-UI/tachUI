@@ -5,6 +5,7 @@
  */
 
 import { BaseModifier } from '../basic/base'
+import { createEffect, getThemeSignal } from '@tachui/core/reactive'
 import type { ModifierContext } from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/types/runtime'
 
@@ -51,8 +52,72 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
 
     const styles = this.computeBorderStyles(this.properties)
     this.applyStyles(context.element, styles)
+    this.applyAssetColorThemeReactivity(context.element, this.properties)
 
     return undefined
+  }
+
+  private applyAssetColorThemeReactivity(
+    element: Element,
+    props: BorderOptions
+  ): void {
+    const assetColorStyles = this.computeAssetColorStyles(props)
+    if (Object.keys(assetColorStyles).length === 0) {
+      return
+    }
+
+    const themeSignal = getThemeSignal()
+
+    createEffect(() => {
+      themeSignal()
+      Object.entries(assetColorStyles).forEach(([property, asset]) => {
+        this.applyStyleChange(element, property, asset.resolve())
+      })
+    })
+  }
+
+  private computeAssetColorStyles(
+    props: BorderOptions
+  ): Record<string, { resolve: () => string }> {
+    const styles: Record<string, { resolve: () => string }> = {}
+    const resolvedSides = this.resolveBorderSides(props)
+    const hasSpecificSides = this.hasSpecificSides(props, resolvedSides)
+
+    if (!hasSpecificSides && this.isAssetValue(props.color)) {
+      styles.borderColor = props.color
+    }
+
+    if (props.all && this.isAssetValue(props.all.color)) {
+      styles.borderColor = props.all.color
+    }
+
+    if (resolvedSides.top && this.isAssetValue(resolvedSides.top.color)) {
+      styles.borderTopColor = resolvedSides.top.color
+    }
+    if (resolvedSides.right && this.isAssetValue(resolvedSides.right.color)) {
+      styles.borderRightColor = resolvedSides.right.color
+    }
+    if (resolvedSides.bottom && this.isAssetValue(resolvedSides.bottom.color)) {
+      styles.borderBottomColor = resolvedSides.bottom.color
+    }
+    if (resolvedSides.left && this.isAssetValue(resolvedSides.left.color)) {
+      styles.borderLeftColor = resolvedSides.left.color
+    }
+
+    return styles
+  }
+
+  private hasSpecificSides(
+    props: BorderOptions,
+    resolvedSides: ReturnType<BorderModifier['resolveBorderSides']>
+  ): boolean {
+    return Boolean(
+      resolvedSides.top ||
+        resolvedSides.right ||
+        resolvedSides.bottom ||
+        resolvedSides.left ||
+        props.all
+    )
   }
 
   private computeBorderStyles(props: BorderOptions) {
@@ -60,12 +125,7 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
 
     const resolvedSides = this.resolveBorderSides(props)
 
-    const hasSpecificSides =
-      resolvedSides.top ||
-      resolvedSides.right ||
-      resolvedSides.bottom ||
-      resolvedSides.left ||
-      props.all
+    const hasSpecificSides = this.hasSpecificSides(props, resolvedSides)
     if (
       !hasSpecificSides &&
       (props.width !== undefined ||
@@ -74,14 +134,21 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
     ) {
       if (props.width !== undefined)
         styles.borderWidth = this.formatBorderWidth(props.width)
-      if (props.color !== undefined) styles.borderColor = props.color
+      if (props.color !== undefined && !this.isAssetValue(props.color)) {
+        styles.borderColor = props.color
+      }
       if (props.style !== undefined) styles.borderStyle = props.style
     }
 
     if (props.all !== undefined) {
       if (props.all.width !== undefined)
         styles.borderWidth = this.formatBorderWidth(props.all.width)
-      if (props.all.color !== undefined) styles.borderColor = props.all.color
+      if (
+        props.all.color !== undefined &&
+        !this.isAssetValue(props.all.color)
+      ) {
+        styles.borderColor = props.all.color
+      }
       if (props.all.style !== undefined) styles.borderStyle = props.all.style
     }
 
@@ -118,7 +185,7 @@ export class BorderModifier extends BaseModifier<BorderOptions> {
     if (side.width !== undefined) {
       styles[`border${sideName}Width`] = this.formatBorderWidth(side.width)
     }
-    if (side.color !== undefined) {
+    if (side.color !== undefined && !this.isAssetValue(side.color)) {
       styles[`border${sideName}Color`] = side.color
     }
     if (side.style !== undefined) {

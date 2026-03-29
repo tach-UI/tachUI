@@ -11,6 +11,11 @@ import type {
   ComponentProps,
   DOMNode,
 } from '@tachui/types/runtime'
+import type {
+  OverlayAlignment,
+  OverlayOffset,
+  OverlaySide,
+} from './layout/overlay'
 
 // Re-export for convenience
 export type { DOMNode } from '@tachui/types/runtime'
@@ -592,16 +597,14 @@ export interface ModifierBuilder<
   ): ModifierBuilder<T>
   overlay(
     content: any,
-    alignment?:
-      | 'center'
-      | 'top'
-      | 'bottom'
-      | 'leading'
-      | 'trailing'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottomLeading'
-      | 'bottomTrailing'
+    alignmentOrOptions?:
+      | OverlayAlignment
+      | {
+          alignment?: OverlayAlignment | Signal<OverlayAlignment>
+          side?: OverlaySide | Signal<OverlaySide>
+          offset?: OverlayOffset | Signal<OverlayOffset>
+          enabled?: boolean | Signal<boolean>
+        }
   ): ModifierBuilder<T>
 
   // Phase 3 SwiftUI modifiers - Critical Transform Modifiers

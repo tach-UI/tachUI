@@ -7,6 +7,8 @@
 import { BaseModifier } from '../base'
 import type { ModifierContext } from '../types'
 import type { DOMNode } from '@tachui/types/runtime'
+import type { Signal } from '@tachui/types/reactive'
+import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 
 export type OverlayAlignment =
   | 'center'
@@ -19,9 +21,20 @@ export type OverlayAlignment =
   | 'bottomLeading'
   | 'bottomTrailing'
 
+export type OverlaySide = 'top' | 'bottom' | 'leading' | 'trailing' | 'center'
+export type OverlayOffset =
+  | number
+  | {
+      x?: number
+      y?: number
+    }
+
 export interface OverlayOptions {
   content: any // ComponentInstance, HTMLElement, or function that returns ComponentInstance
-  alignment?: OverlayAlignment
+  alignment?: OverlayAlignment | Signal<OverlayAlignment>
+  side?: OverlaySide | Signal<OverlaySide>
+  offset?: OverlayOffset | Signal<OverlayOffset>
+  enabled?: boolean | Signal<boolean>
 }
 
 export class OverlayModifier extends BaseModifier<OverlayOptions> {
@@ -35,9 +48,9 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     const element = context.element as HTMLElement
     if (!element.style) return
 
-    const { content, alignment = 'center' } = this.properties
+    const { content } = this.properties
 
-    this.applyOverlay(element, content, alignment, context)
+    this.applyOverlay(element, content, context)
 
     return undefined
   }
@@ -45,7 +58,6 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   private applyOverlay(
     element: HTMLElement,
     content: any,
-    alignment: OverlayAlignment,
     _context: ModifierContext
   ): void {
     // Make the element a positioned container
@@ -58,15 +70,155 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     overlayContainer.style.position = 'absolute'
     overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
 
-    // Apply alignment positioning
-    const alignmentStyles = this.getOverlayAlignment(alignment)
-    Object.assign(overlayContainer.style, alignmentStyles)
+    this.applyOverlayPositioning(overlayContainer)
 
     // Render content
     this.renderContent(overlayContainer, content)
 
     // Add overlay to the element
     element.appendChild(overlayContainer)
+  }
+
+  private applyOverlayPositioning(overlayContainer: HTMLElement): void {
+    const applyResolvedPositioning = () => {
+      const alignmentValue = this.resolveReactive(
+        this.properties.alignment,
+        'center'
+      )
+      const sideValue = this.resolveReactive(this.properties.side, undefined)
+      const offsetValue = this.resolveReactive(this.properties.offset, undefined)
+      const enabledValue = this.resolveReactive(this.properties.enabled, true)
+
+      this.clearPositionStyles(overlayContainer)
+
+      const effectiveSide = sideValue ?? alignmentValue
+      const effectiveAlignment =
+        sideValue !== undefined ? effectiveSide : alignmentValue
+      const alignmentStyles = this.getOverlayAlignment(effectiveAlignment)
+      Object.assign(overlayContainer.style, alignmentStyles)
+
+      this.applyOffset(overlayContainer, effectiveSide, offsetValue)
+
+      overlayContainer.style.display = enabledValue ? '' : 'none'
+    }
+
+    const hasReactivePositioning =
+      this.isReactive(this.properties.alignment) ||
+      this.isReactive(this.properties.side) ||
+      this.isReactive(this.properties.offset) ||
+      this.isReactive(this.properties.enabled)
+
+    if (hasReactivePositioning) {
+      createEffect(() => {
+        applyResolvedPositioning()
+      })
+      return
+    }
+
+    applyResolvedPositioning()
+  }
+
+  private applyOffset(
+    overlayContainer: HTMLElement,
+    side: OverlayAlignment | OverlaySide,
+    offset: OverlayOffset | undefined
+  ): void {
+    if (offset === undefined) return
+
+    if (typeof offset === 'number') {
+      this.applyNumericOffset(overlayContainer, side, offset)
+      return
+    }
+
+    const { x, y } = offset
+    if (typeof x === 'number') {
+      if (overlayContainer.style.left) {
+        overlayContainer.style.left = this.addPixelOffset(
+          overlayContainer.style.left,
+          x
+        )
+      } else if (overlayContainer.style.right) {
+        overlayContainer.style.right = this.addPixelOffset(
+          overlayContainer.style.right,
+          x
+        )
+      }
+    }
+    if (typeof y === 'number') {
+      if (overlayContainer.style.top) {
+        overlayContainer.style.top = this.addPixelOffset(
+          overlayContainer.style.top,
+          y
+        )
+      } else if (overlayContainer.style.bottom) {
+        overlayContainer.style.bottom = this.addPixelOffset(
+          overlayContainer.style.bottom,
+          y
+        )
+      }
+    }
+  }
+
+  private applyNumericOffset(
+    overlayContainer: HTMLElement,
+    side: OverlayAlignment | OverlaySide,
+    offset: number
+  ): void {
+    switch (side) {
+      case 'top':
+      case 'topLeading':
+      case 'topTrailing':
+        overlayContainer.style.top = `${offset}px`
+        break
+      case 'bottom':
+      case 'bottomLeading':
+      case 'bottomTrailing':
+        overlayContainer.style.bottom = `${offset}px`
+        break
+      case 'leading':
+        overlayContainer.style.left = `${offset}px`
+        break
+      case 'trailing':
+        overlayContainer.style.right = `${offset}px`
+        break
+      default:
+        break
+    }
+  }
+
+  private addPixelOffset(base: string, offset: number): string {
+    return `calc(${base} + ${offset}px)`
+  }
+
+  private clearPositionStyles(overlayContainer: HTMLElement): void {
+    overlayContainer.style.top = ''
+    overlayContainer.style.right = ''
+    overlayContainer.style.bottom = ''
+    overlayContainer.style.left = ''
+    overlayContainer.style.transform = ''
+  }
+
+  private isReactive<T>(value: T | Signal<T> | undefined): value is Signal<T> {
+    return Boolean(value && (isSignal(value) || isComputed(value)))
+  }
+
+  private resolveReactive<T>(
+    value: T | Signal<T> | undefined,
+    fallback: T
+  ): T
+  private resolveReactive<T>(
+    value: T | Signal<T> | undefined,
+    fallback: undefined
+  ): T | undefined
+  private resolveReactive<T>(
+    value: T | Signal<T> | undefined,
+    fallback: T | undefined
+  ): T | undefined {
+    if (value === undefined) return fallback
+    if (isSignal(value) || isComputed(value)) {
+      return value()
+    }
+    return value
   }
 
   private renderContent(container: HTMLElement, content: any): void {
@@ -150,7 +302,24 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
  */
 export function overlay(
   content: any,
-  alignment: OverlayAlignment = 'center'
+  alignmentOrOptions:
+    | OverlayAlignment
+    | Omit<OverlayOptions, 'content'> = 'center'
 ): OverlayModifier {
-  return new OverlayModifier({ content, alignment })
+  if (
+    typeof alignmentOrOptions === 'object' &&
+    alignmentOrOptions !== null &&
+    !isSignal(alignmentOrOptions) &&
+    !isComputed(alignmentOrOptions)
+  ) {
+    return new OverlayModifier({
+      content,
+      ...alignmentOrOptions,
+    })
+  }
+
+  return new OverlayModifier({
+    content,
+    alignment: alignmentOrOptions as OverlayAlignment,
+  })
 }

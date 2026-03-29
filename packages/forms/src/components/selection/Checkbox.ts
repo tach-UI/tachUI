@@ -59,6 +59,8 @@ export const Checkbox: Component<CheckboxProps> = props => {
 
   // Handle checkbox change
   const handleChange = (event: Event) => {
+    if (resolveDisabled()) return
+
     const target = event.target as HTMLInputElement
     const newChecked = target.checked
 
@@ -99,6 +101,8 @@ export const Checkbox: Component<CheckboxProps> = props => {
 
   // Handle keyboard interaction for custom styling
   const handleKeyDown = (event: KeyboardEvent) => {
+    if (resolveDisabled()) return
+
     if (event.key === ' ' || event.key === 'Enter') {
       event.preventDefault()
       const checkbox = event.target as HTMLInputElement
@@ -106,6 +110,11 @@ export const Checkbox: Component<CheckboxProps> = props => {
       handleChange(event)
     }
   }
+
+  const resolveDisabled = () =>
+    typeof disabled === 'function' ? (disabled as () => boolean)() : disabled
+  const disabledBinding =
+    typeof disabled === 'function' ? (disabled as () => boolean) : () => disabled
 
   const componentInstance: ComponentInstance = {
     type: 'component',
@@ -124,7 +133,7 @@ export const Checkbox: Component<CheckboxProps> = props => {
               : 'valid',
           'data-checked': field.value(),
           'data-indeterminate': indeterminate,
-          'data-disabled': disabled,
+          'data-disabled': disabledBinding,
         },
         // Checkbox input and label wrapper
         h(
@@ -132,7 +141,7 @@ export const Checkbox: Component<CheckboxProps> = props => {
           {
             'data-tachui-checkbox-label': true,
             'data-focused': focused(),
-            'data-disabled': disabled,
+            'data-disabled': disabledBinding,
           },
           // Hidden native checkbox for accessibility
           h('input', {
@@ -140,7 +149,7 @@ export const Checkbox: Component<CheckboxProps> = props => {
             id: restProps.id || name,
             name,
             checked: field.value(),
-            disabled,
+            disabled: disabledBinding,
             required,
             onchange: handleChange,
             onfocus: handleFocus,
@@ -175,7 +184,7 @@ export const Checkbox: Component<CheckboxProps> = props => {
               'data-checked': field.value(),
               'data-indeterminate': indeterminate,
               'data-focused': focused(),
-              'data-disabled': disabled,
+              'data-disabled': disabledBinding,
               'data-error': !!errorMessage,
               'aria-hidden': 'true',
               role: 'presentation',
@@ -202,7 +211,7 @@ export const Checkbox: Component<CheckboxProps> = props => {
                   'span',
                   {
                     'data-tachui-checkbox-text': true,
-                    'data-disabled': disabled,
+                    'data-disabled': disabledBinding,
                   },
                   text(label),
                   ...(required

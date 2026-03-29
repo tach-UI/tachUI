@@ -6,7 +6,7 @@
  */
 
 import type { Signal } from '@tachui/types/reactive'
-import { isSignal, isComputed, createEffect } from '@tachui/core/reactive'
+import { isSignal, isComputed, createEffect, getThemeSignal } from '@tachui/core/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
 import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
@@ -102,13 +102,21 @@ export class ShadowModifier extends BaseModifier<ShadowOptions> {
 
   private applySingleShadow(element: Element, config: ShadowConfig): void {
     // Check if any values are reactive
-    const hasReactiveValues = Object.values(config).some(
-      value => isSignal(value) || isComputed(value)
+    const hasReactiveInputs = Object.values(config).some(
+      value => isSignal(value) || isComputed(value) || this.isAssetValue(value)
+    )
+    const hasAssetValues = Object.values(config).some(value =>
+      this.isAssetValue(value)
     )
 
-    if (hasReactiveValues) {
+    if (hasReactiveInputs) {
       // Create reactive effect for shadow
       createEffect(() => {
+        // Explicit theme read ensures this effect reruns on theme changes even when
+        // asset resolution crosses package-instance boundaries in workspace tests.
+        if (hasAssetValues) {
+          getThemeSignal()()
+        }
         const shadowValue = this.generateShadowCSS(config)
         this.applyStyleChange(element, 'boxShadow', shadowValue)
       })
@@ -124,13 +132,21 @@ export class ShadowModifier extends BaseModifier<ShadowOptions> {
     configs: ShadowConfig[]
   ): void {
     // Check if any shadow configs have reactive values
-    const hasReactiveValues = configs.some(config =>
-      Object.values(config).some(value => isSignal(value) || isComputed(value))
+    const hasReactiveInputs = configs.some(config =>
+      Object.values(config).some(
+        value => isSignal(value) || isComputed(value) || this.isAssetValue(value)
+      )
+    )
+    const hasAssetValues = configs.some(config =>
+      Object.values(config).some(value => this.isAssetValue(value))
     )
 
-    if (hasReactiveValues) {
+    if (hasReactiveInputs) {
       // Create reactive effect for multiple shadows
       createEffect(() => {
+        if (hasAssetValues) {
+          getThemeSignal()()
+        }
         const shadowValues = configs
           .map(config => this.generateShadowCSS(config))
           .join(', ')
@@ -164,7 +180,7 @@ export class ShadowModifier extends BaseModifier<ShadowOptions> {
       return (value as any)()
     }
     // Resolve Assets (ColorAsset, etc.)
-    if (typeof value === 'object' && value !== null && 'resolve' in value && typeof (value as any).resolve === 'function') {
+    if (this.isAssetValue(value)) {
       return (value as any).resolve()
     }
     return value !== undefined ? value : defaultValue
@@ -218,13 +234,19 @@ export class TextShadowModifier extends BaseModifier<TextShadowOptions> {
     config: ReactiveTextShadowConfig
   ): void {
     // Check if any values are reactive
-    const hasReactiveValues = Object.values(config).some(
-      value => isSignal(value) || isComputed(value)
+    const hasReactiveInputs = Object.values(config).some(
+      value => isSignal(value) || isComputed(value) || this.isAssetValue(value)
+    )
+    const hasAssetValues = Object.values(config).some(value =>
+      this.isAssetValue(value)
     )
 
-    if (hasReactiveValues) {
+    if (hasReactiveInputs) {
       // Create reactive effect for text shadow
       createEffect(() => {
+        if (hasAssetValues) {
+          getThemeSignal()()
+        }
         const shadowValue = this.generateTextShadowCSS(config)
         this.applyStyleChange(element, 'textShadow', shadowValue)
       })
@@ -240,13 +262,21 @@ export class TextShadowModifier extends BaseModifier<TextShadowOptions> {
     configs: ReactiveTextShadowConfig[]
   ): void {
     // Check if any shadow configs have reactive values
-    const hasReactiveValues = configs.some(config =>
-      Object.values(config).some(value => isSignal(value) || isComputed(value))
+    const hasReactiveInputs = configs.some(config =>
+      Object.values(config).some(
+        value => isSignal(value) || isComputed(value) || this.isAssetValue(value)
+      )
+    )
+    const hasAssetValues = configs.some(config =>
+      Object.values(config).some(value => this.isAssetValue(value))
     )
 
-    if (hasReactiveValues) {
+    if (hasReactiveInputs) {
       // Create reactive effect for multiple text shadows
       createEffect(() => {
+        if (hasAssetValues) {
+          getThemeSignal()()
+        }
         const shadowValues = configs
           .map(config => this.generateTextShadowCSS(config))
           .join(', ')
@@ -276,7 +306,7 @@ export class TextShadowModifier extends BaseModifier<TextShadowOptions> {
       return (value as any)()
     }
     // Resolve Assets (ColorAsset, etc.)
-    if (typeof value === 'object' && value !== null && 'resolve' in value && typeof (value as any).resolve === 'function') {
+    if (this.isAssetValue(value)) {
       return (value as any).resolve()
     }
     return value !== undefined ? value : defaultValue
@@ -330,13 +360,19 @@ export class DropShadowModifier extends BaseModifier<DropShadowOptions> {
     config: DropShadowConfig
   ): void {
     // Check if any values are reactive
-    const hasReactiveValues = Object.values(config).some(
-      value => isSignal(value) || isComputed(value)
+    const hasReactiveInputs = Object.values(config).some(
+      value => isSignal(value) || isComputed(value) || this.isAssetValue(value)
+    )
+    const hasAssetValues = Object.values(config).some(value =>
+      this.isAssetValue(value)
     )
 
-    if (hasReactiveValues) {
+    if (hasReactiveInputs) {
       // Create reactive effect for drop shadow
       createEffect(() => {
+        if (hasAssetValues) {
+          getThemeSignal()()
+        }
         const shadowValue = this.generateDropShadowCSS(config)
         this.applyFilterDropShadow(element, shadowValue)
       })
@@ -352,13 +388,21 @@ export class DropShadowModifier extends BaseModifier<DropShadowOptions> {
     configs: DropShadowConfig[]
   ): void {
     // Check if any shadow configs have reactive values
-    const hasReactiveValues = configs.some(config =>
-      Object.values(config).some(value => isSignal(value) || isComputed(value))
+    const hasReactiveInputs = configs.some(config =>
+      Object.values(config).some(
+        value => isSignal(value) || isComputed(value) || this.isAssetValue(value)
+      )
+    )
+    const hasAssetValues = configs.some(config =>
+      Object.values(config).some(value => this.isAssetValue(value))
     )
 
-    if (hasReactiveValues) {
+    if (hasReactiveInputs) {
       // Create reactive effect for multiple drop shadows
       createEffect(() => {
+        if (hasAssetValues) {
+          getThemeSignal()()
+        }
         const shadowValues = configs
           .map(config => `drop-shadow(${this.generateDropShadowCSS(config)})`)
           .join(' ')
@@ -376,10 +420,7 @@ export class DropShadowModifier extends BaseModifier<DropShadowOptions> {
   private applyFilterDropShadow(element: Element, shadowValue: string): void {
     // Get existing filter and add/update drop-shadow
     const existingFilter = (element as HTMLElement).style.filter || ''
-    const otherFilters = existingFilter
-      .split(' ')
-      .filter(f => f && !f.startsWith('drop-shadow('))
-      .join(' ')
+    const otherFilters = this.removeDropShadowFunctions(existingFilter)
 
     const newFilter = otherFilters
       ? `${otherFilters} drop-shadow(${shadowValue})`
@@ -403,10 +444,38 @@ export class DropShadowModifier extends BaseModifier<DropShadowOptions> {
       return (value as any)()
     }
     // Resolve Assets (ColorAsset, etc.)
-    if (typeof value === 'object' && value !== null && 'resolve' in value && typeof (value as any).resolve === 'function') {
+    if (this.isAssetValue(value)) {
       return (value as any).resolve()
     }
     return value !== undefined ? value : defaultValue
+  }
+
+  private removeDropShadowFunctions(filterValue: string): string {
+    if (!filterValue) return ''
+
+    let result = ''
+    let index = 0
+
+    while (index < filterValue.length) {
+      if (filterValue.startsWith('drop-shadow(', index)) {
+        index += 'drop-shadow('.length
+        let depth = 1
+        while (index < filterValue.length && depth > 0) {
+          const char = filterValue[index]
+          if (char === '(') depth += 1
+          if (char === ')') depth -= 1
+          index += 1
+        }
+        while (index < filterValue.length && /\s/.test(filterValue[index])) {
+          index += 1
+        }
+      } else {
+        result += filterValue[index]
+        index += 1
+      }
+    }
+
+    return result.trim().replace(/\s+/g, ' ')
   }
 }
 

@@ -109,7 +109,7 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
   private isDisabled(): boolean {
     const { disabled } = this.props
     if (typeof disabled === 'boolean') return disabled
-    if (isSignal(disabled)) return (disabled as () => boolean)()
+    if (typeof disabled === 'function') return (disabled as () => boolean)()
     return false
   }
 
@@ -516,7 +516,7 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
           max: String(max),
           step: String(step),
           value: String(currentValue),
-          disabled: isDisabled,
+          disabled: this.props.disabled ?? false,
           orient: vertical ? 'vertical' : undefined,
           style: sliderStyles,
           'aria-label': accessibilityLabel,

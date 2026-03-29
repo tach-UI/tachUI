@@ -145,6 +145,18 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
   }
 
   /**
+   * Runtime check for asset-like values that resolve to a concrete CSS value.
+   */
+  protected isAssetValue(value: unknown): value is { resolve: () => string } {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'resolve' in value &&
+      typeof (value as { resolve?: unknown }).resolve === 'function'
+    )
+  }
+
+  /**
    * Convert value to CSS value string with property-specific handling
    */
   protected toCSSValueForProperty(property: string, value: any): string {
@@ -154,6 +166,8 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
         'opacity',
         'z-index',
         'line-height',
+        // Numeric `flex` is shorthand for flex-grow and must stay unitless.
+        'flex',
         'flex-grow',
         'flex-shrink',
         'order',
@@ -170,12 +184,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
 
     // Resolve ColorAssets and other assets with .resolve() method
     // This must happen inside the reactive effect for theme reactivity
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'resolve' in value &&
-      typeof value.resolve === 'function'
-    ) {
+    if (this.isAssetValue(value)) {
       const resolved = value.resolve()
       // Removed verbose logging - enable if debugging asset resolution
       // console.log('toCSSValueForProperty resolving asset:', { property, value, resolved })
@@ -1110,14 +1119,26 @@ export class InteractionModifier extends BaseModifier {
     // Disabled state
     if (props.disabled !== undefined) {
       if (context.element instanceof HTMLElement) {
-        if (props.disabled) {
-          context.element.setAttribute('disabled', 'true')
-          context.element.style.pointerEvents = 'none'
-          context.element.style.opacity = '0.6'
+        const htmlElement = context.element
+        const applyDisabledState = (isDisabled: boolean): void => {
+          if (isDisabled) {
+            htmlElement.setAttribute('disabled', 'true')
+            htmlElement.style.pointerEvents = 'none'
+            htmlElement.style.opacity = '0.6'
+          } else {
+            htmlElement.removeAttribute('disabled')
+            htmlElement.style.pointerEvents = ''
+            htmlElement.style.opacity = ''
+          }
+        }
+
+        if (isSignal(props.disabled) || isComputed(props.disabled)) {
+          createEffect(() => {
+            const currentDisabled = Boolean((props.disabled as () => unknown)())
+            applyDisabledState(currentDisabled)
+          })
         } else {
-          context.element.removeAttribute('disabled')
-          context.element.style.pointerEvents = ''
-          context.element.style.opacity = ''
+          applyDisabledState(Boolean(props.disabled))
         }
       }
     }

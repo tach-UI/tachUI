@@ -7,6 +7,7 @@
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
 import type { ModifierContext } from '@tachui/types/modifiers'
+import type { Signal } from '@tachui/types/reactive'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 
 export type PositionValue =
@@ -16,8 +17,13 @@ export type PositionValue =
   | 'fixed'
   | 'sticky'
 
+export interface PositionCoordinates {
+  x: number | Signal<number>
+  y: number | Signal<number>
+}
+
 export interface PositionOptions {
-  position: PositionValue
+  position: PositionValue | PositionCoordinates
 }
 
 export class PositionModifier extends BaseModifier<PositionOptions> {
@@ -37,7 +43,13 @@ export class PositionModifier extends BaseModifier<PositionOptions> {
       this.validatePosition(position)
     }
 
-    // Handle reactive position
+    // Handle coordinate position API: position({ x, y }).
+    if (this.isCoordinatePosition(position)) {
+      this.applyCoordinatePosition(context.element as HTMLElement, position)
+      return undefined
+    }
+
+    // Handle reactive keyword position
     if (isSignal(position) || isComputed(position)) {
       createEffect(() => {
         const currentPosition = position()
@@ -49,6 +61,51 @@ export class PositionModifier extends BaseModifier<PositionOptions> {
     }
 
     return undefined
+  }
+
+  private isCoordinatePosition(
+    value: PositionValue | PositionCoordinates
+  ): value is PositionCoordinates {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'x' in value &&
+      'y' in value
+    )
+  }
+
+  private applyCoordinatePosition(
+    element: HTMLElement,
+    position: PositionCoordinates
+  ): void {
+    const applyCoordinates = (xValue: number, yValue: number) => {
+      element.style.position = 'absolute'
+      element.style.left = `${xValue}px`
+      element.style.top = `${yValue}px`
+      this.applyPositionOptimizations(element, 'absolute')
+    }
+
+    if (
+      isSignal(position.x) ||
+      isComputed(position.x) ||
+      isSignal(position.y) ||
+      isComputed(position.y)
+    ) {
+      createEffect(() => {
+        const resolvedX =
+          isSignal(position.x) || isComputed(position.x)
+            ? position.x()
+            : position.x
+        const resolvedY =
+          isSignal(position.y) || isComputed(position.y)
+            ? position.y()
+            : position.y
+        applyCoordinates(resolvedX, resolvedY)
+      })
+      return
+    }
+
+    applyCoordinates(position.x as number, position.y as number)
   }
 
   private applyPosition(element: HTMLElement, position: PositionValue): void {
@@ -162,6 +219,9 @@ export class PositionModifier extends BaseModifier<PositionOptions> {
       process.env.NODE_ENV === 'development'
     ) {
       const isReactive = isSignal(position) || isComputed(position)
+      if (this.isCoordinatePosition(position)) {
+        return
+      }
 
       if (!isReactive && typeof position !== 'string') {
         console.warn(
@@ -225,6 +285,6 @@ export class PositionModifier extends BaseModifier<PositionOptions> {
  * position(pos)
  * ```
  */
-export function position(value: PositionValue): PositionModifier {
+export function position(value: PositionValue | PositionCoordinates): PositionModifier {
   return new PositionModifier({ position: value })
 }

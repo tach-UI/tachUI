@@ -10,6 +10,13 @@ import type { ModifierContext } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 import type { ViewportLifecycleOptions } from './types'
 
+interface LifecycleState {
+  isVisible: boolean
+}
+
+const lifecycleStates = new WeakMap<Element, LifecycleState>()
+const lifecycleObservers = new WeakMap<Element, IntersectionObserver>()
+
 export class ViewportLifecycleModifier extends BaseModifier<ViewportLifecycleOptions> {
   readonly type = 'viewportLifecycle'
   readonly priority = 100 // High priority for lifecycle events
@@ -28,14 +35,43 @@ export class ViewportLifecycleModifier extends BaseModifier<ViewportLifecycleOpt
     element: Element,
     props: ViewportLifecycleOptions
   ): void {
+    const existingObserver = lifecycleObservers.get(element)
+    if (existingObserver) {
+      existingObserver.unobserve(element)
+      existingObserver.disconnect()
+      lifecycleObservers.delete(element)
+    }
+
+    lifecycleStates.set(element, {
+      isVisible: false,
+    })
+
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(entry => {
-          if (entry.isIntersecting && props.onAppear) {
-            // Element has appeared in viewport
+          const target = entry.target
+          if (!(target instanceof Element)) return
+
+          if (!target.isConnected) {
+            observer.unobserve(target)
+            lifecycleObservers.delete(target)
+            lifecycleStates.delete(target)
+            return
+          }
+
+          const state = lifecycleStates.get(target) ?? { isVisible: false }
+          const nextVisible = entry.isIntersecting
+
+          if (nextVisible === state.isVisible) {
+            return
+          }
+
+          state.isVisible = nextVisible
+          lifecycleStates.set(target, state)
+
+          if (nextVisible && props.onAppear) {
             props.onAppear()
-          } else if (!entry.isIntersecting && props.onDisappear) {
-            // Element has disappeared from viewport
+          } else if (!nextVisible && props.onDisappear) {
             props.onDisappear()
           }
         })
@@ -47,6 +83,7 @@ export class ViewportLifecycleModifier extends BaseModifier<ViewportLifecycleOpt
     )
 
     observer.observe(element)
+    lifecycleObservers.set(element, observer)
 
     // Note: Cleanup would need to be integrated with the component's cleanup system
     // For now, the observer will be cleaned up when the element is removed from DOM

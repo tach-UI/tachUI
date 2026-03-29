@@ -201,6 +201,56 @@ describe('Position Modifier', () => {
       expect(mockElement.style.zIndex).toBe('0')
       expect(mockElement.style.transform).toBe('translateZ(0)')
     })
+
+    it('should update x axis independently for coordinate position signals', () => {
+      const [x, setX] = createSignal(10)
+      const [y, _setY] = createSignal(20)
+      const modifier = position({ x, y })
+      modifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.position).toBe('absolute')
+      expect(mockElement.style.left).toBe('10px')
+      expect(mockElement.style.top).toBe('20px')
+
+      setX(45)
+      flushSync()
+
+      expect(mockElement.style.left).toBe('45px')
+      expect(mockElement.style.top).toBe('20px')
+    })
+
+    it('should update y axis independently for coordinate position signals', () => {
+      const [x, _setX] = createSignal(5)
+      const [y, setY] = createSignal(15)
+      const modifier = position({ x, y })
+      modifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.left).toBe('5px')
+      expect(mockElement.style.top).toBe('15px')
+
+      setY(60)
+      flushSync()
+
+      expect(mockElement.style.left).toBe('5px')
+      expect(mockElement.style.top).toBe('60px')
+    })
+
+    it('should update both coordinates when both signals change', () => {
+      const [x, setX] = createSignal(30)
+      const [y, setY] = createSignal(40)
+      const modifier = position({ x, y })
+      modifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.left).toBe('30px')
+      expect(mockElement.style.top).toBe('40px')
+
+      setX(100)
+      setY(200)
+      flushSync()
+
+      expect(mockElement.style.left).toBe('100px')
+      expect(mockElement.style.top).toBe('200px')
+    })
   })
 
   describe('Development Mode Validation', () => {

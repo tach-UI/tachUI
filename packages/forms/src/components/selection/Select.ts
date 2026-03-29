@@ -60,6 +60,7 @@ export const Select: Component<SelectProps> = props => {
   const [focused, setFocused] = createSignal(false)
   const [searchQuery, setSearchQuery] = createSignal('')
   const [highlightedIndex, setHighlightedIndex] = createSignal(-1)
+  const [currentTabIndex, setCurrentTabIndex] = createSignal(0)
   const [loading] = createSignal(false)
 
   // Sync with controlled value
@@ -137,8 +138,17 @@ export const Select: Component<SelectProps> = props => {
   }
 
   // Handle dropdown toggle
+  const resolveDisabled = () =>
+    typeof disabled === 'function' ? (disabled as () => boolean)() : disabled
+  const disabledBinding =
+    typeof disabled === 'function' ? (disabled as () => boolean) : () => disabled
+
+  createEffect(() => {
+    setCurrentTabIndex(resolveDisabled() ? -1 : 0)
+  })
+
   const toggleDropdown = () => {
-    if (disabled) return
+    if (resolveDisabled()) return
 
     const newOpen = !isOpen()
     setIsOpen(newOpen)
@@ -306,7 +316,7 @@ export const Select: Component<SelectProps> = props => {
             ? 'validating'
             : 'valid',
         'data-open': isOpen(),
-        'data-disabled': disabled,
+        'data-disabled': disabledBinding,
         'data-multiple': multiple,
         'data-searchable': searchable,
       },
@@ -344,7 +354,7 @@ export const Select: Component<SelectProps> = props => {
           tag: 'div',
           props: {
             id: restProps.id || name,
-            tabindex: disabled ? -1 : 0,
+            tabindex: currentTabIndex,
             role: 'combobox',
             'aria-expanded': isOpen(),
             'aria-haspopup': 'listbox',
@@ -362,7 +372,7 @@ export const Select: Component<SelectProps> = props => {
             onblur: handleBlur,
             'data-tachui-select-trigger': true,
             'data-focused': focused(),
-            'data-disabled': disabled,
+            'data-disabled': disabledBinding,
             'data-error': !!errorMessage,
           },
           children: [

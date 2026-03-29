@@ -76,26 +76,13 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
   }
 
   /**
-   * Check if a value is a ColorAsset (has a resolve method)
-   */
-  private isAssetValue(value: any): value is Asset {
-    return (
-      value !== null &&
-      value !== undefined &&
-      typeof value === 'object' &&
-      'resolve' in value &&
-      typeof value.resolve === 'function'
-    )
-  }
-
-  /**
    * Apply ColorAsset with theme reactivity
    * This mirrors the core AppearanceModifier pattern
    */
   private applyColorAssetWithThemeReactivity(
     element: Element,
     property: string,
-    asset: Asset
+    asset: { resolve: () => string }
   ): void {
     const themeSignal = getThemeSignal()
 

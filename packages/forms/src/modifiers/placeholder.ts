@@ -1,4 +1,4 @@
-import { isSignal } from '@tachui/core'
+import { createEffect, isComputed, isSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import type {
   Modifier,
@@ -22,6 +22,7 @@ function resolvePlaceholder(value: PlaceholderValue): string {
 }
 
 const placeholderHandlers = new WeakMap<Element, () => void>()
+const placeholderDisposers = new WeakMap<Element, () => void>()
 
 function applyPlaceholder(
   element: Element,
@@ -59,9 +60,20 @@ function createPlaceholderModifier(value: PlaceholderValue): Modifier {
         element.removeEventListener('input', previous)
       }
 
+      const previousDispose = placeholderDisposers.get(element)
+      if (previousDispose) {
+        previousDispose()
+        placeholderDisposers.delete(element)
+      }
+
       const handler = () => applyPlaceholder(element, value)
       element.addEventListener('input', handler)
       placeholderHandlers.set(element, handler)
+
+      if (isSignal(value) || isComputed(value)) {
+        const effect = createEffect(update)
+        placeholderDisposers.set(element, () => effect.dispose())
+      }
 
       return node
     },

@@ -7,6 +7,8 @@
 import { BaseModifier } from '../basic/base'
 import type { ModifierContext, FontWeight } from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/types/runtime'
+import { isComputed, isSignal } from '@tachui/core/reactive'
+import { bindReactiveStyle } from '@tachui/core/modifiers/base'
 import type {
   Asset,
   ColorAssetProxy,
@@ -55,6 +57,25 @@ export interface TypographyOptions {
   overflow?: 'visible' | 'hidden' | 'scroll' | 'auto'
 }
 
+const typographyUpdaterScope = 'typography'
+const typographyInstanceIdSymbol = Symbol.for('tachui.typography.instanceId')
+let typographyInstanceIdCounter = 0
+
+function getTypographyInstanceId(modifier: object): number {
+  const existingId = (modifier as any)[typographyInstanceIdSymbol]
+  if (typeof existingId === 'number') return existingId
+
+  typographyInstanceIdCounter += 1
+  const nextId = typographyInstanceIdCounter
+  Object.defineProperty(modifier, typographyInstanceIdSymbol, {
+    value: nextId,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  })
+  return nextId
+}
+
 export class TypographyModifier extends BaseModifier<TypographyOptions> {
   readonly type = 'typography'
   readonly priority = 30
@@ -64,12 +85,65 @@ export class TypographyModifier extends BaseModifier<TypographyOptions> {
 
     const styles = this.computeTypographyStyles(this.properties)
     this.applyStyles(context.element, styles)
+    this.applyImportantTextStyle(
+      context.element,
+      'text-transform',
+      this.properties.transform
+    )
+    this.applyImportantTextStyle(
+      context.element,
+      'text-decoration',
+      this.properties.decoration
+    )
 
     return undefined
   }
 
+  private applyImportantTextStyle(
+    element: Element,
+    propertyName: 'text-transform' | 'text-decoration',
+    value: unknown
+  ): void {
+    if (value === undefined) return
+
+    const styleTarget = (element as any).style
+    if (!styleTarget) return
+
+    const applyValue = (nextValue: unknown): void => {
+      const cssValue = String(nextValue)
+
+      if (styleTarget.setProperty) {
+        styleTarget.setProperty(propertyName, cssValue, 'important')
+        return
+      }
+
+      const camelCase = propertyName.replace(/-([a-z])/g, (_m, letter) =>
+        letter.toUpperCase()
+      )
+      styleTarget[camelCase] = cssValue
+    }
+
+    if (isSignal(value) || isComputed(value)) {
+      const signalValue = value as (() => unknown)
+      const modifierInstanceId = getTypographyInstanceId(this)
+
+      bindReactiveStyle({
+        element,
+        accessor: signalValue,
+        updaterId: `${typographyUpdaterScope}:${modifierInstanceId}:${propertyName}`,
+        updater: currentValue => {
+          applyValue(currentValue)
+        },
+      })
+      return
+    }
+
+    applyValue(value)
+  }
+
   private computeTypographyStyles(props: TypographyOptions) {
     const styles: Record<string, string> = {}
+    const isReactive = (value: unknown) => isSignal(value) || isComputed(value)
 
     if (props.size !== undefined) {
       styles.fontSize = this.toCSSValue(props.size)
@@ -97,26 +171,30 @@ export class TypographyModifier extends BaseModifier<TypographyOptions> {
       }
     }
     if (props.lineHeight !== undefined) {
-      styles.lineHeight =
-        typeof props.lineHeight === 'number'
-          ? props.lineHeight.toString()
-          : props.lineHeight
+      if (isReactive(props.lineHeight)) {
+        styles.lineHeight = props.lineHeight as any
+      } else {
+        styles.lineHeight =
+          typeof props.lineHeight === 'number'
+            ? props.lineHeight.toString()
+            : props.lineHeight
+      }
     }
     if (props.letterSpacing !== undefined) {
-      styles.letterSpacing = this.toCSSValue(props.letterSpacing)
+      styles.letterSpacing = isReactive(props.letterSpacing)
+        ? (props.letterSpacing as any)
+        : this.toCSSValue(props.letterSpacing)
     }
     if (props.wordSpacing !== undefined) {
-      styles.wordSpacing = this.toCSSValue(props.wordSpacing)
+      styles.wordSpacing = isReactive(props.wordSpacing)
+        ? (props.wordSpacing as any)
+        : this.toCSSValue(props.wordSpacing)
     }
     if (props.align !== undefined) {
       styles.textAlign = props.align
     }
-    if (props.transform !== undefined) {
-      styles.textTransform = `${props.transform} !important`
-    }
-    if (props.decoration !== undefined) {
-      styles.textDecoration = `${props.decoration} !important`
-    }
+    // text-transform and text-decoration are handled with explicit !important
+    // in applyImportantTextStyle() to keep static and reactive paths consistent.
     if (props.variant !== undefined) {
       styles.fontVariant = props.variant
     }
@@ -182,6 +260,10 @@ export function lineHeight(value: number | string): TypographyModifier {
 
 export function letterSpacing(value: number | string): TypographyModifier {
   return new TypographyModifier({ letterSpacing: value })
+}
+
+export function wordSpacing(value: number | string): TypographyModifier {
+  return new TypographyModifier({ wordSpacing: value })
 }
 
 export function textOverflow(
