@@ -46,9 +46,10 @@ export class GridColumnSpanModifier extends BaseModifier<{
 
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
     const element = context.element || node.element
-    if (!element || !(element instanceof Element)) {
+    if (!element) {
       return undefined
     }
+    const disposerKey = element instanceof Element ? element : undefined
 
     const update = () => {
       const span = resolveNumber(this.properties.span)
@@ -61,10 +62,10 @@ export class GridColumnSpanModifier extends BaseModifier<{
       }
     }
 
-    const previousDispose = columnDisposers.get(element)
-    if (previousDispose) {
+    const previousDispose = disposerKey ? columnDisposers.get(disposerKey) : undefined
+    if (previousDispose && disposerKey) {
       previousDispose()
-      columnDisposers.delete(element)
+      columnDisposers.delete(disposerKey)
     }
 
     update()
@@ -74,7 +75,9 @@ export class GridColumnSpanModifier extends BaseModifier<{
       isReactiveNumber(this.properties.start)
     ) {
       const effect = createEffect(update)
-      columnDisposers.set(element, () => effect.dispose())
+      if (disposerKey) {
+        columnDisposers.set(disposerKey, () => effect.dispose())
+      }
     }
 
     return undefined
@@ -97,9 +100,10 @@ export class GridRowSpanModifier extends BaseModifier<{
 
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
     const element = context.element || node.element
-    if (!element || !(element instanceof Element)) {
+    if (!element) {
       return undefined
     }
+    const disposerKey = element instanceof Element ? element : undefined
 
     const update = () => {
       const span = resolveNumber(this.properties.span)
@@ -112,10 +116,10 @@ export class GridRowSpanModifier extends BaseModifier<{
       }
     }
 
-    const previousDispose = rowDisposers.get(element)
-    if (previousDispose) {
+    const previousDispose = disposerKey ? rowDisposers.get(disposerKey) : undefined
+    if (previousDispose && disposerKey) {
       previousDispose()
-      rowDisposers.delete(element)
+      rowDisposers.delete(disposerKey)
     }
 
     update()
@@ -125,7 +129,9 @@ export class GridRowSpanModifier extends BaseModifier<{
       isReactiveNumber(this.properties.start)
     ) {
       const effect = createEffect(update)
-      rowDisposers.set(element, () => effect.dispose())
+      if (disposerKey) {
+        rowDisposers.set(disposerKey, () => effect.dispose())
+      }
     }
 
     return undefined
