@@ -18,6 +18,7 @@ import type { ComponentInstance, ComponentProps } from '@tachui/core'
 import { withModifiers } from '@tachui/core'
 import { ImageAsset } from '@tachui/core'
 import type { ImageAssetProxy } from '@tachui/core/assets'
+import { sanitizeSVG } from '@tachui/core'
 // import { getThemeSignal } from '@tachui/core'
 import { useLifecycle } from '@tachui/core'
 import { registerComponentWithLifecycleHooks } from '@tachui/core'
@@ -33,6 +34,10 @@ import { aspectRatio } from '@tachui/modifiers'
 
 type ImageAssetLike = ImageAsset | ImageAssetProxy
 type ImageSource = string | Signal<string> | ImageAssetLike
+type ImageRenderingMode = 'original' | 'template'
+
+const svgTemplateCache = new Map<string, string>()
+const svgTemplateInFlight = new Map<string, Promise<string>>()
 
 /**
  * Image loading state
@@ -77,12 +82,86 @@ function resolveImageAssetSource(
   return source
 }
 
+function resolveMaybeSignal<T>(value: T | Signal<T> | undefined): T | undefined {
+  if (value === undefined) return undefined
+  if (isSignal(value) || isComputed(value)) {
+    return value()
+  }
+  return value
+}
+
+function resolveImageSourceValue(source: ImageSource | undefined): string | undefined {
+  if (!source) return undefined
+  if (isImageAssetLike(source)) return source.resolve()
+  if (isSignal(source) || isComputed(source)) return source()
+  return source
+}
+
+function warnTemplateUnsupportedProps(props: ImageProps): void {
+  if (process.env.NODE_ENV === 'production') return
+
+  const unsupported: string[] = []
+  if (props.loadingStrategy !== undefined) unsupported.push('loadingStrategy')
+  if (props.decoding !== undefined) unsupported.push('decoding')
+  if (props.fetchPriority !== undefined) unsupported.push('fetchPriority')
+  if (props.crossOrigin !== undefined) unsupported.push('crossOrigin')
+  if (props.contentMode !== undefined) unsupported.push('contentMode')
+  if (props.resizeMode !== undefined) unsupported.push('resizeMode')
+
+  if (unsupported.length > 0) {
+    console.warn(
+      `Image(template): unsupported props ignored: ${unsupported.join(', ')}`
+    )
+  }
+}
+
+async function loadTemplateSVG(
+  url: string,
+  customSanitizer?: (markup: string) => string
+): Promise<string> {
+  if (svgTemplateCache.has(url)) {
+    return svgTemplateCache.get(url)!
+  }
+
+  if (svgTemplateInFlight.has(url)) {
+    return svgTemplateInFlight.get(url)!
+  }
+
+  const request = fetch(url)
+    .then(async response => {
+      if (!response.ok) {
+        throw new Error(`Failed to load SVG: ${response.status}`)
+      }
+
+      const rawMarkup = await response.text()
+      const sanitized = customSanitizer
+        ? customSanitizer(rawMarkup)
+        : sanitizeSVG(rawMarkup)
+
+      if (!sanitized || !/<svg[\s>]/i.test(sanitized)) {
+        throw new Error('Sanitized SVG missing root <svg>')
+      }
+
+      svgTemplateCache.set(url, sanitized)
+      return sanitized
+    })
+    .finally(() => {
+      svgTemplateInFlight.delete(url)
+    })
+
+  svgTemplateInFlight.set(url, request)
+  return request
+}
+
 export interface ImageProps
   extends ComponentProps,
     ElementOverrideProps,
     CSSClassesProps {
   // Source
   src?: ImageSource
+  renderingMode?: ImageRenderingMode
+  decorative?: boolean | Signal<boolean>
+  customSanitizer?: (markup: string) => string
   srcSet?: string | Signal<string>
   alt?: string | Signal<string>
 
@@ -187,6 +266,15 @@ export class EnhancedImage
     // ENHANCED: Set up lifecycle hooks for reliable DOM access
     useLifecycle(this, {
       onDOMReady: (_elements, primaryElement) => {
+        const renderingMode = this.props.renderingMode ?? 'original'
+        if (
+          renderingMode === 'template' &&
+          primaryElement instanceof HTMLSpanElement
+        ) {
+          this.setupTemplateModeReactivityForDOMElement(primaryElement)
+          return
+        }
+
         if (primaryElement instanceof HTMLImageElement) {
           this.setupLoadingStateReactivityForDOMElement(primaryElement)
         }
@@ -239,23 +327,41 @@ export class EnhancedImage
       }
     }
 
-    // Resolve ImageAsset to initial src value, reactive updates handled separately
-    const initialSrc = resolveImageAssetSource(this.props.src)
-
     // Process CSS classes for this component
     const baseClasses = ['tachui-image']
     const classString = this.createClassString(this.props, baseClasses)
 
-    // Create main image element - pass reactive props directly to DOM renderer
-    const element = h(this.effectiveTag, {
-      className: classString,
-      src: initialSrc, // Pass resolved src for initial render
-      alt: this.props.alt, // Pass reactive alt directly
-      loading: this.props.loadingStrategy || 'lazy',
-      crossorigin: this.props.crossOrigin,
-      decoding: this.props.decoding || 'async',
-      fetchpriority: this.props.fetchPriority,
-    })
+    const renderingMode = this.props.renderingMode ?? 'original'
+    let element
+
+    if (renderingMode === 'template') {
+      warnTemplateUnsupportedProps(this.props)
+
+      const resolvedAlt = resolveMaybeSignal(this.props.alt)
+      const isDecorative = Boolean(resolveMaybeSignal(this.props.decorative)) || resolvedAlt === ''
+
+      element = h('span', {
+        className: `${classString} tachui-image-template`,
+        role: 'img',
+        ...(isDecorative
+          ? { 'aria-hidden': 'true' }
+          : { 'aria-label': resolvedAlt || this.props.accessibilityLabel || 'Image' }),
+      })
+    } else {
+      // Resolve ImageAsset to initial src value, reactive updates handled separately
+      const initialSrc = resolveImageAssetSource(this.props.src)
+
+      // Create main image element - pass reactive props directly to DOM renderer
+      element = h(this.effectiveTag, {
+        className: classString,
+        src: initialSrc, // Pass resolved src for initial render
+        alt: this.props.alt, // Pass reactive alt directly
+        loading: this.props.loadingStrategy || 'lazy',
+        crossorigin: this.props.crossOrigin,
+        decoding: this.props.decoding || 'async',
+        fetchpriority: this.props.fetchPriority,
+      })
+    }
 
     // Add component metadata for semantic role processing
     ;(element as any).componentMetadata = {
@@ -289,6 +395,77 @@ export class EnhancedImage
 
     // Add cleanup
     this.cleanup.push(() => effect.dispose())
+  }
+
+  private setupTemplateModeReactivityForDOMElement(
+    domElement: HTMLSpanElement
+  ): void {
+    let activeRequestId = 0
+
+    const accessibilityEffect = createEffect(() => {
+      const alt = resolveMaybeSignal(this.props.alt) ?? this.props.accessibilityLabel
+      const isDecorative =
+        Boolean(resolveMaybeSignal(this.props.decorative)) || alt === ''
+
+      domElement.setAttribute('role', 'img')
+
+      if (isDecorative) {
+        domElement.setAttribute('aria-hidden', 'true')
+        domElement.removeAttribute('aria-label')
+      } else {
+        domElement.removeAttribute('aria-hidden')
+        domElement.setAttribute('aria-label', alt || 'Image')
+      }
+    })
+    this.cleanup.push(() => accessibilityEffect.dispose())
+
+    const effect = createEffect(() => {
+      const src = resolveImageSourceValue(this.props.src)
+      const requestId = ++activeRequestId
+
+      if (!src) {
+        domElement.innerHTML = ''
+        this.setLoadingStateWithCallback('error')
+        this.props.onError?.(new Event('error'))
+        return
+      }
+
+      this.props.onLoadStart?.()
+      this.setLoadingStateWithCallback('loading')
+
+      loadTemplateSVG(src, this.props.customSanitizer)
+        .then(markup => {
+          if (requestId !== activeRequestId) {
+            return
+          }
+
+          domElement.innerHTML = markup
+          const svg = domElement.querySelector('svg')
+          if (!(svg instanceof SVGElement)) {
+            throw new Error('No <svg> root after template injection')
+          }
+
+          svg.setAttribute('aria-hidden', 'true')
+          svg.setAttribute('focusable', 'false')
+          svg.setAttribute('width', '100%')
+          svg.setAttribute('height', '100%')
+
+          this.setLoadingStateWithCallback('loaded')
+          this.props.onLoad?.(new Event('load'))
+        })
+        .catch((_error: unknown) => {
+          if (requestId !== activeRequestId) {
+            return
+          }
+          this.setLoadingStateWithCallback('error')
+          this.props.onError?.(new Event('error'))
+        })
+    })
+
+    this.cleanup.push(() => {
+      effect.dispose()
+      activeRequestId = Number.POSITIVE_INFINITY
+    })
   }
 
   private setupLoadingStateReactivityForDOMElement(
@@ -499,6 +676,11 @@ export function Image(
   }
 
   return modifiableComponent
+}
+
+export function __resetImageTemplateCacheForTests(): void {
+  svgTemplateCache.clear()
+  svgTemplateInFlight.clear()
 }
 
 /**
