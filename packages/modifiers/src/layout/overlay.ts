@@ -93,9 +93,7 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
 
       const effectiveSide = sideValue ?? alignmentValue
       const effectiveAlignment =
-        sideValue !== undefined
-          ? this.normalizeSideToAlignment(effectiveSide)
-          : alignmentValue
+        sideValue !== undefined ? effectiveSide : alignmentValue
       const alignmentStyles = this.getOverlayAlignment(effectiveAlignment)
       Object.assign(overlayContainer.style, alignmentStyles)
 
@@ -198,21 +196,6 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     overlayContainer.style.bottom = ''
     overlayContainer.style.left = ''
     overlayContainer.style.transform = ''
-  }
-
-  private normalizeSideToAlignment(
-    side: OverlayAlignment | OverlaySide
-  ): OverlayAlignment {
-    switch (side) {
-      case 'top':
-      case 'bottom':
-      case 'leading':
-      case 'trailing':
-      case 'center':
-        return side
-      default:
-        return side
-    }
   }
 
   private isReactive<T>(value: T | Signal<T> | undefined): value is Signal<T> {

@@ -11,6 +11,11 @@ import type {
   ComponentProps,
   DOMNode,
 } from '@tachui/types/runtime'
+import type {
+  OverlayAlignment,
+  OverlayOffset,
+  OverlaySide,
+} from './layout/overlay'
 
 // Re-export for convenience
 export type { DOMNode } from '@tachui/types/runtime'
@@ -593,48 +598,11 @@ export interface ModifierBuilder<
   overlay(
     content: any,
     alignmentOrOptions?:
-      | 'center'
-      | 'top'
-      | 'bottom'
-      | 'leading'
-      | 'trailing'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottomLeading'
-      | 'bottomTrailing'
+      | OverlayAlignment
       | {
-          alignment?:
-            | 'center'
-            | 'top'
-            | 'bottom'
-            | 'leading'
-            | 'trailing'
-            | 'topLeading'
-            | 'topTrailing'
-            | 'bottomLeading'
-            | 'bottomTrailing'
-            | Signal<
-                | 'center'
-                | 'top'
-                | 'bottom'
-                | 'leading'
-                | 'trailing'
-                | 'topLeading'
-                | 'topTrailing'
-                | 'bottomLeading'
-                | 'bottomTrailing'
-              >
-          side?:
-            | 'center'
-            | 'top'
-            | 'bottom'
-            | 'leading'
-            | 'trailing'
-            | Signal<'center' | 'top' | 'bottom' | 'leading' | 'trailing'>
-          offset?:
-            | number
-            | { x?: number; y?: number }
-            | Signal<number | { x?: number; y?: number }>
+          alignment?: OverlayAlignment | Signal<OverlayAlignment>
+          side?: OverlaySide | Signal<OverlaySide>
+          offset?: OverlayOffset | Signal<OverlayOffset>
           enabled?: boolean | Signal<boolean>
         }
   ): ModifierBuilder<T>

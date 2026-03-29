@@ -5,8 +5,8 @@
  * content rendering, DOM manipulation, and positioning calculations.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createSignal } from '@tachui/core/reactive'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createRoot, createSignal, flushSync } from '@tachui/core/reactive'
 import {
   OverlayModifier,
   overlay,
@@ -545,6 +545,13 @@ describe('Overlay Modifier', () => {
   })
 
   describe('Signal Reactivity', () => {
+    const disposers = new Set<() => void>()
+
+    afterEach(() => {
+      disposers.forEach(dispose => dispose())
+      disposers.clear()
+    })
+
     it('updates side positioning when side signal changes', async () => {
       const [side, setSide] = createSignal<'top' | 'bottom'>('top')
       const modifier = new OverlayModifier({
@@ -552,13 +559,18 @@ describe('Overlay Modifier', () => {
         side,
       })
 
-      modifier.apply({} as DOMNode, mockContext)
+      const dispose = createRoot(dispose => {
+        modifier.apply({} as DOMNode, mockContext)
+        return dispose
+      })
+      disposers.add(dispose)
 
       const overlayContainer = mockElement.children[0]
       expect(overlayContainer.style.top).toBe('0px')
       expect(overlayContainer.style.left).toBe('50%')
 
       setSide('bottom')
+      flushSync()
       await flushReactiveUpdates()
 
       expect(overlayContainer.style.top).toBe('')
@@ -574,12 +586,17 @@ describe('Overlay Modifier', () => {
         offset,
       })
 
-      modifier.apply({} as DOMNode, mockContext)
+      const dispose = createRoot(dispose => {
+        modifier.apply({} as DOMNode, mockContext)
+        return dispose
+      })
+      disposers.add(dispose)
 
       const overlayContainer = mockElement.children[0]
       expect(overlayContainer.style.top).toBe('8px')
 
       setOffset(24)
+      flushSync()
       await flushReactiveUpdates()
 
       expect(overlayContainer.style.top).toBe('24px')
@@ -592,17 +609,23 @@ describe('Overlay Modifier', () => {
         enabled,
       })
 
-      modifier.apply({} as DOMNode, mockContext)
+      const dispose = createRoot(dispose => {
+        modifier.apply({} as DOMNode, mockContext)
+        return dispose
+      })
+      disposers.add(dispose)
 
       const overlayContainer = mockElement.children[0]
       expect(overlayContainer.style.display).toBe('')
 
       setEnabled(false)
+      flushSync()
       await flushReactiveUpdates()
 
       expect(overlayContainer.style.display).toBe('none')
 
       setEnabled(true)
+      flushSync()
       await flushReactiveUpdates()
 
       expect(overlayContainer.style.display).toBe('')

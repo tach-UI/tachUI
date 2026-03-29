@@ -175,7 +175,7 @@ export class EnhancedImage
     // Create loading state signal (or honor external state signal override)
     if (this.props.loadingState) {
       this.loadingStateSignal = this.props.loadingState
-      this.setLoadingState = () => this.loadingStateSignal()
+      this.setLoadingState = (_state: ImageLoadingState) => {}
     } else {
       const initialState: ImageLoadingState = this.props.src ? 'idle' : 'error'
       const [loadingStateSignal, setLoadingState] =
@@ -282,8 +282,9 @@ export class EnhancedImage
       const resolvedSrc = imageAsset.resolve() // This will track the theme signal reactively
 
       // Direct DOM element access - no need for fallbacks since we have the real element
-      domElement.src = resolvedSrc
+      this.props.onLoadStart?.()
       this.setLoadingStateWithCallback('loading')
+      domElement.src = resolvedSrc
     })
 
     // Add cleanup

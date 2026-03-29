@@ -67,10 +67,6 @@ async function flushReactiveUpdates(): Promise<void> {
   await new Promise<void>(resolve => setTimeout(resolve, 0))
 }
 
-async function waitForImageEventCycle(): Promise<void> {
-  await new Promise<void>(resolve => setTimeout(resolve, 20))
-}
-
 describe('EnhancedImage', () => {
   describe('Basic Functionality', () => {
     it('should create image component with basic props', () => {
@@ -715,6 +711,7 @@ describe('DOM Signal Reactivity', () => {
       setSrc('second.jpg')
       await flushReactiveUpdates()
 
+      expect(transitions.filter(state => state === 'loaded')).toHaveLength(0)
       expect(transitions.at(-1)).toBe('loading')
     })
 
@@ -798,7 +795,6 @@ describe('DOM Signal Reactivity', () => {
 
       setSrc('second.jpg')
       await flushReactiveUpdates()
-      await waitForImageEventCycle()
 
       expect(externalLoadingState()).toBe('idle')
       expect(onLoadingStateChange).not.toHaveBeenCalled()
