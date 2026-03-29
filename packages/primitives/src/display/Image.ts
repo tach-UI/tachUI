@@ -401,7 +401,6 @@ export class EnhancedImage
     domElement: HTMLSpanElement
   ): void {
     let activeRequestId = 0
-    let activeController: AbortController | null = null
 
     const accessibilityEffect = createEffect(() => {
       const alt = resolveMaybeSignal(this.props.alt) ?? this.props.accessibilityLabel
@@ -424,11 +423,6 @@ export class EnhancedImage
       const src = resolveImageSourceValue(this.props.src)
       const requestId = ++activeRequestId
 
-      if (activeController) {
-        activeController.abort()
-      }
-      activeController = new AbortController()
-
       if (!src) {
         domElement.innerHTML = ''
         this.setLoadingStateWithCallback('error')
@@ -441,7 +435,7 @@ export class EnhancedImage
 
       loadTemplateSVG(src, this.props.customSanitizer)
         .then(markup => {
-          if (activeController?.signal.aborted || requestId !== activeRequestId) {
+          if (requestId !== activeRequestId) {
             return
           }
 
@@ -460,7 +454,7 @@ export class EnhancedImage
           this.props.onLoad?.(new Event('load'))
         })
         .catch((_error: unknown) => {
-          if (activeController?.signal.aborted || requestId !== activeRequestId) {
+          if (requestId !== activeRequestId) {
             return
           }
           this.setLoadingStateWithCallback('error')
@@ -470,8 +464,7 @@ export class EnhancedImage
 
     this.cleanup.push(() => {
       effect.dispose()
-      activeController?.abort()
-      activeController = null
+      activeRequestId = Number.POSITIVE_INFINITY
     })
   }
 

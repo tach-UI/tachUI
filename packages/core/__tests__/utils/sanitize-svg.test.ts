@@ -34,12 +34,16 @@ describe('sanitizeSVG', () => {
 
   it('allows only fragment href refs for use and strips external refs', () => {
     const safe = sanitizeSVG('<svg><use href="#icon" /></svg>')
+    const safeXlink = sanitizeSVG(
+      '<svg xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="#symbol-id" /></svg>'
+    )
     const unsafeHref = sanitizeSVG('<svg><use href="https://evil.com/icon.svg" /></svg>')
     const unsafeXlink = sanitizeSVG(
       '<svg xmlns:xlink="http://www.w3.org/1999/xlink"><use xlink:href="javascript:alert(1)" /></svg>'
     )
 
     expect(safe).toContain('href="#icon"')
+    expect(safeXlink).toContain('xlink:href="#symbol-id"')
     expect(unsafeHref).not.toContain('href="https://')
     expect(unsafeXlink).not.toContain('xlink:href=')
   })
@@ -58,5 +62,26 @@ describe('sanitizeSVG', () => {
     expect(sanitizeSVG('')).toBe('')
     expect(sanitizeSVG('not-svg')).toBe('')
     expect(sanitizeSVG('<svg><path></svg>')).toBe('')
+  })
+
+  it('preserves safe local url references for filter/clip-path/mask', () => {
+    const input = `
+      <svg viewBox="0 0 10 10">
+        <path d="M0 0L10 10" filter="url(#f)" clip-path="url(#clip)" mask="url(#mask)" />
+      </svg>
+    `
+    const output = sanitizeSVG(input)
+
+    expect(output).toContain('filter="url(#f)"')
+    expect(output).toContain('clip-path="url(#clip)"')
+    expect(output).toContain('mask="url(#mask)"')
+  })
+
+  it('preserves children from unknown tags while stripping wrappers', () => {
+    const input = '<svg><foo><path d="M0 0L10 10" /></foo></svg>'
+    const output = sanitizeSVG(input)
+
+    expect(output).not.toContain('<foo')
+    expect(output).toContain('<path')
   })
 })

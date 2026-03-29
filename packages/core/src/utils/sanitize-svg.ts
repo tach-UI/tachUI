@@ -64,8 +64,6 @@ const ALLOWED_ATTRIBUTES = new Set([
   'xmlns:xlink',
 ])
 
-const URL_REFERENCE_ATTRIBUTES = new Set(['filter', 'clip-path', 'mask'])
-
 function stripXMLDeclarations(markup: string): string {
   return markup
     .replace(/<\?[\s\S]*?\?>/g, '')
@@ -103,10 +101,6 @@ function sanitizeAttribute(name: string, value: string): string | undefined {
   }
 
   if (value.includes('url(')) {
-    return isSafeURLReference(value) ? value.trim() : undefined
-  }
-
-  if (URL_REFERENCE_ATTRIBUTES.has(normalizedName)) {
     return isSafeURLReference(value) ? value.trim() : undefined
   }
 
