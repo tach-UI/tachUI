@@ -100,16 +100,16 @@ export class ResponsiveModifier extends BaseModifier<ResponsiveStyleConfig> {
    */
   private setupReactiveUpdates(): void {
     // Check if any values are reactive signals
-    const hasReactiveValues = this.hasReactiveValues(this.config)
+    const hasReactiveValues = this.hasReactiveValues(this.properties as ResponsiveStyleConfig)
 
     if (hasReactiveValues) {
       // Create reactive effect to regenerate CSS when values change
       createEffect(() => {
         // Track all reactive dependencies by accessing them
-        this.trackReactiveDependencies(this.config)
+        this.trackReactiveDependencies(this.properties as ResponsiveStyleConfig)
 
         // Re-evaluate config with current signal values
-        const currentConfig = this.resolveReactiveConfig(this.config)
+        const currentConfig = this.resolveReactiveConfig(this.properties as ResponsiveStyleConfig)
 
         // Update CSS if config changed
         this.updateConfig(currentConfig)

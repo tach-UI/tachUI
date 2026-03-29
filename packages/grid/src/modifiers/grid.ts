@@ -15,18 +15,32 @@ import type {
 import type { DOMNode } from '@tachui/core/runtime/types'
 import type { GridSpanConfig } from '../components/Grid'
 import { TACHUI_PACKAGE_VERSION } from '../version'
+import { createEffect, isComputed, isSignal } from '@tachui/core/reactive'
+
+type ReactiveNumber = number | (() => number)
+
+const columnDisposers = new WeakMap<Element, () => void>()
+const rowDisposers = new WeakMap<Element, () => void>()
+
+function isReactiveNumber(value: ReactiveNumber | undefined): value is () => number {
+  return Boolean(value && (isSignal(value) || isComputed(value)))
+}
+
+function resolveNumber(value: ReactiveNumber): number {
+  return isReactiveNumber(value) ? value() : value
+}
 
 /**
  * Grid column span modifier (equivalent to SwiftUI's gridCellColumns)
  */
 export class GridColumnSpanModifier extends BaseModifier<{
-  span: number
-  start?: number
+  span: ReactiveNumber
+  start?: ReactiveNumber
 }> {
   readonly type = 'grid-column-span'
   readonly priority = 200
 
-  constructor(span: number, start?: number) {
+  constructor(span: ReactiveNumber, start?: ReactiveNumber) {
     super({ span, start })
   }
 
@@ -36,12 +50,31 @@ export class GridColumnSpanModifier extends BaseModifier<{
       return undefined
     }
 
-    const { span, start } = this.properties
+    const update = () => {
+      const span = resolveNumber(this.properties.span)
+      const start = this.properties.start
 
-    if (start !== undefined) {
-      ;(element as any).style.gridColumn = `${start} / span ${span}`
-    } else {
-      ;(element as any).style.gridColumn = `span ${span}`
+      if (start !== undefined) {
+        ;(element as any).style.gridColumn = `${resolveNumber(start)} / span ${span}`
+      } else {
+        ;(element as any).style.gridColumn = `span ${span}`
+      }
+    }
+
+    const previousDispose = columnDisposers.get(element)
+    if (previousDispose) {
+      previousDispose()
+      columnDisposers.delete(element)
+    }
+
+    update()
+
+    if (
+      isReactiveNumber(this.properties.span) ||
+      isReactiveNumber(this.properties.start)
+    ) {
+      const effect = createEffect(update)
+      columnDisposers.set(element, () => effect.dispose())
     }
 
     return undefined
@@ -52,13 +85,13 @@ export class GridColumnSpanModifier extends BaseModifier<{
  * Grid row span modifier (equivalent to SwiftUI's gridCellRows)
  */
 export class GridRowSpanModifier extends BaseModifier<{
-  span: number
-  start?: number
+  span: ReactiveNumber
+  start?: ReactiveNumber
 }> {
   readonly type = 'grid-row-span'
   readonly priority = 200
 
-  constructor(span: number, start?: number) {
+  constructor(span: ReactiveNumber, start?: ReactiveNumber) {
     super({ span, start })
   }
 
@@ -68,12 +101,31 @@ export class GridRowSpanModifier extends BaseModifier<{
       return undefined
     }
 
-    const { span, start } = this.properties
+    const update = () => {
+      const span = resolveNumber(this.properties.span)
+      const start = this.properties.start
 
-    if (start !== undefined) {
-      ;(element as any).style.gridRow = `${start} / span ${span}`
-    } else {
-      ;(element as any).style.gridRow = `span ${span}`
+      if (start !== undefined) {
+        ;(element as any).style.gridRow = `${resolveNumber(start)} / span ${span}`
+      } else {
+        ;(element as any).style.gridRow = `span ${span}`
+      }
+    }
+
+    const previousDispose = rowDisposers.get(element)
+    if (previousDispose) {
+      previousDispose()
+      rowDisposers.delete(element)
+    }
+
+    update()
+
+    if (
+      isReactiveNumber(this.properties.span) ||
+      isReactiveNumber(this.properties.start)
+    ) {
+      const effect = createEffect(update)
+      rowDisposers.set(element, () => effect.dispose())
     }
 
     return undefined
@@ -213,8 +265,8 @@ export class GridItemConfigModifier extends BaseModifier<GridSpanConfig> {
  * Span multiple columns (.gridCellColumns equivalent)
  */
 export function gridColumnSpan(
-  span: number,
-  start?: number
+  span: ReactiveNumber,
+  start?: ReactiveNumber
 ): GridColumnSpanModifier {
   return new GridColumnSpanModifier(span, start)
 }
@@ -222,7 +274,10 @@ export function gridColumnSpan(
 /**
  * Span multiple rows (.gridCellRows equivalent)
  */
-export function gridRowSpan(span: number, start?: number): GridRowSpanModifier {
+export function gridRowSpan(
+  span: ReactiveNumber,
+  start?: ReactiveNumber
+): GridRowSpanModifier {
   return new GridRowSpanModifier(span, start)
 }
 

@@ -1119,14 +1119,26 @@ export class InteractionModifier extends BaseModifier {
     // Disabled state
     if (props.disabled !== undefined) {
       if (context.element instanceof HTMLElement) {
-        if (props.disabled) {
-          context.element.setAttribute('disabled', 'true')
-          context.element.style.pointerEvents = 'none'
-          context.element.style.opacity = '0.6'
+        const htmlElement = context.element
+        const applyDisabledState = (isDisabled: boolean): void => {
+          if (isDisabled) {
+            htmlElement.setAttribute('disabled', 'true')
+            htmlElement.style.pointerEvents = 'none'
+            htmlElement.style.opacity = '0.6'
+          } else {
+            htmlElement.removeAttribute('disabled')
+            htmlElement.style.pointerEvents = ''
+            htmlElement.style.opacity = ''
+          }
+        }
+
+        if (isSignal(props.disabled) || isComputed(props.disabled)) {
+          createEffect(() => {
+            const currentDisabled = Boolean((props.disabled as () => unknown)())
+            applyDisabledState(currentDisabled)
+          })
         } else {
-          context.element.removeAttribute('disabled')
-          context.element.style.pointerEvents = ''
-          context.element.style.opacity = ''
+          applyDisabledState(Boolean(props.disabled))
         }
       }
     }

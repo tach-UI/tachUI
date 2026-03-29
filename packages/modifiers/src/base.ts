@@ -124,6 +124,15 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
     return String(value)
   }
 
+  protected isAssetValue(value: unknown): value is { resolve: () => string } {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'resolve' in value &&
+      typeof (value as { resolve?: unknown }).resolve === 'function'
+    )
+  }
+
   /**
    * Convert value to CSS value string with property-specific handling
    */
@@ -146,6 +155,10 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
       }
 
       return `${value}px`
+    }
+
+    if (this.isAssetValue(value)) {
+      return value.resolve()
     }
 
     // Properties that should be passed through as-is (no processing)
@@ -176,7 +189,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
           const cssProperty = this.toCSSProperty(property)
 
           // Handle reactive values (signals and computed)
-          if (isSignal(value) || isComputed(value)) {
+          if (isSignal(value) || isComputed(value) || this.isAssetValue(value)) {
             console.log(
               'BaseModifier applyStyles - creating reactive effect for property:',
               cssProperty,
@@ -185,7 +198,14 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
             )
             // Create reactive effect for this style property
             createEffect(() => {
-              const currentValue = value()
+              const currentValue =
+                this.isAssetValue(value)
+                  ? (() => {
+                      // Track theme changes for ColorAsset/ImageAsset-style values.
+                      getThemeSignal()()
+                      return value.resolve()
+                    })()
+                  : value()
               console.log(
                 'BaseModifier reactive effect fired - property:',
                 cssProperty,
@@ -1356,14 +1376,25 @@ export class InteractionModifier extends BaseModifier {
     // Disabled state
     if (props.disabled !== undefined) {
       if (context.element instanceof HTMLElement) {
-        if (props.disabled) {
-          context.element.setAttribute('disabled', 'true')
-          context.element.style.pointerEvents = 'none'
-          context.element.style.opacity = '0.6'
+        const htmlElement = context.element
+        const applyDisabledState = (isDisabled: boolean): void => {
+          if (isDisabled) {
+            htmlElement.setAttribute('disabled', 'true')
+            htmlElement.style.pointerEvents = 'none'
+            htmlElement.style.opacity = '0.6'
+          } else {
+            htmlElement.removeAttribute('disabled')
+            htmlElement.style.pointerEvents = ''
+            htmlElement.style.opacity = ''
+          }
+        }
+
+        if (isSignal(props.disabled) || isComputed(props.disabled)) {
+          createEffect(() => {
+            applyDisabledState(Boolean((props.disabled as () => unknown)()))
+          })
         } else {
-          context.element.removeAttribute('disabled')
-          context.element.style.pointerEvents = ''
-          context.element.style.opacity = ''
+          applyDisabledState(Boolean(props.disabled))
         }
       }
     }
