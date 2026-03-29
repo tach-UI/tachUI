@@ -1,5 +1,15 @@
 # @tachui/grid
 
+## 0.8.17
+
+### Patch Changes
+
+- Updated dependencies [[`e982ab2`](https://github.com/tach-UI/tachUI/commit/e982ab26f9012c610b9cb0bff78840dc26771d40)]:
+  - @tachui/core@0.9.0
+  - @tachui/modifiers@0.8.17
+  - @tachui/responsive@0.8.17
+  - @tachui/registry@0.9.0
+
 ## 0.8.16
 
 ### Patch Changes
