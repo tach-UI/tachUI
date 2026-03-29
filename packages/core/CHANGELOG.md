@@ -1,5 +1,15 @@
 # @tachui/core
 
+## 0.8.16
+
+### Patch Changes
+
+- [#136](https://github.com/tach-UI/tachUI/pull/136) [`a8a1103`](https://github.com/tach-UI/tachUI/commit/a8a1103ebe68d7052f95995db5d1b3dc89bb3b49) Thanks [@whoughton](https://github.com/whoughton)! - Fix reactive update consistency across modifiers, primitives, forms, navigation, and viewport, and add deterministic test coverage for review feedback items.
+
+- Updated dependencies []:
+  - @tachui/types@0.8.16
+  - @tachui/registry@0.8.16
+
 ## 0.8.15
 
 ### Patch Changes

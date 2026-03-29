@@ -1,5 +1,13 @@
 # @tachui/symbols
 
+## 0.8.16
+
+### Patch Changes
+
+- Updated dependencies [[`a8a1103`](https://github.com/tach-UI/tachUI/commit/a8a1103ebe68d7052f95995db5d1b3dc89bb3b49)]:
+  - @tachui/core@0.8.16
+  - @tachui/modifiers@0.8.16
+
 ## 0.8.15
 
 ### Patch Changes
