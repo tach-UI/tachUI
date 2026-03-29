@@ -71,6 +71,15 @@ export interface NavigationContext {
  * Reactive string-like input for head metadata
  */
 export type DocumentHeadValue = string | Accessor<string>
+export type DocumentHeadMetaValue = string | Accessor<string>
+
+export interface DocumentHeadMetaTag {
+  name?: DocumentHeadMetaValue
+  property?: DocumentHeadMetaValue
+  content?: DocumentHeadMetaValue
+  httpEquiv?: DocumentHeadMetaValue
+  charset?: DocumentHeadMetaValue
+}
 
 /**
  * Per-view head metadata configuration
@@ -80,6 +89,7 @@ export interface DocumentHeadConfig {
   titleTemplate?: DocumentHeadValue
   description?: DocumentHeadValue
   canonical?: DocumentHeadValue
+  meta?: DocumentHeadMetaTag[] | Accessor<DocumentHeadMetaTag[]>
   openGraph?: {
     title?: DocumentHeadValue
     description?: DocumentHeadValue

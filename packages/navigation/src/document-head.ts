@@ -2,15 +2,25 @@ import type { Accessor } from '@tachui/core'
 import { createEffect } from '@tachui/core'
 import type {
   DocumentHeadConfig,
+  DocumentHeadMetaTag,
   DocumentHeadValue,
   NavigationStackEntry,
 } from './types'
+
+type ResolvedMetaTag = {
+  name?: string
+  property?: string
+  content?: string
+  httpEquiv?: string
+  charset?: string
+}
 
 type ResolvedDocumentHead = {
   title?: string
   titleTemplate?: string
   description?: string
   canonical?: string
+  meta?: ResolvedMetaTag[]
   openGraph?: {
     title?: string
     description?: string
@@ -60,6 +70,7 @@ function resolveHead(config: DocumentHeadConfig): ResolvedDocumentHead {
     titleTemplate: resolveValue(config.titleTemplate),
     description: resolveValue(config.description),
     canonical: resolveValue(config.canonical),
+    meta: resolveMetaTags(config.meta),
     openGraph: openGraph
       ? {
           title: resolveValue(openGraph.title),
@@ -70,6 +81,37 @@ function resolveHead(config: DocumentHeadConfig): ResolvedDocumentHead {
         }
       : undefined,
   }
+}
+
+function resolveMetaTags(
+  value?: DocumentHeadMetaTag[] | Accessor<DocumentHeadMetaTag[]>
+): ResolvedMetaTag[] | undefined {
+  if (value === undefined || value === null) return undefined
+
+  const rawMeta = typeof value === 'function' ? value() : value
+  if (!Array.isArray(rawMeta) || rawMeta.length === 0) return undefined
+
+  const resolved = rawMeta
+    .map(entry => {
+      const metaTag: ResolvedMetaTag = {
+        name: resolveValue(entry.name),
+        property: resolveValue(entry.property),
+        content: resolveValue(entry.content),
+        httpEquiv: resolveValue(entry.httpEquiv),
+        charset: resolveValue(entry.charset),
+      }
+
+      const hasIdentifier =
+        Boolean(metaTag.name) ||
+        Boolean(metaTag.property) ||
+        Boolean(metaTag.httpEquiv) ||
+        Boolean(metaTag.charset)
+
+      return hasIdentifier ? metaTag : undefined
+    })
+    .filter((entry): entry is ResolvedMetaTag => Boolean(entry))
+
+  return resolved.length > 0 ? resolved : undefined
 }
 
 function mergeHead(
@@ -93,6 +135,7 @@ function mergeHead(
     titleTemplate: next.titleTemplate ?? base.titleTemplate,
     description: next.description ?? base.description,
     canonical: next.canonical ?? base.canonical,
+    meta: next.meta ?? base.meta,
     openGraph: hasOpenGraphValues ? openGraph : undefined,
   }
 }
@@ -177,6 +220,41 @@ function upsertCanonical(doc: Document, href?: string) {
   }
 
   element.setAttribute('href', href)
+}
+
+const MANAGED_META_ATTRIBUTE = 'data-tachui-meta-managed'
+
+function syncManagedMetaTags(doc: Document, metaTags?: ResolvedMetaTag[]): void {
+  doc.head
+    .querySelectorAll(`meta[${MANAGED_META_ATTRIBUTE}="true"]`)
+    .forEach(node => node.remove())
+
+  if (!metaTags || metaTags.length === 0) {
+    return
+  }
+
+  for (const tag of metaTags) {
+    const element = doc.createElement('meta')
+    element.setAttribute(MANAGED_META_ATTRIBUTE, 'true')
+
+    if (tag.charset) {
+      element.setAttribute('charset', tag.charset)
+    }
+    if (tag.name) {
+      element.setAttribute('name', tag.name)
+    }
+    if (tag.property) {
+      element.setAttribute('property', tag.property)
+    }
+    if (tag.httpEquiv) {
+      element.setAttribute('http-equiv', tag.httpEquiv)
+    }
+    if (tag.content) {
+      element.setAttribute('content', tag.content)
+    }
+
+    doc.head.appendChild(element)
+  }
 }
 
 class DocumentHeadRuntime {
@@ -314,6 +392,7 @@ class DocumentHeadRuntime {
       'og:type',
       head.openGraph?.type
     )
+    syncManagedMetaTags(doc, head.meta)
   }
 
   resetForTests(): void {

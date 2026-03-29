@@ -13,6 +13,7 @@ import {
   WindowUtils,
 } from './components'
 import { useDismissWindow, useOpenWindow, useViewportInfo } from './environment'
+import { useViewport } from './viewport-reactivity'
 // Import everything we need for re-export
 import {
   disposeViewportManager,
@@ -101,6 +102,8 @@ export {
   useDismissWindow as useEnvironmentDismissWindow,
   useOpenWindow as useEnvironmentOpenWindow,
 } from './environment'
+export { useViewport } from './viewport-reactivity'
+export type { ViewportSignals } from './viewport-reactivity'
 
 /**
  * Default exports for common scenarios
@@ -113,6 +116,7 @@ export const Viewport = {
   useOpenWindow,
   useDismissWindow,
   useViewportInfo,
+  useViewport,
 
   // Components
   Window,

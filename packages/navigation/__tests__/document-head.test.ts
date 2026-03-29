@@ -11,12 +11,17 @@ import {
 } from '../src/document-head'
 
 describe('Document head metadata', () => {
+  async function flushReactiveUpdates(): Promise<void> {
+    await Promise.resolve()
+    await Promise.resolve()
+  }
+
   beforeEach(() => {
     __resetDocumentHeadRuntimeForTests()
     document.title = 'Base Title'
     document.head
       .querySelectorAll(
-        'meta[name="description"], link[rel="canonical"], meta[property^="og:"]'
+        'meta[name="description"], link[rel="canonical"], meta[property^="og:"], meta[data-tachui-meta-managed="true"]'
       )
       .forEach(node => node.remove())
   })
@@ -151,5 +156,99 @@ describe('Document head metadata', () => {
       'titleTemplate should contain "%s"'
     )
     warnSpy.mockRestore()
+  })
+
+  it('adds and removes dynamic meta tags from signal arrays', async () => {
+    const [meta, setMeta] = createSignal([
+      { name: 'robots', content: 'index,follow' },
+    ])
+
+    useDocumentMeta({ meta })
+    await flushReactiveUpdates()
+
+    expect(
+      document.head
+        .querySelector('meta[name="robots"]')
+        ?.getAttribute('content')
+    ).toBe('index,follow')
+
+    setMeta([
+      { name: 'robots', content: 'index,follow' },
+      { property: 'theme-color', content: '#111111' },
+    ])
+    await flushReactiveUpdates()
+
+    expect(
+      document.head
+        .querySelector('meta[property="theme-color"]')
+        ?.getAttribute('content')
+    ).toBe('#111111')
+
+    setMeta([{ property: 'theme-color', content: '#222222' }])
+    await flushReactiveUpdates()
+
+    expect(document.head.querySelector('meta[name="robots"]')).toBeNull()
+    expect(
+      document.head
+        .querySelector('meta[property="theme-color"]')
+        ?.getAttribute('content')
+    ).toBe('#222222')
+  })
+
+  it('replaces managed meta array without leaving orphaned tags', async () => {
+    const [meta, setMeta] = createSignal([
+      { name: 'robots', content: 'index,follow' },
+      { property: 'theme-color', content: '#111111' },
+    ])
+
+    useDocumentMeta({ meta })
+    await flushReactiveUpdates()
+
+    setMeta([
+      { name: 'description', content: 'fresh description' },
+      { httpEquiv: 'x-ua-compatible', content: 'ie=edge' },
+    ])
+    await flushReactiveUpdates()
+
+    const managed = Array.from(
+      document.head.querySelectorAll('meta[data-tachui-meta-managed="true"]')
+    )
+    expect(managed).toHaveLength(2)
+    expect(document.head.querySelector('meta[name="robots"]')).toBeNull()
+    expect(document.head.querySelector('meta[property="theme-color"]')).toBeNull()
+    expect(
+      document.head
+        .querySelector('meta[name="description"]')
+        ?.getAttribute('content')
+    ).toBe('fresh description')
+    expect(
+      document.head
+        .querySelector('meta[http-equiv="x-ua-compatible"]')
+        ?.getAttribute('content')
+    ).toBe('ie=edge')
+  })
+
+  it('updates title and meta in the same reactive cycle', async () => {
+    const [title, setTitle] = createSignal('Alpha')
+    const [meta, setMeta] = createSignal([
+      { name: 'robots', content: 'index,follow' },
+    ])
+
+    useDocumentMeta({
+      title,
+      meta,
+    })
+    await flushReactiveUpdates()
+
+    setTitle('Beta')
+    setMeta([{ name: 'robots', content: 'noindex,nofollow' }])
+    await flushReactiveUpdates()
+
+    expect(document.title).toBe('Beta')
+    expect(
+      document.head
+        .querySelector('meta[name="robots"]')
+        ?.getAttribute('content')
+    ).toBe('noindex,nofollow')
   })
 })
