@@ -1,6 +1,6 @@
 {
   "name": "@tachui/grid",
-  "version": "0.8.16",
+  "version": "0.8.17",
   "description": "CSS Grid layout components and modifiers for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
