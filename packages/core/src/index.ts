@@ -57,6 +57,7 @@ export {
   createResetLifecycleState,
   resetLifecycleState,
 } from './utils/clone-helpers'
+export { sanitizeSVG } from './utils/sanitize-svg'
 
 // Concatenation system
 export {
