@@ -68,6 +68,31 @@ describe('NavigationSplitView', () => {
         }).build(),
     })
 
+  const createThreeColumnSplitView = (
+    columnWidths?: {
+      sidebar?: number | { min?: number; preferred?: number; max?: number }
+      content?: number | { min?: number; preferred?: number; max?: number }
+      detail?: number | { min?: number; preferred?: number; max?: number }
+    }
+  ) =>
+    NavigationSplitView<string>({
+      sidebar: context =>
+        VStack({
+          children: [Button('Choose A', () => context.selectDetail('A')).build()],
+          spacing: 8,
+          alignment: 'leading',
+        }).build(),
+      content: context =>
+        HTML.div({
+          children: `Content: ${context.selectedValue() ?? 'none'}`,
+        }).build(),
+      detail: context =>
+        HTML.div({
+          children: `Detail: ${context.selectedValue() ?? 'none'}`,
+        }).build(),
+      columnWidths,
+    })
+
   it('renders two columns at and above breakpoint', () => {
     setViewportWidth(1024)
     const split = createSampleSplitView()
@@ -82,6 +107,126 @@ describe('NavigationSplitView', () => {
     expect(
       document.querySelector('[aria-label="NavigationSplitView detail"]')
     ).toBeTruthy()
+
+    cleanup()
+  })
+
+  it('renders three columns at and above 1024px when content is provided', () => {
+    setViewportWidth(1200)
+    const split = createThreeColumnSplitView()
+    const { cleanup } = mountSplitView(split)
+
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView three-column"]')
+    ).toBeTruthy()
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView sidebar"]')
+    ).toBeTruthy()
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView content"]')
+    ).toBeTruthy()
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView detail"]')
+    ).toBeTruthy()
+
+    cleanup()
+  })
+
+  it('degrades to two columns at 768-1023px with sidebar hidden behind toggle', async () => {
+    setViewportWidth(900)
+    const split = createThreeColumnSplitView()
+    const { cleanup } = mountSplitView(split)
+
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView two-column"]')
+    ).toBeTruthy()
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView three-column"]')
+    ).toBeNull()
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView sidebar"]')
+    ).toBeNull()
+    expect(document.body.textContent).toContain('Show Sidebar')
+
+    const showSidebarButton = Array.from(document.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Show Sidebar')
+    )
+    showSidebarButton?.click()
+    await flush()
+
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView sidebar"]')
+    ).toBeTruthy()
+    expect(document.body.textContent).toContain('Hide Sidebar')
+
+    cleanup()
+  })
+
+  it('degrades to single-column stacked navigation below 768px', () => {
+    setViewportWidth(700)
+    const split = createThreeColumnSplitView()
+    const { cleanup } = mountSplitView(split)
+
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView three-column"]')
+    ).toBeNull()
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView two-column"]')
+    ).toBeNull()
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView sidebar"]')
+    ).toBeTruthy()
+
+    cleanup()
+  })
+
+  it('respects custom column width constraints in three-column mode', () => {
+    setViewportWidth(1200)
+    const split = createThreeColumnSplitView({
+      sidebar: { min: 180, preferred: 220, max: 260 },
+      content: 320,
+      detail: { min: 420, max: 900 },
+    })
+    const { cleanup } = mountSplitView(split)
+
+    const shell = document.querySelector(
+      '[aria-label="NavigationSplitView three-column"]'
+    ) as HTMLElement | null
+    expect(shell).toBeTruthy()
+    const columns = shell ? Array.from(shell.children) as HTMLElement[] : []
+    expect(columns.length).toBe(3)
+    expect(columns[0]?.style.minWidth).toBe('180px')
+    expect(columns[0]?.style.width).toBe('220px')
+    expect(columns[0]?.style.maxWidth).toBe('260px')
+    expect(columns[1]?.style.minWidth).toBe('320px')
+    expect(columns[1]?.style.width).toBe('320px')
+    expect(columns[1]?.style.maxWidth).toBe('320px')
+    expect(columns[2]?.style.minWidth).toBe('420px')
+    expect(columns[2]?.style.maxWidth).toBe('900px')
+
+    cleanup()
+  })
+
+  it('supports column selection flow in medium mode via sidebar toggle', async () => {
+    setViewportWidth(900)
+    const split = createThreeColumnSplitView()
+    const { cleanup } = mountSplitView(split)
+
+    const showSidebarButton = Array.from(document.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Show Sidebar')
+    )
+    showSidebarButton?.click()
+    await flush()
+
+    const chooseAButton = Array.from(document.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Choose A')
+    )
+    chooseAButton?.click()
+    await flush()
+
+    expect(document.body.textContent).toContain('Detail: A')
+    expect(document.body.textContent).not.toContain('Hide Sidebar')
+    expect(document.body.textContent).toContain('Show Sidebar')
 
     cleanup()
   })
