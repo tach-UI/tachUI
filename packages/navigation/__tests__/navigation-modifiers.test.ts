@@ -24,6 +24,7 @@ import {
   toolbarForegroundColor,
   searchable,
   searchSuggestions,
+  searchScopes,
   presentationDetents,
   sheet,
   fullScreenCover,
@@ -189,9 +190,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       const input = document.querySelector(
         '[data-tachui-searchable-input="true"]'
       ) as HTMLInputElement | null
-      const placement = input?.parentElement?.getAttribute(
-        'data-tachui-searchable-placement'
-      )
+      const placement = input
+        ?.closest('[data-tachui-searchable-placement]')
+        ?.getAttribute('data-tachui-searchable-placement')
 
       expect(input).toBeTruthy()
       expect(placement).toBe('navigationBar')
@@ -272,9 +273,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       const input = document.querySelector(
         '[data-tachui-searchable-input="true"]'
       ) as HTMLInputElement | null
-      const placement = input?.parentElement?.getAttribute(
-        'data-tachui-searchable-placement'
-      )
+      const placement = input
+        ?.closest('[data-tachui-searchable-placement]')
+        ?.getAttribute('data-tachui-searchable-placement')
 
       expect(input).toBeTruthy()
       expect(placement).toBe('toolbar')
@@ -505,6 +506,164 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
         document.querySelectorAll('[data-tachui-searchable-suggestion-item="true"]')
           .length
       ).toBe(0)
+
+      cleanup()
+      container.remove()
+    })
+
+    it('renders search scopes below search field when focused', async () => {
+      const [searchText] = createSignal('')
+      const [scope] = createSignal('all')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchScopes(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        scope,
+        [
+          { value: 'all', label: 'All' },
+          { value: 'recent', label: 'Recent' },
+        ]
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      const scopesContainer = document.querySelector(
+        '[data-tachui-search-scopes="true"]'
+      ) as HTMLDivElement | null
+
+      expect(input).toBeTruthy()
+      expect(scopesContainer?.style.display).toBe('none')
+
+      input!.focus()
+      await flushMicrotasks()
+
+      expect(scopesContainer?.style.display).toBe('inline-flex')
+      expect(
+        document.querySelectorAll('[data-tachui-search-scope-item="true"]').length
+      ).toBe(2)
+
+      cleanup()
+      container.remove()
+    })
+
+    it('selecting a scope segment updates scope signal', async () => {
+      const [searchText] = createSignal('')
+      const [scope] = createSignal('all')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchScopes(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        scope,
+        [
+          { value: 'all', label: 'All' },
+          { value: 'recent', label: 'Recent' },
+        ]
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      input!.focus()
+      await flushMicrotasks()
+
+      const recentButton = Array.from(
+        document.querySelectorAll<HTMLButtonElement>(
+          '[data-tachui-search-scope-item="true"]'
+        )
+      ).find(button => button.textContent === 'Recent')
+      recentButton?.click()
+      await flushMicrotasks()
+
+      const updatedRecentButton = document.querySelector(
+        '[data-tachui-search-scope-value="recent"]'
+      ) as HTMLButtonElement | null
+
+      expect(scope()).toBe('recent')
+      expect(updatedRecentButton?.getAttribute('data-active')).toBe('true')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('reactively updates active scope indicator when scope changes externally', async () => {
+      const [searchText] = createSignal('')
+      const [scope, setScope] = createSignal('all')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchScopes(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        scope,
+        [
+          { value: 'all', label: 'All' },
+          { value: 'recent', label: 'Recent' },
+        ]
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      input!.focus()
+      await flushMicrotasks()
+
+      setScope('recent')
+      await flushMicrotasks()
+
+      const recentButton = document.querySelector(
+        '[data-tachui-search-scope-value="recent"]'
+      ) as HTMLButtonElement | null
+      const allButton = document.querySelector(
+        '[data-tachui-search-scope-value="all"]'
+      ) as HTMLButtonElement | null
+
+      expect(recentButton?.getAttribute('data-active')).toBe('true')
+      expect(allButton?.getAttribute('data-active')).toBe('false')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('uses initial scope signal value as default active selection', async () => {
+      const [searchText] = createSignal('')
+      const [scope] = createSignal('recent')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchScopes(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        scope,
+        [
+          { value: 'all', label: 'All' },
+          { value: 'recent', label: 'Recent' },
+        ]
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      input!.focus()
+      await flushMicrotasks()
+
+      const recentButton = document.querySelector(
+        '[data-tachui-search-scope-value="recent"]'
+      ) as HTMLButtonElement | null
+      const allButton = document.querySelector(
+        '[data-tachui-search-scope-value="all"]'
+      ) as HTMLButtonElement | null
+
+      expect(recentButton?.getAttribute('data-active')).toBe('true')
+      expect(allButton?.getAttribute('data-active')).toBe('false')
 
       cleanup()
       container.remove()

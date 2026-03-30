@@ -35,6 +35,7 @@ export interface NavigationModifierConfig {
   trailingItems?: ComponentInstance[]
   searchable?: SearchableConfig
   searchSuggestions?: SearchSuggestionsInput
+  searchScopes?: SearchScopesConfig
 }
 
 type SheetPresentationState = Accessor<boolean> | Binding<boolean>
@@ -111,6 +112,18 @@ export interface SearchableConfig {
 export type SearchSuggestionsInput =
   | string[]
   | ((query: string) => string[])
+
+export type SearchScopeState = Accessor<string> | Binding<string>
+
+export interface SearchScopeOption {
+  value: string
+  label: string
+}
+
+export interface SearchScopesConfig {
+  scope: SearchScopeState
+  scopes: SearchScopeOption[]
+}
 
 export type ConfirmationDialogButtonRole = 'default' | 'cancel' | 'destructive'
 
@@ -519,7 +532,8 @@ function wrapComponentWithToolbar(
 
   const createSearchableInputNode = (
     config: SearchableConfig,
-    suggestionsInput?: SearchSuggestionsInput
+    suggestionsInput?: SearchSuggestionsInput,
+    searchScopesConfig?: SearchScopesConfig
   ): ComponentInstance => {
     const searchHost = HTML.div({}).build()
     const existingLifecycle = (searchHost as any)._enhancedLifecycle ?? {}
@@ -551,6 +565,31 @@ function wrapComponentWithToolbar(
       }
       console.error(
         '.searchable requires a writable signal accessor or Binding<string>. Computed/read-only accessors are not writable.'
+      )
+      return false
+    }
+
+    const readScopeState = (state: SearchScopeState): string => {
+      if (typeof state === 'function') {
+        return String(state() ?? '')
+      }
+      return String(state.get() ?? '')
+    }
+
+    const setScopeState = (state: SearchScopeState, value: string): boolean => {
+      if (typeof state !== 'function') {
+        state.set(value)
+        return true
+      }
+      if (isSignal(state)) {
+        const signal = getSignalImpl(state)
+        if (signal) {
+          signal.set(value)
+          return true
+        }
+      }
+      console.error(
+        '.searchScopes requires a writable signal accessor or Binding<string>. Computed/read-only accessors are not writable.'
       )
       return false
     }
@@ -621,6 +660,16 @@ function wrapComponentWithToolbar(
         clearButton.style.alignItems = 'center'
         clearButton.style.justifyContent = 'center'
 
+        const scopesContainer = document.createElement('div')
+        scopesContainer.setAttribute('data-tachui-search-scopes', 'true')
+        scopesContainer.style.display = 'none'
+        scopesContainer.style.marginTop = '8px'
+        scopesContainer.style.padding = '2px'
+        scopesContainer.style.border = '1px solid #d1d5db'
+        scopesContainer.style.borderRadius = '10px'
+        scopesContainer.style.background = '#f3f4f6'
+        scopesContainer.style.gap = '4px'
+
         const suggestionsDropdown = document.createElement('div')
         suggestionsDropdown.setAttribute(
           'data-tachui-searchable-suggestions',
@@ -643,6 +692,9 @@ function wrapComponentWithToolbar(
         let isFocused = false
         let suggestionsDismissedBySelection = false
         let blurTimer: number | null = null
+        let currentScopeValue = searchScopesConfig
+          ? readScopeState(searchScopesConfig.scope)
+          : ''
 
         const closeSuggestions = (): void => {
           suggestionsDropdown.style.display = 'none'
@@ -653,6 +705,46 @@ function wrapComponentWithToolbar(
           if (setSearchState(config.text, value)) {
             input.value = value
           }
+        }
+
+        const renderScopeSegments = (): void => {
+          if (!searchScopesConfig || !isFocused || searchScopesConfig.scopes.length === 0) {
+            scopesContainer.style.display = 'none'
+            scopesContainer.replaceChildren()
+            return
+          }
+
+          scopesContainer.replaceChildren(
+            ...searchScopesConfig.scopes.map(scopeOption => {
+              const button = document.createElement('button')
+              const isActive = currentScopeValue === scopeOption.value
+              button.type = 'button'
+              button.setAttribute('data-tachui-search-scope-item', 'true')
+              button.setAttribute('data-tachui-search-scope-value', scopeOption.value)
+              button.setAttribute('data-active', isActive ? 'true' : 'false')
+              button.setAttribute('aria-pressed', isActive ? 'true' : 'false')
+              button.textContent = scopeOption.label
+              button.style.border = '0'
+              button.style.borderRadius = '8px'
+              button.style.padding = '6px 10px'
+              button.style.cursor = 'pointer'
+              button.style.fontSize = '13px'
+              button.style.lineHeight = '1.1'
+              button.style.background = isActive ? '#ffffff' : 'transparent'
+              button.style.color = isActive ? '#111827' : '#374151'
+              button.style.boxShadow = isActive
+                ? '0 1px 2px rgba(0, 0, 0, 0.10)'
+                : 'none'
+              button.addEventListener('click', () => {
+                if (setScopeState(searchScopesConfig.scope, scopeOption.value)) {
+                  currentScopeValue = scopeOption.value
+                  renderScopeSegments()
+                }
+              })
+              return button
+            })
+          )
+          scopesContainer.style.display = 'inline-flex'
         }
 
         const renderSuggestions = (query: string): void => {
@@ -720,6 +812,7 @@ function wrapComponentWithToolbar(
 
         const onFocus = (): void => {
           isFocused = true
+          renderScopeSegments()
           renderSuggestions(input.value)
         }
 
@@ -731,6 +824,7 @@ function wrapComponentWithToolbar(
             isFocused = false
             suggestionsDismissedBySelection = false
             closeSuggestions()
+            renderScopeSegments()
             blurTimer = null
           }, 0)
         }
@@ -747,8 +841,27 @@ function wrapComponentWithToolbar(
         input.addEventListener('blur', onBlur)
         input.addEventListener('keydown', onKeyDown)
 
+        const searchShell = document.createElement('div')
+        searchShell.style.position = 'relative'
+
+        const inputRow = document.createElement('div')
+        inputRow.style.display = 'flex'
+        inputRow.style.alignItems = 'center'
+        inputRow.style.gap = '8px'
+
+        inputRow.append(input, clearButton)
+        searchShell.append(inputRow, suggestionsDropdown)
+
         primary.style.position = 'relative'
-        primary.append(input, clearButton, suggestionsDropdown)
+        primary.style.display = 'block'
+        primary.append(searchShell, scopesContainer)
+
+        const scopeSyncEffect = searchScopesConfig
+          ? createEffect(() => {
+              currentScopeValue = readScopeState(searchScopesConfig.scope)
+              renderScopeSegments()
+            })
+          : null
 
         const syncEffect = createEffect(() => {
           const currentValue = readSearchState(config.text)
@@ -756,15 +869,18 @@ function wrapComponentWithToolbar(
             input.value = currentValue
           }
           clearButton.style.display = currentValue ? 'inline-flex' : 'none'
+          renderScopeSegments()
           renderSuggestions(currentValue)
         })
 
         return () => {
           syncEffect.dispose()
+          scopeSyncEffect?.dispose()
           if (blurTimer !== null) {
             window.clearTimeout(blurTimer)
           }
           closeSuggestions()
+          scopesContainer.replaceChildren()
           input.removeEventListener('input', onInput)
           clearButton.removeEventListener('click', onClear)
           input.removeEventListener('focus', onFocus)
@@ -831,7 +947,11 @@ function wrapComponentWithToolbar(
   if (hasNavigationBarSearch && searchableConfig) {
     const searchNode = HStack({
       children: [
-        createSearchableInputNode(searchableConfig, modifiers.searchSuggestions),
+        createSearchableInputNode(
+          searchableConfig,
+          modifiers.searchSuggestions,
+          modifiers.searchScopes
+        ),
       ],
       spacing: 0,
     })
@@ -866,7 +986,11 @@ function wrapComponentWithToolbar(
   if (hasToolbarSearch && searchableConfig) {
     const searchNode = HStack({
       children: [
-        createSearchableInputNode(searchableConfig, modifiers.searchSuggestions),
+        createSearchableInputNode(
+          searchableConfig,
+          modifiers.searchSuggestions,
+          modifiers.searchScopes
+        ),
       ],
       spacing: 0,
     })
@@ -974,6 +1098,46 @@ export function searchSuggestions(
   const nextModifiers = {
     ...currentModifiers,
     searchSuggestions: suggestions,
+  }
+
+  const searchableConfig = nextModifiers.searchable
+  if (!searchableConfig) {
+    ;(component as any)._navigationModifiers = nextModifiers
+    return component
+  }
+
+  const wrappedComponent = wrapComponentWithToolbar(
+    toolbarBaseComponent,
+    toolbarItemList,
+    nextModifiers
+  )
+  ;(wrappedComponent as any)._navigationModifiers = {
+    ...(wrappedComponent as any)._navigationModifiers,
+    ...nextModifiers,
+  }
+  ;(wrappedComponent as any)._toolbarBaseComponent = toolbarBaseComponent
+
+  return wrappedComponent
+}
+
+export function searchScopes(
+  component: ComponentInstance,
+  scope: SearchScopeState,
+  scopes: SearchScopeOption[]
+): ComponentInstance {
+  const currentModifiers = ((component as any)._navigationModifiers ?? {}) as
+    NavigationModifierConfig & {
+      toolbarItems?: ToolbarItemConfig[]
+    }
+  const toolbarItemList = currentModifiers.toolbarItems ?? []
+  const toolbarBaseComponent = ((component as any)
+    ._toolbarBaseComponent ?? component) as ComponentInstance
+  const nextModifiers = {
+    ...currentModifiers,
+    searchScopes: {
+      scope,
+      scopes: [...scopes],
+    } as SearchScopesConfig,
   }
 
   const searchableConfig = nextModifiers.searchable
@@ -2594,6 +2758,10 @@ declare module '@tachui/core' {
     searchSuggestions(
       suggestions: SearchSuggestionsInput
     ): ComponentInstance
+    searchScopes(
+      scope: SearchScopeState,
+      scopes: SearchScopeOption[]
+    ): ComponentInstance
     confirmationDialog(
       title: string,
       isPresented: Accessor<boolean> | Binding<boolean>,
@@ -2691,6 +2859,13 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
 
   proto.searchSuggestions = function(suggestions: SearchSuggestionsInput) {
     return searchSuggestions(this, suggestions)
+  }
+
+  proto.searchScopes = function(
+    scope: SearchScopeState,
+    scopes: SearchScopeOption[]
+  ) {
+    return searchScopes(this, scope, scopes)
   }
 
   proto.confirmationDialog = function(
