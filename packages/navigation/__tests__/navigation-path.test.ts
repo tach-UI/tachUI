@@ -319,6 +319,56 @@ describe('Navigation Path - Path Management and Utilities', () => {
         createNavigationPath.fromString('/home/settings/')
       ).not.toThrow()
     })
+
+    it('supports appending and retrieving typed segments', () => {
+      const path = new NavigationPath()
+      path.append({ type: 'product', id: 42 })
+
+      expect(path.segments).toEqual(['product'])
+      expect(path.entryAt(0)).toEqual({ type: 'product', id: 42 })
+    })
+
+    it('encodes typed segments to JSON with type tags', () => {
+      const path = new NavigationPath()
+      path.append({ type: 'product', id: 42 })
+      path.append({ type: 'review', id: 9 })
+
+      const encoded = path.encode()
+      const decoded = JSON.parse(encoded) as Array<Record<string, unknown>>
+
+      expect(decoded).toEqual([
+        { type: 'product', id: 42 },
+        { type: 'review', id: 9 },
+      ])
+    })
+
+    it('decodes JSON back into typed and string entries', () => {
+      const payload = JSON.stringify([
+        'home',
+        { type: 'product', id: 42 },
+        'reviews',
+      ])
+
+      const path = NavigationPath.decode(payload)
+
+      expect(path.segments).toEqual(['home', 'product', 'reviews'])
+      expect(path.entryAt(1)).toEqual({ type: 'product', id: 42 })
+      expect(path.at(1)).toBe('product')
+    })
+
+    it('preserves mixed string and typed entries through encode/decode', () => {
+      const path = new NavigationPath()
+      path.append('home')
+      path.append({ type: 'product', id: 42 })
+      path.append('details')
+
+      const restored = NavigationPath.decode(path.encode())
+
+      expect(restored.segments).toEqual(['home', 'product', 'details'])
+      expect(restored.entryAt(0)).toBe('home')
+      expect(restored.entryAt(1)).toEqual({ type: 'product', id: 42 })
+      expect(restored.entryAt(2)).toBe('details')
+    })
   })
 
   describe('Typed Navigation Path', () => {

@@ -7,6 +7,48 @@
 
 import type { NavigationPath as INavigationPath } from './types'
 
+export interface NavigationPathTypedSegment {
+  type: string
+  [key: string]: unknown
+}
+
+export type NavigationPathSegment = string | NavigationPathTypedSegment
+
+function isTypedSegment(value: unknown): value is NavigationPathTypedSegment {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    typeof (value as { type?: unknown }).type === 'string'
+  )
+}
+
+function cloneSegment(segment: NavigationPathSegment): NavigationPathSegment {
+  if (typeof segment === 'string') {
+    return segment
+  }
+
+  return { ...segment }
+}
+
+function segmentToKey(segment: NavigationPathSegment): string {
+  return typeof segment === 'string' ? segment : segment.type
+}
+
+function segmentsEqual(
+  left: NavigationPathSegment,
+  right: NavigationPathSegment
+): boolean {
+  if (typeof left === 'string' && typeof right === 'string') {
+    return left === right
+  }
+  if (typeof left === 'string' || typeof right === 'string') {
+    return false
+  }
+
+  return JSON.stringify(left) === JSON.stringify(right)
+}
+
 /**
  * NavigationPath implementation for programmatic navigation
  *
@@ -22,10 +64,10 @@ import type { NavigationPath as INavigationPath } from './types'
  * ```
  */
 export class NavigationPath implements INavigationPath {
-  private _segments: string[] = []
+  private _segments: NavigationPathSegment[] = []
   private _listeners: Set<(path: NavigationPath) => void> = new Set()
   private _beforeChangeListeners?: Set<
-    (change: {
+      (change: {
       oldSegments: string[]
       newSegments: string[]
       operation: string
@@ -34,10 +76,10 @@ export class NavigationPath implements INavigationPath {
   private _notifying: boolean = false
 
   // Allow test access to segments for corruption testing
-  public _segmentsInternal: string[] | null = null
+  public _segmentsInternal: NavigationPathSegment[] | null = null
 
-  constructor(initialSegments: string[] = []) {
-    this._segments = [...initialSegments]
+  constructor(initialSegments: NavigationPathSegment[] = []) {
+    this._segments = initialSegments.map(cloneSegment)
   }
 
   /**
@@ -48,7 +90,18 @@ export class NavigationPath implements INavigationPath {
     if (this._segmentsInternal === null && !Array.isArray(this._segments)) {
       return []
     }
-    return [...this._segments]
+    return this._segments.map(segmentToKey)
+  }
+
+  /**
+   * Get raw path entries (strings and typed segments)
+   */
+  get entries(): readonly NavigationPathSegment[] {
+    if (this._segmentsInternal === null && !Array.isArray(this._segments)) {
+      return []
+    }
+
+    return this._segments.map(cloneSegment)
   }
 
   /**
@@ -80,11 +133,13 @@ export class NavigationPath implements INavigationPath {
    * Append a segment to the navigation path
    * @param segment - The segment to append
    */
-  append(segment: string): void {
+  append(segment: NavigationPathSegment): void {
+    const normalizedSegment = cloneSegment(segment)
+
     // Call before change listeners
     if (this._beforeChangeListeners) {
-      const oldSegments = [...this._segments]
-      const newSegments = [...this._segments, segment]
+      const oldSegments = this._segments.map(segmentToKey)
+      const newSegments = [...oldSegments, segmentToKey(normalizedSegment)]
 
       for (const listener of this._beforeChangeListeners) {
         const shouldProceed = listener({
@@ -98,7 +153,7 @@ export class NavigationPath implements INavigationPath {
       }
     }
 
-    this._segments.push(segment)
+    this._segments.push(normalizedSegment)
     this._notifyListeners()
   }
 
@@ -106,8 +161,8 @@ export class NavigationPath implements INavigationPath {
    * Append multiple segments to the navigation path
    * @param segments - The segments to append
    */
-  appendAll(segments: string[]): void {
-    this._segments.push(...segments)
+  appendAll(segments: NavigationPathSegment[]): void {
+    this._segments.push(...segments.map(cloneSegment))
     this._notifyListeners()
   }
 
@@ -138,7 +193,7 @@ export class NavigationPath implements INavigationPath {
    * @param segment - The segment to check for
    */
   contains(segment: string): boolean {
-    return this._segments.includes(segment)
+    return this._segments.some(current => segmentToKey(current) === segment)
   }
 
   /**
@@ -146,21 +201,32 @@ export class NavigationPath implements INavigationPath {
    * @param index - The index of the segment
    */
   at(index: number): string | undefined {
-    return this._segments[index]
+    const segment = this._segments[index]
+    return segment ? segmentToKey(segment) : undefined
+  }
+
+  /**
+   * Get the raw segment entry (typed or string) at index
+   */
+  entryAt(index: number): NavigationPathSegment | undefined {
+    const segment = this._segments[index]
+    return segment ? cloneSegment(segment) : undefined
   }
 
   /**
    * Get the last segment in the path
    */
   get last(): string | undefined {
-    return this._segments[this._segments.length - 1]
+    const segment = this._segments[this._segments.length - 1]
+    return segment ? segmentToKey(segment) : undefined
   }
 
   /**
    * Get the first segment in the path
    */
   get first(): string | undefined {
-    return this._segments[0]
+    const segment = this._segments[0]
+    return segment ? segmentToKey(segment) : undefined
   }
 
   /**
@@ -174,22 +240,24 @@ export class NavigationPath implements INavigationPath {
    * Find index of a segment
    */
   findIndex(predicate: (segment: string, index: number) => boolean): number {
-    return this._segments.findIndex(predicate)
+    return this._segments
+      .map(segmentToKey)
+      .findIndex((segment, index) => predicate(segment, index))
   }
 
   /**
    * Find index of a segment by value
    */
   indexOf(segment: string): number {
-    return this._segments.indexOf(segment)
+    return this._segments.map(segmentToKey).indexOf(segment)
   }
 
   /**
    * Replace all segments with new ones
    * @param segments - The new segments
    */
-  replaceAll(segments: string[]): void {
-    this._segments = [...segments]
+  replaceAll(segments: NavigationPathSegment[]): void {
+    this._segments = segments.map(cloneSegment)
     this._notifyListeners()
   }
 
@@ -198,9 +266,9 @@ export class NavigationPath implements INavigationPath {
    * @param index - The index to replace
    * @param segment - The new segment
    */
-  replace(index: number, segment: string): void {
+  replace(index: number, segment: NavigationPathSegment): void {
     if (index >= 0 && index < this._segments.length) {
-      this._segments[index] = segment
+      this._segments[index] = cloneSegment(segment)
       this._notifyListeners()
     }
   }
@@ -242,7 +310,7 @@ export class NavigationPath implements INavigationPath {
     const minLength = Math.min(this._segments.length, other._segments.length)
 
     for (let i = 0; i < minLength; i++) {
-      if (this._segments[i] === other._segments[i]) {
+      if (segmentsEqual(this._segments[i], other._segments[i])) {
         matchingSegments++
       }
     }
@@ -254,7 +322,7 @@ export class NavigationPath implements INavigationPath {
    * Convert the path to a URL-like string
    */
   toString(): string {
-    return this._segments.join('/')
+    return this._segments.map(segmentToKey).join('/')
   }
 
   /**
@@ -293,8 +361,8 @@ export class NavigationPath implements INavigationPath {
     if (this._segments.length !== other._segments.length) {
       return false
     }
-    return this._segments.every(
-      (segment, index) => segment === other._segments[index]
+    return this._segments.every((segment, index) =>
+      segmentsEqual(segment, other._segments[index])
     )
   }
 
@@ -302,21 +370,21 @@ export class NavigationPath implements INavigationPath {
    * Iterate over segments
    */
   forEach(callback: (segment: string, index: number) => void): void {
-    this._segments.forEach(callback)
+    this._segments.map(segmentToKey).forEach(callback)
   }
 
   /**
    * Map over segments
    */
   map<T>(callback: (segment: string, index: number) => T): T[] {
-    return this._segments.map(callback)
+    return this._segments.map(segmentToKey).map(callback)
   }
 
   /**
    * Filter segments
    */
   filter(predicate: (segment: string, index: number) => boolean): string[] {
-    return this._segments.filter(predicate)
+    return this._segments.map(segmentToKey).filter(predicate)
   }
 
   /**
@@ -325,7 +393,7 @@ export class NavigationPath implements INavigationPath {
   find(
     predicate: (segment: string, index: number) => boolean
   ): string | undefined {
-    return this._segments.find(predicate)
+    return this._segments.map(segmentToKey).find(predicate)
   }
 
   /**
@@ -380,7 +448,7 @@ export class NavigationPath implements INavigationPath {
 
     // Check if this path starts with the base path
     const isBaseMatch = basePath._segments.every(
-      (segment, index) => this._segments[index] === segment
+      (segment, index) => segmentsEqual(this._segments[index], segment)
     )
 
     if (!isBaseMatch) {
@@ -394,12 +462,12 @@ export class NavigationPath implements INavigationPath {
    * Find common prefix with another path
    */
   findCommonPrefix(other: NavigationPath): NavigationPath {
-    const commonSegments: string[] = []
+    const commonSegments: NavigationPathSegment[] = []
     const minLength = Math.min(this._segments.length, other._segments.length)
 
     for (let i = 0; i < minLength; i++) {
-      if (this._segments[i] === other._segments[i]) {
-        commonSegments.push(this._segments[i])
+      if (segmentsEqual(this._segments[i], other._segments[i])) {
+        commonSegments.push(cloneSegment(this._segments[i]))
       } else {
         break
       }
@@ -412,11 +480,13 @@ export class NavigationPath implements INavigationPath {
    * Calculate diff with another path
    */
   diff(other: NavigationPath): { added: string[]; removed: string[] } {
-    const added = other._segments.filter(
-      segment => !this._segments.includes(segment)
+    const sourceSegments = this._segments.map(segmentToKey)
+    const targetSegments = other._segments.map(segmentToKey)
+    const added = targetSegments.filter(
+      segment => !sourceSegments.includes(segment)
     )
-    const removed = this._segments.filter(
-      segment => !other._segments.includes(segment)
+    const removed = sourceSegments.filter(
+      segment => !targetSegments.includes(segment)
     )
     return { added, removed }
   }
@@ -426,7 +496,7 @@ export class NavigationPath implements INavigationPath {
    */
   normalized(): NavigationPath {
     return new NavigationPath(
-      this._segments.filter(segment => segment.length > 0)
+      this._segments.filter(segment => segmentToKey(segment).length > 0)
     )
   }
 
@@ -435,7 +505,7 @@ export class NavigationPath implements INavigationPath {
    */
   encoded(): NavigationPath {
     return new NavigationPath(
-      this._segments.map(segment => encodeURIComponent(segment))
+      this._segments.map(segment => encodeURIComponent(segmentToKey(segment)))
     )
   }
 
@@ -445,10 +515,11 @@ export class NavigationPath implements INavigationPath {
   decoded(): NavigationPath {
     return new NavigationPath(
       this._segments.map(segment => {
+        const segmentValue = segmentToKey(segment)
         try {
-          return decodeURIComponent(segment)
+          return decodeURIComponent(segmentValue)
         } catch {
-          return segment
+          return segmentValue
         }
       })
     )
@@ -458,7 +529,7 @@ export class NavigationPath implements INavigationPath {
    * Convert to router path format
    */
   toRouterPath(): string {
-    return '/' + this._segments.join('/')
+    return '/' + this._segments.map(segmentToKey).join('/')
   }
 
   /**
@@ -478,10 +549,12 @@ export class NavigationPath implements INavigationPath {
   } {
     return {
       depth: this._segments.length,
-      hasDynamicSegments: this._segments.some(segment => segment.includes(':')),
+      hasDynamicSegments: this._segments.some(segment =>
+        segmentToKey(segment).includes(':')
+      ),
       complexity:
         this._segments.length +
-        this._segments.filter(s => s.includes(':')).length,
+        this._segments.filter(s => segmentToKey(s).includes(':')).length,
     }
   }
 
@@ -492,7 +565,43 @@ export class NavigationPath implements INavigationPath {
     if (!(globalThis as any).__navigationBookmarks) {
       ;(globalThis as any).__navigationBookmarks = {}
     }
-    ;(globalThis as any).__navigationBookmarks[id] = [...this._segments]
+    ;(globalThis as any).__navigationBookmarks[id] = this._segments.map(
+      cloneSegment
+    )
+  }
+
+  /**
+   * Encode the full path entries into JSON.
+   */
+  encode(): string {
+    return JSON.stringify(this._segments)
+  }
+
+  /**
+   * Restore a NavigationPath from JSON payload.
+   */
+  static decode(payload: string): NavigationPath {
+    try {
+      const decoded = JSON.parse(payload) as unknown
+      if (!Array.isArray(decoded)) {
+        return new NavigationPath([])
+      }
+
+      const segments: NavigationPathSegment[] = []
+      decoded.forEach(entry => {
+        if (typeof entry === 'string') {
+          segments.push(entry)
+          return
+        }
+        if (isTypedSegment(entry)) {
+          segments.push({ ...entry })
+        }
+      })
+
+      return new NavigationPath(segments)
+    } catch {
+      return new NavigationPath([])
+    }
   }
 
   /**

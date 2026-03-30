@@ -15,6 +15,7 @@ import type {
   NavigationRouter,
   URLComponents,
 } from './types'
+import type { NavigationPathTypedSegment } from './navigation-path'
 
 /**
  * Internal navigation history implementation
@@ -129,6 +130,13 @@ class NavigationHistoryImpl implements NavigationHistory {
 class NavigationRouterImpl implements NavigationRouter {
   private _history: NavigationHistory
   private _routes = new Map<string, DeepLinkConfig>()
+  private _typedRoutes = new Map<
+    string,
+    {
+      component: NavigationDestination
+      metadata?: Record<string, unknown>
+    }
+  >()
   private _getCurrentPath: () => string
   private _setCurrentPath: (v: string | ((prev: string) => string)) => string
   private _boundPopStateHandler?: (event: PopStateEvent) => void
@@ -264,6 +272,51 @@ class NavigationRouterImpl implements NavigationRouter {
     this._routes.delete(path)
   }
 
+  registerTypedRoute(
+    typeTag: string,
+    destination: NavigationDestination,
+    metadata?: Record<string, unknown>
+  ): void {
+    this._typedRoutes.set(typeTag, {
+      component: destination,
+      metadata,
+    })
+  }
+
+  unregisterTypedRoute(typeTag: string): void {
+    this._typedRoutes.delete(typeTag)
+  }
+
+  navigateSegment(
+    segment: string | NavigationPathTypedSegment,
+    options: { replace?: boolean; animate?: boolean } = {}
+  ): void {
+    if (typeof segment === 'string') {
+      this.navigate(segment, options)
+      return
+    }
+
+    const route = this._typedRoutes.get(segment.type)
+    if (!route) {
+      console.warn(`No typed route found for segment type: ${segment.type}`)
+      return
+    }
+
+    const typedPath = this.buildTypedSegmentPath(segment)
+    const title =
+      (route.metadata?.title as string | undefined) ?? segment.type
+
+    if (options.replace) {
+      this.navigationContext.replace(route.component, typedPath, title)
+      this._history.replaceState(typedPath, title, segment)
+    } else {
+      this.navigationContext.push(route.component, typedPath, title)
+      this._history.pushState(typedPath, title, segment)
+    }
+
+    this.updateCurrentPath(typedPath)
+  }
+
   /**
    * Get navigation history
    */
@@ -360,6 +413,15 @@ class NavigationRouterImpl implements NavigationRouter {
     if (this.onRouteChange) {
       this.onRouteChange(newPath)
     }
+  }
+
+  private buildTypedSegmentPath(segment: NavigationPathTypedSegment): string {
+    const primaryId = segment.id
+    if (typeof primaryId === 'string' || typeof primaryId === 'number') {
+      return `/${segment.type}/${encodeURIComponent(String(primaryId))}`
+    }
+
+    return `/${segment.type}`
   }
 
   /**
