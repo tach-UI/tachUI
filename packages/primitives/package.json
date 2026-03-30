@@ -1,6 +1,6 @@
 {
   "name": "@tachui/primitives",
-  "version": "0.8.18",
+  "version": "0.8.19",
   "description": "Basic UI components for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
