@@ -24,35 +24,48 @@ export interface NavigationSplitViewProps<TSelection = unknown> {
     context: NavigationSplitViewContext<TSelection>
   ) => ComponentInstance
   breakpoint?: number
+  backLabel?: string
+  detailTitle?: string
 }
 
-let _currentNavigationSplitViewContext:
-  | NavigationSplitViewContext
-  | null = null
+const splitViewContextStack: NavigationSplitViewContext[] = []
 
-export function _setCurrentNavigationSplitViewContext(
-  context: NavigationSplitViewContext | null
-): void {
-  _currentNavigationSplitViewContext = context
+function withSplitViewContext<T>(
+  context: NavigationSplitViewContext,
+  fn: () => T
+): T {
+  splitViewContextStack.push(context)
+  try {
+    return fn()
+  } finally {
+    splitViewContextStack.pop()
+  }
 }
 
 export function useNavigationSplitView<TSelection = unknown>():
   | NavigationSplitViewContext<TSelection>
   | null {
-  return _currentNavigationSplitViewContext as
+  const current = splitViewContextStack[splitViewContextStack.length - 1] ?? null
+  return current as
     | NavigationSplitViewContext<TSelection>
     | null
 }
+
+let navigationSplitViewIdCounter = 0
 
 export function NavigationSplitView<TSelection = unknown>(
   props: NavigationSplitViewProps<TSelection>
 ): ComponentInstance {
   const breakpoint = props.breakpoint ?? 768
+  const backLabel = props.backLabel ?? 'Back'
+  const detailTitle = props.detailTitle ?? 'Detail'
   let viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024
   let selectedValue: TSelection | null = null
   let mobileShowsDetail = false
   let hostElement: HTMLElement | null = null
   let mountedContentCleanup: (() => void) | null = null
+  let resizeDebounceTimer: number | null = null
+  let lastCollapsedState = viewportWidth < breakpoint
 
   const renderIntoHost = () => {
     if (!hostElement) {
@@ -83,7 +96,11 @@ export function NavigationSplitView<TSelection = unknown>(
 
   const buildSidebarRegion = (): ComponentInstance =>
     VStack({
-      children: [props.sidebar(splitContext)],
+      children: [
+        withSplitViewContext(splitContext as NavigationSplitViewContext, () =>
+          props.sidebar(splitContext)
+        ),
+      ],
       spacing: 0,
       alignment: 'leading',
     })
@@ -94,7 +111,11 @@ export function NavigationSplitView<TSelection = unknown>(
 
   const buildDetailRegion = (): ComponentInstance =>
     VStack({
-      children: [props.detail(splitContext)],
+      children: [
+        withSplitViewContext(splitContext as NavigationSplitViewContext, () =>
+          props.detail(splitContext)
+        ),
+      ],
       spacing: 0,
       alignment: 'leading',
     })
@@ -104,10 +125,6 @@ export function NavigationSplitView<TSelection = unknown>(
       .build()
 
   const buildLayout = (): ComponentInstance => {
-    _setCurrentNavigationSplitViewContext(
-      splitContext as NavigationSplitViewContext
-    )
-
     if (!splitContext.isCollapsed()) {
       return HStack({
         children: [
@@ -144,7 +161,7 @@ export function NavigationSplitView<TSelection = unknown>(
 
     return VStack({
       children: [
-        Button('Back', () => {
+        Button(backLabel, () => {
           splitContext.showSidebar()
         })
           .backgroundColor('transparent')
@@ -152,7 +169,10 @@ export function NavigationSplitView<TSelection = unknown>(
           .border(0)
           .padding({ top: 8, right: 12, bottom: 8, left: 12 })
           .build(),
-        Text('Detail').fontWeight('600').padding({ bottom: 8 }).build(),
+        Text(detailTitle)
+          .fontWeight('600')
+          .padding({ bottom: 8 })
+          .build(),
         buildDetailRegion(),
       ],
       spacing: 8,
@@ -166,20 +186,16 @@ export function NavigationSplitView<TSelection = unknown>(
 
   const component = {
     type: 'component',
-    id: `nav-split-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+    id: `nav-split-${navigationSplitViewIdCounter++}`,
     mounted: false,
     cleanup: [],
     props: {},
-    render: () => {
-      return [
-        h('div', {
-          'aria-label': 'NavigationSplitView host',
-          style: {
-            width: '100%',
-          },
-        }),
-      ]
-    },
+    render: () =>
+      h('div', {
+        style: {
+          width: '100%',
+        },
+      }),
   } as unknown as ComponentInstance
 
   ;(component as any)._enhancedLifecycle = {
@@ -192,8 +208,19 @@ export function NavigationSplitView<TSelection = unknown>(
       renderIntoHost()
 
       const onResize = () => {
-        viewportWidth = window.innerWidth
-        renderIntoHost()
+        if (resizeDebounceTimer !== null) {
+          window.clearTimeout(resizeDebounceTimer)
+        }
+
+        resizeDebounceTimer = window.setTimeout(() => {
+          viewportWidth = window.innerWidth
+          const nextCollapsedState = viewportWidth < breakpoint
+          if (nextCollapsedState !== lastCollapsedState) {
+            lastCollapsedState = nextCollapsedState
+            renderIntoHost()
+          }
+          resizeDebounceTimer = null
+        }, 100)
       }
 
       if (typeof window !== 'undefined') {
@@ -203,14 +230,14 @@ export function NavigationSplitView<TSelection = unknown>(
       return () => {
         if (typeof window !== 'undefined') {
           window.removeEventListener('resize', onResize)
+          if (resizeDebounceTimer !== null) {
+            window.clearTimeout(resizeDebounceTimer)
+            resizeDebounceTimer = null
+          }
         }
         mountedContentCleanup?.()
         mountedContentCleanup = null
         hostElement = null
-
-        if (_currentNavigationSplitViewContext === splitContext) {
-          _setCurrentNavigationSplitViewContext(null)
-        }
       }
     },
   }

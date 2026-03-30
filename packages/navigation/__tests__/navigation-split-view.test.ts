@@ -2,7 +2,7 @@
  * NavigationSplitView Tests
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountComponentTree } from '@tachui/core'
 import { Button, HTML, VStack } from '@tachui/primitives'
 import { NavigationSplitView } from '../src/navigation-split-view'
@@ -15,6 +15,7 @@ describe('NavigationSplitView', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
@@ -166,6 +167,7 @@ describe('NavigationSplitView', () => {
   })
 
   it('responds to breakpoint transitions on window resize', async () => {
+    vi.useFakeTimers()
     setViewportWidth(1024)
     const split = createSampleSplitView()
     const { cleanup } = mountSplitView(split)
@@ -176,6 +178,7 @@ describe('NavigationSplitView', () => {
 
     setViewportWidth(600)
     window.dispatchEvent(new Event('resize'))
+    vi.advanceTimersByTime(120)
     await flush()
 
     expect(
@@ -184,6 +187,36 @@ describe('NavigationSplitView', () => {
     expect(
       document.querySelector('[aria-label="NavigationSplitView sidebar"]')
     ).toBeTruthy()
+
+    cleanup()
+  })
+
+  it('uses custom mobile labels when provided', async () => {
+    setViewportWidth(600)
+    const split = NavigationSplitView<string>({
+      sidebar: context =>
+        VStack({
+          children: [Button('Open A', () => context.selectDetail('A')).build()],
+          spacing: 8,
+          alignment: 'leading',
+        }).build(),
+      detail: context =>
+        HTML.div({
+          children: `Detail: ${context.selectedValue() ?? 'none'}`,
+        }).build(),
+      backLabel: 'Return',
+      detailTitle: 'Selection',
+    })
+    const { cleanup } = mountSplitView(split)
+
+    const openAButton = Array.from(document.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Open A')
+    )
+    openAButton?.click()
+    await flush()
+
+    expect(document.body.textContent).toContain('Return')
+    expect(document.body.textContent).toContain('Selection')
 
     cleanup()
   })
