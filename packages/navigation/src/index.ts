@@ -48,6 +48,7 @@ export {
   toolbarBackground,
   toolbarForegroundColor,
   sheet,
+  popover,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
   hasNavigationModifiers,
@@ -56,7 +57,11 @@ export {
   onNavigationModifierChange,
   NavigationModifierUtils,
 } from './navigation-modifiers'
-export type { SheetPresentationOptions } from './navigation-modifiers'
+export type {
+  SheetPresentationOptions,
+  PopoverArrowEdge,
+  PopoverPresentationOptions,
+} from './navigation-modifiers'
 
 // Navigation Environment System
 export {

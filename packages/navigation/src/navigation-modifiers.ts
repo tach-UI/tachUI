@@ -42,6 +42,18 @@ export interface SheetPresentationOptions {
   onDismiss?: () => void
 }
 
+export type PopoverArrowEdge = 'top' | 'bottom' | 'leading' | 'trailing'
+
+export interface PopoverPresentationOptions {
+  dismissOnOutsideClick?: boolean
+  dismissOnEscape?: boolean
+  offset?: number
+  zIndex?: number
+  maxWidth?: string
+  ariaLabel?: string
+  onDismiss?: () => void
+}
+
 /**
  * Navigation modifier state management
  */
@@ -511,6 +523,359 @@ function setupSheetPresentation(
   }
 }
 
+function oppositePopoverEdge(edge: PopoverArrowEdge): PopoverArrowEdge {
+  switch (edge) {
+    case 'top':
+      return 'bottom'
+    case 'bottom':
+      return 'top'
+    case 'leading':
+      return 'trailing'
+    case 'trailing':
+      return 'leading'
+  }
+}
+
+function calculatePopoverPosition(
+  edge: PopoverArrowEdge,
+  anchorRect: DOMRect,
+  popoverWidth: number,
+  popoverHeight: number,
+  viewportWidth: number,
+  viewportHeight: number,
+  offset: number
+): { top: number; left: number } {
+  switch (edge) {
+    // arrow on top edge => popover shown below anchor
+    case 'top':
+      return {
+        top: anchorRect.bottom + offset,
+        left: anchorRect.left + anchorRect.width / 2 - popoverWidth / 2,
+      }
+    // arrow on bottom edge => popover shown above anchor
+    case 'bottom':
+      return {
+        top: anchorRect.top - popoverHeight - offset,
+        left: anchorRect.left + anchorRect.width / 2 - popoverWidth / 2,
+      }
+    // arrow on leading edge => popover shown right of anchor
+    case 'leading':
+      return {
+        top: anchorRect.top + anchorRect.height / 2 - popoverHeight / 2,
+        left: anchorRect.right + offset,
+      }
+    // arrow on trailing edge => popover shown left of anchor
+    case 'trailing':
+      return {
+        top: anchorRect.top + anchorRect.height / 2 - popoverHeight / 2,
+        left: anchorRect.left - popoverWidth - offset,
+      }
+  }
+}
+
+function hasPopoverOverflow(
+  position: { top: number; left: number },
+  popoverWidth: number,
+  popoverHeight: number,
+  viewportWidth: number,
+  viewportHeight: number
+): boolean {
+  const viewportPadding = 8
+  return (
+    position.top < viewportPadding ||
+    position.left < viewportPadding ||
+    position.top + popoverHeight > viewportHeight - viewportPadding ||
+    position.left + popoverWidth > viewportWidth - viewportPadding
+  )
+}
+
+function clampPopoverPosition(
+  position: { top: number; left: number },
+  popoverWidth: number,
+  popoverHeight: number,
+  viewportWidth: number,
+  viewportHeight: number
+): { top: number; left: number } {
+  const viewportPadding = 8
+  return {
+    top: Math.min(
+      Math.max(position.top, viewportPadding),
+      Math.max(viewportPadding, viewportHeight - popoverHeight - viewportPadding)
+    ),
+    left: Math.min(
+      Math.max(position.left, viewportPadding),
+      Math.max(viewportPadding, viewportWidth - popoverWidth - viewportPadding)
+    ),
+  }
+}
+
+function setupPopoverPresentation(
+  anchorElement: Element | undefined,
+  isPresented: SheetPresentationState,
+  preferredEdge: PopoverArrowEdge,
+  content: () => ComponentInstance,
+  options: PopoverPresentationOptions
+): () => void {
+  if (typeof document === 'undefined' || !anchorElement) {
+    return () => {}
+  }
+
+  let portalRoot: HTMLDivElement | null = null
+  let popoverHost: HTMLDivElement | null = null
+  let popoverArrow: HTMLDivElement | null = null
+  let popoverContentHost: HTMLDivElement | null = null
+  let removeEscapeListener: (() => void) | null = null
+  let removeOutsideClickListener: (() => void) | null = null
+  let removeRepositionListener: (() => void) | null = null
+  let disposePopoverContent: (() => void) | null = null
+  let isMounted = false
+  const offset = options.offset ?? 12
+
+  const applyArrowStyle = (edge: PopoverArrowEdge) => {
+    if (!popoverArrow) {
+      return
+    }
+
+    popoverArrow.style.width = '10px'
+    popoverArrow.style.height = '10px'
+    popoverArrow.style.position = 'absolute'
+    popoverArrow.style.background = 'white'
+    popoverArrow.style.transform = 'rotate(45deg)'
+    popoverArrow.style.boxShadow = '-1px -1px 1px rgba(0, 0, 0, 0.08)'
+
+    popoverArrow.style.top = ''
+    popoverArrow.style.bottom = ''
+    popoverArrow.style.left = ''
+    popoverArrow.style.right = ''
+    popoverArrow.style.marginLeft = ''
+    popoverArrow.style.marginTop = ''
+
+    if (edge === 'top') {
+      popoverArrow.style.top = '-5px'
+      popoverArrow.style.left = '50%'
+      popoverArrow.style.marginLeft = '-5px'
+    } else if (edge === 'bottom') {
+      popoverArrow.style.bottom = '-5px'
+      popoverArrow.style.left = '50%'
+      popoverArrow.style.marginLeft = '-5px'
+    } else if (edge === 'leading') {
+      popoverArrow.style.left = '-5px'
+      popoverArrow.style.top = '50%'
+      popoverArrow.style.marginTop = '-5px'
+    } else {
+      popoverArrow.style.right = '-5px'
+      popoverArrow.style.top = '50%'
+      popoverArrow.style.marginTop = '-5px'
+    }
+  }
+
+  const positionPopover = () => {
+    if (!popoverHost || !anchorElement) {
+      return
+    }
+
+    const anchorRect = anchorElement.getBoundingClientRect()
+    const measuredRect = popoverHost.getBoundingClientRect()
+    const popoverWidth = measuredRect.width || 280
+    const popoverHeight = measuredRect.height || 200
+    const viewportWidth = window.innerWidth || 1024
+    const viewportHeight = window.innerHeight || 768
+
+    const preferredPosition = calculatePopoverPosition(
+      preferredEdge,
+      anchorRect,
+      popoverWidth,
+      popoverHeight,
+      viewportWidth,
+      viewportHeight,
+      offset
+    )
+
+    let resolvedEdge = preferredEdge
+    let resolvedPosition = preferredPosition
+
+    if (
+      hasPopoverOverflow(
+        preferredPosition,
+        popoverWidth,
+        popoverHeight,
+        viewportWidth,
+        viewportHeight
+      )
+    ) {
+      const flippedEdge = oppositePopoverEdge(preferredEdge)
+      const flippedPosition = calculatePopoverPosition(
+        flippedEdge,
+        anchorRect,
+        popoverWidth,
+        popoverHeight,
+        viewportWidth,
+        viewportHeight,
+        offset
+      )
+
+      resolvedEdge = flippedEdge
+      resolvedPosition = flippedPosition
+    }
+
+    const clampedPosition = clampPopoverPosition(
+      resolvedPosition,
+      popoverWidth,
+      popoverHeight,
+      viewportWidth,
+      viewportHeight
+    )
+
+    popoverHost.style.top = `${clampedPosition.top}px`
+    popoverHost.style.left = `${clampedPosition.left}px`
+    popoverHost.setAttribute('data-tachui-popover-edge', resolvedEdge)
+    applyArrowStyle(resolvedEdge)
+  }
+
+  const unmountPortal = () => {
+    if (disposePopoverContent) {
+      disposePopoverContent()
+      disposePopoverContent = null
+    }
+
+    if (removeEscapeListener) {
+      removeEscapeListener()
+      removeEscapeListener = null
+    }
+
+    if (removeOutsideClickListener) {
+      removeOutsideClickListener()
+      removeOutsideClickListener = null
+    }
+
+    if (removeRepositionListener) {
+      removeRepositionListener()
+      removeRepositionListener = null
+    }
+
+    if (portalRoot) {
+      portalRoot.remove()
+      portalRoot = null
+    }
+
+    popoverHost = null
+    popoverArrow = null
+    popoverContentHost = null
+    isMounted = false
+  }
+
+  const mountPortal = () => {
+    if (isMounted) {
+      positionPopover()
+      return
+    }
+
+    portalRoot = document.createElement('div')
+    portalRoot.setAttribute('data-tachui-popover-root', 'true')
+    portalRoot.style.position = 'fixed'
+    portalRoot.style.inset = '0'
+    portalRoot.style.pointerEvents = 'none'
+    portalRoot.style.zIndex = String(options.zIndex ?? 1100)
+
+    popoverHost = document.createElement('div')
+    popoverHost.setAttribute('data-tachui-popover-content', 'true')
+    popoverHost.setAttribute('role', 'dialog')
+    popoverHost.setAttribute('aria-modal', 'false')
+    if (options.ariaLabel) {
+      popoverHost.setAttribute('aria-label', options.ariaLabel)
+    }
+    popoverHost.style.position = 'fixed'
+    popoverHost.style.pointerEvents = 'auto'
+    popoverHost.style.background = 'white'
+    popoverHost.style.border = '1px solid rgba(0, 0, 0, 0.12)'
+    popoverHost.style.borderRadius = '10px'
+    popoverHost.style.boxShadow =
+      '0 10px 30px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08)'
+    popoverHost.style.padding = '12px'
+    popoverHost.style.maxWidth = options.maxWidth ?? '320px'
+
+    popoverArrow = document.createElement('div')
+    popoverArrow.setAttribute('data-tachui-popover-arrow', 'true')
+
+    popoverContentHost = document.createElement('div')
+    popoverContentHost.setAttribute('data-tachui-popover-body', 'true')
+
+    popoverHost.append(popoverArrow, popoverContentHost)
+    portalRoot.append(popoverHost)
+    document.body.appendChild(portalRoot)
+
+    disposePopoverContent = mountComponentTree(content(), popoverContentHost)
+    positionPopover()
+
+    if (options.dismissOnOutsideClick !== false) {
+      const outsideListener = (event: MouseEvent) => {
+        const target = event.target as Node | null
+        if (!target || !popoverHost || !anchorElement) {
+          return
+        }
+
+        if (popoverHost.contains(target) || anchorElement.contains(target)) {
+          return
+        }
+
+        dismissPresentedState(isPresented, {
+          dismissOnEscape: options.dismissOnEscape,
+          onDismiss: options.onDismiss,
+        })
+      }
+
+      document.addEventListener('mousedown', outsideListener)
+      removeOutsideClickListener = () => {
+        document.removeEventListener('mousedown', outsideListener)
+      }
+    }
+
+    if (options.dismissOnEscape !== false) {
+      const escapeListener = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          dismissPresentedState(isPresented, {
+            dismissOnEscape: options.dismissOnEscape,
+            onDismiss: options.onDismiss,
+          })
+        }
+      }
+
+      document.addEventListener('keydown', escapeListener)
+      removeEscapeListener = () => {
+        document.removeEventListener('keydown', escapeListener)
+      }
+    }
+
+    const repositionListener = () => {
+      positionPopover()
+    }
+    window.addEventListener('resize', repositionListener)
+    window.addEventListener('scroll', repositionListener, true)
+    removeRepositionListener = () => {
+      window.removeEventListener('resize', repositionListener)
+      window.removeEventListener('scroll', repositionListener, true)
+    }
+
+    isMounted = true
+  }
+
+  const presentationEffect = createEffect(() => {
+    const presented = readPresentedState(isPresented)
+
+    if (presented) {
+      mountPortal()
+      return
+    }
+
+    unmountPortal()
+  })
+
+  return () => {
+    presentationEffect.dispose()
+    unmountPortal()
+  }
+}
+
 /**
  * .sheet() modifier
  *
@@ -544,6 +909,57 @@ export function sheet(
 
       return () => {
         sheetCleanup()
+        if (typeof existingCleanup === 'function') {
+          existingCleanup()
+        }
+      }
+    },
+  }
+
+  return component
+}
+
+/**
+ * .popover() modifier
+ *
+ * @param component - The component to anchor popover presentation to
+ * @param isPresented - Reactive popover presentation state accessor/binding
+ * @param arrowEdge - Preferred popover arrow edge orientation
+ * @param content - Popover content factory
+ * @param options - Presentation options
+ * @returns The modified component
+ */
+export function popover(
+  component: ComponentInstance,
+  isPresented: SheetPresentationState,
+  arrowEdge: PopoverArrowEdge,
+  content: () => ComponentInstance,
+  options: PopoverPresentationOptions = {}
+): ComponentInstance {
+  ;(component as any)._navigationModifiers = {
+    ...(component as any)._navigationModifiers,
+    popover: { isPresented, arrowEdge, content, options },
+  }
+
+  const existingLifecycle = (component as any)._enhancedLifecycle ?? {}
+  const existingOnDOMReady = existingLifecycle.onDOMReady as
+    | ((elements: Map<string, Element>, primary?: Element) => void | (() => void))
+    | undefined
+
+  ;(component as any)._enhancedLifecycle = {
+    ...existingLifecycle,
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      const existingCleanup = existingOnDOMReady?.(elements, primary)
+      const popoverCleanup = setupPopoverPresentation(
+        primary,
+        isPresented,
+        arrowEdge,
+        content,
+        options
+      )
+
+      return () => {
+        popoverCleanup()
         if (typeof existingCleanup === 'function') {
           existingCleanup()
         }
@@ -712,7 +1128,12 @@ declare module '@tachui/core' {
       options?: SheetPresentationOptions
     ): ComponentInstance
     fullScreenCover(isPresented: () => boolean, content: () => ComponentInstance, options?: any): ComponentInstance
-    popover(isPresented: () => boolean, content: () => ComponentInstance, options?: any): ComponentInstance
+    popover(
+      isPresented: Accessor<boolean> | Binding<boolean>,
+      arrowEdge: PopoverArrowEdge,
+      content: () => ComponentInstance,
+      options?: PopoverPresentationOptions
+    ): ComponentInstance
   }
 }
 
@@ -758,5 +1179,14 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
     options?: SheetPresentationOptions
   ) {
     return sheet(this, isPresented, content, options)
+  }
+
+  proto.popover = function(
+    isPresented: Accessor<boolean> | Binding<boolean>,
+    arrowEdge: PopoverArrowEdge,
+    content: () => ComponentInstance,
+    options?: PopoverPresentationOptions
+  ) {
+    return popover(this, isPresented, arrowEdge, content, options)
   }
 }

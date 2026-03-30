@@ -17,6 +17,7 @@ import {
   toolbarBackground,
   toolbarForegroundColor,
   sheet,
+  popover,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
   hasNavigationModifiers,
@@ -37,6 +38,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
     clearNavigationModifiers()
     document
       .querySelectorAll('[data-tachui-sheet-root="true"]')
+      .forEach(node => node.remove())
+    document
+      .querySelectorAll('[data-tachui-popover-root="true"]')
       .forEach(node => node.remove())
   })
 
@@ -403,6 +407,179 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       cleanup()
       container.remove()
       setIsPresented(false)
+    })
+  })
+
+  describe('Popover Modifier', () => {
+    const mockAnchorRect = (
+      element: Element,
+      rect: {
+        top: number
+        left: number
+        width: number
+        height: number
+      }
+    ) => {
+      Object.defineProperty(element, 'getBoundingClientRect', {
+        value: () => ({
+          x: rect.left,
+          y: rect.top,
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+          right: rect.left + rect.width,
+          bottom: rect.top + rect.height,
+          toJSON: () => ({}),
+        }),
+        configurable: true,
+      })
+    }
+
+    it('positions popover relative to requested edge', async () => {
+      const [isPresented, setIsPresented] = createSignal(false)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'top',
+        () => HTML.div({ children: 'Popover content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+
+      mockAnchorRect(anchor!, { top: 80, left: 120, width: 100, height: 40 })
+      setIsPresented(true)
+      await flushMicrotasks()
+
+      const popoverNode = document.querySelector(
+        '[data-tachui-popover-content="true"]'
+      ) as HTMLDivElement | null
+      expect(popoverNode).toBeTruthy()
+      expect(popoverNode?.getAttribute('data-tachui-popover-edge')).toBe('top')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('flips popover edge when preferred edge overflows viewport', async () => {
+      const [isPresented, setIsPresented] = createSignal(false)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'bottom',
+        () => HTML.div({ children: 'Popover content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+
+      mockAnchorRect(anchor!, { top: 5, left: 120, width: 100, height: 40 })
+      setIsPresented(true)
+      await flushMicrotasks()
+
+      const popoverNode = document.querySelector(
+        '[data-tachui-popover-content="true"]'
+      ) as HTMLDivElement | null
+      expect(popoverNode).toBeTruthy()
+      expect(popoverNode?.getAttribute('data-tachui-popover-edge')).toBe('top')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('dismisses popover on outside click', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'top',
+        () => HTML.div({ children: 'Popover content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+      mockAnchorRect(anchor!, { top: 100, left: 140, width: 60, height: 36 })
+      await flushMicrotasks()
+
+      document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(
+        document.querySelector('[data-tachui-popover-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('dismisses popover on Escape key', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'leading',
+        () => HTML.div({ children: 'Popover content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+      mockAnchorRect(anchor!, { top: 160, left: 180, width: 44, height: 32 })
+      await flushMicrotasks()
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(
+        document.querySelector('[data-tachui-popover-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('renders provided popover content', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'trailing',
+        () => HTML.div({ children: 'Popover body content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+      mockAnchorRect(anchor!, { top: 180, left: 220, width: 72, height: 36 })
+      await flushMicrotasks()
+
+      expect(document.body.textContent).toContain('Popover body content')
+
+      cleanup()
+      container.remove()
     })
   })
 
