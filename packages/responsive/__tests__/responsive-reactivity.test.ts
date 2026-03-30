@@ -9,7 +9,8 @@ import { ColorAsset } from '@tachui/core'
 import { createResponsiveModifier } from '../src/modifiers/responsive'
 import {
   getCurrentBreakpoint,
-  initializeResponsiveSystem,
+  __resetResponsiveSystemForTests,
+  __syncResponsiveSignalsForTests,
 } from '../src/modifiers/responsive/breakpoints'
 
 function toKebabCase(value: string): string {
@@ -52,7 +53,8 @@ function getMediaRuleValue(
 const disposers = new Set<() => void>()
 let warnSpy: ReturnType<typeof vi.spyOn> | null = null
 
-async function waitForReactiveUpdate(): Promise<void> {
+async function waitForAssetRuleRegeneration(): Promise<void> {
+  // Theme-backed responsive rules are regenerated on the next task.
   await new Promise(resolve => setTimeout(resolve, 0))
 }
 
@@ -75,10 +77,12 @@ function mountModifier(
 
 describe('@tachui/responsive combined reactivity', () => {
   beforeEach(() => {
+    // Suppress expected responsive warnings in this suite.
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    __resetResponsiveSystemForTests()
     setTheme('light')
     window.innerWidth = 1024
-    window.dispatchEvent(new Event('resize'))
+    __syncResponsiveSignalsForTests()
   })
 
   afterEach(() => {
@@ -139,7 +143,7 @@ describe('@tachui/responsive combined reactivity', () => {
 
     setTheme('dark')
     flushSync()
-    await waitForReactiveUpdate()
+    await waitForAssetRuleRegeneration()
     css = cssOutput(modifier)
 
     expect(getBaseRuleValue(css, 'backgroundColor')).toBe('#101010')
@@ -179,7 +183,7 @@ describe('@tachui/responsive combined reactivity', () => {
 
     setTheme('dark')
     flushSync()
-    await waitForReactiveUpdate()
+    await waitForAssetRuleRegeneration()
     css = cssOutput(modifier)
 
     expect(getBaseRuleValue(css, 'color')).toBe('#dddddd')
@@ -197,10 +201,9 @@ describe('@tachui/responsive combined reactivity', () => {
     expect(getMediaRuleValue(css, '768px', 'padding')).toBe('26px')
   })
 
-  it('Breakpoint change + active signal: preserves the correct rule set during resize', async () => {
-    initializeResponsiveSystem()
+  it('Breakpoint change + active signal: preserves the correct rule set during interleaved updates', () => {
     window.innerWidth = 700
-    window.dispatchEvent(new Event('resize'))
+    __syncResponsiveSignalsForTests()
     expect(getCurrentBreakpoint()()).toBe('sm')
 
     const element = document.createElement('div')
@@ -215,13 +218,40 @@ describe('@tachui/responsive combined reactivity', () => {
 
     mountModifier(modifier, element)
 
+    // Interleave updates before a single flush to cover signal+breakpoint ordering.
     setDesktopMargin(72)
+    window.innerWidth = 1200
+    __syncResponsiveSignalsForTests()
     flushSync()
 
+    const css = cssOutput(modifier)
+    expect(getCurrentBreakpoint()()).toBe('lg')
+    expect(getBaseRuleValue(css, 'margin')).toBe('8px')
+    expect(getMediaRuleValue(css, '768px', 'margin')).toBe('20px')
+    expect(getMediaRuleValue(css, '1024px', 'margin')).toBe('72px')
+  })
+
+  it('Breakpoint change + active signal: preserves the correct rule set during interleaved updates (reverse order)', () => {
+    window.innerWidth = 700
+    __syncResponsiveSignalsForTests()
+    expect(getCurrentBreakpoint()()).toBe('sm')
+
+    const element = document.createElement('div')
+    const [desktopMargin, setDesktopMargin] = createSignal(48)
+    const modifier = createResponsiveModifier({
+      margin: {
+        base: 8,
+        md: 20,
+        lg: desktopMargin,
+      },
+    })
+
+    mountModifier(modifier, element)
+
     window.innerWidth = 1200
-    window.dispatchEvent(new Event('resize'))
+    __syncResponsiveSignalsForTests()
+    setDesktopMargin(72)
     flushSync()
-    await waitForReactiveUpdate()
 
     const css = cssOutput(modifier)
     expect(getCurrentBreakpoint()()).toBe('lg')
