@@ -1785,15 +1785,34 @@ function setupConfirmationDialogPresentation(
   let backdrop: HTMLDivElement | null = null
   let dialogHost: HTMLDivElement | null = null
   let removeEscapeListener: (() => void) | null = null
+  let removeFocusTrapListener: (() => void) | null = null
   let removeDismissScope: (() => void) | null = null
+  let focusFrameId: number | null = null
+  let previousActiveElement: HTMLElement | null = null
   let isMounted = false
+  const dialogId = `confirmation-dialog-${Math.random().toString(36).slice(2, 10)}`
 
   const dismissOptions: SheetPresentationOptions = {}
   const dismiss = () => {
     dismissPresentedState(isPresented, dismissOptions)
   }
 
+  const getFocusableElements = (): HTMLElement[] => {
+    if (!dialogHost) {
+      return []
+    }
+    return Array.from(
+      dialogHost.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    )
+  }
+
   const unmountPortal = () => {
+    if (focusFrameId !== null) {
+      cancelAnimationFrame(focusFrameId)
+      focusFrameId = null
+    }
     if (portalRoot) {
       portalRoot.remove()
       portalRoot = null
@@ -1802,10 +1821,26 @@ function setupConfirmationDialogPresentation(
       removeEscapeListener()
       removeEscapeListener = null
     }
+    if (removeFocusTrapListener) {
+      removeFocusTrapListener()
+      removeFocusTrapListener = null
+    }
     if (removeDismissScope) {
       removeDismissScope()
       removeDismissScope = null
     }
+    const stackIndex = activeSheetStack.lastIndexOf(dialogId)
+    if (stackIndex >= 0) {
+      activeSheetStack.splice(stackIndex, 1)
+    }
+    if (
+      previousActiveElement &&
+      previousActiveElement.isConnected &&
+      typeof previousActiveElement.focus === 'function'
+    ) {
+      previousActiveElement.focus()
+    }
+    previousActiveElement = null
     backdrop = null
     dialogHost = null
     isMounted = false
@@ -1836,6 +1871,7 @@ function setupConfirmationDialogPresentation(
     dialogHost.setAttribute('data-tachui-confirmation-dialog-content', 'true')
     dialogHost.setAttribute('role', 'dialog')
     dialogHost.setAttribute('aria-modal', 'true')
+    dialogHost.setAttribute('aria-labelledby', `${dialogId}-title`)
     dialogHost.style.position = 'relative'
     dialogHost.style.pointerEvents = 'auto'
     dialogHost.style.width = 'min(100%, 520px)'
@@ -1849,6 +1885,7 @@ function setupConfirmationDialogPresentation(
     dialogHost.style.flexDirection = 'column'
 
     const titleNode = document.createElement('div')
+    titleNode.id = `${dialogId}-title`
     titleNode.setAttribute('data-tachui-confirmation-dialog-title', 'true')
     titleNode.textContent = title
     titleNode.style.padding = '14px 16px 10px'
@@ -1875,6 +1912,10 @@ function setupConfirmationDialogPresentation(
       if (role === 'destructive') {
         actionButton.style.color = '#d32f2f'
         actionButton.style.fontWeight = '600'
+        actionButton.setAttribute(
+          'aria-label',
+          `${actionItem.label} (destructive action)`
+        )
       } else if (role === 'cancel') {
         actionButton.style.fontWeight = '700'
       } else {
@@ -1893,19 +1934,57 @@ function setupConfirmationDialogPresentation(
 
     portalRoot.append(backdrop, dialogHost)
     document.body.appendChild(portalRoot)
+    previousActiveElement =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+    activeSheetStack.push(dialogId)
 
-    const escapeListener = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+    const keydownListener = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && activeSheetStack.at(-1) === dialogId) {
         event.preventDefault()
+        event.stopPropagation()
         dismiss()
+        return
+      }
+
+      if (event.key !== 'Tab' || !dialogHost || activeSheetStack.at(-1) !== dialogId) {
+        return
+      }
+
+      const focusable = getFocusableElements()
+      if (focusable.length === 0) {
+        event.preventDefault()
+        dialogHost.focus()
+        return
+      }
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement as HTMLElement | null
+      if (event.shiftKey && active === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
       }
     }
-    document.addEventListener('keydown', escapeListener)
+    document.addEventListener('keydown', keydownListener)
     removeEscapeListener = () => {
-      document.removeEventListener('keydown', escapeListener)
+      document.removeEventListener('keydown', keydownListener)
     }
+    removeFocusTrapListener = removeEscapeListener
 
     removeDismissScope = setupModalDismissEnvironment(isPresented, dismissOptions)
+    focusFrameId = requestAnimationFrame(() => {
+      const focusable = getFocusableElements()
+      if (focusable.length > 0) {
+        focusable[0].focus()
+      } else if (dialogHost) {
+        dialogHost.focus()
+      }
+      focusFrameId = null
+    })
     isMounted = true
   }
 

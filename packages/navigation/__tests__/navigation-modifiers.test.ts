@@ -1495,11 +1495,15 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       const title = document.querySelector(
         '[data-tachui-confirmation-dialog-title="true"]'
       ) as HTMLElement | null
+      const dialog = document.querySelector(
+        '[data-tachui-confirmation-dialog-content="true"]'
+      ) as HTMLElement | null
       const buttons = document.querySelectorAll(
         '[data-tachui-confirmation-dialog-action="true"]'
       )
 
       expect(title?.textContent).toBe('Delete item?')
+      expect(dialog?.getAttribute('aria-labelledby')).toBe(title?.id)
       expect(buttons).toHaveLength(3)
 
       cleanup()
@@ -1621,6 +1625,127 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       cleanup()
       container.remove()
       setIsPresented(false)
+    })
+
+    it('dismisses on Escape key and restores prior focus', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const triggerButton = document.createElement('button')
+      triggerButton.textContent = 'Trigger'
+      document.body.appendChild(triggerButton)
+      triggerButton.focus()
+
+      const component = confirmationDialog(
+        HTML.div({ children: 'Host' }).build(),
+        'Confirm action?',
+        isPresented,
+        [
+          { label: 'Proceed', role: 'default' },
+          { label: 'Cancel', role: 'cancel' },
+        ]
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      const firstButton = document.querySelector(
+        '[data-tachui-confirmation-dialog-action="true"]'
+      ) as HTMLButtonElement | null
+      expect(document.activeElement).toBe(firstButton)
+
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+      )
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(document.activeElement).toBe(triggerButton)
+
+      cleanup()
+      container.remove()
+      triggerButton.remove()
+      setIsPresented(false)
+    })
+
+    it('traps Tab focus within confirmation dialog actions', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = confirmationDialog(
+        HTML.div({ children: 'Host' }).build(),
+        'Confirm action?',
+        isPresented,
+        [
+          { label: 'One', role: 'default' },
+          { label: 'Two', role: 'default' },
+        ]
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      const buttons = Array.from(
+        document.querySelectorAll<HTMLButtonElement>(
+          '[data-tachui-confirmation-dialog-action="true"]'
+        )
+      )
+      expect(buttons).toHaveLength(2)
+      buttons[1].focus()
+
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })
+      )
+      expect(document.activeElement).toBe(buttons[0])
+
+      buttons[0].focus()
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          shiftKey: true,
+          bubbles: true,
+        })
+      )
+      expect(document.activeElement).toBe(buttons[1])
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('applies expected default and cancel action styles', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = confirmationDialog(
+        HTML.div({ children: 'Host' }).build(),
+        'Confirm action?',
+        isPresented,
+        [
+          { label: 'Proceed', role: 'default' },
+          { label: 'Cancel', role: 'cancel' },
+        ]
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const defaultButton = document.querySelector(
+        '[data-tachui-confirmation-dialog-action="true"][data-role="default"]'
+      ) as HTMLButtonElement | null
+      const cancelButton = document.querySelector(
+        '[data-tachui-confirmation-dialog-action="true"][data-role="cancel"]'
+      ) as HTMLButtonElement | null
+
+      expect(defaultButton?.style.color).toBe('rgb(17, 24, 39)')
+      expect(cancelButton?.style.fontWeight).toBe('700')
+
+      cleanup()
+      container.remove()
     })
   })
 
@@ -2118,6 +2243,34 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
 
       cleanup()
       container.remove()
+    })
+
+    it('dismiss() closes an active confirmationDialog', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = confirmationDialog(
+        HTML.div({ children: 'Host' }).build(),
+        'Leave page?',
+        isPresented,
+        [{ label: 'Cancel', role: 'cancel' }]
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      useNavigationEnvironment().dismiss()
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(
+        document.querySelector('[data-tachui-confirmation-dialog-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
     })
   })
 

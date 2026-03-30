@@ -37,6 +37,8 @@ class NavigationEnvironmentStore {
     new Set()
   private _contextStack: NavigationContext[] = []
   private _dismissStack: Array<() => void> = []
+  private _routerContextRef: NavigationContext | null = null
+  private _routerRef: NavigationRouter | null = null
 
   /**
    * Get the current navigation state
@@ -50,10 +52,17 @@ class NavigationEnvironmentStore {
       this._contextStack[this._contextStack.length - 1] || null
     const dismiss =
       this._dismissStack[this._dismissStack.length - 1] || noopDismiss
+    if (!currentContext) {
+      this._routerContextRef = null
+      this._routerRef = null
+    } else if (this._routerContextRef !== currentContext) {
+      this._routerContextRef = currentContext
+      this._routerRef = createNavigationRouter(currentContext)
+    }
 
     this._currentState = {
       context: currentContext,
-      router: currentContext ? createNavigationRouter(currentContext) : null,
+      router: this._routerRef,
       stackId: currentContext?.navigationId || null,
       dismiss,
     }
@@ -131,12 +140,9 @@ class NavigationEnvironmentStore {
   clear(): void {
     this._contextStack = []
     this._dismissStack = []
-    this._currentState = {
-      context: null,
-      router: null,
-      stackId: null,
-      dismiss: noopDismiss,
-    }
+    this._routerContextRef = null
+    this._routerRef = null
+    this._syncState()
     this._notifyListeners()
   }
 

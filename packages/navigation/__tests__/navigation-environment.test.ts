@@ -511,6 +511,21 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
       expect((globalThis as any).__navigationEnvironment).toBeUndefined()
     })
 
+    it('uses noop dismiss after clear even if a stale dismiss existed previously', () => {
+      const staleDismiss = vi.fn()
+      ;(globalThis as any).__navigationEnvironment = {
+        context: new MockNavigationContext(),
+        router: new MockNavigationRouter(),
+        dismiss: staleDismiss,
+      }
+
+      clearNavigationEnvironment()
+      useNavigationEnvironment().dismiss()
+
+      expect(staleDismiss).not.toHaveBeenCalled()
+      expect((globalThis as any).__navigationEnvironment).toBeUndefined()
+    })
+
     it('handles large numbers of environment operations', () => {
       const operations = 100
 
