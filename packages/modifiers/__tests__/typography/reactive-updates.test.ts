@@ -5,6 +5,7 @@ import type { DOMNode } from '@tachui/core/runtime/types'
 import {
   letterSpacing,
   lineHeight,
+  textAlign,
   textDecoration,
   textTransform,
   typography,
@@ -101,6 +102,17 @@ describe('Typography Reactive Updates', () => {
     setTransform('lowercase')
     flushSync()
     expect(mockElement.style.textTransform).toBe('lowercase')
+  })
+
+  it('normalizes SwiftUI text alignment aliases to logical CSS values', () => {
+    textAlign('leading').apply({} as DOMNode, mockContext)
+    expect(mockElement.style.textAlign).toBe('start')
+
+    textAlign('trailing').apply({} as DOMNode, mockContext)
+    expect(mockElement.style.textAlign).toBe('end')
+
+    typography({ align: 'leading' }).apply({} as DOMNode, mockContext)
+    expect(mockElement.style.textAlign).toBe('start')
   })
 
   it('applies !important for static text transform and text decoration', () => {

@@ -45,6 +45,8 @@ export type TextAlign =
   | 'justify'
   | 'start'
   | 'end'
+  | 'leading'
+  | 'trailing'
 export type TextDecoration = 'none' | 'underline' | 'overline' | 'line-through'
 export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize'
 

@@ -443,7 +443,15 @@ export interface ModifierBuilder<
     color?: string
   }): ModifierBuilder<T>
   textAlign(
-    value: 'left' | 'center' | 'right' | 'justify' | 'start' | 'end'
+    value:
+      | 'left'
+      | 'center'
+      | 'right'
+      | 'justify'
+      | 'start'
+      | 'end'
+      | 'leading'
+      | 'trailing'
   ): ModifierBuilder<T>
   textTransform(
     value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
