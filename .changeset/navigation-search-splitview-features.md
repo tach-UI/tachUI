@@ -1,5 +1,5 @@
 ---
-"@tachui/navigation": minor
+"@tachui/navigation": patch
 ---
 
 Add three-column NavigationSplitView, searchable/suggestions/scopes modifiers, and fix NavigationStack root rendering
