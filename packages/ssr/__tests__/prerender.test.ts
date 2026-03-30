@@ -62,4 +62,106 @@ describe('prerender', () => {
       await rm(outDir, { recursive: true, force: true })
     }
   })
+
+  it('throws for empty routes input', async () => {
+    const outDir = await mkdtemp(path.join(os.tmpdir(), 'tachui-ssr-'))
+    try {
+      await expect(prerender([], { outDir })).rejects.toThrow(
+        'prerender requires at least one route definition.'
+      )
+    } finally {
+      await rm(outDir, { recursive: true, force: true })
+    }
+  })
+
+  it('throws for empty or whitespace outDir', async () => {
+    await expect(
+      prerender(
+        [
+          {
+            path: '/',
+            render: () => h('main', null, text('Home')),
+          },
+        ],
+        { outDir: '' }
+      )
+    ).rejects.toThrow('prerender requires a non-empty outDir.')
+
+    await expect(
+      prerender(
+        [
+          {
+            path: '/',
+            render: () => h('main', null, text('Home')),
+          },
+        ],
+        { outDir: '   ' }
+      )
+    ).rejects.toThrow('prerender requires a non-empty outDir.')
+  })
+
+  it('writes deep nested route paths', async () => {
+    const outDir = await mkdtemp(path.join(os.tmpdir(), 'tachui-ssr-'))
+
+    try {
+      await prerender(
+        [
+          {
+            path: '/a/b/c',
+            render: () => h('main', null, text('Deep')),
+          },
+        ],
+        { outDir }
+      )
+
+      const html = await readFile(path.join(outDir, 'a/b/c/index.html'), 'utf8')
+      expect(html).toContain('<div id="app"><main>Deep</main></div>')
+    } finally {
+      await rm(outDir, { recursive: true, force: true })
+    }
+  })
+
+  it('uses route title in the default document shell', async () => {
+    const outDir = await mkdtemp(path.join(os.tmpdir(), 'tachui-ssr-'))
+
+    try {
+      await prerender(
+        [
+          {
+            path: '/meta',
+            title: 'Meta & <Title>',
+            render: () => h('main', null, text('Title test')),
+          },
+        ],
+        { outDir }
+      )
+
+      const html = await readFile(path.join(outDir, 'meta/index.html'), 'utf8')
+      expect(html).toContain('<title>Meta &amp; &lt;Title&gt;</title>')
+    } finally {
+      await rm(outDir, { recursive: true, force: true })
+    }
+  })
+
+  it('propagates render errors with route context', async () => {
+    const outDir = await mkdtemp(path.join(os.tmpdir(), 'tachui-ssr-'))
+
+    try {
+      await expect(
+        prerender(
+          [
+            {
+              path: '/broken',
+              render: () => {
+                throw new Error('boom')
+              },
+            },
+          ],
+          { outDir }
+        )
+      ).rejects.toThrow('prerender failed for route "/broken": boom')
+    } finally {
+      await rm(outDir, { recursive: true, force: true })
+    }
+  })
 })

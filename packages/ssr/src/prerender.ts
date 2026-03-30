@@ -12,14 +12,22 @@ function resolveOutputPath(outDir: string, routePath: string): string {
   return path.join(outDir, clean, 'index.html')
 }
 
-function defaultDocument(html: string): string {
+function escapeHTML(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+function defaultDocument(html: string, route: PrerenderRoute): string {
+  const title = escapeHTML(route.title ?? 'TachUI App')
   return [
     '<!doctype html>',
     '<html lang="en">',
     '<head>',
     '  <meta charset="UTF-8">',
     '  <meta name="viewport" content="width=device-width, initial-scale=1.0">',
-    '  <title>TachUI App</title>',
+    `  <title>${title}</title>`,
     '</head>',
     `<body><div id="app">${html}</div></body>`,
     '</html>',
@@ -39,21 +47,27 @@ export async function prerender(
   }
 
   const results: PrerenderResult[] = []
-  const renderDocument = options.document ?? ((html: string) => defaultDocument(html))
+  const renderDocument =
+    options.document ?? ((html: string, route: PrerenderRoute) => defaultDocument(html, route))
 
   for (const route of routes) {
-    const routeHtml = renderToString(route.render())
-    const fullHtml = renderDocument(routeHtml, route)
-    const outputPath = resolveOutputPath(options.outDir, route.path)
+    try {
+      const routeHtml = renderToString(route.render())
+      const fullHtml = renderDocument(routeHtml, route)
+      const outputPath = resolveOutputPath(options.outDir, route.path)
 
-    await mkdir(path.dirname(outputPath), { recursive: true })
-    await writeFile(outputPath, fullHtml, 'utf8')
+      await mkdir(path.dirname(outputPath), { recursive: true })
+      await writeFile(outputPath, fullHtml, 'utf8')
 
-    results.push({
-      routePath: route.path,
-      outputPath,
-      html: fullHtml,
-    })
+      results.push({
+        routePath: route.path,
+        outputPath,
+        html: fullHtml,
+      })
+    } catch (error) {
+      const details = error instanceof Error ? error.message : String(error)
+      throw new Error(`prerender failed for route "${route.path}": ${details}`)
+    }
   }
 
   return results

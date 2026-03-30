@@ -1,8 +1,13 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 
+export interface ModifierBuilderLike {
+  build: () => SSRNodeInput
+}
+
 export type SSRNodeInput =
   | ComponentInstance
   | DOMNode
+  | ModifierBuilderLike
   | string
   | number
   | boolean
@@ -16,6 +21,7 @@ export interface RenderToStringOptions {
 
 export interface PrerenderRoute {
   path: string
+  title?: string
   render: () => SSRNodeInput
 }
 

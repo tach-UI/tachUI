@@ -1,6 +1,6 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import { isComputed, isSignal, untrack } from '@tachui/core/reactive'
-import type { SSRNodeInput } from './types'
+import type { ModifierBuilderLike, SSRNodeInput } from './types'
 
 const VOID_ELEMENTS = new Set([
   'area',
@@ -38,13 +38,56 @@ function isDOMNode(value: unknown): value is DOMNode {
   )
 }
 
-function isModifierBuilder(value: unknown): value is { build: () => unknown } {
+function isModifierBuilder(value: unknown): value is ModifierBuilderLike {
   return (
     typeof value === 'object' &&
     value !== null &&
     typeof (value as any).build === 'function'
   )
 }
+
+const PROP_TO_ATTR: Record<string, string> = {
+  className: 'class',
+  htmlFor: 'for',
+  tabIndex: 'tabindex',
+  colSpan: 'colspan',
+  rowSpan: 'rowspan',
+  autoPlay: 'autoplay',
+  autoComplete: 'autocomplete',
+  crossOrigin: 'crossorigin',
+  readOnly: 'readonly',
+  maxLength: 'maxlength',
+  noValidate: 'novalidate',
+  encType: 'enctype',
+}
+
+const BOOLEAN_HTML_ATTRS = new Set([
+  'allowfullscreen',
+  'async',
+  'autofocus',
+  'autoplay',
+  'checked',
+  'controls',
+  'default',
+  'defer',
+  'disabled',
+  'formnovalidate',
+  'hidden',
+  'inert',
+  'ismap',
+  'itemscope',
+  'loop',
+  'multiple',
+  'muted',
+  'nomodule',
+  'novalidate',
+  'open',
+  'playsinline',
+  'readonly',
+  'required',
+  'reversed',
+  'selected',
+])
 
 function resolveReactiveValue(value: unknown): unknown {
   if (isSignal(value) || isComputed(value)) {
@@ -132,7 +175,7 @@ function serializeAttributes(node: DOMNode): string {
       continue
     }
 
-    const key = rawKey === 'className' ? 'class' : rawKey
+    const key = PROP_TO_ATTR[rawKey] ?? rawKey
     const resolvedValue = resolveReactiveValue(rawValue)
 
     if (key === 'class') {
@@ -160,7 +203,11 @@ function serializeAttributes(node: DOMNode): string {
     }
 
     if (resolvedValue === true) {
-      attributes.push(key)
+      if (key.startsWith('aria-') || !BOOLEAN_HTML_ATTRS.has(key)) {
+        attributes.push(`${key}="true"`)
+      } else {
+        attributes.push(key)
+      }
       continue
     }
 
@@ -188,7 +235,8 @@ function serializeNode(node: DOMNode): string {
   }
 
   if (node.type === 'comment') {
-    return `<!--${escapeHTML(String(node.text ?? ''))}-->`
+    const safeComment = String(node.text ?? '').replace(/-->/g, '--\\u003E')
+    return `<!--${safeComment}-->`
   }
 
   const tag = node.tag ?? 'div'
@@ -215,7 +263,7 @@ export function serializeToHTML(input: SSRNodeInput): string {
   }
 
   if (isModifierBuilder(input)) {
-    return serializeToHTML(input.build() as SSRNodeInput)
+    return serializeToHTML((input as ModifierBuilderLike).build())
   }
 
   if (isComponentInstance(input)) {
