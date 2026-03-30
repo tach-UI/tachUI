@@ -193,6 +193,42 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
   }
 
   /**
+   * Wrap arbitrary component output in a semantic list row.
+   */
+  private wrapComponentInListItem(
+    component: ComponentInstance,
+    id: string,
+    className: string,
+    style: Record<string, unknown> = {},
+    extraProps: Record<string, unknown> = {}
+  ): ComponentInstance {
+    return {
+      type: 'component',
+      id,
+      mounted: false,
+      cleanup: [],
+      props: {},
+      render: () => {
+        const rendered = this.flattenRenderResult(component.render())
+        return [
+          h(
+            'li',
+            {
+              class: className,
+              style: {
+                listStyle: 'none',
+                ...style,
+              },
+              ...extraProps,
+            },
+            ...rendered
+          ),
+        ]
+      },
+    }
+  }
+
+  /**
    * Normalize item render output into safe DOM node payloads.
    *
    * Strings and primitives are always emitted as text nodes to avoid HTML
@@ -424,10 +460,11 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
       props: {},
       render: () => {
         const itemElement = h(
-          'div',
+          'li',
           {
             class: `tachui-list-item tachui-list-item-${style || 'plain'}`,
             style: {
+              listStyle: 'none',
               display: 'flex',
               flexDirection: 'column',
               position: 'relative',
@@ -497,7 +534,13 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     if (!separator) return null
 
     if (typeof separator === 'object' && 'render' in separator) {
-      return separator
+      return this.wrapComponentInListItem(
+        separator,
+        `${this.id}-separator-custom`,
+        'tachui-list-separator-item',
+        {},
+        { 'aria-hidden': 'true' }
+      )
     }
 
     return {
@@ -507,13 +550,15 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
       cleanup: [],
       props: {},
       render: () => [
-        h('div', {
+        h('li', {
           class: 'tachui-list-separator',
           style: {
+            listStyle: 'none',
             height: '1px',
             backgroundColor: '#e0e0e0',
             margin: '0 16px',
           },
+          'aria-hidden': 'true',
         }),
       ],
     }
@@ -536,9 +581,10 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
         cleanup: [],
         props: {},
         render: () => {
-          const headerNode = h('div', {
+          const headerNode = h('li', {
             class: 'tachui-list-section-header',
             style: {
+              listStyle: 'none',
               padding: '8px 16px',
               backgroundColor: '#f8f9fa',
               fontWeight: '600',
@@ -555,9 +601,15 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
       }
     }
 
-    return this.props.renderSectionHeader
+    const headerComponent = this.props.renderSectionHeader
       ? this.props.renderSectionHeader(section, index)
       : (section.header as ComponentInstance)
+
+    return this.wrapComponentInListItem(
+      headerComponent,
+      `${this.id}-section-header-${index}`,
+      'tachui-list-section-header-item'
+    )
   }
 
   /**
@@ -577,9 +629,10 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
         cleanup: [],
         props: {},
         render: () => {
-          const footerNode = h('div', {
+          const footerNode = h('li', {
             class: 'tachui-list-section-footer',
             style: {
+              listStyle: 'none',
               padding: '8px 16px',
               fontSize: '12px',
               color: '#999',
@@ -592,9 +645,15 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
       }
     }
 
-    return this.props.renderSectionFooter
+    const footerComponent = this.props.renderSectionFooter
       ? this.props.renderSectionFooter(section, index)
       : (section.footer as ComponentInstance)
+
+    return this.wrapComponentInListItem(
+      footerComponent,
+      `${this.id}-section-footer-${index}`,
+      'tachui-list-section-footer-item'
+    )
   }
 
   /**
@@ -694,8 +753,10 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
         cleanup: [],
         props: {},
         render: () => [
-          h('div', {
-            style: { height: `${spacerHeight}px` },
+          h('li', {
+            class: 'tachui-list-spacer tachui-list-spacer-top',
+            style: { listStyle: 'none', height: `${spacerHeight}px` },
+            'aria-hidden': 'true',
           }),
         ],
       })
@@ -730,8 +791,10 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
         cleanup: [],
         props: {},
         render: () => [
-          h('div', {
-            style: { height: `${remainingHeight}px` },
+          h('li', {
+            class: 'tachui-list-spacer tachui-list-spacer-bottom',
+            style: { listStyle: 'none', height: `${remainingHeight}px` },
+            'aria-hidden': 'true',
           }),
         ],
       })
@@ -797,6 +860,34 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
   }
 
   /**
+   * Wrap list rows in a semantic list container.
+   */
+  private createListContainer(content: ComponentInstance[]): ComponentInstance {
+    return {
+      type: 'component',
+      id: `${this.id}-content`,
+      mounted: false,
+      cleanup: [],
+      props: {},
+      render: () => [
+        h(
+          'ul',
+          {
+            class: `tachui-list-content tachui-list-content-${this.props.style || 'plain'}`,
+            style: {
+              margin: '0',
+              padding: '0',
+              listStyle: 'none',
+              width: '100%',
+            },
+          },
+          ...content.flatMap((item: ComponentInstance) => item.render())
+        ),
+      ],
+    }
+  }
+
+  /**
    * Handle scroll events for virtual scrolling and infinite scroll
    */
   private handleListScroll = (scrollInfo: any) => {
@@ -855,14 +946,20 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     if (isLoading && data.length > 0) {
       const loadingIndicator = this.createLoadingIndicator()
       if (loadingIndicator) {
-        content.push(loadingIndicator)
+        content.push(
+          this.wrapComponentInListItem(
+            loadingIndicator,
+            `${this.id}-loading-row`,
+            'tachui-list-loading-row'
+          )
+        )
       }
     }
 
     // Create scroll view props
     const scrollViewProps: ScrollViewProps = {
       ...this.props,
-      children: content,
+      children: [this.createListContainer(content)],
       onScroll: this.handleListScroll,
     }
 
