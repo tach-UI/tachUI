@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { isPeerDependencyVersionCompatible } from '../check-packed-internal-deps.mjs'
+import {
+  isPeerDependencyVersionCompatible,
+  isStrictInternalDependencyVersionMatch,
+} from '../check-packed-internal-deps.mjs'
 
 describe('isPeerDependencyVersionCompatible', () => {
   it('accepts exact peer version pin', () => {
@@ -53,5 +56,15 @@ describe('isPeerDependencyVersionCompatible', () => {
     ).toEqual({
       valid: true,
     })
+  })
+
+  it('enforces strict exact match for dependencies and optionalDependencies', () => {
+    expect(isStrictInternalDependencyVersionMatch('0.8.13', '0.8.13')).toBe(true)
+    expect(
+      isStrictInternalDependencyVersionMatch('^0.8.13', '0.8.13')
+    ).toBe(false)
+    expect(
+      isStrictInternalDependencyVersionMatch('~0.8.13', '0.8.13')
+    ).toBe(false)
   })
 })

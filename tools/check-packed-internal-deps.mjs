@@ -79,6 +79,9 @@ function readManifestFromPackedTarball(tarballPath) {
  * - Exact pins are valid.
  * - Semver ranges are valid only if they include the current expected release version.
  * - Wildcards/latest are accepted as explicit opt-ins.
+ *
+ * @returns {{ valid: true } | { valid: false, reason: string }}
+ * When invalid, `reason` is included verbatim in violation diagnostics emitted by `main()`.
  */
 export function isPeerDependencyVersionCompatible(depVersion, expectedVersion) {
   if (depVersion === expectedVersion) {
@@ -104,6 +107,13 @@ export function isPeerDependencyVersionCompatible(depVersion, expectedVersion) {
   }
 
   return { valid: true }
+}
+
+export function isStrictInternalDependencyVersionMatch(
+  depVersion,
+  expectedVersion
+) {
+  return depVersion === expectedVersion
 }
 
 function main() {
@@ -138,7 +148,10 @@ function main() {
             : null
           const isValid = isPeerDependency
             ? peerValidation.valid
-            : depVersion === expectedVersion
+            : isStrictInternalDependencyVersionMatch(
+                String(depVersion),
+                expectedVersion
+              )
 
           if (!isValid) {
             const reason = peerValidation?.reason
