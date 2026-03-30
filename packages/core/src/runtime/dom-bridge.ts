@@ -541,8 +541,16 @@ export function getComponentFromElement(
 /**
  * Debug utilities for DOM bridge
  */
-export const DOMBridgeDebug = {
-  getMountedComponents: () => Array.from(mountedComponents.entries()),
+export interface DOMBridgeDebugAPI {
+  getMountedComponents(): Array<[Element, ComponentInstance]>
+  getComponentElements(component: ComponentInstance): Element[] | undefined
+  isComponentMounted(component: ComponentInstance): boolean
+  validateMounting(): { valid: boolean; issues: string[] }
+}
+
+export const DOMBridgeDebug: DOMBridgeDebugAPI = {
+  getMountedComponents: (): Array<[Element, ComponentInstance]> =>
+    Array.from(mountedComponents.entries()),
   getComponentElements: (component: ComponentInstance) =>
     componentElements.get(component),
   isComponentMounted: (component: ComponentInstance) =>
