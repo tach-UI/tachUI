@@ -275,6 +275,15 @@ export class EnhancedImage
           return
         }
 
+        if (renderingMode === 'template') {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn(
+              'Image(template): expected HTMLSpanElement primary element; skipping mismatched lifecycle binding.'
+            )
+          }
+          return
+        }
+
         if (primaryElement instanceof HTMLImageElement) {
           this.setupLoadingStateReactivityForDOMElement(primaryElement)
         }

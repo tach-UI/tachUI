@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Image, __resetImageTemplateCacheForTests } from '../../src/display/Image'
+import { HStack } from '../../src/layout/Stack'
 import { ImageAsset, createSignal, mountComponentTree, setTheme } from '@tachui/core'
 
 async function flushReactiveUpdates(): Promise<void> {
@@ -283,5 +284,53 @@ describe('Image renderingMode', () => {
     expect(warnSpy.mock.calls[0]?.[0]).toContain(
       'Image(template): unsupported props ignored:'
     )
+  })
+
+  it('keeps sibling original and template images isolated in HStack', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      text: async () => '<svg viewBox="0 0 10 10"><path d="M0 0L10 10"/></svg>',
+    } as Response)
+
+    const logoMark = ImageAsset.init({
+      name: 'logoMark',
+      default: '/sample/assets/pelly2-386.png',
+      light: '/sample/assets/pelly2-386.png',
+      dark: '/sample/assets/pelly2-386.png',
+    })
+    const logoText = ImageAsset.init({
+      name: 'logoText',
+      default: '/sample/assets/waypod-base.svg',
+      light: '/sample/assets/waypod-base.svg',
+      dark: '/sample/assets/waypod-base.svg',
+    })
+
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+
+    mountImage(
+      HStack({
+        children: [
+          Image(logoMark, { alt: 'Pelly' }).scaledToFit().frame(44, 44),
+          Image(logoText, { alt: 'Waypod', renderingMode: 'template' })
+            .foregroundColor('rgb(89, 217, 219)')
+            .frame(84, 24),
+        ],
+        spacing: 16,
+        alignment: 'center',
+      }),
+      container
+    )
+    await flushReactiveUpdates()
+
+    const img = container.querySelector('img.tachui-image')
+    const template = container.querySelector('span.tachui-image-template')
+
+    expect(img).not.toBeNull()
+    expect(template).not.toBeNull()
+    expect(img?.getAttribute('src')).toBe('/sample/assets/pelly2-386.png')
+    expect(img?.getAttribute('alt')).toBe('Pelly')
+    expect(template?.getAttribute('aria-label')).toBe('Waypod')
+    expect(template?.innerHTML.toLowerCase()).toContain('<svg')
   })
 })
