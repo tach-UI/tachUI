@@ -5,7 +5,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountComponentTree } from '@tachui/core'
 import { Button, HTML, VStack } from '@tachui/primitives'
-import { NavigationSplitView } from '../src/navigation-split-view'
+import {
+  NavigationSplitView,
+  useNavigationSplitView,
+} from '../src/navigation-split-view'
 
 describe('NavigationSplitView', () => {
   let originalInnerWidth: number
@@ -219,5 +222,138 @@ describe('NavigationSplitView', () => {
     expect(document.body.textContent).toContain('Selection')
 
     cleanup()
+  })
+
+  it('respects custom breakpoint prop', () => {
+    setViewportWidth(700)
+    const split = NavigationSplitView<string>({
+      sidebar: context =>
+        VStack({
+          children: [Button('Open', () => context.selectDetail('A')).build()],
+          spacing: 8,
+          alignment: 'leading',
+        }).build(),
+      detail: context =>
+        HTML.div({
+          children: `Detail: ${context.selectedValue() ?? 'none'}`,
+        }).build(),
+      breakpoint: 600,
+    })
+    const { cleanup } = mountSplitView(split)
+
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView two-column"]')
+    ).toBeTruthy()
+
+    cleanup()
+  })
+
+  it('supports showDetail without selectDetail', async () => {
+    setViewportWidth(600)
+    const split = NavigationSplitView<string>({
+      sidebar: context =>
+        VStack({
+          children: [Button('Show detail', () => context.showDetail()).build()],
+          spacing: 8,
+          alignment: 'leading',
+        }).build(),
+      detail: context =>
+        HTML.div({
+          children: `Detail: ${context.selectedValue() ?? 'none'}`,
+        }).build(),
+    })
+    const { cleanup } = mountSplitView(split)
+
+    const showDetailButton = Array.from(document.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Show detail')
+    )
+    showDetailButton?.click()
+    await flush()
+
+    expect(document.body.textContent).toContain('Detail: none')
+    expect(document.body.textContent).toContain('Back')
+
+    cleanup()
+  })
+
+  it('exposes isCollapsed through context during render', () => {
+    setViewportWidth(600)
+    let observedCollapsed: boolean | null = null
+
+    const split = NavigationSplitView<string>({
+      sidebar: context => {
+        observedCollapsed = context.isCollapsed()
+        return HTML.div({ children: 'Sidebar' }).build()
+      },
+      detail: () => HTML.div({ children: 'Detail' }).build(),
+    })
+    const { cleanup } = mountSplitView(split)
+
+    expect(observedCollapsed).toBe(true)
+
+    cleanup()
+  })
+
+  it('returns split-view context in synchronous render and null outside it', () => {
+    setViewportWidth(1024)
+    let seenContextDuringRender = false
+
+    const split = NavigationSplitView<string>({
+      sidebar: () => {
+        seenContextDuringRender = useNavigationSplitView<string>() !== null
+        return HTML.div({ children: 'Sidebar' }).build()
+      },
+      detail: () => HTML.div({ children: 'Detail' }).build(),
+    })
+    const { cleanup } = mountSplitView(split)
+
+    expect(seenContextDuringRender).toBe(true)
+    expect(useNavigationSplitView<string>()).toBeNull()
+
+    cleanup()
+  })
+
+  it('keeps contexts isolated when two split views are mounted', async () => {
+    setViewportWidth(600)
+
+    const splitA = NavigationSplitView<string>({
+      sidebar: context =>
+        VStack({
+          children: [Button('Open A', () => context.selectDetail('A')).build()],
+          spacing: 8,
+          alignment: 'leading',
+        }).build(),
+      detail: context =>
+        HTML.div({
+          children: `Detail A: ${context.selectedValue() ?? 'none'}`,
+        }).build(),
+    })
+    const splitB = NavigationSplitView<string>({
+      sidebar: context =>
+        VStack({
+          children: [Button('Open B', () => context.selectDetail('B')).build()],
+          spacing: 8,
+          alignment: 'leading',
+        }).build(),
+      detail: context =>
+        HTML.div({
+          children: `Detail B: ${context.selectedValue() ?? 'none'}`,
+        }).build(),
+    })
+
+    const mountA = mountSplitView(splitA)
+    const mountB = mountSplitView(splitB)
+
+    const openAButton = Array.from(document.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Open A')
+    )
+    openAButton?.click()
+    await flush()
+
+    expect(document.body.textContent).toContain('Detail A: A')
+    expect(document.body.textContent).not.toContain('Detail B: B')
+
+    mountA.cleanup()
+    mountB.cleanup()
   })
 })

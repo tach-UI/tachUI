@@ -42,6 +42,13 @@ function withSplitViewContext<T>(
   }
 }
 
+/**
+ * Read the current split-view context during synchronous render.
+ *
+ * The context is only available while NavigationSplitView is building
+ * `sidebar`/`detail` content. Calling this from async/effect/event scopes
+ * may return null.
+ */
 export function useNavigationSplitView<TSelection = unknown>():
   | NavigationSplitViewContext<TSelection>
   | null {
