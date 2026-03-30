@@ -5,7 +5,7 @@
  * along the main axis of its container. Behaves like SwiftUI.Spacer.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import { h, withModifiers } from '@tachui/core'
 import type { ComponentProps, DOMNode } from '@tachui/core'
 import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
@@ -97,19 +97,15 @@ export class SpacerComponent
 /**
  * Create a Spacer component with optional minimum length
  */
-export function Spacer(minLength?: number): ModifiableComponent<SpacerProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<SpacerProps>>
-}
+export function Spacer(
+  minLength?: number
+): ModifiableComponentWithModifiers<SpacerProps>
 export function Spacer(
   props?: SpacerProps
-): ModifiableComponent<SpacerProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<SpacerProps>>
-}
+): ModifiableComponentWithModifiers<SpacerProps>
 export function Spacer(
   minLengthOrProps?: number | SpacerProps
-): ModifiableComponent<SpacerProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<SpacerProps>>
-} {
+): ModifiableComponentWithModifiers<SpacerProps> {
   let props: SpacerProps
 
   if (typeof minLengthOrProps === 'number') {

@@ -2,8 +2,8 @@
  * Transform Effects Tests
  */
 
-import { describe, it, expect } from 'vitest'
-import { createSignal, flushSync } from '@tachui/core/reactive'
+import { afterEach, describe, it, expect } from 'vitest'
+import { createRoot, createSignal, flushSync } from '@tachui/core/reactive'
 import type { ModifierContext } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 import {
@@ -19,6 +19,8 @@ import {
   rotateZ,
   perspective,
   matrix3d,
+  translate3d,
+  translateZ,
   offset,
 } from '../../src/effects/transforms'
 
@@ -47,6 +49,13 @@ class MockElement {
 }
 
 describe('Transform Effects', () => {
+  const disposers = new Set<() => void>()
+
+  afterEach(() => {
+    disposers.forEach(dispose => dispose())
+    disposers.clear()
+  })
+
   const createContext = (): {
     element: MockElement
     context: ModifierContext
@@ -56,6 +65,13 @@ describe('Transform Effects', () => {
       element,
       context: { element: element as unknown as HTMLElement },
     }
+  }
+
+  const applyModifier = (modifier: { apply: (node: DOMNode, context: ModifierContext) => unknown }, context: ModifierContext): void => {
+    createRoot(dispose => {
+      disposers.add(dispose)
+      modifier.apply({} as DOMNode, context)
+    })
   }
 
   describe('TransformModifier', () => {
@@ -162,9 +178,9 @@ describe('Transform Effects', () => {
   describe('Reactive Support', () => {
     it('updates rotate() transform from signal values', () => {
       const [angle, setAngle] = createSignal(15)
-      const modifier = rotate(angle as unknown as any)
+      const modifier = rotate(angle)
       const { element, context } = createContext()
-      modifier.apply({} as DOMNode, context)
+      applyModifier(modifier, context)
 
       expect(element.style.transform).toContain('rotate(15deg)')
       setAngle(75)
@@ -176,11 +192,11 @@ describe('Transform Effects', () => {
       const [x, setX] = createSignal(10)
       const [y, setY] = createSignal(20)
       const modifier = skew({
-        x: x as unknown as any,
-        y: y as unknown as any,
+        x,
+        y,
       })
       const { element, context } = createContext()
-      modifier.apply({} as DOMNode, context)
+      applyModifier(modifier, context)
 
       expect(element.style.transform).toContain('skew(10deg, 20deg)')
       setX(25)
@@ -191,18 +207,18 @@ describe('Transform Effects', () => {
 
     it('supports skewX and skewY paths from reactive skew config', () => {
       const [x, setX] = createSignal(12)
-      const xOnly = skew({ x: x as unknown as any })
+      const xOnly = skew({ x })
       const xCtx = createContext()
-      xOnly.apply({} as DOMNode, xCtx.context)
+      applyModifier(xOnly, xCtx.context)
       expect(xCtx.element.style.transform).toContain('skewX(12deg)')
       setX(30)
       flushSync()
       expect(xCtx.element.style.transform).toContain('skewX(30deg)')
 
       const [y, setY] = createSignal(8)
-      const yOnly = skew({ y: y as unknown as any })
+      const yOnly = skew({ y })
       const yCtx = createContext()
-      yOnly.apply({} as DOMNode, yCtx.context)
+      applyModifier(yOnly, yCtx.context)
       expect(yCtx.element.style.transform).toContain('skewY(8deg)')
       setY(18)
       flushSync()
@@ -214,11 +230,11 @@ describe('Transform Effects', () => {
       const [skewX, setSkewX] = createSignal(5)
 
       const modifier = transform({
-        rotate: angle as unknown as any,
-        skew: { x: skewX as unknown as any },
+        rotate: angle,
+        skew: { x: skewX },
       })
       const { element, context } = createContext()
-      modifier.apply({} as DOMNode, context)
+      applyModifier(modifier, context)
 
       expect(element.style.transform).toContain('rotate(10deg)')
       expect(element.style.transform).toContain('skewX(5deg)')
@@ -232,6 +248,55 @@ describe('Transform Effects', () => {
       flushSync()
       expect(element.style.transform).toContain('rotate(45deg)')
       expect(element.style.transform).toContain('skewX(15deg)')
+    })
+
+    it('composes chained transform modifiers instead of overwriting', () => {
+      const { element, context } = createContext()
+
+      applyModifier(perspective(800), context)
+      applyModifier(rotateY('-22deg'), context)
+      applyModifier(rotateX('14deg'), context)
+      applyModifier(translateZ('8px'), context)
+
+      expect(element.style.transform).toContain('perspective(800px)')
+      expect(element.style.transform).toContain('rotateY(-22deg)')
+      expect(element.style.transform).toContain('rotateX(14deg)')
+      expect(element.style.transform).toContain('translateZ(8px)')
+    })
+
+    it('updates one chained transform without duplicating or dropping siblings', () => {
+      const [xAngle, setXAngle] = createSignal(14)
+      const { element, context } = createContext()
+
+      applyModifier(perspective(800), context)
+      applyModifier(rotateY('-22deg'), context)
+      applyModifier(rotateX(xAngle), context)
+      applyModifier(translateZ('8px'), context)
+
+      expect(element.style.transform).toContain('rotateX(14deg)')
+      expect(element.style.transform.match(/rotateX\(/g)?.length ?? 0).toBe(1)
+
+      setXAngle(30)
+      flushSync()
+
+      expect(element.style.transform).toContain('perspective(800px)')
+      expect(element.style.transform).toContain('rotateY(-22deg)')
+      expect(element.style.transform).toContain('rotateX(30deg)')
+      expect(element.style.transform).toContain('translateZ(8px)')
+      expect(element.style.transform.match(/rotateX\(/g)?.length ?? 0).toBe(1)
+    })
+
+    it('handles nested-paren transform args when replacing previous functions', () => {
+      const { element, context } = createContext()
+
+      element.style.transform =
+        'translate3d(calc(100% - 10px), 0px, 0px) rotateY(10deg)'
+
+      applyModifier(translate3d('8px', '0px', '0px'), context)
+
+      expect(element.style.transform).toContain('rotateY(10deg)')
+      expect(element.style.transform).toContain('translate3d(8px, 0px, 0px)')
+      expect(element.style.transform).not.toContain('calc(100% - 10px')
     })
   })
 })

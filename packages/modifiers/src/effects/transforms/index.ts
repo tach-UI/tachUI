@@ -9,6 +9,9 @@ import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
 import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
 import { createEffect, isComputed, isSignal } from '@tachui/core/reactive'
+import type { Signal } from '@tachui/core/reactive/types'
+
+type ReactiveTransformValue<T> = T | Signal<T>
 
 export interface TransformConfig {
   scale?: number | { x?: number; y?: number }
@@ -48,30 +51,31 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
-    if (this.hasReactiveValues(this.properties)) {
+    if (hasReactiveValues(this.properties)) {
       createEffect(() => {
-        const styles = this.computeTransformStyles(
-          this.resolveTransformOptions(this.properties)
+        const resolved = this.resolveTransformOptions(this.properties)
+        const styles = this.computeTransformStyles(resolved)
+        const functionNames = this.getTransformFunctionNames(resolved)
+        applyTransformStylesComposed(
+          context.element!,
+          styles,
+          functionNames,
+          (element, styleMap) => this.applyStyles(element, styleMap)
         )
-        this.applyStyles(context.element!, styles)
       })
     } else {
-      const styles = this.computeTransformStyles(this.properties)
-      this.applyStyles(context.element, styles)
+      const resolved = this.properties
+      const styles = this.computeTransformStyles(resolved)
+      const functionNames = this.getTransformFunctionNames(resolved)
+      applyTransformStylesComposed(
+        context.element,
+        styles,
+        functionNames,
+        (element, styleMap) => this.applyStyles(element, styleMap)
+      )
     }
 
     return undefined
-  }
-
-  private hasReactiveValues(value: unknown): boolean {
-    if (isSignal(value) || isComputed(value)) return true
-    if (Array.isArray(value)) {
-      return value.some(item => this.hasReactiveValues(item))
-    }
-    if (value && typeof value === 'object') {
-      return Object.values(value).some(item => this.hasReactiveValues(item))
-    }
-    return false
   }
 
   private resolveTransformOptions(
@@ -114,6 +118,11 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
     }
 
     return styles
+  }
+
+  private getTransformFunctionNames(props: ModifierTransformOptions): string[] {
+    if (!props.transform) return []
+    return collectBasicTransformFunctionNames(props.transform)
   }
 
   private generateTransformCSS(
@@ -233,8 +242,17 @@ export interface MatrixTransformConfig {
 }
 
 export interface Advanced3DTransformConfig {
-  rotate3d?: { x: number; y: number; z: number; angle: string }
-  scale3d?: { x: number; y: number; z: number }
+  rotate3d?: {
+    x: number
+    y: number
+    z: number
+    angle: string
+  }
+  scale3d?: {
+    x: number
+    y: number
+    z: number
+  }
   translate3d?: {
     x?: number | string
     y?: number | string
@@ -274,30 +292,31 @@ export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTran
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
 
-    if (this.hasReactiveValues(this.properties)) {
+    if (hasReactiveValues(this.properties)) {
       createEffect(() => {
-        const styles = this.computeAdvancedTransformStyles(
-          this.resolveAdvancedTransformOptions(this.properties)
+        const resolved = this.resolveAdvancedTransformOptions(this.properties)
+        const styles = this.computeAdvancedTransformStyles(resolved)
+        const functionNames = this.getTransformFunctionNames(resolved)
+        applyTransformStylesComposed(
+          context.element!,
+          styles,
+          functionNames,
+          (element, styleMap) => this.applyStyles(element, styleMap)
         )
-        this.applyStyles(context.element!, styles)
       })
     } else {
-      const styles = this.computeAdvancedTransformStyles(this.properties)
-      this.applyStyles(context.element, styles)
+      const resolved = this.properties
+      const styles = this.computeAdvancedTransformStyles(resolved)
+      const functionNames = this.getTransformFunctionNames(resolved)
+      applyTransformStylesComposed(
+        context.element,
+        styles,
+        functionNames,
+        (element, styleMap) => this.applyStyles(element, styleMap)
+      )
     }
 
     return undefined
-  }
-
-  private hasReactiveValues(value: unknown): boolean {
-    if (isSignal(value) || isComputed(value)) return true
-    if (Array.isArray(value)) {
-      return value.some(item => this.hasReactiveValues(item))
-    }
-    if (value && typeof value === 'object') {
-      return Object.values(value).some(item => this.hasReactiveValues(item))
-    }
-    return false
   }
 
   private resolveAdvancedTransformOptions(
@@ -346,6 +365,13 @@ export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTran
     }
 
     return styles
+  }
+
+  private getTransformFunctionNames(
+    props: ModifierAdvancedTransformOptions
+  ): string[] {
+    if (!props.transform) return []
+    return collectAdvancedTransformFunctionNames(props.transform)
   }
 
   private generateAdvancedTransformCSS(config: any): string {
@@ -453,9 +479,14 @@ export function transform(
  * ```
  */
 export function scale(
-  value: number | { x?: number; y?: number }
+  value:
+    | ReactiveTransformValue<number>
+    | {
+        x?: ReactiveTransformValue<number>
+        y?: ReactiveTransformValue<number>
+      }
 ): TransformModifier {
-  return new TransformModifier({ transform: { scale: value } })
+  return new TransformModifier({ transform: { scale: value as any } })
 }
 
 /**
@@ -468,8 +499,10 @@ export function scale(
  * .rotate('0.5turn')
  * ```
  */
-export function rotate(angle: string | number): TransformModifier {
-  return new TransformModifier({ transform: { rotate: angle } })
+export function rotate(
+  angle: ReactiveTransformValue<string | number>
+): TransformModifier {
+  return new TransformModifier({ transform: { rotate: angle as any } })
 }
 
 /**
@@ -482,10 +515,10 @@ export function rotate(angle: string | number): TransformModifier {
  * ```
  */
 export function translate(offset: {
-  x?: number | string
-  y?: number | string
+  x?: ReactiveTransformValue<number | string>
+  y?: ReactiveTransformValue<number | string>
 }): TransformModifier {
-  return new TransformModifier({ transform: { translate: offset } })
+  return new TransformModifier({ transform: { translate: offset as any } })
 }
 
 /**
@@ -498,10 +531,10 @@ export function translate(offset: {
  * ```
  */
 export function skew(angles: {
-  x?: string | number
-  y?: string | number
+  x?: ReactiveTransformValue<string | number>
+  y?: ReactiveTransformValue<string | number>
 }): TransformModifier {
-  return new TransformModifier({ transform: { skew: angles } })
+  return new TransformModifier({ transform: { skew: angles as any } })
 }
 
 // ============================================================================
@@ -517,8 +550,10 @@ export function skew(angles: {
  * .rotateX('1rad')
  * ```
  */
-export function rotateX(angle: string | number): TransformModifier {
-  return new TransformModifier({ transform: { rotateX: angle } })
+export function rotateX(
+  angle: ReactiveTransformValue<string | number>
+): TransformModifier {
+  return new TransformModifier({ transform: { rotateX: angle as any } })
 }
 
 /**
@@ -530,8 +565,10 @@ export function rotateX(angle: string | number): TransformModifier {
  * .rotateY('-45deg')
  * ```
  */
-export function rotateY(angle: string | number): TransformModifier {
-  return new TransformModifier({ transform: { rotateY: angle } })
+export function rotateY(
+  angle: ReactiveTransformValue<string | number>
+): TransformModifier {
+  return new TransformModifier({ transform: { rotateY: angle as any } })
 }
 
 /**
@@ -543,8 +580,10 @@ export function rotateY(angle: string | number): TransformModifier {
  * .rotateZ('0.25turn')
  * ```
  */
-export function rotateZ(angle: string | number): TransformModifier {
-  return new TransformModifier({ transform: { rotateZ: angle } })
+export function rotateZ(
+  angle: ReactiveTransformValue<string | number>
+): TransformModifier {
+  return new TransformModifier({ transform: { rotateZ: angle as any } })
 }
 
 /**
@@ -556,8 +595,8 @@ export function rotateZ(angle: string | number): TransformModifier {
  * .perspective(500)   // Closer perspective
  * ```
  */
-export function perspective(value: number): TransformModifier {
-  return new TransformModifier({ transform: { perspective: value } })
+export function perspective(value: ReactiveTransformValue<number>): TransformModifier {
+  return new TransformModifier({ transform: { perspective: value as any } })
 }
 
 // ============================================================================
@@ -742,4 +781,196 @@ export function offset(x: number, y: number): AdvancedTransformModifier {
   return new AdvancedTransformModifier({
     transform: { translateX: x, translateY: y },
   })
+}
+
+function composeTransform(
+  element: Element,
+  nextTransform: string,
+  transformFunctionsToReplace: string[]
+): void {
+  const styleTarget =
+    element instanceof HTMLElement ? element.style : (element as any).style
+  if (!styleTarget) return
+
+  const existingTransform = String(styleTarget.transform || '')
+  const keepSet = new Set(transformFunctionsToReplace)
+  const existingFunctions = splitTransformFunctions(existingTransform).filter(
+    entry => !keepSet.has(entry.name)
+  )
+  const nextFunctions = splitTransformFunctions(nextTransform)
+  styleTarget.transform = [...existingFunctions, ...nextFunctions]
+    .map(entry => entry.raw.trim())
+    .join(' ')
+    .trim()
+}
+
+function applyTransformStylesComposed(
+  element: Element,
+  styles: Record<string, string>,
+  transformFunctionsToReplace: string[],
+  applyStyles: (element: Element, styleMap: Record<string, string>) => void
+): void {
+  const { transform: nextTransform, ...otherStyles } = styles
+
+  if (nextTransform !== undefined) {
+    composeTransform(element, nextTransform, transformFunctionsToReplace)
+  }
+
+  if (Object.keys(otherStyles).length > 0) {
+    applyStyles(element, otherStyles)
+  }
+}
+
+function hasReactiveValues(value: unknown): boolean {
+  if (isSignal(value) || isComputed(value)) return true
+  if (Array.isArray(value)) {
+    return value.some(item => hasReactiveValues(item))
+  }
+  if (value && typeof value === 'object') {
+    return Object.values(value).some(item => hasReactiveValues(item))
+  }
+  return false
+}
+
+type TransformFunctionToken = {
+  name: string
+  raw: string
+}
+
+function splitTransformFunctions(transform: string): TransformFunctionToken[] {
+  const tokens: TransformFunctionToken[] = []
+  let index = 0
+  const input = transform.trim()
+
+  while (index < input.length) {
+    while (index < input.length && /\s/.test(input[index])) index += 1
+    if (index >= input.length) break
+
+    const nameStart = index
+    while (index < input.length && /[a-zA-Z0-9-]/.test(input[index])) index += 1
+    const name = input.slice(nameStart, index)
+    if (!name) break
+
+    while (index < input.length && /\s/.test(input[index])) index += 1
+    if (input[index] !== '(') break
+
+    const valueStart = index
+    let depth = 0
+    while (index < input.length) {
+      const char = input[index]
+      if (char === '(') depth += 1
+      if (char === ')') {
+        depth -= 1
+        if (depth === 0) {
+          index += 1
+          break
+        }
+      }
+      index += 1
+    }
+
+    const raw = `${name}${input.slice(valueStart, index)}`
+    tokens.push({ name, raw })
+  }
+
+  return tokens
+}
+
+function collectBasicTransformFunctionNames(
+  config: TransformConfig | Transform3DConfig
+): string[] {
+  const names = new Set<string>()
+
+  if ('perspective' in config && config.perspective !== undefined) {
+    names.add('perspective')
+  }
+
+  if (config.scale !== undefined) {
+    names.add('scale')
+  }
+
+  if (config.rotate !== undefined) {
+    names.add('rotate')
+  }
+
+  if ('rotateX' in config && config.rotateX !== undefined) {
+    names.add('rotateX')
+  }
+  if ('rotateY' in config && config.rotateY !== undefined) {
+    names.add('rotateY')
+  }
+  if ('rotateZ' in config && config.rotateZ !== undefined) {
+    names.add('rotateZ')
+  }
+
+  if (config.translate !== undefined) {
+    names.add('translate3d')
+  }
+
+  if (config.skew !== undefined) {
+    names.add('skew')
+    names.add('skewX')
+    names.add('skewY')
+  }
+
+  if ('scaleZ' in config && config.scaleZ !== undefined) {
+    names.add('scaleZ')
+  }
+
+  return Array.from(names)
+}
+
+function collectAdvancedTransformFunctionNames(
+  config:
+    | TransformConfig
+    | Transform3DConfig
+    | MatrixTransformConfig
+    | Advanced3DTransformConfig
+): string[] {
+  const names = new Set<string>()
+
+  if ('matrix' in config && config.matrix) {
+    names.add('matrix')
+  }
+  if ('matrix3d' in config && config.matrix3d) {
+    names.add('matrix3d')
+  }
+  if ('rotate3d' in config && config.rotate3d) {
+    names.add('rotate3d')
+  }
+  if ('scale3d' in config && config.scale3d) {
+    names.add('scale3d')
+  }
+  if ('translate3d' in config && config.translate3d) {
+    names.add('translate3d')
+  }
+
+  if ('scaleX' in config && config.scaleX !== undefined) {
+    names.add('scaleX')
+  }
+  if ('scaleY' in config && config.scaleY !== undefined) {
+    names.add('scaleY')
+  }
+  if ('scaleZ' in config && config.scaleZ !== undefined) {
+    names.add('scaleZ')
+  }
+  if ('translateX' in config && config.translateX !== undefined) {
+    names.add('translateX')
+  }
+  if ('translateY' in config && config.translateY !== undefined) {
+    names.add('translateY')
+  }
+  if ('translateZ' in config && config.translateZ !== undefined) {
+    names.add('translateZ')
+  }
+
+  if (names.size === 0) {
+    for (const basicName of collectBasicTransformFunctionNames(
+      config as TransformConfig | Transform3DConfig
+    )) {
+      names.add(basicName)
+    }
+  }
+
+  return Array.from(names)
 }

@@ -1018,7 +1018,7 @@ export class DOMRenderer {
     }
 
     if ((oldNode as any).__appliedProps) {
-      (newNode as any).__appliedProps = (oldNode as any).__appliedProps
+      ;(newNode as any).__appliedProps = { ...(oldNode as any).__appliedProps }
     }
 
     this.metrics.adopted++
@@ -1164,7 +1164,7 @@ export function renderComponent(
           node.element = cached.element
           // Also transfer internal state for reconciliation
           if ((cached as any).__appliedProps) {
-            (node as any).__appliedProps = (cached as any).__appliedProps
+            ;(node as any).__appliedProps = { ...(cached as any).__appliedProps }
           }
           if ((cached as any).__renderedChildren) {
             (node as any).__renderedChildren = (cached as any).__renderedChildren

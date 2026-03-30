@@ -321,9 +321,19 @@ export class LayoutComponent
     container: Element,
     childIndex: number
   ): Element[] {
+    // Prefer exact DOM association by stable component id marker
+    const byComponentId = container.querySelectorAll(
+      `[data-component-id="${child.id}"]`
+    )
+    if (byComponentId.length > 0) {
+      return Array.from(byComponentId)
+    }
+
     // For Image components, look for img elements with the tachui-image class
     if (child.id.startsWith('image-')) {
-      const images = container.querySelectorAll('img.tachui-image')
+      const images = container.querySelectorAll(
+        'img.tachui-image, span.tachui-image-template'
+      )
       // Since we don't have a perfect way to match, we'll use the childIndex as a heuristic
       if (images[childIndex]) {
         return [images[childIndex]]

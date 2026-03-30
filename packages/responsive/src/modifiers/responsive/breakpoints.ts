@@ -36,6 +36,19 @@ const [viewportDimensions, setViewportDimensions] = createSignal({
   height: 0,
 })
 
+let responsiveSystemInitialized = false
+const resizeListener = (): void => {
+  updateViewportDimensions()
+  updateCurrentBreakpoint()
+}
+const orientationChangeListener = (): void => {
+  // Delay to ensure accurate dimensions after orientation change
+  setTimeout(() => {
+    updateViewportDimensions()
+    updateCurrentBreakpoint()
+  }, 100)
+}
+
 /**
  * Configure global breakpoints for the application
  */
@@ -90,24 +103,53 @@ export function initializeResponsiveSystem(): void {
     return // Skip on server-side
   }
 
+  if (responsiveSystemInitialized) {
+    return
+  }
+
   // Set initial viewport dimensions
   updateViewportDimensions()
   updateCurrentBreakpoint()
 
   // Listen for window resize events
-  window.addEventListener('resize', () => {
-    updateViewportDimensions()
-    updateCurrentBreakpoint()
-  })
+  window.addEventListener('resize', resizeListener)
 
   // Listen for orientation changes
-  window.addEventListener('orientationchange', () => {
-    // Delay to ensure accurate dimensions after orientation change
-    setTimeout(() => {
-      updateViewportDimensions()
-      updateCurrentBreakpoint()
-    }, 100)
+  window.addEventListener('orientationchange', orientationChangeListener)
+  responsiveSystemInitialized = true
+}
+
+/**
+ * Test helper: synchronize responsive signals from the current window dimensions.
+ */
+export function __syncResponsiveSignalsForTests(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  updateViewportDimensions()
+  updateCurrentBreakpoint()
+}
+
+/**
+ * Test helper: reset responsive singleton state and detach global listeners.
+ */
+export function __resetResponsiveSystemForTests(): void {
+  currentBreakpointConfig = {
+    ...DEFAULT_BREAKPOINTS,
+  }
+  setCurrentBreakpoint('base')
+  setViewportDimensions({
+    width: 0,
+    height: 0,
   })
+
+  if (typeof window !== 'undefined' && responsiveSystemInitialized) {
+    window.removeEventListener('resize', resizeListener)
+    window.removeEventListener('orientationchange', orientationChangeListener)
+  }
+
+  responsiveSystemInitialized = false
 }
 
 /**
