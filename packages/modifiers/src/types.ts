@@ -11,6 +11,7 @@ import type {
   ComponentProps,
   DOMNode,
 } from '@tachui/types/runtime'
+import type { TextAlign } from '@tachui/types/modifiers'
 import type {
   OverlayAlignment,
   OverlayOffset,
@@ -442,17 +443,7 @@ export interface ModifierBuilder<
     style?: string
     color?: string
   }): ModifierBuilder<T>
-  textAlign(
-    value:
-      | 'left'
-      | 'center'
-      | 'right'
-      | 'justify'
-      | 'start'
-      | 'end'
-      | 'leading'
-      | 'trailing'
-  ): ModifierBuilder<T>
+  textAlign(value: TextAlign): ModifierBuilder<T>
   textTransform(
     value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
   ): ModifierBuilder<T>

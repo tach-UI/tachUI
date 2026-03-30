@@ -113,6 +113,9 @@ describe('Typography Reactive Updates', () => {
 
     typography({ align: 'leading' }).apply({} as DOMNode, mockContext)
     expect(mockElement.style.textAlign).toBe('start')
+
+    typography({ align: 'trailing' }).apply({} as DOMNode, mockContext)
+    expect(mockElement.style.textAlign).toBe('end')
   })
 
   it('applies !important for static text transform and text decoration', () => {
