@@ -11,8 +11,13 @@ import type { NavigationPathSegment, NavigationPathTypedSegment } from './naviga
 /**
  * Navigation destination type
  */
+export interface BuildableNavigationDestination {
+  build: () => ComponentInstance
+}
+
 export type NavigationDestination =
   | ComponentInstance
+  | BuildableNavigationDestination
   | (() => ComponentInstance)
 
 /**
