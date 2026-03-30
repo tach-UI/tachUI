@@ -507,6 +507,24 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
       expect(result?.params).toEqual({ tab: 'settings' })
     })
 
+    it('extracts fragment when no query string is present', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink('myapp://page#section')
+
+      expect(result).toBeDefined()
+      expect(result?.path).toBe('/page')
+      expect(result?.fragment).toBe('section')
+      expect(result?.query).toEqual({})
+    })
+
+    it('decodes URL-encoded fragment values', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink('myapp://page#my%20section')
+
+      expect(result).toBeDefined()
+      expect(result?.fragment).toBe('my section')
+    })
+
     it('parses array query parameters into arrays', () => {
       const manager = new DeepLinkManager()
       const result = manager.parseDeepLink('myapp://page?ids[]=1&ids[]=2')
@@ -542,6 +560,24 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
       expect(result?.fragment).toBe('summary')
     })
 
+    it('documents plain key overwrite when mixed with array syntax', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink('myapp://page?ids[]=1&ids[]=2&ids=3')
+
+      expect(result).toBeDefined()
+      expect(result?.query).toEqual({ ids: '3' })
+      expect(result?.params).toEqual({ ids: '3' })
+    })
+
+    it('documents plain key overwrite when mixed with dot-notation', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink('myapp://page?user.id=5&user=alice')
+
+      expect(result).toBeDefined()
+      expect(result?.query).toEqual({ user: 'alice' })
+      expect(result?.params).toEqual({ user: 'alice' })
+    })
+
     it('returns empty fragment when URL ends with hash marker', () => {
       const manager = new DeepLinkManager()
       const result = manager.parseDeepLink('myapp://page#')
@@ -561,6 +597,16 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
       expect(result?.query).toEqual({})
       expect(result?.params).toEqual({})
       expect(result?.fragment).toBeUndefined()
+    })
+
+    it('returns query and params as separate objects', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink('myapp://page?tab=settings')
+
+      expect(result).toBeDefined()
+      expect(result?.query).toEqual({ tab: 'settings' })
+      expect(result?.params).toEqual({ tab: 'settings' })
+      expect(result?.query).not.toBe(result?.params)
     })
   })
 
