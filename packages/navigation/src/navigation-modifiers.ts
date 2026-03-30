@@ -33,6 +33,7 @@ export interface NavigationModifierConfig {
   toolbarItems?: ToolbarItemConfig[]
   leadingItems?: ComponentInstance[]
   trailingItems?: ComponentInstance[]
+  searchable?: SearchableConfig
 }
 
 type SheetPresentationState = Accessor<boolean> | Binding<boolean>
@@ -96,6 +97,14 @@ export interface PopoverPresentationOptions {
   maxWidth?: string
   ariaLabel?: string
   onDismiss?: () => void
+}
+
+export type SearchableTextState = Accessor<string> | Binding<string>
+export type SearchablePlacement = 'navigationBar' | 'toolbar'
+
+export interface SearchableConfig {
+  text: SearchableTextState
+  placement: SearchablePlacement
 }
 
 export type ConfirmationDialogButtonRole = 'default' | 'cancel' | 'destructive'
@@ -486,11 +495,14 @@ function wrapComponentWithToolbar(
   modifiers: NavigationModifierConfig = {}
 ): ComponentInstance {
   const partitions = partitionToolbarItems(items)
+  const searchableConfig = modifiers.searchable
+  const hasNavigationBarSearch = searchableConfig?.placement !== 'toolbar'
+  const hasToolbarSearch = searchableConfig?.placement === 'toolbar'
   const hasTopBar =
     partitions.navigation.length > 0 || partitions.trailing.length > 0
   const hasBottomBar = partitions.bottomBar.length > 0
 
-  if (!hasTopBar && !hasBottomBar) {
+  if (!hasTopBar && !hasBottomBar && !searchableConfig) {
     return component
   }
 
@@ -499,6 +511,131 @@ function wrapComponentWithToolbar(
   const topBarVisibility = visibilityMap.navigationBar ?? 'visible'
   const bottomBarVisibility = visibilityMap.bottomBar ?? 'visible'
   const toolbarBackgroundColor = modifiers.toolbarBackground ?? '#f9fafb'
+
+  const createSearchableInputNode = (
+    config: SearchableConfig
+  ): ComponentInstance => {
+    const searchHost = HTML.div({}).build()
+    const existingLifecycle = (searchHost as any)._enhancedLifecycle ?? {}
+    const existingOnDOMReady = existingLifecycle.onDOMReady as
+      | ((elements: Map<string, Element>, primary?: Element) => void | (() => void))
+      | undefined
+
+    const readSearchState = (state: SearchableTextState): string => {
+      if (typeof state === 'function') {
+        return String(state() ?? '')
+      }
+      return String(state.get() ?? '')
+    }
+
+    const setSearchState = (
+      state: SearchableTextState,
+      value: string
+    ): boolean => {
+      if (typeof state !== 'function') {
+        state.set(value)
+        return true
+      }
+      if (isSignal(state)) {
+        const signal = getSignalImpl(state)
+        if (signal) {
+          signal.set(value)
+          return true
+        }
+      }
+      console.error(
+        '.searchable requires a writable signal accessor or Binding<string>. Computed/read-only accessors are not writable.'
+      )
+      return false
+    }
+
+    ;(searchHost as any)._enhancedLifecycle = {
+      ...existingLifecycle,
+      onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+        const existingCleanup = existingOnDOMReady?.(elements, primary)
+        if (!(primary instanceof HTMLElement)) {
+          return existingCleanup
+        }
+
+        primary.setAttribute(
+          'data-tachui-searchable-placement',
+          config.placement
+        )
+        primary.style.width = '100%'
+        primary.style.display = 'flex'
+        primary.style.alignItems = 'center'
+        primary.style.gap = '8px'
+        primary.style.padding = '8px 12px'
+
+        const input = document.createElement('input')
+        input.type = 'search'
+        input.setAttribute('data-tachui-searchable-input', 'true')
+        input.placeholder = 'Search'
+        input.style.width = '100%'
+        input.style.minHeight = '34px'
+        input.style.padding = '6px 10px'
+        input.style.border = '1px solid #d1d5db'
+        input.style.borderRadius = '8px'
+        input.style.outline = 'none'
+        input.value = readSearchState(config.text)
+
+        const clearButton = document.createElement('button')
+        clearButton.type = 'button'
+        clearButton.setAttribute('data-tachui-searchable-clear', 'true')
+        clearButton.setAttribute('aria-label', 'Clear search')
+        clearButton.textContent = '×'
+        clearButton.style.minWidth = '30px'
+        clearButton.style.height = '30px'
+        clearButton.style.border = '0'
+        clearButton.style.borderRadius = '999px'
+        clearButton.style.background = '#e5e7eb'
+        clearButton.style.cursor = 'pointer'
+        clearButton.style.fontSize = '18px'
+        clearButton.style.lineHeight = '1'
+        clearButton.style.display = input.value ? 'inline-flex' : 'none'
+        clearButton.style.alignItems = 'center'
+        clearButton.style.justifyContent = 'center'
+
+        const onInput = (): void => {
+          const nextValue = input.value
+          setSearchState(config.text, nextValue)
+          clearButton.style.display = nextValue ? 'inline-flex' : 'none'
+        }
+
+        const onClear = (): void => {
+          if (setSearchState(config.text, '')) {
+            input.value = ''
+            clearButton.style.display = 'none'
+            input.focus()
+          }
+        }
+
+        input.addEventListener('input', onInput)
+        clearButton.addEventListener('click', onClear)
+
+        primary.append(input, clearButton)
+
+        const syncEffect = createEffect(() => {
+          const currentValue = readSearchState(config.text)
+          if (input.value !== currentValue) {
+            input.value = currentValue
+          }
+          clearButton.style.display = currentValue ? 'inline-flex' : 'none'
+        })
+
+        return () => {
+          syncEffect.dispose()
+          input.removeEventListener('input', onInput)
+          clearButton.removeEventListener('click', onClear)
+          if (typeof existingCleanup === 'function') {
+            existingCleanup()
+          }
+        }
+      },
+    }
+
+    return searchHost
+  }
 
   if (hasTopBar) {
     const topBarChildren: ComponentInstance[] = []
@@ -548,6 +685,19 @@ function wrapComponentWithToolbar(
     children.push(topBarNode.build())
   }
 
+  if (hasNavigationBarSearch && searchableConfig) {
+    const searchNode = HStack({
+      children: [createSearchableInputNode(searchableConfig)],
+      spacing: 0,
+    })
+      .role('search')
+      .padding({ top: 6, right: 12, bottom: 8, left: 12 })
+      .backgroundColor(toolbarBackgroundColor)
+      .border({ width: 1, color: '#e5e7eb' })
+      .build()
+    children.push(searchNode)
+  }
+
   children.push(component)
 
   if (hasBottomBar) {
@@ -566,6 +716,19 @@ function wrapComponentWithToolbar(
     }
 
     children.push(bottomBarNode.build())
+  }
+
+  if (hasToolbarSearch && searchableConfig) {
+    const searchNode = HStack({
+      children: [createSearchableInputNode(searchableConfig)],
+      spacing: 0,
+    })
+      .role('search')
+      .padding({ top: 8, right: 12, bottom: 10, left: 12 })
+      .backgroundColor(toolbarBackgroundColor)
+      .border({ width: 1, color: '#e5e7eb' })
+      .build()
+    children.push(searchNode)
   }
 
   return VStack({
@@ -617,6 +780,37 @@ export function toolbar(
   items: ToolbarItemConfig[]
 ): ComponentInstance {
   return toolbarItems(component, items)
+}
+
+export function searchable(
+  component: ComponentInstance,
+  text: SearchableTextState,
+  placement: SearchablePlacement = 'navigationBar'
+): ComponentInstance {
+  const currentModifiers = ((component as any)._navigationModifiers ?? {}) as
+    NavigationModifierConfig & {
+      toolbarItems?: ToolbarItemConfig[]
+    }
+  const toolbarItemList = currentModifiers.toolbarItems ?? []
+  const toolbarBaseComponent = ((component as any)
+    ._toolbarBaseComponent ?? component) as ComponentInstance
+  const nextModifiers = {
+    ...currentModifiers,
+    searchable: { text, placement } as SearchableConfig,
+  }
+
+  const wrappedComponent = wrapComponentWithToolbar(
+    toolbarBaseComponent,
+    toolbarItemList,
+    nextModifiers
+  )
+  ;(wrappedComponent as any)._navigationModifiers = {
+    ...(wrappedComponent as any)._navigationModifiers,
+    ...nextModifiers,
+  }
+  ;(wrappedComponent as any)._toolbarBaseComponent = toolbarBaseComponent
+
+  return wrappedComponent
 }
 
 export function presentationDetents(
@@ -2210,6 +2404,10 @@ declare module '@tachui/core' {
       content: () => ComponentInstance,
       options?: PopoverPresentationOptions
     ): ComponentInstance
+    searchable(
+      text: Accessor<string> | Binding<string>,
+      placement?: SearchablePlacement
+    ): ComponentInstance
     confirmationDialog(
       title: string,
       isPresented: Accessor<boolean> | Binding<boolean>,
@@ -2296,6 +2494,13 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
     options?: PopoverPresentationOptions
   ) {
     return popover(this, isPresented, arrowEdge, content, options)
+  }
+
+  proto.searchable = function(
+    text: Accessor<string> | Binding<string>,
+    placement: SearchablePlacement = 'navigationBar'
+  ) {
+    return searchable(this, text, placement)
   }
 
   proto.confirmationDialog = function(

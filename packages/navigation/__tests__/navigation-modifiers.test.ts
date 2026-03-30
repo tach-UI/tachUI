@@ -22,6 +22,7 @@ import {
   toolbarBackground,
   toolbarBackgroundVisibility,
   toolbarForegroundColor,
+  searchable,
   presentationDetents,
   sheet,
   fullScreenCover,
@@ -162,6 +163,143 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       ])
 
       expect(withToolbar).toBeDefined()
+    })
+  })
+
+  describe('Searchable Modifier', () => {
+    it('renders search field in navigation bar by default', async () => {
+      const [searchText] = createSignal('')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchable(
+        HTML.div({ children: 'Host' }).build(),
+        searchText
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      const placement = input?.parentElement?.getAttribute(
+        'data-tachui-searchable-placement'
+      )
+
+      expect(input).toBeTruthy()
+      expect(placement).toBe('navigationBar')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('updates bound signal on each keystroke', async () => {
+      const [searchText] = createSignal('')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchable(
+        HTML.div({ children: 'Host' }).build(),
+        searchText
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      expect(input).toBeTruthy()
+      input!.value = 'tachui'
+      input!.dispatchEvent(new Event('input', { bubbles: true }))
+      await flushMicrotasks()
+
+      expect(searchText()).toBe('tachui')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('clear button resets signal and input to empty string', async () => {
+      const [searchText] = createSignal('prefilled')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchable(
+        HTML.div({ children: 'Host' }).build(),
+        searchText
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      const clearButton = document.querySelector(
+        '[data-tachui-searchable-clear="true"]'
+      ) as HTMLButtonElement | null
+
+      expect(input?.value).toBe('prefilled')
+      clearButton?.click()
+      await flushMicrotasks()
+
+      expect(searchText()).toBe('')
+      expect(input?.value).toBe('')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('supports toolbar placement option', async () => {
+      const [searchText] = createSignal('')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchable(
+        HTML.div({ children: 'Host' }).build(),
+        searchText,
+        'toolbar'
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      const placement = input?.parentElement?.getAttribute(
+        'data-tachui-searchable-placement'
+      )
+
+      expect(input).toBeTruthy()
+      expect(placement).toBe('toolbar')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('reactively updates input value when signal changes externally', async () => {
+      const [searchText, setSearchText] = createSignal('initial')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchable(
+        HTML.div({ children: 'Host' }).build(),
+        searchText
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      expect(input?.value).toBe('initial')
+
+      setSearchText('updated')
+      await flushMicrotasks()
+
+      expect(input?.value).toBe('updated')
+
+      cleanup()
+      container.remove()
     })
   })
 
