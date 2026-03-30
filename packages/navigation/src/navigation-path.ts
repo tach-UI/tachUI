@@ -23,12 +23,24 @@ function isTypedSegment(value: unknown): value is NavigationPathTypedSegment {
   )
 }
 
+function deepCloneValue<T>(value: T): T {
+  if (typeof value !== 'object' || value === null) {
+    return value
+  }
+
+  if (typeof structuredClone === 'function') {
+    return structuredClone(value)
+  }
+
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
 function cloneSegment(segment: NavigationPathSegment): NavigationPathSegment {
   if (typeof segment === 'string') {
     return segment
   }
 
-  return { ...segment }
+  return deepCloneValue(segment)
 }
 
 function segmentToKey(segment: NavigationPathSegment): string {
@@ -74,9 +86,7 @@ export class NavigationPath implements INavigationPath {
     }) => boolean
   >
   private _notifying: boolean = false
-
-  // Allow test access to segments for corruption testing
-  public _segmentsInternal: NavigationPathSegment[] | null = null
+  private _segmentsCorruptedForTests = false
 
   constructor(initialSegments: NavigationPathSegment[] = []) {
     this._segments = initialSegments.map(cloneSegment)
@@ -86,8 +96,7 @@ export class NavigationPath implements INavigationPath {
    * Get the current path segments
    */
   get segments(): readonly string[] {
-    // Check if segments have been corrupted for testing
-    if (this._segmentsInternal === null && !Array.isArray(this._segments)) {
+    if (this._segmentsCorruptedForTests || !Array.isArray(this._segments)) {
       return []
     }
     return this._segments.map(segmentToKey)
@@ -97,22 +106,11 @@ export class NavigationPath implements INavigationPath {
    * Get raw path entries (strings and typed segments)
    */
   get entries(): readonly NavigationPathSegment[] {
-    if (this._segmentsInternal === null && !Array.isArray(this._segments)) {
+    if (this._segmentsCorruptedForTests || !Array.isArray(this._segments)) {
       return []
     }
 
     return this._segments.map(cloneSegment)
-  }
-
-  /**
-   * Allow test access for corruption testing
-   */
-  set segments(value: any) {
-    this._segmentsInternal = value
-    if (value === null) {
-      // Simulate corruption for testing
-      ;(this as any)._segments = null
-    }
   }
 
   /**
@@ -162,7 +160,31 @@ export class NavigationPath implements INavigationPath {
    * @param segments - The segments to append
    */
   appendAll(segments: NavigationPathSegment[]): void {
-    this._segments.push(...segments.map(cloneSegment))
+    const normalizedSegments = segments.map(cloneSegment)
+    if (normalizedSegments.length === 0) {
+      return
+    }
+
+    if (this._beforeChangeListeners) {
+      const oldSegments = this._segments.map(segmentToKey)
+      const newSegments = [
+        ...oldSegments,
+        ...normalizedSegments.map(segmentToKey),
+      ]
+
+      for (const listener of this._beforeChangeListeners) {
+        const shouldProceed = listener({
+          oldSegments,
+          newSegments,
+          operation: 'appendAll',
+        })
+        if (shouldProceed === false) {
+          return
+        }
+      }
+    }
+
+    this._segments.push(...normalizedSegments)
     this._notifyListeners()
   }
 
@@ -191,6 +213,8 @@ export class NavigationPath implements INavigationPath {
   /**
    * Check if the path contains a specific segment
    * @param segment - The segment to check for
+   *
+   * For typed entries, lookup is based on the `type` tag.
    */
   contains(segment: string): boolean {
     return this._segments.some(current => segmentToKey(current) === segment)
@@ -199,6 +223,8 @@ export class NavigationPath implements INavigationPath {
   /**
    * Get the segment at a specific index
    * @param index - The index of the segment
+   *
+   * For typed entries, this returns the `type` tag. Use `entryAt` for full payload.
    */
   at(index: number): string | undefined {
     const segment = this._segments[index]
@@ -400,9 +426,7 @@ export class NavigationPath implements INavigationPath {
    * Check if path is valid
    */
   isValid(): boolean {
-    return this._segmentsInternal === null
-      ? Array.isArray(this._segments)
-      : this._segmentsInternal !== null
+    return !this._segmentsCorruptedForTests && Array.isArray(this._segments)
   }
 
   /**
@@ -410,10 +434,17 @@ export class NavigationPath implements INavigationPath {
    */
   validationErrors(): string[] {
     const errors: string[] = []
-    if (!Array.isArray(this._segments)) {
+    if (this._segmentsCorruptedForTests || !Array.isArray(this._segments)) {
       errors.push('Segments must be an array')
     }
     return errors
+  }
+
+  /**
+   * Test-only hook for corruption-path validation scenarios.
+   */
+  __setSegmentsCorruptedForTests(corrupted: boolean): void {
+    this._segmentsCorruptedForTests = corrupted
   }
 
   /**

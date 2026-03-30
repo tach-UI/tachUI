@@ -169,6 +169,22 @@ describe('Navigation Router - SwiftUI Compatible Router System', () => {
       expect(mockContext.stack).toHaveLength(1)
       expect(mockContext.stack[0]?.destination).toBe(mockDestination)
     })
+
+    it('uses first primitive field when typed segment has no id', () => {
+      const typedRouter = createNavigationRouter(mockContext) as any
+      typedRouter.registerTypedRoute('profile', mockDestination, {
+        title: 'Profile',
+      })
+
+      typedRouter.navigateSegment({
+        type: 'profile',
+        slug: 'alice',
+        metadata: { section: 'about' },
+      })
+
+      expect(mockContext.currentPath).toBe('/profile/alice')
+      expect(mockContext.stack).toHaveLength(1)
+    })
   })
 
   describe('URL Parsing and Building', () => {

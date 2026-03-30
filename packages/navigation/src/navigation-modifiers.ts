@@ -77,6 +77,11 @@ export interface ToolbarItemInput {
   content: () => ComponentInstance
 }
 
+/**
+ * Toolbar background visibility state.
+ *
+ * Note: `automatic` currently aliases `visible` in web rendering.
+ */
 export type ToolbarBackgroundVisibility = 'visible' | 'hidden' | 'automatic'
 export type ToolbarBackgroundVisibilityTarget = 'navigationBar' | 'bottomBar'
 
@@ -380,9 +385,6 @@ export function toolbarBackgroundVisibility(
   }
 
   ;(component as any)._navigationModifiers = nextModifiers
-  navigationModifierManager.pushModifier({
-    toolbarBackgroundVisibility: nextVisibility,
-  })
 
   const toolbarBaseComponent = ((component as any)
     ._toolbarBaseComponent ?? component) as ComponentInstance

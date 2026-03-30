@@ -80,6 +80,13 @@ describe('Navigation Path - Path Management and Utilities', () => {
       expect(path.count).toBe(3)
     })
 
+    it('returns raw entries for mixed typed and string segments', () => {
+      const path = createNavigationPath(['home'])
+      path.append({ type: 'product', id: 42 })
+
+      expect(path.entries).toEqual(['home', { type: 'product', id: 42 }])
+    })
+
     it('removes last segment', () => {
       const path = createNavigationPath(['home', 'settings', 'profile'])
       path.removeLast()
@@ -369,6 +376,56 @@ describe('Navigation Path - Path Management and Utilities', () => {
       expect(restored.entryAt(1)).toEqual({ type: 'product', id: 42 })
       expect(restored.entryAt(2)).toBe('details')
     })
+
+    it('drops invalid decode entries but keeps valid typed/string entries', () => {
+      const payload = JSON.stringify([
+        'home',
+        { type: 'product', id: 42 },
+        { id: 7 },
+        123,
+        null,
+        { type: 99 },
+      ])
+
+      const path = NavigationPath.decode(payload)
+
+      expect(path.segments).toEqual(['home', 'product'])
+      expect(path.entries).toEqual(['home', { type: 'product', id: 42 }])
+    })
+
+    it('deep clones nested typed segments on append', () => {
+      const original = {
+        type: 'product',
+        payload: {
+          meta: { slug: 'starter' },
+        },
+      }
+      const path = new NavigationPath()
+      path.append(original)
+
+      ;(original.payload.meta as any).slug = 'mutated'
+
+      expect(path.entryAt(0)).toEqual({
+        type: 'product',
+        payload: {
+          meta: { slug: 'starter' },
+        },
+      })
+    })
+
+    it('returns cloned entries snapshots that cannot mutate internal state', () => {
+      const path = new NavigationPath()
+      path.append({ type: 'product', id: 42, payload: { slug: 'starter' } })
+
+      const entries = path.entries as Array<any>
+      entries[0].payload.slug = 'mutated'
+
+      expect(path.entryAt(0)).toEqual({
+        type: 'product',
+        id: 42,
+        payload: { slug: 'starter' },
+      })
+    })
   })
 
   describe('Typed Navigation Path', () => {
@@ -472,6 +529,21 @@ describe('Navigation Path - Path Management and Utilities', () => {
 
       expect(path.segments).toEqual(['home']) // Should not have changed
       expect(preventListener).toHaveBeenCalled()
+    })
+
+    it('allows preventing appendAll changes', () => {
+      const path = createNavigationPath(['home'])
+      const preventListener = vi.fn(() => false)
+
+      path.onBeforeChange(preventListener)
+      path.appendAll(['settings', 'profile'])
+
+      expect(path.segments).toEqual(['home'])
+      expect(preventListener).toHaveBeenCalledWith({
+        oldSegments: ['home'],
+        newSegments: ['home', 'settings', 'profile'],
+        operation: 'appendAll',
+      })
     })
   })
 
@@ -681,8 +753,7 @@ describe('Navigation Path - Path Management and Utilities', () => {
 
       expect(path.isValid()).toBe(true)
 
-      // Simulate corruption
-      ;(path as any).segments = null
+      ;(path as any).__setSegmentsCorruptedForTests(true)
 
       expect(path.isValid()).toBe(false)
     })

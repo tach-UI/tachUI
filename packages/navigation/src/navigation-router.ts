@@ -421,6 +421,16 @@ class NavigationRouterImpl implements NavigationRouter {
       return `/${segment.type}/${encodeURIComponent(String(primaryId))}`
     }
 
+    const fallbackIdentityEntry = Object.entries(segment).find(
+      ([key, value]) =>
+        key !== 'type' &&
+        (typeof value === 'string' || typeof value === 'number')
+    )
+    if (fallbackIdentityEntry) {
+      const [, identityValue] = fallbackIdentityEntry
+      return `/${segment.type}/${encodeURIComponent(String(identityValue))}`
+    }
+
     return `/${segment.type}`
   }
 
