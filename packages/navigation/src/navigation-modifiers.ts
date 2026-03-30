@@ -639,6 +639,7 @@ function setupPopoverPresentation(
   let removeOutsideClickListener: (() => void) | null = null
   let removeRepositionListener: (() => void) | null = null
   let disposePopoverContent: (() => void) | null = null
+  let initialPositionFrameId: number | null = null
   let isMounted = false
   const offset = options.offset ?? 12
 
@@ -764,6 +765,11 @@ function setupPopoverPresentation(
       removeRepositionListener = null
     }
 
+    if (initialPositionFrameId !== null) {
+      cancelAnimationFrame(initialPositionFrameId)
+      initialPositionFrameId = null
+    }
+
     if (portalRoot) {
       portalRoot.remove()
       portalRoot = null
@@ -791,7 +797,6 @@ function setupPopoverPresentation(
     popoverHost = document.createElement('div')
     popoverHost.setAttribute('data-tachui-popover-content', 'true')
     popoverHost.setAttribute('role', 'dialog')
-    popoverHost.setAttribute('aria-modal', 'false')
     if (options.ariaLabel) {
       popoverHost.setAttribute('aria-label', options.ariaLabel)
     }
@@ -816,7 +821,11 @@ function setupPopoverPresentation(
     document.body.appendChild(portalRoot)
 
     disposePopoverContent = mountComponentTree(content(), popoverContentHost)
-    positionPopover()
+
+    initialPositionFrameId = requestAnimationFrame(() => {
+      positionPopover()
+      initialPositionFrameId = null
+    })
 
     if (options.dismissOnOutsideClick !== false) {
       const outsideListener = (event: MouseEvent) => {

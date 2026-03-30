@@ -48,6 +48,12 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
     await Promise.resolve()
   }
 
+  const flushAnimationFrame = async (): Promise<void> => {
+    await new Promise<void>(resolve => {
+      requestAnimationFrame(() => resolve())
+    })
+  }
+
   describe('Basic Navigation Modifiers', () => {
     it('applies navigationTitle modifier', () => {
       const titled = navigationTitle(mockComponent, 'My Title')
@@ -503,6 +509,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       mockAnchorRect(anchor!, { top: 80, left: 120, width: 100, height: 40 })
       setIsPresented(true)
       await flushMicrotasks()
+      await flushAnimationFrame()
 
       const popoverNode = document.querySelector(
         '[data-tachui-popover-content="true"]'
@@ -533,6 +540,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       mockAnchorRect(anchor!, { top: 5, left: 120, width: 100, height: 40 })
       setIsPresented(true)
       await flushMicrotasks()
+      await flushAnimationFrame()
 
       const popoverNode = document.querySelector(
         '[data-tachui-popover-content="true"]'
@@ -561,6 +569,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       expect(anchor).toBeTruthy()
       mockAnchorRect(anchor!, { top: 100, left: 140, width: 60, height: 36 })
       await flushMicrotasks()
+      await flushAnimationFrame()
 
       document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
       await flushMicrotasks()
@@ -592,6 +601,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       expect(anchor).toBeTruthy()
       mockAnchorRect(anchor!, { top: 160, left: 180, width: 44, height: 32 })
       await flushMicrotasks()
+      await flushAnimationFrame()
 
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
       await flushMicrotasks()
@@ -623,8 +633,203 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       expect(anchor).toBeTruthy()
       mockAnchorRect(anchor!, { top: 180, left: 220, width: 72, height: 36 })
       await flushMicrotasks()
+      await flushAnimationFrame()
 
       expect(document.body.textContent).toContain('Popover body content')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('does not dismiss when dismissOnOutsideClick is false', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'top',
+        () => HTML.div({ children: 'Popover content' }).build(),
+        { dismissOnOutsideClick: false }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+      mockAnchorRect(anchor!, { top: 100, left: 140, width: 60, height: 36 })
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(true)
+      expect(
+        document.querySelector('[data-tachui-popover-root="true"]')
+      ).toBeTruthy()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('calls onDismiss when popover is dismissed', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const onDismiss = vi.fn()
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'top',
+        () => HTML.div({ children: 'Popover content' }).build(),
+        { onDismiss }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+      mockAnchorRect(anchor!, { top: 100, left: 140, width: 60, height: 36 })
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(onDismiss).toHaveBeenCalledTimes(1)
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('supports leading and trailing edge positioning', async () => {
+      const [isLeadingPresented, setLeadingPresented] = createSignal(true)
+      const [isTrailingPresented, setTrailingPresented] = createSignal(true)
+      const leadingContainer = document.createElement('div')
+      const trailingContainer = document.createElement('div')
+      document.body.append(leadingContainer, trailingContainer)
+
+      const leadingComponent = popover(
+        HTML.button({ children: 'Leading' }).build(),
+        isLeadingPresented,
+        'leading',
+        () => HTML.div({ children: 'Leading content' }).build()
+      )
+      const trailingComponent = popover(
+        HTML.button({ children: 'Trailing' }).build(),
+        isTrailingPresented,
+        'trailing',
+        () => HTML.div({ children: 'Trailing content' }).build()
+      )
+
+      const cleanupLeading = mountComponentTree(leadingComponent, leadingContainer)
+      const leadingAnchor = leadingContainer.querySelector('button')
+      expect(leadingAnchor).toBeTruthy()
+      mockAnchorRect(leadingAnchor!, { top: 180, left: 180, width: 80, height: 40 })
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      const leadingPopover = document.querySelector(
+        '[data-tachui-popover-content="true"]'
+      ) as HTMLDivElement | null
+      expect(leadingPopover?.getAttribute('data-tachui-popover-edge')).toBe(
+        'leading'
+      )
+
+      const cleanupTrailing = mountComponentTree(
+        trailingComponent,
+        trailingContainer
+      )
+      const trailingAnchor = trailingContainer.querySelector('button')
+      expect(trailingAnchor).toBeTruthy()
+      mockAnchorRect(trailingAnchor!, { top: 220, left: 640, width: 80, height: 40 })
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      const popovers = document.querySelectorAll('[data-tachui-popover-content="true"]')
+      const trailingPopover = popovers[popovers.length - 1] as HTMLDivElement | undefined
+      expect(trailingPopover?.getAttribute('data-tachui-popover-edge')).toBe(
+        'trailing'
+      )
+
+      cleanupTrailing()
+      cleanupLeading()
+      leadingContainer.remove()
+      trailingContainer.remove()
+      setLeadingPresented(false)
+      setTrailingPresented(false)
+    })
+
+    it('flips from top to bottom when bottom viewport edge would overflow', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'top',
+        () => HTML.div({ children: 'Popover content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+      mockAnchorRect(anchor!, { top: 740, left: 120, width: 80, height: 40 })
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      const popoverNode = document.querySelector(
+        '[data-tachui-popover-content="true"]'
+      ) as HTMLDivElement | null
+      expect(popoverNode?.getAttribute('data-tachui-popover-edge')).toBe(
+        'bottom'
+      )
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('applies popover style options to the DOM', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'top',
+        () => HTML.div({ children: 'Popover content' }).build(),
+        {
+          zIndex: 3456,
+          maxWidth: '420px',
+          ariaLabel: 'Help popover',
+        }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+      mockAnchorRect(anchor!, { top: 180, left: 220, width: 72, height: 36 })
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      const popoverRoot = document.querySelector(
+        '[data-tachui-popover-root="true"]'
+      ) as HTMLDivElement | null
+      const popoverNode = document.querySelector(
+        '[data-tachui-popover-content="true"]'
+      ) as HTMLDivElement | null
+
+      expect(popoverRoot?.style.zIndex).toBe('3456')
+      expect(popoverNode?.style.maxWidth).toBe('420px')
+      expect(popoverNode?.getAttribute('aria-label')).toBe('Help popover')
+      expect(popoverNode?.hasAttribute('aria-modal')).toBe(false)
 
       cleanup()
       container.remove()
