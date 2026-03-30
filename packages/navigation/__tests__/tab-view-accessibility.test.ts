@@ -54,5 +54,58 @@ describe('TabView accessibility semantics', () => {
     expect(panel).toBeDefined()
     expect(panel.props?.id).toBe(selectedTabs[0].props?.['aria-controls'])
     expect(panel.props?.['aria-labelledby']).toBe(selectedTabs[0].props?.id)
+    expect(panel.props?.tabIndex).toBe(0)
+  })
+
+  it('updates aria-selected and roving tabIndex when active tab changes', () => {
+    const tabs = [
+      createTabItem('home', 'Home', Text('Home content')),
+      createTabItem('search', 'Search', Text('Search content')),
+    ]
+
+    const tabView = TabView(tabs)
+    const coordinator = (tabView as any).tabCoordinator
+
+    coordinator.selectTab('search')
+
+    const elements = collectElements(tabView.render())
+    const tabButtons = elements.filter(element => element.props?.role === 'tab')
+
+    const homeTab = tabButtons.find(
+      element => element.props?.id && String(element.props.id).includes('home')
+    )
+    const searchTab = tabButtons.find(
+      element =>
+        element.props?.id && String(element.props.id).includes('search')
+    )
+
+    expect(homeTab?.props?.['aria-selected']).toBe('false')
+    expect(homeTab?.props?.tabIndex).toBe(-1)
+    expect(searchTab?.props?.['aria-selected']).toBe('true')
+    expect(searchTab?.props?.tabIndex).toBe(0)
+  })
+
+  it('sets aria-disabled on disabled tabs and supports custom tablist label', () => {
+    const tabs = [
+      createTabItem('home', 'Home', Text('Home content')),
+      createTabItem('disabled', 'Disabled', Text('Disabled content'), {
+        disabled: true,
+      }),
+    ]
+
+    const tabView = TabView(tabs, {
+      accessibilityLabel: 'Primary navigation tabs',
+    })
+
+    const elements = collectElements(tabView.render())
+    const tabList = elements.find(element => element.props?.role === 'tablist')
+    expect(tabList?.props?.['aria-label']).toBe('Primary navigation tabs')
+
+    const tabButtons = elements.filter(element => element.props?.role === 'tab')
+    const disabledTab = tabButtons.find(
+      element =>
+        element.props?.id && String(element.props.id).includes('disabled')
+    )
+    expect(disabledTab?.props?.['aria-disabled']).toBe('true')
   })
 })

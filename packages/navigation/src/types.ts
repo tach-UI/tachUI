@@ -144,6 +144,7 @@ export interface TabViewOptions {
   tabPlacement?: 'automatic' | 'top' | 'bottom'
   backgroundColor?: string
   accentColor?: string
+  accessibilityLabel?: string
   onSelectionChange?: (selectedId: string) => void
 }
 

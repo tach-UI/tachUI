@@ -214,7 +214,6 @@ export function TabView(
 
     const tabButtons = tabs.map(tab => {
       const isDisabled = tab.disabled || false
-      const isActive = activeTabId() === tab.id
 
       const button = Button(
         '', // We'll use custom content
@@ -238,6 +237,7 @@ export function TabView(
         cleanup: [],
         props: {},
         render: () => {
+          const isActive = activeTabId() === tab.id
           const rendered = button.render()
 
           return rendered.map((node: any) => {
@@ -354,7 +354,7 @@ export function TabView(
             props: {
               ...node.props,
               role: 'tablist',
-              'aria-label': 'Tab navigation',
+              'aria-label': options.accessibilityLabel || 'Tab navigation',
             },
           }
         })
@@ -389,12 +389,13 @@ export function TabView(
           h(
             'div',
             {
-              role: 'tabpanel',
-              id: getTabPanelId(activeTab.id),
-              'aria-labelledby': getTabButtonId(activeTab.id),
-            },
-            ...panelChildren
-          ),
+            role: 'tabpanel',
+            id: getTabPanelId(activeTab.id),
+            'aria-labelledby': getTabButtonId(activeTab.id),
+            tabIndex: 0,
+          },
+          ...panelChildren
+        ),
         ]
       },
     } as unknown as ComponentInstance
