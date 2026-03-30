@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { renderToString } from './render-to-string'
 import type { PrerenderOptions, PrerenderResult, PrerenderRoute } from './types'
+import { escapeHTML } from './escape'
 
 function resolveOutputPath(outDir: string, routePath: string): string {
   if (routePath === '/' || routePath === '') {
@@ -10,13 +11,6 @@ function resolveOutputPath(outDir: string, routePath: string): string {
 
   const clean = routePath.replace(/^\/+/, '').replace(/\/+$/, '')
   return path.join(outDir, clean, 'index.html')
-}
-
-function escapeHTML(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
 }
 
 function defaultDocument(html: string, route: PrerenderRoute): string {

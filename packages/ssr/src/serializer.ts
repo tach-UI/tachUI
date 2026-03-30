@@ -1,6 +1,7 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import { isComputed, isSignal, untrack } from '@tachui/core/reactive'
 import type { ModifierBuilderLike, SSRNodeInput } from './types'
+import { escapeAttribute, escapeHTML } from './escape'
 
 const VOID_ELEMENTS = new Set([
   'area',
@@ -144,17 +145,6 @@ function normalizeStyle(value: unknown): string {
     .filter(Boolean)
 
   return styleEntries.join(';')
-}
-
-function escapeHTML(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
-
-function escapeAttribute(text: string): string {
-  return escapeHTML(text).replace(/"/g, '&quot;')
 }
 
 function serializeAttributes(node: DOMNode): string {

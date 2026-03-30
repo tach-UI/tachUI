@@ -12,6 +12,14 @@ export default defineConfig({
         find: '@tachui/core',
         replacement: resolve(__dirname, '../core/src/index.ts'),
       },
+      {
+        find: /^@tachui\/types\/(.*)$/,
+        replacement: resolve(__dirname, '../types/src/$1.ts'),
+      },
+      {
+        find: '@tachui/types',
+        replacement: resolve(__dirname, '../types/src/index.ts'),
+      },
     ],
   },
   test: {
