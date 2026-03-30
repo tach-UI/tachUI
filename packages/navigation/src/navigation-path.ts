@@ -43,6 +43,40 @@ function cloneSegment(segment: NavigationPathSegment): NavigationPathSegment {
   return deepCloneValue(segment)
 }
 
+function normalizeLegacyTypedSegment(
+  entry: NavigationPathTypedSegment
+): NavigationPathSegment {
+  const legacyValue = (entry as Record<string, unknown>).value
+
+  if (
+    entry.type === 'string' &&
+    typeof legacyValue === 'string' &&
+    Object.keys(entry).length === 2
+  ) {
+    return legacyValue
+  }
+
+  if (
+    typeof legacyValue === 'object' &&
+    legacyValue !== null &&
+    !Array.isArray(legacyValue)
+  ) {
+    const valueRecord = deepCloneValue(legacyValue) as Record<string, unknown>
+    if ('type' in valueRecord) {
+      delete valueRecord.type
+    }
+    return {
+      type: entry.type,
+      ...valueRecord,
+    }
+  }
+
+  return {
+    type: entry.type,
+    value: deepCloneValue(legacyValue),
+  }
+}
+
 function segmentToKey(segment: NavigationPathSegment): string {
   return typeof segment === 'string' ? segment : segment.type
 }
@@ -625,7 +659,11 @@ export class NavigationPath implements INavigationPath {
           return
         }
         if (isTypedSegment(entry)) {
-          segments.push({ ...entry })
+          if ('value' in (entry as Record<string, unknown>)) {
+            segments.push(normalizeLegacyTypedSegment(entry))
+            return
+          }
+          segments.push(deepCloneValue(entry))
         }
       })
 
@@ -830,7 +868,8 @@ export class TypedNavigationPath {
       if ('value' in entry) {
         typedPath.append(entry.type, (entry as any).value)
       } else {
-        typedPath.append(entry.type, { ...entry })
+        const { type, ...payload } = entry
+        typedPath.append(type, payload)
       }
     }
 

@@ -393,6 +393,33 @@ describe('Navigation Path - Path Management and Utilities', () => {
       expect(path.entries).toEqual(['home', { type: 'product', id: 42 }])
     })
 
+    it('decodes legacy typed-wrapper format into canonical typed entries', () => {
+      const payload = JSON.stringify([
+        { type: 'product', value: { id: 42, sku: 'starter' } },
+        { type: 'review', value: 9 },
+      ])
+
+      const path = NavigationPath.decode(payload)
+
+      expect(path.entries).toEqual([
+        { type: 'product', id: 42, sku: 'starter' },
+        { type: 'review', value: 9 },
+      ])
+      expect(path.segments).toEqual(['product', 'review'])
+    })
+
+    it('decodes legacy string wrappers back to plain string segments', () => {
+      const payload = JSON.stringify([
+        { type: 'string', value: 'home' },
+        { type: 'string', value: 'settings' },
+      ])
+
+      const path = NavigationPath.decode(payload)
+
+      expect(path.entries).toEqual(['home', 'settings'])
+      expect(path.segments).toEqual(['home', 'settings'])
+    })
+
     it('deep clones nested typed segments on append', () => {
       const original = {
         type: 'product',
