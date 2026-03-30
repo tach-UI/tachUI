@@ -169,6 +169,45 @@ describe('NavigationSplitView', () => {
     cleanup()
   })
 
+  it('does not remount sidebar in two-column mode when selecting detail', async () => {
+    setViewportWidth(1024)
+    let sidebarRenderCount = 0
+    let detailRenderCount = 0
+
+    const split = NavigationSplitView<string>({
+      sidebar: context => {
+        sidebarRenderCount++
+        return VStack({
+          children: [Button('Open A', () => context.selectDetail('A')).build()],
+          spacing: 8,
+          alignment: 'leading',
+        }).build()
+      },
+      detail: context => {
+        detailRenderCount++
+        return HTML.div({
+          children: `Detail: ${context.selectedValue() ?? 'none'}`,
+        }).build()
+      },
+    })
+    const { cleanup } = mountSplitView(split)
+
+    expect(sidebarRenderCount).toBe(1)
+    expect(detailRenderCount).toBe(1)
+
+    const openAButton = Array.from(document.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Open A')
+    )
+    openAButton?.click()
+    await flush()
+
+    expect(sidebarRenderCount).toBe(1)
+    expect(detailRenderCount).toBe(2)
+    expect(document.body.textContent).toContain('Detail: A')
+
+    cleanup()
+  })
+
   it('responds to breakpoint transitions on window resize', async () => {
     vi.useFakeTimers()
     setViewportWidth(1024)

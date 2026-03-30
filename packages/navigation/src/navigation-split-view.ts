@@ -6,7 +6,7 @@
 
 import { h, mountComponentTree } from '@tachui/core'
 import type { ComponentInstance } from '@tachui/core'
-import { Button, Text, VStack, HStack } from '@tachui/primitives'
+import { Button, HTML, Text, VStack, HStack } from '@tachui/primitives'
 
 export interface NavigationSplitViewContext<TSelection = unknown> {
   selectDetail: (value: TSelection) => void
@@ -60,6 +60,33 @@ export function useNavigationSplitView<TSelection = unknown>():
 
 let navigationSplitViewIdCounter = 0
 
+function createMountHost(
+  onHostReady: (host: HTMLElement | null) => void
+): ComponentInstance {
+  const host = HTML.div({}).build()
+  const existingLifecycle = (host as any)._enhancedLifecycle ?? {}
+  const existingOnDOMReady = existingLifecycle.onDOMReady as
+    | ((elements: Map<string, Element>, primary?: Element) => void | (() => void))
+    | undefined
+
+  ;(host as any)._enhancedLifecycle = {
+    ...existingLifecycle,
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      const existingCleanup = existingOnDOMReady?.(elements, primary)
+      onHostReady(primary instanceof HTMLElement ? primary : null)
+
+      return () => {
+        onHostReady(null)
+        if (typeof existingCleanup === 'function') {
+          existingCleanup()
+        }
+      }
+    },
+  }
+
+  return host
+}
+
 export function NavigationSplitView<TSelection = unknown>(
   props: NavigationSplitViewProps<TSelection>
 ): ComponentInstance {
@@ -70,36 +97,46 @@ export function NavigationSplitView<TSelection = unknown>(
   let selectedValue: TSelection | null = null
   let mobileShowsDetail = false
   let hostElement: HTMLElement | null = null
-  let mountedContentCleanup: (() => void) | null = null
+  let shellCleanup: (() => void) | null = null
+  let sidebarRegionCleanup: (() => void) | null = null
+  let detailRegionCleanup: (() => void) | null = null
+  let sidebarRegionHost: HTMLElement | null = null
+  let detailRegionHost: HTMLElement | null = null
   let resizeDebounceTimer: number | null = null
   let lastCollapsedState = viewportWidth < breakpoint
-
-  const renderIntoHost = () => {
-    if (!hostElement) {
-      return
-    }
-
-    mountedContentCleanup?.()
-    mountedContentCleanup = mountComponentTree(buildLayout(), hostElement)
-  }
 
   const splitContext: NavigationSplitViewContext<TSelection> = {
     selectDetail: (value: TSelection) => {
       selectedValue = value
       mobileShowsDetail = true
-      renderIntoHost()
+      if (splitContext.isCollapsed()) {
+        renderShellIntoHost()
+      } else {
+        remountDetailRegion()
+      }
     },
     selectedValue: () => selectedValue,
     showSidebar: () => {
       mobileShowsDetail = false
-      renderIntoHost()
+      if (splitContext.isCollapsed()) {
+        renderShellIntoHost()
+      }
     },
     showDetail: () => {
       mobileShowsDetail = true
-      renderIntoHost()
+      if (splitContext.isCollapsed()) {
+        renderShellIntoHost()
+      } else {
+        remountDetailRegion()
+      }
     },
     isCollapsed: () => viewportWidth < breakpoint,
   }
+
+  const shouldRenderSidebar = (): boolean =>
+    !splitContext.isCollapsed() || !mobileShowsDetail
+  const shouldRenderDetail = (): boolean =>
+    !splitContext.isCollapsed() || mobileShowsDetail
 
   const buildSidebarRegion = (): ComponentInstance =>
     VStack({
@@ -131,12 +168,52 @@ export function NavigationSplitView<TSelection = unknown>(
       .width('100%')
       .build()
 
-  const buildLayout = (): ComponentInstance => {
+  const remountSidebarRegion = (): void => {
+    sidebarRegionCleanup?.()
+    sidebarRegionCleanup = null
+    if (!shouldRenderSidebar() || !sidebarRegionHost) {
+      return
+    }
+    sidebarRegionCleanup = mountComponentTree(buildSidebarRegion(), sidebarRegionHost)
+  }
+
+  const remountDetailRegion = (): void => {
+    detailRegionCleanup?.()
+    detailRegionCleanup = null
+    if (!shouldRenderDetail() || !detailRegionHost) {
+      return
+    }
+    detailRegionCleanup = mountComponentTree(buildDetailRegion(), detailRegionHost)
+  }
+
+  const buildSidebarMountHost = (): ComponentInstance =>
+    createMountHost(nextHost => {
+      sidebarRegionHost = nextHost
+      if (nextHost === null) {
+        sidebarRegionCleanup?.()
+        sidebarRegionCleanup = null
+        return
+      }
+      remountSidebarRegion()
+    })
+
+  const buildDetailMountHost = (): ComponentInstance =>
+    createMountHost(nextHost => {
+      detailRegionHost = nextHost
+      if (nextHost === null) {
+        detailRegionCleanup?.()
+        detailRegionCleanup = null
+        return
+      }
+      remountDetailRegion()
+    })
+
+  const buildLayoutShell = (): ComponentInstance => {
     if (!splitContext.isCollapsed()) {
       return HStack({
         children: [
           VStack({
-            children: [buildSidebarRegion()],
+            children: [buildSidebarMountHost()],
             spacing: 0,
             alignment: 'leading',
           })
@@ -145,7 +222,7 @@ export function NavigationSplitView<TSelection = unknown>(
             .border({ width: 1, color: '#e5e7eb' })
             .build(),
           VStack({
-            children: [buildDetailRegion()],
+            children: [buildDetailMountHost()],
             spacing: 0,
             alignment: 'leading',
           })
@@ -163,7 +240,15 @@ export function NavigationSplitView<TSelection = unknown>(
     }
 
     if (!mobileShowsDetail) {
-      return buildSidebarRegion()
+      return VStack({
+        children: [buildSidebarMountHost()],
+        spacing: 0,
+        alignment: 'leading',
+      })
+        .role('region')
+        .ariaLabel('NavigationSplitView sidebar')
+        .width('100%')
+        .build()
     }
 
     return VStack({
@@ -180,7 +265,7 @@ export function NavigationSplitView<TSelection = unknown>(
           .fontWeight('600')
           .padding({ bottom: 8 })
           .build(),
-        buildDetailRegion(),
+        buildDetailMountHost(),
       ],
       spacing: 8,
       alignment: 'leading',
@@ -189,6 +274,19 @@ export function NavigationSplitView<TSelection = unknown>(
       .ariaLabel('NavigationSplitView detail')
       .width('100%')
       .build()
+  }
+
+  const renderShellIntoHost = (): void => {
+    if (!hostElement) {
+      return
+    }
+
+    sidebarRegionCleanup?.()
+    sidebarRegionCleanup = null
+    detailRegionCleanup?.()
+    detailRegionCleanup = null
+    shellCleanup?.()
+    shellCleanup = mountComponentTree(buildLayoutShell(), hostElement)
   }
 
   const component = {
@@ -212,7 +310,7 @@ export function NavigationSplitView<TSelection = unknown>(
       }
 
       hostElement = primary
-      renderIntoHost()
+      renderShellIntoHost()
 
       const onResize = () => {
         if (resizeDebounceTimer !== null) {
@@ -224,7 +322,7 @@ export function NavigationSplitView<TSelection = unknown>(
           const nextCollapsedState = viewportWidth < breakpoint
           if (nextCollapsedState !== lastCollapsedState) {
             lastCollapsedState = nextCollapsedState
-            renderIntoHost()
+            renderShellIntoHost()
           }
           resizeDebounceTimer = null
         }, 100)
@@ -242,8 +340,14 @@ export function NavigationSplitView<TSelection = unknown>(
             resizeDebounceTimer = null
           }
         }
-        mountedContentCleanup?.()
-        mountedContentCleanup = null
+        sidebarRegionCleanup?.()
+        sidebarRegionCleanup = null
+        detailRegionCleanup?.()
+        detailRegionCleanup = null
+        shellCleanup?.()
+        shellCleanup = null
+        sidebarRegionHost = null
+        detailRegionHost = null
         hostElement = null
       }
     },
