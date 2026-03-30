@@ -26,6 +26,7 @@ import {
   sheet,
   fullScreenCover,
   popover,
+  confirmationDialog,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
   hasNavigationModifiers,
@@ -34,6 +35,7 @@ import {
   onNavigationModifierChange,
   NavigationModifierUtils,
 } from '../src/navigation-modifiers'
+import { useNavigationEnvironment } from '../src/navigation-environment'
 
 describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
   let mockComponent: any
@@ -53,6 +55,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       .forEach(node => node.remove())
     document
       .querySelectorAll('[data-tachui-fullscreen-cover-root="true"]')
+      .forEach(node => node.remove())
+    document
+      .querySelectorAll('[data-tachui-confirmation-dialog-root="true"]')
       .forEach(node => node.remove())
   })
 
@@ -1467,6 +1472,158 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
     })
   })
 
+  describe('ConfirmationDialog Modifier', () => {
+    it('renders dialog title and provided action buttons', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = confirmationDialog(
+        HTML.div({ children: 'Host' }).build(),
+        'Delete item?',
+        isPresented,
+        [
+          { label: 'Delete', role: 'destructive' },
+          { label: 'Keep', role: 'default' },
+          { label: 'Cancel', role: 'cancel' },
+        ]
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const title = document.querySelector(
+        '[data-tachui-confirmation-dialog-title="true"]'
+      ) as HTMLElement | null
+      const buttons = document.querySelectorAll(
+        '[data-tachui-confirmation-dialog-action="true"]'
+      )
+
+      expect(title?.textContent).toBe('Delete item?')
+      expect(buttons).toHaveLength(3)
+
+      cleanup()
+      container.remove()
+    })
+
+    it('dismisses without action when cancel role button is tapped', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const destructiveAction = vi.fn()
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = confirmationDialog(
+        HTML.div({ children: 'Host' }).build(),
+        'Delete item?',
+        isPresented,
+        [
+          { label: 'Delete', role: 'destructive', action: destructiveAction },
+          { label: 'Cancel', role: 'cancel' },
+        ]
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const cancelButton = document.querySelector(
+        '[data-tachui-confirmation-dialog-action="true"][data-role="cancel"]'
+      ) as HTMLButtonElement | null
+      cancelButton?.click()
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(destructiveAction).not.toHaveBeenCalled()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('styles destructive role action with red text', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = confirmationDialog(
+        HTML.div({ children: 'Host' }).build(),
+        'Delete item?',
+        isPresented,
+        [{ label: 'Delete', role: 'destructive' }]
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const destructiveButton = document.querySelector(
+        '[data-tachui-confirmation-dialog-action="true"][data-role="destructive"]'
+      ) as HTMLButtonElement | null
+      expect(destructiveButton?.style.color).toBe('rgb(211, 47, 47)')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('fires action callback and closes when confirm action is tapped', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const onDelete = vi.fn()
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = confirmationDialog(
+        HTML.div({ children: 'Host' }).build(),
+        'Delete item?',
+        isPresented,
+        [{ label: 'Delete', role: 'destructive', action: onDelete }]
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const destructiveButton = document.querySelector(
+        '[data-tachui-confirmation-dialog-action="true"][data-role="destructive"]'
+      ) as HTMLButtonElement | null
+      destructiveButton?.click()
+      await flushMicrotasks()
+
+      expect(onDelete).toHaveBeenCalledTimes(1)
+      expect(isPresented()).toBe(false)
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('dismisses when backdrop is tapped without firing actions', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const onDelete = vi.fn()
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = confirmationDialog(
+        HTML.div({ children: 'Host' }).build(),
+        'Delete item?',
+        isPresented,
+        [{ label: 'Delete', role: 'destructive', action: onDelete }]
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const backdrop = document.querySelector(
+        '[data-tachui-confirmation-dialog-backdrop="true"]'
+      ) as HTMLDivElement | null
+      backdrop?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(onDelete).not.toHaveBeenCalled()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+  })
+
   describe('Popover Modifier', () => {
     const mockAnchorRect = (
       element: Element,
@@ -1833,6 +1990,131 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       expect(popoverNode?.style.maxWidth).toBe('420px')
       expect(popoverNode?.getAttribute('aria-label')).toBe('Help popover')
       expect(popoverNode?.hasAttribute('aria-modal')).toBe(false)
+
+      cleanup()
+      container.remove()
+    })
+  })
+
+  describe('Modal Dismiss Environment', () => {
+    const mockAnchorRect = (
+      element: Element,
+      rect: {
+        top: number
+        left: number
+        width: number
+        height: number
+      }
+    ) => {
+      Object.defineProperty(element, 'getBoundingClientRect', {
+        value: () => ({
+          x: rect.left,
+          y: rect.top,
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+          right: rect.left + rect.width,
+          bottom: rect.top + rect.height,
+          toJSON: () => ({}),
+        }),
+        configurable: true,
+      })
+    }
+
+    it('dismiss() closes an active sheet', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      let dismiss: (() => void) | null = null
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => {
+          dismiss = useNavigationEnvironment().dismiss
+          return HTML.div({ children: 'Sheet content' }).build()
+        }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      expect(dismiss).not.toBeNull()
+      dismiss?.()
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('dismiss() closes an active fullScreenCover', async () => {
+      const [isPresented] = createSignal(true)
+      let dismiss: (() => void) | null = null
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = fullScreenCover(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => {
+          dismiss = useNavigationEnvironment().dismiss
+          return HTML.div({ children: 'Cover content' }).build()
+        }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      dismiss?.()
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(
+        document.querySelector('[data-tachui-fullscreen-cover-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+      container.remove()
+    })
+
+    it('dismiss() closes an active popover', async () => {
+      const [isPresented] = createSignal(true)
+      let dismiss: (() => void) | null = null
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = popover(
+        HTML.button({ children: 'Info' }).build(),
+        isPresented,
+        'top',
+        () => {
+          dismiss = useNavigationEnvironment().dismiss
+          return HTML.div({ children: 'Popover content' }).build()
+        }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      const anchor = container.querySelector('button')
+      expect(anchor).toBeTruthy()
+      mockAnchorRect(anchor!, { top: 120, left: 120, width: 80, height: 40 })
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      dismiss?.()
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(
+        document.querySelector('[data-tachui-popover-root="true"]')
+      ).toBeNull()
 
       cleanup()
       container.remove()

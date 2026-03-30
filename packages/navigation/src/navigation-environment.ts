@@ -16,7 +16,10 @@ interface NavigationEnvironmentState {
   context: NavigationContext | null
   router: NavigationRouter | null
   stackId: string | null
+  dismiss: () => void
 }
+
+const noopDismiss = (): void => {}
 
 /**
  * Global navigation environment store
@@ -27,17 +30,44 @@ class NavigationEnvironmentStore {
     context: null,
     router: null,
     stackId: null,
+    dismiss: noopDismiss,
   }
 
   private _listeners: Set<(state: NavigationEnvironmentState) => void> =
     new Set()
   private _contextStack: NavigationContext[] = []
+  private _dismissStack: Array<() => void> = []
 
   /**
    * Get the current navigation state
    */
   get currentState(): NavigationEnvironmentState {
     return { ...this._currentState }
+  }
+
+  private _syncState(): void {
+    const currentContext =
+      this._contextStack[this._contextStack.length - 1] || null
+    const dismiss =
+      this._dismissStack[this._dismissStack.length - 1] || noopDismiss
+
+    this._currentState = {
+      context: currentContext,
+      router: currentContext ? createNavigationRouter(currentContext) : null,
+      stackId: currentContext?.navigationId || null,
+      dismiss,
+    }
+
+    if (!this._currentState.context && this._dismissStack.length === 0) {
+      delete (globalThis as any).__navigationEnvironment
+      return
+    }
+
+    ;(globalThis as any).__navigationEnvironment = {
+      context: this._currentState.context,
+      router: this._currentState.router,
+      dismiss,
+    }
   }
 
   /**
@@ -52,17 +82,23 @@ class NavigationEnvironmentStore {
       this._contextStack.pop()
     }
 
-    // Update current state to the top of the stack
-    const currentContext =
-      this._contextStack[this._contextStack.length - 1] || null
-
-    this._currentState = {
-      context: currentContext,
-      router: currentContext ? createNavigationRouter(currentContext) : null,
-      stackId: currentContext?.navigationId || null,
-    }
-
+    this._syncState()
     this._notifyListeners()
+  }
+
+  pushDismiss(dismiss: () => void): () => void {
+    this._dismissStack.push(dismiss)
+    this._syncState()
+    this._notifyListeners()
+
+    return () => {
+      const stackIndex = this._dismissStack.lastIndexOf(dismiss)
+      if (stackIndex >= 0) {
+        this._dismissStack.splice(stackIndex, 1)
+      }
+      this._syncState()
+      this._notifyListeners()
+    }
   }
 
   /**
@@ -94,10 +130,12 @@ class NavigationEnvironmentStore {
    */
   clear(): void {
     this._contextStack = []
+    this._dismissStack = []
     this._currentState = {
       context: null,
       router: null,
       stackId: null,
+      dismiss: noopDismiss,
     }
     this._notifyListeners()
   }
@@ -147,12 +185,18 @@ export function _setNavigationEnvironmentContext(
   navigationEnvironment.setContext(context)
 }
 
+export function _pushNavigationEnvironmentDismiss(
+  dismiss: () => void
+): () => void {
+  return navigationEnvironment.pushDismiss(dismiss)
+}
+
 /**
  * Get the current navigation context from environment
  */
 export function useNavigationEnvironmentContext(): NavigationContext | null {
   const env = (globalThis as any).__navigationEnvironment
-  return env?.context || null
+  return env?.context || navigationEnvironment.currentState.context || null
 }
 
 /**
@@ -160,7 +204,7 @@ export function useNavigationEnvironmentContext(): NavigationContext | null {
  */
 export function useNavigationEnvironmentRouter(): NavigationRouter | null {
   const env = (globalThis as any).__navigationEnvironment
-  return env?.router || null
+  return env?.router || navigationEnvironment.currentState.router || null
 }
 
 /**
@@ -174,14 +218,29 @@ export function useNavigationEnvironmentState():
     }
   | undefined {
   const env = (globalThis as any).__navigationEnvironment
-  if (!env || !env.context) {
+  const context = env?.context || navigationEnvironment.currentState.context
+  if (!context) {
     return undefined
   }
 
   return {
-    canGoBack: env.context.canGoBack || false,
-    canGoForward: env.context.canGoForward || false,
-    currentPath: env.context.currentPath || '/',
+    canGoBack: context.canGoBack || false,
+    canGoForward: context.canGoForward || false,
+    currentPath: context.currentPath || '/',
+  }
+}
+
+export function useNavigationEnvironment(): {
+  context: NavigationContext | null
+  router: NavigationRouter | null
+  dismiss: () => void
+} {
+  const env = (globalThis as any).__navigationEnvironment
+  const fallback = navigationEnvironment.currentState
+  return {
+    context: env?.context || fallback.context || null,
+    router: env?.router || fallback.router || null,
+    dismiss: typeof env?.dismiss === 'function' ? env.dismiss : fallback.dismiss,
   }
 }
 
@@ -203,9 +262,11 @@ export function NavigationEnvironmentProvider({
 }): ComponentInstance {
   // Set the environment when this provider is active
   if (context || router) {
+    const existingDismiss = navigationEnvironment.currentState.dismiss
     ;(globalThis as any).__navigationEnvironment = {
       context: context || null,
       router: router || null,
+      dismiss: existingDismiss,
     }
   }
 
@@ -258,9 +319,11 @@ export function withNavigationEnvironment(
   }
 
   // Set as current global environment
+  const existingDismiss = navigationEnvironment.currentState.dismiss
   ;(globalThis as any).__navigationEnvironment = {
     context: environment.context || null,
     router: environment.router || null,
+    dismiss: existingDismiss,
   }
 
   return component
@@ -279,9 +342,27 @@ export function hasNavigationEnvironment(): boolean {
 export function getNavigationEnvironment(): {
   context: NavigationContext | null
   router: NavigationRouter | null
+  dismiss: () => void
 } | null {
   const env = (globalThis as any).__navigationEnvironment
-  return env || null
+  if (env) {
+    return {
+      context: env.context || null,
+      router: env.router || null,
+      dismiss: typeof env.dismiss === 'function' ? env.dismiss : noopDismiss,
+    }
+  }
+
+  const fallback = navigationEnvironment.currentState
+  if (!fallback.context && !fallback.router) {
+    return null
+  }
+
+  return {
+    context: fallback.context,
+    router: fallback.router,
+    dismiss: fallback.dismiss,
+  }
 }
 
 /**

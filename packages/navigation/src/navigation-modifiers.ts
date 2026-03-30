@@ -14,6 +14,7 @@ import {
 import type { Accessor, Binding, ComponentInstance } from '@tachui/core'
 import { HStack, HTML, VStack } from '@tachui/primitives'
 import type { NavigationContext } from './types'
+import { _pushNavigationEnvironmentDismiss } from './navigation-environment'
 
 /**
  * Navigation modifier configuration
@@ -95,6 +96,14 @@ export interface PopoverPresentationOptions {
   maxWidth?: string
   ariaLabel?: string
   onDismiss?: () => void
+}
+
+export type ConfirmationDialogButtonRole = 'default' | 'cancel' | 'destructive'
+
+export interface ConfirmationDialogAction {
+  label: string
+  role?: ConfirmationDialogButtonRole
+  action?: () => void
 }
 
 /**
@@ -654,6 +663,15 @@ function dismissPresentedState(
   return false
 }
 
+function setupModalDismissEnvironment(
+  isPresented: SheetPresentationState,
+  options: SheetPresentationOptions
+): () => void {
+  return _pushNavigationEnvironmentDismiss(() => {
+    dismissPresentedState(isPresented, options)
+  })
+}
+
 function setupSheetPresentation(
   isPresented: SheetPresentationState,
   content: () => ComponentInstance,
@@ -677,6 +695,7 @@ function setupSheetPresentation(
   const transitionDurationMs = options.transitionDurationMs ?? 220
   let removeDetentDragListeners: (() => void) | null = null
   let removeDetentResizeListener: (() => void) | null = null
+  let removeDismissScope: (() => void) | null = null
 
   const clearTransitionQueue = () => {
     if (transitionFrameId !== null) {
@@ -738,6 +757,10 @@ function setupSheetPresentation(
     if (removeDetentResizeListener) {
       removeDetentResizeListener()
       removeDetentResizeListener = null
+    }
+    if (removeDismissScope) {
+      removeDismissScope()
+      removeDismissScope = null
     }
 
     if (
@@ -844,6 +867,8 @@ function setupSheetPresentation(
       sheetHost!.style.height = `${height}px`
       sheetHost!.style.maxHeight = `${Math.round(window.innerHeight * 0.95)}px`
     }
+
+    removeDismissScope = setupModalDismissEnvironment(isPresented, options)
 
     const sheetContent = content()
     const requestedDetents = (((sheetContent as any)._sheetPresentationDetents
@@ -1193,6 +1218,7 @@ function setupPopoverPresentation(
   let disposePopoverContent: (() => void) | null = null
   let initialPositionFrameId: number | null = null
   let isMounted = false
+  let removeDismissScope: (() => void) | null = null
   const offset = options.offset ?? 12
 
   const applyArrowStyle = (edge: PopoverArrowEdge) => {
@@ -1321,6 +1347,10 @@ function setupPopoverPresentation(
       cancelAnimationFrame(initialPositionFrameId)
       initialPositionFrameId = null
     }
+    if (removeDismissScope) {
+      removeDismissScope()
+      removeDismissScope = null
+    }
 
     if (portalRoot) {
       portalRoot.remove()
@@ -1371,6 +1401,10 @@ function setupPopoverPresentation(
     popoverHost.append(popoverArrow, popoverContentHost)
     portalRoot.append(popoverHost)
     document.body.appendChild(portalRoot)
+    removeDismissScope = setupModalDismissEnvironment(isPresented, {
+      dismissOnEscape: options.dismissOnEscape,
+      onDismiss: options.onDismiss,
+    })
 
     disposePopoverContent = mountComponentTree(content(), popoverContentHost)
 
@@ -1507,6 +1541,7 @@ function setupFullScreenCoverPresentation(
   let removeFocusTrapListener: (() => void) | null = null
   let focusFrameId: number | null = null
   let isMounted = false
+  let removeDismissScope: (() => void) | null = null
 
   const getFocusableElements = (): HTMLElement[] => {
     if (!contentHost) return []
@@ -1531,6 +1566,10 @@ function setupFullScreenCoverPresentation(
     if (focusFrameId !== null) {
       cancelAnimationFrame(focusFrameId)
       focusFrameId = null
+    }
+    if (removeDismissScope) {
+      removeDismissScope()
+      removeDismissScope = null
     }
 
     if (portalRoot) {
@@ -1577,6 +1616,9 @@ function setupFullScreenCoverPresentation(
 
     portalRoot.appendChild(contentHost)
     document.body.appendChild(portalRoot)
+    removeDismissScope = setupModalDismissEnvironment(isPresented, {
+      onDismiss: options.onDismiss,
+    })
     previousActiveElement =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
@@ -1720,6 +1762,196 @@ export function popover(
 
       return () => {
         popoverCleanup()
+        if (typeof existingCleanup === 'function') {
+          existingCleanup()
+        }
+      }
+    },
+  }
+
+  return component
+}
+
+function setupConfirmationDialogPresentation(
+  isPresented: SheetPresentationState,
+  title: string,
+  actions: ConfirmationDialogAction[]
+): () => void {
+  if (typeof document === 'undefined') {
+    return () => {}
+  }
+
+  let portalRoot: HTMLDivElement | null = null
+  let backdrop: HTMLDivElement | null = null
+  let dialogHost: HTMLDivElement | null = null
+  let removeEscapeListener: (() => void) | null = null
+  let removeDismissScope: (() => void) | null = null
+  let isMounted = false
+
+  const dismissOptions: SheetPresentationOptions = {}
+  const dismiss = () => {
+    dismissPresentedState(isPresented, dismissOptions)
+  }
+
+  const unmountPortal = () => {
+    if (portalRoot) {
+      portalRoot.remove()
+      portalRoot = null
+    }
+    if (removeEscapeListener) {
+      removeEscapeListener()
+      removeEscapeListener = null
+    }
+    if (removeDismissScope) {
+      removeDismissScope()
+      removeDismissScope = null
+    }
+    backdrop = null
+    dialogHost = null
+    isMounted = false
+  }
+
+  const mountPortal = () => {
+    if (isMounted) return
+
+    portalRoot = document.createElement('div')
+    portalRoot.setAttribute('data-tachui-confirmation-dialog-root', 'true')
+    portalRoot.style.position = 'fixed'
+    portalRoot.style.inset = '0'
+    portalRoot.style.display = 'flex'
+    portalRoot.style.alignItems = 'flex-end'
+    portalRoot.style.justifyContent = 'center'
+    portalRoot.style.zIndex = '1300'
+    portalRoot.style.pointerEvents = 'none'
+
+    backdrop = document.createElement('div')
+    backdrop.setAttribute('data-tachui-confirmation-dialog-backdrop', 'true')
+    backdrop.style.position = 'absolute'
+    backdrop.style.inset = '0'
+    backdrop.style.background = 'rgba(0, 0, 0, 0.45)'
+    backdrop.style.pointerEvents = 'auto'
+    backdrop.addEventListener('click', dismiss)
+
+    dialogHost = document.createElement('div')
+    dialogHost.setAttribute('data-tachui-confirmation-dialog-content', 'true')
+    dialogHost.setAttribute('role', 'dialog')
+    dialogHost.setAttribute('aria-modal', 'true')
+    dialogHost.style.position = 'relative'
+    dialogHost.style.pointerEvents = 'auto'
+    dialogHost.style.width = 'min(100%, 520px)'
+    dialogHost.style.margin = '0 12px 12px'
+    dialogHost.style.borderRadius = '14px'
+    dialogHost.style.background = '#ffffff'
+    dialogHost.style.border = '1px solid rgba(0, 0, 0, 0.12)'
+    dialogHost.style.boxShadow = '0 20px 45px rgba(0, 0, 0, 0.24)'
+    dialogHost.style.overflow = 'hidden'
+    dialogHost.style.display = 'flex'
+    dialogHost.style.flexDirection = 'column'
+
+    const titleNode = document.createElement('div')
+    titleNode.setAttribute('data-tachui-confirmation-dialog-title', 'true')
+    titleNode.textContent = title
+    titleNode.style.padding = '14px 16px 10px'
+    titleNode.style.fontSize = '15px'
+    titleNode.style.fontWeight = '600'
+    titleNode.style.textAlign = 'center'
+    titleNode.style.borderBottom = '1px solid rgba(0, 0, 0, 0.08)'
+    dialogHost.appendChild(titleNode)
+
+    actions.forEach(actionItem => {
+      const actionButton = document.createElement('button')
+      const role = actionItem.role ?? 'default'
+      actionButton.setAttribute('type', 'button')
+      actionButton.setAttribute('data-tachui-confirmation-dialog-action', 'true')
+      actionButton.setAttribute('data-role', role)
+      actionButton.textContent = actionItem.label
+      actionButton.style.border = '0'
+      actionButton.style.background = 'transparent'
+      actionButton.style.padding = '14px 16px'
+      actionButton.style.cursor = 'pointer'
+      actionButton.style.fontSize = '16px'
+      actionButton.style.borderBottom = '1px solid rgba(0, 0, 0, 0.06)'
+
+      if (role === 'destructive') {
+        actionButton.style.color = '#d32f2f'
+        actionButton.style.fontWeight = '600'
+      } else if (role === 'cancel') {
+        actionButton.style.fontWeight = '700'
+      } else {
+        actionButton.style.color = '#111827'
+      }
+
+      actionButton.addEventListener('click', () => {
+        if (role !== 'cancel') {
+          actionItem.action?.()
+        }
+        dismiss()
+      })
+
+      dialogHost!.appendChild(actionButton)
+    })
+
+    portalRoot.append(backdrop, dialogHost)
+    document.body.appendChild(portalRoot)
+
+    const escapeListener = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        dismiss()
+      }
+    }
+    document.addEventListener('keydown', escapeListener)
+    removeEscapeListener = () => {
+      document.removeEventListener('keydown', escapeListener)
+    }
+
+    removeDismissScope = setupModalDismissEnvironment(isPresented, dismissOptions)
+    isMounted = true
+  }
+
+  const presentationEffect = createEffect(() => {
+    const presented = readPresentedState(isPresented)
+    if (presented) {
+      mountPortal()
+      return
+    }
+    unmountPortal()
+  })
+
+  return () => {
+    presentationEffect.dispose()
+    unmountPortal()
+  }
+}
+
+export function confirmationDialog(
+  component: ComponentInstance,
+  title: string,
+  isPresented: SheetPresentationState,
+  actions: ConfirmationDialogAction[]
+): ComponentInstance {
+  ;(component as any)._navigationModifiers = {
+    ...(component as any)._navigationModifiers,
+    confirmationDialog: { title, isPresented, actions },
+  }
+
+  const existingLifecycle = (component as any)._enhancedLifecycle ?? {}
+  const existingOnDOMReady = existingLifecycle.onDOMReady as
+    | ((elements: Map<string, Element>, primary?: Element) => void | (() => void))
+    | undefined
+
+  ;(component as any)._enhancedLifecycle = {
+    ...existingLifecycle,
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      const existingCleanup = existingOnDOMReady?.(elements, primary)
+      const dialogCleanup = setupConfirmationDialogPresentation(
+        isPresented,
+        title,
+        actions
+      )
+
+      return () => {
+        dialogCleanup()
         if (typeof existingCleanup === 'function') {
           existingCleanup()
         }
@@ -1905,6 +2137,11 @@ declare module '@tachui/core' {
       content: () => ComponentInstance,
       options?: PopoverPresentationOptions
     ): ComponentInstance
+    confirmationDialog(
+      title: string,
+      isPresented: Accessor<boolean> | Binding<boolean>,
+      actions: ConfirmationDialogAction[]
+    ): ComponentInstance
   }
 }
 
@@ -1986,5 +2223,13 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
     options?: PopoverPresentationOptions
   ) {
     return popover(this, isPresented, arrowEdge, content, options)
+  }
+
+  proto.confirmationDialog = function(
+    title: string,
+    isPresented: Accessor<boolean> | Binding<boolean>,
+    actions: ConfirmationDialogAction[]
+  ) {
+    return confirmationDialog(this, title, isPresented, actions)
   }
 }
