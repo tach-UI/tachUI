@@ -74,7 +74,7 @@ function stripXMLDeclarations(markup: string): string {
 function hasUnsafeProtocol(value: string): boolean {
   const normalized = value
     .toLowerCase()
-    .replace(/[\u0000-\u0020]+/g, '')
+    .replace(/[\u0000-\u0020]+/g, '') // eslint-disable-line no-control-regex -- intentional: strips null bytes and control chars to defeat javascript:/data: bypass attacks
   return normalized.includes('javascript:') || normalized.includes('data:')
 }
 
