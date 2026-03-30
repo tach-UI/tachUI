@@ -124,6 +124,7 @@ class NavigationModifierManager {
 
 // Global modifier manager
 const navigationModifierManager = new NavigationModifierManager()
+const activeSheetStack: string[] = []
 
 /**
  * .navigationTitle() modifier
@@ -354,6 +355,7 @@ function setupSheetPresentation(
   let previousActiveElement: HTMLElement | null = null
   let removeEscapeListener: (() => void) | null = null
   let isMounted = false
+  const sheetId = `sheet-${Math.random().toString(36).slice(2, 10)}`
   let transitionFrameId: number | null = null
   let focusFrameId: number | null = null
   let isTransitionQueued = false
@@ -403,6 +405,11 @@ function setupSheetPresentation(
       portalRoot = null
     }
 
+    const stackIndex = activeSheetStack.lastIndexOf(sheetId)
+    if (stackIndex >= 0) {
+      activeSheetStack.splice(stackIndex, 1)
+    }
+
     if (removeEscapeListener) {
       removeEscapeListener()
       removeEscapeListener = null
@@ -429,6 +436,7 @@ function setupSheetPresentation(
 
     portalRoot = document.createElement('div')
     portalRoot.setAttribute('data-tachui-sheet-root', 'true')
+    portalRoot.setAttribute('data-tachui-sheet-id', sheetId)
     portalRoot.style.position = 'fixed'
     portalRoot.style.inset = '0'
     portalRoot.style.zIndex = String(options.zIndex ?? 1000)
@@ -470,7 +478,9 @@ function setupSheetPresentation(
 
     if (options.dismissOnEscape !== false) {
       const escapeListener = (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
+        if (event.key === 'Escape' && activeSheetStack.at(-1) === sheetId) {
+          event.preventDefault()
+          event.stopPropagation()
           dismissPresentedState(isPresented, options)
         }
       }
@@ -482,6 +492,7 @@ function setupSheetPresentation(
 
     portalRoot.append(backdrop, sheetHost)
     document.body.appendChild(portalRoot)
+    activeSheetStack.push(sheetId)
 
     previousActiveElement =
       document.activeElement instanceof HTMLElement

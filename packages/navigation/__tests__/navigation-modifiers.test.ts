@@ -408,6 +408,54 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       container.remove()
       setIsPresented(false)
     })
+
+    it('dismisses only the topmost sheet on Escape when stacked', async () => {
+      const [isFirstPresented, setFirstPresented] = createSignal(true)
+      const [isSecondPresented, setSecondPresented] = createSignal(true)
+      const firstContainer = document.createElement('div')
+      const secondContainer = document.createElement('div')
+      document.body.append(firstContainer, secondContainer)
+
+      const firstComponent = sheet(
+        HTML.div({ children: 'First host' }).build(),
+        isFirstPresented,
+        () => HTML.div({ children: 'First sheet' }).build()
+      )
+
+      const secondComponent = sheet(
+        HTML.div({ children: 'Second host' }).build(),
+        isSecondPresented,
+        () => HTML.div({ children: 'Second sheet' }).build()
+      )
+
+      const cleanupFirst = mountComponentTree(firstComponent, firstContainer)
+      const cleanupSecond = mountComponentTree(secondComponent, secondContainer)
+      await flushMicrotasks()
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushMicrotasks()
+
+      expect(isSecondPresented()).toBe(false)
+      expect(isFirstPresented()).toBe(true)
+      expect(
+        document.querySelectorAll('[data-tachui-sheet-root="true"]')
+      ).toHaveLength(1)
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushMicrotasks()
+
+      expect(isFirstPresented()).toBe(false)
+      expect(
+        document.querySelectorAll('[data-tachui-sheet-root="true"]')
+      ).toHaveLength(0)
+
+      cleanupSecond()
+      cleanupFirst()
+      firstContainer.remove()
+      secondContainer.remove()
+      setFirstPresented(false)
+      setSecondPresented(false)
+    })
   })
 
   describe('Popover Modifier', () => {
