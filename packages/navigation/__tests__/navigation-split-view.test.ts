@@ -231,6 +231,79 @@ describe('NavigationSplitView', () => {
     cleanup()
   })
 
+  it('transitions from three-column to two-column layout on resize below 1024px', async () => {
+    vi.useFakeTimers()
+    setViewportWidth(1200)
+    const split = createThreeColumnSplitView()
+    const { cleanup } = mountSplitView(split)
+
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView three-column"]')
+    ).toBeTruthy()
+
+    setViewportWidth(900)
+    window.dispatchEvent(new Event('resize'))
+    vi.advanceTimersByTime(120)
+    await flush()
+
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView three-column"]')
+    ).toBeNull()
+    expect(
+      document.querySelector('[aria-label="NavigationSplitView two-column"]')
+    ).toBeTruthy()
+
+    cleanup()
+  })
+
+  it('does not remount sidebar or content when selecting detail in three-column mode', async () => {
+    setViewportWidth(1200)
+    let sidebarRenderCount = 0
+    let contentRenderCount = 0
+    let detailRenderCount = 0
+
+    const split = NavigationSplitView<string>({
+      sidebar: context => {
+        sidebarRenderCount++
+        return VStack({
+          children: [Button('Choose A', () => context.selectDetail('A')).build()],
+          spacing: 8,
+          alignment: 'leading',
+        }).build()
+      },
+      content: context => {
+        contentRenderCount++
+        return HTML.div({
+          children: `Content: ${context.selectedValue() ?? 'none'}`,
+        }).build()
+      },
+      detail: context => {
+        detailRenderCount++
+        return HTML.div({
+          children: `Detail: ${context.selectedValue() ?? 'none'}`,
+        }).build()
+      },
+    })
+    const { cleanup } = mountSplitView(split)
+
+    expect(sidebarRenderCount).toBe(1)
+    expect(contentRenderCount).toBe(1)
+    expect(detailRenderCount).toBe(1)
+
+    const chooseAButton = Array.from(document.querySelectorAll('button')).find(
+      button => button.textContent?.includes('Choose A')
+    )
+    chooseAButton?.click()
+    await flush()
+
+    expect(sidebarRenderCount).toBe(1)
+    expect(contentRenderCount).toBe(1)
+    expect(detailRenderCount).toBe(2)
+    expect(document.body.textContent).toContain('Detail: A')
+
+    cleanup()
+  })
+
   it('renders sidebar-first layout below breakpoint', () => {
     setViewportWidth(600)
     const split = createSampleSplitView()

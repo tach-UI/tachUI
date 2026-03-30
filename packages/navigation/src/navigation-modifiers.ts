@@ -641,6 +641,7 @@ function wrapComponentWithToolbar(
         input.style.border = '1px solid #d1d5db'
         input.style.borderRadius = '8px'
         input.style.outline = 'none'
+        input.setAttribute('aria-label', 'Search')
         input.value = readSearchState(config.text)
 
         const clearButton = document.createElement('button')
@@ -869,7 +870,6 @@ function wrapComponentWithToolbar(
             input.value = currentValue
           }
           clearButton.style.display = currentValue ? 'inline-flex' : 'none'
-          renderScopeSegments()
           renderSuggestions(currentValue)
         })
 

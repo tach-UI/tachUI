@@ -632,6 +632,46 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       container.remove()
     })
 
+    it('hides scope segments when search field loses focus', async () => {
+      const [searchText] = createSignal('')
+      const [scope] = createSignal('all')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const outside = document.createElement('button')
+      document.body.appendChild(outside)
+
+      const component = searchScopes(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        scope,
+        [
+          { value: 'all', label: 'All' },
+          { value: 'recent', label: 'Recent' },
+        ]
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      const scopesContainer = document.querySelector(
+        '[data-tachui-search-scopes="true"]'
+      ) as HTMLDivElement | null
+
+      input!.focus()
+      await flushMicrotasks()
+      expect(scopesContainer?.style.display).toBe('inline-flex')
+
+      outside.focus()
+      input!.dispatchEvent(new Event('blur', { bubbles: true }))
+      await flushMacrotasks()
+      expect(scopesContainer?.style.display).toBe('none')
+
+      outside.remove()
+      cleanup()
+      container.remove()
+    })
+
     it('uses initial scope signal value as default active selection', async () => {
       const [searchText] = createSignal('')
       const [scope] = createSignal('recent')

@@ -239,7 +239,7 @@ export function NavigationSplitView<TSelection = unknown>(
     VStack({
       children: [
         withSplitViewContext(splitContext as NavigationSplitViewContext, () =>
-          props.content ? props.content(splitContext) : HTML.div({}).build()
+          props.content!(splitContext)
         ),
       ],
       spacing: 0,
