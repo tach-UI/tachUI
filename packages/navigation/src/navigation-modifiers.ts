@@ -33,10 +33,12 @@ type SheetPresentationState = Accessor<boolean> | Binding<boolean>
 
 export interface SheetPresentationOptions {
   dismissOnBackdropTap?: boolean
+  dismissOnEscape?: boolean
   backdropColor?: string
   transitionDurationMs?: number
   maxWidth?: string
   zIndex?: number
+  ariaLabel?: string
   onDismiss?: () => void
 }
 
@@ -301,27 +303,27 @@ function readPresentedState(isPresented: SheetPresentationState): boolean {
 function dismissPresentedState(
   isPresented: SheetPresentationState,
   options: SheetPresentationOptions
-): void {
+): boolean {
   if (typeof isPresented !== 'function') {
     isPresented.set(false)
     options.onDismiss?.()
-    return
+    return true
   }
 
   if (isSignal(isPresented)) {
     const signal = getSignalImpl(isPresented)
-    signal?.set(false)
-    options.onDismiss?.()
-    return
+    if (signal) {
+      signal.set(false)
+      options.onDismiss?.()
+      return true
+    }
   }
 
+  console.error(
+    '.sheet dismiss requires a writable signal accessor or Binding<boolean>. Computed/read-only accessors are not dismissible.'
+  )
   options.onDismiss?.()
-
-  if (process.env.NODE_ENV !== 'production') {
-    console.warn(
-      '.sheet backdrop dismiss requires a Binding<boolean> or signal accessor to update presentation state.'
-    )
-  }
+  return false
 }
 
 function setupSheetPresentation(
@@ -337,15 +339,18 @@ function setupSheetPresentation(
   let backdrop: HTMLDivElement | null = null
   let sheetHost: HTMLDivElement | null = null
   let disposeSheetContent: (() => void) | null = null
+  let previousActiveElement: HTMLElement | null = null
+  let removeEscapeListener: (() => void) | null = null
   let isMounted = false
-  let animationFrameId: number | null = null
+  let transitionFrameId: number | null = null
+  let focusFrameId: number | null = null
   let isTransitionQueued = false
   const transitionDurationMs = options.transitionDurationMs ?? 220
 
   const clearTransitionQueue = () => {
-    if (animationFrameId !== null) {
-      cancelAnimationFrame(animationFrameId)
-      animationFrameId = null
+    if (transitionFrameId !== null) {
+      cancelAnimationFrame(transitionFrameId)
+      transitionFrameId = null
     }
     isTransitionQueued = false
   }
@@ -356,14 +361,14 @@ function setupSheetPresentation(
     }
 
     isTransitionQueued = true
-    animationFrameId = requestAnimationFrame(() => {
+    transitionFrameId = requestAnimationFrame(() => {
       if (backdrop) {
         backdrop.style.opacity = '1'
       }
       if (sheetHost) {
         sheetHost.style.transform = 'translateY(0)'
       }
-      animationFrameId = null
+      transitionFrameId = null
       isTransitionQueued = false
     })
   }
@@ -376,10 +381,29 @@ function setupSheetPresentation(
       disposeSheetContent = null
     }
 
+    if (focusFrameId !== null) {
+      cancelAnimationFrame(focusFrameId)
+      focusFrameId = null
+    }
+
     if (portalRoot) {
       portalRoot.remove()
       portalRoot = null
     }
+
+    if (removeEscapeListener) {
+      removeEscapeListener()
+      removeEscapeListener = null
+    }
+
+    if (
+      previousActiveElement &&
+      previousActiveElement.isConnected &&
+      typeof previousActiveElement.focus === 'function'
+    ) {
+      previousActiveElement.focus()
+    }
+    previousActiveElement = null
 
     backdrop = null
     sheetHost = null
@@ -413,6 +437,12 @@ function setupSheetPresentation(
 
     sheetHost = document.createElement('div')
     sheetHost.setAttribute('data-tachui-sheet-content', 'true')
+    sheetHost.setAttribute('role', 'dialog')
+    sheetHost.setAttribute('aria-modal', 'true')
+    if (options.ariaLabel) {
+      sheetHost.setAttribute('aria-label', options.ariaLabel)
+    }
+    sheetHost.tabIndex = -1
     sheetHost.style.position = 'relative'
     sheetHost.style.width = '100%'
     sheetHost.style.maxWidth = options.maxWidth ?? '640px'
@@ -426,12 +456,42 @@ function setupSheetPresentation(
       })
     }
 
+    if (options.dismissOnEscape !== false) {
+      const escapeListener = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          dismissPresentedState(isPresented, options)
+        }
+      }
+      document.addEventListener('keydown', escapeListener)
+      removeEscapeListener = () => {
+        document.removeEventListener('keydown', escapeListener)
+      }
+    }
+
     portalRoot.append(backdrop, sheetHost)
     document.body.appendChild(portalRoot)
+
+    previousActiveElement =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
 
     disposeSheetContent = mountComponentTree(content(), sheetHost)
     isMounted = true
     scheduleEntranceTransition()
+
+    focusFrameId = requestAnimationFrame(() => {
+      const focusableElement = sheetHost?.querySelector<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+
+      if (focusableElement && typeof focusableElement.focus === 'function') {
+        focusableElement.focus()
+      } else if (sheetHost) {
+        sheetHost.focus()
+      }
+      focusFrameId = null
+    })
   }
 
   const presentationEffect = createEffect(() => {

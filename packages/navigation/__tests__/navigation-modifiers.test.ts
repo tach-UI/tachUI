@@ -4,8 +4,8 @@
  * Tests for SwiftUI-compatible navigation modifiers
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { createSignal, mountComponentTree } from '@tachui/core'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { createBinding, createSignal, mountComponentTree } from '@tachui/core'
 import { HTML, Text } from '@tachui/primitives'
 import {
   navigationTitle,
@@ -34,6 +34,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
   })
 
   afterEach(() => {
+    clearNavigationModifiers()
     document
       .querySelectorAll('[data-tachui-sheet-root="true"]')
       .forEach(node => node.remove())
@@ -269,6 +270,139 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
 
       cleanup()
       container.remove()
+    })
+
+    it('does not dismiss from backdrop when dismissOnBackdropTap is false', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { dismissOnBackdropTap: false }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const backdrop = document.querySelector(
+        '[data-tachui-sheet-backdrop="true"]'
+      ) as HTMLDivElement | null
+      backdrop?.click()
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(true)
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeTruthy()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('supports Binding<boolean> dismiss and onDismiss callback', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const binding = createBinding<boolean>(() => isPresented(), value => {
+        setIsPresented(
+          typeof value === 'function' ? value(isPresented()) : value
+        )
+      })
+      const onDismiss = vi.fn()
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        binding,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { onDismiss }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const backdrop = document.querySelector(
+        '[data-tachui-sheet-backdrop="true"]'
+      ) as HTMLDivElement | null
+      backdrop?.click()
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(onDismiss).toHaveBeenCalledTimes(1)
+
+      cleanup()
+      container.remove()
+    })
+
+    it('applies sheet presentation option styles', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        {
+          backdropColor: 'rgba(255, 0, 0, 0.2)',
+          zIndex: 4242,
+          maxWidth: '420px',
+          ariaLabel: 'Preferences sheet',
+        }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const portalRoot = document.querySelector(
+        '[data-tachui-sheet-root="true"]'
+      ) as HTMLDivElement | null
+      const backdrop = document.querySelector(
+        '[data-tachui-sheet-backdrop="true"]'
+      ) as HTMLDivElement | null
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+
+      expect(portalRoot?.style.zIndex).toBe('4242')
+      expect(backdrop?.style.background).toBe('rgba(255, 0, 0, 0.2)')
+      expect(content?.style.maxWidth).toBe('420px')
+      expect(content?.getAttribute('role')).toBe('dialog')
+      expect(content?.getAttribute('aria-modal')).toBe('true')
+      expect(content?.getAttribute('aria-label')).toBe('Preferences sheet')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('dismisses on Escape key by default', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
     })
   })
 
