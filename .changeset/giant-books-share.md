@@ -13,3 +13,4 @@ Ship current ready work on this branch:
 - resolve SSR review findings around attribute serialization, route metadata, and test coverage
 - improve release dependency guard validation with semver-accurate peer range checks plus tools test coverage
 - include current navigation, data, and modifier/type fixes from linked issue work
+- add navigation modal enhancements: `confirmationDialog(...)` and environment `dismiss` support for sheet/full-screen/popover presentations
