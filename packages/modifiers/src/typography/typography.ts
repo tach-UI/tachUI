@@ -28,6 +28,8 @@ export type TextAlign =
   | 'justify'
   | 'start'
   | 'end'
+  | 'leading'
+  | 'trailing'
 export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize'
 export type TextDecoration = 'none' | 'underline' | 'overline' | 'line-through'
 export type FontVariant = 'normal' | 'small-caps'
@@ -191,7 +193,7 @@ export class TypographyModifier extends BaseModifier<TypographyOptions> {
         : this.toCSSValue(props.wordSpacing)
     }
     if (props.align !== undefined) {
-      styles.textAlign = props.align
+      styles.textAlign = this.normalizeTextAlign(props.align)
     }
     // text-transform and text-decoration are handled with explicit !important
     // in applyImportantTextStyle() to keep static and reactive paths consistent.
@@ -227,6 +229,12 @@ export class TypographyModifier extends BaseModifier<TypographyOptions> {
 
   protected toCSSValue(value: number | string): string {
     return typeof value === 'number' ? `${value}px` : value
+  }
+
+  private normalizeTextAlign(value: TextAlign): Exclude<TextAlign, 'leading' | 'trailing'> {
+    if (value === 'leading') return 'start'
+    if (value === 'trailing') return 'end'
+    return value
   }
 }
 

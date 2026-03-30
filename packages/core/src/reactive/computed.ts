@@ -7,7 +7,7 @@
 
 import { ComputationImpl, getCurrentComputation, getCurrentOwner } from './context'
 import { defaultEquals, type EqualityFunction } from './equality'
-import type { Computation, Signal } from './types'
+import type { Computation, Owner, Signal } from './types'
 import { ComputationState } from './types'
 import { type ReactiveNode, UpdatePriority } from './unified-scheduler'
 
@@ -31,7 +31,11 @@ class ComputedImpl<T> extends ComputationImpl implements ReactiveNode {
   private equalsFn: EqualityFunction<T>
   private options: ComputedOptions<T>
 
-  constructor(fn: () => T, options: ComputedOptions<T> = {}, owner = getCurrentOwner()) {
+  constructor(
+    fn: () => T,
+    options: ComputedOptions<T> = {},
+    owner: Owner | null = getCurrentOwner()
+  ) {
     super(fn, owner)
     this.priority = options.priority ?? UpdatePriority.Normal
     this.equalsFn = options.equals ?? defaultEquals

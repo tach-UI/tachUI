@@ -3,6 +3,8 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { execSync } from 'node:child_process'
+import { pathToFileURL } from 'node:url'
+import { satisfies, validRange } from 'semver'
 
 const ROOT_DIR = process.cwd()
 const PACKAGES_DIR = join(ROOT_DIR, 'packages')
@@ -72,13 +74,46 @@ function readManifestFromPackedTarball(tarballPath) {
   return JSON.parse(manifestJson)
 }
 
-function isPeerDependencyVersionCompatible(depVersion, expectedVersion) {
-  if (depVersion === expectedVersion) return true
-  // Intentional heuristic: this guard is meant to catch obvious cross-version drift
-  // in packed manifests. It is not a full semver range parser/evaluator.
-  if (depVersion.includes(expectedVersion)) return true
-  if (depVersion === '*' || depVersion === 'latest') return true
-  return false
+/**
+ * Peer dependency policy for internal packages:
+ * - Exact pins are valid.
+ * - Semver ranges are valid only if they include the current expected release version.
+ * - Wildcards/latest are accepted as explicit opt-ins.
+ *
+ * @returns {{ valid: true } | { valid: false, reason: string }}
+ * When invalid, `reason` is included verbatim in violation diagnostics emitted by `main()`.
+ */
+export function isPeerDependencyVersionCompatible(depVersion, expectedVersion) {
+  if (depVersion === expectedVersion) {
+    return { valid: true }
+  }
+
+  if (depVersion === '*' || depVersion === 'latest') {
+    return { valid: true }
+  }
+
+  if (!validRange(depVersion)) {
+    return {
+      valid: false,
+      reason: `invalid peer semver range "${depVersion}"`,
+    }
+  }
+
+  if (!satisfies(expectedVersion, depVersion, { includePrerelease: true })) {
+    return {
+      valid: false,
+      reason: `peer range "${depVersion}" does not include expected version "${expectedVersion}"`,
+    }
+  }
+
+  return { valid: true }
+}
+
+export function isStrictInternalDependencyVersionMatch(
+  depVersion,
+  expectedVersion
+) {
+  return depVersion === expectedVersion
 }
 
 function main() {
@@ -108,13 +143,22 @@ function main() {
           }
 
           const isPeerDependency = section === 'peerDependencies'
-          const isValid = isPeerDependency
+          const peerValidation = isPeerDependency
             ? isPeerDependencyVersionCompatible(String(depVersion), expectedVersion)
-            : depVersion === expectedVersion
+            : null
+          const isValid = isPeerDependency
+            ? peerValidation.valid
+            : isStrictInternalDependencyVersionMatch(
+                String(depVersion),
+                expectedVersion
+              )
 
           if (!isValid) {
+            const reason = peerValidation?.reason
             violations.push(
-              `${pkg.name}@${pkg.version} ${section}.${depName}=${String(depVersion)} (expected ${expectedVersion})`
+              `${pkg.name}@${pkg.version} ${section}.${depName}=${String(depVersion)} (expected ${expectedVersion})${
+                reason ? ` - ${reason}` : ''
+              }`
             )
           }
         }
@@ -135,4 +179,9 @@ function main() {
   console.log(`Packed internal dependency validation passed for ${packages.length} packages.`)
 }
 
-main()
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  main()
+}

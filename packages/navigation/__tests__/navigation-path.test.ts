@@ -80,6 +80,13 @@ describe('Navigation Path - Path Management and Utilities', () => {
       expect(path.count).toBe(3)
     })
 
+    it('returns raw entries for mixed typed and string segments', () => {
+      const path = createNavigationPath(['home'])
+      path.append({ type: 'product', id: 42 })
+
+      expect(path.entries).toEqual(['home', { type: 'product', id: 42 }])
+    })
+
     it('removes last segment', () => {
       const path = createNavigationPath(['home', 'settings', 'profile'])
       path.removeLast()
@@ -319,6 +326,133 @@ describe('Navigation Path - Path Management and Utilities', () => {
         createNavigationPath.fromString('/home/settings/')
       ).not.toThrow()
     })
+
+    it('supports appending and retrieving typed segments', () => {
+      const path = new NavigationPath()
+      path.append({ type: 'product', id: 42 })
+
+      expect(path.segments).toEqual(['product'])
+      expect(path.entryAt(0)).toEqual({ type: 'product', id: 42 })
+    })
+
+    it('encodes typed segments to JSON with type tags', () => {
+      const path = new NavigationPath()
+      path.append({ type: 'product', id: 42 })
+      path.append({ type: 'review', id: 9 })
+
+      const encoded = path.encode()
+      const decoded = JSON.parse(encoded) as Array<Record<string, unknown>>
+
+      expect(decoded).toEqual([
+        { type: 'product', id: 42 },
+        { type: 'review', id: 9 },
+      ])
+    })
+
+    it('decodes JSON back into typed and string entries', () => {
+      const payload = JSON.stringify([
+        'home',
+        { type: 'product', id: 42 },
+        'reviews',
+      ])
+
+      const path = NavigationPath.decode(payload)
+
+      expect(path.segments).toEqual(['home', 'product', 'reviews'])
+      expect(path.entryAt(1)).toEqual({ type: 'product', id: 42 })
+      expect(path.at(1)).toBe('product')
+    })
+
+    it('preserves mixed string and typed entries through encode/decode', () => {
+      const path = new NavigationPath()
+      path.append('home')
+      path.append({ type: 'product', id: 42 })
+      path.append('details')
+
+      const restored = NavigationPath.decode(path.encode())
+
+      expect(restored.segments).toEqual(['home', 'product', 'details'])
+      expect(restored.entryAt(0)).toBe('home')
+      expect(restored.entryAt(1)).toEqual({ type: 'product', id: 42 })
+      expect(restored.entryAt(2)).toBe('details')
+    })
+
+    it('drops invalid decode entries but keeps valid typed/string entries', () => {
+      const payload = JSON.stringify([
+        'home',
+        { type: 'product', id: 42 },
+        { id: 7 },
+        123,
+        null,
+        { type: 99 },
+      ])
+
+      const path = NavigationPath.decode(payload)
+
+      expect(path.segments).toEqual(['home', 'product'])
+      expect(path.entries).toEqual(['home', { type: 'product', id: 42 }])
+    })
+
+    it('decodes legacy typed-wrapper format into canonical typed entries', () => {
+      const payload = JSON.stringify([
+        { type: 'product', value: { id: 42, sku: 'starter' } },
+        { type: 'review', value: 9 },
+      ])
+
+      const path = NavigationPath.decode(payload)
+
+      expect(path.entries).toEqual([
+        { type: 'product', id: 42, sku: 'starter' },
+        { type: 'review', value: 9 },
+      ])
+      expect(path.segments).toEqual(['product', 'review'])
+    })
+
+    it('decodes legacy string wrappers back to plain string segments', () => {
+      const payload = JSON.stringify([
+        { type: 'string', value: 'home' },
+        { type: 'string', value: 'settings' },
+      ])
+
+      const path = NavigationPath.decode(payload)
+
+      expect(path.entries).toEqual(['home', 'settings'])
+      expect(path.segments).toEqual(['home', 'settings'])
+    })
+
+    it('deep clones nested typed segments on append', () => {
+      const original = {
+        type: 'product',
+        payload: {
+          meta: { slug: 'starter' },
+        },
+      }
+      const path = new NavigationPath()
+      path.append(original)
+
+      ;(original.payload.meta as any).slug = 'mutated'
+
+      expect(path.entryAt(0)).toEqual({
+        type: 'product',
+        payload: {
+          meta: { slug: 'starter' },
+        },
+      })
+    })
+
+    it('returns cloned entries snapshots that cannot mutate internal state', () => {
+      const path = new NavigationPath()
+      path.append({ type: 'product', id: 42, payload: { slug: 'starter' } })
+
+      const entries = path.entries as Array<any>
+      entries[0].payload.slug = 'mutated'
+
+      expect(path.entryAt(0)).toEqual({
+        type: 'product',
+        id: 42,
+        payload: { slug: 'starter' },
+      })
+    })
   })
 
   describe('Typed Navigation Path', () => {
@@ -365,6 +499,32 @@ describe('Navigation Path - Path Management and Utilities', () => {
       const path = createTypedNavigationPath([''])
 
       expect(path.isValid()).toBe(true) // Empty strings are allowed
+    })
+
+    it('supports codable parity via encode/decode compatibility shim', () => {
+      const path = createTypedNavigationPath(['home'])
+      path.append('product', { id: 42, sku: 'starter' })
+
+      const encoded = path.encode()
+      const restored = TypedNavigationPath.decode(encoded)
+
+      expect(restored.segments).toEqual(['home', 'product'])
+      expect(restored.lastOfType<{ id: number; sku: string }>('product')).toEqual({
+        id: 42,
+        sku: 'starter',
+      })
+    })
+
+    it('keeps typed shim backed by canonical key behavior', () => {
+      const path = new TypedNavigationPath()
+      path.append('product', { id: 1 })
+      path.append('product', { id: 2 })
+
+      expect(path.segments).toEqual(['product', 'product'])
+      expect(path.allOfType<{ id: number }>('product')).toEqual([
+        { id: 1 },
+        { id: 2 },
+      ])
     })
   })
 
@@ -422,6 +582,21 @@ describe('Navigation Path - Path Management and Utilities', () => {
 
       expect(path.segments).toEqual(['home']) // Should not have changed
       expect(preventListener).toHaveBeenCalled()
+    })
+
+    it('allows preventing appendAll changes', () => {
+      const path = createNavigationPath(['home'])
+      const preventListener = vi.fn(() => false)
+
+      path.onBeforeChange(preventListener)
+      path.appendAll(['settings', 'profile'])
+
+      expect(path.segments).toEqual(['home'])
+      expect(preventListener).toHaveBeenCalledWith({
+        oldSegments: ['home'],
+        newSegments: ['home', 'settings', 'profile'],
+        operation: 'appendAll',
+      })
     })
   })
 
@@ -631,8 +806,7 @@ describe('Navigation Path - Path Management and Utilities', () => {
 
       expect(path.isValid()).toBe(true)
 
-      // Simulate corruption
-      ;(path as any).segments = null
+      ;(path as any).__setSegmentsCorruptedForTests(true)
 
       expect(path.isValid()).toBe(false)
     })

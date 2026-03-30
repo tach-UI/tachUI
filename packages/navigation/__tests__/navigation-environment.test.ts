@@ -11,6 +11,7 @@ import {
   useNavigationEnvironmentContext,
   useNavigationEnvironmentRouter,
   useNavigationEnvironmentState,
+  useNavigationEnvironment,
   NavigationEnvironmentProvider,
   NavigationEnvironmentUtils,
   clearNavigationEnvironment,
@@ -212,6 +213,7 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
       expect(() => useNavigationEnvironmentContext()).not.toThrow()
       expect(() => useNavigationEnvironmentRouter()).not.toThrow()
       expect(() => useNavigationEnvironmentState()).not.toThrow()
+      expect(() => useNavigationEnvironment().dismiss()).not.toThrow()
     })
   })
 
@@ -240,7 +242,13 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
 
       const retrieved = getNavigationEnvironment()
 
-      expect(retrieved).toEqual(env)
+      expect(retrieved).toEqual(
+        expect.objectContaining({
+          context: env.context,
+          router: env.router,
+          dismiss: expect.any(Function),
+        })
+      )
     })
 
     it('checks if navigation environment exists', () => {
@@ -312,7 +320,7 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
       const env1 = getNavigationEnvironment()
       const env2 = getNavigationEnvironment()
 
-      expect(env1).toBe(env2)
+      expect(env1).toStrictEqual(env2)
     })
 
     it('isolates environment per test', () => {
@@ -344,7 +352,13 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
       ]
 
       results.forEach(result => {
-        expect(result).toEqual(env)
+        expect(result).toEqual(
+          expect.objectContaining({
+            context: env.context,
+            router: env.router,
+            dismiss: expect.any(Function),
+          })
+        )
       })
     })
   })
@@ -395,7 +409,13 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
 
       const retrieved = getNavigationEnvironment()
 
-      expect(retrieved).toEqual(newEnv)
+      expect(retrieved).toEqual(
+        expect.objectContaining({
+          context: newEnv.context,
+          router: newEnv.router,
+          dismiss: expect.any(Function),
+        })
+      )
       expect(retrieved?.context).toBe(newContext)
     })
   })
@@ -488,6 +508,21 @@ describe('Navigation Environment - SwiftUI Compatible Environment System', () =>
       clearNavigationEnvironment()
 
       // Environment should be completely cleared
+      expect((globalThis as any).__navigationEnvironment).toBeUndefined()
+    })
+
+    it('uses noop dismiss after clear even if a stale dismiss existed previously', () => {
+      const staleDismiss = vi.fn()
+      ;(globalThis as any).__navigationEnvironment = {
+        context: new MockNavigationContext(),
+        router: new MockNavigationRouter(),
+        dismiss: staleDismiss,
+      }
+
+      clearNavigationEnvironment()
+      useNavigationEnvironment().dismiss()
+
+      expect(staleDismiss).not.toHaveBeenCalled()
       expect((globalThis as any).__navigationEnvironment).toBeUndefined()
     })
 

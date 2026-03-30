@@ -6,6 +6,7 @@
  */
 
 import type { Accessor, Binding, ComponentInstance } from '@tachui/core'
+import type { NavigationPathSegment, NavigationPathTypedSegment } from './navigation-path'
 
 /**
  * Navigation destination type
@@ -19,17 +20,20 @@ export type NavigationDestination =
  */
 export interface NavigationPath {
   readonly segments: readonly string[]
+  readonly entries?: readonly NavigationPathSegment[]
   readonly count: number
   readonly isEmpty: boolean
-  append(segment: string): void
-  appendAll(segments: string[]): void
+  append(segment: NavigationPathSegment): void
+  appendAll(segments: NavigationPathSegment[]): void
   removeLast(count?: number): void
   clear(): void
   contains(segment: string): boolean
   at(index: number): string | undefined
+  entryAt?(index: number): NavigationPathSegment | undefined
   readonly last: string | undefined
-  replaceAll(segments: string[]): void
+  replaceAll(segments: NavigationPathSegment[]): void
   toString(): string
+  encode?(): string
   onChange(listener: (path: NavigationPath) => void): () => void
   copy(): NavigationPath
   equals(other: NavigationPath): boolean
@@ -144,6 +148,7 @@ export interface TabViewOptions {
   tabPlacement?: 'automatic' | 'top' | 'bottom'
   backgroundColor?: string
   accentColor?: string
+  accessibilityLabel?: string
   onSelectionChange?: (selectedId: string) => void
 }
 
@@ -214,12 +219,22 @@ export interface NavigationRouter {
     path: string,
     options?: { replace?: boolean; animate?: boolean }
   ): void
+  navigateSegment?(
+    segment: string | NavigationPathTypedSegment,
+    options?: { replace?: boolean; animate?: boolean }
+  ): void
   goBack(): void
   goForward(): void
   push(destination: NavigationDestination, path?: string): void
   pop(): void
   popToRoot(): void
   replace(destination: NavigationDestination, path?: string): void
+  registerTypedRoute?(
+    typeTag: string,
+    destination: NavigationDestination,
+    metadata?: Record<string, unknown>
+  ): void
+  unregisterTypedRoute?(typeTag: string): void
 }
 
 /**

@@ -55,6 +55,12 @@
       ],
       "@tachui/modifiers/*": [
         "./packages/modifiers/dist/*"
+      ],
+      "@tachui/ssr": [
+        "./packages/ssr/dist/index.d.ts"
+      ],
+      "@tachui/ssr/*": [
+        "./packages/ssr/dist/*"
       ]
     }
   },
@@ -72,6 +78,7 @@
     { "path": "./packages/responsive" },
     { "path": "./packages/devtools" },
     { "path": "./packages/cli" },
-    { "path": "./packages/eslint-plugin-tachui" }
+    { "path": "./packages/eslint-plugin-tachui" },
+    { "path": "./packages/ssr" }
   ]
 }

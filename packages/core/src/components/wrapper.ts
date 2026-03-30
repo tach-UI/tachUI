@@ -8,6 +8,7 @@
 import { createModifiableComponent, createModifierBuilder } from '../modifiers'
 import type {
   ModifiableComponent,
+  Modifier,
   ModifierBuilder,
   ModifiableComponentWithModifiers,
 } from '../modifiers/types'
@@ -811,7 +812,11 @@ export function wrapComponent<P extends ComponentProps>(
  */
 export function withModifierSupport<P extends ComponentProps>(
   ComponentClass: new (props: P) => ComponentInstance<P>
-) {
+): new (props: P) => ComponentInstance<P> & {
+  _modifiableComponent?: ModifiableComponent<P>
+  readonly modifier: ModifierBuilder<ModifiableComponent<P>>
+  readonly modifiers: Modifier[]
+} {
   return class extends ComponentClass {
     public _modifiableComponent?: ModifiableComponent<P>
 
@@ -848,7 +853,7 @@ export function withModifierSupport<P extends ComponentProps>(
       return mod.modifier
     }
 
-    get modifiers() {
+    get modifiers(): Modifier[] {
       const mod = this._modifiableComponent ?? (withModifiers(this) as any)
       this._modifiableComponent = mod
       return mod.modifiers

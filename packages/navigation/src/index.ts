@@ -17,6 +17,15 @@ export {
 } from './navigation-stack'
 
 export {
+  NavigationSplitView,
+  useNavigationSplitView,
+} from './navigation-split-view'
+export type {
+  NavigationSplitViewContext,
+  NavigationSplitViewProps,
+} from './navigation-split-view'
+
+export {
   NavigationLink,
   NavigationIconLink,
   NavigationListLink,
@@ -45,8 +54,18 @@ export {
   navigationBarBackButtonHidden,
   navigationBarBackButtonTitle,
   navigationBarItems,
+  toolbar,
+  toolbarItems,
+  ToolbarItem,
+  presentationDetents,
+  getToolbarItemsByPlacement,
   toolbarBackground,
+  toolbarBackgroundVisibility,
   toolbarForegroundColor,
+  sheet,
+  fullScreenCover,
+  popover,
+  confirmationDialog,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
   hasNavigationModifiers,
@@ -55,12 +74,27 @@ export {
   onNavigationModifierChange,
   NavigationModifierUtils,
 } from './navigation-modifiers'
+export type {
+  SheetPresentationOptions,
+  FullScreenCoverOptions,
+  PopoverArrowEdge,
+  PopoverPresentationOptions,
+  ConfirmationDialogAction,
+  ConfirmationDialogButtonRole,
+  PresentationDetent,
+  ToolbarItemPlacement,
+  ToolbarBackgroundVisibility,
+  ToolbarBackgroundVisibilityTarget,
+  ToolbarItemConfig,
+  ToolbarItemInput,
+} from './navigation-modifiers'
 
 // Navigation Environment System
 export {
   useNavigationEnvironmentContext,
   useNavigationEnvironmentRouter,
   useNavigationEnvironmentState,
+  useNavigationEnvironment,
   NavigationEnvironmentProvider,
   NavigationEnvironmentUtils,
   clearNavigationEnvironment,

@@ -135,12 +135,37 @@ export interface InvalidDeepLinkInfo {
     | 'disallowed_scheme'
 }
 
+export type DeepLinkQueryValue =
+  | string
+  | DeepLinkQueryValue[]
+  | { [key: string]: DeepLinkQueryValue }
+
+export type DeepLinkQueryParams = Record<string, DeepLinkQueryValue>
+
+export interface ParsedDeepLink {
+  scheme: string
+  path: string
+  query: DeepLinkQueryParams
+  params: DeepLinkQueryParams
+  fragment?: string
+  isDeepLink: true
+}
+
+export interface DeepLinkHandlerPayload {
+  scheme: string
+  path: string
+  params: Record<string, string>
+  query: DeepLinkQueryParams
+  fragment?: string
+}
+
 /**
  * Deep linking manager
  */
 export class DeepLinkManager {
   private _routes: Map<string, DeepLinkRoute> = new Map()
-  private _handlers: Map<string, Function> = new Map()
+  private _handlers: Map<string, (payload: DeepLinkHandlerPayload) => unknown> =
+    new Map()
   private _baseURL: string = ''
   private _allowedSchemes: Set<string> = new Set()
   private _onInvalidLink?: (info: InvalidDeepLinkInfo) => void
@@ -199,13 +224,70 @@ export class DeepLinkManager {
       : withoutControlChars
   }
 
+  private assignParsedQueryValue(
+    target: DeepLinkQueryParams,
+    rawKey: string,
+    value: string
+  ): void {
+    const keyPath = rawKey
+      .split('.')
+      .map(segment => segment.trim())
+      .filter(Boolean)
+    if (keyPath.length === 0) {
+      return
+    }
+
+    let cursor: DeepLinkQueryParams | Record<string, DeepLinkQueryValue> = target
+
+    for (let i = 0; i < keyPath.length; i++) {
+      const isLast = i === keyPath.length - 1
+      const rawSegment = keyPath[i]
+      const isArraySegment = rawSegment.endsWith('[]')
+      const segment = isArraySegment ? rawSegment.slice(0, -2) : rawSegment
+      if (!segment) {
+        return
+      }
+
+      if (isLast) {
+        if (isArraySegment) {
+          const existing = cursor[segment]
+          if (Array.isArray(existing)) {
+            existing.push(value)
+            return
+          }
+
+          if (existing === undefined) {
+            cursor[segment] = [value]
+            return
+          }
+
+          cursor[segment] = [String(existing), value]
+          return
+        }
+
+        cursor[segment] = value
+        return
+      }
+
+      const existing = cursor[segment]
+      if (
+        typeof existing !== 'object' ||
+        existing === null ||
+        Array.isArray(existing)
+      ) {
+        cursor[segment] = {}
+      }
+      cursor = cursor[segment] as Record<string, any>
+    }
+  }
+
   /**
    * Parse a deep link URL
    *
    * @param url - Deep link URL to parse
    * @returns Parsed deep link data or null
    */
-  parseDeepLink(url: string): any | null {
+  parseDeepLink(url: string): ParsedDeepLink | null {
     if (!url || typeof url !== 'string') {
       this.notifyInvalidLink(String(url), 'invalid_input')
       return null
@@ -249,10 +331,15 @@ export class DeepLinkManager {
         return null
       }
 
-      const [pathAndQuery] = rest.split('#') // Remove fragment
+      const fragmentIndex = rest.indexOf('#')
+      const hasFragment = fragmentIndex >= 0
+      const pathAndQuery = hasFragment ? rest.slice(0, fragmentIndex) : rest
+      const fragment = hasFragment
+        ? this.sanitizeQueryToken(rest.slice(fragmentIndex + 1))
+        : undefined
       const [fullPath, queryString] = pathAndQuery.split('?')
 
-      const query: Record<string, string> = {}
+      const query: DeepLinkQueryParams = {}
       if (queryString) {
         queryString.split('&').forEach(param => {
           const equalsIndex = param.indexOf('=')
@@ -263,7 +350,7 @@ export class DeepLinkManager {
           const key = this.sanitizeQueryToken(rawKey || '')
           const value = this.sanitizeQueryToken(rawValue || '')
           if (key) {
-            query[key] = value
+            this.assignParsedQueryValue(query, key, value)
           }
         })
       }
@@ -275,6 +362,8 @@ export class DeepLinkManager {
         scheme,
         path,
         query,
+        params: this.cloneQueryParams(query),
+        fragment,
         isDeepLink: true,
       }
     } catch {
@@ -299,8 +388,19 @@ export class DeepLinkManager {
    * @param type - Deep link type
    * @param handler - Handler function
    */
-  registerHandler(type: string, handler: Function): void {
+  registerHandler(
+    type: string,
+    handler: (payload: DeepLinkHandlerPayload) => unknown
+  ): void {
     this._handlers.set(type, handler)
+  }
+
+  private cloneQueryParams(query: DeepLinkQueryParams): DeepLinkQueryParams {
+    if (typeof structuredClone === 'function') {
+      return structuredClone(query)
+    }
+
+    return JSON.parse(JSON.stringify(query)) as DeepLinkQueryParams
   }
 
   /**
@@ -309,7 +409,7 @@ export class DeepLinkManager {
    * @param url - Deep link URL
    * @returns Handler result or undefined
    */
-  handleDeepLink(url: string): any {
+  handleDeepLink(url: string): unknown {
     const parsed = this.parseDeepLink(url)
     if (!parsed) return undefined
 
@@ -329,6 +429,7 @@ export class DeepLinkManager {
         path: parsed.path,
         params,
         query: parsed.query,
+        fragment: parsed.fragment,
       })
     }
 
@@ -341,7 +442,7 @@ export class DeepLinkManager {
    * @param url - Deep link URL
    * @returns Metadata object
    */
-  getDeepLinkMetadata(url: string): any | null {
+  getDeepLinkMetadata(url: string): ParsedDeepLink | null {
     return this.parseDeepLink(url)
   }
 

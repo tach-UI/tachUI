@@ -10,6 +10,7 @@ import {
   createEffect,
   createSignal,
   getSignalImpl,
+  h,
   isBinding,
   isSignal,
 } from '@tachui/core'
@@ -151,6 +152,13 @@ export function TabView(
   tabs: TabItem[],
   options: TabViewOptions = {}
 ): NavigationComponent {
+  const tabViewId = `tabview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  const sanitizeTabId = (tabId: string) => tabId.replace(/[^a-zA-Z0-9_-]/g, '-')
+  const getTabButtonId = (tabId: string) =>
+    `${tabViewId}-tab-${sanitizeTabId(tabId)}`
+  const getTabPanelId = (tabId: string) =>
+    `${tabViewId}-panel-${sanitizeTabId(tabId)}`
+
   // Create tab state
   const [activeTabId, setActiveTabId] = createSignal(tabs[0]?.id || '')
   const tabCoordinator = new TabCoordinatorImpl(newTabId => {
@@ -207,7 +215,7 @@ export function TabView(
     const tabButtons = tabs.map(tab => {
       const isDisabled = tab.disabled || false
 
-      return Button(
+      const button = Button(
         '', // We'll use custom content
         () => {
           if (!isDisabled) {
@@ -221,6 +229,37 @@ export function TabView(
         .opacity(isDisabled ? 0.5 : 1)
         .disabled(isDisabled)
         .build()
+
+      return {
+        type: 'component',
+        id: `${button.id}-tab-${tab.id}`,
+        mounted: false,
+        cleanup: [],
+        props: {},
+        render: () => {
+          const isActive = activeTabId() === tab.id
+          const rendered = button.render()
+
+          return rendered.map((node: any) => {
+            if (node.type !== 'element' || node.tag !== 'button') {
+              return node
+            }
+
+            return {
+              ...node,
+              props: {
+                ...node.props,
+                id: getTabButtonId(tab.id),
+                role: 'tab',
+                'aria-selected': isActive ? 'true' : 'false',
+                'aria-controls': getTabPanelId(tab.id),
+                'aria-disabled': isDisabled ? 'true' : 'false',
+                tabIndex: isActive ? 0 : -1,
+              },
+            }
+          })
+        },
+      } as unknown as ComponentInstance
     })
 
     // Override button content with custom tab items
@@ -293,6 +332,36 @@ export function TabView(
       .build()
   }
 
+  const TabBarWithAccessibility = () => {
+    const tabBar = TabBar()
+
+    return {
+      type: 'component',
+      id: `${tabViewId}-tablist`,
+      mounted: false,
+      cleanup: [],
+      props: {},
+      render: () => {
+        const rendered = tabBar.render()
+        const nodes = Array.isArray(rendered) ? rendered : [rendered]
+        return nodes.map((node: any) => {
+          if (node.type !== 'element') {
+            return node
+          }
+
+          return {
+            ...node,
+            props: {
+              ...node.props,
+              role: 'tablist',
+              'aria-label': options.accessibilityLabel || 'Tab navigation',
+            },
+          }
+        })
+      },
+    } as unknown as ComponentInstance
+  }
+
   // Content area
   const TabContent = () => {
     const activeTab = tabCoordinator.getActiveTab()
@@ -304,17 +373,40 @@ export function TabView(
         .build()
     }
 
-    return HTML.div({
-      children: [activeTab.content],
-    }).build()
+    return {
+      type: 'component',
+      id: `${tabViewId}-tabpanel-${activeTab.id}`,
+      mounted: false,
+      cleanup: [],
+      props: {},
+      render: () => {
+        const renderedContent = activeTab.content.render()
+        const panelChildren = Array.isArray(renderedContent)
+          ? renderedContent
+          : [renderedContent]
+
+        return [
+          h(
+            'div',
+            {
+            role: 'tabpanel',
+            id: getTabPanelId(activeTab.id),
+            'aria-labelledby': getTabButtonId(activeTab.id),
+            tabIndex: 0,
+          },
+          ...panelChildren
+        ),
+        ]
+      },
+    } as unknown as ComponentInstance
   }
 
   // Main tab view component
   const tabViewComponent: NavigationComponent = VStack({
     children:
       options.tabPlacement === 'top'
-        ? [TabBar(), TabContent()]
-        : [TabContent(), TabBar()],
+        ? [TabBarWithAccessibility(), TabContent()]
+        : [TabContent(), TabBarWithAccessibility()],
     spacing: 0,
     alignment: 'leading',
   })

@@ -33,6 +33,20 @@ function createMockListElement(): HTMLElement {
   return element
 }
 
+function collectElements(node: any, acc: any[] = []): any[] {
+  if (!node || typeof node !== 'object') {
+    return acc
+  }
+
+  if (node.type === 'element') {
+    acc.push(node)
+    const children = Array.isArray(node.children) ? node.children : []
+    children.forEach((child: any) => collectElements(child, acc))
+  }
+
+  return acc
+}
+
 // Mock createElement
 const originalCreateElement = document.createElement
 beforeEach(() => {
@@ -469,7 +483,29 @@ describe('EnhancedList', () => {
       })
 
       const separator = list.createSeparator()
-      expect(separator).toBe(customSeparator)
+      expect(separator).not.toBeNull()
+      const rendered = separator?.render() ?? []
+      const wrapped = Array.isArray(rendered) ? rendered[0] : rendered
+      expect(wrapped.tag).toBe('li')
+      expect(JSON.stringify(wrapped)).toContain('---')
+    })
+
+    it('creates unique separator component IDs per rendered gap', () => {
+      const customSeparator = Text('---')
+      const renderItem = (item: any, _index: number) => Text(item.name)
+      const list = new EnhancedList({
+        data: sampleData.slice(0, 3),
+        renderItem,
+        separator: customSeparator,
+      })
+
+      const content = list.renderRegularContent()
+      const separators = content.filter(component =>
+        component.id.includes('separator')
+      )
+
+      expect(separators).toHaveLength(2)
+      expect(new Set(separators.map(component => component.id)).size).toBe(2)
     })
 
     it('should handle no separator', () => {
@@ -482,6 +518,88 @@ describe('EnhancedList', () => {
 
       const separator = list.createSeparator()
       expect(separator).toBeNull()
+    })
+  })
+
+  describe('Semantic Structure', () => {
+    it('renders list content inside ul with li rows', () => {
+      const renderItem = (item: any, _index: number) => Text(item.name)
+      const list = new EnhancedList({
+        data: sampleData.slice(0, 2),
+        renderItem,
+        separator: true,
+      })
+
+      const rendered = list.render()
+      const allElements = collectElements(rendered[0])
+
+      const listContainer = allElements.find(
+        element =>
+          element.tag === 'ul' &&
+          String(element.props?.class || '').includes('tachui-list-content')
+      )
+      expect(listContainer).toBeDefined()
+      expect(listContainer.props?.style?.listStyle).toBe('none')
+      expect(listContainer.props?.role).toBe('list')
+
+      const itemRows = allElements.filter(
+        element =>
+          element.tag === 'li' &&
+          String(element.props?.class || '').includes('tachui-list-item')
+      )
+      expect(itemRows).toHaveLength(2)
+
+      const divRows = allElements.filter(
+        element =>
+          element.tag === 'div' &&
+          String(element.props?.class || '').includes('tachui-list-item')
+      )
+      expect(divRows).toHaveLength(0)
+    })
+
+    it('renders section headers and separators as li entries', () => {
+      const renderItem = (item: any, _index: number) => Text(item.name)
+      const list = new EnhancedList({
+        data: sampleData.slice(0, 2),
+        sections: [
+          {
+            id: 'section-a',
+            header: 'Section A',
+            footer: 'Footer A',
+            items: sampleData.slice(0, 2),
+          },
+        ],
+        renderItem,
+        separator: true,
+      })
+
+      const rendered = list.render()
+      const allElements = collectElements(rendered[0])
+
+      const header = allElements.find(
+        element =>
+          element.tag === 'li' &&
+          String(element.props?.class || '').includes(
+            'tachui-list-section-header'
+          )
+      )
+      expect(header).toBeDefined()
+
+      const footer = allElements.find(
+        element =>
+          element.tag === 'li' &&
+          String(element.props?.class || '').includes(
+            'tachui-list-section-footer'
+          )
+      )
+      expect(footer).toBeDefined()
+
+      const separator = allElements.find(
+        element =>
+          element.tag === 'li' &&
+          String(element.props?.class || '').includes('tachui-list-separator')
+      )
+      expect(separator).toBeDefined()
     })
   })
 
