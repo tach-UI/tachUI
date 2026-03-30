@@ -281,6 +281,8 @@ export class EnhancedImage
               'Image(template): expected HTMLSpanElement primary element; skipping mismatched lifecycle binding.'
             )
           }
+          this.setLoadingStateWithCallback('error')
+          this.props.onError?.(new Event('error'))
           return
         }
 

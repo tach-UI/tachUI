@@ -287,22 +287,27 @@ describe('Image renderingMode', () => {
   })
 
   it('keeps sibling original and template images isolated in HStack', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      text: async () => '<svg viewBox="0 0 10 10"><path d="M0 0L10 10"/></svg>',
-    } as Response)
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
+      const url = String(input)
+      const variant = url.includes('dark') ? 'dark' : 'light'
+      return {
+        ok: true,
+        text: async () =>
+          `<svg viewBox="0 0 10 10"><path id="${variant}" d="M0 0L10 10"/></svg>`,
+      } as Response
+    })
 
     const logoMark = ImageAsset.init({
       name: 'logoMark',
       default: '/sample/assets/pelly2-386.png',
       light: '/sample/assets/pelly2-386.png',
-      dark: '/sample/assets/pelly2-386.png',
+      dark: '/sample/assets/pelly2-dark.png',
     })
     const logoText = ImageAsset.init({
       name: 'logoText',
       default: '/sample/assets/waypod-base.svg',
       light: '/sample/assets/waypod-base.svg',
-      dark: '/sample/assets/waypod-base.svg',
+      dark: '/sample/assets/waypod-dark.svg',
     })
 
     const container = document.createElement('div')
@@ -332,5 +337,11 @@ describe('Image renderingMode', () => {
     expect(img?.getAttribute('alt')).toBe('Pelly')
     expect(template?.getAttribute('aria-label')).toBe('Waypod')
     expect(template?.innerHTML.toLowerCase()).toContain('<svg')
+
+    setTheme('dark')
+    await flushReactiveUpdates()
+
+    expect(img?.getAttribute('src')).toBe('/sample/assets/pelly2-dark.png')
+    expect(template?.innerHTML).toContain('id="dark"')
   })
 })
