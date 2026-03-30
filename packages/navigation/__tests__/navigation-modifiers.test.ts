@@ -14,6 +14,10 @@ import {
   navigationBarBackButtonHidden,
   navigationBarBackButtonTitle,
   navigationBarItems,
+  toolbar,
+  toolbarItems,
+  ToolbarItem,
+  getToolbarItemsByPlacement,
   toolbarBackground,
   toolbarForegroundColor,
   sheet,
@@ -134,6 +138,100 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       expect(
         (withItems as any)._navigationModifiers.trailingItems
       ).toBeDefined()
+    })
+
+    it('adds toolbar items via toolbar modifier', () => {
+      const withToolbar = toolbar(mockComponent, [
+        ToolbarItem({
+          placement: 'navigation',
+          content: () => HTML.button({ children: 'Back' }).build(),
+        }),
+      ])
+
+      expect(withToolbar).toBeDefined()
+    })
+  })
+
+  describe('ToolbarItem Placement', () => {
+    it('maps navigation placement into the leading slot', () => {
+      const modified = toolbarItems(mockComponent, [
+        ToolbarItem({
+          placement: 'navigation',
+          content: () => HTML.button({ children: 'Back' }).build(),
+        }),
+      ])
+
+      const placements = getToolbarItemsByPlacement(modified)
+      expect(placements.navigation).toHaveLength(1)
+      expect(placements.trailing).toHaveLength(0)
+      expect(placements.bottomBar).toHaveLength(0)
+    })
+
+    it('maps primaryAction placement into the trailing slot', () => {
+      const modified = toolbarItems(mockComponent, [
+        ToolbarItem({
+          placement: 'primaryAction',
+          content: () => HTML.button({ children: 'Save' }).build(),
+        }),
+      ])
+
+      const placements = getToolbarItemsByPlacement(modified)
+      expect(placements.navigation).toHaveLength(0)
+      expect(placements.trailing).toHaveLength(1)
+      expect(placements.bottomBar).toHaveLength(0)
+      expect(placements.trailing[0]?.placement).toBe('primaryAction')
+    })
+
+    it('maps destructiveAction placement into the trailing slot', () => {
+      const modified = toolbarItems(mockComponent, [
+        ToolbarItem({
+          placement: 'destructiveAction',
+          content: () => HTML.button({ children: 'Delete' }).build(),
+        }),
+      ])
+
+      const placements = getToolbarItemsByPlacement(modified)
+      expect(placements.navigation).toHaveLength(0)
+      expect(placements.trailing).toHaveLength(1)
+      expect(placements.bottomBar).toHaveLength(0)
+      expect(placements.trailing[0]?.placement).toBe('destructiveAction')
+    })
+
+    it('maps bottomBar placement into the bottom slot', () => {
+      const modified = toolbarItems(mockComponent, [
+        ToolbarItem({
+          placement: 'bottomBar',
+          content: () => HTML.button({ children: 'Bottom' }).build(),
+        }),
+      ])
+
+      const placements = getToolbarItemsByPlacement(modified)
+      expect(placements.navigation).toHaveLength(0)
+      expect(placements.trailing).toHaveLength(0)
+      expect(placements.bottomBar).toHaveLength(1)
+      expect(placements.bottomBar[0]?.placement).toBe('bottomBar')
+    })
+
+    it('supports multiple toolbar items coexisting across placements', () => {
+      const modified = toolbarItems(mockComponent, [
+        ToolbarItem({
+          placement: 'navigation',
+          content: () => HTML.button({ children: 'Back' }).build(),
+        }),
+        ToolbarItem({
+          placement: 'primaryAction',
+          content: () => HTML.button({ children: 'Save' }).build(),
+        }),
+        ToolbarItem({
+          placement: 'bottomBar',
+          content: () => HTML.button({ children: 'Inspect' }).build(),
+        }),
+      ])
+
+      const placements = getToolbarItemsByPlacement(modified)
+      expect(placements.navigation).toHaveLength(1)
+      expect(placements.trailing).toHaveLength(1)
+      expect(placements.bottomBar).toHaveLength(1)
     })
   })
 

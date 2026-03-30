@@ -12,6 +12,7 @@ import {
   mountComponentTree,
 } from '@tachui/core'
 import type { Accessor, Binding, ComponentInstance } from '@tachui/core'
+import { HTML } from '@tachui/primitives'
 import type { NavigationContext } from './types'
 
 /**
@@ -42,6 +43,23 @@ export interface SheetPresentationOptions {
   onDismiss?: () => void
 }
 
+export type ToolbarItemPlacement =
+  | 'navigation'
+  | 'primaryAction'
+  | 'destructiveAction'
+  | 'bottomBar'
+
+export interface ToolbarItemConfig {
+  id: string
+  placement: ToolbarItemPlacement
+  content: () => ComponentInstance
+}
+
+export interface ToolbarItemInput {
+  placement: ToolbarItemPlacement
+  content: () => ComponentInstance
+}
+
 export type PopoverArrowEdge = 'top' | 'bottom' | 'leading' | 'trailing'
 
 export interface PopoverPresentationOptions {
@@ -52,6 +70,17 @@ export interface PopoverPresentationOptions {
   maxWidth?: string
   ariaLabel?: string
   onDismiss?: () => void
+}
+
+/**
+ * ToolbarItem descriptor factory
+ */
+export function ToolbarItem(input: ToolbarItemInput): ToolbarItemConfig {
+  return {
+    id: `toolbar-item-${Math.random().toString(36).slice(2, 10)}`,
+    placement: input.placement,
+    content: input.content,
+  }
 }
 
 /**
@@ -303,6 +332,145 @@ export function toolbarForegroundColor(
   navigationModifierManager.pushModifier({ foregroundColor: color })
 
   return component
+}
+
+function partitionToolbarItems(items: ToolbarItemConfig[]): {
+  navigation: ToolbarItemConfig[]
+  trailing: ToolbarItemConfig[]
+  bottomBar: ToolbarItemConfig[]
+} {
+  const navigation = items.filter(item => item.placement === 'navigation')
+  const trailing = items.filter(
+    item =>
+      item.placement === 'primaryAction' ||
+      item.placement === 'destructiveAction'
+  )
+  const bottomBar = items.filter(item => item.placement === 'bottomBar')
+
+  return { navigation, trailing, bottomBar }
+}
+
+export function getToolbarItemsByPlacement(component: ComponentInstance): {
+  navigation: ToolbarItemConfig[]
+  trailing: ToolbarItemConfig[]
+  bottomBar: ToolbarItemConfig[]
+} {
+  const toolbarItemList = ((component as any)._navigationModifiers
+    ?.toolbarItems ?? []) as ToolbarItemConfig[]
+  return partitionToolbarItems(toolbarItemList)
+}
+
+function createToolbarItemNode(item: ToolbarItemConfig): ComponentInstance {
+  const content = item.content()
+  if (item.placement === 'destructiveAction') {
+    return HTML.div({
+      children: [content],
+    })
+      .foregroundColor('#d32f2f')
+      .build()
+  }
+  return content
+}
+
+function wrapComponentWithToolbar(
+  component: ComponentInstance,
+  items: ToolbarItemConfig[]
+): ComponentInstance {
+  const partitions = partitionToolbarItems(items)
+  const hasTopBar =
+    partitions.navigation.length > 0 || partitions.trailing.length > 0
+  const hasBottomBar = partitions.bottomBar.length > 0
+
+  if (!hasTopBar && !hasBottomBar) {
+    return component
+  }
+
+  const children: ComponentInstance[] = []
+
+  if (hasTopBar) {
+    const leadingGroup = HTML.div({
+      children: partitions.navigation.map(createToolbarItemNode),
+    })
+      .display('flex')
+      .gap(8)
+      .build()
+
+    const trailingGroup = HTML.div({
+      children: partitions.trailing.map(createToolbarItemNode),
+    })
+      .display('flex')
+      .gap(8)
+      .build()
+
+    children.push(
+      HTML.div({
+        children: [leadingGroup, trailingGroup],
+      })
+        .display('flex')
+        .justifyContent('space-between')
+        .alignItems('center')
+        .padding({ top: 10, right: 12, bottom: 10, left: 12 })
+        .border({ width: 1, color: '#e5e7eb' })
+        .backgroundColor('#f9fafb')
+        .build()
+    )
+  }
+
+  children.push(component)
+
+  if (hasBottomBar) {
+    children.push(
+      HTML.div({
+        children: partitions.bottomBar.map(createToolbarItemNode),
+      })
+        .display('flex')
+        .gap(8)
+        .alignItems('center')
+        .padding({ top: 10, right: 12, bottom: 10, left: 12 })
+        .border({ width: 1, color: '#e5e7eb' })
+        .backgroundColor('#f9fafb')
+        .build()
+    )
+  }
+
+  return HTML.div({
+    children,
+  })
+    .display('flex')
+    .flexDirection('column')
+    .build()
+}
+
+/**
+ * .toolbarItems() modifier
+ */
+export function toolbarItems(
+  component: ComponentInstance,
+  items: ToolbarItemConfig[]
+): ComponentInstance {
+  const nextModifiers = {
+    ...(component as any)._navigationModifiers,
+    toolbarItems: items,
+  }
+  ;(component as any)._navigationModifiers = nextModifiers
+
+  const wrappedComponent = wrapComponentWithToolbar(component, items)
+  ;(wrappedComponent as any)._navigationModifiers = {
+    ...(wrappedComponent as any)._navigationModifiers,
+    ...nextModifiers,
+  }
+
+  return wrappedComponent
+}
+
+/**
+ * .toolbar() modifier alias
+ */
+export function toolbar(
+  component: ComponentInstance,
+  items: ToolbarItemConfig[]
+): ComponentInstance {
+  return toolbarItems(component, items)
 }
 
 function readPresentedState(isPresented: SheetPresentationState): boolean {
@@ -1141,6 +1309,8 @@ declare module '@tachui/core' {
     navigationBarBackButtonTitle(title: string): ComponentInstance
     toolbarBackground(background: string): ComponentInstance
     toolbarForegroundColor(color: string): ComponentInstance
+    toolbar(items: ToolbarItemConfig[]): ComponentInstance
+    toolbarItems(items: ToolbarItemConfig[]): ComponentInstance
     // Modal presentation modifiers
     sheet(
       isPresented: Accessor<boolean> | Binding<boolean>,
@@ -1191,6 +1361,14 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
 
   proto.toolbarForegroundColor = function(color: string) {
     return toolbarForegroundColor(this, color)
+  }
+
+  proto.toolbar = function(items: ToolbarItemConfig[]) {
+    return toolbar(this, items)
+  }
+
+  proto.toolbarItems = function(items: ToolbarItemConfig[]) {
+    return toolbarItems(this, items)
   }
 
   proto.sheet = function(

@@ -45,6 +45,10 @@ export {
   navigationBarBackButtonHidden,
   navigationBarBackButtonTitle,
   navigationBarItems,
+  toolbar,
+  toolbarItems,
+  ToolbarItem,
+  getToolbarItemsByPlacement,
   toolbarBackground,
   toolbarForegroundColor,
   sheet,
@@ -61,6 +65,9 @@ export type {
   SheetPresentationOptions,
   PopoverArrowEdge,
   PopoverPresentationOptions,
+  ToolbarItemPlacement,
+  ToolbarItemConfig,
+  ToolbarItemInput,
 } from './navigation-modifiers'
 
 // Navigation Environment System
