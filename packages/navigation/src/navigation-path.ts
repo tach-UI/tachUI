@@ -660,7 +660,8 @@ export class NavigationPath implements INavigationPath {
 }
 
 /**
- * Type-safe navigation path element for storing heterogeneous data
+ * @deprecated Use `NavigationPath` typed entries directly:
+ * `path.append({ type: 'product', id: 42 })`
  */
 export class NavigationPathElement<T = any> {
   constructor(
@@ -677,61 +678,59 @@ export class NavigationPathElement<T = any> {
 }
 
 /**
- * Enhanced NavigationPath with type-safe elements
+ * @deprecated Compatibility shim. Use `NavigationPath` directly.
  */
 export class TypedNavigationPath {
-  private _elements: NavigationPathElement[] = []
+  private _path: NavigationPath = new NavigationPath()
   private _listeners: Set<(path: TypedNavigationPath) => void> = new Set()
 
   /**
    * Get the number of elements in the path
    */
   get count(): number {
-    return this._elements.length
+    return this._path.count
   }
 
   /**
    * Check if the path is empty
    */
   get isEmpty(): boolean {
-    return this._elements.length === 0
+    return this._path.isEmpty
   }
 
   /**
    * Get segments as strings for compatibility
    */
   get segments(): string[] {
-    return this._elements.map(el => el.value as string)
+    return [...this._path.segments]
   }
 
   /**
    * Check if path is valid
    */
   isValid(): boolean {
-    return Array.isArray(this._elements)
+    return this._path.isValid()
   }
 
   /**
    * Get validation errors
    */
   validationErrors(): string[] {
-    return []
+    return this._path.validationErrors()
   }
 
   /**
    * Get element at index (compatibility method)
    */
   at(index: number): string | undefined {
-    const element = this._elements[index]
-    return element ? (element.value as string) : undefined
+    return this._path.at(index)
   }
 
   /**
    * Get last element (compatibility method)
    */
   last(): string | undefined {
-    const lastElement = this._elements[this._elements.length - 1]
-    return lastElement ? (lastElement.value as string) : undefined
+    return this._path.last
   }
 
   /**
@@ -740,7 +739,13 @@ export class TypedNavigationPath {
    * @param value - The value to store
    */
   append<T>(type: string, value: T): void {
-    this._elements.push(new NavigationPathElement(type, value))
+    if (type === 'string' && typeof value === 'string') {
+      this._path.append(value)
+      this._notifyListeners()
+      return
+    }
+
+    this._path.append({ type, value })
     this._notifyListeners()
   }
 
@@ -749,9 +754,8 @@ export class TypedNavigationPath {
    * @param count - Number of elements to remove (default: 1)
    */
   removeLast(count: number = 1): void {
-    const actualCount = Math.min(count, this._elements.length)
-    if (actualCount > 0) {
-      this._elements.splice(-actualCount, actualCount)
+    if (count > 0) {
+      this._path.removeLast(count)
       this._notifyListeners()
     }
   }
@@ -760,8 +764,8 @@ export class TypedNavigationPath {
    * Clear all elements from the path
    */
   clear(): void {
-    if (this._elements.length > 0) {
-      this._elements = []
+    if (!this._path.isEmpty) {
+      this._path.clear()
       this._notifyListeners()
     }
   }
@@ -771,10 +775,18 @@ export class TypedNavigationPath {
    * @param type - The type to search for
    */
   lastOfType<T>(type: string): T | undefined {
-    for (let i = this._elements.length - 1; i >= 0; i--) {
-      const element = this._elements[i]
-      if (element.type === type) {
-        return element.value as T
+    const entries = this._path.entries
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const entry = entries[i]
+      if (typeof entry === 'string') {
+        if (type === 'string') {
+          return entry as T
+        }
+        continue
+      }
+
+      if (entry.type === type) {
+        return (entry as any).value as T
       }
     }
     return undefined
@@ -785,9 +797,44 @@ export class TypedNavigationPath {
    * @param type - The type to filter by
    */
   allOfType<T>(type: string): T[] {
-    return this._elements
-      .filter(element => element.type === type)
-      .map(element => element.value as T)
+    return this._path.entries
+      .flatMap(entry => {
+        if (typeof entry === 'string') {
+          return type === 'string' ? ([entry] as T[]) : []
+        }
+        return entry.type === type ? ([(entry as any).value] as T[]) : []
+      })
+  }
+
+  /**
+   * @deprecated Use `NavigationPath.encode()` directly.
+   */
+  encode(): string {
+    return this._path.encode()
+  }
+
+  /**
+   * @deprecated Use `NavigationPath.decode()` directly.
+   */
+  static decode(payload: string): TypedNavigationPath {
+    const typedPath = new TypedNavigationPath()
+    const decodedPath = NavigationPath.decode(payload)
+    const entries = decodedPath.entries
+
+    for (const entry of entries) {
+      if (typeof entry === 'string') {
+        typedPath.append('string', entry)
+        continue
+      }
+
+      if ('value' in entry) {
+        typedPath.append(entry.type, (entry as any).value)
+      } else {
+        typedPath.append(entry.type, { ...entry })
+      }
+    }
+
+    return typedPath
   }
 
   /**
@@ -847,7 +894,7 @@ createNavigationPath.fromBookmark = (bookmarkId: string) => {
 }
 
 /**
- * Create a new TypedNavigationPath instance
+ * @deprecated Use `createNavigationPath()` and append typed entries directly.
  */
 export function createTypedNavigationPath(
   initialSegments?: string[]

@@ -473,6 +473,32 @@ describe('Navigation Path - Path Management and Utilities', () => {
 
       expect(path.isValid()).toBe(true) // Empty strings are allowed
     })
+
+    it('supports codable parity via encode/decode compatibility shim', () => {
+      const path = createTypedNavigationPath(['home'])
+      path.append('product', { id: 42, sku: 'starter' })
+
+      const encoded = path.encode()
+      const restored = TypedNavigationPath.decode(encoded)
+
+      expect(restored.segments).toEqual(['home', 'product'])
+      expect(restored.lastOfType<{ id: number; sku: string }>('product')).toEqual({
+        id: 42,
+        sku: 'starter',
+      })
+    })
+
+    it('keeps typed shim backed by canonical key behavior', () => {
+      const path = new TypedNavigationPath()
+      path.append('product', { id: 1 })
+      path.append('product', { id: 2 })
+
+      expect(path.segments).toEqual(['product', 'product'])
+      expect(path.allOfType<{ id: number }>('product')).toEqual([
+        { id: 1 },
+        { id: 2 },
+      ])
+    })
   })
 
   describe('Navigation Path Events', () => {
