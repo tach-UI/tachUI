@@ -1,5 +1,14 @@
 # @tachui/mobile
 
+## 0.8.19
+
+### Patch Changes
+
+- Updated dependencies [[`b2f2522`](https://github.com/tach-UI/tachUI/commit/b2f25224d7d33e249653f90a94091287c3506f47)]:
+  - @tachui/core@0.8.19
+  - @tachui/modifiers@0.8.19
+  - @tachui/registry@0.8.19
+
 ## 0.8.18
 
 ### Patch Changes
