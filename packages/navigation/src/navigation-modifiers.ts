@@ -763,7 +763,9 @@ function setupSheetPresentation(
         const fraction = Math.min(Math.max(detent.fraction, 0.1), 0.95)
         return Math.round(viewportHeight * fraction)
       }
-      return Math.round(Math.min(detent.height, viewportHeight * 0.95))
+      return Math.round(
+        Math.max(1, Math.min(detent.height, viewportHeight * 0.95))
+      )
     }
 
     const applyDetentToHost = (
@@ -780,11 +782,16 @@ function setupSheetPresentation(
     const requestedDetents = (((sheetContent as any)._sheetPresentationDetents
       ?.detents ?? []) as PresentationDetent[]).filter(Boolean)
     let detentHeights = requestedDetents.map(resolveDetentHeightPx)
-    let currentDetentIndex = 0
+    let currentDetentIndex = detentHeights.length > 0
+      ? detentHeights.reduce((smallestIndex, currentHeight, currentIndex) => {
+          return currentHeight < detentHeights[smallestIndex]
+            ? currentIndex
+            : smallestIndex
+        }, 0)
+      : 0
 
     if (detentHeights.length > 0) {
       applyDetentToHost(detentHeights, currentDetentIndex)
-      sheetHost.style.transform = 'translateY(0)'
       sheetHost.style.transition = `transform ${transitionDurationMs}ms ease, height ${transitionDurationMs}ms ease`
     }
 
@@ -801,6 +808,15 @@ function setupSheetPresentation(
       dragHandle.style.justifyContent = 'center'
       dragHandle.style.padding = '10px 0 6px 0'
       dragHandle.style.cursor = 'grab'
+      dragHandle.style.touchAction = 'none'
+      dragHandle.setAttribute('role', 'slider')
+      dragHandle.setAttribute('tabindex', '0')
+      dragHandle.setAttribute('aria-label', 'Adjust sheet height')
+      dragHandle.setAttribute('aria-valuemin', '0')
+      dragHandle.setAttribute(
+        'aria-valuemax',
+        String(Math.max(0, detentHeights.length - 1))
+      )
 
       const indicator = document.createElement('div')
       indicator.style.width = '36px'
@@ -813,10 +829,16 @@ function setupSheetPresentation(
       let isDragging = false
       let startY = 0
       let startHeight = detentHeights[currentDetentIndex] ?? 0
+      let activeTouchIdentifier: number | null = null
 
-      const onMouseMove = (event: MouseEvent) => {
+      const updateDragHandleAriaValue = () => {
+        dragHandle.setAttribute('aria-valuenow', String(currentDetentIndex))
+      }
+      updateDragHandleAriaValue()
+
+      const onDragMove = (clientY: number) => {
         if (!isDragging) return
-        const deltaY = event.clientY - startY
+        const deltaY = clientY - startY
         const minHeight = Math.min(...detentHeights)
         const maxHeight = Math.max(...detentHeights)
         const nextHeight = Math.min(
@@ -826,9 +848,10 @@ function setupSheetPresentation(
         currentSheetHost.style.height = `${Math.round(nextHeight)}px`
       }
 
-      const onMouseUp = () => {
+      const onDragEnd = () => {
         if (!isDragging) return
         isDragging = false
+        activeTouchIdentifier = null
         dragHandle.style.cursor = 'grab'
 
         const currentHeight = Number.parseFloat(currentSheetHost.style.height)
@@ -839,29 +862,101 @@ function setupSheetPresentation(
         }, 0)
         currentDetentIndex = nearestIndex
         applyDetentToHost(detentHeights, currentDetentIndex)
+        updateDragHandleAriaValue()
 
         window.removeEventListener('mousemove', onMouseMove)
         window.removeEventListener('mouseup', onMouseUp)
+        window.removeEventListener('touchmove', onTouchMove)
+        window.removeEventListener('touchend', onTouchEnd)
+        window.removeEventListener('touchcancel', onTouchEnd)
+      }
+
+      const beginDrag = (clientY: number) => {
+        isDragging = true
+        startY = clientY
+        startHeight = Number.parseFloat(currentSheetHost.style.height)
+        dragHandle.style.cursor = 'grabbing'
+      }
+
+      const onMouseMove = (event: MouseEvent) => {
+        onDragMove(event.clientY)
+      }
+
+      const onMouseUp = () => {
+        onDragEnd()
+      }
+
+      const onTouchMove = (event: TouchEvent) => {
+        if (!isDragging) return
+        const matchingTouch = Array.from(event.touches).find(
+          touch => touch.identifier === activeTouchIdentifier
+        )
+        const activeTouch = matchingTouch ?? event.touches[0]
+        if (!activeTouch) return
+        event.preventDefault()
+        onDragMove(activeTouch.clientY)
+      }
+
+      const onTouchEnd = () => {
+        onDragEnd()
       }
 
       const onMouseDown = (event: MouseEvent) => {
         event.preventDefault()
-        isDragging = true
-        startY = event.clientY
-        startHeight = Number.parseFloat(currentSheetHost.style.height)
-        dragHandle.style.cursor = 'grabbing'
+        beginDrag(event.clientY)
         window.addEventListener('mousemove', onMouseMove)
         window.addEventListener('mouseup', onMouseUp)
       }
 
+      const onTouchStart = (event: TouchEvent) => {
+        const touch = event.touches[0]
+        if (!touch) return
+        event.preventDefault()
+        activeTouchIdentifier = touch.identifier
+        beginDrag(touch.clientY)
+        window.addEventListener('touchmove', onTouchMove, { passive: false })
+        window.addEventListener('touchend', onTouchEnd)
+        window.addEventListener('touchcancel', onTouchEnd)
+      }
+
+      const onHandleKeyDown = (event: KeyboardEvent) => {
+        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+          return
+        }
+        event.preventDefault()
+        const nextIndex =
+          event.key === 'ArrowUp'
+            ? Math.min(detentHeights.length - 1, currentDetentIndex + 1)
+            : Math.max(0, currentDetentIndex - 1)
+        if (nextIndex === currentDetentIndex) {
+          return
+        }
+        currentDetentIndex = nextIndex
+        applyDetentToHost(detentHeights, currentDetentIndex)
+        updateDragHandleAriaValue()
+      }
+
       dragHandle.addEventListener('mousedown', onMouseDown)
+      dragHandle.addEventListener('touchstart', onTouchStart, { passive: false })
+      dragHandle.addEventListener('keydown', onHandleKeyDown)
 
       removeDetentDragListeners = () => {
         dragHandle.removeEventListener('mousedown', onMouseDown)
-        window.removeEventListener('mousemove', onMouseMove)
-        window.removeEventListener('mouseup', onMouseUp)
+        dragHandle.removeEventListener('touchstart', onTouchStart)
+        dragHandle.removeEventListener('keydown', onHandleKeyDown)
+        if (isDragging) {
+          isDragging = false
+          activeTouchIdentifier = null
+          window.removeEventListener('mousemove', onMouseMove)
+          window.removeEventListener('mouseup', onMouseUp)
+          window.removeEventListener('touchmove', onTouchMove)
+          window.removeEventListener('touchend', onTouchEnd)
+          window.removeEventListener('touchcancel', onTouchEnd)
+        }
       }
+    }
 
+    if (detentHeights.length > 0) {
       const onResize = () => {
         detentHeights = requestedDetents.map(resolveDetentHeightPx)
         currentDetentIndex = Math.min(currentDetentIndex, detentHeights.length - 1)

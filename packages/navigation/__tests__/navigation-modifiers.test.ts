@@ -715,6 +715,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
         '[data-tachui-sheet-content="true"]'
       ) as HTMLDivElement | null
       expect(Number.parseFloat(content?.style.height ?? '0')).toBe(500)
+      expect(
+        document.querySelector('[data-tachui-sheet-drag-handle="true"]')
+      ).toBeNull()
 
       cleanup()
       container.remove()
@@ -821,6 +824,128 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       })
     })
 
+    it('clamps fraction and height detent values to valid bounds', async () => {
+      const originalInnerHeight = window.innerHeight
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const lowFractionComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            [{ fraction: 0 }]
+          )
+      )
+      const cleanupLowFraction = mountComponentTree(lowFractionComponent, container)
+      await flushMicrotasks()
+
+      let content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(100)
+      cleanupLowFraction()
+
+      const highFractionComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            [{ fraction: 1.5 }]
+          )
+      )
+      const cleanupHighFraction = mountComponentTree(highFractionComponent, container)
+      await flushMicrotasks()
+
+      content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(950)
+      cleanupHighFraction()
+
+      const zeroHeightComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            [{ height: 0 }]
+          )
+      )
+      const cleanupZeroHeight = mountComponentTree(zeroHeightComponent, container)
+      await flushMicrotasks()
+
+      content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(1)
+      cleanupZeroHeight()
+
+      const largeHeightComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            [{ height: 4000 }]
+          )
+      )
+      const cleanupLargeHeight = mountComponentTree(largeHeightComponent, container)
+      await flushMicrotasks()
+
+      content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(950)
+
+      cleanupLargeHeight()
+      container.remove()
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      })
+    })
+
+    it('animates sheet entrance when detents are configured', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            ['medium']
+          )
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(content?.style.transform).toBe('translateY(100%)')
+
+      await flushAnimationFrame()
+      expect(content?.style.transform).toBe('translateY(0)')
+
+      cleanup()
+      container.remove()
+    })
+
     it('renders drag indicator and snaps between detents when dragged', async () => {
       const originalInnerHeight = window.innerHeight
       Object.defineProperty(window, 'innerHeight', {
@@ -870,6 +995,128 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       expect(Number.parseFloat(content?.style.height ?? '0')).toBe(900)
 
       cleanup()
+      container.remove()
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      })
+    })
+
+    it('supports touch drag snapping between detents', async () => {
+      const originalInnerHeight = window.innerHeight
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            ['medium', 'large']
+          )
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      const handle = document.querySelector(
+        '[data-tachui-sheet-drag-handle="true"]'
+      ) as HTMLDivElement | null
+      expect(handle).toBeTruthy()
+
+      const touchStart = new Event('touchstart', {
+        bubbles: true,
+        cancelable: true,
+      }) as unknown as TouchEvent
+      Object.defineProperty(touchStart, 'touches', {
+        value: [{ identifier: 1, clientY: 600 }],
+      })
+      handle?.dispatchEvent(touchStart)
+
+      const touchMove = new Event('touchmove', {
+        bubbles: true,
+        cancelable: true,
+      }) as unknown as TouchEvent
+      Object.defineProperty(touchMove, 'touches', {
+        value: [{ identifier: 1, clientY: 120 }],
+      })
+      window.dispatchEvent(touchMove)
+
+      const touchEnd = new Event('touchend', {
+        bubbles: true,
+        cancelable: true,
+      }) as unknown as TouchEvent
+      window.dispatchEvent(touchEnd)
+      await flushMicrotasks()
+
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(900)
+
+      cleanup()
+      container.remove()
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      })
+    })
+
+    it('recalculates detent height on resize and removes resize listener on cleanup', async () => {
+      const originalInnerHeight = window.innerHeight
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+      const removeSpy = vi.spyOn(window, 'removeEventListener')
+
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            ['medium']
+          )
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(500)
+
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1200,
+      })
+      window.dispatchEvent(new Event('resize'))
+      await flushMicrotasks()
+
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(600)
+
+      cleanup()
+      expect(removeSpy).toHaveBeenCalledWith('resize', expect.any(Function))
+
+      removeSpy.mockRestore()
       container.remove()
       Object.defineProperty(window, 'innerHeight', {
         configurable: true,
