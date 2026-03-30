@@ -52,6 +52,7 @@ export {
   toolbarBackground,
   toolbarForegroundColor,
   sheet,
+  fullScreenCover,
   popover,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
@@ -63,6 +64,7 @@ export {
 } from './navigation-modifiers'
 export type {
   SheetPresentationOptions,
+  FullScreenCoverOptions,
   PopoverArrowEdge,
   PopoverPresentationOptions,
   ToolbarItemPlacement,

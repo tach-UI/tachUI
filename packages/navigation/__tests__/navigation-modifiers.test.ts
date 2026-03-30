@@ -21,6 +21,7 @@ import {
   toolbarBackground,
   toolbarForegroundColor,
   sheet,
+  fullScreenCover,
   popover,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
@@ -45,6 +46,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       .forEach(node => node.remove())
     document
       .querySelectorAll('[data-tachui-popover-root="true"]')
+      .forEach(node => node.remove())
+    document
+      .querySelectorAll('[data-tachui-fullscreen-cover-root="true"]')
       .forEach(node => node.remove())
   })
 
@@ -559,6 +563,130 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       secondContainer.remove()
       setFirstPresented(false)
       setSecondPresented(false)
+    })
+  })
+
+  describe('FullScreenCover Modifier', () => {
+    it('renders full-screen cover when presentation signal is true', async () => {
+      const [isPresented, setIsPresented] = createSignal(false)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = fullScreenCover(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Cover content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+
+      setIsPresented(true)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      expect(
+        document.querySelector('[data-tachui-fullscreen-cover-root="true"]')
+      ).toBeTruthy()
+
+      cleanup()
+      container.remove()
+    })
+
+    it('unmounts full-screen cover when presentation signal is false', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = fullScreenCover(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Cover content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+      expect(
+        document.querySelector('[data-tachui-fullscreen-cover-root="true"]')
+      ).toBeTruthy()
+
+      setIsPresented(false)
+      await flushMicrotasks()
+
+      expect(
+        document.querySelector('[data-tachui-fullscreen-cover-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('applies full viewport sizing styles', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = fullScreenCover(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Cover content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      const root = document.querySelector(
+        '[data-tachui-fullscreen-cover-root="true"]'
+      ) as HTMLDivElement | null
+
+      expect(root?.style.position).toBe('fixed')
+      expect(root?.style.width).toBe('100vw')
+      expect(root?.style.height).toBe('100vh')
+      expect(root?.style.inset).toBe('0')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('traps focus within the cover while open', async () => {
+      const [isPresented] = createSignal(true)
+      const outsideButton = document.createElement('button')
+      outsideButton.textContent = 'Outside'
+      document.body.appendChild(outsideButton)
+      outsideButton.focus()
+
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = fullScreenCover(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Cover content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+
+      const coverHost = document.querySelector(
+        '[data-tachui-fullscreen-cover-content="true"]'
+      ) as HTMLElement | null
+      expect(coverHost).toBeTruthy()
+      expect(document.activeElement).toBe(coverHost)
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }))
+      expect(document.activeElement).toBe(coverHost)
+
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true })
+      )
+      expect(document.activeElement).toBe(coverHost)
+
+      cleanup()
+      container.remove()
+      outsideButton.remove()
     })
   })
 

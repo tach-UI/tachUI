@@ -43,6 +43,13 @@ export interface SheetPresentationOptions {
   onDismiss?: () => void
 }
 
+export interface FullScreenCoverOptions {
+  zIndex?: number
+  backgroundColor?: string
+  ariaLabel?: string
+  onDismiss?: () => void
+}
+
 export type ToolbarItemPlacement =
   | 'navigation'
   | 'primaryAction'
@@ -1107,6 +1114,194 @@ export function sheet(
   return component
 }
 
+function setupFullScreenCoverPresentation(
+  isPresented: SheetPresentationState,
+  content: () => ComponentInstance,
+  options: FullScreenCoverOptions
+): () => void {
+  if (typeof document === 'undefined') {
+    return () => {}
+  }
+
+  let portalRoot: HTMLDivElement | null = null
+  let contentHost: HTMLDivElement | null = null
+  let disposeCoverContent: (() => void) | null = null
+  let previousActiveElement: HTMLElement | null = null
+  let removeFocusTrapListener: (() => void) | null = null
+  let focusFrameId: number | null = null
+  let isMounted = false
+
+  const getFocusableElements = (): HTMLElement[] => {
+    if (!contentHost) return []
+    return Array.from(
+      contentHost.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    )
+  }
+
+  const unmountPortal = () => {
+    if (disposeCoverContent) {
+      disposeCoverContent()
+      disposeCoverContent = null
+    }
+
+    if (removeFocusTrapListener) {
+      removeFocusTrapListener()
+      removeFocusTrapListener = null
+    }
+
+    if (focusFrameId !== null) {
+      cancelAnimationFrame(focusFrameId)
+      focusFrameId = null
+    }
+
+    if (portalRoot) {
+      portalRoot.remove()
+      portalRoot = null
+    }
+
+    if (
+      previousActiveElement &&
+      previousActiveElement.isConnected &&
+      typeof previousActiveElement.focus === 'function'
+    ) {
+      previousActiveElement.focus()
+    }
+    previousActiveElement = null
+
+    contentHost = null
+    isMounted = false
+  }
+
+  const mountPortal = () => {
+    if (isMounted) return
+
+    portalRoot = document.createElement('div')
+    portalRoot.setAttribute('data-tachui-fullscreen-cover-root', 'true')
+    portalRoot.style.position = 'fixed'
+    portalRoot.style.inset = '0'
+    portalRoot.style.width = '100vw'
+    portalRoot.style.height = '100vh'
+    portalRoot.style.zIndex = String(options.zIndex ?? 1200)
+    portalRoot.style.background = options.backgroundColor ?? '#ffffff'
+    portalRoot.style.pointerEvents = 'auto'
+
+    contentHost = document.createElement('div')
+    contentHost.setAttribute('data-tachui-fullscreen-cover-content', 'true')
+    contentHost.setAttribute('role', 'dialog')
+    contentHost.setAttribute('aria-modal', 'true')
+    if (options.ariaLabel) {
+      contentHost.setAttribute('aria-label', options.ariaLabel)
+    }
+    contentHost.tabIndex = -1
+    contentHost.style.width = '100%'
+    contentHost.style.height = '100%'
+
+    portalRoot.appendChild(contentHost)
+    document.body.appendChild(portalRoot)
+    previousActiveElement =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+
+    disposeCoverContent = mountComponentTree(content(), contentHost)
+
+    const focusTrapHandler = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || !contentHost) return
+
+      const focusable = getFocusableElements()
+      if (focusable.length === 0) {
+        event.preventDefault()
+        contentHost.focus()
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement as HTMLElement | null
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', focusTrapHandler)
+    removeFocusTrapListener = () => {
+      document.removeEventListener('keydown', focusTrapHandler)
+    }
+
+    focusFrameId = requestAnimationFrame(() => {
+      const focusable = getFocusableElements()
+      if (focusable.length > 0) {
+        focusable[0].focus()
+      } else if (contentHost) {
+        contentHost.focus()
+      }
+      focusFrameId = null
+    })
+
+    isMounted = true
+  }
+
+  const effect = createEffect(() => {
+    if (readPresentedState(isPresented)) {
+      mountPortal()
+    } else {
+      unmountPortal()
+    }
+  })
+
+  return () => {
+    effect.dispose()
+    unmountPortal()
+  }
+}
+
+/**
+ * .fullScreenCover() modifier
+ */
+export function fullScreenCover(
+  component: ComponentInstance,
+  isPresented: SheetPresentationState,
+  content: () => ComponentInstance,
+  options: FullScreenCoverOptions = {}
+): ComponentInstance {
+  ;(component as any)._navigationModifiers = {
+    ...(component as any)._navigationModifiers,
+    fullScreenCover: { isPresented, content, options },
+  }
+
+  const existingLifecycle = (component as any)._enhancedLifecycle ?? {}
+  const existingOnDOMReady = existingLifecycle.onDOMReady as
+    | ((elements: Map<string, Element>, primary?: Element) => void | (() => void))
+    | undefined
+
+  ;(component as any)._enhancedLifecycle = {
+    ...existingLifecycle,
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      const existingCleanup = existingOnDOMReady?.(elements, primary)
+      const coverCleanup = setupFullScreenCoverPresentation(
+        isPresented,
+        content,
+        options
+      )
+
+      return () => {
+        coverCleanup()
+        if (typeof existingCleanup === 'function') {
+          existingCleanup()
+        }
+      }
+    },
+  }
+
+  return component
+}
+
 /**
  * .popover() modifier
  *
@@ -1317,7 +1512,11 @@ declare module '@tachui/core' {
       content: () => ComponentInstance,
       options?: SheetPresentationOptions
     ): ComponentInstance
-    fullScreenCover(isPresented: () => boolean, content: () => ComponentInstance, options?: any): ComponentInstance
+    fullScreenCover(
+      isPresented: Accessor<boolean> | Binding<boolean>,
+      content: () => ComponentInstance,
+      options?: FullScreenCoverOptions
+    ): ComponentInstance
     popover(
       isPresented: Accessor<boolean> | Binding<boolean>,
       arrowEdge: PopoverArrowEdge,
@@ -1377,6 +1576,14 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
     options?: SheetPresentationOptions
   ) {
     return sheet(this, isPresented, content, options)
+  }
+
+  proto.fullScreenCover = function(
+    isPresented: Accessor<boolean> | Binding<boolean>,
+    content: () => ComponentInstance,
+    options?: FullScreenCoverOptions
+  ) {
+    return fullScreenCover(this, isPresented, content, options)
   }
 
   proto.popover = function(
