@@ -376,7 +376,6 @@ export function getNavigationEnvironment(): {
  */
 export function clearNavigationEnvironment(): void {
   navigationEnvironment.clear()
-  delete (globalThis as any).__navigationEnvironment
 }
 
 /**

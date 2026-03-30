@@ -1784,8 +1784,7 @@ function setupConfirmationDialogPresentation(
   let portalRoot: HTMLDivElement | null = null
   let backdrop: HTMLDivElement | null = null
   let dialogHost: HTMLDivElement | null = null
-  let removeEscapeListener: (() => void) | null = null
-  let removeFocusTrapListener: (() => void) | null = null
+  let removeKeydownListener: (() => void) | null = null
   let removeDismissScope: (() => void) | null = null
   let focusFrameId: number | null = null
   let previousActiveElement: HTMLElement | null = null
@@ -1817,13 +1816,9 @@ function setupConfirmationDialogPresentation(
       portalRoot.remove()
       portalRoot = null
     }
-    if (removeEscapeListener) {
-      removeEscapeListener()
-      removeEscapeListener = null
-    }
-    if (removeFocusTrapListener) {
-      removeFocusTrapListener()
-      removeFocusTrapListener = null
+    if (removeKeydownListener) {
+      removeKeydownListener()
+      removeKeydownListener = null
     }
     if (removeDismissScope) {
       removeDismissScope()
@@ -1970,10 +1965,9 @@ function setupConfirmationDialogPresentation(
       }
     }
     document.addEventListener('keydown', keydownListener)
-    removeEscapeListener = () => {
+    removeKeydownListener = () => {
       document.removeEventListener('keydown', keydownListener)
     }
-    removeFocusTrapListener = removeEscapeListener
 
     removeDismissScope = setupModalDismissEnvironment(isPresented, dismissOptions)
     focusFrameId = requestAnimationFrame(() => {
