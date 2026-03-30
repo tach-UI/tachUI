@@ -19,6 +19,7 @@ import {
   rotateZ,
   perspective,
   matrix3d,
+  translateZ,
   offset,
 } from '../../src/effects/transforms'
 
@@ -232,6 +233,42 @@ describe('Transform Effects', () => {
       flushSync()
       expect(element.style.transform).toContain('rotate(45deg)')
       expect(element.style.transform).toContain('skewX(15deg)')
+    })
+
+    it('composes chained transform modifiers instead of overwriting', () => {
+      const { element, context } = createContext()
+
+      perspective(800).apply({} as DOMNode, context)
+      rotateY('-22deg').apply({} as DOMNode, context)
+      rotateX('14deg').apply({} as DOMNode, context)
+      translateZ('8px').apply({} as DOMNode, context)
+
+      expect(element.style.transform).toContain('perspective(800px)')
+      expect(element.style.transform).toContain('rotateY(-22deg)')
+      expect(element.style.transform).toContain('rotateX(14deg)')
+      expect(element.style.transform).toContain('translateZ(8px)')
+    })
+
+    it('updates one chained transform without duplicating or dropping siblings', () => {
+      const [xAngle, setXAngle] = createSignal(14)
+      const { element, context } = createContext()
+
+      perspective(800).apply({} as DOMNode, context)
+      rotateY('-22deg').apply({} as DOMNode, context)
+      rotateX(xAngle as unknown as any).apply({} as DOMNode, context)
+      translateZ('8px').apply({} as DOMNode, context)
+
+      expect(element.style.transform).toContain('rotateX(14deg)')
+      expect(element.style.transform.match(/rotateX\(/g)?.length ?? 0).toBe(1)
+
+      setXAngle(30)
+      flushSync()
+
+      expect(element.style.transform).toContain('perspective(800px)')
+      expect(element.style.transform).toContain('rotateY(-22deg)')
+      expect(element.style.transform).toContain('rotateX(30deg)')
+      expect(element.style.transform).toContain('translateZ(8px)')
+      expect(element.style.transform.match(/rotateX\(/g)?.length ?? 0).toBe(1)
     })
   })
 })

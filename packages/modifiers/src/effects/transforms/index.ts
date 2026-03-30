@@ -53,11 +53,11 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
         const styles = this.computeTransformStyles(
           this.resolveTransformOptions(this.properties)
         )
-        this.applyStyles(context.element!, styles)
+        this.applyTransformStyles(context.element!, styles)
       })
     } else {
       const styles = this.computeTransformStyles(this.properties)
-      this.applyStyles(context.element, styles)
+      this.applyTransformStyles(context.element, styles)
     }
 
     return undefined
@@ -114,6 +114,30 @@ export class TransformModifier extends BaseModifier<ModifierTransformOptions> {
     }
 
     return styles
+  }
+
+  private applyTransformStyles(
+    element: Element,
+    styles: Record<string, string>
+  ): void {
+    const { transform: nextTransform, ...otherStyles } = styles
+
+    if (nextTransform !== undefined) {
+      composeTransform(
+        element,
+        nextTransform,
+        this.getTransformFunctionNames(this.resolveTransformOptions(this.properties))
+      )
+    }
+
+    if (Object.keys(otherStyles).length > 0) {
+      this.applyStyles(element, otherStyles)
+    }
+  }
+
+  private getTransformFunctionNames(props: ModifierTransformOptions): string[] {
+    if (!props.transform) return []
+    return collectBasicTransformFunctionNames(props.transform)
   }
 
   private generateTransformCSS(
@@ -279,11 +303,11 @@ export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTran
         const styles = this.computeAdvancedTransformStyles(
           this.resolveAdvancedTransformOptions(this.properties)
         )
-        this.applyStyles(context.element!, styles)
+        this.applyTransformStyles(context.element!, styles)
       })
     } else {
       const styles = this.computeAdvancedTransformStyles(this.properties)
-      this.applyStyles(context.element, styles)
+      this.applyTransformStyles(context.element, styles)
     }
 
     return undefined
@@ -346,6 +370,34 @@ export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTran
     }
 
     return styles
+  }
+
+  private applyTransformStyles(
+    element: Element,
+    styles: Record<string, string>
+  ): void {
+    const { transform: nextTransform, ...otherStyles } = styles
+
+    if (nextTransform !== undefined) {
+      composeTransform(
+        element,
+        nextTransform,
+        this.getTransformFunctionNames(
+          this.resolveAdvancedTransformOptions(this.properties)
+        )
+      )
+    }
+
+    if (Object.keys(otherStyles).length > 0) {
+      this.applyStyles(element, otherStyles)
+    }
+  }
+
+  private getTransformFunctionNames(
+    props: ModifierAdvancedTransformOptions
+  ): string[] {
+    if (!props.transform) return []
+    return collectAdvancedTransformFunctionNames(props.transform)
   }
 
   private generateAdvancedTransformCSS(config: any): string {
@@ -742,4 +794,132 @@ export function offset(x: number, y: number): AdvancedTransformModifier {
   return new AdvancedTransformModifier({
     transform: { translateX: x, translateY: y },
   })
+}
+
+function composeTransform(
+  element: Element,
+  nextTransform: string,
+  transformFunctionsToReplace: string[]
+): void {
+  const styleTarget =
+    element instanceof HTMLElement ? element.style : (element as any).style
+  if (!styleTarget) return
+
+  const existingTransform = String(styleTarget.transform || '')
+  let remainingTransform = existingTransform
+
+  for (const functionName of transformFunctionsToReplace) {
+    const functionRegex = new RegExp(
+      `(?:^|\\s)${functionName}\\([^)]*\\)(?=\\s|$)`,
+      'g'
+    )
+    remainingTransform = remainingTransform.replace(functionRegex, ' ')
+  }
+
+  const normalizedExisting = remainingTransform.replace(/\s+/g, ' ').trim()
+  const normalizedNext = nextTransform.replace(/\s+/g, ' ').trim()
+  const composedTransform = normalizedExisting
+    ? `${normalizedExisting} ${normalizedNext}`
+    : normalizedNext
+
+  styleTarget.transform = composedTransform
+}
+
+function collectBasicTransformFunctionNames(
+  config: TransformConfig | Transform3DConfig
+): string[] {
+  const names = new Set<string>()
+
+  if ('perspective' in config && config.perspective !== undefined) {
+    names.add('perspective')
+  }
+
+  if (config.scale !== undefined) {
+    names.add('scale')
+  }
+
+  if (config.rotate !== undefined) {
+    names.add('rotate')
+  }
+
+  if ('rotateX' in config && config.rotateX !== undefined) {
+    names.add('rotateX')
+  }
+  if ('rotateY' in config && config.rotateY !== undefined) {
+    names.add('rotateY')
+  }
+  if ('rotateZ' in config && config.rotateZ !== undefined) {
+    names.add('rotateZ')
+  }
+
+  if (config.translate !== undefined) {
+    names.add('translate3d')
+  }
+
+  if (config.skew !== undefined) {
+    names.add('skew')
+    names.add('skewX')
+    names.add('skewY')
+  }
+
+  if ('scaleZ' in config && config.scaleZ !== undefined) {
+    names.add('scaleZ')
+  }
+
+  return Array.from(names)
+}
+
+function collectAdvancedTransformFunctionNames(
+  config:
+    | TransformConfig
+    | Transform3DConfig
+    | MatrixTransformConfig
+    | Advanced3DTransformConfig
+): string[] {
+  const names = new Set<string>()
+
+  if ('matrix' in config && config.matrix) {
+    names.add('matrix')
+  }
+  if ('matrix3d' in config && config.matrix3d) {
+    names.add('matrix3d')
+  }
+  if ('rotate3d' in config && config.rotate3d) {
+    names.add('rotate3d')
+  }
+  if ('scale3d' in config && config.scale3d) {
+    names.add('scale3d')
+  }
+  if ('translate3d' in config && config.translate3d) {
+    names.add('translate3d')
+  }
+
+  if ('scaleX' in config && config.scaleX !== undefined) {
+    names.add('scaleX')
+  }
+  if ('scaleY' in config && config.scaleY !== undefined) {
+    names.add('scaleY')
+  }
+  if ('scaleZ' in config && config.scaleZ !== undefined) {
+    names.add('scaleZ')
+  }
+  if ('translateX' in config && config.translateX !== undefined) {
+    names.add('translateX')
+  }
+  if ('translateY' in config && config.translateY !== undefined) {
+    names.add('translateY')
+  }
+  if ('translateZ' in config && config.translateZ !== undefined) {
+    names.add('translateZ')
+  }
+
+  if (names.size === 0) {
+    for (const basicName of collectBasicTransformFunctionNames(
+      config as TransformConfig | Transform3DConfig
+    )) {
+      names.add(basicName)
+    }
+  }
+
+  return Array.from(names)
 }
