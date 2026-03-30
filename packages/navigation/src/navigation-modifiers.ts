@@ -43,6 +43,12 @@ export interface SheetPresentationOptions {
   onDismiss?: () => void
 }
 
+export type PresentationDetent =
+  | 'medium'
+  | 'large'
+  | { fraction: number }
+  | { height: number }
+
 export interface FullScreenCoverOptions {
   zIndex?: number
   backgroundColor?: string
@@ -537,6 +543,16 @@ export function toolbar(
   return toolbarItems(component, items)
 }
 
+export function presentationDetents(
+  component: ComponentInstance,
+  detents: PresentationDetent[]
+): ComponentInstance {
+  ;(component as any)._sheetPresentationDetents = {
+    detents: [...detents],
+  }
+  return component
+}
+
 function readPresentedState(isPresented: SheetPresentationState): boolean {
   if (typeof isPresented === 'function') {
     return Boolean(isPresented())
@@ -592,6 +608,8 @@ function setupSheetPresentation(
   let focusFrameId: number | null = null
   let isTransitionQueued = false
   const transitionDurationMs = options.transitionDurationMs ?? 220
+  let removeDetentDragListeners: (() => void) | null = null
+  let removeDetentResizeListener: (() => void) | null = null
 
   const clearTransitionQueue = () => {
     if (transitionFrameId !== null) {
@@ -645,6 +663,14 @@ function setupSheetPresentation(
     if (removeEscapeListener) {
       removeEscapeListener()
       removeEscapeListener = null
+    }
+    if (removeDetentDragListeners) {
+      removeDetentDragListeners()
+      removeDetentDragListeners = null
+    }
+    if (removeDetentResizeListener) {
+      removeDetentResizeListener()
+      removeDetentResizeListener = null
     }
 
     if (
@@ -701,6 +727,9 @@ function setupSheetPresentation(
     sheetHost.style.transform = 'translateY(100%)'
     sheetHost.style.transition = `transform ${transitionDurationMs}ms ease`
     sheetHost.style.pointerEvents = 'auto'
+    sheetHost.style.overflow = 'hidden'
+    sheetHost.style.display = 'flex'
+    sheetHost.style.flexDirection = 'column'
 
     if (options.dismissOnBackdropTap !== false) {
       backdrop.addEventListener('click', () => {
@@ -722,6 +751,135 @@ function setupSheetPresentation(
       }
     }
 
+    const resolveDetentHeightPx = (detent: PresentationDetent): number => {
+      const viewportHeight = window.innerHeight
+      if (detent === 'medium') {
+        return Math.round(viewportHeight * 0.5)
+      }
+      if (detent === 'large') {
+        return Math.round(viewportHeight * 0.9)
+      }
+      if ('fraction' in detent) {
+        const fraction = Math.min(Math.max(detent.fraction, 0.1), 0.95)
+        return Math.round(viewportHeight * fraction)
+      }
+      return Math.round(Math.min(detent.height, viewportHeight * 0.95))
+    }
+
+    const applyDetentToHost = (
+      detentHeights: number[],
+      detentIndex: number
+    ): void => {
+      const clampedIndex = Math.max(0, Math.min(detentIndex, detentHeights.length - 1))
+      const height = detentHeights[clampedIndex]
+      sheetHost!.style.height = `${height}px`
+      sheetHost!.style.maxHeight = `${Math.round(window.innerHeight * 0.95)}px`
+    }
+
+    const sheetContent = content()
+    const requestedDetents = (((sheetContent as any)._sheetPresentationDetents
+      ?.detents ?? []) as PresentationDetent[]).filter(Boolean)
+    let detentHeights = requestedDetents.map(resolveDetentHeightPx)
+    let currentDetentIndex = 0
+
+    if (detentHeights.length > 0) {
+      applyDetentToHost(detentHeights, currentDetentIndex)
+      sheetHost.style.transform = 'translateY(0)'
+      sheetHost.style.transition = `transform ${transitionDurationMs}ms ease, height ${transitionDurationMs}ms ease`
+    }
+
+    if (detentHeights.length > 1) {
+      const currentSheetHost = sheetHost
+      if (!currentSheetHost) {
+        return
+      }
+
+      const dragHandle = document.createElement('div')
+      dragHandle.setAttribute('data-tachui-sheet-drag-handle', 'true')
+      dragHandle.style.width = '100%'
+      dragHandle.style.display = 'flex'
+      dragHandle.style.justifyContent = 'center'
+      dragHandle.style.padding = '10px 0 6px 0'
+      dragHandle.style.cursor = 'grab'
+
+      const indicator = document.createElement('div')
+      indicator.style.width = '36px'
+      indicator.style.height = '4px'
+      indicator.style.borderRadius = '999px'
+      indicator.style.background = 'rgba(60, 60, 67, 0.35)'
+      dragHandle.appendChild(indicator)
+      currentSheetHost.appendChild(dragHandle)
+
+      let isDragging = false
+      let startY = 0
+      let startHeight = detentHeights[currentDetentIndex] ?? 0
+
+      const onMouseMove = (event: MouseEvent) => {
+        if (!isDragging) return
+        const deltaY = event.clientY - startY
+        const minHeight = Math.min(...detentHeights)
+        const maxHeight = Math.max(...detentHeights)
+        const nextHeight = Math.min(
+          maxHeight,
+          Math.max(minHeight, startHeight - deltaY)
+        )
+        currentSheetHost.style.height = `${Math.round(nextHeight)}px`
+      }
+
+      const onMouseUp = () => {
+        if (!isDragging) return
+        isDragging = false
+        dragHandle.style.cursor = 'grab'
+
+        const currentHeight = Number.parseFloat(currentSheetHost.style.height)
+        const nearestIndex = detentHeights.reduce((nearest, detentHeight, index) => {
+          const nearestDistance = Math.abs(detentHeights[nearest] - currentHeight)
+          const currentDistance = Math.abs(detentHeight - currentHeight)
+          return currentDistance < nearestDistance ? index : nearest
+        }, 0)
+        currentDetentIndex = nearestIndex
+        applyDetentToHost(detentHeights, currentDetentIndex)
+
+        window.removeEventListener('mousemove', onMouseMove)
+        window.removeEventListener('mouseup', onMouseUp)
+      }
+
+      const onMouseDown = (event: MouseEvent) => {
+        event.preventDefault()
+        isDragging = true
+        startY = event.clientY
+        startHeight = Number.parseFloat(currentSheetHost.style.height)
+        dragHandle.style.cursor = 'grabbing'
+        window.addEventListener('mousemove', onMouseMove)
+        window.addEventListener('mouseup', onMouseUp)
+      }
+
+      dragHandle.addEventListener('mousedown', onMouseDown)
+
+      removeDetentDragListeners = () => {
+        dragHandle.removeEventListener('mousedown', onMouseDown)
+        window.removeEventListener('mousemove', onMouseMove)
+        window.removeEventListener('mouseup', onMouseUp)
+      }
+
+      const onResize = () => {
+        detentHeights = requestedDetents.map(resolveDetentHeightPx)
+        currentDetentIndex = Math.min(currentDetentIndex, detentHeights.length - 1)
+        applyDetentToHost(detentHeights, currentDetentIndex)
+      }
+      window.addEventListener('resize', onResize)
+      removeDetentResizeListener = () => {
+        window.removeEventListener('resize', onResize)
+      }
+    }
+
+    const contentHost = document.createElement('div')
+    contentHost.setAttribute('data-tachui-sheet-body', 'true')
+    contentHost.style.width = '100%'
+    contentHost.style.height = '100%'
+    contentHost.style.overflow = 'auto'
+    sheetHost.appendChild(contentHost)
+
     portalRoot.append(backdrop, sheetHost)
     document.body.appendChild(portalRoot)
     activeSheetStack.push(sheetId)
@@ -731,7 +889,7 @@ function setupSheetPresentation(
         ? document.activeElement
         : null
 
-    disposeSheetContent = mountComponentTree(content(), sheetHost)
+    disposeSheetContent = mountComponentTree(sheetContent, contentHost)
     isMounted = true
     scheduleEntranceTransition()
 
@@ -1561,6 +1719,7 @@ declare module '@tachui/core' {
     navigationBarBackButtonTitle(title: string): ComponentInstance
     toolbarBackground(background: string): ComponentInstance
     toolbarForegroundColor(color: string): ComponentInstance
+    presentationDetents(detents: PresentationDetent[]): ComponentInstance
     toolbar(items: ToolbarItemConfig[]): ComponentInstance
     toolbarItems(items: ToolbarItemConfig[]): ComponentInstance
     // Modal presentation modifiers
@@ -1617,6 +1776,10 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
 
   proto.toolbarForegroundColor = function(color: string) {
     return toolbarForegroundColor(this, color)
+  }
+
+  proto.presentationDetents = function(detents: PresentationDetent[]) {
+    return presentationDetents(this, detents)
   }
 
   proto.toolbar = function(items: ToolbarItemConfig[]) {

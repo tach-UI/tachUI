@@ -21,6 +21,7 @@ import {
   getToolbarItemsByPlacement,
   toolbarBackground,
   toolbarForegroundColor,
+  presentationDetents,
   sheet,
   fullScreenCover,
   popover,
@@ -683,6 +684,198 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       secondContainer.remove()
       setFirstPresented(false)
       setSecondPresented(false)
+    })
+
+    it('applies medium detent sizing to approximately 50vh', async () => {
+      const originalInnerHeight = window.innerHeight
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            ['medium']
+          )
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(500)
+
+      cleanup()
+      container.remove()
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      })
+    })
+
+    it('applies large detent sizing to approximately 90vh', async () => {
+      const originalInnerHeight = window.innerHeight
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            ['large']
+          )
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(900)
+
+      cleanup()
+      container.remove()
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      })
+    })
+
+    it('applies custom fraction and custom height detents', async () => {
+      const originalInnerHeight = window.innerHeight
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const fractionComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            [{ fraction: 0.4 }]
+          )
+      )
+
+      const cleanupFraction = mountComponentTree(fractionComponent, container)
+      await flushMicrotasks()
+
+      let content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(400)
+      cleanupFraction()
+
+      const heightComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            [{ height: 300 }]
+          )
+      )
+      const cleanupHeight = mountComponentTree(heightComponent, container)
+      await flushMicrotasks()
+
+      content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(300)
+
+      cleanupHeight()
+      container.remove()
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      })
+    })
+
+    it('renders drag indicator and snaps between detents when dragged', async () => {
+      const originalInnerHeight = window.innerHeight
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            ['medium', 'large']
+          )
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      const handle = document.querySelector(
+        '[data-tachui-sheet-drag-handle="true"]'
+      ) as HTMLDivElement | null
+
+      expect(handle).toBeTruthy()
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(500)
+
+      handle?.dispatchEvent(
+        new MouseEvent('mousedown', { clientY: 600, bubbles: true })
+      )
+      window.dispatchEvent(
+        new MouseEvent('mousemove', { clientY: 120, bubbles: true })
+      )
+      window.dispatchEvent(
+        new MouseEvent('mouseup', { clientY: 120, bubbles: true })
+      )
+      await flushMicrotasks()
+
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(900)
+
+      cleanup()
+      container.remove()
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      })
     })
   })
 
