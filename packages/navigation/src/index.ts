@@ -17,6 +17,15 @@ export {
 } from './navigation-stack'
 
 export {
+  NavigationSplitView,
+  useNavigationSplitView,
+} from './navigation-split-view'
+export type {
+  NavigationSplitViewContext,
+  NavigationSplitViewProps,
+} from './navigation-split-view'
+
+export {
   NavigationLink,
   NavigationIconLink,
   NavigationListLink,
