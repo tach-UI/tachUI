@@ -12,7 +12,7 @@ import {
   mountComponentTree,
 } from '@tachui/core'
 import type { Accessor, Binding, ComponentInstance } from '@tachui/core'
-import { HTML } from '@tachui/primitives'
+import { HStack, HTML, VStack } from '@tachui/primitives'
 import type { NavigationContext } from './types'
 
 /**
@@ -82,12 +82,18 @@ export interface PopoverPresentationOptions {
 /**
  * ToolbarItem descriptor factory
  */
+let toolbarItemIdCounter = 0
+
 export function ToolbarItem(input: ToolbarItemInput): ToolbarItemConfig {
   return {
-    id: `toolbar-item-${Math.random().toString(36).slice(2, 10)}`,
+    id: `toolbar-item-${toolbarItemIdCounter++}`,
     placement: input.placement,
     content: input.content,
   }
+}
+
+export function __resetToolbarItemIdCounterForTests(): void {
+  toolbarItemIdCounter = 0
 }
 
 /**
@@ -368,15 +374,41 @@ export function getToolbarItemsByPlacement(component: ComponentInstance): {
 }
 
 function createToolbarItemNode(item: ToolbarItemConfig): ComponentInstance {
-  const content = item.content()
+  const contentHost = HTML.div({}).build()
+  const existingLifecycle = (contentHost as any)._enhancedLifecycle ?? {}
+  const existingOnDOMReady = existingLifecycle.onDOMReady as
+    | ((elements: Map<string, Element>, primary?: Element) => void | (() => void))
+    | undefined
+
+  ;(contentHost as any)._enhancedLifecycle = {
+    ...existingLifecycle,
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      const existingCleanup = existingOnDOMReady?.(elements, primary)
+      if (!(primary instanceof HTMLElement)) {
+        return existingCleanup
+      }
+
+      const cleanup = mountComponentTree(item.content(), primary)
+
+      return () => {
+        cleanup()
+        if (typeof existingCleanup === 'function') {
+          existingCleanup()
+        }
+      }
+    },
+  }
+
   if (item.placement === 'destructiveAction') {
-    return HTML.div({
-      children: [content],
+    return HStack({
+      children: [contentHost],
+      spacing: 0,
     })
-      .foregroundColor('#d32f2f')
+      .foregroundColor('var(--tachui-toolbar-destructive-color, #d32f2f)')
       .build()
   }
-  return content
+
+  return contentHost
 }
 
 function wrapComponentWithToolbar(
@@ -395,26 +427,42 @@ function wrapComponentWithToolbar(
   const children: ComponentInstance[] = []
 
   if (hasTopBar) {
-    const leadingGroup = HTML.div({
-      children: partitions.navigation.map(createToolbarItemNode),
-    })
-      .display('flex')
-      .gap(8)
-      .build()
+    const topBarChildren: ComponentInstance[] = []
+    const hasLeadingItems = partitions.navigation.length > 0
+    const hasTrailingItems = partitions.trailing.length > 0
 
-    const trailingGroup = HTML.div({
-      children: partitions.trailing.map(createToolbarItemNode),
-    })
-      .display('flex')
-      .gap(8)
-      .build()
+    if (hasLeadingItems) {
+      topBarChildren.push(
+        HStack({
+          children: partitions.navigation.map(createToolbarItemNode),
+          spacing: 8,
+        }).build()
+      )
+    }
+
+    if (hasTrailingItems) {
+      topBarChildren.push(
+        HStack({
+          children: partitions.trailing.map(createToolbarItemNode),
+          spacing: 8,
+        }).build()
+      )
+    }
+
+    const topBarJustifyContent =
+      hasLeadingItems && hasTrailingItems
+        ? 'space-between'
+        : hasTrailingItems
+          ? 'flex-end'
+          : 'flex-start'
 
     children.push(
-      HTML.div({
-        children: [leadingGroup, trailingGroup],
+      HStack({
+        children: topBarChildren,
+        spacing: 12,
       })
-        .display('flex')
-        .justifyContent('space-between')
+        .role('toolbar')
+        .justifyContent(topBarJustifyContent)
         .alignItems('center')
         .padding({ top: 10, right: 12, bottom: 10, left: 12 })
         .border({ width: 1, color: '#e5e7eb' })
@@ -427,11 +475,11 @@ function wrapComponentWithToolbar(
 
   if (hasBottomBar) {
     children.push(
-      HTML.div({
+      HStack({
         children: partitions.bottomBar.map(createToolbarItemNode),
+        spacing: 8,
       })
-        .display('flex')
-        .gap(8)
+        .role('toolbar')
         .alignItems('center')
         .padding({ top: 10, right: 12, bottom: 10, left: 12 })
         .border({ width: 1, color: '#e5e7eb' })
@@ -440,11 +488,10 @@ function wrapComponentWithToolbar(
     )
   }
 
-  return HTML.div({
+  return VStack({
     children,
+    spacing: 0,
   })
-    .display('flex')
-    .flexDirection('column')
     .build()
 }
 
@@ -455,17 +502,27 @@ export function toolbarItems(
   component: ComponentInstance,
   items: ToolbarItemConfig[]
 ): ComponentInstance {
-  const nextModifiers = {
-    ...(component as any)._navigationModifiers,
-    toolbarItems: items,
+  const currentModifiers = ((component as any)._navigationModifiers ?? {}) as {
+    toolbarItems?: ToolbarItemConfig[]
   }
-  ;(component as any)._navigationModifiers = nextModifiers
+  const existingItems = currentModifiers.toolbarItems ?? []
+  const mergedItems = [...existingItems, ...items]
+  const toolbarBaseComponent = ((component as any)
+    ._toolbarBaseComponent ?? component) as ComponentInstance
 
-  const wrappedComponent = wrapComponentWithToolbar(component, items)
+  const wrappedComponent = wrapComponentWithToolbar(
+    toolbarBaseComponent,
+    mergedItems
+  )
+  const nextModifiers = {
+    ...currentModifiers,
+    toolbarItems: mergedItems,
+  }
   ;(wrappedComponent as any)._navigationModifiers = {
     ...(wrappedComponent as any)._navigationModifiers,
     ...nextModifiers,
   }
+  ;(wrappedComponent as any)._toolbarBaseComponent = toolbarBaseComponent
 
   return wrappedComponent
 }

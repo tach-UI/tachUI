@@ -17,6 +17,7 @@ import {
   toolbar,
   toolbarItems,
   ToolbarItem,
+  __resetToolbarItemIdCounterForTests,
   getToolbarItemsByPlacement,
   toolbarBackground,
   toolbarForegroundColor,
@@ -37,6 +38,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
 
   beforeEach(() => {
     mockComponent = HTML.div({ children: 'Base Component' }).build()
+    __resetToolbarItemIdCounterForTests()
   })
 
   afterEach(() => {
@@ -157,7 +159,18 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
   })
 
   describe('ToolbarItem Placement', () => {
-    it('maps navigation placement into the leading slot', () => {
+    const mountToolbarComponent = (component: any) => {
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const cleanup = mountComponentTree(component, container)
+
+      return () => {
+        cleanup()
+        container.remove()
+      }
+    }
+
+    it('renders navigation placement in the top toolbar', () => {
       const modified = toolbarItems(mockComponent, [
         ToolbarItem({
           placement: 'navigation',
@@ -165,13 +178,18 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
         }),
       ])
 
-      const placements = getToolbarItemsByPlacement(modified)
-      expect(placements.navigation).toHaveLength(1)
-      expect(placements.trailing).toHaveLength(0)
-      expect(placements.bottomBar).toHaveLength(0)
+      const cleanup = mountToolbarComponent(modified)
+      const toolbars = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="toolbar"]')
+      )
+
+      expect(toolbars).toHaveLength(1)
+      expect(toolbars[0]?.textContent).toContain('Back')
+
+      cleanup()
     })
 
-    it('maps primaryAction placement into the trailing slot', () => {
+    it('renders primaryAction in the top toolbar trailing area', () => {
       const modified = toolbarItems(mockComponent, [
         ToolbarItem({
           placement: 'primaryAction',
@@ -179,14 +197,18 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
         }),
       ])
 
-      const placements = getToolbarItemsByPlacement(modified)
-      expect(placements.navigation).toHaveLength(0)
-      expect(placements.trailing).toHaveLength(1)
-      expect(placements.bottomBar).toHaveLength(0)
-      expect(placements.trailing[0]?.placement).toBe('primaryAction')
+      const cleanup = mountToolbarComponent(modified)
+      const toolbars = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="toolbar"]')
+      )
+
+      expect(toolbars).toHaveLength(1)
+      expect(toolbars[0]?.textContent).toContain('Save')
+
+      cleanup()
     })
 
-    it('maps destructiveAction placement into the trailing slot', () => {
+    it('renders destructiveAction in the top toolbar', () => {
       const modified = toolbarItems(mockComponent, [
         ToolbarItem({
           placement: 'destructiveAction',
@@ -194,14 +216,18 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
         }),
       ])
 
-      const placements = getToolbarItemsByPlacement(modified)
-      expect(placements.navigation).toHaveLength(0)
-      expect(placements.trailing).toHaveLength(1)
-      expect(placements.bottomBar).toHaveLength(0)
-      expect(placements.trailing[0]?.placement).toBe('destructiveAction')
+      const cleanup = mountToolbarComponent(modified)
+      const deleteButton = Array.from(
+        document.querySelectorAll<HTMLElement>('button')
+      ).find(button => button.textContent?.includes('Delete'))
+
+      expect(deleteButton).toBeTruthy()
+      expect(document.body.textContent).toContain('Delete')
+
+      cleanup()
     })
 
-    it('maps bottomBar placement into the bottom slot', () => {
+    it('renders bottomBar placement in a bottom toolbar after content', () => {
       const modified = toolbarItems(mockComponent, [
         ToolbarItem({
           placement: 'bottomBar',
@@ -209,14 +235,19 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
         }),
       ])
 
-      const placements = getToolbarItemsByPlacement(modified)
-      expect(placements.navigation).toHaveLength(0)
-      expect(placements.trailing).toHaveLength(0)
-      expect(placements.bottomBar).toHaveLength(1)
-      expect(placements.bottomBar[0]?.placement).toBe('bottomBar')
+      const cleanup = mountToolbarComponent(modified)
+      const contentText = document.body.textContent ?? ''
+
+      expect(contentText.indexOf('Base Component')).toBeGreaterThanOrEqual(0)
+      expect(contentText.indexOf('Bottom')).toBeGreaterThanOrEqual(0)
+      expect(contentText.indexOf('Bottom')).toBeGreaterThan(
+        contentText.indexOf('Base Component')
+      )
+
+      cleanup()
     })
 
-    it('supports multiple toolbar items coexisting across placements', () => {
+    it('renders navigation, trailing, and bottom toolbar items together', () => {
       const modified = toolbarItems(mockComponent, [
         ToolbarItem({
           placement: 'navigation',
@@ -232,10 +263,99 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
         }),
       ])
 
-      const placements = getToolbarItemsByPlacement(modified)
+      const cleanup = mountToolbarComponent(modified)
+      const toolbars = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="toolbar"]')
+      )
+
+      expect(toolbars).toHaveLength(2)
+      expect(toolbars[0]?.textContent).toContain('Back')
+      expect(toolbars[0]?.textContent).toContain('Save')
+      expect(toolbars[1]?.textContent).toContain('Inspect')
+
+      cleanup()
+    })
+
+    it('appends toolbar items when toolbarItems is chained', () => {
+      const firstPass = toolbarItems(mockComponent, [
+        ToolbarItem({
+          placement: 'navigation',
+          content: () => HTML.button({ children: 'Back' }).build(),
+        }),
+      ])
+      const secondPass = toolbarItems(firstPass, [
+        ToolbarItem({
+          placement: 'primaryAction',
+          content: () => HTML.button({ children: 'Save' }).build(),
+        }),
+      ])
+
+      const cleanup = mountToolbarComponent(secondPass)
+      const toolbars = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="toolbar"]')
+      )
+
+      expect(toolbars).toHaveLength(1)
+      expect(toolbars[0]?.textContent).toContain('Back')
+      expect(toolbars[0]?.textContent).toContain('Save')
+
+      const placements = getToolbarItemsByPlacement(secondPass)
       expect(placements.navigation).toHaveLength(1)
       expect(placements.trailing).toHaveLength(1)
-      expect(placements.bottomBar).toHaveLength(1)
+
+      cleanup()
+    })
+
+    it('does not evaluate toolbar content closures before mount', () => {
+      const contentFactory = vi.fn(() =>
+        HTML.button({ children: 'Lazy Toolbar' }).build()
+      )
+
+      const modified = toolbarItems(mockComponent, [
+        ToolbarItem({
+          placement: 'navigation',
+          content: contentFactory,
+        }),
+      ])
+
+      expect(contentFactory).not.toHaveBeenCalled()
+
+      const cleanup = mountToolbarComponent(modified)
+      expect(contentFactory).toHaveBeenCalledTimes(1)
+
+      cleanup()
+    })
+
+    it('assigns deterministic toolbar item ids', () => {
+      const first = ToolbarItem({
+        placement: 'navigation',
+        content: () => HTML.button({ children: 'One' }).build(),
+      })
+      const second = ToolbarItem({
+        placement: 'primaryAction',
+        content: () => HTML.button({ children: 'Two' }).build(),
+      })
+
+      expect(first.id).toBe('toolbar-item-0')
+      expect(second.id).toBe('toolbar-item-1')
+    })
+
+    it('does not render empty top-bar side groups', () => {
+      const modified = toolbarItems(mockComponent, [
+        ToolbarItem({
+          placement: 'primaryAction',
+          content: () => HTML.button({ children: 'Save' }).build(),
+        }),
+      ])
+
+      const cleanup = mountToolbarComponent(modified)
+      const topToolbar = document.querySelector('[role="toolbar"]')
+      const groupContainerCount =
+        topToolbar?.querySelectorAll(':scope > .tachui-hstack').length ?? 0
+
+      expect(groupContainerCount).toBe(1)
+
+      cleanup()
     })
   })
 
