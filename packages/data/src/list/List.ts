@@ -202,6 +202,23 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     style: Record<string, unknown> = {},
     extraProps: Record<string, unknown> = {}
   ): ComponentInstance {
+    const {
+      class: extraClass,
+      style: extraStyle,
+      ...remainingExtraProps
+    } = extraProps as Record<string, unknown> & {
+      class?: unknown
+      style?: unknown
+    }
+    const mergedClassName =
+      typeof extraClass === 'string' && extraClass.length > 0
+        ? `${className} ${extraClass}`
+        : className
+    const mergedExtraStyle =
+      extraStyle && typeof extraStyle === 'object'
+        ? (extraStyle as Record<string, unknown>)
+        : {}
+
     return {
       type: 'component',
       id,
@@ -214,12 +231,13 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
           h(
             'li',
             {
-              class: className,
+              class: mergedClassName,
               style: {
                 listStyle: 'none',
                 ...style,
+                ...mergedExtraStyle,
               },
-              ...extraProps,
+              ...remainingExtraProps,
             },
             ...rendered
           ),
@@ -528,7 +546,7 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
   /**
    * Create list separator
    */
-  private createSeparator(): ComponentInstance | null {
+  private createSeparator(indexHint = 0): ComponentInstance | null {
     const { separator } = this.props
 
     if (!separator) return null
@@ -536,7 +554,7 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     if (typeof separator === 'object' && 'render' in separator) {
       return this.wrapComponentInListItem(
         separator,
-        `${this.id}-separator-custom`,
+        `${this.id}-separator-custom-${indexHint}`,
         'tachui-list-separator-item',
         {},
         { 'aria-hidden': 'true' }
@@ -545,7 +563,7 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
 
     return {
       type: 'component',
-      id: `${this.id}-separator`,
+      id: `${this.id}-separator-${indexHint}`,
       mounted: false,
       cleanup: [],
       props: {},
@@ -738,8 +756,6 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
 
     const data = this.dataSignal()
     const selectedItems = this.selectedItemsSignal()
-    const separator = this.createSeparator()
-
     const visibleItems: ComponentInstance[] = []
 
     // Add spacer for items before visible range
@@ -774,7 +790,9 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
 
       visibleItems.push(this.createListItem(item, i, isSelected))
 
-      if (separator && i < data.length - 1) {
+      if (i < data.length - 1) {
+        const separator = this.createSeparator(i)
+        if (!separator) continue
         visibleItems.push(separator)
       }
     }
@@ -810,8 +828,6 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
     const data = this.dataSignal()
     const sections = this.sectionsSignal()
     const selectedItems = this.selectedItemsSignal()
-    const separator = this.createSeparator()
-
     const content: ComponentInstance[] = []
 
     // Render sections if available
@@ -831,8 +847,11 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
 
           content.push(this.createListItem(item, globalIndex, isSelected))
 
-          if (separator && itemIndex < section.items.length - 1) {
-            content.push(separator)
+          if (itemIndex < section.items.length - 1) {
+            const separator = this.createSeparator(globalIndex)
+            if (separator) {
+              content.push(separator)
+            }
           }
         })
 
@@ -850,8 +869,11 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
 
         content.push(this.createListItem(item, index, isSelected))
 
-        if (separator && index < data.length - 1) {
-          content.push(separator)
+        if (index < data.length - 1) {
+          const separator = this.createSeparator(index)
+          if (separator) {
+            content.push(separator)
+          }
         }
       })
     }
@@ -873,6 +895,7 @@ export class EnhancedList<T = any> implements ComponentInstance<ListProps<T>> {
         h(
           'ul',
           {
+            role: 'list',
             class: `tachui-list-content tachui-list-content-${this.props.style || 'plain'}`,
             style: {
               margin: '0',

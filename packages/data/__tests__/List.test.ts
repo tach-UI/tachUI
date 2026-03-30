@@ -490,6 +490,24 @@ describe('EnhancedList', () => {
       expect(JSON.stringify(wrapped)).toContain('---')
     })
 
+    it('creates unique separator component IDs per rendered gap', () => {
+      const customSeparator = Text('---')
+      const renderItem = (item: any, _index: number) => Text(item.name)
+      const list = new EnhancedList({
+        data: sampleData.slice(0, 3),
+        renderItem,
+        separator: customSeparator,
+      })
+
+      const content = list.renderRegularContent()
+      const separators = content.filter(component =>
+        component.id.includes('separator')
+      )
+
+      expect(separators).toHaveLength(2)
+      expect(new Set(separators.map(component => component.id)).size).toBe(2)
+    })
+
     it('should handle no separator', () => {
       const renderItem = (item: any, _index: number) => Text(item.name)
       const list = new EnhancedList({
@@ -522,6 +540,7 @@ describe('EnhancedList', () => {
       )
       expect(listContainer).toBeDefined()
       expect(listContainer.props?.style?.listStyle).toBe('none')
+      expect(listContainer.props?.role).toBe('list')
 
       const itemRows = allElements.filter(
         element =>
