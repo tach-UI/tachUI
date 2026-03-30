@@ -1,5 +1,21 @@
 # @tachui/responsive
 
+## 0.8.18
+
+### Patch Changes
+
+- [#145](https://github.com/tach-UI/tachUI/pull/145) [`b3ca77c`](https://github.com/tach-UI/tachUI/commit/b3ca77c89cfcf75994f32ca7c2245bf579f71a82) Thanks [@whoughton](https://github.com/whoughton)! - Patch release for recent bug fixes and typing/reactivity improvements:
+
+  - Fix transform modifier composition/reactive update behavior and add stronger regression coverage.
+  - Harden responsive breakpoint reactivity test support and singleton reset behavior.
+  - Fix `Spacer()` typing so direct modifier chains (for example `.maxHeight()`) are available.
+  - Apply core SVG sanitization lint fix and include related renderer/runtime refinements.
+
+- Updated dependencies [[`b3ca77c`](https://github.com/tach-UI/tachUI/commit/b3ca77c89cfcf75994f32ca7c2245bf579f71a82)]:
+  - @tachui/core@0.8.18
+  - @tachui/modifiers@0.8.18
+  - @tachui/registry@0.8.18
+
 ## 0.8.17
 
 ### Patch Changes
