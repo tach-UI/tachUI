@@ -16,6 +16,7 @@ import {
   extractDocumentHeadFromComponent,
 } from './document-head'
 import { NavigationPath, createNavigationPath } from './navigation-path'
+import { resolveNavigationDestination } from './resolve-navigation-destination'
 import type {
   NavigationContext,
   NavigationStackEntry,
@@ -81,8 +82,7 @@ class NavigationStackContext implements NavigationContext {
   }
 
   push(destination: NavigationDestination, path: string, title?: string): void {
-    const component =
-      typeof destination === 'function' ? destination() : destination
+    const component = resolveNavigationDestination(destination)
 
     const entry: NavigationStackEntry = {
       id: `nav-${Date.now()}-${Math.random()}`,
@@ -145,8 +145,7 @@ class NavigationStackContext implements NavigationContext {
     title?: string
   ): void {
     if (this._stack.length > 0) {
-      const component =
-        typeof destination === 'function' ? destination() : destination
+      const component = resolveNavigationDestination(destination)
 
       const entry: NavigationStackEntry = {
         id: `nav-${Date.now()}-${Math.random()}`,
@@ -174,17 +173,18 @@ class NavigationStackContext implements NavigationContext {
    * Set the root component
    */
   setRoot(
-    component: ComponentInstance,
+    destination: NavigationDestination,
     path: string = '/',
     title?: string
   ): void {
+    const resolvedComponent = resolveNavigationDestination(destination)
     const entry: NavigationStackEntry = {
       id: `nav-root-${Date.now()}`,
       path,
-      component,
+      component: resolvedComponent,
       title,
       metadata: {
-        documentHead: extractDocumentHeadFromComponent(component),
+        documentHead: extractDocumentHeadFromComponent(resolvedComponent),
       },
       timestamp: Date.now(),
     }
@@ -368,13 +368,16 @@ export function NavigationStack(
     const currentEntry = stack[stack.length - 1]
 
     if (!currentEntry) {
-      return HTML.div({
-        children: [Text('No content').build()],
-      }).build()
+      return Text('No content')
+        .padding(20)
+        .foregroundColor('#999')
+        .build()
     }
 
-    return HTML.div({
+    return VStack({
       children: [currentEntry.component],
+      spacing: 0,
+      alignment: 'leading',
     })
       .opacity(isNavigating() ? 0.8 : 1)
       .build()

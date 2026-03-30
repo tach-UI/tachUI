@@ -20,12 +20,20 @@ export interface NavigationSplitViewProps<TSelection = unknown> {
   sidebar: (
     context: NavigationSplitViewContext<TSelection>
   ) => ComponentInstance
+  content?: (
+    context: NavigationSplitViewContext<TSelection>
+  ) => ComponentInstance
   detail: (
     context: NavigationSplitViewContext<TSelection>
   ) => ComponentInstance
   breakpoint?: number
   backLabel?: string
   detailTitle?: string
+  columnWidths?: {
+    sidebar?: number | { min?: number; preferred?: number; max?: number }
+    content?: number | { min?: number; preferred?: number; max?: number }
+    detail?: number | { min?: number; preferred?: number; max?: number }
+  }
 }
 
 const splitViewContextStack: NavigationSplitViewContext[] = []
@@ -91,41 +99,97 @@ export function NavigationSplitView<TSelection = unknown>(
   props: NavigationSplitViewProps<TSelection>
 ): ComponentInstance {
   const breakpoint = props.breakpoint ?? 768
+  const threeColumnBreakpoint = 1024
   const backLabel = props.backLabel ?? 'Back'
   const detailTitle = props.detailTitle ?? 'Detail'
+  const hasContentColumn = Boolean(props.content)
   let viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1024
   let selectedValue: TSelection | null = null
   let mobileShowsDetail = false
+  let mediumSidebarVisible = !hasContentColumn
   let hostElement: HTMLElement | null = null
   let shellCleanup: (() => void) | null = null
   let sidebarRegionCleanup: (() => void) | null = null
+  let contentRegionCleanup: (() => void) | null = null
   let detailRegionCleanup: (() => void) | null = null
   let sidebarRegionHost: HTMLElement | null = null
+  let contentRegionHost: HTMLElement | null = null
   let detailRegionHost: HTMLElement | null = null
   let resizeDebounceTimer: number | null = null
-  let lastCollapsedState = viewportWidth < breakpoint
+  let lastLayoutMode: 'single' | 'two' | 'three' =
+    viewportWidth >= threeColumnBreakpoint
+      ? 'three'
+      : viewportWidth >= breakpoint
+        ? 'two'
+        : 'single'
+
+  const resolveColumnWidth = (
+    value?: number | { min?: number; preferred?: number; max?: number }
+  ): { minWidth?: string; width?: string; maxWidth?: string } => {
+    if (typeof value === 'number') {
+      const px = `${value}px`
+      return {
+        minWidth: px,
+        width: px,
+        maxWidth: px,
+      }
+    }
+    if (!value) {
+      return {}
+    }
+    return {
+      minWidth: typeof value.min === 'number' ? `${value.min}px` : undefined,
+      width:
+        typeof value.preferred === 'number' ? `${value.preferred}px` : undefined,
+      maxWidth: typeof value.max === 'number' ? `${value.max}px` : undefined,
+    }
+  }
+
+  const sidebarColumnWidth = resolveColumnWidth(props.columnWidths?.sidebar)
+  const contentColumnWidth = resolveColumnWidth(props.columnWidths?.content)
+  const detailColumnWidth = resolveColumnWidth(props.columnWidths?.detail)
 
   const splitContext: NavigationSplitViewContext<TSelection> = {
     selectDetail: (value: TSelection) => {
       selectedValue = value
       mobileShowsDetail = true
-      if (splitContext.isCollapsed()) {
+      const layoutMode = getLayoutMode()
+      if (layoutMode === 'single') {
         renderShellIntoHost()
+      } else if (layoutMode === 'two') {
+        if (hasContentColumn) {
+          mediumSidebarVisible = false
+          renderShellIntoHost()
+        } else {
+          remountDetailRegion()
+        }
       } else {
         remountDetailRegion()
       }
     },
     selectedValue: () => selectedValue,
     showSidebar: () => {
-      mobileShowsDetail = false
-      if (splitContext.isCollapsed()) {
+      const layoutMode = getLayoutMode()
+      if (layoutMode === 'single') {
+        mobileShowsDetail = false
+        renderShellIntoHost()
+      } else if (layoutMode === 'two') {
+        mediumSidebarVisible = true
         renderShellIntoHost()
       }
     },
     showDetail: () => {
-      mobileShowsDetail = true
-      if (splitContext.isCollapsed()) {
+      const layoutMode = getLayoutMode()
+      if (layoutMode === 'single') {
+        mobileShowsDetail = true
         renderShellIntoHost()
+      } else if (layoutMode === 'two') {
+        if (hasContentColumn) {
+          mediumSidebarVisible = false
+          renderShellIntoHost()
+        } else {
+          remountDetailRegion()
+        }
       } else {
         remountDetailRegion()
       }
@@ -133,10 +197,28 @@ export function NavigationSplitView<TSelection = unknown>(
     isCollapsed: () => viewportWidth < breakpoint,
   }
 
+  const getLayoutMode = (): 'single' | 'two' | 'three' => {
+    if (viewportWidth >= threeColumnBreakpoint) {
+      return hasContentColumn ? 'three' : 'two'
+    }
+    if (viewportWidth >= breakpoint) {
+      return 'two'
+    }
+    return 'single'
+  }
+
   const shouldRenderSidebar = (): boolean =>
-    !splitContext.isCollapsed() || !mobileShowsDetail
+    getLayoutMode() === 'three'
+      ? true
+      : getLayoutMode() === 'two'
+        ? hasContentColumn
+          ? mediumSidebarVisible
+          : true
+        : !mobileShowsDetail
+  const shouldRenderContent = (): boolean =>
+    Boolean(props.content) && getLayoutMode() === 'three'
   const shouldRenderDetail = (): boolean =>
-    !splitContext.isCollapsed() || mobileShowsDetail
+    getLayoutMode() !== 'single' || mobileShowsDetail
 
   const buildSidebarRegion = (): ComponentInstance =>
     VStack({
@@ -150,6 +232,21 @@ export function NavigationSplitView<TSelection = unknown>(
     })
       .role('region')
       .ariaLabel('NavigationSplitView sidebar')
+      .width('100%')
+      .build()
+
+  const buildContentRegion = (): ComponentInstance =>
+    VStack({
+      children: [
+        withSplitViewContext(splitContext as NavigationSplitViewContext, () =>
+          props.content!(splitContext)
+        ),
+      ],
+      spacing: 0,
+      alignment: 'leading',
+    })
+      .role('region')
+      .ariaLabel('NavigationSplitView content')
       .width('100%')
       .build()
 
@@ -186,6 +283,15 @@ export function NavigationSplitView<TSelection = unknown>(
     detailRegionCleanup = mountComponentTree(buildDetailRegion(), detailRegionHost)
   }
 
+  const remountContentRegion = (): void => {
+    contentRegionCleanup?.()
+    contentRegionCleanup = null
+    if (!shouldRenderContent() || !contentRegionHost) {
+      return
+    }
+    contentRegionCleanup = mountComponentTree(buildContentRegion(), contentRegionHost)
+  }
+
   const buildSidebarMountHost = (): ComponentInstance =>
     createMountHost(nextHost => {
       sidebarRegionHost = nextHost
@@ -208,8 +314,21 @@ export function NavigationSplitView<TSelection = unknown>(
       remountDetailRegion()
     })
 
+  const buildContentMountHost = (): ComponentInstance =>
+    createMountHost(nextHost => {
+      contentRegionHost = nextHost
+      if (nextHost === null) {
+        contentRegionCleanup?.()
+        contentRegionCleanup = null
+        return
+      }
+      remountContentRegion()
+    })
+
   const buildLayoutShell = (): ComponentInstance => {
-    if (!splitContext.isCollapsed()) {
+    const layoutMode = getLayoutMode()
+
+    if (layoutMode === 'three') {
       return HStack({
         children: [
           VStack({
@@ -217,8 +336,19 @@ export function NavigationSplitView<TSelection = unknown>(
             spacing: 0,
             alignment: 'leading',
           })
-            .width(280)
-            .maxWidth(320)
+            .minWidth(sidebarColumnWidth.minWidth ?? '220px')
+            .width(sidebarColumnWidth.width ?? '280px')
+            .maxWidth(sidebarColumnWidth.maxWidth ?? '320px')
+            .border({ width: 1, color: '#e5e7eb' })
+            .build(),
+          VStack({
+            children: [buildContentMountHost()],
+            spacing: 0,
+            alignment: 'leading',
+          })
+            .minWidth(contentColumnWidth.minWidth ?? '240px')
+            .width(contentColumnWidth.width ?? '320px')
+            .maxWidth(contentColumnWidth.maxWidth ?? '420px')
             .border({ width: 1, color: '#e5e7eb' })
             .build(),
           VStack({
@@ -226,8 +356,63 @@ export function NavigationSplitView<TSelection = unknown>(
             spacing: 0,
             alignment: 'leading',
           })
-            .minWidth(0)
-            .width('100%')
+            .minWidth(detailColumnWidth.minWidth ?? '0')
+            .width(detailColumnWidth.width ?? '100%')
+            .maxWidth(detailColumnWidth.maxWidth)
+            .build(),
+        ],
+        spacing: 0,
+        alignment: 'leading',
+      })
+        .role('group')
+        .ariaLabel('NavigationSplitView three-column')
+        .width('100%')
+        .build()
+    }
+
+    if (layoutMode === 'two') {
+      return HStack({
+        children: [
+          ...(shouldRenderSidebar()
+            ? [
+                VStack({
+                  children: [buildSidebarMountHost()],
+                  spacing: 0,
+                  alignment: 'leading',
+                })
+                  .minWidth(sidebarColumnWidth.minWidth ?? '220px')
+                  .width(sidebarColumnWidth.width ?? '280px')
+                  .maxWidth(sidebarColumnWidth.maxWidth ?? '320px')
+                  .border({ width: 1, color: '#e5e7eb' })
+                  .build(),
+              ]
+            : []),
+          VStack({
+            children: [
+              ...(hasContentColumn
+                ? [
+                    Button(
+                      shouldRenderSidebar() ? 'Hide Sidebar' : 'Show Sidebar',
+                      () => {
+                        mediumSidebarVisible = !mediumSidebarVisible
+                        renderShellIntoHost()
+                      }
+                    )
+                      .backgroundColor('transparent')
+                      .foregroundColor('#007AFF')
+                      .border(0)
+                      .padding({ top: 8, right: 12, bottom: 8, left: 12 })
+                      .build(),
+                  ]
+                : []),
+              buildDetailMountHost(),
+            ],
+            spacing: 0,
+            alignment: 'leading',
+          })
+            .minWidth(detailColumnWidth.minWidth ?? '0')
+            .width(detailColumnWidth.width ?? '100%')
+            .maxWidth(detailColumnWidth.maxWidth)
             .build(),
         ],
         spacing: 0,
@@ -283,6 +468,8 @@ export function NavigationSplitView<TSelection = unknown>(
 
     sidebarRegionCleanup?.()
     sidebarRegionCleanup = null
+    contentRegionCleanup?.()
+    contentRegionCleanup = null
     detailRegionCleanup?.()
     detailRegionCleanup = null
     shellCleanup?.()
@@ -319,9 +506,12 @@ export function NavigationSplitView<TSelection = unknown>(
 
         resizeDebounceTimer = window.setTimeout(() => {
           viewportWidth = window.innerWidth
-          const nextCollapsedState = viewportWidth < breakpoint
-          if (nextCollapsedState !== lastCollapsedState) {
-            lastCollapsedState = nextCollapsedState
+          const nextLayoutMode = getLayoutMode()
+          if (nextLayoutMode !== lastLayoutMode) {
+            if (nextLayoutMode === 'two') {
+              mediumSidebarVisible = !hasContentColumn
+            }
+            lastLayoutMode = nextLayoutMode
             renderShellIntoHost()
           }
           resizeDebounceTimer = null
@@ -342,11 +532,14 @@ export function NavigationSplitView<TSelection = unknown>(
         }
         sidebarRegionCleanup?.()
         sidebarRegionCleanup = null
+        contentRegionCleanup?.()
+        contentRegionCleanup = null
         detailRegionCleanup?.()
         detailRegionCleanup = null
         shellCleanup?.()
         shellCleanup = null
         sidebarRegionHost = null
+        contentRegionHost = null
         detailRegionHost = null
         hostElement = null
       }
@@ -356,7 +549,14 @@ export function NavigationSplitView<TSelection = unknown>(
   ;(component as any)._navigationSplitView = {
     type: 'NavigationSplitView',
     breakpoint,
+    threeColumnBreakpoint,
     context: splitContext,
+    toggleSidebarVisibility: () => {
+      if (getLayoutMode() === 'two') {
+        mediumSidebarVisible = !mediumSidebarVisible
+        renderShellIntoHost()
+      }
+    },
   }
 
   return component
