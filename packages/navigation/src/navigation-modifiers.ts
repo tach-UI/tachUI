@@ -5,7 +5,13 @@
  * with inheritance support and automatic state management.
  */
 
-import type { ComponentInstance } from '@tachui/core'
+import {
+  createEffect,
+  getSignalImpl,
+  isSignal,
+  mountComponentTree,
+} from '@tachui/core'
+import type { Accessor, Binding, ComponentInstance } from '@tachui/core'
 import type { NavigationContext } from './types'
 
 /**
@@ -21,6 +27,17 @@ export interface NavigationModifierConfig {
   foregroundColor?: string
   leadingItems?: ComponentInstance[]
   trailingItems?: ComponentInstance[]
+}
+
+type SheetPresentationState = Accessor<boolean> | Binding<boolean>
+
+export interface SheetPresentationOptions {
+  dismissOnBackdropTap?: boolean
+  backdropColor?: string
+  transitionDurationMs?: number
+  maxWidth?: string
+  zIndex?: number
+  onDismiss?: () => void
 }
 
 /**
@@ -273,6 +290,210 @@ export function toolbarForegroundColor(
   return component
 }
 
+function readPresentedState(isPresented: SheetPresentationState): boolean {
+  if (typeof isPresented === 'function') {
+    return Boolean(isPresented())
+  }
+
+  return Boolean(isPresented.get())
+}
+
+function dismissPresentedState(
+  isPresented: SheetPresentationState,
+  options: SheetPresentationOptions
+): void {
+  if (typeof isPresented !== 'function') {
+    isPresented.set(false)
+    options.onDismiss?.()
+    return
+  }
+
+  if (isSignal(isPresented)) {
+    const signal = getSignalImpl(isPresented)
+    signal?.set(false)
+    options.onDismiss?.()
+    return
+  }
+
+  options.onDismiss?.()
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '.sheet backdrop dismiss requires a Binding<boolean> or signal accessor to update presentation state.'
+    )
+  }
+}
+
+function setupSheetPresentation(
+  isPresented: SheetPresentationState,
+  content: () => ComponentInstance,
+  options: SheetPresentationOptions
+): () => void {
+  if (typeof document === 'undefined') {
+    return () => {}
+  }
+
+  let portalRoot: HTMLDivElement | null = null
+  let backdrop: HTMLDivElement | null = null
+  let sheetHost: HTMLDivElement | null = null
+  let disposeSheetContent: (() => void) | null = null
+  let isMounted = false
+  let animationFrameId: number | null = null
+  let isTransitionQueued = false
+  const transitionDurationMs = options.transitionDurationMs ?? 220
+
+  const clearTransitionQueue = () => {
+    if (animationFrameId !== null) {
+      cancelAnimationFrame(animationFrameId)
+      animationFrameId = null
+    }
+    isTransitionQueued = false
+  }
+
+  const scheduleEntranceTransition = () => {
+    if (!backdrop || !sheetHost || isTransitionQueued) {
+      return
+    }
+
+    isTransitionQueued = true
+    animationFrameId = requestAnimationFrame(() => {
+      if (backdrop) {
+        backdrop.style.opacity = '1'
+      }
+      if (sheetHost) {
+        sheetHost.style.transform = 'translateY(0)'
+      }
+      animationFrameId = null
+      isTransitionQueued = false
+    })
+  }
+
+  const unmountPortal = () => {
+    clearTransitionQueue()
+
+    if (disposeSheetContent) {
+      disposeSheetContent()
+      disposeSheetContent = null
+    }
+
+    if (portalRoot) {
+      portalRoot.remove()
+      portalRoot = null
+    }
+
+    backdrop = null
+    sheetHost = null
+    isMounted = false
+  }
+
+  const mountPortal = () => {
+    if (isMounted) {
+      return
+    }
+
+    portalRoot = document.createElement('div')
+    portalRoot.setAttribute('data-tachui-sheet-root', 'true')
+    portalRoot.style.position = 'fixed'
+    portalRoot.style.inset = '0'
+    portalRoot.style.zIndex = String(options.zIndex ?? 1000)
+    portalRoot.style.display = 'flex'
+    portalRoot.style.alignItems = 'flex-end'
+    portalRoot.style.justifyContent = 'center'
+    portalRoot.style.pointerEvents = 'none'
+
+    backdrop = document.createElement('div')
+    backdrop.setAttribute('data-tachui-sheet-backdrop', 'true')
+    backdrop.style.position = 'absolute'
+    backdrop.style.inset = '0'
+    backdrop.style.background =
+      options.backdropColor ?? 'rgba(0, 0, 0, 0.45)'
+    backdrop.style.opacity = '0'
+    backdrop.style.pointerEvents = 'auto'
+    backdrop.style.transition = `opacity ${transitionDurationMs}ms ease`
+
+    sheetHost = document.createElement('div')
+    sheetHost.setAttribute('data-tachui-sheet-content', 'true')
+    sheetHost.style.position = 'relative'
+    sheetHost.style.width = '100%'
+    sheetHost.style.maxWidth = options.maxWidth ?? '640px'
+    sheetHost.style.transform = 'translateY(100%)'
+    sheetHost.style.transition = `transform ${transitionDurationMs}ms ease`
+    sheetHost.style.pointerEvents = 'auto'
+
+    if (options.dismissOnBackdropTap !== false) {
+      backdrop.addEventListener('click', () => {
+        dismissPresentedState(isPresented, options)
+      })
+    }
+
+    portalRoot.append(backdrop, sheetHost)
+    document.body.appendChild(portalRoot)
+
+    disposeSheetContent = mountComponentTree(content(), sheetHost)
+    isMounted = true
+    scheduleEntranceTransition()
+  }
+
+  const presentationEffect = createEffect(() => {
+    const presented = readPresentedState(isPresented)
+
+    if (presented) {
+      mountPortal()
+      return
+    }
+
+    unmountPortal()
+  })
+
+  return () => {
+    presentationEffect.dispose()
+    unmountPortal()
+  }
+}
+
+/**
+ * .sheet() modifier
+ *
+ * @param component - The component to anchor sheet presentation to
+ * @param isPresented - Reactive sheet presentation state accessor/binding
+ * @param content - Sheet content factory
+ * @param options - Presentation options
+ * @returns The modified component
+ */
+export function sheet(
+  component: ComponentInstance,
+  isPresented: SheetPresentationState,
+  content: () => ComponentInstance,
+  options: SheetPresentationOptions = {}
+): ComponentInstance {
+  ;(component as any)._navigationModifiers = {
+    ...(component as any)._navigationModifiers,
+    sheet: { isPresented, content, options },
+  }
+
+  const existingLifecycle = (component as any)._enhancedLifecycle ?? {}
+  const existingOnDOMReady = existingLifecycle.onDOMReady as
+    | ((elements: Map<string, Element>, primary?: Element) => void | (() => void))
+    | undefined
+
+  ;(component as any)._enhancedLifecycle = {
+    ...existingLifecycle,
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      const existingCleanup = existingOnDOMReady?.(elements, primary)
+      const sheetCleanup = setupSheetPresentation(isPresented, content, options)
+
+      return () => {
+        sheetCleanup()
+        if (typeof existingCleanup === 'function') {
+          existingCleanup()
+        }
+      }
+    },
+  }
+
+  return component
+}
+
 /**
  * Get the current navigation modifier configuration
  */
@@ -425,7 +646,11 @@ declare module '@tachui/core' {
     toolbarBackground(background: string): ComponentInstance
     toolbarForegroundColor(color: string): ComponentInstance
     // Modal presentation modifiers
-    sheet(isPresented: () => boolean, content: () => ComponentInstance, options?: any): ComponentInstance
+    sheet(
+      isPresented: Accessor<boolean> | Binding<boolean>,
+      content: () => ComponentInstance,
+      options?: SheetPresentationOptions
+    ): ComponentInstance
     fullScreenCover(isPresented: () => boolean, content: () => ComponentInstance, options?: any): ComponentInstance
     popover(isPresented: () => boolean, content: () => ComponentInstance, options?: any): ComponentInstance
   }
@@ -465,5 +690,13 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
 
   proto.toolbarForegroundColor = function(color: string) {
     return toolbarForegroundColor(this, color)
+  }
+
+  proto.sheet = function(
+    isPresented: Accessor<boolean> | Binding<boolean>,
+    content: () => ComponentInstance,
+    options?: SheetPresentationOptions
+  ) {
+    return sheet(this, isPresented, content, options)
   }
 }

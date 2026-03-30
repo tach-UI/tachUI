@@ -4,7 +4,8 @@
  * Tests for SwiftUI-compatible navigation modifiers
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { createSignal, mountComponentTree } from '@tachui/core'
 import { HTML, Text } from '@tachui/primitives'
 import {
   navigationTitle,
@@ -15,6 +16,7 @@ import {
   navigationBarItems,
   toolbarBackground,
   toolbarForegroundColor,
+  sheet,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
   hasNavigationModifiers,
@@ -30,6 +32,16 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
   beforeEach(() => {
     mockComponent = HTML.div({ children: 'Base Component' }).build()
   })
+
+  afterEach(() => {
+    document
+      .querySelectorAll('[data-tachui-sheet-root="true"]')
+      .forEach(node => node.remove())
+  })
+
+  const flushMicrotasks = async (): Promise<void> => {
+    await Promise.resolve()
+  }
 
   describe('Basic Navigation Modifiers', () => {
     it('applies navigationTitle modifier', () => {
@@ -111,6 +123,152 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       expect(
         (withItems as any)._navigationModifiers.trailingItems
       ).toBeDefined()
+    })
+  })
+
+  describe('Sheet Modifier', () => {
+    it('renders sheet when presentation signal becomes true', async () => {
+      const [isPresented, setIsPresented] = createSignal(false)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeNull()
+
+      setIsPresented(true)
+      await flushMicrotasks()
+
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeTruthy()
+
+      cleanup()
+      container.remove()
+    })
+
+    it('unmounts sheet when presentation signal becomes false', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeTruthy()
+
+      setIsPresented(false)
+      await flushMicrotasks()
+
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+      container.remove()
+    })
+
+    it('dismisses sheet on backdrop tap', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const backdrop = document.querySelector(
+        '[data-tachui-sheet-backdrop="true"]'
+      ) as HTMLDivElement | null
+
+      expect(backdrop).toBeTruthy()
+      backdrop?.click()
+      await flushMicrotasks()
+
+      expect(isPresented()).toBe(false)
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+      container.remove()
+      setIsPresented(false)
+    })
+
+    it('renders provided sheet content', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Rendered from sheet' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      expect(document.body.textContent).toContain('Rendered from sheet')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('reacts to repeated open and close toggles', async () => {
+      const [isPresented, setIsPresented] = createSignal(false)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+
+      setIsPresented(true)
+      await flushMicrotasks()
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeTruthy()
+
+      setIsPresented(false)
+      await flushMicrotasks()
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeNull()
+
+      setIsPresented(true)
+      await flushMicrotasks()
+      expect(
+        document.querySelector('[data-tachui-sheet-root="true"]')
+      ).toBeTruthy()
+
+      cleanup()
+      container.remove()
     })
   })
 

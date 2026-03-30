@@ -47,6 +47,7 @@ export {
   navigationBarItems,
   toolbarBackground,
   toolbarForegroundColor,
+  sheet,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
   hasNavigationModifiers,
@@ -55,6 +56,7 @@ export {
   onNavigationModifierChange,
   NavigationModifierUtils,
 } from './navigation-modifiers'
+export type { SheetPresentationOptions } from './navigation-modifiers'
 
 // Navigation Environment System
 export {
