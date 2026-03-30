@@ -199,6 +199,63 @@ export class DeepLinkManager {
       : withoutControlChars
   }
 
+  private assignParsedQueryValue(
+    target: Record<string, any>,
+    rawKey: string,
+    value: string
+  ): void {
+    const keyPath = rawKey
+      .split('.')
+      .map(segment => segment.trim())
+      .filter(Boolean)
+    if (keyPath.length === 0) {
+      return
+    }
+
+    let cursor: Record<string, any> = target
+
+    for (let i = 0; i < keyPath.length; i++) {
+      const isLast = i === keyPath.length - 1
+      const rawSegment = keyPath[i]
+      const isArraySegment = rawSegment.endsWith('[]')
+      const segment = isArraySegment ? rawSegment.slice(0, -2) : rawSegment
+      if (!segment) {
+        return
+      }
+
+      if (isLast) {
+        if (isArraySegment) {
+          const existing = cursor[segment]
+          if (Array.isArray(existing)) {
+            existing.push(value)
+            return
+          }
+
+          if (existing === undefined) {
+            cursor[segment] = [value]
+            return
+          }
+
+          cursor[segment] = [String(existing), value]
+          return
+        }
+
+        cursor[segment] = value
+        return
+      }
+
+      const existing = cursor[segment]
+      if (
+        typeof existing !== 'object' ||
+        existing === null ||
+        Array.isArray(existing)
+      ) {
+        cursor[segment] = {}
+      }
+      cursor = cursor[segment] as Record<string, any>
+    }
+  }
+
   /**
    * Parse a deep link URL
    *
@@ -249,10 +306,15 @@ export class DeepLinkManager {
         return null
       }
 
-      const [pathAndQuery] = rest.split('#') // Remove fragment
+      const fragmentIndex = rest.indexOf('#')
+      const hasFragment = fragmentIndex >= 0
+      const pathAndQuery = hasFragment ? rest.slice(0, fragmentIndex) : rest
+      const fragment = hasFragment
+        ? this.sanitizeQueryToken(rest.slice(fragmentIndex + 1))
+        : undefined
       const [fullPath, queryString] = pathAndQuery.split('?')
 
-      const query: Record<string, string> = {}
+      const query: Record<string, any> = {}
       if (queryString) {
         queryString.split('&').forEach(param => {
           const equalsIndex = param.indexOf('=')
@@ -263,7 +325,7 @@ export class DeepLinkManager {
           const key = this.sanitizeQueryToken(rawKey || '')
           const value = this.sanitizeQueryToken(rawValue || '')
           if (key) {
-            query[key] = value
+            this.assignParsedQueryValue(query, key, value)
           }
         })
       }
@@ -275,6 +337,8 @@ export class DeepLinkManager {
         scheme,
         path,
         query,
+        params: query,
+        fragment,
         isDeepLink: true,
       }
     } catch {

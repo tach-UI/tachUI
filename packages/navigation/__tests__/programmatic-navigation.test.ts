@@ -494,6 +494,74 @@ describe('Programmatic Navigation - Advanced Navigation Utilities', () => {
       expect(result?.query.token).toBe('abc==')
       expect(result?.query.bio.length).toBe(2048)
     })
+
+    it('extracts URL fragment when present', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink(
+        'myapp://profile/123?tab=settings#section'
+      )
+
+      expect(result).toBeDefined()
+      expect(result?.fragment).toBe('section')
+      expect(result?.query).toEqual({ tab: 'settings' })
+      expect(result?.params).toEqual({ tab: 'settings' })
+    })
+
+    it('parses array query parameters into arrays', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink('myapp://page?ids[]=1&ids[]=2')
+
+      expect(result).toBeDefined()
+      expect(result?.query).toEqual({ ids: ['1', '2'] })
+      expect(result?.params).toEqual({ ids: ['1', '2'] })
+    })
+
+    it('parses dot-notation query parameters into nested objects', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink(
+        'myapp://page?user.id=5&user.name=Alex'
+      )
+
+      expect(result).toBeDefined()
+      expect(result?.query).toEqual({ user: { id: '5', name: 'Alex' } })
+      expect(result?.params).toEqual({ user: { id: '5', name: 'Alex' } })
+    })
+
+    it('parses mixed simple, nested, and array query parameters', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink(
+        'myapp://page?tab=settings&ids[]=1&ids[]=2&user.id=5#summary'
+      )
+
+      expect(result).toBeDefined()
+      expect(result?.query).toEqual({
+        tab: 'settings',
+        ids: ['1', '2'],
+        user: { id: '5' },
+      })
+      expect(result?.fragment).toBe('summary')
+    })
+
+    it('returns empty fragment when URL ends with hash marker', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink('myapp://page#')
+
+      expect(result).toBeDefined()
+      expect(result?.fragment).toBe('')
+      expect(result?.query).toEqual({})
+      expect(result?.params).toEqual({})
+    })
+
+    it('handles deep links with no query params and no fragment', () => {
+      const manager = new DeepLinkManager()
+      const result = manager.parseDeepLink('myapp://page')
+
+      expect(result).toBeDefined()
+      expect(result?.path).toBe('/page')
+      expect(result?.query).toEqual({})
+      expect(result?.params).toEqual({})
+      expect(result?.fragment).toBeUndefined()
+    })
   })
 
   describe('Global Managers', () => {
