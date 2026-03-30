@@ -34,6 +34,7 @@ export interface NavigationModifierConfig {
   leadingItems?: ComponentInstance[]
   trailingItems?: ComponentInstance[]
   searchable?: SearchableConfig
+  searchSuggestions?: SearchSuggestionsInput
 }
 
 type SheetPresentationState = Accessor<boolean> | Binding<boolean>
@@ -106,6 +107,10 @@ export interface SearchableConfig {
   text: SearchableTextState
   placement: SearchablePlacement
 }
+
+export type SearchSuggestionsInput =
+  | string[]
+  | ((query: string) => string[])
 
 export type ConfirmationDialogButtonRole = 'default' | 'cancel' | 'destructive'
 
@@ -513,7 +518,8 @@ function wrapComponentWithToolbar(
   const toolbarBackgroundColor = modifiers.toolbarBackground ?? '#f9fafb'
 
   const createSearchableInputNode = (
-    config: SearchableConfig
+    config: SearchableConfig,
+    suggestionsInput?: SearchSuggestionsInput
   ): ComponentInstance => {
     const searchHost = HTML.div({}).build()
     const existingLifecycle = (searchHost as any)._enhancedLifecycle ?? {}
@@ -547,6 +553,25 @@ function wrapComponentWithToolbar(
         '.searchable requires a writable signal accessor or Binding<string>. Computed/read-only accessors are not writable.'
       )
       return false
+    }
+
+    const resolveSuggestions = (query: string): string[] => {
+      if (!query.trim()) {
+        return []
+      }
+      if (!suggestionsInput) {
+        return []
+      }
+      const resolved =
+        typeof suggestionsInput === 'function'
+          ? suggestionsInput(query)
+          : suggestionsInput
+      if (!Array.isArray(resolved)) {
+        return []
+      }
+      return resolved
+        .map(item => String(item ?? '').trim())
+        .filter(item => item.length > 0)
     }
 
     ;(searchHost as any)._enhancedLifecycle = {
@@ -596,24 +621,134 @@ function wrapComponentWithToolbar(
         clearButton.style.alignItems = 'center'
         clearButton.style.justifyContent = 'center'
 
+        const suggestionsDropdown = document.createElement('div')
+        suggestionsDropdown.setAttribute(
+          'data-tachui-searchable-suggestions',
+          'true'
+        )
+        suggestionsDropdown.style.position = 'absolute'
+        suggestionsDropdown.style.top = '100%'
+        suggestionsDropdown.style.left = '12px'
+        suggestionsDropdown.style.right = '12px'
+        suggestionsDropdown.style.zIndex = '40'
+        suggestionsDropdown.style.border = '1px solid #d1d5db'
+        suggestionsDropdown.style.borderRadius = '8px'
+        suggestionsDropdown.style.background = '#ffffff'
+        suggestionsDropdown.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)'
+        suggestionsDropdown.style.marginTop = '4px'
+        suggestionsDropdown.style.maxHeight = '220px'
+        suggestionsDropdown.style.overflowY = 'auto'
+        suggestionsDropdown.style.display = 'none'
+
+        let isFocused = false
+        let suggestionsDismissedBySelection = false
+        let blurTimer: number | null = null
+
+        const closeSuggestions = (): void => {
+          suggestionsDropdown.style.display = 'none'
+          suggestionsDropdown.replaceChildren()
+        }
+
+        const setSearchValue = (value: string): void => {
+          if (setSearchState(config.text, value)) {
+            input.value = value
+          }
+        }
+
+        const renderSuggestions = (query: string): void => {
+          const suggestions = resolveSuggestions(query)
+          if (
+            !isFocused ||
+            suggestionsDismissedBySelection ||
+            !query.trim() ||
+            suggestions.length === 0
+          ) {
+            closeSuggestions()
+            return
+          }
+
+          suggestionsDropdown.replaceChildren(
+            ...suggestions.map(suggestion => {
+              const button = document.createElement('button')
+              button.type = 'button'
+              button.setAttribute('data-tachui-searchable-suggestion-item', 'true')
+              button.textContent = suggestion
+              button.style.display = 'block'
+              button.style.width = '100%'
+              button.style.textAlign = 'left'
+              button.style.padding = '8px 10px'
+              button.style.border = '0'
+              button.style.background = 'transparent'
+              button.style.cursor = 'pointer'
+              button.style.fontSize = '14px'
+              button.style.lineHeight = '1.3'
+              button.addEventListener('mousedown', event => {
+                event.preventDefault()
+              })
+              button.addEventListener('click', () => {
+                setSearchValue(suggestion)
+                suggestionsDismissedBySelection = true
+                clearButton.style.display = suggestion
+                  ? 'inline-flex'
+                  : 'none'
+                closeSuggestions()
+                input.focus()
+              })
+              return button
+            })
+          )
+          suggestionsDropdown.style.display = 'block'
+        }
+
         const onInput = (): void => {
+          suggestionsDismissedBySelection = false
           const nextValue = input.value
           setSearchState(config.text, nextValue)
           clearButton.style.display = nextValue ? 'inline-flex' : 'none'
+          renderSuggestions(nextValue)
         }
 
         const onClear = (): void => {
+          suggestionsDismissedBySelection = false
           if (setSearchState(config.text, '')) {
             input.value = ''
             clearButton.style.display = 'none'
+            closeSuggestions()
             input.focus()
+          }
+        }
+
+        const onFocus = (): void => {
+          isFocused = true
+          renderSuggestions(input.value)
+        }
+
+        const onBlur = (): void => {
+          if (blurTimer !== null) {
+            window.clearTimeout(blurTimer)
+          }
+          blurTimer = window.setTimeout(() => {
+            isFocused = false
+            suggestionsDismissedBySelection = false
+            closeSuggestions()
+            blurTimer = null
+          }, 0)
+        }
+
+        const onKeyDown = (event: KeyboardEvent): void => {
+          if (event.key === 'Escape') {
+            closeSuggestions()
           }
         }
 
         input.addEventListener('input', onInput)
         clearButton.addEventListener('click', onClear)
+        input.addEventListener('focus', onFocus)
+        input.addEventListener('blur', onBlur)
+        input.addEventListener('keydown', onKeyDown)
 
-        primary.append(input, clearButton)
+        primary.style.position = 'relative'
+        primary.append(input, clearButton, suggestionsDropdown)
 
         const syncEffect = createEffect(() => {
           const currentValue = readSearchState(config.text)
@@ -621,12 +756,20 @@ function wrapComponentWithToolbar(
             input.value = currentValue
           }
           clearButton.style.display = currentValue ? 'inline-flex' : 'none'
+          renderSuggestions(currentValue)
         })
 
         return () => {
           syncEffect.dispose()
+          if (blurTimer !== null) {
+            window.clearTimeout(blurTimer)
+          }
+          closeSuggestions()
           input.removeEventListener('input', onInput)
           clearButton.removeEventListener('click', onClear)
+          input.removeEventListener('focus', onFocus)
+          input.removeEventListener('blur', onBlur)
+          input.removeEventListener('keydown', onKeyDown)
           if (typeof existingCleanup === 'function') {
             existingCleanup()
           }
@@ -687,7 +830,9 @@ function wrapComponentWithToolbar(
 
   if (hasNavigationBarSearch && searchableConfig) {
     const searchNode = HStack({
-      children: [createSearchableInputNode(searchableConfig)],
+      children: [
+        createSearchableInputNode(searchableConfig, modifiers.searchSuggestions),
+      ],
       spacing: 0,
     })
       .role('search')
@@ -720,7 +865,9 @@ function wrapComponentWithToolbar(
 
   if (hasToolbarSearch && searchableConfig) {
     const searchNode = HStack({
-      children: [createSearchableInputNode(searchableConfig)],
+      children: [
+        createSearchableInputNode(searchableConfig, modifiers.searchSuggestions),
+      ],
       spacing: 0,
     })
       .role('search')
@@ -797,6 +944,42 @@ export function searchable(
   const nextModifiers = {
     ...currentModifiers,
     searchable: { text, placement } as SearchableConfig,
+  }
+
+  const wrappedComponent = wrapComponentWithToolbar(
+    toolbarBaseComponent,
+    toolbarItemList,
+    nextModifiers
+  )
+  ;(wrappedComponent as any)._navigationModifiers = {
+    ...(wrappedComponent as any)._navigationModifiers,
+    ...nextModifiers,
+  }
+  ;(wrappedComponent as any)._toolbarBaseComponent = toolbarBaseComponent
+
+  return wrappedComponent
+}
+
+export function searchSuggestions(
+  component: ComponentInstance,
+  suggestions: SearchSuggestionsInput
+): ComponentInstance {
+  const currentModifiers = ((component as any)._navigationModifiers ?? {}) as
+    NavigationModifierConfig & {
+      toolbarItems?: ToolbarItemConfig[]
+    }
+  const toolbarItemList = currentModifiers.toolbarItems ?? []
+  const toolbarBaseComponent = ((component as any)
+    ._toolbarBaseComponent ?? component) as ComponentInstance
+  const nextModifiers = {
+    ...currentModifiers,
+    searchSuggestions: suggestions,
+  }
+
+  const searchableConfig = nextModifiers.searchable
+  if (!searchableConfig) {
+    ;(component as any)._navigationModifiers = nextModifiers
+    return component
   }
 
   const wrappedComponent = wrapComponentWithToolbar(
@@ -2408,6 +2591,9 @@ declare module '@tachui/core' {
       text: Accessor<string> | Binding<string>,
       placement?: SearchablePlacement
     ): ComponentInstance
+    searchSuggestions(
+      suggestions: SearchSuggestionsInput
+    ): ComponentInstance
     confirmationDialog(
       title: string,
       isPresented: Accessor<boolean> | Binding<boolean>,
@@ -2501,6 +2687,10 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
     placement: SearchablePlacement = 'navigationBar'
   ) {
     return searchable(this, text, placement)
+  }
+
+  proto.searchSuggestions = function(suggestions: SearchSuggestionsInput) {
+    return searchSuggestions(this, suggestions)
   }
 
   proto.confirmationDialog = function(

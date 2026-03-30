@@ -23,6 +23,7 @@ import {
   toolbarBackgroundVisibility,
   toolbarForegroundColor,
   searchable,
+  searchSuggestions,
   presentationDetents,
   sheet,
   fullScreenCover,
@@ -64,6 +65,12 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
 
   const flushMicrotasks = async (): Promise<void> => {
     await Promise.resolve()
+  }
+
+  const flushMacrotasks = async (): Promise<void> => {
+    await new Promise<void>(resolve => {
+      setTimeout(() => resolve(), 0)
+    })
   }
 
   const flushAnimationFrame = async (): Promise<void> => {
@@ -297,6 +304,207 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       await flushMicrotasks()
 
       expect(input?.value).toBe('updated')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('shows search suggestions when focused and query is non-empty', async () => {
+      const [searchText] = createSignal('')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchSuggestions(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        ['tachui', 'tachyon']
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      const dropdown = document.querySelector(
+        '[data-tachui-searchable-suggestions="true"]'
+      ) as HTMLDivElement | null
+      expect(input).toBeTruthy()
+      expect(dropdown).toBeTruthy()
+
+      input!.focus()
+      input!.value = 'ta'
+      input!.dispatchEvent(new Event('input', { bubbles: true }))
+      await flushMicrotasks()
+
+      expect(dropdown?.style.display).toBe('block')
+      expect(
+        document.querySelectorAll('[data-tachui-searchable-suggestion-item="true"]')
+          .length
+      ).toBe(2)
+
+      cleanup()
+      container.remove()
+    })
+
+    it('updates suggestion list reactively as query changes', async () => {
+      const [searchText, setSearchText] = createSignal('')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchSuggestions(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        query =>
+          ['apple', 'apricot', 'banana'].filter(item => item.startsWith(query))
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      expect(input).toBeTruthy()
+      input!.focus()
+      setSearchText('ap')
+      await flushMicrotasks()
+
+      expect(
+        document.querySelectorAll('[data-tachui-searchable-suggestion-item="true"]')
+          .length
+      ).toBe(2)
+
+      setSearchText('ban')
+      await flushMicrotasks()
+
+      const suggestions = Array.from(
+        document.querySelectorAll('[data-tachui-searchable-suggestion-item="true"]')
+      ).map(node => node.textContent)
+      expect(suggestions).toEqual(['banana'])
+
+      cleanup()
+      container.remove()
+    })
+
+    it('selecting a suggestion updates search text and closes dropdown', async () => {
+      const [searchText] = createSignal('')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchSuggestions(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        ['tachui', 'tachyon']
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      const dropdown = document.querySelector(
+        '[data-tachui-searchable-suggestions="true"]'
+      ) as HTMLDivElement | null
+      expect(input).toBeTruthy()
+
+      input!.focus()
+      input!.value = 'ta'
+      input!.dispatchEvent(new Event('input', { bubbles: true }))
+      await flushMicrotasks()
+
+      const suggestionButton = Array.from(
+        document.querySelectorAll<HTMLButtonElement>(
+          '[data-tachui-searchable-suggestion-item="true"]'
+        )
+      ).find(button => button.textContent === 'tachyon')
+      suggestionButton?.click()
+      await flushMicrotasks()
+
+      expect(searchText()).toBe('tachyon')
+      expect(input?.value).toBe('tachyon')
+      expect(dropdown?.style.display).toBe('none')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('dismisses suggestions on Escape key and focus loss', async () => {
+      const [searchText] = createSignal('')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchSuggestions(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        ['tachui']
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      const dropdown = document.querySelector(
+        '[data-tachui-searchable-suggestions="true"]'
+      ) as HTMLDivElement | null
+      const outside = document.createElement('button')
+      document.body.appendChild(outside)
+      expect(input).toBeTruthy()
+
+      input!.focus()
+      input!.value = 'ta'
+      input!.dispatchEvent(new Event('input', { bubbles: true }))
+      await flushMicrotasks()
+      expect(dropdown?.style.display).toBe('block')
+
+      input!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+      )
+      await flushMicrotasks()
+      expect(dropdown?.style.display).toBe('none')
+
+      input!.focus()
+      input!.dispatchEvent(new Event('focus', { bubbles: true }))
+      input!.value = 'ta'
+      input!.dispatchEvent(new Event('input', { bubbles: true }))
+      await flushMicrotasks()
+      expect(dropdown?.style.display).toBe('block')
+
+      outside.focus()
+      input!.dispatchEvent(new Event('blur', { bubbles: true }))
+      await flushMacrotasks()
+      expect(dropdown?.style.display).toBe('none')
+
+      outside.remove()
+      cleanup()
+      container.remove()
+    })
+
+    it('keeps suggestions hidden for empty query', async () => {
+      const [searchText] = createSignal('')
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = searchSuggestions(
+        searchable(HTML.div({ children: 'Host' }).build(), searchText),
+        ['tachui']
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const input = document.querySelector(
+        '[data-tachui-searchable-input="true"]'
+      ) as HTMLInputElement | null
+      const dropdown = document.querySelector(
+        '[data-tachui-searchable-suggestions="true"]'
+      ) as HTMLDivElement | null
+      expect(input).toBeTruthy()
+
+      input!.focus()
+      input!.value = ''
+      input!.dispatchEvent(new Event('input', { bubbles: true }))
+      await flushMicrotasks()
+
+      expect(dropdown?.style.display).toBe('none')
+      expect(
+        document.querySelectorAll('[data-tachui-searchable-suggestion-item="true"]')
+          .length
+      ).toBe(0)
 
       cleanup()
       container.remove()
