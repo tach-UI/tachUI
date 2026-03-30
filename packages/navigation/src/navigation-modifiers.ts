@@ -25,7 +25,11 @@ export interface NavigationModifierConfig {
   backButtonHidden?: boolean
   backButtonTitle?: string
   toolbarBackground?: string
+  toolbarBackgroundVisibility?: Partial<
+    Record<ToolbarBackgroundVisibilityTarget, ToolbarBackgroundVisibility>
+  >
   foregroundColor?: string
+  toolbarItems?: ToolbarItemConfig[]
   leadingItems?: ComponentInstance[]
   trailingItems?: ComponentInstance[]
 }
@@ -72,6 +76,9 @@ export interface ToolbarItemInput {
   placement: ToolbarItemPlacement
   content: () => ComponentInstance
 }
+
+export type ToolbarBackgroundVisibility = 'visible' | 'hidden' | 'automatic'
+export type ToolbarBackgroundVisibilityTarget = 'navigationBar' | 'bottomBar'
 
 export type PopoverArrowEdge = 'top' | 'bottom' | 'leading' | 'trailing'
 
@@ -353,6 +360,51 @@ export function toolbarForegroundColor(
   return component
 }
 
+/**
+ * .toolbarBackgroundVisibility() modifier
+ */
+export function toolbarBackgroundVisibility(
+  component: ComponentInstance,
+  visibility: ToolbarBackgroundVisibility,
+  target: ToolbarBackgroundVisibilityTarget = 'navigationBar'
+): ComponentInstance {
+  const currentModifiers = ((component as any)._navigationModifiers ?? {}) as
+    NavigationModifierConfig
+  const nextVisibility = {
+    ...currentModifiers.toolbarBackgroundVisibility,
+    [target]: visibility,
+  }
+  const nextModifiers = {
+    ...currentModifiers,
+    toolbarBackgroundVisibility: nextVisibility,
+  }
+
+  ;(component as any)._navigationModifiers = nextModifiers
+  navigationModifierManager.pushModifier({
+    toolbarBackgroundVisibility: nextVisibility,
+  })
+
+  const toolbarBaseComponent = ((component as any)
+    ._toolbarBaseComponent ?? component) as ComponentInstance
+  const toolbarItemList = (nextModifiers.toolbarItems ?? []) as
+    ToolbarItemConfig[]
+  if (toolbarItemList.length === 0) {
+    return component
+  }
+
+  const wrappedComponent = wrapComponentWithToolbar(
+    toolbarBaseComponent,
+    toolbarItemList,
+    nextModifiers
+  )
+  ;(wrappedComponent as any)._navigationModifiers = {
+    ...(wrappedComponent as any)._navigationModifiers,
+    ...nextModifiers,
+  }
+  ;(wrappedComponent as any)._toolbarBaseComponent = toolbarBaseComponent
+  return wrappedComponent
+}
+
 function partitionToolbarItems(items: ToolbarItemConfig[]): {
   navigation: ToolbarItemConfig[]
   trailing: ToolbarItemConfig[]
@@ -419,7 +471,8 @@ function createToolbarItemNode(item: ToolbarItemConfig): ComponentInstance {
 
 function wrapComponentWithToolbar(
   component: ComponentInstance,
-  items: ToolbarItemConfig[]
+  items: ToolbarItemConfig[],
+  modifiers: NavigationModifierConfig = {}
 ): ComponentInstance {
   const partitions = partitionToolbarItems(items)
   const hasTopBar =
@@ -431,6 +484,10 @@ function wrapComponentWithToolbar(
   }
 
   const children: ComponentInstance[] = []
+  const visibilityMap = modifiers.toolbarBackgroundVisibility ?? {}
+  const topBarVisibility = visibilityMap.navigationBar ?? 'visible'
+  const bottomBarVisibility = visibilityMap.bottomBar ?? 'visible'
+  const toolbarBackgroundColor = modifiers.toolbarBackground ?? '#f9fafb'
 
   if (hasTopBar) {
     const topBarChildren: ComponentInstance[] = []
@@ -462,36 +519,42 @@ function wrapComponentWithToolbar(
           ? 'flex-end'
           : 'flex-start'
 
-    children.push(
-      HStack({
-        children: topBarChildren,
-        spacing: 12,
-      })
-        .role('toolbar')
-        .justifyContent(topBarJustifyContent)
-        .alignItems('center')
-        .padding({ top: 10, right: 12, bottom: 10, left: 12 })
-        .border({ width: 1, color: '#e5e7eb' })
-        .backgroundColor('#f9fafb')
-        .build()
-    )
+    const topBarNode = HStack({
+      children: topBarChildren,
+      spacing: 12,
+    })
+      .role('toolbar')
+      .justifyContent(topBarJustifyContent)
+      .alignItems('center')
+      .padding({ top: 10, right: 12, bottom: 10, left: 12 })
+    if (topBarVisibility === 'hidden') {
+      topBarNode.border(0).backgroundColor('transparent')
+    } else {
+      topBarNode.border({ width: 1, color: '#e5e7eb' })
+      topBarNode.backgroundColor(toolbarBackgroundColor)
+    }
+
+    children.push(topBarNode.build())
   }
 
   children.push(component)
 
   if (hasBottomBar) {
-    children.push(
-      HStack({
-        children: partitions.bottomBar.map(createToolbarItemNode),
-        spacing: 8,
-      })
-        .role('toolbar')
-        .alignItems('center')
-        .padding({ top: 10, right: 12, bottom: 10, left: 12 })
-        .border({ width: 1, color: '#e5e7eb' })
-        .backgroundColor('#f9fafb')
-        .build()
-    )
+    const bottomBarNode = HStack({
+      children: partitions.bottomBar.map(createToolbarItemNode),
+      spacing: 8,
+    })
+      .role('toolbar')
+      .alignItems('center')
+      .padding({ top: 10, right: 12, bottom: 10, left: 12 })
+    if (bottomBarVisibility === 'hidden') {
+      bottomBarNode.border(0).backgroundColor('transparent')
+    } else {
+      bottomBarNode.border({ width: 1, color: '#e5e7eb' })
+      bottomBarNode.backgroundColor(toolbarBackgroundColor)
+    }
+
+    children.push(bottomBarNode.build())
   }
 
   return VStack({
@@ -508,7 +571,8 @@ export function toolbarItems(
   component: ComponentInstance,
   items: ToolbarItemConfig[]
 ): ComponentInstance {
-  const currentModifiers = ((component as any)._navigationModifiers ?? {}) as {
+  const currentModifiers = ((component as any)._navigationModifiers ?? {}) as
+    NavigationModifierConfig & {
     toolbarItems?: ToolbarItemConfig[]
   }
   const existingItems = currentModifiers.toolbarItems ?? []
@@ -518,7 +582,8 @@ export function toolbarItems(
 
   const wrappedComponent = wrapComponentWithToolbar(
     toolbarBaseComponent,
-    mergedItems
+    mergedItems,
+    currentModifiers
   )
   const nextModifiers = {
     ...currentModifiers,
@@ -1814,6 +1879,10 @@ declare module '@tachui/core' {
     navigationBarBackButtonTitle(title: string): ComponentInstance
     toolbarBackground(background: string): ComponentInstance
     toolbarForegroundColor(color: string): ComponentInstance
+    toolbarBackgroundVisibility(
+      visibility: ToolbarBackgroundVisibility,
+      target?: ToolbarBackgroundVisibilityTarget
+    ): ComponentInstance
     presentationDetents(detents: PresentationDetent[]): ComponentInstance
     toolbar(items: ToolbarItemConfig[]): ComponentInstance
     toolbarItems(items: ToolbarItemConfig[]): ComponentInstance
@@ -1871,6 +1940,13 @@ if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
 
   proto.toolbarForegroundColor = function(color: string) {
     return toolbarForegroundColor(this, color)
+  }
+
+  proto.toolbarBackgroundVisibility = function(
+    visibility: ToolbarBackgroundVisibility,
+    target: ToolbarBackgroundVisibilityTarget = 'navigationBar'
+  ) {
+    return toolbarBackgroundVisibility(this, visibility, target)
   }
 
   proto.presentationDetents = function(detents: PresentationDetent[]) {

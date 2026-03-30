@@ -60,6 +60,7 @@ export {
   presentationDetents,
   getToolbarItemsByPlacement,
   toolbarBackground,
+  toolbarBackgroundVisibility,
   toolbarForegroundColor,
   sheet,
   fullScreenCover,
@@ -79,6 +80,8 @@ export type {
   PopoverPresentationOptions,
   PresentationDetent,
   ToolbarItemPlacement,
+  ToolbarBackgroundVisibility,
+  ToolbarBackgroundVisibilityTarget,
   ToolbarItemConfig,
   ToolbarItemInput,
 } from './navigation-modifiers'

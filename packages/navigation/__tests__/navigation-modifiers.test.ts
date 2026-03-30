@@ -20,6 +20,7 @@ import {
   __resetToolbarItemIdCounterForTests,
   getToolbarItemsByPlacement,
   toolbarBackground,
+  toolbarBackgroundVisibility,
   toolbarForegroundColor,
   presentationDetents,
   sheet,
@@ -355,6 +356,112 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
         topToolbar?.querySelectorAll(':scope > .tachui-hstack').length ?? 0
 
       expect(groupContainerCount).toBe(1)
+
+      cleanup()
+    })
+
+    it('hides navigation bar background when scoped to navigationBar', () => {
+      const modified = toolbarBackgroundVisibility(
+        toolbarItems(mockComponent, [
+          ToolbarItem({
+            placement: 'navigation',
+            content: () => HTML.button({ children: 'Back' }).build(),
+          }),
+        ]),
+        'hidden',
+        'navigationBar'
+      )
+
+      const cleanup = mountToolbarComponent(modified)
+      const toolbars = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="toolbar"]')
+      )
+
+      expect(toolbars).toHaveLength(1)
+      expect(toolbars[0]?.style.backgroundColor).toBe('transparent')
+      expect(toolbars[0]?.style.borderWidth).toBe('0px')
+
+      cleanup()
+    })
+
+    it('restores navigation bar background when visibility is visible', () => {
+      const modified = toolbarBackgroundVisibility(
+        toolbarItems(mockComponent, [
+          ToolbarItem({
+            placement: 'navigation',
+            content: () => HTML.button({ children: 'Back' }).build(),
+          }),
+        ]),
+        'visible',
+        'navigationBar'
+      )
+
+      const cleanup = mountToolbarComponent(modified)
+      const toolbars = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="toolbar"]')
+      )
+
+      expect(toolbars).toHaveLength(1)
+      expect(toolbars[0]?.style.backgroundColor).toBe('rgb(249, 250, 251)')
+      expect(toolbars[0]?.style.borderWidth).toBe('1px')
+
+      cleanup()
+    })
+
+    it('applies hidden background to bottomBar only when scoped to bottomBar', () => {
+      const modified = toolbarBackgroundVisibility(
+        toolbarItems(mockComponent, [
+          ToolbarItem({
+            placement: 'navigation',
+            content: () => HTML.button({ children: 'Back' }).build(),
+          }),
+          ToolbarItem({
+            placement: 'bottomBar',
+            content: () => HTML.button({ children: 'Inspect' }).build(),
+          }),
+        ]),
+        'hidden',
+        'bottomBar'
+      )
+
+      const cleanup = mountToolbarComponent(modified)
+      const toolbars = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="toolbar"]')
+      )
+
+      expect(toolbars).toHaveLength(2)
+      expect(toolbars[0]?.style.backgroundColor).toBe('rgb(249, 250, 251)')
+      expect(toolbars[1]?.style.backgroundColor).toBe('transparent')
+      expect(toolbars[1]?.style.borderWidth).toBe('0px')
+
+      cleanup()
+    })
+
+    it('applies hidden background to navigation bar only when scoped to navigationBar', () => {
+      const modified = toolbarBackgroundVisibility(
+        toolbarItems(mockComponent, [
+          ToolbarItem({
+            placement: 'navigation',
+            content: () => HTML.button({ children: 'Back' }).build(),
+          }),
+          ToolbarItem({
+            placement: 'bottomBar',
+            content: () => HTML.button({ children: 'Inspect' }).build(),
+          }),
+        ]),
+        'hidden',
+        'navigationBar'
+      )
+
+      const cleanup = mountToolbarComponent(modified)
+      const toolbars = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="toolbar"]')
+      )
+
+      expect(toolbars).toHaveLength(2)
+      expect(toolbars[0]?.style.backgroundColor).toBe('transparent')
+      expect(toolbars[0]?.style.borderWidth).toBe('0px')
+      expect(toolbars[1]?.style.backgroundColor).toBe('rgb(249, 250, 251)')
 
       cleanup()
     })
