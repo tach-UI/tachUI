@@ -225,6 +225,14 @@ describe('Spacer Factory Function', () => {
       expect(typeof spacer.backgroundColor).toBe('function')
       expect(typeof spacer.padding).toBe('function')
       expect(typeof spacer.margin).toBe('function')
+      expect(typeof spacer.maxHeight).toBe('function')
+      expect(typeof spacer.minHeight).toBe('function')
+    })
+
+    it('should allow height modifier chaining on Spacer', () => {
+      expect(() => {
+        Spacer().maxHeight(64).minHeight(16).build()
+      }).not.toThrow()
     })
   })
 
