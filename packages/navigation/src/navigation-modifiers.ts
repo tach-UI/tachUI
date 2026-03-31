@@ -10,6 +10,7 @@ import {
   getSignalImpl,
   isSignal,
   mountComponentTree,
+  untrack,
 } from '@tachui/core'
 import type { Accessor, Binding, ComponentInstance } from '@tachui/core'
 import { HStack, HTML, VStack } from '@tachui/primitives'
@@ -1253,14 +1254,16 @@ function setupSheetPresentation(
 
     isTransitionQueued = true
     transitionFrameId = requestAnimationFrame(() => {
-      if (backdrop) {
-        backdrop.style.opacity = '1'
-      }
-      if (sheetHost) {
-        sheetHost.style.transform = 'translateY(0)'
-      }
-      transitionFrameId = null
-      isTransitionQueued = false
+      transitionFrameId = requestAnimationFrame(() => {
+        if (backdrop) {
+          backdrop.style.opacity = '1'
+        }
+        if (sheetHost) {
+          sheetHost.style.transform = 'translateY(0)'
+        }
+        transitionFrameId = null
+        isTransitionQueued = false
+      })
     })
   }
 
@@ -1411,9 +1414,11 @@ function setupSheetPresentation(
 
     removeDismissScope = setupModalDismissEnvironment(isPresented, options)
 
-    const sheetContent = content()
-    const requestedDetents = (((sheetContent as any)._sheetPresentationDetents
-      ?.detents ?? []) as PresentationDetent[]).filter(Boolean)
+    const sheetContent = untrack(() => content())
+    const requestedDetents = untrack(() =>
+      (((sheetContent as any)._sheetPresentationDetents
+        ?.detents ?? []) as PresentationDetent[]).filter(Boolean)
+    )
     let detentHeights = requestedDetents.map(resolveDetentHeightPx)
     let currentDetentIndex = detentHeights.length > 0
       ? detentHeights.reduce((smallestIndex, currentHeight, currentIndex) => {
@@ -1617,7 +1622,7 @@ function setupSheetPresentation(
         ? document.activeElement
         : null
 
-    disposeSheetContent = mountComponentTree(sheetContent, contentHost)
+    disposeSheetContent = untrack(() => mountComponentTree(sheetContent, contentHost))
     isMounted = true
     scheduleEntranceTransition()
 
@@ -1947,7 +1952,7 @@ function setupPopoverPresentation(
       onDismiss: options.onDismiss,
     })
 
-    disposePopoverContent = mountComponentTree(content(), popoverContentHost)
+    disposePopoverContent = untrack(() => mountComponentTree(untrack(() => content()), popoverContentHost!))
 
     initialPositionFrameId = requestAnimationFrame(() => {
       positionPopover()
@@ -2165,7 +2170,7 @@ function setupFullScreenCoverPresentation(
         ? document.activeElement
         : null
 
-    disposeCoverContent = mountComponentTree(content(), contentHost)
+    disposeCoverContent = untrack(() => mountComponentTree(untrack(() => content()), contentHost!))
 
     const focusTrapHandler = (event: KeyboardEvent) => {
       if (event.key !== 'Tab' || !contentHost) return

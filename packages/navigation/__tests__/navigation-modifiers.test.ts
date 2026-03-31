@@ -1707,6 +1707,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       expect(content?.style.transform).toBe('translateY(100%)')
 
       await flushAnimationFrame()
+      await flushAnimationFrame()
       expect(content?.style.transform).toBe('translateY(0)')
 
       cleanup()
