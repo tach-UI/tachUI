@@ -306,34 +306,6 @@ export function tabItem(
   return component
 }
 
-/**
- * Add .tabItem() method to ComponentInstance prototype
- * This allows for fluent API: Component().tabItem(...)
- */
-declare module '@tachui/core' {
-  interface ComponentInstance {
-    tabItem(
-      id: string,
-      label: string,
-      icon?: string,
-      badge?: string | number,
-      disabled?: boolean
-    ): ComponentInstance
-  }
-}
-
-// Extend ComponentInstance prototype (if possible)
-if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
-  ;(window as any).ComponentInstance.prototype.tabItem = function (
-    id: string,
-    label: string,
-    icon?: string,
-    badge?: string | number,
-    disabled?: boolean
-  ) {
-    return tabItem(this, id, label, icon, badge, disabled)
-  }
-}
 
 /**
  * Create a tab view with simple configuration

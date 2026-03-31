@@ -46,6 +46,9 @@ export {
 } from './simple-tab-view'
 export type { SimpleTabItem, SimpleTabViewOptions } from './simple-tab-view'
 
+// Register navigation modifiers on ModifierBuilder (side-effect import)
+import './navigation-modifiers-registry'
+
 // Navigation Modifiers (SwiftUI-compatible)
 export {
   navigationTitle,
