@@ -54,6 +54,12 @@ export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize'
  * Valid color value types for modifiers
  */
 export type ColorValue = string | Asset | ColorAssetProxy | Signal<string>
+/**
+ * CSS blend modes supported by TachUI blend modifiers.
+ *
+ * Intentionally excludes SwiftUI-only values without CSS parity:
+ * sourceAtop, destinationOver, destinationOut.
+ */
 export type BlendMode =
   | 'normal'
   | 'multiply'
@@ -73,8 +79,6 @@ export type BlendMode =
   | 'luminosity'
   | 'plus-lighter'
   | 'plus-darker'
-// Intentionally excludes SwiftUI-only values without CSS parity:
-// sourceAtop, destinationOver, destinationOut.
 export type BackgroundImageRepeat =
   | 'tile'
   | 'no-repeat'

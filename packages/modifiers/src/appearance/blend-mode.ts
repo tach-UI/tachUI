@@ -39,11 +39,14 @@ export class BackgroundBlendModeModifier extends BaseModifier<BlendModeModifierP
 }
 
 export function blendMode(mode: BlendMode): BlendModeModifier {
+  // Blend mode is static-only for now; reactive Signal support can be added later
+  // if dynamic compositing use-cases emerge.
   return new BlendModeModifier({ mode })
 }
 
 export function backgroundBlendMode(
   mode: BlendMode
 ): BackgroundBlendModeModifier {
+  // Blend mode is static-only for now; reactive Signal support can be added later.
   return new BackgroundBlendModeModifier({ mode })
 }
