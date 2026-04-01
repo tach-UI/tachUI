@@ -10,6 +10,7 @@ import { ColorAsset } from './ColorAsset'
 import { ImageAsset } from './ImageAsset'
 import { FontAsset, type FontAssetOptions } from './FontAsset'
 import type { AssetInfo, AssetsInterface } from './types'
+import type { ColorAssetProxy, ImageAssetProxy, FontAssetProxy } from '@tachui/types/assets'
 
 // Global asset collection
 const globalAssets = new AssetCollection()
@@ -36,11 +37,23 @@ export {
 } from './FontAsset'
 
 // Convenience function for registering assets
-export function registerAsset(name: string, asset: Asset): void
-export function registerAsset(asset: Asset): void
-export function registerAsset(asset: Asset, name?: string): void
+// Single asset registration returns typed proxy for type-safe usage
+export function registerAsset(asset: ColorAsset): ColorAssetProxy
+export function registerAsset(asset: ImageAsset): ImageAssetProxy
+export function registerAsset(asset: FontAsset): FontAssetProxy
+export function registerAsset(name: string, asset: ColorAsset): ColorAssetProxy
+export function registerAsset(name: string, asset: ImageAsset): ImageAssetProxy
+export function registerAsset(name: string, asset: FontAsset): FontAssetProxy
+// Variadic overload returns void (can't return typed tuple)
 export function registerAsset(...assets: [Asset, ...Asset[]]): void
-export function registerAsset(...args: unknown[]): void {
+// Legacy/optional-name overloads return void for backward compatibility
+export function registerAsset(name: string, asset: Asset): void
+export function registerAsset(asset: Asset, name?: string): void
+// Implementation uses any return type to satisfy all overloads
+// Return type is narrowed by TypeScript based on which overload matches
+export function registerAsset(
+  ...args: unknown[]
+): ColorAssetProxy | ImageAssetProxy | FontAssetProxy | Asset | void {
   if (args.length === 0) {
     throw new Error('registerAsset requires at least one argument')
   }
@@ -51,15 +64,19 @@ export function registerAsset(...args: unknown[]): void {
   if (typeof firstArg === 'string' && secondArg instanceof Asset && args.length === 2) {
     // Legacy usage: registerAsset(name, asset)
     globalAssets.add(firstArg, secondArg)
+    return secondArg
   } else if (firstArg instanceof Asset && typeof secondArg === 'string' && args.length === 2) {
     // New usage: registerAsset(asset, overrideName)
     globalAssets.add(secondArg, firstArg)
+    return firstArg
   } else if (firstArg instanceof Asset && args.length === 1) {
     // New usage: registerAsset(asset) - uses asset.name
     globalAssets.add(firstArg.name, firstArg)
+    return firstArg
   } else if (firstArg instanceof Asset && secondArg === undefined && args.length === 2) {
     // Compatibility for explicit `registerAsset(asset, undefined)`.
     globalAssets.add(firstArg.name, firstArg)
+    return firstArg
   } else if (firstArg instanceof Asset && args.length > 1) {
     // Variadic usage: registerAsset(asset1, asset2, ...). This branch executes
     // only after all explicit two-argument signatures are exhausted.
@@ -78,6 +95,7 @@ export function registerAsset(...args: unknown[]): void {
     validatedAssets.forEach((asset) => {
       globalAssets.add(asset.name, asset)
     })
+    return
   } else {
     throw new Error(
       'registerAsset requires either (name, asset), (asset), (asset, overrideName), or (...assets)'

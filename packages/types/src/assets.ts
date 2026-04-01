@@ -20,11 +20,12 @@ export interface Asset {
 export interface ColorAssetProxy extends Asset {
   light: string
   dark: string
-  opacity(alpha: number): string
-  saturate(amount: number): string
-  brighten(amount: number): string
-  contrast(amount: number): string
-  rotateHue(degrees: number): string
+  resolve(): string
+  opacity(alpha: number): ColorAssetProxy | string
+  saturate(amount: number): ColorAssetProxy | string
+  brighten(amount: number): ColorAssetProxy | string
+  contrast(amount: number): ColorAssetProxy | string
+  rotateHue(degrees: number): ColorAssetProxy | string
   toString(): string
   valueOf(): string
 }
@@ -67,7 +68,7 @@ export interface SystemAssets {
  * Main Assets interface with extensible custom asset support
  */
 export interface AssetsInterface extends SystemAssets {
-  [key: string]: ColorAssetProxy | ImageAssetProxy | FontAssetProxy | Asset
+  [key: string]: ColorAssetProxy | ImageAssetProxy | FontAssetProxy
 }
 
 /**
