@@ -68,7 +68,7 @@ export interface UnifiedTabItem {
   readonly icon?: string
   readonly content: ComponentInstance | (() => ComponentInstance)
   readonly disabled?: boolean
-  badge?: string | number
+  badge?: string | number | boolean
   badgeColor?: string
   isReorderable?: boolean
   isClosable?: boolean
@@ -221,7 +221,7 @@ class UnifiedTabCoordinatorImpl {
     }
   }
 
-  updateTabBadge(tabId: string, badge?: string | number): void {
+  updateTabBadge(tabId: string, badge?: string | number | boolean): void {
     const tab = this._tabs.find(t => t.id === tabId)
     if (tab) {
       tab.badge = badge

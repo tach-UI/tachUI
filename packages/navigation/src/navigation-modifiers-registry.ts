@@ -115,7 +115,7 @@ declare module '@tachui/core' {
       id: string,
       label: string,
       icon?: string,
-      badge?: string | number,
+      badge?: string | number | boolean,
       disabled?: boolean
     ): ModifierBuilder<T>
   }
@@ -266,7 +266,7 @@ proto.tabItem = function(
   id: string,
   label: string,
   icon?: string,
-  badge?: string | number,
+  badge?: string | number | boolean,
   disabled?: boolean
 ) {
   tabItem((this as any).component, id, label, icon, badge, disabled)

@@ -17,7 +17,8 @@ export interface SimpleTabItem {
   readonly id: string
   readonly label: string
   readonly icon?: string
-  readonly badge?: string | number
+  /** Badge value: number for count, true for dot, 0/false/undefined to hide */
+  readonly badge?: string | number | boolean
   readonly content: ComponentInstance
   readonly disabled?: boolean
 }
@@ -131,6 +132,20 @@ export function SimpleTabView(
       const isSelected = selectedTabId() === tab.id
       const isDisabled = tab.disabled || false
 
+      // Determine badge display
+      const showBadge = tab.badge !== undefined && tab.badge !== false && tab.badge !== 0 && tab.badge !== ''
+      const isDotBadge = tab.badge === true
+      const numericBadge = typeof tab.badge === 'number' ? tab.badge : parseInt(tab.badge as string, 10)
+      const badgeText = isDotBadge
+        ? ''
+        : typeof tab.badge === 'string'
+          ? tab.badge
+          : !isNaN(numericBadge)
+            ? numericBadge > 99
+              ? '99+'
+              : String(tab.badge)
+            : String(tab.badge)
+
       // Tab button content
       const buttonContent = VStack({
         children: [
@@ -155,17 +170,24 @@ export function SimpleTabView(
             .build(),
 
           // Badge (if provided)
-          ...(tab.badge
+          ...(showBadge
             ? [
                 HTML.div({
-                  children: String(tab.badge),
+                  children: badgeText,
                 })
                   .backgroundColor('#ff3b30')
                   .foregroundColor('#ffffff')
-                  .fontSize(10)
+                  .fontSize(isDotBadge ? 0 : 10)
                   .fontWeight('bold')
-                  .padding({ top: 2, bottom: 2, left: 6, right: 6 })
-                  .cornerRadius(10)
+                  .padding(isDotBadge
+                    ? { top: 0, bottom: 0, left: 0, right: 0 }
+                    : { top: 2, bottom: 2, left: 6, right: 6 }
+                  )
+                  .cornerRadius(isDotBadge ? 4 : 10)
+                  .frame(isDotBadge
+                    ? { width: 8, height: 8 }
+                    : { minWidth: 16, height: 16 }
+                  )
                   .textAlign('center')
                   .build(),
               ]
@@ -291,7 +313,7 @@ export function tabItem(
   id: string,
   label: string,
   icon?: string,
-  badge?: string | number,
+  badge?: string | number | boolean,
   disabled?: boolean
 ): ComponentInstance {
   // Store tab item configuration on the component
@@ -319,7 +341,7 @@ export function createSimpleTabView(
     id: string
     label: string
     icon?: string
-    badge?: string | number
+    badge?: string | number | boolean
     content: ComponentInstance
     disabled?: boolean
   }>,

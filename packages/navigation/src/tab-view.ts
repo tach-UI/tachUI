@@ -83,9 +83,9 @@ class TabCoordinatorImpl implements TabCoordinator {
     }
   }
 
-  updateTabBadge(tabId: string, badge?: string | number): void {
+  updateTabBadge(tabId: string, badge?: string | number | boolean): void {
     const tab = this._tabs.find(t => t.id === tabId) as
-      | { badge?: string | number }
+      | { badge?: string | number | boolean }
       | undefined
     if (tab) {
       tab.badge = badge
@@ -265,57 +265,90 @@ export function TabView(
     // Override button content with custom tab items
     tabButtons.forEach((button, index) => {
       const tab = tabs[index]
-      const isActive = activeTabId() === tab.id
 
-      const tabContent = VStack({
-        children: [
-          // Icon
-          ...(tab.icon
-            ? [
-                HTML.div({
-                  children: tab.icon,
-                })
-                  .fontSize(20)
+      // Create reactive badge signal for this tab
+      const [badgeValue, setBadgeValue] = createSignal(tab.badge)
+
+      // Watch for badge changes from tab coordinator
+      createEffect(() => {
+        const currentTab = tabCoordinator.tabs.find(t => t.id === tab.id)
+        if (currentTab && 'badge' in currentTab) {
+          setBadgeValue(currentTab.badge)
+        }
+      })
+
+      const tabContent = () => {
+        const isActive = activeTabId() === tab.id
+        const badge = badgeValue()
+
+        // Determine badge display
+        const showBadge = badge !== undefined && badge !== false && badge !== 0 && badge !== ''
+        const isDotBadge = badge === true
+        const numericBadge = typeof badge === 'number' ? badge : parseInt(badge as string, 10)
+        const displayText = isDotBadge
+          ? ''
+          : typeof badge === 'string'
+            ? badge
+            : numericBadge > 99
+              ? '99+'
+              : String(badge)
+
+        return VStack({
+          children: [
+            // Icon with badge overlay
+            ...(tab.icon
+              ? [
+                  HTML.div({
+                    children: tab.icon,
+                  })
+                    .fontSize(20)
+                    .foregroundColor(isActive ? accentColor : '#666666')
+                    .build(),
+                ]
+              : []),
+
+            // Title with badge
+            HStack({
+              children: [
+                Text(tab.title)
+                  .fontSize(12)
+                  .fontWeight(isActive ? '600' : '400')
                   .foregroundColor(isActive ? accentColor : '#666666')
                   .build(),
-              ]
-            : []),
 
-          // Title with badge
-          HStack({
-            children: [
-              Text(tab.title)
-                .fontSize(12)
-                .fontWeight(isActive ? '600' : '400')
-                .foregroundColor(isActive ? accentColor : '#666666')
-                .build(),
-
-              // Badge
-              ...(tab.badge
-                ? [
-                    HTML.div({
-                      children: String(tab.badge),
-                    })
-                      .backgroundColor('#FF3B30')
-                      .foregroundColor('#ffffff')
-                      .fontSize(10)
-                      .fontWeight('bold')
-                      .padding({ top: 2, bottom: 2, left: 6, right: 6 })
-                      .cornerRadius(8)
-                      .frame({ width: 16, height: 16 })
-                      .build(),
-                  ]
-                : []),
-            ],
-            spacing: 4,
-            alignment: 'center',
-          }),
-        ],
-        spacing: 4,
-        alignment: 'center',
-      })
-        .padding(4)
-        .build()
+                // Badge
+                ...(showBadge
+                  ? [
+                      HTML.div({
+                        children: displayText,
+                      })
+                        .backgroundColor('#FF3B30')
+                        .foregroundColor('#ffffff')
+                        .fontSize(isDotBadge ? 0 : 10)
+                        .fontWeight('bold')
+                        .padding(isDotBadge
+                          ? { top: 0, bottom: 0, left: 0, right: 0 }
+                          : { top: 2, bottom: 2, left: 6, right: 6 }
+                        )
+                        .cornerRadius(isDotBadge ? 4 : 8)
+                        .frame(isDotBadge
+                          ? { width: 8, height: 8 }
+                          : { minWidth: 16, height: 16 }
+                        )
+                        .build(),
+                    ]
+                  : []),
+              ],
+              spacing: 4,
+              alignment: 'center',
+            }),
+          ],
+          spacing: 4,
+          alignment: 'center',
+        })
+          .padding(4)
+          .build()
+      }
 
       // Replace button content
       ;(button as any).children = [tabContent]
