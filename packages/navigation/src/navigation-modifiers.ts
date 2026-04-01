@@ -2318,6 +2318,388 @@ export function popover(
   return component
 }
 
+export interface InspectorPresentationOptions {
+  zIndex?: number
+  ariaLabel?: string
+  dismissOnBackdropTap?: boolean
+  dismissOnEscape?: boolean
+  backdropColor?: string
+  onDismiss?: () => void
+  transitionDurationMs?: number
+}
+
+export interface InspectorColumnWidthConfig {
+  min?: number
+  ideal?: number
+  max?: number
+}
+
+export type InspectorPresentationState = Accessor<boolean> | Binding<boolean>
+
+const inspectorColumnWidthState: { min: number; ideal: number; max: number } = {
+  min: 200,
+  ideal: 300,
+  max: 500,
+}
+
+function setupInspectorPresentation(
+  isPresented: InspectorPresentationState,
+  content: () => ComponentInstance,
+  options: InspectorPresentationOptions = {}
+): () => void {
+  if (typeof document === 'undefined') {
+    return () => {}
+  }
+
+  let portalRoot: HTMLDivElement | null = null
+  let inspectorHost: HTMLDivElement | null = null
+  let disposeInspectorContent: (() => void) | null = null
+  let previousActiveElement: HTMLElement | null = null
+  let removeEscapeListener: (() => void) | null = null
+  let isMounted = false
+  const inspectorId = `inspector-${Math.random().toString(36).slice(2, 10)}`
+  let transitionFrameId: number | null = null
+  let focusFrameId: number | null = null
+  let isTransitionQueued = false
+  let removeResizeListeners: (() => void) | null = null
+  const transitionDurationMs = options.transitionDurationMs ?? 220
+
+  const clearTransitionQueue = () => {
+    if (transitionFrameId !== null) {
+      cancelAnimationFrame(transitionFrameId)
+      transitionFrameId = null
+    }
+    isTransitionQueued = false
+  }
+
+  const scheduleEntranceTransition = () => {
+    if (!inspectorHost || isTransitionQueued) {
+      return
+    }
+    isTransitionQueued = true
+    transitionFrameId = requestAnimationFrame(() => {
+      transitionFrameId = requestAnimationFrame(() => {
+        if (inspectorHost) {
+          inspectorHost.style.transform = 'translateX(0)'
+        }
+        transitionFrameId = null
+        isTransitionQueued = false
+      })
+    })
+  }
+
+  const unmountPortal = () => {
+    clearTransitionQueue()
+
+    if (disposeInspectorContent) {
+      disposeInspectorContent()
+      disposeInspectorContent = null
+    }
+
+    if (focusFrameId !== null) {
+      cancelAnimationFrame(focusFrameId)
+      focusFrameId = null
+    }
+
+    if (portalRoot) {
+      portalRoot.remove()
+      portalRoot = null
+    }
+
+    if (removeEscapeListener) {
+      removeEscapeListener()
+      removeEscapeListener = null
+    }
+    if (removeResizeListeners) {
+      removeResizeListeners()
+      removeResizeListeners = null
+    }
+
+    if (
+      previousActiveElement &&
+      previousActiveElement.isConnected &&
+      typeof previousActiveElement.focus === 'function'
+    ) {
+      previousActiveElement.focus()
+    }
+    previousActiveElement = null
+
+    inspectorHost = null
+    isMounted = false
+  }
+
+  const dismissInspector = () => {
+    dismissPresentedState(isPresented, options as SheetPresentationOptions)
+  }
+
+  const mountPortal = () => {
+    if (isMounted) {
+      return
+    }
+
+    portalRoot = document.createElement('div')
+    portalRoot.setAttribute('data-tachui-inspector-root', 'true')
+    portalRoot.setAttribute('data-tachui-inspector-id', inspectorId)
+    portalRoot.style.position = 'fixed'
+    portalRoot.style.inset = '0'
+    portalRoot.style.zIndex = String(options.zIndex ?? 1000)
+    portalRoot.style.display = 'flex'
+    portalRoot.style.alignItems = 'stretch'
+    portalRoot.style.justifyContent = 'flex-end'
+    portalRoot.style.pointerEvents = 'none'
+
+    inspectorHost = document.createElement('div')
+    inspectorHost.setAttribute('data-tachui-inspector-content', 'true')
+    inspectorHost.setAttribute('role', 'dialog')
+    inspectorHost.setAttribute('aria-modal', 'true')
+    if (options.ariaLabel) {
+      inspectorHost.setAttribute('aria-label', options.ariaLabel)
+    }
+    inspectorHost.tabIndex = -1
+    inspectorHost.style.position = 'relative'
+    inspectorHost.style.width = `${inspectorColumnWidthState.ideal}px`
+    inspectorHost.style.minWidth = `${inspectorColumnWidthState.min}px`
+    inspectorHost.style.maxWidth = `${inspectorColumnWidthState.max}px`
+    inspectorHost.style.height = '100%'
+    inspectorHost.style.transform = 'translateX(100%)'
+    inspectorHost.style.transition = `transform ${transitionDurationMs}ms ease`
+    inspectorHost.style.pointerEvents = 'auto'
+    inspectorHost.style.overflow = 'hidden'
+    inspectorHost.style.display = 'flex'
+    inspectorHost.style.flexDirection = 'column'
+    inspectorHost.style.background = '#ffffff'
+    inspectorHost.style.boxShadow = '-4px 0 16px rgba(0, 0, 0, 0.12)'
+    inspectorHost.style.borderLeft = '1px solid #e5e7eb'
+
+    // Create resize handle
+    const resizeHandle = document.createElement('div')
+    resizeHandle.setAttribute('data-tachui-inspector-resize-handle', 'true')
+    resizeHandle.style.position = 'absolute'
+    resizeHandle.style.left = '-4px'
+    resizeHandle.style.top = '0'
+    resizeHandle.style.bottom = '0'
+    resizeHandle.style.width = '8px'
+    resizeHandle.style.cursor = 'col-resize'
+    resizeHandle.style.background = 'transparent'
+    resizeHandle.style.zIndex = '10'
+    inspectorHost.appendChild(resizeHandle)
+
+    // Resize handle interaction
+    let isResizing = false
+    let startX = 0
+    let startWidth = 0
+
+    const onMouseDown = (event: MouseEvent) => {
+      event.preventDefault()
+      isResizing = true
+      startX = event.clientX
+      startWidth = inspectorHost?.offsetWidth ?? inspectorColumnWidthState.ideal
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      window.addEventListener('mousemove', onMouseMove)
+      window.addEventListener('mouseup', onMouseUp)
+    }
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (!isResizing || !inspectorHost) return
+      const deltaX = startX - event.clientX
+      const newWidth = Math.max(
+        inspectorColumnWidthState.min,
+        Math.min(inspectorColumnWidthState.max, startWidth + deltaX)
+      )
+      inspectorHost.style.width = `${newWidth}px`
+    }
+
+    const onMouseUp = () => {
+      isResizing = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+
+    const onTouchStart = (event: TouchEvent) => {
+      const touch = event.touches[0]
+      if (!touch) return
+      event.preventDefault()
+      isResizing = true
+      startX = touch.clientX
+      startWidth = inspectorHost?.offsetWidth ?? inspectorColumnWidthState.ideal
+      window.addEventListener('touchmove', onTouchMove, { passive: false })
+      window.addEventListener('touchend', onTouchEnd)
+    }
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!isResizing || !inspectorHost) return
+      const touch = event.touches[0]
+      if (!touch) return
+      event.preventDefault()
+      const deltaX = startX - touch.clientX
+      const newWidth = Math.max(
+        inspectorColumnWidthState.min,
+        Math.min(inspectorColumnWidthState.max, startWidth + deltaX)
+      )
+      inspectorHost.style.width = `${newWidth}px`
+    }
+
+    const onTouchEnd = () => {
+      isResizing = false
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', onTouchEnd)
+    }
+
+    resizeHandle.addEventListener('mousedown', onMouseDown)
+    resizeHandle.addEventListener('touchstart', onTouchStart)
+
+    removeResizeListeners = () => {
+      resizeHandle.removeEventListener('mousedown', onMouseDown)
+      resizeHandle.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', onTouchEnd)
+    }
+
+    // Dismiss on backdrop tap
+    portalRoot.addEventListener('click', (event) => {
+      if (event.target === portalRoot && options.dismissOnBackdropTap !== false) {
+        dismissInspector()
+      }
+    })
+
+    // Escape key handling
+    if (options.dismissOnEscape !== false) {
+      const escapeListener = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          event.stopPropagation()
+          dismissInspector()
+        }
+      }
+      document.addEventListener('keydown', escapeListener)
+      removeEscapeListener = () => {
+        document.removeEventListener('keydown', escapeListener)
+      }
+    }
+
+    const inspectorContent = untrack(() => content())
+    disposeInspectorContent = mountComponentTree(inspectorContent, inspectorHost, false)
+
+    portalRoot.appendChild(inspectorHost)
+    document.body.appendChild(portalRoot)
+    previousActiveElement =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+
+    isMounted = true
+  }
+
+  const presentationEffect = createEffect(() => {
+    const presented = readPresentedState(isPresented)
+    if (presented) {
+      mountPortal()
+      scheduleEntranceTransition()
+      return
+    }
+    unmountPortal()
+  })
+
+  return () => {
+    presentationEffect.dispose()
+    unmountPortal()
+  }
+}
+
+/**
+ * .inspector() modifier
+ *
+ * Shows a side panel for contextual detail — used in editor and developer tool UIs.
+ *
+ * @param component - The component to modify
+ * @param isPresented - Boolean signal controlling inspector visibility
+ * @param content - Function returning the inspector content
+ * @param options - Presentation options
+ * @returns The modified component
+ */
+export function inspector(
+  component: ComponentInstance,
+  isPresented: InspectorPresentationState,
+  content: () => ComponentInstance,
+  options: InspectorPresentationOptions = {}
+): ComponentInstance {
+  ;(component as any)._navigationModifiers = {
+    ...(component as any)._navigationModifiers,
+    inspector: { isPresented, content, options },
+  }
+
+  const existingLifecycle = (component as any)._enhancedLifecycle ?? {}
+  const existingOnDOMReady = existingLifecycle.onDOMReady as
+    | ((elements: Map<string, Element>, primary?: Element) => void | (() => void))
+    | undefined
+
+  ;(component as any)._enhancedLifecycle = {
+    ...existingLifecycle,
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      const existingCleanup = existingOnDOMReady?.(elements, primary)
+      const inspectorCleanup = setupInspectorPresentation(
+        isPresented,
+        content,
+        options
+      )
+
+      return () => {
+        inspectorCleanup()
+        if (typeof existingCleanup === 'function') {
+          existingCleanup()
+        }
+      }
+    },
+  }
+
+  return component
+}
+
+/**
+ * .inspectorColumnWidth() modifier
+ *
+ * Customizes the width constraints for an inspector panel.
+ *
+ * @param component - The component to modify
+ * @param config - Width constraint configuration
+ * @returns The modified component
+ */
+export function inspectorColumnWidth(
+  component: ComponentInstance,
+  config: InspectorColumnWidthConfig
+): ComponentInstance {
+  if (config.min !== undefined) {
+    inspectorColumnWidthState.min = config.min
+  }
+  if (config.ideal !== undefined) {
+    inspectorColumnWidthState.ideal = config.ideal
+  }
+  if (config.max !== undefined) {
+    inspectorColumnWidthState.max = config.max
+  }
+
+  ;(component as any)._navigationModifiers = {
+    ...(component as any)._navigationModifiers,
+    inspectorColumnWidth: config,
+  }
+
+  return component
+}
+
+/**
+ * Reset inspector column width to defaults (for testing)
+ */
+export function __resetInspectorColumnWidthForTests(): void {
+  inspectorColumnWidthState.min = 200
+  inspectorColumnWidthState.ideal = 300
+  inspectorColumnWidthState.max = 500
+}
+
 function setupConfirmationDialogPresentation(
   isPresented: SheetPresentationState,
   title: string,

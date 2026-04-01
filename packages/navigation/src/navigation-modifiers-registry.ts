@@ -33,6 +33,8 @@ import {
   searchSuggestions,
   searchScopes,
   confirmationDialog,
+  inspector,
+  inspectorColumnWidth,
 } from './navigation-modifiers'
 import type {
   SheetPresentationOptions,
@@ -48,6 +50,8 @@ import type {
   ToolbarBackgroundVisibility,
   ToolbarBackgroundVisibilityTarget,
   ToolbarItemConfig,
+  InspectorPresentationOptions,
+  InspectorColumnWidthConfig,
 } from './navigation-modifiers'
 import { tabItem } from './simple-tab-view'
 
@@ -101,6 +105,12 @@ declare module '@tachui/core' {
       isPresented: Accessor<boolean> | Binding<boolean>,
       actions: ConfirmationDialogAction[]
     ): ModifierBuilder<T>
+    inspector(
+      isPresented: Accessor<boolean> | Binding<boolean>,
+      content: () => ComponentInstance,
+      options?: InspectorPresentationOptions
+    ): ModifierBuilder<T>
+    inspectorColumnWidth(config: InspectorColumnWidthConfig): ModifierBuilder<T>
     tabItem(
       id: string,
       label: string,
@@ -235,6 +245,20 @@ proto.confirmationDialog = function(
   actions: ConfirmationDialogAction[]
 ) {
   confirmationDialog((this as any).component, title, isPresented, actions)
+  return this
+}
+
+proto.inspector = function(
+  isPresented: Accessor<boolean> | Binding<boolean>,
+  content: () => ComponentInstance,
+  options?: InspectorPresentationOptions
+) {
+  inspector((this as any).component, isPresented, content, options)
+  return this
+}
+
+proto.inspectorColumnWidth = function(config: InspectorColumnWidthConfig) {
+  inspectorColumnWidth((this as any).component, config)
   return this
 }
 

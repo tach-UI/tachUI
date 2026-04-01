@@ -72,6 +72,8 @@ export {
   fullScreenCover,
   popover,
   confirmationDialog,
+  inspector,
+  inspectorColumnWidth,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
   hasNavigationModifiers,
@@ -99,6 +101,9 @@ export type {
   ToolbarBackgroundVisibilityTarget,
   ToolbarItemConfig,
   ToolbarItemInput,
+  InspectorPresentationOptions,
+  InspectorColumnWidthConfig,
+  InspectorPresentationState,
 } from './navigation-modifiers'
 
 // Navigation Environment System

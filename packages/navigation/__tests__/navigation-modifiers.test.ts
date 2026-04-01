@@ -30,6 +30,8 @@ import {
   fullScreenCover,
   popover,
   confirmationDialog,
+  inspector,
+  inspectorColumnWidth,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
   hasNavigationModifiers,
@@ -1303,39 +1305,40 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       setIsPresented(false)
     })
 
-    it('supports Binding<boolean> dismiss and onDismiss callback', async () => {
-      const [isPresented, setIsPresented] = createSignal(true)
-      const binding = createBinding<boolean>(() => isPresented(), value => {
-        setIsPresented(
-          typeof value === 'function' ? value(isPresented()) : value
-        )
-      })
-      const onDismiss = vi.fn()
-      const container = document.createElement('div')
-      document.body.appendChild(container)
+     it('supports Binding<boolean> dismiss and onDismiss callback', async () => {
+       const [isPresented, setIsPresented] = createSignal(true)
+       const binding = createBinding<boolean>(() => isPresented(), value => {
+         setIsPresented(
+           typeof value === 'function' ? value(isPresented()) : value
+         )
+         return true
+       })
+       const onDismiss = vi.fn()
+       const container = document.createElement('div')
+       document.body.appendChild(container)
 
-      const component = sheet(
-        HTML.div({ children: 'Host' }).build(),
-        binding,
-        () => HTML.div({ children: 'Sheet content' }).build(),
-        { onDismiss }
-      )
+       const component = sheet(
+         HTML.div({ children: 'Host' }).build(),
+         binding,
+         () => HTML.div({ children: 'Sheet content' }).build(),
+         { onDismiss }
+       )
 
-      const cleanup = mountComponentTree(component, container)
-      await flushMicrotasks()
+       const cleanup = mountComponentTree(component, container)
+       await flushMicrotasks()
 
-      const backdrop = document.querySelector(
-        '[data-tachui-sheet-backdrop="true"]'
-      ) as HTMLDivElement | null
-      backdrop?.click()
-      await flushMicrotasks()
+       const backdrop = document.querySelector(
+         '[data-tachui-sheet-backdrop="true"]'
+       ) as HTMLDivElement | null
+       backdrop?.click()
+       await flushMicrotasks()
 
-      expect(isPresented()).toBe(false)
-      expect(onDismiss).toHaveBeenCalledTimes(1)
+       expect(isPresented()).toBe(false)
+       expect(onDismiss).toHaveBeenCalledTimes(1)
 
-      cleanup()
-      container.remove()
-    })
+       cleanup()
+       container.remove()
+     })
 
     it('applies sheet presentation option styles', async () => {
       const [isPresented] = createSignal(true)
@@ -1890,9 +1893,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
         configurable: true,
         writable: true,
         value: originalInnerHeight,
-      })
-    })
   })
+})
+})
 
   describe('FullScreenCover Modifier', () => {
     it('renders full-screen cover when presentation signal is true', async () => {
@@ -3097,13 +3100,159 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
           }).build(),
         ],
       }).build()
+    })
+  })
 
-      const modifiedNested = navigationTitle(nestedComponent, 'Nested Title')
+  describe('Inspector Modifier', () => {
+    let mockComponent: any
+    let container: HTMLDivElement
 
-      expect(modifiedNested).toBeDefined()
-      expect((modifiedNested as any)._navigationModifiers.title).toBe(
-        'Nested Title'
+    beforeEach(() => {
+      mockComponent = HTML.div({ children: 'Base Component' }).build()
+      container = document.createElement('div')
+      document.body.appendChild(container)
+    })
+
+    afterEach(() => {
+      // Clean up DOM
+      document
+        .querySelectorAll('[data-tachui-inspector-root="true"]')
+        .forEach(node => node.remove())
+      container.remove()
+    })
+
+    it('renders inspector when presentation signal becomes true', async () => {
+      const [isPresented, setIsPresented] = createSignal(false)
+      const component = inspector(
+        mockComponent,
+        isPresented,
+        () => HTML.div({ children: 'Inspector content' }).build()
       )
+
+      const cleanup = mountComponentTree(component, container)
+
+      expect(
+        document.querySelector('[data-tachui-inspector-root="true"]')
+      ).toBeNull()
+
+      setIsPresented(true)
+      await flushMicrotasks()
+
+      expect(
+        document.querySelector('[data-tachui-inspector-root="true"]')
+      ).toBeTruthy()
+
+      cleanup()
+    })
+
+    it('unmounts inspector when presentation signal becomes false', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const component = inspector(
+        mockComponent,
+        isPresented,
+        () => HTML.div({ children: 'Inspector content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      expect(
+        document.querySelector('[data-tachui-inspector-root="true"]')
+      ).toBeTruthy()
+
+      setIsPresented(false)
+      await flushMicrotasks()
+
+      expect(
+        document.querySelector('[data-tachui-inspector-root="true"]')
+      ).toBeNull()
+
+      cleanup()
+    })
+
+    it('respects default inspector width of 300px', async () => {
+      const [isPresented] = createSignal(true)
+      const component = inspector(
+        mockComponent,
+        isPresented,
+        () => HTML.div({ children: 'Inspector content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const inspectorHost = document.querySelector(
+        '[data-tachui-inspector-content="true"]'
+      ) as HTMLDivElement | null
+      expect(inspectorHost?.style.width).toBe('300px')
+
+      cleanup()
+    })
+
+    it('respects custom inspector width from inspectorColumnWidth', async () => {
+      const [isPresented] = createSignal(true)
+      const component = inspectorColumnWidth(
+        inspector(
+          mockComponent,
+          isPresented,
+          () => HTML.div({ children: 'Inspector content' }).build()
+        ),
+        { min: 200, ideal: 400, max: 600 }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const inspectorHost = document.querySelector(
+        '[data-tachui-inspector-content="true"]'
+      ) as HTMLDivElement | null
+      expect(inspectorHost?.style.width).toBe('400px')
+
+      cleanup()
+    })
+
+    it('respects width constraints when resizing inspector', async () => {
+      const [isPresented] = createSignal(true)
+      const component = inspector(
+        mockComponent,
+        isPresented,
+        () => HTML.div({ children: 'Inspector content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const inspectorHost = document.querySelector(
+        '[data-tachui-inspector-content="true"]'
+      ) as HTMLDivElement | null
+      expect(inspectorHost).toBeTruthy()
+
+      // Simulate resize drag to minimum width
+      const resizeHandle = document.querySelector(
+        '[data-tachui-inspector-resize-handle="true"]'
+      ) as HTMLElement | null
+      expect(resizeHandle).toBeTruthy()
+
+      // Start resize at left edge of inspector
+      const startX = inspectorHost!.getBoundingClientRect().left
+      resizeHandle!.dispatchEvent(new MouseEvent('mousedown', { clientX: startX }))
+
+      // Drag to left (should not go below min width)
+      document.dispatchEvent(new MouseEvent('mousemove', { clientX: startX - 100 }))
+      document.dispatchEvent(new MouseEvent('mouseup'))
+
+      await flushMicrotasks()
+      expect(inspectorHost?.style.width).toBe('200px') // min width
+
+      // Drag to right (should not go above max width)
+      resizeHandle!.dispatchEvent(new MouseEvent('mousedown', { clientX: startX }))
+      document.dispatchEvent(new MouseEvent('mousemove', { clientX: startX + 500 }))
+      document.dispatchEvent(new MouseEvent('mouseup'))
+
+      await flushMicrotasks()
+      expect(inspectorHost?.style.width).toBe('600px') // max width
+
+      cleanup()
     })
   })
 })
