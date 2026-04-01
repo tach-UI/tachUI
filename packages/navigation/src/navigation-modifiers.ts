@@ -2336,7 +2336,7 @@ export interface InspectorColumnWidthConfig {
 
 export type InspectorPresentationState = Accessor<boolean> | Binding<boolean>
 
-const inspectorColumnWidthState: { min: number; ideal: number; max: number } = {
+const DEFAULT_INSPECTOR_WIDTH: { min: number; ideal: number; max: number } = {
   min: 200,
   ideal: 300,
   max: 500,
@@ -2345,13 +2345,21 @@ const inspectorColumnWidthState: { min: number; ideal: number; max: number } = {
 function setupInspectorPresentation(
   isPresented: InspectorPresentationState,
   content: () => ComponentInstance,
-  options: InspectorPresentationOptions = {}
+  options: InspectorPresentationOptions = {},
+  columnWidth?: InspectorColumnWidthConfig
 ): () => void {
   if (typeof document === 'undefined') {
     return () => {}
   }
 
+  const widthConfig = {
+    min: columnWidth?.min ?? DEFAULT_INSPECTOR_WIDTH.min,
+    ideal: columnWidth?.ideal ?? DEFAULT_INSPECTOR_WIDTH.ideal,
+    max: columnWidth?.max ?? DEFAULT_INSPECTOR_WIDTH.max,
+  }
+
   let portalRoot: HTMLDivElement | null = null
+  let backdrop: HTMLDivElement | null = null
   let inspectorHost: HTMLDivElement | null = null
   let disposeInspectorContent: (() => void) | null = null
   let previousActiveElement: HTMLElement | null = null
@@ -2359,7 +2367,6 @@ function setupInspectorPresentation(
   let isMounted = false
   const inspectorId = `inspector-${Math.random().toString(36).slice(2, 10)}`
   let transitionFrameId: number | null = null
-  let focusFrameId: number | null = null
   let isTransitionQueued = false
   let removeResizeListeners: (() => void) | null = null
   const transitionDurationMs = options.transitionDurationMs ?? 220
@@ -2373,12 +2380,15 @@ function setupInspectorPresentation(
   }
 
   const scheduleEntranceTransition = () => {
-    if (!inspectorHost || isTransitionQueued) {
+    if (!backdrop || !inspectorHost || isTransitionQueued) {
       return
     }
     isTransitionQueued = true
     transitionFrameId = requestAnimationFrame(() => {
       transitionFrameId = requestAnimationFrame(() => {
+        if (backdrop) {
+          backdrop.style.opacity = '1'
+        }
         if (inspectorHost) {
           inspectorHost.style.transform = 'translateX(0)'
         }
@@ -2394,11 +2404,6 @@ function setupInspectorPresentation(
     if (disposeInspectorContent) {
       disposeInspectorContent()
       disposeInspectorContent = null
-    }
-
-    if (focusFrameId !== null) {
-      cancelAnimationFrame(focusFrameId)
-      focusFrameId = null
     }
 
     if (portalRoot) {
@@ -2424,12 +2429,18 @@ function setupInspectorPresentation(
     }
     previousActiveElement = null
 
+    backdrop = null
     inspectorHost = null
     isMounted = false
   }
 
   const dismissInspector = () => {
-    dismissPresentedState(isPresented, options as SheetPresentationOptions)
+    const dismissed = dismissPresentedState(isPresented, {
+      onDismiss: options.onDismiss,
+    })
+    if (!dismissed) {
+      options.onDismiss?.()
+    }
   }
 
   const mountPortal = () => {
@@ -2448,18 +2459,30 @@ function setupInspectorPresentation(
     portalRoot.style.justifyContent = 'flex-end'
     portalRoot.style.pointerEvents = 'none'
 
+    backdrop = document.createElement('div')
+    backdrop.setAttribute('data-tachui-inspector-backdrop', 'true')
+    backdrop.style.position = 'absolute'
+    backdrop.style.inset = '0'
+    backdrop.style.background = options.backdropColor ?? 'rgba(0, 0, 0, 0.45)'
+    backdrop.style.opacity = '0'
+    backdrop.style.transition = `opacity ${transitionDurationMs}ms ease`
+
+    if (options.dismissOnBackdropTap !== false) {
+      backdrop.style.pointerEvents = 'auto'
+      backdrop.addEventListener('click', dismissInspector)
+    }
+
     inspectorHost = document.createElement('div')
     inspectorHost.setAttribute('data-tachui-inspector-content', 'true')
-    inspectorHost.setAttribute('role', 'dialog')
-    inspectorHost.setAttribute('aria-modal', 'true')
+    inspectorHost.setAttribute('role', 'complementary')
     if (options.ariaLabel) {
       inspectorHost.setAttribute('aria-label', options.ariaLabel)
     }
     inspectorHost.tabIndex = -1
     inspectorHost.style.position = 'relative'
-    inspectorHost.style.width = `${inspectorColumnWidthState.ideal}px`
-    inspectorHost.style.minWidth = `${inspectorColumnWidthState.min}px`
-    inspectorHost.style.maxWidth = `${inspectorColumnWidthState.max}px`
+    inspectorHost.style.width = `${widthConfig.ideal}px`
+    inspectorHost.style.minWidth = `${widthConfig.min}px`
+    inspectorHost.style.maxWidth = `${widthConfig.max}px`
     inspectorHost.style.height = '100%'
     inspectorHost.style.transform = 'translateX(100%)'
     inspectorHost.style.transition = `transform ${transitionDurationMs}ms ease`
@@ -2493,7 +2516,7 @@ function setupInspectorPresentation(
       event.preventDefault()
       isResizing = true
       startX = event.clientX
-      startWidth = inspectorHost?.offsetWidth ?? inspectorColumnWidthState.ideal
+      startWidth = inspectorHost?.offsetWidth ?? widthConfig.ideal
       document.body.style.cursor = 'col-resize'
       document.body.style.userSelect = 'none'
       window.addEventListener('mousemove', onMouseMove)
@@ -2504,8 +2527,8 @@ function setupInspectorPresentation(
       if (!isResizing || !inspectorHost) return
       const deltaX = startX - event.clientX
       const newWidth = Math.max(
-        inspectorColumnWidthState.min,
-        Math.min(inspectorColumnWidthState.max, startWidth + deltaX)
+        widthConfig.min,
+        Math.min(widthConfig.max, startWidth + deltaX)
       )
       inspectorHost.style.width = `${newWidth}px`
     }
@@ -2524,7 +2547,7 @@ function setupInspectorPresentation(
       event.preventDefault()
       isResizing = true
       startX = touch.clientX
-      startWidth = inspectorHost?.offsetWidth ?? inspectorColumnWidthState.ideal
+      startWidth = inspectorHost?.offsetWidth ?? widthConfig.ideal
       window.addEventListener('touchmove', onTouchMove, { passive: false })
       window.addEventListener('touchend', onTouchEnd)
     }
@@ -2536,8 +2559,8 @@ function setupInspectorPresentation(
       event.preventDefault()
       const deltaX = startX - touch.clientX
       const newWidth = Math.max(
-        inspectorColumnWidthState.min,
-        Math.min(inspectorColumnWidthState.max, startWidth + deltaX)
+        widthConfig.min,
+        Math.min(widthConfig.max, startWidth + deltaX)
       )
       inspectorHost.style.width = `${newWidth}px`
     }
@@ -2560,13 +2583,6 @@ function setupInspectorPresentation(
       window.removeEventListener('touchend', onTouchEnd)
     }
 
-    // Dismiss on backdrop tap
-    portalRoot.addEventListener('click', (event) => {
-      if (event.target === portalRoot && options.dismissOnBackdropTap !== false) {
-        dismissInspector()
-      }
-    })
-
     // Escape key handling
     if (options.dismissOnEscape !== false) {
       const escapeListener = (event: KeyboardEvent) => {
@@ -2585,7 +2601,7 @@ function setupInspectorPresentation(
     const inspectorContent = untrack(() => content())
     disposeInspectorContent = mountComponentTree(inspectorContent, inspectorHost, false)
 
-    portalRoot.appendChild(inspectorHost)
+    portalRoot.append(backdrop, inspectorHost)
     document.body.appendChild(portalRoot)
     previousActiveElement =
       document.activeElement instanceof HTMLElement
@@ -2593,6 +2609,9 @@ function setupInspectorPresentation(
         : null
 
     isMounted = true
+
+    // Focus management
+    inspectorHost.focus()
   }
 
   const presentationEffect = createEffect(() => {
@@ -2642,10 +2661,13 @@ export function inspector(
     ...existingLifecycle,
     onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
       const existingCleanup = existingOnDOMReady?.(elements, primary)
+      const modifiers = (component as any)._navigationModifiers
+      const columnWidth = modifiers?.inspectorColumnWidth
       const inspectorCleanup = setupInspectorPresentation(
         isPresented,
         content,
-        options
+        options,
+        columnWidth
       )
 
       return () => {
@@ -2673,31 +2695,12 @@ export function inspectorColumnWidth(
   component: ComponentInstance,
   config: InspectorColumnWidthConfig
 ): ComponentInstance {
-  if (config.min !== undefined) {
-    inspectorColumnWidthState.min = config.min
-  }
-  if (config.ideal !== undefined) {
-    inspectorColumnWidthState.ideal = config.ideal
-  }
-  if (config.max !== undefined) {
-    inspectorColumnWidthState.max = config.max
-  }
-
   ;(component as any)._navigationModifiers = {
     ...(component as any)._navigationModifiers,
     inspectorColumnWidth: config,
   }
 
   return component
-}
-
-/**
- * Reset inspector column width to defaults (for testing)
- */
-export function __resetInspectorColumnWidthForTests(): void {
-  inspectorColumnWidthState.min = 200
-  inspectorColumnWidthState.ideal = 300
-  inspectorColumnWidthState.max = 500
 }
 
 function setupConfirmationDialogPresentation(

@@ -3213,10 +3213,13 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
 
     it('respects width constraints when resizing inspector', async () => {
       const [isPresented] = createSignal(true)
-      const component = inspector(
-        mockComponent,
-        isPresented,
-        () => HTML.div({ children: 'Inspector content' }).build()
+      const component = inspectorColumnWidth(
+        inspector(
+          mockComponent,
+          isPresented,
+          () => HTML.div({ children: 'Inspector content' }).build()
+        ),
+        { min: 200, ideal: 400, max: 600 }
       )
 
       const cleanup = mountComponentTree(component, container)
@@ -3235,19 +3238,22 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
 
       // Start resize at left edge of inspector
       const startX = inspectorHost!.getBoundingClientRect().left
-      resizeHandle!.dispatchEvent(new MouseEvent('mousedown', { clientX: startX }))
 
-      // Drag to left (should not go below min width)
-      document.dispatchEvent(new MouseEvent('mousemove', { clientX: startX - 100 }))
-      document.dispatchEvent(new MouseEvent('mouseup'))
+      // Drag to right (should not go below min width)
+      resizeHandle!.dispatchEvent(new MouseEvent('mousedown', { clientX: startX, bubbles: true }))
+      await flushMicrotasks()
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: startX + 500, bubbles: true }))
+      window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
 
       await flushMicrotasks()
       expect(inspectorHost?.style.width).toBe('200px') // min width
 
-      // Drag to right (should not go above max width)
-      resizeHandle!.dispatchEvent(new MouseEvent('mousedown', { clientX: startX }))
-      document.dispatchEvent(new MouseEvent('mousemove', { clientX: startX + 500 }))
-      document.dispatchEvent(new MouseEvent('mouseup'))
+      // Drag to left (should not go above max width)
+      // After first resize, width is 200px, so we drag far enough to exceed max
+      resizeHandle!.dispatchEvent(new MouseEvent('mousedown', { clientX: startX, bubbles: true }))
+      await flushMicrotasks()
+      window.dispatchEvent(new MouseEvent('mousemove', { clientX: startX - 600, bubbles: true }))
+      window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
 
       await flushMicrotasks()
       expect(inspectorHost?.style.width).toBe('600px') // max width
