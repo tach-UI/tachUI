@@ -46,14 +46,46 @@ describe('backgroundImage modifier', () => {
       backgroundImage('url("/pattern.png")', {
         repeat: 'tile',
         size: 'auto',
-        position: 'top left',
+        position: 'left top',
       }),
       element
     )
 
     expect(element.style.getPropertyValue('background-repeat')).toBe('repeat')
     expect(element.style.getPropertyValue('background-size')).toBe('auto')
-    expect(element.style.getPropertyValue('background-position')).toBe('top left')
+    expect(element.style.getPropertyValue('background-position')).toBe('left top')
+  })
+
+  it('passes through repeat-x and repeat-y values', () => {
+    const element = document.createElement('div')
+
+    applyModifierToElement(
+      backgroundImage('url("/pattern.png")', { repeat: 'repeat-x' }),
+      element
+    )
+    expect(element.style.getPropertyValue('background-repeat')).toBe('repeat-x')
+
+    applyModifierToElement(
+      backgroundImage('url("/pattern.png")', { repeat: 'repeat-y' }),
+      element
+    )
+    expect(element.style.getPropertyValue('background-repeat')).toBe('repeat-y')
+  })
+
+  it('supports pixel and percentage background-size values', () => {
+    const element = document.createElement('div')
+
+    applyModifierToElement(
+      backgroundImage('url("/pattern.png")', { size: '64px' }),
+      element
+    )
+    expect(element.style.getPropertyValue('background-size')).toBe('64px')
+
+    applyModifierToElement(
+      backgroundImage('url("/pattern.png")', { size: '50%' }),
+      element
+    )
+    expect(element.style.getPropertyValue('background-size')).toBe('50%')
   })
 
   it('accepts ImageAssetProxy sources and resolves reactively by theme', async () => {

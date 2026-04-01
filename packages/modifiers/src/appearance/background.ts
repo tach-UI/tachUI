@@ -12,6 +12,11 @@ import {
   isSignal,
 } from '@tachui/core/reactive'
 import type { ModifierContext } from '@tachui/types/modifiers'
+import type {
+  BackgroundImageOptions,
+  BackgroundImageRepeat,
+} from '@tachui/types/modifiers'
+export type { BackgroundImageOptions, BackgroundImageRepeat } from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/types/runtime'
 import type { GradientDefinition } from '@tachui/core/gradients'
 import type {
@@ -324,25 +329,6 @@ export interface BackgroundClipOptions {
   webkitTextFillColor?: string
 }
 
-export type BackgroundImageRepeat =
-  | 'tile'
-  | 'no-repeat'
-  | 'repeat-x'
-  | 'repeat-y'
-
-export type BackgroundImageSize =
-  | 'auto'
-  | 'cover'
-  | 'contain'
-  | `${number}px`
-  | `${number}%`
-
-export interface BackgroundImageOptions {
-  repeat?: BackgroundImageRepeat
-  size?: BackgroundImageSize
-  position?: string
-}
-
 export interface BackgroundImageModifierProps {
   source: ImageAssetProxy | string
   options: Required<BackgroundImageOptions>
@@ -444,6 +430,12 @@ export function background(value: string | any): BackgroundModifier {
   return new BackgroundModifier({ background: value })
 }
 
+/**
+ * Apply CSS background-image styles.
+ *
+ * String sources must be valid CSS background-image values
+ * (for example: `url('/image.png')` or `linear-gradient(...)`).
+ */
 export function backgroundImage(
   source: ImageAssetProxy | string,
   options: BackgroundImageOptions = {}

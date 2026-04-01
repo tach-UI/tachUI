@@ -11,7 +11,11 @@ import type {
   ComponentProps,
   DOMNode,
 } from '@tachui/types/runtime'
-import type { TextAlign } from '@tachui/types/modifiers'
+import type {
+  TextAlign,
+  BlendMode,
+  BackgroundImageOptions,
+} from '@tachui/types/modifiers'
 import type {
   OverlayAlignment,
   OverlayOffset,
@@ -42,43 +46,6 @@ export interface FontAssetProxy extends Asset {}
  * Valid color value types for modifiers
  */
 export type ColorValue = string | Asset | ColorAssetProxy | Signal<string>
-export type BlendMode =
-  | 'normal'
-  | 'multiply'
-  | 'screen'
-  | 'overlay'
-  | 'darken'
-  | 'lighten'
-  | 'color-dodge'
-  | 'color-burn'
-  | 'soft-light'
-  | 'hard-light'
-  | 'difference'
-  | 'exclusion'
-  | 'hue'
-  | 'saturation'
-  | 'color'
-  | 'luminosity'
-  | 'plus-lighter'
-  | 'plus-darker'
-// Intentionally excludes SwiftUI-only values without CSS parity:
-// sourceAtop, destinationOver, destinationOut.
-export type BackgroundImageRepeat =
-  | 'tile'
-  | 'no-repeat'
-  | 'repeat-x'
-  | 'repeat-y'
-export type BackgroundImageSize =
-  | 'auto'
-  | 'cover'
-  | 'contain'
-  | `${number}px`
-  | `${number}%`
-export interface BackgroundImageOptions {
-  repeat?: BackgroundImageRepeat
-  size?: BackgroundImageSize
-  position?: string
-}
 
 /**
  * Valid asset types for modifiers
