@@ -77,6 +77,7 @@ import {
 import {
   backgroundColor,
   background,
+  backgroundImage,
   border,
   borderTop,
   borderBottom,
@@ -271,6 +272,7 @@ export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]
   // Appearance
   ['backgroundColor', backgroundColor],
   ['background', background],
+  ['backgroundImage', backgroundImage],
   ['border', border],
   ['borderTop', borderTop],
   ['borderBottom', borderBottom],

@@ -54,6 +54,22 @@ export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize'
  * Valid color value types for modifiers
  */
 export type ColorValue = string | Asset | ColorAssetProxy | Signal<string>
+export type BackgroundImageRepeat =
+  | 'tile'
+  | 'no-repeat'
+  | 'repeat-x'
+  | 'repeat-y'
+export type BackgroundImageSize =
+  | 'auto'
+  | 'cover'
+  | 'contain'
+  | `${number}px`
+  | `${number}%`
+export interface BackgroundImageOptions {
+  repeat?: BackgroundImageRepeat
+  size?: BackgroundImageSize
+  position?: string
+}
 
 /**
  * Text component interface for type safety with asHTML modifier
@@ -460,6 +476,10 @@ export interface ModifierBuilder<
   backgroundColor(color: ColorValue): ModifierBuilder<T>
   background(
     value: StatefulBackgroundValue | Signal<string>
+  ): ModifierBuilder<T>
+  backgroundImage(
+    source: ImageAssetProxy | string,
+    options?: BackgroundImageOptions
   ): ModifierBuilder<T>
   font(options: AppearanceModifierProps['font']): ModifierBuilder<T>
   font(size: number | string): ModifierBuilder<T>
