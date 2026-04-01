@@ -21,11 +21,11 @@ export interface ColorAssetProxy extends Asset {
   light: string
   dark: string
   resolve(): string
-  opacity(alpha: number): ColorAssetProxy | string
-  saturate(amount: number): ColorAssetProxy | string
-  brighten(amount: number): ColorAssetProxy | string
-  contrast(amount: number): ColorAssetProxy | string
-  rotateHue(degrees: number): ColorAssetProxy | string
+  opacity(alpha: number): ColorAssetProxy
+  saturate(amount: number): ColorAssetProxy
+  brighten(amount: number): ColorAssetProxy
+  contrast(amount: number): ColorAssetProxy
+  rotateHue(degrees: number): ColorAssetProxy
   toString(): string
   valueOf(): string
 }
