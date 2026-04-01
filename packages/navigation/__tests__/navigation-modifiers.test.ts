@@ -1603,7 +1603,13 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
 
     it('applies automatic size defaults by edge', async () => {
       const originalInnerHeight = window.innerHeight
+      const originalInnerWidth = window.innerWidth
       Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+      Object.defineProperty(window, 'innerWidth', {
         configurable: true,
         writable: true,
         value: 1000,
@@ -1612,13 +1618,13 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       const container = document.createElement('div')
       document.body.appendChild(container)
 
-      const component = sheet(
+      const topComponent = sheet(
         HTML.div({ children: 'Host' }).build(),
         isPresented,
         () => HTML.div({ children: 'Sheet content' }).build(),
         { edge: 'top', size: 'automatic' }
       )
-      const cleanup = mountComponentTree(component, container)
+      const topCleanup = mountComponentTree(topComponent, container)
       await flushMicrotasks()
 
       const content = document.querySelector(
@@ -1626,12 +1632,35 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       ) as HTMLDivElement | null
       expect(Number.parseFloat(content?.style.height ?? '0')).toBe(500)
 
-      cleanup()
+      topCleanup()
+      await flushMicrotasks()
+
+      const [isPresentedRight] = createSignal(true)
+      const rightComponent = sheet(
+        HTML.div({ children: 'Host right' }).build(),
+        isPresentedRight,
+        () => HTML.div({ children: 'Sheet content right' }).build(),
+        { edge: 'right', size: 'automatic' }
+      )
+      const rightCleanup = mountComponentTree(rightComponent, container)
+      await flushMicrotasks()
+
+      const rightContent = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(rightContent?.style.width ?? '0')).toBe(320)
+
+      rightCleanup()
       container.remove()
       Object.defineProperty(window, 'innerHeight', {
         configurable: true,
         writable: true,
         value: originalInnerHeight,
+      })
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
       })
     })
 

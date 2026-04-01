@@ -1242,7 +1242,7 @@ function resolveSheetEdgeLayout(edge: SheetEdge): SheetEdgeLayout {
       isHorizontal: false,
       axisProperty: 'height',
       viewportSize: () => window.innerHeight,
-      portalAlignItems: 'center',
+      portalAlignItems: 'flex-start',
       portalJustifyContent: 'flex-start',
       initialTransform: 'translateY(-100%)',
       onscreenTransform: 'translateY(0)',
@@ -1302,7 +1302,7 @@ function resolveSheetSizePx(size: SheetSize, edge: SheetEdge): number {
   if (size === 'automatic') {
     return edge === 'left' || edge === 'right'
       ? Math.min(320, maxSize)
-      : Math.min(Math.round(window.innerHeight * 0.5), maxSize)
+      : Math.min(Math.round(viewportSize * 0.5), maxSize)
   }
   if ('fraction' in size) {
     const fraction = Math.min(Math.max(size.fraction, 0.1), 0.95)
