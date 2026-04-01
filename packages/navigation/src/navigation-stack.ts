@@ -25,7 +25,13 @@ import type {
 } from './types'
 import { createSwipeBackGesture } from './swipe-back-gesture'
 import type { SwipeBackGestureConfig } from './swipe-back-gesture'
-import type { TransitionConfig } from './navigation-animations'
+import {
+  animateTransition,
+  getPushKeyframes,
+  getPopKeyframes,
+  prefersReducedMotion,
+  type TransitionConfig,
+} from './navigation-animations'
 
 /**
  * Navigation destination registry for type-safe routing
@@ -41,11 +47,68 @@ class NavigationStackContext implements NavigationContext {
   private _stack: NavigationStackEntry[] = []
   private _currentPath = '/'
   private _destinationRegistry: NavigationDestinationRegistry = {}
+  private _contentElement: HTMLElement | null = null
+  private _transitionConfig: TransitionConfig = 'slide'
+  private _transitionDurationMs: number = 300
+  private _isReducedMotion: boolean = false
 
   constructor(
     public readonly navigationId: string,
     private onStackChange?: (stack: NavigationStackEntry[]) => void
-  ) {}
+  ) {
+    this._isReducedMotion = prefersReducedMotion()
+  }
+
+  /**
+   * Set the content element for animations
+   */
+  setContentElement(element: HTMLElement | null): void {
+    this._contentElement = element
+  }
+
+  /**
+   * Set transition configuration
+   */
+  setTransitionConfig(config: TransitionConfig, durationMs?: number): void {
+    this._transitionConfig = config
+    if (durationMs !== undefined) {
+      this._transitionDurationMs = durationMs
+    }
+  }
+
+  /**
+   * Play push animation
+   */
+  private _playPushAnimation(): void {
+    if (!this._contentElement) return
+
+    const keyframes = getPushKeyframes(this._transitionConfig, this._isReducedMotion)
+    animateTransition(
+      this._contentElement,
+      keyframes,
+      this._transitionConfig,
+      'push',
+      this._isReducedMotion,
+      this._transitionDurationMs
+    )
+  }
+
+  /**
+   * Play pop animation
+   */
+  private _playPopAnimation(): void {
+    if (!this._contentElement) return
+
+    const keyframes = getPopKeyframes(this._transitionConfig, this._isReducedMotion)
+    animateTransition(
+      this._contentElement,
+      keyframes,
+      this._transitionConfig,
+      'pop',
+      this._isReducedMotion,
+      this._transitionDurationMs
+    )
+  }
 
   get stack(): NavigationStackEntry[] {
     return [...this._stack]
@@ -101,6 +164,9 @@ class NavigationStackContext implements NavigationContext {
     this._stack.push(entry)
     this._currentPath = path
 
+    // Play push animation
+    this._playPushAnimation()
+
     if (this.onStackChange) {
       this.onStackChange([...this._stack])
     }
@@ -108,6 +174,9 @@ class NavigationStackContext implements NavigationContext {
 
   pop(): void {
     if (this._stack.length > 1) {
+      // Play pop animation before removing from stack
+      this._playPopAnimation()
+
       this._stack.pop()
       const previousEntry = this._stack[this._stack.length - 1]
       this._currentPath = previousEntry?.path || '/'
@@ -301,6 +370,12 @@ export function NavigationStack(
   // Set the root view
   navigationContext.setRoot(rootView, '/', options.navigationTitle)
 
+  // Configure transition settings
+  navigationContext.setTransitionConfig(
+    options.transition ?? 'slide',
+    transitionDurationMs
+  )
+
   // Set this as the current navigation context (both old and new systems)
   _setCurrentNavigationContext(navigationContext)
   _setNavigationEnvironmentContext(navigationContext)
@@ -479,16 +554,24 @@ export function NavigationStack(
   // Store cleanup function
   ;(navigationComponent as any)._navigationCleanup = cleanup
 
-  // Attach gesture to DOM element when component is mounted
-  if (swipeEnabled) {
-    ;(navigationComponent as any)._enhancedLifecycle = {
-      onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
-        if (primary instanceof HTMLElement) {
-          swipeGesture.attachToElement(primary)
-        }
-        return () => swipeGesture.destroy()
-      },
-    }
+  // Attach gesture and content element when component is mounted
+  ;(navigationComponent as any)._enhancedLifecycle = {
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      // Set content element for animations
+      if (primary instanceof HTMLElement) {
+        navigationContext.setContentElement(primary)
+      }
+
+      // Attach swipe gesture if enabled
+      if (swipeEnabled && primary instanceof HTMLElement) {
+        swipeGesture.attachToElement(primary)
+      }
+
+      return () => {
+        swipeGesture.destroy()
+        navigationContext.setContentElement(null)
+      }
+    },
   }
 
   return navigationComponent

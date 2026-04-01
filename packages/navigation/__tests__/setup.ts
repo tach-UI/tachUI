@@ -60,6 +60,9 @@ if (typeof Element.prototype.animate === 'undefined') {
     const duration = typeof options === 'number'
       ? options
       : (options?.duration as number) ?? 300
+
+    const listeners: Map<string, Array<() => void>> = new Map()
+
     return {
       playState: 'running',
       effect: {
@@ -70,8 +73,22 @@ if (typeof Element.prototype.animate === 'undefined') {
       cancel: () => {},
       play: () => {},
       pause: () => {},
-      finish: () => {},
-    } as Animation
+      finish: () => {
+        // Trigger finish event
+        listeners.get('finish')?.forEach(cb => cb())
+      },
+      commitStyles: () => {},
+      addEventListener: (event: string, callback: () => void, _options?: unknown) => {
+        if (!listeners.has(event)) listeners.set(event, [])
+        listeners.get(event)!.push(callback)
+      },
+      removeEventListener: (event: string, callback: () => void) => {
+        const eventListeners = listeners.get(event)
+        if (eventListeners) {
+          listeners.set(event, eventListeners.filter(cb => cb !== callback))
+        }
+      },
+    } as unknown as Animation
   }
 }
 

@@ -5,7 +5,7 @@
  * using the Web Animations API with prefers-reduced-motion support.
  */
 
-import { createEffect, type Signal } from '@tachui/core'
+import { createEffect } from '@tachui/core'
 
 export type TransitionType = 'slide' | 'fade' | 'spring'
 
@@ -88,8 +88,8 @@ function generateSpringKeyframes(
       )
     }
 
-    // Clamp displacement to [0, 1] range
-    displacement = Math.max(0, Math.min(1, displacement))
+    // Allow displacement outside [0, 1] for spring overshoot effect
+    // The Web Animations API handles out-of-range values correctly
 
     const keyframe: AnimationKeyframe = { offset: i / steps }
 
@@ -218,8 +218,8 @@ export function calculateSpringDuration(physics: SpringPhysics): number {
   if (zeta < 1) {
     // Underdamped
     tau = 1 / (zeta * omega)
-  } else if (zeta === 1) {
-    // Critically damped
+  } else if (Math.abs(zeta - 1) < 0.001) {
+    // Critically damped (with tolerance for floating point)
     tau = 1 / omega
   } else {
     // Overdamped
@@ -241,10 +241,10 @@ export function animateTransition(
   element: HTMLElement,
   keyframes: AnimationKeyframe[],
   transition: TransitionConfig,
-  direction: 'push' | 'pop'
+  direction: 'push' | 'pop',
+  isReducedMotion: boolean = prefersReducedMotion(),
+  durationMs?: number
 ): Animation {
-  const isReducedMotion = prefersReducedMotion()
-
   if (isReducedMotion) {
     // Instant transition for reduced motion preference
     return element.animate(
@@ -265,22 +265,38 @@ export function animateTransition(
       duration
     )
 
-    return element.animate(springKeyframes as Keyframe[], {
+    const animation = element.animate(springKeyframes as Keyframe[], {
       duration,
       fill: 'forwards',
       easing: 'linear', // Spring physics handled in keyframes
     })
+
+    // Clean up animation after finish to prevent style accumulation
+    animation.addEventListener('finish', () => {
+      animation.commitStyles?.()
+      animation.cancel()
+    }, { once: true })
+
+    return animation
   }
 
   // Standard slide/fade transitions
-  const duration = 300 // Default duration for non-spring transitions
+  const duration = durationMs ?? 300 // Use provided duration or default
   const easing = type === 'fade' ? 'ease-in-out' : 'ease-out'
 
-  return element.animate(keyframes as Keyframe[], {
+  const animation = element.animate(keyframes as Keyframe[], {
     duration,
     easing,
     fill: 'forwards',
   })
+
+  // Clean up animation after finish to prevent style accumulation
+  animation.addEventListener('finish', () => {
+    animation.commitStyles?.()
+    animation.cancel()
+  }, { once: true })
+
+  return animation
 }
 
 /**
@@ -290,22 +306,28 @@ export function createReactiveAnimation(
   element: HTMLElement,
   isNavigating: () => boolean,
   transition: TransitionConfig,
-  direction: 'push' | 'pop'
+  direction: 'push' | 'pop',
+  durationMs?: number
 ): () => void {
   let currentAnimation: Animation | null = null
+  const isReducedMotion = prefersReducedMotion()
 
   const effect = createEffect(() => {
     const navigating = isNavigating()
     if (navigating) {
       const keyframes = direction === 'push'
-        ? getPushKeyframes(transition, prefersReducedMotion())
-        : getPopKeyframes(transition, prefersReducedMotion())
+        ? getPushKeyframes(transition, isReducedMotion)
+        : getPopKeyframes(transition, isReducedMotion)
 
-      currentAnimation = animateTransition(element, keyframes, transition, direction)
+      currentAnimation = animateTransition(element, keyframes, transition, direction, isReducedMotion, durationMs)
     } else {
-      // Cancel any running animation
+      // Finish any running animation to jump to end state (don't snap back)
       if (currentAnimation) {
-        currentAnimation.cancel()
+        try {
+          currentAnimation.finish()
+        } catch {
+          // Animation may already be finished or cancelled
+        }
         currentAnimation = null
       }
     }
@@ -314,7 +336,11 @@ export function createReactiveAnimation(
   return () => {
     effect.dispose()
     if (currentAnimation) {
-      currentAnimation.cancel()
+      try {
+        currentAnimation.finish()
+      } catch {
+        // Animation may already be finished or cancelled
+      }
     }
   }
 }
