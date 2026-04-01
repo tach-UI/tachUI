@@ -490,7 +490,6 @@ export function NavigationStack(
   const NavigationContent = () => {
     const stack = navigationStack()
     const currentEntry = stack[stack.length - 1]
-    const previousEntry = stack.length > 1 ? stack[stack.length - 2] : null
 
     if (!currentEntry) {
       return Text('No content')

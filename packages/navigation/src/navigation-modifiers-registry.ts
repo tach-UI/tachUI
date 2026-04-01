@@ -11,7 +11,7 @@
  * builder/proxy layer, not raw ComponentInstance implementations.
  */
 
-import type { Accessor, Binding, ComponentInstance, ModifierBuilder } from '@tachui/core'
+import type { Accessor, Binding, ComponentInstance } from '@tachui/core'
 import { ModifierBuilderImpl } from '@tachui/core/modifiers'
 import {
   navigationTitle,

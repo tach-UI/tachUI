@@ -47,6 +47,7 @@ export {
 export type { SimpleTabItem, SimpleTabViewOptions } from './simple-tab-view'
 
 // Register navigation modifiers on ModifierBuilder (side-effect import)
+// eslint-disable-next-line import/no-unassigned-import
 import './navigation-modifiers-registry'
 
 // Swipe-back gesture
