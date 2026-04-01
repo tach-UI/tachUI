@@ -94,7 +94,7 @@ export function createSwipeBackGesture(
   }
 
   const updateGesture = (clientX: number, clientY: number) => {
-    const state = gestureState()
+    let state = gestureState()
     if (!state.isActive) return
 
     const deltaX = clientX - state.startX
@@ -118,12 +118,15 @@ export function createSwipeBackGesture(
           cancelGesture()
           return
         }
+
+        // Re-read state after update to get fresh isHorizontal value
+        state = gestureState()
       } else {
         return // Not enough movement to determine direction
       }
     }
 
-    // Only process horizontal movement
+    // Only process horizontal movement (use fresh state)
     if (!state.isHorizontal) return
 
     // Calculate progress (0-1) based on container width
@@ -191,11 +194,14 @@ export function createSwipeBackGesture(
       // Only respond to primary pointer (single finger/mouse)
       if (!event.isPrimary) return
 
-      // Ignore if target is interactive
+      // Ignore if target is interactive (use closest for complete check)
       const target = event.target as HTMLElement
-      if (target.tagName === 'BUTTON' || target.tagName === 'INPUT' || target.tagName === 'A') {
+      if (target.closest('a, button, input, select, textarea, [role="button"], [contenteditable="true"]')) {
         return
       }
+
+      // Capture pointer to ensure we receive pointer events even if pointer leaves element
+      element.setPointerCapture(event.pointerId)
 
       startGesture(event.clientX, event.clientY)
     }
@@ -211,78 +217,36 @@ export function createSwipeBackGesture(
       if (!gestureState().isActive) return
       if (!event.isPrimary) return
 
+      // Release pointer capture
+      element.releasePointerCapture(event.pointerId)
+
       endGesture()
     }
 
-    const handlePointerCancel = () => {
+    const handlePointerCancel = (event: PointerEvent) => {
       if (!gestureState().isActive) return
+
+      // Release pointer capture if still held
+      try {
+        element.releasePointerCapture(event.pointerId)
+      } catch {
+        // Ignore if not captured
+      }
+
       cancelGesture()
     }
 
-    // Touch events for better mobile support
-    const handleTouchStart = (event: TouchEvent) => {
-      const touch = event.touches[0]
-      if (!touch) return
-
-      // Only detect swipes starting from the left edge
-      if (touch.clientX > finalConfig.edgeWidth) return
-
-      // Ignore if target is interactive
-      const target = event.target as HTMLElement
-      if (target.tagName === 'BUTTON' || target.tagName === 'INPUT' || target.tagName === 'A') {
-        return
-      }
-
-      startGesture(touch.clientX, touch.clientY)
-    }
-
-    const handleTouchMove = (event: TouchEvent) => {
-      if (!gestureState().isActive) return
-
-      const touch = event.touches[0]
-      if (!touch) return
-
-      updateGesture(touch.clientX, touch.clientY)
-
-      // Prevent default scrolling during horizontal swipe
-      const state = gestureState()
-      if (state.isHorizontal) {
-        event.preventDefault()
-      }
-    }
-
-    const handleTouchEnd = () => {
-      if (!gestureState().isActive) return
-      endGesture()
-    }
-
-    const handleTouchCancel = () => {
-      if (!gestureState().isActive) return
-      cancelGesture()
-    }
-
-    // Add listeners
+    // Add listeners - Pointer Events cover mouse, touch, and stylus on modern browsers
     element.addEventListener('pointerdown', handlePointerDown)
     element.addEventListener('pointermove', handlePointerMove)
     element.addEventListener('pointerup', handlePointerUp)
     element.addEventListener('pointercancel', handlePointerCancel)
-
-    // Touch events (for better iOS support)
-    element.addEventListener('touchstart', handleTouchStart, { passive: false })
-    element.addEventListener('touchmove', handleTouchMove, { passive: false })
-    element.addEventListener('touchend', handleTouchEnd)
-    element.addEventListener('touchcancel', handleTouchCancel)
 
     removeListeners = () => {
       element.removeEventListener('pointerdown', handlePointerDown)
       element.removeEventListener('pointermove', handlePointerMove)
       element.removeEventListener('pointerup', handlePointerUp)
       element.removeEventListener('pointercancel', handlePointerCancel)
-
-      element.removeEventListener('touchstart', handleTouchStart)
-      element.removeEventListener('touchmove', handleTouchMove)
-      element.removeEventListener('touchend', handleTouchEnd)
-      element.removeEventListener('touchcancel', handleTouchCancel)
     }
   }
 

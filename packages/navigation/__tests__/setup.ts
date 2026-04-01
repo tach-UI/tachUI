@@ -1,6 +1,55 @@
 // Test setup for @tachui/navigation
 import { beforeAll, afterAll } from 'vitest'
 
+// PointerEvent polyfill for jsdom
+if (typeof PointerEvent === 'undefined') {
+  // @ts-expect-error - Polyfill for jsdom environment
+  global.PointerEvent = class PointerEvent extends MouseEvent {
+    isPrimary: boolean
+    constructor(type: string, params: PointerEventInit = {}) {
+      super(type, params)
+      this.isPrimary = params.isPrimary ?? true
+    }
+  }
+}
+
+// setPointerCapture polyfill for jsdom
+if (typeof Element.prototype.setPointerCapture === 'undefined') {
+  Element.prototype.setPointerCapture = () => {
+    // No-op in jsdom
+  }
+}
+
+if (typeof Element.prototype.releasePointerCapture === 'undefined') {
+  Element.prototype.releasePointerCapture = () => {
+    // No-op in jsdom
+  }
+}
+
+// clientWidth/clientHeight getters polyfill for jsdom
+// JSDOM doesn't compute layout, so we need to read from style
+Object.defineProperty(Element.prototype, 'clientWidth', {
+  get() {
+    const width = this.style.width
+    if (width && width.endsWith('px')) {
+      return parseInt(width, 10)
+    }
+    // Default fallback for tests
+    return 800
+  },
+})
+
+Object.defineProperty(Element.prototype, 'clientHeight', {
+  get() {
+    const height = this.style.height
+    if (height && height.endsWith('px')) {
+      return parseInt(height, 10)
+    }
+    // Default fallback for tests
+    return 600
+  },
+})
+
 // Suppress expected test console outputs
 let originalConsoleError: typeof console.error
 let originalConsoleWarn: typeof console.warn

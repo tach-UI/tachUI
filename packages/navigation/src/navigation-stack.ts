@@ -212,6 +212,8 @@ export interface NavigationStackOptions {
   swipeBackEnabled?: boolean
   /** Swipe-back gesture configuration */
   swipeBackConfig?: SwipeBackGestureConfig
+  /** Transition duration in milliseconds (default: 300) */
+  transitionDurationMs?: number
 }
 
 /**
@@ -255,6 +257,9 @@ export function NavigationStack(
   const [swipeProgress, setSwipeProgress] = createSignal(0)
   const [isSwipingBack, setIsSwipingBack] = createSignal(false)
   const swipeEnabled = options.swipeBackEnabled !== false
+
+  // Transition duration (for consistent animations)
+  const transitionDurationMs = options.transitionDurationMs ?? 300
 
   // Path management
   const pathBinding = options.path
@@ -345,7 +350,7 @@ export function NavigationStack(
         // Reset navigating state after animation
         setTimeout(() => {
           setIsNavigating(false)
-        }, 300)
+        }, transitionDurationMs)
       },
       onGestureCancel: () => {
         setSwipeProgress(0)
@@ -353,9 +358,6 @@ export function NavigationStack(
       },
     }
   )
-
-  // Store gesture instance for cleanup
-  const swipeGestureInstance = swipeGesture
 
   // Navigation bar component
   const NavigationBar = () => {
@@ -377,7 +379,7 @@ export function NavigationStack(
               // Reset navigating state after animation
               setTimeout(() => {
                 setIsNavigating(false)
-              }, 300)
+              }, transitionDurationMs)
             })
               .backgroundColor('transparent')
               .foregroundColor('#007AFF')
@@ -453,12 +455,12 @@ export function NavigationStack(
   }
 
   // Store swipe gesture for DOM attachment and cleanup
-  ;(navigationComponent as any)._swipeBackGesture = swipeGestureInstance
+  ;(navigationComponent as any)._swipeBackGesture = swipeGesture
 
   // Set up cleanup
   const cleanup = () => {
     clearDocumentHeadForNavigation(navigationId)
-    swipeGestureInstance.destroy()
+    swipeGesture.destroy()
     // Clear context if this was the current one
     if (_setCurrentNavigationContext) {
       _setCurrentNavigationContext(null)
