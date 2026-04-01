@@ -266,6 +266,12 @@ function acquireBodyScrollLock(): () => void {
   }
 }
 
+export function __resetScrollLockStateForTests(): void {
+  activeSheetScrollLockCount = 0
+  previousBodyOverflow = null
+  previousBodyOverscrollBehavior = null
+}
+
 /**
  * .navigationTitle() modifier
  *

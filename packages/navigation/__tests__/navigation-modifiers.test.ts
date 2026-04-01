@@ -18,6 +18,7 @@ import {
   toolbarItems,
   ToolbarItem,
   __resetToolbarItemIdCounterForTests,
+  __resetScrollLockStateForTests,
   getToolbarItemsByPlacement,
   toolbarBackground,
   toolbarBackgroundVisibility,
@@ -66,6 +67,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       .forEach(node => node.remove())
     document.body.style.overflow = ''
     document.body.style.overscrollBehavior = ''
+    __resetScrollLockStateForTests()
   })
 
   const flushMicrotasks = async (): Promise<void> => {
@@ -1194,6 +1196,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       const container = document.createElement('div')
       document.body.appendChild(container)
       document.body.style.overflow = 'auto'
+      document.body.style.overscrollBehavior = 'contain'
 
       const component = sheet(
         HTML.div({ children: 'Host' }).build(),
@@ -1205,10 +1208,12 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       await flushMicrotasks()
 
       expect(document.body.style.overflow).toBe('hidden')
+      expect(document.body.style.overscrollBehavior).toBe('none')
 
       cleanup()
       container.remove()
       expect(document.body.style.overflow).toBe('auto')
+      expect(document.body.style.overscrollBehavior).toBe('contain')
     })
 
     it('does not lock background scroll when lockBackgroundScroll is false', async () => {
@@ -1239,6 +1244,7 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       const container = document.createElement('div')
       document.body.appendChild(container)
       document.body.style.overflow = 'scroll'
+      document.body.style.overscrollBehavior = 'contain'
 
       const component = sheet(
         HTML.div({ children: 'Host' }).build(),
@@ -1249,10 +1255,12 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       const cleanup = mountComponentTree(component, container)
       await flushMicrotasks()
       expect(document.body.style.overflow).toBe('hidden')
+      expect(document.body.style.overscrollBehavior).toBe('none')
 
       setIsPresented(false)
       await flushMicrotasks()
       expect(document.body.style.overflow).toBe('scroll')
+      expect(document.body.style.overscrollBehavior).toBe('contain')
 
       cleanup()
       container.remove()
