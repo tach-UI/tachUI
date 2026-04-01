@@ -15,8 +15,13 @@ import type { ModifierContext } from '@tachui/types/modifiers'
 import type {
   BackgroundImageOptions,
   BackgroundImageRepeat,
+  BackgroundImageSize,
 } from '@tachui/types/modifiers'
-export type { BackgroundImageOptions, BackgroundImageRepeat } from '@tachui/types/modifiers'
+export type {
+  BackgroundImageOptions,
+  BackgroundImageRepeat,
+  BackgroundImageSize,
+} from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/types/runtime'
 import type { GradientDefinition } from '@tachui/core/gradients'
 import type {
