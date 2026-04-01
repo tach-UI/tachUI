@@ -109,6 +109,8 @@ export {
 } from './navigation-modifiers'
 export type {
   SheetPresentationOptions,
+  SheetEdge,
+  SheetSize,
   FullScreenCoverOptions,
   PopoverArrowEdge,
   PopoverPresentationOptions,

@@ -1456,6 +1456,386 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       setSecondPresented(false)
     })
 
+    it('mounts top-edge sheets offscreen with negative Y transform', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'top' }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      const root = document.querySelector(
+        '[data-tachui-sheet-root="true"]'
+      ) as HTMLDivElement | null
+
+      expect(content?.style.transform).toBe('translateY(-100%)')
+      expect(root?.getAttribute('data-tachui-sheet-edge')).toBe('top')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('transitions top-edge sheets to onscreen transform', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'top' }
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+      await flushAnimationFrame()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(content?.style.transform).toBe('translateY(0)')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('mounts left-edge sheets offscreen with negative X transform', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'left' }
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(content?.style.transform).toBe('translateX(-100%)')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('transitions left-edge sheets to onscreen transform', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'left' }
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+      await flushAnimationFrame()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(content?.style.transform).toBe('translateX(0)')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('mounts right-edge sheets offscreen with positive X transform', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'right' }
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(content?.style.transform).toBe('translateX(100%)')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('transitions right-edge sheets to onscreen transform', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'right' }
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      await flushAnimationFrame()
+      await flushAnimationFrame()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(content?.style.transform).toBe('translateX(0)')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('applies automatic size defaults by edge', async () => {
+      const originalInnerHeight = window.innerHeight
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'top', size: 'automatic' }
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(500)
+
+      cleanup()
+      container.remove()
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      })
+    })
+
+    it('applies fraction size against horizontal viewport on left edge', async () => {
+      const originalInnerWidth = window.innerWidth
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'left', size: { fraction: 0.4 } }
+      )
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.width ?? '0')).toBe(400)
+
+      cleanup()
+      container.remove()
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      })
+    })
+
+    it('applies exact pixel size and clamps to 95 percent viewport', async () => {
+      const originalInnerHeight = window.innerHeight
+      const originalInnerWidth = window.innerWidth
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const topComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'top', size: { px: 300 } }
+      )
+      const cleanupTop = mountComponentTree(topComponent, container)
+      await flushMicrotasks()
+      let content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.height ?? '0')).toBe(300)
+      cleanupTop()
+
+      const rightComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { edge: 'right', size: { px: 3000 } }
+      )
+      const cleanupRight = mountComponentTree(rightComponent, container)
+      await flushMicrotasks()
+      content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      expect(Number.parseFloat(content?.style.width ?? '0')).toBe(950)
+
+      cleanupRight()
+      container.remove()
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        writable: true,
+        value: originalInnerHeight,
+      })
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      })
+    })
+
+    it('dismisses from backdrop and Escape across side edges', async () => {
+      const [isLeftPresented, setLeftPresented] = createSignal(true)
+      const [isRightPresented, setRightPresented] = createSignal(true)
+      const leftContainer = document.createElement('div')
+      const rightContainer = document.createElement('div')
+      document.body.append(leftContainer, rightContainer)
+
+      const leftComponent = sheet(
+        HTML.div({ children: 'Left Host' }).build(),
+        isLeftPresented,
+        () => HTML.div({ children: 'Left content' }).build(),
+        { edge: 'left' }
+      )
+      const cleanupLeft = mountComponentTree(leftComponent, leftContainer)
+      await flushMicrotasks()
+      const backdrop = document.querySelector(
+        '[data-tachui-sheet-backdrop="true"]'
+      ) as HTMLDivElement | null
+      backdrop?.click()
+      await flushMicrotasks()
+      expect(isLeftPresented()).toBe(false)
+
+      const rightComponent = sheet(
+        HTML.div({ children: 'Right Host' }).build(),
+        isRightPresented,
+        () => HTML.div({ children: 'Right content' }).build(),
+        { edge: 'right' }
+      )
+      const cleanupRight = mountComponentTree(rightComponent, rightContainer)
+      await flushMicrotasks()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      await flushMicrotasks()
+      expect(isRightPresented()).toBe(false)
+
+      cleanupRight()
+      cleanupLeft()
+      leftContainer.remove()
+      rightContainer.remove()
+      setLeftPresented(false)
+      setRightPresented(false)
+    })
+
+    it('keeps bottom edge as default and supports horizontal drag on right edge', async () => {
+      const originalInnerWidth = window.innerWidth
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: 1000,
+      })
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+
+      const defaultComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build()
+      )
+      const cleanupDefault = mountComponentTree(defaultComponent, container)
+      await flushMicrotasks()
+      const defaultRoot = document.querySelector(
+        '[data-tachui-sheet-root="true"]'
+      ) as HTMLDivElement | null
+      expect(defaultRoot?.getAttribute('data-tachui-sheet-edge')).toBeNull()
+      cleanupDefault()
+
+      const rightDetentComponent = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () =>
+          presentationDetents(
+            HTML.div({ children: 'Sheet content' }).build(),
+            ['medium', 'large']
+          ),
+        { edge: 'right' }
+      )
+      const cleanupRight = mountComponentTree(rightDetentComponent, container)
+      await flushMicrotasks()
+      const content = document.querySelector(
+        '[data-tachui-sheet-content="true"]'
+      ) as HTMLDivElement | null
+      const handle = document.querySelector(
+        '[data-tachui-sheet-drag-handle="true"]'
+      ) as HTMLDivElement | null
+      expect(handle?.getAttribute('aria-label')).toBe('Adjust sheet width')
+      expect(Number.parseFloat(content?.style.width ?? '0')).toBe(500)
+
+      handle?.dispatchEvent(
+        new MouseEvent('mousedown', { clientX: 850, clientY: 300, bubbles: true })
+      )
+      window.dispatchEvent(
+        new MouseEvent('mousemove', { clientX: 200, clientY: 300, bubbles: true })
+      )
+      window.dispatchEvent(
+        new MouseEvent('mouseup', { clientX: 200, clientY: 300, bubbles: true })
+      )
+      await flushMicrotasks()
+
+      expect(Number.parseFloat(content?.style.width ?? '0')).toBe(900)
+
+      cleanupRight()
+      container.remove()
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        writable: true,
+        value: originalInnerWidth,
+      })
+    })
+
     it('applies medium detent sizing to approximately 50vh', async () => {
       const originalInnerHeight = window.innerHeight
       Object.defineProperty(window, 'innerHeight', {

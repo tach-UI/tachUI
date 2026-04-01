@@ -41,6 +41,12 @@ export interface NavigationModifierConfig {
 
 type SheetPresentationState = Accessor<boolean> | Binding<boolean>
 
+export type SheetEdge = 'top' | 'bottom' | 'left' | 'right'
+export type SheetSize =
+  | 'automatic'
+  | { fraction: number }
+  | { px: number }
+
 export interface SheetPresentationOptions {
   dismissOnBackdropTap?: boolean
   dismissOnEscape?: boolean
@@ -50,6 +56,8 @@ export interface SheetPresentationOptions {
   zIndex?: number
   ariaLabel?: string
   onDismiss?: () => void
+  edge?: SheetEdge
+  size?: SheetSize
 }
 
 export type PresentationDetent =
@@ -1214,6 +1222,96 @@ function setupModalDismissEnvironment(
   })
 }
 
+interface SheetEdgeLayout {
+  edge: SheetEdge
+  isHorizontal: boolean
+  axisProperty: 'height' | 'width'
+  viewportSize: () => number
+  portalAlignItems: string
+  portalJustifyContent: string
+  initialTransform: string
+  onscreenTransform: string
+  axisDelta: (x: number, y: number) => number
+  dragDeltaSign: 1 | -1
+}
+
+function resolveSheetEdgeLayout(edge: SheetEdge): SheetEdgeLayout {
+  if (edge === 'top') {
+    return {
+      edge,
+      isHorizontal: false,
+      axisProperty: 'height',
+      viewportSize: () => window.innerHeight,
+      portalAlignItems: 'center',
+      portalJustifyContent: 'flex-start',
+      initialTransform: 'translateY(-100%)',
+      onscreenTransform: 'translateY(0)',
+      axisDelta: (_x, y) => y,
+      dragDeltaSign: 1,
+    }
+  }
+  if (edge === 'left') {
+    return {
+      edge,
+      isHorizontal: true,
+      axisProperty: 'width',
+      viewportSize: () => window.innerWidth,
+      portalAlignItems: 'stretch',
+      portalJustifyContent: 'flex-start',
+      initialTransform: 'translateX(-100%)',
+      onscreenTransform: 'translateX(0)',
+      axisDelta: (x, _y) => x,
+      dragDeltaSign: 1,
+    }
+  }
+  if (edge === 'right') {
+    return {
+      edge,
+      isHorizontal: true,
+      axisProperty: 'width',
+      viewportSize: () => window.innerWidth,
+      portalAlignItems: 'stretch',
+      portalJustifyContent: 'flex-end',
+      initialTransform: 'translateX(100%)',
+      onscreenTransform: 'translateX(0)',
+      axisDelta: (x, _y) => x,
+      dragDeltaSign: -1,
+    }
+  }
+
+  return {
+    edge: 'bottom',
+    isHorizontal: false,
+    axisProperty: 'height',
+    viewportSize: () => window.innerHeight,
+    portalAlignItems: 'center',
+    portalJustifyContent: 'flex-end',
+    initialTransform: 'translateY(100%)',
+    onscreenTransform: 'translateY(0)',
+    axisDelta: (_x, y) => y,
+    dragDeltaSign: -1,
+  }
+}
+
+function resolveSheetSizePx(size: SheetSize, edge: SheetEdge): number {
+  const viewportSize = edge === 'left' || edge === 'right'
+    ? window.innerWidth
+    : window.innerHeight
+  const maxSize = Math.max(1, Math.round(viewportSize * 0.95))
+
+  if (size === 'automatic') {
+    return edge === 'left' || edge === 'right'
+      ? Math.min(320, maxSize)
+      : Math.min(Math.round(window.innerHeight * 0.5), maxSize)
+  }
+  if ('fraction' in size) {
+    const fraction = Math.min(Math.max(size.fraction, 0.1), 0.95)
+    return Math.round(viewportSize * fraction)
+  }
+
+  return Math.round(Math.max(1, Math.min(size.px, maxSize)))
+}
+
 function setupSheetPresentation(
   isPresented: SheetPresentationState,
   content: () => ComponentInstance,
@@ -1235,8 +1333,11 @@ function setupSheetPresentation(
   let focusFrameId: number | null = null
   let isTransitionQueued = false
   const transitionDurationMs = options.transitionDurationMs ?? 220
+  const edge = options.edge ?? 'bottom'
+  const edgeLayout = resolveSheetEdgeLayout(edge)
   let removeDetentDragListeners: (() => void) | null = null
   let removeDetentResizeListener: (() => void) | null = null
+  let removeSizeResizeListener: (() => void) | null = null
   let removeDismissScope: (() => void) | null = null
 
   const clearTransitionQueue = () => {
@@ -1259,7 +1360,7 @@ function setupSheetPresentation(
           backdrop.style.opacity = '1'
         }
         if (sheetHost) {
-          sheetHost.style.transform = 'translateY(0)'
+          sheetHost.style.transform = edgeLayout.onscreenTransform
         }
         transitionFrameId = null
         isTransitionQueued = false
@@ -1302,6 +1403,10 @@ function setupSheetPresentation(
       removeDetentResizeListener()
       removeDetentResizeListener = null
     }
+    if (removeSizeResizeListener) {
+      removeSizeResizeListener()
+      removeSizeResizeListener = null
+    }
     if (removeDismissScope) {
       removeDismissScope()
       removeDismissScope = null
@@ -1329,12 +1434,15 @@ function setupSheetPresentation(
     portalRoot = document.createElement('div')
     portalRoot.setAttribute('data-tachui-sheet-root', 'true')
     portalRoot.setAttribute('data-tachui-sheet-id', sheetId)
+    if (edge !== 'bottom') {
+      portalRoot.setAttribute('data-tachui-sheet-edge', edge)
+    }
     portalRoot.style.position = 'fixed'
     portalRoot.style.inset = '0'
     portalRoot.style.zIndex = String(options.zIndex ?? 1000)
     portalRoot.style.display = 'flex'
-    portalRoot.style.alignItems = 'flex-end'
-    portalRoot.style.justifyContent = 'center'
+    portalRoot.style.alignItems = edgeLayout.portalAlignItems
+    portalRoot.style.justifyContent = edgeLayout.portalJustifyContent
     portalRoot.style.pointerEvents = 'none'
 
     backdrop = document.createElement('div')
@@ -1356,9 +1464,16 @@ function setupSheetPresentation(
     }
     sheetHost.tabIndex = -1
     sheetHost.style.position = 'relative'
-    sheetHost.style.width = '100%'
-    sheetHost.style.maxWidth = options.maxWidth ?? '640px'
-    sheetHost.style.transform = 'translateY(100%)'
+    if (edgeLayout.isHorizontal) {
+      sheetHost.style.height = '100%'
+      sheetHost.style.maxHeight = options.maxWidth ?? '100%'
+      sheetHost.style.width = '320px'
+      sheetHost.style.maxWidth = `${Math.round(window.innerWidth * 0.95)}px`
+    } else {
+      sheetHost.style.width = '100%'
+      sheetHost.style.maxWidth = options.maxWidth ?? '640px'
+    }
+    sheetHost.style.transform = edgeLayout.initialTransform
     sheetHost.style.transition = `transform ${transitionDurationMs}ms ease`
     sheetHost.style.pointerEvents = 'auto'
     sheetHost.style.overflow = 'hidden'
@@ -1385,31 +1500,40 @@ function setupSheetPresentation(
       }
     }
 
-    const resolveDetentHeightPx = (detent: PresentationDetent): number => {
-      const viewportHeight = window.innerHeight
+    const resolveDetentSizePx = (detent: PresentationDetent): number => {
+      const viewportSize = edgeLayout.viewportSize()
       if (detent === 'medium') {
-        return Math.round(viewportHeight * 0.5)
+        return Math.round(viewportSize * 0.5)
       }
       if (detent === 'large') {
-        return Math.round(viewportHeight * 0.9)
+        return Math.round(viewportSize * 0.9)
       }
       if ('fraction' in detent) {
         const fraction = Math.min(Math.max(detent.fraction, 0.1), 0.95)
-        return Math.round(viewportHeight * fraction)
+        return Math.round(viewportSize * fraction)
       }
       return Math.round(
-        Math.max(1, Math.min(detent.height, viewportHeight * 0.95))
+        Math.max(1, Math.min(detent.height, viewportSize * 0.95))
       )
     }
 
-    const applyDetentToHost = (
-      detentHeights: number[],
-      detentIndex: number
+    const applySizeToHost = (
+      resolvedSizes: number[],
+      sizeIndex: number
     ): void => {
-      const clampedIndex = Math.max(0, Math.min(detentIndex, detentHeights.length - 1))
-      const height = detentHeights[clampedIndex]
-      sheetHost!.style.height = `${height}px`
-      sheetHost!.style.maxHeight = `${Math.round(window.innerHeight * 0.95)}px`
+      const clampedIndex = Math.max(
+        0,
+        Math.min(sizeIndex, resolvedSizes.length - 1)
+      )
+      const sizePx = resolvedSizes[clampedIndex]
+      const maxViewportSize = `${Math.round(edgeLayout.viewportSize() * 0.95)}px`
+      if (edgeLayout.axisProperty === 'height') {
+        sheetHost!.style.height = `${sizePx}px`
+        sheetHost!.style.maxHeight = maxViewportSize
+      } else {
+        sheetHost!.style.width = `${sizePx}px`
+        sheetHost!.style.maxWidth = maxViewportSize
+      }
     }
 
     removeDismissScope = setupModalDismissEnvironment(isPresented, options)
@@ -1419,21 +1543,25 @@ function setupSheetPresentation(
       (((sheetContent as any)._sheetPresentationDetents
         ?.detents ?? []) as PresentationDetent[]).filter(Boolean)
     )
-    let detentHeights = requestedDetents.map(resolveDetentHeightPx)
-    let currentDetentIndex = detentHeights.length > 0
-      ? detentHeights.reduce((smallestIndex, currentHeight, currentIndex) => {
-          return currentHeight < detentHeights[smallestIndex]
+    let resolvedSizes = requestedDetents.map(resolveDetentSizePx)
+    const configuredSize = options.size
+    if (configuredSize) {
+      resolvedSizes = [resolveSheetSizePx(configuredSize, edge)]
+    }
+    let currentSizeIndex = resolvedSizes.length > 0
+      ? resolvedSizes.reduce((smallestIndex, currentSize, currentIndex) => {
+          return currentSize < resolvedSizes[smallestIndex]
             ? currentIndex
             : smallestIndex
         }, 0)
       : 0
 
-    if (detentHeights.length > 0) {
-      applyDetentToHost(detentHeights, currentDetentIndex)
-      sheetHost.style.transition = `transform ${transitionDurationMs}ms ease, height ${transitionDurationMs}ms ease`
+    if (resolvedSizes.length > 0) {
+      applySizeToHost(resolvedSizes, currentSizeIndex)
+      sheetHost.style.transition = `transform ${transitionDurationMs}ms ease, ${edgeLayout.axisProperty} ${transitionDurationMs}ms ease`
     }
 
-    if (detentHeights.length > 1) {
+    if (!configuredSize && resolvedSizes.length > 1) {
       const currentSheetHost = sheetHost
       if (!currentSheetHost) {
         return
@@ -1441,49 +1569,74 @@ function setupSheetPresentation(
 
       const dragHandle = document.createElement('div')
       dragHandle.setAttribute('data-tachui-sheet-drag-handle', 'true')
-      dragHandle.style.width = '100%'
       dragHandle.style.display = 'flex'
+      dragHandle.style.alignItems = 'center'
       dragHandle.style.justifyContent = 'center'
-      dragHandle.style.padding = '10px 0 6px 0'
       dragHandle.style.cursor = 'grab'
       dragHandle.style.touchAction = 'none'
       dragHandle.setAttribute('role', 'slider')
       dragHandle.setAttribute('tabindex', '0')
-      dragHandle.setAttribute('aria-label', 'Adjust sheet height')
+      dragHandle.setAttribute(
+        'aria-label',
+        edgeLayout.isHorizontal ? 'Adjust sheet width' : 'Adjust sheet height'
+      )
       dragHandle.setAttribute('aria-valuemin', '0')
       dragHandle.setAttribute(
         'aria-valuemax',
-        String(Math.max(0, detentHeights.length - 1))
+        String(Math.max(0, resolvedSizes.length - 1))
       )
 
       const indicator = document.createElement('div')
-      indicator.style.width = '36px'
-      indicator.style.height = '4px'
       indicator.style.borderRadius = '999px'
       indicator.style.background = 'rgba(60, 60, 67, 0.35)'
+      if (edgeLayout.isHorizontal) {
+        dragHandle.style.position = 'absolute'
+        dragHandle.style.top = '0'
+        dragHandle.style.bottom = '0'
+        dragHandle.style.width = '14px'
+        dragHandle.style.padding = '0 4px'
+        dragHandle.style.right = edge === 'left' ? '0' : 'auto'
+        dragHandle.style.left = edge === 'right' ? '0' : 'auto'
+        indicator.style.width = '4px'
+        indicator.style.height = '36px'
+      } else {
+        dragHandle.style.width = '100%'
+        dragHandle.style.padding = edge === 'top' ? '6px 0 10px 0' : '10px 0 6px 0'
+        dragHandle.style.position = 'relative'
+        indicator.style.width = '36px'
+        indicator.style.height = '4px'
+      }
       dragHandle.appendChild(indicator)
       currentSheetHost.appendChild(dragHandle)
 
       let isDragging = false
-      let startY = 0
-      let startHeight = detentHeights[currentDetentIndex] ?? 0
+      let startClientX = 0
+      let startClientY = 0
+      let startSize = resolvedSizes[currentSizeIndex] ?? 0
       let activeTouchIdentifier: number | null = null
 
       const updateDragHandleAriaValue = () => {
-        dragHandle.setAttribute('aria-valuenow', String(currentDetentIndex))
+        dragHandle.setAttribute('aria-valuenow', String(currentSizeIndex))
       }
       updateDragHandleAriaValue()
 
-      const onDragMove = (clientY: number) => {
+      const onDragMove = (clientX: number, clientY: number) => {
         if (!isDragging) return
-        const deltaY = clientY - startY
-        const minHeight = Math.min(...detentHeights)
-        const maxHeight = Math.max(...detentHeights)
-        const nextHeight = Math.min(
-          maxHeight,
-          Math.max(minHeight, startHeight - deltaY)
+        const delta = edgeLayout.axisDelta(
+          clientX - startClientX,
+          clientY - startClientY
         )
-        currentSheetHost.style.height = `${Math.round(nextHeight)}px`
+        const minSize = Math.min(...resolvedSizes)
+        const maxSize = Math.max(...resolvedSizes)
+        const nextSize = Math.min(
+          maxSize,
+          Math.max(minSize, startSize + delta * edgeLayout.dragDeltaSign)
+        )
+        if (edgeLayout.axisProperty === 'height') {
+          currentSheetHost.style.height = `${Math.round(nextSize)}px`
+        } else {
+          currentSheetHost.style.width = `${Math.round(nextSize)}px`
+        }
       }
 
       const onDragEnd = () => {
@@ -1492,14 +1645,18 @@ function setupSheetPresentation(
         activeTouchIdentifier = null
         dragHandle.style.cursor = 'grab'
 
-        const currentHeight = Number.parseFloat(currentSheetHost.style.height)
-        const nearestIndex = detentHeights.reduce((nearest, detentHeight, index) => {
-          const nearestDistance = Math.abs(detentHeights[nearest] - currentHeight)
-          const currentDistance = Math.abs(detentHeight - currentHeight)
+        const currentSize = Number.parseFloat(
+          edgeLayout.axisProperty === 'height'
+            ? currentSheetHost.style.height
+            : currentSheetHost.style.width
+        )
+        const nearestIndex = resolvedSizes.reduce((nearest, resolvedSize, index) => {
+          const nearestDistance = Math.abs(resolvedSizes[nearest] - currentSize)
+          const currentDistance = Math.abs(resolvedSize - currentSize)
           return currentDistance < nearestDistance ? index : nearest
         }, 0)
-        currentDetentIndex = nearestIndex
-        applyDetentToHost(detentHeights, currentDetentIndex)
+        currentSizeIndex = nearestIndex
+        applySizeToHost(resolvedSizes, currentSizeIndex)
         updateDragHandleAriaValue()
 
         window.removeEventListener('mousemove', onMouseMove)
@@ -1509,15 +1666,20 @@ function setupSheetPresentation(
         window.removeEventListener('touchcancel', onTouchEnd)
       }
 
-      const beginDrag = (clientY: number) => {
+      const beginDrag = (clientX: number, clientY: number) => {
         isDragging = true
-        startY = clientY
-        startHeight = Number.parseFloat(currentSheetHost.style.height)
+        startClientX = clientX
+        startClientY = clientY
+        startSize = Number.parseFloat(
+          edgeLayout.axisProperty === 'height'
+            ? currentSheetHost.style.height
+            : currentSheetHost.style.width
+        )
         dragHandle.style.cursor = 'grabbing'
       }
 
       const onMouseMove = (event: MouseEvent) => {
-        onDragMove(event.clientY)
+        onDragMove(event.clientX, event.clientY)
       }
 
       const onMouseUp = () => {
@@ -1532,7 +1694,7 @@ function setupSheetPresentation(
         const activeTouch = matchingTouch ?? event.touches[0]
         if (!activeTouch) return
         event.preventDefault()
-        onDragMove(activeTouch.clientY)
+        onDragMove(activeTouch.clientX, activeTouch.clientY)
       }
 
       const onTouchEnd = () => {
@@ -1541,7 +1703,7 @@ function setupSheetPresentation(
 
       const onMouseDown = (event: MouseEvent) => {
         event.preventDefault()
-        beginDrag(event.clientY)
+        beginDrag(event.clientX, event.clientY)
         window.addEventListener('mousemove', onMouseMove)
         window.addEventListener('mouseup', onMouseUp)
       }
@@ -1551,26 +1713,28 @@ function setupSheetPresentation(
         if (!touch) return
         event.preventDefault()
         activeTouchIdentifier = touch.identifier
-        beginDrag(touch.clientY)
+        beginDrag(touch.clientX, touch.clientY)
         window.addEventListener('touchmove', onTouchMove, { passive: false })
         window.addEventListener('touchend', onTouchEnd)
         window.addEventListener('touchcancel', onTouchEnd)
       }
 
       const onHandleKeyDown = (event: KeyboardEvent) => {
-        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+        const increaseKey = edgeLayout.isHorizontal ? 'ArrowRight' : 'ArrowUp'
+        const decreaseKey = edgeLayout.isHorizontal ? 'ArrowLeft' : 'ArrowDown'
+        if (event.key !== increaseKey && event.key !== decreaseKey) {
           return
         }
         event.preventDefault()
         const nextIndex =
-          event.key === 'ArrowUp'
-            ? Math.min(detentHeights.length - 1, currentDetentIndex + 1)
-            : Math.max(0, currentDetentIndex - 1)
-        if (nextIndex === currentDetentIndex) {
+          event.key === increaseKey
+            ? Math.min(resolvedSizes.length - 1, currentSizeIndex + 1)
+            : Math.max(0, currentSizeIndex - 1)
+        if (nextIndex === currentSizeIndex) {
           return
         }
-        currentDetentIndex = nextIndex
-        applyDetentToHost(detentHeights, currentDetentIndex)
+        currentSizeIndex = nextIndex
+        applySizeToHost(resolvedSizes, currentSizeIndex)
         updateDragHandleAriaValue()
       }
 
@@ -1594,11 +1758,21 @@ function setupSheetPresentation(
       }
     }
 
-    if (detentHeights.length > 0) {
+    if (configuredSize) {
       const onResize = () => {
-        detentHeights = requestedDetents.map(resolveDetentHeightPx)
-        currentDetentIndex = Math.min(currentDetentIndex, detentHeights.length - 1)
-        applyDetentToHost(detentHeights, currentDetentIndex)
+        resolvedSizes = [resolveSheetSizePx(configuredSize, edge)]
+        currentSizeIndex = 0
+        applySizeToHost(resolvedSizes, currentSizeIndex)
+      }
+      window.addEventListener('resize', onResize)
+      removeSizeResizeListener = () => {
+        window.removeEventListener('resize', onResize)
+      }
+    } else if (resolvedSizes.length > 0) {
+      const onResize = () => {
+        resolvedSizes = requestedDetents.map(resolveDetentSizePx)
+        currentSizeIndex = Math.min(currentSizeIndex, resolvedSizes.length - 1)
+        applySizeToHost(resolvedSizes, currentSizeIndex)
       }
       window.addEventListener('resize', onResize)
       removeDetentResizeListener = () => {
@@ -3098,4 +3272,3 @@ export const NavigationModifierUtils = {
     return Object.keys(config).length === 0
   }
 }
-
