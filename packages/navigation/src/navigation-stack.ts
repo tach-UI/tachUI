@@ -422,8 +422,12 @@ export function NavigationStack(
     }
 
     // Build children array - just the current entry for now
-    // Swipe-back gesture will be handled via DOM attachment after mount
     const children: ComponentInstance[] = [currentEntry.component]
+
+    // Visual feedback during swipe-back gesture
+    const swiping = isSwipingBack()
+    const progress = swipeProgress()
+    const transformValue = swiping ? `translateX(${progress * 100}%)` : ''
 
     return VStack({
       children,
@@ -431,6 +435,7 @@ export function NavigationStack(
       alignment: 'leading',
     })
       .opacity(isNavigating() ? 0.8 : 1)
+      .transform(transformValue)
       .build()
   }
 
@@ -470,6 +475,18 @@ export function NavigationStack(
 
   // Store cleanup function
   ;(navigationComponent as any)._navigationCleanup = cleanup
+
+  // Attach gesture to DOM element when component is mounted
+  if (swipeEnabled) {
+    ;(navigationComponent as any)._enhancedLifecycle = {
+      onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+        if (primary instanceof HTMLElement) {
+          swipeGesture.attachToElement(primary)
+        }
+        return () => swipeGesture.destroy()
+      },
+    }
+  }
 
   return navigationComponent
 }

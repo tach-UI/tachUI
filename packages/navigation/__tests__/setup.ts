@@ -28,14 +28,15 @@ if (typeof Element.prototype.releasePointerCapture === 'undefined') {
 
 // clientWidth/clientHeight getters polyfill for jsdom
 // JSDOM doesn't compute layout, so we need to read from style
+// Fallback returns 0 to match jsdom's natural default behavior
 Object.defineProperty(Element.prototype, 'clientWidth', {
   get() {
     const width = this.style.width
     if (width && width.endsWith('px')) {
       return parseInt(width, 10)
     }
-    // Default fallback for tests
-    return 800
+    // Return 0 to match jsdom's natural default (not a global fallback)
+    return 0
   },
 })
 
@@ -45,8 +46,8 @@ Object.defineProperty(Element.prototype, 'clientHeight', {
     if (height && height.endsWith('px')) {
       return parseInt(height, 10)
     }
-    // Default fallback for tests
-    return 600
+    // Return 0 to match jsdom's natural default (not a global fallback)
+    return 0
   },
 })
 
