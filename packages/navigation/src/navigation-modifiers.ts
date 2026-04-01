@@ -2435,12 +2435,7 @@ function setupInspectorPresentation(
   }
 
   const dismissInspector = () => {
-    const dismissed = dismissPresentedState(isPresented, {
-      onDismiss: options.onDismiss,
-    })
-    if (!dismissed) {
-      options.onDismiss?.()
-    }
+    dismissPresentedState(isPresented, { onDismiss: options.onDismiss })
   }
 
   const mountPortal = () => {
