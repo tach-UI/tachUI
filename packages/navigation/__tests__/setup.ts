@@ -51,6 +51,44 @@ Object.defineProperty(Element.prototype, 'clientHeight', {
   },
 })
 
+// Web Animations API polyfill for jsdom
+if (typeof Element.prototype.animate === 'undefined') {
+  Element.prototype.animate = function (
+    keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
+    options?: number | KeyframeAnimationOptions
+  ): Animation {
+    const duration = typeof options === 'number'
+      ? options
+      : (options?.duration as number) ?? 300
+    return {
+      playState: 'running',
+      effect: {
+        getComputedTiming: () => ({
+          duration,
+        }),
+      },
+      cancel: () => {},
+      play: () => {},
+      pause: () => {},
+      finish: () => {},
+    } as Animation
+  }
+}
+
+// matchMedia polyfill for jsdom
+if (typeof window.matchMedia === 'undefined') {
+  window.matchMedia = (query: string): MediaQueryList => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  } as MediaQueryList)
+}
+
 // Suppress expected test console outputs
 let originalConsoleError: typeof console.error
 let originalConsoleWarn: typeof console.warn

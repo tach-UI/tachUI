@@ -57,6 +57,23 @@ export type {
   SwipeBackGestureState,
 } from './swipe-back-gesture'
 
+// Navigation animations
+export {
+  animateTransition,
+  getPushKeyframes,
+  getPopKeyframes,
+  getSpringPhysics,
+  calculateSpringDuration,
+  prefersReducedMotion,
+} from './navigation-animations'
+export type {
+  TransitionType,
+  TransitionConfig,
+  SpringTransitionConfig,
+  SpringPhysics,
+  AnimationKeyframe,
+} from './navigation-animations'
+
 // Navigation Modifiers (SwiftUI-compatible)
 export {
   navigationTitle,

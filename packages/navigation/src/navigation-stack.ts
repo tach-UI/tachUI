@@ -25,6 +25,7 @@ import type {
 } from './types'
 import { createSwipeBackGesture } from './swipe-back-gesture'
 import type { SwipeBackGestureConfig } from './swipe-back-gesture'
+import type { TransitionConfig } from './navigation-animations'
 
 /**
  * Navigation destination registry for type-safe routing
@@ -212,7 +213,9 @@ export interface NavigationStackOptions {
   swipeBackEnabled?: boolean
   /** Swipe-back gesture configuration */
   swipeBackConfig?: SwipeBackGestureConfig
-  /** Transition duration in milliseconds (default: 300) */
+  /** Transition animation config - 'slide', 'fade', or { type: 'spring', damping, stiffness, mass } */
+  transition?: TransitionConfig
+  /** Transition duration in milliseconds for non-spring transitions (default: 300) */
   transitionDurationMs?: number
 }
 
