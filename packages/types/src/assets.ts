@@ -68,7 +68,7 @@ export interface SystemAssets {
  * Main Assets interface with extensible custom asset support
  */
 export interface AssetsInterface extends SystemAssets {
-  [key: string]: ColorAssetProxy | ImageAssetProxy | FontAssetProxy
+  [key: string]: ColorAssetProxy | ImageAssetProxy | FontAssetProxy | Asset
 }
 
 /**
