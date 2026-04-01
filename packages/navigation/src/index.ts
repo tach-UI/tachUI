@@ -49,6 +49,14 @@ export type { SimpleTabItem, SimpleTabViewOptions } from './simple-tab-view'
 // Register navigation modifiers on ModifierBuilder (side-effect import)
 import './navigation-modifiers-registry'
 
+// Swipe-back gesture
+export { createSwipeBackGesture } from './swipe-back-gesture'
+export type {
+  SwipeBackGestureConfig,
+  SwipeBackGestureCallbacks,
+  SwipeBackGestureState,
+} from './swipe-back-gesture'
+
 // Navigation Modifiers (SwiftUI-compatible)
 export {
   navigationTitle,

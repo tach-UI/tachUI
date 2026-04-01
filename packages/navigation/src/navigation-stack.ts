@@ -23,6 +23,8 @@ import type {
   NavigationDestination,
   NavigationComponent,
 } from './types'
+import { createSwipeBackGesture } from './swipe-back-gesture'
+import type { SwipeBackGestureConfig } from './swipe-back-gesture'
 
 /**
  * Navigation destination registry for type-safe routing
@@ -206,6 +208,10 @@ export interface NavigationStackOptions {
   navigationBarHidden?: boolean
   navigationTitle?: string
   onPathChange?: (path: NavigationPath) => void
+  /** Enable/disable interactive swipe-back gesture (default: true) */
+  swipeBackEnabled?: boolean
+  /** Swipe-back gesture configuration */
+  swipeBackConfig?: SwipeBackGestureConfig
 }
 
 /**
@@ -244,6 +250,11 @@ export function NavigationStack(
   const [currentTitle, setCurrentTitle] = createSignal(
     options?.navigationTitle || ''
   )
+
+  // Swipe-back gesture state
+  const [swipeProgress, setSwipeProgress] = createSignal(0)
+  const [isSwipingBack, setIsSwipingBack] = createSignal(false)
+  const swipeEnabled = options.swipeBackEnabled !== false
 
   // Path management
   const pathBinding = options.path
@@ -313,6 +324,39 @@ export function NavigationStack(
     })
   }
 
+  // Swipe-back gesture setup
+  const swipeGesture = createSwipeBackGesture(
+    {
+      enabled: swipeEnabled,
+      ...options.swipeBackConfig,
+    },
+    {
+      onGestureStart: () => {
+        setIsSwipingBack(true)
+      },
+      onGestureProgress: (progress) => {
+        setSwipeProgress(progress)
+      },
+      onGestureComplete: () => {
+        setSwipeProgress(0)
+        setIsSwipingBack(false)
+        setIsNavigating(true)
+        navigationContext.pop()
+        // Reset navigating state after animation
+        setTimeout(() => {
+          setIsNavigating(false)
+        }, 300)
+      },
+      onGestureCancel: () => {
+        setSwipeProgress(0)
+        setIsSwipingBack(false)
+      },
+    }
+  )
+
+  // Store gesture instance for cleanup
+  const swipeGestureInstance = swipeGesture
+
   // Navigation bar component
   const NavigationBar = () => {
     const stack = navigationStack()
@@ -366,6 +410,7 @@ export function NavigationStack(
   const NavigationContent = () => {
     const stack = navigationStack()
     const currentEntry = stack[stack.length - 1]
+    const previousEntry = stack.length > 1 ? stack[stack.length - 2] : null
 
     if (!currentEntry) {
       return Text('No content')
@@ -374,8 +419,12 @@ export function NavigationStack(
         .build()
     }
 
+    // Build children array - just the current entry for now
+    // Swipe-back gesture will be handled via DOM attachment after mount
+    const children: ComponentInstance[] = [currentEntry.component]
+
     return VStack({
-      children: [currentEntry.component],
+      children,
       spacing: 0,
       alignment: 'leading',
     })
@@ -403,9 +452,13 @@ export function NavigationStack(
       navigationContext.navigateToDestination.bind(navigationContext),
   }
 
+  // Store swipe gesture for DOM attachment and cleanup
+  ;(navigationComponent as any)._swipeBackGesture = swipeGestureInstance
+
   // Set up cleanup
   const cleanup = () => {
     clearDocumentHeadForNavigation(navigationId)
+    swipeGestureInstance.destroy()
     // Clear context if this was the current one
     if (_setCurrentNavigationContext) {
       _setCurrentNavigationContext(null)
