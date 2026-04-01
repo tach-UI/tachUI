@@ -1,0 +1,533 @@
+{
+  "runAt": "2025-11-08T18:33:23.262Z",
+  "port": 4173,
+  "results": [
+    {
+      "name": "Create 1,000 rows",
+      "duration": 23.8,
+      "memory": 7.86,
+      "operationsPerSecond": 4202,
+      "timestamp": "2025-11-08T18:33:22.682Z"
+    },
+    {
+      "name": "Replace all 1,000 rows",
+      "duration": 3.3,
+      "memory": 5.63,
+      "operationsPerSecond": 30303,
+      "timestamp": "2025-11-08T18:33:22.754Z"
+    },
+    {
+      "name": "Partial update (every 10th row)",
+      "duration": 0.7,
+      "memory": 5.17,
+      "operationsPerSecond": 142857,
+      "timestamp": "2025-11-08T18:33:22.847Z"
+    },
+    {
+      "name": "Select row",
+      "duration": 1,
+      "memory": 5.39,
+      "operationsPerSecond": 100000,
+      "timestamp": "2025-11-08T18:33:22.920Z"
+    },
+    {
+      "name": "Swap rows",
+      "duration": 25.7,
+      "memory": 9.93,
+      "operationsPerSecond": 3891,
+      "timestamp": "2025-11-08T18:33:23.014Z"
+    },
+    {
+      "name": "Remove rows",
+      "duration": 21.4,
+      "memory": 8.63,
+      "operationsPerSecond": 4673,
+      "timestamp": "2025-11-08T18:33:23.106Z"
+    },
+    {
+      "name": "Clear rows",
+      "duration": 8.7,
+      "memory": 8.82,
+      "operationsPerSecond": 11494,
+      "timestamp": "2025-11-08T18:33:23.187Z"
+    },
+    {
+      "name": "Component creation (1,000 components)",
+      "duration": 2.7,
+      "memory": 4.21,
+      "operationsPerSecond": 37037,
+      "timestamp": "2025-11-08T18:33:23.248Z"
+    }
+  ],
+  "memorySummary": {
+    "averageMb": 2.1704158782958984,
+    "samples": [
+      {
+        "name": "warmup",
+        "valueMb": 0.4908733367919922
+      },
+      {
+        "name": "post-run",
+        "valueMb": 3.8499584197998047
+      }
+    ]
+  },
+  "rendererMetrics": {
+    "Create 1,000 rows": {
+      "iterations": 1,
+      "totals": {
+        "created": 10000,
+        "adopted": 2,
+        "removed": 0,
+        "inserted": 10000,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 7000,
+        "attributeRemovals": 0,
+        "textUpdates": 4000,
+        "modifierApplications": 0
+      },
+      "average": {
+        "created": 10000,
+        "adopted": 2,
+        "removed": 0,
+        "inserted": 10000,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 7000,
+        "attributeRemovals": 0,
+        "textUpdates": 4000,
+        "modifierApplications": 0
+      },
+      "max": {
+        "created": 10000,
+        "adopted": 2,
+        "removed": 0,
+        "inserted": 10000,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 7000,
+        "attributeRemovals": 0,
+        "textUpdates": 4000,
+        "modifierApplications": 0
+      },
+      "samples": [
+        {
+          "created": 10000,
+          "adopted": 2,
+          "removed": 0,
+          "inserted": 10000,
+          "moved": 0,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "attributeWrites": 7000,
+          "attributeRemovals": 0,
+          "textUpdates": 4000,
+          "modifierApplications": 0
+        }
+      ]
+    },
+    "Replace all 1,000 rows": {
+      "iterations": 1,
+      "totals": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 1000,
+        "modifierApplications": 0
+      },
+      "average": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 1000,
+        "modifierApplications": 0
+      },
+      "max": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 1000,
+        "modifierApplications": 0
+      },
+      "samples": [
+        {
+          "created": 0,
+          "adopted": 0,
+          "removed": 0,
+          "inserted": 0,
+          "moved": 0,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "attributeWrites": 0,
+          "attributeRemovals": 0,
+          "textUpdates": 1000,
+          "modifierApplications": 0
+        }
+      ]
+    },
+    "Partial update (every 10th row)": {
+      "iterations": 1,
+      "totals": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 100,
+        "modifierApplications": 0
+      },
+      "average": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 100,
+        "modifierApplications": 0
+      },
+      "max": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 100,
+        "modifierApplications": 0
+      },
+      "samples": [
+        {
+          "created": 0,
+          "adopted": 0,
+          "removed": 0,
+          "inserted": 0,
+          "moved": 0,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "attributeWrites": 0,
+          "attributeRemovals": 0,
+          "textUpdates": 100,
+          "modifierApplications": 0
+        }
+      ]
+    },
+    "Select row": {
+      "iterations": 1,
+      "totals": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 1,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "average": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 1,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "max": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 1,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "samples": [
+        {
+          "created": 0,
+          "adopted": 0,
+          "removed": 0,
+          "inserted": 0,
+          "moved": 0,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "attributeWrites": 1,
+          "attributeRemovals": 0,
+          "textUpdates": 0,
+          "modifierApplications": 0
+        }
+      ]
+    },
+    "Swap rows": {
+      "iterations": 1,
+      "totals": {
+        "created": 0,
+        "adopted": 10002,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 997,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "average": {
+        "created": 0,
+        "adopted": 10002,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 997,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "max": {
+        "created": 0,
+        "adopted": 10002,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 997,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "samples": [
+        {
+          "created": 0,
+          "adopted": 10002,
+          "removed": 0,
+          "inserted": 0,
+          "moved": 997,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "attributeWrites": 0,
+          "attributeRemovals": 0,
+          "textUpdates": 0,
+          "modifierApplications": 0
+        }
+      ]
+    },
+    "Remove rows": {
+      "iterations": 1,
+      "totals": {
+        "created": 0,
+        "adopted": 9002,
+        "removed": 1000,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "average": {
+        "created": 0,
+        "adopted": 9002,
+        "removed": 1000,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "max": {
+        "created": 0,
+        "adopted": 9002,
+        "removed": 1000,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "samples": [
+        {
+          "created": 0,
+          "adopted": 9002,
+          "removed": 1000,
+          "inserted": 0,
+          "moved": 0,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "attributeWrites": 0,
+          "attributeRemovals": 0,
+          "textUpdates": 0,
+          "modifierApplications": 0
+        }
+      ]
+    },
+    "Clear rows": {
+      "iterations": 1,
+      "totals": {
+        "created": 0,
+        "adopted": 2,
+        "removed": 9000,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "average": {
+        "created": 0,
+        "adopted": 2,
+        "removed": 9000,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "max": {
+        "created": 0,
+        "adopted": 2,
+        "removed": 9000,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "samples": [
+        {
+          "created": 0,
+          "adopted": 2,
+          "removed": 9000,
+          "inserted": 0,
+          "moved": 0,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "attributeWrites": 0,
+          "attributeRemovals": 0,
+          "textUpdates": 0,
+          "modifierApplications": 0
+        }
+      ]
+    },
+    "Component creation (1,000 components)": {
+      "iterations": 1,
+      "totals": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "average": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "max": {
+        "created": 0,
+        "adopted": 0,
+        "removed": 0,
+        "inserted": 0,
+        "moved": 0,
+        "cacheHits": 0,
+        "cacheMisses": 0,
+        "attributeWrites": 0,
+        "attributeRemovals": 0,
+        "textUpdates": 0,
+        "modifierApplications": 0
+      },
+      "samples": [
+        {
+          "created": 0,
+          "adopted": 0,
+          "removed": 0,
+          "inserted": 0,
+          "moved": 0,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "attributeWrites": 0,
+          "attributeRemovals": 0,
+          "textUpdates": 0,
+          "modifierApplications": 0
+        }
+      ]
+    }
+  }
+}

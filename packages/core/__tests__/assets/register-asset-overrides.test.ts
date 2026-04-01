@@ -186,3 +186,56 @@ describe('registerAsset with name override', () => {
     expect(Assets.sharedName.resolve()).toBe('#FFFFFF')
   })
 })
+
+describe('registerAsset typed return (Issue #156)', () => {
+  beforeEach(() => {
+    const assetCollection = (Assets as any).__assetCollection
+    if (assetCollection) {
+      assetCollection.assets.clear()
+    }
+  })
+
+  test('should return ColorAssetProxy when registering ColorAsset', () => {
+    const myColor = registerAsset(ColorAsset.init({
+      default: '#FF0000',
+      name: 'typedColor'
+    }))
+
+    // The return value should be the ColorAsset itself (which implements ColorAssetProxy)
+    expect(myColor).toBeDefined()
+    expect(typeof myColor.opacity).toBe('function')
+    expect(typeof myColor.resolve).toBe('function')
+  })
+
+  test('should allow using returned asset without Assets.x access', () => {
+    // This is the key use case: users can export the return value
+    const myColor = registerAsset(ColorAsset.init({
+      default: '#00FF00',
+      light: '#00FF00',
+      dark: '#00CC00',
+      name: 'exportableColor'
+    }))
+
+    // Should be able to use it directly with full type safety
+    const resolved = myColor.resolve()
+    expect(resolved).toBeDefined()
+
+    // Transform methods work and return ColorAsset (chainable)
+    const withOpacity = myColor.opacity(0.5)
+    expect(withOpacity).toBeDefined()
+    expect(typeof withOpacity.resolve).toBe('function')
+    // Now chainable!
+    const furtherOpacity = withOpacity.opacity(0.5)
+    expect(furtherOpacity).toBeDefined()
+  })
+
+  test('should return asset from named registration', () => {
+    const myColor = registerAsset('myNamedColor', ColorAsset.init({
+      default: '#0000FF',
+      name: 'original'
+    }))
+
+    expect(myColor).toBeDefined()
+    expect(typeof myColor.opacity).toBe('function')
+  })
+})

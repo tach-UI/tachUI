@@ -140,7 +140,8 @@ export interface TabItem {
   readonly id: string
   readonly title: string
   readonly icon?: string
-  readonly badge?: string | number
+  /** Badge value: number for count, true for dot, 0/false/undefined to hide */
+  readonly badge?: string | number | boolean
   readonly content: ComponentInstance
   readonly disabled?: boolean
 }
@@ -274,7 +275,7 @@ export interface TabCoordinator {
   addTab(tab: TabItem): void
   removeTab(tabId: string): void
   selectTab(tabId: string): void
-  updateTabBadge(tabId: string, badge?: string | number): void
+  updateTabBadge(tabId: string, badge?: string | number | boolean): void
 }
 
 /**

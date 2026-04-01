@@ -22,6 +22,7 @@ import type {
   TabItem,
   TabViewOptions,
 } from './types'
+import { formatBadge, buildBadgeElement } from './simple-tab-view'
 
 /**
  * Internal tab coordinator implementation
@@ -83,12 +84,10 @@ class TabCoordinatorImpl implements TabCoordinator {
     }
   }
 
-  updateTabBadge(tabId: string, badge?: string | number): void {
-    const tab = this._tabs.find(t => t.id === tabId) as
-      | { badge?: string | number }
-      | undefined
-    if (tab) {
-      tab.badge = badge
+  updateTabBadge(tabId: string, badge?: string | number | boolean): void {
+    const index = this._tabs.findIndex(t => t.id === tabId)
+    if (index >= 0) {
+      this._tabs[index] = { ...this._tabs[index], badge }
     }
   }
 
@@ -206,6 +205,20 @@ export function TabView(
     }
   }
 
+  // Per-tab badge signals for reactive badge updates
+  const badgeSignals = new Map<string, [() => string | number | boolean | undefined, (v: string | number | boolean | undefined) => void]>()
+  tabs.forEach(tab => {
+    const [get, set] = createSignal<string | number | boolean | undefined>(tab.badge)
+    badgeSignals.set(tab.id, [get, set])
+  })
+
+  // Expose reactive badge update that keeps coordinator and signals in sync
+  const updateTabBadgeReactive = (tabId: string, badge?: string | number | boolean) => {
+    tabCoordinator.updateTabBadge(tabId, badge)
+    const entry = badgeSignals.get(tabId)
+    if (entry) entry[1](badge)
+  }
+
   // Tab bar component
   const TabBar = () => {
     // const placement = options.tabPlacement || 'bottom'
@@ -265,57 +278,51 @@ export function TabView(
     // Override button content with custom tab items
     tabButtons.forEach((button, index) => {
       const tab = tabs[index]
-      const isActive = activeTabId() === tab.id
 
-      const tabContent = VStack({
-        children: [
-          // Icon
-          ...(tab.icon
-            ? [
-                HTML.div({
-                  children: tab.icon,
-                })
-                  .fontSize(20)
-                  .foregroundColor(isActive ? accentColor : '#666666')
-                  .build(),
-              ]
-            : []),
+      // Read badge from the per-tab signal (reactive — avoids polling via createEffect)
+      const [getBadge] = badgeSignals.get(tab.id)!
 
-          // Title with badge
-          HStack({
-            children: [
-              Text(tab.title)
-                .fontSize(12)
-                .fontWeight(isActive ? '600' : '400')
-                .foregroundColor(isActive ? accentColor : '#666666')
-                .build(),
+      const tabContent = () => {
+        const isActive = activeTabId() === tab.id
+        const badge = getBadge()
+        const { show: showBadge, isDot: isDotBadge, text: displayText } = formatBadge(badge)
 
-              // Badge
-              ...(tab.badge
-                ? [
-                    HTML.div({
-                      children: String(tab.badge),
-                    })
-                      .backgroundColor('#FF3B30')
-                      .foregroundColor('#ffffff')
-                      .fontSize(10)
-                      .fontWeight('bold')
-                      .padding({ top: 2, bottom: 2, left: 6, right: 6 })
-                      .cornerRadius(8)
-                      .frame({ width: 16, height: 16 })
-                      .build(),
-                  ]
-                : []),
-            ],
-            spacing: 4,
-            alignment: 'center',
-          }),
-        ],
-        spacing: 4,
-        alignment: 'center',
-      })
-        .padding(4)
-        .build()
+        // Icon wrapper with badge overlay (position: relative)
+        const iconWrapperChildren: ComponentInstance[] = []
+        if (tab.icon) {
+          iconWrapperChildren.push(
+            HTML.div({ children: tab.icon })
+              .fontSize(20)
+              .foregroundColor(isActive ? accentColor : '#666666')
+              .build()
+          )
+        }
+        if (showBadge) {
+          iconWrapperChildren.push(buildBadgeElement(displayText, isDotBadge))
+        }
+        const iconWrapper = HTML.div({ children: iconWrapperChildren }).build()
+        ;(iconWrapper as any).props = (iconWrapper as any).props ?? {}
+        ;(iconWrapper as any).props.style = (iconWrapper as any).props.style ?? {}
+        Object.assign((iconWrapper as any).props.style, {
+          position: 'relative',
+          display: 'inline-block',
+        })
+
+        return VStack({
+          children: [
+            iconWrapper,
+            Text(tab.title)
+              .fontSize(12)
+              .fontWeight(isActive ? '600' : '400')
+              .foregroundColor(isActive ? accentColor : '#666666')
+              .build(),
+          ],
+          spacing: 4,
+          alignment: 'center',
+        })
+          .padding(4)
+          .build()
+      }
 
       // Replace button content
       ;(button as any).children = [tabContent]
@@ -416,6 +423,7 @@ export function TabView(
 
   // Add tab coordinator to component
   ;(tabViewComponent as any).tabCoordinator = tabCoordinator
+  ;(tabViewComponent as any).updateTabBadge = updateTabBadgeReactive
 
   // Integrate with navigation environment (if available)
   const navContext = useNavigationEnvironmentContext()

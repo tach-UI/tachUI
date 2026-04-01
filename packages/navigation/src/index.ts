@@ -46,6 +46,35 @@ export {
 } from './simple-tab-view'
 export type { SimpleTabItem, SimpleTabViewOptions } from './simple-tab-view'
 
+// Register navigation modifiers on ModifierBuilder (side-effect import)
+// eslint-disable-next-line import/no-unassigned-import
+import './navigation-modifiers-registry'
+
+// Swipe-back gesture
+export { createSwipeBackGesture } from './swipe-back-gesture'
+export type {
+  SwipeBackGestureConfig,
+  SwipeBackGestureCallbacks,
+  SwipeBackGestureState,
+} from './swipe-back-gesture'
+
+// Navigation animations
+export {
+  animateTransition,
+  getPushKeyframes,
+  getPopKeyframes,
+  getSpringPhysics,
+  calculateSpringDuration,
+  prefersReducedMotion,
+} from './navigation-animations'
+export type {
+  TransitionType,
+  TransitionConfig,
+  SpringTransitionConfig,
+  SpringPhysics,
+  AnimationKeyframe,
+} from './navigation-animations'
+
 // Navigation Modifiers (SwiftUI-compatible)
 export {
   navigationTitle,
@@ -69,6 +98,8 @@ export {
   fullScreenCover,
   popover,
   confirmationDialog,
+  inspector,
+  inspectorColumnWidth,
   extractNavigationModifiers,
   getCurrentNavigationModifiers,
   hasNavigationModifiers,
@@ -79,6 +110,8 @@ export {
 } from './navigation-modifiers'
 export type {
   SheetPresentationOptions,
+  SheetEdge,
+  SheetSize,
   FullScreenCoverOptions,
   PopoverArrowEdge,
   PopoverPresentationOptions,
@@ -96,6 +129,9 @@ export type {
   ToolbarBackgroundVisibilityTarget,
   ToolbarItemConfig,
   ToolbarItemInput,
+  InspectorPresentationOptions,
+  InspectorColumnWidthConfig,
+  InspectorPresentationState,
 } from './navigation-modifiers'
 
 // Navigation Environment System

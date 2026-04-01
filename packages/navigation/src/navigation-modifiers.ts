@@ -10,6 +10,7 @@ import {
   getSignalImpl,
   isSignal,
   mountComponentTree,
+  untrack,
 } from '@tachui/core'
 import type { Accessor, Binding, ComponentInstance } from '@tachui/core'
 import { HStack, HTML, VStack } from '@tachui/primitives'
@@ -40,6 +41,12 @@ export interface NavigationModifierConfig {
 
 type SheetPresentationState = Accessor<boolean> | Binding<boolean>
 
+export type SheetEdge = 'top' | 'bottom' | 'left' | 'right'
+export type SheetSize =
+  | 'automatic'
+  | { fraction: number }
+  | { px: number }
+
 export interface SheetPresentationOptions {
   dismissOnBackdropTap?: boolean
   dismissOnEscape?: boolean
@@ -49,6 +56,8 @@ export interface SheetPresentationOptions {
   zIndex?: number
   ariaLabel?: string
   onDismiss?: () => void
+  edge?: SheetEdge
+  size?: SheetSize
 }
 
 export type PresentationDetent =
@@ -1213,6 +1222,96 @@ function setupModalDismissEnvironment(
   })
 }
 
+interface SheetEdgeLayout {
+  edge: SheetEdge
+  isHorizontal: boolean
+  axisProperty: 'height' | 'width'
+  viewportSize: () => number
+  portalAlignItems: string
+  portalJustifyContent: string
+  initialTransform: string
+  onscreenTransform: string
+  axisDelta: (x: number, y: number) => number
+  dragDeltaSign: 1 | -1
+}
+
+function resolveSheetEdgeLayout(edge: SheetEdge): SheetEdgeLayout {
+  if (edge === 'top') {
+    return {
+      edge,
+      isHorizontal: false,
+      axisProperty: 'height',
+      viewportSize: () => window.innerHeight,
+      portalAlignItems: 'flex-start',
+      portalJustifyContent: 'flex-start',
+      initialTransform: 'translateY(-100%)',
+      onscreenTransform: 'translateY(0)',
+      axisDelta: (_x, y) => y,
+      dragDeltaSign: 1,
+    }
+  }
+  if (edge === 'left') {
+    return {
+      edge,
+      isHorizontal: true,
+      axisProperty: 'width',
+      viewportSize: () => window.innerWidth,
+      portalAlignItems: 'stretch',
+      portalJustifyContent: 'flex-start',
+      initialTransform: 'translateX(-100%)',
+      onscreenTransform: 'translateX(0)',
+      axisDelta: (x, _y) => x,
+      dragDeltaSign: 1,
+    }
+  }
+  if (edge === 'right') {
+    return {
+      edge,
+      isHorizontal: true,
+      axisProperty: 'width',
+      viewportSize: () => window.innerWidth,
+      portalAlignItems: 'stretch',
+      portalJustifyContent: 'flex-end',
+      initialTransform: 'translateX(100%)',
+      onscreenTransform: 'translateX(0)',
+      axisDelta: (x, _y) => x,
+      dragDeltaSign: -1,
+    }
+  }
+
+  return {
+    edge: 'bottom',
+    isHorizontal: false,
+    axisProperty: 'height',
+    viewportSize: () => window.innerHeight,
+    portalAlignItems: 'center',
+    portalJustifyContent: 'flex-end',
+    initialTransform: 'translateY(100%)',
+    onscreenTransform: 'translateY(0)',
+    axisDelta: (_x, y) => y,
+    dragDeltaSign: -1,
+  }
+}
+
+function resolveSheetSizePx(size: SheetSize, edge: SheetEdge): number {
+  const viewportSize = edge === 'left' || edge === 'right'
+    ? window.innerWidth
+    : window.innerHeight
+  const maxSize = Math.max(1, Math.round(viewportSize * 0.95))
+
+  if (size === 'automatic') {
+    return edge === 'left' || edge === 'right'
+      ? Math.min(320, maxSize)
+      : Math.min(Math.round(viewportSize * 0.5), maxSize)
+  }
+  if ('fraction' in size) {
+    const fraction = Math.min(Math.max(size.fraction, 0.1), 0.95)
+    return Math.round(viewportSize * fraction)
+  }
+
+  return Math.round(Math.max(1, Math.min(size.px, maxSize)))
+}
+
 function setupSheetPresentation(
   isPresented: SheetPresentationState,
   content: () => ComponentInstance,
@@ -1234,8 +1333,11 @@ function setupSheetPresentation(
   let focusFrameId: number | null = null
   let isTransitionQueued = false
   const transitionDurationMs = options.transitionDurationMs ?? 220
+  const edge = options.edge ?? 'bottom'
+  const edgeLayout = resolveSheetEdgeLayout(edge)
   let removeDetentDragListeners: (() => void) | null = null
   let removeDetentResizeListener: (() => void) | null = null
+  let removeSizeResizeListener: (() => void) | null = null
   let removeDismissScope: (() => void) | null = null
 
   const clearTransitionQueue = () => {
@@ -1253,14 +1355,16 @@ function setupSheetPresentation(
 
     isTransitionQueued = true
     transitionFrameId = requestAnimationFrame(() => {
-      if (backdrop) {
-        backdrop.style.opacity = '1'
-      }
-      if (sheetHost) {
-        sheetHost.style.transform = 'translateY(0)'
-      }
-      transitionFrameId = null
-      isTransitionQueued = false
+      transitionFrameId = requestAnimationFrame(() => {
+        if (backdrop) {
+          backdrop.style.opacity = '1'
+        }
+        if (sheetHost) {
+          sheetHost.style.transform = edgeLayout.onscreenTransform
+        }
+        transitionFrameId = null
+        isTransitionQueued = false
+      })
     })
   }
 
@@ -1299,6 +1403,10 @@ function setupSheetPresentation(
       removeDetentResizeListener()
       removeDetentResizeListener = null
     }
+    if (removeSizeResizeListener) {
+      removeSizeResizeListener()
+      removeSizeResizeListener = null
+    }
     if (removeDismissScope) {
       removeDismissScope()
       removeDismissScope = null
@@ -1326,12 +1434,15 @@ function setupSheetPresentation(
     portalRoot = document.createElement('div')
     portalRoot.setAttribute('data-tachui-sheet-root', 'true')
     portalRoot.setAttribute('data-tachui-sheet-id', sheetId)
+    if (edge !== 'bottom') {
+      portalRoot.setAttribute('data-tachui-sheet-edge', edge)
+    }
     portalRoot.style.position = 'fixed'
     portalRoot.style.inset = '0'
     portalRoot.style.zIndex = String(options.zIndex ?? 1000)
     portalRoot.style.display = 'flex'
-    portalRoot.style.alignItems = 'flex-end'
-    portalRoot.style.justifyContent = 'center'
+    portalRoot.style.alignItems = edgeLayout.portalAlignItems
+    portalRoot.style.justifyContent = edgeLayout.portalJustifyContent
     portalRoot.style.pointerEvents = 'none'
 
     backdrop = document.createElement('div')
@@ -1353,9 +1464,16 @@ function setupSheetPresentation(
     }
     sheetHost.tabIndex = -1
     sheetHost.style.position = 'relative'
-    sheetHost.style.width = '100%'
-    sheetHost.style.maxWidth = options.maxWidth ?? '640px'
-    sheetHost.style.transform = 'translateY(100%)'
+    if (edgeLayout.isHorizontal) {
+      sheetHost.style.height = '100%'
+      sheetHost.style.maxHeight = options.maxWidth ?? '100%'
+      sheetHost.style.width = '320px'
+      sheetHost.style.maxWidth = `${Math.round(window.innerWidth * 0.95)}px`
+    } else {
+      sheetHost.style.width = '100%'
+      sheetHost.style.maxWidth = options.maxWidth ?? '640px'
+    }
+    sheetHost.style.transform = edgeLayout.initialTransform
     sheetHost.style.transition = `transform ${transitionDurationMs}ms ease`
     sheetHost.style.pointerEvents = 'auto'
     sheetHost.style.overflow = 'hidden'
@@ -1382,53 +1500,68 @@ function setupSheetPresentation(
       }
     }
 
-    const resolveDetentHeightPx = (detent: PresentationDetent): number => {
-      const viewportHeight = window.innerHeight
+    const resolveDetentSizePx = (detent: PresentationDetent): number => {
+      const viewportSize = edgeLayout.viewportSize()
       if (detent === 'medium') {
-        return Math.round(viewportHeight * 0.5)
+        return Math.round(viewportSize * 0.5)
       }
       if (detent === 'large') {
-        return Math.round(viewportHeight * 0.9)
+        return Math.round(viewportSize * 0.9)
       }
       if ('fraction' in detent) {
         const fraction = Math.min(Math.max(detent.fraction, 0.1), 0.95)
-        return Math.round(viewportHeight * fraction)
+        return Math.round(viewportSize * fraction)
       }
       return Math.round(
-        Math.max(1, Math.min(detent.height, viewportHeight * 0.95))
+        Math.max(1, Math.min(detent.height, viewportSize * 0.95))
       )
     }
 
-    const applyDetentToHost = (
-      detentHeights: number[],
-      detentIndex: number
+    const applySizeToHost = (
+      resolvedSizes: number[],
+      sizeIndex: number
     ): void => {
-      const clampedIndex = Math.max(0, Math.min(detentIndex, detentHeights.length - 1))
-      const height = detentHeights[clampedIndex]
-      sheetHost!.style.height = `${height}px`
-      sheetHost!.style.maxHeight = `${Math.round(window.innerHeight * 0.95)}px`
+      const clampedIndex = Math.max(
+        0,
+        Math.min(sizeIndex, resolvedSizes.length - 1)
+      )
+      const sizePx = resolvedSizes[clampedIndex]
+      const maxViewportSize = `${Math.round(edgeLayout.viewportSize() * 0.95)}px`
+      if (edgeLayout.axisProperty === 'height') {
+        sheetHost!.style.height = `${sizePx}px`
+        sheetHost!.style.maxHeight = maxViewportSize
+      } else {
+        sheetHost!.style.width = `${sizePx}px`
+        sheetHost!.style.maxWidth = maxViewportSize
+      }
     }
 
     removeDismissScope = setupModalDismissEnvironment(isPresented, options)
 
-    const sheetContent = content()
-    const requestedDetents = (((sheetContent as any)._sheetPresentationDetents
-      ?.detents ?? []) as PresentationDetent[]).filter(Boolean)
-    let detentHeights = requestedDetents.map(resolveDetentHeightPx)
-    let currentDetentIndex = detentHeights.length > 0
-      ? detentHeights.reduce((smallestIndex, currentHeight, currentIndex) => {
-          return currentHeight < detentHeights[smallestIndex]
+    const sheetContent = untrack(() => content())
+    const requestedDetents = untrack(() =>
+      (((sheetContent as any)._sheetPresentationDetents
+        ?.detents ?? []) as PresentationDetent[]).filter(Boolean)
+    )
+    let resolvedSizes = requestedDetents.map(resolveDetentSizePx)
+    const configuredSize = options.size
+    if (configuredSize) {
+      resolvedSizes = [resolveSheetSizePx(configuredSize, edge)]
+    }
+    let currentSizeIndex = resolvedSizes.length > 0
+      ? resolvedSizes.reduce((smallestIndex, currentSize, currentIndex) => {
+          return currentSize < resolvedSizes[smallestIndex]
             ? currentIndex
             : smallestIndex
         }, 0)
       : 0
 
-    if (detentHeights.length > 0) {
-      applyDetentToHost(detentHeights, currentDetentIndex)
-      sheetHost.style.transition = `transform ${transitionDurationMs}ms ease, height ${transitionDurationMs}ms ease`
+    if (resolvedSizes.length > 0) {
+      applySizeToHost(resolvedSizes, currentSizeIndex)
+      sheetHost.style.transition = `transform ${transitionDurationMs}ms ease, ${edgeLayout.axisProperty} ${transitionDurationMs}ms ease`
     }
 
-    if (detentHeights.length > 1) {
+    if (!configuredSize && resolvedSizes.length > 1) {
       const currentSheetHost = sheetHost
       if (!currentSheetHost) {
         return
@@ -1436,49 +1569,74 @@ function setupSheetPresentation(
 
       const dragHandle = document.createElement('div')
       dragHandle.setAttribute('data-tachui-sheet-drag-handle', 'true')
-      dragHandle.style.width = '100%'
       dragHandle.style.display = 'flex'
+      dragHandle.style.alignItems = 'center'
       dragHandle.style.justifyContent = 'center'
-      dragHandle.style.padding = '10px 0 6px 0'
       dragHandle.style.cursor = 'grab'
       dragHandle.style.touchAction = 'none'
       dragHandle.setAttribute('role', 'slider')
       dragHandle.setAttribute('tabindex', '0')
-      dragHandle.setAttribute('aria-label', 'Adjust sheet height')
+      dragHandle.setAttribute(
+        'aria-label',
+        edgeLayout.isHorizontal ? 'Adjust sheet width' : 'Adjust sheet height'
+      )
       dragHandle.setAttribute('aria-valuemin', '0')
       dragHandle.setAttribute(
         'aria-valuemax',
-        String(Math.max(0, detentHeights.length - 1))
+        String(Math.max(0, resolvedSizes.length - 1))
       )
 
       const indicator = document.createElement('div')
-      indicator.style.width = '36px'
-      indicator.style.height = '4px'
       indicator.style.borderRadius = '999px'
       indicator.style.background = 'rgba(60, 60, 67, 0.35)'
+      if (edgeLayout.isHorizontal) {
+        dragHandle.style.position = 'absolute'
+        dragHandle.style.top = '0'
+        dragHandle.style.bottom = '0'
+        dragHandle.style.width = '14px'
+        dragHandle.style.padding = '0 4px'
+        dragHandle.style.right = edge === 'left' ? '0' : 'auto'
+        dragHandle.style.left = edge === 'right' ? '0' : 'auto'
+        indicator.style.width = '4px'
+        indicator.style.height = '36px'
+      } else {
+        dragHandle.style.width = '100%'
+        dragHandle.style.padding = edge === 'top' ? '6px 0 10px 0' : '10px 0 6px 0'
+        dragHandle.style.position = 'relative'
+        indicator.style.width = '36px'
+        indicator.style.height = '4px'
+      }
       dragHandle.appendChild(indicator)
       currentSheetHost.appendChild(dragHandle)
 
       let isDragging = false
-      let startY = 0
-      let startHeight = detentHeights[currentDetentIndex] ?? 0
+      let startClientX = 0
+      let startClientY = 0
+      let startSize = resolvedSizes[currentSizeIndex] ?? 0
       let activeTouchIdentifier: number | null = null
 
       const updateDragHandleAriaValue = () => {
-        dragHandle.setAttribute('aria-valuenow', String(currentDetentIndex))
+        dragHandle.setAttribute('aria-valuenow', String(currentSizeIndex))
       }
       updateDragHandleAriaValue()
 
-      const onDragMove = (clientY: number) => {
+      const onDragMove = (clientX: number, clientY: number) => {
         if (!isDragging) return
-        const deltaY = clientY - startY
-        const minHeight = Math.min(...detentHeights)
-        const maxHeight = Math.max(...detentHeights)
-        const nextHeight = Math.min(
-          maxHeight,
-          Math.max(minHeight, startHeight - deltaY)
+        const delta = edgeLayout.axisDelta(
+          clientX - startClientX,
+          clientY - startClientY
         )
-        currentSheetHost.style.height = `${Math.round(nextHeight)}px`
+        const minSize = Math.min(...resolvedSizes)
+        const maxSize = Math.max(...resolvedSizes)
+        const nextSize = Math.min(
+          maxSize,
+          Math.max(minSize, startSize + delta * edgeLayout.dragDeltaSign)
+        )
+        if (edgeLayout.axisProperty === 'height') {
+          currentSheetHost.style.height = `${Math.round(nextSize)}px`
+        } else {
+          currentSheetHost.style.width = `${Math.round(nextSize)}px`
+        }
       }
 
       const onDragEnd = () => {
@@ -1487,14 +1645,18 @@ function setupSheetPresentation(
         activeTouchIdentifier = null
         dragHandle.style.cursor = 'grab'
 
-        const currentHeight = Number.parseFloat(currentSheetHost.style.height)
-        const nearestIndex = detentHeights.reduce((nearest, detentHeight, index) => {
-          const nearestDistance = Math.abs(detentHeights[nearest] - currentHeight)
-          const currentDistance = Math.abs(detentHeight - currentHeight)
+        const currentSize = Number.parseFloat(
+          edgeLayout.axisProperty === 'height'
+            ? currentSheetHost.style.height
+            : currentSheetHost.style.width
+        )
+        const nearestIndex = resolvedSizes.reduce((nearest, resolvedSize, index) => {
+          const nearestDistance = Math.abs(resolvedSizes[nearest] - currentSize)
+          const currentDistance = Math.abs(resolvedSize - currentSize)
           return currentDistance < nearestDistance ? index : nearest
         }, 0)
-        currentDetentIndex = nearestIndex
-        applyDetentToHost(detentHeights, currentDetentIndex)
+        currentSizeIndex = nearestIndex
+        applySizeToHost(resolvedSizes, currentSizeIndex)
         updateDragHandleAriaValue()
 
         window.removeEventListener('mousemove', onMouseMove)
@@ -1504,15 +1666,20 @@ function setupSheetPresentation(
         window.removeEventListener('touchcancel', onTouchEnd)
       }
 
-      const beginDrag = (clientY: number) => {
+      const beginDrag = (clientX: number, clientY: number) => {
         isDragging = true
-        startY = clientY
-        startHeight = Number.parseFloat(currentSheetHost.style.height)
+        startClientX = clientX
+        startClientY = clientY
+        startSize = Number.parseFloat(
+          edgeLayout.axisProperty === 'height'
+            ? currentSheetHost.style.height
+            : currentSheetHost.style.width
+        )
         dragHandle.style.cursor = 'grabbing'
       }
 
       const onMouseMove = (event: MouseEvent) => {
-        onDragMove(event.clientY)
+        onDragMove(event.clientX, event.clientY)
       }
 
       const onMouseUp = () => {
@@ -1527,7 +1694,7 @@ function setupSheetPresentation(
         const activeTouch = matchingTouch ?? event.touches[0]
         if (!activeTouch) return
         event.preventDefault()
-        onDragMove(activeTouch.clientY)
+        onDragMove(activeTouch.clientX, activeTouch.clientY)
       }
 
       const onTouchEnd = () => {
@@ -1536,7 +1703,7 @@ function setupSheetPresentation(
 
       const onMouseDown = (event: MouseEvent) => {
         event.preventDefault()
-        beginDrag(event.clientY)
+        beginDrag(event.clientX, event.clientY)
         window.addEventListener('mousemove', onMouseMove)
         window.addEventListener('mouseup', onMouseUp)
       }
@@ -1546,26 +1713,28 @@ function setupSheetPresentation(
         if (!touch) return
         event.preventDefault()
         activeTouchIdentifier = touch.identifier
-        beginDrag(touch.clientY)
+        beginDrag(touch.clientX, touch.clientY)
         window.addEventListener('touchmove', onTouchMove, { passive: false })
         window.addEventListener('touchend', onTouchEnd)
         window.addEventListener('touchcancel', onTouchEnd)
       }
 
       const onHandleKeyDown = (event: KeyboardEvent) => {
-        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+        const increaseKey = edgeLayout.isHorizontal ? 'ArrowRight' : 'ArrowUp'
+        const decreaseKey = edgeLayout.isHorizontal ? 'ArrowLeft' : 'ArrowDown'
+        if (event.key !== increaseKey && event.key !== decreaseKey) {
           return
         }
         event.preventDefault()
         const nextIndex =
-          event.key === 'ArrowUp'
-            ? Math.min(detentHeights.length - 1, currentDetentIndex + 1)
-            : Math.max(0, currentDetentIndex - 1)
-        if (nextIndex === currentDetentIndex) {
+          event.key === increaseKey
+            ? Math.min(resolvedSizes.length - 1, currentSizeIndex + 1)
+            : Math.max(0, currentSizeIndex - 1)
+        if (nextIndex === currentSizeIndex) {
           return
         }
-        currentDetentIndex = nextIndex
-        applyDetentToHost(detentHeights, currentDetentIndex)
+        currentSizeIndex = nextIndex
+        applySizeToHost(resolvedSizes, currentSizeIndex)
         updateDragHandleAriaValue()
       }
 
@@ -1589,11 +1758,21 @@ function setupSheetPresentation(
       }
     }
 
-    if (detentHeights.length > 0) {
+    if (configuredSize) {
       const onResize = () => {
-        detentHeights = requestedDetents.map(resolveDetentHeightPx)
-        currentDetentIndex = Math.min(currentDetentIndex, detentHeights.length - 1)
-        applyDetentToHost(detentHeights, currentDetentIndex)
+        resolvedSizes = [resolveSheetSizePx(configuredSize, edge)]
+        currentSizeIndex = 0
+        applySizeToHost(resolvedSizes, currentSizeIndex)
+      }
+      window.addEventListener('resize', onResize)
+      removeSizeResizeListener = () => {
+        window.removeEventListener('resize', onResize)
+      }
+    } else if (resolvedSizes.length > 0) {
+      const onResize = () => {
+        resolvedSizes = requestedDetents.map(resolveDetentSizePx)
+        currentSizeIndex = Math.min(currentSizeIndex, resolvedSizes.length - 1)
+        applySizeToHost(resolvedSizes, currentSizeIndex)
       }
       window.addEventListener('resize', onResize)
       removeDetentResizeListener = () => {
@@ -1617,7 +1796,7 @@ function setupSheetPresentation(
         ? document.activeElement
         : null
 
-    disposeSheetContent = mountComponentTree(sheetContent, contentHost)
+    disposeSheetContent = untrack(() => mountComponentTree(sheetContent, contentHost))
     isMounted = true
     scheduleEntranceTransition()
 
@@ -1947,7 +2126,7 @@ function setupPopoverPresentation(
       onDismiss: options.onDismiss,
     })
 
-    disposePopoverContent = mountComponentTree(content(), popoverContentHost)
+    disposePopoverContent = untrack(() => mountComponentTree(untrack(() => content()), popoverContentHost!))
 
     initialPositionFrameId = requestAnimationFrame(() => {
       positionPopover()
@@ -2165,7 +2344,7 @@ function setupFullScreenCoverPresentation(
         ? document.activeElement
         : null
 
-    disposeCoverContent = mountComponentTree(content(), contentHost)
+    disposeCoverContent = untrack(() => mountComponentTree(untrack(() => content()), contentHost!))
 
     const focusTrapHandler = (event: KeyboardEvent) => {
       if (event.key !== 'Tab' || !contentHost) return
@@ -2308,6 +2487,386 @@ export function popover(
         }
       }
     },
+  }
+
+  return component
+}
+
+export interface InspectorPresentationOptions {
+  zIndex?: number
+  ariaLabel?: string
+  dismissOnBackdropTap?: boolean
+  dismissOnEscape?: boolean
+  backdropColor?: string
+  onDismiss?: () => void
+  transitionDurationMs?: number
+}
+
+export interface InspectorColumnWidthConfig {
+  min?: number
+  ideal?: number
+  max?: number
+}
+
+export type InspectorPresentationState = Accessor<boolean> | Binding<boolean>
+
+const DEFAULT_INSPECTOR_WIDTH: { min: number; ideal: number; max: number } = {
+  min: 200,
+  ideal: 300,
+  max: 500,
+}
+
+function setupInspectorPresentation(
+  isPresented: InspectorPresentationState,
+  content: () => ComponentInstance,
+  options: InspectorPresentationOptions = {},
+  columnWidth?: InspectorColumnWidthConfig
+): () => void {
+  if (typeof document === 'undefined') {
+    return () => {}
+  }
+
+  const widthConfig = {
+    min: columnWidth?.min ?? DEFAULT_INSPECTOR_WIDTH.min,
+    ideal: columnWidth?.ideal ?? DEFAULT_INSPECTOR_WIDTH.ideal,
+    max: columnWidth?.max ?? DEFAULT_INSPECTOR_WIDTH.max,
+  }
+
+  let portalRoot: HTMLDivElement | null = null
+  let backdrop: HTMLDivElement | null = null
+  let inspectorHost: HTMLDivElement | null = null
+  let disposeInspectorContent: (() => void) | null = null
+  let previousActiveElement: HTMLElement | null = null
+  let removeEscapeListener: (() => void) | null = null
+  let isMounted = false
+  const inspectorId = `inspector-${Math.random().toString(36).slice(2, 10)}`
+  let transitionFrameId: number | null = null
+  let isTransitionQueued = false
+  let removeResizeListeners: (() => void) | null = null
+  const transitionDurationMs = options.transitionDurationMs ?? 220
+
+  const clearTransitionQueue = () => {
+    if (transitionFrameId !== null) {
+      cancelAnimationFrame(transitionFrameId)
+      transitionFrameId = null
+    }
+    isTransitionQueued = false
+  }
+
+  const scheduleEntranceTransition = () => {
+    if (!backdrop || !inspectorHost || isTransitionQueued) {
+      return
+    }
+    isTransitionQueued = true
+    transitionFrameId = requestAnimationFrame(() => {
+      transitionFrameId = requestAnimationFrame(() => {
+        if (backdrop) {
+          backdrop.style.opacity = '1'
+        }
+        if (inspectorHost) {
+          inspectorHost.style.transform = 'translateX(0)'
+        }
+        transitionFrameId = null
+        isTransitionQueued = false
+      })
+    })
+  }
+
+  const unmountPortal = () => {
+    clearTransitionQueue()
+
+    if (disposeInspectorContent) {
+      disposeInspectorContent()
+      disposeInspectorContent = null
+    }
+
+    if (portalRoot) {
+      portalRoot.remove()
+      portalRoot = null
+    }
+
+    if (removeEscapeListener) {
+      removeEscapeListener()
+      removeEscapeListener = null
+    }
+    if (removeResizeListeners) {
+      removeResizeListeners()
+      removeResizeListeners = null
+    }
+
+    if (
+      previousActiveElement &&
+      previousActiveElement.isConnected &&
+      typeof previousActiveElement.focus === 'function'
+    ) {
+      previousActiveElement.focus()
+    }
+    previousActiveElement = null
+
+    backdrop = null
+    inspectorHost = null
+    isMounted = false
+  }
+
+  const dismissInspector = () => {
+    dismissPresentedState(isPresented, { onDismiss: options.onDismiss })
+  }
+
+  const mountPortal = () => {
+    if (isMounted) {
+      return
+    }
+
+    portalRoot = document.createElement('div')
+    portalRoot.setAttribute('data-tachui-inspector-root', 'true')
+    portalRoot.setAttribute('data-tachui-inspector-id', inspectorId)
+    portalRoot.style.position = 'fixed'
+    portalRoot.style.inset = '0'
+    portalRoot.style.zIndex = String(options.zIndex ?? 1000)
+    portalRoot.style.display = 'flex'
+    portalRoot.style.alignItems = 'stretch'
+    portalRoot.style.justifyContent = 'flex-end'
+    portalRoot.style.pointerEvents = 'none'
+
+    backdrop = document.createElement('div')
+    backdrop.setAttribute('data-tachui-inspector-backdrop', 'true')
+    backdrop.style.position = 'absolute'
+    backdrop.style.inset = '0'
+    backdrop.style.background = options.backdropColor ?? 'rgba(0, 0, 0, 0.45)'
+    backdrop.style.opacity = '0'
+    backdrop.style.transition = `opacity ${transitionDurationMs}ms ease`
+
+    if (options.dismissOnBackdropTap !== false) {
+      backdrop.style.pointerEvents = 'auto'
+      backdrop.addEventListener('click', dismissInspector)
+    }
+
+    inspectorHost = document.createElement('div')
+    inspectorHost.setAttribute('data-tachui-inspector-content', 'true')
+    inspectorHost.setAttribute('role', 'complementary')
+    if (options.ariaLabel) {
+      inspectorHost.setAttribute('aria-label', options.ariaLabel)
+    }
+    inspectorHost.tabIndex = -1
+    inspectorHost.style.position = 'relative'
+    inspectorHost.style.width = `${widthConfig.ideal}px`
+    inspectorHost.style.minWidth = `${widthConfig.min}px`
+    inspectorHost.style.maxWidth = `${widthConfig.max}px`
+    inspectorHost.style.height = '100%'
+    inspectorHost.style.transform = 'translateX(100%)'
+    inspectorHost.style.transition = `transform ${transitionDurationMs}ms ease`
+    inspectorHost.style.pointerEvents = 'auto'
+    inspectorHost.style.overflow = 'hidden'
+    inspectorHost.style.display = 'flex'
+    inspectorHost.style.flexDirection = 'column'
+    inspectorHost.style.background = '#ffffff'
+    inspectorHost.style.boxShadow = '-4px 0 16px rgba(0, 0, 0, 0.12)'
+    inspectorHost.style.borderLeft = '1px solid #e5e7eb'
+
+    // Create resize handle
+    const resizeHandle = document.createElement('div')
+    resizeHandle.setAttribute('data-tachui-inspector-resize-handle', 'true')
+    resizeHandle.style.position = 'absolute'
+    resizeHandle.style.left = '-4px'
+    resizeHandle.style.top = '0'
+    resizeHandle.style.bottom = '0'
+    resizeHandle.style.width = '8px'
+    resizeHandle.style.cursor = 'col-resize'
+    resizeHandle.style.background = 'transparent'
+    resizeHandle.style.zIndex = '10'
+    inspectorHost.appendChild(resizeHandle)
+
+    // Resize handle interaction
+    let isResizing = false
+    let startX = 0
+    let startWidth = 0
+
+    const onMouseDown = (event: MouseEvent) => {
+      event.preventDefault()
+      isResizing = true
+      startX = event.clientX
+      startWidth = inspectorHost?.offsetWidth ?? widthConfig.ideal
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      window.addEventListener('mousemove', onMouseMove)
+      window.addEventListener('mouseup', onMouseUp)
+    }
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (!isResizing || !inspectorHost) return
+      const deltaX = startX - event.clientX
+      const newWidth = Math.max(
+        widthConfig.min,
+        Math.min(widthConfig.max, startWidth + deltaX)
+      )
+      inspectorHost.style.width = `${newWidth}px`
+    }
+
+    const onMouseUp = () => {
+      isResizing = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+
+    const onTouchStart = (event: TouchEvent) => {
+      const touch = event.touches[0]
+      if (!touch) return
+      event.preventDefault()
+      isResizing = true
+      startX = touch.clientX
+      startWidth = inspectorHost?.offsetWidth ?? widthConfig.ideal
+      window.addEventListener('touchmove', onTouchMove, { passive: false })
+      window.addEventListener('touchend', onTouchEnd)
+    }
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!isResizing || !inspectorHost) return
+      const touch = event.touches[0]
+      if (!touch) return
+      event.preventDefault()
+      const deltaX = startX - touch.clientX
+      const newWidth = Math.max(
+        widthConfig.min,
+        Math.min(widthConfig.max, startWidth + deltaX)
+      )
+      inspectorHost.style.width = `${newWidth}px`
+    }
+
+    const onTouchEnd = () => {
+      isResizing = false
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', onTouchEnd)
+    }
+
+    resizeHandle.addEventListener('mousedown', onMouseDown)
+    resizeHandle.addEventListener('touchstart', onTouchStart)
+
+    removeResizeListeners = () => {
+      resizeHandle.removeEventListener('mousedown', onMouseDown)
+      resizeHandle.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', onTouchEnd)
+    }
+
+    // Escape key handling
+    if (options.dismissOnEscape !== false) {
+      const escapeListener = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          event.stopPropagation()
+          dismissInspector()
+        }
+      }
+      document.addEventListener('keydown', escapeListener)
+      removeEscapeListener = () => {
+        document.removeEventListener('keydown', escapeListener)
+      }
+    }
+
+    const inspectorContent = untrack(() => content())
+    disposeInspectorContent = mountComponentTree(inspectorContent, inspectorHost, false)
+
+    portalRoot.append(backdrop, inspectorHost)
+    document.body.appendChild(portalRoot)
+    previousActiveElement =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+
+    isMounted = true
+
+    // Focus management
+    inspectorHost.focus()
+  }
+
+  const presentationEffect = createEffect(() => {
+    const presented = readPresentedState(isPresented)
+    if (presented) {
+      mountPortal()
+      scheduleEntranceTransition()
+      return
+    }
+    unmountPortal()
+  })
+
+  return () => {
+    presentationEffect.dispose()
+    unmountPortal()
+  }
+}
+
+/**
+ * .inspector() modifier
+ *
+ * Shows a side panel for contextual detail — used in editor and developer tool UIs.
+ *
+ * @param component - The component to modify
+ * @param isPresented - Boolean signal controlling inspector visibility
+ * @param content - Function returning the inspector content
+ * @param options - Presentation options
+ * @returns The modified component
+ */
+export function inspector(
+  component: ComponentInstance,
+  isPresented: InspectorPresentationState,
+  content: () => ComponentInstance,
+  options: InspectorPresentationOptions = {}
+): ComponentInstance {
+  ;(component as any)._navigationModifiers = {
+    ...(component as any)._navigationModifiers,
+    inspector: { isPresented, content, options },
+  }
+
+  const existingLifecycle = (component as any)._enhancedLifecycle ?? {}
+  const existingOnDOMReady = existingLifecycle.onDOMReady as
+    | ((elements: Map<string, Element>, primary?: Element) => void | (() => void))
+    | undefined
+
+  ;(component as any)._enhancedLifecycle = {
+    ...existingLifecycle,
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      const existingCleanup = existingOnDOMReady?.(elements, primary)
+      const modifiers = (component as any)._navigationModifiers
+      const columnWidth = modifiers?.inspectorColumnWidth
+      const inspectorCleanup = setupInspectorPresentation(
+        isPresented,
+        content,
+        options,
+        columnWidth
+      )
+
+      return () => {
+        inspectorCleanup()
+        if (typeof existingCleanup === 'function') {
+          existingCleanup()
+        }
+      }
+    },
+  }
+
+  return component
+}
+
+/**
+ * .inspectorColumnWidth() modifier
+ *
+ * Customizes the width constraints for an inspector panel.
+ *
+ * @param component - The component to modify
+ * @param config - Width constraint configuration
+ * @returns The modified component
+ */
+export function inspectorColumnWidth(
+  component: ComponentInstance,
+  config: InspectorColumnWidthConfig
+): ComponentInstance {
+  ;(component as any)._navigationModifiers = {
+    ...(component as any)._navigationModifiers,
+    inspectorColumnWidth: config,
   }
 
   return component
@@ -2711,168 +3270,5 @@ export const NavigationModifierUtils = {
    */
   isEmpty(config: NavigationModifierConfig): boolean {
     return Object.keys(config).length === 0
-  }
-}
-
-/**
- * Add navigation modifier methods to ComponentInstance prototype
- */
-declare module '@tachui/core' {
-  interface ComponentInstance {
-    navigationTitle(title: string): ComponentInstance
-    navigationBarTitleDisplayMode(mode: 'automatic' | 'inline' | 'large'): ComponentInstance
-    navigationBarHidden(hidden?: boolean): ComponentInstance
-    navigationBarItems(options: { leading?: ComponentInstance | ComponentInstance[], trailing?: ComponentInstance | ComponentInstance[] }): ComponentInstance
-    navigationBarBackButtonHidden(hidden?: boolean): ComponentInstance
-    navigationBarBackButtonTitle(title: string): ComponentInstance
-    toolbarBackground(background: string): ComponentInstance
-    toolbarForegroundColor(color: string): ComponentInstance
-    toolbarBackgroundVisibility(
-      visibility: ToolbarBackgroundVisibility,
-      target?: ToolbarBackgroundVisibilityTarget
-    ): ComponentInstance
-    presentationDetents(detents: PresentationDetent[]): ComponentInstance
-    toolbar(items: ToolbarItemConfig[]): ComponentInstance
-    toolbarItems(items: ToolbarItemConfig[]): ComponentInstance
-    // Modal presentation modifiers
-    sheet(
-      isPresented: Accessor<boolean> | Binding<boolean>,
-      content: () => ComponentInstance,
-      options?: SheetPresentationOptions
-    ): ComponentInstance
-    fullScreenCover(
-      isPresented: Accessor<boolean> | Binding<boolean>,
-      content: () => ComponentInstance,
-      options?: FullScreenCoverOptions
-    ): ComponentInstance
-    popover(
-      isPresented: Accessor<boolean> | Binding<boolean>,
-      arrowEdge: PopoverArrowEdge,
-      content: () => ComponentInstance,
-      options?: PopoverPresentationOptions
-    ): ComponentInstance
-    searchable(
-      text: Accessor<string> | Binding<string>,
-      placement?: SearchablePlacement
-    ): ComponentInstance
-    searchSuggestions(
-      suggestions: SearchSuggestionsInput
-    ): ComponentInstance
-    searchScopes(
-      scope: SearchScopeState,
-      scopes: SearchScopeOption[]
-    ): ComponentInstance
-    confirmationDialog(
-      title: string,
-      isPresented: Accessor<boolean> | Binding<boolean>,
-      actions: ConfirmationDialogAction[]
-    ): ComponentInstance
-  }
-}
-
-// Extend ComponentInstance prototype if possible
-if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
-  const proto = (window as any).ComponentInstance.prototype
-
-  proto.navigationTitle = function(title: string) {
-    return navigationTitle(this, title)
-  }
-
-  proto.navigationBarTitleDisplayMode = function(mode: 'automatic' | 'inline' | 'large') {
-    return navigationBarTitleDisplayMode(this, mode)
-  }
-
-  proto.navigationBarHidden = function(hidden: boolean = true) {
-    return navigationBarHidden(this, hidden)
-  }
-
-  proto.navigationBarItems = function(options: any) {
-    return navigationBarItems(this, options)
-  }
-
-  proto.navigationBarBackButtonHidden = function(hidden: boolean = true) {
-    return navigationBarBackButtonHidden(this, hidden)
-  }
-
-  proto.navigationBarBackButtonTitle = function(title: string) {
-    return navigationBarBackButtonTitle(this, title)
-  }
-
-  proto.toolbarBackground = function(background: string) {
-    return toolbarBackground(this, background)
-  }
-
-  proto.toolbarForegroundColor = function(color: string) {
-    return toolbarForegroundColor(this, color)
-  }
-
-  proto.toolbarBackgroundVisibility = function(
-    visibility: ToolbarBackgroundVisibility,
-    target: ToolbarBackgroundVisibilityTarget = 'navigationBar'
-  ) {
-    return toolbarBackgroundVisibility(this, visibility, target)
-  }
-
-  proto.presentationDetents = function(detents: PresentationDetent[]) {
-    return presentationDetents(this, detents)
-  }
-
-  proto.toolbar = function(items: ToolbarItemConfig[]) {
-    return toolbar(this, items)
-  }
-
-  proto.toolbarItems = function(items: ToolbarItemConfig[]) {
-    return toolbarItems(this, items)
-  }
-
-  proto.sheet = function(
-    isPresented: Accessor<boolean> | Binding<boolean>,
-    content: () => ComponentInstance,
-    options?: SheetPresentationOptions
-  ) {
-    return sheet(this, isPresented, content, options)
-  }
-
-  proto.fullScreenCover = function(
-    isPresented: Accessor<boolean> | Binding<boolean>,
-    content: () => ComponentInstance,
-    options?: FullScreenCoverOptions
-  ) {
-    return fullScreenCover(this, isPresented, content, options)
-  }
-
-  proto.popover = function(
-    isPresented: Accessor<boolean> | Binding<boolean>,
-    arrowEdge: PopoverArrowEdge,
-    content: () => ComponentInstance,
-    options?: PopoverPresentationOptions
-  ) {
-    return popover(this, isPresented, arrowEdge, content, options)
-  }
-
-  proto.searchable = function(
-    text: Accessor<string> | Binding<string>,
-    placement: SearchablePlacement = 'navigationBar'
-  ) {
-    return searchable(this, text, placement)
-  }
-
-  proto.searchSuggestions = function(suggestions: SearchSuggestionsInput) {
-    return searchSuggestions(this, suggestions)
-  }
-
-  proto.searchScopes = function(
-    scope: SearchScopeState,
-    scopes: SearchScopeOption[]
-  ) {
-    return searchScopes(this, scope, scopes)
-  }
-
-  proto.confirmationDialog = function(
-    title: string,
-    isPresented: Accessor<boolean> | Binding<boolean>,
-    actions: ConfirmationDialogAction[]
-  ) {
-    return confirmationDialog(this, title, isPresented, actions)
   }
 }

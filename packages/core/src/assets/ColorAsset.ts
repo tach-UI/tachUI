@@ -228,10 +228,15 @@ export class ColorAsset extends Asset {
       return { isValid: true, format: 'named' }
     }
 
+    // CSS color-mix() — produced by opacity() on CSS vars, and valid CSS in its own right
+    if (trimmed.startsWith('color-mix(')) {
+      return { isValid: true, format: 'named' }
+    }
+
     return {
       isValid: false,
       error:
-        'Unsupported color format. Supported: hex, rgb, rgba, hsl, hsla, named colors, CSS custom properties',
+        'Unsupported color format. Supported: hex, rgb, rgba, hsl, hsla, named colors, CSS custom properties, color-mix()',
     }
   }
 
@@ -239,55 +244,85 @@ export class ColorAsset extends Asset {
     return _getCurrentTheme()
   }
 
-  opacity(alpha: number): string {
+  opacity(alpha: number): ColorAsset {
     if (!this.isFiniteInput(alpha, 'opacity(alpha)')) {
-      return this.resolve()
+      return this
     }
 
     const clamped = ColorAsset.clamp(alpha, 0, 1)
-    return ColorAsset.applyAlpha(this.resolve(), clamped)
+    // applyAlpha handles all formats including CSS vars (falls back to color-mix())
+    // and named colors (resolved via NAMED_COLOR_RGB table). Always returns a string
+    // that is safe to store as a variant value and resolve() later.
+    return new ColorAsset({
+      name: this.name,
+      default: ColorAsset.applyAlpha(this.default, clamped),
+      light: this.light ? ColorAsset.applyAlpha(this.light, clamped) : undefined,
+      dark: this.dark ? ColorAsset.applyAlpha(this.dark, clamped) : undefined,
+    })
   }
 
-  saturate(amount: number): string {
+  saturate(amount: number): ColorAsset {
     if (!this.isFiniteInput(amount, 'saturate(amount)')) {
-      return this.resolve()
+      return this
     }
 
     const clamped = ColorAsset.clamp(amount, -1, 1)
-    return ColorAsset.applySaturation(this.resolve(), clamped)
+    // applySaturation passes unresolvable tokens (CSS vars, unknown formats) through
+    // unchanged, so storing them in a new ColorAsset is safe.
+    return new ColorAsset({
+      name: this.name,
+      default: ColorAsset.applySaturation(this.default, clamped),
+      light: this.light ? ColorAsset.applySaturation(this.light, clamped) : undefined,
+      dark: this.dark ? ColorAsset.applySaturation(this.dark, clamped) : undefined,
+    })
   }
 
-  brighten(amount: number): string {
+  brighten(amount: number): ColorAsset {
     // `amount` is intentionally not CSS `filter: brightness(...)`.
     // It is a deterministic token transform in [-1, 1] where:
     // -1 lerps channels to black, 0 is unchanged, 1 lerps channels to white.
     if (!this.isFiniteInput(amount, 'brighten(amount)')) {
-      return this.resolve()
+      return this
     }
 
     const clamped = ColorAsset.clamp(amount, -1, 1)
-    return ColorAsset.applyBrightness(this.resolve(), clamped)
+    return new ColorAsset({
+      name: this.name,
+      default: ColorAsset.applyBrightness(this.default, clamped),
+      light: this.light ? ColorAsset.applyBrightness(this.light, clamped) : undefined,
+      dark: this.dark ? ColorAsset.applyBrightness(this.dark, clamped) : undefined,
+    })
   }
 
-  contrast(amount: number): string {
+  contrast(amount: number): ColorAsset {
     // Deterministic midpoint-pivot contrast transform in [-1, 1]:
     // x' = (x - 0.5) * (1 + amount) + 0.5 where x is channel/255.
     if (!this.isFiniteInput(amount, 'contrast(amount)')) {
-      return this.resolve()
+      return this
     }
 
     const clamped = ColorAsset.clamp(amount, -1, 1)
-    return ColorAsset.applyContrast(this.resolve(), clamped)
+    return new ColorAsset({
+      name: this.name,
+      default: ColorAsset.applyContrast(this.default, clamped),
+      light: this.light ? ColorAsset.applyContrast(this.light, clamped) : undefined,
+      dark: this.dark ? ColorAsset.applyContrast(this.dark, clamped) : undefined,
+    })
   }
 
-  rotateHue(degrees: number): string {
+  rotateHue(degrees: number): ColorAsset {
     if (!this.isFiniteInput(degrees, 'rotateHue(degrees)')) {
-      return this.resolve()
+      return this
     }
 
     // Normalize any finite numeric input into the canonical 0..359 range.
     const normalizedDegrees = ((degrees % 360) + 360) % 360
-    return ColorAsset.applyHueRotation(this.resolve(), normalizedDegrees)
+    return new ColorAsset({
+      name: this.name,
+      default: ColorAsset.applyHueRotation(this.default, normalizedDegrees),
+      light: this.light ? ColorAsset.applyHueRotation(this.light, normalizedDegrees) : undefined,
+      dark: this.dark ? ColorAsset.applyHueRotation(this.dark, normalizedDegrees) : undefined,
+    })
   }
 
   resolve(): string {
@@ -375,6 +410,12 @@ export class ColorAsset extends Asset {
     if (hslaMatch) {
       const [, h, s, l] = hslaMatch.map(Number)
       return `hsla(${h}, ${s}%, ${l}%, ${alphaString})`
+    }
+
+    const namedRgb = ColorAsset.NAMED_COLOR_RGB[trimmed.toLowerCase()]
+    if (namedRgb) {
+      const [r, g, b] = namedRgb
+      return `rgba(${r}, ${g}, ${b}, ${alphaString})`
     }
 
     return ColorAsset.toColorMix(trimmed, alpha)

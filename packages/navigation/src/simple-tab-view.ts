@@ -10,6 +10,60 @@ import { createEffect, createSignal, isBinding } from '@tachui/core'
 import { HStack, HTML, Text, VStack } from '@tachui/primitives'
 import type { NavigationComponent } from './types'
 
+export interface BadgeDisplay {
+  show: boolean
+  isDot: boolean
+  text: string
+}
+
+/**
+ * Computes display properties for a badge value.
+ * Centralizes the show/dot/text logic used by both SimpleTabView and TabView.
+ */
+export function formatBadge(badge: string | number | boolean | undefined): BadgeDisplay {
+  const show = badge !== undefined && badge !== false && badge !== 0 && badge !== ''
+  const isDot = badge === true
+  let text = ''
+  if (show && !isDot) {
+    if (typeof badge === 'string') {
+      text = badge
+    } else if (typeof badge === 'number') {
+      text = badge > 99 ? '99+' : String(badge)
+    }
+  }
+  return { show, isDot, text }
+}
+
+/**
+ * Builds the badge DOM element with correct styling.
+ * Badge is sized as a dot (8×8, no text) when isDot is true,
+ * or as a pill (min 16px tall) with text otherwise.
+ */
+export function buildBadgeElement(text: string, isDot: boolean): ComponentInstance {
+  const el = HTML.div({ children: text })
+    .backgroundColor('#FF3B30')
+    .foregroundColor('#ffffff')
+    .fontSize(isDot ? 0 : 10)
+    .fontWeight('bold')
+    .padding(isDot
+      ? { top: 0, bottom: 0, left: 0, right: 0 }
+      : { top: 2, bottom: 2, left: 6, right: 6 }
+    )
+    .cornerRadius(isDot ? 4 : 8)
+    .frame(isDot ? { width: 8, height: 8 } : { minWidth: 16, height: 16 })
+    .textAlign('center')
+    .build()
+  // Position as overlay (absolutely placed by parent relative container)
+  ;(el as any).props = (el as any).props ?? {}
+  ;(el as any).props.style = (el as any).props.style ?? {}
+  Object.assign((el as any).props.style, {
+    position: 'absolute',
+    top: '-6px',
+    right: '-6px',
+  })
+  return el
+}
+
 /**
  * Tab item configuration for simple TabView
  */
@@ -17,7 +71,8 @@ export interface SimpleTabItem {
   readonly id: string
   readonly label: string
   readonly icon?: string
-  readonly badge?: string | number
+  /** Badge value: number for count, true for dot, 0/false/undefined to hide */
+  readonly badge?: string | number | boolean
   readonly content: ComponentInstance
   readonly disabled?: boolean
 }
@@ -84,6 +139,13 @@ export function SimpleTabView(
     }
   })
 
+  // Per-tab badge signals — enables reactive updates via updateTabBadge
+  const badgeSignals = new Map<string, [() => string | number | boolean | undefined, (v: string | number | boolean | undefined) => void]>()
+  tabItems.forEach(tab => {
+    const [get, set] = createSignal<string | number | boolean | undefined>(tab.badge)
+    badgeSignals.set(tab.id, [get, set])
+  })
+
   // Tab selection state
   let initialSelection = tabItems[0]?.id || ''
   if (options?.selection) {
@@ -131,45 +193,43 @@ export function SimpleTabView(
       const isSelected = selectedTabId() === tab.id
       const isDisabled = tab.disabled || false
 
+      // Read badge reactively from signal
+      const [getBadge] = badgeSignals.get(tab.id)!
+      const badge = getBadge()
+      const { show: showBadge, isDot: isDotBadge, text: badgeText } = formatBadge(badge)
+
+      // Build icon wrapper with badge overlay (position: relative)
+      const iconWrapperChildren: ComponentInstance[] = []
+      if (tab.icon) {
+        iconWrapperChildren.push(
+          HTML.div({ children: tab.icon })
+            .fontSize(20)
+            .lineHeight('1')
+            .build()
+        )
+      }
+      if (showBadge) {
+        iconWrapperChildren.push(buildBadgeElement(badgeText, isDotBadge))
+      }
+
+      const iconWrapper = HTML.div({ children: iconWrapperChildren }).build()
+      ;(iconWrapper as any).props = (iconWrapper as any).props ?? {}
+      ;(iconWrapper as any).props.style = (iconWrapper as any).props.style ?? {}
+      Object.assign((iconWrapper as any).props.style, {
+        position: 'relative',
+        display: 'inline-block',
+      })
+
       // Tab button content
       const buttonContent = VStack({
         children: [
-          // Icon (if provided)
-          ...(tab.icon
-            ? [
-                HTML.div({
-                  children: tab.icon,
-                })
-                  .fontSize(20)
-                  .lineHeight('1')
-                  .build(),
-              ]
-            : []),
-
-          // Label
+          iconWrapper,
           Text(tab.label)
             .fontSize(12)
             .fontWeight(isSelected ? '600' : '400')
             .foregroundColor(isSelected ? accentColor : '#666666')
             .textAlign('center')
             .build(),
-
-          // Badge (if provided)
-          ...(tab.badge
-            ? [
-                HTML.div({
-                  children: String(tab.badge),
-                })
-                  .backgroundColor('#ff3b30')
-                  .foregroundColor('#ffffff')
-                  .fontSize(10)
-                  .fontWeight('bold')
-                  .padding({ top: 2, bottom: 2, left: 6, right: 6 })
-                  .cornerRadius(10)
-                  .textAlign('center')
-                  .build(),
-              ]
-            : []),
         ],
         spacing: 4,
         alignment: 'center',
@@ -264,6 +324,18 @@ export function SimpleTabView(
     selectedTabId: selectedTabId,
     tabs: tabItems,
     selectTab: handleTabSelection,
+    updateTabBadge: (tabId: string, badge?: string | number | boolean) => {
+      const entry = badgeSignals.get(tabId)
+      if (entry) {
+        const [, set] = entry
+        set(badge)
+        // Also update the tab item so metadata.tabs[n].badge stays consistent
+        const tab = tabItems.find(t => t.id === tabId)
+        if (tab) {
+          (tab as any).badge = badge
+        }
+      }
+    },
   }
 
   return tabViewComponent
@@ -291,7 +363,7 @@ export function tabItem(
   id: string,
   label: string,
   icon?: string,
-  badge?: string | number,
+  badge?: string | number | boolean,
   disabled?: boolean
 ): ComponentInstance {
   // Store tab item configuration on the component
@@ -306,34 +378,6 @@ export function tabItem(
   return component
 }
 
-/**
- * Add .tabItem() method to ComponentInstance prototype
- * This allows for fluent API: Component().tabItem(...)
- */
-declare module '@tachui/core' {
-  interface ComponentInstance {
-    tabItem(
-      id: string,
-      label: string,
-      icon?: string,
-      badge?: string | number,
-      disabled?: boolean
-    ): ComponentInstance
-  }
-}
-
-// Extend ComponentInstance prototype (if possible)
-if (typeof window !== 'undefined' && (window as any).ComponentInstance) {
-  ;(window as any).ComponentInstance.prototype.tabItem = function (
-    id: string,
-    label: string,
-    icon?: string,
-    badge?: string | number,
-    disabled?: boolean
-  ) {
-    return tabItem(this, id, label, icon, badge, disabled)
-  }
-}
 
 /**
  * Create a tab view with simple configuration
@@ -347,7 +391,7 @@ export function createSimpleTabView(
     id: string
     label: string
     icon?: string
-    badge?: string | number
+    badge?: string | number | boolean
     content: ComponentInstance
     disabled?: boolean
   }>,

@@ -1,6 +1,111 @@
 // Test setup for @tachui/navigation
 import { beforeAll, afterAll } from 'vitest'
 
+// PointerEvent polyfill for jsdom
+if (typeof PointerEvent === 'undefined') {
+  // @ts-expect-error - Polyfill for jsdom environment
+  global.PointerEvent = class PointerEvent extends MouseEvent {
+    isPrimary: boolean
+    constructor(type: string, params: PointerEventInit = {}) {
+      super(type, params)
+      this.isPrimary = params.isPrimary ?? true
+    }
+  }
+}
+
+// setPointerCapture polyfill for jsdom
+if (typeof Element.prototype.setPointerCapture === 'undefined') {
+  Element.prototype.setPointerCapture = () => {
+    // No-op in jsdom
+  }
+}
+
+if (typeof Element.prototype.releasePointerCapture === 'undefined') {
+  Element.prototype.releasePointerCapture = () => {
+    // No-op in jsdom
+  }
+}
+
+// clientWidth/clientHeight getters polyfill for jsdom
+// JSDOM doesn't compute layout, so we need to read from style
+// Fallback returns 0 to match jsdom's natural default behavior
+Object.defineProperty(Element.prototype, 'clientWidth', {
+  get() {
+    const width = this.style.width
+    if (width && width.endsWith('px')) {
+      return parseInt(width, 10)
+    }
+    // Return 0 to match jsdom's natural default (not a global fallback)
+    return 0
+  },
+})
+
+Object.defineProperty(Element.prototype, 'clientHeight', {
+  get() {
+    const height = this.style.height
+    if (height && height.endsWith('px')) {
+      return parseInt(height, 10)
+    }
+    // Return 0 to match jsdom's natural default (not a global fallback)
+    return 0
+  },
+})
+
+// Web Animations API polyfill for jsdom
+if (typeof Element.prototype.animate === 'undefined') {
+  Element.prototype.animate = function (
+    keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
+    options?: number | KeyframeAnimationOptions
+  ): Animation {
+    const duration = typeof options === 'number'
+      ? options
+      : (options?.duration as number) ?? 300
+
+    const listeners: Map<string, Array<() => void>> = new Map()
+
+    return {
+      playState: 'running',
+      effect: {
+        getComputedTiming: () => ({
+          duration,
+        }),
+      },
+      cancel: () => {},
+      play: () => {},
+      pause: () => {},
+      finish: () => {
+        // Trigger finish event
+        listeners.get('finish')?.forEach(cb => cb())
+      },
+      commitStyles: () => {},
+      addEventListener: (event: string, callback: () => void, _options?: unknown) => {
+        if (!listeners.has(event)) listeners.set(event, [])
+        listeners.get(event)!.push(callback)
+      },
+      removeEventListener: (event: string, callback: () => void) => {
+        const eventListeners = listeners.get(event)
+        if (eventListeners) {
+          listeners.set(event, eventListeners.filter(cb => cb !== callback))
+        }
+      },
+    } as unknown as Animation
+  }
+}
+
+// matchMedia polyfill for jsdom
+if (typeof window.matchMedia === 'undefined') {
+  window.matchMedia = (query: string): MediaQueryList => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  } as MediaQueryList)
+}
+
 // Suppress expected test console outputs
 let originalConsoleError: typeof console.error
 let originalConsoleWarn: typeof console.warn

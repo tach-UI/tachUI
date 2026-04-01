@@ -23,6 +23,15 @@ import type {
   NavigationDestination,
   NavigationComponent,
 } from './types'
+import { createSwipeBackGesture } from './swipe-back-gesture'
+import type { SwipeBackGestureConfig } from './swipe-back-gesture'
+import {
+  animateTransition,
+  getPushKeyframes,
+  getPopKeyframes,
+  prefersReducedMotion,
+  type TransitionConfig,
+} from './navigation-animations'
 
 /**
  * Navigation destination registry for type-safe routing
@@ -38,11 +47,68 @@ class NavigationStackContext implements NavigationContext {
   private _stack: NavigationStackEntry[] = []
   private _currentPath = '/'
   private _destinationRegistry: NavigationDestinationRegistry = {}
+  private _contentElement: HTMLElement | null = null
+  private _transitionConfig: TransitionConfig = 'slide'
+  private _transitionDurationMs: number = 300
+  private _isReducedMotion: boolean = false
 
   constructor(
     public readonly navigationId: string,
     private onStackChange?: (stack: NavigationStackEntry[]) => void
-  ) {}
+  ) {
+    this._isReducedMotion = prefersReducedMotion()
+  }
+
+  /**
+   * Set the content element for animations
+   */
+  setContentElement(element: HTMLElement | null): void {
+    this._contentElement = element
+  }
+
+  /**
+   * Set transition configuration
+   */
+  setTransitionConfig(config: TransitionConfig, durationMs?: number): void {
+    this._transitionConfig = config
+    if (durationMs !== undefined) {
+      this._transitionDurationMs = durationMs
+    }
+  }
+
+  /**
+   * Play push animation
+   */
+  private _playPushAnimation(): void {
+    if (!this._contentElement) return
+
+    const keyframes = getPushKeyframes(this._transitionConfig, this._isReducedMotion)
+    animateTransition(
+      this._contentElement,
+      keyframes,
+      this._transitionConfig,
+      'push',
+      this._isReducedMotion,
+      this._transitionDurationMs
+    )
+  }
+
+  /**
+   * Play pop animation
+   */
+  private _playPopAnimation(): void {
+    if (!this._contentElement) return
+
+    const keyframes = getPopKeyframes(this._transitionConfig, this._isReducedMotion)
+    animateTransition(
+      this._contentElement,
+      keyframes,
+      this._transitionConfig,
+      'pop',
+      this._isReducedMotion,
+      this._transitionDurationMs
+    )
+  }
 
   get stack(): NavigationStackEntry[] {
     return [...this._stack]
@@ -98,6 +164,9 @@ class NavigationStackContext implements NavigationContext {
     this._stack.push(entry)
     this._currentPath = path
 
+    // Play push animation
+    this._playPushAnimation()
+
     if (this.onStackChange) {
       this.onStackChange([...this._stack])
     }
@@ -105,6 +174,9 @@ class NavigationStackContext implements NavigationContext {
 
   pop(): void {
     if (this._stack.length > 1) {
+      // Play pop animation before removing from stack
+      this._playPopAnimation()
+
       this._stack.pop()
       const previousEntry = this._stack[this._stack.length - 1]
       this._currentPath = previousEntry?.path || '/'
@@ -206,6 +278,14 @@ export interface NavigationStackOptions {
   navigationBarHidden?: boolean
   navigationTitle?: string
   onPathChange?: (path: NavigationPath) => void
+  /** Enable/disable interactive swipe-back gesture (default: true) */
+  swipeBackEnabled?: boolean
+  /** Swipe-back gesture configuration */
+  swipeBackConfig?: SwipeBackGestureConfig
+  /** Transition animation config - 'slide', 'fade', or { type: 'spring', damping, stiffness, mass } */
+  transition?: TransitionConfig
+  /** Transition duration in milliseconds for non-spring transitions (default: 300) */
+  transitionDurationMs?: number
 }
 
 /**
@@ -245,6 +325,14 @@ export function NavigationStack(
     options?.navigationTitle || ''
   )
 
+  // Swipe-back gesture state
+  const [swipeProgress, setSwipeProgress] = createSignal(0)
+  const [isSwipingBack, setIsSwipingBack] = createSignal(false)
+  const swipeEnabled = options.swipeBackEnabled !== false
+
+  // Transition duration (for consistent animations)
+  const transitionDurationMs = options.transitionDurationMs ?? 300
+
   // Path management
   const pathBinding = options.path
   let internalPath = createNavigationPath()
@@ -282,6 +370,12 @@ export function NavigationStack(
   // Set the root view
   navigationContext.setRoot(rootView, '/', options.navigationTitle)
 
+  // Configure transition settings
+  navigationContext.setTransitionConfig(
+    options.transition ?? 'slide',
+    transitionDurationMs
+  )
+
   // Set this as the current navigation context (both old and new systems)
   _setCurrentNavigationContext(navigationContext)
   _setNavigationEnvironmentContext(navigationContext)
@@ -313,6 +407,36 @@ export function NavigationStack(
     })
   }
 
+  // Swipe-back gesture setup
+  const swipeGesture = createSwipeBackGesture(
+    {
+      enabled: swipeEnabled,
+      ...options.swipeBackConfig,
+    },
+    {
+      onGestureStart: () => {
+        setIsSwipingBack(true)
+      },
+      onGestureProgress: (progress) => {
+        setSwipeProgress(progress)
+      },
+      onGestureComplete: () => {
+        setSwipeProgress(0)
+        setIsSwipingBack(false)
+        setIsNavigating(true)
+        navigationContext.pop()
+        // Reset navigating state after animation
+        setTimeout(() => {
+          setIsNavigating(false)
+        }, transitionDurationMs)
+      },
+      onGestureCancel: () => {
+        setSwipeProgress(0)
+        setIsSwipingBack(false)
+      },
+    }
+  )
+
   // Navigation bar component
   const NavigationBar = () => {
     const stack = navigationStack()
@@ -333,7 +457,7 @@ export function NavigationStack(
               // Reset navigating state after animation
               setTimeout(() => {
                 setIsNavigating(false)
-              }, 300)
+              }, transitionDurationMs)
             })
               .backgroundColor('transparent')
               .foregroundColor('#007AFF')
@@ -374,12 +498,21 @@ export function NavigationStack(
         .build()
     }
 
+    // Build children array - just the current entry for now
+    const children: ComponentInstance[] = [currentEntry.component]
+
+    // Visual feedback during swipe-back gesture
+    const swiping = isSwipingBack()
+    const progress = swipeProgress()
+    const transformValue = swiping ? `translateX(${progress * 100}%)` : ''
+
     return VStack({
-      children: [currentEntry.component],
+      children,
       spacing: 0,
       alignment: 'leading',
     })
       .opacity(isNavigating() ? 0.8 : 1)
+      .transform(transformValue)
       .build()
   }
 
@@ -403,9 +536,13 @@ export function NavigationStack(
       navigationContext.navigateToDestination.bind(navigationContext),
   }
 
+  // Store swipe gesture for DOM attachment and cleanup
+  ;(navigationComponent as any)._swipeBackGesture = swipeGesture
+
   // Set up cleanup
   const cleanup = () => {
     clearDocumentHeadForNavigation(navigationId)
+    swipeGesture.destroy()
     // Clear context if this was the current one
     if (_setCurrentNavigationContext) {
       _setCurrentNavigationContext(null)
@@ -415,6 +552,26 @@ export function NavigationStack(
 
   // Store cleanup function
   ;(navigationComponent as any)._navigationCleanup = cleanup
+
+  // Attach gesture and content element when component is mounted
+  ;(navigationComponent as any)._enhancedLifecycle = {
+    onDOMReady: (elements: Map<string, Element>, primary?: Element) => {
+      // Set content element for animations
+      if (primary instanceof HTMLElement) {
+        navigationContext.setContentElement(primary)
+      }
+
+      // Attach swipe gesture if enabled
+      if (swipeEnabled && primary instanceof HTMLElement) {
+        swipeGesture.attachToElement(primary)
+      }
+
+      return () => {
+        swipeGesture.destroy()
+        navigationContext.setContentElement(null)
+      }
+    },
+  }
 
   return navigationComponent
 }
