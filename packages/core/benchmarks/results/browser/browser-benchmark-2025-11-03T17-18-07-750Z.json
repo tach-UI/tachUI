@@ -1,0 +1,62 @@
+{
+  "runAt": "2025-11-03T17:18:07.750Z",
+  "port": 4173,
+  "results": [
+    {
+      "name": "Create 1,000 rows",
+      "duration": 13.2,
+      "memory": 0,
+      "operationsPerSecond": 7576,
+      "timestamp": "2025-11-03T17:18:06.994Z"
+    },
+    {
+      "name": "Replace all 1,000 rows",
+      "duration": 13.8,
+      "memory": 0,
+      "operationsPerSecond": 7246,
+      "timestamp": "2025-11-03T17:18:07.109Z"
+    },
+    {
+      "name": "Update every 10th row",
+      "duration": 0.4,
+      "memory": 0,
+      "operationsPerSecond": 250000,
+      "timestamp": "2025-11-03T17:18:07.213Z"
+    },
+    {
+      "name": "Select row",
+      "duration": 0.5,
+      "memory": 0,
+      "operationsPerSecond": 200000,
+      "timestamp": "2025-11-03T17:18:07.315Z"
+    },
+    {
+      "name": "Swap rows",
+      "duration": 1.1,
+      "memory": 0,
+      "operationsPerSecond": 90909,
+      "timestamp": "2025-11-03T17:18:07.419Z"
+    },
+    {
+      "name": "Remove every 10th row",
+      "duration": 11.5,
+      "memory": 0,
+      "operationsPerSecond": 8696,
+      "timestamp": "2025-11-03T17:18:07.534Z"
+    },
+    {
+      "name": "Clear all rows",
+      "duration": 5.7,
+      "memory": 0,
+      "operationsPerSecond": 17544,
+      "timestamp": "2025-11-03T17:18:07.640Z"
+    },
+    {
+      "name": "Component creation (1,000 components)",
+      "duration": 3.5,
+      "memory": 0,
+      "operationsPerSecond": 28571,
+      "timestamp": "2025-11-03T17:18:07.746Z"
+    }
+  ]
+}

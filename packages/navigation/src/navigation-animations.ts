@@ -76,8 +76,8 @@ function generateSpringKeyframes(
       displacement = 1 - Math.exp(-zeta * omega * t) * (
         Math.cos(omegaD * t) + (zeta * omega / omegaD) * Math.sin(omegaD * t)
       )
-    } else if (zeta === 1) {
-      // Critically damped
+    } else if (Math.abs(zeta - 1) < 0.001) {
+      // Critically damped (with tolerance for floating point)
       displacement = 1 - Math.exp(-omega * t) * (1 + omega * t)
     } else {
       // Overdamped

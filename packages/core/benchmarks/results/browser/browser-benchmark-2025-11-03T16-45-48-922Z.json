@@ -1,0 +1,13 @@
+{
+  "runAt": "2025-11-03T16:45:48.922Z",
+  "port": 4173,
+  "results": [
+    {
+      "name": "Create 1,000 rows",
+      "duration": 12.6,
+      "memory": 0,
+      "operationsPerSecond": 7937,
+      "timestamp": "2025-11-03T16:45:48.868Z"
+    }
+  ]
+}

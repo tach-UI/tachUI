@@ -14,6 +14,7 @@ import {
   animateTransition,
 } from '../src/navigation-animations'
 import type { TransitionConfig, SpringPhysics } from '../src/navigation-animations'
+import { NavigationStack } from '../src/navigation-stack'
 
 describe('Navigation Stack Transitions', () => {
   let mockElement: HTMLElement
@@ -241,7 +242,6 @@ describe('Navigation Stack Transitions', () => {
     beforeEach(() => {
       // Ensure matchMedia is available
       if (typeof window.matchMedia === 'undefined') {
-        // @ts-expect-error - Test polyfill
         window.matchMedia = (query: string): MediaQueryList => ({
           matches: false,
           media: query,
@@ -313,6 +313,144 @@ describe('Navigation Stack Transitions', () => {
       animation.cancel()
 
       // Restore
+      window.matchMedia = originalMatchMedia
+    })
+  })
+
+  describe('Integration with NavigationStack', () => {
+    it('calls element.animate() when NavigationStack triggers push animation', () => {
+      const animateSpy = vi.spyOn(mockElement, 'animate')
+
+      // Create a simple view
+      const rootView = document.createElement('div')
+      rootView.setAttribute('data-testid', 'root-view')
+
+      // Create NavigationStack with spring transition
+      const navStack = NavigationStack(
+        { type: 'div', props: { children: rootView } } as any,
+        {
+          transition: { type: 'spring', damping: 0.7, stiffness: 180 },
+          transitionDurationMs: 300,
+        }
+      )
+
+      // Simulate DOM ready
+      const lifecycle = (navStack as any)._enhancedLifecycle
+      expect(lifecycle).toBeDefined()
+
+      // Call onDOMReady to wire up the content element
+      const elements = new Map<string, Element>()
+      lifecycle.onDOMReady(elements, mockElement)
+
+      // Get the navigation context and trigger a push
+      const context = (navStack as any).navigationContext
+      expect(context).toBeDefined()
+
+      // Trigger push operation which should call animate
+      context.push(
+        { type: 'div', props: { children: 'Test View' } } as any,
+        '/test',
+        'Test'
+      )
+
+      // Verify element.animate was called
+      expect(animateSpy).toHaveBeenCalled()
+
+      // Clean up
+      animateSpy.mockRestore()
+    })
+
+    it('calls element.animate() when NavigationStack triggers pop animation', () => {
+      const animateSpy = vi.spyOn(mockElement, 'animate')
+
+      // Create a simple view
+      const rootView = document.createElement('div')
+
+      // Create NavigationStack with slide transition
+      const navStack = NavigationStack(
+        { type: 'div', props: { children: rootView } } as any,
+        {
+          transition: 'slide',
+          transitionDurationMs: 300,
+        }
+      )
+
+      // Simulate DOM ready
+      const lifecycle = (navStack as any)._enhancedLifecycle
+      const elements = new Map<string, Element>()
+      lifecycle.onDOMReady(elements, mockElement)
+
+      // Get the navigation context
+      const context = (navStack as any).navigationContext
+
+      // First push a view so we have something to pop
+      context.push(
+        { type: 'div', props: { children: 'Test View' } } as any,
+        '/test',
+        'Test'
+      )
+
+      // Reset spy to check only the pop animation
+      animateSpy.mockClear()
+
+      // Trigger pop operation
+      context.pop()
+
+      // Verify element.animate was called for pop
+      expect(animateSpy).toHaveBeenCalled()
+
+      // Clean up
+      animateSpy.mockRestore()
+    })
+
+    it('respects reduced motion preference in NavigationStack', () => {
+      // Mock matchMedia for reduced motion
+      const originalMatchMedia = window.matchMedia
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })) as unknown as typeof window.matchMedia
+
+      const animateSpy = vi.spyOn(mockElement, 'animate')
+
+      // Create NavigationStack
+      const rootView = document.createElement('div')
+      const navStack = NavigationStack(
+        { type: 'div', props: { children: rootView } } as any,
+        {
+          transition: 'spring',
+        }
+      )
+
+      // Simulate DOM ready
+      const lifecycle = (navStack as any)._enhancedLifecycle
+      const elements = new Map<string, Element>()
+      lifecycle.onDOMReady(elements, mockElement)
+
+      // Get the navigation context
+      const context = (navStack as any).navigationContext
+
+      // Trigger push - should still call animate but with 0 duration
+      context.push(
+        { type: 'div', props: { children: 'Test View' } } as any,
+        '/test',
+        'Test'
+      )
+
+      // Verify element.animate was called with 0 duration for reduced motion
+      expect(animateSpy).toHaveBeenCalled()
+      const lastCall = animateSpy.mock.calls[animateSpy.mock.calls.length - 1]
+      const options = lastCall[1] as { duration: number }
+      expect(options.duration).toBe(0)
+
+      // Clean up
+      animateSpy.mockRestore()
       window.matchMedia = originalMatchMedia
     })
   })
