@@ -37,6 +37,7 @@ type BasicBackgroundValue = string | GradientDefinition | Asset | undefined | nu
 
 export interface BackgroundOptions {
   background: StatefulBackgroundValue
+  cssProperty?: 'background' | 'backgroundColor'
 }
 
 export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
@@ -47,9 +48,10 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     if (!context.element) return
 
     const backgroundValue = this.properties.background
+    const cssProperty = this.properties.cssProperty ?? 'background'
 
     if (isSignal(backgroundValue) || isComputed(backgroundValue)) {
-      this.applyStyles(context.element, { background: backgroundValue as any })
+      this.applyStyles(context.element, { [cssProperty]: backgroundValue as any })
       return undefined
     }
 
@@ -57,7 +59,7 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     if (this.isAssetValue(backgroundValue)) {
       this.applyColorAssetWithThemeReactivity(
         context.element,
-        'background',
+        cssProperty,
         backgroundValue
       )
       return undefined
@@ -70,7 +72,7 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
       context.element instanceof HTMLElement &&
       this.isStateGradientOption(backgroundValue)
     ) {
-      this.applyStatefulBackground(context.element, backgroundValue)
+      this.applyStatefulBackground(context.element, backgroundValue, cssProperty)
       return undefined
     }
 
@@ -79,7 +81,7 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     )
 
     if (resolvedBackground !== undefined) {
-      const styles = { background: resolvedBackground }
+      const styles = { [cssProperty]: resolvedBackground }
       this.applyStyles(context.element, styles)
     }
 
@@ -151,7 +153,8 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
 
   private applyStatefulBackground(
     element: HTMLElement,
-    stateOptions: StateGradientOptions
+    stateOptions: StateGradientOptions,
+    cssProperty: 'background' | 'backgroundColor'
   ): void {
     const resolvedStates: Partial<Record<BackgroundState, string>> = {
       default: this.resolveBackgroundValue(stateOptions.default),
@@ -175,7 +178,7 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
       if (!state) return
       const value = resolvedStates[state]
       if (value !== undefined) {
-        this.applyStyleChange(element, 'background', value)
+        this.applyStyleChange(element, cssProperty, value)
       }
     }
 
@@ -198,7 +201,9 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
       const duration = animation.duration ?? 200
       const easing = animation.easing ?? 'ease'
       const delay = animation.delay ?? 0
-      const transitionValue = `background ${duration}ms ${easing} ${delay}ms`
+      const transitionTarget =
+        cssProperty === 'backgroundColor' ? 'background-color' : 'background'
+      const transitionValue = `${transitionTarget} ${duration}ms ${easing} ${delay}ms`
       element.style.transition = transitionValue
       const cssText = element.style.cssText || ''
       if (!cssText.includes('transition')) {
@@ -428,11 +433,17 @@ export class BackgroundClipModifier extends BaseModifier<BackgroundClipOptions> 
 }
 
 export function backgroundColor(color: string | any): BackgroundModifier {
-  return new BackgroundModifier({ background: color })
+  return new BackgroundModifier({
+    background: color,
+    cssProperty: 'backgroundColor',
+  })
 }
 
 export function background(value: string | any): BackgroundModifier {
-  return new BackgroundModifier({ background: value })
+  return new BackgroundModifier({
+    background: value,
+    cssProperty: 'background',
+  })
 }
 
 /**

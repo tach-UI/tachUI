@@ -71,6 +71,7 @@ describe('blend mode modifiers', () => {
   it('integrates with backgroundImage and backgroundColor modifiers', () => {
     const element = document.createElement('div')
 
+    // Regression: backgroundColor applied after backgroundImage should not wipe image.
     applyModifierToElement(backgroundImage('url("/texture.png")'), element)
     applyModifierToElement(backgroundColor('#3a86ff'), element)
     applyModifierToElement(backgroundBlendMode('overlay'), element)
@@ -80,7 +81,7 @@ describe('blend mode modifiers', () => {
     )
     expect(
       ['#3a86ff', 'rgb(58, 134, 255)'].includes(
-        element.style.getPropertyValue('background')
+        element.style.getPropertyValue('background-color')
       )
     ).toBe(true)
     expect(element.style.getPropertyValue('background-blend-mode')).toBe('overlay')
