@@ -3,7 +3,17 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest'
-import { ColorAsset, registerAsset, Assets, listAssetNames } from '../../src/assets'
+import {
+  Asset,
+  ColorAsset,
+  registerAsset,
+  Assets,
+  listAssetNames,
+  getAsset,
+  getColorAsset,
+  isColorAsset,
+  asColorAsset,
+} from '../../src/assets'
 
 describe('registerAsset with name override', () => {
   beforeEach(() => {
@@ -237,5 +247,57 @@ describe('registerAsset typed return (Issue #156)', () => {
 
     expect(myColor).toBeDefined()
     expect(typeof myColor.opacity).toBe('function')
+  })
+})
+
+describe('asset narrowing helpers (Issue #162)', () => {
+  beforeEach(() => {
+    const assetCollection = (Assets as any).__assetCollection
+    if (assetCollection) {
+      assetCollection.assets.clear()
+    }
+  })
+
+  test('getColorAsset returns ColorAssetProxy for custom color names', () => {
+    registerAsset(ColorAsset.init({
+      default: '#DB8B5A',
+      name: 'sand'
+    }))
+
+    const sand = getColorAsset('sand')
+    expect(sand).toBeDefined()
+    expect(sand?.opacity(0.67).resolve()).toContain('rgba(')
+  })
+
+  test('isColorAsset/asColorAsset narrow dynamic Assets access', () => {
+    registerAsset(ColorAsset.init({
+      default: '#679B9C',
+      name: 'grayteal'
+    }))
+
+    const maybeAsset = Assets.grayteal
+    expect(isColorAsset(maybeAsset)).toBe(true)
+
+    const grayteal = asColorAsset(maybeAsset, 'grayteal')
+    expect(grayteal.saturate(0.4).resolve()).toBeDefined()
+  })
+
+  test('getAsset preserves access to custom asset subclasses', () => {
+    class TestTokenAsset extends Asset<string> {
+      constructor(name: string, private readonly token: string) {
+        super(name)
+      }
+
+      resolve(): string {
+        return this.token
+      }
+    }
+
+    const custom = new TestTokenAsset('brandToken', 'brand.surface')
+    registerAsset(custom)
+
+    const loaded = getAsset('brandToken')
+    expect(loaded).toBe(custom)
+    expect(loaded?.resolve()).toBe('brand.surface')
   })
 })

@@ -50,6 +50,19 @@ export interface FontAssetProxy extends Asset {
 }
 
 /**
+ * Proxies returned by the dynamic Assets object.
+ */
+export type RegisteredAssetProxy =
+  | ColorAssetProxy
+  | ImageAssetProxy
+  | FontAssetProxy
+
+/**
+ * Any asset that can be registered in the collection.
+ */
+export type RegisteredAsset = RegisteredAssetProxy | Asset
+
+/**
  * Built-in system assets interface
  */
 export interface SystemAssets {
@@ -65,10 +78,12 @@ export interface SystemAssets {
 }
 
 /**
- * Main Assets interface with extensible custom asset support
+ * Main Assets interface for dynamic dot-notation access.
+ * Custom asset subclasses should be accessed through helper APIs
+ * (`getAsset`, `getColorAsset`, `asColorAsset`) to preserve type safety.
  */
 export interface AssetsInterface extends SystemAssets {
-  [key: string]: ColorAssetProxy | ImageAssetProxy | FontAssetProxy | Asset
+  [key: string]: RegisteredAssetProxy
 }
 
 /**
@@ -94,6 +109,4 @@ export interface ColorValidationResult {
  */
 export type AssetValue =
   | Asset
-  | ColorAssetProxy
-  | ImageAssetProxy
-  | FontAssetProxy
+  | RegisteredAssetProxy

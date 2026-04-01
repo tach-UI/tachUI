@@ -10,7 +10,12 @@ import { ColorAsset } from './ColorAsset'
 import { ImageAsset } from './ImageAsset'
 import { FontAsset, type FontAssetOptions } from './FontAsset'
 import type { AssetInfo, AssetsInterface } from './types'
-import type { ColorAssetProxy, ImageAssetProxy, FontAssetProxy } from '@tachui/types/assets'
+import type {
+  ColorAssetProxy,
+  ImageAssetProxy,
+  FontAssetProxy,
+  RegisteredAsset,
+} from '@tachui/types/assets'
 
 // Global asset collection
 const globalAssets = new AssetCollection()
@@ -166,6 +171,58 @@ export function getAssetInfo(): AssetInfo[] {
   }
 
   return assetInfos.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/**
+ * Get a registered asset by name.
+ * Use this for custom asset subclasses that are not represented on the dynamic
+ * `Assets.<name>` proxy type.
+ */
+export function getAsset(name: string): RegisteredAsset | undefined {
+  return globalAssets.get(name)
+}
+
+/**
+ * Type guard for values that support ColorAsset transforms.
+ */
+export function isColorAsset(value: unknown): value is ColorAssetProxy {
+  if (value instanceof ColorAsset) {
+    return true
+  }
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  const candidate = value as Partial<ColorAssetProxy>
+  return (
+    typeof candidate.resolve === 'function' &&
+    typeof candidate.opacity === 'function' &&
+    typeof candidate.saturate === 'function' &&
+    typeof candidate.brighten === 'function' &&
+    typeof candidate.contrast === 'function' &&
+    typeof candidate.rotateHue === 'function'
+  )
+}
+
+/**
+ * Resolve a named asset and narrow it to ColorAsset when possible.
+ */
+export function getColorAsset(name: string): ColorAssetProxy | undefined {
+  const value = (AssetsProxy as Record<string, unknown>)[name]
+  return isColorAsset(value) ? value : undefined
+}
+
+/**
+ * Assert an unknown value is a ColorAssetProxy.
+ * Useful for narrowing when reading from `Assets.<dynamicName>`.
+ */
+export function asColorAsset(
+  value: unknown,
+  nameForError: string = 'asset'
+): ColorAssetProxy {
+  if (!isColorAsset(value)) {
+    throw new Error(`Asset "${nameForError}" is not a ColorAsset`)
+  }
+  return value
 }
 
 // Asset discovery function to list all registered asset names
