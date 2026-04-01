@@ -6,6 +6,7 @@
 
 // Background modifiers
 export * from './background'
+export * from './blend-mode'
 
 // Border modifiers
 export * from './border'
