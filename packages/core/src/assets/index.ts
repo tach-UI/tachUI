@@ -192,6 +192,8 @@ export function isColorAsset(value: unknown): value is ColorAssetProxy {
   if (!value || typeof value !== 'object') {
     return false
   }
+  // Duck-type check is required because Assets entries are proxy-wrapped at runtime,
+  // and relying on instanceof alone is brittle across module/context boundaries.
   const candidate = value as Partial<ColorAssetProxy>
   return (
     typeof candidate.resolve === 'function' &&

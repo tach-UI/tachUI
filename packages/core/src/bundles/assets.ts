@@ -29,6 +29,7 @@ export {
   type FontWidthValue,
   type AssetInfo,
   type AssetsInterface,
+  type RegisteredAsset,
 } from '../assets'
 
 // Gradient system

@@ -34,6 +34,7 @@ export {
   type FontWidthValue,
   type AssetInfo,
   type AssetsInterface,
+  type RegisteredAsset,
 } from './assets'
 
 // Constants system
