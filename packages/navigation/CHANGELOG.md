@@ -1,5 +1,22 @@
 # @tachui/navigation
 
+## 0.8.21
+
+### Patch Changes
+
+- [#159](https://github.com/tach-UI/tachUI/pull/159) [`859a15a`](https://github.com/tach-UI/tachUI/commit/859a15a245cbde879a6dba2f74568d8881d74a4c) Thanks [@whoughton](https://github.com/whoughton)! - Fix and enhance navigation and asset behavior across the branch scope:
+
+  - add directional sheet edge/size support (`top|bottom|left|right`, axis-aware sizing and drag)
+  - add swipe-back gesture support and spring transition improvements in navigation
+  - add tab badge support and fix badge reactivity/overlay behavior
+  - add `.inspector()` support and dismissal correctness updates
+  - fix navigation ComponentInstance compatibility issues and related modal mounting behavior
+  - improve typed asset registration and make ColorAsset transforms chainable/theme-adaptive
+
+- Updated dependencies [[`859a15a`](https://github.com/tach-UI/tachUI/commit/859a15a245cbde879a6dba2f74568d8881d74a4c)]:
+  - @tachui/core@0.8.20
+  - @tachui/modifiers@0.8.20
+
 ## 0.8.20
 
 ### Patch Changes
