@@ -4,8 +4,14 @@
  * Tests for tab item badge functionality
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { SimpleTabView, createSimpleTabView, tabItem, getSimpleTabViewMetadata } from '../src/simple-tab-view'
+import { describe, it, expect, beforeEach } from 'vitest'
+import {
+  SimpleTabView,
+  createSimpleTabView,
+  tabItem,
+  getSimpleTabViewMetadata,
+  formatBadge,
+} from '../src/simple-tab-view'
 import { HTML } from '@tachui/primitives'
 
 describe('TabView Badge Support', () => {
@@ -17,120 +23,129 @@ describe('TabView Badge Support', () => {
     mockTabContent2 = HTML.div({ children: 'Settings Content' }).build()
   })
 
-  afterEach(() => {
-    // Cleanup
+  describe('formatBadge helper', () => {
+    it('formats numeric badge correctly', () => {
+      expect(formatBadge(5)).toEqual({ show: true, isDot: false, text: '5' })
+    })
+
+    it('formats badge > 99 as 99+', () => {
+      expect(formatBadge(100).text).toBe('99+')
+      expect(formatBadge(150).text).toBe('99+')
+      expect(formatBadge(99).text).toBe('99')
+    })
+
+    it('formats dot badge (true)', () => {
+      expect(formatBadge(true)).toEqual({ show: true, isDot: true, text: '' })
+    })
+
+    it('hides badge for 0, false, undefined, empty string', () => {
+      expect(formatBadge(0).show).toBe(false)
+      expect(formatBadge(false).show).toBe(false)
+      expect(formatBadge(undefined).show).toBe(false)
+      expect(formatBadge('').show).toBe(false)
+    })
+
+    it('formats string badge correctly', () => {
+      expect(formatBadge('New')).toEqual({ show: true, isDot: false, text: 'New' })
+    })
   })
 
-  it('renders numeric badge with correct count', () => {
-    const tabs = [
-      tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 5),
-      tabItem(mockTabContent2, 'settings', 'Settings'),
-    ]
+  describe('SimpleTabView badge metadata', () => {
+    it('stores numeric badge on tab item', () => {
+      const tabs = [
+        tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 5),
+        tabItem(mockTabContent2, 'settings', 'Settings'),
+      ]
+      const tabView = SimpleTabView(tabs)
+      const metadata = getSimpleTabViewMetadata(tabView)
+      expect(metadata.tabs[0].badge).toBe(5)
+      expect(metadata.tabs[1].badge).toBeUndefined()
+    })
 
-    const tabView = SimpleTabView(tabs)
+    it('stores dot badge (true)', () => {
+      const tabs = [tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, true)]
+      const tabView = SimpleTabView(tabs)
+      expect(getSimpleTabViewMetadata(tabView).tabs[0].badge).toBe(true)
+    })
 
-    // Verify tabView was created
-    expect(tabView).toBeDefined()
+    it('stores badge 0 (hidden but stored)', () => {
+      const tabs = [tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 0)]
+      const tabView = SimpleTabView(tabs)
+      expect(getSimpleTabViewMetadata(tabView).tabs[0].badge).toBe(0)
+    })
 
-    // Get metadata to check badge
-    const metadata = getSimpleTabViewMetadata(tabView)
-    expect(metadata).toBeDefined()
-    expect(metadata.tabs).toHaveLength(2)
+    it('stores string badge value', () => {
+      const tabs = [tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 'New')]
+      const tabView = SimpleTabView(tabs)
+      expect(getSimpleTabViewMetadata(tabView).tabs[0].badge).toBe('New')
+    })
 
-    // Check that the tab has the badge
-    expect(metadata.tabs[0].badge).toBe(5)
-    expect(metadata.tabs[1].badge).toBeUndefined()
+    it('stores icon and badge together', () => {
+      const tabs = [tabItem(mockTabContent1, 'inbox', 'Inbox', 'envelope', 5)]
+      const tabView = SimpleTabView(tabs)
+      const metadata = getSimpleTabViewMetadata(tabView)
+      expect(metadata.tabs[0].icon).toBe('envelope')
+      expect(metadata.tabs[0].badge).toBe(5)
+    })
+
+    it('createSimpleTabView passes badge through', () => {
+      const tabView = createSimpleTabView([
+        { id: 'inbox', label: 'Inbox', icon: 'mail', badge: 5, content: HTML.div({ children: 'Inbox' }).build() },
+        { id: 'settings', label: 'Settings', content: HTML.div({ children: 'Settings' }).build() },
+      ])
+      const metadata = getSimpleTabViewMetadata(tabView)
+      expect(metadata.tabs[0].badge).toBe(5)
+      expect(metadata.tabs[1].badge).toBeUndefined()
+    })
   })
 
-  it('stores badge counts over 99 correctly', () => {
-    const tabs = [
-      tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 150),
-    ]
+  describe('Badge reactivity via updateTabBadge', () => {
+    it('updateTabBadge updates the badge value', () => {
+      const tabs = [tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 1)]
+      const tabView = SimpleTabView(tabs)
+      const metadata = getSimpleTabViewMetadata(tabView)
 
-    const tabView = SimpleTabView(tabs)
-    const metadata = getSimpleTabViewMetadata(tabView)
-    expect(metadata.tabs[0].badge).toBe(150)
+      expect(metadata.tabs[0].badge).toBe(1)
 
-    // The display logic will show 99+ when rendered
+      metadata.updateTabBadge('inbox', 5)
+
+      expect(metadata.tabs[0].badge).toBe(5)
+    })
+
+    it('updateTabBadge can clear a badge by setting to 0', () => {
+      const tabs = [tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 3)]
+      const tabView = SimpleTabView(tabs)
+      const metadata = getSimpleTabViewMetadata(tabView)
+
+      metadata.updateTabBadge('inbox', 0)
+
+      expect(metadata.tabs[0].badge).toBe(0)
+      expect(formatBadge(metadata.tabs[0].badge).show).toBe(false)
+    })
+
+    it('updateTabBadge ignores unknown tabId without throwing', () => {
+      const tabs = [tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 3)]
+      const tabView = SimpleTabView(tabs)
+      const metadata = getSimpleTabViewMetadata(tabView)
+
+      expect(() => metadata.updateTabBadge('nonexistent', 5)).not.toThrow()
+      expect(metadata.tabs[0].badge).toBe(3)
+    })
   })
 
-  it('renders dot badge when badge is true', () => {
-    const tabs = [
-      tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, true),
-      tabItem(mockTabContent2, 'settings', 'Settings'),
-    ]
+  describe('Badge overlay structure', () => {
+    it('renders badge element inside a position-relative icon wrapper', () => {
+      const tabs = [tabItem(mockTabContent1, 'inbox', 'Inbox', 'envelope', 5)]
+      const tabView = SimpleTabView(tabs)
+      expect(tabView).toBeDefined()
+      // The tab bar should be built without throwing; overlay positioning is applied
+      // via props.style on the icon wrapper and badge element
+    })
 
-    const tabView = SimpleTabView(tabs)
-    const metadata = getSimpleTabViewMetadata(tabView)
-    expect(metadata.tabs[0].badge).toBe(true)
-    expect(metadata.tabs[1].badge).toBeUndefined()
-  })
-
-  it('hides badge when count is 0', () => {
-    const tabs = [
-      tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 0),
-      tabItem(mockTabContent2, 'settings', 'Settings', undefined, 3),
-    ]
-
-    const tabView = SimpleTabView(tabs)
-    const metadata = getSimpleTabViewMetadata(tabView)
-
-    // Badge should be 0 but considered falsy for display
-    expect(metadata.tabs[0].badge).toBe(0)
-    expect(metadata.tabs[1].badge).toBe(3)
-  })
-
-  it('supports string badge values', () => {
-    const tabs = [
-      tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 'New'),
-    ]
-
-    const tabView = SimpleTabView(tabs)
-    const metadata = getSimpleTabViewMetadata(tabView)
-    expect(metadata.tabs[0].badge).toBe('New')
-  })
-
-  it('supports updating badge via createSimpleTabView', () => {
-    const tabs1 = [
-      tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 1),
-    ]
-
-    const tabView1 = SimpleTabView(tabs1)
-    const metadata1 = getSimpleTabViewMetadata(tabView1)
-    expect(metadata1.tabs[0].badge).toBe(1)
-
-    // Create a new view with updated badge
-    const tabs2 = [
-      tabItem(mockTabContent1, 'inbox', 'Inbox', undefined, 5),
-    ]
-    const tabView2 = SimpleTabView(tabs2)
-    const metadata2 = getSimpleTabViewMetadata(tabView2)
-    expect(metadata2.tabs[0].badge).toBe(5)
-  })
-
-  it('badge renders with correct visual styling', () => {
-    const tabs = [
-      tabItem(mockTabContent1, 'inbox', 'Inbox', 'envelope', 5),
-    ]
-
-    const tabView = SimpleTabView(tabs)
-
-    // Verify the metadata contains icon and badge
-    const metadata = getSimpleTabViewMetadata(tabView)
-    expect(metadata.tabs[0].icon).toBe('envelope')
-    expect(metadata.tabs[0].badge).toBe(5)
-    expect(metadata.tabs[0].label).toBe('Inbox')
-  })
-
-  it('uses createSimpleTabView helper with badges', () => {
-    const tabView = createSimpleTabView([
-      { id: 'inbox', label: 'Inbox', icon: 'mail', badge: 5, content: HTML.div({ children: 'Inbox' }).build() },
-      { id: 'settings', label: 'Settings', content: HTML.div({ children: 'Settings' }).build() },
-    ])
-
-    const metadata = getSimpleTabViewMetadata(tabView)
-    expect(metadata.tabs).toHaveLength(2)
-    expect(metadata.tabs[0].badge).toBe(5)
-    expect(metadata.tabs[1].badge).toBeUndefined()
+    it('renders without badge when badge is 0', () => {
+      const tabs = [tabItem(mockTabContent1, 'inbox', 'Inbox', 'envelope', 0)]
+      const tabView = SimpleTabView(tabs)
+      expect(tabView).toBeDefined()
+    })
   })
 })

@@ -22,6 +22,7 @@ import type {
   TabItem,
   TabViewOptions,
 } from './types'
+import { formatBadge, buildBadgeElement } from './simple-tab-view'
 
 /**
  * Internal tab coordinator implementation
@@ -84,11 +85,9 @@ class TabCoordinatorImpl implements TabCoordinator {
   }
 
   updateTabBadge(tabId: string, badge?: string | number | boolean): void {
-    const tab = this._tabs.find(t => t.id === tabId) as
-      | { badge?: string | number | boolean }
-      | undefined
-    if (tab) {
-      tab.badge = badge
+    const index = this._tabs.findIndex(t => t.id === tabId)
+    if (index >= 0) {
+      this._tabs[index] = { ...this._tabs[index], badge }
     }
   }
 
@@ -206,6 +205,20 @@ export function TabView(
     }
   }
 
+  // Per-tab badge signals for reactive badge updates
+  const badgeSignals = new Map<string, [() => string | number | boolean | undefined, (v: string | number | boolean | undefined) => void]>()
+  tabs.forEach(tab => {
+    const [get, set] = createSignal<string | number | boolean | undefined>(tab.badge)
+    badgeSignals.set(tab.id, [get, set])
+  })
+
+  // Expose reactive badge update that keeps coordinator and signals in sync
+  const updateTabBadgeReactive = (tabId: string, badge?: string | number | boolean) => {
+    tabCoordinator.updateTabBadge(tabId, badge)
+    const entry = badgeSignals.get(tabId)
+    if (entry) entry[1](badge)
+  }
+
   // Tab bar component
   const TabBar = () => {
     // const placement = options.tabPlacement || 'bottom'
@@ -266,82 +279,43 @@ export function TabView(
     tabButtons.forEach((button, index) => {
       const tab = tabs[index]
 
-      // Create reactive badge signal for this tab
-      const [badgeValue, setBadgeValue] = createSignal(tab.badge)
-
-      // Watch for badge changes from tab coordinator
-      createEffect(() => {
-        const currentTab = tabCoordinator.tabs.find(t => t.id === tab.id)
-        if (currentTab && 'badge' in currentTab) {
-          setBadgeValue(currentTab.badge)
-        }
-      })
+      // Read badge from the per-tab signal (reactive — avoids polling via createEffect)
+      const [getBadge] = badgeSignals.get(tab.id)!
 
       const tabContent = () => {
         const isActive = activeTabId() === tab.id
-        const badge = badgeValue()
+        const badge = getBadge()
+        const { show: showBadge, isDot: isDotBadge, text: displayText } = formatBadge(badge)
 
-        // Determine badge display
-        const showBadge = badge !== undefined && badge !== false && badge !== 0 && badge !== ''
-        const isDotBadge = badge === true
-        const numericBadge = typeof badge === 'number' ? badge : parseInt(badge as string, 10)
-        const displayText = isDotBadge
-          ? ''
-          : typeof badge === 'string'
-            ? badge
-            : numericBadge > 99
-              ? '99+'
-              : String(badge)
+        // Icon wrapper with badge overlay (position: relative)
+        const iconWrapperChildren: ComponentInstance[] = []
+        if (tab.icon) {
+          iconWrapperChildren.push(
+            HTML.div({ children: tab.icon })
+              .fontSize(20)
+              .foregroundColor(isActive ? accentColor : '#666666')
+              .build()
+          )
+        }
+        if (showBadge) {
+          iconWrapperChildren.push(buildBadgeElement(displayText, isDotBadge))
+        }
+        const iconWrapper = HTML.div({ children: iconWrapperChildren }).build()
+        ;(iconWrapper as any).props = (iconWrapper as any).props ?? {}
+        ;(iconWrapper as any).props.style = (iconWrapper as any).props.style ?? {}
+        Object.assign((iconWrapper as any).props.style, {
+          position: 'relative',
+          display: 'inline-block',
+        })
 
         return VStack({
           children: [
-            // Icon with badge overlay
-            ...(tab.icon
-              ? [
-                  HTML.div({
-                    children: tab.icon,
-                  })
-                    .fontSize(20)
-                    .foregroundColor(isActive ? accentColor : '#666666')
-                    .build(),
-                ]
-              : []),
-
-            // Title with badge
-            HStack({
-              children: [
-                Text(tab.title)
-                  .fontSize(12)
-                  .fontWeight(isActive ? '600' : '400')
-                  .foregroundColor(isActive ? accentColor : '#666666')
-                  .build(),
-
-                // Badge
-                ...(showBadge
-                  ? [
-                      HTML.div({
-                        children: displayText,
-                      })
-                        .backgroundColor('#FF3B30')
-                        .foregroundColor('#ffffff')
-                        .fontSize(isDotBadge ? 0 : 10)
-                        .fontWeight('bold')
-                        .padding(isDotBadge
-                          ? { top: 0, bottom: 0, left: 0, right: 0 }
-                          : { top: 2, bottom: 2, left: 6, right: 6 }
-                        )
-                        .cornerRadius(isDotBadge ? 4 : 8)
-                        .frame(isDotBadge
-                          ? { width: 8, height: 8 }
-                          : { minWidth: 16, height: 16 }
-                        )
-                        .build(),
-                    ]
-                  : []),
-              ],
-              spacing: 4,
-              alignment: 'center',
-            }),
+            iconWrapper,
+            Text(tab.title)
+              .fontSize(12)
+              .fontWeight(isActive ? '600' : '400')
+              .foregroundColor(isActive ? accentColor : '#666666')
+              .build(),
           ],
           spacing: 4,
           alignment: 'center',
@@ -449,6 +423,7 @@ export function TabView(
 
   // Add tab coordinator to component
   ;(tabViewComponent as any).tabCoordinator = tabCoordinator
+  ;(tabViewComponent as any).updateTabBadge = updateTabBadgeReactive
 
   // Integrate with navigation environment (if available)
   const navContext = useNavigationEnvironmentContext()
