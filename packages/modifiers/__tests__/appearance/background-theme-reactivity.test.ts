@@ -54,11 +54,19 @@ describe('Background Modifier Theme Reactivity', () => {
     testDisposers.push(cleanup.dispose)
 
     await waitForEffects()
-    expectColorValue(cleanup.element.style.background, '#EDEAE9', 'rgb(237, 234, 233)')
+    expectColorValue(
+      cleanup.element.style.getPropertyValue('background-color'),
+      '#EDEAE9',
+      'rgb(237, 234, 233)'
+    )
 
     setTheme('dark')
     await waitForEffects()
-    expectColorValue(cleanup.element.style.background, '#332A25', 'rgb(51, 42, 37)')
+    expectColorValue(
+      cleanup.element.style.getPropertyValue('background-color'),
+      '#332A25',
+      'rgb(51, 42, 37)'
+    )
   })
 
   it('keeps foregroundColor(ColorAsset) behavior unchanged', async () => {
@@ -94,9 +102,17 @@ describe('Background Modifier Theme Reactivity', () => {
       element
     )
 
-    expectColorValue(element.style.background, '#112233', 'rgb(17, 34, 51)')
+    expectColorValue(
+      element.style.getPropertyValue('background-color'),
+      '#112233',
+      'rgb(17, 34, 51)'
+    )
 
     element.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
-    expectColorValue(element.style.background, '#445566', 'rgb(68, 85, 102)')
+    expectColorValue(
+      element.style.getPropertyValue('background-color'),
+      '#445566',
+      'rgb(68, 85, 102)'
+    )
   })
 })

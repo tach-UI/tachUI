@@ -23,6 +23,10 @@ export {
   createColorAsset,
   createImageAsset,
   createFontAsset,
+  getAsset,
+  getColorAsset,
+  isColorAsset,
+  asColorAsset,
   getAssetInfo,
   listAssetNames,
   type FontAssetOptions,
@@ -30,6 +34,7 @@ export {
   type FontWidthValue,
   type AssetInfo,
   type AssetsInterface,
+  type RegisteredAsset,
 } from './assets'
 
 // Constants system

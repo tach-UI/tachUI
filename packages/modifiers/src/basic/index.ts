@@ -77,6 +77,9 @@ import {
 import {
   backgroundColor,
   background,
+  backgroundImage,
+  blendMode,
+  backgroundBlendMode,
   border,
   borderTop,
   borderBottom,
@@ -271,6 +274,9 @@ export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]
   // Appearance
   ['backgroundColor', backgroundColor],
   ['background', background],
+  ['backgroundImage', backgroundImage],
+  ['blendMode', blendMode],
+  ['backgroundBlendMode', backgroundBlendMode],
   ['border', border],
   ['borderTop', borderTop],
   ['borderBottom', borderBottom],

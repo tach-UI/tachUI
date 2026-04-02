@@ -20,6 +20,7 @@ export type {
   AnimationModifierProps,
   AppearanceModifierProps,
   AssetValue,
+  BlendMode,
   ColorValue,
   CSSClassNames,
   CSSStyleProperties,

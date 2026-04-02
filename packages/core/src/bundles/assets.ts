@@ -16,6 +16,10 @@ export {
   createColorAsset,
   createImageAsset,
   createFontAsset,
+  getAsset,
+  getColorAsset,
+  isColorAsset,
+  asColorAsset,
   createGoogleFont,
   createVariableFont,
   getAssetInfo,
@@ -25,6 +29,7 @@ export {
   type FontWidthValue,
   type AssetInfo,
   type AssetsInterface,
+  type RegisteredAsset,
 } from '../assets'
 
 // Gradient system

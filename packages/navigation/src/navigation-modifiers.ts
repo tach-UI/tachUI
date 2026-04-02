@@ -58,6 +58,7 @@ export interface SheetPresentationOptions {
   onDismiss?: () => void
   edge?: SheetEdge
   size?: SheetSize
+  lockBackgroundScroll?: boolean
 }
 
 export type PresentationDetent =
@@ -230,6 +231,46 @@ class NavigationModifierManager {
 // Global modifier manager
 const navigationModifierManager = new NavigationModifierManager()
 const activeSheetStack: string[] = []
+let activeSheetScrollLockCount = 0
+let previousBodyOverflow: string | null = null
+let previousBodyOverscrollBehavior: string | null = null
+
+function acquireBodyScrollLock(): () => void {
+  if (typeof document === 'undefined') {
+    return () => {}
+  }
+
+  const body = document.body
+  if (activeSheetScrollLockCount === 0) {
+    previousBodyOverflow = body.style.overflow
+    previousBodyOverscrollBehavior = body.style.overscrollBehavior
+    body.style.overflow = 'hidden'
+    body.style.overscrollBehavior = 'none'
+  }
+  activeSheetScrollLockCount += 1
+
+  let released = false
+  return () => {
+    if (released) {
+      return
+    }
+    released = true
+
+    activeSheetScrollLockCount = Math.max(0, activeSheetScrollLockCount - 1)
+    if (activeSheetScrollLockCount === 0) {
+      body.style.overflow = previousBodyOverflow ?? ''
+      body.style.overscrollBehavior = previousBodyOverscrollBehavior ?? ''
+      previousBodyOverflow = null
+      previousBodyOverscrollBehavior = null
+    }
+  }
+}
+
+export function __resetScrollLockStateForTests(): void {
+  activeSheetScrollLockCount = 0
+  previousBodyOverflow = null
+  previousBodyOverscrollBehavior = null
+}
 
 /**
  * .navigationTitle() modifier
@@ -1339,6 +1380,7 @@ function setupSheetPresentation(
   let removeDetentResizeListener: (() => void) | null = null
   let removeSizeResizeListener: (() => void) | null = null
   let removeDismissScope: (() => void) | null = null
+  let releaseBodyScrollLock: (() => void) | null = null
 
   const clearTransitionQueue = () => {
     if (transitionFrameId !== null) {
@@ -1410,6 +1452,10 @@ function setupSheetPresentation(
     if (removeDismissScope) {
       removeDismissScope()
       removeDismissScope = null
+    }
+    if (releaseBodyScrollLock) {
+      releaseBodyScrollLock()
+      releaseBodyScrollLock = null
     }
 
     if (
@@ -1790,6 +1836,9 @@ function setupSheetPresentation(
     portalRoot.append(backdrop, sheetHost)
     document.body.appendChild(portalRoot)
     activeSheetStack.push(sheetId)
+    if (options.lockBackgroundScroll !== false) {
+      releaseBodyScrollLock = acquireBodyScrollLock()
+    }
 
     previousActiveElement =
       document.activeElement instanceof HTMLElement

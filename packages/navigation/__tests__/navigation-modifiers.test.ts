@@ -18,6 +18,7 @@ import {
   toolbarItems,
   ToolbarItem,
   __resetToolbarItemIdCounterForTests,
+  __resetScrollLockStateForTests,
   getToolbarItemsByPlacement,
   toolbarBackground,
   toolbarBackgroundVisibility,
@@ -64,6 +65,9 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
     document
       .querySelectorAll('[data-tachui-confirmation-dialog-root="true"]')
       .forEach(node => node.remove())
+    document.body.style.overflow = ''
+    document.body.style.overscrollBehavior = ''
+    __resetScrollLockStateForTests()
   })
 
   const flushMicrotasks = async (): Promise<void> => {
@@ -1184,6 +1188,117 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       ).toBeNull()
 
       cleanup()
+      container.remove()
+    })
+
+    it('locks background scroll by default while sheet is presented', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      document.body.style.overflow = 'auto'
+      document.body.style.overscrollBehavior = 'contain'
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      expect(document.body.style.overflow).toBe('hidden')
+      expect(document.body.style.overscrollBehavior).toBe('none')
+
+      cleanup()
+      container.remove()
+      expect(document.body.style.overflow).toBe('auto')
+      expect(document.body.style.overscrollBehavior).toBe('contain')
+    })
+
+    it('does not lock background scroll when lockBackgroundScroll is false', async () => {
+      const [isPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      document.body.style.overflow = 'auto'
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build(),
+        { lockBackgroundScroll: false }
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+
+      expect(document.body.style.overflow).toBe('auto')
+
+      cleanup()
+      container.remove()
+      expect(document.body.style.overflow).toBe('auto')
+    })
+
+    it('restores previous body scroll style after dismiss via signal update', async () => {
+      const [isPresented, setIsPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      document.body.style.overflow = 'scroll'
+      document.body.style.overscrollBehavior = 'contain'
+
+      const component = sheet(
+        HTML.div({ children: 'Host' }).build(),
+        isPresented,
+        () => HTML.div({ children: 'Sheet content' }).build()
+      )
+
+      const cleanup = mountComponentTree(component, container)
+      await flushMicrotasks()
+      expect(document.body.style.overflow).toBe('hidden')
+      expect(document.body.style.overscrollBehavior).toBe('none')
+
+      setIsPresented(false)
+      await flushMicrotasks()
+      expect(document.body.style.overflow).toBe('scroll')
+      expect(document.body.style.overscrollBehavior).toBe('contain')
+
+      cleanup()
+      container.remove()
+    })
+
+    it('keeps scroll lock until all concurrently presented sheets are dismissed', async () => {
+      const [firstPresented, setFirstPresented] = createSignal(true)
+      const [secondPresented, setSecondPresented] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      document.body.style.overflow = 'auto'
+
+      const first = sheet(
+        HTML.div({ children: 'First host' }).build(),
+        firstPresented,
+        () => HTML.div({ children: 'First sheet' }).build()
+      )
+      const second = sheet(
+        HTML.div({ children: 'Second host' }).build(),
+        secondPresented,
+        () => HTML.div({ children: 'Second sheet' }).build()
+      )
+
+      const cleanupFirst = mountComponentTree(first, container)
+      const cleanupSecond = mountComponentTree(second, container)
+      await flushMicrotasks()
+      expect(document.body.style.overflow).toBe('hidden')
+
+      setFirstPresented(false)
+      await flushMicrotasks()
+      expect(document.body.style.overflow).toBe('hidden')
+
+      setSecondPresented(false)
+      await flushMicrotasks()
+      expect(document.body.style.overflow).toBe('auto')
+
+      cleanupFirst()
+      cleanupSecond()
       container.remove()
     })
 

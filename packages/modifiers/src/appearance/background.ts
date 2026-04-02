@@ -12,6 +12,16 @@ import {
   isSignal,
 } from '@tachui/core/reactive'
 import type { ModifierContext } from '@tachui/types/modifiers'
+import type {
+  BackgroundImageOptions,
+  BackgroundImageRepeat,
+  BackgroundImageSize,
+} from '@tachui/types/modifiers'
+export type {
+  BackgroundImageOptions,
+  BackgroundImageRepeat,
+  BackgroundImageSize,
+} from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/types/runtime'
 import type { GradientDefinition } from '@tachui/core/gradients'
 import type {
@@ -19,6 +29,7 @@ import type {
   StateGradientOptions,
 } from '@tachui/core/gradients/types'
 import type { Asset } from '@tachui/core/assets'
+import type { ImageAssetProxy } from '@tachui/types/assets'
 import { gradientToCSS } from '@tachui/core/gradients/css-generator'
 
 type BackgroundState = 'default' | 'hover' | 'active' | 'focus' | 'disabled'
@@ -26,6 +37,7 @@ type BasicBackgroundValue = string | GradientDefinition | Asset | undefined | nu
 
 export interface BackgroundOptions {
   background: StatefulBackgroundValue
+  cssProperty?: 'background' | 'backgroundColor'
 }
 
 export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
@@ -36,9 +48,10 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     if (!context.element) return
 
     const backgroundValue = this.properties.background
+    const cssProperty = this.properties.cssProperty ?? 'background'
 
     if (isSignal(backgroundValue) || isComputed(backgroundValue)) {
-      this.applyStyles(context.element, { background: backgroundValue as any })
+      this.applyStyles(context.element, { [cssProperty]: backgroundValue as any })
       return undefined
     }
 
@@ -46,7 +59,7 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     if (this.isAssetValue(backgroundValue)) {
       this.applyColorAssetWithThemeReactivity(
         context.element,
-        'background',
+        cssProperty,
         backgroundValue
       )
       return undefined
@@ -59,7 +72,7 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
       context.element instanceof HTMLElement &&
       this.isStateGradientOption(backgroundValue)
     ) {
-      this.applyStatefulBackground(context.element, backgroundValue)
+      this.applyStatefulBackground(context.element, backgroundValue, cssProperty)
       return undefined
     }
 
@@ -68,7 +81,7 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     )
 
     if (resolvedBackground !== undefined) {
-      const styles = { background: resolvedBackground }
+      const styles = { [cssProperty]: resolvedBackground }
       this.applyStyles(context.element, styles)
     }
 
@@ -140,7 +153,8 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
 
   private applyStatefulBackground(
     element: HTMLElement,
-    stateOptions: StateGradientOptions
+    stateOptions: StateGradientOptions,
+    cssProperty: 'background' | 'backgroundColor'
   ): void {
     const resolvedStates: Partial<Record<BackgroundState, string>> = {
       default: this.resolveBackgroundValue(stateOptions.default),
@@ -164,7 +178,7 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
       if (!state) return
       const value = resolvedStates[state]
       if (value !== undefined) {
-        this.applyStyleChange(element, 'background', value)
+        this.applyStyleChange(element, cssProperty, value)
       }
     }
 
@@ -187,7 +201,9 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
       const duration = animation.duration ?? 200
       const easing = animation.easing ?? 'ease'
       const delay = animation.delay ?? 0
-      const transitionValue = `background ${duration}ms ${easing} ${delay}ms`
+      const transitionTarget =
+        cssProperty === 'backgroundColor' ? 'background-color' : 'background'
+      const transitionValue = `${transitionTarget} ${duration}ms ${easing} ${delay}ms`
       element.style.transition = transitionValue
       const cssText = element.style.cssText || ''
       if (!cssText.includes('transition')) {
@@ -323,6 +339,63 @@ export interface BackgroundClipOptions {
   webkitTextFillColor?: string
 }
 
+export interface BackgroundImageModifierProps {
+  source: ImageAssetProxy | string
+  options: Required<BackgroundImageOptions>
+}
+
+const DEFAULT_BACKGROUND_IMAGE_OPTIONS: Required<BackgroundImageOptions> = {
+  repeat: 'no-repeat',
+  size: 'cover',
+  position: 'center',
+}
+
+export class BackgroundImageModifier extends BaseModifier<BackgroundImageModifierProps> {
+  readonly type = 'backgroundImage'
+  readonly priority = 94
+
+  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+    if (!context.element) return
+
+    const {
+      source,
+      options: { repeat, size, position },
+    } = this.properties
+
+    this.applyStyles(context.element, {
+      backgroundRepeat: this.mapRepeatValue(repeat),
+      backgroundSize: size,
+      backgroundPosition: position,
+    })
+
+    if (this.isAssetValue(source)) {
+      this.applyImageAssetWithThemeReactivity(context.element, source)
+      return undefined
+    }
+
+    this.applyStyleChange(context.element, 'backgroundImage', source)
+    return undefined
+  }
+
+  private mapRepeatValue(repeat: BackgroundImageRepeat): string {
+    if (repeat === 'tile') return 'repeat'
+    return repeat
+  }
+
+  private applyImageAssetWithThemeReactivity(
+    element: Element,
+    asset: { resolve: () => string }
+  ): void {
+    const themeSignal = getThemeSignal()
+    createEffect(() => {
+      themeSignal()
+      const resolved = asset.resolve()
+      const escaped = resolved.replace(/["\\]/g, '\\$&')
+      this.applyStyleChange(element, 'backgroundImage', `url("${escaped}")`)
+    })
+  }
+}
+
 export class BackgroundClipModifier extends BaseModifier<BackgroundClipOptions> {
   readonly type = 'backgroundClip'
   readonly priority = 40
@@ -360,11 +433,36 @@ export class BackgroundClipModifier extends BaseModifier<BackgroundClipOptions> 
 }
 
 export function backgroundColor(color: string | any): BackgroundModifier {
-  return new BackgroundModifier({ background: color })
+  return new BackgroundModifier({
+    background: color,
+    cssProperty: 'backgroundColor',
+  })
 }
 
 export function background(value: string | any): BackgroundModifier {
-  return new BackgroundModifier({ background: value })
+  return new BackgroundModifier({
+    background: value,
+    cssProperty: 'background',
+  })
+}
+
+/**
+ * Apply CSS background-image styles.
+ *
+ * String sources must be valid CSS background-image values
+ * (for example: `url('/image.png')` or `linear-gradient(...)`).
+ */
+export function backgroundImage(
+  source: ImageAssetProxy | string,
+  options: BackgroundImageOptions = {}
+): BackgroundImageModifier {
+  return new BackgroundImageModifier({
+    source,
+    options: {
+      ...DEFAULT_BACKGROUND_IMAGE_OPTIONS,
+      ...options,
+    },
+  })
 }
 
 export function backgroundClip(

@@ -11,7 +11,11 @@ import type {
   ComponentProps,
   DOMNode,
 } from '@tachui/types/runtime'
-import type { TextAlign } from '@tachui/types/modifiers'
+import type {
+  TextAlign,
+  BlendMode,
+  BackgroundImageOptions,
+} from '@tachui/types/modifiers'
 import type {
   OverlayAlignment,
   OverlayOffset,
@@ -634,6 +638,12 @@ export interface ModifierBuilder<
   background(
     value: StatefulBackgroundValue | Signal<string>
   ): ModifierBuilder<T>
+  backgroundImage(
+    source: ImageAssetProxy | string,
+    options?: BackgroundImageOptions
+  ): ModifierBuilder<T>
+  blendMode(mode: BlendMode): ModifierBuilder<T>
+  backgroundBlendMode(mode: BlendMode): ModifierBuilder<T>
   font(options: AppearanceModifierProps['font']): ModifierBuilder<T>
   font(size: number | string): ModifierBuilder<T>
   fontWeight(
