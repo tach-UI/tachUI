@@ -37,6 +37,21 @@ const modifierInstanceIdSymbol = Symbol.for('tachui.modifier.instanceId')
 const updaterScope = 'core'
 let modifierInstanceIdCounter = 0
 
+function isHTMLElementRuntimeElement(element: unknown): element is HTMLElement {
+  return typeof HTMLElement !== 'undefined' && element instanceof HTMLElement
+}
+
+function hasStyleTarget(
+  element: unknown
+): element is { style: Record<string, string> } {
+  return (
+    typeof element === 'object' &&
+    element !== null &&
+    'style' in element &&
+    Boolean((element as { style?: unknown }).style)
+  )
+}
+
 function getModifierInstanceId(modifier: object): number {
   const existingId = (modifier as any)[modifierInstanceIdSymbol]
   if (typeof existingId === 'number') return existingId
@@ -258,7 +273,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Add CSS classes to an element
    */
   protected addClasses(element: Element, classes: string[]): void {
-    if (element instanceof HTMLElement) {
+    if (isHTMLElementRuntimeElement(element)) {
       element.classList.add(...classes)
     }
   }
@@ -267,7 +282,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Remove CSS classes from an element
    */
   protected removeClasses(element: Element, classes: string[]): void {
-    if (element instanceof HTMLElement) {
+    if (isHTMLElementRuntimeElement(element)) {
       element.classList.remove(...classes)
     }
   }
@@ -318,7 +333,7 @@ export class LayoutModifier extends BaseModifier {
 
     // Handle absolutePosition separately for proper positioning (Phase 3 - Epic: Butternut)
     const props = this.properties as any
-    if (props.position && context.element instanceof HTMLElement) {
+    if (props.position && isHTMLElementRuntimeElement(context.element)) {
       this.applyAbsolutePosition(context.element, props.position)
     }
 
@@ -1045,7 +1060,7 @@ export class InteractionModifier extends BaseModifier {
 
     // Disabled state
     if (props.disabled !== undefined) {
-      if (context.element instanceof HTMLElement) {
+      if (isHTMLElementRuntimeElement(context.element)) {
         if (props.disabled) {
           context.element.setAttribute('disabled', 'true')
           context.element.style.pointerEvents = 'none'
@@ -1060,7 +1075,7 @@ export class InteractionModifier extends BaseModifier {
 
     // Draggable state
     if (props.draggable !== undefined) {
-      if (context.element instanceof HTMLElement) {
+      if (isHTMLElementRuntimeElement(context.element)) {
         context.element.draggable = props.draggable
       }
     }
@@ -1098,16 +1113,16 @@ export class AnimationModifier extends BaseModifier {
       const easing = t.easing || 'ease'
       const delay = t.delay || 0
 
-      if (context.element instanceof HTMLElement) {
+      if (hasStyleTarget(context.element)) {
         context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
       }
     }
 
     // Animation
-    if (props.animation && context.element instanceof HTMLElement) {
+    if (props.animation && hasStyleTarget(context.element)) {
       const anim = props.animation
 
-      if (anim.keyframes) {
+      if (anim.keyframes && typeof document !== 'undefined') {
         // Create keyframes
         const keyframeName = `tachui-animation-${context.componentId}-${Date.now()}`
         const keyframeRule = this.createKeyframeRule(
@@ -1129,12 +1144,12 @@ export class AnimationModifier extends BaseModifier {
     }
 
     // Transform
-    if (props.transform && context.element instanceof HTMLElement) {
+    if (props.transform && hasStyleTarget(context.element)) {
       if (isSignal(props.transform) || isComputed(props.transform)) {
         // Create reactive effect for transform
         createEffect(() => {
           const transformValue = props.transform()
-          if (context.element instanceof HTMLElement) {
+          if (hasStyleTarget(context.element)) {
             context.element.style.transform = transformValue
           }
         })
@@ -1144,7 +1159,7 @@ export class AnimationModifier extends BaseModifier {
     }
 
     // Scale Effect (SwiftUI .scaleEffect(x, y, anchor))
-    if (props.scaleEffect && context.element instanceof HTMLElement) {
+    if (props.scaleEffect && hasStyleTarget(context.element)) {
       const { x, y, anchor } = props.scaleEffect
       const scaleY = y ?? x // Default to uniform scaling if y not provided
 

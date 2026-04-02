@@ -285,12 +285,21 @@ function createSSRVirtualElement(initialStyle: unknown): {
   getStyles: () => SSRStyleObject
 } {
   const styleState = collectStyleObject(initialStyle)
-  const styleTarget: SSRStyleTarget = {
+  const styleTargetBase: SSRStyleTarget & Record<string, unknown> = {
     setProperty(name: string, value: string, priority?: string) {
       const suffix = priority === 'important' ? ' !important' : ''
       styleState[name] = `${value}${suffix}`
     },
   }
+  const styleTarget = new Proxy(styleTargetBase, {
+    set(target, property, value) {
+      if (typeof property === 'string' && property !== 'setProperty') {
+        styleState[property] = String(value)
+      }
+      ;(target as Record<string, unknown>)[property as string] = value
+      return true
+    },
+  }) as SSRStyleTarget
 
   const element: SSRVirtualElement = {
     style: styleTarget,

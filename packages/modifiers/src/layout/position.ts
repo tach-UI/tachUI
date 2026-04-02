@@ -10,6 +10,15 @@ import type { ModifierContext } from '@tachui/types/modifiers'
 import type { Signal } from '@tachui/types/reactive'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 
+function canUseDocument(): boolean {
+  return typeof document !== 'undefined'
+}
+
+function readComputedStyle(element: Element): CSSStyleDeclaration | null {
+  if (typeof getComputedStyle !== 'function') return null
+  return getComputedStyle(element)
+}
+
 export type PositionValue =
   | 'static'
   | 'relative'
@@ -161,11 +170,15 @@ export class PositionModifier extends BaseModifier<PositionOptions> {
   }
 
   private warnIfMissingPositionedParent(element: HTMLElement): void {
+    if (!canUseDocument()) return
+
     let parent = element.parentElement
     let hasPositionedParent = false
 
     while (parent && parent !== document.body) {
-      const parentPosition = getComputedStyle(parent).position
+      const parentStyle = readComputedStyle(parent)
+      if (!parentStyle) return
+      const parentPosition = parentStyle.position
       if (parentPosition !== 'static') {
         hasPositionedParent = true
         break
@@ -181,7 +194,9 @@ export class PositionModifier extends BaseModifier<PositionOptions> {
   }
 
   private warnIfMissingStickyProperties(element: HTMLElement): void {
-    const style = getComputedStyle(element)
+    const style = readComputedStyle(element)
+    if (!style) return
+
     const hasStickySide =
       style.top !== 'auto' ||
       style.right !== 'auto' ||
@@ -196,7 +211,9 @@ export class PositionModifier extends BaseModifier<PositionOptions> {
   }
 
   private warnIfHasPositioningProperties(element: HTMLElement): void {
-    const style = getComputedStyle(element)
+    const style = readComputedStyle(element)
+    if (!style) return
+
     const hasPositioningProps =
       style.top !== 'auto' ||
       style.right !== 'auto' ||

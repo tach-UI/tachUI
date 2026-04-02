@@ -1,7 +1,10 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import { createSignal, h, text } from '@tachui/core'
+import { AnimationModifier } from '@tachui/core/modifiers'
+import { animation, transform } from '@tachui/modifiers/animation'
 import { blendMode } from '@tachui/modifiers/appearance/blend-mode'
-import { describe, expect, it } from 'vitest'
+import { zIndex } from '@tachui/modifiers/layout/z-index'
+import { describe, expect, it, vi } from 'vitest'
 import { renderToString } from '../src/render-to-string'
 import type { ModifierBuilderLike } from '../src/types'
 
@@ -265,5 +268,49 @@ describe('renderToString', () => {
 
     expect(html).toContain('display:flex')
     expect(html).toContain('mix-blend-mode:multiply')
+  })
+
+  it('applies SSR-safe layout and animation modifiers without DOM globals', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    try {
+      const node = h('div', {
+        style: {
+          display: 'block',
+        },
+      }) as DOMNode & { modifiers: unknown[] }
+
+      node.modifiers = [
+        zIndex(20),
+        transform('translateX(8px)'),
+        new AnimationModifier({
+          transition: {
+            property: 'opacity',
+            duration: 240,
+            easing: 'ease-in-out',
+            delay: 0,
+          },
+        }),
+        animation({
+          keyframes: {
+            from: { opacity: '0' },
+            to: { opacity: '1' },
+          },
+          duration: 180,
+        } as never),
+      ]
+
+      const html = renderToString(node)
+
+      expect(errorSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Failed to apply modifier')
+      )
+      expect(html).toContain('display:block')
+      expect(html).toContain('z-index:20')
+      expect(html).toContain('transform:translateX(8px)')
+      expect(html).toContain('transition:opacity 240ms ease-in-out 0ms')
+    } finally {
+      errorSpy.mockRestore()
+    }
   })
 })

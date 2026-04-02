@@ -13,6 +13,15 @@ export interface ZIndexOptions {
   zIndex: number
 }
 
+function canUseComputedStyle(): boolean {
+  return typeof getComputedStyle === 'function'
+}
+
+function readComputedStyle(element: HTMLElement): CSSStyleDeclaration | null {
+  if (!canUseComputedStyle()) return null
+  return getComputedStyle(element)
+}
+
 export class ZIndexModifier extends BaseModifier<ZIndexOptions> {
   readonly type = 'zIndex'
   readonly priority = 45 // High priority for layering
@@ -52,7 +61,9 @@ export class ZIndexModifier extends BaseModifier<ZIndexOptions> {
   }
 
   private ensureStackingContext(element: HTMLElement, zIndex: number): void {
-    const computedStyle = getComputedStyle(element)
+    const computedStyle = readComputedStyle(element)
+    if (!computedStyle) return
+
     const position = computedStyle.position
 
     // z-index only works on positioned elements, flex items, and grid items
@@ -87,7 +98,9 @@ export class ZIndexModifier extends BaseModifier<ZIndexOptions> {
     const parent = element.parentElement
     if (!parent) return false
 
-    const parentDisplay = getComputedStyle(parent).display
+    const parentStyle = readComputedStyle(parent)
+    if (!parentStyle) return false
+    const parentDisplay = parentStyle.display
     return parentDisplay === 'flex' || parentDisplay === 'inline-flex'
   }
 
@@ -95,7 +108,9 @@ export class ZIndexModifier extends BaseModifier<ZIndexOptions> {
     const parent = element.parentElement
     if (!parent) return false
 
-    const parentDisplay = getComputedStyle(parent).display
+    const parentStyle = readComputedStyle(parent)
+    if (!parentStyle) return false
+    const parentDisplay = parentStyle.display
     return parentDisplay === 'grid' || parentDisplay === 'inline-grid'
   }
 
@@ -116,7 +131,8 @@ export class ZIndexModifier extends BaseModifier<ZIndexOptions> {
   }
 
   private checkStackingContext(element: HTMLElement): void {
-    const style = getComputedStyle(element)
+    const style = readComputedStyle(element)
+    if (!style) return
 
     const stackingContextProperties = [
       { prop: 'opacity', value: style.opacity, creates: style.opacity !== '1' },

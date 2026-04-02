@@ -789,7 +789,9 @@ function composeTransform(
   transformFunctionsToReplace: string[]
 ): void {
   const styleTarget =
-    element instanceof HTMLElement ? element.style : (element as any).style
+    typeof HTMLElement !== 'undefined' && element instanceof HTMLElement
+      ? element.style
+      : (element as any).style
   if (!styleTarget) return
 
   const existingTransform = String(styleTarget.transform || '')
