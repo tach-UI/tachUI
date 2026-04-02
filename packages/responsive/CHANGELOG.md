@@ -1,5 +1,14 @@
 # @tachui/responsive
 
+## 0.8.23
+
+### Patch Changes
+
+- Updated dependencies [[`97ad059`](https://github.com/tach-UI/tachUI/commit/97ad059fd80122b84f938aeba5847b7984bacc5f)]:
+  - @tachui/core@0.8.23
+  - @tachui/modifiers@0.8.23
+  - @tachui/registry@0.8.23
+
 ## 0.8.22
 
 ### Patch Changes

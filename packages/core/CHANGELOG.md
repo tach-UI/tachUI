@@ -1,5 +1,21 @@
 # @tachui/core
 
+## 0.8.23
+
+### Patch Changes
+
+- [#173](https://github.com/tach-UI/tachUI/pull/173) [`97ad059`](https://github.com/tach-UI/tachUI/commit/97ad059fd80122b84f938aeba5847b7984bacc5f) Thanks [@whoughton](https://github.com/whoughton)! - Fix SSR serialization recursion for component inputs that also expose `build()` by prioritizing component render dispatch and guarding against cyclic builder chains.
+
+  Improve asset typing ergonomics by adding declaration-merging support for custom `Assets` keys via `CustomAssets`.
+
+  Add `.compositingGroup()` modifier mapped to `isolation: isolate`, with non-colliding priority so isolation is applied before blend-mode modifiers.
+
+  Make `FontAsset` loading SSR-safe by no-oping DOM-dependent load paths when `document`/`window` are unavailable (prevents eager Google font crashes during prerender).
+
+- Updated dependencies [[`97ad059`](https://github.com/tach-UI/tachUI/commit/97ad059fd80122b84f938aeba5847b7984bacc5f)]:
+  - @tachui/types@0.8.23
+  - @tachui/registry@0.8.23
+
 ## 0.8.22
 
 ### Patch Changes
