@@ -98,9 +98,6 @@ export {
   equalShare,
 } from './constants/frame-utils'
 
-// Compiler system (Phase 2)
-export * from './compiler'
-
 // Component system (Phase 4-5)
 export * from './components'
 

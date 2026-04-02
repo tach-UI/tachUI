@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => ({
       entry: {
         // Bundle variants (tree-shakable)
         index: resolve(__dirname, 'src/bundles/complete.ts'), // Complete (with validation)
+        full: resolve(__dirname, 'src/full.ts'), // Legacy root compatibility (+ compiler)
         minimal: resolve(__dirname, 'src/bundles/minimal.ts'), // Dev minimal (with validation)
         common: resolve(__dirname, 'src/bundles/common.ts'), // Dev common (with validation)
         essential: resolve(__dirname, 'src/bundles/essential.ts'), // Dev essential (with validation)
