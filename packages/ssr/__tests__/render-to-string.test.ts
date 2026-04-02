@@ -1,5 +1,6 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import { createSignal, h, text } from '@tachui/core'
+import { blendMode } from '@tachui/modifiers/appearance/blend-mode'
 import { describe, expect, it } from 'vitest'
 import { renderToString } from '../src/render-to-string'
 import type { ModifierBuilderLike } from '../src/types'
@@ -252,44 +253,17 @@ describe('renderToString', () => {
   })
 
   it('applies node modifiers before serializing styles', () => {
-    const styleModifier = {
-      type: 'ssr-test-style',
-      priority: 100,
-      properties: {},
-      apply(node: DOMNode) {
-        const style = { ...node.props?.style } as Record<string, string>
-        style.justifyContent = 'space-between'
-        style.width = '100%'
-        style.maxWidth = '1240px'
-        style.paddingLeft = '24px'
-        style.paddingTop = '8px'
-        style.position = 'sticky'
-        return {
-          ...node,
-          props: {
-            ...node.props,
-            style,
-          },
-        }
-      },
-    }
-
     const node = h('div', {
       style: {
         display: 'flex',
       },
     }) as DOMNode & { modifiers: unknown[] }
 
-    node.modifiers = [styleModifier]
+    node.modifiers = [blendMode('multiply')]
 
     const html = renderToString(node)
 
     expect(html).toContain('display:flex')
-    expect(html).toContain('justify-content:space-between')
-    expect(html).toContain('width:100%')
-    expect(html).toContain('max-width:1240px')
-    expect(html).toContain('padding-left:24px')
-    expect(html).toContain('padding-top:8px')
-    expect(html).toContain('position:sticky')
+    expect(html).toContain('mix-blend-mode:multiply')
   })
 })
