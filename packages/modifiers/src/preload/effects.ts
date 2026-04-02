@@ -3,4 +3,6 @@
  * Re-export keeps the module evaluated while surfacing its public API.
  */
 
+import '../effects'
+
 export * from '../effects'

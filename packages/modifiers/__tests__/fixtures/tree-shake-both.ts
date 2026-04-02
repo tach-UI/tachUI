@@ -1,2 +1,2 @@
-import '@tachui/modifiers/preload/basic'
-import '@tachui/modifiers/preload/effects'
+import '../../src/preload/basic'
+import '../../src/preload/effects'
