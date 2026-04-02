@@ -1,6 +1,6 @@
 {
   "name": "@tachui/responsive",
-  "version": "0.8.20",
+  "version": "0.8.21",
   "description": "Advanced responsive design patterns and utilities for tachUI framework",
   "homepage": "https://tachui.dev/",
   "main": "./dist/index.js",
