@@ -10,6 +10,7 @@ import {
 } from '../reactive/theme'
 import { getCurrentComputation } from '../reactive/context'
 import { Asset } from './Asset'
+import { getSSRAssetHeadCollector } from './ssr-context'
 import type { ColorValidationResult } from './types'
 
 /**
@@ -340,12 +341,28 @@ export class ColorAsset extends Asset {
       currentTheme = ColorAsset.getCurrentTheme()
     }
 
+    const ssrHeadCollector = getSSRAssetHeadCollector()
+    if (ssrHeadCollector) {
+      ssrHeadCollector.addStyle(this.toSSRVariableBlock())
+    }
+
     // Resolve priority: theme-specific → default
     if (currentTheme === 'dark') {
       return this.dark || this.default
     } else {
       return this.light || this.default
     }
+  }
+
+  private toSSRVariableBlock(): string {
+    const variableName = `--tachui-color-${this.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'asset'}`
+
+    const lightValue = this.light || this.default
+    const darkValue = this.dark || this.default
+    return `:root{${variableName}:${lightValue};}@media (prefers-color-scheme: dark){:root{${variableName}:${darkValue};}}`
   }
 
   private isFiniteInput(value: number, methodSignature: string): boolean {

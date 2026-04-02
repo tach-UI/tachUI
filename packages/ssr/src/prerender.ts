@@ -1,7 +1,12 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { renderToString } from './render-to-string'
-import type { PrerenderOptions, PrerenderResult, PrerenderRoute } from './types'
+import { createSSRContext, renderToString } from './render-to-string'
+import type {
+  PrerenderOptions,
+  PrerenderResult,
+  PrerenderRoute,
+  SSRContext,
+} from './types'
 import { escapeHTML } from './escape'
 
 function resolveOutputPath(outDir: string, routePath: string): string {
@@ -13,8 +18,18 @@ function resolveOutputPath(outDir: string, routePath: string): string {
   return path.join(outDir, clean, 'index.html')
 }
 
-function defaultDocument(html: string, route: PrerenderRoute): string {
+function defaultDocument(
+  html: string,
+  route: PrerenderRoute,
+  context: SSRContext
+): string {
   const title = escapeHTML(route.title ?? 'TachUI App')
+  const headEntries = [
+    ...context.meta,
+    ...context.links,
+    ...context.styles.map(style => `<style>${style}</style>`),
+  ]
+
   return [
     '<!doctype html>',
     '<html lang="en">',
@@ -22,6 +37,7 @@ function defaultDocument(html: string, route: PrerenderRoute): string {
     '  <meta charset="UTF-8">',
     '  <meta name="viewport" content="width=device-width, initial-scale=1.0">',
     `  <title>${title}</title>`,
+    ...headEntries.map(entry => `  ${entry}`),
     '</head>',
     `<body><div id="app">${html}</div></body>`,
     '</html>',
@@ -42,12 +58,15 @@ export async function prerender(
 
   const results: PrerenderResult[] = []
   const renderDocument =
-    options.document ?? ((html: string, route: PrerenderRoute) => defaultDocument(html, route))
+    options.document ??
+    ((html: string, route: PrerenderRoute, context: SSRContext) =>
+      defaultDocument(html, route, context))
 
   for (const route of routes) {
     try {
-      const routeHtml = renderToString(route.render())
-      const fullHtml = renderDocument(routeHtml, route)
+      const context = createSSRContext()
+      const routeHtml = renderToString(route.render(), { context })
+      const fullHtml = renderDocument(routeHtml, route, context)
       const outputPath = resolveOutputPath(options.outDir, route.path)
 
       await mkdir(path.dirname(outputPath), { recursive: true })

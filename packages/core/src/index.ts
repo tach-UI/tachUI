@@ -35,6 +35,9 @@ export {
   type AssetInfo,
   type AssetsInterface,
   type RegisteredAsset,
+  getSSRAssetHeadCollector,
+  withSSRAssetHeadCollector,
+  type SSRAssetHeadCollector,
 } from './assets'
 
 // Constants system

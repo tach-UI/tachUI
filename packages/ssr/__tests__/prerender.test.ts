@@ -2,7 +2,14 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { h, text } from '@tachui/core'
+import {
+  Assets,
+  createColorAsset,
+  createGoogleFont,
+  h,
+  registerAsset,
+  text,
+} from '@tachui/core'
 import { prerender } from '../src/prerender'
 
 describe('prerender', () => {
@@ -160,6 +167,43 @@ describe('prerender', () => {
           { outDir }
         )
       ).rejects.toThrow('prerender failed for route "/broken": boom')
+    } finally {
+      await rm(outDir, { recursive: true, force: true })
+    }
+  })
+
+  it('injects collected SSR head entries into the default document', async () => {
+    const outDir = await mkdtemp(path.join(os.tmpdir(), 'tachui-ssr-'))
+    registerAsset(
+      'prerender-font',
+      createGoogleFont('Inter', [400], 'prerender-font')
+    )
+    registerAsset(
+      'prerender-color',
+      createColorAsset('#202020', '#f3f3f3', 'prerender-color')
+    )
+
+    try {
+      await prerender(
+        [
+          {
+            path: '/head',
+            render: () =>
+              h('main', {
+                style: {
+                  fontFamily: (Assets as any)['prerender-font'],
+                  color: (Assets as any)['prerender-color'],
+                },
+              }, text('Head test')),
+          },
+        ],
+        { outDir }
+      )
+
+      const html = await readFile(path.join(outDir, 'head/index.html'), 'utf8')
+      expect(html).toContain('<link rel="stylesheet" href="https://fonts.googleapis.com')
+      expect(html).toContain('<style>:root{--tachui-color-prerender-color:#202020;}')
+      expect(html).toContain('<div id="app"><main style="font-family:Inter')
     } finally {
       await rm(outDir, { recursive: true, force: true })
     }

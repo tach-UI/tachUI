@@ -7,6 +7,7 @@
 import { getCurrentTheme as _getCurrentTheme, getThemeSignal } from '../reactive/theme'
 import { getCurrentComputation } from '../reactive/context'
 import { Asset } from './Asset'
+import { getSSRAssetHeadCollector } from './ssr-context'
 
 /**
  * ImageAsset initialization options
@@ -65,11 +66,18 @@ export class ImageAsset extends Asset {
     }
     
     // Resolve priority: theme-specific → default
-    if (currentTheme === 'dark') {
-      return this.dark || this.default
-    } else {
-      return this.light || this.default
+    const resolved = currentTheme === 'dark'
+      ? this.dark || this.default
+      : this.light || this.default
+
+    const ssrHeadCollector = getSSRAssetHeadCollector()
+    if (ssrHeadCollector) {
+      ssrHeadCollector.addLink(
+        `<link rel="preload" href="${resolved}" as="image">`
+      )
     }
+
+    return resolved
   }
 
   // Additional accessors

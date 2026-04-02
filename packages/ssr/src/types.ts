@@ -17,6 +17,13 @@ export type SSRNodeInput =
 
 export interface RenderToStringOptions {
   includeDoctype?: boolean
+  context?: SSRContext
+}
+
+export interface SSRContext {
+  links: string[]
+  styles: string[]
+  meta: string[]
 }
 
 export interface PrerenderRoute {
@@ -27,7 +34,7 @@ export interface PrerenderRoute {
 
 export interface PrerenderOptions {
   outDir: string
-  document?: (html: string, route: PrerenderRoute) => string
+  document?: (html: string, route: PrerenderRoute, context: SSRContext) => string
 }
 
 export interface PrerenderResult {

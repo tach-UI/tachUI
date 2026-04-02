@@ -29,6 +29,11 @@ export const Assets: AssetsInterface = AssetsProxy as AssetsInterface
 // Export asset classes and types
 export { Asset, ColorAsset, ImageAsset, FontAsset }
 export * from './types'
+export {
+  getSSRAssetHeadCollector,
+  withSSRAssetHeadCollector,
+  type SSRAssetHeadCollector,
+} from './ssr-context'
 export { 
   FontWeightPreset as FontWeight, 
   FontWidth, 

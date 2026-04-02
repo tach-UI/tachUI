@@ -1,11 +1,20 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
-import { createSignal, h, text } from '@tachui/core'
+import {
+  Assets,
+  createColorAsset,
+  createGoogleFont,
+  createImageAsset,
+  createSignal,
+  h,
+  registerAsset,
+  text,
+} from '@tachui/core'
 import { AnimationModifier } from '@tachui/core/modifiers'
 import { animation, transform } from '@tachui/modifiers/animation'
 import { blendMode } from '@tachui/modifiers/appearance/blend-mode'
 import { zIndex } from '@tachui/modifiers/layout/z-index'
 import { describe, expect, it, vi } from 'vitest'
-import { renderToString } from '../src/render-to-string'
+import { createSSRContext, renderToString } from '../src/render-to-string'
 import type { ModifierBuilderLike } from '../src/types'
 
 function createComponent(render: () => DOMNode): ComponentInstance {
@@ -311,6 +320,78 @@ describe('renderToString', () => {
       expect(html).toContain('transition:opacity 240ms ease-in-out 0ms')
     } finally {
       errorSpy.mockRestore()
+    }
+  })
+
+  it('collects SSR head entries from assets via context', () => {
+    registerAsset(
+      'ssr-context-font',
+      createGoogleFont('Inter', [400], 'ssr-context-font')
+    )
+    registerAsset(
+      'ssr-context-color',
+      createColorAsset('#111111', '#efefef', 'ssr-context-color')
+    )
+    registerAsset(
+      'ssr-context-image',
+      createImageAsset('/hero-light.png', '/hero-light.png', '/hero-dark.png', 'ssr-context-image')
+    )
+
+    const context = createSSRContext()
+    const html = renderToString(
+      h('img', {
+        src: (Assets as any)['ssr-context-image'],
+        style: {
+          fontFamily: (Assets as any)['ssr-context-font'],
+          color: (Assets as any)['ssr-context-color'],
+        },
+      }),
+      { context }
+    )
+
+    expect(html).toContain('src="/hero-light.png"')
+    expect(context.links.some(link => link.includes('fonts.googleapis.com'))).toBe(true)
+    expect(context.links.some(link => link.includes('as="image"'))).toBe(true)
+    expect(context.styles.some(style => style.includes('--tachui-color-ssr-context-color'))).toBe(true)
+  })
+
+  it('prefers SSR context collection over DOM font injection when context is present', () => {
+    registerAsset(
+      'ssr-no-dom-font',
+      createGoogleFont('Rokkitt', [400], 'ssr-no-dom-font')
+    )
+
+    const originalDocument = (globalThis as any).document
+    const originalWindow = (globalThis as any).window
+    const createElementSpy = vi.fn(() => ({
+      set rel(_value: string) {},
+      set href(_value: string) {},
+    }))
+
+    ;(globalThis as any).document = {
+      createElement: createElementSpy,
+      head: { appendChild: vi.fn() },
+      querySelector: vi.fn(() => null),
+      fonts: { ready: Promise.resolve(), check: vi.fn(() => true) },
+    }
+    ;(globalThis as any).window = {}
+
+    try {
+      const context = createSSRContext()
+      renderToString(
+        h('div', {
+          style: {
+            fontFamily: (Assets as any)['ssr-no-dom-font'],
+          },
+        }),
+        { context }
+      )
+
+      expect(createElementSpy).not.toHaveBeenCalled()
+      expect(context.links.some(link => link.includes('fonts.googleapis.com'))).toBe(true)
+    } finally {
+      ;(globalThis as any).document = originalDocument
+      ;(globalThis as any).window = originalWindow
     }
   })
 })

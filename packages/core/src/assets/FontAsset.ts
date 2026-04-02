@@ -5,6 +5,7 @@
  */
 
 import { Asset } from './Asset'
+import { getSSRAssetHeadCollector } from './ssr-context'
 
 export interface FontAssetOptions {
   /** URL to the font file or CSS containing @font-face */
@@ -267,11 +268,88 @@ export class FontAsset extends Asset {
    * Resolve the font value (required by Asset base class)
    */
   resolve(): string {
+    const ssrHeadCollector = getSSRAssetHeadCollector()
+    if (ssrHeadCollector && this.options.fontUrl) {
+      this.collectSSRHeadEntries(ssrHeadCollector)
+    }
+
     // Trigger lazy loading if configured
     if (this.options.loading === 'lazy' && !this.loaded && this.options.fontUrl) {
-      this.load()
+      if (!ssrHeadCollector) {
+        this.load()
+      }
     }
     return this.value
+  }
+
+  private collectSSRHeadEntries(
+    collector: ReturnType<typeof getSSRAssetHeadCollector>
+  ): void {
+    const { fontUrl, preconnect } = this.options
+    if (!collector || !fontUrl) {
+      return
+    }
+
+    if (preconnect) {
+      try {
+        const origin = new URL(fontUrl).origin
+        collector.addLink(
+          `<link rel="preconnect" href="${origin}" crossorigin="anonymous">`
+        )
+      } catch (_error) {
+        // Ignore invalid URL input and continue with best-effort head entries.
+      }
+    }
+
+    if (fontUrl.endsWith('.css') || fontUrl.includes('fonts.googleapis.com')) {
+      collector.addLink(`<link rel="stylesheet" href="${fontUrl}">`)
+      return
+    }
+
+    const type = this.getFontMimeType(fontUrl)
+    const typeAttribute = type ? ` type="${type}"` : ''
+    collector.addLink(
+      `<link rel="preload" href="${fontUrl}" as="font"${typeAttribute} crossorigin="anonymous">`
+    )
+    collector.addStyle(this.buildFontFaceRule(fontUrl).trim())
+  }
+
+  private getFontMimeType(url: string): string | undefined {
+    if (url.endsWith('.woff2')) return 'font/woff2'
+    if (url.endsWith('.woff')) return 'font/woff'
+    if (url.endsWith('.ttf')) return 'font/ttf'
+    if (url.endsWith('.otf')) return 'font/otf'
+    return undefined
+  }
+
+  private buildFontFaceRule(url: string): string {
+    const { fontFormat, fontDisplay, weightRange, widthRange } = this.options
+
+    let format = ''
+    if (fontFormat) {
+      format = `format('${fontFormat}')`
+    } else if (url.endsWith('.woff2')) {
+      format = "format('woff2')"
+    } else if (url.endsWith('.woff')) {
+      format = "format('woff')"
+    } else if (url.endsWith('.ttf')) {
+      format = "format('truetype')"
+    }
+
+    const declarations: string[] = [
+      `font-family: "${this.family}";`,
+      `src: url("${url}")${format ? ` ${format}` : ''};`,
+      `font-display: ${fontDisplay || 'swap'};`,
+    ]
+
+    if (weightRange) {
+      declarations.push(`font-weight: ${weightRange[0]} ${weightRange[1]};`)
+    }
+    if (widthRange) {
+      declarations.push(`font-stretch: ${widthRange[0]}% ${widthRange[1]}%;`)
+    }
+
+    return `@font-face { ${declarations.join(' ')} }`
   }
 }
 
