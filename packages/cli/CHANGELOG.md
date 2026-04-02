@@ -1,5 +1,13 @@
 # @tachui/cli
 
+## 0.8.22
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/core@0.8.22
+  - @tachui/devtools@0.8.22
+
 ## 0.8.21
 
 ### Patch Changes

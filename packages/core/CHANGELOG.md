@@ -1,5 +1,13 @@
 # @tachui/core
 
+## 0.8.22
+
+### Patch Changes
+
+- Updated dependencies [[`6fc0c1c`](https://github.com/tach-UI/tachUI/commit/6fc0c1cd732eb0a18a7886cb1666833542a0abc5)]:
+  - @tachui/types@0.8.22
+  - @tachui/registry@0.8.22
+
 ## 0.8.21
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@tachui/navigation",
-  "version": "0.8.22",
+  "version": "0.8.23",
   "description": "Navigation components for tachUI - NavigationView, TabView, and routing utilities",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -38,7 +38,7 @@
     "@tachui/modifiers": "workspace:*"
   },
   "peerDependencies": {
-    "@tachui/core": ">=0.8.21"
+    "@tachui/core": ">=0.8.22"
   },
   "devDependencies": {
     "@tachui/core": "workspace:*",
