@@ -83,7 +83,11 @@ export interface SystemAssets {
  * (`getAsset`, `getColorAsset`, `asColorAsset`) to preserve type safety.
  */
 export interface AssetsInterface extends SystemAssets {
-  [key: string]: RegisteredAssetProxy
+  // Dynamic asset keys are runtime-registered and cannot be inferred statically.
+  // Use `any` here to preserve ergonomic dot-access on custom assets
+  // (e.g. `Assets.brandPrimary.opacity(0.5)`), while system assets remain
+  // strongly typed via explicit properties above.
+  [key: string]: any
 }
 
 /**
