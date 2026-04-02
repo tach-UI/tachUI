@@ -53,9 +53,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build && tsc --project tsconfig.build.json",
-    "build:dev": "rm -rf dist && vite build --mode development && tsc --project tsconfig.build.json",
-    "build:prod": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json",
+    "build": "vite build && tsc --project tsconfig.build.json && node ./scripts/verify-build-artifacts.mjs",
+    "build:dev": "rm -rf dist && vite build --mode development && tsc --project tsconfig.build.json && node ./scripts/verify-build-artifacts.mjs",
+    "build:prod": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json && node ./scripts/verify-build-artifacts.mjs",
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",

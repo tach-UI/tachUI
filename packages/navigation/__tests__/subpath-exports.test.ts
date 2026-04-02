@@ -1,3 +1,4 @@
+import { ModifierBuilderImpl } from '@tachui/core/modifiers'
 import { describe, expect, it } from 'vitest'
 
 import * as environmentSubpath from '../src/environment'
@@ -57,5 +58,11 @@ describe('navigation granular subpath entrypoints', () => {
   it('exposes explicit side-effectful modifier registration subpath', () => {
     expect(typeof modifiersRegisterSubpath.navigationTitle).toBe('function')
     expect(typeof modifiersRegisterSubpath.sheet).toBe('function')
+    expect(typeof (ModifierBuilderImpl.prototype as any).navigationTitle).toBe(
+      'function',
+    )
+    expect(typeof (ModifierBuilderImpl.prototype as any).sheet).toBe(
+      'function',
+    )
   })
 })
