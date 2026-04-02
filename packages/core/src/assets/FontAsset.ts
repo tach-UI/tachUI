@@ -84,6 +84,14 @@ export class FontAsset extends Asset {
       return
     }
 
+    // SSR/Node: no-op when DOM globals are unavailable.
+    if (
+      typeof document === 'undefined' ||
+      typeof window === 'undefined'
+    ) {
+      return
+    }
+
     if (this.loadPromise) {
       return this.loadPromise
     }
@@ -185,6 +193,7 @@ export class FontAsset extends Asset {
    * Load a font file directly and create @font-face rule
    */
   private async loadFontFile(url: string): Promise<void> {
+    // Browser-only path. `load()` guards SSR/non-DOM contexts before calling here.
     const { fontFormat, fontDisplay, weightRange, widthRange } = this.options
 
     // Determine format string
