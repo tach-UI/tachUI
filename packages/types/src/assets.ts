@@ -79,10 +79,21 @@ export interface SystemAssets {
 
 /**
  * Main Assets interface for dynamic dot-notation access.
- * Custom asset subclasses should be accessed through helper APIs
- * (`getAsset`, `getColorAsset`, `asColorAsset`) to preserve type safety.
+ *
+ * Consumers can augment `CustomAssets` to strongly type known runtime-registered
+ * asset names:
+ *
+ * ```ts
+ * declare module '@tachui/types/assets' {
+ *   interface CustomAssets {
+ *     sand: ColorAssetProxy
+ *   }
+ * }
+ * ```
  */
-export interface AssetsInterface extends SystemAssets {
+export interface CustomAssets {}
+
+export interface AssetsInterface extends SystemAssets, CustomAssets {
   [key: string]: RegisteredAssetProxy
 }
 

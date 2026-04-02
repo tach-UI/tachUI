@@ -106,12 +106,60 @@ describe('renderToString', () => {
     expect(renderToString(parent)).toBe('<div><em>child</em></div>')
   })
 
+  it('serializes when render() returns another component instance', () => {
+    const leaf = createComponent(() => h('strong', null, text('leaf')))
+    const middle = createComponent(() => leaf as unknown as DOMNode)
+    const parent = createComponent(() => middle as unknown as DOMNode)
+
+    expect(renderToString(parent)).toBe('<strong>leaf</strong>')
+  })
+
   it('serializes ModifierBuilder-like inputs via build()', () => {
     const builder: ModifierBuilderLike = {
       build: () => h('article', null, text('Built')),
     }
 
     expect(renderToString(builder)).toBe('<article>Built</article>')
+  })
+
+  it('prefers component render() when input also has build()', () => {
+    const componentWithBuild = {
+      type: 'component',
+      id: 'dual-shape-component',
+      props: {},
+      render: () => h('section', null, text('Rendered path')),
+      build: () => h('article', null, text('Builder path')),
+    } as unknown as ComponentInstance & ModifierBuilderLike
+
+    expect(renderToString(componentWithBuild)).toBe(
+      '<section>Rendered path</section>'
+    )
+  })
+
+  it('throws clear error when builder build() returns itself', () => {
+    const loopingBuilder: ModifierBuilderLike = {
+      build() {
+        return this as unknown as DOMNode
+      },
+    }
+
+    expect(() => renderToString(loopingBuilder)).toThrow(
+      'Modifier build() returned itself'
+    )
+  })
+
+  it('throws clear error for cyclic builder chains', () => {
+    const builderA: ModifierBuilderLike = {
+      build: () => builderB as unknown as DOMNode,
+    }
+
+    const builderB: ModifierBuilderLike = {
+      build: () => builderA as unknown as DOMNode,
+    }
+
+    expect(() => renderToString(builderA)).toThrow(
+      'Detected cyclic builder input'
+    )
   })
 
   it('emits aria attributes with explicit true string values', () => {
