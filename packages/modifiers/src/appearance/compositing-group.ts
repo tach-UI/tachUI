@@ -11,7 +11,7 @@ import type { ModifierContext } from '@tachui/types/modifiers'
 
 export class CompositingGroupModifier extends BaseModifier<Record<string, never>> {
   readonly type = 'compositingGroup'
-  readonly priority = 94
+  readonly priority = 91
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return

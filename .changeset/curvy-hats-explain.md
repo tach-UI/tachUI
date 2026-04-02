@@ -8,4 +8,4 @@ Fix SSR serialization recursion for component inputs that also expose a `build()
 
 Also add declaration-merging support for custom asset names via `CustomAssets` so consumers can strongly type known runtime-registered keys (for example declaring `sand: ColorAssetProxy` and then calling `Assets.sand.opacity(...)` with full type safety).
 
-Add a new `.compositingGroup()` modifier that maps to CSS `isolation: isolate`, including modifier registry wiring and blend-mode integration coverage.
+Add a new `.compositingGroup()` modifier that maps to CSS `isolation: isolate`, including modifier registry wiring, blend-mode integration coverage, and an explicit non-colliding priority (`91`) so isolation is applied before blend-mode modifiers.
