@@ -1,5 +1,13 @@
 # @tachui/core
 
+## Unreleased
+
+### Migration Guidance
+
+- Root `@tachui/core` is now runtime-safe and excludes compiler APIs.
+- Import compiler/tooling APIs from `@tachui/core/compiler` (and build helpers from `@tachui/core/build-tools`) explicitly.
+- `@tachui/core/full` is a temporary compatibility entrypoint and is planned for removal in `v1.0.0`.
+
 ## 0.8.23
 
 ### Patch Changes
