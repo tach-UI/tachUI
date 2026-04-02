@@ -9,6 +9,10 @@ export default defineConfig({
         replacement: resolve(__dirname, '../core/src/modifiers/base.ts'),
       },
       {
+        find: /^@tachui\/core\/modifiers$/,
+        replacement: resolve(__dirname, '../core/src/modifiers/index.ts'),
+      },
+      {
         find: /^@tachui\/core\/reactive$/,
         replacement: resolve(__dirname, '../core/src/reactive/index.ts'),
       },
@@ -27,6 +31,10 @@ export default defineConfig({
       {
         find: /^@tachui\/types$/,
         replacement: resolve(__dirname, '../types/src/index.ts'),
+      },
+      {
+        find: /^@tachui\/modifiers\/animation$/,
+        replacement: resolve(__dirname, '../modifiers/src/animation/index.ts'),
       },
       {
         find: /^@tachui\/modifiers\/(.*)$/,

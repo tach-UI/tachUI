@@ -32,6 +32,29 @@ const modifierInstanceIdSymbol = Symbol.for('tachui.modifier.instanceId')
 const updaterScope = 'package'
 let modifierInstanceIdCounter = 0
 
+function isHTMLElementRuntimeElement(element: unknown): element is HTMLElement {
+  return typeof HTMLElement !== 'undefined' && element instanceof HTMLElement
+}
+
+function hasStyleTarget(
+  element: unknown
+): element is { style: Record<string, string> } {
+  return (
+    typeof element === 'object' &&
+    element !== null &&
+    'style' in element &&
+    Boolean((element as { style?: unknown }).style)
+  )
+}
+
+function canUseDocument(): boolean {
+  return typeof document !== 'undefined'
+}
+
+function canUseWindow(): boolean {
+  return typeof window !== 'undefined'
+}
+
 function getModifierInstanceId(modifier: object): number {
   const existingId = (modifier as any)[modifierInstanceIdSymbol]
   if (typeof existingId === 'number') return existingId
@@ -273,7 +296,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Add CSS classes to an element
    */
   protected addClasses(element: Element, classes: string[]): void {
-    if (element instanceof HTMLElement) {
+    if (isHTMLElementRuntimeElement(element)) {
       element.classList.add(...classes)
     }
   }
@@ -282,7 +305,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Remove CSS classes from an element
    */
   protected removeClasses(element: Element, classes: string[]): void {
-    if (element instanceof HTMLElement) {
+    if (isHTMLElementRuntimeElement(element)) {
       element.classList.remove(...classes)
     }
   }
@@ -330,27 +353,27 @@ export class LayoutModifier extends BaseModifier {
 
     // Handle offset separately for proper transform combining
     const props = this.properties as any
-    if (props.offset && context.element instanceof HTMLElement) {
+    if (props.offset && isHTMLElementRuntimeElement(context.element)) {
       this.applyOffsetTransform(context.element, props.offset)
     }
 
     // Handle aspectRatio separately for reactive support
-    if (props.aspectRatio && context.element instanceof HTMLElement) {
+    if (props.aspectRatio && isHTMLElementRuntimeElement(context.element)) {
       this.applyAspectRatio(context.element, props.aspectRatio)
     }
 
     // Handle scaleEffect separately for proper transform combining (Phase 3 - Epic: Butternut)
-    if (props.scaleEffect && context.element instanceof HTMLElement) {
+    if (props.scaleEffect && isHTMLElementRuntimeElement(context.element)) {
       this.applyScaleTransform(context.element, props.scaleEffect)
     }
 
     // Handle absolutePosition separately for proper positioning (Phase 3 - Epic: Butternut)
-    if (props.position && context.element instanceof HTMLElement) {
+    if (props.position && isHTMLElementRuntimeElement(context.element)) {
       this.applyAbsolutePosition(context.element, props.position)
     }
 
     // Handle zIndex separately for proper layering (Phase 3 - Epic: Butternut)
-    if (props.zIndex !== undefined && context.element instanceof HTMLElement) {
+    if (props.zIndex !== undefined && isHTMLElementRuntimeElement(context.element)) {
       this.applyZIndex(context.element, props.zIndex)
     }
 
@@ -1121,7 +1144,7 @@ export class InteractionModifier extends BaseModifier {
 
     // Disabled state
     if (props.disabled !== undefined) {
-      if (context.element instanceof HTMLElement) {
+      if (isHTMLElementRuntimeElement(context.element)) {
         const htmlElement = context.element
         const applyDisabledState = (isDisabled: boolean): void => {
           if (isDisabled) {
@@ -1148,7 +1171,7 @@ export class InteractionModifier extends BaseModifier {
 
     // Draggable state
     if (props.draggable !== undefined) {
-      if (context.element instanceof HTMLElement) {
+      if (isHTMLElementRuntimeElement(context.element)) {
         context.element.draggable = props.draggable
       }
     }
@@ -1207,7 +1230,7 @@ export class InteractionModifier extends BaseModifier {
     const minimumDuration = options.minimumDuration ?? 500 // ms
     const maximumDistance = options.maximumDistance ?? 10 // px
 
-    let timeoutId: number | undefined
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
     let startPoint: { x: number; y: number } | null = null
     let isPressing = false
 
@@ -1232,7 +1255,7 @@ export class InteractionModifier extends BaseModifier {
         options.onPressingChanged(true)
       }
 
-      timeoutId = window.setTimeout(() => {
+      timeoutId = (canUseWindow() ? window.setTimeout : setTimeout)(() => {
         if (isPressing && startPoint) {
           options.perform()
           cleanup()
@@ -1320,6 +1343,7 @@ export class InteractionModifier extends BaseModifier {
     }
 
     // Add keyboard event listener to document for global shortcuts
+    if (!canUseDocument()) return
     document.addEventListener('keydown', handleKeyDown)
 
     // Store cleanup function
@@ -1335,7 +1359,7 @@ export class InteractionModifier extends BaseModifier {
     element: Element,
     focused: boolean | Signal<boolean>
   ): void {
-    if (!(element instanceof HTMLElement)) return
+    if (!isHTMLElementRuntimeElement(element)) return
 
     const htmlElement = element as HTMLElement
 
@@ -1372,7 +1396,7 @@ export class InteractionModifier extends BaseModifier {
       interactions?: ('activate' | 'edit')[]
     }
   ): void {
-    if (!(element instanceof HTMLElement)) return
+    if (!isHTMLElementRuntimeElement(element)) return
 
     const htmlElement = element as HTMLElement
 
@@ -1449,7 +1473,7 @@ export class InteractionModifier extends BaseModifier {
    * Setup hit testing control
    */
   private setupHitTesting(element: Element, enabled: boolean): void {
-    if (element instanceof HTMLElement) {
+    if (isHTMLElementRuntimeElement(element)) {
       element.style.pointerEvents = enabled ? '' : 'none'
     }
   }
@@ -1475,7 +1499,7 @@ export class AnimationModifier extends BaseModifier {
       const easing = t.easing || 'ease'
       const delay = t.delay || 0
 
-      if (context.element instanceof HTMLElement) {
+      if (hasStyleTarget(context.element)) {
         // Handle 'none' to disable transitions
         if (property === 'none') {
           context.element.style.transition = 'none'
@@ -1486,10 +1510,10 @@ export class AnimationModifier extends BaseModifier {
     }
 
     // Animation
-    if (props.animation && context.element instanceof HTMLElement) {
+    if (props.animation && hasStyleTarget(context.element)) {
       const anim = props.animation
 
-      if (anim.keyframes) {
+      if (anim.keyframes && canUseDocument()) {
         // Create keyframes
         const keyframeName = `tachui-animation-${context.componentId}-${Date.now()}`
         const keyframeRule = this.createKeyframeRule(
@@ -1511,12 +1535,12 @@ export class AnimationModifier extends BaseModifier {
     }
 
     // Transform
-    if (props.transform && context.element instanceof HTMLElement) {
+    if (props.transform && hasStyleTarget(context.element)) {
       if (isSignal(props.transform) || isComputed(props.transform)) {
         // Create reactive effect for transform
         createEffect(() => {
           const transformValue = props.transform()
-          if (context.element instanceof HTMLElement) {
+          if (hasStyleTarget(context.element)) {
             context.element.style.transform = transformValue
           }
         })
@@ -1526,7 +1550,7 @@ export class AnimationModifier extends BaseModifier {
     }
 
     // Rotation Effect (SwiftUI .rotationEffect(angle))
-    if (props.rotationEffect && context.element instanceof HTMLElement) {
+    if (props.rotationEffect && hasStyleTarget(context.element)) {
       const { angle, anchor } = props.rotationEffect
 
       // Convert anchor to CSS transform-origin
@@ -1553,7 +1577,7 @@ export class AnimationModifier extends BaseModifier {
           const currentAngle = typeof angle === 'function' ? angle() : angle
           const currentRotation = `rotate(${currentAngle}deg)`
 
-          if (context.element instanceof HTMLElement) {
+          if (hasStyleTarget(context.element)) {
             context.element.style.transformOrigin = transformOrigin
 
             // Combine with existing transforms if any
@@ -1572,7 +1596,7 @@ export class AnimationModifier extends BaseModifier {
         })
       } else {
         // Static rotation
-        if (context.element instanceof HTMLElement) {
+        if (hasStyleTarget(context.element)) {
           context.element.style.transformOrigin = transformOrigin
 
           // Combine with existing transforms if any
@@ -1592,7 +1616,7 @@ export class AnimationModifier extends BaseModifier {
     }
 
     // Overlay modifier (SwiftUI .overlay())
-    if (props.overlay && context.element instanceof HTMLElement) {
+    if (props.overlay && isHTMLElementRuntimeElement(context.element)) {
       this.applyOverlay(context.element, props.overlay, context)
     }
 
@@ -1612,6 +1636,7 @@ export class AnimationModifier extends BaseModifier {
     }
 
     // Create overlay container
+    if (!canUseDocument()) return
     const overlayContainer = document.createElement('div')
     overlayContainer.style.position = 'absolute'
     overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
@@ -1636,7 +1661,7 @@ export class AnimationModifier extends BaseModifier {
       if (contentNode.element) {
         overlayContainer.appendChild(contentNode.element)
       }
-    } else if (content instanceof HTMLElement) {
+    } else if (isHTMLElementRuntimeElement(content)) {
       // If content is already a DOM element
       overlayContainer.appendChild(content)
     }
@@ -1713,6 +1738,7 @@ export class AnimationModifier extends BaseModifier {
   }
 
   private addKeyframesToStylesheet(rule: string): void {
+    if (!canUseDocument()) return
     let stylesheet = document.querySelector(
       '#tachui-animations'
     ) as HTMLStyleElement
@@ -1845,6 +1871,7 @@ export class LifecycleModifier extends BaseModifier {
     const threshold = 70 // Pull threshold in pixels
 
     // Create refresh indicator element
+    if (!canUseDocument()) return
     const refreshIndicator = document.createElement('div')
     refreshIndicator.style.cssText = `
       position: absolute;
@@ -1876,7 +1903,7 @@ export class LifecycleModifier extends BaseModifier {
     }
 
     const container = element.parentElement || element
-    if (container instanceof HTMLElement) {
+    if (isHTMLElementRuntimeElement(container)) {
       container.style.position = 'relative'
       container.appendChild(refreshIndicator)
     }

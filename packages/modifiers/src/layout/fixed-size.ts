@@ -9,6 +9,11 @@ import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
 import type { ModifierContext } from '@tachui/types/modifiers'
 
+function readComputedStyle(element: Element): CSSStyleDeclaration | null {
+  if (typeof getComputedStyle !== 'function') return null
+  return getComputedStyle(element)
+}
+
 export interface FixedSizeOptions {
   horizontal: boolean
   vertical: boolean
@@ -102,7 +107,9 @@ export class FixedSizeModifier extends BaseModifier<FixedSizeOptions> {
     const parent = element.parentElement
     if (!parent) return false
 
-    const parentDisplay = getComputedStyle(parent).display
+    const parentStyle = readComputedStyle(parent)
+    if (!parentStyle) return false
+    const parentDisplay = parentStyle.display
     return parentDisplay === 'flex' || parentDisplay === 'inline-flex'
   }
 

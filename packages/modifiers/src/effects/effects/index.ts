@@ -165,6 +165,7 @@ export class HoverModifier extends BaseModifier<HoverOptions> {
 
   private addHoverStyles(className: string, props: HoverOptions): void {
     const styleSheet = this.getOrCreateStyleSheet()
+    if (!styleSheet) return
 
     // Base transition styles
     const transition = this.formatTransition(props.transition)
@@ -264,7 +265,9 @@ export class HoverModifier extends BaseModifier<HoverOptions> {
     return transition
   }
 
-  private getOrCreateStyleSheet(): CSSStyleSheet {
+  private getOrCreateStyleSheet(): CSSStyleSheet | null {
+    if (typeof document === 'undefined') return null
+
     const existingStyle = document.getElementById('tachui-hover-styles')
 
     if (existingStyle && existingStyle instanceof HTMLStyleElement) {

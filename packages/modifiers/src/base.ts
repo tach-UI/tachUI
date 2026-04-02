@@ -42,6 +42,14 @@ function hasStyleTarget(
   )
 }
 
+function canUseDocument(): boolean {
+  return typeof document !== 'undefined'
+}
+
+function canUseWindow(): boolean {
+  return typeof window !== 'undefined'
+}
+
 /**
  * Abstract base modifier class
  */
@@ -1480,7 +1488,7 @@ export class InteractionModifier extends BaseModifier {
     const minimumDuration = options.minimumDuration ?? 500 // ms
     const maximumDistance = options.maximumDistance ?? 10 // px
 
-    let timeoutId: number | undefined
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
     let startPoint: { x: number; y: number } | null = null
     let isPressing = false
 
@@ -1505,7 +1513,7 @@ export class InteractionModifier extends BaseModifier {
         options.onPressingChanged(true)
       }
 
-      timeoutId = window.setTimeout(() => {
+      timeoutId = (canUseWindow() ? window.setTimeout : setTimeout)(() => {
         if (isPressing && startPoint) {
           options.perform()
           cleanup()
@@ -1593,6 +1601,7 @@ export class InteractionModifier extends BaseModifier {
     }
 
     // Add keyboard event listener to document for global shortcuts
+    if (!canUseDocument()) return
     document.addEventListener('keydown', handleKeyDown)
 
     // Store cleanup function
@@ -1880,6 +1889,7 @@ export class AnimationModifier extends BaseModifier {
     }
 
     // Create overlay container
+    if (!canUseDocument()) return
     const overlayContainer = document.createElement('div')
     overlayContainer.style.position = 'absolute'
     overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
@@ -1981,6 +1991,7 @@ export class AnimationModifier extends BaseModifier {
   }
 
   private addKeyframesToStylesheet(rule: string): void {
+    if (!canUseDocument()) return
     let stylesheet = document.querySelector(
       '#tachui-animations'
     ) as HTMLStyleElement
@@ -2113,6 +2124,7 @@ export class LifecycleModifier extends BaseModifier {
     const threshold = 70 // Pull threshold in pixels
 
     // Create refresh indicator element
+    if (!canUseDocument()) return
     const refreshIndicator = document.createElement('div')
     refreshIndicator.style.cssText = `
       position: absolute;
