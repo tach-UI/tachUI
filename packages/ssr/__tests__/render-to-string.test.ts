@@ -114,6 +114,32 @@ describe('renderToString', () => {
     expect(renderToString(builder)).toBe('<article>Built</article>')
   })
 
+  it('prefers component render() when input also has build()', () => {
+    const componentWithBuild = {
+      type: 'component',
+      id: 'dual-shape-component',
+      props: {},
+      render: () => h('section', null, text('Rendered path')),
+      build: () => h('article', null, text('Builder path')),
+    } as unknown as ComponentInstance & ModifierBuilderLike
+
+    expect(renderToString(componentWithBuild)).toBe(
+      '<section>Rendered path</section>'
+    )
+  })
+
+  it('throws clear error when builder build() returns itself', () => {
+    const loopingBuilder: ModifierBuilderLike = {
+      build() {
+        return this as unknown as DOMNode
+      },
+    }
+
+    expect(() => renderToString(loopingBuilder)).toThrow(
+      'Modifier build() returned itself'
+    )
+  })
+
   it('emits aria attributes with explicit true string values', () => {
     const html = renderToString(h('div', { 'aria-hidden': true }))
     expect(html).toBe('<div aria-hidden="true"></div>')

@@ -252,12 +252,18 @@ export function serializeToHTML(input: SSRNodeInput): string {
     return input.map(entry => serializeToHTML(entry)).join('')
   }
 
-  if (isModifierBuilder(input)) {
-    return serializeToHTML((input as ModifierBuilderLike).build())
-  }
-
   if (isComponentInstance(input)) {
     return serializeToHTML(input.render() as SSRNodeInput)
+  }
+
+  if (isModifierBuilder(input)) {
+    const built = (input as ModifierBuilderLike).build()
+    if (built === input) {
+      throw new TypeError(
+        'Unsupported TachUI SSR input. Modifier build() returned itself and cannot be serialized.'
+      )
+    }
+    return serializeToHTML(built)
   }
 
   if (isDOMNode(input)) {
