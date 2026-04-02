@@ -1,4 +1,5 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
+import { applyModifiersToNode } from '@tachui/core'
 import { isComputed, isSignal, untrack } from '@tachui/core/reactive'
 import type { ModifierBuilderLike, SSRNodeInput } from './types'
 import { escapeAttribute, escapeHTML } from './escape'
@@ -215,6 +216,56 @@ function serializeAttributes(node: DOMNode): string {
   return attributes.length > 0 ? ` ${attributes.join(' ')}` : ''
 }
 
+function getNodeModifiers(node: DOMNode): unknown[] {
+  const directModifiers =
+    'modifiers' in (node as any) && Array.isArray((node as any).modifiers)
+      ? (node as any).modifiers
+      : []
+
+  const metadataModifiers =
+    'componentMetadata' in (node as any) &&
+    Array.isArray((node as any).componentMetadata?.modifiers)
+      ? (node as any).componentMetadata.modifiers
+      : []
+
+  // Match runtime precedence: use component metadata modifiers when present.
+  return metadataModifiers.length > 0 ? metadataModifiers : directModifiers
+}
+
+function applyNodeModifiersForSSR(node: DOMNode): DOMNode {
+  if (node.type !== 'element') {
+    return node
+  }
+
+  const modifiers = getNodeModifiers(node)
+  if (modifiers.length === 0) {
+    return node
+  }
+
+  const nodeForSSR = {
+    ...node,
+    props: { ...node.props },
+  } as DOMNode
+
+  return applyModifiersToNode(
+    nodeForSSR,
+    modifiers as any[],
+    {
+      componentId: (node as any).componentId || 'unknown',
+      phase: 'creation',
+      componentInstance:
+        (node as any).componentInstance ||
+        (node as any).componentMetadata?.componentInstance ||
+        (node as any)._originalComponent ||
+        node,
+    },
+    {
+      batch: true,
+      suppressEffects: true,
+    }
+  )
+}
+
 function serializeNode(node: DOMNode): string {
   if (node.type === 'text') {
     if (typeof node.reactiveContent === 'function') {
@@ -229,15 +280,16 @@ function serializeNode(node: DOMNode): string {
     return `<!--${safeComment}-->`
   }
 
-  const tag = node.tag ?? 'div'
-  const attributes = serializeAttributes(node)
+  const preparedNode = applyNodeModifiersForSSR(node)
+  const tag = preparedNode.tag ?? 'div'
+  const attributes = serializeAttributes(preparedNode)
   const openingTag = `<${tag}${attributes}>`
 
   if (VOID_ELEMENTS.has(tag)) {
     return openingTag
   }
 
-  const children = (node.children ?? [])
+  const children = (preparedNode.children ?? [])
     .map((child: DOMNode) => serializeNode(child))
     .join('')
   return `${openingTag}${children}</${tag}>`
