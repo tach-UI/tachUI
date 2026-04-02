@@ -4,12 +4,13 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const preloadChecks: Array<{ fixture: string; registryKey: string }> = [
-  { fixture: 'tree-shake-effects.ts', registryKey: 'transformStyle' },
-  { fixture: 'tree-shake-filters.ts', registryKey: 'blur' },
-  { fixture: 'tree-shake-shadows.ts', registryKey: 'shadow' },
-  { fixture: 'tree-shake-transforms.ts', registryKey: 'transformStyle' },
-  { fixture: 'tree-shake-backdrop.ts', registryKey: 'backdropFilter' },
+const preloadChecks: Array<{ fixture: string; registryKeys: string[] }> = [
+  { fixture: 'tree-shake-effects.ts', registryKeys: ['transformStyle'] },
+  { fixture: 'tree-shake-filters.ts', registryKeys: ['blur'] },
+  { fixture: 'tree-shake-shadows.ts', registryKeys: ['shadow'] },
+  { fixture: 'tree-shake-transforms.ts', registryKeys: ['transformStyle'] },
+  { fixture: 'tree-shake-backdrop.ts', registryKeys: ['backdropFilter'] },
+  { fixture: 'tree-shake-both.ts', registryKeys: ['padding', 'transformStyle'] },
 ]
 
 async function buildFixtureOutput(fixture: string): Promise<string> {
@@ -38,11 +39,13 @@ async function verify() {
 
   for (const check of preloadChecks) {
     const bundledOutput = await buildFixtureOutput(check.fixture)
-    if (!bundledOutput.includes(check.registryKey)) {
-      console.error(
-        `❌ Tree-shaking failed: expected "${check.registryKey}" in ${check.fixture} bundle`
-      )
-      process.exit(1)
+    for (const registryKey of check.registryKeys) {
+      if (!bundledOutput.includes(registryKey)) {
+        console.error(
+          `❌ Tree-shaking failed: expected "${registryKey}" in ${check.fixture} bundle`
+        )
+        process.exit(1)
+      }
     }
   }
 

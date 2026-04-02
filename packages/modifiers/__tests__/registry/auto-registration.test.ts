@@ -1,5 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+function getRegistrableFunctionNames(
+  moduleExports: Record<string, unknown>,
+  excludedNames: ReadonlySet<string> = new Set()
+): string[] {
+  return Object.entries(moduleExports)
+    .filter(([name, value]) => {
+      if (excludedNames.has(name)) return false
+      if (typeof value !== 'function') return false
+      return /^[a-z]/.test(name)
+    })
+    .map(([name]) => name)
+    .sort()
+}
+
 describe('Modifier registry auto-registration', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -71,5 +85,48 @@ describe('Modifier registry auto-registration', () => {
 
     expect(globalModifierRegistry.has('backdropFilter')).toBe(true)
     expect(globalModifierRegistry.has('transformStyle')).toBe(false)
+  })
+
+  it('keeps preload registrations aligned with effect module exports', async () => {
+    const { globalModifierRegistry } = await import('@tachui/registry')
+    const preloadModulePairs = [
+      {
+        preload: () => import('../../src/preload/filters'),
+        effectsModule: () => import('../../src/effects/filters'),
+        excludedNames: new Set(['opacity', 'backdropFilter']),
+      },
+      {
+        preload: () => import('../../src/preload/shadows'),
+        effectsModule: () => import('../../src/effects/shadows'),
+        excludedNames: new Set<string>(),
+      },
+      {
+        preload: () => import('../../src/preload/transforms'),
+        effectsModule: () => import('../../src/effects/transforms'),
+        excludedNames: new Set(['offset']),
+      },
+      {
+        preload: () => import('../../src/preload/backdrop'),
+        effectsModule: () => import('../../src/effects/backdrop'),
+        excludedNames: new Set<string>(),
+      },
+    ] as const
+
+    for (const pair of preloadModulePairs) {
+      globalModifierRegistry.clear()
+
+      const effectsModuleExports = await pair.effectsModule()
+      await pair.preload()
+
+      const expectedFactoryNames = getRegistrableFunctionNames(
+        effectsModuleExports,
+        pair.excludedNames
+      )
+      const missingRegistrations = expectedFactoryNames.filter(
+        factoryName => !globalModifierRegistry.has(factoryName)
+      )
+
+      expect(missingRegistrations).toEqual([])
+    }
   })
 })

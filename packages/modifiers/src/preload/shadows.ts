@@ -14,6 +14,8 @@ import {
   neumorphism,
   neumorphismPressed,
   reactiveShadow,
+  shadowPreset,
+  shadows,
   shadow,
   swiftUIShadow,
   textEmbossed,
@@ -25,6 +27,8 @@ import {
 } from '../effects/shadows'
 
 const shadowRegistrations: Array<[string, (...args: any[]) => any]> = [
+  ['shadows', shadows],
+  ['shadowPreset', shadowPreset],
   ['shadow', shadow],
   ['textShadow', textShadow],
   ['dropShadow', dropShadow],
