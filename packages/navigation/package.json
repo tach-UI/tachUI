@@ -12,9 +12,41 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./modifiers": {
+      "types": "./dist/modifiers.d.ts",
+      "import": "./dist/modifiers.js"
+    },
+    "./modifiers/register": {
+      "types": "./dist/modifiers-register.d.ts",
+      "import": "./dist/modifiers-register.js"
+    },
     "./sheet": {
       "types": "./dist/sheet.d.ts",
       "import": "./dist/sheet.js"
+    },
+    "./stack": {
+      "types": "./dist/stack.d.ts",
+      "import": "./dist/stack.js"
+    },
+    "./link": {
+      "types": "./dist/link.d.ts",
+      "import": "./dist/link.js"
+    },
+    "./tabs": {
+      "types": "./dist/tabs.d.ts",
+      "import": "./dist/tabs.js"
+    },
+    "./path": {
+      "types": "./dist/path.d.ts",
+      "import": "./dist/path.js"
+    },
+    "./environment": {
+      "types": "./dist/environment.d.ts",
+      "import": "./dist/environment.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
     }
   },
   "files": [
@@ -72,6 +104,7 @@
     "node": ">=20.0.0"
   },
   "sideEffects": [
-    "./dist/index.js"
+    "./dist/index.js",
+    "./dist/modifiers-register.js"
   ]
 }

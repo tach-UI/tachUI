@@ -28,15 +28,33 @@ pnpm add @tachui/core @tachui/navigation
 
 ## Quick Start
 
-### Targeted Sheet Imports
+### Subpath Imports (Recommended)
 
-Use the sheet subpath when you only need presentation modifiers:
+Prefer focused subpaths when you only need part of navigation:
 
 ```typescript
+import { NavigationStack } from '@tachui/navigation/stack'
+import { NavigationLink } from '@tachui/navigation/link'
+import { TabView } from '@tachui/navigation/tabs'
+import { NavigationPath } from '@tachui/navigation/path'
+import { NavigationEnvironmentProvider } from '@tachui/navigation/environment'
 import { sheet, fullScreenCover, popover } from '@tachui/navigation/sheet'
+import { navigationTitle } from '@tachui/navigation/modifiers'
 ```
 
-Use the root package for full navigation runtime APIs (`NavigationStack`, `NavigationLink`, routers, tabs).
+Available subpaths:
+
+- `@tachui/navigation/stack`
+- `@tachui/navigation/link`
+- `@tachui/navigation/tabs`
+- `@tachui/navigation/path`
+- `@tachui/navigation/environment`
+- `@tachui/navigation/sheet`
+- `@tachui/navigation/modifiers`
+- `@tachui/navigation/modifiers/register` (explicitly side-effectful registration for modifier-builder patching)
+- `@tachui/navigation/types`
+
+Use root `@tachui/navigation` when you intentionally want the full legacy surface.
 
 ### Stack Navigation
 

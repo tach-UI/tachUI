@@ -23,13 +23,31 @@ pnpm add @tachui/navigation
 
 ## Subpath Imports
 
-For sheet/presentation-only usage, prefer the focused subpath:
+Prefer granular subpaths for better tree-shaking:
 
 ```typescript
+import { NavigationStack } from '@tachui/navigation/stack'
+import { NavigationLink } from '@tachui/navigation/link'
+import { TabView } from '@tachui/navigation/tabs'
+import { NavigationPath } from '@tachui/navigation/path'
+import { NavigationEnvironmentProvider } from '@tachui/navigation/environment'
 import { sheet, fullScreenCover, popover } from '@tachui/navigation/sheet'
+import { navigationTitle } from '@tachui/navigation/modifiers'
 ```
 
-Use `@tachui/navigation` root imports when you need stack, link, tab, router, and broader navigation runtime APIs.
+Subpath matrix:
+
+- `@tachui/navigation/stack`: stack/split/view container APIs
+- `@tachui/navigation/link`: declarative navigation link APIs
+- `@tachui/navigation/tabs`: tab navigation APIs
+- `@tachui/navigation/path`: path and programmatic navigation APIs
+- `@tachui/navigation/environment`: navigation environment + document-head APIs
+- `@tachui/navigation/sheet`: sheet/popover/cover presentation APIs
+- `@tachui/navigation/modifiers`: pure navigation modifier functions (no global registration side effects)
+- `@tachui/navigation/modifiers/register`: explicit modifier-builder registration side effects
+- `@tachui/navigation/types`: shared type definitions
+
+Use root `@tachui/navigation` when you intentionally need the full compatibility surface.
 
 Follow progress via the [Phase 2 navigation enhancement design doc](/design-docs/Enh-NavigationPlugin.md).
 

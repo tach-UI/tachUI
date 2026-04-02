@@ -6,7 +6,15 @@ export default defineConfig(({ mode }) => ({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
+        modifiers: resolve(__dirname, 'src/modifiers.ts'),
+        'modifiers-register': resolve(__dirname, 'src/modifiers-register.ts'),
         sheet: resolve(__dirname, 'src/sheet.ts'),
+        stack: resolve(__dirname, 'src/stack.ts'),
+        link: resolve(__dirname, 'src/link.ts'),
+        tabs: resolve(__dirname, 'src/tabs.ts'),
+        path: resolve(__dirname, 'src/path.ts'),
+        environment: resolve(__dirname, 'src/environment.ts'),
+        types: resolve(__dirname, 'src/types.ts'),
       },
       name: 'TachUINavigation',
       fileName: (_, entryName) => `${entryName}.js`,
