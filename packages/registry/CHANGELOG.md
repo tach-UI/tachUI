@@ -1,5 +1,7 @@
 # @tachui/registry
 
+## 0.8.25
+
 ## 0.8.24
 
 ### Patch Changes

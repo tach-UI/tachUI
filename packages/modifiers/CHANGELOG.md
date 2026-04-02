@@ -1,5 +1,21 @@
 # @tachui/modifiers
 
+## 0.8.25
+
+### Patch Changes
+
+- [#184](https://github.com/tach-UI/tachUI/pull/184) [`2e43673`](https://github.com/tach-UI/tachUI/commit/2e43673d98067daf54af8b7a7f31cc125a53ab34) Thanks [@whoughton](https://github.com/whoughton)! - Fix SSR modifier application in Node environments by guarding browser-only globals and preserving style serialization output.
+
+  - guard modifier paths that previously accessed `HTMLElement`, `document`, `window`, or `getComputedStyle` without runtime checks
+  - harden modifier factory/runtime code paths used during server-side rendering
+  - ensure SSR style materialization captures direct style assignments in addition to `setProperty`
+  - add and fix SSR test aliasing and regression coverage for animation/transform/z-index serialization
+
+- Updated dependencies [[`2e43673`](https://github.com/tach-UI/tachUI/commit/2e43673d98067daf54af8b7a7f31cc125a53ab34)]:
+  - @tachui/core@0.8.25
+  - @tachui/types@0.8.25
+  - @tachui/registry@0.8.25
+
 ## 0.8.24
 
 ### Patch Changes
