@@ -1,5 +1,22 @@
 # @tachui/grid
 
+## 0.8.24
+
+### Patch Changes
+
+- [#181](https://github.com/tach-UI/tachUI/pull/181) [`1e6c1f4`](https://github.com/tach-UI/tachUI/commit/1e6c1f4f98f68929397ce4b5ea9bfc92e6e45dca) Thanks [@whoughton](https://github.com/whoughton)! - Release tree-shaking and packaging improvements across core and feature packages.
+
+  - add explicit `sideEffects` metadata across publishable packages for safer bundling
+  - split runtime-safe vs tooling entry points in `@tachui/core` and add subpath exports
+  - add granular navigation and responsive subpath exports with artifact verification
+  - include SSR and modifiers/runtime fixes plus supporting docs and CI updates
+
+- Updated dependencies [[`1e6c1f4`](https://github.com/tach-UI/tachUI/commit/1e6c1f4f98f68929397ce4b5ea9bfc92e6e45dca)]:
+  - @tachui/core@0.8.24
+  - @tachui/modifiers@0.8.24
+  - @tachui/registry@0.8.24
+  - @tachui/responsive@0.8.24
+
 ## 0.8.23
 
 ### Patch Changes
