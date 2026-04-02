@@ -3,6 +3,14 @@
  *
  * This entrypoint intentionally exports only modal/sheet-style presentation
  * modifiers so consumers can avoid importing the full navigation runtime.
+ *
+ * Intentionally excluded:
+ * - searchable
+ * - searchSuggestions
+ * - searchScopes
+ *
+ * These belong to navigation-bar search configuration rather than modal/sheet
+ * presentation concerns.
  */
 
 export {

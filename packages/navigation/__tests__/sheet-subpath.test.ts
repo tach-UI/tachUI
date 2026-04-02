@@ -9,6 +9,8 @@ describe('navigation sheet subpath entrypoint', () => {
     expect(typeof sheetSubpath.popover).toBe('function')
     expect(typeof sheetSubpath.confirmationDialog).toBe('function')
     expect(typeof sheetSubpath.inspector).toBe('function')
+    expect(typeof sheetSubpath.presentationDetents).toBe('function')
+    expect(typeof sheetSubpath.inspectorColumnWidth).toBe('function')
   })
 
   it('does not re-export unrelated stack APIs', () => {
