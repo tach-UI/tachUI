@@ -1,5 +1,13 @@
 # @tachui/data
 
+## 0.8.26
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/mobile@0.8.26
+  - @tachui/primitives@0.8.26
+
 ## 0.8.25
 
 ### Patch Changes

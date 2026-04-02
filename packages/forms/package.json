@@ -1,6 +1,6 @@
 {
   "name": "@tachui/forms",
-  "version": "0.8.25",
+  "version": "0.8.26",
   "description": "Unified form components and validation system for tachUI",
   "type": "module",
   "sideEffects": false,

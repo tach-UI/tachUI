@@ -1,5 +1,13 @@
 # @tachui/modifiers
 
+## 0.8.26
+
+### Patch Changes
+
+- [#190](https://github.com/tach-UI/tachUI/pull/190) [`ee3b6ed`](https://github.com/tach-UI/tachUI/commit/ee3b6ed44ca0262a4efe4567e67a52e2e2bd7534) Thanks [@whoughton](https://github.com/whoughton)! - Fix preload registration reliability for segmented modifier imports by hardening side-effect handling against production tree-shaking.
+
+  This updates preload registration behavior for basic/effects and segmented effects preloads (filters, shadows, transforms, backdrop), expands sideEffects coverage for source and dist entrypoints, and adds regression verification/tests so chain methods like `transformStyle` remain available in production bundles.
+
 ## 0.8.25
 
 ### Patch Changes
