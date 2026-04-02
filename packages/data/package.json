@@ -1,6 +1,6 @@
 {
   "name": "@tachui/data",
-  "version": "0.8.23",
+  "version": "0.8.24",
   "description": "Data display and organization components for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
