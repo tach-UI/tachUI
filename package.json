@@ -59,6 +59,7 @@
     "ci:check-changesets": "node ./tools/check-changesets.mjs",
     "ci:check-readme-pins": "node ./tools/check-readme-version-pins.mjs",
     "ci:check-version-line": "node ./tools/check-version-line.mjs",
+    "ci:check-side-effects": "node ./tools/check-side-effects.mjs",
     "lint": "oxlint packages --import-plugin --ignore-pattern='**/__tests__/**' --ignore-pattern='**/*.test.*' --ignore-pattern='**/*.spec.*'",
     "lint:fix": "oxlint packages --import-plugin --ignore-pattern='**/__tests__/**' --ignore-pattern='**/*.test.*' --ignore-pattern='**/*.spec.*' --fix",
     "type-check": "pnpm -r type-check",
