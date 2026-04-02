@@ -18,6 +18,30 @@ import type {
   ReactiveModifierProps,
 } from './types'
 
+function isHTMLElementRuntimeElement(element: unknown): element is HTMLElement {
+  return typeof HTMLElement !== 'undefined' && element instanceof HTMLElement
+}
+
+function hasStyleTarget(
+  element: unknown
+): element is { style: Record<string, string> & { setProperty?: unknown } } {
+  return (
+    typeof element === 'object' &&
+    element !== null &&
+    'style' in element &&
+    Boolean((element as { style?: unknown }).style)
+  )
+}
+
+function hasSetPropertyStyleTarget(
+  element: unknown
+): element is { style: { setProperty: (name: string, value: string) => void } } {
+  return (
+    hasStyleTarget(element) &&
+    typeof (element.style as { setProperty?: unknown }).setProperty === 'function'
+  )
+}
+
 /**
  * Helper functions for working with modifiers
  */
@@ -135,7 +159,7 @@ export function createStyleModifier<TProps extends Record<string, any>>(
   priority: number = 100
 ): ModifierFactory<TProps> {
   return createCustomModifier(type, priority, (node, context, props) => {
-    if (context.element instanceof HTMLElement) {
+    if (hasStyleTarget(context.element)) {
       const styleObject = styles(props)
       Object.assign(context.element.style, styleObject)
     }
@@ -153,7 +177,7 @@ export function createPresetModifier(
 ): () => Modifier {
   return () =>
     createCustomModifier(type, priority, (node, context) => {
-      if (context.element instanceof HTMLElement) {
+      if (hasStyleTarget(context.element)) {
         Object.assign(context.element.style, styles)
       }
       return node
@@ -357,7 +381,7 @@ export function classModifier(
         ? classNames
         : classNames.split(' ').filter(Boolean)
 
-      if (context.element instanceof HTMLElement) {
+      if (isHTMLElementRuntimeElement(context.element)) {
         context.element.classList.add(...classList)
       }
     }
@@ -372,7 +396,7 @@ export function classModifier(
           ? newClasses
           : newClasses.split(' ').filter(Boolean)
 
-        if (context.element instanceof HTMLElement) {
+        if (isHTMLElementRuntimeElement(context.element)) {
           // Remove previous classes
           context.element.classList.remove(...previousClasses)
           // Add new classes
@@ -412,7 +436,7 @@ export function styleModifier(
     if (!context.element) return node
 
     const applyStyles = (styleObj: Record<string, string | number>) => {
-      if (context.element instanceof HTMLElement) {
+      if (hasSetPropertyStyleTarget(context.element)) {
         for (const [property, value] of Object.entries(styleObj)) {
           const cssProperty = modifierHelpers.toKebabCase(property)
           const cssValue = modifierHelpers.normalizeCSSValue(value)

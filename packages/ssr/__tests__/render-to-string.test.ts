@@ -1,5 +1,6 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import { createSignal, h, text } from '@tachui/core'
+import { AnimationModifier } from '@tachui/core/modifiers'
 import { animation, transform } from '@tachui/modifiers/animation'
 import { blendMode } from '@tachui/modifiers/appearance/blend-mode'
 import { zIndex } from '@tachui/modifiers/layout/z-index'
@@ -282,6 +283,14 @@ describe('renderToString', () => {
       node.modifiers = [
         zIndex(20),
         transform('translateX(8px)'),
+        new AnimationModifier({
+          transition: {
+            property: 'opacity',
+            duration: 240,
+            easing: 'ease-in-out',
+            delay: 0,
+          },
+        }),
         animation({
           keyframes: {
             from: { opacity: '0' },
@@ -299,6 +308,7 @@ describe('renderToString', () => {
       expect(html).toContain('display:block')
       expect(html).toContain('z-index:20')
       expect(html).toContain('transform:translateX(8px)')
+      expect(html).toContain('transition:opacity 240ms ease-in-out 0ms')
     } finally {
       errorSpy.mockRestore()
     }
