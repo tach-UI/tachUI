@@ -644,6 +644,7 @@ export interface ModifierBuilder<
   ): ModifierBuilder<T>
   blendMode(mode: BlendMode): ModifierBuilder<T>
   backgroundBlendMode(mode: BlendMode): ModifierBuilder<T>
+  compositingGroup(): ModifierBuilder<T>
   font(options: AppearanceModifierProps['font']): ModifierBuilder<T>
   font(size: number | string): ModifierBuilder<T>
   fontWeight(

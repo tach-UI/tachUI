@@ -7,6 +7,7 @@
 // Background modifiers
 export * from './background'
 export * from './blend-mode'
+export * from './compositing-group'
 
 // Border modifiers
 export * from './border'

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   blendMode,
   backgroundBlendMode,
+  compositingGroup,
   backgroundImage,
   backgroundColor,
 } from '../../src/appearance'
@@ -42,6 +43,12 @@ describe('blend mode modifiers', () => {
     expect(element.style.getPropertyValue('background-blend-mode')).toBe('screen')
   })
 
+  it('compositingGroup sets isolation:isolate', () => {
+    const element = document.createElement('div')
+    applyModifierToElement(compositingGroup(), element)
+    expect(element.style.getPropertyValue('isolation')).toBe('isolate')
+  })
+
   it('coexists with backgroundImage/backgroundColor styles', () => {
     const element = document.createElement('div')
     element.style.setProperty('background-image', 'url("/texture.png")')
@@ -66,6 +73,19 @@ describe('blend mode modifiers', () => {
 
     expect(element.style.getPropertyValue('mix-blend-mode')).toBe('difference')
     expect(element.style.getPropertyValue('background-blend-mode')).toBe('screen')
+  })
+
+  it('supports local blend setup with compositingGroup + blendMode', () => {
+    const parent = document.createElement('div')
+    const child = document.createElement('div')
+    parent.appendChild(child)
+
+    applyModifierToElement(compositingGroup(), parent)
+    applyModifierToElement(blendMode('multiply'), child)
+
+    // JSDOM cannot render compositing; assert style contract for isolated blending.
+    expect(parent.style.getPropertyValue('isolation')).toBe('isolate')
+    expect(child.style.getPropertyValue('mix-blend-mode')).toBe('multiply')
   })
 
   it('integrates with backgroundImage and backgroundColor modifiers', () => {
