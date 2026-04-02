@@ -41,7 +41,9 @@ export class CustomPropertiesModifier extends BaseModifier<CustomPropertiesOptio
     const styles = this.computeCustomPropertyStyles(this.properties)
     const element = context.element as HTMLElement | { style?: any }
     const styleTarget =
-      element instanceof HTMLElement ? element.style : (element as any).style
+      typeof HTMLElement !== 'undefined' && element instanceof HTMLElement
+        ? element.style
+        : (element as any).style
 
     if (styleTarget && typeof styleTarget.setProperty === 'function') {
       for (const [propertyName, formatted] of Object.entries(styles)) {
