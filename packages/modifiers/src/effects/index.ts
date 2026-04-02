@@ -65,6 +65,8 @@ import {
   backfaceVisibility,
 } from './transforms'
 import {
+  shadows,
+  shadowPreset,
   shadow,
   textShadow,
   dropShadow,
@@ -162,6 +164,8 @@ const effectRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['backfaceVisibility', backfaceVisibility],
 
   // Shadows
+  ['shadows', shadows],
+  ['shadowPreset', shadowPreset],
   ['shadow', shadow],
   ['textShadow', textShadow],
   ['dropShadow', dropShadow],
@@ -270,6 +274,8 @@ export {
   backfaceVisibility,
 } from './transforms'
 export {
+  shadows,
+  shadowPreset,
   shadow,
   textShadow,
   dropShadow,

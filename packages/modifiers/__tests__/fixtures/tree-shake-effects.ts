@@ -1,1 +1,1 @@
-import '@tachui/modifiers/preload/effects'
+import '../../src/preload/effects'

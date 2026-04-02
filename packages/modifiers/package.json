@@ -164,6 +164,11 @@
     "node": ">=20.0.0"
   },
   "sideEffects": [
+    "./src/basic/index.ts",
+    "./src/effects/index.ts",
+    "./src/preload/*.ts",
+    "./dist/basic/index.js",
+    "./dist/effects/index.js",
     "./dist/preload/*.js"
   ],
   "publishConfig": {

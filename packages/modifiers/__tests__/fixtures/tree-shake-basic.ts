@@ -1,1 +1,1 @@
-import '@tachui/modifiers/preload/basic'
+import '../../src/preload/basic'
