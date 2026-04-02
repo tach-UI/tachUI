@@ -243,27 +243,42 @@ function serializeNode(node: DOMNode): string {
   return `${openingTag}${children}</${tag}>`
 }
 
-export function serializeToHTML(input: SSRNodeInput): string {
+function serializeToHTMLInternal(
+  input: SSRNodeInput,
+  activeBuilders: Set<object>
+): string {
   if (input == null || input === false || input === true) {
     return ''
   }
 
   if (Array.isArray(input)) {
-    return input.map(entry => serializeToHTML(entry)).join('')
+    return input.map(entry => serializeToHTMLInternal(entry, activeBuilders)).join('')
   }
 
   if (isComponentInstance(input)) {
-    return serializeToHTML(input.render() as SSRNodeInput)
+    return serializeToHTMLInternal(input.render() as SSRNodeInput, activeBuilders)
   }
 
   if (isModifierBuilder(input)) {
-    const built = (input as ModifierBuilderLike).build()
-    if (built === input) {
+    const builder = input as ModifierBuilderLike
+    if (activeBuilders.has(builder as object)) {
       throw new TypeError(
-        'Unsupported TachUI SSR input. Modifier build() returned itself and cannot be serialized.'
+        'Unsupported TachUI SSR input. Detected cyclic builder input and cannot be serialized.'
       )
     }
-    return serializeToHTML(built)
+
+    activeBuilders.add(builder as object)
+    try {
+      const built = builder.build()
+      if (built === input) {
+        throw new TypeError(
+          'Unsupported TachUI SSR input. Modifier build() returned itself and cannot be serialized.'
+        )
+      }
+      return serializeToHTMLInternal(built, activeBuilders)
+    } finally {
+      activeBuilders.delete(builder as object)
+    }
   }
 
   if (isDOMNode(input)) {
@@ -275,4 +290,8 @@ export function serializeToHTML(input: SSRNodeInput): string {
   }
 
   throw new TypeError('Unsupported TachUI SSR input. Expected component, DOM node, or primitive text.')
+}
+
+export function serializeToHTML(input: SSRNodeInput): string {
+  return serializeToHTMLInternal(input, new Set())
 }

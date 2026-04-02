@@ -106,6 +106,14 @@ describe('renderToString', () => {
     expect(renderToString(parent)).toBe('<div><em>child</em></div>')
   })
 
+  it('serializes when render() returns another component instance', () => {
+    const leaf = createComponent(() => h('strong', null, text('leaf')))
+    const middle = createComponent(() => leaf as unknown as DOMNode)
+    const parent = createComponent(() => middle as unknown as DOMNode)
+
+    expect(renderToString(parent)).toBe('<strong>leaf</strong>')
+  })
+
   it('serializes ModifierBuilder-like inputs via build()', () => {
     const builder: ModifierBuilderLike = {
       build: () => h('article', null, text('Built')),
@@ -137,6 +145,20 @@ describe('renderToString', () => {
 
     expect(() => renderToString(loopingBuilder)).toThrow(
       'Modifier build() returned itself'
+    )
+  })
+
+  it('throws clear error for cyclic builder chains', () => {
+    const builderA: ModifierBuilderLike = {
+      build: () => builderB as unknown as DOMNode,
+    }
+
+    const builderB: ModifierBuilderLike = {
+      build: () => builderA as unknown as DOMNode,
+    }
+
+    expect(() => renderToString(builderA)).toThrow(
+      'Detected cyclic builder input'
     )
   })
 
