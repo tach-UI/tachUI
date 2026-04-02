@@ -4,9 +4,12 @@ import { defineConfig } from 'vite'
 export default defineConfig(({ mode }) => ({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        sheet: resolve(__dirname, 'src/sheet.ts'),
+      },
       name: 'TachUINavigation',
-      fileName: 'index',
+      fileName: (_, entryName) => `${entryName}.js`,
       formats: ['es'],
     },
     rollupOptions: {

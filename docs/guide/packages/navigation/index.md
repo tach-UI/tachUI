@@ -21,6 +21,16 @@ Provides NavigationStack, NavigationLink, TabView, deep linking, and route utili
 pnpm add @tachui/navigation
 ```
 
+## Subpath Imports
+
+For sheet/presentation-only usage, prefer the focused subpath:
+
+```typescript
+import { sheet, fullScreenCover, popover } from '@tachui/navigation/sheet'
+```
+
+Use `@tachui/navigation` root imports when you need stack, link, tab, router, and broader navigation runtime APIs.
+
 Follow progress via the [Phase 2 navigation enhancement design doc](/design-docs/Enh-NavigationPlugin.md).
 
 ## Per-view SEO metadata

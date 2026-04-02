@@ -28,6 +28,16 @@ pnpm add @tachui/core @tachui/navigation
 
 ## Quick Start
 
+### Targeted Sheet Imports
+
+Use the sheet subpath when you only need presentation modifiers:
+
+```typescript
+import { sheet, fullScreenCover, popover } from '@tachui/navigation/sheet'
+```
+
+Use the root package for full navigation runtime APIs (`NavigationStack`, `NavigationLink`, routers, tabs).
+
 ### Stack Navigation
 
 ```typescript
