@@ -1,5 +1,13 @@
 # @tachui/viewport
 
+## 0.8.25
+
+### Patch Changes
+
+- Updated dependencies [[`2e43673`](https://github.com/tach-UI/tachUI/commit/2e43673d98067daf54af8b7a7f31cc125a53ab34)]:
+  - @tachui/core@0.8.25
+  - @tachui/modifiers@0.8.25
+
 ## 0.8.24
 
 ### Patch Changes
