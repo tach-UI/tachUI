@@ -79,15 +79,22 @@ export interface SystemAssets {
 
 /**
  * Main Assets interface for dynamic dot-notation access.
- * Custom asset subclasses should be accessed through helper APIs
- * (`getAsset`, `getColorAsset`, `asColorAsset`) to preserve type safety.
+ *
+ * Consumers can augment `CustomAssets` to strongly type known runtime-registered
+ * asset names:
+ *
+ * ```ts
+ * declare module '@tachui/types/assets' {
+ *   interface CustomAssets {
+ *     sand: ColorAssetProxy
+ *   }
+ * }
+ * ```
  */
-export interface AssetsInterface extends SystemAssets {
-  // Dynamic asset keys are runtime-registered and cannot be inferred statically.
-  // Use `any` here to preserve ergonomic dot-access on custom assets
-  // (e.g. `Assets.brandPrimary.opacity(0.5)`), while system assets remain
-  // strongly typed via explicit properties above.
-  [key: string]: any
+export interface CustomAssets {}
+
+export interface AssetsInterface extends SystemAssets, CustomAssets {
+  [key: string]: RegisteredAssetProxy
 }
 
 /**
