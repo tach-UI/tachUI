@@ -22,9 +22,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && vite build && vite build --config vite.config.cjs.ts && tsc -p tsconfig.build.json --emitDeclarationOnly",
-    "build:dev": "rm -rf dist && vite build --mode development && vite build --config vite.config.cjs.ts && tsc -p tsconfig.build.json --emitDeclarationOnly",
-    "build:prod": "rm -rf dist && vite build --mode production && vite build --config vite.config.cjs.ts && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "build": "rm -rf dist && vite build && vite build --config vite.config.cjs.ts && tsc -p tsconfig.build.json --emitDeclarationOnly && node ./scripts/verify-build-artifacts.mjs",
+    "build:dev": "rm -rf dist && vite build --mode development && vite build --config vite.config.cjs.ts && tsc -p tsconfig.build.json --emitDeclarationOnly && node ./scripts/verify-build-artifacts.mjs",
+    "build:prod": "rm -rf dist && vite build --mode production && vite build --config vite.config.cjs.ts && tsc -p tsconfig.build.json --emitDeclarationOnly && node ./scripts/verify-build-artifacts.mjs",
     "dev": "vite build --watch",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
     "test": "vitest run",
@@ -73,5 +73,9 @@
     "type": "git",
     "url": "https://github.com/tach-UI/tachUI",
     "directory": "packages/responsive"
-  }
+  },
+  "sideEffects": [
+    "./dist/index.mjs",
+    "./dist/index.js"
+  ]
 }

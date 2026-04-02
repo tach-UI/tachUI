@@ -52,6 +52,9 @@ jobs:
       - name: Enforce publishable version-line consistency
         run: pnpm ci:check-version-line
 
+      - name: Enforce explicit sideEffects declarations
+        run: pnpm ci:check-side-effects
+
   readme-version-policy:
     name: README Version Policy
     if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'

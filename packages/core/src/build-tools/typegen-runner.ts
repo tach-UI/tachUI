@@ -1,6 +1,10 @@
 /**
  * Shared utilities for modifier type generation tooling.
  * These helpers are reused by the CLI script and the Vite plugin.
+ *
+ * Note: This file is an internal source helper and is not currently the
+ * backing implementation for the `@tachui/core/build-tools` package export.
+ * That export aliases `src/build-plugins/index.ts` for compatibility.
  */
 
 import { promises as fs } from 'node:fs'

@@ -1,4 +1,5 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
+import { applyModifiersToNode } from '@tachui/core'
 import { isComputed, isSignal, untrack } from '@tachui/core/reactive'
 import type { ModifierBuilderLike, SSRNodeInput } from './types'
 import { escapeAttribute, escapeHTML } from './escape'
@@ -215,6 +216,172 @@ function serializeAttributes(node: DOMNode): string {
   return attributes.length > 0 ? ` ${attributes.join(' ')}` : ''
 }
 
+type SSRStyleObject = Record<string, string>
+
+interface SSRStyleTarget {
+  setProperty: (name: string, value: string, priority?: string) => void
+}
+
+interface SSRVirtualElement {
+  style: SSRStyleTarget
+  classList: {
+    add: (..._tokens: string[]) => void
+    remove: (..._tokens: string[]) => void
+    contains: (_token: string) => boolean
+  }
+  setAttribute: (_name: string, _value: string) => void
+  removeAttribute: (_name: string) => void
+  getAttribute: (_name: string) => string | null
+  hasAttribute: (_name: string) => boolean
+  addEventListener: (
+    _type: string,
+    _listener: unknown
+  ) => void
+  removeEventListener: (
+    _type: string,
+    _listener: unknown
+  ) => void
+}
+
+function collectStyleObject(styleInput: unknown): SSRStyleObject {
+  const styleObject: SSRStyleObject = {}
+  const resolvedStyle = resolveReactiveValue(styleInput)
+
+  if (typeof resolvedStyle === 'string') {
+    for (const declaration of resolvedStyle.split(';')) {
+      const trimmedDeclaration = declaration.trim()
+      if (!trimmedDeclaration) continue
+      const separatorIndex = trimmedDeclaration.indexOf(':')
+      if (separatorIndex < 1) continue
+      const propertyName = trimmedDeclaration.slice(0, separatorIndex).trim()
+      const value = trimmedDeclaration.slice(separatorIndex + 1).trim()
+      if (propertyName && value) {
+        styleObject[propertyName] = value
+      }
+    }
+    return styleObject
+  }
+
+  if (typeof resolvedStyle !== 'object' || resolvedStyle === null) {
+    return styleObject
+  }
+
+  for (const [property, propertyValue] of Object.entries(
+    resolvedStyle as Record<string, unknown>
+  )) {
+    const reactiveValue = resolveReactiveValue(propertyValue)
+    if (reactiveValue == null || reactiveValue === false) continue
+    const cssProperty = property.startsWith('--')
+      ? property
+      : property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
+    styleObject[cssProperty] = String(reactiveValue)
+  }
+
+  return styleObject
+}
+
+function createSSRVirtualElement(initialStyle: unknown): {
+  element: SSRVirtualElement
+  getStyles: () => SSRStyleObject
+} {
+  const styleState = collectStyleObject(initialStyle)
+  const styleTarget: SSRStyleTarget = {
+    setProperty(name: string, value: string, priority?: string) {
+      const suffix = priority === 'important' ? ' !important' : ''
+      styleState[name] = `${value}${suffix}`
+    },
+  }
+
+  const element: SSRVirtualElement = {
+    style: styleTarget,
+    classList: {
+      add() {},
+      remove() {},
+      contains() {
+        return false
+      },
+    },
+    setAttribute() {},
+    removeAttribute() {},
+    getAttribute() {
+      return null
+    },
+    hasAttribute() {
+      return false
+    },
+    addEventListener() {},
+    removeEventListener() {},
+  }
+
+  return {
+    element,
+    getStyles: () => ({ ...styleState }),
+  }
+}
+
+function getNodeModifiers(node: DOMNode): unknown[] {
+  const directModifiers =
+    'modifiers' in (node as any) && Array.isArray((node as any).modifiers)
+      ? (node as any).modifiers
+      : []
+
+  const metadataModifiers =
+    'componentMetadata' in (node as any) &&
+    Array.isArray((node as any).componentMetadata?.modifiers)
+      ? (node as any).componentMetadata.modifiers
+      : []
+
+  // Match runtime precedence: use component metadata modifiers when present.
+  return metadataModifiers.length > 0 ? metadataModifiers : directModifiers
+}
+
+function applyNodeModifiersForSSR(node: DOMNode): DOMNode {
+  if (node.type !== 'element') {
+    return node
+  }
+
+  const modifiers = getNodeModifiers(node)
+  if (modifiers.length === 0) {
+    return node
+  }
+
+  const virtualElement = createSSRVirtualElement(node.props?.style)
+  const nodeForSSR = {
+    ...node,
+    props: { ...node.props },
+  } as DOMNode
+
+  const nodeWithAppliedModifiers = applyModifiersToNode(
+    nodeForSSR,
+    modifiers as any[],
+    {
+      componentId: (node as any).componentId || 'unknown',
+      phase: 'creation',
+      element: virtualElement.element as unknown as Element,
+      componentInstance:
+        (node as any).componentInstance ||
+        (node as any).componentMetadata?.componentInstance ||
+        (node as any)._originalComponent ||
+        node,
+    },
+    {
+      batch: true,
+      suppressEffects: true,
+    }
+  )
+
+  return {
+    ...nodeWithAppliedModifiers,
+    props: {
+      ...nodeWithAppliedModifiers.props,
+      style: {
+        ...collectStyleObject(nodeWithAppliedModifiers.props?.style),
+        ...virtualElement.getStyles(),
+      },
+    },
+  }
+}
+
 function serializeNode(node: DOMNode): string {
   if (node.type === 'text') {
     if (typeof node.reactiveContent === 'function') {
@@ -229,15 +396,16 @@ function serializeNode(node: DOMNode): string {
     return `<!--${safeComment}-->`
   }
 
-  const tag = node.tag ?? 'div'
-  const attributes = serializeAttributes(node)
+  const preparedNode = applyNodeModifiersForSSR(node)
+  const tag = preparedNode.tag ?? 'div'
+  const attributes = serializeAttributes(preparedNode)
   const openingTag = `<${tag}${attributes}>`
 
   if (VOID_ELEMENTS.has(tag)) {
     return openingTag
   }
 
-  const children = (node.children ?? [])
+  const children = (preparedNode.children ?? [])
     .map((child: DOMNode) => serializeNode(child))
     .join('')
   return `${openingTag}${children}</${tag}>`

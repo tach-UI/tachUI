@@ -77,8 +77,7 @@
     }
   },
   "sideEffects": [
-    "./dist/index.js",
-    "./src/index.ts"
+    "./dist/index.js"
   ],
   "bugs": "https://github.com/tach-UI/tachUI/issues",
   "engines": {

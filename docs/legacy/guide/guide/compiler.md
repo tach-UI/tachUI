@@ -16,7 +16,7 @@ Add the TachUI plugin to your `vite.config.ts`:
 
 ```typescript
 import { defineConfig } from 'vite'
-import { createTachUIPlugin } from '@tachui/core'
+import { createTachUIPlugin } from '@tachui/core/compiler'
 
 export default defineConfig({
   plugins: [
@@ -41,6 +41,11 @@ export default defineConfig({
   ]
 })
 ```
+
+> [!IMPORTANT]
+> Compiler APIs are tooling-only and no longer exported from the runtime-safe `@tachui/core` root entrypoint.
+> Use `@tachui/core/compiler` directly. If you need temporary migration compatibility, use `@tachui/core/full`.
+> `@tachui/core/full` is planned for removal in the next major release (`v1.0.0`).
 
 ## Supported Syntax
 

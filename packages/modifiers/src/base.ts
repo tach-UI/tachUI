@@ -74,37 +74,37 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
     property: string,
     value: any
   ): void {
-    if (element instanceof HTMLElement) {
-      const cssProperty = this.toCSSProperty(property)
+    const isHTMLElement =
+      typeof HTMLElement !== 'undefined' && element instanceof HTMLElement
 
-      // Handle reactive values (signals and computed)
-      if (isSignal(value) || isComputed(value)) {
-        // Create reactive effect for this style property
-        createEffect(() => {
-          const currentValue = value()
-          const cssValue = String(currentValue)
-
-          // Check if value contains !important and handle it properly
-          if (cssValue.includes('!important')) {
-            const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
-            element.style.setProperty(cssProperty, actualValue, 'important')
-          } else {
-            element.style.setProperty(cssProperty, cssValue)
-          }
-        })
-      } else {
-        // Handle static values
-        const cssValue = String(value)
-
-        // Check if value contains !important and handle it properly
-        if (cssValue.includes('!important')) {
-          const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
-          element.style.setProperty(cssProperty, actualValue, 'important')
-        } else {
-          element.style.setProperty(cssProperty, cssValue)
-        }
-      }
+    if (!isHTMLElement && !(element as any).style) {
+      return
     }
+
+    const cssProperty = this.toCSSProperty(property)
+    const styleTarget =
+      isHTMLElement ? element.style : (element as any).style
+
+    const applyStyleValue = (cssValue: string): void => {
+      if (cssValue.includes('!important')) {
+        const actualValue = cssValue.replace(/\s*!important\s*$/, '').trim()
+        styleTarget.setProperty(cssProperty, actualValue, 'important')
+        return
+      }
+      styleTarget.setProperty(cssProperty, cssValue)
+    }
+
+    // Handle reactive values (signals and computed)
+    if (isSignal(value) || isComputed(value)) {
+      createEffect(() => {
+        const currentValue = value()
+        applyStyleValue(String(currentValue))
+      })
+      return
+    }
+
+    // Handle static values
+    applyStyleValue(String(value))
   }
 
   /**
@@ -179,10 +179,13 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Apply multiple CSS properties to an element with reactive support
    */
   protected applyStyles(element: Element, styles: CSSStyleProperties): void {
+    const isHTMLElement =
+      typeof HTMLElement !== 'undefined' && element instanceof HTMLElement
+
     // Check if element has a style property (for testing and real elements)
-    if (element instanceof HTMLElement || (element as any).style) {
+    if (isHTMLElement || (element as any).style) {
       const styleTarget =
-        element instanceof HTMLElement ? element.style : (element as any).style
+        isHTMLElement ? element.style : (element as any).style
 
       for (const [property, value] of Object.entries(styles)) {
         if (value !== undefined) {

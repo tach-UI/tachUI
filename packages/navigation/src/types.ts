@@ -3,6 +3,10 @@
  *
  * Type definitions for NavigationView, NavigationLink, TabView, and related
  * navigation components that provide SwiftUI-compatible navigation patterns.
+ *
+ * @remarks
+ * This module is intentionally types-only at runtime. The `@tachui/navigation/types`
+ * subpath exists for type imports and emits an effectively empty JavaScript module.
  */
 
 import type { Accessor, Binding, ComponentInstance } from '@tachui/core'

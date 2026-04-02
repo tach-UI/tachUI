@@ -11,15 +11,51 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./modifiers": {
+      "types": "./dist/modifiers.d.ts",
+      "import": "./dist/modifiers.js"
+    },
+    "./modifiers/register": {
+      "types": "./dist/modifiers-register.d.ts",
+      "import": "./dist/modifiers-register.js"
+    },
+    "./sheet": {
+      "types": "./dist/sheet.d.ts",
+      "import": "./dist/sheet.js"
+    },
+    "./stack": {
+      "types": "./dist/stack.d.ts",
+      "import": "./dist/stack.js"
+    },
+    "./link": {
+      "types": "./dist/link.d.ts",
+      "import": "./dist/link.js"
+    },
+    "./tabs": {
+      "types": "./dist/tabs.d.ts",
+      "import": "./dist/tabs.js"
+    },
+    "./path": {
+      "types": "./dist/path.d.ts",
+      "import": "./dist/path.js"
+    },
+    "./environment": {
+      "types": "./dist/environment.d.ts",
+      "import": "./dist/environment.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "vite build && tsc --project tsconfig.build.json",
-    "build:dev": "rm -rf dist && vite build --mode development && tsc --project tsconfig.build.json",
-    "build:prod": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json",
+    "build": "vite build && tsc --project tsconfig.build.json && node ./scripts/verify-build-artifacts.mjs",
+    "build:dev": "rm -rf dist && vite build --mode development && tsc --project tsconfig.build.json && node ./scripts/verify-build-artifacts.mjs",
+    "build:prod": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json && node ./scripts/verify-build-artifacts.mjs",
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
     "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
@@ -67,5 +103,8 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "sideEffects": false
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/modifiers-register.js"
+  ]
 }

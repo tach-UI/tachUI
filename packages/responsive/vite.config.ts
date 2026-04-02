@@ -4,9 +4,11 @@ import { resolve } from 'path'
 export default defineConfig(({ mode }) => ({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        'modifiers/index': resolve(__dirname, 'src/modifiers/index.ts'),
+      },
       name: 'TachUIResponsive',
-      fileName: 'index',
       formats: ['es'],
     },
     emptyOutDir: false, // Don't clean the dist directory to preserve .d.ts files
@@ -16,6 +18,7 @@ export default defineConfig(({ mode }) => ({
         id === '@tachui/registry' ||
         id.startsWith('@tachui/modifiers'),
       output: {
+        entryFileNames: '[name].mjs',
         globals: {
           '@tachui/core': 'TachUICore',
           '@tachui/modifiers': 'TachUIModifiers',

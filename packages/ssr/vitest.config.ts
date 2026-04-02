@@ -5,20 +5,36 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: '@tachui/core/reactive',
+        find: /^@tachui\/core\/modifiers\/base$/,
+        replacement: resolve(__dirname, '../core/src/modifiers/base.ts'),
+      },
+      {
+        find: /^@tachui\/core\/reactive$/,
         replacement: resolve(__dirname, '../core/src/reactive/index.ts'),
       },
       {
-        find: '@tachui/core',
+        find: /^@tachui\/core$/,
         replacement: resolve(__dirname, '../core/src/index.ts'),
+      },
+      {
+        find: /^@tachui\/core\/(.*)$/,
+        replacement: resolve(__dirname, '../core/src/$1.ts'),
       },
       {
         find: /^@tachui\/types\/(.*)$/,
         replacement: resolve(__dirname, '../types/src/$1.ts'),
       },
       {
-        find: '@tachui/types',
+        find: /^@tachui\/types$/,
         replacement: resolve(__dirname, '../types/src/index.ts'),
+      },
+      {
+        find: /^@tachui\/modifiers\/(.*)$/,
+        replacement: resolve(__dirname, '../modifiers/src/$1.ts'),
+      },
+      {
+        find: /^@tachui\/modifiers$/,
+        replacement: resolve(__dirname, '../modifiers/src/index.ts'),
       },
     ],
   },

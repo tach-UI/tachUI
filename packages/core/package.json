@@ -4,6 +4,7 @@
   "description": "tachUI core framework with reactive system and compiler",
   "homepage": "https://tachui.dev/",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,6 +12,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./full": {
+      "types": "./dist/full.d.ts",
+      "import": "./dist/full.js"
     },
     "./minimal": {
       "types": "./dist/minimal.d.ts",
@@ -64,7 +69,15 @@
       "types": "./dist/build-plugins/index.d.ts",
       "import": "./dist/build-plugins/index.js"
     },
+    "./build-tools": {
+      "types": "./dist/build-plugins/index.d.ts",
+      "import": "./dist/build-plugins/index.js"
+    },
     "./build-plugins/modifier-types": {
+      "types": "./dist/build-plugins/modifier-types.d.ts",
+      "import": "./dist/build-plugins/modifier-types.js"
+    },
+    "./build-tools/modifier-types": {
       "types": "./dist/build-plugins/modifier-types.d.ts",
       "import": "./dist/build-plugins/modifier-types.js"
     },

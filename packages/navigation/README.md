@@ -28,6 +28,34 @@ pnpm add @tachui/core @tachui/navigation
 
 ## Quick Start
 
+### Subpath Imports (Recommended)
+
+Prefer focused subpaths when you only need part of navigation:
+
+```typescript
+import { NavigationStack } from '@tachui/navigation/stack'
+import { NavigationLink } from '@tachui/navigation/link'
+import { TabView } from '@tachui/navigation/tabs'
+import { NavigationPath } from '@tachui/navigation/path'
+import { NavigationEnvironmentProvider } from '@tachui/navigation/environment'
+import { sheet, fullScreenCover, popover } from '@tachui/navigation/sheet'
+import { navigationTitle } from '@tachui/navigation/modifiers'
+```
+
+Available subpaths:
+
+- `@tachui/navigation/stack`
+- `@tachui/navigation/link`
+- `@tachui/navigation/tabs`
+- `@tachui/navigation/path`
+- `@tachui/navigation/environment`
+- `@tachui/navigation/sheet`
+- `@tachui/navigation/modifiers`
+- `@tachui/navigation/modifiers/register` (explicitly side-effectful registration for modifier-builder patching)
+- `@tachui/navigation/types`
+
+Use root `@tachui/navigation` when you intentionally want the full legacy surface.
+
 ### Stack Navigation
 
 ```typescript
