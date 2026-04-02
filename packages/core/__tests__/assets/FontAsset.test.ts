@@ -305,5 +305,78 @@ describe('FontAsset', () => {
 
       warnSpy.mockRestore()
     })
+
+    it('is SSR-safe for eager Google fonts when DOM is unavailable', async () => {
+      const originalDocument = (globalThis as any).document
+      const originalWindow = (globalThis as any).window
+
+      try {
+        delete (globalThis as any).document
+        delete (globalThis as any).window
+
+        expect(() =>
+          createGoogleFont(
+            'Nunito',
+            [200, 400, 700],
+            'bodyFont',
+            {
+              loading: 'eager',
+              fontDisplay: 'swap',
+            }
+          )
+        ).not.toThrow()
+      } finally {
+        ;(globalThis as any).document = originalDocument
+        ;(globalThis as any).window = originalWindow
+      }
+    })
+
+    it('does not start lazy DOM loading during resolve() in SSR context', () => {
+      const originalDocument = (globalThis as any).document
+      const originalWindow = (globalThis as any).window
+
+      try {
+        delete (globalThis as any).document
+        delete (globalThis as any).window
+
+        const font = new FontAsset('Inter', [], 'ssr-test', {
+          fontUrl: 'https://example.com/inter.woff2',
+          loading: 'lazy',
+        })
+
+        expect(() => font.resolve()).not.toThrow()
+        expect((font as any).loadPromise).toBeNull()
+      } finally {
+        ;(globalThis as any).document = originalDocument
+        ;(globalThis as any).window = originalWindow
+      }
+    })
+
+    it('no-ops load when document is unavailable but window exists', async () => {
+      const originalDocument = (globalThis as any).document
+      const originalWindow = (globalThis as any).window
+      const createElementSpy = vi.spyOn(global.document, 'createElement')
+
+      try {
+        ;(globalThis as any).window = {
+          ...originalWindow,
+          FontFace: global.FontFace,
+        }
+        delete (globalThis as any).document
+
+        const font = new FontAsset('Inter', [], 'ssr-doc-missing', {
+          fontUrl: 'https://example.com/inter.woff2',
+          loading: 'eager',
+        })
+
+        await font.load()
+        expect((font as any).loadPromise).toBeNull()
+        expect(createElementSpy).not.toHaveBeenCalled()
+      } finally {
+        createElementSpy.mockRestore()
+        ;(globalThis as any).document = originalDocument
+        ;(globalThis as any).window = originalWindow
+      }
+    })
   })
 })
