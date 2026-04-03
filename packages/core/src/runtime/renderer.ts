@@ -19,6 +19,26 @@ const debugManager = {
 }
 
 const MANAGED_COMPONENT_ID_MARKER = '__tachuiManagedComponentId'
+const INTERNAL_DOM_PROP_KEYS = new Set(['componentMetadata', 'debugLabel'])
+
+function isInternalDOMPropKey(key: string): boolean {
+  return INTERNAL_DOM_PROP_KEYS.has(key)
+}
+
+function sanitizeDOMProps(
+  props: Record<string, any> | null | undefined
+): Record<string, any> {
+  if (!props) return {}
+
+  const sanitizedProps: Record<string, any> = {}
+  for (const [key, value] of Object.entries(props)) {
+    if (isInternalDOMPropKey(key)) {
+      continue
+    }
+    sanitizedProps[key] = value
+  }
+  return sanitizedProps
+}
 
 /**
  * Direct DOM renderer for efficient DOM manipulation
@@ -221,7 +241,7 @@ export class DOMRenderer {
   }
 
   private updateProps(element: Element, node: DOMNode, container?: Element): void {
-    const newProps = node.props || {}
+    const newProps = sanitizeDOMProps(node.props)
     const previousProps = (node as any).__appliedProps || {}
 
     // Remove props that are no longer present
@@ -430,7 +450,9 @@ export class DOMRenderer {
     }
 
     // Check direct debug label in props
-    if (node.props && 'debugLabel' in node.props) {
+    if ('debugLabel' in node && (node as any).debugLabel != null) {
+      debugLabel = (node as any).debugLabel
+    } else if (node.props && 'debugLabel' in node.props) {
       debugLabel = node.props.debugLabel
     }
 
@@ -1386,10 +1408,12 @@ export function h(
       return child as DOMNode
     })
 
+  const normalizedProps = sanitizeDOMProps(props)
+
   const node: DOMNode = {
     type: 'element',
     tag,
-    props: props || {},
+    props: normalizedProps,
     children: normalizedChildren,
     key: props?.key ?? undefined,
   }
@@ -1397,6 +1421,11 @@ export function h(
   // Extract componentMetadata from props and store it on the node
   if (props && 'componentMetadata' in props) {
     ;(node as any).componentMetadata = props.componentMetadata
+  }
+
+  // Extract debugLabel from props and store it as internal node metadata
+  if (props && 'debugLabel' in props) {
+    ;(node as any).debugLabel = props.debugLabel
   }
 
   return node

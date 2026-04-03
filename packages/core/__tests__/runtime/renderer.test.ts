@@ -131,6 +131,30 @@ describe('DOM Renderer System', () => {
     })
 
     describe('Props Handling', () => {
+      it('should not emit internal metadata props as DOM attributes', () => {
+        const node: DOMNode = {
+          type: 'element',
+          tag: 'span',
+          props: {
+            id: 'text-node',
+            componentMetadata: { originalType: 'Text' },
+            debugLabel: 'StoryTitle',
+          },
+        }
+
+        const element = renderer.render(node) as any
+
+        expect(element.setAttribute).toHaveBeenCalledWith('id', 'text-node')
+        expect(element.setAttribute).not.toHaveBeenCalledWith(
+          'componentMetadata',
+          expect.anything()
+        )
+        expect(element.setAttribute).not.toHaveBeenCalledWith(
+          'debugLabel',
+          expect.anything()
+        )
+      })
+
       it('should apply className prop', () => {
         const node: DOMNode = {
           type: 'element',
@@ -434,6 +458,19 @@ describe('DOM Renderer System', () => {
         expect(node.children).toHaveLength(2)
         expect(node.children![0]).toEqual({ type: 'text', text: '42' })
         expect(node.children![1]).toEqual({ type: 'text', text: '3.14' })
+      })
+
+      it('should strip internal props while preserving node metadata', () => {
+        const metadata = { originalType: 'Text' }
+        const node = h('span', {
+          id: 'story-title',
+          componentMetadata: metadata,
+          debugLabel: 'StoryTitle',
+        })
+
+        expect(node.props).toEqual({ id: 'story-title' })
+        expect((node as any).componentMetadata).toBe(metadata)
+        expect((node as any).debugLabel).toBe('StoryTitle')
       })
     })
 
