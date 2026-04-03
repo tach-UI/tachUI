@@ -10,6 +10,7 @@ import { createRoot } from '../../src/reactive/context'
 import {
   ComponentContextDebug,
   consumeEnvironmentValue,
+  createDeterministicComponentId,
   createComponentContext,
   createEnvironmentKey,
   getCurrentComponentContext,
@@ -269,6 +270,35 @@ describe('Component Context System', () => {
       const instance = WrappedComponent({})
 
       expect(instance.context!.id).toBe('custom-context')
+    })
+
+    it('resets wrapped child index allocation on each render', () => {
+      const allocated: string[][] = []
+      const TestComponent = (props: ComponentProps) => ({
+        type: 'component' as const,
+        render: () => {
+          const context = getCurrentComponentContext()
+          allocated.push([
+            createDeterministicComponentId('Child', context),
+            createDeterministicComponentId('Child', context),
+          ])
+          return { type: 'element' as const, tag: 'div' }
+        },
+        props,
+        id: 'test-component',
+      })
+
+      const WrappedComponent = withComponentContext(TestComponent)
+      const instance = WrappedComponent({})
+
+      instance.render()
+      instance.render()
+
+      expect(allocated[0]).toEqual([
+        `${instance.context!.id}:child:0`,
+        `${instance.context!.id}:child:1`,
+      ])
+      expect(allocated[1]).toEqual(allocated[0])
     })
   })
 

@@ -1,9 +1,12 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import {
   Assets,
+  createComponent as createRuntimeComponent,
   createColorAsset,
+  createRoot,
   createGoogleFont,
   createImageAsset,
+  getCurrentComponentContext,
   createSignal,
   h,
   registerAsset,
@@ -234,6 +237,32 @@ describe('renderToString', () => {
     node.componentId = 'cmp-1'
 
     expect(renderToString(node)).toBe('<section data-component-id="cmp-1"></section>')
+  })
+
+  it('emits stable deterministic data-component-id across component renders', () => {
+    const Counter = createRuntimeComponent(
+      () => {
+        const node = h('div', null, text('Counter')) as DOMNode & {
+          componentId?: string
+        }
+        node.componentId = getCurrentComponentContext().id
+        return node
+      },
+      { displayName: 'Counter' }
+    )
+
+    let htmlFirst = ''
+    let htmlSecond = ''
+    createRoot((dispose) => {
+      htmlFirst = renderToString(Counter({}))
+      htmlSecond = renderToString(Counter({}))
+      dispose()
+    })
+
+    expect(htmlFirst).toBe(
+      '<div data-component-id="app:counter:0">Counter</div>'
+    )
+    expect(htmlSecond).toBe(htmlFirst)
   })
 
   it('omits key and ref props from serialized attributes', () => {

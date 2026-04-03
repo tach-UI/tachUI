@@ -208,6 +208,8 @@ export function createDeterministicComponentId(
   componentName: string,
   parentContext?: ComponentContext
 ): string {
+  // Root-level components without a parent context default to sibling index 0.
+  // This path is intended for standalone entrypoints rather than sibling trees.
   const parentId = parentContext?.id || 'app'
   const siblingIndex = parentContext?.allocateChildIndex() ?? 0
   return `${parentId}:${normalizeComponentName(componentName)}:${siblingIndex}`
@@ -291,6 +293,12 @@ export function withComponentContext<P extends ComponentProps>(
     // Create the component instance with context
     return runWithComponentContext(context, () => {
       const instance = component(props)
+      const originalRender = instance.render.bind(instance)
+      instance.render = () =>
+        runWithComponentContext(context, () => {
+          context.beginRenderPass()
+          return originalRender()
+        })
 
       // Inject context into instance
       instance.context = context
