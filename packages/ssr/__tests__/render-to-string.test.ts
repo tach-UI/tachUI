@@ -14,6 +14,8 @@ import { animation, transform } from '@tachui/modifiers/animation'
 import { blendMode } from '@tachui/modifiers/appearance/blend-mode'
 import { zIndex } from '@tachui/modifiers/layout/z-index'
 import { describe, expect, it, vi } from 'vitest'
+import { HoverModifier } from '../../modifiers/src/effects/effects/index'
+import { ResponsiveModifier } from '../../responsive/src/modifiers/responsive/responsive-modifier'
 import { createSSRContext, renderToString } from '../src/render-to-string'
 import type { ModifierBuilderLike } from '../src/types'
 
@@ -393,5 +395,59 @@ describe('renderToString', () => {
       ;(globalThis as any).document = originalDocument
       ;(globalThis as any).window = originalWindow
     }
+  })
+
+  it('collects static CSS rules from modifiers implementing getStaticCSS', () => {
+    const node = h('div', {
+      style: {
+        display: 'block',
+      },
+    }) as DOMNode & { modifiers: unknown[]; componentId: string }
+
+    node.componentId = 'cmp-static-css'
+    node.modifiers = [
+      new AnimationModifier({
+        animation: {
+          keyframes: {
+            from: { opacity: '0' },
+            to: { opacity: '1' },
+          },
+          duration: 180,
+        },
+      }),
+      new HoverModifier({
+        hoverStyles: { backgroundColor: '#f3f3f3' },
+      }),
+    ]
+
+    const context = createSSRContext()
+    renderToString(node, { context })
+
+    const collected = context.styles.join('\n')
+    expect(collected).toContain('@keyframes')
+    expect(collected).toContain('[data-component-id="cmp-static-css"]')
+    expect(collected).toContain(':hover')
+    expect(collected).not.toContain('!important')
+  })
+
+  it('collects static @media rules from responsive modifiers during SSR', () => {
+    const node = h('div') as DOMNode & { modifiers: unknown[]; componentId: string }
+    node.componentId = 'cmp-responsive-css'
+    node.modifiers = [
+      new ResponsiveModifier({
+        fontSize: {
+          sm: '14px',
+          md: '18px',
+        },
+      }),
+    ]
+
+    const context = createSSRContext()
+    renderToString(node, { context })
+
+    const collected = context.styles.join('\n')
+    expect(collected).toContain('@media')
+    expect(collected).toContain('[data-component-id="cmp-responsive-css"]')
+    expect(collected).toContain('font-size')
   })
 })

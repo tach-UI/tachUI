@@ -1,7 +1,7 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import { applyModifiersToNode } from '@tachui/core'
 import { isComputed, isSignal, untrack } from '@tachui/core/reactive'
-import type { ModifierBuilderLike, SSRNodeInput } from './types'
+import type { ModifierBuilderLike, SSRContext, SSRNodeInput } from './types'
 import { escapeAttribute, escapeHTML } from './escape'
 
 const VOID_ELEMENTS = new Set([
@@ -344,7 +344,46 @@ function getNodeModifiers(node: DOMNode): unknown[] {
   return metadataModifiers.length > 0 ? metadataModifiers : directModifiers
 }
 
-function applyNodeModifiersForSSR(node: DOMNode): DOMNode {
+interface StaticCSSCapableModifier {
+  getStaticCSS?: (selector: string) => string[]
+}
+
+function escapeSelectorAttributeValue(value: string): string {
+  // Escape only for the `[attr="..."]` double-quoted attribute-value context.
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+function collectStaticCSSRules(
+  modifiers: unknown[],
+  selector: string
+): string[] {
+  const rules: string[] = []
+
+  for (const modifier of modifiers) {
+    if (
+      !modifier ||
+      typeof modifier !== 'object' ||
+      typeof (modifier as StaticCSSCapableModifier).getStaticCSS !== 'function'
+    ) {
+      continue
+    }
+
+    const modifierRules = (modifier as StaticCSSCapableModifier).getStaticCSS!(
+      selector
+    )
+    if (Array.isArray(modifierRules) && modifierRules.length > 0) {
+      rules.push(...modifierRules.filter(rule => typeof rule === 'string' && rule.trim().length > 0))
+    }
+  }
+
+  return rules
+}
+
+function applyNodeModifiersForSSR(
+  node: DOMNode,
+  context?: SSRContext,
+  seenStaticStyles?: Set<string>
+): DOMNode {
   if (node.type !== 'element') {
     return node
   }
@@ -379,6 +418,21 @@ function applyNodeModifiersForSSR(node: DOMNode): DOMNode {
     }
   )
 
+  const componentId =
+    (nodeWithAppliedModifiers as any).componentId ?? (node as any).componentId
+  if (context && seenStaticStyles && componentId != null) {
+    const selector = `[data-component-id="${escapeSelectorAttributeValue(
+      String(componentId)
+    )}"]`
+    const staticCSSRules = collectStaticCSSRules(modifiers, selector)
+    for (const rule of staticCSSRules) {
+      if (!seenStaticStyles.has(rule)) {
+        seenStaticStyles.add(rule)
+        context.styles.push(rule)
+      }
+    }
+  }
+
   return {
     ...nodeWithAppliedModifiers,
     props: {
@@ -391,7 +445,11 @@ function applyNodeModifiersForSSR(node: DOMNode): DOMNode {
   }
 }
 
-function serializeNode(node: DOMNode): string {
+function serializeNode(
+  node: DOMNode,
+  context?: SSRContext,
+  seenStaticStyles?: Set<string>
+): string {
   if (node.type === 'text') {
     if (typeof node.reactiveContent === 'function') {
       const resolvedText = untrack(() => node.reactiveContent!())
@@ -405,7 +463,7 @@ function serializeNode(node: DOMNode): string {
     return `<!--${safeComment}-->`
   }
 
-  const preparedNode = applyNodeModifiersForSSR(node)
+  const preparedNode = applyNodeModifiersForSSR(node, context, seenStaticStyles)
   const tag = preparedNode.tag ?? 'div'
   const attributes = serializeAttributes(preparedNode)
   const openingTag = `<${tag}${attributes}>`
@@ -415,25 +473,34 @@ function serializeNode(node: DOMNode): string {
   }
 
   const children = (preparedNode.children ?? [])
-    .map((child: DOMNode) => serializeNode(child))
+    .map((child: DOMNode) => serializeNode(child, context, seenStaticStyles))
     .join('')
   return `${openingTag}${children}</${tag}>`
 }
 
 function serializeToHTMLInternal(
   input: SSRNodeInput,
-  activeBuilders: Set<object>
+  activeBuilders: Set<object>,
+  context?: SSRContext,
+  seenStaticStyles?: Set<string>
 ): string {
   if (input == null || input === false || input === true) {
     return ''
   }
 
   if (Array.isArray(input)) {
-    return input.map(entry => serializeToHTMLInternal(entry, activeBuilders)).join('')
+    return input
+      .map(entry => serializeToHTMLInternal(entry, activeBuilders, context, seenStaticStyles))
+      .join('')
   }
 
   if (isComponentInstance(input)) {
-    return serializeToHTMLInternal(input.render() as SSRNodeInput, activeBuilders)
+    return serializeToHTMLInternal(
+      input.render() as SSRNodeInput,
+      activeBuilders,
+      context,
+      seenStaticStyles
+    )
   }
 
   if (isModifierBuilder(input)) {
@@ -452,14 +519,19 @@ function serializeToHTMLInternal(
           'Unsupported TachUI SSR input. Modifier build() returned itself and cannot be serialized.'
         )
       }
-      return serializeToHTMLInternal(built, activeBuilders)
+      return serializeToHTMLInternal(
+        built,
+        activeBuilders,
+        context,
+        seenStaticStyles
+      )
     } finally {
       activeBuilders.delete(builder as object)
     }
   }
 
   if (isDOMNode(input)) {
-    return serializeNode(input)
+    return serializeNode(input, context, seenStaticStyles)
   }
 
   if (typeof input === 'string' || typeof input === 'number') {
@@ -471,4 +543,11 @@ function serializeToHTMLInternal(
 
 export function serializeToHTML(input: SSRNodeInput): string {
   return serializeToHTMLInternal(input, new Set())
+}
+
+export function serializeToHTMLWithContext(
+  input: SSRNodeInput,
+  context: SSRContext
+): string {
+  return serializeToHTMLInternal(input, new Set(), context, new Set(context.styles))
 }

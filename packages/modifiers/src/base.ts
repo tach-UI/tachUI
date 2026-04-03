@@ -10,6 +10,7 @@ import {
   isSignal,
   getThemeSignal,
 } from '@tachui/core/reactive'
+import { collectStaticAnimationCSSRules } from '@tachui/core/modifiers/base'
 import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
 import type {
@@ -63,6 +64,10 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Apply the modifier to a DOM node
    */
   abstract apply(node: DOMNode, context: ModifierContext): DOMNode | undefined
+
+  getStaticCSS(_selector: string): string[] {
+    return []
+  }
 
   /**
    * Helper to resolve reactive properties
@@ -1758,7 +1763,11 @@ export class AnimationModifier extends BaseModifier {
       const delay = t.delay || 0
 
       if (hasStyleTarget(context.element)) {
-        context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
+        if (property === 'none') {
+          context.element.style.transition = 'none'
+        } else {
+          context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
+        }
       }
     }
 
@@ -1874,6 +1883,14 @@ export class AnimationModifier extends BaseModifier {
     }
 
     return undefined
+  }
+
+  override getStaticCSS(selector: string): string[] {
+    return collectStaticAnimationCSSRules(
+      selector,
+      this.properties as any,
+      this.createKeyframeRule.bind(this)
+    )
   }
 
   private applyOverlay(

@@ -67,6 +67,18 @@ export class ResponsiveModifier extends BaseModifier<ResponsiveStyleConfig> {
     return undefined // No DOM modifications needed
   }
 
+  override getStaticCSS(selector: string): string[] {
+    const config = this.resolveReactiveConfig(this.properties as ResponsiveStyleConfig)
+    const generator = new ResponsiveCSSGenerator({
+      selector,
+      generateMinified: process.env.NODE_ENV === 'production',
+      includeComments: false,
+      optimizeOutput: true,
+    })
+
+    return generator.generateResponsiveCSS(config).cssRules
+  }
+
   /**
    * Generate and inject responsive CSS
    */

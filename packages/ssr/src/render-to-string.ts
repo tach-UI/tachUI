@@ -1,5 +1,5 @@
 import { withSSRAssetHeadCollector } from '@tachui/core'
-import { serializeToHTML } from './serializer'
+import { serializeToHTMLWithContext } from './serializer'
 import type {
   RenderToStringOptions,
   SSRContext,
@@ -46,7 +46,7 @@ export function renderToString(
       },
     },
     () => {
-      html = serializeToHTML(input)
+      html = serializeToHTMLWithContext(input, context)
       return undefined
     }
   )
