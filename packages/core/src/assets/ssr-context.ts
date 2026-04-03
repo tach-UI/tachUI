@@ -18,6 +18,8 @@ export function withSSRAssetHeadCollector<T>(
   collector: SSRAssetHeadCollector | undefined,
   callback: () => T
 ): T {
+  // This binding is intentionally scoped to synchronous render execution.
+  // It is not async-context-safe across overlapping asynchronous render flows.
   const scope = globalThis as GlobalScopeWithCollector
   const previous = scope[SSR_ASSET_HEAD_COLLECTOR_KEY]
 

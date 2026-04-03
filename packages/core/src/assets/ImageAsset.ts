@@ -72,6 +72,8 @@ export class ImageAsset extends Asset {
 
     const ssrHeadCollector = getSSRAssetHeadCollector()
     if (ssrHeadCollector) {
+      // Prerender captures the currently resolved theme variant as a preload hint.
+      // This intentionally reflects the SSR snapshot rather than emitting both variants.
       ssrHeadCollector.addLink(
         `<link rel="preload" href="${resolved}" as="image">`
       )

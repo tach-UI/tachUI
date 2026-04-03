@@ -5,7 +5,10 @@
  */
 
 import { Asset } from './Asset'
-import { getSSRAssetHeadCollector } from './ssr-context'
+import {
+  getSSRAssetHeadCollector,
+  type SSRAssetHeadCollector,
+} from './ssr-context'
 
 export interface FontAssetOptions {
   /** URL to the font file or CSS containing @font-face */
@@ -283,7 +286,7 @@ export class FontAsset extends Asset {
   }
 
   private collectSSRHeadEntries(
-    collector: ReturnType<typeof getSSRAssetHeadCollector>
+    collector: SSRAssetHeadCollector
   ): void {
     const { fontUrl, preconnect } = this.options
     if (!collector || !fontUrl) {

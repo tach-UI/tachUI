@@ -17,12 +17,25 @@ export type SSRNodeInput =
 
 export interface RenderToStringOptions {
   includeDoctype?: boolean
+  /**
+   * Optional context used to collect `<head>` contributions from asset resolution.
+   */
   context?: SSRContext
 }
 
 export interface SSRContext {
+  /**
+   * Complete `<link ...>` tag strings to be inserted into `<head>`.
+   */
   links: string[]
+  /**
+   * Complete CSS blocks/rules (for example `@font-face` or `:root{...}`), not declarations.
+   * Entries are wrapped in `<style>` by the default prerender document.
+   */
   styles: string[]
+  /**
+   * Complete `<meta ...>` tag strings to be inserted into `<head>`.
+   */
   meta: string[]
 }
 

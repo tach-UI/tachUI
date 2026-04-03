@@ -19,22 +19,28 @@ export function renderToString(
   options: RenderToStringOptions = {}
 ): string {
   const context = options.context ?? createSSRContext()
+  const seenLinks = new Set(context.links)
+  const seenStyles = new Set(context.styles)
+  const seenMeta = new Set(context.meta)
 
   let html = ''
   withSSRAssetHeadCollector(
     {
       addLink(tag: string) {
-        if (!context.links.includes(tag)) {
+        if (!seenLinks.has(tag)) {
+          seenLinks.add(tag)
           context.links.push(tag)
         }
       },
       addStyle(styleContent: string) {
-        if (!context.styles.includes(styleContent)) {
+        if (!seenStyles.has(styleContent)) {
+          seenStyles.add(styleContent)
           context.styles.push(styleContent)
         }
       },
       addMeta(tag: string) {
-        if (!context.meta.includes(tag)) {
+        if (!seenMeta.has(tag)) {
+          seenMeta.add(tag)
           context.meta.push(tag)
         }
       },

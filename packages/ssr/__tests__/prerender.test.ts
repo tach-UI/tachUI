@@ -1,10 +1,11 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   Assets,
   createColorAsset,
+  createFontAsset,
   createGoogleFont,
   h,
   registerAsset,
@@ -65,6 +66,46 @@ describe('prerender', () => {
       expect(html).toBe(
         '<!doctype html><html><body data-route="/custom"><section>Custom</section></body></html>'
       )
+    } finally {
+      await rm(outDir, { recursive: true, force: true })
+    }
+  })
+
+  it('passes populated SSR context to custom document wrappers', async () => {
+    const outDir = await mkdtemp(path.join(os.tmpdir(), 'tachui-ssr-'))
+    registerAsset(
+      'custom-doc-font',
+      createGoogleFont('Inter', [400], 'custom-doc-font')
+    )
+
+    try {
+      await prerender(
+        [
+          {
+            path: '/custom-context',
+            render: () =>
+              h('main', {
+                style: {
+                  fontFamily: (Assets as any)['custom-doc-font'],
+                },
+              }, text('Custom context')),
+          },
+        ],
+        {
+          outDir,
+          document: (html, route, context) =>
+            `<!doctype html><html><head data-links="${context.links.length}" data-styles="${context.styles.length}" data-meta="${context.meta.length}"></head><body data-route="${route.path}">${html}</body></html>`,
+        }
+      )
+
+      const html = await readFile(
+        path.join(outDir, 'custom-context/index.html'),
+        'utf8'
+      )
+      expect(html).toContain('data-links="2"')
+      expect(html).toContain('data-styles="0"')
+      expect(html).toContain('data-meta="0"')
+      expect(html).toContain('data-route="/custom-context"')
     } finally {
       await rm(outDir, { recursive: true, force: true })
     }
@@ -205,6 +246,43 @@ describe('prerender', () => {
       expect(html).toContain('<style>:root{--tachui-color-prerender-color:#202020;}')
       expect(html).toContain('<div id="app"><main style="font-family:Inter')
     } finally {
+      await rm(outDir, { recursive: true, force: true })
+    }
+  })
+
+  it('drops unsafe head entries before injecting default document head', async () => {
+    const outDir = await mkdtemp(path.join(os.tmpdir(), 'tachui-ssr-'))
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    registerAsset(
+      'unsafe-head-font',
+      createFontAsset('Unsafe', ['serif'], 'unsafe-head-font', {
+        fontUrl: 'https://example.com/font.css"></style><script>alert(1)</script>',
+      })
+    )
+
+    try {
+      await prerender(
+        [
+          {
+            path: '/safe-head',
+            render: () =>
+              h('main', {
+                style: {
+                  fontFamily: (Assets as any)['unsafe-head-font'],
+                },
+              }, text('Safe head')),
+          },
+        ],
+        { outDir }
+      )
+
+      const html = await readFile(path.join(outDir, 'safe-head/index.html'), 'utf8')
+      expect(html).not.toContain('<script')
+      expect(html).not.toContain('</style></head>')
+      expect(warnSpy).toHaveBeenCalled()
+    } finally {
+      warnSpy.mockRestore()
       await rm(outDir, { recursive: true, force: true })
     }
   })

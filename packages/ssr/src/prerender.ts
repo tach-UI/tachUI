@@ -9,6 +9,8 @@ import type {
 } from './types'
 import { escapeHTML } from './escape'
 
+const UNSAFE_HEAD_ENTRY_PATTERN = /<\/(?:head|style)>|<script\b/i
+
 function resolveOutputPath(outDir: string, routePath: string): string {
   if (routePath === '/' || routePath === '') {
     return path.join(outDir, 'index.html')
@@ -18,17 +20,59 @@ function resolveOutputPath(outDir: string, routePath: string): string {
   return path.join(outDir, clean, 'index.html')
 }
 
+function sanitizeHeadEntry(
+  entry: string,
+  routePath: string
+): string | undefined {
+  const trimmed = entry.trim()
+  if (!trimmed) {
+    return undefined
+  }
+
+  if (UNSAFE_HEAD_ENTRY_PATTERN.test(trimmed)) {
+    console.warn(
+      `[tachUI][prerender] Dropping unsafe head entry for route "${routePath}".`
+    )
+    return undefined
+  }
+
+  return trimmed
+}
+
+function buildHeadEntries(context: SSRContext, routePath: string): string[] {
+  const entries: string[] = []
+
+  for (const metaTag of context.meta) {
+    const safeEntry = sanitizeHeadEntry(metaTag, routePath)
+    if (safeEntry) {
+      entries.push(safeEntry)
+    }
+  }
+
+  for (const linkTag of context.links) {
+    const safeEntry = sanitizeHeadEntry(linkTag, routePath)
+    if (safeEntry) {
+      entries.push(safeEntry)
+    }
+  }
+
+  for (const styleBlock of context.styles) {
+    const safeStyle = sanitizeHeadEntry(styleBlock, routePath)
+    if (safeStyle) {
+      entries.push(`<style>${safeStyle}</style>`)
+    }
+  }
+
+  return entries
+}
+
 function defaultDocument(
   html: string,
   route: PrerenderRoute,
   context: SSRContext
 ): string {
   const title = escapeHTML(route.title ?? 'TachUI App')
-  const headEntries = [
-    ...context.meta,
-    ...context.links,
-    ...context.styles.map(style => `<style>${style}</style>`),
-  ]
+  const headEntries = buildHeadEntries(context, route.path)
 
   return [
     '<!doctype html>',
