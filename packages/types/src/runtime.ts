@@ -143,6 +143,8 @@ export interface ComponentContext {
   providers: Map<symbol, any>
   consumers: Set<symbol>
   cleanup: Set<() => void>
+  beginRenderPass(): void
+  allocateChildIndex(): number
 
   // State management methods
   setState(propertyName: string, value: any): void

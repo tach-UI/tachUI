@@ -8,7 +8,9 @@
 
 import { createEffect, onCleanup } from '../reactive'
 import {
+  createDeterministicComponentId,
   createComponentContext,
+  getCurrentComponentContextOrNull,
   runWithComponentContext,
 } from './component-context'
 import { ChildrenManager, PropsManager, propsUtils, RefManager } from './props'
@@ -214,12 +216,14 @@ export function createComponent<P extends ComponentProps = ComponentProps>(
   } = {}
 ): Component<P> {
   const component: Component<P> = (props: P) => {
-    const componentId = generateComponentId()
+    const parentContext = getCurrentComponentContextOrNull() || undefined
+    const componentName = options.displayName || render.name || 'unknown'
+    const componentId = createDeterministicComponentId(componentName, parentContext)
     const manager = ComponentManager.getInstance()
     const cleanup: (() => void)[] = []
 
     // Create component context
-    const context = createComponentContext(componentId)
+    const context = createComponentContext(componentId, parentContext)
 
     // Create props manager with validation
     const propsManager = new PropsManager(props, {
@@ -241,6 +245,8 @@ export function createComponent<P extends ComponentProps = ComponentProps>(
     // Create render function with reactive context
     const renderFunction: RenderFunction = () =>
       runWithComponentContext(context, () => {
+        context.beginRenderPass()
+
         // Set up lifecycle hooks
         if (options.lifecycle?.onMount && !mounted) {
           const mountCleanup = options.lifecycle.onMount()
@@ -355,13 +361,6 @@ export function createComponent<P extends ComponentProps = ComponentProps>(
   }
 
   return component
-}
-
-/**
- * Generate unique component ID
- */
-function generateComponentId(): string {
-  return `component_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
 /**
@@ -480,13 +479,14 @@ export function createAdvancedComponent<P extends ComponentProps>(
  */
 export function createFragment(children: ComponentChildren[]): ComponentInstance {
   const childrenManager = new ChildrenManager(children)
+  const parentContext = getCurrentComponentContextOrNull() || undefined
 
   return {
     type: 'component',
     render: () => childrenManager.renderChildren(),
     props: { children },
     children,
-    id: generateComponentId(),
+    id: createDeterministicComponentId('fragment', parentContext),
   }
 }
 

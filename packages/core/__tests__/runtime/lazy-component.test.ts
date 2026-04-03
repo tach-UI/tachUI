@@ -6,12 +6,17 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  Suspense,
   createLazyComponentGroup,
   type LazyComponentLoader,
   lazy,
   preloadComponent,
   preloadComponentGroup,
 } from '../../src/runtime/lazy-component'
+import {
+  createComponentContext,
+  runWithComponentContext,
+} from '../../src/runtime/component-context'
 
 describe('Lazy Component System', () => {
   beforeEach(() => {
@@ -233,6 +238,19 @@ describe('Lazy Component System', () => {
         },
         { timeout: 100 }
       )
+    })
+  })
+
+  describe('Structural IDs', () => {
+    it('assigns deterministic suspense IDs from parent context', () => {
+      const parent = createComponentContext('app:stack:0')
+      parent.beginRenderPass()
+
+      const suspense = runWithComponentContext(parent, () =>
+        Suspense({ fallback: { type: 'element', tag: 'div' }, children: [] })
+      )
+
+      expect(suspense.id).toBe('app:stack:0:suspense:0')
     })
   })
 

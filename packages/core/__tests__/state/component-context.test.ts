@@ -252,7 +252,7 @@ describe('Component Context System', () => {
       const instance = WrappedComponent({})
 
       expect(instance.context).toBeDefined()
-      expect(instance.context!.id).toMatch(/component-/)
+      expect(instance.context!.id).toBe('app:testcomponent:0')
       expect(instance.cleanup).toBeDefined()
       expect(instance.cleanup!.length).toBe(1)
     })

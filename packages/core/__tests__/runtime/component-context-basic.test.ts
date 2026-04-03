@@ -4,6 +4,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  createDeterministicComponentId,
   consumeEnvironmentValue,
   createComponentContext,
   createEnvironmentKey,
@@ -12,6 +13,7 @@ import {
   runWithComponentContext,
   setCurrentComponentContext,
 } from '../../src/runtime/component-context'
+import { createComponent } from '../../src/runtime/component'
 
 describe('Component Context Basic Tests', () => {
   beforeEach(() => {
@@ -62,5 +64,52 @@ describe('Component Context Basic Tests', () => {
       const value = consumeEnvironmentValue(TestKey)
       expect(value).toBe('test-value')
     })
+  })
+
+  it('creates deterministic child IDs from parent structural position', () => {
+    const parent = createComponentContext('app:vstack:0')
+    parent.beginRenderPass()
+
+    const first = createDeterministicComponentId('Counter', parent)
+    const second = createDeterministicComponentId('Counter', parent)
+
+    expect(first).toBe('app:vstack:0:counter:0')
+    expect(second).toBe('app:vstack:0:counter:1')
+  })
+
+  it('resets sibling index each render pass', () => {
+    const parent = createComponentContext('app:vstack:0')
+
+    parent.beginRenderPass()
+    expect(createDeterministicComponentId('Counter', parent)).toBe(
+      'app:vstack:0:counter:0'
+    )
+
+    parent.beginRenderPass()
+    expect(createDeterministicComponentId('Counter', parent)).toBe(
+      'app:vstack:0:counter:0'
+    )
+  })
+
+  it('assigns deterministic IDs in createComponent for root and nested renders', () => {
+    const Counter = createComponent(
+      () => ({ type: 'element' as const, tag: 'div' }),
+      { displayName: 'Counter' }
+    )
+
+    const rootFirst = Counter({})
+    const rootSecond = Counter({})
+    expect(rootFirst.id).toBe('app:counter:0')
+    expect(rootSecond.id).toBe('app:counter:0')
+
+    const parent = createComponentContext('app:vstack:0')
+    parent.beginRenderPass()
+    const [nestedFirst, nestedSecond] = runWithComponentContext(parent, () => [
+      Counter({}),
+      Counter({}),
+    ])
+
+    expect(nestedFirst.id).toBe('app:vstack:0:counter:0')
+    expect(nestedSecond.id).toBe('app:vstack:0:counter:1')
   })
 })
