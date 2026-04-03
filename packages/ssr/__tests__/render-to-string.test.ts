@@ -247,6 +247,20 @@ describe('renderToString', () => {
     expect(html).toBe('<div id="visible"></div>')
   })
 
+  it('omits internal renderer metadata props from serialized attributes', () => {
+    const html = renderToString(
+      h('span', {
+        componentMetadata: { originalType: 'Text' },
+        debugLabel: 'StoryTitle',
+        title: 'Stories',
+      })
+    )
+
+    expect(html).toBe('<span title="Stories"></span>')
+    expect(html).not.toContain('componentmetadata=')
+    expect(html).not.toContain('debuglabel=')
+  })
+
   it('escapes script-like text content to prevent HTML injection', () => {
     const html = renderToString(
       h('p', null, text('<script>alert("xss")</script>'))

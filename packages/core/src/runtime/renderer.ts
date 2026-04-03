@@ -449,11 +449,9 @@ export class DOMRenderer {
       debugLabel = node.props['data-tachui-label']
     }
 
-    // Check direct debug label in props
+    // Check direct debug label from internal node metadata
     if ('debugLabel' in node && (node as any).debugLabel != null) {
       debugLabel = (node as any).debugLabel
-    } else if (node.props && 'debugLabel' in node.props) {
-      debugLabel = node.props.debugLabel
     }
 
     // Apply debug attributes using the debug manager

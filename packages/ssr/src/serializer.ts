@@ -157,7 +157,8 @@ function serializeAttributes(node: DOMNode): string {
       rawKey === 'children' ||
       rawKey === 'key' ||
       rawKey === 'ref' ||
-      rawKey === 'componentMetadata'
+      rawKey === 'componentMetadata' ||
+      rawKey === 'debugLabel'
     ) {
       continue
     }
