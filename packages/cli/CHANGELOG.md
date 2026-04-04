@@ -1,5 +1,13 @@
 # @tachui/cli
 
+## 0.8.27
+
+### Patch Changes
+
+- Updated dependencies [[`ea92165`](https://github.com/tach-UI/tachUI/commit/ea921651953ac5edaefe410ac7c08730634f869f)]:
+  - @tachui/core@0.8.26
+  - @tachui/devtools@0.8.27
+
 ## 0.8.26
 
 ### Patch Changes
