@@ -1,10 +1,10 @@
 ---
-"@tachui/core": minor
-"@tachui/types": minor
-"@tachui/ssr": minor
+"@tachui/core": patch
+"@tachui/types": patch
+"@tachui/ssr": patch
 "@tachui/modifiers": patch
 "@tachui/responsive": patch
-"@tachui/fragments": minor
+"@tachui/fragments": patch
 ---
 
 Add fragments architecture, SSR head collection, and deterministic component IDs.
