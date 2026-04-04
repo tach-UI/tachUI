@@ -239,6 +239,55 @@ describe('renderToString', () => {
     expect(renderToString(node)).toBe('<section data-component-id="cmp-1"></section>')
   })
 
+  it('wraps marked nodes in <tachui-fragment> when fragment serialization is interactive', () => {
+    const context = createSSRContext() as any
+    const fragments: Array<{ componentId: string; componentName: string }> = []
+    context.fragmentSerialization = {
+      interactive: true,
+      onFragment: (fragment: { componentId: string; componentName: string }) => {
+        fragments.push(fragment)
+      },
+    }
+
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-1',
+      componentName: 'Counter',
+      snapshotData: { count: 1 },
+    }
+
+    expect(renderToString(node, { context })).toBe(
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-1" data-state="{&quot;count&quot;:1}"><section>Count</section></tachui-fragment>'
+    )
+    expect(fragments).toEqual([
+      {
+        componentId: 'cmp-1',
+        componentName: 'Counter',
+        snapshotData: { count: 1 },
+      },
+    ])
+  })
+
+  it('collects marked nodes without wrapper when fragment serialization is non-interactive', () => {
+    const context = createSSRContext() as any
+    const fragments: Array<{ componentId: string; componentName: string }> = []
+    context.fragmentSerialization = {
+      interactive: false,
+      onFragment: (fragment: { componentId: string; componentName: string }) => {
+        fragments.push(fragment)
+      },
+    }
+
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-2',
+      componentName: 'Counter',
+    }
+
+    expect(renderToString(node, { context })).toBe('<section>Count</section>')
+    expect(fragments).toEqual([{ componentId: 'cmp-2', componentName: 'Counter' }])
+  })
+
   it('does not emit __tachui_fragment metadata as an HTML attribute', () => {
     const node = h('section') as DOMNode
     node.__tachui_fragment = {

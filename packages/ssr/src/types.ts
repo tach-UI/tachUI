@@ -1,4 +1,5 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
+import type { FragmentMarker } from '@tachui/core/runtime/types'
 
 export interface ModifierBuilderLike {
   build: () => SSRNodeInput
@@ -37,6 +38,14 @@ export interface SSRContext {
    * Complete `<meta ...>` tag strings to be inserted into `<head>`.
    */
   meta: string[]
+  /**
+   * Optional internal hook used by fragment-aware prerender flows.
+   * Consumers should treat this as an advanced integration surface.
+   */
+  fragmentSerialization?: {
+    interactive?: boolean
+    onFragment?: (fragment: FragmentMarker) => void
+  }
 }
 
 export interface PrerenderRoute {

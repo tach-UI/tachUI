@@ -1,4 +1,5 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
+import type { FragmentMarker } from '@tachui/core/runtime/types'
 import { applyModifiersToNode } from '@tachui/core'
 import { isComputed, isSignal, untrack } from '@tachui/core/reactive'
 import type { ModifierBuilderLike, SSRContext, SSRNodeInput } from './types'
@@ -446,10 +447,51 @@ function applyNodeModifiersForSSR(
   }
 }
 
+function resolveFragmentMarker(node: DOMNode): FragmentMarker | undefined {
+  if (!('__tachui_fragment' in (node as any))) {
+    return undefined
+  }
+
+  const marker = (node as any).__tachui_fragment as FragmentMarker | undefined
+  if (!marker) {
+    return undefined
+  }
+
+  const componentId =
+    marker.componentId ||
+    ((node as any).componentId ? String((node as any).componentId) : '')
+
+  if (!componentId) {
+    return undefined
+  }
+
+  return {
+    ...marker,
+    componentId,
+    componentName: marker.componentName || 'Fragment',
+  }
+}
+
+function serializeFragmentWrapperAttributes(marker: FragmentMarker): string {
+  const attributes = [
+    `data-component="${escapeAttribute(marker.componentName)}"`,
+    `data-component-id="${escapeAttribute(marker.componentId)}"`,
+  ]
+
+  if (marker.snapshotData && Object.keys(marker.snapshotData).length > 0) {
+    attributes.push(
+      `data-state="${escapeAttribute(JSON.stringify(marker.snapshotData))}"`
+    )
+  }
+
+  return attributes.join(' ')
+}
+
 function serializeNode(
   node: DOMNode,
   context?: SSRContext,
-  seenStaticStyles?: Set<string>
+  seenStaticStyles?: Set<string>,
+  insideFragmentBoundary = false
 ): string {
   if (node.type === 'text') {
     if (typeof node.reactiveContent === 'function') {
@@ -465,18 +507,56 @@ function serializeNode(
   }
 
   const preparedNode = applyNodeModifiersForSSR(node, context, seenStaticStyles)
+  const fragmentMarker = insideFragmentBoundary
+    ? undefined
+    : resolveFragmentMarker(preparedNode)
+  const nextInsideFragmentBoundary = insideFragmentBoundary || Boolean(fragmentMarker)
+
   const tag = preparedNode.tag ?? 'div'
   const attributes = serializeAttributes(preparedNode)
   const openingTag = `<${tag}${attributes}>`
 
   if (VOID_ELEMENTS.has(tag)) {
+    if (
+      fragmentMarker &&
+      context?.fragmentSerialization &&
+      context.fragmentSerialization.interactive !== false
+    ) {
+      const wrapperAttrs = serializeFragmentWrapperAttributes(fragmentMarker)
+      context.fragmentSerialization?.onFragment?.(fragmentMarker)
+      return `<tachui-fragment ${wrapperAttrs}>${openingTag}</tachui-fragment>`
+    }
+
+    if (fragmentMarker) {
+      context?.fragmentSerialization?.onFragment?.(fragmentMarker)
+    }
+
     return openingTag
   }
 
   const children = (preparedNode.children ?? [])
-    .map((child: DOMNode) => serializeNode(child, context, seenStaticStyles))
+    .map((child: DOMNode) =>
+      serializeNode(child, context, seenStaticStyles, nextInsideFragmentBoundary)
+    )
     .join('')
-  return `${openingTag}${children}</${tag}>`
+  const nodeHTML = `${openingTag}${children}</${tag}>`
+
+  if (!fragmentMarker) {
+    return nodeHTML
+  }
+
+  context?.fragmentSerialization?.onFragment?.(fragmentMarker)
+
+  if (!context?.fragmentSerialization) {
+    return nodeHTML
+  }
+
+  if (context.fragmentSerialization.interactive === false) {
+    return nodeHTML
+  }
+
+  const wrapperAttrs = serializeFragmentWrapperAttributes(fragmentMarker)
+  return `<tachui-fragment ${wrapperAttrs}>${nodeHTML}</tachui-fragment>`
 }
 
 function serializeToHTMLInternal(
