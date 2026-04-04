@@ -1,6 +1,7 @@
 import type { DOMNode } from '@tachui/core/runtime/types'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
 import type { FragmentMarker } from '@tachui/core/runtime/types'
+import type { ModifierFactory } from '@tachui/core/modifiers/types'
 import type { FragmentSnapshotHandlers } from './types'
 import { BaseModifier, createModifierRegistry, ModifierPriority } from '@tachui/core/modifiers'
 
@@ -64,8 +65,6 @@ export class SnapshotModifier extends BaseModifier<FragmentSnapshotHandlers> {
   readonly type = 'snapshot'
   readonly priority = ModifierPriority.INTERACTION
 
-  
-
   apply(node: DOMNode, context: { componentId: string; componentInstance?: ComponentInstance }): DOMNode {
     if (node.type !== 'element') {
       return node
@@ -95,10 +94,8 @@ export function registerFragmentModifiers(): void {
   }
 
   if (!registry.has('snapshot')) {
-    registry.register(
-      'snapshot',
-      ((handlers: FragmentSnapshotHandlers) =>
-        snapshot(handlers)) as any
-    )
+    const snapshotFactory: ModifierFactory<FragmentSnapshotHandlers> = props =>
+      snapshot(props as unknown as FragmentSnapshotHandlers)
+    registry.register('snapshot', snapshotFactory)
   }
 }

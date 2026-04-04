@@ -63,7 +63,7 @@ describe('@tachui/fragments', () => {
     })
   })
 
-  it('Interactive marks single and multi-child content, warns when id is missing', () => {
+  it('Interactive marks single and multi-child content, including componentName overrides', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     const single = h('button', null, text('Click')) as DOMNode
@@ -75,9 +75,10 @@ describe('@tachui/fragments', () => {
 
     const multi = Interactive({
       children: [h('span', null, text('A')), h('span', null, text('B'))],
+      componentName: 'WrapperFrag',
     })
     expect(multi.type).toBe('element')
-    expect((multi as any).__tachui_fragment?.componentName).toBe('Interactive')
+    expect((multi as any).__tachui_fragment?.componentName).toBe('WrapperFrag')
     expect(warnSpy).toHaveBeenCalled()
   })
 
@@ -218,6 +219,88 @@ describe('@tachui/fragments', () => {
     const fragment = document.querySelector('tachui-fragment')
     expect(fragment?.innerHTML).toContain('hydrated')
     expect(restoreSpy).toHaveBeenCalledWith({ count: 1 })
+  })
+
+  it('reports malformed snapshot JSON and continues hydration with static fallback semantics', () => {
+    const handler = vi.fn()
+    const restoreSpy = vi.fn()
+    configureFragments({ onHydrationError: handler })
+
+    registerFragment('Counter', () => ({
+      type: 'component',
+      id: 'counter',
+      props: {},
+      modifiers: [
+        snapshot({
+          get: () => ({ count: 0 }),
+          restore: restoreSpy,
+        }),
+      ],
+      render: () => h('div', null, text('hydrated')),
+    } as any))
+
+    document.body.innerHTML =
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-bad-json" data-state="{not-json"><div>static</div></tachui-fragment>'
+
+    hydrateFragments()
+
+    const fragment = document.querySelector('tachui-fragment')
+    expect(fragment?.innerHTML).toContain('hydrated')
+    expect(restoreSpy).not.toHaveBeenCalled()
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler.mock.calls[0][1]).toMatchObject({
+      phase: 'restore',
+      componentId: 'cmp-bad-json',
+      componentName: 'Counter',
+    })
+  })
+
+  it('defers hydration until DOMContentLoaded when document is still loading', () => {
+    registerFragment('Deferred', () => ({
+      type: 'component',
+      id: 'deferred',
+      props: {},
+      render: () => h('div', null, text('hydrated-late')),
+    } as any))
+
+    document.body.innerHTML =
+      '<tachui-fragment data-component="Deferred" data-component-id="cmp-late"><div>static</div></tachui-fragment>'
+
+    const readyStateDescriptor = Object.getOwnPropertyDescriptor(document, 'readyState')
+    Object.defineProperty(document, 'readyState', {
+      configurable: true,
+      get: () => 'loading',
+    })
+
+    let domContentLoadedHandler: (() => void) | undefined
+    const addEventListenerSpy = vi
+      .spyOn(document, 'addEventListener')
+      .mockImplementation(
+        (
+          type: string,
+          handler: EventListenerOrEventListenerObject
+        ) => {
+          if (type === 'DOMContentLoaded' && typeof handler === 'function') {
+            domContentLoadedHandler = handler
+          }
+        }
+      )
+
+    try {
+      hydrateFragments()
+      expect(document.querySelector('tachui-fragment')?.innerHTML).toContain('static')
+      expect(domContentLoadedHandler).toBeTypeOf('function')
+
+      domContentLoadedHandler?.()
+      expect(document.querySelector('tachui-fragment')?.innerHTML).toContain('hydrated-late')
+    } finally {
+      addEventListenerSpy.mockRestore()
+      if (readyStateDescriptor) {
+        Object.defineProperty(document, 'readyState', readyStateDescriptor)
+      } else {
+        Reflect.deleteProperty(document, 'readyState')
+      }
+    }
   })
 
   it('registerFragment overwrite keeps latest registration', () => {

@@ -4,6 +4,4 @@
  * still exposing the public API for downstream imports.
  */
 
-import '../basic'
-
 export * from '../basic'

@@ -586,9 +586,7 @@ export class LayoutModifier extends BaseModifier {
 
       // For containers that need to size based on highest priority child
       // We use CSS custom properties that can be read by parent containers
-      if (styles && typeof styles === 'object' && 'setProperty' in styles) {
-        ;(styles as any).setProperty('--layout-priority', String(priority))
-      }
+      styles['--layout-priority'] = String(priority)
     }
 
     // Offset modifier (SwiftUI .offset(x, y))

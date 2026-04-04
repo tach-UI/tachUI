@@ -16,7 +16,14 @@ function resolveOutputPath(outDir: string, routePath: string): string {
   }
 
   const clean = routePath.replace(/^\/+/, '').replace(/\/+$/, '')
-  return path.join(outDir, clean, 'index.html')
+  const outputRoot = path.resolve(outDir)
+  const resolvedPath = path.resolve(outputRoot, clean, 'index.html')
+  const outputRootPrefix = `${outputRoot}${path.sep}`
+  if (resolvedPath !== outputRoot && !resolvedPath.startsWith(outputRootPrefix)) {
+    throw new Error(`Route path "${routePath}" resolves outside outDir.`)
+  }
+
+  return resolvedPath
 }
 
 function defaultDocument(

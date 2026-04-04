@@ -169,6 +169,26 @@ describe('prerender', () => {
     }
   })
 
+  it('rejects route paths that resolve outside outDir', async () => {
+    const outDir = await mkdtemp(path.join(os.tmpdir(), 'tachui-ssr-'))
+
+    try {
+      await expect(
+        prerender(
+          [
+            {
+              path: '../../outside',
+              render: () => h('main', null, text('Blocked')),
+            },
+          ],
+          { outDir }
+        )
+      ).rejects.toThrow('resolves outside outDir')
+    } finally {
+      await rm(outDir, { recursive: true, force: true })
+    }
+  })
+
   it('uses route title in the default document shell', async () => {
     const outDir = await mkdtemp(path.join(os.tmpdir(), 'tachui-ssr-'))
 
