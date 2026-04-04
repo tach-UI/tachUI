@@ -243,7 +243,6 @@ describe('renderToString', () => {
     const context = createSSRContext() as any
     const fragments: Array<{ componentId: string; componentName: string }> = []
     context.fragmentSerialization = {
-      interactive: true,
       onFragment: (fragment: { componentId: string; componentName: string }) => {
         fragments.push(fragment)
       },
@@ -284,7 +283,6 @@ describe('renderToString', () => {
     const context = createSSRContext() as any
     const fragments: Array<{ componentId: string; componentName: string }> = []
     context.fragmentSerialization = {
-      interactive: false,
       onFragment: (fragment: { componentId: string; componentName: string }) => {
         fragments.push(fragment)
       },
@@ -300,6 +298,108 @@ describe('renderToString', () => {
       '<section>Count</section>'
     )
     expect(fragments).toEqual([{ componentId: 'cmp-2', componentName: 'Counter' }])
+  })
+
+  it('suppresses wrappers without fragment context when interactive is false', () => {
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-plain-static',
+      componentName: 'Counter',
+    }
+
+    expect(renderToString(node, { interactive: false })).toBe(
+      '<section>Count</section>'
+    )
+  })
+
+  it('wraps marked void elements in interactive mode', () => {
+    const node = h('img', { src: '/hero.png', alt: 'Hero' }) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-img-1',
+      componentName: 'HeroImage',
+    }
+
+    expect(renderToString(node)).toBe(
+      '<tachui-fragment data-component="HeroImage" data-component-id="cmp-img-1"><img src="/hero.png" alt="Hero"></tachui-fragment>'
+    )
+  })
+
+  it('suppresses nested fragment wrappers and nested collection callbacks', () => {
+    const context = createSSRContext() as any
+    const fragments: Array<{ componentId: string; componentName: string }> = []
+    context.fragmentSerialization = {
+      onFragment: (fragment: { componentId: string; componentName: string }) => {
+        fragments.push(fragment)
+      },
+    }
+
+    const child = h('span', null, text('Inner')) as DOMNode
+    child.__tachui_fragment = {
+      componentId: 'cmp-inner',
+      componentName: 'Inner',
+    }
+
+    const parent = h('section', null, child) as DOMNode
+    parent.__tachui_fragment = {
+      componentId: 'cmp-outer',
+      componentName: 'Outer',
+    }
+
+    expect(renderToString(parent, { context })).toBe(
+      '<tachui-fragment data-component="Outer" data-component-id="cmp-outer"><section><span>Inner</span></section></tachui-fragment>'
+    )
+    expect(fragments).toEqual([
+      { componentId: 'cmp-outer', componentName: 'Outer' },
+    ])
+  })
+
+  it('omits data-state when snapshotData is empty', () => {
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-empty-state',
+      componentName: 'Counter',
+      snapshotData: {},
+    }
+
+    expect(renderToString(node)).toBe(
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-empty-state"><section>Count</section></tachui-fragment>'
+    )
+  })
+
+  it('serializes array-like snapshotData payloads when provided', () => {
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-array-state',
+      componentName: 'Counter',
+      snapshotData: [1, 2, 3] as unknown as Record<string, unknown>,
+    }
+
+    expect(renderToString(node)).toBe(
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-array-state" data-state="[1,2,3]"><section>Count</section></tachui-fragment>'
+    )
+  })
+
+  it('omits data-state and warns when snapshotData is not serializable', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const node = h('section', null, text('Count')) as DOMNode
+    const circular: Record<string, unknown> = {}
+    circular.self = circular
+    node.__tachui_fragment = {
+      componentId: 'cmp-bad-state',
+      componentName: 'Counter',
+      snapshotData: circular,
+    }
+
+    try {
+      expect(renderToString(node)).toBe(
+        '<tachui-fragment data-component="Counter" data-component-id="cmp-bad-state"><section>Count</section></tachui-fragment>'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[tachUI/ssr] Fragment snapshotData could not be serialized; data-state omitted.'
+      )
+    } finally {
+      warnSpy.mockRestore()
+    }
   })
 
   it('does not emit __tachui_fragment metadata as an HTML attribute', () => {

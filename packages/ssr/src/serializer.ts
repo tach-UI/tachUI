@@ -480,9 +480,18 @@ function serializeFragmentWrapperAttributes(marker: FragmentMarker): string {
 
   const snapshotData = marker.snapshotData
   if (snapshotData && Object.keys(snapshotData).length > 0) {
-    attributes.push(
-      `data-state="${escapeAttribute(JSON.stringify(snapshotData))}"`
-    )
+    try {
+      const serializedSnapshot = JSON.stringify(snapshotData)
+      if (typeof serializedSnapshot === 'string') {
+        attributes.push(
+          `data-state="${escapeAttribute(serializedSnapshot)}"`
+        )
+      }
+    } catch {
+      console.warn(
+        '[tachUI/ssr] Fragment snapshotData could not be serialized; data-state omitted.'
+      )
+    }
   }
 
   return attributes.join(' ')
