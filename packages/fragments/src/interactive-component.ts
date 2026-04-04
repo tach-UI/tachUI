@@ -9,6 +9,11 @@ function markNodeAsInteractive(node: DOMNode, componentName: string): DOMNode {
   }
 
   const existing = (node as any).__tachui_fragment as FragmentMarker | undefined
+  if (!existing?.componentId) {
+    console.warn(
+      `[tachui/fragments] Interactive boundary "${componentName}" has no componentId and will remain static.`
+    )
+  }
   ;(node as any).__tachui_fragment = {
     ...existing,
     componentId: existing?.componentId ?? '',

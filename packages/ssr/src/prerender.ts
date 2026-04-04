@@ -8,8 +8,7 @@ import type {
   SSRContext,
 } from './types'
 import { escapeHTML } from './escape'
-
-const UNSAFE_HEAD_ENTRY_PATTERN = /<\/(?:head|style)>|<script\b/i
+import { buildHeadEntries } from './head-sanitizer'
 
 function resolveOutputPath(outDir: string, routePath: string): string {
   if (routePath === '/' || routePath === '') {
@@ -18,52 +17,6 @@ function resolveOutputPath(outDir: string, routePath: string): string {
 
   const clean = routePath.replace(/^\/+/, '').replace(/\/+$/, '')
   return path.join(outDir, clean, 'index.html')
-}
-
-function sanitizeHeadEntry(
-  entry: string,
-  routePath: string
-): string | undefined {
-  const trimmed = entry.trim()
-  if (!trimmed) {
-    return undefined
-  }
-
-  if (UNSAFE_HEAD_ENTRY_PATTERN.test(trimmed)) {
-    console.warn(
-      `[tachUI][prerender] Dropping unsafe head entry for route "${routePath}".`
-    )
-    return undefined
-  }
-
-  return trimmed
-}
-
-function buildHeadEntries(context: SSRContext, routePath: string): string[] {
-  const entries: string[] = []
-
-  for (const metaTag of context.meta) {
-    const safeEntry = sanitizeHeadEntry(metaTag, routePath)
-    if (safeEntry) {
-      entries.push(safeEntry)
-    }
-  }
-
-  for (const linkTag of context.links) {
-    const safeEntry = sanitizeHeadEntry(linkTag, routePath)
-    if (safeEntry) {
-      entries.push(safeEntry)
-    }
-  }
-
-  for (const styleBlock of context.styles) {
-    const safeStyle = sanitizeHeadEntry(styleBlock, routePath)
-    if (safeStyle) {
-      entries.push(`<style>${safeStyle}</style>`)
-    }
-  }
-
-  return entries
 }
 
 function defaultDocument(

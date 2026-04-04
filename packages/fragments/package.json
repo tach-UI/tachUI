@@ -43,7 +43,6 @@
   "keywords": [
     "tachui",
     "fragments",
-    "islands",
     "hydration",
     "ssr"
   ],

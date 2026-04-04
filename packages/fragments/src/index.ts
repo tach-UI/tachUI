@@ -1,7 +1,11 @@
+import { interactive, registerFragmentModifiers, snapshot } from './modifiers'
+
 export { Interactive } from './interactive-component'
-export { configureFragments } from './config'
-export { interactive, registerFragmentModifiers, snapshot } from './modifiers'
+export { __resetFragmentConfigForTests, configureFragments } from './config'
+export { interactive, registerFragmentModifiers, snapshot }
 export { prerender } from './prerender'
+
+registerFragmentModifiers()
 
 export type {
   FragmentConfig,

@@ -48,7 +48,6 @@ export interface SSRContext {
    * Consumers should treat this as an advanced integration surface.
    */
   fragmentSerialization?: {
-    interactive?: boolean
     onFragment?: (fragment: FragmentMarker) => void
   }
 }

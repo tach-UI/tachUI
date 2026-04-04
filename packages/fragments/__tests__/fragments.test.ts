@@ -4,8 +4,15 @@ import path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { h, text } from '@tachui/core'
 import type { DOMNode } from '@tachui/core/runtime/types'
+import { __resetFragmentConfigForTests, configureFragments } from '../src/config'
+import { Interactive } from '../src/interactive-component'
 import { interactive, snapshot } from '../src/modifiers'
 import { prerender } from '../src/prerender'
+import {
+  __resetFragmentsRuntimeForTests,
+  hydrateFragments,
+  registerFragment,
+} from '../src/runtime'
 
 function createFragmentNode(componentId: string): DOMNode {
   const node = h('div', null, text('Counter')) as DOMNode & {
@@ -27,6 +34,8 @@ describe('@tachui/fragments', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     document.body.innerHTML = ''
+    __resetFragmentsRuntimeForTests()
+    __resetFragmentConfigForTests()
   })
 
   it('interactive and snapshot modifiers stamp fragment marker metadata', () => {
@@ -54,6 +63,24 @@ describe('@tachui/fragments', () => {
     })
   })
 
+  it('Interactive marks single and multi-child content, warns when id is missing', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const single = h('button', null, text('Click')) as DOMNode
+    const markedSingle = Interactive({
+      children: single,
+      componentName: 'ButtonFrag',
+    })
+    expect((markedSingle as any).__tachui_fragment?.componentName).toBe('ButtonFrag')
+
+    const multi = Interactive({
+      children: [h('span', null, text('A')), h('span', null, text('B'))],
+    })
+    expect(multi.type).toBe('element')
+    expect((multi as any).__tachui_fragment?.componentName).toBe('Interactive')
+    expect(warnSpy).toHaveBeenCalled()
+  })
+
   it('prerender emits fragment wrapper, manifest script, and runtime script when interactive', async () => {
     const outDir = await mkdtemp(path.join(tmpdir(), 'tachui-fragments-'))
 
@@ -72,7 +99,9 @@ describe('@tachui/fragments', () => {
     expect(result[0].fragmentManifest).toEqual({
       'app:counter:0': 'Fragment',
     })
-    expect(html).toContain('<tachui-fragment data-component="Fragment" data-component-id="app:counter:0"')
+    expect(html).toContain(
+      '<tachui-fragment data-component="Fragment" data-component-id="app:counter:0"'
+    )
     expect(html).toContain('data-state="{&quot;count&quot;:0}"')
     expect(html).toContain('id="tachui-fragment-manifest"')
     expect(html).toContain('src="/tachui-fragments-runtime.js"')
@@ -101,44 +130,116 @@ describe('@tachui/fragments', () => {
     expect(html).not.toContain('/tachui-fragments-runtime.js')
   })
 
-  it('hydrateFragments restores snapshot and preserves static fallback on hydration errors', async () => {
-    vi.resetModules()
-    const { registerFragment, hydrateFragments } = await import('../src/runtime')
+  it('prerender validates routes/outDir and blocks output path traversal', async () => {
+    const outDir = await mkdtemp(path.join(tmpdir(), 'tachui-fragments-validate-'))
 
-    const restoreSpy = vi.fn()
+    await expect(prerender([], { outDir })).rejects.toThrow(
+      'prerender requires at least one route definition.'
+    )
+    await expect(
+      prerender([{ path: '/', render: () => h('div') }], { outDir: '' })
+    ).rejects.toThrow('prerender requires a non-empty outDir.')
+    await expect(
+      prerender(
+        [{ path: '../../outside', render: () => h('div') }],
+        { outDir }
+      )
+    ).rejects.toThrow('resolves outside outDir')
+  })
 
-    const instance = {
-      type: 'component',
-      id: 'counter-component',
-      props: {},
-      modifiers: [
-        snapshot({
-          get: () => ({ count: 0 }),
-          restore: restoreSpy,
-        }),
+  it('prerender supports multiple routes, escaped runtimeScriptSrc, and custom document', async () => {
+    const outDir = await mkdtemp(path.join(tmpdir(), 'tachui-fragments-doc-'))
+    const customDocument = vi.fn(
+      (
+        html: string,
+        route: { path: string },
+        _context: unknown,
+        manifest: Record<string, string>,
+        runtimeTags: string[]
+      ) => `<!doctype html><html><head>${runtimeTags.join('')}</head><body data-route="${route.path}" data-manifest="${Object.keys(manifest).length}">${html}</body></html>`
+    )
+
+    await prerender(
+      [
+        { path: '/', render: () => createFragmentNode('cmp-1') },
+        { path: '/about', render: () => createFragmentNode('cmp-2') },
       ],
-      render: () => h('div', null, text('hydrated')),
-    }
+      {
+        outDir,
+        runtimeScriptSrc: '/x" onerror="alert(1)".js',
+        document: customDocument,
+      }
+    )
 
-    document.body.innerHTML = [
-      '<script id="tachui-fragment-manifest" type="application/json">{"cmp-1":"Counter"}</script>',
-      '<tachui-fragment data-component-id="cmp-1" data-state="{&quot;count&quot;:1}"><div>static</div></tachui-fragment>',
-      '<tachui-fragment data-component="Broken" data-component-id="cmp-2"><div>kept</div></tachui-fragment>',
-    ].join('')
+    const rootHtml = await readFile(path.join(outDir, 'index.html'), 'utf8')
+    const aboutHtml = await readFile(path.join(outDir, 'about/index.html'), 'utf8')
 
-    registerFragment('Counter', () => instance as any)
-    registerFragment('Broken', () => {
-      throw new Error('boom')
-    })
+    expect(customDocument).toHaveBeenCalledTimes(2)
+    expect(rootHtml).toContain('src="/x&quot; onerror=&quot;alert(1)&quot;.js"')
+    expect(aboutHtml).toContain('data-route="/about"')
+  })
 
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  it('configureFragments routes hydration errors to custom handler', () => {
+    const handler = vi.fn()
+    configureFragments({ onHydrationError: handler })
+
+    document.body.innerHTML =
+      '<tachui-fragment data-component="Missing" data-component-id="cmp-err"><div>kept</div></tachui-fragment>'
 
     hydrateFragments()
 
-    const fragments = document.querySelectorAll('tachui-fragment')
-    expect(fragments[0].innerHTML).toContain('hydrated')
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(document.querySelector('tachui-fragment')?.innerHTML).toContain('kept')
+  })
+
+  it('hydrateFragments restores snapshot and supports builder outputs', () => {
+    const restoreSpy = vi.fn()
+
+    registerFragment('Counter', () => ({
+      build: () => ({
+        type: 'component',
+        id: 'counter-component',
+        props: {},
+        modifiers: [
+          snapshot({
+            get: () => ({ count: 0 }),
+            restore: restoreSpy,
+          }),
+        ],
+        render: () => h('div', null, text('hydrated')),
+      }),
+    } as any))
+
+    document.body.innerHTML =
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-1" data-state="{&quot;count&quot;:1}"><div>static</div></tachui-fragment>'
+
+    hydrateFragments()
+
+    const fragment = document.querySelector('tachui-fragment')
+    expect(fragment?.innerHTML).toContain('hydrated')
     expect(restoreSpy).toHaveBeenCalledWith({ count: 1 })
-    expect(fragments[1].innerHTML).toContain('kept')
-    expect(errorSpy).toHaveBeenCalled()
+  })
+
+  it('registerFragment overwrite keeps latest registration', () => {
+    registerFragment('Swap', () => ({
+      type: 'component',
+      id: 'first',
+      props: {},
+      render: () => h('div', null, text('first')),
+    } as any))
+
+    registerFragment('Swap', () => ({
+      type: 'component',
+      id: 'second',
+      props: {},
+      render: () => h('div', null, text('second')),
+    } as any))
+
+    document.body.innerHTML =
+      '<tachui-fragment data-component="Swap" data-component-id="cmp-swap"><div>static</div></tachui-fragment>'
+
+    hydrateFragments()
+
+    expect(document.querySelector('tachui-fragment')?.innerHTML).toContain('second')
   })
 })

@@ -478,10 +478,7 @@ function serializeFragmentWrapperAttributes(marker: FragmentMarker): string {
     `data-component-id="${escapeAttribute(marker.componentId)}"`,
   ]
 
-  const snapshotData =
-    marker.snapshotData ??
-    ((marker as unknown as { snapshot?: Record<string, unknown> }).snapshot ??
-      undefined)
+  const snapshotData = marker.snapshotData
   if (snapshotData && Object.keys(snapshotData).length > 0) {
     attributes.push(
       `data-state="${escapeAttribute(JSON.stringify(snapshotData))}"`

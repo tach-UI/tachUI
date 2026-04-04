@@ -75,10 +75,6 @@ export class SnapshotModifier extends BaseModifier<FragmentSnapshotHandlers> {
 
     marker.snapshotData = this.properties.get()
 
-    ;(node as any).__tachui_fragment_snapshot = {
-      restore: this.properties.restore,
-    }
-
     return node
   }
 }
@@ -106,5 +102,3 @@ export function registerFragmentModifiers(): void {
     )
   }
 }
-
-registerFragmentModifiers()

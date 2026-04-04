@@ -25,10 +25,7 @@ export interface FragmentRuntimeManifest {
   [componentId: string]: string
 }
 
-export interface SerializedFragment extends FragmentMarker {
-  componentId: string
-  componentName: string
-}
+export type SerializedFragment = FragmentMarker
 
 export interface FragmentPrerenderRoute extends SSRPrerenderRoute {}
 

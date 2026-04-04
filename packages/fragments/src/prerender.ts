@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { createSSRContext, renderToString } from '@tachui/ssr'
+import { buildHeadEntries, createSSRContext, renderToString } from '@tachui/ssr'
 import type { SSRContext } from '@tachui/ssr'
 import type {
   FragmentPrerenderOptions,
@@ -9,8 +9,6 @@ import type {
   FragmentRuntimeManifest,
   SerializedFragment,
 } from './types'
-
-const UNSAFE_HEAD_ENTRY_PATTERN = /<\/(?:head|style)>|<script\b/i
 
 function escapeHTML(value: string): string {
   return value
@@ -21,56 +19,28 @@ function escapeHTML(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
+function escapeAttribute(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 function resolveOutputPath(outDir: string, routePath: string): string {
   if (routePath === '/' || routePath === '') {
     return path.join(outDir, 'index.html')
   }
 
   const clean = routePath.replace(/^\/+/, '').replace(/\/+$/, '')
-  return path.join(outDir, clean, 'index.html')
-}
-
-function sanitizeHeadEntry(entry: string, routePath: string): string | undefined {
-  const trimmed = entry.trim()
-  if (!trimmed) {
-    return undefined
+  const outputRoot = path.resolve(outDir)
+  const resolvedPath = path.resolve(outputRoot, clean, 'index.html')
+  const outputRootPrefix = `${outputRoot}${path.sep}`
+  if (resolvedPath !== outputRoot && !resolvedPath.startsWith(outputRootPrefix)) {
+    throw new Error(`Route path "${routePath}" resolves outside outDir.`)
   }
 
-  if (UNSAFE_HEAD_ENTRY_PATTERN.test(trimmed)) {
-    console.warn(
-      `[tachUI/fragments] Dropping unsafe head entry for route "${routePath}".`
-    )
-    return undefined
-  }
-
-  return trimmed
-}
-
-function buildHeadEntries(context: SSRContext, routePath: string): string[] {
-  const entries: string[] = []
-
-  for (const metaTag of context.meta) {
-    const safeEntry = sanitizeHeadEntry(metaTag, routePath)
-    if (safeEntry) {
-      entries.push(safeEntry)
-    }
-  }
-
-  for (const linkTag of context.links) {
-    const safeEntry = sanitizeHeadEntry(linkTag, routePath)
-    if (safeEntry) {
-      entries.push(safeEntry)
-    }
-  }
-
-  for (const styleBlock of context.styles) {
-    const safeStyle = sanitizeHeadEntry(styleBlock, routePath)
-    if (safeStyle) {
-      entries.push(`<style>${safeStyle}</style>`)
-    }
-  }
-
-  return entries
+  return resolvedPath
 }
 
 function defaultDocument(
@@ -81,7 +51,11 @@ function defaultDocument(
   runtimeTags: string[]
 ): string {
   const title = escapeHTML(route.title ?? 'TachUI App')
-  const headEntries = buildHeadEntries(context, route.path)
+  const headEntries = buildHeadEntries(
+    context,
+    route.path,
+    '[tachUI/fragments][prerender]'
+  )
 
   return [
     '<!doctype html>',
@@ -110,7 +84,7 @@ function buildRuntimeTags(
 
   return [
     `<script id="tachui-fragment-manifest" type="application/json">${JSON.stringify(manifest)}</script>`,
-    `<script type="module" src="${runtimeScriptSrc}" defer></script>`,
+    `<script type="module" src="${escapeAttribute(runtimeScriptSrc)}" defer></script>`,
   ]
 }
 
@@ -145,14 +119,12 @@ export async function prerender(
     try {
       const context = createSSRContext() as SSRContext & {
         fragmentSerialization?: {
-          interactive?: boolean
           onFragment?: (fragment: SerializedFragment) => void
         }
       }
 
       const serializedFragments: SerializedFragment[] = []
       context.fragmentSerialization = {
-        interactive,
         onFragment(fragment) {
           serializedFragments.push(fragment)
         },

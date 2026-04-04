@@ -159,3 +159,8 @@ export function hydrateFragments(): void {
 
   hydrateNow()
 }
+
+export function __resetFragmentsRuntimeForTests(): void {
+  hydrationStarted = false
+  fragmentRegistry.clear()
+}

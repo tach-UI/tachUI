@@ -15,3 +15,9 @@ export function configureFragments(options: FragmentConfig): void {
 export function getFragmentConfig(): Required<FragmentConfig> {
   return fragmentConfig
 }
+
+export function __resetFragmentConfigForTests(): void {
+  fragmentConfig.onHydrationError = (error, context) => {
+    console.error('[tachui/fragments] hydration error:', error, context)
+  }
+}
