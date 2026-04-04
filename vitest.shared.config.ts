@@ -107,6 +107,14 @@ export default defineConfig({
         find: '@tachui/registry',
         replacement: path.resolve(__dirname, 'packages/registry/src'),
       },
+      {
+        find: '@tachui/ssr/',
+        replacement: path.resolve(__dirname, 'packages/ssr/src') + '/',
+      },
+      {
+        find: '@tachui/ssr',
+        replacement: path.resolve(__dirname, 'packages/ssr/src'),
+      },
 
       // Plugin packages - all use src for consistency
       {

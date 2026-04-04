@@ -31,7 +31,7 @@ SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorep
 ## Key Locations
 - **Source**: `packages/*`
 - **Docs**: `docs/`
-- **Designs**: `design/`
+- **Designs**: `planning/`
 - **Demos**: `demos/`
 - **Tests**: `__tests__/*.test.ts` per package
 - **Root configs**: `package.json`, `pnpm-workspace.yaml`, `tsconfig.json`, `vitest*.config.ts`
@@ -50,8 +50,10 @@ SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorep
 - `@tachui/viewport`: Window/viewport management
 - `@tachui/symbols`: Icons (Lucide + SF Symbols mapping)
 - `@tachui/devtools`: Debug, profiler
+- `@tachui/ssr`: Server-side rendering, prerender, HTML serialization
+- `@tachui/types`: Shared TypeScript definitions (modifiers, runtime, reactive, layout, etc.)
 - `@tachui/cli`: CLI tools
-- Others: types, registry, eslint-plugin-tachui
+- Others: registry, eslint-plugin-tachui
 
 ## Essential Commands
 ```bash
@@ -92,9 +94,12 @@ pnpm benchmark:navigation
 
 Package-specific: Each has `dev`, `build`, `test`, `valid` (full check).
 
+## Useful Tools
+- **Github CLI**: available at `/opt/homebrew/bin/gh`
+
 ## Code Patterns & Conventions
 - **Components**: Exported functions returning JSX/TSX
-- **Modifiers**: Chainable `.modifier()` from `@tachui/core`
+- **Modifiers**: Chainable `.modifierName()` directly on component instances (e.g. `Text('hi').padding().bold()`); `.modifier()` is an internal method and must not be exposed in public APIs or docs
 - **Reactivity**: Signals/effects from core (SolidJS-like)
 - **Tests**: `__tests__/*.test.ts`, Vitest, high coverage, DOM mocks
 - **Types**: Strict TS, generated modifier types (`generated-modifiers.d.ts`)
@@ -116,7 +121,7 @@ Package-specific: Each has `dev`, `build`, `test`, `valid` (full check).
 - **Git Hooks**: pre-commit (lint), pre-push (type-check + test:ci)
 - **Absolute Paths**: Use workspace aliases (e.g., `@tachui/core`)
 - **No Side Effects**: Pure functions, explicit reactivity
-- **Design Docs**: Check `design/` before implementing
+- **Design Docs**: Check `planning/` for planning docs; design decisions are captured in GitHub issues directly
 
 ## Quality Metrics (Observed)
 - Tests: 100+ files, thousands passing

@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@tachui/core": [
+        "../core/dist/index.d.ts"
+      ],
+      "@tachui/core/*": [
+        "../core/dist/*"
+      ],
+      "@tachui/ssr": [
+        "../ssr/dist/index.d.ts"
+      ],
+      "@tachui/ssr/*": [
+        "../ssr/dist/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "package.json"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../ssr"
+    }
+  ]
+}

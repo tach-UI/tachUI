@@ -10,7 +10,10 @@ import {
   isComputed,
   isSignal,
 } from '@tachui/core/reactive'
-import { bindReactiveStyle } from '@tachui/core/modifiers/base'
+import {
+  bindReactiveStyle,
+  collectStaticAnimationCSSRules,
+} from '@tachui/core/modifiers/base'
 import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
 import type {
@@ -83,6 +86,10 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Apply the modifier to a DOM node
    */
   abstract apply(node: DOMNode, context: ModifierContext): DOMNode | undefined
+
+  getStaticCSS(_selector: string): string[] {
+    return []
+  }
 
   /**
    * Helper to resolve reactive properties
@@ -1621,6 +1628,14 @@ export class AnimationModifier extends BaseModifier {
     }
 
     return undefined
+  }
+
+  override getStaticCSS(selector: string): string[] {
+    return collectStaticAnimationCSSRules(
+      selector,
+      this.properties as any,
+      this.createKeyframeRule.bind(this)
+    )
   }
 
   private applyOverlay(

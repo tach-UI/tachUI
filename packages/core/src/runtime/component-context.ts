@@ -24,6 +24,15 @@ export const EnvironmentSymbol = Symbol('TachUI.Environment')
  */
 let currentComponentContext: ComponentContext | null = null
 
+function normalizeComponentName(componentName: string): string {
+  const normalized = componentName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return normalized || 'unknown'
+}
 
 /**
  * Component context implementation
@@ -38,6 +47,7 @@ class ComponentContextImpl implements ComponentContext {
   // State management
   private stateStore = new Map<string, any>()
   private bindingStore = new Map<string, any>()
+  private nextChildIndex = 0
 
   // Performance tracking
   private createdAt = Date.now()
@@ -46,6 +56,16 @@ class ComponentContextImpl implements ComponentContext {
   constructor(id: string, parent?: ComponentContext) {
     this.id = id
     this.parent = parent
+  }
+
+  beginRenderPass(): void {
+    this.nextChildIndex = 0
+  }
+
+  allocateChildIndex(): number {
+    const index = this.nextChildIndex
+    this.nextChildIndex += 1
+    return index
   }
 
   /**
@@ -168,25 +188,40 @@ export function createComponentContext(
   return new ComponentContextImpl(componentId, parent)
 }
 
+export function getCurrentComponentContextOrNull(): ComponentContext | null {
+  if (currentComponentContext) {
+    return currentComponentContext
+  }
+
+  let owner = getCurrentOwner()
+  while (owner) {
+    if (owner.context.has(ComponentContextSymbol)) {
+      return owner.context.get(ComponentContextSymbol) as ComponentContext
+    }
+    owner = owner.parent
+  }
+
+  return null
+}
+
+export function createDeterministicComponentId(
+  componentName: string,
+  parentContext?: ComponentContext
+): string {
+  // Root-level components without a parent context default to sibling index 0.
+  // This path is intended for standalone entrypoints rather than sibling trees.
+  const parentId = parentContext?.id || 'app'
+  const siblingIndex = parentContext?.allocateChildIndex() ?? 0
+  return `${parentId}:${normalizeComponentName(componentName)}:${siblingIndex}`
+}
+
 /**
  * Get the current component context
  */
 export function getCurrentComponentContext(): ComponentContext {
-  // ALWAYS check global context first for immediate availability
-  // This is more reliable when reactive context gets lost
-  if (currentComponentContext) {
-    return currentComponentContext
-  }
-  
-  // Then check reactive owner chain as fallback
-  let owner = getCurrentOwner()
-  
-  while (owner) {
-    if (owner.context.has(ComponentContextSymbol)) {
-      const context = owner.context.get(ComponentContextSymbol) as ComponentContext
-      return context
-    }
-    owner = owner.parent
+  const context = getCurrentComponentContextOrNull()
+  if (context) {
+    return context
   }
 
   throw new Error(
@@ -245,17 +280,25 @@ export function withComponentContext<P extends ComponentProps>(
   contextId?: string
 ) {
   return (props: P): ComponentInstance<P> => {
-    const componentId = contextId || `component-${Math.random().toString(36).substr(2, 9)}`
-
-    // Get parent context if available
-    const parentContext = currentComponentContext || undefined
+    const parentContext = getCurrentComponentContextOrNull() || undefined
+    const componentName =
+      (component as any).displayName || component.name || 'unknown'
+    const componentId =
+      contextId || createDeterministicComponentId(componentName, parentContext)
 
     // Create component context
     const context = createComponentContext(componentId, parentContext)
+    context.beginRenderPass()
 
     // Create the component instance with context
     return runWithComponentContext(context, () => {
       const instance = component(props)
+      const originalRender = instance.render.bind(instance)
+      instance.render = () =>
+        runWithComponentContext(context, () => {
+          context.beginRenderPass()
+          return originalRender()
+        })
 
       // Inject context into instance
       instance.context = context

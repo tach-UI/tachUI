@@ -23,6 +23,7 @@
     "build:navigation": "pnpm --filter @tachui/navigation... build",
     "build:grid": "pnpm --filter @tachui/grid... build",
     "build:devtools": "pnpm --filter @tachui/devtools... build",
+    "build:ssr": "pnpm --filter @tachui/ssr... build",
     "build:cli": "pnpm --filter @tachui/cli... build",
     "dev": "pnpm -r --parallel dev",
     "test": "vitest run && pnpm test:tools",

@@ -1,7 +1,8 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
+import type { FragmentMarker } from '@tachui/core/runtime/types'
 import { applyModifiersToNode } from '@tachui/core'
 import { isComputed, isSignal, untrack } from '@tachui/core/reactive'
-import type { ModifierBuilderLike, SSRNodeInput } from './types'
+import type { ModifierBuilderLike, SSRContext, SSRNodeInput } from './types'
 import { escapeAttribute, escapeHTML } from './escape'
 
 const VOID_ELEMENTS = new Set([
@@ -157,7 +158,8 @@ function serializeAttributes(node: DOMNode): string {
       rawKey === 'children' ||
       rawKey === 'key' ||
       rawKey === 'ref' ||
-      rawKey === 'componentMetadata'
+      rawKey === 'componentMetadata' ||
+      rawKey === 'debugLabel'
     ) {
       continue
     }
@@ -344,7 +346,46 @@ function getNodeModifiers(node: DOMNode): unknown[] {
   return metadataModifiers.length > 0 ? metadataModifiers : directModifiers
 }
 
-function applyNodeModifiersForSSR(node: DOMNode): DOMNode {
+interface StaticCSSCapableModifier {
+  getStaticCSS?: (selector: string) => string[]
+}
+
+function escapeSelectorAttributeValue(value: string): string {
+  // Escape only for the `[attr="..."]` double-quoted attribute-value context.
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+function collectStaticCSSRules(
+  modifiers: unknown[],
+  selector: string
+): string[] {
+  const rules: string[] = []
+
+  for (const modifier of modifiers) {
+    if (
+      !modifier ||
+      typeof modifier !== 'object' ||
+      typeof (modifier as StaticCSSCapableModifier).getStaticCSS !== 'function'
+    ) {
+      continue
+    }
+
+    const modifierRules = (modifier as StaticCSSCapableModifier).getStaticCSS!(
+      selector
+    )
+    if (Array.isArray(modifierRules) && modifierRules.length > 0) {
+      rules.push(...modifierRules.filter(rule => typeof rule === 'string' && rule.trim().length > 0))
+    }
+  }
+
+  return rules
+}
+
+function applyNodeModifiersForSSR(
+  node: DOMNode,
+  context?: SSRContext,
+  seenStaticStyles?: Set<string>
+): DOMNode {
   if (node.type !== 'element') {
     return node
   }
@@ -379,6 +420,21 @@ function applyNodeModifiersForSSR(node: DOMNode): DOMNode {
     }
   )
 
+  const componentId =
+    (nodeWithAppliedModifiers as any).componentId ?? (node as any).componentId
+  if (context && seenStaticStyles && componentId != null) {
+    const selector = `[data-component-id="${escapeSelectorAttributeValue(
+      String(componentId)
+    )}"]`
+    const staticCSSRules = collectStaticCSSRules(modifiers, selector)
+    for (const rule of staticCSSRules) {
+      if (!seenStaticStyles.has(rule)) {
+        seenStaticStyles.add(rule)
+        context.styles.push(rule)
+      }
+    }
+  }
+
   return {
     ...nodeWithAppliedModifiers,
     props: {
@@ -391,7 +447,63 @@ function applyNodeModifiersForSSR(node: DOMNode): DOMNode {
   }
 }
 
-function serializeNode(node: DOMNode): string {
+function resolveFragmentMarker(node: DOMNode): FragmentMarker | undefined {
+  if (!('__tachui_fragment' in (node as any))) {
+    return undefined
+  }
+
+  const marker = (node as any).__tachui_fragment as FragmentMarker | undefined
+  if (!marker) {
+    return undefined
+  }
+
+  const componentId =
+    marker.componentId ||
+    ((node as any).componentId ? String((node as any).componentId) : '')
+
+  if (!componentId) {
+    return undefined
+  }
+
+  return {
+    ...marker,
+    componentId,
+    componentName: marker.componentName || 'Fragment',
+  }
+}
+
+function serializeFragmentWrapperAttributes(marker: FragmentMarker): string {
+  const attributes = [
+    `data-component="${escapeAttribute(marker.componentName)}"`,
+    `data-component-id="${escapeAttribute(marker.componentId)}"`,
+  ]
+
+  const snapshotData = marker.snapshotData
+  if (snapshotData && Object.keys(snapshotData).length > 0) {
+    try {
+      const serializedSnapshot = JSON.stringify(snapshotData)
+      if (typeof serializedSnapshot === 'string') {
+        attributes.push(
+          `data-state="${escapeAttribute(serializedSnapshot)}"`
+        )
+      }
+    } catch {
+      console.warn(
+        '[tachUI/ssr] Fragment snapshotData could not be serialized; data-state omitted.'
+      )
+    }
+  }
+
+  return attributes.join(' ')
+}
+
+function serializeNode(
+  node: DOMNode,
+  context?: SSRContext,
+  seenStaticStyles?: Set<string>,
+  insideFragmentBoundary = false,
+  interactive = true
+): string {
   if (node.type === 'text') {
     if (typeof node.reactiveContent === 'function') {
       const resolvedText = untrack(() => node.reactiveContent!())
@@ -405,35 +517,93 @@ function serializeNode(node: DOMNode): string {
     return `<!--${safeComment}-->`
   }
 
-  const preparedNode = applyNodeModifiersForSSR(node)
+  const preparedNode = applyNodeModifiersForSSR(node, context, seenStaticStyles)
+  const fragmentMarker = insideFragmentBoundary
+    ? undefined
+    : resolveFragmentMarker(preparedNode)
+  const nextInsideFragmentBoundary = insideFragmentBoundary || Boolean(fragmentMarker)
+
   const tag = preparedNode.tag ?? 'div'
   const attributes = serializeAttributes(preparedNode)
   const openingTag = `<${tag}${attributes}>`
 
   if (VOID_ELEMENTS.has(tag)) {
+    if (
+      fragmentMarker &&
+      interactive
+    ) {
+      const wrapperAttrs = serializeFragmentWrapperAttributes(fragmentMarker)
+      context?.fragmentSerialization?.onFragment?.(fragmentMarker)
+      return `<tachui-fragment ${wrapperAttrs}>${openingTag}</tachui-fragment>`
+    }
+
+    if (fragmentMarker) {
+      context?.fragmentSerialization?.onFragment?.(fragmentMarker)
+    }
+
     return openingTag
   }
 
   const children = (preparedNode.children ?? [])
-    .map((child: DOMNode) => serializeNode(child))
+    .map((child: DOMNode) =>
+      serializeNode(
+        child,
+        context,
+        seenStaticStyles,
+        nextInsideFragmentBoundary,
+        interactive
+      )
+    )
     .join('')
-  return `${openingTag}${children}</${tag}>`
+  const nodeHTML = `${openingTag}${children}</${tag}>`
+
+  if (!fragmentMarker) {
+    return nodeHTML
+  }
+
+  context?.fragmentSerialization?.onFragment?.(fragmentMarker)
+
+  if (!interactive) {
+    return nodeHTML
+  }
+
+  const wrapperAttrs = serializeFragmentWrapperAttributes(fragmentMarker)
+  return `<tachui-fragment ${wrapperAttrs}>${nodeHTML}</tachui-fragment>`
 }
 
 function serializeToHTMLInternal(
   input: SSRNodeInput,
-  activeBuilders: Set<object>
+  activeBuilders: Set<object>,
+  context?: SSRContext,
+  seenStaticStyles?: Set<string>,
+  interactive = true
 ): string {
   if (input == null || input === false || input === true) {
     return ''
   }
 
   if (Array.isArray(input)) {
-    return input.map(entry => serializeToHTMLInternal(entry, activeBuilders)).join('')
+    return input
+      .map(entry =>
+        serializeToHTMLInternal(
+          entry,
+          activeBuilders,
+          context,
+          seenStaticStyles,
+          interactive
+        )
+      )
+      .join('')
   }
 
   if (isComponentInstance(input)) {
-    return serializeToHTMLInternal(input.render() as SSRNodeInput, activeBuilders)
+    return serializeToHTMLInternal(
+      input.render() as SSRNodeInput,
+      activeBuilders,
+      context,
+      seenStaticStyles,
+      interactive
+    )
   }
 
   if (isModifierBuilder(input)) {
@@ -452,14 +622,20 @@ function serializeToHTMLInternal(
           'Unsupported TachUI SSR input. Modifier build() returned itself and cannot be serialized.'
         )
       }
-      return serializeToHTMLInternal(built, activeBuilders)
+      return serializeToHTMLInternal(
+        built,
+        activeBuilders,
+        context,
+        seenStaticStyles,
+        interactive
+      )
     } finally {
       activeBuilders.delete(builder as object)
     }
   }
 
   if (isDOMNode(input)) {
-    return serializeNode(input)
+    return serializeNode(input, context, seenStaticStyles, false, interactive)
   }
 
   if (typeof input === 'string' || typeof input === 'number') {
@@ -471,4 +647,18 @@ function serializeToHTMLInternal(
 
 export function serializeToHTML(input: SSRNodeInput): string {
   return serializeToHTMLInternal(input, new Set())
+}
+
+export function serializeToHTMLWithContext(
+  input: SSRNodeInput,
+  context: SSRContext,
+  interactive = true
+): string {
+  return serializeToHTMLInternal(
+    input,
+    new Set(),
+    context,
+    new Set(context.styles),
+    interactive
+  )
 }

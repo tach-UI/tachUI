@@ -146,6 +146,18 @@ export default defineConfig({
         find: '@tachui/cli',
         replacement: path.resolve(__dirname, 'packages/cli/src'),
       },
+      {
+        find: '@tachui/ssr',
+        replacement: path.resolve(__dirname, 'packages/ssr/src'),
+      },
+      {
+        find: '@tachui/fragments',
+        replacement: path.resolve(__dirname, 'packages/fragments/src'),
+      },
+      {
+        find: '@tachui/fragments/runtime',
+        replacement: path.resolve(__dirname, 'packages/fragments/src/runtime.ts'),
+      },
     ],
   },
 })

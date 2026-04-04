@@ -94,6 +94,15 @@ export interface CloneableComponent<P extends ComponentProps = ComponentProps> e
  */
 export type RenderFunction = () => DOMNode | DOMNode[];
 /**
+ * Internal fragment marker set by @tachui/fragments when a node
+ * participates in fragment hydration/interaction boundaries.
+ */
+export interface FragmentMarker {
+    componentId: string;
+    componentName: string;
+    snapshotData?: Record<string, unknown>;
+}
+/**
  * DOM node representation
  */
 export interface DOMNode {
@@ -106,6 +115,7 @@ export interface DOMNode {
     dispose?: (() => void) | undefined;
     reactiveContent?: (() => string) | undefined;
     key?: string | number;
+    __tachui_fragment?: FragmentMarker;
 }
 /**
  * Component context for dependency injection
@@ -116,6 +126,8 @@ export interface ComponentContext {
     providers: Map<symbol, any>;
     consumers: Set<symbol>;
     cleanup: Set<() => void>;
+    beginRenderPass(): void;
+    allocateChildIndex(): number;
     setState(propertyName: string, value: any): void;
     getState(propertyName: string): any;
     hasState(propertyName: string): boolean;

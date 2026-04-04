@@ -127,6 +127,7 @@ jobs:
       - name: Build dependencies (needed for type checking)
         run: |
           pnpm build:core
+          pnpm build:ssr
           pnpm build:mobile
           pnpm build:flow-control
           pnpm build:viewport
@@ -167,6 +168,7 @@ jobs:
       - name: Build dependencies (needed for tests)
         run: |
           pnpm build:core
+          pnpm build:ssr
           pnpm build:mobile
           pnpm build:flow-control
           pnpm build:modifiers

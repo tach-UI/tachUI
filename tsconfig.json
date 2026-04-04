@@ -61,6 +61,12 @@
       ],
       "@tachui/ssr/*": [
         "./packages/ssr/dist/*"
+      ],
+      "@tachui/fragments": [
+        "./packages/fragments/dist/index.d.ts"
+      ],
+      "@tachui/fragments/*": [
+        "./packages/fragments/dist/*"
       ]
     }
   },

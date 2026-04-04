@@ -1,11 +1,25 @@
 import type { ComponentInstance, DOMNode } from '@tachui/core'
-import { createSignal, h, text } from '@tachui/core'
+import {
+  Assets,
+  createComponent as createRuntimeComponent,
+  createColorAsset,
+  createRoot,
+  createGoogleFont,
+  createImageAsset,
+  getCurrentComponentContext,
+  createSignal,
+  h,
+  registerAsset,
+  text,
+} from '@tachui/core'
 import { AnimationModifier } from '@tachui/core/modifiers'
 import { animation, transform } from '@tachui/modifiers/animation'
 import { blendMode } from '@tachui/modifiers/appearance/blend-mode'
 import { zIndex } from '@tachui/modifiers/layout/z-index'
 import { describe, expect, it, vi } from 'vitest'
-import { renderToString } from '../src/render-to-string'
+import { HoverModifier } from '../../modifiers/src/effects/effects/index'
+import { ResponsiveModifier } from '../../responsive/src/modifiers/responsive/responsive-modifier'
+import { createSSRContext, renderToString } from '../src/render-to-string'
 import type { ModifierBuilderLike } from '../src/types'
 
 function createComponent(render: () => DOMNode): ComponentInstance {
@@ -225,6 +239,209 @@ describe('renderToString', () => {
     expect(renderToString(node)).toBe('<section data-component-id="cmp-1"></section>')
   })
 
+  it('wraps marked nodes in <tachui-fragment> when fragment serialization is interactive', () => {
+    const context = createSSRContext() as any
+    const fragments: Array<{ componentId: string; componentName: string }> = []
+    context.fragmentSerialization = {
+      onFragment: (fragment: { componentId: string; componentName: string }) => {
+        fragments.push(fragment)
+      },
+    }
+
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-1',
+      componentName: 'Counter',
+      snapshotData: { count: 1 },
+    }
+
+    expect(renderToString(node, { context })).toBe(
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-1" data-state="{&quot;count&quot;:1}"><section>Count</section></tachui-fragment>'
+    )
+    expect(fragments).toEqual([
+      {
+        componentId: 'cmp-1',
+        componentName: 'Counter',
+        snapshotData: { count: 1 },
+      },
+    ])
+  })
+
+  it('wraps marked nodes in <tachui-fragment> by default without fragment context hooks', () => {
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-default',
+      componentName: 'Counter',
+    }
+
+    expect(renderToString(node)).toBe(
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-default"><section>Count</section></tachui-fragment>'
+    )
+  })
+
+  it('collects marked nodes without wrapper when fragment serialization is non-interactive', () => {
+    const context = createSSRContext() as any
+    const fragments: Array<{ componentId: string; componentName: string }> = []
+    context.fragmentSerialization = {
+      onFragment: (fragment: { componentId: string; componentName: string }) => {
+        fragments.push(fragment)
+      },
+    }
+
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-2',
+      componentName: 'Counter',
+    }
+
+    expect(renderToString(node, { context, interactive: false })).toBe(
+      '<section>Count</section>'
+    )
+    expect(fragments).toEqual([{ componentId: 'cmp-2', componentName: 'Counter' }])
+  })
+
+  it('suppresses wrappers without fragment context when interactive is false', () => {
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-plain-static',
+      componentName: 'Counter',
+    }
+
+    expect(renderToString(node, { interactive: false })).toBe(
+      '<section>Count</section>'
+    )
+  })
+
+  it('wraps marked void elements in interactive mode', () => {
+    const node = h('img', { src: '/hero.png', alt: 'Hero' }) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-img-1',
+      componentName: 'HeroImage',
+    }
+
+    expect(renderToString(node)).toBe(
+      '<tachui-fragment data-component="HeroImage" data-component-id="cmp-img-1"><img src="/hero.png" alt="Hero"></tachui-fragment>'
+    )
+  })
+
+  it('suppresses nested fragment wrappers and nested collection callbacks', () => {
+    const context = createSSRContext() as any
+    const fragments: Array<{ componentId: string; componentName: string }> = []
+    context.fragmentSerialization = {
+      onFragment: (fragment: { componentId: string; componentName: string }) => {
+        fragments.push(fragment)
+      },
+    }
+
+    const child = h('span', null, text('Inner')) as DOMNode
+    child.__tachui_fragment = {
+      componentId: 'cmp-inner',
+      componentName: 'Inner',
+    }
+
+    const parent = h('section', null, child) as DOMNode
+    parent.__tachui_fragment = {
+      componentId: 'cmp-outer',
+      componentName: 'Outer',
+    }
+
+    expect(renderToString(parent, { context })).toBe(
+      '<tachui-fragment data-component="Outer" data-component-id="cmp-outer"><section><span>Inner</span></section></tachui-fragment>'
+    )
+    expect(fragments).toEqual([
+      { componentId: 'cmp-outer', componentName: 'Outer' },
+    ])
+  })
+
+  it('omits data-state when snapshotData is empty', () => {
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-empty-state',
+      componentName: 'Counter',
+      snapshotData: {},
+    }
+
+    expect(renderToString(node)).toBe(
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-empty-state"><section>Count</section></tachui-fragment>'
+    )
+  })
+
+  it('serializes array-like snapshotData payloads when provided', () => {
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-array-state',
+      componentName: 'Counter',
+      snapshotData: [1, 2, 3] as unknown as Record<string, unknown>,
+    }
+
+    expect(renderToString(node)).toBe(
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-array-state" data-state="[1,2,3]"><section>Count</section></tachui-fragment>'
+    )
+  })
+
+  it('omits data-state and warns when snapshotData is not serializable', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const node = h('section', null, text('Count')) as DOMNode
+    const circular: Record<string, unknown> = {}
+    circular.self = circular
+    node.__tachui_fragment = {
+      componentId: 'cmp-bad-state',
+      componentName: 'Counter',
+      snapshotData: circular,
+    }
+
+    try {
+      expect(renderToString(node)).toBe(
+        '<tachui-fragment data-component="Counter" data-component-id="cmp-bad-state"><section>Count</section></tachui-fragment>'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[tachUI/ssr] Fragment snapshotData could not be serialized; data-state omitted.'
+      )
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  it('does not emit __tachui_fragment metadata as an HTML attribute', () => {
+    const node = h('section') as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-1',
+      componentName: 'Stories',
+      snapshotData: { mode: 'preview' },
+    }
+
+    const html = renderToString(node, { interactive: false })
+    expect(html).toBe('<section></section>')
+    expect(html).not.toContain('__tachui_fragment')
+    expect(html).not.toContain('tachui_fragment')
+  })
+
+  it('emits stable deterministic data-component-id across component renders', () => {
+    const Counter = createRuntimeComponent(
+      () => {
+        const node = h('div', null, text('Counter')) as DOMNode & {
+          componentId?: string
+        }
+        node.componentId = getCurrentComponentContext().id
+        return node
+      },
+      { displayName: 'Counter' }
+    )
+
+    let htmlFirst = ''
+    let htmlSecond = ''
+    createRoot((dispose) => {
+      htmlFirst = renderToString(Counter({}))
+      htmlSecond = renderToString(Counter({}))
+      dispose()
+    })
+
+    expect(htmlFirst).toBe(
+      '<div data-component-id="app:counter:0">Counter</div>'
+    )
+    expect(htmlSecond).toBe(htmlFirst)
+  })
+
   it('omits key and ref props from serialized attributes', () => {
     const html = renderToString(
       h('div', {
@@ -234,6 +451,20 @@ describe('renderToString', () => {
       })
     )
     expect(html).toBe('<div id="visible"></div>')
+  })
+
+  it('omits internal renderer metadata props from serialized attributes', () => {
+    const html = renderToString(
+      h('span', {
+        componentMetadata: { originalType: 'Text' },
+        debugLabel: 'StoryTitle',
+        title: 'Stories',
+      })
+    )
+
+    expect(html).toBe('<span title="Stories"></span>')
+    expect(html).not.toContain('componentmetadata=')
+    expect(html).not.toContain('debuglabel=')
   })
 
   it('escapes script-like text content to prevent HTML injection', () => {
@@ -312,5 +543,131 @@ describe('renderToString', () => {
     } finally {
       errorSpy.mockRestore()
     }
+  })
+
+  it('collects SSR head entries from assets via context', () => {
+    registerAsset(
+      'ssr-context-font',
+      createGoogleFont('Inter', [400], 'ssr-context-font')
+    )
+    registerAsset(
+      'ssr-context-color',
+      createColorAsset('#111111', '#efefef', 'ssr-context-color')
+    )
+    registerAsset(
+      'ssr-context-image',
+      createImageAsset('/hero-light.png', '/hero-light.png', '/hero-dark.png', 'ssr-context-image')
+    )
+
+    const context = createSSRContext()
+    const html = renderToString(
+      h('img', {
+        src: (Assets as any)['ssr-context-image'],
+        style: {
+          fontFamily: (Assets as any)['ssr-context-font'],
+          color: (Assets as any)['ssr-context-color'],
+        },
+      }),
+      { context }
+    )
+
+    expect(html).toContain('src="/hero-light.png"')
+    expect(context.links.some(link => link.includes('fonts.googleapis.com'))).toBe(true)
+    expect(context.links.some(link => link.includes('as="image"'))).toBe(true)
+    expect(context.styles.some(style => style.includes('--tachui-color-ssr-context-color'))).toBe(true)
+  })
+
+  it('prefers SSR context collection over DOM font injection when context is present', () => {
+    registerAsset(
+      'ssr-no-dom-font',
+      createGoogleFont('Rokkitt', [400], 'ssr-no-dom-font')
+    )
+
+    const originalDocument = (globalThis as any).document
+    const originalWindow = (globalThis as any).window
+    const createElementSpy = vi.fn(() => ({
+      set rel(_value: string) {},
+      set href(_value: string) {},
+    }))
+
+    ;(globalThis as any).document = {
+      createElement: createElementSpy,
+      head: { appendChild: vi.fn() },
+      querySelector: vi.fn(() => null),
+      fonts: { ready: Promise.resolve(), check: vi.fn(() => true) },
+    }
+    ;(globalThis as any).window = {}
+
+    try {
+      const context = createSSRContext()
+      renderToString(
+        h('div', {
+          style: {
+            fontFamily: (Assets as any)['ssr-no-dom-font'],
+          },
+        }),
+        { context }
+      )
+
+      expect(createElementSpy).not.toHaveBeenCalled()
+      expect(context.links.some(link => link.includes('fonts.googleapis.com'))).toBe(true)
+    } finally {
+      ;(globalThis as any).document = originalDocument
+      ;(globalThis as any).window = originalWindow
+    }
+  })
+
+  it('collects static CSS rules from modifiers implementing getStaticCSS', () => {
+    const node = h('div', {
+      style: {
+        display: 'block',
+      },
+    }) as DOMNode & { modifiers: unknown[]; componentId: string }
+
+    node.componentId = 'cmp-static-css'
+    node.modifiers = [
+      new AnimationModifier({
+        animation: {
+          keyframes: {
+            from: { opacity: '0' },
+            to: { opacity: '1' },
+          },
+          duration: 180,
+        },
+      }),
+      new HoverModifier({
+        hoverStyles: { backgroundColor: '#f3f3f3' },
+      }),
+    ]
+
+    const context = createSSRContext()
+    renderToString(node, { context })
+
+    const collected = context.styles.join('\n')
+    expect(collected).toContain('@keyframes')
+    expect(collected).toContain('[data-component-id="cmp-static-css"]')
+    expect(collected).toContain(':hover')
+    expect(collected).not.toContain('!important')
+  })
+
+  it('collects static @media rules from responsive modifiers during SSR', () => {
+    const node = h('div') as DOMNode & { modifiers: unknown[]; componentId: string }
+    node.componentId = 'cmp-responsive-css'
+    node.modifiers = [
+      new ResponsiveModifier({
+        fontSize: {
+          sm: '14px',
+          md: '18px',
+        },
+      }),
+    ]
+
+    const context = createSSRContext()
+    renderToString(node, { context })
+
+    const collected = context.styles.join('\n')
+    expect(collected).toContain('@media')
+    expect(collected).toContain('[data-component-id="cmp-responsive-css"]')
+    expect(collected).toContain('font-size')
   })
 })

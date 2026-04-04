@@ -67,6 +67,63 @@ function getModifierInstanceId(modifier: object): number {
   return nextId
 }
 
+export function collectStaticAnimationCSSRules(
+  selector: string,
+  props: {
+    transition?: {
+      property?: string
+      duration?: number
+      easing?: string
+      delay?: number
+    }
+    animation?: {
+      keyframes?: Record<string, Record<string, string>>
+      duration?: number
+      easing?: string
+      iterations?: number | 'infinite'
+      direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse'
+    }
+  },
+  createKeyframeRule: (
+    name: string,
+    keyframes: Record<string, Record<string, string>>
+  ) => string
+): string[] {
+  const rules: string[] = []
+
+  if (props.transition) {
+    const t = props.transition
+    const property = t.property || 'all'
+    const duration = t.duration || 300
+    const easing = t.easing || 'ease'
+    const delay = t.delay || 0
+    if (property === 'none') {
+      rules.push(`${selector} { transition: none; }`)
+    } else {
+      rules.push(
+        `${selector} { transition: ${property} ${duration}ms ${easing} ${delay}ms; }`
+      )
+    }
+  }
+
+  const anim = props.animation
+  if (anim?.keyframes) {
+    const normalized = selector.replace(/[^a-zA-Z0-9_-]/g, '')
+    const keyframeName = `tachui-animation-${normalized || 'component'}`
+    rules.push(createKeyframeRule(keyframeName, anim.keyframes))
+
+    const duration = anim.duration || 1000
+    const easing = anim.easing || 'ease'
+    const iterations = anim.iterations || 1
+    const direction = anim.direction || 'normal'
+    rules.push(
+      `${selector} { animation: ${keyframeName} ${duration}ms ${easing} ${iterations} ${direction}; }`
+    )
+  }
+
+  return rules
+}
+
 /**
  * Abstract base modifier class
  */
@@ -80,6 +137,10 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Apply the modifier to a DOM node
    */
   abstract apply(node: DOMNode, context: ModifierContext): DOMNode | undefined
+
+  getStaticCSS(_selector: string): string[] {
+    return []
+  }
 
   /**
    * Helper to resolve reactive properties
@@ -525,9 +586,7 @@ export class LayoutModifier extends BaseModifier {
 
       // For containers that need to size based on highest priority child
       // We use CSS custom properties that can be read by parent containers
-      if (styles && typeof styles === 'object' && 'setProperty' in styles) {
-        ;(styles as any).setProperty('--layout-priority', String(priority))
-      }
+      styles['--layout-priority'] = String(priority)
     }
 
     // Offset modifier (SwiftUI .offset(x, y))
@@ -1114,7 +1173,11 @@ export class AnimationModifier extends BaseModifier {
       const delay = t.delay || 0
 
       if (hasStyleTarget(context.element)) {
-        context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
+        if (property === 'none') {
+          context.element.style.transition = 'none'
+        } else {
+          context.element.style.transition = `${property} ${duration}ms ${easing} ${delay}ms`
+        }
       }
     }
 
@@ -1199,6 +1262,14 @@ export class AnimationModifier extends BaseModifier {
     // Overlay modifier moved to @tachui/modifiers package
 
     return undefined
+  }
+
+  override getStaticCSS(selector: string): string[] {
+    return collectStaticAnimationCSSRules(
+      selector,
+      this.properties as any,
+      this.createKeyframeRule.bind(this)
+    )
   }
 
   private createKeyframeRule(

@@ -125,6 +125,7 @@ export interface HoverOptions {
   hoverStyles?: HoverStyles
   transition?: string | number
   isEnabled?: boolean
+  pseudoClass?: 'hover' | 'focus' | 'active'
 }
 
 export type ReactiveHoverOptions = ReactiveModifierProps<HoverOptions>
@@ -163,6 +164,31 @@ export class HoverModifier extends BaseModifier<HoverOptions> {
     return undefined
   }
 
+  getStaticCSS(selector: string): string[] {
+    const isEnabled = this.properties.isEnabled !== false
+    if (!isEnabled) return []
+
+    const rules: string[] = []
+    const transition = this.formatTransition(this.properties.transition)
+    if (transition) {
+      rules.push(`${selector} { transition: ${transition}; }`)
+    }
+
+    const hoverStyles = this.computeHoverStyles(this.properties)
+    if (Object.keys(hoverStyles).length > 0) {
+      const pseudoClass = this.properties.pseudoClass ?? 'hover'
+      const cssProperties = Object.entries(hoverStyles)
+        .map(([prop, value]) => {
+          const cssProperty = this.toCSSProperty(prop)
+          return `${cssProperty}: ${value}`
+        })
+        .join('; ')
+      rules.push(`${selector}:${pseudoClass} { ${cssProperties} }`)
+    }
+
+    return rules
+  }
+
   private addHoverStyles(className: string, props: HoverOptions): void {
     const styleSheet = this.getOrCreateStyleSheet()
     if (!styleSheet) return
@@ -181,6 +207,7 @@ export class HoverModifier extends BaseModifier<HoverOptions> {
     // Hover effect styles
     const hoverStyles = this.computeHoverStyles(props)
     if (Object.keys(hoverStyles).length > 0) {
+      const pseudoClass = props.pseudoClass ?? 'hover'
       // Use !important for critical hover properties that might conflict with inline styles
       const cssPropertiesWithImportant = Object.entries(hoverStyles)
         .map(([prop, value]) => {
@@ -197,7 +224,7 @@ export class HoverModifier extends BaseModifier<HoverOptions> {
         })
         .join('; ')
 
-      const hoverRule = `.${className}:hover { ${cssPropertiesWithImportant} }`
+      const hoverRule = `.${className}:${pseudoClass} { ${cssPropertiesWithImportant} }`
 
       try {
         styleSheet.insertRule(hoverRule)
@@ -469,7 +496,7 @@ export function imageHover(): HoverModifier {
  * ```
  */
 export function active(styles: HoverStyles): HoverModifier {
-  return new HoverModifier({ hoverStyles: styles })
+  return new HoverModifier({ hoverStyles: styles, pseudoClass: 'active' })
 }
 
 /**
@@ -483,7 +510,7 @@ export function active(styles: HoverStyles): HoverModifier {
  * ```
  */
 export function focus(styles: HoverStyles): HoverModifier {
-  return new HoverModifier({ hoverStyles: styles })
+  return new HoverModifier({ hoverStyles: styles, pseudoClass: 'focus' })
 }
 
 /**
@@ -496,5 +523,5 @@ export function focus(styles: HoverStyles): HoverModifier {
  * ```
  */
 export function pressed(styles: HoverStyles): HoverModifier {
-  return new HoverModifier({ hoverStyles: styles })
+  return new HoverModifier({ hoverStyles: styles, pseudoClass: 'active' })
 }

@@ -7,6 +7,10 @@
 
 // No reactive imports needed - using simple state management to avoid memory leaks
 import type { ComponentInstance, DOMNode } from './types'
+import {
+  createDeterministicComponentId,
+  getCurrentComponentContextOrNull,
+} from './component-context'
 
 export interface LazyComponentOptions {
   /** Fallback to show while loading */
@@ -139,6 +143,7 @@ export function Suspense(props: {
   fallback: DOMNode
   children: ComponentInstance[]
 }): ComponentInstance {
+  const parentContext = getCurrentComponentContextOrNull() || undefined
   // This would integrate with the actual rendering system
   // For now, just return children directly
   return {
@@ -154,7 +159,7 @@ export function Suspense(props: {
       })),
     }),
     props: props,
-    id: `suspense-${Math.random().toString(36).substr(2, 9)}`,
+    id: createDeterministicComponentId('suspense', parentContext),
   }
 }
 

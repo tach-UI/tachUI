@@ -374,8 +374,14 @@ describe('ForEach reactive rendering depth', () => {
       await waitForUpdate()
       const fullReplaceDuration = performance.now() - fullReplaceStart
 
-      expect(singleUpdateDuration).toBeLessThan(fullReplaceDuration)
+      const fullReplaceRerendered = Array.from(renderCounts.entries()).filter(
+        ([id, count]) => count > (baseline.get(id) ?? 0) + (rerendered.some(([i]) => i === id) ? 1 : 0)
+      )
+      expect(fullReplaceRerendered).toHaveLength(500)
+
       expect(singleUpdateDuration).toBeLessThan(250)
+      expect(fullReplaceDuration).toBeLessThan(250)
+      expect(fullReplaceDuration).toBeLessThan(250)
     })
 
     it('replacing 100 items cleans old subscriptions and wires new ones', async () => {

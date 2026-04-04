@@ -586,6 +586,22 @@ describe('DOM Signal Reactivity', () => {
     expect(textElement!.textContent).toBe('Updated value')
   })
 
+  it('does not leak componentMetadata into rendered DOM attributes', async () => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    domContainers.push(container)
+
+    const cleanup = mountComponentTree(Text('Stories') as any, container)
+    domCleanups.push(cleanup)
+    await flushReactiveUpdates()
+
+    const textElement = container.querySelector(TEXT_CLASS_SELECTOR) as HTMLElement
+    expect(textElement).not.toBeNull()
+    expect(textElement.getAttribute('componentmetadata')).toBeNull()
+    expect(textElement.getAttribute('componentMetadata')).toBeNull()
+    expect(textElement.outerHTML).not.toContain('componentmetadata=')
+  })
+
   it('preserves style modifiers when reactive content updates', async () => {
     const [content, setContent] = createSignal('Styled start')
     const container = document.createElement('div')
