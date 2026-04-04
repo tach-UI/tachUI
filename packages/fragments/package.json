@@ -4,6 +4,9 @@
   "description": "Fragments architecture for selective hydration in tachUI",
   "homepage": "https://tachui.dev/",
   "type": "module",
+  "sideEffects": [
+    "./dist/runtime.js"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
