@@ -1,5 +1,12 @@
 # @tachui/flow-control
 
+## 0.8.26
+
+### Patch Changes
+
+- Updated dependencies [[`ea92165`](https://github.com/tach-UI/tachUI/commit/ea921651953ac5edaefe410ac7c08730634f869f)]:
+  - @tachui/core@0.8.26
+
 ## 0.8.25
 
 ### Patch Changes
