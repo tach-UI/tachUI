@@ -268,6 +268,18 @@ describe('renderToString', () => {
     ])
   })
 
+  it('wraps marked nodes in <tachui-fragment> by default without fragment context hooks', () => {
+    const node = h('section', null, text('Count')) as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-default',
+      componentName: 'Counter',
+    }
+
+    expect(renderToString(node)).toBe(
+      '<tachui-fragment data-component="Counter" data-component-id="cmp-default"><section>Count</section></tachui-fragment>'
+    )
+  })
+
   it('collects marked nodes without wrapper when fragment serialization is non-interactive', () => {
     const context = createSSRContext() as any
     const fragments: Array<{ componentId: string; componentName: string }> = []
@@ -284,7 +296,9 @@ describe('renderToString', () => {
       componentName: 'Counter',
     }
 
-    expect(renderToString(node, { context })).toBe('<section>Count</section>')
+    expect(renderToString(node, { context, interactive: false })).toBe(
+      '<section>Count</section>'
+    )
     expect(fragments).toEqual([{ componentId: 'cmp-2', componentName: 'Counter' }])
   })
 
@@ -296,7 +310,7 @@ describe('renderToString', () => {
       snapshotData: { mode: 'preview' },
     }
 
-    const html = renderToString(node)
+    const html = renderToString(node, { interactive: false })
     expect(html).toBe('<section></section>')
     expect(html).not.toContain('__tachui_fragment')
     expect(html).not.toContain('tachui_fragment')

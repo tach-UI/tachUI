@@ -478,9 +478,13 @@ function serializeFragmentWrapperAttributes(marker: FragmentMarker): string {
     `data-component-id="${escapeAttribute(marker.componentId)}"`,
   ]
 
-  if (marker.snapshotData && Object.keys(marker.snapshotData).length > 0) {
+  const snapshotData =
+    marker.snapshotData ??
+    ((marker as unknown as { snapshot?: Record<string, unknown> }).snapshot ??
+      undefined)
+  if (snapshotData && Object.keys(snapshotData).length > 0) {
     attributes.push(
-      `data-state="${escapeAttribute(JSON.stringify(marker.snapshotData))}"`
+      `data-state="${escapeAttribute(JSON.stringify(snapshotData))}"`
     )
   }
 
@@ -491,7 +495,8 @@ function serializeNode(
   node: DOMNode,
   context?: SSRContext,
   seenStaticStyles?: Set<string>,
-  insideFragmentBoundary = false
+  insideFragmentBoundary = false,
+  interactive = true
 ): string {
   if (node.type === 'text') {
     if (typeof node.reactiveContent === 'function') {
@@ -519,11 +524,10 @@ function serializeNode(
   if (VOID_ELEMENTS.has(tag)) {
     if (
       fragmentMarker &&
-      context?.fragmentSerialization &&
-      context.fragmentSerialization.interactive !== false
+      interactive
     ) {
       const wrapperAttrs = serializeFragmentWrapperAttributes(fragmentMarker)
-      context.fragmentSerialization?.onFragment?.(fragmentMarker)
+      context?.fragmentSerialization?.onFragment?.(fragmentMarker)
       return `<tachui-fragment ${wrapperAttrs}>${openingTag}</tachui-fragment>`
     }
 
@@ -536,7 +540,13 @@ function serializeNode(
 
   const children = (preparedNode.children ?? [])
     .map((child: DOMNode) =>
-      serializeNode(child, context, seenStaticStyles, nextInsideFragmentBoundary)
+      serializeNode(
+        child,
+        context,
+        seenStaticStyles,
+        nextInsideFragmentBoundary,
+        interactive
+      )
     )
     .join('')
   const nodeHTML = `${openingTag}${children}</${tag}>`
@@ -547,11 +557,7 @@ function serializeNode(
 
   context?.fragmentSerialization?.onFragment?.(fragmentMarker)
 
-  if (!context?.fragmentSerialization) {
-    return nodeHTML
-  }
-
-  if (context.fragmentSerialization.interactive === false) {
+  if (!interactive) {
     return nodeHTML
   }
 
@@ -563,7 +569,8 @@ function serializeToHTMLInternal(
   input: SSRNodeInput,
   activeBuilders: Set<object>,
   context?: SSRContext,
-  seenStaticStyles?: Set<string>
+  seenStaticStyles?: Set<string>,
+  interactive = true
 ): string {
   if (input == null || input === false || input === true) {
     return ''
@@ -571,7 +578,15 @@ function serializeToHTMLInternal(
 
   if (Array.isArray(input)) {
     return input
-      .map(entry => serializeToHTMLInternal(entry, activeBuilders, context, seenStaticStyles))
+      .map(entry =>
+        serializeToHTMLInternal(
+          entry,
+          activeBuilders,
+          context,
+          seenStaticStyles,
+          interactive
+        )
+      )
       .join('')
   }
 
@@ -580,7 +595,8 @@ function serializeToHTMLInternal(
       input.render() as SSRNodeInput,
       activeBuilders,
       context,
-      seenStaticStyles
+      seenStaticStyles,
+      interactive
     )
   }
 
@@ -604,7 +620,8 @@ function serializeToHTMLInternal(
         built,
         activeBuilders,
         context,
-        seenStaticStyles
+        seenStaticStyles,
+        interactive
       )
     } finally {
       activeBuilders.delete(builder as object)
@@ -612,7 +629,7 @@ function serializeToHTMLInternal(
   }
 
   if (isDOMNode(input)) {
-    return serializeNode(input, context, seenStaticStyles)
+    return serializeNode(input, context, seenStaticStyles, false, interactive)
   }
 
   if (typeof input === 'string' || typeof input === 'number') {
@@ -628,7 +645,14 @@ export function serializeToHTML(input: SSRNodeInput): string {
 
 export function serializeToHTMLWithContext(
   input: SSRNodeInput,
-  context: SSRContext
+  context: SSRContext,
+  interactive = true
 ): string {
-  return serializeToHTMLInternal(input, new Set(), context, new Set(context.styles))
+  return serializeToHTMLInternal(
+    input,
+    new Set(),
+    context,
+    new Set(context.styles),
+    interactive
+  )
 }

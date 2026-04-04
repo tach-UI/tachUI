@@ -19,6 +19,11 @@ export type SSRNodeInput =
 export interface RenderToStringOptions {
   includeDoctype?: boolean
   /**
+   * Controls fragment wrapper emission for nodes marked with `__tachui_fragment`.
+   * Defaults to true.
+   */
+  interactive?: boolean
+  /**
    * Optional context used to collect `<head>` contributions from asset resolution.
    */
   context?: SSRContext

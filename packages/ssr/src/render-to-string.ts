@@ -19,6 +19,7 @@ export function renderToString(
   options: RenderToStringOptions = {}
 ): string {
   const context = options.context ?? createSSRContext()
+  const interactive = options.interactive ?? true
   const seenLinks = new Set(context.links)
   const seenStyles = new Set(context.styles)
   const seenMeta = new Set(context.meta)
@@ -46,7 +47,7 @@ export function renderToString(
       },
     },
     () => {
-      html = serializeToHTMLWithContext(input, context)
+      html = serializeToHTMLWithContext(input, context, interactive)
       return undefined
     }
   )

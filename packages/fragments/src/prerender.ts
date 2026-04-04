@@ -158,7 +158,10 @@ export async function prerender(
         },
       }
 
-      const routeHtml = renderToString(route.render(), { context })
+      const routeHtml = renderToString(route.render(), {
+        context,
+        interactive,
+      })
       const fragmentManifest = buildManifest(serializedFragments)
       const runtimeTags = buildRuntimeTags(interactive, fragmentManifest, runtimeScriptSrc)
       const fullHtml = renderDocument(routeHtml, route, context, fragmentManifest, runtimeTags)
