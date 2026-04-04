@@ -239,6 +239,20 @@ describe('renderToString', () => {
     expect(renderToString(node)).toBe('<section data-component-id="cmp-1"></section>')
   })
 
+  it('does not emit __tachui_fragment metadata as an HTML attribute', () => {
+    const node = h('section') as DOMNode
+    node.__tachui_fragment = {
+      componentId: 'cmp-1',
+      componentName: 'Stories',
+      snapshotData: { mode: 'preview' },
+    }
+
+    const html = renderToString(node)
+    expect(html).toBe('<section></section>')
+    expect(html).not.toContain('__tachui_fragment')
+    expect(html).not.toContain('tachui_fragment')
+  })
+
   it('emits stable deterministic data-component-id across component renders', () => {
     const Counter = createRuntimeComponent(
       () => {

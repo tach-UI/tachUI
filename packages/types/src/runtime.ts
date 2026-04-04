@@ -126,6 +126,7 @@ export type RenderFunction = () => DOMNode | DOMNode[]
 export interface FragmentMarker {
   componentId: string
   componentName: string
+  snapshotData?: Record<string, unknown>
 }
 
 /**

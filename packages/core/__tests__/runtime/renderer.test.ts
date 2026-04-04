@@ -131,6 +131,21 @@ describe('DOM Renderer System', () => {
     })
 
     describe('Props Handling', () => {
+      it('accepts __tachui_fragment metadata on DOM nodes', () => {
+        const node: DOMNode = {
+          type: 'element',
+          tag: 'div',
+          __tachui_fragment: {
+            componentId: 'fragment-1',
+            componentName: 'Stories',
+            snapshotData: { mode: 'preview' },
+          },
+        }
+
+        expect(node.__tachui_fragment?.componentId).toBe('fragment-1')
+        expect(node.__tachui_fragment?.snapshotData).toEqual({ mode: 'preview' })
+      })
+
       it('should not emit internal metadata props as DOM attributes', () => {
         const node: DOMNode = {
           type: 'element',
