@@ -25,6 +25,7 @@ jobs:
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
