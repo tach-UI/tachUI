@@ -25,7 +25,7 @@
     "build:devtools": "bun run --filter @tachui/devtools build",
     "build:ssr": "bun run --filter @tachui/ssr build",
     "build:cli": "bun run --filter @tachui/cli build",
-    "dev": "bun run --filter '*' dev --parallel",
+    "dev": "bun run --filter '*' --parallel dev",
     "test": "vitest run && bun run test:tools",
     "test:stress": "vitest run --config vitest.stress.config.ts",
     "test:ci": "vitest run --config=vitest.ci.config.ts && bun run test:tools && bun run --filter @tachui/modifiers verify:tree-shaking",

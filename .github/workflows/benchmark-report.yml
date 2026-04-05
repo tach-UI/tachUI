@@ -16,10 +16,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup PNPM
+      - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
-          version: 10.14.0
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
