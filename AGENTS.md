@@ -4,7 +4,7 @@ cssclasses:
 ---
 
 # tachUI Framework
-SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorepo using pnpm workspaces.
+SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorepo using bun workspaces.
 
 ## Important Guidelines
 - Never run dev servers yourself; coordinate with the user for runtime verification.
@@ -13,7 +13,7 @@ SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorep
 - Follow ALL instructions here strictly
 - Be direct; ask for clarification if needed
 - Minimize code changes; check existing implementations first
-- `pnpm build` MUST succeed after every change
+- `bun run build` MUST succeed after every change
 - Maintain 95%+ test coverage; ask before removing tests
 - Add tests for new code in `__tests__/`
 - "SwiftUI" OK in docs/comments, NOT in code/filenames
@@ -23,7 +23,7 @@ SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorep
 - TypeScript 5.8+ (strict mode)
 - Vite 7+ for build/dev
 - Vitest 3.2+ for testing
-- pnpm 10+ monorepo
+- bun 1.0+ monorepo
 - 20+ packages: core framework + plugins (forms, navigation, etc.)
 - VitePress docs
 - Demos: calculator, intro app
@@ -34,7 +34,7 @@ SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorep
 - **Designs**: `planning/`
 - **Demos**: `demos/`
 - **Tests**: `__tests__/*.test.ts` per package
-- **Root configs**: `package.json`, `pnpm-workspace.yaml`, `tsconfig.json`, `vitest*.config.ts`
+- **Root configs**: `package.json`, `bun-workspace.yaml`, `tsconfig.json`, `vitest*.config.ts`
 
 ## Packages
 - `@tachui/core`: Reactivity (signals), runtime, base modifiers
@@ -58,7 +58,7 @@ SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorep
 ## Essential Commands
 ```bash
 # Setup
-pnpm install
+bun install
 
 # Dev servers (per package)
 pnpm dev:core          # Core
@@ -110,12 +110,12 @@ Package-specific: Each has `dev`, `build`, `test`, `valid` (full check).
 - Unit: Component/modifier isolation
 - Integration: Full renders, reactivity
 - Perf/Memory/Security: Specialized suites
-- Run after changes: `pnpm test` → `pnpm build`
-- Coverage: 95%+, measured via `pnpm test:coverage`
+- Run after changes: `bun run test` → `bun run build`
+- Coverage: 95%+, measured via `bun run test:coverage`
 
 ## Gotchas & Non-Obvious
-- **Workspaces**: Use `pnpm --filter @tachui/pkg` for targeted ops
-- **Type Gen**: Modifiers auto-generate types; run `pnpm build` to update
+- **Workspaces**: Use `bun run --filter @tachui/pkg` for targeted ops
+- **Type Gen**: Modifiers auto-generate types; run `bun run build` to update
 - **Tree-shaking**: Modifiers/plugins tree-shake; test bundles
 - **Dev Servers**: Don't start unless asked (resource-heavy)
 - **Git Hooks**: pre-commit (lint), pre-push (type-check + test:ci)

@@ -55,7 +55,7 @@ This alpha is ideal for:
 ```bash
 npm install @tachui/core
 # or
-pnpm add @tachui/core
+bun add @tachui/core
 ```
 
 ### Your First Component
@@ -204,7 +204,7 @@ git clone https://github.com/tach-UI/tachUI.git
 cd tachUI
 
 # Install dependencies
-pnpm install
+bun install
 
 # Start development
 pnpm dev:core           # Core framework development

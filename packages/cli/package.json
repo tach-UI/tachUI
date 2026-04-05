@@ -18,7 +18,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
-    "valid": "clear && vitest run && tsc --noEmit && pnpm lint && pnpm build",
+    "valid": "clear && vitest run && tsc --noEmit && bun run lint && bun run build",
     "test": "vitest",
     "test:ci": "vitest run",
     "type-check": "tsc --noEmit",

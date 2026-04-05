@@ -113,7 +113,7 @@
     "build:dev": "rm -rf dist && vite build --mode development --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "build:prod": "rm -rf dist && vite build --mode production --mode production && tsc --project tsconfig.build.json --emitDeclarationOnly",
     "dev": "vite build --watch",
-    "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
+    "valid": "clear && vitest run && bun run type-check && bun run lint && bun run build",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",

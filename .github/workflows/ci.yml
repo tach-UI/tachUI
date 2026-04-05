@@ -6,7 +6,7 @@ on:
 
 env:
   NODE_VERSION: '20'
-  PNPM_VERSION: '10.14.0'
+  BUN_VERSION: '10.14.0'
 
 jobs:
   release-pr-guard:
@@ -32,28 +32,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # Bun doesn't require cache configuration
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Enforce changeset requirement for publishable changes
-        run: pnpm ci:check-changesets
+        run: bun run ci:check-changesets
 
       - name: Enforce publishable version-line consistency
-        run: pnpm ci:check-version-line
+        run: bun run ci:check-version-line
 
       - name: Enforce explicit sideEffects declarations
-        run: pnpm ci:check-side-effects
+        run: bun run ci:check-side-effects
 
   readme-version-policy:
     name: README Version Policy
@@ -62,22 +61,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # Bun doesn't require cache configuration
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Enforce package README pinning policy
-        run: pnpm ci:check-readme-pins
+        run: bun run ci:check-readme-pins
 
   lint:
     name: Lint
@@ -86,22 +84,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # Bun doesn't require cache configuration
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
       
       - name: Run linter
-        run: pnpm lint
+        run: bun run lint
 
   typecheck:
     name: Type Check
@@ -110,39 +107,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # Bun doesn't require cache configuration
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
       
       - name: Build dependencies (needed for type checking)
         run: |
-          pnpm build:core
-          pnpm build:ssr
-          pnpm build:mobile
-          pnpm build:flow-control
-          pnpm build:viewport
-          pnpm build:modifiers
-          pnpm build:primitives
-          pnpm build:responsive
-          pnpm build:symbols
-          pnpm build:devtools
-          pnpm build:data
-          pnpm build:forms
-          pnpm build:navigation
-          pnpm build:grid
+          bun run build:core
+          bun run build:ssr
+          bun run build:mobile
+          bun run build:flow-control
+          bun run build:viewport
+          bun run build:modifiers
+          bun run build:primitives
+          bun run build:responsive
+          bun run build:symbols
+          bun run build:devtools
+          bun run build:data
+          bun run build:forms
+          bun run build:navigation
+          bun run build:grid
       
       - name: Run type checking
-        run: pnpm type-check
+        run: bun run type-check
 
   test:
     name: Test
@@ -151,32 +147,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # Bun doesn't require cache configuration
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
       
       - name: Build dependencies (needed for tests)
         run: |
-          pnpm build:core
-          pnpm build:ssr
-          pnpm build:mobile
-          pnpm build:flow-control
-          pnpm build:modifiers
-          pnpm build:primitives
-          pnpm build:responsive
+          bun run build:core
+          bun run build:ssr
+          bun run build:mobile
+          bun run build:flow-control
+          bun run build:modifiers
+          bun run build:primitives
+          bun run build:responsive
       
       - name: Run tests
-        run: pnpm test:ci
+        run: bun run test:ci
       
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -195,22 +190,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # Bun doesn't require cache configuration
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
       
       - name: Build packages
-        run: pnpm build
+        run: bun run build
       
       - name: Check for build artifacts
         run: |
@@ -227,19 +221,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # Bun doesn't require cache configuration
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Run CLI init packed smoke test
         run: ./tools/smoke-cli-init-packed.sh
@@ -251,28 +244,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # Bun doesn't require cache configuration
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
       
       - name: Build packages (needed for TypeDoc)
-        run: pnpm build
+        run: bun run build
       
       - name: Build API documentation
-        run: pnpm docs:api
+        run: bun run docs:api
       
       - name: Build guide documentation
-        run: pnpm docs:build
+        run: bun run docs:build
 
   security:
     name: Security Audit
@@ -281,22 +273,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # Bun doesn't require cache configuration
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
       
       - name: Run dependency security audit
-        run: pnpm audit --audit-level=moderate
+        run: bun run audit --audit-level=moderate
         continue-on-error: true
 
   benchmarks:
@@ -310,31 +301,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
+          # Bun does not require cache configuration
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build packages
-        run: pnpm build
+        run: bun run build
 
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
 
       - name: Run browser benchmark suite
-        run: pnpm benchmark:browser:report
+        run: bun run benchmark:browser:report
 
       - name: Generate combined benchmark summary
-        run: pnpm benchmark:report:combined
+        run: bun run benchmark:report:combined
 
       - name: Publish benchmark comparison
         run: |

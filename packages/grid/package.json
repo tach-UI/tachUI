@@ -30,7 +30,7 @@
     "build:dev": "rm -rf dist && vite build --mode development",
     "build:prod": "rm -rf dist && vite build --mode production",
     "dev": "vite build --watch",
-    "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
+    "valid": "clear && vitest run && bun run type-check && bun run lint && bun run build",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",

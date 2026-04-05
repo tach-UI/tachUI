@@ -35,7 +35,7 @@ git clone https://github.com/tach-UI/tachUI.git
 cd tachUI
 
 # Install dependencies
-pnpm install
+bun install
 
 # Run development server
 pnpm dev:core
@@ -51,7 +51,7 @@ pnpm build
 
 ### Workspace Structure
 
-tachUI uses pnpm workspaces with the following structure:
+tachUI uses bun workspaces with the following structure:
 
 ```
 packages/
@@ -183,7 +183,7 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 ### Changeset Policy
 
 - Publishable changes under `packages/*` require a changeset file in the PR.
-- No-release exemptions must use an explicit empty changeset (`pnpm changeset --empty`).
+- No-release exemptions must use an explicit empty changeset (`bun run changeset --empty`).
 - Labels/comments are not accepted as a no-release exemption.
 - Package README install snippets should be unpinned by default (for example `npm i @tachui/core`).
 - Peer ranges currently use `<1.0.0` ceilings for selected packages. When `@tachui/core` reaches `1.0.0`, maintainers must coordinate a same-release peer range update across all affected packages.
@@ -196,7 +196,7 @@ Minimum checklist for that release:
 
 - Update peer ranges in affected packages (for example `@tachui/forms`, `@tachui/navigation`, `@tachui/mobile`).
 - Include changesets for each affected package in the release PR.
-- Run `pnpm release:smoke` against local tarballs before publish.
+- Run `bun run release:smoke` against local tarballs before publish.
 - Validate install compatibility with `@tachui/core@1.0.0` in a clean temp project.
 
 ## Project Structure

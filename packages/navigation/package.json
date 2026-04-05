@@ -58,7 +58,7 @@
     "build:prod": "rm -rf dist && vite build --mode production && tsc --project tsconfig.build.json && node ./scripts/verify-build-artifacts.mjs",
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
-    "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
+    "valid": "clear && vitest run && bun run type-check && bun run lint && bun run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit",
@@ -67,7 +67,7 @@
     "benchmark:quick": "vitest bench --config vitest.benchmark.config.ts benchmarks/quick.bench.ts",
     "benchmark:bundle": "vitest bench --config vitest.benchmark.config.ts benchmarks/bundle-size.bench.ts",
     "benchmark:browser": "playwright test benchmarks/browser.spec.ts",
-    "benchmark:all": "pnpm benchmark && pnpm benchmark:bundle && pnpm benchmark:browser",
+    "benchmark:all": "bun run benchmark && bun run benchmark:bundle && bun run benchmark:browser",
     "lint": "oxlint src"
   },
   "dependencies": {

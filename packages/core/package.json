@@ -158,12 +158,12 @@
     "build:dev": "rm -rf dist tsconfig.build.tsbuildinfo && vite build --mode development && tsc --build tsconfig.build.json",
     "build:prod": "rm -rf dist tsconfig.build.tsbuildinfo && vite build --mode production && tsc --build tsconfig.build.json",
     "dev": "vite build --watch",
-    "valid": "clear && vitest run && pnpm type-check && pnpm lint && pnpm build",
+    "valid": "clear && vitest run && bun run type-check && bun run lint && bun run build",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ci": "vitest run",
-    "test:stress": "sh -lc 'cd ../.. && pnpm vitest run --config vitest.stress.config.ts packages/core/__tests__/modifiers/reactive-stress.test.ts --maxWorkers 1'",
+    "test:stress": "sh -lc 'cd ../.. && bunx vitest run --config vitest.stress.config.ts packages/core/__tests__/modifiers/reactive-stress.test.ts --maxWorkers 1'",
     "test:all": "vitest run --config vitest.all.config.ts",
     "bench": "vitest bench",
     "benchmark": "vitest run --config vitest.benchmark.config.ts benchmarks/full.bench.ts",
@@ -190,7 +190,7 @@
     "migrate": "node scripts/migration-tool.js",
     "migrate:fix": "node scripts/migration-tool.js --fix",
     "generate-modifier-types": "tsx --tsconfig ./tsconfig.typegen.json ./scripts/generate-types.ts",
-    "generate-modifier-types:check": "pnpm run generate-modifier-types -- --check",
+    "generate-modifier-types:check": "bun run generate-modifier-types -- --check",
     "generate-modifier-types:monorepo": "tsx --tsconfig ./tsconfig.typegen.json ./scripts/generate-types-monorepo.ts"
   },
   "dependencies": {

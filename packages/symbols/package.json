@@ -15,7 +15,7 @@
     "build:dev": "vite build --mode development",
     "build:prod": "vite build --mode production",
     "dev": "vite build --watch",
-    "valid": "clear && vitest run && tsc --project tsconfig.type-check.json && pnpm lint && pnpm build",
+    "valid": "clear && vitest run && tsc --project tsconfig.type-check.json && bun run lint && bun run build",
     "test": "vitest run",
     "test:ci": "vitest run 2>/dev/null",
     "test:quiet": "vitest run 2>/dev/null",
