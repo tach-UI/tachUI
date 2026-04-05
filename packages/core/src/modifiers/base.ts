@@ -374,11 +374,12 @@ export class LayoutModifier extends BaseModifier {
   readonly priority = ModifierPriority.LAYOUT
 
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
-    if (!node.element || !context.element) return
+    const element = (context.element ?? node.element) as Element | undefined
+    if (!element) return
 
     const styleContext = this.createStyleContext(
       context.componentId,
-      context.element,
+      element,
       []
     )
 
@@ -387,15 +388,15 @@ export class LayoutModifier extends BaseModifier {
       styleContext
     )
 
-    this.applyStyles(context.element, styles)
+    this.applyStyles(element, styles)
 
     // Layout modifiers (offset, aspectRatio, scaleEffect, zIndex) have been
     // migrated to @tachui/modifiers/layout for enhanced functionality
 
     // Handle absolutePosition separately for proper positioning (Phase 3 - Epic: Butternut)
     const props = this.properties as any
-    if (props.position && isHTMLElementRuntimeElement(context.element)) {
-      this.applyAbsolutePosition(context.element, props.position)
+    if (props.position && isHTMLElementRuntimeElement(element)) {
+      this.applyAbsolutePosition(element as HTMLElement, props.position)
     }
 
     return undefined
@@ -640,13 +641,14 @@ export class AppearanceModifier extends BaseModifier {
   readonly priority = ModifierPriority.APPEARANCE
 
   apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
-    if (!node.element || !context.element) {
+    const element = (context.element ?? node.element) as Element | undefined
+    if (!element) {
       return
     }
 
     const styleContext = this.createStyleContext(
       context.componentId,
-      context.element,
+      element,
       []
     )
 
@@ -656,14 +658,14 @@ export class AppearanceModifier extends BaseModifier {
     )
 
     // Handle Assets separately with theme reactivity
-    this.applyAssetBasedStyles(context.element, resolved)
+    this.applyAssetBasedStyles(element, resolved)
 
     // Handle non-Asset styles normally
     const styles = this.computeAppearanceStyles(resolved)
-    this.applyStyles(context.element, styles)
+    this.applyStyles(element, styles)
 
     // Handle HTML attributes (ARIA, role, navigation, etc.)
-    this.applyAttributes(context.element, resolved)
+    this.applyAttributes(element, resolved)
 
     return undefined
   }
