@@ -22,7 +22,6 @@
         "caughtErrorsIgnorePattern": "^_"
       }
     ],
-    "_disabled_oxc_no-restricted-imports": "off"
   },
   "overrides": [
     {
