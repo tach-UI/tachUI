@@ -7,7 +7,7 @@ on:
       - '.changeset/**'
       - 'packages/**'
       - 'package.json'
-      - 'bun.lockb'
+      - 'bun.lock'
       - '.github/workflows/release.yml'
   workflow_dispatch:
 
