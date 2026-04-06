@@ -24,13 +24,13 @@ bun run --filter @tachui/devtools build
 bun run --filter @tachui/cli build
 
 echo "[smoke-cli-init-packed] packing required packages"
-cd "$ROOT_DIR/packages/types" && bun pack --out-dir "$PACK_DIR" >/dev/null
-cd "$ROOT_DIR/packages/registry" && bun pack --out-dir "$PACK_DIR" >/dev/null
-cd "$ROOT_DIR/packages/core" && bun pack --out-dir "$PACK_DIR" >/dev/null
-cd "$ROOT_DIR/packages/modifiers" && bun pack --out-dir "$PACK_DIR" >/dev/null
-cd "$ROOT_DIR/packages/primitives" && bun pack --out-dir "$PACK_DIR" >/dev/null
-cd "$ROOT_DIR/packages/devtools" && bun pack --out-dir "$PACK_DIR" >/dev/null
-cd "$ROOT_DIR/packages/cli" && bun pack --out-dir "$PACK_DIR" >/dev/null
+cd "$ROOT_DIR/packages/types" && bun pm pack --destination "$PACK_DIR" --quiet >/dev/null
+cd "$ROOT_DIR/packages/registry" && bun pm pack --destination "$PACK_DIR" --quiet >/dev/null
+cd "$ROOT_DIR/packages/core" && bun pm pack --destination "$PACK_DIR" --quiet >/dev/null
+cd "$ROOT_DIR/packages/modifiers" && bun pm pack --destination "$PACK_DIR" --quiet >/dev/null
+cd "$ROOT_DIR/packages/primitives" && bun pm pack --destination "$PACK_DIR" --quiet >/dev/null
+cd "$ROOT_DIR/packages/devtools" && bun pm pack --destination "$PACK_DIR" --quiet >/dev/null
+cd "$ROOT_DIR/packages/cli" && bun pm pack --destination "$PACK_DIR" --quiet >/dev/null
 
 TYPES_TGZ="$(ls "$PACK_DIR"/tachui-types-*.tgz | head -n 1)"
 REGISTRY_TGZ="$(ls "$PACK_DIR"/tachui-registry-*.tgz | head -n 1)"
