@@ -69,7 +69,7 @@ function packPackage(packageName, packageDir, packDestination) {
   if (typeof filename !== 'string' || filename.length === 0) {
     throw new Error(`Failed to resolve packed tarball filename for ${packageName}`)
   }
-  return filename
+  return join(packDestination, filename)
 }
 
 function readManifestFromPackedTarball(tarballPath) {
