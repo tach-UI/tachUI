@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: '0 7 * * *'
 
+env:
+  NODE_VERSION: '22'
+  BUN_VERSION: '1.2.0'
+
 jobs:
   run:
     name: Benchmark Report
@@ -24,7 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           # Bun does not require cache configuration
 
       - name: Install dependencies

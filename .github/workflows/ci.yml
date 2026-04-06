@@ -5,7 +5,7 @@ on:
     branches: [main, develop]
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
   BUN_VERSION: '1.2.0'
 
 jobs:
@@ -142,7 +142,8 @@ jobs:
           bun run build:forms
           bun run build:navigation
           bun run build:grid
-      
+          bun run --filter @tachui/fragments build
+
       - name: Run type checking
         run: bun run type-check
 
@@ -178,7 +179,8 @@ jobs:
           bun run build:flow-control
           bun run build:primitives
           bun run build:responsive
-      
+          bun run --filter @tachui/fragments build
+
       - name: Run tests
         run: bun run test:ci
       
