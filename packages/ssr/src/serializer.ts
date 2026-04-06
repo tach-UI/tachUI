@@ -132,21 +132,40 @@ function normalizeStyle(value: unknown): string {
     return ''
   }
 
-  const styleEntries = Object.entries(resolved as Record<string, unknown>)
-    .map(([property, propertyValue]) => {
-      const reactiveValue = resolveReactiveValue(propertyValue)
-      if (reactiveValue == null || reactiveValue === false) {
-        return ''
+  const styleEntries: string[] = []
+
+  for (const [property, propertyValue] of Object.entries(
+    resolved as Record<string, unknown>
+  )) {
+    const reactiveValue = resolveReactiveValue(propertyValue)
+    if (reactiveValue == null || reactiveValue === false) {
+      continue
+    }
+
+    const cssProperty = property.startsWith('--')
+      ? property
+      : property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
+
+    if (
+      (cssProperty === 'padding' || cssProperty === 'margin') &&
+      typeof reactiveValue === 'object' &&
+      reactiveValue !== null &&
+      !Array.isArray(reactiveValue)
+    ) {
+      const expanded = expandPaddingMarginObject(
+        reactiveValue as PaddingMarginObject,
+        cssProperty
+      )
+      for (const { property: expandedProperty, value } of expanded) {
+        styleEntries.push(`${expandedProperty}:${value}`)
       }
+      continue
+    }
 
-      const cssProperty = property.startsWith('--')
-        ? property
-        : property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
-      return `${cssProperty}:${String(reactiveValue)}`
-    })
-    .filter(Boolean)
+    styleEntries.push(`${cssProperty}:${String(reactiveValue)}`)
+  }
 
-  return styleEntries.join(';')
+  return styleEntries.filter(Boolean).join(';')
 }
 
 function serializeAttributes(node: DOMNode): string {
@@ -245,6 +264,86 @@ interface SSRVirtualElement {
   ) => void
 }
 
+interface PaddingMarginObject {
+  all?: string | number
+  horizontal?: string | number
+  vertical?: string | number
+  top?: string | number
+  right?: string | number
+  bottom?: string | number
+  left?: string | number
+}
+
+function formatPaddingMarginValue(value: string | number): string {
+  if (typeof value === 'number') {
+    return `${value}px`
+  }
+  return String(value)
+}
+
+function expandPaddingMarginObject(
+  obj: PaddingMarginObject,
+  prefix: string
+): Array<{ property: string; value: string }> {
+  const results: Array<{ property: string; value: string }> = []
+
+  if (obj.all !== undefined) {
+    const value = formatPaddingMarginValue(obj.all)
+    results.push({ property: `${prefix}`, value })
+    return results
+  }
+
+  if (obj.horizontal !== undefined) {
+    const value = formatPaddingMarginValue(obj.horizontal)
+    results.push({ property: `${prefix}-left`, value })
+    results.push({ property: `${prefix}-right`, value })
+  }
+
+  if (obj.vertical !== undefined) {
+    const value = formatPaddingMarginValue(obj.vertical)
+    results.push({ property: `${prefix}-top`, value })
+    results.push({ property: `${prefix}-bottom`, value })
+  }
+
+  if (obj.left !== undefined) {
+    const existingIndex = results.findIndex(r => r.property === `${prefix}-left`)
+    if (existingIndex >= 0) results.splice(existingIndex, 1)
+    results.push({
+      property: `${prefix}-left`,
+      value: formatPaddingMarginValue(obj.left),
+    })
+  }
+
+  if (obj.right !== undefined) {
+    const existingIndex = results.findIndex(r => r.property === `${prefix}-right`)
+    if (existingIndex >= 0) results.splice(existingIndex, 1)
+    results.push({
+      property: `${prefix}-right`,
+      value: formatPaddingMarginValue(obj.right),
+    })
+  }
+
+  if (obj.top !== undefined) {
+    const existingIndex = results.findIndex(r => r.property === `${prefix}-top`)
+    if (existingIndex >= 0) results.splice(existingIndex, 1)
+    results.push({
+      property: `${prefix}-top`,
+      value: formatPaddingMarginValue(obj.top),
+    })
+  }
+
+  if (obj.bottom !== undefined) {
+    const existingIndex = results.findIndex(r => r.property === `${prefix}-bottom`)
+    if (existingIndex >= 0) results.splice(existingIndex, 1)
+    results.push({
+      property: `${prefix}-bottom`,
+      value: formatPaddingMarginValue(obj.bottom),
+    })
+  }
+
+  return results
+}
+
 function collectStyleObject(styleInput: unknown): SSRStyleObject {
   const styleObject: SSRStyleObject = {}
   const resolvedStyle = resolveReactiveValue(styleInput)
@@ -273,9 +372,27 @@ function collectStyleObject(styleInput: unknown): SSRStyleObject {
   )) {
     const reactiveValue = resolveReactiveValue(propertyValue)
     if (reactiveValue == null || reactiveValue === false) continue
+
     const cssProperty = property.startsWith('--')
       ? property
       : property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
+
+    if (
+      (cssProperty === 'padding' || cssProperty === 'margin') &&
+      typeof reactiveValue === 'object' &&
+      reactiveValue !== null &&
+      !Array.isArray(reactiveValue)
+    ) {
+      const expanded = expandPaddingMarginObject(
+        reactiveValue as PaddingMarginObject,
+        cssProperty
+      )
+      for (const { property: expandedProperty, value } of expanded) {
+        styleObject[expandedProperty] = value
+      }
+      continue
+    }
+
     styleObject[cssProperty] = String(reactiveValue)
   }
 

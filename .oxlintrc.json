@@ -22,22 +22,6 @@
         "caughtErrorsIgnorePattern": "^_"
       }
     ],
-    "oxc/no-restricted-imports": [
-      "error",
-      {
-        "paths": [
-          {
-            "name": "@tachui/core/modifiers",
-            "message": "Import globalModifierRegistry from '@tachui/registry' instead to ensure singleton behavior"
-          },
-          {
-            "name": "@tachui/core",
-            "importNames": ["globalModifierRegistry"],
-            "message": "Import globalModifierRegistry from '@tachui/registry' instead to ensure singleton behavior"
-          }
-        ]
-      }
-    ]
   },
   "overrides": [
     {

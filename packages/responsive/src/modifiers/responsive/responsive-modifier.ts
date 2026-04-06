@@ -50,7 +50,7 @@ export class ResponsiveModifier extends BaseModifier<ResponsiveStyleConfig> {
   apply(node: DOMNode, _context: ModifierContext): DOMNode | undefined {
     const element = node.element
 
-    if (!element || !(element instanceof HTMLElement)) {
+    if (!element || typeof HTMLElement === 'undefined' || !(element instanceof HTMLElement)) {
       return undefined
     }
 
@@ -345,7 +345,7 @@ export class MediaQueryModifier extends BaseModifier<{
   apply(node: DOMNode, _context: ModifierContext): DOMNode | undefined {
     const element = node.element
 
-    if (!element || !(element instanceof HTMLElement)) {
+    if (!element || typeof HTMLElement === 'undefined' || !(element instanceof HTMLElement)) {
       return undefined
     }
 

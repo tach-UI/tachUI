@@ -670,4 +670,77 @@ describe('renderToString', () => {
     expect(collected).toContain('[data-component-id="cmp-responsive-css"]')
     expect(collected).toContain('font-size')
   })
+
+  describe('padding/margin object serialization', () => {
+    it('serializes padding object with horizontal/vertical to CSS properties', () => {
+      const html = renderToString(
+        h('div', {
+          style: {
+            padding: { horizontal: 12, vertical: 8 },
+          },
+        })
+      )
+
+      expect(html).toContain('padding-left:12px')
+      expect(html).toContain('padding-right:12px')
+      expect(html).toContain('padding-top:8px')
+      expect(html).toContain('padding-bottom:8px')
+      expect(html).not.toContain('[object Object]')
+    })
+
+    it('serializes padding object with individual sides', () => {
+      const html = renderToString(
+        h('div', {
+          style: {
+            padding: { top: 10, right: 20, bottom: 30, left: 40 },
+          },
+        })
+      )
+
+      expect(html).toContain('padding-top:10px')
+      expect(html).toContain('padding-right:20px')
+      expect(html).toContain('padding-bottom:30px')
+      expect(html).toContain('padding-left:40px')
+    })
+
+    it('serializes padding object with all property', () => {
+      const html = renderToString(
+        h('div', {
+          style: {
+            padding: { all: 16 },
+          },
+        })
+      )
+
+      expect(html).toContain('padding:16px')
+    })
+
+    it('serializes margin object with horizontal/vertical', () => {
+      const html = renderToString(
+        h('div', {
+          style: {
+            margin: { horizontal: '2rem', vertical: '1rem' },
+          },
+        })
+      )
+
+      expect(html).toContain('margin-left:2rem')
+      expect(html).toContain('margin-right:2rem')
+      expect(html).toContain('margin-top:1rem')
+      expect(html).toContain('margin-bottom:1rem')
+    })
+
+    it('individual sides override horizontal/vertical in padding object', () => {
+      const html = renderToString(
+        h('div', {
+          style: {
+            padding: { horizontal: 12, left: 20 },
+          },
+        })
+      )
+
+      expect(html).toContain('padding-left:20px')
+      expect(html).toContain('padding-right:12px')
+    })
+  })
 })
