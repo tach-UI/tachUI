@@ -126,6 +126,7 @@ jobs:
       
       - name: Build dependencies (needed for type checking)
         run: |
+          bun run --filter @tachui/types build
           bun run build:core
           bun run build:ssr
           bun run build:mobile
@@ -167,6 +168,7 @@ jobs:
       
       - name: Build dependencies (needed for tests)
         run: |
+          bun run --filter @tachui/types build
           bun run build:core
           bun run build:ssr
           bun run build:mobile
