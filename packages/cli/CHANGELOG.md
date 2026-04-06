@@ -1,5 +1,23 @@
 # @tachui/cli
 
+## 0.8.28
+
+### Patch Changes
+
+- [#206](https://github.com/tach-UI/tachUI/pull/206) [`d579b1f`](https://github.com/tach-UI/tachUI/commit/d579b1f1fb5cd5441ca281670f815890be20039d) Thanks [@whoughton](https://github.com/whoughton)! - Migrate package manager from pnpm to bun
+
+  - Replace pnpm with bun (v1.2.0) as package manager
+  - Update all package scripts from pnpm to bun equivalents
+  - Migrate workspace configuration from pnpm-workspace.yaml to package.json workspaces
+  - Update CI/CD workflows to use oven-sh/setup-bun@v2
+  - Update documentation with bun commands
+
+  Note: This is a tooling change only - no API changes to packages.
+
+- Updated dependencies [[`d579b1f`](https://github.com/tach-UI/tachUI/commit/d579b1f1fb5cd5441ca281670f815890be20039d)]:
+  - @tachui/core@0.8.27
+  - @tachui/devtools@0.8.28
+
 ## 0.8.27
 
 ### Patch Changes
