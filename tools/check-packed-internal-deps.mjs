@@ -59,11 +59,13 @@ function getPublishablePackages() {
 }
 
 function packPackage(packageName, packageDir, packDestination) {
-  const tarballPath = execSync(
-    `bun pm pack --destination "${packDestination}" --quiet`,
+  const output = execSync(
+    `bun pm pack --destination "${packDestination}"`,
     { cwd: packageDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
   ).trim()
-  if (typeof tarballPath !== 'string' || tarballPath.length === 0) {
+  // bun pm pack prints the tarball path on its own line ending with .tgz
+  const tarballPath = output.split('\n').map((l) => l.trim()).find((l) => l.endsWith('.tgz'))
+  if (!tarballPath) {
     throw new Error(`Failed to resolve packed tarball filename for ${packageName}`)
   }
   return tarballPath
