@@ -82,7 +82,7 @@ function main() {
     `\\n🎉 Type-check configuration fixes applied to ${packages.length} packages.`
   )
   console.log('\\nTest the fixes by running:')
-  console.log('  pnpm -r type-check')
+  console.log('  bun run type-check')
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

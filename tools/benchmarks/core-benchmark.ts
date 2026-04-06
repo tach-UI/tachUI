@@ -70,7 +70,7 @@ async function ensureBenchmarkDependencies(): Promise<void> {
     return
   }
   console.log('📦 Building @tachui/registry (required for benchmark runtime imports)…')
-  await runCommand('pnpm', ['--filter', '@tachui/registry', 'build'], repoRoot)
+  await runCommand('bun', ['run', '--filter', '@tachui/registry', 'build'], repoRoot)
   if (!(await fileExists(registryDistEntry))) {
     throw new Error(`Failed to build @tachui/registry – missing ${registryDistEntry}`)
   }
@@ -267,7 +267,7 @@ async function run() {
   const comparisonReport = generateComparisonReport(comparisonSource, comparisonBaselines)
   if (!browserPayload) {
     console.warn(
-      '⚠️ No browser benchmark results were found. Run `pnpm benchmark:browser:report` first if you need browser data.'
+      '⚠️ No browser benchmark results were found. Run `bun run benchmark:browser:report` first if you need browser data.'
     )
   }
 

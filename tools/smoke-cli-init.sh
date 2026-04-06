@@ -12,7 +12,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[smoke-cli-init] building @tachui/cli"
-pnpm --dir "$ROOT_DIR" --filter @tachui/cli build
+bun run --cwd "$ROOT_DIR" --filter @tachui/cli build
 
 if [[ -n "${TACHUI_VERSION:-}" ]]; then
   VERSION="$TACHUI_VERSION"
