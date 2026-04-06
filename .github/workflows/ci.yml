@@ -134,7 +134,6 @@ jobs:
           bun run build:mobile
           bun run build:flow-control
           bun run build:viewport
-          bun run build:modifiers
           bun run build:primitives
           bun run build:responsive
           bun run build:symbols
@@ -177,7 +176,6 @@ jobs:
           bun run build:ssr
           bun run build:mobile
           bun run build:flow-control
-          bun run build:modifiers
           bun run build:primitives
           bun run build:responsive
       
