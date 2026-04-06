@@ -57,17 +57,14 @@ function getPublishablePackages() {
 }
 
 function packPackage(packageName, packageDir, packDestination) {
-  const output = execSync(
-    `npm pack --json --pack-destination "${packDestination}"`,
+  const tarballPath = execSync(
+    `bun pm pack --destination "${packDestination}" --quiet`,
     { cwd: packageDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
   ).trim()
-  const parsed = JSON.parse(output)
-  const packResult = Array.isArray(parsed) ? parsed[0] : parsed
-  const filename = packResult?.filename
-  if (typeof filename !== 'string' || filename.length === 0) {
+  if (typeof tarballPath !== 'string' || tarballPath.length === 0) {
     throw new Error(`Failed to resolve packed tarball filename for ${packageName}`)
   }
-  return join(packDestination, filename)
+  return tarballPath
 }
 
 function readManifestFromPackedTarball(tarballPath) {
