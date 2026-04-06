@@ -48,7 +48,7 @@ if (!touchesPublishable) {
 const hasChangeset = changedFiles.some(isChangesetFile)
 if (!hasChangeset) {
   console.error('Publishable package changes detected without a changeset.')
-  console.error('Add a changeset with `pnpm changeset` or an explicit no-release empty changeset with `pnpm changeset --empty`.')
+  console.error('Add a changeset with `bun run changeset` or an explicit no-release empty changeset with `bun run changeset --empty`.')
   process.exit(1)
 }
 

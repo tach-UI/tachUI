@@ -58,8 +58,11 @@ function getPublishablePackages() {
   return packages.sort((a, b) => a.name.localeCompare(b.name))
 }
 
-function packPackage(packageName, packDestination) {
-  const output = run(`pnpm --filter ${packageName} pack --pack-destination "${packDestination}" --json`)
+function packPackage(packageName, packageDir, packDestination) {
+  const output = execSync(
+    `npm pack --json --pack-destination "${packDestination}"`,
+    { cwd: packageDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
+  ).trim()
   const parsed = JSON.parse(output)
   const packResult = Array.isArray(parsed) ? parsed[0] : parsed
   const filename = packResult?.filename
@@ -124,7 +127,7 @@ function main() {
 
   try {
     for (const pkg of packages) {
-      const tarballPath = packPackage(pkg.name, packDestination)
+      const tarballPath = packPackage(pkg.name, join(PACKAGES_DIR, pkg.dir), packDestination)
       const manifest = readManifestFromPackedTarball(tarballPath)
 
       for (const section of DEP_SECTIONS_TO_CHECK) {

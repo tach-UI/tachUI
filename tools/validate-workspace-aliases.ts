@@ -7,20 +7,18 @@
  * in vitest.config.ts files. Missing aliases can cause test import failures.
  *
  * Usage:
- *   pnpm tsx tools/validate-workspace-aliases.ts
- *   pnpm tsx tools/validate-workspace-aliases.ts --fix  # Auto-add missing aliases
+ *   bunx tsx tools/validate-workspace-aliases.ts
+ *   bunx tsx tools/validate-workspace-aliases.ts --fix  # Auto-add missing aliases
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { globSync } from 'glob'
-import * as yaml from 'yaml'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const REPO_ROOT = resolve(__dirname, '..')
-const WORKSPACE_FILE = resolve(REPO_ROOT, 'pnpm-workspace.yaml')
 
 interface PackageInfo {
   name: string
@@ -35,11 +33,10 @@ interface VitestConfig {
   hasResolveAlias: boolean
 }
 
-/** Get all workspace packages from pnpm-workspace.yaml */
+/** Get all workspace packages from package.json workspaces field */
 function getWorkspacePackages(): PackageInfo[] {
-  const workspaceContent = readFileSync(WORKSPACE_FILE, 'utf-8')
-  const workspace = yaml.parse(workspaceContent)
-  const patterns = workspace.packages || []
+  const rootManifest = JSON.parse(readFileSync(resolve(REPO_ROOT, 'package.json'), 'utf-8'))
+  const patterns: string[] = rootManifest.workspaces || []
 
   const packages: PackageInfo[] = []
 
@@ -70,7 +67,7 @@ function getWorkspacePackages(): PackageInfo[] {
     }
   }
 
-  return packages.sort((a, b) => a.name.localeCompare(b.name))
+  return packages.toSorted((a, b) => a.name.localeCompare(b.name))
 }
 
 /** Parse vitest config to extract aliases */
