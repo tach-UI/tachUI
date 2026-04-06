@@ -3,7 +3,8 @@
 "@tachui/core": patch
 "@tachui/data": patch
 "@tachui/devtools": patch
-"@tachui/eslint-plugin-tachui": patch
+"@tachui/eslint-plugin": patch
+"@tachui/fragments": patch
 "@tachui/flow-control": patch
 "@tachui/forms": patch
 "@tachui/grid": patch
