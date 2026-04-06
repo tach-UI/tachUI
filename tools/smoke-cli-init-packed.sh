@@ -14,22 +14,23 @@ trap cleanup EXIT
 mkdir -p "$PACK_DIR"
 
 echo "[smoke-cli-init-packed] building required packages"
-pnpm --dir "$ROOT_DIR" --filter @tachui/types build
-pnpm --dir "$ROOT_DIR" --filter @tachui/registry build
-pnpm --dir "$ROOT_DIR" --filter @tachui/core build
-pnpm --dir "$ROOT_DIR" --filter @tachui/modifiers build
-pnpm --dir "$ROOT_DIR" --filter @tachui/primitives build
-pnpm --dir "$ROOT_DIR" --filter @tachui/devtools build
-pnpm --dir "$ROOT_DIR" --filter @tachui/cli build
+cd "$ROOT_DIR"
+bun run --filter @tachui/types build
+bun run --filter @tachui/registry build
+bun run --filter @tachui/core build
+bun run --filter @tachui/modifiers build
+bun run --filter @tachui/primitives build
+bun run --filter @tachui/devtools build
+bun run --filter @tachui/cli build
 
 echo "[smoke-cli-init-packed] packing required packages"
-pnpm --dir "$ROOT_DIR" --filter @tachui/types pack --pack-destination "$PACK_DIR" >/dev/null
-pnpm --dir "$ROOT_DIR" --filter @tachui/registry pack --pack-destination "$PACK_DIR" >/dev/null
-pnpm --dir "$ROOT_DIR" --filter @tachui/core pack --pack-destination "$PACK_DIR" >/dev/null
-pnpm --dir "$ROOT_DIR" --filter @tachui/modifiers pack --pack-destination "$PACK_DIR" >/dev/null
-pnpm --dir "$ROOT_DIR" --filter @tachui/primitives pack --pack-destination "$PACK_DIR" >/dev/null
-pnpm --dir "$ROOT_DIR" --filter @tachui/devtools pack --pack-destination "$PACK_DIR" >/dev/null
-pnpm --dir "$ROOT_DIR" --filter @tachui/cli pack --pack-destination "$PACK_DIR" >/dev/null
+cd "$ROOT_DIR/packages/types" && bun pack --out-dir "$PACK_DIR" >/dev/null
+cd "$ROOT_DIR/packages/registry" && bun pack --out-dir "$PACK_DIR" >/dev/null
+cd "$ROOT_DIR/packages/core" && bun pack --out-dir "$PACK_DIR" >/dev/null
+cd "$ROOT_DIR/packages/modifiers" && bun pack --out-dir "$PACK_DIR" >/dev/null
+cd "$ROOT_DIR/packages/primitives" && bun pack --out-dir "$PACK_DIR" >/dev/null
+cd "$ROOT_DIR/packages/devtools" && bun pack --out-dir "$PACK_DIR" >/dev/null
+cd "$ROOT_DIR/packages/cli" && bun pack --out-dir "$PACK_DIR" >/dev/null
 
 TYPES_TGZ="$(ls "$PACK_DIR"/tachui-types-*.tgz | head -n 1)"
 REGISTRY_TGZ="$(ls "$PACK_DIR"/tachui-registry-*.tgz | head -n 1)"
