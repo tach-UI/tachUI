@@ -128,8 +128,8 @@ jobs:
         run: |
           bun run --filter @tachui/types build
           bun run --filter @tachui/registry build
-          bun run --filter @tachui/modifiers build
           bun run build:core
+          bun run --filter @tachui/modifiers build
           bun run build:ssr
           bun run build:mobile
           bun run build:flow-control
@@ -171,8 +171,8 @@ jobs:
         run: |
           bun run --filter @tachui/types build
           bun run --filter @tachui/registry build
-          bun run --filter @tachui/modifiers build
           bun run build:core
+          bun run --filter @tachui/modifiers build
           bun run build:ssr
           bun run build:mobile
           bun run build:flow-control
