@@ -11,6 +11,7 @@ const historyDir = path.resolve(repoRoot, 'benchmarks/history')
 const browserResultsDir = path.resolve(repoRoot, 'packages/core/benchmarks/results/browser')
 const registryPackageDir = path.resolve(repoRoot, 'packages/registry')
 const registryDistEntry = path.resolve(registryPackageDir, 'dist/index.js')
+const typesDistEntry = path.resolve(repoRoot, 'packages/types/dist/assets.js')
 
 type TachUIBenchmarkModule = typeof import('../../packages/core/benchmarks/index.ts')
 type TachUIBenchmarkRun = Awaited<ReturnType<TachUIBenchmarkModule['runTachUIBenchmarks']>>
@@ -66,6 +67,14 @@ async function runCommand(command: string, args: string[], cwd: string): Promise
 }
 
 async function ensureBenchmarkDependencies(): Promise<void> {
+  if (!(await fileExists(typesDistEntry))) {
+    console.log('📦 Building @tachui/types (required for benchmark runtime imports)…')
+    await runCommand('bun', ['run', '--filter', '@tachui/types', 'build'], repoRoot)
+    if (!(await fileExists(typesDistEntry))) {
+      throw new Error(`Failed to build @tachui/types – missing ${typesDistEntry}`)
+    }
+  }
+
   if (await fileExists(registryDistEntry)) {
     return
   }
