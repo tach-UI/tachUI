@@ -7,6 +7,7 @@
 
 import { BaseModifier } from '../base'
 import type { DOMNode } from '@tachui/types/runtime'
+import type { ModifierResult } from '@tachui/types/modifiers'
 import type { ModifierContext } from '../types'
 
 export interface OnContinuousHoverOptions {
@@ -18,17 +19,17 @@ export class OnContinuousHoverModifier extends BaseModifier<OnContinuousHoverOpt
   readonly type = 'onContinuousHover'
   readonly priority = 70
 
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+  apply(node: DOMNode, context: ModifierContext): DOMNode | ModifierResult | undefined {
     if (!context.element) return
 
-    this.setupContinuousHover(context.element, this.properties)
-    return undefined
+    const cleanup = this.setupContinuousHover(context.element, this.properties)
+    return { node, cleanup: [cleanup] }
   }
 
   private setupContinuousHover(
     element: Element,
     options: OnContinuousHoverOptions
-  ): void {
+  ): () => void {
     const coordinateSpace = options.coordinateSpace ?? 'local'
     let isHovering = false
 
@@ -96,6 +97,8 @@ export class OnContinuousHoverModifier extends BaseModifier<OnContinuousHoverOpt
     }
 
     ;(element as any)._continuousHoverCleanup = cleanup
+
+    return cleanup
   }
 }
 

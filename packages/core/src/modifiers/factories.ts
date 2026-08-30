@@ -17,6 +17,7 @@ import type {
   ModifierFactory,
   ReactiveModifierProps,
 } from './types'
+import type { ModifierResult } from '@tachui/types/modifiers'
 
 function isHTMLElementRuntimeElement(element: unknown): element is HTMLElement {
   return typeof HTMLElement !== 'undefined' && element instanceof HTMLElement
@@ -135,13 +136,16 @@ export function createCustomModifier<TProps extends Record<string, any>>(
     node: DOMNode,
     context: ModifierContext,
     props: TProps
-  ) => DOMNode | undefined
+  ) => DOMNode | ModifierResult | undefined
 ): ModifierFactory<TProps> {
   class CustomModifier extends BaseModifier<TProps> {
     readonly type = type
     readonly priority = priority
 
-    apply(node: DOMNode, context: ModifierContext): DOMNode | undefined {
+    apply(
+      node: DOMNode,
+      context: ModifierContext,
+    ): DOMNode | ModifierResult | undefined {
       return applyFn(node, context, this.properties)
     }
   }
@@ -207,12 +211,29 @@ export function combineModifiers(
 ): Modifier {
   return createCustomModifier(type, priority, (node, context, _props) => {
     let currentNode = node
+    const cleanups: (() => void)[] = []
 
     // Apply all modifiers in sequence
     for (const modifier of modifiers) {
       const result = modifier.apply(currentNode, context)
       if (result && typeof result === 'object' && 'type' in result) {
         currentNode = result
+      } else if (result && typeof result === 'object' && 'node' in result) {
+        const modifierResult = result as ModifierResult
+        if (modifierResult.node) {
+          currentNode = modifierResult.node
+        }
+        if (modifierResult.cleanup) {
+          cleanups.push(...modifierResult.cleanup)
+        }
+      }
+    }
+
+    if (cleanups.length > 0) {
+      const existingCleanup = currentNode.dispose
+      currentNode.dispose = () => {
+        cleanups.forEach((fn) => fn())
+        if (existingCleanup) existingCleanup()
       }
     }
 

@@ -7,6 +7,7 @@
 
 import { BaseModifier } from '../base'
 import type { DOMNode } from '@tachui/types/runtime'
+import type { ModifierResult } from '@tachui/types/modifiers'
 import type { ModifierContext } from '../types'
 
 export interface OnHoverOptions {
@@ -17,14 +18,14 @@ export class OnHoverModifier extends BaseModifier<OnHoverOptions> {
   readonly type = 'onHover'
   readonly priority = 50
 
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+  apply(node: DOMNode, context: ModifierContext): DOMNode | ModifierResult | undefined {
     if (!context.element) return
 
-    this.setupHoverTracking(context.element, this.properties)
-    return undefined
+    const cleanup = this.setupHoverTracking(context.element, this.properties)
+    return { node, cleanup: [cleanup] }
   }
 
-  private setupHoverTracking(element: Element, options: OnHoverOptions): void {
+  private setupHoverTracking(element: Element, options: OnHoverOptions): () => void {
     const handleMouseEnter = () => {
       options.onHover(true)
     }
@@ -47,6 +48,8 @@ export class OnHoverModifier extends BaseModifier<OnHoverOptions> {
     }
 
     ;(element as any)._hoverCleanup = cleanup
+
+    return cleanup
   }
 }
 

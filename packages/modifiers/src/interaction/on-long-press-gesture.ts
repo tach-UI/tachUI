@@ -7,6 +7,7 @@
 
 import { BaseModifier } from '../base'
 import type { DOMNode } from '@tachui/types/runtime'
+import type { ModifierResult } from '@tachui/types/modifiers'
 import type { ModifierContext } from '../types'
 
 export interface OnLongPressGestureOptions {
@@ -20,17 +21,17 @@ export class OnLongPressGestureModifier extends BaseModifier<OnLongPressGestureO
   readonly type = 'onLongPressGesture'
   readonly priority = 85
 
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+  apply(node: DOMNode, context: ModifierContext): DOMNode | ModifierResult | undefined {
     if (!context.element) return
 
-    this.setupLongPressGesture(context.element, this.properties)
-    return undefined
+    const cleanup = this.setupLongPressGesture(context.element, this.properties)
+    return { node, cleanup: [cleanup] }
   }
 
   private setupLongPressGesture(
     element: Element,
     options: OnLongPressGestureOptions
-  ): void {
+  ): () => void {
     const minimumDuration = options.minimumDuration ?? 500 // ms
     const maximumDistance = options.maximumDistance ?? 10 // px
 
@@ -253,6 +254,8 @@ export class OnLongPressGestureModifier extends BaseModifier<OnLongPressGestureO
 
     // Store cleanup function for later removal
     ;(element as any)._longPressCleanup = cleanup
+
+    return cleanup
   }
 }
 

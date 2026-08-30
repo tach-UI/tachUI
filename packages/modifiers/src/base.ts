@@ -13,6 +13,7 @@ import {
 import { collectStaticAnimationCSSRules } from '@tachui/core/modifiers/base'
 import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
+import type { ModifierResult } from '@tachui/types/modifiers'
 import type {
   CSSStyleProperties,
   LifecycleModifierProps,
@@ -63,7 +64,10 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
   /**
    * Apply the modifier to a DOM node
    */
-  abstract apply(node: DOMNode, context: ModifierContext): DOMNode | undefined
+  abstract apply(
+    node: DOMNode,
+    context: ModifierContext,
+  ): DOMNode | ModifierResult | undefined
 
   getStaticCSS(_selector: string): string[] {
     return []
@@ -1149,107 +1153,126 @@ export class AppearanceModifier extends BaseModifier {
 export class InteractionModifier extends BaseModifier {
   readonly type = 'interaction'
   readonly priority = ModifierPriority.INTERACTION
-
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+  apply(node: DOMNode, context: ModifierContext): DOMNode | ModifierResult | undefined {
     if (!context.element) return
 
     const props = this.properties as any
+    const element = context.element
+
+    // Track every registered listener so the returned cleanup can remove them (#216)
+    const listeners: {
+      target: EventTarget
+      type: string
+      handler: EventListener
+      options?: AddEventListenerOptions | boolean
+    }[] = []
+    const lifecycleCleanups: (() => void)[] = []
+
+    const addListener = (
+      target: EventTarget,
+      type: string,
+      handler: EventListener,
+      options?: AddEventListenerOptions | boolean
+    ): void => {
+      target.addEventListener(type, handler, options)
+      listeners.push({ target, type, handler, options })
+    }
 
     // Event handlers
     if (props.onTap) {
-      context.element.addEventListener('click', props.onTap)
+      addListener(element, 'click', props.onTap)
     }
 
     if (props.onHover) {
-      context.element.addEventListener('mouseenter', () => props.onHover(true))
-      context.element.addEventListener('mouseleave', () => props.onHover(false))
+      addListener(element, 'mouseenter', () => props.onHover(true))
+      addListener(element, 'mouseleave', () => props.onHover(false))
     }
 
     if (props.onMouseEnter) {
-      context.element.addEventListener('mouseenter', props.onMouseEnter)
+      addListener(element, 'mouseenter', props.onMouseEnter)
     }
 
     if (props.onMouseLeave) {
-      context.element.addEventListener('mouseleave', props.onMouseLeave)
+      addListener(element, 'mouseleave', props.onMouseLeave)
     }
 
     if (props.onMouseDown) {
-      context.element.addEventListener('mousedown', props.onMouseDown)
+      addListener(element, 'mousedown', props.onMouseDown)
     }
 
     if (props.onMouseUp) {
-      context.element.addEventListener('mouseup', props.onMouseUp)
+      addListener(element, 'mouseup', props.onMouseUp)
     }
 
     if (props.onDragStart) {
-      context.element.addEventListener('dragstart', props.onDragStart)
+      addListener(element, 'dragstart', props.onDragStart)
     }
 
     if (props.onDragOver) {
-      context.element.addEventListener('dragover', props.onDragOver)
+      addListener(element, 'dragover', props.onDragOver)
     }
 
     if (props.onDragLeave) {
-      context.element.addEventListener('dragleave', props.onDragLeave)
+      addListener(element, 'dragleave', props.onDragLeave)
     }
 
     if (props.onDrop) {
-      context.element.addEventListener('drop', props.onDrop)
+      addListener(element, 'drop', props.onDrop)
     }
 
     // Additional mouse events
     if (props.onDoubleClick) {
-      context.element.addEventListener('dblclick', props.onDoubleClick)
+      addListener(element, 'dblclick', props.onDoubleClick)
     }
 
     if (props.onContextMenu) {
-      context.element.addEventListener('contextmenu', props.onContextMenu)
+      addListener(element, 'contextmenu', props.onContextMenu)
     }
 
     // Focus events
     if (props.onFocus) {
-      context.element.addEventListener('focus', () => props.onFocus(true))
-      context.element.addEventListener('blur', () => props.onFocus(false))
+      addListener(element, 'focus', () => props.onFocus(true))
+      addListener(element, 'blur', () => props.onFocus(false))
     }
 
     if (props.onBlur) {
-      context.element.addEventListener('blur', () => props.onBlur(false))
+      addListener(element, 'blur', () => props.onBlur(false))
     }
 
     // Keyboard events
     if (props.onKeyPress) {
-      context.element.addEventListener('keypress', props.onKeyPress)
+      addListener(element, 'keypress', props.onKeyPress)
     }
 
     if (props.onKeyDown) {
-      context.element.addEventListener('keydown', props.onKeyDown)
+      addListener(element, 'keydown', props.onKeyDown)
     }
 
     if (props.onKeyUp) {
-      context.element.addEventListener('keyup', props.onKeyUp)
+      addListener(element, 'keyup', props.onKeyUp)
     }
 
     // Touch events
     if (props.onTouchStart) {
-      context.element.addEventListener('touchstart', props.onTouchStart, {
+      addListener(element, 'touchstart', props.onTouchStart, {
         passive: true,
       })
     }
 
     if (props.onTouchMove) {
-      context.element.addEventListener('touchmove', props.onTouchMove, {
+      addListener(element, 'touchmove', props.onTouchMove, {
         passive: true,
       })
     }
 
     if (props.onTouchEnd) {
-      context.element.addEventListener('touchend', props.onTouchEnd, {
+      addListener(element, 'touchend', props.onTouchEnd, {
         passive: true,
       })
     }
 
     if (props.onTouchCancel) {
-      context.element.addEventListener('touchcancel', props.onTouchCancel, {
+      addListener(element, 'touchcancel', props.onTouchCancel, {
         passive: true,
       })
     }
@@ -1259,7 +1282,8 @@ export class InteractionModifier extends BaseModifier {
       let startX = 0
       let startY = 0
 
-      context.element.addEventListener(
+      addListener(
+        element,
         'touchstart',
         (e: Event) => {
           const touchEvent = e as TouchEvent
@@ -1270,7 +1294,8 @@ export class InteractionModifier extends BaseModifier {
         { passive: true }
       )
 
-      context.element.addEventListener(
+      addListener(
+        element,
         'touchend',
         (e: Event) => {
           const touchEvent = e as TouchEvent
@@ -1297,24 +1322,24 @@ export class InteractionModifier extends BaseModifier {
 
     // Scroll and wheel events
     if (props.onScroll) {
-      context.element.addEventListener('scroll', props.onScroll, {
+      addListener(element, 'scroll', props.onScroll, {
         passive: true,
       })
     }
 
     if (props.onWheel) {
-      context.element.addEventListener('wheel', props.onWheel, {
+      addListener(element, 'wheel', props.onWheel, {
         passive: false,
       })
     }
 
     // Input events
     if (props.onInput) {
-      context.element.addEventListener('input', props.onInput)
+      addListener(element, 'input', props.onInput)
     }
 
     if (props.onChange) {
-      context.element.addEventListener('change', event => {
+      addListener(element, 'change', event => {
         const target = event.target as HTMLInputElement
         const value = target.value || target.textContent || ''
         props.onChange(value, event)
@@ -1323,26 +1348,26 @@ export class InteractionModifier extends BaseModifier {
 
     // Clipboard events
     if (props.onCopy) {
-      context.element.addEventListener('copy', props.onCopy)
+      addListener(element, 'copy', props.onCopy)
     }
 
     if (props.onCut) {
-      context.element.addEventListener('cut', props.onCut)
+      addListener(element, 'cut', props.onCut)
     }
 
     if (props.onPaste) {
-      context.element.addEventListener('paste', props.onPaste)
+      addListener(element, 'paste', props.onPaste)
     }
 
     // Selection events
     if (props.onSelect) {
-      context.element.addEventListener('select', props.onSelect)
+      addListener(element, 'select', props.onSelect)
     }
 
     // Disabled state
     if (props.disabled !== undefined) {
-      if (isHTMLElementRuntimeElement(context.element)) {
-        const htmlElement = context.element
+      if (isHTMLElementRuntimeElement(element)) {
+        const htmlElement = element
         const applyDisabledState = (isDisabled: boolean): void => {
           if (isDisabled) {
             htmlElement.setAttribute('disabled', 'true')
@@ -1367,46 +1392,67 @@ export class InteractionModifier extends BaseModifier {
 
     // Draggable state
     if (props.draggable !== undefined) {
-      if (isHTMLElementRuntimeElement(context.element)) {
-        context.element.draggable = props.draggable
+      if (isHTMLElementRuntimeElement(element)) {
+        element.draggable = props.draggable
       }
     }
 
     // Accessibility
     if (props.accessibilityLabel) {
-      context.element.setAttribute('aria-label', props.accessibilityLabel)
+      element.setAttribute('aria-label', props.accessibilityLabel)
     }
 
     if (props.accessibilityHint) {
-      context.element.setAttribute('aria-describedby', props.accessibilityHint)
+      element.setAttribute('aria-describedby', props.accessibilityHint)
     }
 
     // Advanced Gesture Modifiers (Phase 4 - Epic: Butternut)
+
     if (props.onLongPressGesture) {
-      this.setupLongPressGesture(context.element, props.onLongPressGesture)
+      lifecycleCleanups.push(
+        this.setupLongPressGesture(element, props.onLongPressGesture)
+      )
     }
 
     if (props.keyboardShortcut) {
-      this.setupKeyboardShortcut(context.element, props.keyboardShortcut)
+      const cleanup = this.setupKeyboardShortcut(element, props.keyboardShortcut)
+      if (cleanup) lifecycleCleanups.push(cleanup)
     }
 
     if (props.focused !== undefined) {
-      this.setupFocusManagement(context.element, props.focused)
+      this.setupFocusManagement(element, props.focused)
     }
 
     if (props.focusable) {
-      this.setupFocusable(context.element, props.focusable)
+      const cleanup = this.setupFocusable(element, props.focusable)
+      if (cleanup) lifecycleCleanups.push(cleanup)
     }
 
     if (props.onContinuousHover) {
-      this.setupContinuousHover(context.element, props.onContinuousHover)
+      lifecycleCleanups.push(
+        this.setupContinuousHover(element, props.onContinuousHover)
+      )
     }
 
     if (props.allowsHitTesting !== undefined) {
-      this.setupHitTesting(context.element, props.allowsHitTesting)
+      this.setupHitTesting(element, props.allowsHitTesting)
     }
 
-    return undefined
+    // Teardown removes every registered listener from the same target it was
+    // added to (including document/window targets) and runs gesture cleanups.
+    const teardown = () => {
+      for (const { target, type, handler, options } of listeners) {
+        target.removeEventListener(type, handler, options)
+      }
+      listeners.length = 0
+
+      for (const fn of lifecycleCleanups) {
+        fn()
+      }
+      lifecycleCleanups.length = 0
+    }
+
+    return { node, cleanup: [teardown] }
   }
 
   // Phase 4 Advanced Gesture Methods
@@ -1422,7 +1468,7 @@ export class InteractionModifier extends BaseModifier {
       perform: () => void
       onPressingChanged?: (isPressing: boolean) => void
     }
-  ): void {
+  ): () => void {
     const minimumDuration = options.minimumDuration ?? 500 // ms
     const maximumDistance = options.maximumDistance ?? 10 // px
 
@@ -1440,6 +1486,14 @@ export class InteractionModifier extends BaseModifier {
       }
       isPressing = false
       startPoint = null
+
+      element.removeEventListener('pointerdown', handlePointerDown as EventListener)
+      element.removeEventListener('pointermove', handlePointerMove as EventListener)
+      element.removeEventListener('pointerup', handlePointerUp as EventListener)
+      element.removeEventListener(
+        'pointercancel',
+        handlePointerCancel as EventListener
+      )
     }
 
     const handlePointerDown = (event: Event) => {
@@ -1492,6 +1546,8 @@ export class InteractionModifier extends BaseModifier {
 
     // Store cleanup function for later removal
     ;(element as any)._longPressCleanup = cleanup
+
+    return cleanup
   }
 
   /**
@@ -1504,7 +1560,7 @@ export class InteractionModifier extends BaseModifier {
       modifiers?: ('cmd' | 'ctrl' | 'shift' | 'alt' | 'meta')[]
       action: () => void
     }
-  ): void {
+  ): (() => void) | undefined {
     const modifiers = shortcut.modifiers ?? []
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1539,13 +1595,16 @@ export class InteractionModifier extends BaseModifier {
     }
 
     // Add keyboard event listener to document for global shortcuts
-    if (!canUseDocument()) return
+    if (!canUseDocument()) return undefined
     document.addEventListener('keydown', handleKeyDown)
 
     // Store cleanup function
-    ;(element as any)._keyboardShortcutCleanup = () => {
+    const cleanup = () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
+    ;(element as any)._keyboardShortcutCleanup = cleanup
+
+    return cleanup
   }
 
   /**
@@ -1591,8 +1650,8 @@ export class InteractionModifier extends BaseModifier {
       isFocusable?: boolean
       interactions?: ('activate' | 'edit')[]
     }
-  ): void {
-    if (!isHTMLElementRuntimeElement(element)) return
+  ): (() => void) | undefined {
+    if (!isHTMLElementRuntimeElement(element)) return undefined
 
     const htmlElement = element as HTMLElement
 
@@ -1605,19 +1664,26 @@ export class InteractionModifier extends BaseModifier {
     }
 
     // Setup interaction behaviors
+    let keydownCleanup: (() => void) | undefined
     if (options.interactions?.includes('activate')) {
-      htmlElement.addEventListener('keydown', event => {
+      const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           htmlElement.click()
         }
-      })
+      }
+      htmlElement.addEventListener('keydown', handleKeyDown)
+      keydownCleanup = () => {
+        htmlElement.removeEventListener('keydown', handleKeyDown)
+      }
     }
 
     if (options.interactions?.includes('edit')) {
       htmlElement.setAttribute('role', 'textbox')
       htmlElement.setAttribute('contenteditable', 'true')
     }
+
+    return keydownCleanup
   }
 
   /**
@@ -1629,7 +1695,7 @@ export class InteractionModifier extends BaseModifier {
       coordinateSpace?: 'local' | 'global'
       perform: (location: { x: number; y: number } | null) => void
     }
-  ): void {
+  ): () => void {
     const coordinateSpace = options.coordinateSpace ?? 'local'
 
     const handleMouseMove = (event: Event) => {
@@ -1656,13 +1722,16 @@ export class InteractionModifier extends BaseModifier {
     element.addEventListener('mouseleave', handleMouseLeave as EventListener)
 
     // Store cleanup
-    ;(element as any)._continuousHoverCleanup = () => {
+    const cleanup = () => {
       element.removeEventListener('mousemove', handleMouseMove as EventListener)
       element.removeEventListener(
         'mouseleave',
         handleMouseLeave as EventListener
       )
     }
+    ;(element as any)._continuousHoverCleanup = cleanup
+
+    return cleanup
   }
 
   /**
