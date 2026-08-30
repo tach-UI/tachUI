@@ -128,7 +128,7 @@ function applyModifiersSequential(
   options: ModifierApplicationOptions,
 ): DOMNode {
   // Sort modifiers by priority
-  const sortedModifiers = [...modifiers].toSorted(
+  const sortedModifiers = [...modifiers].sort(
     (a, b) => a.priority - b.priority,
   );
 
@@ -256,7 +256,7 @@ function applyModifierGroup(
   cleanup: (() => void)[] = [],
 ): DOMNode {
   // Sort by priority within the group
-  const sortedModifiers = [...modifiers].toSorted(
+  const sortedModifiers = [...modifiers].sort(
     (a, b) => a.priority - b.priority,
   );
 
