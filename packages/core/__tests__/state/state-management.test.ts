@@ -33,16 +33,16 @@ import {
   isBinding,
   isObservableObject,
   isObservedObject,
-  unwrapValue
-} from '../../src/state'
-import {
+  unwrapValue,
+  // Environment-object surface, exercised through the public state entrypoint
+  // (state/index.ts re-exports the corrected environment-object API)
   createEnvironmentKey,
   createEnvironmentObjectProvider,
   useEnvironmentObject,
   EnvironmentObject,
   isEnvironmentObject,
   isEnvironmentKey
-} from '../../src/state/environment-object'
+} from '../../src/state'
 import type { ComponentContext } from '../../src/runtime/component-context'
 
 describe('SwiftUI State Management (Phase 6.2)', () => {
@@ -328,7 +328,7 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
         language: string
       }
       
-      const AppSettingsKey = createEnvironmentKey<AppSettings>({
+      const AppSettingsKey = createEnvironmentKey<AppSettings>('app-settings', {
         theme: 'light',
         language: 'en'
       })
@@ -346,7 +346,7 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
         preferences: Record<string, any>
       }
       
-      const UserSettingsKey = createEnvironmentKey<UserSettings>()
+      const UserSettingsKey = createEnvironmentKey<UserSettings>('user-settings')
       const settings: UserSettings = {
         username: 'testuser',
         preferences: { theme: 'dark' }
@@ -370,7 +370,7 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
         apiUrl: string
       }
       
-      const RequiredConfigKey = createEnvironmentKey<RequiredConfig>()
+      const RequiredConfigKey = createEnvironmentKey<RequiredConfig>('required-config')
       
       // Should throw when required object is not provided
       expect(() => {
@@ -384,7 +384,7 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
         timeout: number
       }
       
-      const ConfigKey = createEnvironmentKey<ConfigWithDefaults>({
+      const ConfigKey = createEnvironmentKey<ConfigWithDefaults>('config-with-defaults', {
         maxRetries: 3,
         timeout: 5000
       })
@@ -401,7 +401,7 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
         mode: string
       }
 
-      const ModeKey = createEnvironmentKey<ModeConfig>({ mode: 'default' })
+      const ModeKey = createEnvironmentKey<ModeConfig>('mode-config', { mode: 'default' })
       const provider = createEnvironmentObjectProvider(ModeKey, { mode: 'provided' })
 
       provider.provide()
@@ -417,7 +417,7 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
         secondaryColor: string
       }
       
-      const ThemeConfigKey = createEnvironmentKey<ThemeConfig>()
+      const ThemeConfigKey = createEnvironmentKey<ThemeConfig>('theme-config')
       const themeConfig: ThemeConfig = {
         primaryColor: '#007AFF',
         secondaryColor: '#34C759'
@@ -458,7 +458,7 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
       const { observedObj, envObj, provider } = withRenderContext(() => {
         const observedObj = ObservedObject(observableObj)
 
-        const envKey = createEnvironmentKey<string>('default')
+        const envKey = createEnvironmentKey<string>('env-key', 'default')
         const provider = createEnvironmentObjectProvider(envKey, 'value')
         provider.provide()
         const envObj = EnvironmentObject({ key: envKey })
@@ -555,7 +555,7 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
         fontSize: number
       }
       
-      const AppSettingsKey = createEnvironmentKey<AppSettings>()
+      const AppSettingsKey = createEnvironmentKey<AppSettings>('app-settings-patterns')
       
       // SwiftUI: Provide environment object in parent
       const settings: AppSettings = { isDarkMode: true, fontSize: 16 }
