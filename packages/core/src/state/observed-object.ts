@@ -10,6 +10,7 @@ import { getCurrentOwner } from '../reactive/context'
 import { createEffect } from '../reactive/effect'
 import { createSignal } from '../reactive/signal'
 import type { Signal } from '../reactive/types'
+import { ComponentContextSymbol } from '../runtime/component-context'
 import type { ComponentContext } from '../runtime/types'
 import type {
   ObservableObject,
@@ -29,10 +30,10 @@ export class ObservableObjectBase implements ObservableObject {
 
   constructor() {
     const [getNotify, setNotify] = createSignal<void>(undefined)
-    this._objectWillChange = {
-      getValue: getNotify,
-      peek: getNotify,
-    } as unknown as Signal<void>
+    // Signal<T> is a callable getter (() => T) & { peek(): T } — see
+    // packages/types/src/reactive.ts:72. Expose the getter directly so that
+    // consumers can subscribe by calling objectWillChange().
+    this._objectWillChange = getNotify as unknown as Signal<void>
 
     // Track notification setter for manual triggering
     ;(this as any)._notifySetter = setNotify
@@ -242,6 +243,18 @@ export function makeObservable<T extends Record<string, any>>(
       return result
     },
 
+    has(obj, prop) {
+      // Expose the ObservableObject interface to `in` checks / type guards
+      if (
+        prop === 'objectWillChange' ||
+        prop === 'notifyChange' ||
+        prop === 'notificationCount'
+      ) {
+        return true
+      }
+      return Reflect.has(obj, prop)
+    },
+
     get(obj, prop) {
       // Provide access to ObservableObject methods
       if (prop === 'objectWillChange') {
@@ -359,11 +372,6 @@ function getCallerPropertyName(): string | null {
   }
   return null
 }
-
-/**
- * Symbol for component context storage
- */
-const ComponentContextSymbol = Symbol('TachUI.ComponentContext')
 
 /**
  * Type guard for ObservableObject

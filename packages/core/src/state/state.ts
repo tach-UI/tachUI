@@ -312,7 +312,15 @@ export { createBinding }
  * Type guard for State property wrappers
  */
 export function isState<T>(value: any): value is Types.State<T> {
-  return value && typeof value === 'object' && 'wrappedValue' in value && 'projectedValue' in value
+  return (
+    value &&
+    typeof value === 'object' &&
+    'wrappedValue' in value &&
+    'projectedValue' in value &&
+    // Bindings expose the same surface plus get()/set() — exclude them so the
+    // State and Binding guards are mutually exclusive
+    !('get' in value && 'set' in value)
+  )
 }
 
 /**
