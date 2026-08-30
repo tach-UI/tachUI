@@ -12,9 +12,9 @@ import {
   CommonEnvironmentKeys,
   createEnvironmentKey,
   createObservableEnvironmentObject,
-  EnvironmentObject,
   provideEnvironmentObject,
 } from './environment'
+import { EnvironmentObject } from './environment-object'
 import { makeObservable, observable } from './observed-object'
 // Import actual implementations
 import { createBinding, createStateBinding, State } from './state'
@@ -26,15 +26,26 @@ export {
   createBinding as createEnhancedBinding,
   isBinding as isEnhancedBinding,
 } from './binding'
-// @EnvironmentObject property wrapper
+// @EnvironmentObject property wrapper — the corrected environment-object
+// implementations: provider registry with provide()/revoke(), the
+// options-object EnvironmentObject factory, and default-aware value
+// resolution where registered providers take precedence over key defaults.
+// createEnvironmentKey intentionally stays bound to the runtime variant
+// (name-first signature, re-exported by './runtime' at the root barrel); its
+// keys are fully compatible with the environment-object resolution paths.
 export {
   CommonEnvironmentKeys,
   createEnvironmentKey,
   createObservableEnvironmentObject,
-  EnvironmentObject,
-  isEnvironmentObject,
   provideEnvironmentObject,
 } from './environment'
+export {
+  createEnvironmentObjectProvider,
+  EnvironmentObject,
+  isEnvironmentKey,
+  isEnvironmentObject,
+  useEnvironmentObject,
+} from './environment-object'
 
 // @ObservedObject property wrapper
 export {
@@ -81,12 +92,9 @@ export type {
   StateWrapperOptions,
 } from './types'
 
-// Legacy compatibility exports (for failing tests)
-export const createEnvironmentObjectProvider = provideEnvironmentObject
-export function useEnvironmentObject(key: any) {
-  console.warn('useEnvironmentObject is deprecated, use EnvironmentObject instead')
-  return EnvironmentObject(key)
-}
+// Environment object utilities are re-exported from './environment-object'
+// (see the @EnvironmentObject block above) — the previous legacy-compat
+// aliases pointed at incompatible implementations from './environment'.
 
 /**
  * Re-export commonly used reactive primitives from the reactive system
