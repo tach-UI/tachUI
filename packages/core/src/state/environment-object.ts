@@ -7,6 +7,7 @@
 
 import { getCurrentOwner } from '../reactive/context'
 import { createContext, useContext } from '../runtime/context'
+import { ComponentContextSymbol } from '../runtime/component-context'
 import type { ComponentContext } from '../runtime/types'
 import type * as Types from './types'
 import type {
@@ -151,12 +152,14 @@ class EnvironmentObjectImpl<T> implements Types.EnvironmentObject<T> {
    */
   private resolveEnvironmentObject(key: EnvironmentKey<T>, required: boolean = false): T {
     try {
-      // Try to use the context system to find the environment object
-      const contextValue = useContext(
+      // Try to use the context system to find the environment object.
+      // useContext returns a getter function — call it to resolve the value.
+      const getValue = useContext(
         createContext(key.defaultValue, { displayName: key.symbol.toString() })
       )
+      const contextValue = getValue()
       if (contextValue !== undefined) {
-        return contextValue as T
+        return contextValue
       }
     } catch (_error) {
       // Context resolution failed, try registry
@@ -336,11 +339,13 @@ export function EnvironmentObjectProviderComponent<T>(
  * ```
  */
 export function useEnvironmentObject<T>(key: EnvironmentKey<T>, required: boolean = false): T {
-  // Try context first
+  // Try context first. useContext returns a getter function — call it to
+  // resolve the value (packages/core/src/runtime/context.ts:272-283).
   try {
-    const contextValue = useContext(
+    const getValue = useContext(
       createContext(key.defaultValue, { displayName: key.symbol.toString() })
     )
+    const contextValue = getValue()
     if (contextValue !== undefined) {
       return contextValue as T
     }
@@ -417,11 +422,6 @@ function getCallerPropertyName(): string | null {
   }
   return null
 }
-
-/**
- * Symbol for component context storage
- */
-const ComponentContextSymbol = Symbol('TachUI.ComponentContext')
 
 /**
  * Type guard for EnvironmentObject property wrapper

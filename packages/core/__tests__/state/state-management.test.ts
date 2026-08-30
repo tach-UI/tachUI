@@ -1,27 +1,31 @@
 /**
- * Tests for SwiftUI-Style State Management (Phase 6.2) - SKIPPED
- * 
- * NOTE: This test file has been temporarily skipped due to decorator syntax issues
- * that require TypeScript configuration changes. These tests should be fixed
- * in a future update when decorator support is properly configured.
- * 
+ * Tests for SwiftUI-Style State Management (Phase 6.2)
+ *
  * Comprehensive tests for @State, @Binding, @ObservedObject, and @EnvironmentObject
  * property wrappers and their integration with the reactive system.
+ *
+ * Re-enabled as part of #219. The original harness predated the component-context-
+ * requiring API and used a broken `vi.doMock` (fresh `Symbol()` never matched the
+ * real `ComponentContextSymbol`); it now follows the `createRoot` +
+ * `setCurrentComponentContext` pattern from `enhanced-state.test.ts`.
+ * EnvironmentObject suite functions are imported from `state/environment-object`
+ * — the state index's legacy-compat aliases have different signatures.
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createSignal } from '../../src/reactive'
+import { createRoot } from '../../src/reactive/context'
+import {
+  createComponentContext,
+  runWithComponentContext,
+  setCurrentComponentContext,
+} from '../../src/runtime/component-context'
 import {
   State,
-  IObservedObject,
   ObservedObject,
-  EnvironmentObject,
   ObservableObjectBase,
   makeObservable,
   observable,
-  createEnvironmentKey,
-  createEnvironmentObjectProvider,
-  useEnvironmentObject,
   createStateBinding,
   createBinding,
   StateUtils,
@@ -29,43 +33,53 @@ import {
   isBinding,
   isObservableObject,
   isObservedObject,
-  isEnvironmentObject,
-  isEnvironmentKey,
   unwrapValue
 } from '../../src/state'
-import type { ComponentContext } from '../../src/runtime/types'
+import {
+  createEnvironmentKey,
+  createEnvironmentObjectProvider,
+  useEnvironmentObject,
+  EnvironmentObject,
+  isEnvironmentObject,
+  isEnvironmentKey
+} from '../../src/state/environment-object'
+import type { ComponentContext } from '../../src/runtime/component-context'
 
-// Mock component context
-function createMockComponentContext(): ComponentContext {
-  return {
-    id: `component-${Math.random()}`,
-    parent: undefined,
-    providers: new Map(),
-    consumers: new Set(),
-    cleanup: new Set()
-  }
-}
+describe('SwiftUI State Management (Phase 6.2)', () => {
+  let context: ComponentContext | undefined
+  let dispose: (() => void) | undefined
 
-// Mock reactive context
-beforeEach(() => {
-  // Mock getCurrentOwner for reactive context
-  vi.doMock('../../src/reactive/context', () => ({
-    getCurrentOwner: vi.fn().mockReturnValue({
-      id: 1,
-      context: new Map([[Symbol('TachUI.ComponentContext'), createMockComponentContext()]]),
-      cleanups: [],
-      parent: null,
-      sources: new Set(),
-      disposed: false
+  beforeEach(() => {
+    dispose = createRoot((disposeRoot) => {
+      context = createComponentContext('state-management-test')
+      setCurrentComponentContext(context)
+      return disposeRoot
     })
-  }))
-})
+  })
 
-afterEach(() => {
-  vi.restoreAllMocks()
-})
+  afterEach(() => {
+    setCurrentComponentContext(null)
+    if (dispose) {
+      dispose()
+    }
+  })
 
-describe.skip('SwiftUI State Management (Phase 6.2) - SKIPPED DUE TO DECORATOR SYNTAX', () => {
+  /**
+   * Run a function inside a render-scoped reactive owner. The @ObservedObject and
+   * @EnvironmentObject factories resolve their context from the reactive owner
+   * (state/observed-object.ts:339-345), so they must be called within
+   * `runWithComponentContext` **inside an active owner** — mirroring how the
+   * compiler wraps real renders. The scope is disposed when the function returns.
+   */
+  const withRenderContext = <T>(fn: () => T): T => {
+    let result!: T
+    const disposeScope = createRoot((disposeRoot) => {
+      result = runWithComponentContext(context!, fn)
+      return disposeRoot
+    })
+    disposeScope()
+    return result
+  }
   describe('@State Property Wrapper', () => {
     it('should create state with initial value', () => {
       const state = State(42)
@@ -211,16 +225,16 @@ describe.skip('SwiftUI State Management (Phase 6.2) - SKIPPED DUE TO DECORATOR S
     it('should observe object changes', () => {
       class UserData extends ObservableObjectBase {
         private _name = 'Unknown'
-        
+
         get name() { return this._name }
         set name(value: string) {
           this._name = value
           this.notifyChange()
         }
       }
-      
+
       const userData = new UserData()
-      const observedObject = ObservedObject(userData)
+      const observedObject = withRenderContext(() => ObservedObject(userData))
       
       expect(isObservedObject(observedObject)).toBe(true)
       expect(observedObject.wrappedValue).toBe(userData)
@@ -375,11 +389,13 @@ describe.skip('SwiftUI State Management (Phase 6.2) - SKIPPED DUE TO DECORATOR S
       
       const provider = createEnvironmentObjectProvider(ThemeConfigKey, themeConfig)
       provider.provide()
-      
-      const environmentObject = EnvironmentObject({ 
-        key: ThemeConfigKey, 
-        required: true 
-      })
+
+      const environmentObject = withRenderContext(() =>
+        EnvironmentObject({
+          key: ThemeConfigKey,
+          required: true
+        })
+      )
       
       expect(isEnvironmentObject(environmentObject)).toBe(true)
       expect(environmentObject.wrappedValue).toBe(themeConfig)
@@ -403,12 +419,16 @@ describe.skip('SwiftUI State Management (Phase 6.2) - SKIPPED DUE TO DECORATOR S
       const state = State('test')
       const binding = state.projectedValue
       const observableObj = new ObservableObjectBase()
-      const observedObj = ObservedObject(observableObj)
-      
-      const envKey = createEnvironmentKey<string>('default')
-      const provider = createEnvironmentObjectProvider(envKey, 'value')
-      provider.provide()
-      const envObj = EnvironmentObject({ key: envKey })
+      const { observedObj, envObj, provider } = withRenderContext(() => {
+        const observedObj = ObservedObject(observableObj)
+
+        const envKey = createEnvironmentKey<string>('default')
+        const provider = createEnvironmentObjectProvider(envKey, 'value')
+        provider.provide()
+        const envObj = EnvironmentObject({ key: envKey })
+
+        return { observedObj, envObj, provider }
+      })
       
       expect(isState(state)).toBe(true)
       expect(isBinding(binding)).toBe(true)
@@ -482,9 +502,9 @@ describe.skip('SwiftUI State Management (Phase 6.2) - SKIPPED DUE TO DECORATOR S
       }
       
       const userData = new UserData()
-      
+
       // SwiftUI: @ObservedObject var userData: UserData
-      const observedUserData = ObservedObject(userData)
+      const observedUserData = withRenderContext(() => ObservedObject(userData))
       
       expect(observedUserData.wrappedValue.isLoggedIn).toBe(false)
       
@@ -505,12 +525,14 @@ describe.skip('SwiftUI State Management (Phase 6.2) - SKIPPED DUE TO DECORATOR S
       const settings: AppSettings = { isDarkMode: true, fontSize: 16 }
       const provider = createEnvironmentObjectProvider(AppSettingsKey, settings)
       provider.provide()
-      
+
       // SwiftUI: @EnvironmentObject var settings: AppSettings
-      const environmentSettings = EnvironmentObject({ 
-        key: AppSettingsKey, 
-        required: true 
-      })
+      const environmentSettings = withRenderContext(() =>
+        EnvironmentObject({
+          key: AppSettingsKey,
+          required: true
+        })
+      )
       
       expect(environmentSettings.wrappedValue.isDarkMode).toBe(true)
       expect(environmentSettings.wrappedValue.fontSize).toBe(16)
@@ -556,7 +578,7 @@ describe.skip('SwiftUI State Management (Phase 6.2) - SKIPPED DUE TO DECORATOR S
 
     it('should handle memory cleanup properly', () => {
       const observableData = makeObservable({ count: 0 })
-      const observedObject = ObservedObject(observableData)
+      const observedObject = withRenderContext(() => ObservedObject(observableData))
       
       // Simulate component unmount - cleanup should be handled by component lifecycle
       const metadata = (observedObject as any).metadata
