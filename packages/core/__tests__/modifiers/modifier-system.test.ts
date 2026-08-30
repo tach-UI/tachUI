@@ -485,6 +485,38 @@ describe('Modifier System', () => {
       expect(combined.priority).toBe(999)
     })
 
+    it('should forward effects and cleanup from combined modifiers', () => {
+      const effect = vi.fn()
+      const cleanup = vi.fn()
+      const inner = {
+        type: 'inner',
+        priority: 0,
+        properties: {},
+        apply: (node: any) => ({ node, effects: [effect], cleanup: [cleanup] }),
+      }
+
+      const combined = combineModifiers([inner], 'combined')
+      const node = h('div')
+
+      const finalNode = applyModifiersToNode(
+        node,
+        [combined],
+        {
+          componentId: 'test',
+          phase: 'creation',
+        },
+        // Run forwarded effects immediately so we can assert they were delivered
+        { immediate: true }
+      )
+
+      expect(effect).toHaveBeenCalledTimes(1)
+
+      // Forwarded cleanup chains onto the node's dispose via the registry
+      expect(typeof finalNode.dispose).toBe('function')
+      finalNode.dispose!()
+      expect(cleanup).toHaveBeenCalledTimes(1)
+    })
+
     it('should create conditional modifiers', () => {
       const [condition, _setCondition] = createSignal(true)
       const baseModifier = appearanceModifiers.foregroundColor('#ff0000')

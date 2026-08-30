@@ -212,6 +212,7 @@ export function combineModifiers(
   return createCustomModifier(type, priority, (node, context, _props) => {
     let currentNode = node
     const cleanups: (() => void)[] = []
+    const effects: (() => void)[] = []
 
     // Apply all modifiers in sequence
     for (const modifier of modifiers) {
@@ -223,21 +224,22 @@ export function combineModifiers(
         if (modifierResult.node) {
           currentNode = modifierResult.node
         }
+        if (modifierResult.effects) {
+          effects.push(...modifierResult.effects)
+        }
         if (modifierResult.cleanup) {
           cleanups.push(...modifierResult.cleanup)
         }
       }
     }
 
-    if (cleanups.length > 0) {
-      const existingCleanup = currentNode.dispose
-      currentNode.dispose = () => {
-        cleanups.forEach((fn) => fn())
-        if (existingCleanup) existingCleanup()
-      }
+    // Propagate collected effects and cleanup with the combined result so the
+    // registry paths (sequential/batch) drain them exactly as they would for
+    // the inner modifiers applied individually.
+    if (effects.length === 0 && cleanups.length === 0) {
+      return currentNode
     }
-
-    return currentNode
+    return { node: currentNode, effects, cleanup: cleanups }
   })({})
 }
 

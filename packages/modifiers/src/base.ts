@@ -1476,7 +1476,10 @@ export class InteractionModifier extends BaseModifier {
     let startPoint: { x: number; y: number } | null = null
     let isPressing = false
 
-    const cleanup = () => {
+    // Ends the current press (timer/state reset). Invoked on pointerup,
+    // pointercancel, movement-cancel, and when the long-press fires — must NOT
+    // remove listeners, or the first press would unregister the gesture.
+    const endPress = () => {
       if (timeoutId) {
         clearTimeout(timeoutId)
         timeoutId = undefined
@@ -1486,7 +1489,11 @@ export class InteractionModifier extends BaseModifier {
       }
       isPressing = false
       startPoint = null
+    }
 
+    // Unmount teardown: reset any in-flight press and remove the listeners.
+    const teardown = () => {
+      endPress()
       element.removeEventListener('pointerdown', handlePointerDown as EventListener)
       element.removeEventListener('pointermove', handlePointerMove as EventListener)
       element.removeEventListener('pointerup', handlePointerUp as EventListener)
@@ -1508,7 +1515,7 @@ export class InteractionModifier extends BaseModifier {
       timeoutId = (canUseWindow() ? window.setTimeout : setTimeout)(() => {
         if (isPressing && startPoint) {
           options.perform()
-          cleanup()
+          endPress()
         }
       }, minimumDuration)
     }
@@ -1523,16 +1530,16 @@ export class InteractionModifier extends BaseModifier {
       )
 
       if (distance > maximumDistance) {
-        cleanup()
+        endPress()
       }
     }
 
     const handlePointerUp = () => {
-      cleanup()
+      endPress()
     }
 
     const handlePointerCancel = () => {
-      cleanup()
+      endPress()
     }
 
     // Use pointer events for better touch/mouse compatibility
@@ -1544,10 +1551,10 @@ export class InteractionModifier extends BaseModifier {
       handlePointerCancel as EventListener
     )
 
-    // Store cleanup function for later removal
-    ;(element as any)._longPressCleanup = cleanup
+    // Store unmount teardown for later removal
+    ;(element as any)._longPressCleanup = teardown
 
-    return cleanup
+    return teardown
   }
 
   /**
