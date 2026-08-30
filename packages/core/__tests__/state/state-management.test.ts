@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createSignal } from '../../src/reactive'
+import { createSignal, createEffect, flushSync } from '../../src/reactive'
 import { createRoot } from '../../src/reactive/context'
 import {
   createComponentContext,
@@ -48,6 +48,7 @@ import type { ComponentContext } from '../../src/runtime/component-context'
 describe('SwiftUI State Management (Phase 6.2)', () => {
   let context: ComponentContext | undefined
   let dispose: (() => void) | undefined
+  const pendingDisposers: (() => void)[] = []
 
   beforeEach(() => {
     dispose = createRoot((disposeRoot) => {
@@ -62,6 +63,11 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
     if (dispose) {
       dispose()
     }
+    // Dispose render scopes only after the test body has finished mutating
+    // and asserting, so observation effects stay live for re-runs
+    while (pendingDisposers.length) {
+      pendingDisposers.pop()!()
+    }
   })
 
   /**
@@ -69,15 +75,17 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
    * @EnvironmentObject factories resolve their context from the reactive owner
    * (state/observed-object.ts:339-345), so they must be called within
    * `runWithComponentContext` **inside an active owner** — mirroring how the
-   * compiler wraps real renders. The scope is disposed when the function returns.
+   * compiler wraps real renders. The owner is kept alive until afterEach so
+   * effects created inside remain reactive through mutation/assertion.
    */
   const withRenderContext = <T>(fn: () => T): T => {
     let result!: T
-    const disposeScope = createRoot((disposeRoot) => {
-      result = runWithComponentContext(context!, fn)
-      return disposeRoot
-    })
-    disposeScope()
+    pendingDisposers.push(
+      createRoot((disposeRoot) => {
+        result = runWithComponentContext(context!, fn)
+        return disposeRoot
+      })
+    )
     return result
   }
   describe('@State Property Wrapper', () => {
@@ -235,13 +243,26 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
 
       const userData = new UserData()
       const observedObject = withRenderContext(() => ObservedObject(userData))
-      
+
       expect(isObservedObject(observedObject)).toBe(true)
-      expect(observedObject.wrappedValue).toBe(userData)
       expect(observedObject.wrappedValue.name).toBe('Unknown')
-      
+
+      // Reading wrappedValue inside a reactive scope must track the object's
+      // notification signal so the scope re-runs when the object changes
+      let effectRuns = 0
+      let observedName = ''
+      withRenderContext(() => {
+        createEffect(() => {
+          effectRuns++
+          observedName = observedObject.wrappedValue.name
+        })
+      })
+
       userData.name = 'John Doe'
-      expect(observedObject.wrappedValue.name).toBe('John Doe')
+      flushSync()
+
+      expect(observedName).toBe('John Doe')
+      expect(effectRuns).toBe(2)
       expect(userData.notificationCount).toBe(1)
     })
 
@@ -373,6 +394,21 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
         maxRetries: 3,
         timeout: 5000
       })
+    })
+
+    it('should prefer a registered provider over the key default value', () => {
+      interface ModeConfig {
+        mode: string
+      }
+
+      const ModeKey = createEnvironmentKey<ModeConfig>({ mode: 'default' })
+      const provider = createEnvironmentObjectProvider(ModeKey, { mode: 'provided' })
+
+      provider.provide()
+      expect(useEnvironmentObject(ModeKey)).toEqual({ mode: 'provided' })
+
+      provider.revoke()
+      expect(useEnvironmentObject(ModeKey)).toEqual({ mode: 'default' })
     })
 
     it('should work within environment object context', () => {

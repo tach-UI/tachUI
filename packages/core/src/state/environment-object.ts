@@ -151,8 +151,17 @@ class EnvironmentObjectImpl<T> implements Types.EnvironmentObject<T> {
    * Resolve the environment object from the context hierarchy
    */
   private resolveEnvironmentObject(key: EnvironmentKey<T>, required: boolean = false): T {
+    // Resolve the environment registry first — a registered provider must take
+    // precedence over the key's default value. (The runtime context lookup
+    // below mints a fresh symbol per call, so it can only ever surface the
+    // default, never a provider registered through EnvironmentRegistry.)
+    const provider = EnvironmentRegistry.getInstance().getProvider<T>(key.symbol)
+    if (provider) {
+      return provider.value
+    }
+
     try {
-      // Try to use the context system to find the environment object.
+      // Fall back to the runtime context system.
       // useContext returns a getter function — call it to resolve the value.
       const getValue = useContext(
         createContext(key.defaultValue, { displayName: key.symbol.toString() })
@@ -162,13 +171,7 @@ class EnvironmentObjectImpl<T> implements Types.EnvironmentObject<T> {
         return contextValue
       }
     } catch (_error) {
-      // Context resolution failed, try registry
-    }
-
-    // Try to find in the environment registry
-    const provider = EnvironmentRegistry.getInstance().getProvider<T>(key.symbol)
-    if (provider) {
-      return provider.value
+      // Context resolution failed, fall through to default/required handling
     }
 
     // Use default value if available
@@ -339,8 +342,17 @@ export function EnvironmentObjectProviderComponent<T>(
  * ```
  */
 export function useEnvironmentObject<T>(key: EnvironmentKey<T>, required: boolean = false): T {
-  // Try context first. useContext returns a getter function — call it to
-  // resolve the value (packages/core/src/runtime/context.ts:272-283).
+  // Resolve the environment registry first — a registered provider must take
+  // precedence over the key's default value. (The runtime context lookup below
+  // mints a fresh symbol per call, so it can only ever surface the default,
+  // never a provider registered through EnvironmentRegistry.)
+  const provider = EnvironmentRegistry.getInstance().getProvider<T>(key.symbol)
+  if (provider) {
+    return provider.value
+  }
+
+  // Fall back to the runtime context system. useContext returns a getter
+  // function — call it to resolve the value (runtime/context.ts:272-283).
   try {
     const getValue = useContext(
       createContext(key.defaultValue, { displayName: key.symbol.toString() })
@@ -351,12 +363,6 @@ export function useEnvironmentObject<T>(key: EnvironmentKey<T>, required: boolea
     }
   } catch (_error) {
     // Context resolution failed
-  }
-
-  // Try registry
-  const provider = EnvironmentRegistry.getInstance().getProvider<T>(key.symbol)
-  if (provider) {
-    return provider.value
   }
 
   // Use default value

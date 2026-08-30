@@ -7,7 +7,6 @@
  */
 
 import { getCurrentOwner } from '../reactive/context'
-import { createEffect } from '../reactive/effect'
 import { createSignal } from '../reactive/signal'
 import type { Signal } from '../reactive/types'
 import { ComponentContextSymbol } from '../runtime/component-context'
@@ -27,16 +26,18 @@ import type {
 export class ObservableObjectBase implements ObservableObject {
   private _objectWillChange: Signal<void>
   private _notifyCount = 0
+  private _revision = 0
 
   constructor() {
-    const [getNotify, setNotify] = createSignal<void>(undefined)
+    const [getRevision, setRevision] = createSignal(0)
     // Signal<T> is a callable getter (() => T) & { peek(): T } — see
     // packages/types/src/reactive.ts:72. Expose the getter directly so that
     // consumers can subscribe by calling objectWillChange().
-    this._objectWillChange = getNotify as unknown as Signal<void>
-
-    // Track notification setter for manual triggering
-    ;(this as any)._notifySetter = setNotify
+    this._objectWillChange = getRevision as unknown as Signal<void>
+    // The setter writes a monotonically increasing revision rather than a
+    // constant: signals only notify on value change (signal.ts set()), so
+    // rewriting a constant would never invalidate subscribers.
+    ;(this as any)._notifySetter = setRevision
   }
 
   get objectWillChange(): Signal<void> {
@@ -51,7 +52,7 @@ export class ObservableObjectBase implements ObservableObject {
     this._notifyCount++
     const setter = (this as any)._notifySetter
     if (setter) {
-      setter(undefined)
+      setter(++this._revision)
     }
   }
 
@@ -69,7 +70,6 @@ export class ObservableObjectBase implements ObservableObject {
 class ObservedObjectImpl<T extends ObservableObject> implements ObservedObject<T> {
   private _object: T
   private _metadata: PropertyWrapperMetadata
-  private _effectCleanup?: () => void
 
   constructor(
     object: T,
@@ -86,26 +86,13 @@ class ObservedObjectImpl<T extends ObservableObject> implements ObservedObject<T
       componentId: componentContext.id,
       options,
     }
-
-    // Register with component context for lifecycle management
-    // TODO: Integrate StateManager with ComponentContext in future version
-    // if (componentContext.stateManager) {
-    //   componentContext.stateManager.registerObservedObject(this, options)
-    // }
-
-    // Set up observation effect
-    this.setupObservation()
-
-    // Set up cleanup on component unmount
-    const owner = getCurrentOwner()
-    if (owner) {
-      owner.cleanups.push(() => {
-        this.cleanup()
-      })
-    }
   }
 
   get wrappedValue(): T {
+    // Track the object's notification signal in the caller's reactive scope.
+    // Any effect/computation that reads wrappedValue (a component render
+    // effect, a computed, etc.) re-runs when the object calls notifyChange().
+    ;(this._object.objectWillChange as unknown as () => number)()
     return this._object
   }
 
@@ -121,37 +108,10 @@ class ObservedObjectImpl<T extends ObservableObject> implements ObservedObject<T
   }
 
   /**
-   * Set up reactive observation of the object
-   */
-  private setupObservation(): void {
-    // Create an effect that tracks the object's objectWillChange signal
-    const effect = createEffect(() => {
-      // Access the objectWillChange signal to create dependency
-      this._object.objectWillChange()
-
-      // The effect will re-run whenever the object notifies changes
-      // This will trigger component re-renders automatically
-    })
-    this._effectCleanup = () => effect.dispose()
-  }
-
-  /**
-   * Cleanup observation
-   */
-  private cleanup(): void {
-    if (this._effectCleanup) {
-      this._effectCleanup()
-      this._effectCleanup = undefined
-    }
-  }
-
-  /**
    * Replace the observed object (advanced usage)
    */
   updateObject(newObject: T): void {
-    this.cleanup()
     this._object = newObject
-    this.setupObservation()
   }
 }
 
