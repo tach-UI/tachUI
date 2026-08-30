@@ -127,7 +127,9 @@ describe('OnLongPressGestureModifier', () => {
 
       const result = modifier.apply(mockNode, mockContext)
 
-      expect(result).toBeUndefined()
+      // Returns a ModifierResult carrying the teardown cleanup (#216)
+      expect(result).toMatchObject({ node: mockNode })
+      expect((result as any).cleanup).toHaveLength(1)
       // Should have added event listeners
       expect(mockElement.addEventListener).toBeDefined()
     })

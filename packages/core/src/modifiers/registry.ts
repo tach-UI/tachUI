@@ -19,6 +19,7 @@ import type {
   ModifierContext,
   ModifierFactory,
 } from "./types";
+import type { ModifierResult } from "@tachui/types/modifiers";
 import type { Concatenatable, ComponentSegment } from "../concatenation/types";
 import { ConcatenatedComponent } from "../concatenation/concatenated-component";
 
@@ -127,7 +128,7 @@ function applyModifiersSequential(
   options: ModifierApplicationOptions,
 ): DOMNode {
   // Sort modifiers by priority
-  const sortedModifiers = [...modifiers].sort(
+  const sortedModifiers = [...modifiers].toSorted(
     (a, b) => a.priority - b.priority,
   );
 
@@ -140,7 +141,20 @@ function applyModifiersSequential(
       const result = modifier.apply(currentNode, context);
 
       if (result && typeof result === "object" && "type" in result) {
+        // DOMNode return — the legacy/common shape
         currentNode = result;
+      } else if (result && typeof result === "object" && "node" in result) {
+        // ModifierResult return — harvest node, effects, and cleanup
+        const modifierResult = result as ModifierResult;
+        if (modifierResult.node) {
+          currentNode = modifierResult.node;
+        }
+        if (modifierResult.effects) {
+          effects.push(...modifierResult.effects);
+        }
+        if (modifierResult.cleanup) {
+          cleanup.push(...modifierResult.cleanup);
+        }
       }
 
       if (options.immediate && !options.suppressEffects) {
@@ -184,7 +198,13 @@ function applyModifiersBatch(
   // Apply each group
   for (const [type, groupModifiers] of modifierGroups) {
     try {
-      currentNode = applyModifierGroup(currentNode, groupModifiers, context);
+      currentNode = applyModifierGroup(
+        currentNode,
+        groupModifiers,
+        context,
+        allEffects,
+        allCleanup,
+      );
     } catch (error) {
       // Only log in non-test environments to avoid polluting test output
       if (typeof process === "undefined" || process.env.NODE_ENV !== "test") {
@@ -232,9 +252,11 @@ function applyModifierGroup(
   node: DOMNode,
   modifiers: Modifier[],
   context: ModifierContext,
+  effects: (() => void)[] = [],
+  cleanup: (() => void)[] = [],
 ): DOMNode {
   // Sort by priority within the group
-  const sortedModifiers = [...modifiers].sort(
+  const sortedModifiers = [...modifiers].toSorted(
     (a, b) => a.priority - b.priority,
   );
 
@@ -245,6 +267,18 @@ function applyModifierGroup(
       const result = modifier.apply(currentNode, context);
       if (result && typeof result === "object" && "type" in result) {
         currentNode = result;
+      } else if (result && typeof result === "object" && "node" in result) {
+        // ModifierResult return — harvest node, effects, and cleanup
+        const modifierResult = result as ModifierResult;
+        if (modifierResult.node) {
+          currentNode = modifierResult.node;
+        }
+        if (modifierResult.effects) {
+          effects.push(...modifierResult.effects);
+        }
+        if (modifierResult.cleanup) {
+          cleanup.push(...modifierResult.cleanup);
+        }
       }
     } catch (error) {
       // In batch mode, individual modifier failures shouldn't break the entire batch

@@ -111,7 +111,7 @@ export interface Modifier<TProps = {}> {
   readonly type: string
   readonly priority: number
   readonly properties: TProps
-  apply(node: DOMNode, context: ModifierContext): DOMNode | undefined
+  apply(node: DOMNode, context: ModifierContext): DOMNode | ModifierResult | undefined
   /**
    * Optional static CSS extraction hook used by SSR/prerender.
    * Implementations may return full CSS rules (including pseudo/selectors,
