@@ -1,5 +1,25 @@
 # @tachui/core
 
+## 0.8.30
+
+### Patch Changes
+
+- [#251](https://github.com/tach-UI/tachUI/pull/251) [`de58dac`](https://github.com/tach-UI/tachUI/commit/de58dac18bc26c1d1c0a3cc15472e3d2cde92bf7) Thanks [@whoughton](https://github.com/whoughton)! - Stop copying and priority-sorting modifier arrays on every node render (#220): `applyModifiersSequential` and the batch path now share a `WeakMap`-memoized sorted array keyed on the source array identity, so stable renders pay neither the array copy nor the O(n log n) sort.
+
+  Modifier arrays are appended to in place after construction — by the modifier builder, and post-construction by `Image.scaledToFit`/`scaledToFill` and `Grid`'s item animations — so identity alone is not a sufficient cache key. The cache also records the source length and re-sorts when it changes; every modifier-array mutation in the tree is an append, so this is sound and O(1). Without it a warm cache silently drops modifiers pushed between renders.
+
+  The batch path no longer re-sorts each type group. Group arrays are allocated fresh per call and could never hit the cache, so grouping now fills from the memoized sorted array instead. Application order is unchanged in both dimensions: groups are still applied in the order their type first appears in the caller's array, and modifiers within a group are still applied in priority order.
+
+- [#251](https://github.com/tach-UI/tachUI/pull/251) [`4a8d3a8`](https://github.com/tach-UI/tachUI/commit/4a8d3a8aa5293ddd5e4698c0cfe21a52327fe972) Thanks [@whoughton](https://github.com/whoughton)! - Fix `createReactiveComponent` skipping its first render (#238): the props-tracking effects were created _inside_ the render function, so they re-ran on every pass and re-captured `previousProps` before the `shouldUpdate` guard evaluated. The guard therefore compared the props to themselves and returned an empty render result.
+
+  The lifecycle tracking effects are now created once per instance, and `previousProps` is snapshotted after a successful render rather than mid-pass. `previousProps` is `undefined` on the first pass, so the guard naturally applies to re-renders only and the first render always executes.
+
+  This also fixes two consequences of the per-render effect creation: effects accumulated on every render pass without ever being disposed, and each new effect fired `onUpdate` against the snapshot the previous one had just written — so `onUpdate` was called on every render even when no prop had changed.
+
+- Updated dependencies []:
+  - @tachui/types@0.8.30
+  - @tachui/registry@0.8.30
+
 ## 0.8.29
 
 ### Patch Changes

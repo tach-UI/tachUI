@@ -1,6 +1,6 @@
 {
   "name": "@tachui/flow-control",
-  "version": "0.8.29",
+  "version": "0.8.30",
   "description": "Control flow components for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -41,7 +41,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "0.8.29"
+    "@tachui/core": "0.8.30"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
