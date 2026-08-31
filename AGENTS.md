@@ -61,35 +61,35 @@ SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorep
 bun install
 
 # Dev servers (per package)
-pnpm dev:core          # Core
-pnpm dev:docs          # Docs (VitePress)
-pnpm dev:navigation    # Navigation
-pnpm dev:symbols       # Symbols
-pnpm dev              # All parallel
+bun run dev:core          # Core
+bun run dev:docs          # Docs (VitePress)
+bun run dev:navigation    # Navigation
+bun run dev:symbols       # Symbols
+bun run dev              # All parallel
 
 # Build
-pnpm build             # All (pnpm -r build)
-pnpm build:core        # Specific package
-pnpm build:clean       # Clean + test/lint/type-check + build:dev
+bun run build             # All (sequential filter chain, not parallel)
+bun run build:core        # Specific package
+bun run build:clean       # Clean + test/lint/type-check + build:dev
 
 # Test (~30-40s full suite, 95%+ coverage)
-pnpm test              # All (vitest run)
-pnpm test:ci           # CI mode
-pnpm test:coverage     # With coverage
-pnpm test:memory-leaks # Memory checks
+bun run test              # All (vitest run)
+bun run test:ci           # CI mode
+bun run test:coverage     # With coverage
+bun run test:memory-leaks # Memory checks
 
 # Lint/Type-check
-pnpm lint              # oxlint
-pnpm type-check        # tsc -r
+bun run lint              # oxlint
+bun run type-check        # tsc -r
 
 # Docs
-pnpm docs:dev          # VitePress dev
-pnpm docs:build        # Build docs
+bun run docs:dev          # VitePress dev
+bun run docs:build        # Build docs
 
 # Benchmarks
-pnpm benchmark         # Core perf
-pnpm benchmark:quick
-pnpm benchmark:navigation
+bun run benchmark         # Core perf
+bun run benchmark:quick
+bun run benchmark:navigation
 ```
 
 Package-specific: Each has `dev`, `build`, `test`, `valid` (full check).

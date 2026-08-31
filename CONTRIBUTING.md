@@ -22,8 +22,8 @@ This project adheres to a Code of Conduct. By participating, you are expected to
 
 ### Prerequisites
 
-- **Node.js**: 20.0.0 or higher
-- **pnpm**: 10.0.0 or higher
+- **Node.js**: 20.0.0 or higher (CI runs 24)
+- **bun**: 1.2.0 or higher (the repo's package manager — see `packageManager` in `package.json`)
 - **TypeScript**: Familiarity with TypeScript development
 - **SwiftUI Knowledge**: Helpful but not required
 
@@ -38,13 +38,13 @@ cd tachUI
 bun install
 
 # Run development server
-pnpm dev:core
+bun run dev:core
 
 # Run tests
-pnpm test
+bun run test
 
 # Build all packages
-pnpm build
+bun run build
 ```
 
 ## Development Setup
@@ -67,23 +67,23 @@ packages/
 
 ```bash
 # Development
-pnpm dev                 # Start all dev servers
-pnpm dev:core           # Core package development
-pnpm dev:docs           # Documentation development
+bun run dev                 # Start all dev servers
+bun run dev:core           # Core package development
+bun run dev:docs           # Documentation development
 
 # Testing
-pnpm test               # Run all tests
-pnpm test:coverage      # Run tests with coverage
-pnpm benchmark          # Run performance benchmarks
+bun run test               # Run all tests
+bun run test:coverage      # Run tests with coverage
+bun run benchmark          # Run performance benchmarks
 
 # Building
-pnpm build              # Build all packages
-pnpm build:core         # Build core package only
+bun run build              # Build all packages
+bun run build:core         # Build core package only
 
 # Code Quality
-pnpm lint               # Run linter
-pnpm type-check         # Run TypeScript checks
-pnpm docs:api          # Generate API documentation
+bun run lint               # Run linter
+bun run type-check         # Run TypeScript checks
+bun run docs:api          # Generate API documentation
 ```
 
 ## Contributing Guidelines
@@ -130,20 +130,20 @@ git checkout -b feature/your-feature-name
 # ...
 
 # Run quality checks
-pnpm lint
-pnpm type-check
-pnpm test
-pnpm build
+bun run lint
+bun run type-check
+bun run test
+bun run build
 ```
 
 For publishable package changes (`packages/*`), add a changeset:
 
 ```bash
 # Normal release note
-pnpm changeset
+bun run changeset
 
 # Explicit no-release exemption (required instead of labels)
-pnpm changeset --empty
+bun run changeset --empty
 ```
 
 ### 2. Commit Messages
@@ -320,10 +320,10 @@ Run the workspace alias validator to check for missing aliases:
 
 ```bash
 # Check for missing aliases
-pnpm validate:workspace-aliases
+bun run validate:workspace-aliases
 
 # Auto-fix missing aliases
-pnpm validate:workspace-aliases --fix
+bun run validate:workspace-aliases --fix
 ```
 
 The validator scans your test files for `@tachui/*` imports and ensures all referenced packages have proper aliases configured. It only checks for aliases that are actually used in your tests.
@@ -360,16 +360,16 @@ describe('MyComponent', () => {
 
 ```bash
 # All tests
-pnpm test
+bun run test
 
 # Specific package
-pnpm --filter @tachui/core test
+bun run --filter @tachui/core test
 
 # Watch mode
-pnpm --filter @tachui/core test --watch
+bun run --filter @tachui/core test --watch
 
 # Coverage
-pnpm test:coverage
+bun run test:coverage
 ```
 
 ## Documentation
@@ -392,13 +392,13 @@ pnpm test:coverage
 
 ```bash
 # API docs (TypeDoc)
-pnpm docs:api
+bun run docs:api
 
 # Guide docs (VitePress)
-pnpm docs:build
+bun run docs:build
 
 # Development server
-pnpm docs:dev
+bun run docs:dev
 ```
 
 ## Community

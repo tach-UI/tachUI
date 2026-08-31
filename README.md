@@ -7,7 +7,7 @@ cssclasses:
 
 > **SwiftUI-inspired web framework with fine-grained reactivity**
 
-[![Version](https://img.shields.io/badge/Version-0.8.8--alpha-orange)](https://github.com/tach-UI/tachUI/releases)
+[![Version](https://img.shields.io/npm/v/@tachui/core?label=%40tachui%2Fcore&color=orange)](https://www.npmjs.com/package/@tachui/core)
 [![License](https://img.shields.io/badge/License-MPL--2.0-blue)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node-20+-green)](https://nodejs.org/)
@@ -18,11 +18,11 @@ cssclasses:
 
 ## Alpha Release - Welcome!
 
-**tachUI 0.8.8-alpha** represents a major architectural milestone! This release features complete modular restructuring with 15+ specialized packages and improved performance across the entire framework.
+**tachUI 0.8.x alpha** represents a major architectural milestone! This release features complete modular restructuring with 19 specialized packages and improved performance across the entire framework.
 
-### What's New in 0.8.8 Alpha
+### What's New in the 0.8 Alpha Line
 
-- **Modular Architecture:** 15+ specialized packages (@tachui/primitives, @tachui/modifiers, etc.)
+- **Modular Architecture:** 19 specialized packages (@tachui/primitives, @tachui/modifiers, etc.)
 - **200+ SwiftUI Modifiers:** Complete modifier system with chainable API
 - **Foundation Packages:** Primitives, modifiers, effects, grid, responsive design
 - **Advanced Features:** Flow control, navigation, forms, mobile patterns, symbols
@@ -32,7 +32,7 @@ cssclasses:
 ### What to know about...
 
 - **Modular Extraction:** We have revamped the entire framework structure for better separation and tree-shaking which should lead to smaller output. This is undergoing real-world integration testing now.
-- **Package Ecosystem:** 15 packages including @tachui/grid, @tachui/responsive, @tachui/modifiers/effects
+- **Package Ecosystem:** 19 packages including @tachui/grid, @tachui/responsive, @tachui/modifiers/effects
 - **Testing:** We're doing extensive dogfooding with tachUI now as we build out apps to test it from (hopefully) end to end
 - **Documentation:** Documentation is there and pretty extensive, but disheveled and somewhat inconsistent, as the restructure winds down, this is our next major task.
 - **Impact:** All of this means you can have a great impact if you have feedback now!
@@ -53,39 +53,54 @@ This alpha is ideal for:
 ### Installation
 
 ```bash
-npm install @tachui/core
+npm install @tachui/core @tachui/primitives
 # or
-bun add @tachui/core
+bun add @tachui/core @tachui/primitives
 ```
+
+> **Moved in 0.8:** components live in `@tachui/primitives`, not `@tachui/core`. The
+> modular split means `@tachui/core` now ships reactivity, the runtime and the
+> modifier engine only. Pre-0.8 tutorials that import `VStack`, `Text` or `Button`
+> from `@tachui/core` will not compile.
 
 ### Your First Component
 
 ```typescript
-import { Text, Button, VStack, createSignal } from '@tachui/core'
+import { createSignal, mount } from '@tachui/core'
+import { Button, Text, VStack } from '@tachui/primitives'
 
-// Create reactive state
-const [count, setCount] = createSignal(0)
+function CounterApp() {
+  const [count, setCount] = createSignal(0)
 
-// Build SwiftUI-style components
-const counterApp = VStack({
-  children: [
-    Text(() => `Count: ${count()}`)
-      .fontSize(24)
-      .fontWeight('bold')
-      .foregroundColor('#007AFF')
-      ,
+  return VStack({
+    children: [
+      Text(() => `Count: ${count()}`)
+        .fontSize(24)
+        .fontWeight('bold')
+        .foregroundColor('#007AFF'),
 
-    Button('Increment', () => setCount(count() + 1))
-      .backgroundColor('#007AFF')
-      .foregroundColor('white')
-      .padding({ horizontal: 24, vertical: 12 })
-      .cornerRadius(8)
-      ,
-  ],
-  spacing: 16,
-  alignment: 'center',
-})
+      Button('Increment', () => setCount(count() + 1))
+        .backgroundColor('#007AFF')
+        .foregroundColor('white')
+        .padding({ horizontal: 24, vertical: 12 })
+        .cornerRadius(8),
+    ],
+    spacing: 16,
+    alignment: 'center',
+  })
+}
+
+// Renders into <div id="app"></div>; returns a dispose function.
+const dispose = mount(() => CounterApp())
 ```
+
+`mount()` takes a thunk returning your root component and an optional target
+(an element or CSS selector, defaulting to `#app`), and returns a function that
+unmounts the app again.
+
+> This example is executed as a test on every CI run
+> (`packages/core/__tests__/integration/readme-quick-start.test.ts`), so it
+> compiles and runs against the current API.
 
 ---
 
@@ -207,13 +222,13 @@ cd tachUI
 bun install
 
 # Start development
-pnpm dev:core           # Core framework development
+bun run dev:core           # Core framework development
 
 # Build everything
-pnpm build
+bun run build
 
 # Run tests
-pnpm test
+bun run test
 ```
 
 ### Project Structure
@@ -310,16 +325,19 @@ Much of this is obviously TBD based on community feedback and reception.
 
 ### Documentation
 
-- **[Getting Started Guide](apps/docs/guide/getting-started.md)** - Your first tachUI application
-- **[Component Reference](apps/docs/components/index.md)** - Complete component documentation
-- **[SwiftUI Migration](apps/docs/guide/swiftui-compatibility.md)** - Transition from SwiftUI
-- **[API Documentation](apps/docs/api/index.md)** - Detailed API reference
+- **[Guide](docs/guide/index.md)** - Concepts, components and modifiers
+- **[Component Catalog](docs/guide/components.md)** - Complete component documentation
+- **[SwiftUI Migration](docs/guide/swiftui-compatibility.md)** - Transition from SwiftUI
+- **[API Reference](docs/reference/index.md)** - Detailed API reference
 
 ### Examples
 
-- **[Calculator App](apps/calculator/)** - Production-ready calculator with themes
-- **[Component Examples](apps/examples/)** - Interactive component demonstrations
-- **[Real-world Patterns](apps/examples/working-demos/)** - Common application patterns
+- **[Calculator App](demos/calculator/)** - Production-ready calculator with themes
+- **[Intro App](demos/intro/)** - Interactive component demonstrations
+- **[Worked Examples](docs/examples/index.md)** - Common application patterns
+
+> `demos/` is a git submodule. Clone with `git clone --recurse-submodules`, or run
+> `git submodule update --init` in an existing checkout.
 
 ---
 
@@ -334,8 +352,8 @@ Much of this is obviously TBD based on community feedback and reception.
 
 ### Getting Help
 
-1. **Check Documentation** - Comprehensive guides in `apps/docs/`
-2. **Browse Examples** - Working examples in `apps/examples/`
+1. **Check Documentation** - Comprehensive guides in `docs/`
+2. **Browse Examples** - Working examples in `demos/`
 3. **Report Issues** - GitHub issues with reproduction cases
 4. **Join Discussions** - Ask questions in GitHub Discussions
 
@@ -366,15 +384,17 @@ Special thanks to the open source community for continuous inspiration and feedb
 
 ```bash
 # Install tachUI Alpha
-npm install @tachui/core
-
-# Create your first SwiftUI-style component
-import { createSignal } from '@tachui/core'
-import { VStack, Text, Button } from '@tachui/primitives'
-
-# Start building! 🎉
+npm install @tachui/core @tachui/primitives
 ```
 
-**tachUI 0.8.8-alpha** - Modular architecture meets SwiftUI-inspired web development.
+```typescript
+// Create your first SwiftUI-style component
+import { createSignal, mount } from '@tachui/core'
+import { Button, Text, VStack } from '@tachui/primitives'
 
-[![Get Started](https://img.shields.io/badge/Get%20Started-Documentation-blue?style=for-the-badge)](./apps/docs/guide/getting-started.md) [![View Examples](https://img.shields.io/badge/View%20Examples-Live%20Demos-green?style=for-the-badge)](./apps/examples/) [![Join Community](https://img.shields.io/badge/Contribute-GitHub-purple?style=for-the-badge)](https://github.com/tach-UI/tachUI)
+// Start building! 🎉
+```
+
+**tachUI 0.8.x alpha** - Modular architecture meets SwiftUI-inspired web development.
+
+[![Get Started](https://img.shields.io/badge/Get%20Started-Documentation-blue?style=for-the-badge)](./docs/guide/index.md) [![View Examples](https://img.shields.io/badge/View%20Examples-Live%20Demos-green?style=for-the-badge)](./demos/) [![Join Community](https://img.shields.io/badge/Contribute-GitHub-purple?style=for-the-badge)](https://github.com/tach-UI/tachUI)

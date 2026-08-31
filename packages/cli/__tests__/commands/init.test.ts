@@ -137,7 +137,7 @@ describe('TachUI CLI - Init Command', () => {
   })
 
   it('can scaffold from built dist entrypoint', async () => {
-    await execAsync('pnpm build', { cwd: cliPackageDir })
+    await execAsync('bun run build', { cwd: cliPackageDir })
 
     const primaryDistEntry = path.resolve(cliPackageDir, 'dist/index.js')
     const fallbackDistEntry = path.resolve(cliPackageDir, 'dist/cli/src/index.js')
@@ -162,7 +162,7 @@ describe('TachUI CLI - Init Command', () => {
   }, 120000)
 
   it('rejects invalid tachui version from built dist entrypoint', async () => {
-    await execAsync('pnpm build', { cwd: cliPackageDir })
+    await execAsync('bun run build', { cwd: cliPackageDir })
 
     const distEntry = path.resolve(cliPackageDir, 'dist/index.js')
     expect(existsSync(distEntry)).toBe(true)
@@ -181,7 +181,7 @@ describe('TachUI CLI - Init Command', () => {
   }, 120000)
 
   it('prints compatibility-map warning when registry is unavailable', async () => {
-    await execAsync('pnpm build', { cwd: cliPackageDir })
+    await execAsync('bun run build', { cwd: cliPackageDir })
 
     const distEntry = path.resolve(cliPackageDir, 'dist/index.js')
     expect(existsSync(distEntry)).toBe(true)
