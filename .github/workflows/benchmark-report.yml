@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
@@ -26,7 +26,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           # Bun does not require cache configuration
@@ -44,7 +44,7 @@ jobs:
         run: bun run benchmark:report
 
       - name: Upload benchmark history artefact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: benchmark-history
           path: benchmarks/history/*.json
