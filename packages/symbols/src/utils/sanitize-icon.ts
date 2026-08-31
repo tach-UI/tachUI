@@ -144,9 +144,12 @@ const SSR_ALLOWED_ATTRIBUTES = new Set([
 // Open/close tag token: attributes must be whitespace-separated
 // `name="value"` pairs whose values contain no quotes or angle brackets.
 // Anything malformed does not match as a tag and degrades to inert text.
+// Sticky ('y') tokenizer: tags must match exactly at the scan position — a
+// malformed tag can never be skipped over, so markup following it cannot leak
+// through as text (#218 review)
 const SSR_TAG_TOKEN_RE =
-  /<(\/?)([a-zA-Z][a-zA-Z0-9]*)((?:\s+[a-zA-Z_:][a-zA-Z0-9:._-]*="[^"<>]*")*)\s*(\/?)>/
-const SSR_TEXT_TOKEN_RE = /^[^<]+/
+  /<(\/?)([a-zA-Z][a-zA-Z0-9]*)((?:\s+[a-zA-Z_:][a-zA-Z0-9:._-]*="[^"<>]*")*)\s*(\/?)>/y
+const SSR_TEXT_TOKEN_RE = /[^<]+/y
 const SSR_ATTRIBUTE_RE = /([a-zA-Z_:][a-zA-Z0-9:._-]*)="([^"<>]*)"/g
 
 function hasUnsafeSSRProtocol(value: string): boolean {
@@ -239,23 +242,24 @@ function sanitizeIconBodyWithoutDom(markup: string): string {
 
   let position = 0
   while (position < stripped.length) {
-    const remaining = stripped.slice(position)
+    SSR_TAG_TOKEN_RE.lastIndex = position
+    const tagMatch = SSR_TAG_TOKEN_RE.exec(stripped)
 
-    const tagMatch = SSR_TAG_TOKEN_RE.exec(remaining)
     if (!tagMatch) {
-      const textMatch = SSR_TEXT_TOKEN_RE.exec(remaining)
-      if (textMatch && stripDepth === 0) {
+      // No valid tag at this position: plain text or malformed markup. Text
+      // is consumed (and emitted outside strip subtrees); a '<' that cannot
+      // tokenize fails closed — everything from it onward is dropped.
+      SSR_TEXT_TOKEN_RE.lastIndex = position
+      const textMatch = SSR_TEXT_TOKEN_RE.exec(stripped)
+      if (!textMatch) break
+      if (stripDepth === 0) {
         emitted.push(textMatch[0])
       }
-      break
+      position = SSR_TEXT_TOKEN_RE.lastIndex
+      continue
     }
 
-    const leadingText = remaining.slice(0, tagMatch.index)
-    if (leadingText && stripDepth === 0) {
-      emitted.push(leadingText)
-    }
-    position += tagMatch.index + tagMatch[0].length
-
+    position = SSR_TAG_TOKEN_RE.lastIndex
     const [, closeSlash, tagName, attributeSource = '', selfSlash] = tagMatch
     const lowerTag = tagName.toLowerCase()
 
