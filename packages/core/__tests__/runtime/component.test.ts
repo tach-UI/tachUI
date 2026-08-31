@@ -212,21 +212,69 @@ describe('Component Management System', () => {
   })
 
   describe('createReactiveComponent', () => {
-    it('should create component that reacts to prop changes', () => {
-      // #238 fixed: shouldUpdate only gates re-renders (hasRendered flag),
-      // so the first render always executes the user render function
-      const [message, setMessage] = createSignal('Hello')
+    // #238: the props-tracking effect used to be created inside the render
+    // function, so it re-captured previousProps mid-pass and shouldUpdate
+    // compared the props to themselves. The first render was skipped
+    // entirely and render() returned [].
+    it('executes the user render function on the first render', () => {
       let renderCount = 0
-      
-      const component = createReactiveComponent<{ message: string }>((props) => {
+
+      const component = createReactiveComponent<{ message: string }>(props => {
         renderCount++
         return { type: 'text', text: props.message } as DOMNode
       })
-      
-      const instance = component({ message: message() })
-      instance.render()
-      
+
+      const instance = component({ message: 'Hello' })
+      const result = instance.render()
+
       expect(renderCount).toBe(1)
+      expect(result).toEqual({ type: 'text', text: 'Hello' })
+    })
+
+    it('memoizes re-renders while props are unchanged', () => {
+      let renderCount = 0
+
+      const component = createReactiveComponent<{ message: string }>(props => {
+        renderCount++
+        return { type: 'text', text: props.message } as DOMNode
+      })
+
+      const instance = component({ message: 'Hello' })
+      instance.render()
+      instance.render()
+
+      // The point of the reactive wrapper: shouldUpdate skips the second
+      // pass because the props are shallow-equal. Regression guard against
+      // "fixing" #238 by deleting shouldUpdate, which would make
+      // createReactiveComponent an alias for createComponent.
+      expect(renderCount).toBe(1)
+    })
+
+    it('runs lifecycle tracking effects once per instance, not once per render', () => {
+      const onUpdate = vi.fn()
+      let renderCount = 0
+
+      const component = createComponent<{ message: string }>(
+        props => {
+          renderCount++
+          return { type: 'text', text: props.message } as DOMNode
+        },
+        { lifecycle: { onUpdate } }
+      )
+
+      const instance = component({ message: 'Hello' })
+      instance.render()
+      instance.render()
+      instance.render()
+
+      // The tracking effects used to be created inside the render function,
+      // so every pass added another live effect (never disposed — the render
+      // is wrapped in runWithComponentContext, not a per-render root) and
+      // each new effect fired onUpdate against the snapshot the previous one
+      // had just written. Props never changed here, so onUpdate must not
+      // fire at all; at HEAD it fired once per render from pass 2 onward.
+      expect(renderCount).toBe(3)
+      expect(onUpdate).not.toHaveBeenCalled()
     })
   })
 

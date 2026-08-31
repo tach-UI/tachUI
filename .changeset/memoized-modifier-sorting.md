@@ -2,4 +2,8 @@
 '@tachui/core': patch
 ---
 
-Stop copying and priority-sorting modifier arrays on every node render (#220): `applyModifiersSequential`, the batch group path, and the per-render `node.modifiers` population now share a `WeakMap`-memoized sorted array keyed on the source array identity. Modifier ordering is static after construction and every append path (modifier builder, proxy, `updateComponentModifiers`) replaces the array with a new identity — so stable renders hit the cache and pay neither the array copy nor the O(n log n) sort.
+Stop copying and priority-sorting modifier arrays on every node render (#220): `applyModifiersSequential` and the batch path now share a `WeakMap`-memoized sorted array keyed on the source array identity, so stable renders pay neither the array copy nor the O(n log n) sort.
+
+Modifier arrays are appended to in place after construction — by the modifier builder, and post-construction by `Image.scaledToFit`/`scaledToFill` and `Grid`'s item animations — so identity alone is not a sufficient cache key. The cache also records the source length and re-sorts when it changes; every modifier-array mutation in the tree is an append, so this is sound and O(1). Without it a warm cache silently drops modifiers pushed between renders.
+
+The batch path now sorts once before grouping instead of re-sorting each type group. Groups are allocated fresh per call and could never hit the cache, so this both restores cache hits and keeps within-group application in priority order.
