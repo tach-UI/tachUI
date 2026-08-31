@@ -108,7 +108,7 @@
   },
   "simple-git-hooks": {
     "pre-commit": "bunx lint-staged",
-    "pre-push": "node ./tools/pre-push.mjs"
+    "pre-push": "if [ -f ./tools/pre-push.mjs ]; then node ./tools/pre-push.mjs; else bun run type-check && bun run test:ci; fi"
   },
   "lint-staged": {
     "*.{js,ts,tsx,json,md}": [
