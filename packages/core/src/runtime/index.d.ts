@@ -9,10 +9,8 @@ export { ComponentManager, createAdvancedComponent, createComponent, createFragm
 export { ComponentContextDebug, ComponentContextSymbol, consumeEnvironmentValue, createComponentContext, createEnvironmentKey, EnvironmentSymbol, getCurrentComponentContext, provideEnvironmentValue, runWithComponentContext, setCurrentComponentContext, withComponentContext, } from './component-context';
 export type { TachUIContext } from './context';
 export { ContextManager, contextUtils, createContext, createContextConsumer, DIContainer, defaultContextManager, globalDI, Injectable, inject, useContext, withProvider, } from './context';
-export { mountRoot, DOMBridgeDebug, getComponentFromElement, mountComponentChildren, mountComponentTree, unmountComponent, unmountComponentEnhanced, updateComponent, } from './dom-bridge';
+export { mount, unmount, mountRoot, DOMBridgeDebug, getComponentFromElement, mountComponentChildren, mountComponentTree, unmountComponent, unmountComponentEnhanced, updateComponent, } from './dom-bridge';
 export { LifecycleManager } from './lifecycle';
-export { mount, unmount, updateProps } from './mounting';
-export { lazy, memo } from './optimization';
 export { ChildrenManager, createChildrenManager, createPropsManager, createRefManager, defaultChildrenRenderer, PropsManager, propsUtils, RefManager, } from './props';
 export { DOMRenderer, h, renderComponent, text, resetRendererMetrics, getRendererMetrics } from './renderer';
 export type { RendererMetricsSnapshot } from './renderer';
