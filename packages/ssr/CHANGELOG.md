@@ -1,5 +1,11 @@
 # @tachui/ssr
 
+## 0.8.30
+
+### Patch Changes
+
+- [#249](https://github.com/tach-UI/tachUI/pull/249) [`1022bb4`](https://github.com/tach-UI/tachUI/commit/1022bb436ff32c6046e41ad1d9c650bed6092b5a) Thanks [@whoughton](https://github.com/whoughton)! - Harden the SSR serializer against attribute-name injection (#218): attribute _values_ were already escaped, but attribute _names_ reached the markup unvalidated. Prop keys arriving via spread-props patterns (e.g. `"x\" onmouseover=\"1"`) are now validated against a safe attribute-name charset and skipped with a development-mode warning instead of being emitted.
+
 ## 0.8.29
 
 ### Patch Changes
