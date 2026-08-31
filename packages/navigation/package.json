@@ -1,6 +1,6 @@
 {
   "name": "@tachui/navigation",
-  "version": "0.8.31",
+  "version": "0.8.32",
   "description": "Navigation components for tachUI - NavigationView, TabView, and routing utilities",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -71,10 +71,10 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/modifiers": "0.8.30"
+    "@tachui/modifiers": "0.8.31"
   },
   "peerDependencies": {
-    "@tachui/core": ">=0.8.29"
+    "@tachui/core": ">=0.8.30"
   },
   "devDependencies": {
     "@tachui/core": "workspace:*",
