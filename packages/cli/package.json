@@ -1,6 +1,6 @@
 {
   "name": "@tachui/cli",
-  "version": "0.8.29",
+  "version": "0.8.30",
   "description": "Tacho CLI - Comprehensive developer tooling for tachUI",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -26,8 +26,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@tachui/core": "0.8.28",
-    "@tachui/devtools": "0.8.29",
+    "@tachui/core": "0.8.29",
+    "@tachui/devtools": "0.8.30",
     "commander": "^11.0.0",
     "chalk": "^5.0.0",
     "ora": "^7.0.0",
