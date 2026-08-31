@@ -8,7 +8,12 @@
  */
 
 import { describe, expect, it, vi, afterEach } from 'vitest'
-import { createEffect, createSignal, flushSync } from '../../src/reactive'
+import {
+  createComputed,
+  createEffect,
+  createSignal,
+  flushSync,
+} from '../../src/reactive'
 // ComputationState is only re-exported as a type from the reactive index;
 // the runtime const lives in the types re-export
 import { ComputationState } from '../../src/reactive/types'
@@ -96,6 +101,63 @@ describe('reactive error isolation (#217)', () => {
       'Error in computation during flush:',
       expect.any(Error)
     )
+  })
+
+  it('an early failure preserves prior dependencies so recovery stays scheduled', () => {
+    const [source, setSource] = createSignal(1)
+    let shouldThrow = false
+    let runs = 0
+
+    createEffect(() => {
+      runs++
+      // On the faulting run this guard throws BEFORE the signal is read —
+      // execute() has already cleared the previous dependency set at that
+      // point, so the computation must fall back to its prior subscriptions
+      if (shouldThrow) {
+        throw new Error('transient guard failure')
+      }
+      source()
+    })
+
+    expect(runs).toBe(1)
+
+    shouldThrow = true
+    setSource(2)
+    flushSync()
+    expect(runs).toBe(2)
+
+    // The source subscription survived the early failure — a later change
+    // must re-schedule the effect for recovery
+    shouldThrow = false
+    setSource(3)
+    flushSync()
+    expect(runs).toBe(3)
+  })
+
+  it('a failed computed surfaces the error on read instead of serving a stale value', () => {
+    const [source, setSource] = createSignal(1)
+    let shouldThrow = false
+
+    const computed = createComputed(() => {
+      if (shouldThrow) {
+        throw new Error('computed failure')
+      }
+      return source() * 2
+    })
+
+    expect(computed()).toBe(2)
+
+    // The queued recompute fails during the flush: the computed must not be
+    // treated as clean — the next read re-executes and surfaces the error
+    shouldThrow = true
+    setSource(2)
+    flushSync()
+    expect(() => computed()).toThrow('computed failure')
+    expect(() => computed.peek()).toThrow('computed failure')
+
+    // Fault clears: the computed re-executes with the current source (2 * 2)
+    shouldThrow = false
+    expect(computed()).toBe(4)
   })
 
   it('a disposed computation stays disposed (explicit dispose path unaffected)', () => {
