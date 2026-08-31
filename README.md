@@ -53,9 +53,9 @@ This alpha is ideal for:
 ### Installation
 
 ```bash
-npm install @tachui/core @tachui/primitives
+npm install @tachui/core @tachui/primitives @tachui/modifiers
 # or
-bun add @tachui/core @tachui/primitives
+bun add @tachui/core @tachui/primitives @tachui/modifiers
 ```
 
 > **Moved in 0.8:** components live in `@tachui/primitives`, not `@tachui/core`. The
@@ -68,6 +68,10 @@ bun add @tachui/core @tachui/primitives
 ```typescript
 import { createSignal, mount } from '@tachui/core'
 import { Button, Text, VStack } from '@tachui/primitives'
+// Registers the basic modifiers (.fontSize, .padding, .cornerRadius, ...).
+// Without this, the first modifier call throws
+// "Modifier 'fontSize' not found in registry".
+import '@tachui/modifiers/preload/basic'
 
 function CounterApp() {
   const [count, setCount] = createSignal(0)
@@ -384,13 +388,14 @@ Special thanks to the open source community for continuous inspiration and feedb
 
 ```bash
 # Install tachUI Alpha
-npm install @tachui/core @tachui/primitives
+npm install @tachui/core @tachui/primitives @tachui/modifiers
 ```
 
 ```typescript
 // Create your first SwiftUI-style component
 import { createSignal, mount } from '@tachui/core'
 import { Button, Text, VStack } from '@tachui/primitives'
+import '@tachui/modifiers/preload/basic'
 
 // Start building! 🎉
 ```
