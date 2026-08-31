@@ -241,6 +241,12 @@ export function createComponent<P extends ComponentProps = ComponentProps>(
     let previousProps: P | undefined
     let mounted = false
     let cleanupRegistered = false
+    // False until the first render completes: shouldUpdate must only gate
+    // re-renders. On the first pass previousProps is captured mid-render by
+    // the props-tracking effect below, so comparing then would always be a
+    // no-op — and for createReactiveComponent it skipped the first render
+    // entirely (#238).
+    let hasRendered = false
 
     // Create render function with reactive context
     const renderFunction: RenderFunction = () =>
@@ -310,15 +316,17 @@ export function createComponent<P extends ComponentProps = ComponentProps>(
           const currentProps = propsManager.getProps()
           const currentChildren = childrenManager.getChildren()
 
-          // Check shouldUpdate if provided
-          if (previousProps && options.shouldUpdate) {
+          // Check shouldUpdate if provided (re-renders only — see hasRendered)
+          if (hasRendered && previousProps && options.shouldUpdate) {
             if (!options.shouldUpdate(previousProps, currentProps)) {
               // Skip render if shouldUpdate returns false
               return []
             }
           }
 
-          return render(currentProps, currentChildren)
+          const renderResult = render(currentProps, currentChildren)
+          hasRendered = true
+          return renderResult
         } catch (error) {
           if (options.lifecycle?.onError) {
             options.lifecycle.onError(error as Error)

@@ -212,10 +212,9 @@ describe('Component Management System', () => {
   })
 
   describe('createReactiveComponent', () => {
-    // SKIPPED: createReactiveComponent skips its first render — the props-tracking
-    // effect sets previousProps before the shouldUpdate guard runs, so it compares
-    // props to themselves and returns []. Tracked in https://github.com/tach-UI/tachUI/issues/238
-    it.skip('should create component that reacts to prop changes', () => {
+    it('should create component that reacts to prop changes', () => {
+      // #238 fixed: shouldUpdate only gates re-renders (hasRendered flag),
+      // so the first render always executes the user render function
       const [message, setMessage] = createSignal('Hello')
       let renderCount = 0
       
