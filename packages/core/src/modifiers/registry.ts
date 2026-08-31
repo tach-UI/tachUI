@@ -118,21 +118,46 @@ export function applyModifiersToNode(
   }
 }
 
-// Modifier ordering is static after construction, but modifier application
-// runs on every element render. Cache the priority-sorted result keyed on the
-// SOURCE array identity: the builder replaces (never mutates) the array on
-// each chain append, so a new identity invalidates the cache naturally and
-// stable renders hit it. The sorted result is also registered as its own key
-// so downstream application paths that receive the cached array skip all work.
-const sortedModifiersCache = new WeakMap<Modifier[], Modifier[]>()
+// Modifier ordering is static once a chain is built, but modifier application
+// runs on every element render, so the priority sort is memoized on the SOURCE
+// array identity. The sorted result is registered as its own key too, so
+// downstream paths handed the cached array skip all work.
+//
+// Identity alone is NOT a sufficient key: modifier arrays are appended to in
+// place after construction. `ModifierBuilder` pushes on every chain call, and
+// two post-construction sites push during/after render — `scaledToFit` and
+// `scaledToFill` (packages/primitives/src/display/Image.ts) and
+// `applyItemAnimations` (packages/grid/src/components/Grid.ts). A cache keyed
+// on identity alone silently drops those modifiers once it is warm.
+//
+// Every mutation in the tree is an append — verified: no indexed assignment,
+// splice, pop, shift, sort, reverse, or length write targets a modifier array
+// anywhere in packages/*/src. So the source length is a sound validity token,
+// and checking it is O(1). If #253 rules that modifier arrays are immutable
+// after construction, this guard becomes dead weight and should be removed
+// along with the three mutation sites.
+interface SortedModifiersEntry {
+  sourceLength: number
+  sorted: Modifier[]
+}
+
+const sortedModifiersCache = new WeakMap<Modifier[], SortedModifiersEntry>()
 
 function getSortedModifiers(modifiers: Modifier[]): Modifier[] {
-  let sorted = sortedModifiersCache.get(modifiers)
-  if (!sorted) {
-    sorted = [...modifiers].sort((a, b) => a.priority - b.priority)
-    sortedModifiersCache.set(modifiers, sorted)
-    sortedModifiersCache.set(sorted, sorted)
+  const cached = sortedModifiersCache.get(modifiers)
+  if (cached && cached.sourceLength === modifiers.length) {
+    return cached.sorted
   }
+
+  const sorted = [...modifiers].sort((a, b) => a.priority - b.priority)
+  sortedModifiersCache.set(modifiers, {
+    sourceLength: modifiers.length,
+    sorted,
+  })
+  sortedModifiersCache.set(sorted, {
+    sourceLength: sorted.length,
+    sorted,
+  })
   return sorted
 }
 
@@ -203,8 +228,11 @@ function applyModifiersBatch(
   context: ModifierContext,
   options: ModifierApplicationOptions,
 ): DOMNode {
-  // Group modifiers by type for more efficient application
-  const modifierGroups = groupModifiersByType(modifiers);
+  // Sort ONCE, then group. Grouping allocates a fresh array per type, so
+  // sorting per group could never hit the cache; sorting the source first
+  // hits it, and groups built from a priority-sorted array are themselves in
+  // priority order, making the per-group sort redundant.
+  const modifierGroups = groupModifiersByType(getSortedModifiers(modifiers));
 
   let currentNode = node;
   const allEffects: (() => void)[] = [];
@@ -270,11 +298,11 @@ function applyModifierGroup(
   effects: (() => void)[] = [],
   cleanup: (() => void)[] = [],
 ): DOMNode {
-  const sortedModifiers = getSortedModifiers(modifiers);
-
+  // Groups arrive pre-sorted — applyModifiersBatch sorts before grouping, so
+  // within-group order is already priority order and no re-sort is needed.
   let currentNode = node;
 
-  for (const modifier of sortedModifiers) {
+  for (const modifier of modifiers) {
     try {
       const result = modifier.apply(currentNode, context);
       if (result && typeof result === "object" && "type" in result) {

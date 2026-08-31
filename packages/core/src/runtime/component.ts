@@ -237,16 +237,40 @@ export function createComponent<P extends ComponentProps = ComponentProps>(
     // Create ref manager for component references
     const refManager = new RefManager()
 
-    // Track previous props for lifecycle hooks
+    // Track previous props for lifecycle hooks. The snapshot is taken AFTER
+    // each successful render (not inside the tracking effects), so
+    // shouldUpdate on a re-render compares against the prior pass's props
+    // and the first pass — where no prior snapshot exists — always renders
+    // (#238).
     let previousProps: P | undefined
     let mounted = false
     let cleanupRegistered = false
-    // False until the first render completes: shouldUpdate must only gate
-    // re-renders. On the first pass previousProps is captured mid-render by
-    // the props-tracking effect below, so comparing then would always be a
-    // no-op — and for createReactiveComponent it skipped the first render
-    // entirely (#238).
-    let hasRendered = false
+
+    // Lifecycle tracking effects — created ONCE per instance. Re-creating
+    // them inside the render function accumulated a new effect per render
+    // pass (multiplying lifecycle notifications) and re-captured
+    // previousProps mid-pass, corrupting the shouldUpdate comparison.
+    createEffect(() => {
+      const currentProps = propsManager.getProps()
+
+      if (previousProps && options.lifecycle?.onPropsChange) {
+        const changedKeys = propsUtils.compareProps(previousProps, currentProps)
+        if (changedKeys.length > 0) {
+          options.lifecycle.onPropsChange(previousProps, currentProps, changedKeys)
+        }
+      }
+
+      if (previousProps && options.lifecycle?.onUpdate) {
+        options.lifecycle.onUpdate(previousProps, currentProps)
+      }
+    })
+
+    createEffect(() => {
+      const currentChildren = childrenManager.getChildren()
+      if (options.lifecycle?.onChildrenChange && previousProps) {
+        options.lifecycle.onChildrenChange(previousProps.children, currentChildren)
+      }
+    })
 
     // Create render function with reactive context
     const renderFunction: RenderFunction = () =>
@@ -281,32 +305,6 @@ export function createComponent<P extends ComponentProps = ComponentProps>(
           })
         }
 
-        // Set up props change tracking
-        createEffect(() => {
-          const currentProps = propsManager.getProps()
-
-          if (previousProps && options.lifecycle?.onPropsChange) {
-            const changedKeys = propsUtils.compareProps(previousProps, currentProps)
-            if (changedKeys.length > 0) {
-              options.lifecycle.onPropsChange(previousProps, currentProps, changedKeys)
-            }
-          }
-
-          if (previousProps && options.lifecycle?.onUpdate) {
-            options.lifecycle.onUpdate(previousProps, currentProps)
-          }
-
-          previousProps = { ...currentProps }
-        })
-
-        // Set up children change tracking
-        createEffect(() => {
-          const currentChildren = childrenManager.getChildren()
-          if (options.lifecycle?.onChildrenChange && previousProps) {
-            options.lifecycle.onChildrenChange(previousProps.children, currentChildren)
-          }
-        })
-
         // Render the component
         try {
           if (options.lifecycle?.onRender) {
@@ -316,16 +314,20 @@ export function createComponent<P extends ComponentProps = ComponentProps>(
           const currentProps = propsManager.getProps()
           const currentChildren = childrenManager.getChildren()
 
-          // Check shouldUpdate if provided (re-renders only — see hasRendered)
-          if (hasRendered && previousProps && options.shouldUpdate) {
+          // Check shouldUpdate if provided — previousProps is the prior
+          // render's post-render snapshot; undefined on the first pass, so
+          // the guard naturally applies to re-renders only (#238)
+          if (previousProps && options.shouldUpdate) {
             if (!options.shouldUpdate(previousProps, currentProps)) {
-              // Skip render if shouldUpdate returns false
+              // Skip render if shouldUpdate returns false. previousProps is
+              // intentionally not advanced: pending prop changes accumulate
+              // and remain visible to the next shouldUpdate comparison.
               return []
             }
           }
 
           const renderResult = render(currentProps, currentChildren)
-          hasRendered = true
+          previousProps = { ...currentProps }
           return renderResult
         } catch (error) {
           if (options.lifecycle?.onError) {
@@ -414,7 +416,12 @@ export function createReactiveComponent<P extends ComponentProps>(
 ): Component<P> {
   return createComponent(render, {
     shouldUpdate: (prevProps, nextProps) => {
-      // Always update for reactive components
+      // Re-render only when props actually differ. #238 was never this
+      // guard being wrong — it was previousProps being captured mid-pass by
+      // an effect created inside the render function, so the first pass
+      // compared props to themselves and skipped. previousProps is now
+      // snapshotted after a successful render and is undefined on the first
+      // pass, so the guard applies to re-renders only.
       return !propsUtils.shallowEqual(prevProps, nextProps)
     },
   })
