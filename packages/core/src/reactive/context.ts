@@ -146,12 +146,13 @@ export class ComputationImpl implements Computation {
       return this.value
     }
 
-    // Clean up old dependencies
-    for (const source of this.sources) {
-      if (source && typeof source === 'object' && 'removeObserver' in source) {
-        ;(source as any).removeObserver(this)
-      }
-    }
+    // Snapshot the current dependencies. Unsubscribing stale ones is
+    // deferred until after a successful run: if fn() throws partway
+    // through, previous subscriptions were never removed, so the
+    // computation stays wired for recovery even when the failure happens
+    // before any signal read re-tracks them (#217 review: an early failure
+    // must not strand the computation with empty sources).
+    const previousSources = Array.from(this.sources)
     this.sources.clear()
 
     const prevComputation = reactiveContext.currentComputation
@@ -160,17 +161,35 @@ export class ComputationImpl implements Computation {
     try {
       this.state = ComputationState.Clean
       this.value = this.fn()
+
+      // Success: drop subscriptions that were not re-read during this run
+      for (const source of previousSources) {
+        if (
+          !this.sources.has(source) &&
+          source &&
+          typeof source === 'object' &&
+          'removeObserver' in source
+        ) {
+          ;(source as any).removeObserver(this)
+        }
+      }
+
       return this.value
     } catch (error) {
-      // Recoverable failure (#217): mark Clean instead of Disposed. The
-      // computation stays subscribed to whatever sources it read before
-      // throwing (tracking happened during fn() execution via
-      // reactiveContext.currentComputation), so their next change re-runs it.
-      // Marking Disposed here would permanently kill the effect even after
-      // the fault clears. The rethrow is kept so synchronous callers (e.g. a
-      // computed read or the initial effect run at creation) still see the
-      // error; the flush loop is what isolates it from sibling updates.
-      this.state = ComputationState.Clean
+      // Recoverable failure (#217): mark Dirty, not Clean/Disposed.
+      // - A failed computed re-executes on its next read and surfaces the
+      //   error synchronously instead of silently serving its stale cached
+      //   value (Clean + _hasValue would do exactly that).
+      // - Subscriptions from the failed run are retained: previous sources
+      //   were never unsubscribed (only the tracking set was cleared), and
+      //   partially re-tracked sources stay subscribed too, so the next
+      //   change of any of them re-schedules recovery. The next successful
+      //   run prunes whatever is no longer read.
+      for (const source of previousSources) {
+        this.sources.add(source)
+      }
+
+      this.state = ComputationState.Dirty
       // Don't suppress errors - let them propagate for proper error handling
       // Only log in non-test environments to avoid polluting test output
       if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
