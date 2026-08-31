@@ -130,50 +130,148 @@ function findDOMElementsForComponent(component: ComponentInstance): Element[] {
  *
  * Note: This requires a DOM element with id="app" to exist.
  */
-export function mountRoot(rootFunction: () => ComponentInstance): void {
+/**
+ * Roots currently mounted by `mount()`, keyed on their container element, so
+ * `unmount(target)` can find and dispose one without the caller holding on to
+ * the returned dispose function.
+ */
+const mountedRoots = new Map<Element, () => void>()
+
+/**
+ * Resolve a mount target to an element.
+ *
+ * Accepts an element directly, or a CSS selector. The error names the selector
+ * that missed — the previous behaviour was an undocumented throw referring to
+ * `id="app"` regardless of what the caller asked for.
+ */
+function resolveMountTarget(target: Element | string): Element {
+  if (typeof target !== 'string') return target
+
+  if (typeof document === 'undefined') {
+    throw new Error(
+      `mount(): no DOM available to resolve "${target}". ` +
+        'mount() requires a browser environment; use @tachui/ssr to render on the server.'
+    )
+  }
+
+  const element = document.querySelector(target)
+  if (!element) {
+    throw new Error(
+      `mount(): no element matches "${target}". ` +
+        'Add it to your HTML (for the default, `<div id="app"></div>`) ' +
+        'or pass a different target, e.g. mount(() => App(), "#root").'
+    )
+  }
+  return element
+}
+
+/**
+ * Mount an application into the DOM.
+ *
+ * This is the entry point for a tachUI app. The root is a thunk returning a
+ * component instance — `() => App()`, not `App()` — so that component
+ * construction happens inside the reactive root that owns it.
+ *
+ * @param rootFunction Returns the root component instance.
+ * @param target Element or CSS selector to mount into. Defaults to `'#app'`.
+ * @returns A dispose function that unmounts the app and tears down its
+ *          reactive root. Safe to call more than once.
+ *
+ * @example
+ * ```ts
+ * import { mount } from '@tachui/core'
+ * import { VStack, Text } from '@tachui/primitives'
+ *
+ * const dispose = mount(() => VStack([Text('Hello')]))
+ * // later
+ * dispose()
+ * ```
+ */
+export function mount(
+  rootFunction: () => ComponentInstance,
+  target: Element | string = '#app'
+): () => void {
+  const container = resolveMountTarget(target)
+
+  let disposeRoot: (() => void) | undefined
+  let disposeTree: (() => void) | undefined
+
   createReactiveRoot(dispose => {
-    // Create root component context for State() to work throughout the entire app
+    disposeRoot = dispose
+
+    // Root component context so State() works throughout the app
     const rootContext = createComponentContext('root-app')
     setCurrentComponentContext(rootContext)
 
-    // Also store context in reactive owner so State() can find it
+    // Also store context in the reactive owner so State() can find it
     const owner = getOwner()
     if (owner) {
       owner.context.set(ComponentContextSymbol, rootContext)
     }
 
-    let component: ComponentInstance
-
-    try {
-      component = rootFunction()
-
-      // Find app container
-      const container = document.getElementById('app')
-      if (!container) {
-        throw new Error('App container element with id="app" not found')
-      }
-
-      // Mount the component tree to the container
-      mountComponentTree(component, container)
-    } catch (error) {
-      // Reset context on error
+    const resetContext = () => {
       setCurrentComponentContext(null)
       if (owner) {
         owner.context.delete(ComponentContextSymbol)
       }
+    }
+
+    try {
+      disposeTree = mountComponentTree(rootFunction(), container)
+    } catch (error) {
+      resetContext()
       throw error
     }
 
-    // Set up cleanup that resets context when the root is disposed
-    const originalDispose = dispose
-    return () => {
-      setCurrentComponentContext(null)
-      if (owner) {
-        owner.context.delete(ComponentContextSymbol)
-      }
-      return originalDispose()
-    }
+    return resetContext
   })
+
+  let disposed = false
+  const disposeApp = () => {
+    if (disposed) return
+    disposed = true
+    mountedRoots.delete(container)
+    // Tree first (component cleanup and DOM removal), then the reactive root.
+    disposeTree?.()
+    disposeRoot?.()
+  }
+
+  mountedRoots.set(container, disposeApp)
+  return disposeApp
+}
+
+/**
+ * Unmount the application mounted at `target`.
+ *
+ * Equivalent to calling the dispose function `mount()` returned. Provided for
+ * callers that did not keep it.
+ *
+ * @param target Element or CSS selector. Defaults to `'#app'`.
+ * @returns `true` if an app was mounted there and has now been unmounted.
+ */
+export function unmount(target: Element | string = '#app'): boolean {
+  let container: Element
+  try {
+    container = resolveMountTarget(target)
+  } catch {
+    return false
+  }
+
+  const disposeApp = mountedRoots.get(container)
+  if (!disposeApp) return false
+
+  disposeApp()
+  return true
+}
+
+/**
+ * Mount an application into `#app`.
+ *
+ * @deprecated Use {@link mount}, which takes a configurable target and returns
+ * a dispose function. Retained so existing bootstraps keep working.
+ */
+export function mountRoot(rootFunction: () => ComponentInstance): void {
+  mount(rootFunction, '#app')
 }
 
 /**

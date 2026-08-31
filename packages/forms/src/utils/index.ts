@@ -4,23 +4,13 @@
  * Shared utilities for form handling, formatting, and validation
  */
 
-// TODO: Migrate actual utilities from @tachui/forms
-// Placeholder implementation for unified package structure
+// `useFormState` and `useFormValidation` used to be exported from here as
+// stubs returning `{}`. They shadowed the real form-state engine that lives
+// two directories away and gave callers silent no-ops instead of an error
+// (#226). Use `createFormState`, `createField` or `createMultiStepFormState`
+// from `@tachui/forms` instead — see `src/state/`.
 
-// Form state utilities (stubs)
-export function useFormState() {
-  return {
-    /* TODO: Implement form state hook */
-  }
-}
-
-export function useFormValidation() {
-  return {
-    /* TODO: Implement form validation hook */
-  }
-}
-
-// Formatting utilities (stubs)
+// Formatting utilities
 export function formatCreditCard(value: string): string {
   return value.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1 ')
 }
@@ -37,7 +27,7 @@ export function formatPostalCode(value: string): string {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 
-// Date utilities (stubs)
+// Date utilities
 export function formatDate(date: Date, _format: string = 'yyyy-MM-dd'): string {
   return date.toISOString().split('T')[0]
 }
@@ -51,7 +41,5 @@ export function isValidDate(date: Date): boolean {
 }
 
 // Type aliases
-export type FormStateManager = any
 export type FormatterFunction = (value: string) => string
 export type DateFormat = string
-export type FormUtilOptions = any
