@@ -1,5 +1,15 @@
 # @tachui/core
 
+## 0.8.29
+
+### Patch Changes
+
+- [#246](https://github.com/tach-UI/tachUI/pull/246) [`6a45ba3`](https://github.com/tach-UI/tachUI/commit/6a45ba3e75bbde9f0fa6e2636f5a6e7d7e7a2019) Thanks [@whoughton](https://github.com/whoughton)! - Fix reactive error isolation (#217): a single throwing effect no longer aborts the update flush (remaining computations in the batch now complete, matching the `MicrotaskScheduler`'s per-task isolation), and a throwing computation is no longer permanently disposed — it stays subscribed to the sources it read before throwing and re-runs on their next change, so a transient error is recoverable. Errors are reported via `console.error` at both isolation layers; synchronous callers (computed reads, initial effect runs) still receive the thrown error. Note: this supersedes the v2.0 semantics where effect errors propagated out of `flushSync()` — they are now isolated and reported instead.
+
+- Updated dependencies []:
+  - @tachui/types@0.8.29
+  - @tachui/registry@0.8.29
+
 ## 0.8.28
 
 ### Patch Changes
