@@ -4,10 +4,11 @@ on:
   push:
     branches: [main]
     paths:
+      # Only run for changeset activity: a merge adding changesets (creates /
+      # updates the version PR) and the version PR merge itself (which deletes
+      # the changeset files — this is the publish run). Code-only merges do
+      # not need this pipeline; ci.yml covers them.
       - '.changeset/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'bun.lock'
       - '.github/workflows/release.yml'
   workflow_dispatch:
 
