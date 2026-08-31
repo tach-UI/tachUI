@@ -1,13 +1,5 @@
 # @tachui/primitives
 
-## 0.8.32
-
-### Patch Changes
-
-- Updated dependencies [[`57aa503`](https://github.com/tach-UI/tachUI/commit/57aa5037a19c9fa655f2edec26d1d459727fcc60), [`37495ef`](https://github.com/tach-UI/tachUI/commit/37495efb162a996ab429302d711481bbad9c6648), [`c2ebb49`](https://github.com/tach-UI/tachUI/commit/c2ebb49cb08ad83819284c7c6a44a56c33102cbb)]:
-  - @tachui/core@0.9.0
-  - @tachui/modifiers@0.8.32
-
 ## 0.8.31
 
 ### Patch Changes
