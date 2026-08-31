@@ -26,8 +26,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@tachui/core": "workspace:*",
-    "@tachui/devtools": "workspace:*",
+    "@tachui/core": "0.8.27",
+    "@tachui/devtools": "0.8.28",
     "commander": "^11.0.0",
     "chalk": "^5.0.0",
     "ora": "^7.0.0",

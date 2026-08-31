@@ -71,7 +71,7 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/modifiers": "workspace:*"
+    "@tachui/modifiers": "0.8.28"
   },
   "peerDependencies": {
     "@tachui/core": ">=0.8.27"

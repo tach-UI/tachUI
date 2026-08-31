@@ -34,8 +34,8 @@
     }
   },
   "dependencies": {
-    "@tachui/core": "workspace:*",
-    "@tachui/ssr": "workspace:*"
+    "@tachui/core": "0.8.27",
+    "@tachui/ssr": "0.8.27"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

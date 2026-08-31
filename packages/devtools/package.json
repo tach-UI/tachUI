@@ -53,9 +53,9 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "workspace:*",
-    "@tachui/primitives": "workspace:*",
-    "@tachui/registry": "workspace:*",
+    "@tachui/core": "0.8.27",
+    "@tachui/primitives": "0.8.28",
+    "@tachui/registry": "0.8.27",
     "magic-string": "^0.30.0"
   },
   "devDependencies": {
