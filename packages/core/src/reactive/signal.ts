@@ -139,7 +139,19 @@ function flushUpdates(): void {
 
       for (const computation of computations) {
         if (computation.state === ComputationState.Dirty) {
-          computation.execute()
+          try {
+            computation.execute()
+          } catch (error) {
+            // Isolate failures: one throwing computation must not abort the
+            // remaining computations in this batch (matching the per-task
+            // isolation in MicrotaskScheduler). The computation itself
+            // re-establishes a recoverable state in execute(); the rethrown
+            // error is reported here and the loop continues so sibling
+            // updates complete.
+            if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
+              console.error('Error in computation during flush:', error)
+            }
+          }
         }
       }
     }
