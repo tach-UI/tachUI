@@ -331,24 +331,27 @@ describe('Signal', () => {
       setCount(1) // Should work fine
       flushSync()
 
-      // Now errors properly propagate instead of being silently suppressed
+      // Errors are isolated (#217): a throwing effect is reported and stays
+      // recoverable, but does not propagate out of the flush
       expect(() => {
-        setCount(5) // Should trigger error
+        setCount(5) // Triggers the error
         flushSync()
-      }).toThrow('Test error')
+      }).not.toThrow()
 
-      // Error logging is suppressed in test environment, so we don't expect it to be called
-      // expect(errorSpy).toHaveBeenCalled()
+      // The effect recovers once the fault clears
+      setCount(6)
+      flushSync() // Runs again without throwing
+
       errorSpy.mockRestore()
     })
 
-    it('should demonstrate that errors now properly propagate (v2.0 behavior)', () => {
+    it('should isolate effect errors from the flush and stay recoverable (#217)', () => {
       const [count, setCount] = createSignal(0)
-      let effectExecuted = false
+      let effectExecuted = 0
 
       createRoot(() => {
         createEffect(() => {
-          effectExecuted = true
+          effectExecuted++
           if (count() === 5) {
             throw new Error('Test error')
           }
@@ -357,14 +360,17 @@ describe('Signal', () => {
 
       setCount(1) // Should work fine
       flushSync()
-      expect(effectExecuted).toBe(true)
+      expect(effectExecuted).toBe(2)
 
-      // In v2.0, errors properly propagate instead of being silently suppressed
-      // This is the CORRECT behavior for debugging and error handling
-      expect(() => {
-        setCount(5)
-        flushSync()
-      }).toThrow('Test error')
+      // Since #217, errors are isolated (reported, not propagated) so sibling
+      // updates in the same flush complete, and the effect stays recoverable
+      setCount(5)
+      flushSync()
+      expect(effectExecuted).toBe(3)
+
+      setCount(6) // Fault clears — the effect runs again
+      flushSync()
+      expect(effectExecuted).toBe(4)
     })
   })
 })

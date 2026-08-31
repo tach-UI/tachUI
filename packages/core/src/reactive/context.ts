@@ -162,7 +162,15 @@ export class ComputationImpl implements Computation {
       this.value = this.fn()
       return this.value
     } catch (error) {
-      this.state = ComputationState.Disposed
+      // Recoverable failure (#217): mark Clean instead of Disposed. The
+      // computation stays subscribed to whatever sources it read before
+      // throwing (tracking happened during fn() execution via
+      // reactiveContext.currentComputation), so their next change re-runs it.
+      // Marking Disposed here would permanently kill the effect even after
+      // the fault clears. The rethrow is kept so synchronous callers (e.g. a
+      // computed read or the initial effect run at creation) still see the
+      // error; the flush loop is what isolates it from sibling updates.
+      this.state = ComputationState.Clean
       // Don't suppress errors - let them propagate for proper error handling
       // Only log in non-test environments to avoid polluting test output
       if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
