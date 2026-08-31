@@ -7,19 +7,28 @@
  * sample verbatim. If the public API moves again, this fails instead of the
  * user's first five minutes.
  *
- * Keep the code inside `quickStartExample` byte-identical to the README block.
+ * Keep the marked regions byte-identical to the README block — including the
+ * modifier preload. An earlier version of this file imported the preload
+ * outside the mirrored region, so the test passed while the documented snippet
+ * threw "Modifier 'fontSize' not found in registry". A guard that sets up more
+ * than the docs do is not a guard.
+ *
+ * LIMITATION: Vitest resolves modules like Node and does not tree-shake, so
+ * this proves the documented code compiles and runs — it cannot catch the
+ * modifier registration being eliminated from a bundled app. That is a
+ * separate packaging bug, cross-referenced from #236.
  */
 
 import { JSDOM } from 'jsdom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-// --- README sample: imports -------------------------------------------------
-import { createSignal, mount } from '../../src'
+// Test-only: drives the reactive scheduler; not part of the documented sample.
 import { flushSync } from '../../src/reactive'
-import { Button, Text, VStack } from '@tachui/primitives'
-// ---------------------------------------------------------------------------
 
+// --- README sample: imports (verbatim) --------------------------------------
+import { createSignal, mount } from '../../src'
+import { Button, Text, VStack } from '@tachui/primitives'
 import '@tachui/modifiers/preload/basic'
+// ----------------------------------------------------------------------------
 
 let dom: JSDOM
 
