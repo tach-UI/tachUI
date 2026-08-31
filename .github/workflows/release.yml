@@ -58,7 +58,10 @@ jobs:
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:
-          version: bun run changeset:version && bun install
+          # Note: no shell chaining in these inputs — `bun run <cmd> && ...`
+          # passes "&&" through as script arguments instead of chaining. All
+          # chaining lives inside the package.json scripts.
+          version: bun run release:version
           publish: bun run release:publish
           title: 'chore(release): version packages'
           commit: 'chore(release): version packages'

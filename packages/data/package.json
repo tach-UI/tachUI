@@ -40,10 +40,10 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "workspace:*",
-    "@tachui/flow-control": "workspace:*",
-    "@tachui/mobile": "workspace:*",
-    "@tachui/primitives": "workspace:*"
+    "@tachui/core": "0.8.27",
+    "@tachui/flow-control": "0.8.27",
+    "@tachui/mobile": "0.8.28",
+    "@tachui/primitives": "0.8.28"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

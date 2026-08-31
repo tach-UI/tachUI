@@ -32,7 +32,7 @@
     }
   },
   "dependencies": {
-    "@tachui/core": "workspace:*"
+    "@tachui/core": "0.8.27"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

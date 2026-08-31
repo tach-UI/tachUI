@@ -194,8 +194,8 @@
     "generate-modifier-types:monorepo": "tsx --tsconfig ./tsconfig.typegen.json ./scripts/generate-types-monorepo.ts"
   },
   "dependencies": {
-    "@tachui/types": "workspace:*",
-    "@tachui/registry": "workspace:*"
+    "@tachui/types": "0.8.27",
+    "@tachui/registry": "0.8.27"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.6",

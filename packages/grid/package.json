@@ -41,10 +41,10 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "workspace:*",
-    "@tachui/responsive": "workspace:*",
-    "@tachui/modifiers": "workspace:*",
-    "@tachui/registry": "workspace:*"
+    "@tachui/core": "0.8.27",
+    "@tachui/responsive": "0.8.28",
+    "@tachui/modifiers": "0.8.28",
+    "@tachui/registry": "0.8.27"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
