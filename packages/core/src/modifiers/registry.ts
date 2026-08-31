@@ -118,6 +118,24 @@ export function applyModifiersToNode(
   }
 }
 
+// Modifier ordering is static after construction, but modifier application
+// runs on every element render. Cache the priority-sorted result keyed on the
+// SOURCE array identity: the builder replaces (never mutates) the array on
+// each chain append, so a new identity invalidates the cache naturally and
+// stable renders hit it. The sorted result is also registered as its own key
+// so downstream application paths that receive the cached array skip all work.
+const sortedModifiersCache = new WeakMap<Modifier[], Modifier[]>()
+
+function getSortedModifiers(modifiers: Modifier[]): Modifier[] {
+  let sorted = sortedModifiersCache.get(modifiers)
+  if (!sorted) {
+    sorted = [...modifiers].sort((a, b) => a.priority - b.priority)
+    sortedModifiersCache.set(modifiers, sorted)
+    sortedModifiersCache.set(sorted, sorted)
+  }
+  return sorted
+}
+
 /**
  * Apply modifiers sequentially
  */
@@ -127,10 +145,7 @@ function applyModifiersSequential(
   context: ModifierContext,
   options: ModifierApplicationOptions,
 ): DOMNode {
-  // Sort modifiers by priority
-  const sortedModifiers = [...modifiers].sort(
-    (a, b) => a.priority - b.priority,
-  );
+  const sortedModifiers = getSortedModifiers(modifiers);
 
   let currentNode = node;
   const effects: (() => void)[] = [];
@@ -255,10 +270,7 @@ function applyModifierGroup(
   effects: (() => void)[] = [],
   cleanup: (() => void)[] = [],
 ): DOMNode {
-  // Sort by priority within the group
-  const sortedModifiers = [...modifiers].sort(
-    (a, b) => a.priority - b.priority,
-  );
+  const sortedModifiers = getSortedModifiers(modifiers);
 
   let currentNode = node;
 
@@ -381,7 +393,9 @@ export function createModifiableComponent<P extends ComponentProps>(
       if (node && typeof node === "object") {
         // Only attach modifiers to the root node (index 0)
         if (index === 0) {
-          node.modifiers = [...modifiableComponent.modifiers];
+          // Cached priority-sorted array — shared across renders of the same
+          // component (stable identity), so application paths skip re-sorting
+          node.modifiers = getSortedModifiers(modifiableComponent.modifiers);
           node.componentId = component.id;
           node._originalComponent = modifiableComponent._originalComponent;
         } else {
