@@ -211,11 +211,25 @@ const effectRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['customGlassmorphism', customGlassmorphism],
 ]
 
-effectRegistrations.forEach(([name, factory]) => {
-  if (!globalModifierRegistry.has(name)) {
-    globalModifierRegistry.register(name, factory as any)
-  }
-})
+/**
+ * Register every effect modifier on the global registry.
+ *
+ * Exported so `preload/effects` can call it explicitly. The module-scope call
+ * below covers barrel imports, but it cannot be relied on by the preload
+ * entry: the build forces this module into the hashed `modifiers-effects`
+ * chunk, which matches none of the package's `sideEffects` globs, so a
+ * bundler is free to drop it (#260). Idempotent — registration is guarded on
+ * `has()`.
+ */
+export function registerEffectModifiers(): void {
+  effectRegistrations.forEach(([name, factory]) => {
+    if (!globalModifierRegistry.has(name)) {
+      globalModifierRegistry.register(name, factory as any)
+    }
+  })
+}
+
+registerEffectModifiers()
 
 // Export all types and utilities
 
