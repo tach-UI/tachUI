@@ -8,6 +8,10 @@ import {
   ModifierBuilder,
   withModifiers
 } from '@tachui/core'
+import {
+  getSafeViewBox,
+  getSanitizedIconBody,
+} from '../utils/sanitize-icon.js'
 import type { 
   SymbolProps, 
   IconDefinition, 
@@ -388,10 +392,27 @@ export function Symbol(
           } else if (iconDef) {
             const { width, height } = getSize()
             const colors = getColors()
-            const opacityAttr = colors.opacity ? ` opacity="${colors.opacity}"` : ''
-            
-            // Apply stroke-width directly to SVG - simpler approach
-            element.innerHTML = `<svg width="${width}" height="${height}" viewBox="${iconDef.viewBox || '0 0 24 24'}" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${colors.strokeWidth}" stroke-linecap="round" stroke-linejoin="round"${opacityAttr}>${iconDef.svg}</svg>`
+
+            // Build the wrapper <svg> via the DOM so interpolated attribute
+            // values are escaped by setAttribute, and only innerHTML the
+            // allowlist-sanitized icon body (#218)
+            const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
+            const svgElement = document.createElementNS(SVG_NAMESPACE, 'svg')
+            svgElement.setAttribute('width', String(width))
+            svgElement.setAttribute('height', String(height))
+            svgElement.setAttribute('viewBox', getSafeViewBox(iconDef))
+            svgElement.setAttribute('fill', colors.fill)
+            svgElement.setAttribute('stroke', colors.stroke)
+            svgElement.setAttribute('stroke-width', String(colors.strokeWidth))
+            svgElement.setAttribute('stroke-linecap', 'round')
+            svgElement.setAttribute('stroke-linejoin', 'round')
+            if (colors.opacity) {
+              svgElement.setAttribute('opacity', colors.opacity)
+            }
+            svgElement.innerHTML = getSanitizedIconBody(iconDef)
+
+            element.innerHTML = ''
+            element.appendChild(svgElement)
           }
         }
       })

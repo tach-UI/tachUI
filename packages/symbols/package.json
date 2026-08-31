@@ -43,6 +43,7 @@
     "@tachui/core": ">=0.8.29"
   },
   "dependencies": {
+    "@tachui/core": "0.8.29",
     "@tachui/modifiers": "0.8.30",
     "lucide": "^0.447.0"
   },
