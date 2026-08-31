@@ -1,5 +1,26 @@
 # @tachui/modifiers
 
+## 0.8.29
+
+### Patch Changes
+
+- [#241](https://github.com/tach-UI/tachUI/pull/241) [`547c82e`](https://github.com/tach-UI/tachUI/commit/547c82e61e9f92da31b0cdceece66fe65da7283a) Thanks [@whoughton](https://github.com/whoughton)! - Fix interaction modifier listener leaks (#216): `onHover`, `onContinuousHover`, `onLongPressGesture`, and `InteractionModifier` (`.onTap()`, `.onHover()`, gestures, keyboard, scroll, etc.) now return a `ModifierResult` whose `cleanup` removes every registered DOM event listener — including document-level keyboard shortcut listeners — when the component unmounts. The modifier registry (`applyModifiersSequential`, batch path, and `combineModifiers`) now harvests `ModifierResult` returns and chains their cleanup onto `node.dispose`, which the renderer already drains on teardown. Listener teardown is double-dispose safe.
+
+- [#242](https://github.com/tach-UI/tachUI/pull/242) [`112d9c5`](https://github.com/tach-UI/tachUI/commit/112d9c551cc71669591678c32ef55ffe9c410fd2) Thanks [@whoughton](https://github.com/whoughton)! - fix(release): publish versioned internal dependency ranges
+
+  Rewrites the `workspace:*` internal dependency ranges to concrete
+  versioned ranges so published manifests are installable from npm.
+  `@tachui/core@0.8.27` and `@tachui/primitives@0.8.28` (the current
+  `latest` tags) shipped `workspace:*` dependencies and are uninstallable
+  outside the monorepo (#235). The release pipeline now rewrites workspace
+  ranges during versioning and rejects non-publishable protocols before
+  any future publish.
+
+- Updated dependencies [[`d4c6f85`](https://github.com/tach-UI/tachUI/commit/d4c6f85f8a706076cfc47e0e58f76ac39b346513), [`547c82e`](https://github.com/tach-UI/tachUI/commit/547c82e61e9f92da31b0cdceece66fe65da7283a), [`112d9c5`](https://github.com/tach-UI/tachUI/commit/112d9c551cc71669591678c32ef55ffe9c410fd2)]:
+  - @tachui/core@0.8.28
+  - @tachui/registry@0.8.28
+  - @tachui/types@0.8.28
+
 ## 0.8.28
 
 ### Patch Changes

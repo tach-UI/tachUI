@@ -1,5 +1,19 @@
 # @tachui/eslint-plugin
 
+## 0.8.16
+
+### Patch Changes
+
+- [#242](https://github.com/tach-UI/tachUI/pull/242) [`112d9c5`](https://github.com/tach-UI/tachUI/commit/112d9c551cc71669591678c32ef55ffe9c410fd2) Thanks [@whoughton](https://github.com/whoughton)! - fix(release): publish versioned internal dependency ranges
+
+  Rewrites the `workspace:*` internal dependency ranges to concrete
+  versioned ranges so published manifests are installable from npm.
+  `@tachui/core@0.8.27` and `@tachui/primitives@0.8.28` (the current
+  `latest` tags) shipped `workspace:*` dependencies and are uninstallable
+  outside the monorepo (#235). The release pipeline now rewrites workspace
+  ranges during versioning and rejects non-publishable protocols before
+  any future publish.
+
 ## 0.8.15
 
 ### Patch Changes
