@@ -975,4 +975,83 @@ describe('Modifier System', () => {
       expect(modifiers.length).toBe(3)
     })
   })
+
+  describe('Modifier sort caching (#220)', () => {
+    const makeTracker = (name: string, priority: number) =>
+      createCustomModifier(name, priority, () => undefined)({}) as any
+
+    it('applies modifiers in priority order regardless of input order', () => {
+      const log: string[] = []
+      const record = (name: string) => (node: any) => {
+        log.push(name)
+        return node
+      }
+      const modifiers = [
+        createCustomModifier('p30', 30, record('p30'))({}),
+        createCustomModifier('p10', 10, record('p10'))({}),
+        createCustomModifier('p20', 20, record('p20'))({}),
+      ]
+
+      applyModifiersToNode(h('div') as any, modifiers as any, {
+        componentId: 'order-test',
+        phase: 'creation',
+      })
+
+      expect(log).toEqual(['p10', 'p20', 'p30'])
+    })
+
+    it('reuses the cached sorted array across renders of the same component', () => {
+      const base = createComponent(() => ({ type: 'text', text: 'x' } as any))
+      const component = createModifiableComponent(base({}), [
+        makeTracker('p30', 30),
+        makeTracker('p10', 10),
+      ])
+
+      const firstRender = component.render()
+      const secondRender = component.render()
+
+      const firstNode = Array.isArray(firstRender) ? firstRender[0] : firstRender
+      const secondNode = Array.isArray(secondRender) ? secondRender[0] : secondRender
+
+      // Same cached sorted array — no per-render re-sorting or copying
+      expect(secondNode.modifiers).toBe(firstNode.modifiers)
+      expect(firstNode.modifiers.map((m: any) => m.priority)).toEqual([10, 30])
+    })
+
+    it('picks up chained modifiers in the correct position after cache population', () => {
+      const log: string[] = []
+      const record = (name: string) => (node: any) => {
+        log.push(name)
+        return node
+      }
+
+      const base = createComponent(() => ({ type: 'text', text: 'x' } as any))
+      const component = createModifiableComponent(base({}), [
+        createCustomModifier('late-p10', 10, record('late-p10'))({}),
+      ])
+
+      const firstRender = component.render()
+      const firstNode = Array.isArray(firstRender) ? firstRender[0] : firstRender
+      expect(firstNode.modifiers).toHaveLength(1)
+
+      // Chain growth replaces the component's modifiers array with a new
+      // identity (ModifierBuilder.append, proxy paths, and
+      // updateComponentModifiers all do this — never in-place mutation)
+      component.modifiers = [
+        ...component.modifiers,
+        createCustomModifier('late-p20', 20, record('late-p20'))({}),
+      ]
+
+      const secondRender = component.render()
+      const secondNode = Array.isArray(secondRender) ? secondRender[0] : secondRender
+      expect(secondNode.modifiers).toHaveLength(2)
+
+      // Fresh application order is still priority-correct after invalidation
+      applyModifiersToNode(h('div') as any, secondNode.modifiers as any, {
+        componentId: 'growth-test',
+        phase: 'creation',
+      })
+      expect(log).toEqual(['late-p10', 'late-p20'])
+    })
+  })
 })
