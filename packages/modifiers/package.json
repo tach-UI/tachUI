@@ -1,6 +1,6 @@
 {
   "name": "@tachui/modifiers",
-  "version": "0.8.31",
+  "version": "0.8.32",
   "description": "Essential styling modifiers for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -124,9 +124,9 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/types": "0.8.30",
-    "@tachui/core": "0.8.30",
-    "@tachui/registry": "0.8.30"
+    "@tachui/types": "0.9.0",
+    "@tachui/core": "0.9.0",
+    "@tachui/registry": "0.9.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -1,6 +1,6 @@
 {
   "name": "@tachui/forms",
-  "version": "0.8.31",
+  "version": "1.0.0",
   "description": "Unified form components and validation system for tachUI",
   "type": "module",
   "sideEffects": false,
@@ -43,7 +43,7 @@
     }
   },
   "peerDependencies": {
-    "@tachui/core": ">=0.8.30"
+    "@tachui/core": ">=0.9.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
@@ -80,9 +80,9 @@
     "directory": "packages/forms"
   },
   "dependencies": {
-    "@tachui/core": "0.8.30",
-    "@tachui/modifiers": "0.8.31",
-    "@tachui/primitives": "0.8.31",
-    "@tachui/registry": "0.8.30"
+    "@tachui/core": "0.9.0",
+    "@tachui/modifiers": "0.8.32",
+    "@tachui/primitives": "0.8.32",
+    "@tachui/registry": "0.9.0"
   }
 }
