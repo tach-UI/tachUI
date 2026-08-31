@@ -232,6 +232,50 @@ describe('renderToString', () => {
     expect(renderToString(commentNode)).toBe('<!--5 > 3 --\\u003E ok-->')
   })
 
+  it('skips attribute names with unsafe characters (#218)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const node = h('div', {
+      'x" onmouseover="1': 'value',
+      'data-foo': 'safe',
+    } as any)
+
+    const html = renderToString(node)
+
+    // The crafted key must not reach the markup at all
+    expect(html).not.toContain('onmouseover')
+    expect(html).toContain('data-foo="safe"')
+    expect(html).toMatch(/^<div [^>]*><\/div>$/)
+
+    warnSpy.mockRestore()
+  })
+
+  it('skips attribute names containing > (#218)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const node = h('div', { 'a>b': 'value' } as any)
+    const html = renderToString(node)
+
+    expect(html).not.toContain('a>b')
+    expect(html).toBe('<div></div>')
+
+    warnSpy.mockRestore()
+  })
+
+  it('still serializes normal attribute names (#218)', () => {
+    const node = h('div', {
+      id: 'main',
+      'aria-label': 'Main area',
+      'data-testid': 'main-div',
+    } as any)
+
+    const html = renderToString(node)
+
+    expect(html).toContain('id="main"')
+    expect(html).toContain('aria-label="Main area"')
+    expect(html).toContain('data-testid="main-div"')
+  })
+
   it('emits data-component-id from node metadata', () => {
     const node = h('section') as DOMNode & { componentId: string }
     node.componentId = 'cmp-1'

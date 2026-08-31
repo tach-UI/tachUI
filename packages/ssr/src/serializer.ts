@@ -64,6 +64,11 @@ const PROP_TO_ATTR: Record<string, string> = {
   encType: 'enctype',
 }
 
+// Attribute names are interpolated into markup unescaped, so prop keys from
+// spread-props patterns must be restricted to a safe charset. Anything else
+// could terminate the attribute or tag in server-rendered HTML (#218).
+const SAFE_ATTR_NAME = /^[a-zA-Z_:][a-zA-Z0-9:._-]*$/
+
 const BOOLEAN_HTML_ATTRS = new Set([
   'allowfullscreen',
   'async',
@@ -188,6 +193,16 @@ function serializeAttributes(node: DOMNode): string {
     }
 
     const key = PROP_TO_ATTR[rawKey] ?? rawKey
+
+    if (!SAFE_ATTR_NAME.test(key)) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          `[tachui/ssr] Skipping invalid attribute name: ${JSON.stringify(key)}`
+        )
+      }
+      continue
+    }
+
     const resolvedValue = resolveReactiveValue(rawValue)
 
     if (key === 'class') {

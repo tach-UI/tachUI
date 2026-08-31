@@ -40,7 +40,7 @@
     },
     "packages/cli": {
       "name": "@tachui/cli",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "bin": {
         "tacho": "./bin/tacho.js",
       },
@@ -67,10 +67,10 @@
     },
     "packages/core": {
       "name": "@tachui/core",
-      "version": "0.8.27",
+      "version": "0.8.29",
       "dependencies": {
-        "@tachui/registry": "0.8.27",
-        "@tachui/types": "0.8.27",
+        "@tachui/registry": "0.8.29",
+        "@tachui/types": "0.8.29",
       },
       "devDependencies": {
         "@playwright/test": "^1.55.0",
@@ -95,7 +95,7 @@
     },
     "packages/data": {
       "name": "@tachui/data",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
         "@tachui/core": "workspace:*",
         "@tachui/flow-control": "workspace:*",
@@ -120,7 +120,7 @@
     },
     "packages/devtools": {
       "name": "@tachui/devtools",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
         "@tachui/core": "workspace:*",
         "@tachui/primitives": "workspace:*",
@@ -140,7 +140,7 @@
     },
     "packages/eslint-plugin-tachui": {
       "name": "@tachui/eslint-plugin",
-      "version": "0.8.15",
+      "version": "0.8.16",
       "devDependencies": {
         "@types/node": "^20.0.0",
         "typescript": "^5.8.0",
@@ -152,7 +152,7 @@
     },
     "packages/flow-control": {
       "name": "@tachui/flow-control",
-      "version": "0.8.27",
+      "version": "0.8.29",
       "dependencies": {
         "@tachui/core": "workspace:*",
       },
@@ -174,12 +174,12 @@
     },
     "packages/forms": {
       "name": "@tachui/forms",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
-        "@tachui/core": "0.8.27",
-        "@tachui/modifiers": "0.8.28",
-        "@tachui/primitives": "0.8.28",
-        "@tachui/registry": "0.8.27",
+        "@tachui/core": "0.8.29",
+        "@tachui/modifiers": "0.8.30",
+        "@tachui/primitives": "0.8.30",
+        "@tachui/registry": "0.8.29",
       },
       "devDependencies": {
         "@types/node": "^20.10.0",
@@ -188,12 +188,12 @@
         "vitest": "^3.2.4",
       },
       "peerDependencies": {
-        "@tachui/core": ">=0.8.27",
+        "@tachui/core": ">=0.8.29",
       },
     },
     "packages/fragments": {
       "name": "@tachui/fragments",
-      "version": "0.8.27",
+      "version": "0.8.29",
       "dependencies": {
         "@tachui/core": "workspace:*",
         "@tachui/ssr": "workspace:*",
@@ -207,7 +207,7 @@
     },
     "packages/grid": {
       "name": "@tachui/grid",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
         "@tachui/core": "workspace:*",
         "@tachui/modifiers": "workspace:*",
@@ -232,9 +232,9 @@
     },
     "packages/mobile": {
       "name": "@tachui/mobile",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
-        "@tachui/modifiers": "0.8.28",
+        "@tachui/modifiers": "0.8.30",
       },
       "devDependencies": {
         "@tachui/core": "workspace:*",
@@ -246,17 +246,17 @@
         "vitest": "^3.2.4",
       },
       "peerDependencies": {
-        "@tachui/core": ">=0.8.27",
-        "@tachui/registry": ">=0.8.27",
+        "@tachui/core": ">=0.8.29",
+        "@tachui/registry": ">=0.8.29",
       },
     },
     "packages/modifiers": {
       "name": "@tachui/modifiers",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
-        "@tachui/core": "0.8.27",
-        "@tachui/registry": "0.8.27",
-        "@tachui/types": "0.8.27",
+        "@tachui/core": "0.8.29",
+        "@tachui/registry": "0.8.29",
+        "@tachui/types": "0.8.29",
       },
       "devDependencies": {
         "@types/jsdom": "^21.1.6",
@@ -276,9 +276,9 @@
     },
     "packages/navigation": {
       "name": "@tachui/navigation",
-      "version": "0.8.29",
+      "version": "0.8.31",
       "dependencies": {
-        "@tachui/modifiers": "0.8.28",
+        "@tachui/modifiers": "0.8.30",
       },
       "devDependencies": {
         "@playwright/test": "^1.40.0",
@@ -290,15 +290,15 @@
         "vitest": "^3.2.4",
       },
       "peerDependencies": {
-        "@tachui/core": ">=0.8.27",
+        "@tachui/core": ">=0.8.29",
       },
     },
     "packages/primitives": {
       "name": "@tachui/primitives",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
-        "@tachui/core": "0.8.27",
-        "@tachui/modifiers": "0.8.28",
+        "@tachui/core": "0.8.29",
+        "@tachui/modifiers": "0.8.30",
       },
       "devDependencies": {
         "@types/jsdom": "^21.1.6",
@@ -318,7 +318,7 @@
     },
     "packages/registry": {
       "name": "@tachui/registry",
-      "version": "0.8.27",
+      "version": "0.8.29",
       "devDependencies": {
         "@types/node": "^20.0.0",
         "typescript": "^5.2.0",
@@ -328,7 +328,7 @@
     },
     "packages/responsive": {
       "name": "@tachui/responsive",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
         "@tachui/core": "workspace:*",
         "@tachui/modifiers": "workspace:*",
@@ -352,7 +352,7 @@
     },
     "packages/ssr": {
       "name": "@tachui/ssr",
-      "version": "0.8.27",
+      "version": "0.8.29",
       "dependencies": {
         "@tachui/core": "workspace:*",
       },
@@ -365,9 +365,10 @@
     },
     "packages/symbols": {
       "name": "@tachui/symbols",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
-        "@tachui/modifiers": "0.8.28",
+        "@tachui/core": "0.8.29",
+        "@tachui/modifiers": "0.8.30",
         "lucide": "^0.447.0",
       },
       "devDependencies": {
@@ -380,19 +381,19 @@
         "vitest": "^3.2.4",
       },
       "peerDependencies": {
-        "@tachui/core": ">=0.8.27",
+        "@tachui/core": ">=0.8.29",
       },
     },
     "packages/types": {
       "name": "@tachui/types",
-      "version": "0.8.27",
+      "version": "0.8.29",
       "devDependencies": {
         "typescript": "^5.8.0",
       },
     },
     "packages/viewport": {
       "name": "@tachui/viewport",
-      "version": "0.8.28",
+      "version": "0.8.30",
       "dependencies": {
         "@tachui/core": "workspace:*",
         "@tachui/modifiers": "workspace:*",

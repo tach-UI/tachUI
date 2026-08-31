@@ -1,5 +1,10 @@
 import type { IconDefinition } from '../types.js'
 import { IconRenderingStrategy } from '../types.js'
+import {
+  escapeHtmlAttr,
+  getSafeViewBox,
+  getSanitizedIconBody,
+} from './sanitize-icon.js'
 
 /**
  * Performance-optimized SVG renderer
@@ -54,15 +59,15 @@ export class OptimizedSVGRenderer {
     return `<svg 
       width="${size}" 
       height="${size}" 
-      viewBox="${definition.viewBox}" 
+      viewBox="${getSafeViewBox(definition)}" 
       fill="none" 
-      stroke="${color}" 
+      stroke="${escapeHtmlAttr(color)}" 
       stroke-width="2" 
       stroke-linecap="round" 
       stroke-linejoin="round"
       aria-hidden="true"
       focusable="false"
-    >${definition.svg}</svg>`
+    >${getSanitizedIconBody(definition)}</svg>`
   }
   
   private static renderSVGUse(
@@ -77,12 +82,12 @@ export class OptimizedSVGRenderer {
     return `<svg 
       width="${size}" 
       height="${size}" 
-      viewBox="${definition.viewBox}"
-      fill="${color}"
+      viewBox="${getSafeViewBox(definition)}"
+      fill="${escapeHtmlAttr(color)}"
       aria-hidden="true"
       focusable="false"
     >
-      <use href="#icon-${definition.name}-${definition.variant}"></use>
+      <use href="#icon-${escapeHtmlAttr(definition.name)}-${escapeHtmlAttr(definition.variant)}"></use>
     </svg>`
   }
   
@@ -99,12 +104,12 @@ export class OptimizedSVGRenderer {
     return `<svg 
       width="${size}" 
       height="${size}" 
-      viewBox="${definition.viewBox}"
-      fill="${color}"
+      viewBox="${getSafeViewBox(definition)}"
+      fill="${escapeHtmlAttr(color)}"
       aria-hidden="true"
       focusable="false"
     >
-      <use href="#sprite-${definition.name}-${definition.variant}"></use>
+      <use href="#sprite-${escapeHtmlAttr(definition.name)}-${escapeHtmlAttr(definition.variant)}"></use>
     </svg>`
   }
   
@@ -128,8 +133,8 @@ export class OptimizedSVGRenderer {
     
     const symbol = document.createElement('symbol')
     symbol.id = symbolId
-    symbol.setAttribute('viewBox', definition.viewBox)
-    symbol.innerHTML = definition.svg
+    symbol.setAttribute('viewBox', getSafeViewBox(definition))
+    symbol.innerHTML = getSanitizedIconBody(definition)
     
     defsContainer.appendChild(symbol)
   }

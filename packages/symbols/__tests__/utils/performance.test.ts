@@ -3,23 +3,12 @@ import { OptimizedSVGRenderer, getIconBundleSize, optimizeSVG, minifySVG } from 
 import { IconRenderingStrategy } from '../../src/types.js'
 import type { IconDefinition } from '../../src/types.js'
 
-// Mock DOM methods
-Object.assign(global, {
-  document: {
-    createElement: vi.fn(() => ({
-      id: '',
-      style: {},
-      setAttribute: vi.fn(),
-      innerHTML: '',
-      appendChild: vi.fn(),
-    })),
-    body: {
-      insertBefore: vi.fn(),
-      firstChild: null,
-    },
-    getElementById: vi.fn(() => null),
-  },
-})
+// Spy on the real jsdom document instead of stubbing it — icon rendering now
+// sanitizes SVG through a DOM-based allowlist sanitizer (#218), which needs a
+// working document (DOMParser, implementation, querySelector). Spies keep the
+// existing createElement call-count assertions working while delegating to
+// the real implementation.
+const createElementSpy = vi.spyOn(document, 'createElement')
 
 describe('OptimizedSVGRenderer', () => {
   const mockIcon: IconDefinition = {
@@ -33,6 +22,11 @@ describe('OptimizedSVGRenderer', () => {
   beforeEach(() => {
     OptimizedSVGRenderer.clearCache()
     OptimizedSVGRenderer.resetSpriteSheet()
+    // Real-DOM state persists across tests — remove generated icon elements
+    // so getElementById-based reuse checks start from a clean slate
+    document
+      .querySelectorAll('#tachui-symbol-defs, [id^="icon-"], [id^="sprite-"]')
+      .forEach((element) => element.remove())
     vi.clearAllMocks()
   })
 
@@ -46,7 +40,9 @@ describe('OptimizedSVGRenderer', () => {
       expect(result).toContain('viewBox="0 0 24 24"')
       expect(result).toContain('fill="none"')
       expect(result).toContain('stroke="currentColor"')
-      expect(result).toContain(mockIcon.svg)
+      // DOM serialization expands self-closing syntax (`/>` → `></path>`)
+      expect(result).toContain('<path d="M12 21.35')
+      expect(result).toContain('></path>')
     })
 
     test('renders inline SVG with custom size', () => {
@@ -91,17 +87,17 @@ describe('OptimizedSVGRenderer', () => {
       OptimizedSVGRenderer.render(mockIcon, IconRenderingStrategy.SVG_USE)
       
       // Should create symbol definition in DOM
-      expect(document.createElement).toHaveBeenCalledWith('symbol')
+      expect(createElementSpy).toHaveBeenCalledWith('symbol')
     })
 
     test('reuses existing symbol definition', () => {
       // First render creates the symbol
       OptimizedSVGRenderer.render(mockIcon, IconRenderingStrategy.SVG_USE)
-      const createCallCount = (document.createElement as any).mock.calls.length
+      const createCallCount = createElementSpy.mock.calls.length
       
       // Second render should reuse
       OptimizedSVGRenderer.render(mockIcon, IconRenderingStrategy.SVG_USE)
-      expect((document.createElement as any).mock.calls.length).toBe(createCallCount)
+      expect(createElementSpy.mock.calls.length).toBe(createCallCount)
     })
   })
 
@@ -116,7 +112,7 @@ describe('OptimizedSVGRenderer', () => {
     test('creates sprite sheet container', () => {
       OptimizedSVGRenderer.render(mockIcon, IconRenderingStrategy.SPRITE_SHEET)
       
-      expect(document.createElement).toHaveBeenCalledWith('div')
+      expect(createElementSpy).toHaveBeenCalledWith('div')
     })
   })
 
@@ -172,7 +168,9 @@ describe('OptimizedSVGRenderer', () => {
       const result = OptimizedSVGRenderer.render(mockIcon)
       
       expect(result).toContain('<svg')
-      expect(result).toContain(mockIcon.svg)
+      // DOM serialization expands self-closing syntax (`/>` → `></path>`)
+      expect(result).toContain('<path d="M12 21.35')
+      expect(result).toContain('></path>')
     })
   })
 })
