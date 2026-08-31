@@ -1,6 +1,6 @@
 {
   "name": "@tachui/core",
-  "version": "0.8.30",
+  "version": "0.8.31",
   "description": "tachUI core framework with reactive system and compiler",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -194,8 +194,8 @@
     "generate-modifier-types:monorepo": "tsx --tsconfig ./tsconfig.typegen.json ./scripts/generate-types-monorepo.ts"
   },
   "dependencies": {
-    "@tachui/types": "0.8.30",
-    "@tachui/registry": "0.8.30"
+    "@tachui/types": "0.8.31",
+    "@tachui/registry": "0.8.31"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.6",
