@@ -42,6 +42,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           # Bun doesn't require cache configuration
+          # registry-url stays under trusted publishing: it writes the
+          # .npmrc that points npm at the registry. Node 24 bundles the
+          # npm 11.x that performs the OIDC exchange.
           registry-url: 'https://registry.npmjs.org'
       
       - name: Install dependencies
@@ -68,4 +71,16 @@ jobs:
           commit: 'chore(release): version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # No NODE_AUTH_TOKEN: publishing goes through npm trusted
+          # publishing (OIDC), proven end-to-end on the 0.8.30/0.8.31
+          # release — all 18 published packages carry SLSA provenance
+          # naming this workflow, and nothing in the repo requests
+          # provenance explicitly, so it can only have come from the
+          # trusted-publisher flow.
+          #
+          # The absence of a token fallback is deliberate. While
+          # NODE_AUTH_TOKEN was set, npm silently fell back to it
+          # whenever the OIDC exchange failed, so a green publish could
+          # not be told apart from a working one — the ambiguity behind
+          # the #235 outage. Without it, a broken trusted-publisher
+          # config fails the run loudly instead of quietly degrading.
