@@ -34,7 +34,11 @@ program
   .option('-p, --project <path>', 'Project root directory', process.cwd())
   .option('-o, --output <file>', 'Output report to file')
   .option('-i, --interactive', 'Interactive optimization mode', false)
-  .option('-f, --fix', 'Automatically apply safe optimizations', false)
+  .option(
+    '-f, --fix',
+    'Preview the safe optimizations that would be applied (does not edit files yet)',
+    false
+  )
   .option('-t, --threshold <kb>', 'Bundle size threshold for warnings', '50')
   .action(async (options: AnalyzeOptions) => {
     await analyzeImports(options)
@@ -121,19 +125,19 @@ async function analyzeImports(options: AnalyzeOptions) {
         {
           type: 'confirm',
           name: 'applyOptimizations',
-          message: 'Would you like to apply safe optimizations automatically?',
+          message: 'Show the safe optimizations that would be applied?',
           default: false,
         },
       ])
 
       if (applyOptimizations) {
-        await applyAutomaticOptimizations(project, optimizations)
+        await previewAutomaticOptimizations(project, optimizations)
       }
     }
 
-    // Auto-fix mode
+    // --fix: preview only; see previewAutomaticOptimizations
     if (fix) {
-      await applyAutomaticOptimizations(project, optimizations)
+      await previewAutomaticOptimizations(project, optimizations)
     }
 
     // Output to file
@@ -148,34 +152,41 @@ async function analyzeImports(options: AnalyzeOptions) {
   }
 }
 
-async function applyAutomaticOptimizations(
+/**
+ * Report the safe optimizations that would be applied.
+ *
+ * This does NOT edit files. It previously printed per-optimization success
+ * ticks and "Applied N optimizations successfully!" while writing nothing,
+ * so `--fix` reported a fix that had not happened (#226). Rewriting imports
+ * needs real source transformation; until that exists the honest behaviour is
+ * to show the work and say plainly that it is manual.
+ */
+async function previewAutomaticOptimizations(
   _projectPath: string,
   optimizations: any[]
 ) {
-  console.log(chalk.blue('\n🔧 Applying automatic optimizations...\n'))
-
   const safeOptimizations = optimizations.filter(opt => opt.risk === 'low')
 
   if (safeOptimizations.length === 0) {
-    console.log(chalk.yellow('⚠️  No safe automatic optimizations available'))
+    console.log(chalk.yellow('\n⚠️  No safe automatic optimizations available'))
     return
   }
 
-  let applied = 0
+  console.log(
+    chalk.blue(
+      `\n🔧 ${safeOptimizations.length} safe optimization(s) available — apply these by hand:\n`
+    )
+  )
+
   for (const opt of safeOptimizations) {
-    try {
-      // Apply optimization (simplified - would need actual file transformation)
-      console.log(
-        chalk.green(`✅ ${opt.from} → ${opt.to} (saves ${opt.savings})`)
-      )
-      applied++
-    } catch (_error) {
-      console.error(chalk.red(`❌ Failed to apply: ${opt.from} → ${opt.to}`))
-    }
+    console.log(chalk.cyan(`   ${opt.from} → ${opt.to} (saves ${opt.savings})`))
   }
 
   console.log(
-    chalk.green(`\n🎉 Applied ${applied} optimizations successfully!`)
+    chalk.yellow(
+      '\n⚠️  No files were modified. Automatic rewriting is not implemented yet;\n' +
+        '   the changes above are reported so you can make them yourself.'
+    )
   )
 }
 

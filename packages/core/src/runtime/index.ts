@@ -50,6 +50,10 @@ export {
 // Import from @tachui/devtools instead
 // DOM Bridge - Component mounting system
 export {
+  // Application entry point: mount() returns a dispose function.
+  mount,
+  unmount,
+  // Deprecated #app-only bootstrap, delegates to mount().
   mountRoot,
   DOMBridgeDebug,
   getComponentFromElement,
@@ -62,8 +66,6 @@ export {
 // Error handling system moved to @tachui/devtools - import from that package
 export { LifecycleManager } from './lifecycle'
 // Runtime utilities
-export { mount, unmount, updateProps } from './mounting'
-export { lazy, memo } from './optimization'
 // Performance monitoring moved to @tachui/devtools - import from that package
 // Props and children handling
 export {
