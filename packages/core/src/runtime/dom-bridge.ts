@@ -193,8 +193,14 @@ export function mount(
 ): () => void {
   const container = resolveMountTarget(target)
 
+  // Mounting over a live app disposes it first. Both mounts would otherwise
+  // share the container — mountComponentTree clears it — leaving the previous
+  // reactive root and its effects alive with no DOM and no way to reach them.
+  mountedRoots.get(container)?.()
+
   let disposeRoot: (() => void) | undefined
   let disposeTree: (() => void) | undefined
+  let resetContext: () => void = () => {}
 
   createReactiveRoot(dispose => {
     disposeRoot = dispose
@@ -209,7 +215,7 @@ export function mount(
       owner.context.set(ComponentContextSymbol, rootContext)
     }
 
-    const resetContext = () => {
+    resetContext = () => {
       setCurrentComponentContext(null)
       if (owner) {
         owner.context.delete(ComponentContextSymbol)
@@ -219,20 +225,35 @@ export function mount(
     try {
       disposeTree = mountComponentTree(rootFunction(), container)
     } catch (error) {
+      // Reset the ambient context AND tear down the root we just created —
+      // effects and onCleanup callbacks registered before the throw would
+      // otherwise outlive a mount that never completed.
       resetContext()
+      dispose()
       throw error
     }
 
-    return resetContext
+    // NOTE: deliberately returns nothing. createRoot hands its callback's
+    // return value back to *its caller*; it is not a disposal hook. The
+    // previous mountRoot returned a context-reset closure here and it was
+    // silently never invoked. Disposal is driven from disposeApp below.
   })
 
   let disposed = false
   const disposeApp = () => {
     if (disposed) return
     disposed = true
-    mountedRoots.delete(container)
-    // Tree first (component cleanup and DOM removal), then the reactive root.
+
+    // Only clear the registry if it still points at this mount — a stale
+    // disposer must not evict a newer app mounted at the same container.
+    if (mountedRoots.get(container) === disposeApp) {
+      mountedRoots.delete(container)
+    }
+
+    // Tree first (component cleanup and DOM removal), then the ambient
+    // context, then the reactive root.
     disposeTree?.()
+    resetContext()
     disposeRoot?.()
   }
 
