@@ -9,6 +9,7 @@ import {
   withModifiers
 } from '@tachui/core'
 import {
+  escapeHtmlAttr,
   getSafeViewBox,
   getSanitizedIconBody,
 } from '../utils/sanitize-icon.js'
@@ -388,7 +389,7 @@ export function Symbol(
           } else if (errorMsg) {
             const { width, height } = getSize()
             const colors = getColors()
-            element.innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 24 24" fill="none" stroke="${colors.stroke}" stroke-width="${colors.strokeWidth}"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`
+            element.innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 24 24" fill="none" stroke="${escapeHtmlAttr(colors.stroke)}" stroke-width="${colors.strokeWidth}"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`
           } else if (iconDef) {
             const { width, height } = getSize()
             const colors = getColors()
