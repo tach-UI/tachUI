@@ -47,7 +47,12 @@ function getPublishablePackages() {
   return packages.sort((a, b) => a.name.localeCompare(b.name))
 }
 
-function findProtocolViolations(manifest) {
+/**
+ * Return human-readable violations for every dependency entry in `manifest`
+ * (across dependencies/optionalDependencies/peerDependencies) whose range
+ * uses a protocol that cannot be resolved from the npm registry.
+ */
+export function findProtocolViolations(manifest) {
   const violations = []
 
   for (const section of DEP_SECTIONS) {

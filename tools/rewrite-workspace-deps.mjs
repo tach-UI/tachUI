@@ -9,7 +9,10 @@
  *
  * Policy (matching the packed-deps guard):
  * - dependencies / optionalDependencies: exact current workspace version
- * - peerDependencies: ^current (peers should track a compatible range)
+ * - peerDependencies: ^current (peers must track a compatible range, so
+ *   every workspace range — including `workspace:*`, `workspace:^1.2.0`,
+ *   `workspace:~1.2.0` — becomes `^<current>`; pinning a peer to an exact
+ *   version would reject consumers on later compatible versions)
  *
  * Idempotent: already-rewritten ranges are left untouched, so the steady
  * state after the first run is a no-op (changesets maintains the concrete
@@ -22,7 +25,7 @@ const ROOT_DIR = process.cwd()
 const PACKAGES_DIR = join(ROOT_DIR, 'packages')
 const INTERNAL_SCOPE = '@tachui/'
 const REWRITE_SECTIONS = ['dependencies', 'optionalDependencies', 'peerDependencies']
-const WORKSPACE_RANGE_RE = /^workspace:(?<range>.*)$/
+const WORKSPACE_PROTOCOL_RE = /^workspace:/
 
 function getWorkspacePackages() {
   const entries = readdirSync(PACKAGES_DIR, { withFileTypes: true })
@@ -48,7 +51,12 @@ function getWorkspacePackages() {
   return packages
 }
 
-function rewriteManifest(manifest, versionByName, errors) {
+/**
+ * Rewrite all internal workspace dependency ranges in a manifest.
+ * Mutates `manifest` in place, appends errors to `errors`, and returns the
+ * list of human-readable change descriptions (empty when nothing to do).
+ */
+export function rewriteManifest(manifest, versionByName, errors) {
   const changes = []
 
   for (const section of REWRITE_SECTIONS) {
@@ -60,8 +68,7 @@ function rewriteManifest(manifest, versionByName, errors) {
         continue
       }
 
-      const match = WORKSPACE_RANGE_RE.exec(depVersion)
-      if (!match) continue
+      if (!WORKSPACE_PROTOCOL_RE.test(depVersion)) continue
 
       const targetVersion = versionByName.get(depName)
       if (!targetVersion) {
@@ -72,11 +79,9 @@ function rewriteManifest(manifest, versionByName, errors) {
       }
 
       const isPeer = section === 'peerDependencies'
-      const requestedRange = match.groups.range.trim()
-      const nextVersion =
-        isPeer && (requestedRange === '' || requestedRange === '*')
-          ? `^${targetVersion}`
-          : targetVersion
+      // Peers always track a compatible range (^current) regardless of the
+      // requested workspace suffix; runtime deps pin the exact version.
+      const nextVersion = isPeer ? `^${targetVersion}` : targetVersion
 
       deps[depName] = nextVersion
       changes.push(`${section}.${depName}: ${depVersion} -> ${nextVersion}`)
