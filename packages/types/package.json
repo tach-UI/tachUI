@@ -52,5 +52,10 @@
   ],
   "devDependencies": {
     "typescript": "^5.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tach-UI/tachUI",
+    "directory": "packages/types"
   }
 }
