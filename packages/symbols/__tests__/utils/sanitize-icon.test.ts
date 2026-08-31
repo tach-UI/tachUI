@@ -194,4 +194,24 @@ describe('DOM-free SSR fallback (#218 review)', () => {
 
     vi.unstubAllGlobals()
   })
+
+  test('DOM-free sanitizer fails closed when malformed markup precedes a valid tag', () => {
+    vi.stubGlobal('DOMParser', undefined)
+    vi.stubGlobal('document', undefined)
+
+    // The malformed first tag must not leak through as text ahead of the
+    // valid second tag — a '<' that cannot tokenize drops the rest (fail closed)
+    const sanitized = getSanitizedIconBody(
+      makeDefinition({
+        name: 'ssr-chained',
+        svg: '<path d=M12 onload=alert(1)><path d="M0 0"/>',
+      })
+    )
+
+    expect(sanitized).not.toContain('onload')
+    expect(sanitized).not.toContain('alert(1)')
+    expect(sanitized).toBe('')
+
+    vi.unstubAllGlobals()
+  })
 })
