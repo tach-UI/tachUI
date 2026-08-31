@@ -6,7 +6,7 @@
  * validated/escaped attribute values.
  */
 
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   escapeHtmlAttr,
   getSafeViewBox,
@@ -139,5 +139,59 @@ describe('OptimizedSVGRenderer integration', () => {
     expect(symbolElement!.innerHTML).not.toContain('<script')
     expect(symbolElement!.innerHTML).not.toContain('onload')
     expect(symbolElement!.innerHTML).toContain('<path')
+  })
+})
+
+describe('DOM-free SSR fallback (#218 review)', () => {
+  test('inline SVG rendering works without DOMParser/document', () => {
+    vi.stubGlobal('DOMParser', undefined)
+    vi.stubGlobal('document', undefined)
+
+    const definition = makeDefinition({ name: 'ssr-icon' })
+    const rendered = OptimizedSVGRenderer.render(
+      definition,
+      IconRenderingStrategy.INLINE_SVG
+    )
+
+    expect(rendered).toContain('<svg')
+    expect(rendered).toContain('<path d="M20.84')
+    vi.unstubAllGlobals()
+  })
+
+  test('DOM-free sanitizer strips scripts, handlers, and unknown elements', () => {
+    vi.stubGlobal('DOMParser', undefined)
+    vi.stubGlobal('document', undefined)
+
+    const definition = makeDefinition({
+      name: 'ssr-evil',
+      svg: '<script>alert(1)</script><a href="#x"><path d="M10 10" onload="alert(1)"/></a>',
+    })
+
+    // Throwing computed values are memoized per object — use a fresh body
+    // via a direct call on a fresh definition
+    const sanitized = getSanitizedIconBody(makeDefinition(definition))
+
+    expect(sanitized).not.toContain('<script')
+    expect(sanitized).not.toContain('onload')
+    expect(sanitized).not.toContain('<a')
+    expect(sanitized).toContain('<path d="M10 10"/>')
+
+    vi.unstubAllGlobals()
+  })
+
+  test('DOM-free sanitizer drops malformed markup instead of emitting it', () => {
+    vi.stubGlobal('DOMParser', undefined)
+    vi.stubGlobal('document', undefined)
+
+    // Unquoted attribute values do not match the strict token grammar —
+    // the element must be dropped, not emitted with the raw attributes
+    const sanitized = getSanitizedIconBody(
+      makeDefinition({ name: 'ssr-malformed', svg: `<path d=M12 onload=x>` })
+    )
+
+    expect(sanitized).not.toContain('onload')
+    expect(sanitized).not.toContain('d=M12')
+
+    vi.unstubAllGlobals()
   })
 })
