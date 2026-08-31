@@ -222,5 +222,9 @@ export type { Signal } from './types'
 // Export flush function for testing and manual control
 export { flushUpdates as flushSync }
 
+// Internal scheduler export — used by computed.ts to schedule dependents
+// through the isolated flush on recomputation failure (#217)
+export { scheduleUpdate }
+
 // Register flush function with context module
 setFlushFunction(flushUpdates)

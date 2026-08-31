@@ -7,6 +7,7 @@
 
 import { ComputationImpl, getCurrentComputation, getCurrentOwner } from './context'
 import { defaultEquals, type EqualityFunction } from './equality'
+import { scheduleUpdate } from './signal'
 import type { Computation, Owner, Signal } from './types'
 import { ComputationState } from './types'
 import { type ReactiveNode, UpdatePriority } from './unified-scheduler'
@@ -27,6 +28,11 @@ class ComputedImpl<T> extends ComputationImpl implements ReactiveNode {
   readonly priority: UpdatePriority
 
   private _hasValue = false
+  // Guards one-shot dependent invalidation per failure episode: without it,
+  // a scheduled dependent re-reads this (still-dirty) computed on re-run,
+  // which re-executes and re-schedules the same dependents — an infinite
+  // flush cycle. Reset on the next successful evaluation.
+  private _errorPropagated = false
   private _error: Error | null = null
   private equalsFn: EqualityFunction<T>
   private options: ComputedOptions<T>
@@ -97,6 +103,7 @@ class ComputedImpl<T> extends ComputationImpl implements ReactiveNode {
     }
     this.sources.clear()
     this._hasValue = false
+    this._errorPropagated = false
     this.state = ComputationState.Dirty
   }
 
@@ -105,7 +112,30 @@ class ComputedImpl<T> extends ComputationImpl implements ReactiveNode {
    */
   execute(): T {
     const previousValue = this._hasValue ? this.value : undefined
-    const result = super.execute()
+
+    let result: T
+    try {
+      result = super.execute()
+    } catch (error) {
+      // Propagate the failure through the graph (#217 review): dependents
+      // must be invalidated even when the recomputation throws before the
+      // success path's notification loop runs, or they stay Clean forever
+      // and keep rendering the old value. Scheduling via the signal update
+      // queue means dependents re-run inside the isolated flush; their
+      // re-read of this computed re-executes it and surfaces the error.
+      // The guard keeps this one-shot per failure episode (see field docs).
+      if (!this._errorPropagated) {
+        this._errorPropagated = true
+        for (const observer of this.observers) {
+          if (observer.state !== ComputationState.Disposed) {
+            observer.state = ComputationState.Dirty
+            scheduleUpdate(observer)
+          }
+        }
+      }
+      throw error
+    }
+    this._errorPropagated = false
 
     // Only notify observers if the value actually changed
     if (!this._hasValue || !this.equalsFn(previousValue, result)) {

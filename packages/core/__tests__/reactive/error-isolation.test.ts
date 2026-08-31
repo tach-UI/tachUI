@@ -160,6 +160,48 @@ describe('reactive error isolation (#217)', () => {
     expect(computed()).toBe(4)
   })
 
+  it('invalidates dependent effects when a queued computed recompute fails', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const [source, setSource] = createSignal(1)
+    let runs = 0
+
+    const computed = createComputed(() => {
+      if (source() === 2) {
+        throw new Error('computed boom')
+      }
+      return source() * 2
+    })
+
+    // runs++ comes first so the re-run is counted even when the re-read of
+    // the computed throws inside the effect body
+    createEffect(() => {
+      runs++
+      return computed()
+    })
+
+    expect(runs).toBe(1)
+
+    // The computed's queued recompute fails during the flush — its dependents
+    // must be invalidated, not left Clean rendering the old value forever
+    setSource(2)
+    flushSync()
+
+    expect(runs).toBe(2)
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Error in computation during flush:',
+      expect.any(Error)
+    )
+
+    // Recovery: the computed recomputes successfully and re-notifies its
+    // dependents (success-path notifications are microtask-deferred)
+    setSource(3)
+    flushSync()
+    await Promise.resolve()
+    expect(runs).toBe(3)
+  })
+
   it('a disposed computation stays disposed (explicit dispose path unaffected)', () => {
     const [value, setValue] = createSignal(0)
     let runs = 0
