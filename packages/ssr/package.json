@@ -1,6 +1,6 @@
 {
   "name": "@tachui/ssr",
-  "version": "0.8.27",
+  "version": "0.8.28",
   "description": "Server-side rendering and static prerender utilities for tachUI",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -32,7 +32,7 @@
     }
   },
   "dependencies": {
-    "@tachui/core": "0.8.27"
+    "@tachui/core": "0.8.28"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
