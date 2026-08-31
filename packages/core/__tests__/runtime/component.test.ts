@@ -250,6 +250,54 @@ describe('Component Management System', () => {
       expect(renderCount).toBe(1)
     })
 
+    // The end-to-end flow this API is named for — props actually changing and
+    // shouldUpdate seeing prev !== next — cannot be driven today:
+    // PropsManager.setProps has zero call sites in packages/*/src and
+    // ComponentInstance exposes no way to reach it (see #237). What IS
+    // reachable, and is where the new snapshot semantics could surprise, is
+    // WHEN previousProps advances. Pinned here by object identity.
+    it('advances previousProps only after a render that actually ran', () => {
+      const seen: Array<{ prev: unknown; next: unknown }> = []
+      let allowRender = true
+
+      const component = createComponent<{ n: number }>(
+        props => ({ type: 'text', text: String(props.n) }) as DOMNode,
+        {
+          shouldUpdate: (prev, next) => {
+            seen.push({ prev, next })
+            return allowRender
+          },
+        }
+      )
+
+      const instance = component({ n: 1 })
+
+      // Pass 1: no snapshot exists yet, so the guard is not consulted at all.
+      instance.render()
+      expect(seen).toHaveLength(0)
+
+      // Pass 2: guard sees the snapshot taken after pass 1, then renders,
+      // so the snapshot advances to a fresh copy.
+      instance.render()
+      expect(seen).toHaveLength(1)
+
+      // Pass 3: guard sees the pass-2 snapshot — a different object than the
+      // pass-1 one, proving a successful render advanced it.
+      instance.render()
+      expect(seen).toHaveLength(2)
+      expect(seen[1].prev).not.toBe(seen[0].prev)
+
+      // Pass 4 is skipped, so the snapshot must NOT advance...
+      allowRender = false
+      instance.render()
+      expect(seen).toHaveLength(3)
+
+      // ...which pass 5 observes as the identical object it saw last time.
+      instance.render()
+      expect(seen).toHaveLength(4)
+      expect(seen[3].prev).toBe(seen[2].prev)
+    })
+
     it('runs lifecycle tracking effects once per instance, not once per render', () => {
       const onUpdate = vi.fn()
       let renderCount = 0

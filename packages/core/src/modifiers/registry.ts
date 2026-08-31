@@ -230,9 +230,8 @@ function applyModifiersBatch(
 ): DOMNode {
   // Sort ONCE, then group. Grouping allocates a fresh array per type, so
   // sorting per group could never hit the cache; sorting the source first
-  // hits it, and groups built from a priority-sorted array are themselves in
-  // priority order, making the per-group sort redundant.
-  const modifierGroups = groupModifiersByType(getSortedModifiers(modifiers));
+  // hits it and makes the per-group sort redundant.
+  const modifierGroups = groupModifiersByType(modifiers);
 
   let currentNode = node;
   const allEffects: (() => void)[] = [];
@@ -274,15 +273,34 @@ function applyModifiersBatch(
 }
 
 /**
- * Group modifiers by type for batch processing
+ * Group modifiers by type for batch processing.
+ *
+ * Two orderings matter here and they come from different arrays:
+ *
+ * - CROSS-group order (which type's group is applied first) is the order the
+ *   types first appear in the CALLER's array. Grouping the priority-sorted
+ *   array instead would make this priority-driven, which is arguably more
+ *   coherent but is a live behaviour change — `batch: true` is the renderer's
+ *   element path (runtime/renderer.ts) and the SSR serializer, so it would
+ *   move real DOM and prerendered HTML. Keyed off `modifiers` to preserve it.
+ * - WITHIN-group order is priority order, which is what it has always been
+ *   (applyModifierGroup used to sort each group). Filled from the memoized
+ *   sorted array, so the groups inherit it without a per-group sort — group
+ *   arrays are freshly allocated per call and could never hit the cache.
  */
 function groupModifiersByType(modifiers: Modifier[]): Map<string, Modifier[]> {
   const groups = new Map<string, Modifier[]>();
 
+  // Seed keys in caller order, so Map iteration preserves cross-group order.
   for (const modifier of modifiers) {
-    const existing = groups.get(modifier.type) || [];
-    existing.push(modifier);
-    groups.set(modifier.type, existing);
+    if (!groups.has(modifier.type)) {
+      groups.set(modifier.type, []);
+    }
+  }
+
+  // Fill in priority order.
+  for (const modifier of getSortedModifiers(modifiers)) {
+    groups.get(modifier.type)!.push(modifier);
   }
 
   return groups;

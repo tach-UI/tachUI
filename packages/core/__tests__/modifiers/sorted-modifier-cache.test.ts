@@ -89,6 +89,43 @@ describe('sorted modifier cache (#220)', () => {
     expect((node as any).__applied).toEqual(['first', 'second', 'third'])
   })
 
+  // Cross-group order is the order types first appear in the CALLER's array,
+  // not priority order. Grouping the priority-sorted array instead would flip
+  // this — and batch mode is the renderer's element path and the SSR
+  // serializer, so it would move real DOM and prerendered HTML output.
+  it('applies type groups in caller order, not priority order, on the batch path', () => {
+    const modifiers: Modifier[] = [
+      { ...trackingModifier('layout', 10), type: 'layout' } as Modifier,
+      { ...trackingModifier('interaction', 5), type: 'interaction' } as Modifier,
+    ]
+    const node = applyModifiersToNode(makeNode(), modifiers, context, {
+      batch: true,
+    })
+
+    // 'interaction' has the lower priority number but 'layout' is named first.
+    expect((node as any).__applied).toEqual(['layout', 'interaction'])
+  })
+
+  it('keeps cross-group caller order while sorting within each group', () => {
+    const modifiers: Modifier[] = [
+      { ...trackingModifier('b-late', 90), type: 'beta' } as Modifier,
+      { ...trackingModifier('a-late', 80), type: 'alpha' } as Modifier,
+      { ...trackingModifier('b-early', 20), type: 'beta' } as Modifier,
+      { ...trackingModifier('a-early', 10), type: 'alpha' } as Modifier,
+    ]
+    const node = applyModifiersToNode(makeNode(), modifiers, context, {
+      batch: true,
+    })
+
+    // beta first (named first), each group internally in priority order.
+    expect((node as any).__applied).toEqual([
+      'b-early',
+      'b-late',
+      'a-early',
+      'a-late',
+    ])
+  })
+
   it('keeps same-type modifiers in priority order on the batch path', () => {
     const sameType: Modifier[] = [
       { ...trackingModifier('high', 90), type: 'shared' } as Modifier,
