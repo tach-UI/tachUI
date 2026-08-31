@@ -4,6 +4,7 @@ import { rewriteManifest } from '../rewrite-workspace-deps.mjs'
 const VERSIONS = new Map([
   ['@tachui/core', '0.8.28'],
   ['@tachui/types', '0.8.28'],
+  ['@tachui/registry', '0.8.28'],
 ])
 
 describe('rewriteManifest', () => {
@@ -50,6 +51,7 @@ describe('rewriteManifest', () => {
       peerDependencies: {
         '@tachui/core': 'workspace:*',
         '@tachui/types': 'workspace:^0.8.0',
+        '@tachui/registry': 'workspace:~0.8.0',
       },
     }
 
@@ -61,6 +63,7 @@ describe('rewriteManifest', () => {
     expect(manifest.peerDependencies).toEqual({
       '@tachui/core': '^0.8.28',
       '@tachui/types': '^0.8.28',
+      '@tachui/registry': '^0.8.28',
     })
   })
 
