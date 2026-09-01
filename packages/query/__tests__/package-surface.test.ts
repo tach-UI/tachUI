@@ -28,7 +28,6 @@ describe('@tachui/query barrel', () => {
       'DEFAULT_RETRY',
       'DEFAULT_SNAPSHOT',
       'DEFAULT_STALE_TIME',
-      'DEV',
       'QueryError',
       'isDevelopment',
       'isServer',

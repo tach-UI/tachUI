@@ -155,7 +155,17 @@ export interface QueryOptions<TRaw, TData = TRaw, E = Error> {
 export type FetchQueryOptions<TRaw, E = Error> = Omit<
   QueryOptions<TRaw, TRaw, E>,
   'select' | 'placeholderData' | 'enabled' | 'refetchOnFocus' | 'refetchOnReconnect'
->
+> & {
+  // `Omit` alone only rejects a fresh object literal. A `QueryOptions` variable
+  // carrying `enabled: false` stays structurally assignable and slips through,
+  // which is the likelier mistake: options get built once and passed around.
+  // Declaring the excluded keys as `never` rejects the variable too.
+  select?: never
+  placeholderData?: never
+  enabled?: never
+  refetchOnFocus?: never
+  refetchOnReconnect?: never
+}
 
 /**
  * The reactive result of observing a query.
@@ -454,8 +464,13 @@ export type AsyncStreamOptions<T, A = undefined> = AsyncStreamBaseOptions<T> &
          * Only meaningful when the accumulator is an array - there is no general
          * way to drop the oldest entry of a Map or a plain object, so accepting
          * it there would promise a bound the implementation could only ignore.
+         *
+         * Wrapped in tuples to stop the conditional distributing: a bare
+         * `A extends readonly unknown[]` maps over a union like
+         * `Message[] | number` and yields `number | never`, so a fold that can
+         * hold a plain number would still accept a cap it cannot honour.
          */
-        bufferSize?: A extends readonly unknown[] ? number : never
+        bufferSize?: [A] extends [readonly unknown[]] ? number : never
       }
   )
 

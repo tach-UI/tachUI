@@ -52,6 +52,28 @@ describe('relativeImportsOf', () => {
     expect(relativeImportsOf('import { x } from "@tachui/core"\nimport "node:fs"')).toEqual([])
   })
 
+  // Bundlers preserve `/*! ... */` legal banners, and those routinely quote code.
+  // Since an unresolvable specifier now throws, a banner naming a file that does
+  // not exist would fail the whole gate over an inert comment.
+  it('ignores import-like text inside a preserved banner comment', () => {
+    const source = '/*! import { x } from "./does-not-exist.js" */\nimport{a}from"./real.js";'
+    expect(relativeImportsOf(source)).toEqual(['./real.js'])
+  })
+
+  it('ignores import-like text inside a line comment', () => {
+    expect(relativeImportsOf('// import x from "./nope.js"\nimport "./real.js"')).toEqual([
+      './real.js',
+    ])
+  })
+
+  // The opposite failure: a real lazy chunk omitted from the measurement because
+  // the specifier is followed by an import-attributes argument rather than `)`.
+  it('finds a dynamic import that carries import attributes', () => {
+    expect(
+      relativeImportsOf('const lazy = import("./large.js", { with: { type: "json" } })')
+    ).toContain('./large.js')
+  })
+
   it('reports each specifier once even when imported repeatedly', () => {
     expect(
       relativeImportsOf('import{a}from"./c.js";import{b}from"./c.js";')

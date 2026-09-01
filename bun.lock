@@ -320,7 +320,7 @@
       "name": "@tachui/query",
       "version": "0.8.32",
       "dependencies": {
-        "@tachui/core": "0.8.31",
+        "@tachui/core": "0.8.32",
       },
       "devDependencies": {
         "@types/node": "^20.0.0",

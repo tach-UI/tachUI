@@ -293,10 +293,25 @@ export type AsyncStreamListOptionsMembers = Assert<
  * would silently drop a projection the caller wrote; accepting `enabled: false`
  * would leave a non-optional `Promise` with no defined resolution.
  */
-export type FetchQueryOmitsObserverOptions = Assert<
+export type FetchQueryKeepsHonourableOptions = Assert<
   Equals<
-    keyof FetchQueryOptions<RawUser>,
+    Exclude<
+      keyof FetchQueryOptions<RawUser>,
+      'select' | 'placeholderData' | 'enabled' | 'refetchOnFocus' | 'refetchOnReconnect'
+    >,
     'key' | 'load' | 'staleTime' | 'gcTime' | 'retry' | 'retryDelay' | 'snapshot' | 'client'
+  >
+>
+
+/**
+ * The excluded keys are still *present*, typed `never`. That is the mechanism:
+ * omitting them only stops a fresh literal, while a `never`-typed property also
+ * rejects a prebuilt variable that carries one.
+ */
+export type FetchQueryNevertypesObserverOptions = Assert<
+  Equals<
+    FetchQueryOptions<RawUser>['select' | 'placeholderData' | 'enabled'],
+    undefined
   >
 >
 
@@ -357,6 +372,35 @@ export const contextualTypingSurvives: MutationOptions<string, number, Error, nu
     void context
   },
 }
+
+/**
+ * The observer-only options are rejected through a *variable*, not just a fresh
+ * literal. `Omit` alone only triggers excess-property checking on literals, and
+ * options objects are routinely built once and passed around.
+ */
+declare const observerOptions: QueryOptions<RawUser>
+export type FetchQueryRejectsOptionsVariable = Assert<
+  Equals<Assignable<typeof observerOptions, FetchQueryOptions<RawUser>>, false>
+>
+
+/**
+ * A mixed accumulator cannot claim a `bufferSize`. The conditional is written
+ * non-distributively, so `Message[] | number` does not map to `number | never`
+ * and quietly permit a cap on a fold that may hold a plain number.
+ */
+export type MixedAccumulatorRejectsBufferSize = Assert<
+  Equals<
+    Assignable<
+      StreamBase & {
+        initial: () => number
+        reduce: (acc: Message[] | number, m: Message) => Message[] | number
+        bufferSize: 5
+      },
+      AsyncStreamOptions<Message, Message[] | number>
+    >,
+    false
+  >
+>
 
 /** There is no second rollback slot; `onError` is where the context lives. */
 export type NoSeparateRollbackHook = Assert<
