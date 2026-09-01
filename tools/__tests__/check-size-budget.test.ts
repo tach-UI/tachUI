@@ -210,6 +210,25 @@ describe('measure', () => {
     expect(measure(path.join(dir, 'index.js')).files).toBe(2)
   })
 
+  // The regex case at the measurement level, not just the scanner's. This failure
+  // is quieter than an unresolvable chunk: nothing throws, because the import is
+  // never seen at all - the chunk is simply absent from the total and the gate
+  // passes on an understated number. Before regex tokenization this measured 1
+  // file and lost the chunk's bytes entirely.
+  it('counts a chunk imported after a regex literal containing a quote', () => {
+    writeFileSync(path.join(dir, 'chunk.js'), `export const c = "${'x'.repeat(4000)}"\n`)
+    writeFileSync(
+      path.join(dir, 'index.js'),
+      'const esc=s=>s.replace(/"/g,"&quot;");import{c}from"./chunk.js";export{c};'
+    )
+    writeFileSync(path.join(dir, 'entry-only.js'), 'const esc=s=>s.replace(/"/g,"&quot;");')
+
+    const withChunk = measure(path.join(dir, 'index.js'))
+
+    expect(withChunk.files).toBe(2)
+    expect(withChunk.gzipBytes).toBeGreaterThan(measure(path.join(dir, 'entry-only.js')).gzipBytes)
+  })
+
   it('throws rather than silently shrinking the measurement', () => {
     // Skipping an unresolvable chunk would under-report the bundle, which is the
     // one direction this gate must never be wrong in.
