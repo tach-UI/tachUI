@@ -20,7 +20,8 @@
     "type-check": "tsc --project tsconfig.type-check.json",
     "clean": "rm -rf dist",
     "lint": "oxlint src",
-    "size": "node ../../tools/check-size-budget.mjs @tachui/query"
+    "size": "node ../../tools/check-size-budget.mjs @tachui/query",
+    "valid": "clear && vitest run && bun run type-check && bun run lint && bun run build"
   },
   "exports": {
     ".": {

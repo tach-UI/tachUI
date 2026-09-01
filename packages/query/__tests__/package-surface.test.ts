@@ -6,6 +6,8 @@
  * that later phases build their safety checks on.
  */
 
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import * as query from '../src/index'
@@ -30,6 +32,33 @@ describe('@tachui/query barrel', () => {
       'isDevelopment',
       'isServer',
     ])
+  })
+})
+
+describe('package manifest', () => {
+  const manifest = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../package.json'), 'utf8')
+  ) as {
+    dependencies?: Record<string, string>
+    peerDependencies?: Record<string, string>
+    optionalDependencies?: Record<string, string>
+    scripts?: Record<string, string>
+  }
+
+  // Nothing else in the toolchain notices a new dependency: the size budget
+  // measures only relative imports, and vite inlines anything not marked
+  // external. So the zero-runtime-deps promise is only enforced here.
+  it('carries @tachui/core as its only runtime dependency', () => {
+    expect(Object.keys(manifest.dependencies ?? {})).toEqual(['@tachui/core'])
+  })
+
+  it('declares no peer or optional dependencies', () => {
+    expect(manifest.peerDependencies).toBeUndefined()
+    expect(manifest.optionalDependencies).toBeUndefined()
+  })
+
+  it('exposes the workspace-standard aggregate check', () => {
+    expect(manifest.scripts?.valid).toBeDefined()
   })
 })
 
@@ -118,13 +147,29 @@ describe('isDevelopment', () => {
     expect(isDevelopment()).toBe(true)
   })
 
-  it('fails open when there is no process at all', () => {
+  it('is false when there is no process, so browser bundles ship no dev checks', () => {
     vi.stubGlobal('process', undefined)
+    expect(isDevelopment()).toBe(false)
+  })
+
+  it('treats an unset NODE_ENV as development', () => {
+    vi.stubGlobal('process', {})
     expect(isDevelopment()).toBe(true)
   })
 
-  it('fails open when process carries no env', () => {
-    vi.stubGlobal('process', {})
-    expect(isDevelopment()).toBe(true)
+  it('is false when reading the environment throws', () => {
+    // A hardened runtime can expose `process` but refuse to hand over `env`.
+    vi.stubGlobal(
+      'process',
+      new Proxy(
+        {},
+        {
+          get() {
+            throw new Error('blocked')
+          },
+        }
+      )
+    )
+    expect(isDevelopment()).toBe(false)
   })
 })

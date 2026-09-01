@@ -18,11 +18,11 @@ cssclasses:
 
 ## Alpha Release - Welcome!
 
-**tachUI 0.8.x alpha** represents a major architectural milestone! This release features complete modular restructuring with 19 specialized packages and improved performance across the entire framework.
+**tachUI 0.8.x alpha** represents a major architectural milestone! This release features complete modular restructuring with 20 specialized packages and improved performance across the entire framework.
 
 ### What's New in the 0.8 Alpha Line
 
-- **Modular Architecture:** 19 specialized packages (@tachui/primitives, @tachui/modifiers, etc.)
+- **Modular Architecture:** 20 specialized packages (@tachui/primitives, @tachui/modifiers, etc.)
 - **200+ SwiftUI Modifiers:** Complete modifier system with chainable API
 - **Foundation Packages:** Primitives, modifiers, effects, grid, responsive design
 - **Advanced Features:** Flow control, navigation, forms, mobile patterns, symbols
@@ -32,7 +32,7 @@ cssclasses:
 ### What to know about...
 
 - **Modular Extraction:** We have revamped the entire framework structure for better separation and tree-shaking which should lead to smaller output. This is undergoing real-world integration testing now.
-- **Package Ecosystem:** 19 packages including @tachui/grid, @tachui/responsive, @tachui/modifiers/effects
+- **Package Ecosystem:** 20 packages including @tachui/grid, @tachui/responsive, @tachui/modifiers/effects
 - **Testing:** We're doing extensive dogfooding with tachUI now as we build out apps to test it from (hopefully) end to end
 - **Documentation:** Documentation is there and pretty extensive, but disheveled and somewhat inconsistent, as the restructure winds down, this is our next major task.
 - **Impact:** All of this means you can have a great impact if you have feedback now!
@@ -196,6 +196,7 @@ These applications are coming and will be available in a separate repository
 - **@tachui/mobile** - Mobile UI patterns (ActionSheet, Alert, ScrollView)
 - **@tachui/viewport** - Window and viewport management
 - **@tachui/data** - Data display and organization components
+- **@tachui/query** - Backend-neutral reactive query layer
 
 **Developer Tools:**
 

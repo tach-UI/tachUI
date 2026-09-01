@@ -158,6 +158,10 @@ export default defineConfig({
         find: '@tachui/fragments/runtime',
         replacement: path.resolve(__dirname, 'packages/fragments/src/runtime.ts'),
       },
+      {
+        find: '@tachui/query',
+        replacement: path.resolve(__dirname, 'packages/query/src'),
+      },
     ],
   },
 })

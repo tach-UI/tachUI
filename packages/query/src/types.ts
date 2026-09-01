@@ -284,13 +284,14 @@ export interface MutationOptions<I, O, E = Error, TContext = unknown> {
    */
   optimisticUpdate?: (input: I) => TContext
 
-  /** Rolls back the optimistic update. Receives whatever `optimisticUpdate` returned. */
-  rollback?: (context: TContext, input: I, error: E) => void
-
   /** Runs after a successful mutation, before `mutate` resolves. */
   onSuccess?: (data: O, input: I) => void | Promise<void>
 
-  /** Runs after a failed mutation, before `mutate` rejects. */
+  /**
+   * Runs after a failed mutation, before `mutate` rejects. This is the single
+   * rollback hook: `context` is whatever `optimisticUpdate` returned, and it is
+   * undefined when no optimistic update ran.
+   */
   onError?: (error: E, input: I, context: TContext | undefined) => void | Promise<void>
 
   /** Runs after success or failure. */
@@ -362,15 +363,30 @@ export interface AsyncStreamBaseOptions<T> {
  * `(items, m) => [...items, m]` copies the whole array per message and grows
  * without bound; use `createAsyncStreamList` for collections instead.
  */
-export interface AsyncStreamOptions<T, A = undefined>
-  extends AsyncStreamBaseOptions<T> {
-  /** Seed for the reduction. Required when `reduce` is supplied. */
-  initial?: () => A
-  /** Folds each message into the accumulated value. */
-  reduce?: (accumulated: A, message: T) => A
-  /** Caps an array-valued accumulation, dropping oldest entries. */
-  bufferSize?: number
-}
+export type AsyncStreamOptions<T, A = undefined> = AsyncStreamBaseOptions<T> &
+  (
+    | {
+        /**
+         * No reduction: the stream only tracks `latest`, and the accumulated
+         * value stays at the default `A` of `undefined`.
+         */
+        initial?: never
+        reduce?: never
+        bufferSize?: never
+      }
+    | {
+        /**
+         * Seed for the reduction. Paired with `reduce` in the type rather than
+         * only in prose, because `AsyncStreamResult.value` promises a fully
+         * populated `A` and a seedless fold has nothing to start from.
+         */
+        initial: () => A
+        /** Folds each message into the accumulated value. */
+        reduce: (accumulated: A, message: T) => A
+        /** Caps an array-valued accumulation, dropping oldest entries. */
+        bufferSize?: number
+      }
+  )
 
 /**
  * Mode B - collection mode, backed by `createSignalList` so a List updates one row
@@ -392,7 +408,10 @@ export interface AsyncStreamListOptions<T, K extends PropertyKey = PropertyKey>
 export interface AsyncStreamResult<T, A = undefined, E = Error> {
   /** The most recent message. */
   readonly latest: Signal<T | undefined>
-  /** The accumulated value. Present when `reduce` is supplied. */
+  /**
+   * The accumulated value. `A` is only inhabited by supplying `initial` and
+   * `reduce`; without them it stays at its `undefined` default.
+   */
   readonly value: Signal<A>
   readonly status: Signal<AsyncStreamStatus>
   readonly error: Signal<E | undefined>
@@ -408,8 +427,12 @@ export interface AsyncStreamResult<T, A = undefined, E = Error> {
 export interface AsyncStreamListResult<T, K extends PropertyKey = PropertyKey, E = Error> {
   /** Retained message keys, in display order. */
   readonly ids: Signal<K[]>
-  /** Per-item reactive accessor, so one row can update without touching the rest. */
-  get(key: K): () => T
+  /**
+   * Per-item reactive accessor, so one row can update without touching the rest.
+   * Undefined for a key that is not retained: `limit` evicts as messages arrive,
+   * so a key read from `ids()` can be gone by the time it is looked up.
+   */
+  get(key: K): (() => T) | undefined
   readonly latest: Signal<T | undefined>
   readonly status: Signal<AsyncStreamStatus>
   readonly error: Signal<E | undefined>

@@ -20,21 +20,28 @@ export class QueryError extends Error {
 /**
  * Whether development-time diagnostics should run.
  *
- * Deliberately fails open: when the environment cannot be determined the answer
- * is "yes". The checks this gates catch mistakes that otherwise corrupt the cache
- * silently, and a thrown error at the call site is far cheaper to diagnose than a
- * query that mysteriously never hits.
+ * Fails closed: an environment that does not report itself as development is
+ * treated as production. A browser bundle has no `process` binding, so a fail-open
+ * check would leave every dev-only throw live in shipped applications and would
+ * keep the guarded code statically reachable, defeating tree-shaking. Matching the
+ * repo-wide `typeof process !== 'undefined' && process.env.NODE_ENV !== 'production'`
+ * shape also lets a consumer's bundler fold the whole condition to `false`.
  *
- * `__DEV__` is not used here. It is declared as a global type in `tools/globals.d.ts`
- * but no build or test config defines it, so referencing it would throw a
- * ReferenceError at runtime.
+ * `__DEV__` is not used here, even though the type is declared globally in
+ * `tools/globals.d.ts`. No build defines it; its only assignment is an import
+ * side effect of `@tachui/core`'s `reactive/cleanup.ts:246-249`. This package
+ * declares `sideEffects: false`, so depending on another module having been
+ * evaluated is exactly the assumption a bundler is entitled to break, and the
+ * ambient declaration gives no compile-time warning if it does. A self-contained
+ * check has no such ordering requirement.
  */
 export function isDevelopment(): boolean {
   try {
-    if (typeof process === 'undefined' || !process.env) return true
-    return process.env.NODE_ENV !== 'production'
+    return typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production'
   } catch {
-    return true
+    // A hardened runtime can make reading `process.env` throw; that is not a
+    // development environment either.
+    return false
   }
 }
 
