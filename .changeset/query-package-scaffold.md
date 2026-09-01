@@ -9,10 +9,10 @@ This first release ships the public type surface and the shared defaults, ahead 
 What is exported now:
 
 - `QueryKey`, `QueryStatus`, `FetchStatus`, `QueryOptions`, `QueryResult`
-- `QueryClient`, `CacheEntry`, `DehydratedState`
-- `MutationOptions`, `MutationResult`
+- `QueryClient`, `FetchQueryOptions`, `CacheEntry`, `DehydratedState`
+- `MutationOptions`, `MutationOptionsBase`, `MutationResult`
 - `AsyncStreamOptions`, `AsyncStreamListOptions`, and their result types
-- `DEFAULT_STALE_TIME` (0), `DEFAULT_GC_TIME` (300000), `DEFAULT_RETRY` (0)
-- `QueryError`, `isDevelopment`, `isServer`
+- `DEFAULT_STALE_TIME` (0), `DEFAULT_GC_TIME` (300000), `DEFAULT_RETRY` (0), `DEFAULT_ENABLED` (true), `DEFAULT_SNAPSHOT` (false)
+- `QueryError`, `DEV`, `isDevelopment`, `isServer`
 
 The package depends on `@tachui/core` and nothing else, is marked `sideEffects: false`, and ships a single entry point under a 12 KB gzipped budget now asserted in CI by `tools/check-size-budget.mjs`. Any package can opt into that gate by declaring `tachui.sizeBudget` in its manifest.

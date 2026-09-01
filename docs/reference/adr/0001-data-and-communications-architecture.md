@@ -49,8 +49,20 @@ would silently break any communications layer built on top of them.
    describes the request (`idle | fetching`). `refreshing` is not a status value; a
    background refresh is `success` plus `fetching`.
 10. `enabled` and `select` ship in the first released type surface. `select` adds the
-    second type parameter to `QueryResult`, so retrofitting it later would rewrite every
-    generic signature.
+    second type parameter to `QueryOptions` - `QueryOptions<TRaw, TData = TRaw, E = Error>`,
+    where `TRaw` is what the loader returns and the cache stores and `TData` is what one
+    observer projects - and retypes `QueryResult`'s first parameter from the cached `TRaw`
+    to the projected `TData`, leaving `QueryResult<TData, E = Error>`. Retrofitting either
+    later would rewrite every generic signature in the package and in every adapter above
+    it.
+
+    *Amended 2026-09-01, during #276.* This decision originally read that `select` adds the
+    second type parameter to `QueryResult`. The shipped surface puts it on `QueryOptions`
+    and gives `QueryResult`'s second slot to the error type, which is the better shape:
+    `select` is an option, so its parameter belongs to the options type, and every result
+    consumer benefits from a nameable `E`. Recorded here because a later implementation
+    following the original wording would write `QueryResult<TRaw, TData>` and collide with
+    what shipped.
 11. `select` runs per observer, outside the cache, so one cached response serves many
     projections.
 12. `staleTime` (freshness) and `gcTime` (unobserved retention) are distinct and separately

@@ -28,6 +28,7 @@ describe('@tachui/query barrel', () => {
       'DEFAULT_RETRY',
       'DEFAULT_SNAPSHOT',
       'DEFAULT_STALE_TIME',
+      'DEV',
       'QueryError',
       'isDevelopment',
       'isServer',
@@ -43,6 +44,7 @@ describe('package manifest', () => {
     peerDependencies?: Record<string, string>
     optionalDependencies?: Record<string, string>
     scripts?: Record<string, string>
+    tachui?: { sizeBudget?: { entry?: string; gzipBytes?: number } }
   }
 
   // Nothing else in the toolchain notices a new dependency: the size budget
@@ -59,6 +61,17 @@ describe('package manifest', () => {
 
   it('exposes the workspace-standard aggregate check', () => {
     expect(manifest.scripts?.valid).toBeDefined()
+  })
+
+  // The size gate is opt-in: tools/check-size-budget.mjs skips any package with
+  // no `tachui.sizeBudget` and exits 0 when none declares one. Without this
+  // assertion, deleting or renaming the field leaves both the test suite and CI
+  // green while acceptance criterion 2 quietly stops being enforced.
+  it('declares the size budget the CI gate enforces', () => {
+    expect(manifest.tachui?.sizeBudget).toEqual({
+      entry: 'dist/index.js',
+      gzipBytes: 12288,
+    })
   })
 })
 

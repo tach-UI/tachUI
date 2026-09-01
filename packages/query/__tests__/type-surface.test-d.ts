@@ -27,8 +27,10 @@ import type {
   CacheEntryPolicy,
   DehydratedQuery,
   DehydratedState,
+  FetchQueryOptions,
   FetchStatus,
   MutationOptions,
+  MutationOptionsBase,
   MutationResult,
   MutationRunContext,
   MutationStatus,
@@ -84,8 +86,10 @@ export type PublicTypeSurface = {
   CacheEntryPolicy: CacheEntryPolicy
   DehydratedQuery: DehydratedQuery
   DehydratedState: DehydratedState
+  FetchQueryOptions: FetchQueryOptions<RawUser>
   FetchStatus: FetchStatus
   MutationOptions: MutationOptions<string, void>
+  MutationOptionsBase: MutationOptionsBase<string, void>
   MutationResult: MutationResult<string, void>
   MutationRunContext: MutationRunContext
   MutationStatus: MutationStatus
@@ -206,20 +210,192 @@ export type MutationHasNoFetchStatus = Assert<
 >
 
 /**
- * `onError` is the only rollback hook, so there is no second slot promising a
- * context that a failed `run` may never have produced.
+ * Every member of the method-bearing interfaces is pinned by name. Instantiating
+ * a type (as `PublicTypeSurface` does) only gates that the barrel still exports
+ * the identifier - deleting `QueryClient.dispose` or `QueryResult.refetch` left
+ * both type-check and the runtime suite green until these were added.
  */
+export type QueryClientMembers = Assert<
+  Equals<
+    keyof QueryClient,
+    'fetchQuery' | 'prefetchQueries' | 'invalidate' | 'dehydrate' | 'hydrate' | 'clear' | 'dispose'
+  >
+>
+
+export type QueryResultMembers = Assert<
+  Equals<
+    keyof QueryResult<string>,
+    | 'data'
+    | 'error'
+    | 'status'
+    | 'fetchStatus'
+    | 'isLoading'
+    | 'isFetching'
+    | 'isRefreshing'
+    | 'isStale'
+    | 'updatedAt'
+    | 'refetch'
+    | 'invalidate'
+    | 'cancel'
+    | 'dispose'
+  >
+>
+
+export type MutationResultMembers = Assert<
+  Equals<
+    keyof MutationResult<string, void>,
+    'status' | 'data' | 'error' | 'isPending' | 'mutate' | 'reset' | 'cancel'
+  >
+>
+
+export type QueryOptionsMembers = Assert<
+  Equals<
+    keyof QueryOptions<RawUser>,
+    | 'key'
+    | 'load'
+    | 'enabled'
+    | 'select'
+    | 'placeholderData'
+    | 'staleTime'
+    | 'gcTime'
+    | 'retry'
+    | 'retryDelay'
+    | 'snapshot'
+    | 'client'
+    | 'refetchOnFocus'
+    | 'refetchOnReconnect'
+  >
+>
+
+export type AsyncStreamResultMembers = Assert<
+  Equals<
+    keyof AsyncStreamResult<Message>,
+    'latest' | 'value' | 'status' | 'error' | 'connect' | 'cancel' | 'dispose'
+  >
+>
+
+export type AsyncStreamListResultMembers = Assert<
+  Equals<
+    keyof AsyncStreamListResult<Message, string>,
+    'ids' | 'get' | 'latest' | 'status' | 'error' | 'connect' | 'cancel' | 'dispose'
+  >
+>
+
+export type AsyncStreamListOptionsMembers = Assert<
+  Equals<
+    keyof AsyncStreamListOptions<Message, string>,
+    'key' | 'open' | 'autoConnect' | 'itemKey' | 'limit' | 'insert'
+  >
+>
+
+/**
+ * An imperative fetch cannot honour per-observer options. Accepting `select`
+ * would silently drop a projection the caller wrote; accepting `enabled: false`
+ * would leave a non-optional `Promise` with no defined resolution.
+ */
+export type FetchQueryOmitsObserverOptions = Assert<
+  Equals<
+    keyof FetchQueryOptions<RawUser>,
+    'key' | 'load' | 'staleTime' | 'gcTime' | 'retry' | 'retryDelay' | 'snapshot' | 'client'
+  >
+>
+
+type FetchBase = {
+  key: () => QueryKey
+  load: (ctx: QueryLoadContext) => Promise<RawUser>
+}
+
+declare const fetchBase: FetchBase
+
+/**
+ * Written as literals under `@ts-expect-error` rather than as `Assignable`
+ * assertions: structural assignability permits extra properties, and only a
+ * fresh object literal gets excess-property checking. The literal is also the
+ * shape a caller actually writes at a `fetchQuery` call site. Each of these
+ * fails the type-check if the option stops being rejected.
+ */
+
+export const fetchQueryRejectsSelect: FetchQueryOptions<RawUser> = {
+  ...fetchBase,
+  // @ts-expect-error - `select` is per-observer; an imperative fetch would drop it silently
+  select: (user: RawUser) => user.displayName,
+}
+
+export const fetchQueryRejectsEnabled: FetchQueryOptions<RawUser> = {
+  ...fetchBase,
+  // @ts-expect-error - `enabled: false` would leave a non-optional Promise unresolved
+  enabled: false,
+}
+
+export const fetchQueryRejectsPlaceholder: FetchQueryOptions<RawUser> = {
+  ...fetchBase,
+  // @ts-expect-error - there is no observer to show placeholder data to
+  placeholderData: { id: '0', displayName: '' },
+}
+
+/** The options an imperative fetch can honour are still accepted. */
+export const fetchQueryAcceptsCachePolicy: FetchQueryOptions<RawUser> = {
+  ...fetchBase,
+  staleTime: 30_000,
+  gcTime: 60_000,
+  retry: 2,
+  snapshot: true,
+}
+
+/**
+ * `onError` must stay contextually typeable. It lives on the base interface
+ * rather than inside the union for exactly this reason: moving it into the
+ * branches makes TypeScript unable to pick a signature, and every caller has to
+ * annotate all three parameters by hand.
+ */
+export const contextualTypingSurvives: MutationOptions<string, number, Error, number> = {
+  run: async input => input.length,
+  optimisticUpdate: input => input.length,
+  onError: (error, input, context) => {
+    void error.message
+    void input.length
+    void context
+  },
+}
+
+/** There is no second rollback slot; `onError` is where the context lives. */
 export type NoSeparateRollbackHook = Assert<
   Equals<'rollback' extends keyof MutationOptions<string, void> ? true : false, false>
 >
 
-/** The rollback context stays optional, because `optimisticUpdate` is optional. */
-export type RollbackContextIsOptional = Assert<
+type MutationBase = { run: (input: string) => Promise<number> }
+
+/** A mutation with no optimistic update needs no rollback hook. */
+export type PlainMutationAccepted = Assert<
+  Assignable<MutationBase, MutationOptions<string, number>>
+>
+
+/**
+ * An optimistic update without `onError` is rejected: it would mutate the UI on
+ * the way in with nowhere to undo it when `run` rejects.
+ */
+export type OptimisticWithoutRollbackRejected = Assert<
   Equals<
-    Parameters<
-      NonNullable<MutationOptions<string, void, Error, { previous: string[] }>['onError']>
-    >[2],
-    { previous: string[] } | undefined
+    Assignable<
+      MutationBase & { optimisticUpdate: (input: string) => number },
+      MutationOptions<string, number, Error, number>
+    >,
+    false
+  >
+>
+
+/**
+ * Paired, it is accepted. The context stays `TContext | undefined` even here:
+ * `optimisticUpdate` can itself throw before returning, and `onError` still runs
+ * on that path with nothing to roll back.
+ */
+export type OptimisticWithRollbackAccepted = Assert<
+  Assignable<
+    MutationBase & {
+      optimisticUpdate: (input: string) => number
+      onError: (error: Error, input: string, context: number | undefined) => void
+    },
+    MutationOptions<string, number, Error, number>
   >
 >
 
@@ -268,6 +444,47 @@ export type SeedlessFoldRejected = Assert<
 /** `bufferSize` caps an array accumulation, so it belongs to the reducing branch. */
 export type BufferSizeWithoutFoldRejected = Assert<
   Equals<Assignable<StreamBase & { bufferSize: 100 }, AsyncStreamOptions<Message>>, false>
+>
+
+/**
+ * The no-fold branch is gated on `A` being inhabitable by `undefined`. Without
+ * that gate an explicit accumulator with no `initial`/`reduce` type-checked and
+ * `value()` was statically `number` while nothing could ever populate it.
+ */
+export type ExplicitAccumulatorRequiresFold = Assert<
+  Equals<Assignable<StreamBase, AsyncStreamOptions<Message, number>>, false>
+>
+
+/** `bufferSize` caps an array; on a Map there is no oldest entry to drop. */
+export type BufferSizeOnNonArrayRejected = Assert<
+  Equals<
+    Assignable<
+      StreamBase & {
+        initial: () => Map<string, Message>
+        reduce: (acc: Map<string, Message>, m: Message) => Map<string, Message>
+        bufferSize: 100
+      },
+      AsyncStreamOptions<Message, Map<string, Message>>
+    >,
+    false
+  >
+>
+
+/** On an array accumulator it is accepted. */
+export type BufferSizeOnArrayAccepted = Assert<
+  Assignable<
+    StreamBase & {
+      initial: () => Message[]
+      reduce: (acc: Message[], m: Message) => Message[]
+      bufferSize: 100
+    },
+    AsyncStreamOptions<Message, Message[]>
+  >
+>
+
+/** The retained id list is readonly: mutating it in place would desync the list. */
+export type StreamListIdsAreReadonly = Assert<
+  Equals<AsyncStreamListResult<Message, string>['ids'], Signal<readonly string[]>>
 >
 
 /** Without a reduction the accumulated value stays `undefined`. */
