@@ -1,6 +1,6 @@
 {
   "name": "@tachui/devtools",
-  "version": "0.8.32",
+  "version": "0.8.33",
   "description": "Development & debugging tools for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@tachui/core": "0.8.31",
-    "@tachui/primitives": "0.8.32",
+    "@tachui/primitives": "0.8.33",
     "@tachui/registry": "0.8.31",
     "magic-string": "^0.30.0"
   },

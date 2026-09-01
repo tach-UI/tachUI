@@ -1,5 +1,12 @@
 # @tachui/data
 
+## 0.8.33
+
+### Patch Changes
+
+- Updated dependencies [[`80ebe36`](https://github.com/tach-UI/tachUI/commit/80ebe366c5e64bd6ebe3419744f5bff3605e51be)]:
+  - @tachui/primitives@0.8.33
+
 ## 0.8.32
 
 ### Patch Changes
