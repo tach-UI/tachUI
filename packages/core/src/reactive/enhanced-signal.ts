@@ -5,6 +5,7 @@
  * to fix signal update detection bugs and eliminate race conditions.
  */
 
+import { warnEnhancedReactiveDeprecated } from './deprecation'
 import { getCurrentComputation } from './context'
 import { defaultEquals, deepEquals, shallowEquals, type EqualityFunction } from './equality'
 import type { Computation } from './types'
@@ -148,10 +149,17 @@ export type SignalSetter<T> = (value: T | ((prev: T) => T)) => T
 /**
  * Create a new enhanced reactive signal with custom equality
  */
+/**
+ * @deprecated Part of the enhanced reactive branch, whose effects never track
+ * dependencies. Reads and writes work, but nothing observing this signal
+ * through an enhanced effect will update. Use `createSignal` from the standard
+ * graph. Scheduled for removal in 0.9.0 (#271).
+ */
 export function createEnhancedSignal<T>(
   initialValue: T,
   options?: SignalOptions<T>
 ): [() => T, SignalSetter<T>] {
+  warnEnhancedReactiveDeprecated('createEnhancedSignal', 'createSignal')
   const signal = new EnhancedSignalImpl(initialValue, options)
 
   const getter = signal.getValue.bind(signal) as (() => T) & { peek: () => T }

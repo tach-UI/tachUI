@@ -5,6 +5,7 @@
  * to fix silent error suppression and incomplete cleanup issues.
  */
 
+import { warnEnhancedReactiveDeprecated } from './deprecation'
 import { getCurrentComputation, getCurrentOwner } from './context'
 import type { Owner } from './types'
 import { type ReactiveNode, ReactiveScheduler, UpdatePriority } from './unified-scheduler'
@@ -206,10 +207,16 @@ export class EffectImpl implements ReactiveNode {
  * cleanup()
  * ```
  */
+/**
+ * @deprecated DOES NOT WORK — enhanced effects never track dependencies, so
+ * this will not re-run when a signal it reads changes. Use `createEffect`
+ * from the standard graph. Scheduled for removal in 0.9.0 (#271).
+ */
 export function createEnhancedEffect(
   effectFn: () => undefined | (() => void),
   options?: EffectOptions
 ): () => void {
+  warnEnhancedReactiveDeprecated('createEnhancedEffect', 'createEffect')
   const effect = new EffectImpl(effectFn, options)
 
   // Register cleanup with owner if available

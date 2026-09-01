@@ -6,7 +6,6 @@ import { AnimationModifier } from '@tachui/core/modifiers'
 import type { AnimationModifierProps, Modifier } from '@tachui/types/modifiers'
 import type { Signal } from '@tachui/types/reactive'
 
-type TransitionConfig = NonNullable<AnimationModifierProps['transition']>
 type AnimationConfig = NonNullable<AnimationModifierProps['animation']>
 
 export function transform(
@@ -22,13 +21,4 @@ export function animation(
     return new AnimationModifier({})
   }
   return new AnimationModifier({ animation: options as AnimationConfig })
-}
-
-export function transitions(
-  config: TransitionConfig | Record<string, any>
-): Modifier {
-  // Preserve existing behavior where arbitrary config objects were stored
-  // on a `transitions` property even though AnimationModifier ignores it.
-  // Future refactors can map this shape to the concrete transition support.
-  return new AnimationModifier({ transitions: config })
 }

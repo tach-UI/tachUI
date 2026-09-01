@@ -1052,11 +1052,6 @@ export class ModifierBuilderImpl<
   // MISSING TRANSITION METHODS
   // ============================================================================
 
-  transitions(config: any): ModifierBuilder<T> {
-    // Placeholder - implement with proper transition system
-    this.modifiers.push(createRegistryModifier('transitions', config))
-    return this as unknown as ModifierBuilder<T>
-  }
 
   // All transition methods moved to @tachui/modifiers:
   // fadeTransition(), transformTransition(), colorTransition(), layoutTransition(),

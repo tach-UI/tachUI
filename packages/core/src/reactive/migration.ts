@@ -29,8 +29,9 @@ let migrationStats = {
 export function createLegacySignal<T>(value: T): any {
   if (migrationWarningsEnabled) {
     console.warn(
-      'createLegacySignal is deprecated. Use createSignal() or createEnhancedSignal() instead. ' +
-        'See: https://docs.tachui.dev/migration/reactive-system'
+      'createLegacySignal is deprecated. Use createSignal() instead. ' +
+        'Do not use createEnhancedSignal(): the enhanced graph never tracks ' +
+        'dependencies and is scheduled for removal in 0.9.0 (#271).'
     )
   }
   migrationStats.signalsConverted++
@@ -176,22 +177,19 @@ export function migrateReactiveCode(oldCode: string): {
   const transformations: string[] = []
   let newCode = oldCode
 
-  // Basic regex-based transformations
+  // Basic regex-based transformations.
+  //
+  // The createSignal -> createEnhancedSignal and createEffect ->
+  // createEnhancedEffect rewrites were removed (#271): they steered callers
+  // onto the enhanced graph, whose effects never track dependencies, so the
+  // codemod's output was strictly more broken than its input. Migration now
+  // runs in the other direction — see the deprecation notices on those
+  // exports.
   const patterns = [
-    {
-      from: /createSignal\(/g,
-      to: 'createEnhancedSignal(',
-      description: 'Upgraded createSignal to createEnhancedSignal',
-    },
     {
       from: /createComputed\(([^,]+)\)/g,
       to: "createComputed($1, { debugName: 'computed' })",
       description: 'Added debug name to createComputed',
-    },
-    {
-      from: /createEffect\(([^,]+)\)/g,
-      to: "createEnhancedEffect($1, { debugName: 'effect' })",
-      description: 'Upgraded createEffect to createEnhancedEffect with debug name',
     },
   ]
 
