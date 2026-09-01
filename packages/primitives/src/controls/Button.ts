@@ -921,10 +921,40 @@ export class EnhancedButton
 export function Button(
   title: string | (() => string) | Signal<string>,
   action?: () => void | Promise<void>,
+  props?: Omit<ButtonProps, 'title' | 'action'>
+): ModifiableComponentWithModifiers<ButtonProps>
+/**
+ * Props-second form, matching every other primitive — `Image(src, props)`,
+ * `Toggle(isOn, props)`, `Text(content, props)`. Put `action` in the props
+ * object.
+ */
+export function Button(
+  title: string | (() => string) | Signal<string>,
+  props?: Omit<ButtonProps, 'title'>
+): ModifiableComponentWithModifiers<ButtonProps>
+export function Button(
+  title: string | (() => string) | Signal<string>,
+  actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title'>,
   props: Omit<ButtonProps, 'title' | 'action'> = {}
 ): ModifiableComponentWithModifiers<ButtonProps> {
+  // Button was the only primitive taking props third. Callers who learned the
+  // shape from Text or Image wrote Button(title, props), which silently landed
+  // the whole props object in the `action` slot — every prop on it, `css`
+  // included, was dropped with no runtime signal (#266). Both forms now work.
+  // Three shapes to tell apart, and an explicit `undefined` in the action slot
+  // must keep reading props from the third argument — Button(title, undefined,
+  // props) is a real call pattern.
+  const action =
+    typeof actionOrProps === 'function'
+      ? (actionOrProps as () => void | Promise<void>)
+      : undefined
+  const resolvedProps =
+    actionOrProps != null && typeof actionOrProps !== 'function'
+      ? (actionOrProps as Omit<ButtonProps, 'title'>)
+      : props
+
   const buttonProps: ButtonProps = {
-    ...props,
+    ...resolvedProps,
     title,
     ...(action && { action }),
   }
@@ -941,54 +971,72 @@ export const ButtonStyles = {
    */
   Filled: (
     title: string | (() => string) | Signal<string>,
-    action?: () => void | Promise<void>,
+    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'variant'>,
     props: Omit<ButtonProps, 'title' | 'action' | 'variant'> = {}
-  ) => Button(title, action, { ...props, variant: 'filled' }),
+  ) =>
+    actionOrProps == null || typeof actionOrProps === 'function'
+      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, variant: 'filled' })
+      : Button(title, { ...(actionOrProps ?? {}), variant: 'filled' }),
 
   /**
    * Outlined button
    */
   Outlined: (
     title: string | (() => string) | Signal<string>,
-    action?: () => void | Promise<void>,
+    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'variant'>,
     props: Omit<ButtonProps, 'title' | 'action' | 'variant'> = {}
-  ) => Button(title, action, { ...props, variant: 'outlined' }),
+  ) =>
+    actionOrProps == null || typeof actionOrProps === 'function'
+      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, variant: 'outlined' })
+      : Button(title, { ...(actionOrProps ?? {}), variant: 'outlined' }),
 
   /**
    * Plain button (text only)
    */
   Plain: (
     title: string | (() => string) | Signal<string>,
-    action?: () => void | Promise<void>,
+    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'variant'>,
     props: Omit<ButtonProps, 'title' | 'action' | 'variant'> = {}
-  ) => Button(title, action, { ...props, variant: 'plain' }),
+  ) =>
+    actionOrProps == null || typeof actionOrProps === 'function'
+      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, variant: 'plain' })
+      : Button(title, { ...(actionOrProps ?? {}), variant: 'plain' }),
 
   /**
    * Bordered button
    */
   Bordered: (
     title: string | (() => string) | Signal<string>,
-    action?: () => void | Promise<void>,
+    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'variant'>,
     props: Omit<ButtonProps, 'title' | 'action' | 'variant'> = {}
-  ) => Button(title, action, { ...props, variant: 'bordered' }),
+  ) =>
+    actionOrProps == null || typeof actionOrProps === 'function'
+      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, variant: 'bordered' })
+      : Button(title, { ...(actionOrProps ?? {}), variant: 'bordered' }),
 
   /**
    * Destructive button
    */
   Destructive: (
     title: string | (() => string) | Signal<string>,
-    action?: () => void | Promise<void>,
+    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'role'>,
     props: Omit<ButtonProps, 'title' | 'action' | 'role'> = {}
-  ) => Button(title, action, { ...props, role: 'destructive' }),
+  ) =>
+    actionOrProps == null || typeof actionOrProps === 'function'
+      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, role: 'destructive' })
+      : Button(title, { ...(actionOrProps ?? {}), role: 'destructive' }),
 
   /**
    * Cancel button
    */
   Cancel: (
     title: string | (() => string) | Signal<string>,
-    action?: () => void | Promise<void>,
+    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'role'>,
     props: Omit<ButtonProps, 'title' | 'action' | 'role'> = {}
-  ) => Button(title, action, { ...props, role: 'cancel' }),
+  ) =>
+    actionOrProps == null || typeof actionOrProps === 'function'
+      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, role: 'cancel' })
+      : Button(title, { ...(actionOrProps ?? {}), role: 'cancel' }),
 }
 
 /**
