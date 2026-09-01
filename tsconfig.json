@@ -67,6 +67,12 @@
       ],
       "@tachui/fragments/*": [
         "./packages/fragments/dist/*"
+      ],
+      "@tachui/query": [
+        "./packages/query/dist/index.d.ts"
+      ],
+      "@tachui/query/*": [
+        "./packages/query/dist/*"
       ]
     }
   },

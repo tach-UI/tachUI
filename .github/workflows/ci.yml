@@ -143,6 +143,7 @@ jobs:
           bun run build:navigation
           bun run build:grid
           bun run --filter @tachui/fragments build
+          bun run build:query
 
       - name: Run type checking
         run: bun run type-check
@@ -230,6 +231,9 @@ jobs:
             echo "Core package build failed"
             exit 1
           fi
+
+      - name: Enforce bundle size budgets
+        run: bun run ci:check-size-budget
 
   cli-init-smoke:
     name: CLI Init Packed Smoke

@@ -165,6 +165,10 @@ export default defineConfig({
         find: '@tachui/flow-control',
         replacement: path.resolve(__dirname, 'packages/flow-control/src'),
       },
+      {
+        find: '@tachui/query',
+        replacement: path.resolve(__dirname, 'packages/query/src'),
+      },
     ],
   },
 })
