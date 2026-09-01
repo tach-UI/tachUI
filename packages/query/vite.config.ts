@@ -3,6 +3,9 @@ import { defineConfig } from 'vite'
 
 export default defineConfig(({ mode }) => ({
   build: {
+    // The size-budget gate reads the chunk graph from this manifest rather than
+    // re-deriving it by parsing the emitted JavaScript (tools/check-size-budget.mjs).
+    manifest: true,
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
