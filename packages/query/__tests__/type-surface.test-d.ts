@@ -8,9 +8,11 @@
  * `bun run --filter @tachui/query type-check`, which includes this file; a
  * regression is a type error, not a failed run.
  *
- * Everything is imported through `../src/index` rather than `../src/types`, so
- * dropping a name from the barrel's re-export block fails here even when the
- * declaration itself survives in `types.ts`.
+ * Everything is imported through the package's export map rather than a relative
+ * path, so these assertions run against the built declarations a consumer
+ * actually receives - declaration emit can widen, drop, or reorder a type while
+ * the source still compiles. Dropping a name from the barrel's re-export block
+ * fails here even when the declaration survives in `types.ts`.
  */
 
 import type { Signal } from '@tachui/core'
@@ -43,7 +45,7 @@ import type {
   QueryResult,
   QueryStatus,
   RetryPolicy,
-} from '../src/index'
+} from '@tachui/query'
 
 type Assert<T extends true> = T
 
