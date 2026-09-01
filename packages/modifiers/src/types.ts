@@ -799,7 +799,6 @@ export interface ModifierBuilder<
     easing?: string,
     delay?: number
   ): ModifierBuilder<T>
-  transitions(config: any): ModifierBuilder<T>
   animation(options: AnimationModifierProps['animation']): ModifierBuilder<T>
 
   // Transition presets

@@ -10,6 +10,8 @@
  * removal cannot be mistaken for a loss of capability.
  */
 
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { JSDOM } from 'jsdom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Text } from '@tachui/primitives'
@@ -64,5 +66,30 @@ describe('.transitions() removal (#297)', () => {
     expect(host.querySelector('span')!.style.transition).toBe(
       'opacity 500ms ease-in 0ms'
     )
+  })
+
+  /**
+   * `ModifierBuilder` is declared twice — `@tachui/modifiers/types` is a
+   * published entry point in its own right, so a declaration left behind in
+   * either file lets a consumer compile a call that is undefined at runtime.
+   * Read as source because neither file is covered by `type-check` from here
+   * and `@ts-expect-error` would be inert inside `__tests__`.
+   */
+  describe.each([
+    ['@tachui/modifiers/types', '../src/types.ts'],
+    ['@tachui/types/modifiers', '../../types/src/modifiers.ts'],
+  ])('%s', (_entry, relativePath) => {
+    const source = readFileSync(
+      fileURLToPath(new URL(relativePath, import.meta.url)),
+      'utf8'
+    )
+
+    it('does not declare transitions() on ModifierBuilder', () => {
+      expect(source).not.toMatch(/^\s*transitions\(/m)
+    })
+
+    it('still declares the singular transition()', () => {
+      expect(source).toMatch(/^\s*transition\(/m)
+    })
   })
 })
