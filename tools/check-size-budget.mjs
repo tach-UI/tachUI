@@ -91,6 +91,12 @@ const NON_VALUE_KEYWORDS = new Set([
 ])
 
 /**
+ * Words whose parenthesised head is followed by a *statement* rather than a
+ * value, so a `/` after the closing `)` opens a regex instead of dividing.
+ */
+const CONTROL_HEAD_KEYWORDS = new Set(['if', 'while', 'for'])
+
+/**
  * The relative specifiers a module imports.
  *
  * A single-pass tokenizer rather than regexes over the whole file. A regex
@@ -117,6 +123,14 @@ export function relativeImportsOf(source) {
   let lastWord = ''
   // A `/` at the very start of a module can only be a regex.
   let expectsValue = true
+  // Whether the previous token was `.`, so the next word is a member name.
+  let afterDot = false
+  // Open groupings, innermost last. A `(` remembers whether it headed a control
+  // statement; a `${` remembers the template to return to on `}`.
+  const stack = []
+  // Set while reading template-literal text, rather than skipping the template
+  // wholesale.
+  let template = null
 
   const isIdentifierChar = ch => /[A-Za-z0-9_$]/.test(ch)
 
@@ -127,6 +141,44 @@ export function relativeImportsOf(source) {
   }
 
   while (i < length) {
+    if (template) {
+      const ch = source[i]
+
+      if (ch === '\\') {
+        template.text += source[i + 1] ?? ''
+        i += 2
+        continue
+      }
+
+      if (ch === '`') {
+        const closed = template
+        template = null
+        i += 1
+        if (closed.word === 'from' || closed.word === 'import') {
+          record(closed.interpolated ? null : closed.text)
+        }
+        lastWord = ''
+        expectsValue = false
+        afterDot = false
+        continue
+      }
+
+      if (ch === '$' && source[i + 1] === '{') {
+        template.interpolated = true
+        stack.push({ kind: 'interpolation', template })
+        template = null
+        i += 2
+        lastWord = ''
+        expectsValue = true
+        afterDot = false
+        continue
+      }
+
+      template.text += ch
+      i += 1
+      continue
+    }
+
     const two = source.slice(i, i + 2)
 
     if (two === '//') {
@@ -151,16 +203,24 @@ export function relativeImportsOf(source) {
         i = end
         lastWord = ''
         expectsValue = false
+        afterDot = false
         continue
       }
     }
 
-    if (ch === '"' || ch === "'" || ch === '`') {
+    if (ch === '`') {
+      template = { text: '', interpolated: false, word: lastWord }
+      i += 1
+      continue
+    }
+
+    if (ch === '"' || ch === "'") {
       const literal = readStringLiteral(source, i)
       if (lastWord === 'from' || lastWord === 'import') record(literal.value)
       i = literal.end
       lastWord = ''
       expectsValue = false
+      afterDot = false
       continue
     }
 
@@ -169,7 +229,11 @@ export function relativeImportsOf(source) {
       while (j < length && isIdentifierChar(source[j])) j += 1
       lastWord = source.slice(i, j)
       i = j
-      expectsValue = NON_VALUE_KEYWORDS.has(lastWord)
+      // A keyword used as a member name - `o.in`, `o.of`, `o.return` - is an
+      // ordinary property, so it leaves a value behind and a following `/`
+      // divides. Only a real keyword flips this.
+      expectsValue = !afterDot && NON_VALUE_KEYWORDS.has(lastWord)
+      afterDot = false
       continue
     }
 
@@ -181,16 +245,62 @@ export function relativeImportsOf(source) {
     }
 
     if (ch === '(') {
+      stack.push({ kind: 'paren', controlHead: CONTROL_HEAD_KEYWORDS.has(lastWord) })
       if (lastWord !== 'import') lastWord = ''
       i += 1
       expectsValue = true
+      afterDot = false
+      continue
+    }
+
+    if (ch === '[' || ch === '{') {
+      stack.push({ kind: ch === '[' ? 'bracket' : 'brace' })
+      lastWord = ''
+      i += 1
+      expectsValue = true
+      afterDot = false
+      continue
+    }
+
+    if (ch === ')') {
+      const frame = stack.pop()
+      // `if (...)`, `while (...)` and `for (...)` are followed by a statement,
+      // where a `/` opens a regex. Every other `)` closes a value, where it
+      // divides.
+      expectsValue = frame?.kind === 'paren' && frame.controlHead === true
+      lastWord = ''
+      afterDot = false
+      i += 1
+      continue
+    }
+
+    if (ch === ']') {
+      stack.pop()
+      expectsValue = false
+      lastWord = ''
+      afterDot = false
+      i += 1
+      continue
+    }
+
+    if (ch === '}') {
+      const frame = stack.pop()
+      if (frame?.kind === 'interpolation') {
+        // Back to the template text this interpolation interrupted.
+        template = frame.template
+        i += 1
+        continue
+      }
+      expectsValue = true
+      lastWord = ''
+      afterDot = false
+      i += 1
       continue
     }
 
     lastWord = ''
-    // `)` and `]` close a value; every other punctuator leaves an expression
-    // still expected, so a `/` after one opens a regex.
-    expectsValue = ch !== ')' && ch !== ']'
+    afterDot = ch === '.'
+    expectsValue = true
     i += 1
   }
 
@@ -208,7 +318,6 @@ function readStringLiteral(source, start) {
   const quote = source[start]
   let i = start + 1
   let value = ''
-  let interpolated = false
 
   while (i < source.length) {
     const ch = source[i]
@@ -221,18 +330,6 @@ function readStringLiteral(source, start) {
       continue
     }
 
-    if (quote === '`' && ch === '$' && source[i + 1] === '{') {
-      interpolated = true
-      let depth = 1
-      i += 2
-      while (i < source.length && depth > 0) {
-        if (source[i] === '{') depth += 1
-        else if (source[i] === '}') depth -= 1
-        i += 1
-      }
-      continue
-    }
-
     if (ch === quote) {
       i += 1
       break
@@ -242,7 +339,7 @@ function readStringLiteral(source, start) {
     i += 1
   }
 
-  return { value: interpolated ? null : value, end: i }
+  return { value, end: i }
 }
 
 /**
