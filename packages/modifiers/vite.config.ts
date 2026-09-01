@@ -39,6 +39,9 @@ export default defineConfig(({ mode }) => ({
         '@tachui/core',
         '@tachui/core/reactive',
         '@tachui/core/reactive/types',
+        // Must stay external: bundling the renderer would give this package
+        // its own globalRenderer, separate from the app's.
+        '@tachui/core/runtime',
         '@tachui/core/runtime/types',
         '@tachui/core/modifiers',
         '@tachui/core/modifiers/base',

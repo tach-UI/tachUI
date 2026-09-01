@@ -5,10 +5,11 @@
  */
 
 import { BaseModifier } from '../base'
-import type { ModifierContext } from '../types'
-import type { DOMNode } from '@tachui/types/runtime'
+import type { ModifierContext, ModifierResult } from '../types'
+import type { ComponentInstance, DOMNode } from '@tachui/types/runtime'
 import type { Signal } from '@tachui/types/reactive'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
+import { renderComponent } from '@tachui/core/runtime'
 
 export type OverlayAlignment =
   | 'center'
@@ -29,19 +30,58 @@ export type OverlayOffset =
       y?: number
     }
 
+/**
+ * A single piece of overlay content, after any content closure has been called.
+ *
+ * `ComponentInstance` covers both built and unbuilt components — an unbuilt
+ * modifier builder is built on render, the same way a root component is.
+ */
+export type OverlayContentValue =
+  | ComponentInstance
+  | Element
+  | string
+  | number
+  | null
+  | undefined
+
+/**
+ * Content accepted by {@link overlay}, mirroring SwiftUI's
+ * `.overlay(alignment:content:)` content closure.
+ */
+export type OverlayContent =
+  | OverlayContentValue
+  | Signal<string | number>
+  | (() => OverlayContentValue)
+
 export interface OverlayOptions {
-  content: any // ComponentInstance, HTMLElement, or function that returns ComponentInstance
+  content: OverlayContent
   alignment?: OverlayAlignment | Signal<OverlayAlignment>
   side?: OverlaySide | Signal<OverlaySide>
   offset?: OverlayOffset | Signal<OverlayOffset>
   enabled?: boolean | Signal<boolean>
 }
 
+/**
+ * A component instance, or an unbuilt modifier builder wrapping one — both are
+ * mountable by `renderComponent`, which builds a builder before rendering.
+ */
+function isComponentContent(value: unknown): value is ComponentInstance {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as { render?: unknown; build?: unknown }
+  return (
+    typeof candidate.render === 'function' ||
+    typeof candidate.build === 'function'
+  )
+}
+
 export class OverlayModifier extends BaseModifier<OverlayOptions> {
   readonly type = 'overlay'
   readonly priority = 10 // Apply late so positioning is relative to final layout
 
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+  apply(
+    node: DOMNode,
+    context: ModifierContext
+  ): DOMNode | ModifierResult | undefined {
     if (!context.element) return
 
     // In test environment, accept any element with style property
@@ -50,16 +90,15 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
 
     const { content } = this.properties
 
-    this.applyOverlay(element, content, context)
-
-    return undefined
+    // The node passes through untouched — overlay never rewrites the tree, it
+    // only appends a container and hands back the teardown for it.
+    return { node, cleanup: this.applyOverlay(element, content) }
   }
 
   private applyOverlay(
     element: HTMLElement,
-    content: any,
-    _context: ModifierContext
-  ): void {
+    content: OverlayContent
+  ): (() => void)[] {
     // Make the element a positioned container
     if (element.style.position === '' || element.style.position === 'static') {
       element.style.position = 'relative'
@@ -70,16 +109,30 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     overlayContainer.style.position = 'absolute'
     overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
 
-    this.applyOverlayPositioning(overlayContainer)
+    const cleanup: (() => void)[] = []
 
-    // Render content
-    this.renderContent(overlayContainer, content)
+    const disposePositioning = this.applyOverlayPositioning(overlayContainer)
+    if (disposePositioning) cleanup.push(disposePositioning)
 
-    // Add overlay to the element
+    // Add the overlay to the element before rendering so content mounts into
+    // the connected tree (event delegation resolves against a real ancestor).
     element.appendChild(overlayContainer)
+
+    const disposeContent = this.renderContent(overlayContainer, content)
+    if (disposeContent) cleanup.push(disposeContent)
+
+    // The overlay container is DOM this modifier added, so it goes when the
+    // modifier does — after the content's own disposers have run.
+    cleanup.push(() => {
+      overlayContainer.remove?.()
+    })
+
+    return cleanup
   }
 
-  private applyOverlayPositioning(overlayContainer: HTMLElement): void {
+  private applyOverlayPositioning(
+    overlayContainer: HTMLElement
+  ): (() => void) | undefined {
     const applyResolvedPositioning = () => {
       const alignmentValue = this.resolveReactive(
         this.properties.alignment,
@@ -109,13 +162,14 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
       this.isReactive(this.properties.enabled)
 
     if (hasReactivePositioning) {
-      createEffect(() => {
+      const effect = createEffect(() => {
         applyResolvedPositioning()
       })
-      return
+      return () => effect.dispose()
     }
 
     applyResolvedPositioning()
+    return undefined
   }
 
   private applyOffset(
@@ -221,29 +275,58 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     return value
   }
 
-  private renderContent(container: HTMLElement, content: any): void {
-    if (typeof content === 'function') {
-      // If content is a function, call it to get component
-      const contentComponent = content()
-      if (contentComponent && typeof contentComponent.render === 'function') {
-        const contentNode = contentComponent.render()
-        if (contentNode.element) {
-          container.appendChild(contentNode.element)
-        }
-      }
-    } else if (content && typeof content.render === 'function') {
-      // If content is a component instance
-      const contentNode = content.render()
-      if (contentNode.element) {
-        container.appendChild(contentNode.element)
-      }
-    } else if (
-      content &&
-      (content instanceof HTMLElement || content.appendChild)
-    ) {
-      // If content is a DOM element (including test mock elements with appendChild method)
-      container.appendChild(content)
+  /**
+   * Mount overlay content into the container.
+   *
+   * Returns a disposer when the content owns reactive state or DOM that has to
+   * be torn down with the modifier, otherwise `undefined`.
+   */
+  private renderContent(
+    container: HTMLElement,
+    content: OverlayContent
+  ): (() => void) | undefined {
+    if (content === null || content === undefined) return undefined
+
+    // A signal renders as reactive text, so `overlay(label)` tracks updates
+    // the same way `alignment`/`offset` do.
+    if (isSignal(content) || isComputed(content)) {
+      const signal = content as Signal<string | number>
+      const textNode = document.createTextNode('')
+      container.appendChild(textNode)
+      const effect = createEffect(() => {
+        textNode.data = String(signal() ?? '')
+      })
+      return () => effect.dispose()
     }
+
+    // A thunk is SwiftUI's `@ViewBuilder` content closure: call it once and
+    // mount whatever it produced.
+    if (typeof content === 'function') {
+      return this.renderContent(
+        container,
+        (content as () => OverlayContentValue)()
+      )
+    }
+
+    if (typeof content === 'string' || typeof content === 'number') {
+      container.appendChild(document.createTextNode(String(content)))
+      return undefined
+    }
+
+    // A component instance (built or not) has to go through the renderer —
+    // `render()` alone returns DOMNode descriptions with no `element` yet.
+    if (isComponentContent(content)) {
+      return renderComponent(content as ComponentInstance, container)
+    }
+
+    // A DOM element (including test mocks that only implement appendChild)
+    const asElement = content as { appendChild?: unknown }
+    if (typeof asElement.appendChild === 'function') {
+      container.appendChild(content as Element)
+      return undefined
+    }
+
+    return undefined
   }
 
   private getOverlayAlignment(
@@ -301,7 +384,7 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
  * Creates an overlay modifier that overlays content on top of the view
  */
 export function overlay(
-  content: any,
+  content: OverlayContent,
   alignmentOrOptions:
     | OverlayAlignment
     | Omit<OverlayOptions, 'content'> = 'center'
