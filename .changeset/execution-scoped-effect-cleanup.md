@@ -23,6 +23,26 @@ createEffect(() => {
 })
 ```
 
-**Breaking.** Any effect that returns a function and relies on receiving it back as `previousValue` changes behaviour. The workspace was audited for this population before the change (#269); it found three effects returning a function, all of which returned a teardown closure that was previously swallowed, so all three leaked and none consumed `previousValue`. Two were production leaks that this change fixes: a `keydown` listener in `@tachui/mobile`'s `ActionSheet` and a `resize` listener in `@tachui/navigation`'s tab view.
+**Breaking.** Any effect that returns a function and relies on receiving it back as `previousValue` changes behaviour: the function is now invoked as teardown before the next run and on disposal, and the next run receives `undefined` instead of it.
+
+The workspace was audited for this population before the change (#269). It found three effects returning a function, all of which returned a teardown closure that was previously swallowed, so all three leaked and none consumed `previousValue`. Two were production leaks that this change fixes: a `keydown` listener in `@tachui/mobile`'s `ActionSheet` and a `resize` listener in `@tachui/navigation`'s tab view.
+
+That audit covers this workspace only and cannot see published consumers. If you carry a function *as state* through `previousValue`, wrap it so the return value is not itself callable:
+
+```typescript
+// Before — the function is now treated as a disposer.
+createEffect((prev) => {
+  const handler = prev ?? makeHandler()
+  return handler
+})
+
+// After — box it, so the effect returns a value rather than a function.
+createEffect<{ handler: Handler }>((prev) => {
+  const handler = prev?.handler ?? makeHandler()
+  return { handler }
+})
+```
+
+There is no opt-out. Treating a returned function as a disposer is the decision recorded in ADR 0001, and a sentinel or branded return would leave the leaking-by-default shape reachable.
 
 Behaviour recorded before the change is in `graph-characterization.test.ts`; the new contract is pinned in `effect-cleanup.test.ts`.

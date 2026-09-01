@@ -29,7 +29,9 @@ import {
   flushSync,
   getOwner,
   onCleanup,
+  runWithOwner,
 } from '../../src/reactive'
+import type { Computation, Owner } from '../../src/reactive/types'
 
 describe('owner subtree disposal', () => {
   it('registers a nested root with its parent', () => {
@@ -195,7 +197,7 @@ describe('owner subtree disposal', () => {
     expect(order).toEqual([])
   })
 
-  it('disposes nested roots created inside an effect body', () => {
+  it('disposes a nested root created in an effect body when the effect reruns', () => {
     const [get, set] = createSignal(0)
     const order: string[] = []
 
@@ -210,11 +212,8 @@ describe('owner subtree disposal', () => {
       set(1)
       flushSync()
 
-      // A nested root is owned by the enclosing owner, not by the effect, so
-      // both runs' roots are still alive here — an effect rerun does not
-      // dispose the root the previous run created. Use a returned disposer if
-      // per-run teardown is wanted.
-      expect(order).toEqual([])
+      // The rerun tore down the root the previous run created.
+      expect(order).toEqual(['nested-0'])
       disposeOuter()
     })
 
@@ -223,59 +222,205 @@ describe('owner subtree disposal', () => {
 
   it('registers an onCleanup inside a nested root on that root, not the effect', () => {
     // A root is an ownership boundary, so it closes the enclosing execution
-    // cleanup scope opened by #270. Without that, this cleanup would land on
-    // the effect's execution scope and fire on the effect's next run.
-    const [get, set] = createSignal(0)
+    // cleanup scope opened by #270. Both scopes are torn down at the same
+    // point here, so this is checked through the owner tree instead: the
+    // cleanup must belong to the nested root, not to the effect.
     const order: string[] = []
+    let nestedOwner: ReturnType<typeof getOwner>
 
     createRoot((disposeOuter) => {
       createEffect(() => {
-        get()
         createRoot(() => {
+          nestedOwner = getOwner()
           onCleanup(() => order.push('nested'))
         })
       })
 
-      set(1)
-      flushSync()
-
+      expect(nestedOwner!.cleanups).toHaveLength(1)
       expect(order).toEqual([])
       disposeOuter()
     })
 
-    expect(order).toEqual(['nested', 'nested'])
+    expect(order).toEqual(['nested'])
   })
 
-  it('LIMIT: a root created during a rerun flushed outside the owner stack is orphaned', () => {
-    // `ComputationImpl.execute()` restores `currentComputation` but not
-    // `currentOwner`. When the flush happens inside the enclosing createRoot
-    // call stack the owner is still set, but once it happens outside — the
-    // normal microtask case — `getOwner()` is null during the rerun and any
-    // root created there has no parent to dispose it.
+  it('owns a root created during a rerun flushed outside the enclosing stack', () => {
+    // Regression for the gap Codex flagged. `ComputationImpl.execute()` used
+    // to restore `currentComputation` but not `currentOwner`, so once the
+    // flush arrived on a later microtask — the normal case — `getOwner()` was
+    // null during the rerun and any root created there was orphaned: it
+    // survived disposal of the enclosing root with its cleanups unrun.
     //
-    // Pre-existing and distinct from the owner-subtree fix: closing it means
-    // making a computation establish an owner scope for its own execution.
-    // Characterized, not endorsed.
+    // Assertions are collected and checked after the flush, never inside the
+    // effect body: the flush loop isolates and swallows errors thrown by a
+    // computation, so an expect() in there cannot fail a test.
     const [get, set] = createSignal(0)
     const order: string[] = []
+    const ownerWasNull: boolean[] = []
     let disposeOuter = () => {}
 
     createRoot((dispose) => {
       disposeOuter = dispose
       createEffect(() => {
         const value = get()
-        expect(getOwner() === null).toBe(value !== 0)
+        ownerWasNull.push(getOwner() === null)
         createRoot(() => {
           onCleanup(() => order.push(`nested-${value}`))
         })
       })
     })
 
+    // The flush happens outside the createRoot call stack.
     set(1)
     flushSync()
+
+    expect(ownerWasNull).toEqual([false, false])
+    // The rerun disposed the first run's root.
+    expect(order).toEqual(['nested-0'])
+
     disposeOuter()
 
-    // 'nested-1' is missing: that root was created with no owner.
-    expect(order).toEqual(['nested-0'])
+    expect(order).toEqual(['nested-0', 'nested-1'])
+  })
+
+  it('does not accumulate per-rerun children on the enclosing root', () => {
+    // The fix Codex recommended — parenting to `this.owner` — would pile every
+    // rerun's children onto the root and only release them when the root died.
+    const [get, set] = createSignal(0)
+    let rootOwner: ReturnType<typeof getOwner>
+
+    createRoot((disposeOuter) => {
+      rootOwner = getOwner()
+      createEffect(() => {
+        get()
+        createRoot(() => {
+          onCleanup(() => {})
+        })
+      })
+
+      for (let i = 1; i <= 20; i++) {
+        set(i)
+        flushSync()
+      }
+
+      // One live child owner: the effect's current execution scope.
+      expect(rootOwner!.childOwners!.size).toBe(1)
+      disposeOuter()
+    })
+  })
+
+  it('disposes an effect created during a rerun when the effect reruns again', () => {
+    const [outer, setOuter] = createSignal(0)
+    const [inner, setInner] = createSignal(0)
+    const innerRuns: number[] = []
+
+    createRoot(() => {
+      createEffect(() => {
+        outer()
+        createEffect(() => {
+          innerRuns.push(inner())
+        })
+      })
+    })
+
+    setInner(1)
+    flushSync()
+    expect(innerRuns).toEqual([0, 1])
+
+    // Rerunning the outer effect disposes the inner one it previously created,
+    // with no explicit disposer written by the caller.
+    setOuter(1)
+    flushSync()
+    setInner(2)
+    flushSync()
+
+    // The replacement inner effect runs immediately against the current value
+    // (1), then once more for 2. If the first inner effect had survived, 2
+    // would appear twice.
+    expect(innerRuns).toEqual([0, 1, 1, 2])
+  })
+})
+
+describe('owner subtree disposal: foreign and legacy owners', () => {
+  /**
+   * An `Owner` shaped like the interface before `childOwners` and `dispose`
+   * existed — what a hand-rolled JS object, a downstream structural
+   * implementation, or an already-compiled consumer on an older
+   * `@tachui/types` would hand to `runWithOwner`.
+   */
+  function createLegacyOwner(): Owner {
+    return {
+      id: -1,
+      parent: null,
+      context: new Map<symbol, unknown>(),
+      cleanups: [],
+      sources: new Set<Computation>(),
+      disposed: false,
+    } as Owner
+  }
+
+  it('does not throw when a root is created under a legacy owner', () => {
+    const legacy = createLegacyOwner()
+    let ran = false
+
+    expect(() => {
+      runWithOwner(legacy, () => {
+        createRoot(() => {
+          ran = true
+        })
+      })
+    }).not.toThrow()
+
+    expect(ran).toBe(true)
+  })
+
+  it('does not throw when a root under a legacy owner disposes itself', () => {
+    const legacy = createLegacyOwner()
+    const order: string[] = []
+
+    expect(() => {
+      runWithOwner(legacy, () => {
+        createRoot((dispose) => {
+          onCleanup(() => order.push('inner'))
+          dispose()
+        })
+      })
+    }).not.toThrow()
+
+    expect(order).toEqual(['inner'])
+  })
+
+  it('runs effects normally under a legacy owner', () => {
+    const legacy = createLegacyOwner()
+    const [get, set] = createSignal(0)
+    const seen: number[] = []
+
+    runWithOwner(legacy, () => {
+      createRoot(() => {
+        createEffect(() => seen.push(get()))
+      })
+    })
+
+    set(1)
+    flushSync()
+
+    expect(seen).toEqual([0, 1])
+  })
+
+  it('degrades to unparented rather than throwing, and says so', () => {
+    // A legacy owner cannot record children, so a root created under it is
+    // not disposed by it. That is the pre-fix behaviour, deliberately kept as
+    // the fallback: silently unparented beats throwing before the body runs.
+    const legacy = createLegacyOwner()
+    const order: string[] = []
+
+    runWithOwner(legacy, () => {
+      createRoot(() => {
+        onCleanup(() => order.push('inner'))
+      })
+    })
+
+    expect(legacy.childOwners).toBeUndefined()
+    expect(order).toEqual([])
   })
 })

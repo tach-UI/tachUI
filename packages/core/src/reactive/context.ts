@@ -148,7 +148,12 @@ class OwnerImpl implements Owner {
     // the parent link is one-directional: the child knows its parent, the
     // parent has no idea the child exists, and a nested root survives its
     // enclosing root's disposal with its effects still subscribed.
-    if (parent && !parent.disposed) {
+    //
+    // `runWithOwner` is public and accepts any `Owner`, so the parent may be a
+    // structural implementation or one built by an older runtime that predates
+    // `childOwners`. Degrade to the previous unparented behaviour rather than
+    // throwing before the root body has even run.
+    if (parent && !parent.disposed && parent.childOwners instanceof Set) {
       parent.childOwners.add(this)
     }
   }
@@ -161,7 +166,7 @@ class OwnerImpl implements Owner {
     // Dispose nested owners first, so teardown runs deepest-first. Iterate a
     // snapshot: each child deregisters itself from this set as it disposes.
     for (const child of Array.from(this.childOwners)) {
-      child.dispose()
+      child.dispose?.()
     }
     this.childOwners.clear()
 
@@ -185,7 +190,7 @@ class OwnerImpl implements Owner {
     // `as any` cast and could never match, because owners were never added
     // there in the first place.
     if (this.parent && !this.parent.disposed) {
-      this.parent.childOwners.delete(this)
+      this.parent.childOwners?.delete(this)
     }
   }
 }
@@ -202,6 +207,10 @@ export class ComputationImpl implements Computation {
   // Cleanups registered by the execution currently in progress (#270). Torn
   // down before the next execution and again on disposal.
   readonly cleanups: CleanupFunction[] = []
+  // Owner scope for the execution currently in progress. Anything that takes
+  // an owner during the body — a nested createRoot, a nested effect — is
+  // parented here, so it dies with the run that created it.
+  private executionOwner: OwnerImpl | null = null
   state: ComputationStateValue = ComputationState.Dirty
   value: any = undefined
 
@@ -236,6 +245,23 @@ export class ComputationImpl implements Computation {
     this.cleanups.push(fn)
   }
 
+  /**
+   * Tear down everything the previous execution created.
+   *
+   * Owned scopes go first and the run's own cleanups second, matching the
+   * deepest-first order `OwnerImpl.dispose` uses, so a disposer still sees a
+   * fully torn-down subtree beneath it.
+   */
+  private teardownExecution(): void {
+    const owner = this.executionOwner
+    if (owner) {
+      this.executionOwner = null
+      owner.dispose()
+    }
+
+    drainCleanups(this.cleanups)
+  }
+
   execute(): any {
     if (this.state === ComputationState.Disposed) {
       return this.value
@@ -245,7 +271,7 @@ export class ComputationImpl implements Computation {
     // a disposer never overlaps the run that replaces it. This happens even
     // when the previous run threw: its cleanups were registered before the
     // throw and still own real resources.
-    drainCleanups(this.cleanups)
+    this.teardownExecution()
 
     // Snapshot the current dependencies. Unsubscribing stale ones is
     // deferred until after a successful run: if fn() throws partway
@@ -258,7 +284,18 @@ export class ComputationImpl implements Computation {
 
     const prevComputation = reactiveContext.currentComputation
     const prevCleanupScope = currentCleanupScope
+    const prevOwner = reactiveContext.currentOwner
+
+    // Open an owner scope for this run. Without it `currentOwner` is whatever
+    // the caller happened to leave set — the enclosing root during the initial
+    // synchronous run, but null once the flush arrives on a later microtask,
+    // which orphaned anything the rerun created. Parenting to `this.owner`
+    // instead would leak the other way: every rerun's children would pile up
+    // on the root and only be released when the root died.
+    this.executionOwner = new OwnerImpl(this.owner)
+
     reactiveContext.currentComputation = this
+    reactiveContext.currentOwner = this.executionOwner
     currentCleanupScope = this.cleanups
 
     try {
@@ -301,6 +338,7 @@ export class ComputationImpl implements Computation {
       throw error
     } finally {
       reactiveContext.currentComputation = prevComputation
+      reactiveContext.currentOwner = prevOwner
       currentCleanupScope = prevCleanupScope
     }
   }
@@ -313,7 +351,7 @@ export class ComputationImpl implements Computation {
     // Final teardown of the last execution's scope (#270). Runs before the
     // computation is unwired so a disposer can still read this computation's
     // own state.
-    drainCleanups(this.cleanups)
+    this.teardownExecution()
 
     // Remove from all sources
     for (const source of this.sources) {
