@@ -275,34 +275,6 @@ Button("Delayed Transition")
   
 ```
 
-### Complex Transitions
-
-#### `transitions(config: TransitionsConfig)`
-
-Multiple property transitions with individual timing.
-
-```typescript
-interface TransitionConfig {
-  duration?: number
-  easing?: string
-  delay?: number
-}
-
-interface TransitionsConfig {
-  [property: string]: TransitionConfig
-}
-
-// Multi-property transitions
-Button("Complex Transition", handleClick)
-  .modifier
-  .transitions({
-    backgroundColor: { duration: 200, easing: 'ease-out' },
-    transform: { duration: 300, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', delay: 50 },
-    boxShadow: { duration: 250, easing: 'ease-in-out' }
-  })
-  
-```
-
 ---
 
 ## Backdrop Filters
