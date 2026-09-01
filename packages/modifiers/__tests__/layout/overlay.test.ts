@@ -7,59 +7,32 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRoot, createSignal, flushSync } from '@tachui/core/reactive'
+import { h, text as textNode } from '@tachui/core/runtime'
 import {
   OverlayModifier,
   overlay,
   type OverlayAlignment,
 } from '../../src/layout/overlay'
-import type { ModifierContext } from '../../src/types'
+import type { ModifierContext, ModifierResult } from '../../src/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 
-// Mock DOM element that matches HTMLElement interface
-class MockElement {
-  style: {
-    [key: string]: string
-    setProperty: (property: string, value: string) => void
-  }
-  children: MockElement[] = []
-  _appendChild: (child: MockElement) => void
+let componentCounter = 0
 
-  constructor() {
-    this.style = new Proxy({} as any, {
-      set: (target, prop, value) => {
-        target[prop] = value
-        return true
-      },
-      get: (target, prop) => {
-        if (prop === 'setProperty') {
-          return (property: string, value: string) => {
-            target[property] = value
-          }
-        }
-        return target[prop] || ''
-      },
-    })
-
-    this._appendChild = (child: MockElement) => {
-      this.children.push(child)
-    }
-  }
-
-  appendChild(child: MockElement) {
-    this._appendChild(child)
-    return child
-  }
-}
-
-// Mock component instance
+/**
+ * A component instance shaped the way the framework actually produces them:
+ * `render()` returns DOMNode *descriptions* with no `element` attached yet, so
+ * the overlay has to go through the renderer to materialize them (#302).
+ */
 const createMockComponent = (elementType = 'span') => ({
   type: 'component' as const,
-  id: 'mock-component',
-  render: vi.fn().mockReturnValue({
-    element: new MockElement(),
-    children: [],
-  }),
+  id: `mock-component-${++componentCounter}`,
+  props: {},
+  render: vi.fn(() =>
+    h(elementType, { class: 'overlay-content' }, textNode('content'))
+  ),
 })
+
+const childrenOf = (element: Element) => Array.from(element.children)
 
 // Mock console methods
 const mockConsole = {
@@ -72,16 +45,16 @@ async function flushReactiveUpdates(): Promise<void> {
 }
 
 describe('Overlay Modifier', () => {
-  let mockElement: MockElement
+  let mockElement: HTMLElement
   let mockContext: ModifierContext
   let mockComponent: ReturnType<typeof createMockComponent>
   let originalConsole: any
 
   beforeEach(() => {
-    mockElement = new MockElement()
+    mockElement = document.createElement('div')
     mockContext = {
       componentId: 'test-component',
-      element: mockElement as any,
+      element: mockElement,
       phase: 'creation',
     }
     mockComponent = createMockComponent()
@@ -93,13 +66,6 @@ describe('Overlay Modifier', () => {
     }
     console.warn = mockConsole.warn
     console.error = mockConsole.error
-
-    // Mock document.createElement to return MockElement
-    vi.spyOn(document, 'createElement').mockImplementation(
-      (tagName: string) => {
-        return new MockElement() as any
-      }
-    )
   })
 
   afterEach(() => {
@@ -300,8 +266,11 @@ describe('Overlay Modifier', () => {
       expect(mockComponent.render).toHaveBeenCalled()
       expect(mockElement.children).toHaveLength(1)
 
-      const overlayContainer = mockElement.children[0]
+      const overlayContainer = mockElement.children[0]!
       expect(overlayContainer.children).toHaveLength(1)
+      expect(overlayContainer.innerHTML).toBe(
+        '<span class="overlay-content">content</span>'
+      )
     })
 
     it('should render function content', () => {
@@ -313,29 +282,103 @@ describe('Overlay Modifier', () => {
       expect(contentFunction).toHaveBeenCalled()
       expect(mockComponent.render).toHaveBeenCalled()
 
-      const overlayContainer = mockElement.children[0]
+      const overlayContainer = mockElement.children[0]!
       expect(overlayContainer.children).toHaveLength(1)
+      expect(overlayContainer.textContent).toBe('content')
+    })
+
+    it('should render an already-built component instance', () => {
+      // `Text('D').modifier.build()` shape: a plain instance, no builder left.
+      const built = {
+        type: 'component' as const,
+        id: 'built-component',
+        props: {},
+        render: () => h('b', null, textNode('D')),
+      }
+      const modifier = overlay(built)
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]!
+      expect(overlayContainer.innerHTML).toBe('<b>D</b>')
+    })
+
+    it('should build an unbuilt modifier builder before rendering', () => {
+      // `Text('D').modifier` shape: exposes build(), not render().
+      const builder = {
+        build: () => ({
+          type: 'component' as const,
+          id: 'built-from-builder',
+          props: {},
+          render: () => h('i', null, textNode('D')),
+        }),
+      }
+      const modifier = overlay(builder as any)
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]!
+      expect(overlayContainer.innerHTML).toBe('<i>D</i>')
+    })
+
+    it('should render string content as text', () => {
+      const modifier = overlay('D')
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]!
+      expect(overlayContainer.textContent).toBe('D')
+    })
+
+    it('should render numeric content as text', () => {
+      const modifier = overlay(7)
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]!
+      expect(overlayContainer.textContent).toBe('7')
+    })
+
+    it('should render signal content reactively', async () => {
+      const [label, setLabel] = createSignal('D')
+      const modifier = overlay(label)
+
+      const dispose = createRoot(dispose => {
+        modifier.apply({} as DOMNode, mockContext)
+        return dispose
+      })
+
+      const overlayContainer = mockElement.children[0]!
+      expect(overlayContainer.textContent).toBe('D')
+
+      setLabel('E')
+      flushSync()
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.textContent).toBe('E')
+
+      dispose()
     })
 
     it('should render HTMLElement content', () => {
-      const htmlElement = new MockElement()
+      const htmlElement = document.createElement('span')
       const modifier = overlay(htmlElement)
 
       modifier.apply({} as DOMNode, mockContext)
 
-      const overlayContainer = mockElement.children[0]
-      expect(overlayContainer.children).toContain(htmlElement)
+      const overlayContainer = mockElement.children[0]!
+      expect(childrenOf(overlayContainer)).toContain(htmlElement)
     })
 
     it('should handle component without render method gracefully', () => {
       const invalidComponent = { type: 'component', id: 'invalid' }
-      const modifier = overlay(invalidComponent)
+      const modifier = overlay(invalidComponent as any)
 
       expect(() => {
         modifier.apply({} as DOMNode, mockContext)
       }).not.toThrow()
 
-      const overlayContainer = mockElement.children[0]
+      const overlayContainer = mockElement.children[0]!
       expect(overlayContainer.children).toHaveLength(0)
     })
 
@@ -349,27 +392,21 @@ describe('Overlay Modifier', () => {
 
       expect(contentFunction).toHaveBeenCalled()
 
-      const overlayContainer = mockElement.children[0]
+      const overlayContainer = mockElement.children[0]!
       expect(overlayContainer.children).toHaveLength(0)
     })
 
-    it('should handle render method returning null element', () => {
-      const componentWithNullElement = {
-        ...mockComponent,
-        render: vi.fn().mockReturnValue({
-          element: null,
-          children: [],
-        }),
+    it('should handle null and undefined content', () => {
+      for (const content of [null, undefined]) {
+        const element = document.createElement('div')
+        const modifier = overlay(content)
+
+        expect(() => {
+          modifier.apply({} as DOMNode, { ...mockContext, element })
+        }).not.toThrow()
+
+        expect(element.children[0]!.childNodes).toHaveLength(0)
       }
-
-      const modifier = overlay(componentWithNullElement)
-
-      expect(() => {
-        modifier.apply({} as DOMNode, mockContext)
-      }).not.toThrow()
-
-      const overlayContainer = mockElement.children[0]
-      expect(overlayContainer.children).toHaveLength(0)
     })
   })
 
@@ -453,12 +490,31 @@ describe('Overlay Modifier', () => {
       }).not.toThrow()
     })
 
-    it('should return undefined (no DOM tree modification)', () => {
+    it('should return cleanup that tears the overlay back down', () => {
       const modifier = overlay(mockComponent)
+      const node = {} as DOMNode
 
-      const result = modifier.apply({} as DOMNode, mockContext)
+      const result = modifier.apply(node, mockContext) as ModifierResult
 
-      expect(result).toBeUndefined()
+      // The node passes straight through — overlay never rewrites the tree.
+      expect(result.node).toBe(node)
+      expect(mockElement.children).toHaveLength(1)
+
+      result.cleanup!.forEach(fn => fn())
+
+      expect(mockElement.children).toHaveLength(0)
+    })
+
+    it('should return cleanup for non-reactive content too', () => {
+      const modifier = overlay(document.createElement('span'))
+
+      const result = modifier.apply({} as DOMNode, mockContext) as ModifierResult
+
+      expect(mockElement.children).toHaveLength(1)
+
+      result.cleanup!.forEach(fn => fn())
+
+      expect(mockElement.children).toHaveLength(0)
     })
 
     it('should handle invalid alignment by defaulting to center', () => {
@@ -485,8 +541,8 @@ describe('Overlay Modifier', () => {
 
       for (let i = 0; i < iterations; i++) {
         // Create fresh element for each iteration to avoid accumulation
-        const freshElement = new MockElement()
-        const freshContext = { ...mockContext, element: freshElement as any }
+        const freshElement = document.createElement('div')
+        const freshContext = { ...mockContext, element: freshElement }
         modifier.apply({} as DOMNode, freshContext)
       }
 
@@ -516,14 +572,17 @@ describe('Overlay Modifier', () => {
       const complexComponent = {
         type: 'component' as const,
         id: 'complex-component',
-        render: vi.fn().mockImplementation(() => {
+        props: {},
+        render: vi.fn().mockImplementation(() =>
           // Simulate complex rendering
-          const element = new MockElement()
-          for (let i = 0; i < 10; i++) {
-            element.appendChild(new MockElement())
-          }
-          return { element, children: [] }
-        }),
+          h(
+            'div',
+            null,
+            ...Array.from({ length: 10 }, (_, i) =>
+              h('span', null, textNode(String(i)))
+            )
+          )
+        ),
       }
 
       const modifier = overlay(complexComponent, 'center')
@@ -532,8 +591,8 @@ describe('Overlay Modifier', () => {
       const start = performance.now()
 
       for (let i = 0; i < iterations; i++) {
-        const freshElement = new MockElement()
-        const freshContext = { ...mockContext, element: freshElement as any }
+        const freshElement = document.createElement('div')
+        const freshContext = { ...mockContext, element: freshElement }
         modifier.apply({} as DOMNode, freshContext)
       }
 

@@ -100,6 +100,21 @@ VStack({ children })
   
 ```
 
+`overlay()` accepts a component, a content closure (SwiftUI's `@ViewBuilder`
+shape), a plain string or number, a signal — which renders as reactive text —
+or a DOM element:
+
+```typescript
+.overlay(Text('Badge'), 'topTrailing')     // component
+.overlay(() => Text('Badge'))              // content closure
+.overlay('3')                              // string
+.overlay(unreadCount)                      // signal, re-renders on change
+```
+
+Overlays stack: apply `.overlay()` more than once and each container layers in
+the order applied, which is how multi-layer compositions (a ring, then a badge,
+then a status dot) are built.
+
 ### Advanced Gesture & Interaction Modifiers
 
 Comprehensive interaction system beyond basic events:
