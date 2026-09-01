@@ -143,6 +143,21 @@ export interface QueryOptions<TRaw, TData = TRaw, E = Error> {
 }
 
 /**
+ * Options an imperative fetch can actually honour.
+ *
+ * `select`, `placeholderData` and `enabled` are per-observer concerns: there is
+ * no observer here to project for, nothing to show a placeholder to, and no
+ * reactive gate to re-open. Accepting them would let a caller write a projection
+ * that is silently dropped, or disable a call whose non-optional `Promise` then
+ * has no defined resolution. The reserved `refetchOn*` flags are excluded for the
+ * same reason.
+ */
+export type FetchQueryOptions<TRaw, E = Error> = Omit<
+  QueryOptions<TRaw, TRaw, E>,
+  'select' | 'placeholderData' | 'enabled' | 'refetchOnFocus' | 'refetchOnReconnect'
+>
+
+/**
  * The reactive result of observing a query.
  */
 export interface QueryResult<TData, E = Error> {
@@ -230,20 +245,29 @@ export interface QueryClient {
    * Resolves a query imperatively, using and populating the cache. Identical
    * in-flight keys share one execution.
    */
-  fetchQuery<TRaw, TData = TRaw, E = Error>(
-    options: QueryOptions<TRaw, TData, E>
-  ): Promise<TRaw>
+  fetchQuery<TRaw, E = Error>(options: FetchQueryOptions<TRaw, E>): Promise<TRaw>
 
   /**
    * Warms the cache for a set of queries. Intended for the server's prefetch
    * phase, which must complete before the synchronous render begins.
    */
-  prefetchQueries(requests: readonly QueryOptions<any, any, any>[]): Promise<void>
+  prefetchQueries(requests: readonly FetchQueryOptions<any, any>[]): Promise<void>
 
   /** Marks every entry whose key starts with `prefix` stale, refetching observed ones. */
   invalidate(prefix: QueryKey): void
 
-  /** Serializes matching entries for transfer to the client. */
+  /**
+   * Serializes cached data for transfer to the client.
+   *
+   * With no filter this serializes only entries whose `options.snapshot` is
+   * true. Snapshot serialization is opt-in per query (ADR 0001 item 22), so an
+   * unmarked response cannot reach the HTML payload just because a caller
+   * omitted an argument. A supplied filter narrows that set further; it does not
+   * replace the gate.
+   *
+   * Successful data only. Errors, transports, headers, credentials, and
+   * interceptor context are never serialized.
+   */
   dehydrate(filter?: (entry: CacheEntry) => boolean): DehydratedState
 
   /** Restores entries produced by {@link QueryClient.dehydrate}. */
@@ -271,30 +295,35 @@ export interface MutationRunContext {
 }
 
 /**
- * Options for `createMutation`.
+ * The parts of `MutationOptions` that do not depend on whether the mutation
+ * updates optimistically.
  */
-export interface MutationOptions<I, O, E = Error, TContext = unknown> {
+export interface MutationOptionsBase<I, O, E = Error, TContext = unknown> {
   /** Performs the mutation. Must respect `ctx.signal`. */
   run: (input: I, ctx: MutationRunContext) => Promise<O>
-
-  /**
-   * Applies an optimistic update before `run` starts. Whatever it returns is
-   * handed back to `onError` so the change can be rolled back. Opt-in: the server
-   * stays authoritative.
-   */
-  optimisticUpdate?: (input: I) => TContext
 
   /** Runs after a successful mutation, before `mutate` resolves. */
   onSuccess?: (data: O, input: I) => void | Promise<void>
 
   /**
-   * Runs after a failed mutation, before `mutate` rejects. This is the single
-   * rollback hook: `context` is whatever `optimisticUpdate` returned, and it is
-   * undefined when no optimistic update ran.
+   * Runs after a failed mutation, before `mutate` rejects. This is where an
+   * optimistic update is undone: `context` is whatever `optimisticUpdate`
+   * returned, and `undefined` when none ran - including when `optimisticUpdate`
+   * itself threw, which still reaches this hook with nothing to roll back.
+   *
+   * Declared here rather than only in the optimistic branch below so that
+   * TypeScript can contextually type its parameters. Moving it into the union
+   * costs every caller three explicit annotations.
    */
   onError?: (error: E, input: I, context: TContext | undefined) => void | Promise<void>
 
-  /** Runs after success or failure. */
+  /**
+   * Runs after success or failure.
+   *
+   * Deliberately receives no optimistic context: it runs on both paths, and a
+   * context that is meaningful on only one of them is a trap. Roll back in
+   * `onError`, which is where the context is.
+   */
   onSettled?: (
     data: O | undefined,
     error: E | undefined,
@@ -307,6 +336,35 @@ export interface MutationOptions<I, O, E = Error, TContext = unknown> {
   /** Explicit client, bypassing environment resolution. */
   client?: QueryClient
 }
+
+/**
+ * Options for `createMutation`.
+ *
+ * An optimistic update and its rollback are paired in the type rather than only
+ * in prose. Declaring `optimisticUpdate` without `onError` would leave a
+ * mutation that mutates the UI on the way in and has nowhere to undo it when
+ * `run` rejects - the optimistic change would simply stay, permanently, with no
+ * compile-time signal. Supplying one requires the other, and `context` is then
+ * non-optional because an optimistic update always produced one.
+ */
+export type MutationOptions<I, O, E = Error, TContext = unknown> =
+  MutationOptionsBase<I, O, E, TContext> &
+    (
+      | { optimisticUpdate?: never }
+      | {
+          /**
+           * Applies an optimistic update before `run` starts. Whatever it
+           * returns is handed to `onError` to undo the change. Opt-in: the
+           * server stays authoritative.
+           */
+          optimisticUpdate: (input: I) => TContext
+          /**
+           * Required alongside `optimisticUpdate`. Same signature as the base
+           * declaration; restated here only to make it non-optional.
+           */
+          onError: (error: E, input: I, context: TContext | undefined) => void | Promise<void>
+        }
+    )
 
 /**
  * The reactive result of a mutation. Mutations never retry automatically.
@@ -365,15 +423,22 @@ export interface AsyncStreamBaseOptions<T> {
  */
 export type AsyncStreamOptions<T, A = undefined> = AsyncStreamBaseOptions<T> &
   (
-    | {
-        /**
-         * No reduction: the stream only tracks `latest`, and the accumulated
-         * value stays at the default `A` of `undefined`.
-         */
-        initial?: never
-        reduce?: never
-        bufferSize?: never
-      }
+    | ([undefined] extends [A]
+        ? {
+            /**
+             * No reduction: the stream only tracks `latest`, and the accumulated
+             * value stays `undefined`.
+             *
+             * This branch is available only when `A` can actually be `undefined`.
+             * Without that guard, `createAsyncStream<Message, number>({ key, open })`
+             * would type-check and hand back `value: Signal<number>` that nothing
+             * can ever populate.
+             */
+            initial?: never
+            reduce?: never
+            bufferSize?: never
+          }
+        : never)
     | {
         /**
          * Seed for the reduction. Paired with `reduce` in the type rather than
@@ -383,8 +448,14 @@ export type AsyncStreamOptions<T, A = undefined> = AsyncStreamBaseOptions<T> &
         initial: () => A
         /** Folds each message into the accumulated value. */
         reduce: (accumulated: A, message: T) => A
-        /** Caps an array-valued accumulation, dropping oldest entries. */
-        bufferSize?: number
+        /**
+         * Caps an array-valued accumulation, dropping oldest entries.
+         *
+         * Only meaningful when the accumulator is an array - there is no general
+         * way to drop the oldest entry of a Map or a plain object, so accepting
+         * it there would promise a bound the implementation could only ignore.
+         */
+        bufferSize?: A extends readonly unknown[] ? number : never
       }
   )
 
@@ -425,8 +496,15 @@ export interface AsyncStreamResult<T, A = undefined, E = Error> {
  * The reactive result of a stream in collection mode.
  */
 export interface AsyncStreamListResult<T, K extends PropertyKey = PropertyKey, E = Error> {
-  /** Retained message keys, in display order. */
-  readonly ids: Signal<K[]>
+  /**
+   * Retained message keys, in display order.
+   *
+   * `readonly` because `createSignalList` hands back its stored array by
+   * reference: an in-place `reverse()` or `push()` would mutate the list's own
+   * state without a signal write, so nothing re-renders and the next message's
+   * structural-change check sees an unchanged key set and skips the update.
+   */
+  readonly ids: Signal<readonly K[]>
   /**
    * Per-item reactive accessor, so one row can update without touching the rest.
    * Undefined for a key that is not retained: `limit` evicts as messages arrive,

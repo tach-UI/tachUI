@@ -22,6 +22,7 @@
 import { gzipSync } from 'node:zlib'
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import process from 'node:process'
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..')
@@ -31,7 +32,7 @@ function readJson(file) {
   return JSON.parse(readFileSync(file, 'utf8'))
 }
 
-function collectBudgetedPackages(only) {
+export function collectBudgetedPackages(only) {
   const packages = []
 
   for (const entry of readdirSync(PACKAGES_DIR, { withFileTypes: true })) {
@@ -70,25 +71,35 @@ function collectBudgetedPackages(only) {
 /**
  * Resolve the specifiers a module imports, keeping only relative ones. External
  * dependencies are the consumer's cost, not this package's.
+ *
+ * Deliberately not anchored to line starts. Minified output puts many statements
+ * on one physical line, and an anchored scan would capture only the first,
+ * silently dropping the remaining chunks from the measurement and letting an
+ * over-budget bundle report a pass.
  */
-function relativeImportsOf(source) {
+export function relativeImportsOf(source) {
   const specifiers = []
   const patterns = [
-    /(?:^|\n)\s*(?:import|export)[^'"]*?from\s*['"]([^'"]+)['"]/g,
-    /(?:^|\n)\s*import\s*['"]([^'"]+)['"]/g,
+    // import ... from '.', export ... from '.'
+    /\b(?:import|export)\b[^'"();]*?\bfrom\s*['"]([^'"]+)['"]/g,
+    // bare side-effect import '.'
+    /\bimport\s*['"]([^'"]+)['"]/g,
+    // dynamic import('.')
     /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g,
   ]
 
   for (const pattern of patterns) {
     for (const match of source.matchAll(pattern)) {
-      if (match[1].startsWith('.')) specifiers.push(match[1])
+      if (match[1].startsWith('.') && !specifiers.includes(match[1])) {
+        specifiers.push(match[1])
+      }
     }
   }
 
   return specifiers
 }
 
-function resolveChunk(fromFile, specifier) {
+export function resolveChunk(fromFile, specifier) {
   const base = path.resolve(path.dirname(fromFile), specifier)
   const candidates = [base, `${base}.js`, `${base}.mjs`, path.join(base, 'index.js')]
   return candidates.find(candidate => existsSync(candidate) && statSync(candidate).isFile())
@@ -99,7 +110,7 @@ function resolveChunk(fromFile, specifier) {
  * concatenation rather than summing per-file gzip sizes is both closer to what a
  * server sends and immune to per-file header overhead inflating small chunks.
  */
-function measure(entryFile) {
+export function measure(entryFile) {
   const seen = new Set()
   const queue = [entryFile]
   const sources = []
@@ -114,7 +125,14 @@ function measure(entryFile) {
 
     for (const specifier of relativeImportsOf(source)) {
       const resolved = resolveChunk(file, specifier)
-      if (resolved) queue.push(resolved)
+      if (!resolved) {
+        // Dropping it would quietly shrink the measured bundle, which is the one
+        // direction this gate must never be wrong in.
+        throw new Error(
+          `Cannot resolve ${specifier} imported from ${file}. The size budget cannot be measured accurately.`
+        )
+      }
+      queue.push(resolved)
     }
   }
 
@@ -128,7 +146,7 @@ function formatBytes(bytes) {
   return `${(bytes / 1024).toFixed(2)} KB (${bytes} B)`
 }
 
-function main() {
+export function main() {
   const only = process.argv[2]
   let packages
 
@@ -183,4 +201,7 @@ function main() {
   }
 }
 
-main()
+// Only run when invoked directly, so tests can import the helpers above.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+}

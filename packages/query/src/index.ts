@@ -15,7 +15,7 @@ export {
   DEFAULT_SNAPSHOT,
   DEFAULT_STALE_TIME,
 } from './defaults'
-export { isDevelopment, isServer, QueryError } from './errors'
+export { DEV, isDevelopment, isServer, QueryError } from './errors'
 export type {
   AsyncStreamBaseOptions,
   AsyncStreamListOptions,
@@ -28,8 +28,10 @@ export type {
   CacheEntryPolicy,
   DehydratedQuery,
   DehydratedState,
+  FetchQueryOptions,
   FetchStatus,
   MutationOptions,
+  MutationOptionsBase,
   MutationResult,
   MutationRunContext,
   MutationStatus,
