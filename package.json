@@ -32,7 +32,7 @@
     "dev": "bun run --filter '*' --parallel dev",
     "test": "vitest run && bun run test:tools",
     "test:stress": "vitest run --config vitest.stress.config.ts",
-    "test:ci": "vitest run --config=vitest.ci.config.ts && bun run test:tools && bun run test:types && bun run --filter @tachui/modifiers verify:tree-shaking",
+    "test:ci": "vitest run --config=vitest.ci.config.ts && bun run test:tools && bun run --filter @tachui/modifiers verify:tree-shaking",
     "test:tools": "vitest run --config vitest.tools.config.ts",
     "test:long": "vitest run packages/core/__tests__/integration/long-running-simulation.test.ts packages/core/__tests__/security/malicious-plugin-detection.test.ts packages/core/__tests__/security/sandbox-security.test.ts",
     "test:error-recovery": "vitest run packages/core/__tests__/integration/error-recovery.test.ts",
@@ -79,7 +79,7 @@
     "validate:workspace-aliases": "tsx tools/validate-workspace-aliases.ts",
     "validate:workspace-aliases:fix": "tsx tools/validate-workspace-aliases.ts --fix",
     "prepare": "simple-git-hooks",
-    "test:types": "vitest run --config vitest.typecheck.config.ts"
+    "test:types": "node ./tools/check-typecheck-test-prereqs.mjs && vitest run --config vitest.typecheck.config.ts"
   },
   "workspaces": [
     "packages/*",

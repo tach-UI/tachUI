@@ -147,6 +147,12 @@ jobs:
       - name: Run type checking
         run: bun run type-check
 
+      # Runs here rather than in test:ci because it resolves against built
+      # declarations, and this job has already built them. test:ci is also the
+      # pre-push gate, which does no build.
+      - name: Run type-level tests
+        run: bun run test:types
+
   test:
     name: Test
     if: github.event_name != 'pull_request' || github.head_ref != 'changeset-release/main'
