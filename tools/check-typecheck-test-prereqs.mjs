@@ -26,6 +26,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const REQUIRED = [
   'packages/types/dist/index.d.ts',
   'packages/core/dist/index.d.ts',
+  'packages/query/dist/index.d.ts',
   'packages/modifiers/dist/index.d.ts',
   'packages/primitives/dist/index.d.ts',
   'packages/primitives/dist/controls/index.d.ts',

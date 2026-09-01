@@ -35,6 +35,7 @@
       "@tachui/types/*": ["./packages/types/dist/*"],
       "@tachui/core": ["./packages/core/dist/index.d.ts"],
       "@tachui/core/*": ["./packages/core/dist/*"],
+      "@tachui/query": ["./packages/query/dist/index.d.ts"],
       "@tachui/modifiers": ["./packages/modifiers/dist/index.d.ts"],
       "@tachui/modifiers/*": ["./packages/modifiers/dist/*"],
       "@tachui/primitives": ["./packages/primitives/dist/index.d.ts"],
