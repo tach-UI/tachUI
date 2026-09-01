@@ -151,6 +151,62 @@ describe('relativeImportsOf', () => {
     expect(relativeImportsOf('const z=p/q/r;import{d}from"./d.js";')).toEqual(['./d.js'])
   })
 
+  // Three shapes that each ended the scan early and dropped every later
+  // specifier. None of them throws - the import is simply never seen - so the
+  // gate would pass on an understated number, which is the one direction it must
+  // never be wrong in.
+
+  it('does not read a keyword used as a member name as a keyword', () => {
+    // `.in` is an ordinary property, so the `/` after it divides. Reading `in`
+    // as the keyword made the `/` open a regex that closed on the `/` inside
+    // "./chunk-A.js", swallowing the specifier.
+    expect(relativeImportsOf('const r=o.in/2;import{a}from"./chunk-A.js";')).toEqual([
+      './chunk-A.js',
+    ])
+    expect(relativeImportsOf('const r=o.of/2;import{a}from"./chunk-A.js";')).toEqual([
+      './chunk-A.js',
+    ])
+    expect(relativeImportsOf('const r=o?.return/2;import{a}from"./chunk-A.js";')).toEqual([
+      './chunk-A.js',
+    ])
+  })
+
+  it('reads a regex after a control-statement head, and division elsewhere', () => {
+    // `if (…)` is followed by a statement, so `/` opens a regex; `(a+b)` closes a
+    // value, so `/` divides. Treating every `)` as a value made the first case
+    // read `/"/` as division and open a string on the quote.
+    expect(relativeImportsOf('if(x)/"/.test(s);import{a}from"./chunk-A.js";')).toEqual([
+      './chunk-A.js',
+    ])
+    expect(relativeImportsOf('while(x)/"/.test(s);import{a}from"./chunk-A.js";')).toEqual([
+      './chunk-A.js',
+    ])
+    expect(relativeImportsOf('const r=(a+b)/2;import{a}from"./chunk-A.js";')).toEqual([
+      './chunk-A.js',
+    ])
+  })
+
+  it('ends a template interpolation containing an unbalanced brace', () => {
+    // Counting raw braces never reached depth 0 when one sat inside a nested
+    // regex or string, so the scan consumed the rest of the file.
+    expect(
+      relativeImportsOf('const s=`${x.replace(/[{]/g,"")}`;import{a}from"./chunk-A.js";')
+    ).toEqual(['./chunk-A.js'])
+    expect(relativeImportsOf('const s=`${o["{"]}`;import{a}from"./chunk-A.js";')).toEqual([
+      './chunk-A.js',
+    ])
+    expect(
+      relativeImportsOf('const s=`${`${o["{"]}`}`;import{a}from"./chunk-A.js";')
+    ).toEqual(['./chunk-A.js'])
+  })
+
+  it('finds a dynamic import inside a template interpolation', () => {
+    // Skipping the interpolation wholesale hid any import within it.
+    expect(
+      relativeImportsOf('const s=`${import("./lazy.js")}`;import{a}from"./chunk-A.js";')
+    ).toEqual(['./lazy.js', './chunk-A.js'])
+  })
+
   it('reports each specifier once even when imported repeatedly', () => {
     expect(
       relativeImportsOf('import{a}from"./c.js";import{b}from"./c.js";')
