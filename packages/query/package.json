@@ -1,6 +1,6 @@
 {
   "name": "@tachui/query",
-  "version": "0.8.31",
+  "version": "0.8.32",
   "description": "Backend-neutral reactive query layer for tachUI: request lifecycle, cache, mutations, and async streams",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -36,7 +36,7 @@
     }
   },
   "dependencies": {
-    "@tachui/core": "0.8.31"
+    "@tachui/core": "0.8.32"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
