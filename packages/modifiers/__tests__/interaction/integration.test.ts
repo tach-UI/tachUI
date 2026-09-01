@@ -262,7 +262,7 @@ describe('Interaction Modifiers Integration', () => {
   })
 
   describe('long press + continuous hover integration', () => {
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should handle both gestures simultaneously',
       () => {
         const longPressAction = vi.fn()
@@ -312,7 +312,7 @@ describe('Interaction Modifiers Integration', () => {
       }
     )
 
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should handle hover ending during long press',
       () => {
         const longPressAction = vi.fn()
@@ -381,7 +381,7 @@ describe('Interaction Modifiers Integration', () => {
       expect(shortcutAction).toHaveBeenCalled()
     })
 
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should re-enable interactions when hit testing is enabled',
       () => {
         const longPressAction = vi.fn()
@@ -415,7 +415,7 @@ describe('Interaction Modifiers Integration', () => {
   })
 
   describe('complex interaction scenarios', () => {
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should handle full accessibility-enhanced interactive element',
       () => {
         const longPressAction = vi.fn()

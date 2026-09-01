@@ -187,6 +187,16 @@ class MockHTMLElement {
 // Set up global HTMLElement
 global.HTMLElement = MockHTMLElement as any
 
+// `document.createElement` hands back MockHTMLElement, so the real jsdom
+// subclasses no longer recognise their own tags. Source that narrows with
+// `instanceof HTMLStyleElement` (see pseudo-elements.ts `getOrCreateStyleSheet`)
+// would otherwise reject every element this mock DOM can produce.
+global.HTMLStyleElement = class MockHTMLStyleElement {
+  static [Symbol.hasInstance](instance: any) {
+    return instance instanceof MockHTMLElement && instance.tagName === 'STYLE'
+  }
+} as any
+
 // Enhanced Event constructor for proper event creation
 global.Event = class MockEvent {
   type: string
@@ -284,18 +294,46 @@ global.TouchEvent = class MockTouchEvent extends global.Event {
 const mockHead = new MockHTMLElement()
 const mockBody = new MockHTMLElement()
 
+// Document-level listeners are real: modifiers that register on `document`
+// (keyboard shortcuts, for one) are only observable — and only provably
+// removed on cleanup — if dispatch actually reaches them.
+const documentListeners = new MockHTMLElement()
+
+// Elements appended to head/body are findable by id, the way they are in a
+// browser. Source that caches a singleton <style> by id — see
+// `getOrCreateStyleSheet` in pseudo-elements.ts — otherwise misses its cache on
+// every call and rebuilds the element each time, which is both untrue to the
+// browser and slow enough to distort the performance stress tests.
+const elementsById = new Map<string, any>()
+
+function trackById(element: any) {
+  if (element && typeof element.id === 'string' && element.id) {
+    elementsById.set(element.id, element)
+  }
+  return element
+}
+
+mockHead.appendChild = vi.fn(trackById)
+mockBody.appendChild = vi.fn(trackById)
+
 global.document = {
   createElement: vi.fn((tagName: string) => {
     const element = new MockHTMLElement()
     element.tagName = tagName.toUpperCase()
+    // A <style> element exposes a live CSSStyleSheet in a browser. Without one
+    // every `styleSheet.insertRule(...)` in source throws on undefined and is
+    // swallowed by its catch, so the rules under test are never really written.
+    if (element.tagName === 'STYLE') {
+      ;(element as any).sheet = new (global.CSSStyleSheet as any)()
+    }
     return element
   }),
-  getElementById: vi.fn(() => null),
+  getElementById: vi.fn((id: string) => elementsById.get(id) ?? null),
   querySelector: vi.fn(() => null),
   querySelectorAll: vi.fn(() => []),
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn(),
+  addEventListener: documentListeners.addEventListener,
+  removeEventListener: documentListeners.removeEventListener,
+  dispatchEvent: documentListeners.dispatchEvent,
   activeElement: null,
   body: mockBody,
   head: mockHead,
@@ -311,8 +349,13 @@ global.window = {
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
   dispatchEvent: vi.fn(),
-  setTimeout: global.setTimeout,
-  clearTimeout: global.clearTimeout,
+  // Resolved per call, never captured: `vi.useFakeTimers()` swaps the global
+  // binding after this file runs, and a captured reference would keep pointing
+  // at the real clock that `vi.advanceTimersByTime()` cannot drive.
+  setTimeout: ((...args: unknown[]) =>
+    (globalThis.setTimeout as any)(...args)) as unknown as typeof global.setTimeout,
+  clearTimeout: ((id?: unknown) =>
+    (globalThis.clearTimeout as any)(id)) as unknown as typeof global.clearTimeout,
   requestAnimationFrame: vi.fn((cb: FrameRequestCallback) => {
     const id = setTimeout(() => cb(Date.now()), 16)
     return id as any
@@ -384,6 +427,9 @@ beforeEach(() => {
   if (document.body) {
     ;(document.body as any).innerHTML = ''
   }
+  // Emptying head/body has to empty the id index with it, or a singleton
+  // <style> created by one test stays findable by the next.
+  elementsById.clear()
 
   // Clear all timers to ensure clean test state
   vi.clearAllTimers()

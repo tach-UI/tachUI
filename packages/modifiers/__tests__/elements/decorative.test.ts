@@ -580,7 +580,7 @@ describe('Error Handling', () => {
     expect(result).toBeUndefined()
   })
 
-  it.skipIf(process.env.TEST_ISOLATION === 'true')(
+  it(
     'should handle stylesheet insertion errors gracefully',
     () => {
       const mockSheet = {

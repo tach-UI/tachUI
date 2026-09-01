@@ -297,7 +297,7 @@ describe('Appearance Modifiers Stress Tests', () => {
       expect(duration).toBeLessThan(200) // Should complete within 200ms
     })
 
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should handle invalid parameters gracefully at scale',
       () => {
         const invalidModifiers = [
