@@ -46,7 +46,6 @@ import { transition } from './animation'
 import {
   animation as animationModifier,
   transform as transformModifier,
-  transitions as transitionsModifier,
 } from '../animation'
 import { task as taskModifier } from '../lifecycle'
 
@@ -377,7 +376,6 @@ export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]
   ['navigationBarItems', navigationBarItems],
   ['animation', animationModifier],
   ['transform', transformModifier],
-  ['transitions', transitionsModifier],
   ['transition', transition],
 
   // Attributes
