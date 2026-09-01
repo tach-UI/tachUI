@@ -32,10 +32,19 @@ export interface Owner {
    *
    * Kept separate from `sources` because that set is typed to computations
    * and its members are torn down through the computation disposal path.
+   *
+   * Optional so that an `Owner` produced by an older version of the runtime,
+   * or a hand-rolled structural implementation, still satisfies this interface.
+   * `runWithOwner` accepts any `Owner`, so the core must tolerate one that
+   * predates this field rather than throwing on it.
    */
-  readonly childOwners: Set<Owner>
+  readonly childOwners?: Set<Owner>
   disposed: boolean
-  dispose(): void
+  /**
+   * Optional for the same reason as `childOwners`: the core already guards
+   * this at runtime rather than assuming it is present.
+   */
+  dispose?(): void
 }
 
 /**

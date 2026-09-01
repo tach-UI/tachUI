@@ -23,6 +23,18 @@ Two consequences worth noting:
 - `createDetachedRoot` now means something. It clears the current owner so the new root has no parent; previously parentage conferred nothing, so a plain nested `createRoot` was already detached.
 - `createRoot` and `runWithOwner` now close any enclosing execution cleanup scope, so an `onCleanup` written directly in their body belongs to that owner rather than to whichever effect happened to be running.
 
-`Owner` in `@tachui/types` gains `childOwners: Set<Owner>` and `dispose(): void`. `dispose` was already assumed by `@tachui/core`'s `dispose(owner)` helper behind a runtime guard; both are now part of the declared shape. `OwnerImpl` is the only implementation in the workspace.
+`Owner` in `@tachui/types` gains **optional** `childOwners?: Set<Owner>` and `dispose?(): void`. Both are optional so an `Owner` from an older runtime, a hand-rolled JS object, or a downstream structural implementation still satisfies the interface — `runWithOwner` is public and accepts any `Owner`. The core guards both members at runtime and degrades such an owner to the previous unparented behaviour rather than throwing before the root body runs. `dispose` was already assumed by `@tachui/core`'s `dispose(owner)` helper behind exactly such a guard.
 
-**Known limit, unchanged by this fix and characterized in `owner-subtree-disposal.test.ts`:** `ComputationImpl.execute()` restores `currentComputation` but not `currentOwner`, so an effect rerunning from a flush outside the enclosing `createRoot` call stack sees a null owner, and a root created during that rerun still has no parent to dispose it. Closing that means making a computation establish an owner scope for its own execution, which is a larger change.
+**Computations now open an owner scope for each execution.** Previously `ComputationImpl.execute()` restored `currentComputation` but not `currentOwner`, so once the flush arrived on a later microtask — the normal asynchronous case — `getOwner()` was null during a rerun and any root or nested effect created there was orphaned, surviving disposal of the enclosing root with its subscriptions live and its cleanups unrun.
+
+Each run now gets its own owner, parented to the computation's owner and disposed as part of that run's teardown. So anything created during a run dies with that run:
+
+```typescript
+createEffect(() => {
+  outer()
+  // Disposed automatically when this effect reruns — no explicit disposer.
+  createEffect(() => inner())
+})
+```
+
+Parenting these children to the computation's own owner instead would have traded the orphan leak for an unbounded one, piling every rerun's children onto the root until the root died.
