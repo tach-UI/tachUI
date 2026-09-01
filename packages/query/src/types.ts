@@ -76,14 +76,12 @@ export type PlaceholderData<TData> =
   | ((previous: TData | undefined) => TData | undefined)
 
 /**
- * Options for {@link QueryClient.fetchQuery} and `createQuery`.
- *
- * `TRaw` is what the loader returns and what the cache stores. `TData` is what a
- * single observer projects through `select`; the projection runs per observer and
- * outside the cache, so one cached response can serve many differently-shaped
- * consumers.
+ * Everything in {@link QueryOptions} except `select`, whose optionality depends on
+ * whether `TData` differs from `TRaw`. Split out so that condition lives in one
+ * place, and so {@link FetchQueryOptions} - which never accepts a projection - can
+ * derive from a shape that has none to remove.
  */
-export interface QueryOptions<TRaw, TData = TRaw, E = Error> {
+export interface QueryOptionsBase<TRaw, TData = TRaw, E = Error> {
   /**
    * Produces the query key. Called inside a memo so a key change triggers exactly
    * once rather than once per dependency it reads.
@@ -98,12 +96,6 @@ export interface QueryOptions<TRaw, TData = TRaw, E = Error> {
    * Defaults to true.
    */
   enabled?: boolean | (() => boolean)
-
-  /**
-   * Projects the cached `TRaw` into the shape this observer wants. Runs outside
-   * the cache and is memoized per observer.
-   */
-  select?: (data: TRaw) => TData
 
   /** Value to present while there is no cached data. Never written to the cache. */
   placeholderData?: PlaceholderData<TData>
@@ -143,6 +135,56 @@ export interface QueryOptions<TRaw, TData = TRaw, E = Error> {
 }
 
 /**
+ * True only when `A` and `B` are the same type, rather than merely mutually
+ * assignable. The two-signature form is the standard way to ask TypeScript for
+ * identity: assignability alone would call `RawUser` and `RawUser | undefined`
+ * close enough and let the projection go missing.
+ */
+type IsExactly<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false
+
+/**
+ * `select` is optional only when the projected type *is* the raw type.
+ *
+ * Without this, `QueryOptions<RawUser, string>` accepts an object with no
+ * projection at all, and every consumer then reads a `RawUser` through a `string`
+ * contract - `result.data()?.toUpperCase()` typechecks and throws at runtime.
+ * Declaring a second parameter is the act of promising a projection, so the type
+ * requires one.
+ */
+type SelectRequirement<TRaw, TData> =
+  IsExactly<TRaw, TData> extends true
+    ? {
+        /**
+         * Projects the cached `TRaw` into the shape this observer wants. Runs
+         * outside the cache and is memoized per observer.
+         */
+        select?: (data: TRaw) => TData
+      }
+    : {
+        /**
+         * Projects the cached `TRaw` into the shape this observer wants. Required
+         * here because `TData` differs from `TRaw`: nothing else can produce one.
+         */
+        select: (data: TRaw) => TData
+      }
+
+/**
+ * Options for {@link QueryClient.fetchQuery} and `createQuery`.
+ *
+ * `TRaw` is what the loader returns and what the cache stores. `TData` is what a
+ * single observer projects through `select`; the projection runs per observer and
+ * outside the cache, so one cached response can serve many differently-shaped
+ * consumers. When the two differ, `select` is required rather than optional.
+ */
+export type QueryOptions<TRaw, TData = TRaw, E = Error> = QueryOptionsBase<
+  TRaw,
+  TData,
+  E
+> &
+  SelectRequirement<TRaw, TData>
+
+/**
  * Options an imperative fetch can actually honour.
  *
  * `select`, `placeholderData` and `enabled` are per-observer concerns: there is
@@ -153,8 +195,8 @@ export interface QueryOptions<TRaw, TData = TRaw, E = Error> {
  * same reason.
  */
 export type FetchQueryOptions<TRaw, E = Error> = Omit<
-  QueryOptions<TRaw, TRaw, E>,
-  'select' | 'placeholderData' | 'enabled' | 'refetchOnFocus' | 'refetchOnReconnect'
+  QueryOptionsBase<TRaw, TRaw, E>,
+  'placeholderData' | 'enabled' | 'refetchOnFocus' | 'refetchOnReconnect'
 > & {
   // `Omit` alone only rejects a fresh object literal. A `QueryOptions` variable
   // carrying `enabled: false` stays structurally assignable and slips through,
