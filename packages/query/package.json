@@ -10,7 +10,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "!dist/.vite"
   ],
   "scripts": {
     "build": "rm -rf dist tsconfig.build.tsbuildinfo && vite build && tsc --project tsconfig.build.json",
