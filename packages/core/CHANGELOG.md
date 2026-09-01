@@ -1,5 +1,35 @@
 # @tachui/core
 
+## 0.8.32
+
+### Patch Changes
+
+- [#299](https://github.com/tach-UI/tachUI/pull/299) [`9ae49e0`](https://github.com/tach-UI/tachUI/commit/9ae49e04ebeaf6d5363d1f5cb85230010f9905c2) Thanks [@whoughton](https://github.com/whoughton)! - Deprecate the enhanced reactive branch, which does not track dependencies (#271).
+
+  `createEnhancedEffect` never re-runs when a signal it read changes: `EnhancedEffect.execute` resolves `(this as any).setCurrentComputation` — a member that does not exist — and falls back to a no-op. Measured on the same shape:
+
+  |                                   | after create | after set |
+  | --------------------------------- | ------------ | --------- |
+  | standard signal + standard effect | 1            | 2         |
+  | enhanced signal + enhanced effect | 1            | 1         |
+  | standard signal + enhanced effect | 1            | 1         |
+
+  The effect is the broken half; the signal type makes no difference. Reads and writes appear to succeed and nothing downstream updates, which makes this dangerous to build a data or communications layer on.
+
+  `createEnhancedSignal` and `createEnhancedEffect` now carry `@deprecated` tags and warn once per symbol at runtime, naming the standard replacement. The migration codemod previously rewrote `createSignal` → `createEnhancedSignal` and `createEffect` → `createEnhancedEffect`, making its output strictly more broken than its input; those two rewrites are removed.
+
+  Behaviour is otherwise unchanged — the exports still exist and still do what they did. Removal is scheduled for 0.9.0, gated on the characterization in #269 and the version-line procedure in #264.
+
+- [#299](https://github.com/tach-UI/tachUI/pull/299) [`9ae49e0`](https://github.com/tach-UI/tachUI/commit/9ae49e04ebeaf6d5363d1f5cb85230010f9905c2) Thanks [@whoughton](https://github.com/whoughton)! - Remove `.transitions()`, which never did anything (#297).
+
+  It was chainable, declared in the modifier types, and registered in the modifier registry — so calls resolved without error — but `AnimationModifier.apply` never read `props.transitions`. `Text('x').transitions({ opacity: { duration: 500 } })` left `element.style.transition` empty while the singular `.transition('opacity', 500, 'ease-in')` produced `opacity 500ms ease-in 0ms` on the same render.
+
+  Removing it turns a silent no-op into a compile error. No capability is lost: `.transition()` is the working API and there was never a defined shape for `.transitions()`'s config, which was typed `any`. If a multi-property form is wanted it should be designed and implemented, not inherited from a placeholder.
+
+- Updated dependencies [[`9ae49e0`](https://github.com/tach-UI/tachUI/commit/9ae49e04ebeaf6d5363d1f5cb85230010f9905c2)]:
+  - @tachui/types@0.8.32
+  - @tachui/registry@0.8.32
+
 ## 0.8.31
 
 ### Patch Changes

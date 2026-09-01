@@ -1,6 +1,6 @@
 {
   "name": "@tachui/grid",
-  "version": "0.8.32",
+  "version": "0.8.33",
   "description": "CSS Grid layout components and modifiers for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -41,10 +41,10 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "0.8.31",
-    "@tachui/responsive": "0.8.32",
-    "@tachui/modifiers": "0.8.32",
-    "@tachui/registry": "0.8.31"
+    "@tachui/core": "0.8.32",
+    "@tachui/responsive": "0.8.33",
+    "@tachui/modifiers": "0.8.33",
+    "@tachui/registry": "0.8.32"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
