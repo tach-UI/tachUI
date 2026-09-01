@@ -27,9 +27,13 @@
     // so a test could import something no consumer can reach and quietly stop
     // covering the barrel and the export map.
     //
-    // The remaining packages keep wildcards: they are here only so the
-    // declarations under test can resolve their own imports, not as surfaces
-    // these tests assert against.
+    // `@tachui/query` is wildcard-free for the same reason, and needs no
+    // wildcard anyway: its declarations import only relatively. It, like
+    // `@tachui/primitives`, is a surface these tests assert against.
+    //
+    // The wildcards on `@tachui/types`, `@tachui/core` and `@tachui/modifiers`
+    // exist solely so the declarations under test can resolve their own
+    // imports, not as surfaces these tests assert against.
     "paths": {
       "@tachui/types": ["./packages/types/dist/index.d.ts"],
       "@tachui/types/*": ["./packages/types/dist/*"],

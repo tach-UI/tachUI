@@ -7,7 +7,15 @@
   },
   "exclude": [
     "dist",
-    "node_modules"
+    "node_modules",
+    // `*.test-d.ts` imports through the package's own `exports` map, so it can
+    // only resolve into `dist`. Checking it here would make this program depend
+    // on a prior build - `valid` runs type-check before build, so it would
+    // assert against the previous build's declarations, and a clean tree could
+    // not type-check at all. The root `test:types` tier owns those files: it
+    // resolves the same declarations deliberately and refuses to run when they
+    // are missing (tools/check-typecheck-test-prereqs.mjs).
+    "__tests__/**/*.test-d.ts"
   ],
   "include": [
     "src/**/*",
