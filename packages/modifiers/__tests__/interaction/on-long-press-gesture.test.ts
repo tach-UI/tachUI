@@ -146,7 +146,7 @@ describe('OnLongPressGestureModifier', () => {
   })
 
   describe('pointer event handling', () => {
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should trigger long press after minimum duration',
       () => {
         const perform = vi.fn()
@@ -279,7 +279,7 @@ describe('OnLongPressGestureModifier', () => {
       ;(touchElement as any).ontouchstart = null
     })
 
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should use touch events when pointer events unavailable',
       () => {
         const perform = vi.fn()
@@ -315,7 +315,7 @@ describe('OnLongPressGestureModifier', () => {
       delete (mouseElement as any).ontouchstart
     })
 
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should use mouse events as final fallback',
       () => {
         const perform = vi.fn()
@@ -393,7 +393,7 @@ describe('OnLongPressGestureModifier', () => {
   })
 
   describe('edge cases', () => {
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should handle multiple rapid press attempts',
       () => {
         const perform = vi.fn()
@@ -425,7 +425,7 @@ describe('OnLongPressGestureModifier', () => {
       }
     )
 
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should not trigger twice for same press',
       () => {
         const perform = vi.fn()

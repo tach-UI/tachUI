@@ -304,7 +304,7 @@ describe('Overlay Modifier Stress Tests', () => {
   })
 
   describe('Error Handling Under Stress', () => {
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should handle many invalid content types gracefully',
       () => {
         const invalidContents = [
@@ -340,7 +340,7 @@ describe('Overlay Modifier Stress Tests', () => {
       }
     )
 
-    it.skipIf(process.env.TEST_ISOLATION === 'true')(
+    it(
       'should handle missing elements gracefully at scale',
       () => {
         const component = createMockComponent('missing-element-test')

@@ -9,9 +9,6 @@ export default mergeConfig(
       setupFiles: ['./__tests__/setup-enhanced.ts'],
       silent: true,
     },
-    env: {
-      TEST_ISOLATION: 'true',
-    },
     onConsoleLog: () => false,
     resolve: {
       alias: {
