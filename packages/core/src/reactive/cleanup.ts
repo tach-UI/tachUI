@@ -5,7 +5,7 @@
  * utilities to prevent memory leaks in reactive computations.
  */
 
-import { getCurrentOwner } from './context'
+import { getCurrentOwner, registerExecutionCleanup } from './context'
 import type { CleanupFunction, Owner } from './types'
 
 // Global development flag
@@ -20,17 +20,24 @@ declare const process: {
 }
 
 /**
- * Add a cleanup function to the current reactive context
+ * Add a cleanup function to the innermost active reactive scope
  *
- * @param fn Cleanup function to run when the context is disposed
+ * Inside a computation body the cleanup is execution-scoped (#270): it runs
+ * before that computation's next execution and again when it is disposed, so
+ * each run tears down only what it created. Outside a computation body the
+ * cleanup is owner-scoped and runs when the owner is disposed.
+ *
+ * @param fn Cleanup function to run when the scope is torn down
  *
  * @example
  * ```typescript
  * createEffect(() => {
+ *   // Re-created on every run of the effect...
  *   const interval = setInterval(() => {
  *     console.log('tick')
  *   }, 1000)
  *
+ *   // ...and cleared before the next run, not just at disposal.
  *   onCleanup(() => {
  *     clearInterval(interval)
  *   })
@@ -38,6 +45,8 @@ declare const process: {
  * ```
  */
 export function onCleanup(fn: CleanupFunction): void {
+  if (registerExecutionCleanup(fn)) return
+
   const owner = getCurrentOwner()
   if (owner && !owner.disposed) {
     owner.cleanups.push(fn)

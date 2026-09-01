@@ -25,6 +25,59 @@ let currentComputation: Computation | null = null
 let currentOwner: Owner | null = null
 let isBatching = false
 
+// Cleanup scope for the computation execution currently in progress (#270).
+// Distinct from the owner: an owner's cleanups run once, when the owner is
+// disposed, whereas an execution scope is torn down before every rerun of the
+// computation that opened it.
+let currentCleanupScope: CleanupFunction[] | null = null
+
+/**
+ * Run a list of cleanup functions in registration order, draining it.
+ *
+ * A throwing cleanup must not strand the cleanups queued behind it, so each
+ * call is isolated and reported — matching how `OwnerImpl.dispose` and the
+ * flush loop already treat failures.
+ */
+function drainCleanups(cleanups: CleanupFunction[]): void {
+  if (cleanups.length === 0) return
+
+  // Splice first: a cleanup that re-enters this computation must not see the
+  // entries still queued, and nothing may run twice.
+  const pending = cleanups.splice(0, cleanups.length)
+
+  // Cleanups run outside any tracking or cleanup scope, so an onCleanup call
+  // made from inside a cleanup cannot append to the list being drained.
+  const prevComputation = currentComputation
+  const prevScope = currentCleanupScope
+  currentComputation = null
+  currentCleanupScope = null
+
+  try {
+    for (const cleanup of pending) {
+      try {
+        cleanup()
+      } catch (error) {
+        console.error('Error in cleanup function:', error)
+      }
+    }
+  } finally {
+    currentComputation = prevComputation
+    currentCleanupScope = prevScope
+  }
+}
+
+/**
+ * Register a cleanup on the execution scope currently in progress, if any.
+ *
+ * Returns false when there is no execution scope, so callers can fall back to
+ * owner-scoped registration.
+ */
+export function registerExecutionCleanup(fn: CleanupFunction): boolean {
+  if (!currentCleanupScope) return false
+  currentCleanupScope.push(fn)
+  return true
+}
+
 // Module instance tracking for debugging
 const moduleInstances = new Set<string>()
 moduleInstances.add(moduleInstanceId)
@@ -128,6 +181,9 @@ export class ComputationImpl implements Computation {
   readonly fn: () => any
   readonly sources = new Set<any>() // Signals this computation depends on
   readonly observers = new Set<Computation>() // Computations that depend on this
+  // Cleanups registered by the execution currently in progress (#270). Torn
+  // down before the next execution and again on disposal.
+  readonly cleanups: CleanupFunction[] = []
   state: ComputationStateValue = ComputationState.Dirty
   value: any = undefined
 
@@ -141,10 +197,37 @@ export class ComputationImpl implements Computation {
     }
   }
 
+  /**
+   * Register a cleanup on this computation's current execution scope.
+   *
+   * Registering on an already-disposed computation runs the cleanup at once:
+   * the scope that would have owned it is gone, and dropping it silently would
+   * leak whatever it was holding. `createOnceEffect` disposes itself from
+   * inside its own body and reaches exactly this path.
+   */
+  addCleanup(fn: CleanupFunction): void {
+    if (this.state === ComputationState.Disposed) {
+      try {
+        fn()
+      } catch (error) {
+        console.error('Error in cleanup function:', error)
+      }
+      return
+    }
+
+    this.cleanups.push(fn)
+  }
+
   execute(): any {
     if (this.state === ComputationState.Disposed) {
       return this.value
     }
+
+    // Tear down the previous execution before the next one begins (#270), so
+    // a disposer never overlaps the run that replaces it. This happens even
+    // when the previous run threw: its cleanups were registered before the
+    // throw and still own real resources.
+    drainCleanups(this.cleanups)
 
     // Snapshot the current dependencies. Unsubscribing stale ones is
     // deferred until after a successful run: if fn() throws partway
@@ -156,7 +239,9 @@ export class ComputationImpl implements Computation {
     this.sources.clear()
 
     const prevComputation = reactiveContext.currentComputation
+    const prevCleanupScope = currentCleanupScope
     reactiveContext.currentComputation = this
+    currentCleanupScope = this.cleanups
 
     try {
       this.state = ComputationState.Clean
@@ -198,6 +283,7 @@ export class ComputationImpl implements Computation {
       throw error
     } finally {
       reactiveContext.currentComputation = prevComputation
+      currentCleanupScope = prevCleanupScope
     }
   }
 
@@ -205,6 +291,11 @@ export class ComputationImpl implements Computation {
     if (this.state === ComputationState.Disposed) return
 
     this.state = ComputationState.Disposed
+
+    // Final teardown of the last execution's scope (#270). Runs before the
+    // computation is unwired so a disposer can still read this computation's
+    // own state.
+    drainCleanups(this.cleanups)
 
     // Remove from all sources
     for (const source of this.sources) {
@@ -311,9 +402,16 @@ export function untrack<T>(fn: () => T): T {
 }
 
 /**
- * Add cleanup function to current owner
+ * Add a cleanup function to the innermost active scope.
+ *
+ * Inside a computation body this is the execution scope (#270), so the cleanup
+ * runs before that computation's next execution and again on its disposal.
+ * Outside one — directly in a `createRoot` body, say — it falls back to
+ * owner-scoped registration and runs when the owner is disposed.
  */
 export function onCleanup(fn: CleanupFunction): void {
+  if (registerExecutionCleanup(fn)) return
+
   const owner = reactiveContext.currentOwner
   if (owner && !owner.disposed) {
     owner.cleanups.push(fn)

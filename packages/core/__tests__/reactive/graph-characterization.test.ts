@@ -505,10 +505,9 @@ describe('standard graph characterization: disposal ordering (#269)', () => {
     expect(runs).toBe(1)
   })
 
-  it('registers onCleanup on the owner, not on the effect execution', () => {
-    // Characterizes the #270 starting point: an onCleanup registered inside an
-    // effect body accumulates on the owner and runs only at owner disposal, so
-    // three effect runs register three cleanups and none of them has run yet.
+  it('registers onCleanup on the effect execution, not on the owner (#270)', () => {
+    // Before #270 this accumulated three cleanups on the owner and ran none of
+    // them until disposal. Now each run tears down the run before it.
     const [get, set] = createSignal(0)
     const order: string[] = []
 
@@ -520,16 +519,28 @@ describe('standard graph characterization: disposal ordering (#269)', () => {
 
       set(1)
       flushSync()
+      expect(order).toEqual(['cleanup-0'])
+
       set(2)
       flushSync()
-
-      // Nothing has run: cleanup is owner-scoped, not execution-scoped.
-      expect(order).toEqual([])
+      expect(order).toEqual(['cleanup-0', 'cleanup-1'])
 
       dispose()
     })
 
     expect(order).toEqual(['cleanup-0', 'cleanup-1', 'cleanup-2'])
+  })
+
+  it('still registers onCleanup on the owner outside a computation body (#270)', () => {
+    const order: string[] = []
+
+    createRoot((dispose) => {
+      onCleanup(() => order.push('owner'))
+      expect(order).toEqual([])
+      dispose()
+    })
+
+    expect(order).toEqual(['owner'])
   })
 })
 
@@ -566,10 +577,9 @@ describe('standard graph characterization: effect return values (#269)', () => {
     expect(seen).toEqual([undefined])
   })
 
-  it('CHANGED BY #270: a returned function is swallowed as previousValue and never invoked', () => {
-    // Pre-#270 behaviour. #270 flips this: the returned function becomes an
-    // execution-scoped disposer, runs before the next execution and again on
-    // final disposal, and is no longer fed back as `previousValue`.
+  it('CHANGED BY #270: a returned function is a disposer, not a previousValue', () => {
+    // Before #270 this asserted the opposite: the returned function was fed
+    // back as `previousValue` and never invoked, so every run leaked.
     const [get, set] = createSignal(0)
     let disposerCalls = 0
     const seen: unknown[] = []
@@ -585,7 +595,7 @@ describe('standard graph characterization: effect return values (#269)', () => {
     set(1)
     flushSync()
 
-    expect(disposerCalls).toBe(0)
-    expect(typeof seen[1]).toBe('function')
+    expect(disposerCalls).toBe(1)
+    expect(seen).toEqual([undefined, undefined])
   })
 })

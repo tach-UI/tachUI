@@ -6,7 +6,7 @@
  */
 
 import { ComputationImpl, getCurrentOwner } from './context'
-import type { EffectFunction, EffectOptions } from './types'
+import type { CleanupFunction, EffectFunction, EffectOptions } from './types'
 
 /**
  * Effect function type
@@ -20,6 +20,11 @@ export type Effect = ComputationImpl
  * @param options Effect configuration options
  * @returns The effect computation
  *
+ * An effect may return a disposer function. It runs before the effect's next
+ * execution and again when the effect is disposed, which is what makes it safe
+ * to own a resource — a subscription, a timer, an in-flight request — from
+ * inside an effect body.
+ *
  * @example
  * ```typescript
  * const [count, setCount] = createSignal(0)
@@ -30,23 +35,37 @@ export type Effect = ComputationImpl
  *
  * setCount(5) // Logs: "Count changed: 5"
  * ```
+ *
+ * @example Returning a disposer
+ * ```typescript
+ * createEffect(() => {
+ *   const controller = new AbortController()
+ *   void fetch(`/api/item/${id()}`, { signal: controller.signal })
+ *
+ *   // Aborts the previous request when `id` changes, and on disposal.
+ *   return () => controller.abort()
+ * })
+ * ```
  */
 export function createEffect<T>(fn: EffectFunction<T>, options: EffectOptions = {}): Effect {
   const owner = getCurrentOwner()
 
   let previousValue: T | undefined
-  let isFirst = true
 
   const effectFn = () => {
     const nextValue = fn(previousValue)
 
-    if (!isFirst) {
-      previousValue = nextValue
-    } else {
-      isFirst = false
-      previousValue = nextValue
+    // A returned function is a disposer, not a value (#270). It is registered
+    // last, so it runs after any onCleanup the same run registered, and the
+    // next run receives `undefined` rather than the disposer: an effect uses
+    // the disposer protocol or the previousValue protocol, never both.
+    if (typeof nextValue === 'function') {
+      effect.addCleanup(nextValue as CleanupFunction)
+      previousValue = undefined
+      return undefined
     }
 
+    previousValue = nextValue
     return nextValue
   }
 
@@ -91,13 +110,22 @@ export function createRenderEffect<T>(fn: EffectFunction<T>, options: EffectOpti
   let hasRun = false
 
   const effectFn = () => {
-    if (!hasRun) {
+    const nextValue = fn(previousValue)
+
+    // Same disposer protocol as createEffect (#270).
+    if (typeof nextValue === 'function') {
+      effect.addCleanup(nextValue as CleanupFunction)
+      previousValue = undefined
       hasRun = true
-      // Track dependencies but don't run the effect
-      return fn(previousValue)
+      return undefined
     }
 
-    const nextValue = fn(previousValue)
+    // Unchanged from before #270: the first run does not seed previousValue.
+    if (!hasRun) {
+      hasRun = true
+      return nextValue
+    }
+
     previousValue = nextValue
     return nextValue
   }
@@ -119,6 +147,11 @@ export function createRenderEffect<T>(fn: EffectFunction<T>, options: EffectOpti
 
 /**
  * Create a one-time effect that disposes itself after first execution
+ *
+ * Deliberately does not take part in the returned-disposer protocol (#270).
+ * The effect disposes itself from inside its own body, so a returned disposer
+ * would fire immediately on the same tick — useless, and surprising enough to
+ * be worse than ignoring it. Use `onCleanup` here if teardown is needed.
  *
  * @param fn The effect function to run once
  * @param options Effect configuration options
