@@ -7,18 +7,41 @@
  * declaration emit can widen or reorder what a consumer actually sees.
  *
  * These assertions resolve against `packages/*​/dist/*.d.ts`, not `src`, so
- * they check what an installed consumer gets. See
+ * they check what an installed consumer gets, and through the published
+ * subpath rather than a deep internal one. See
  * `tsconfig.typecheck-tests.json`. Run `bun run build` before `bun run
- * test:types` locally; CI builds first.
+ * test:types`; the script refuses to run without the declarations, because
+ * missing modules resolve to `any` and every assertion below would then pass
+ * while checking nothing.
  *
  * Promoted from throwaway `tsc` scratch files written while #266 was being
  * verified.
  */
 
 import { assertType, describe, expectTypeOf, it } from 'vitest'
-import { Button, ButtonStyles } from '@tachui/primitives/controls/Button'
+// Imported through the published `./controls` subpath, not the deep
+// `./controls/Button` path the original probes used. `package.json` exports
+// declares `./controls` and no `./controls/*` wildcard, so the deep path is not
+// reachable by an installed consumer — testing it would resolve straight to
+// `dist/controls/Button.d.ts` and miss any regression in the barrel or the
+// export map, which is exactly the surface these tests claim to guard.
+import { Button, ButtonStyles } from '@tachui/primitives/controls'
 
 describe('Button call forms', () => {
+  it('resolves real declarations rather than degrading to any', () => {
+    // Every other assertion here is vacuous if the import silently resolves to
+    // `any` — an unresolvable module, a wrong path mapping, an export dropped
+    // from the barrel. `assertType` and `assertType(Button(...))` all succeed
+    // against `any`, so the suite would report a clean pass while checking
+    // nothing. Measured: with `packages/primitives/dist` removed, 9 of the 10
+    // tests below still passed.
+    //
+    // `test:types` refuses to run without built declarations, and this is the
+    // second line of defence for every other cause.
+    expectTypeOf(Button).not.toBeAny()
+    expectTypeOf(ButtonStyles).not.toBeAny()
+  })
+
   it('accepts the title-only form', () => {
     assertType(Button('a'))
   })

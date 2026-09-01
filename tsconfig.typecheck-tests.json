@@ -16,17 +16,32 @@
     // widen, drop, or reorder overloads, and that is precisely the class of
     // regression these tests exist to catch.
     //
-    // CI builds every package in this list before `test:ci`, so `dist` is
-    // present. Locally, run `bun run build` first.
+    // `test:types` guards this: it refuses to run when the declarations are
+    // absent, because missing modules resolve to `any` and every assertion
+    // then passes without checking anything. Run `bun run build` first. In CI
+    // this runs in the Type Check job, which has already built everything.
+    // `@tachui/primitives` is mapped entrypoint-by-entrypoint, mirroring its
+    // `exports` map exactly, with no `/*` wildcard. A wildcard would let a deep
+    // internal path such as `@tachui/primitives/controls/Button` resolve
+    // straight to a declaration file even though `exports` never publishes it,
+    // so a test could import something no consumer can reach and quietly stop
+    // covering the barrel and the export map.
+    //
+    // The remaining packages keep wildcards: they are here only so the
+    // declarations under test can resolve their own imports, not as surfaces
+    // these tests assert against.
     "paths": {
       "@tachui/types": ["./packages/types/dist/index.d.ts"],
       "@tachui/types/*": ["./packages/types/dist/*"],
       "@tachui/core": ["./packages/core/dist/index.d.ts"],
       "@tachui/core/*": ["./packages/core/dist/*"],
-      "@tachui/primitives": ["./packages/primitives/dist/index.d.ts"],
-      "@tachui/primitives/*": ["./packages/primitives/dist/*"],
       "@tachui/modifiers": ["./packages/modifiers/dist/index.d.ts"],
-      "@tachui/modifiers/*": ["./packages/modifiers/dist/*"]
+      "@tachui/modifiers/*": ["./packages/modifiers/dist/*"],
+      "@tachui/primitives": ["./packages/primitives/dist/index.d.ts"],
+      "@tachui/primitives/layout": ["./packages/primitives/dist/layout/index.d.ts"],
+      "@tachui/primitives/display": ["./packages/primitives/dist/display/index.d.ts"],
+      "@tachui/primitives/controls": ["./packages/primitives/dist/controls/index.d.ts"],
+      "@tachui/primitives/forms": ["./packages/primitives/dist/forms/index.d.ts"]
     }
   },
   "include": ["packages/**/__tests__/**/*.test-d.ts"],
