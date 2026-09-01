@@ -116,12 +116,28 @@ export type QueryKeyIsStructured = Assert<Equals<QueryKey, readonly unknown[]>>
  * The order is load-bearing - swapping it silently retypes every call site.
  */
 export type SelectProjectsRawIntoData = Assert<
-  Equals<QueryOptions<RawUser, string>['select'], ((data: RawUser) => string) | undefined>
+  Equals<QueryOptions<RawUser, string>['select'], (data: RawUser) => string>
+>
+
+/**
+ * And it is *required* once the two differ. This previously read
+ * `| undefined`, which let `QueryOptions<RawUser, string>` be satisfied with no
+ * projection at all: the cache holds a `RawUser`, `QueryResult<string>` promises
+ * a `string`, and `result.data()?.toUpperCase()` typechecks and throws. Naming a
+ * second parameter is the act of promising a projection.
+ */
+export type SelectRequiredWhenProjected = Assert<
+  Equals<undefined extends QueryOptions<RawUser, string>['select'] ? true : false, false>
 >
 
 /** `TData` defaults to `TRaw`, so a query without `select` names one parameter. */
 export type ProjectedDataDefaultsToRaw = Assert<
   Equals<QueryOptions<RawUser>['select'], ((data: RawUser) => RawUser) | undefined>
+>
+
+/** ...and stays optional there, because there is nothing to project. */
+export type SelectOptionalWhenUnprojected = Assert<
+  Equals<undefined extends QueryOptions<RawUser>['select'] ? true : false, true>
 >
 
 /** The error type is the third parameter, and `retry` sees that same `E`. */
@@ -551,4 +567,60 @@ export type ListModeRequiresItemKey = Assert<
  */
 export type StreamGetIsPartial = Assert<
   Equals<ReturnType<AsyncStreamListResult<Message, string>['get']>, (() => Message) | undefined>
+>
+
+
+/**
+ * The rule above, written the way a caller hits it. `Assert` compares the
+ * declared member type; these check that the compiler actually rejects the
+ * object, which is the failure the reviewer reported.
+ */
+
+// @ts-expect-error - `TData` is `string` but no projection produces one
+export const projectedQueryRequiresSelect: QueryOptions<RawUser, string> = {
+  key: () => ['user', '1'],
+  load: async () => ({ id: '1', displayName: 'a' }),
+}
+
+/** Supplying the projection satisfies it. */
+export const projectedQueryWithSelect: QueryOptions<RawUser, string> = {
+  key: () => ['user', '1'],
+  load: async () => ({ id: '1', displayName: 'a' }),
+  select: user => user.displayName,
+}
+
+/** An unprojected query still needs no `select`. */
+export const unprojectedQueryNeedsNoSelect: QueryOptions<RawUser> = {
+  key: () => ['user', '1'],
+  load: async () => ({ id: '1', displayName: 'a' }),
+}
+
+/**
+ * Requiring `select` conditionally must not cost inference: TypeScript defers a
+ * conditional type whose check operand is still unresolved, so a caller who
+ * writes no explicit generics could plausibly stop getting `TData` from
+ * `select`'s return. `createQuery` does not exist yet - this stands in for its
+ * signature so the property is locked before it does.
+ */
+declare function inferQuery<TRaw, TData = TRaw, E = Error>(
+  options: QueryOptions<TRaw, TData, E>
+): QueryResult<TData, E>
+
+const inferredProjection = inferQuery({
+  key: () => ['user', '1'],
+  load: async (): Promise<RawUser> => ({ id: '1', displayName: 'a' }),
+  select: (user: RawUser) => user.displayName,
+})
+
+export type InferredProjectionIsProjected = Assert<
+  Equals<typeof inferredProjection, QueryResult<string, Error>>
+>
+
+const inferredRaw = inferQuery({
+  key: () => ['user', '1'],
+  load: async (): Promise<RawUser> => ({ id: '1', displayName: 'a' }),
+})
+
+export type InferredRawStaysRaw = Assert<
+  Equals<typeof inferredRaw, QueryResult<RawUser, Error>>
 >

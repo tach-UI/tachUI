@@ -41,6 +41,7 @@ export type {
   QueryKeyHash,
   QueryLoadContext,
   QueryOptions,
+  QueryOptionsBase,
   QueryResult,
   QueryStatus,
   RetryPolicy,
