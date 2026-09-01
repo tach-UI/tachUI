@@ -125,6 +125,9 @@ export function relativeImportsOf(source) {
   let expectsValue = true
   // Whether the previous token was `.`, so the next word is a member name.
   let afterDot = false
+  // Whether `lastWord` itself arrived as a member name. `loader.import(…)` and
+  // `o.from(…)` are ordinary method calls, not module syntax.
+  let lastWordIsMember = false
   // Open groupings, innermost last. A `(` remembers whether it headed a control
   // statement; a `${` remembers the template to return to on `}`.
   const stack = []
@@ -154,10 +157,11 @@ export function relativeImportsOf(source) {
         const closed = template
         template = null
         i += 1
-        if (closed.word === 'from' || closed.word === 'import') {
+        if (!closed.isMember && (closed.word === 'from' || closed.word === 'import')) {
           record(closed.interpolated ? null : closed.text)
         }
         lastWord = ''
+        lastWordIsMember = false
         expectsValue = false
         afterDot = false
         continue
@@ -169,6 +173,7 @@ export function relativeImportsOf(source) {
         template = null
         i += 2
         lastWord = ''
+        lastWordIsMember = false
         expectsValue = true
         afterDot = false
         continue
@@ -202,6 +207,7 @@ export function relativeImportsOf(source) {
       if (end !== null) {
         i = end
         lastWord = ''
+        lastWordIsMember = false
         expectsValue = false
         afterDot = false
         continue
@@ -209,16 +215,19 @@ export function relativeImportsOf(source) {
     }
 
     if (ch === '`') {
-      template = { text: '', interpolated: false, word: lastWord }
+      template = { text: '', interpolated: false, word: lastWord, isMember: lastWordIsMember }
       i += 1
       continue
     }
 
     if (ch === '"' || ch === "'") {
       const literal = readStringLiteral(source, i)
-      if (lastWord === 'from' || lastWord === 'import') record(literal.value)
+      if (!lastWordIsMember && (lastWord === 'from' || lastWord === 'import')) {
+        record(literal.value)
+      }
       i = literal.end
       lastWord = ''
+      lastWordIsMember = false
       expectsValue = false
       afterDot = false
       continue
@@ -233,6 +242,7 @@ export function relativeImportsOf(source) {
       // ordinary property, so it leaves a value behind and a following `/`
       // divides. Only a real keyword flips this.
       expectsValue = !afterDot && NON_VALUE_KEYWORDS.has(lastWord)
+      lastWordIsMember = afterDot
       afterDot = false
       continue
     }
@@ -246,7 +256,8 @@ export function relativeImportsOf(source) {
 
     if (ch === '(') {
       stack.push({ kind: 'paren', controlHead: CONTROL_HEAD_KEYWORDS.has(lastWord) })
-      if (lastWord !== 'import') lastWord = ''
+      // Only a bare `import(` is a dynamic import; `loader.import(` is a method.
+      if (lastWord !== 'import' || lastWordIsMember) lastWord = ''
       i += 1
       expectsValue = true
       afterDot = false
@@ -256,6 +267,7 @@ export function relativeImportsOf(source) {
     if (ch === '[' || ch === '{') {
       stack.push({ kind: ch === '[' ? 'bracket' : 'brace' })
       lastWord = ''
+      lastWordIsMember = false
       i += 1
       expectsValue = true
       afterDot = false
@@ -269,6 +281,7 @@ export function relativeImportsOf(source) {
       // divides.
       expectsValue = frame?.kind === 'paren' && frame.controlHead === true
       lastWord = ''
+      lastWordIsMember = false
       afterDot = false
       i += 1
       continue
@@ -278,6 +291,7 @@ export function relativeImportsOf(source) {
       stack.pop()
       expectsValue = false
       lastWord = ''
+      lastWordIsMember = false
       afterDot = false
       i += 1
       continue
@@ -293,12 +307,25 @@ export function relativeImportsOf(source) {
       }
       expectsValue = true
       lastWord = ''
+      lastWordIsMember = false
       afterDot = false
       i += 1
       continue
     }
 
+    // `++` and `--` leave a value behind, so a following `/` divides. Prefix use
+    // is unaffected: the operand that follows sets the same state.
+    if ((ch === '+' || ch === '-') && source[i + 1] === ch) {
+      lastWord = ''
+      lastWordIsMember = false
+      afterDot = false
+      expectsValue = false
+      i += 2
+      continue
+    }
+
     lastWord = ''
+    lastWordIsMember = false
     afterDot = ch === '.'
     expectsValue = true
     i += 1
@@ -419,7 +446,15 @@ export function measure(entryFile) {
 
   return {
     files: seen.size,
-    gzipBytes: gzipSync(Buffer.from(sources.join('\n'), 'utf8')).byteLength,
+    // Each chunk is a separate response with its own gzip stream, so they are
+    // sized separately. Gzipping them concatenated would let duplicate text
+    // across chunks share one dictionary and undercount what a browser actually
+    // downloads - measured at 8-27% on this repo's own multi-chunk packages,
+    // which is enough for an over-budget split package to pass.
+    gzipBytes: sources.reduce(
+      (total, source) => total + gzipSync(Buffer.from(source, 'utf8')).byteLength,
+      0
+    ),
   }
 }
 

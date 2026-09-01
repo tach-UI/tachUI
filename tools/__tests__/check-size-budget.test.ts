@@ -207,6 +207,24 @@ describe('relativeImportsOf', () => {
     ).toEqual(['./lazy.js', './chunk-A.js'])
   })
 
+  it('treats a postfix increment as leaving a value', () => {
+    // `i++/2` divides. Reading the `/` as a regex opener consumed the dynamic
+    // import that followed, so the chunk was never measured.
+    expect(relativeImportsOf('i++/2; import("./chunk.js")')).toEqual(['./chunk.js'])
+    expect(relativeImportsOf('i--/2; import("./chunk.js")')).toEqual(['./chunk.js'])
+    // Prefix use is unaffected: the operand sets the same state.
+    expect(relativeImportsOf('x=++i/2; import("./chunk.js")')).toEqual(['./chunk.js'])
+  })
+
+  it('does not treat a member call named import as a dynamic import', () => {
+    // The mirror of the .from() case, and the one finding that errs upward: a
+    // non-chunk either inflates the budget or fails the run as unresolvable.
+    expect(relativeImportsOf('loader.import("./not-a-chunk.js")')).toEqual([])
+    expect(relativeImportsOf('loader.import(`./not-a-chunk.js`)')).toEqual([])
+    // A real dynamic import still resolves.
+    expect(relativeImportsOf('import("./real.js")')).toEqual(['./real.js'])
+  })
+
   it('reports each specifier once even when imported repeatedly', () => {
     expect(
       relativeImportsOf('import{a}from"./c.js";import{b}from"./c.js";')
@@ -283,6 +301,27 @@ describe('measure', () => {
 
     expect(withChunk.files).toBe(2)
     expect(withChunk.gzipBytes).toBeGreaterThan(measure(path.join(dir, 'entry-only.js')).gzipBytes)
+  })
+
+  // Each chunk is served as its own response with its own gzip stream. Gzipping
+  // them concatenated lets duplicate text share one dictionary, so a split
+  // package measures smaller than it downloads - 8-27% on this repo's own
+  // multi-chunk packages, enough for an over-budget package to pass.
+  it('gzips each chunk separately rather than concatenated', () => {
+    const body = `export const v = "${'ab'.repeat(2000)}"\n`
+    writeFileSync(path.join(dir, 'a.js'), body)
+    writeFileSync(path.join(dir, 'b.js'), body)
+    writeFileSync(path.join(dir, 'index.js'), 'import "./a.js"\nimport "./b.js"\n')
+
+    const result = measure(path.join(dir, 'index.js'))
+    const concatenated = gzipSync(
+      Buffer.from([body, body, 'import "./a.js"\nimport "./b.js"\n'].join('\n'), 'utf8')
+    ).byteLength
+
+    expect(result.files).toBe(3)
+    // The two identical chunks compress to ~nothing together and to their real
+    // size apart, so the honest measurement is well above the concatenated one.
+    expect(result.gzipBytes).toBeGreaterThan(concatenated * 1.5)
   })
 
   it('throws rather than silently shrinking the measurement', () => {
