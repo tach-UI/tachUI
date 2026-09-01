@@ -25,8 +25,17 @@ export interface Owner {
   readonly parent: Owner | null
   readonly context: Map<symbol, any>
   readonly cleanups: CleanupFunction[]
+  /** Computations owned directly by this owner. */
   readonly sources: Set<Computation>
+  /**
+   * Owners nested inside this one, so disposal reaches the whole subtree.
+   *
+   * Kept separate from `sources` because that set is typed to computations
+   * and its members are torn down through the computation disposal path.
+   */
+  readonly childOwners: Set<Owner>
   disposed: boolean
+  dispose(): void
 }
 
 /**
