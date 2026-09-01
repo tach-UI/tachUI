@@ -99,6 +99,58 @@ describe('overlay() content rendering (#302)', () => {
     expect(overlayEl.textContent).toBe('D')
   })
 
+  it('does not accumulate containers when the base re-renders', () => {
+    // A content closure that reads a signal is tracked by the render effect, so
+    // updating it re-runs the component's render — and the renderer re-applies
+    // modifiers on every render, not only on element creation. Each pass used
+    // to append another container and leave the previous one behind.
+    const [label, setLabel] = createSignal('x')
+    const container = render(
+      Text('base')
+        .modifier.overlay(() => Text(label()), 'bottomTrailing')
+        .build()
+    )
+
+    const overlays = () =>
+      container.querySelectorAll('[style*="position: absolute"]')
+
+    expect(overlays()).toHaveLength(1)
+    expect(overlays()[0]!.textContent).toBe('x')
+
+    setLabel('y')
+    flushSync()
+
+    expect(overlays()).toHaveLength(1)
+    expect(overlays()[0]!.textContent).toBe('y')
+
+    setLabel('z')
+    flushSync()
+
+    expect(overlays()).toHaveLength(1)
+    expect(overlays()[0]!.textContent).toBe('z')
+  })
+
+  it('keeps each layer distinct when a multi-overlay base re-renders', () => {
+    const [badge, setBadge] = createSignal('1')
+    const container = render(
+      Text('base')
+        .modifier.overlay(Text('ring'), 'center')
+        .overlay(() => Text(badge()), 'bottomTrailing')
+        .build()
+    )
+
+    const overlays = () =>
+      Array.from(container.querySelectorAll('[style*="position: absolute"]'))
+
+    expect(overlays().map(el => el.textContent)).toEqual(['ring', '1'])
+
+    setBadge('2')
+    flushSync()
+
+    // The static ring must survive its sibling's re-application.
+    expect(overlays().map(el => el.textContent)).toEqual(['ring', '2'])
+  })
+
   it('layers multiple overlays, as DSAvatar-style compositions need', () => {
     const container = render(
       Text('base')

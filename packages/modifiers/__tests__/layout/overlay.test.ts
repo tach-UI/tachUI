@@ -410,6 +410,83 @@ describe('Overlay Modifier', () => {
     })
   })
 
+  describe('Re-application on re-render', () => {
+    // `renderSingle` applies modifiers on every render of a node, not only when
+    // the element is created. A base component that re-renders therefore drives
+    // apply() again on the same element, and the pipeline's cleanup does not
+    // run until unmount.
+    it('should replace its overlay rather than append another', () => {
+      const modifier = overlay(mockComponent, 'bottomTrailing')
+
+      modifier.apply({} as DOMNode, mockContext)
+      modifier.apply({} as DOMNode, mockContext)
+      modifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.children).toHaveLength(1)
+    })
+
+    it('should leave the surviving overlay holding the current content', () => {
+      const first = createMockComponent('b')
+      const second = createMockComponent('i')
+
+      new OverlayModifier({ content: first }).apply({} as DOMNode, mockContext)
+
+      const modifier = new OverlayModifier({ content: second })
+      modifier.apply({} as DOMNode, mockContext)
+      modifier.apply({} as DOMNode, mockContext)
+
+      // One container from the first modifier, one from the second — the
+      // second's re-apply replaced its own, and left the first alone.
+      expect(mockElement.children).toHaveLength(2)
+      expect(mockElement.children[1]!.querySelector('i')).not.toBeNull()
+    })
+
+    it('should not clobber a sibling overlay when one re-applies', () => {
+      const ring = overlay(createMockComponent('b'), 'center')
+      const badge = overlay(createMockComponent('i'), 'bottomTrailing')
+
+      ring.apply({} as DOMNode, mockContext)
+      badge.apply({} as DOMNode, mockContext)
+      expect(mockElement.children).toHaveLength(2)
+
+      // A second pass over both, as a re-render would do.
+      ring.apply({} as DOMNode, mockContext)
+      badge.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.children).toHaveLength(2)
+      expect(mockElement.children[0]!.querySelector('b')).not.toBeNull()
+      expect(mockElement.children[1]!.querySelector('i')).not.toBeNull()
+    })
+
+    it('should track elements independently when applied to several', () => {
+      const modifier = overlay(mockComponent)
+      const other = document.createElement('div')
+
+      modifier.apply({} as DOMNode, mockContext)
+      modifier.apply({} as DOMNode, { ...mockContext, element: other })
+      modifier.apply({} as DOMNode, mockContext)
+
+      // Re-applying to one element must not tear down the other's overlay.
+      expect(mockElement.children).toHaveLength(1)
+      expect(other.children).toHaveLength(1)
+    })
+
+    it('should survive cleanup running after a re-apply', () => {
+      const modifier = overlay(mockComponent)
+
+      const first = modifier.apply({} as DOMNode, mockContext) as ModifierResult
+      const second = modifier.apply({} as DOMNode, mockContext) as ModifierResult
+
+      // The pipeline still holds the first pass's cleanup. Running it must not
+      // double-dispose, nor remove the overlay the second pass mounted.
+      expect(() => first.cleanup!.forEach(fn => fn())).not.toThrow()
+      expect(mockElement.children).toHaveLength(1)
+
+      second.cleanup!.forEach(fn => fn())
+      expect(mockElement.children).toHaveLength(0)
+    })
+  })
+
   describe('Multiple Overlay Handling', () => {
     it('should support multiple overlays on same element', () => {
       const modifier1 = overlay(mockComponent, 'topLeading')
