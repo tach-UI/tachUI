@@ -87,3 +87,7 @@ planning/
 # Generated API documentation
 docs/api/
 CLAUDE.md
+
+# Local type-probe scratch area. Throwaway tsc files for checking a public
+# type surface by hand; promote anything worth keeping to a *.test-d.ts.
+.probe/
