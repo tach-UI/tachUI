@@ -137,17 +137,33 @@ class OwnerImpl implements Owner {
   readonly context = new Map<symbol, any>()
   readonly cleanups: CleanupFunction[] = []
   readonly sources = new Set<Computation>()
+  readonly childOwners = new Set<Owner>()
   disposed = false
 
   constructor(parent: Owner | null = null) {
     this.id = ++ownerIdCounter
     this.parent = parent
+
+    // Register with the parent so disposal reaches this owner. Without this
+    // the parent link is one-directional: the child knows its parent, the
+    // parent has no idea the child exists, and a nested root survives its
+    // enclosing root's disposal with its effects still subscribed.
+    if (parent && !parent.disposed) {
+      parent.childOwners.add(this)
+    }
   }
 
   dispose(): void {
     if (this.disposed) return
 
     this.disposed = true
+
+    // Dispose nested owners first, so teardown runs deepest-first. Iterate a
+    // snapshot: each child deregisters itself from this set as it disposes.
+    for (const child of Array.from(this.childOwners)) {
+      child.dispose()
+    }
+    this.childOwners.clear()
 
     // Dispose all child computations
     for (const computation of this.sources) {
@@ -165,9 +181,11 @@ class OwnerImpl implements Owner {
     }
     this.cleanups.length = 0
 
-    // Remove from parent
+    // Remove from parent. This previously targeted `parent.sources` through an
+    // `as any` cast and could never match, because owners were never added
+    // there in the first place.
     if (this.parent && !this.parent.disposed) {
-      this.parent.sources.delete(this as any)
+      this.parent.childOwners.delete(this)
     }
   }
 }
@@ -324,12 +342,18 @@ export class ComputationImpl implements Computation {
 export function createRoot<T>(fn: (dispose: () => void) => T): T {
   const owner = new OwnerImpl(reactiveContext.currentOwner)
   const prevOwner = reactiveContext.currentOwner
+  const prevCleanupScope = currentCleanupScope
   reactiveContext.currentOwner = owner
+  // A root is a fresh ownership boundary, so it also closes any enclosing
+  // execution scope: an onCleanup in this body belongs to the new root, not to
+  // the effect that happens to be running when the root is created.
+  currentCleanupScope = null
 
   try {
     return fn(() => owner.dispose())
   } finally {
     reactiveContext.currentOwner = prevOwner
+    currentCleanupScope = prevCleanupScope
   }
 }
 
@@ -338,12 +362,17 @@ export function createRoot<T>(fn: (dispose: () => void) => T): T {
  */
 export function runWithOwner<T>(owner: Owner | null, fn: () => T): T {
   const prevOwner = reactiveContext.currentOwner
+  const prevCleanupScope = currentCleanupScope
   reactiveContext.currentOwner = owner
+  // Re-parenting ownership also re-parents cleanup registration: an onCleanup
+  // in `fn` belongs to `owner`, not to an enclosing execution scope.
+  currentCleanupScope = null
 
   try {
     return fn()
   } finally {
     reactiveContext.currentOwner = prevOwner
+    currentCleanupScope = prevCleanupScope
   }
 }
 

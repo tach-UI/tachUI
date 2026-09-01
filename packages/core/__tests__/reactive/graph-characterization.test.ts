@@ -444,16 +444,10 @@ describe('standard graph characterization: disposal ordering (#269)', () => {
     expect(runs).toBe(1)
   })
 
-  it('DEFECT: does NOT dispose a nested root when its parent root is disposed', () => {
-    // `OwnerImpl` records `this.parent` but never adds itself to
-    // `parent.sources`, and `sources` only ever holds computations. So a
-    // nested `createRoot` is orphaned: the outer dispose walks computations
-    // and owner cleanups but never reaches the inner owner, and
-    // `OwnerImpl.dispose`'s `parent.sources.delete(this)` is dead code.
-    //
-    // Characterized, not endorsed. Consequence: an inner root's cleanups
-    // never run, and `createDetachedRoot` is indistinguishable from a plain
-    // nested `createRoot`. Tracked separately from #269/#270.
+  it('disposes a nested root when its parent root is disposed', () => {
+    // Before the owner-subtree fix this asserted ['outer']: OwnerImpl recorded
+    // `this.parent` but never added itself to any parent-side registry, so the
+    // outer dispose never reached the inner owner.
     const order: string[] = []
 
     createRoot((disposeOuter) => {
@@ -464,7 +458,7 @@ describe('standard graph characterization: disposal ordering (#269)', () => {
       disposeOuter()
     })
 
-    expect(order).toEqual(['outer'])
+    expect(order).toEqual(['inner', 'outer'])
   })
 
   it('continues past a throwing cleanup and reports it', () => {
