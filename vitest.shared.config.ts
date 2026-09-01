@@ -53,6 +53,8 @@ export default defineConfig({
         '**/*.spec.ts',
         'coverage/**',
         '**/*.d.ts',
+        // Compile-time type tests; gated by type-check, no statements to cover.
+        '**/*.test-d.ts',
         '**/*.config.*',
         '**/vitest.*.ts',
       ],
