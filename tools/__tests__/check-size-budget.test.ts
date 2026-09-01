@@ -74,6 +74,39 @@ describe('relativeImportsOf', () => {
     ).toContain('./large.js')
   })
 
+  // A regex scanner cannot tell import-like text inside a string from a real
+  // import. These four cases defeated the previous one in both directions: the
+  // first two invented chunks that do not exist (and, since an unresolvable
+  // specifier throws, would fail the whole gate), the third dropped a real lazy
+  // chunk from the measurement, and the fourth truncated a valid specifier.
+  it('ignores import-like text inside an ordinary string', () => {
+    const source = `const s = "import x from './not-a-module.js'";import{a}from"./real.js"`
+    expect(relativeImportsOf(source)).toEqual(['./real.js'])
+  })
+
+  it('ignores import-like text inside a template literal', () => {
+    expect(relativeImportsOf('const s = `import x from "./tpl-nope.js"`')).toEqual([])
+  })
+
+  it('finds a dynamic import written with backticks', () => {
+    expect(relativeImportsOf('const lazy = import(`./real-lazy.js`)')).toEqual([
+      './real-lazy.js',
+    ])
+  })
+
+  it('keeps an escaped quote inside a specifier', () => {
+    // Names a file with a quote in it, rather than truncating at the backslash.
+    expect(relativeImportsOf('import "./quo\\"ted.js"')).toEqual(['./quo"ted.js'])
+  })
+
+  it('skips a template specifier it cannot resolve statically', () => {
+    expect(relativeImportsOf('const lazy = import(`./${name}.js`)')).toEqual([])
+  })
+
+  it('does not treat a .from() method call as an import', () => {
+    expect(relativeImportsOf('const rows = table.from("./not-an-import.js")')).toEqual([])
+  })
+
   it('reports each specifier once even when imported repeatedly', () => {
     expect(
       relativeImportsOf('import{a}from"./c.js";import{b}from"./c.js";')

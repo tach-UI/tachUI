@@ -69,98 +69,130 @@ export function collectBudgetedPackages(only) {
 }
 
 /**
- * Resolve the specifiers a module imports, keeping only relative ones. External
- * dependencies are the consumer's cost, not this package's.
+ * The relative specifiers a module imports.
  *
- * Deliberately not anchored to line starts. Minified output puts many statements
- * on one physical line, and an anchored scan would capture only the first,
- * silently dropping the remaining chunks from the measurement and letting an
- * over-budget bundle report a pass.
+ * A single-pass tokenizer rather than regexes over the whole file. A regex
+ * cannot tell import-like text inside an ordinary string from a real import, nor
+ * `import("./a")` from `foo.from("./a")`, and blanking every string literal
+ * would destroy the specifiers this exists to find. Tracking the preceding word
+ * settles all three.
+ *
+ * Bare specifiers are ignored: an external dependency is the consumer's cost,
+ * not this package's.
  */
 export function relativeImportsOf(source) {
   const specifiers = []
-  const code = stripCommentsAndStrings(source)
-  const patterns = [
-    // import ... from '.', export ... from '.'
-    /\b(?:import|export)\b[^'"();]*?\bfrom\s*['"]([^'"]+)['"]/g,
-    // bare side-effect import '.'
-    /\bimport\s*['"]([^'"]+)['"]/g,
-    // dynamic import('.'), with or without an import-attributes argument
-    /\bimport\(\s*['"]([^'"]+)['"]\s*[,)]/g,
-  ]
+  const length = source.length
+  let i = 0
+  let lastWord = ''
 
-  for (const pattern of patterns) {
-    for (const match of code.matchAll(pattern)) {
-      if (match[1].startsWith('.') && !specifiers.includes(match[1])) {
-        specifiers.push(match[1])
-      }
+  const isIdentifierChar = ch => /[A-Za-z0-9_$]/.test(ch)
+
+  const record = value => {
+    if (value !== null && value.startsWith('.') && !specifiers.includes(value)) {
+      specifiers.push(value)
     }
+  }
+
+  while (i < length) {
+    const two = source.slice(i, i + 2)
+
+    if (two === '//') {
+      const stop = source.indexOf('\n', i)
+      i = stop === -1 ? length : stop
+      continue
+    }
+
+    if (two === '/*') {
+      const stop = source.indexOf('*/', i + 2)
+      i = stop === -1 ? length : stop + 2
+      continue
+    }
+
+    const ch = source[i]
+
+    if (ch === '"' || ch === "'" || ch === '`') {
+      const literal = readStringLiteral(source, i)
+      if (lastWord === 'from' || lastWord === 'import') record(literal.value)
+      i = literal.end
+      lastWord = ''
+      continue
+    }
+
+    if (isIdentifierChar(ch)) {
+      let j = i
+      while (j < length && isIdentifierChar(source[j])) j += 1
+      lastWord = source.slice(i, j)
+      i = j
+      continue
+    }
+
+    // Whitespace preserves the word context; `(` preserves it only for
+    // `import(`, so dynamic imports resolve while `something.from(...)` does not.
+    if (/\s/.test(ch)) {
+      i += 1
+      continue
+    }
+
+    if (ch === '(') {
+      if (lastWord !== 'import') lastWord = ''
+      i += 1
+      continue
+    }
+
+    lastWord = ''
+    i += 1
   }
 
   return specifiers
 }
 
 /**
- * Blank out comments and string bodies so the scanner cannot be fooled by
- * import-like text inside them.
+ * Read the string or template literal starting at `start`.
  *
- * Bundlers keep `/*! ... *\/` legal banners, and those routinely quote code. A
- * banner mentioning a specifier used to be scanned as a real import, and since an
- * unresolvable specifier now throws, an inert comment could fail the whole gate.
- *
- * Replaces content with spaces rather than deleting it, so every offset in the
- * returned string still lines up with the original.
+ * Returns the decoded value and the index just past the closing quote. `value`
+ * is null for a template carrying an interpolation: its specifier is not
+ * statically known, so it could not be resolved on disk anyway.
  */
-function stripCommentsAndStrings(source) {
-  const out = source.split('')
-  const blank = (start, end) => {
-    for (let i = start; i < end && i < out.length; i += 1) {
-      if (out[i] !== '\n') out[i] = ' '
-    }
-  }
+function readStringLiteral(source, start) {
+  const quote = source[start]
+  let i = start + 1
+  let value = ''
+  let interpolated = false
 
-  let i = 0
   while (i < source.length) {
-    const two = source.slice(i, i + 2)
-
-    if (two === '//') {
-      const end = source.indexOf('\n', i)
-      blank(i, end === -1 ? source.length : end)
-      i = end === -1 ? source.length : end
-      continue
-    }
-
-    if (two === '/*') {
-      const end = source.indexOf('*/', i + 2)
-      const stop = end === -1 ? source.length : end + 2
-      blank(i, stop)
-      i = stop
-      continue
-    }
-
     const ch = source[i]
-    if (ch === '"' || ch === "'" || ch === '`') {
-      // Keep the quotes themselves: the import patterns match on them, and the
-      // specifier of a real import is exactly what we are blanking out here, so
-      // blanking only the body would corrupt nothing the scanner needs. Instead
-      // skip the literal whole and leave it intact for the patterns to read.
-      let j = i + 1
-      while (j < source.length) {
-        if (source[j] === '\\') {
-          j += 2
-          continue
-        }
-        if (source[j] === ch) break
-        j += 1
-      }
-      i = j + 1
+
+    if (ch === '\\') {
+      // Keep the escaped character: `import "./quo\"ted.js"` names a file with a
+      // quote in it, not a specifier truncated at the backslash.
+      value += source[i + 1] ?? ''
+      i += 2
       continue
     }
 
+    if (quote === '`' && ch === '$' && source[i + 1] === '{') {
+      interpolated = true
+      let depth = 1
+      i += 2
+      while (i < source.length && depth > 0) {
+        if (source[i] === '{') depth += 1
+        else if (source[i] === '}') depth -= 1
+        i += 1
+      }
+      continue
+    }
+
+    if (ch === quote) {
+      i += 1
+      break
+    }
+
+    value += ch
     i += 1
   }
 
-  return out.join('')
+  return { value: interpolated ? null : value, end: i }
 }
 
 export function resolveChunk(fromFile, specifier) {
