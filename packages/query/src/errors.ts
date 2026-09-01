@@ -20,47 +20,35 @@ export class QueryError extends Error {
 /**
  * Whether development-time diagnostics should run.
  *
- * A module constant rather than a function call, so a bundler can erase the
- * branches that depend on it. Every bundler replaces `process.env.NODE_ENV`
- * textually, which folds this to a literal `false` in a production build and
- * lets `if (DEV)` bodies drop out entirely. Wrapping the same expression in a
- * function with a `try`/`catch` does not survive that: esbuild folds the
- * comparison but will not inline across the `catch`, so the guarded code ships.
+ * This is a runtime probe and nothing more. It is **not** erased from a
+ * production bundle, and neither is anything it guards: a bundler replaces
+ * `process.env.NODE_ENV` textually, but it will not propagate the result through
+ * a function call or a module-level constant into the branch. Measured against
+ * esbuild with `--minify --define:process.env.NODE_ENV="production"`, a call
+ * here, a `const` holding the same expression, and an IIFE all leave the guarded
+ * body in the output; only the comparison written inline at the guard site is
+ * eliminated. So if a later phase needs dev-only code genuinely stripped from
+ * production, it needs an inline expression or a dedicated build-time define,
+ * with a bundle assertion to prove it - not this function.
  *
- * What it does NOT do is guarantee production semantics from an unhelpful
- * environment. A `process` with no `NODE_ENV` - a bare `node server.js`, or a
- * browser bundle carrying a `process.env = {}` shim - reads as development, on
- * the grounds that an unconfigured environment is far more often a developer's
- * than an end user's. It reads as production only where there is no `process`
- * binding at all, or where reading it throws.
+ * What it reports: a `process` with no `NODE_ENV` - a bare `node server.js`, or
+ * a browser bundle carrying a `process.env = {}` shim - reads as development, on
+ * the grounds that an unconfigured environment belongs to a developer far more
+ * often than to an end user. It reads as production only where there is no
+ * `process` binding at all, or where reading it throws.
  *
  * `__DEV__` is not used here. It is not a build-time define anywhere in this
  * repo; its only assignment is an import side effect of `@tachui/core`'s
- * `reactive/cleanup.ts:246-249`. This package declares `sideEffects: false`, so
- * relying on another module having been evaluated is exactly the assumption a
- * bundler may break. It would not even compile here: `tools/globals.d.ts` is not
- * in this package's type-check program, so `__DEV__` raises TS2304.
- */
-export const DEV: boolean = (() => {
-  try {
-    return typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production'
-  } catch {
-    // A hardened runtime can expose `process` and refuse to hand over `env`.
-    return false
-  }
-})()
-
-/**
- * Function form of {@link DEV}, for callers that need to observe the environment
- * after module evaluation - notably tests, which stub `process` per case.
- *
- * Prefer `DEV` in library code: a call here is opaque to a bundler and will keep
- * whatever it guards in the output.
+ * `reactive/cleanup.ts:246-249`, and this package declares `sideEffects: false`,
+ * so relying on another module having been evaluated is exactly the assumption a
+ * bundler may break. It would not compile here either: `tools/globals.d.ts` is
+ * not in this package's type-check program, so `__DEV__` raises TS2304.
  */
 export function isDevelopment(): boolean {
   try {
     return typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production'
   } catch {
+    // A hardened runtime can expose `process` and refuse to hand over `env`.
     return false
   }
 }

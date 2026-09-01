@@ -79,17 +79,18 @@ export function collectBudgetedPackages(only) {
  */
 export function relativeImportsOf(source) {
   const specifiers = []
+  const code = stripCommentsAndStrings(source)
   const patterns = [
     // import ... from '.', export ... from '.'
     /\b(?:import|export)\b[^'"();]*?\bfrom\s*['"]([^'"]+)['"]/g,
     // bare side-effect import '.'
     /\bimport\s*['"]([^'"]+)['"]/g,
-    // dynamic import('.')
-    /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g,
+    // dynamic import('.'), with or without an import-attributes argument
+    /\bimport\(\s*['"]([^'"]+)['"]\s*[,)]/g,
   ]
 
   for (const pattern of patterns) {
-    for (const match of source.matchAll(pattern)) {
+    for (const match of code.matchAll(pattern)) {
       if (match[1].startsWith('.') && !specifiers.includes(match[1])) {
         specifiers.push(match[1])
       }
@@ -97,6 +98,69 @@ export function relativeImportsOf(source) {
   }
 
   return specifiers
+}
+
+/**
+ * Blank out comments and string bodies so the scanner cannot be fooled by
+ * import-like text inside them.
+ *
+ * Bundlers keep `/*! ... *\/` legal banners, and those routinely quote code. A
+ * banner mentioning a specifier used to be scanned as a real import, and since an
+ * unresolvable specifier now throws, an inert comment could fail the whole gate.
+ *
+ * Replaces content with spaces rather than deleting it, so every offset in the
+ * returned string still lines up with the original.
+ */
+function stripCommentsAndStrings(source) {
+  const out = source.split('')
+  const blank = (start, end) => {
+    for (let i = start; i < end && i < out.length; i += 1) {
+      if (out[i] !== '\n') out[i] = ' '
+    }
+  }
+
+  let i = 0
+  while (i < source.length) {
+    const two = source.slice(i, i + 2)
+
+    if (two === '//') {
+      const end = source.indexOf('\n', i)
+      blank(i, end === -1 ? source.length : end)
+      i = end === -1 ? source.length : end
+      continue
+    }
+
+    if (two === '/*') {
+      const end = source.indexOf('*/', i + 2)
+      const stop = end === -1 ? source.length : end + 2
+      blank(i, stop)
+      i = stop
+      continue
+    }
+
+    const ch = source[i]
+    if (ch === '"' || ch === "'" || ch === '`') {
+      // Keep the quotes themselves: the import patterns match on them, and the
+      // specifier of a real import is exactly what we are blanking out here, so
+      // blanking only the body would corrupt nothing the scanner needs. Instead
+      // skip the literal whole and leave it intact for the patterns to read.
+      let j = i + 1
+      while (j < source.length) {
+        if (source[j] === '\\') {
+          j += 2
+          continue
+        }
+        if (source[j] === ch) break
+        j += 1
+      }
+      i = j + 1
+      continue
+    }
+
+    i += 1
+  }
+
+  return out.join('')
 }
 
 export function resolveChunk(fromFile, specifier) {
