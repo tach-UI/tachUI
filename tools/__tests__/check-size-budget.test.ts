@@ -107,6 +107,50 @@ describe('relativeImportsOf', () => {
     expect(relativeImportsOf('const rows = table.from("./not-an-import.js")')).toEqual([])
   })
 
+  // A regex literal carrying a quote is routine in minified output - any escaping
+  // or replace helper has one. Without regex tokenization the quote opens a
+  // string that runs to the next quote in the file, so every specifier after it
+  // lands on the wrong side of a quote pair and the whole tail of the chunk
+  // graph vanishes from the measurement: the exact under-reporting this gate
+  // must never do.
+  it('finds imports after a regex containing a double quote', () => {
+    const source =
+      'const e=s=>s.replace(/"/g,"&quot;");import{a}from"./chunk-A.js";import{b}from"./chunk-B.js";'
+
+    expect(relativeImportsOf(source)).toEqual(['./chunk-A.js', './chunk-B.js'])
+  })
+
+  it('finds imports after a regex whose character class holds a quote', () => {
+    expect(relativeImportsOf(`const q=/[']/;import{a}from"./chunk-A.js";`)).toEqual([
+      './chunk-A.js',
+    ])
+    expect(relativeImportsOf('const t=/[`]/;import{a}from"./chunk-B.js";')).toEqual([
+      './chunk-B.js',
+    ])
+  })
+
+  it('finds imports after a regex whose class holds an unescaped slash', () => {
+    // `/` inside `[...]` does not close the literal, so a naive scan would stop
+    // early and read the remainder as code.
+    expect(relativeImportsOf('const r=/[/"]/g;import{b}from"./chunk-B.js";')).toEqual([
+      './chunk-B.js',
+    ])
+  })
+
+  it('finds imports after a regex following a keyword', () => {
+    expect(
+      relativeImportsOf('function f(s){return /"/.test(s)}\nimport{b}from"./chunk-B.js";')
+    ).toEqual(['./chunk-B.js'])
+  })
+
+  // The mirror risk: reading a division as a regex would swallow everything up
+  // to the next `/`, which can just as easily be a real import.
+  it('does not mistake division for a regex', () => {
+    expect(relativeImportsOf('const x=f(a)/2/3;import{b}from"./b.js";')).toEqual(['./b.js'])
+    expect(relativeImportsOf('const y=a[0]/2/3;import{c}from"./c.js";')).toEqual(['./c.js'])
+    expect(relativeImportsOf('const z=p/q/r;import{d}from"./d.js";')).toEqual(['./d.js'])
+  })
+
   it('reports each specifier once even when imported repeatedly', () => {
     expect(
       relativeImportsOf('import{a}from"./c.js";import{b}from"./c.js";')

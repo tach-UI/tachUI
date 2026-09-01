@@ -69,6 +69,28 @@ export function collectBudgetedPackages(only) {
 }
 
 /**
+ * Keywords after which a `/` can only open a regex literal, never divide.
+ * Everything else that reads as a word - an identifier, a number, `true` - is a
+ * value, so a `/` following it is division.
+ */
+const NON_VALUE_KEYWORDS = new Set([
+  'await',
+  'case',
+  'delete',
+  'do',
+  'else',
+  'in',
+  'instanceof',
+  'new',
+  'of',
+  'return',
+  'throw',
+  'typeof',
+  'void',
+  'yield',
+])
+
+/**
  * The relative specifiers a module imports.
  *
  * A single-pass tokenizer rather than regexes over the whole file. A regex
@@ -76,6 +98,14 @@ export function collectBudgetedPackages(only) {
  * `import("./a")` from `foo.from("./a")`, and blanking every string literal
  * would destroy the specifiers this exists to find. Tracking the preceding word
  * settles all three.
+ *
+ * Regex literals are tokenized too, because a quote inside one - `/"/g` in a
+ * minified escaping helper is routine - would otherwise open a string that runs
+ * to the next quote in the file, putting every later specifier on the wrong side
+ * of a quote pair and dropping the whole tail of the chunk graph from the
+ * measurement. Whether a `/` opens a regex is decided by the preceding token, the
+ * standard lexer heuristic: after something that produces a value it is division,
+ * otherwise it is a regex.
  *
  * Bare specifiers are ignored: an external dependency is the consumer's cost,
  * not this package's.
@@ -85,6 +115,8 @@ export function relativeImportsOf(source) {
   const length = source.length
   let i = 0
   let lastWord = ''
+  // A `/` at the very start of a module can only be a regex.
+  let expectsValue = true
 
   const isIdentifierChar = ch => /[A-Za-z0-9_$]/.test(ch)
 
@@ -111,11 +143,24 @@ export function relativeImportsOf(source) {
 
     const ch = source[i]
 
+    if (ch === '/' && expectsValue) {
+      const end = readRegexLiteral(source, i)
+      // `null` means nothing closed it on this line, so the heuristic misread a
+      // division; fall through and treat the `/` as a plain operator.
+      if (end !== null) {
+        i = end
+        lastWord = ''
+        expectsValue = false
+        continue
+      }
+    }
+
     if (ch === '"' || ch === "'" || ch === '`') {
       const literal = readStringLiteral(source, i)
       if (lastWord === 'from' || lastWord === 'import') record(literal.value)
       i = literal.end
       lastWord = ''
+      expectsValue = false
       continue
     }
 
@@ -124,6 +169,7 @@ export function relativeImportsOf(source) {
       while (j < length && isIdentifierChar(source[j])) j += 1
       lastWord = source.slice(i, j)
       i = j
+      expectsValue = NON_VALUE_KEYWORDS.has(lastWord)
       continue
     }
 
@@ -137,10 +183,14 @@ export function relativeImportsOf(source) {
     if (ch === '(') {
       if (lastWord !== 'import') lastWord = ''
       i += 1
+      expectsValue = true
       continue
     }
 
     lastWord = ''
+    // `)` and `]` close a value; every other punctuator leaves an expression
+    // still expected, so a `/` after one opens a regex.
+    expectsValue = ch !== ')' && ch !== ']'
     i += 1
   }
 
@@ -193,6 +243,44 @@ function readStringLiteral(source, start) {
   }
 
   return { value: interpolated ? null : value, end: i }
+}
+
+/**
+ * Read the regex literal starting at `start`, returning the index just past its
+ * flags, or null if it turns out not to be one.
+ *
+ * A `/` inside a `[...]` class does not close the literal, and a regex cannot
+ * span a line - an unterminated one means the heuristic misread a division, so
+ * the caller backs off rather than swallowing the rest of the file.
+ */
+function readRegexLiteral(source, start) {
+  let i = start + 1
+  let inClass = false
+
+  while (i < source.length) {
+    const ch = source[i]
+
+    if (ch === '\\') {
+      i += 2
+      continue
+    }
+
+    if (ch === '\n') return null
+
+    if (inClass) {
+      if (ch === ']') inClass = false
+    } else if (ch === '[') {
+      inClass = true
+    } else if (ch === '/') {
+      i += 1
+      while (i < source.length && /[a-z]/i.test(source[i])) i += 1
+      return i
+    }
+
+    i += 1
+  }
+
+  return null
 }
 
 export function resolveChunk(fromFile, specifier) {
