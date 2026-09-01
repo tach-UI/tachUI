@@ -78,6 +78,21 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   readonly type = 'overlay'
   readonly priority = 10 // Apply late so positioning is relative to final layout
 
+  /**
+   * Teardown for the overlay this modifier last mounted on a given element.
+   *
+   * `renderSingle` applies modifiers on every render of a node, not only when
+   * the element is created, so a base component that re-renders drives
+   * `apply()` again on the same element. Without this, each pass would append
+   * another container and leave the previous one — and its content — in the
+   * DOM, because the pipeline's cleanup only runs at unmount.
+   *
+   * Keyed per element rather than held as a single field so that one modifier
+   * instance applied to several elements tears each down independently, and
+   * weakly so a discarded element does not pin its overlay's closures.
+   */
+  private readonly mounted = new WeakMap<Element, () => void>()
+
   apply(
     node: DOMNode,
     context: ModifierContext
@@ -90,9 +105,27 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
 
     const { content } = this.properties
 
+    // Re-applied to an element this modifier already decorated: drop the stale
+    // overlay before mounting the replacement.
+    this.mounted.get(element)?.()
+
+    const cleanup = this.applyOverlay(element, content)
+
+    let torndown = false
+    const teardown = () => {
+      // The pipeline may run this after a re-apply already has; the disposers
+      // below are not all safe to invoke twice.
+      if (torndown) return
+      torndown = true
+      for (const dispose of cleanup) dispose()
+      this.mounted.delete(element)
+    }
+
+    this.mounted.set(element, teardown)
+
     // The node passes through untouched — overlay never rewrites the tree, it
     // only appends a container and hands back the teardown for it.
-    return { node, cleanup: this.applyOverlay(element, content) }
+    return { node, cleanup: [teardown] }
   }
 
   private applyOverlay(
