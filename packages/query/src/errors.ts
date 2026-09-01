@@ -38,11 +38,12 @@ export class QueryError extends Error {
  * `process` binding at all, or where reading it throws.
  *
  * `__DEV__` is not used here. It is not a build-time define anywhere in this
- * repo; its only assignment is an import side effect of `@tachui/core`'s
- * `reactive/cleanup.ts:246-249`, and this package declares `sideEffects: false`,
- * so relying on another module having been evaluated is exactly the assumption a
- * bundler may break. It would not compile here either: `tools/globals.d.ts` is
- * not in this package's type-check program, so `__DEV__` raises TS2304.
+ * repo; its only assignment is the module-level `globalThis.__DEV__` fallback at
+ * the foot of `@tachui/core`'s `reactive/cleanup.ts`, so it arrives only as an
+ * import side effect, and this package declares `sideEffects: false` - relying on
+ * another module having been evaluated is exactly the assumption a bundler may
+ * break. It would not compile here either: `tools/globals.d.ts` is not in this
+ * package's type-check program, so `__DEV__` raises TS2304.
  */
 export function isDevelopment(): boolean {
   try {

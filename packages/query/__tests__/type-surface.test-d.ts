@@ -4,15 +4,16 @@
  * This PR ships a type surface and no runtime, so the things most worth locking
  * down are invisible to vitest: `Object.keys` on a module namespace never sees a
  * type-only binding, so the barrel's `export type` block has no runtime gate at
- * all. These assertions are checked by
- * `bun run --filter @tachui/query type-check`, which includes this file; a
- * regression is a type error, not a failed run.
+ * all. These assertions are checked by `bun run test:types`; a regression is a
+ * type error, not a failed run.
  *
  * Everything is imported through the package's export map rather than a relative
  * path, so these assertions run against the built declarations a consumer
  * actually receives - declaration emit can widen, drop, or reorder a type while
  * the source still compiles. Dropping a name from the barrel's re-export block
- * fails here even when the declaration survives in `types.ts`.
+ * fails here even when the declaration survives in `types.ts`. That is also why
+ * the package's own `type-check` excludes this file: it runs before the build,
+ * so it could only ever read a stale `dist`.
  */
 
 import type { Signal } from '@tachui/core'
