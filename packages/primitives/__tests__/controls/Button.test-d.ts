@@ -94,9 +94,9 @@ describe('ButtonStyles call forms', () => {
     // yields props `{ css: 'x', variant: 'filled' }` — `disabled` is gone,
     // silently, with no type error.
     //
-    // Pinned as current behaviour, NOT endorsed. Fixing it means giving these
-    // helpers the same overload treatment `Button` already has, at which point
-    // this assertion should flip to `@ts-expect-error`.
+    // Pinned as current behaviour, NOT endorsed. Tracked as #307: fixing it
+    // means giving these helpers the same overload treatment `Button` already
+    // has, at which point this assertion flips to `@ts-expect-error`.
     assertType(ButtonStyles.Filled('a', { css: 'x' }, { disabled: true }))
     assertType(ButtonStyles.Destructive('a', { css: 'x' }, { disabled: true }))
   })
