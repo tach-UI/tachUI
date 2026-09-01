@@ -5,7 +5,8 @@
  */
 
 import process from 'node:process'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import {
   generateModifierArtifacts,
@@ -24,6 +25,11 @@ interface CliOptions {
 }
 
 const DEFAULT_PACKAGES = ['core', 'forms', 'navigation', 'grid', 'data']
+
+// Anchored to this file, not the caller's cwd. The npm script lives in
+// packages/core, so a cwd-relative `packages/<pkg>` resolved to
+// packages/core/packages/<pkg> and grew a duplicate tree there.
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 
 export async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2))
@@ -97,11 +103,11 @@ async function emitForPackages(
 
   for (const pkg of packages) {
     const declarationFile = resolve(
-      process.cwd(),
+      REPO_ROOT,
       `packages/${pkg}/src/types/generated-modifiers.d.ts`,
     )
     const snapshotFile = resolve(
-      process.cwd(),
+      REPO_ROOT,
       `packages/${pkg}/src/types/modifier-metadata.snapshot.json`,
     )
 

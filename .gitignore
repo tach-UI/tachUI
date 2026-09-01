@@ -7,10 +7,15 @@ dist/
 # build/
 *.tsbuildinfo
 # Generated TypeScript declarations (should only be in dist/)
-src/**/*.d.ts
-src/**/*.d.ts.map
+# Leading `**/` matters: a pattern containing a slash anchors to this file's
+# directory, so `src/**` only ever matched a repo-root src/ and never the
+# per-package ones these are meant to cover.
+**/src/**/*.d.ts
+**/src/**/*.d.ts.map
 # Keep hand-written global type definitions
-!src/**/globals.d.ts
+!**/src/**/globals.d.ts
+# Committed on purpose: type-check reads it from a fresh clone
+!packages/core/src/types/generated-modifiers.d.ts
 # Modifier type generation artifacts
 packages/core/src/types/modifier-metadata.snapshot.json
 
