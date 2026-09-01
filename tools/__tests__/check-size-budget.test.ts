@@ -81,6 +81,52 @@ describe('chunkFilesFor', () => {
     expect(chunkFilesFor(manifest, 'index.js')).toEqual(['index.js', 'shared.js'])
   })
 
+  it('counts extracted CSS, which downloads with the chunk that owns it', () => {
+    const manifest = {
+      'src/index.ts': { file: 'index.js', isEntry: true, css: ['style.css'] },
+    }
+
+    expect(chunkFilesFor(manifest, 'index.js')).toEqual(['index.js', 'style.css'])
+  })
+
+  it('counts CSS owned by a chunk further down the graph', () => {
+    const manifest = {
+      'src/index.ts': { file: 'index.js', isEntry: true, imports: ['_c.js'] },
+      '_c.js': { file: 'c.js', css: ['nested.css'] },
+    }
+
+    expect(chunkFilesFor(manifest, 'index.js')).toEqual(['index.js', 'c.js', 'nested.css'])
+  })
+
+  it('counts a stylesheet shared by several chunks once', () => {
+    // One stylesheet is commonly referenced by every chunk that uses it; the
+    // consumer downloads it once and should be charged for it once.
+    const manifest = {
+      'src/index.ts': { file: 'index.js', isEntry: true, imports: ['_a.js', '_b.js'] },
+      '_a.js': { file: 'a.js', css: ['shared.css'] },
+      '_b.js': { file: 'b.js', css: ['shared.css'] },
+    }
+
+    expect(chunkFilesFor(manifest, 'index.js')).toEqual([
+      'index.js',
+      'a.js',
+      'shared.css',
+      'b.js',
+    ])
+  })
+
+  it('leaves assets out, deliberately', () => {
+    // Assets are referenced by URL and fetched on demand rather than pulled in by
+    // loading the chunk, and they are already-compressed binaries whose gzipped
+    // size would inflate the number without making it truer. Asserted so the
+    // exclusion stays a decision rather than drifting into an oversight.
+    const manifest = {
+      'src/index.ts': { file: 'index.js', isEntry: true, assets: ['font.woff2'] },
+    }
+
+    expect(chunkFilesFor(manifest, 'index.js')).toEqual(['index.js'])
+  })
+
   it('throws when the manifest references a key it does not define', () => {
     // Skipping it would quietly shrink the measurement.
     const manifest = {
@@ -191,6 +237,21 @@ describe('measure', () => {
     // The two identical chunks compress to ~nothing together and to their real
     // size apart, so the honest measurement is well above the concatenated one.
     expect(result.gzipBytes).toBeGreaterThan(concatenated * 1.5)
+  })
+
+  it('adds extracted CSS bytes to the total', () => {
+    const css = `.a{color:red}\n${'/* pad */\n'.repeat(400)}`
+    writeManifest({
+      'src/index.ts': { file: 'index.js', isEntry: true, css: ['style.css'] },
+    })
+    writeFileSync(path.join(dir, 'dist', 'index.js'), 'export const a = 1\n')
+    writeFileSync(path.join(dir, 'dist', 'style.css'), css)
+
+    const withCss = measure(path.join(dir, 'dist', 'index.js'), dir)
+    const jsOnly = gzipSync(Buffer.from('export const a = 1\n', 'utf8')).byteLength
+
+    expect(withCss.files).toBe(2)
+    expect(withCss.gzipBytes).toBeGreaterThan(jsOnly)
   })
 
   it('throws rather than silently shrinking when a listed chunk is missing', () => {

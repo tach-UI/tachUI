@@ -113,6 +113,20 @@ export function findManifest(entryFile, packageDir) {
  * chunk can be reached by more than one path, so this is a breadth-first walk over
  * keys with a visited set. Static and dynamic imports both count: a dynamically
  * imported chunk is still shipped and still downloaded when the branch is taken.
+ *
+ * `record.css` counts too. Extracted stylesheets are a blocking dependency of the
+ * chunk that owns them - the browser downloads them to render at all - so leaving
+ * them out lets a CSS-bearing package pass on an understated total.
+ *
+ * `record.assets` deliberately does not count. Assets are referenced by URL and
+ * fetched on demand rather than pulled in by loading the chunk, and they are
+ * already-compressed binaries (fonts, images) whose gzipped size is not a
+ * meaningful contribution to a gzip budget. Counting them would make the number
+ * larger without making it more truthful. If that trade ever needs revisiting it
+ * should be a deliberate change with its own budget, not a silent addition here.
+ *
+ * Files are collected into a set: one stylesheet is commonly shared by several
+ * chunks, and a shared file must be paid for once, not once per referrer.
  */
 export function chunkFilesFor(manifest, entryFile) {
   const entryKey = Object.keys(manifest).find(key => manifest[key].file === entryFile)
@@ -127,7 +141,7 @@ export function chunkFilesFor(manifest, entryFile) {
 
   const seen = new Set()
   const queue = [entryKey]
-  const files = []
+  const files = new Set()
 
   while (queue.length > 0) {
     const key = queue.shift()
@@ -144,12 +158,14 @@ export function chunkFilesFor(manifest, entryFile) {
       )
     }
 
-    files.push(record.file)
+    files.add(record.file)
+    for (const stylesheet of record.css ?? []) files.add(stylesheet)
+
     for (const next of record.imports ?? []) queue.push(next)
     for (const next of record.dynamicImports ?? []) queue.push(next)
   }
 
-  return files
+  return [...files]
 }
 
 /**
