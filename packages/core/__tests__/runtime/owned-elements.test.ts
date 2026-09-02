@@ -14,7 +14,7 @@
  * time `updateChildren` changed.
  */
 
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createSignal, flushSync } from '../../src/reactive'
 import { h, renderComponent } from '../../src/runtime/renderer'
 import type { DOMNode } from '../../src/runtime/types'
@@ -145,5 +145,68 @@ describe('DOMNode.owned', () => {
     expect(host.querySelector('em')?.textContent).toBe('two')
     expect(host.querySelector('path')?.getAttribute('d')).toBe('A')
     expect(host.querySelectorAll('svg')).toHaveLength(1)
+  })
+
+  /**
+   * The swap discards a real element. Anything registered against it — a
+   * third-party widget's listeners and timers — has to be torn down at that
+   * point, and the replacement's own teardown has to survive the swap.
+   */
+  describe('when the owner supplies a replacement element', () => {
+    function mountDisposable(build: () => Element, key: () => string) {
+      const host = document.createElement('div')
+      const component: any = {
+        type: 'component',
+        id: 'disposable',
+        props: {},
+        render: () => {
+          const wrapper = h('span', null) as any
+          const node = ownedNode(build()) as any
+          node.dispose = disposals.register(node.element)
+          wrapper.children = [node]
+          return wrapper
+        },
+      }
+      renderComponent(component, host)
+      return host
+    }
+
+    const disposals = {
+      log: [] as string[],
+      register(element: Element) {
+        const marker = element.getAttribute('data-marker') ?? '?'
+        return () => disposals.log.push(marker)
+      },
+    }
+
+    beforeEach(() => {
+      disposals.log = []
+    })
+
+    it('disposes the replaced element and not the one that replaced it', () => {
+      const [gen, setGen] = createSignal('A')
+      const host = mountDisposable(() => {
+        const svg = buildSvg(gen())
+        svg.setAttribute('data-marker', gen())
+        return svg
+      }, () => gen())
+
+      expect(disposals.log).toEqual([])
+
+      setGen('B')
+      flushSync()
+
+      // The discarded element tore down; the mounted one did not.
+      expect(disposals.log).toEqual(['A'])
+      expect(host.querySelector('path')?.getAttribute('d')).toBe('B')
+
+      setGen('C')
+      flushSync()
+
+      // B's own dispose survived the swap that mounted it, rather than being
+      // overwritten by A's.
+      expect(disposals.log).toEqual(['A', 'B'])
+      expect(host.querySelector('path')?.getAttribute('d')).toBe('C')
+    })
   })
 })

@@ -419,6 +419,14 @@ export class DOMRenderer {
 
   private updateExistingNode(node: DOMNode): void {
     if (node.type === 'element' && node.element instanceof Element) {
+      // An owned element belongs to whoever supplied it, the same as in
+      // `createOrUpdateElement`. This path is reached when a component hands
+      // back the identical node objects across renders, which skips straight
+      // to updating rather than re-creating (see DOMNode.owned).
+      if (node.owned) {
+        return
+      }
+
       // Get the delegation container for this element
       const container = this.elementToContainer.get(node.element)
       this.updateProps(node.element, node, container)
@@ -874,6 +882,26 @@ export class DOMRenderer {
   }
 
   /**
+   * Run and discard the cleanups registered against an element.
+   *
+   * Called wherever an element stops being tracked, whether it is being
+   * unmounted or swapped out for a replacement.
+   */
+  private runCleanups(element: Element | Text | Comment): void {
+    const cleanupFunctions = this.cleanupMap.get(element)
+    if (!cleanupFunctions) return
+
+    cleanupFunctions.forEach(cleanup => {
+      try {
+        cleanup()
+      } catch (error) {
+        console.error('Cleanup error:', error)
+      }
+    })
+    this.cleanupMap.delete(element)
+  }
+
+  /**
    * Update an existing DOM node
    */
   updateNode(node: DOMNode, newProps?: Record<string, any>): void {
@@ -917,17 +945,7 @@ export class DOMRenderer {
     }
 
     // Run cleanup functions
-    const cleanupFunctions = this.cleanupMap.get(element)
-    if (cleanupFunctions) {
-      cleanupFunctions.forEach(cleanup => {
-        try {
-          cleanup()
-        } catch (error) {
-          console.error('Cleanup error:', error)
-        }
-      })
-      this.cleanupMap.delete(element)
-    }
+    this.runCleanups(element)
 
     // Remove from DOM
     if (removeFromDom && element.parentNode) {
@@ -1038,12 +1056,23 @@ export class DOMRenderer {
     // An owned node brings its own element. Adopting over it would discard
     // whatever the owner built and freeze the mounted DOM at the first render,
     // so the owner keeps its element and the mapping follows it.
+    let swapped = false
+
     if (newNode.owned && newNode.element) {
       // A different element means the owner rebuilt its content, so the one
       // already mounted is swapped out for it. This is the only place the two
       // are paired, since each render supplies a fresh node object.
-      if (newNode.element !== element && element.parentNode) {
-        element.parentNode.replaceChild(newNode.element, element)
+      if (newNode.element !== element) {
+        // Nothing holds a reference to the replaced element afterwards, so its
+        // cleanups have to run here or they never run at all — for an owned
+        // node that is the previous widget's listeners and timers.
+        this.runCleanups(element)
+
+        if (element.parentNode) {
+          element.parentNode.replaceChild(newNode.element, element)
+        }
+
+        swapped = true
       }
       this.nodeMap.set(newNode, newNode.element)
     } else {
@@ -1051,7 +1080,11 @@ export class DOMRenderer {
       newNode.element = element
     }
 
-    if (oldNode.dispose) {
+    // Each render supplies a fresh node object, so the dispose registered
+    // against the still-mounted element carries across. After a swap it belongs
+    // to the discarded element and has already run; `newNode` keeps its own,
+    // which `renderSingle` registers against the newly mounted element.
+    if (!swapped && oldNode.dispose) {
       newNode.dispose = oldNode.dispose
     }
 
