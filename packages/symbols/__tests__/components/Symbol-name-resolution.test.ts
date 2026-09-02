@@ -29,7 +29,17 @@ import {
   isSFSymbolSupported,
 } from '../../src/compatibility/sf-symbols-mapping.js'
 
-/** Render and report the names the icon set was asked for. */
+const tick = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+/**
+ * Render and report the names the icon set was asked for.
+ *
+ * Waits for the calls to stop arriving rather than for a fixed window. Name
+ * resolution has to ask Lucide what it holds before it can decide whether to
+ * map a name, so the icon-set call now lands on the far side of a dynamic
+ * import — a fixed 5ms race was enough until it wasn't, and failed only under
+ * full-suite contention.
+ */
 async function namesReachingIconSet(
   name: string,
   props: Record<string, unknown> = {}
@@ -38,7 +48,20 @@ async function namesReachingIconSet(
   spy.mockClear()
   const host = document.createElement('div')
   renderComponent(Symbol(name, props) as any, host)
-  await new Promise(resolve => setTimeout(resolve, 5))
+
+  const deadline = Date.now() + 500
+  let settled = 0
+  let quietFor = 0
+  while (Date.now() < deadline && quietFor < 25) {
+    await tick(5)
+    if (spy.mock.calls.length === settled) {
+      quietFor += 5
+    } else {
+      settled = spy.mock.calls.length
+      quietFor = 0
+    }
+  }
+
   const calls = spy.mock.calls.map(call => call[0] as string)
   spy.mockRestore()
   return calls
@@ -102,6 +125,45 @@ describe('Symbol name resolution (#303)', () => {
 
     test('a name identical in both is unaffected', async () => {
       expect(await namesReachingIconSet('plus')).toEqual(['plus'])
+    })
+  })
+
+  /**
+   * Seven SF keys are also real Lucide icons of the same name. Mapping them
+   * unconditionally sent `Symbol('trash')` to `trash-2` — a different glyph from
+   * the one the caller named, and a regression against the behaviour before the
+   * table was consulted at all, when the raw name went straight through.
+   *
+   * The name as written now wins whenever Lucide has an icon of that name. The
+   * check is exact membership rather than a spelling heuristic: dot-free is not
+   * a usable signal, as the second test here shows.
+   */
+  describe('a name Lucide has of its own is not remapped', () => {
+    const collisions: [sfName: string, mappedTo: string][] = [
+      ['trash', 'trash-2'],
+      ['house', 'home'],
+      ['bolt', 'zap'],
+      ['cross', 'plus'],
+      ['ellipsis', 'more-horizontal'],
+      ['forward', 'skip-forward'],
+      ['speaker', 'volume-2'],
+    ]
+
+    test.each(collisions)(
+      '%s reaches the icon set as itself, not %s',
+      async (sfName, mappedTo) => {
+        // The mapping entry exists and is what the old behaviour used.
+        expect(getLucideForSFSymbol(sfName)).toBe(mappedTo)
+
+        expect(await namesReachingIconSet(sfName)).toEqual([sfName])
+      }
+    )
+
+    test('a dot-free SF name Lucide does not have is still mapped', async () => {
+      // Why the check cannot key on spelling: these are dot-free too, and they
+      // genuinely need the table.
+      expect(await namesReachingIconSet('checkmark')).toEqual(['check'])
+      expect(await namesReachingIconSet('magnifyingglass')).toEqual(['search'])
     })
   })
 
@@ -211,18 +273,29 @@ describe('Symbol name resolution (#303)', () => {
    * warmed a key the render never asked for.
    */
   describe('every IconLoader entry point keys on the same name', () => {
-    test('a preload under an SF name serves the render, and vice versa', async () => {
+    test('a preload under an SF name serves a render of that name', async () => {
       await IconLoader.preloadIcons(['heart.fill'])
 
-      // Both spellings name one cache entry, not two.
+      // The cache keys on the name the caller asked for, so a preload and a
+      // render of the same spelling share an entry and the icon set is never
+      // asked twice.
       expect(IconLoader.isIconCached('heart.fill')).toBe(true)
-      expect(IconLoader.isIconCached('heart')).toBe(true)
-      expect(IconLoader.getCachedIcon('heart.fill')).toBe(
-        IconLoader.getCachedIcon('heart')
-      )
-
-      // The preload actually serves the render: the icon set is never asked.
       expect(await namesReachingIconSet('heart.fill')).toEqual([])
+    })
+
+    /**
+     * Two spellings deliberately do *not* collapse into one entry any more.
+     * They cannot: `trash` is a Lucide icon in its own right and an SF key that
+     * maps to `trash-2`, so a shared entry would serve one caller the other's
+     * glyph. Keying on the requested name is what keeps those distinct — and it
+     * is also the only key available synchronously, since resolution now has to
+     * ask Lucide what it holds.
+     */
+    test('a spelling that means a different icon keeps its own entry', async () => {
+      await IconLoader.preloadIcons(['trash'])
+
+      expect(IconLoader.isIconCached('trash')).toBe(true)
+      expect(IconLoader.isIconCached('trash-2')).toBe(false)
     })
 
     test('the preload loads the resolved name, not the SF spelling', async () => {
