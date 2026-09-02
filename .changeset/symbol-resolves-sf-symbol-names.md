@@ -28,13 +28,22 @@ Fixing name resolution alone was not enough to make a glyph appear. Measured in 
 
 `Symbol` painted from an effect created inside `render()`, but the renderer assigns `node.element` *after* `render()` returns, so that effect could never paint on its first run. Anything it did manage to write later was overwritten by `updateChildren`, which reconciles the node's declared children on every render.
 
-It now hands the renderer the element instead of patching behind it — see the `@tachui/core` note below — so the icon, the error glyph and the spinner are mounted content the renderer will not overwrite.
+## `render()` describes; the renderer subscribes
 
-`Symbol` keeps a root of its own for repainting. Its state has to be read there rather than in `render()`: a child's `render()` is called inline by `renderChildrenArray`, inside the *enclosing* component's render effect, so reading it there subscribes the parent and every icon that resolves re-renders the surrounding subtree. Where the parent constructs its symbols during its own render — the ordinary way to write it — that is a feedback loop that settles only once the loader cache is warm. `render()` is untracked, and the root patches the symbol's own mounted element.
+The deeper problem was where the symbol's state was read. A component's `render()` does not run in its own reactive scope: a child's `render()` is called inline inside the *enclosing* component's render effect, so reading `isLoading`/`error`/`iconDefinition` there subscribes the parent, and every icon that resolved re-rendered the whole surrounding subtree. Where a parent constructs its symbols during its own render — the ordinary way to write it — each pass built fresh signals whose load triggered another pass: **26 enclosing renders for a single symbol**, settling only once the loader cache was warm.
+
+`Symbol`'s `render()` now reads no signals at all. It hands the renderer memos for the wrapper's classes and styles, and the icon as a `DOMNode.reactiveElement` accessor — see the `@tachui/core` note below. Every subscription belongs to a renderer-owned binding scoped to the mounted element, which is where a reactive `className` or `style` prop has always lived. The component owns no scope, patches no DOM, and holds no reference to the element the renderer built.
+
+Four things fall out of that, each of which was broken while `Symbol` maintained its own repaint scope:
+
+- A symbol disposed and re-rendered — what `Show` does across a branch swap — repaints again, instead of freezing at whatever it last painted.
+- A symbol paints inside a layout that hands the renderer a *copy* of the node. `ZStack` and the tab views spread nodes (`{ ...node }`), so the object the component kept never received an `element`; such a symbol stayed on the spinner forever, including with a warm cache.
+- Modifier styles and classes survive the load. `Symbol('heart').padding(8).frame({ width: 40 })` keeps both the padding and the frame width once the icon resolves, and across a later scale change; `.foregroundColor('red')` stays red.
+- A parent re-render with a fresh `Symbol()` instance leaves one child, not a spinner mounted alongside the icon.
+
+The wrapper's styles now go over as an object rather than a string, which also fixes keys the string path silently dropped: `lineHeight`, `fontWeight`, `letterSpacing` and `fontVariationSettings` are not valid CSS property names, and the renderer kebab-cases object keys.
 
 `render()` also no longer needs a DOM: server-side it emits the wrapper alone and the icon is drawn on hydration, rather than throwing on `createElementNS`.
-
-With both fixes, all 23 of the reporter's claimed-supported symbols draw a real glyph, up from 4. The 11 that still fail are exactly the ones with no mapping-table entry, for which `isSFSymbolSupported()` correctly returns `false`.
 
 ## Removed `SelectiveLucideIconSet`
 
