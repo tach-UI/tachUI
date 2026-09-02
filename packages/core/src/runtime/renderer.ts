@@ -7,6 +7,9 @@
 
 import { applyModifiersToNode } from '../modifiers/registry'
 import { createEffect, createRoot, isComputed, isSignal, untrack } from '../reactive'
+// The barrel re-exports this name type-only, so it has to come from the module
+// that owns the value or `ComputationState.Disposed` is a runtime undefined.
+import { ComputationState } from '../reactive/types'
 import type { ComponentInstance, DOMNode } from './types'
 import { semanticRoleManager } from './semantic-role-manager'
 import { globalEventDelegator } from './event-delegation'
@@ -68,7 +71,12 @@ export class DOMRenderer {
   // element. See `bindOwnedElement` for why the two lifetimes are separate.
   private bindings = new WeakMap<
     DOMNode,
-    { binding: () => void; owner?: (() => void) | undefined }
+    {
+      binding: () => void
+      owner?: (() => void) | undefined
+      /** False once the render pass that parented the effect has disposed it. */
+      isLive: () => boolean
+    }
   >()
   private renderedNodes = new Set<DOMNode>()
   // Map each element to its delegation container
@@ -299,16 +307,29 @@ export class DOMRenderer {
    */
   private bindOwnedElement(node: DOMNode, container?: Element): Element {
     const existing = this.bindings.get(node)
-    if (existing) {
+    if (existing?.isLive()) {
       // Already bound; the binding keeps the mounted element current, so a
       // repeat render of the same node object has nothing to do.
       return this.nodeMap.get(node) as Element
     }
 
+    // A dead binding with a live node object: the effect is parented to the
+    // render pass that created it, so a parent re-render disposes it, and a
+    // caller that reuses the same node object across passes (rather than
+    // building a fresh one, as the reconciler expects) outlives its own
+    // binding. Rebind rather than returning a slot nothing is maintaining.
+    if (existing) {
+      this.bindings.delete(node)
+    }
+
     // `adoptNode` leaves the previously mounted element here as a hint, so the
     // first run can tell "the owner rebuilt" from "same element, nothing to do".
     let mounted = node.element instanceof Element ? node.element : undefined
-    const owner = node.dispose
+
+    // On a rebind, `node.dispose` is the composed function the previous bind
+    // installed. Taking that as the owner would nest the dead binding's
+    // disposer inside the new one, once per rebind.
+    const owner = existing ? existing.owner : node.dispose
 
     const effect = createEffect(() => {
       const next = node.reactiveElement!()
@@ -332,13 +353,36 @@ export class DOMRenderer {
     })
 
     const binding = () => effect.dispose()
-    this.bindings.set(node, { binding, owner })
+    const isLive = () => effect.state !== ComputationState.Disposed
+    this.bindings.set(node, { binding, owner, isLive })
     node.dispose = () => {
       binding()
       owner?.()
     }
 
     return mounted as Element
+  }
+
+  /**
+   * Rebind a node whose binding died with the render pass that created it.
+   *
+   * Reached when a caller reuses the same node object across renders: the
+   * reconciler's identity fast path routes it to `updateExistingNode`, which
+   * leaves an owned element alone, so nothing would otherwise notice that the
+   * slot has stopped being maintained.
+   */
+  private rebindIfStale(node: DOMNode): void {
+    if (!node.reactiveElement) return
+
+    const existing = this.bindings.get(node)
+    if (existing && !existing.isLive()) {
+      this.bindOwnedElement(
+        node,
+        node.element instanceof Element
+          ? this.elementToContainer.get(node.element)
+          : undefined
+      )
+    }
   }
 
   private updateProps(element: Element, node: DOMNode, container?: Element): void {
@@ -517,6 +561,9 @@ export class DOMRenderer {
       // back the identical node objects across renders, which skips straight
       // to updating rather than re-creating (see DOMNode.owned).
       if (node.owned) {
+        // Identical node objects are exactly the case where a binding can
+        // outlive its own render pass, so this is where it gets checked.
+        this.rebindIfStale(node)
         return
       }
 

@@ -347,6 +347,56 @@ describe('DOMNode.reactiveElement', () => {
       expect(renders).toBe(1)
     })
 
+    /**
+     * The binding is parented to the render pass that created it, so a parent
+     * re-render disposes it. A caller that returns a *fresh* node each pass gets
+     * a fresh binding with it — but one that reuses the same node object
+     * outlives its own binding, and the reconciler's identity fast path routes
+     * that node to `updateExistingNode`, which leaves an owned element alone.
+     * Nothing would otherwise notice the slot had stopped being maintained.
+     */
+    it('rebinds a node object reused across parent re-renders', () => {
+      const [marker, setMarker] = createSignal('A')
+      const [bump, setBump] = createSignal(0)
+      const accessor = cachingAccessor(marker)
+
+      // One node object, handed back on every pass.
+      const child = boundNode(accessor)
+
+      const host = document.createElement('div')
+      const component: any = {
+        type: 'component',
+        id: 'stable-child',
+        props: {},
+        render: () => {
+          const wrapper = h('span', { class: `w${bump()}` }) as any
+          wrapper.children = [child]
+          return wrapper
+        },
+      }
+      renderComponent(component, host)
+
+      expect(markers(host)).toEqual(['A'])
+
+      setBump(1)
+      flushSync()
+
+      setMarker('B')
+      flushSync()
+
+      expect(markers(host)).toEqual(['B'])
+      expect(host.querySelector('span')?.childElementCount).toBe(1)
+
+      // And the rebind is durable, not a one-shot.
+      setBump(2)
+      flushSync()
+      setMarker('C')
+      flushSync()
+
+      expect(markers(host)).toEqual(['C'])
+      expect(host.querySelector('span')?.childElementCount).toBe(1)
+    })
+
     it('does not leak the previous binding across a parent re-render', () => {
       const [marker, setMarker] = createSignal('A')
       const [bump, setBump] = createSignal(0)
