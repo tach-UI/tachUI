@@ -103,6 +103,40 @@ describe('DOMNode.owned', () => {
     expect(host.querySelectorAll('svg')).toHaveLength(1)
   })
 
+  /**
+   * The swap above works because each render supplies a *fresh* node object,
+   * which the reconciler pairs with its predecessor. A node object the renderer
+   * has already mounted takes the `updateExistingNode` path instead, which
+   * leaves an owned element alone — so mutating `element` in place is not a way
+   * to replace it. `reactiveElement` is the supported route for an owner that
+   * wants to swap on its own schedule.
+   */
+  it('ignores a mutated element on a node object it has already mounted', () => {
+    const [bump, setBump] = createSignal(0)
+    const node = ownedNode(buildSvg('A'))
+
+    const host = document.createElement('div')
+    const component: any = {
+      type: 'component',
+      id: 'stable-node',
+      props: {},
+      render: () => {
+        const wrapper = h('span', { class: `w${bump()}` }) as any
+        // The identical node object every pass.
+        wrapper.children = [node]
+        return wrapper
+      },
+    }
+    renderComponent(component, host)
+
+    node.element = buildSvg('B')
+    setBump(1)
+    flushSync()
+
+    expect(host.querySelector('path')?.getAttribute('d')).toBe('A')
+    expect(host.querySelectorAll('svg')).toHaveLength(1)
+  })
+
   it('does not reconcile an owned node\'s children away', () => {
     // The owner put content inside; the node declares no children. A renderer
     // that reconciled them would empty the element.

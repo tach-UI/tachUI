@@ -148,9 +148,16 @@ export interface DOMNode {
    *
    * An owned node is never adopted over — a previously rendered element is not
    * transferred onto it — and its children are not reconciled, so whatever the
-   * owner built inside stays untouched across renders. Supplying a *different*
-   * element on a later render replaces the mounted one, disposing the element
-   * it replaced.
+   * owner built inside stays untouched across renders.
+   *
+   * To replace the mounted element, supply a *different* element on a **fresh
+   * node object**: the reconciler pairs it with its predecessor and swaps,
+   * disposing the element it replaced. Mutating `element` on a node object the
+   * renderer has already mounted does nothing — that node reaches
+   * `updateExistingNode`, which leaves an owned element alone. An owner that
+   * wants to swap without depending on the parent handing over a new node each
+   * render should use `reactiveElement` instead, which the renderer subscribes
+   * to directly.
    *
    * `tag`, `props` and `children` describe an empty shell, so the element is
    * the only description of the subtree. Server-side rendering therefore reads
