@@ -218,6 +218,14 @@ export class DOMRenderer {
       if (container) {
         this.elementToContainer.set(element, container)
       }
+
+      // An owned node's contents belong to whoever supplied the element, so
+      // props and children are left alone. Reconciling children here would
+      // erase the subtree the owner built (see DOMNode.owned).
+      if (node.owned) {
+        return element
+      }
+
       this.updateProps(element, node, container)
       this.updateChildren(element, node)
       return element
@@ -1023,12 +1031,26 @@ export class DOMRenderer {
     const element = this.nodeMap.get(oldNode)
     if (!element) return
 
-    this.nodeMap.set(newNode, element)
     this.nodeMap.delete(oldNode)
     this.renderedNodes.delete(oldNode)
     this.renderedNodes.add(newNode)
 
-    newNode.element = element
+    // An owned node brings its own element. Adopting over it would discard
+    // whatever the owner built and freeze the mounted DOM at the first render,
+    // so the owner keeps its element and the mapping follows it.
+    if (newNode.owned && newNode.element) {
+      // A different element means the owner rebuilt its content, so the one
+      // already mounted is swapped out for it. This is the only place the two
+      // are paired, since each render supplies a fresh node object.
+      if (newNode.element !== element && element.parentNode) {
+        element.parentNode.replaceChild(newNode.element, element)
+      }
+      this.nodeMap.set(newNode, newNode.element)
+    } else {
+      this.nodeMap.set(newNode, element)
+      newNode.element = element
+    }
+
     if (oldNode.dispose) {
       newNode.dispose = oldNode.dispose
     }
@@ -1179,7 +1201,14 @@ export function renderComponent(
     const populateFromCache = (node: DOMNode): void => {
       if (node.key != null) {
         const cached = keyToNodeCache.get(node.key)
-        if (cached && cached.type === node.type && cached.tag === node.tag && cached.element) {
+        if (
+          cached &&
+          cached.type === node.type &&
+          cached.tag === node.tag &&
+          cached.element &&
+          // An owned node supplies its own element; see DOMNode.owned.
+          !node.owned
+        ) {
           // Transfer the DOM element reference to the new node
           node.element = cached.element
           // Also transfer internal state for reconciliation

@@ -2,14 +2,12 @@ import {
   ComponentInstance, 
   createSignal, 
   createEffect,
-  createRoot,
   Signal,
   ModifiableComponent,
   ModifierBuilder,
   withModifiers
 } from '@tachui/core'
 import {
-  escapeHtmlAttr,
   getSafeViewBox,
   getSanitizedIconBody,
 } from '../utils/sanitize-icon.js'
@@ -66,6 +64,10 @@ export function Symbol(
   const [iconDefinition, setIconDefinition] = createSignal<IconDefinition | undefined>(undefined)
   const [isLoading, setIsLoading] = createSignal(true)
   const [error, setError] = createSignal<string | undefined>(undefined)
+
+  // The element handed to the renderer for the current state, kept so an
+  // unrelated re-render does not swap identical DOM.
+  let cachedContent: { signature: string; element: Element } | undefined
   
   // Resolve signal values
   const getName = () => typeof name === 'function' ? name() : name
@@ -389,98 +391,103 @@ export function Symbol(
         style: styleString,
         ...accessibilityProps
       },
-      children: [{ type: 'text', text: '⟳' }], // Loading spinner
+      // The content is built below and mounted as an owned child, so the
+      // renderer reconciles it like anything else.
+      children: [contentNode()],
       dispose: undefined,
     }
 
-    // Paint the current load state onto the element.
-    //
-    // Split out of the effect below so it can also be driven from a
-    // microtask. The renderer assigns `node.element` *after* `render()`
-    // returns, so an effect created here can never paint on its first run — it
-    // depends entirely on a later signal change to fire again while the
-    // element exists. That is not something to rely on: `createRoot` parents
-    // to `currentOwner`, which inside a computation is that computation's
-    // per-execution owner (#270), so when the renderer's effect re-runs it
-    // tears this root down, and the replacement effect runs once — again
-    // before its element exists — and then sits idle because the signals have
-    // already settled. The symbol was left showing the loading spinner
-    // forever, whatever it had resolved to (#303).
-    const paintDom = () => {
-        const loading = isLoading()
-        const errorMsg = error()
-        const iconDef = iconDefinition()
-        
-        
-        // Update symbolElement props for initial rendering
-        const allClasses = getClasses()
-        const allStyles = getStyles()
-        const styleString = Object.entries(allStyles)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join('; ')
-        
-        symbolElement.props.className = allClasses
-        symbolElement.props.style = styleString
-        
-        // Update DOM element directly when already rendered
-        if (symbolElement.element && symbolElement.element instanceof Element) {
-          const element = symbolElement.element as HTMLElement
-          element.className = allClasses
-          
-          if (loading) {
-            element.innerHTML = '<div class="tachui-symbol__spinner">⟳</div>'
-          } else if (errorMsg) {
-            const { width, height } = getSize()
-            const colors = getColors()
-            element.innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 24 24" fill="none" stroke="${escapeHtmlAttr(colors.stroke)}" stroke-width="${colors.strokeWidth}"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`
-          } else if (iconDef) {
-            const { width, height } = getSize()
-            const colors = getColors()
+    return symbolElement
+  }
 
-            // Build the wrapper <svg> via the DOM so interpolated attribute
-            // values are escaped by setAttribute, and only innerHTML the
-            // allowlist-sanitized icon body (#218)
-            const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
-            const svgElement = document.createElementNS(SVG_NAMESPACE, 'svg')
-            svgElement.setAttribute('width', String(width))
-            svgElement.setAttribute('height', String(height))
-            svgElement.setAttribute('viewBox', getSafeViewBox(iconDef))
-            svgElement.setAttribute('fill', colors.fill)
-            svgElement.setAttribute('stroke', colors.stroke)
-            svgElement.setAttribute('stroke-width', String(colors.strokeWidth))
-            svgElement.setAttribute('stroke-linecap', 'round')
-            svgElement.setAttribute('stroke-linejoin', 'round')
-            if (colors.opacity) {
-              svgElement.setAttribute('opacity', colors.opacity)
-            }
-            svgElement.innerHTML = getSanitizedIconBody(iconDef)
+  /**
+   * Build the element for the current load state.
+   *
+   * Handed to the renderer as an owned node rather than patched in afterwards.
+   * An SVG subtree cannot be expressed as ordinary `DOMNode` children — the
+   * renderer has no namespace support and would produce HTMLUnknownElement —
+   * so the element is built here with `createElementNS` and the renderer mounts
+   * it, swapping it when the state changes (see `DOMNode.owned`).
+   *
+   * Patching it in from an effect, as this did before, could not work: the
+   * renderer assigns `node.element` after `render()` returns, so the effect had
+   * no element on its first run, and `updateChildren` overwrote anything it did
+   * manage to write later (#303).
+   */
+  function contentNode(): any {
+    const element = contentElement()
+    return {
+      type: 'element',
+      tag: element.tagName.toLowerCase(),
+      props: {},
+      children: [],
+      element,
+      owned: true,
+    }
+  }
 
-            element.innerHTML = ''
-            element.appendChild(svgElement)
-          }
-        }
+  function contentElement(): Element {
+    const loading = isLoading()
+    const errorMsg = error()
+    const iconDef = iconDefinition()
+    const { width, height } = getSize()
+    const colors = getColors()
+
+    // Rebuild only when something the element depends on has changed, so a
+    // re-render for an unrelated reason does not swap the DOM needlessly.
+    const signature = JSON.stringify([
+      loading,
+      errorMsg ?? null,
+      iconDef?.name ?? null,
+      iconDef?.variant ?? null,
+      width,
+      height,
+      colors,
+    ])
+    if (cachedContent && cachedContent.signature === signature) {
+      return cachedContent.element
     }
 
-    // Create reactive effect that updates the DOM when signals change
-    const cleanup = createRoot(() => {
-      const effect = createEffect(() => {
-        paintDom()
-      })
+    let element: Element
+    if (loading) {
+      element = document.createElement('div')
+      element.className = 'tachui-symbol__spinner'
+      element.textContent = '⟳'
+    } else if (errorMsg || !iconDef) {
+      element = buildSvgShell(width, height, colors, '0 0 24 24')
+      element.innerHTML =
+        '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'
+    } else {
+      element = buildSvgShell(width, height, colors, getSafeViewBox(iconDef))
+      // Only the allowlist-sanitized icon body is set as markup (#218).
+      element.innerHTML = getSanitizedIconBody(iconDef)
+    }
 
-      // Guarantee a first paint. This runs after the synchronous render that
-      // assigns `element`, and after any re-render that has reset the node's
-      // children back to the spinner, so it lands whatever the effect above
-      // could not.
-      queueMicrotask(paintDom)
+    cachedContent = { signature, element }
+    return element
+  }
 
-      // Return cleanup function
-      return () => {
-        effect.dispose()
-      }
-    })
-
-    symbolElement.dispose = cleanup
-    return symbolElement
+  function buildSvgShell(
+    width: number,
+    height: number,
+    colors: ReturnType<typeof getColors>,
+    viewBox: string
+  ): SVGElement {
+    // Attribute values go through setAttribute so they are escaped (#218).
+    const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
+    const svgElement = document.createElementNS(SVG_NAMESPACE, 'svg')
+    svgElement.setAttribute('width', String(width))
+    svgElement.setAttribute('height', String(height))
+    svgElement.setAttribute('viewBox', viewBox)
+    svgElement.setAttribute('fill', colors.fill)
+    svgElement.setAttribute('stroke', colors.stroke)
+    svgElement.setAttribute('stroke-width', String(colors.strokeWidth))
+    svgElement.setAttribute('stroke-linecap', 'round')
+    svgElement.setAttribute('stroke-linejoin', 'round')
+    if (colors.opacity) {
+      svgElement.setAttribute('opacity', colors.opacity)
+    }
+    return svgElement
   }
 
   const instance: ComponentInstance<SymbolProps> = {

@@ -142,6 +142,20 @@ export interface DOMNode {
   dispose?: (() => void) | undefined
   reactiveContent?: (() => string) | undefined
   key?: string | number
+  /**
+   * The caller supplies and owns `element`; the renderer mounts it but does not
+   * manage its contents.
+   *
+   * An owned node is never adopted over — a previously rendered element is not
+   * transferred onto it — and its children are not reconciled, so whatever the
+   * owner built inside stays untouched across renders. Supplying a *different*
+   * element on a later render replaces the mounted one.
+   *
+   * For content the renderer cannot express as nodes: an SVG subtree built with
+   * `createElementNS`, or a third-party widget that owns its own DOM. Content
+   * that can be expressed as `children` should be, so it reconciles normally.
+   */
+  owned?: boolean
   __tachui_fragment?: FragmentMarker
 }
 
