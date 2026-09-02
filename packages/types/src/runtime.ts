@@ -168,10 +168,21 @@ export interface DOMNode {
    * a Node process, so an owner in that position emits no owned node at all
    * server-side.
    *
-   * Modifiers on an owned node apply to whichever element is mounted when the
-   * node is first rendered. A `reactiveElement` swap disposes the replaced
-   * element's cleanups and nothing re-applies modifiers to the replacement, so
-   * modifiers belong on a wrapper rather than on the owned node itself.
+   * **Modifiers on an owned node are client-only, and apply to the first
+   * mounted element.** Two limits, both deliberate:
+   *
+   * - Server-side the element *is* the markup, so serialization reads its
+   *   `outerHTML` and never runs the modifier pass over it. Modifier styles,
+   *   fragment markers and extracted CSS are therefore absent from the HTML but
+   *   present in the browser — an owned node cannot be a fragment island, and a
+   *   node whose appearance depends on modifiers will not match after
+   *   hydration.
+   * - Client-side they land on whichever element is mounted at first render. A
+   *   `reactiveElement` swap disposes that element's cleanups and nothing
+   *   re-applies modifiers to the replacement.
+   *
+   * Put modifiers on a wrapper element rather than on the owned node itself.
+   * That is what `Symbol` does, which is why it is unaffected by either limit.
    *
    * For content the renderer cannot express as nodes: an SVG subtree built with
    * `createElementNS`, or a third-party widget that owns its own DOM. Content

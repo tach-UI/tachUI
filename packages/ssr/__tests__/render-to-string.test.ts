@@ -766,6 +766,32 @@ describe('renderToString', () => {
       )
     })
 
+    /**
+     * The documented limit, pinned so it is a contract rather than an accident:
+     * the element *is* the markup server-side, so the modifier pass never runs
+     * over it. `DOMNode.owned` tells owners to put modifiers on a wrapper for
+     * exactly this reason.
+     */
+    it('does not apply an owned node\'s own modifiers server-side', () => {
+      const node: DOMNode = {
+        type: 'element',
+        tag: 'svg',
+        props: {},
+        children: [],
+        element: { outerHTML: '<svg data-owner="1"></svg>' } as unknown as Element,
+        owned: true,
+      }
+      ;(node as any).modifiers = [
+        new ResponsiveModifier({ fontSize: { sm: '14px', md: '18px' } }),
+      ]
+
+      const context = createSSRContext()
+      const html = renderToString(h('span', null, node), { context })
+
+      expect(html).toBe('<span><svg data-owner="1"></svg></span>')
+      expect(context.styles.join('\n')).not.toContain('font-size')
+    })
+
     it('serializes the shell when a bound owner emitted no element', () => {
       // The contract for an accessor that needs a DOM: emit no owned node at
       // all server-side. This is what a stray one degrades to.
