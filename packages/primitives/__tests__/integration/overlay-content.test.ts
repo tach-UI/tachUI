@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { createSignal, flushSync } from '@tachui/core'
-import { h, renderComponent } from '@tachui/core/runtime'
+import { h, renderComponent, text as textNode } from '@tachui/core/runtime'
 import { overlay } from '@tachui/modifiers'
 import { Text } from '../../src'
 
@@ -260,6 +260,52 @@ describe('overlay() content rendering (#302)', () => {
 
     // The static ring must survive its sibling's re-application.
     expect(overlays().map(el => el.textContent)).toEqual(['ring', '2'])
+  })
+
+  it('coexists with the renderer reconciling the host element\'s children', () => {
+    // An overlay container is foreign DOM hung off another component's
+    // element — it is not a node in the tree, so it is never in the child
+    // lists `updateChildren` matches against. It must therefore survive its
+    // host's children being reconciled, and stay last so it paints on top.
+    // This guards the boundary between the two mechanisms: content the
+    // renderer mounts (DOMNode.owned) and DOM a modifier attaches itself.
+    const [count, setCount] = createSignal(1)
+    const container = document.createElement('div')
+
+    const host: any = {
+      type: 'component',
+      id: 'overlay-host',
+      props: {},
+      render: () => {
+        const kids = Array.from({ length: count() }, (_, i) =>
+          h('span', { class: `k${i}` }, textNode(String(i)))
+        )
+        const node: any = h('div', { class: 'base' }, ...kids)
+        node.modifiers = [overlay(Text('badge'), 'bottomTrailing')]
+        return node
+      },
+    }
+    renderComponent(host, container)
+
+    const order = () =>
+      Array.from(container.querySelector('.base')!.children).map(
+        el => (el as HTMLElement).className.split(' ')[0] || el.tagName
+      )
+    const overlays = () =>
+      container.querySelectorAll('[style*="position: absolute"]')
+
+    expect(order()).toEqual(['k0', 'DIV'])
+
+    setCount(3)
+    flushSync()
+    expect(order()).toEqual(['k0', 'k1', 'k2', 'DIV'])
+
+    setCount(1)
+    flushSync()
+    expect(order()).toEqual(['k0', 'DIV'])
+
+    expect(overlays()).toHaveLength(1)
+    expect(overlays()[0]!.textContent).toBe('badge')
   })
 
   it('layers multiple overlays, as DSAvatar-style compositions need', () => {
