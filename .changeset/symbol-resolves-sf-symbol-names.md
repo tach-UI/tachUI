@@ -16,7 +16,9 @@ Symbol('chevron.right')
 
 The package README documents `Symbol('heart.fill')`, `Symbol('star.circle')`, `Symbol('person.fill')` and similar throughout, so this affected the component's documented API as written.
 
-`Symbol()` now resolves its name — and its `fallback` — through `getLucideForSFSymbol()` before handing it to the icon set, matching `Image({ systemName })` in the SwiftUI shim, which has always resolved through the same table. A name with no mapping entry passes through unchanged, so icon-set-native names such as `chevron-right` — the only spelling that worked before — keep working, as do names belonging to other icon sets.
+`IconLoader` now resolves a name — and a `fallback` — through `getLucideForSFSymbol()` before asking the icon set for it, matching `Image({ systemName })` in the SwiftUI shim, which has always resolved through the same table. A name with no mapping entry passes through unchanged, so icon-set-native names such as `chevron-right` — the only spelling that worked before — keep working, as do names belonging to other icon sets.
+
+Resolving at the loader rather than in `Symbol()` keeps every entry point on one name. `IconLoader` is exported from the package root and the compatibility guide documents preloading with SF spellings, so resolving in the component alone would leave `preloadIcons(['heart.fill'])` warming a key the render never asks for — a guaranteed miss, plus a wasted load of a name no icon set has.
 
 No mapping entries changed: all 140 targets already existed in Lucide, so the table was correct and simply unused. `isSFSymbolSupported()` now agrees with what renders, which is asserted directly rather than assumed.
 
@@ -26,7 +28,11 @@ Fixing name resolution alone was not enough to make a glyph appear. Measured in 
 
 `Symbol` painted from an effect created inside `render()`, but the renderer assigns `node.element` *after* `render()` returns, so that effect could never paint on its first run. Anything it did manage to write later was overwritten by `updateChildren`, which reconciles the node's declared children on every render.
 
-It now hands the renderer the element instead of patching behind it — see the `@tachui/core` note below — so the icon, the error glyph and the spinner are all ordinary reconciled content. The effect and its root are gone.
+It now hands the renderer the element instead of patching behind it — see the `@tachui/core` note below — so the icon, the error glyph and the spinner are mounted content the renderer will not overwrite.
+
+`Symbol` keeps a root of its own for repainting. Its state has to be read there rather than in `render()`: a child's `render()` is called inline by `renderChildrenArray`, inside the *enclosing* component's render effect, so reading it there subscribes the parent and every icon that resolves re-renders the surrounding subtree. Where the parent constructs its symbols during its own render — the ordinary way to write it — that is a feedback loop that settles only once the loader cache is warm. `render()` is untracked, and the root patches the symbol's own mounted element.
+
+`render()` also no longer needs a DOM: server-side it emits the wrapper alone and the icon is drawn on hydration, rather than throwing on `createElementNS`.
 
 With both fixes, all 23 of the reporter's claimed-supported symbols draw a real glyph, up from 4. The 11 that still fail are exactly the ones with no mapping-table entry, for which `isSFSymbolSupported()` correctly returns `false`.
 
