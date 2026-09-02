@@ -120,11 +120,16 @@ describe('Symbol name resolution (#303)', () => {
     // supported; only 4 rendered. The error class is set from the `error`
     // signal, which is only populated when the icon genuinely fails to load,
     // so it is a faithful proxy for "did this resolve to a real icon".
-    const errorClassFor = async (name: string): Promise<boolean> => {
+    const render = async (name: string) => {
       const host = document.createElement('div')
       renderComponent(Symbol(name) as any, host)
       await new Promise(resolve => setTimeout(resolve, 10))
-      return !!host.firstElementChild?.classList.contains('tachui-symbol--error')
+      return {
+        drewGlyph: !!host.querySelector('svg'),
+        error: !!host.firstElementChild?.classList.contains(
+          'tachui-symbol--error'
+        ),
+      }
     }
 
     // Every symbol the reporter measured as claimed-supported.
@@ -136,14 +141,15 @@ describe('Symbol name resolution (#303)', () => {
       'star.fill', 'xmark', 'calendar', 'clock', 'pencil', 'plus',
     ]
 
-    test('every symbol reported as supported now resolves to an icon', async () => {
+    test('every symbol reported as supported draws a glyph', async () => {
       const failed: string[] = []
       for (const name of claimedSupported) {
         expect(isSFSymbolSupported(name)).toBe(true)
-        if (await errorClassFor(name)) failed.push(name)
+        const { drewGlyph, error } = await render(name)
+        if (!drewGlyph || error) failed.push(name)
       }
 
-      // Was 19 of these 23.
+      // 19 of these 23 drew the error glyph before the fix.
       expect(failed).toEqual([])
     })
 
@@ -151,7 +157,21 @@ describe('Symbol name resolution (#303)', () => {
       // The guarantee is that `isSFSymbolSupported` and what renders agree —
       // not that every name renders. An unmapped name must still fail loudly.
       expect(isSFSymbolSupported('totally.bogus.name')).toBe(false)
-      expect(await errorClassFor('totally.bogus.name')).toBe(true)
+      expect((await render('totally.bogus.name')).error).toBe(true)
+    })
+
+    test('the symbol leaves the loading spinner', async () => {
+      // The paint is driven from a microtask as well as from the effect,
+      // because an effect created during render() can never paint on its first
+      // run — `element` is assigned after render() returns — and the root it
+      // lives in is torn down whenever the renderer's effect re-runs. Without
+      // that, every symbol stayed on the spinner no matter what it resolved to.
+      const host = document.createElement('div')
+      renderComponent(Symbol('chevron.right') as any, host)
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      expect(host.firstElementChild?.innerHTML).not.toBe('⟳')
+      expect(host.querySelector('svg')).not.toBeNull()
     })
   })
 
