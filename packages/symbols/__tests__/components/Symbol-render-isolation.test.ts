@@ -7,8 +7,10 @@
  * surrounding subtree — once per symbol on the screen, each one re-running its
  * siblings' renders too.
  *
- * `Symbol` therefore owns a root, reads its state inside it, and patches its
- * own mounted element. `render()` is untracked.
+ * `Symbol`'s `render()` therefore reads no signals at all: it hands the
+ * renderer memos for the wrapper's classes and styles and a `reactiveElement`
+ * accessor for the icon, so every subscription belongs to a renderer-owned
+ * binding scoped to the mounted element.
  */
 
 import { describe, test, expect, beforeEach, vi } from 'vitest'

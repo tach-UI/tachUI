@@ -270,7 +270,7 @@ describe('Symbol name resolution (#303)', () => {
     }
 
     test('constructing a Symbol does not reference a DOM global', () => {
-      // The repaint effect runs eagerly here, before any render.
+      // The loader effect runs eagerly here, before any render.
       expect(() => withoutDom(() => Symbol('heart.fill'))).not.toThrow()
     })
 
@@ -289,7 +289,9 @@ describe('Symbol name resolution (#303)', () => {
       const node = withoutDom(() => (Symbol('heart.fill') as any).render())
 
       const wrapper = Array.isArray(node) ? node[0] : node
-      expect(wrapper.props.className).toContain('tachui-symbol')
+      // Classes and styles go over as memos, so the renderer subscribes to them
+      // rather than this component's `render()` reading them.
+      expect(wrapper.props.className()).toContain('tachui-symbol')
       expect(wrapper.props['aria-hidden'] ?? wrapper.props.role).toBeDefined()
     })
   })
