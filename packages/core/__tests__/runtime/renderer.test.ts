@@ -20,27 +20,50 @@ Object.defineProperty(global, 'document', {
   configurable: true,
   writable: true,
   value: {
-    createElement: vi.fn((tag: string) => ({
-      tagName: tag.toUpperCase(),
-      appendChild: vi.fn(),
-      removeChild: vi.fn(),
-      insertBefore: vi.fn(),
-      setAttribute: vi.fn(),
-      getAttribute: vi.fn(() => null),
-      removeAttribute: vi.fn(),
-      hasAttribute: vi.fn(() => false),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      style: {
-        setProperty: vi.fn(),
-        removeProperty: vi.fn(),
-        getPropertyValue: vi.fn(() => ''),
-        cssText: '',
-      },
-      className: '',
-      parentNode: null,
-      childNodes: [] as any[]
-    })),
+    createElement: vi.fn((tag: string) => {
+      const element: any = {
+        tagName: tag.toUpperCase(),
+        appendChild: vi.fn(),
+        removeChild: vi.fn(),
+        insertBefore: vi.fn(),
+        setAttribute: vi.fn(),
+        getAttribute: vi.fn(() => null),
+        removeAttribute: vi.fn(),
+        hasAttribute: vi.fn(() => false),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        style: {
+          setProperty: vi.fn(),
+          removeProperty: vi.fn(),
+          getPropertyValue: vi.fn(() => ''),
+          cssText: '',
+        },
+        className: '',
+        parentNode: null,
+        childNodes: [] as any[]
+      }
+
+      // The renderer diffs the class list rather than assigning `className`,
+      // so that classes a modifier added to the same element survive a
+      // reactive update. Backed by `className` here so the assertions below
+      // still read it.
+      const current = () => String(element.className).split(/\s+/).filter(Boolean)
+      element.classList = {
+        add: (...names: string[]) => {
+          const classes = new Set(current())
+          names.forEach(name => classes.add(name))
+          element.className = [...classes].join(' ')
+        },
+        remove: (...names: string[]) => {
+          const classes = new Set(current())
+          names.forEach(name => classes.delete(name))
+          element.className = [...classes].join(' ')
+        },
+        contains: (name: string) => current().includes(name),
+      }
+
+      return element
+    }),
     createTextNode: vi.fn((text: string) => ({
       nodeType: 3,
       textContent: text,

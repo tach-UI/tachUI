@@ -654,8 +654,20 @@ function serializeNode(
   // describe an empty shell. Where a DOM is present (a shimmed server render)
   // the element itself is the only source of truth for its markup; where one is
   // not, the owner emits no owned node at all. See `DOMNode.owned`.
-  if (node.owned && typeof (node.element as any)?.outerHTML === 'string') {
-    return (node.element as any).outerHTML
+  if (node.owned || node.reactiveElement) {
+    // A bound node has no `element` until the renderer mounts it, so the
+    // accessor is the only source of truth server-side. `untrack` keeps the
+    // read out of whatever computation is serializing.
+    const owned =
+      typeof (node.element as any)?.outerHTML === 'string'
+        ? node.element
+        : node.reactiveElement
+          ? untrack(() => node.reactiveElement!())
+          : undefined
+
+    if (typeof (owned as any)?.outerHTML === 'string') {
+      return (owned as any).outerHTML
+    }
   }
 
   const preparedNode = applyNodeModifiersForSSR(node, context, seenStaticStyles)

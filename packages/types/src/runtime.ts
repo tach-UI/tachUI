@@ -156,13 +156,40 @@ export interface DOMNode {
    * the only description of the subtree. Server-side rendering therefore reads
    * `element.outerHTML`, which means an owner that cannot build an element
    * without a DOM must emit no owned node at all rather than an elementless
-   * one — otherwise it serializes as an empty tag.
+   * one — otherwise it serializes as an empty tag. The same applies to
+   * `reactiveElement`: an accessor that reaches for `createElementNS` throws in
+   * a Node process, so an owner in that position emits no owned node at all
+   * server-side.
+   *
+   * Modifiers on an owned node apply to whichever element is mounted when the
+   * node is first rendered. A `reactiveElement` swap disposes the replaced
+   * element's cleanups and nothing re-applies modifiers to the replacement, so
+   * modifiers belong on a wrapper rather than on the owned node itself.
    *
    * For content the renderer cannot express as nodes: an SVG subtree built with
    * `createElementNS`, or a third-party widget that owns its own DOM. Content
    * that can be expressed as `children` should be, so it reconciles normally.
    */
   owned?: boolean
+  /**
+   * Accessor for an owned element. The renderer subscribes at mount and, when
+   * the accessor yields a different element, swaps the mounted one for it,
+   * running the replaced element's cleanups. Implies `owned`.
+   *
+   * This is how an owner repaints without reading signals in `render()`. A
+   * child's `render()` is called inline inside the *enclosing* component's
+   * render effect, so a signal read there subscribes the parent and the whole
+   * surrounding subtree re-renders when the value changes. Handing the renderer
+   * an accessor puts the subscription on a binding scoped to the mounted
+   * element instead, exactly as a reactive `className` or `style` prop already
+   * is.
+   *
+   * `tag` names the slot, not the current element, and must be stable across
+   * renders so the reconciler pairs the node with its predecessor. Return the
+   * same element instance while nothing relevant has changed; a new instance
+   * means "replace".
+   */
+  reactiveElement?: (() => Element) | undefined
   __tachui_fragment?: FragmentMarker
 }
 

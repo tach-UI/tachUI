@@ -25,6 +25,10 @@ function isInternalDOMPropKey(key: string): boolean {
   return INTERNAL_DOM_PROP_KEYS.has(key)
 }
 
+function toKebabCase(property: string): string {
+  return property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
+}
+
 function sanitizeDOMProps(
   props: Record<string, any> | null | undefined
 ): Record<string, any> {
@@ -60,6 +64,12 @@ type RendererMetrics = {
 export class DOMRenderer {
   private nodeMap = new WeakMap<DOMNode, Element | Text | Comment>()
   private cleanupMap = new WeakMap<Element | Text | Comment, (() => void)[]>()
+  // Disposers for `reactiveElement` bindings, held here rather than on the
+  // element. See `bindOwnedElement` for why the two lifetimes are separate.
+  private bindings = new WeakMap<
+    DOMNode,
+    { binding: () => void; owner?: (() => void) | undefined }
+  >()
   private renderedNodes = new Set<DOMNode>()
   // Map each element to its delegation container
   private elementToContainer = new WeakMap<Element, Element>()
@@ -169,8 +179,18 @@ export class DOMRenderer {
       }
     }
 
-    // Set up cleanup if provided
-    if (node.dispose) {
+    // Set up cleanup if provided.
+    //
+    // A bound node's `dispose` is composed of two disposers with two lifetimes
+    // (see `bindOwnedElement`), and only the owner's belongs to the element:
+    // registering the binding's here would end the binding from inside its own
+    // body on the first swap. The binding's is drained by `cleanupNode`.
+    const bound = this.bindings.get(node)
+    if (bound) {
+      if (bound.owner) {
+        this.addCleanup(element, bound.owner)
+      }
+    } else if (node.dispose) {
       this.addCleanup(element, node.dispose)
     }
 
@@ -208,6 +228,14 @@ export class DOMRenderer {
    * Create a DOM element with props and children
    */
   private createOrUpdateElement(node: DOMNode, container?: Element): Element {
+    if (node.reactiveElement) {
+      // Normalized so every other owned path — the early return below,
+      // `updateExistingNode`, `adoptNode`, the key cache, SSR — treats a bound
+      // node the same as one carrying a static `element`.
+      node.owned = true
+      return this.bindOwnedElement(node, container)
+    }
+
     if (!node.tag) {
       throw new Error('Element node must have a tag')
     }
@@ -246,6 +274,71 @@ export class DOMRenderer {
     this.updateChildren(element, node)
 
     return element
+  }
+
+  /**
+   * Subscribe to a node's `reactiveElement` accessor and keep the mounted
+   * element in step with it (see `DOMNode.reactiveElement`).
+   *
+   * The binding is created inside whichever pass called `render`, so the
+   * reactive graph parents it to that pass's execution owner and disposes it
+   * when the pass re-runs or its root dies. Three other exits reach it: a
+   * `reactiveElement` adoption retires it explicitly, `cleanupNode` and
+   * `disposeNode` drain it through `this.bindings`, and `node.dispose` composes
+   * it for callers that only know that field.
+   *
+   * Two disposers with two lifetimes:
+   *
+   * - the binding's is *node*-lifetime. It must never be registered against an
+   *   element: there it would run on the first swap, from inside the effect's
+   *   own body, and a disposed computation is terminal — the icon would paint
+   *   once and then go silently dead.
+   * - the owner's `node.dispose` is *element*-lifetime, as it already is for a
+   *   static owned node: it runs when the element it was registered against is
+   *   replaced or removed, and is re-registered on each replacement.
+   */
+  private bindOwnedElement(node: DOMNode, container?: Element): Element {
+    const existing = this.bindings.get(node)
+    if (existing) {
+      // Already bound; the binding keeps the mounted element current, so a
+      // repeat render of the same node object has nothing to do.
+      return this.nodeMap.get(node) as Element
+    }
+
+    // `adoptNode` leaves the previously mounted element here as a hint, so the
+    // first run can tell "the owner rebuilt" from "same element, nothing to do".
+    let mounted = node.element instanceof Element ? node.element : undefined
+    const owner = node.dispose
+
+    const effect = createEffect(() => {
+      const next = node.reactiveElement!()
+
+      if (mounted && next !== mounted) {
+        // Nothing holds the replaced element afterwards, so its cleanups have
+        // to run here or they never run at all.
+        this.runCleanups(mounted)
+        mounted.parentNode?.replaceChild(next, mounted)
+        if (owner) {
+          this.addCleanup(next, owner)
+        }
+      }
+
+      mounted = next
+      node.element = next
+      this.nodeMap.set(node, next)
+      if (container) {
+        this.elementToContainer.set(next, container)
+      }
+    })
+
+    const binding = () => effect.dispose()
+    this.bindings.set(node, { binding, owner })
+    node.dispose = () => {
+      binding()
+      owner?.()
+    }
+
+    return mounted as Element
   }
 
   private updateProps(element: Element, node: DOMNode, container?: Element): void {
@@ -681,12 +774,7 @@ export class DOMRenderer {
     if (isSignal(value) || isComputed(value)) {
       // Reactive className
       const effect = createEffect(() => {
-        const currentValue = value()
-        const newClassName = this.normalizeClassName(currentValue)
-        if (element.className !== newClassName) {
-          element.className = newClassName
-          this.recordAttributeWrite()
-        }
+        this.setElementClasses(element, value())
       })
 
       // Add cleanup
@@ -694,12 +782,42 @@ export class DOMRenderer {
         effect.dispose()
       })
     } else {
-      const newClassName = this.normalizeClassName(value)
-      if (element.className !== newClassName) {
-        element.className = newClassName
-        this.recordAttributeWrite()
-      }
+      this.setElementClasses(element, value)
     }
+  }
+
+  /**
+   * Write a class list by diffing rather than assigning.
+   *
+   * Assigning `className` would drop every class a modifier added to the same
+   * element, so only the classes this renderer last wrote are removed and only
+   * the missing ones are added.
+   */
+  private setElementClasses(element: Element, value: any): void {
+    const next = this.normalizeClassName(value).split(/\s+/).filter(Boolean)
+    const previous: string[] = (element as any).__appliedClasses || []
+    const nextSet = new Set(next)
+    let changed = false
+
+    previous.forEach(className => {
+      if (!nextSet.has(className)) {
+        element.classList.remove(className)
+        changed = true
+      }
+    })
+
+    next.forEach(className => {
+      if (!element.classList.contains(className)) {
+        element.classList.add(className)
+        changed = true
+      }
+    })
+
+    if (changed) {
+      this.recordAttributeWrite()
+    }
+
+    ;(element as any).__appliedClasses = next
   }
 
   /**
@@ -755,23 +873,36 @@ export class DOMRenderer {
     }
 
     if (typeof styles === 'object' && styles !== null) {
-      // Get previous style object for comparison
-      const prevStyles = (element as any).__appliedStyles || {}
+      // What this renderer last wrote, read back off the element so browser
+      // normalisation of colours and lengths is already absorbed. Comparing
+      // against it — rather than against the live value — is what lets an
+      // external write win; see `isExternallyOwned`.
+      const prevStyles: Record<string, string> = (element as any).__appliedStyles || {}
+      const applied: Record<string, string> = {}
 
       // Remove properties that are no longer present
       Object.keys(prevStyles).forEach(property => {
-        if (!(property in styles)) {
-          element.style.removeProperty(property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`))
-          this.recordAttributeRemoval()
+        if (property in styles) return
+
+        const kebabProperty = toKebabCase(property)
+        if (this.isExternallyOwned(element, kebabProperty, prevStyles[property])) {
+          // Someone else owns this property now; leave it and stop tracking it.
+          return
         }
+        element.style.removeProperty(kebabProperty)
+        this.recordAttributeRemoval()
       })
 
       Object.entries(styles).forEach(([property, value]) => {
+        const kebabProperty = toKebabCase(property)
+
         if (isSignal(value) || isComputed(value)) {
           // Individual style property is reactive
+          let written: string | undefined
           const effect = createEffect(() => {
             const currentValue = value()
-            const kebabProperty = property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
+            if (this.isExternallyOwned(element, kebabProperty, written)) return
+
             if (currentValue == null) {
               element.style.removeProperty(kebabProperty)
               this.recordAttributeRemoval()
@@ -783,21 +914,31 @@ export class DOMRenderer {
                 this.recordAttributeWrite()
               }
             }
+            written = element.style.getPropertyValue(kebabProperty)
           })
 
           // Add cleanup
           this.addCleanup(element, () => {
             effect.dispose()
           })
+
+          // The effect keeps its own record; this one only tracks the property
+          // so a later run knows whether it has vanished.
+          applied[property] = written ?? ''
+        } else if (this.isExternallyOwned(element, kebabProperty, prevStyles[property])) {
+          // Skip the write and carry the *old* record forward rather than
+          // recording what the external write left there. Adopting the live
+          // value would end the contest: the next run would find record and
+          // live in agreement and take the property back.
+          applied[property] = prevStyles[property]
         } else {
-          // Static style property - only set if changed
-          const kebabProperty = property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
           if (value == null) {
             if (element.style.getPropertyValue(kebabProperty)) {
               element.style.removeProperty(kebabProperty)
               this.recordAttributeRemoval()
             }
           } else {
+            // Static style property - only set if changed
             const stringValue = String(value)
             const currentStyleValue = element.style.getPropertyValue(kebabProperty)
             if (currentStyleValue !== stringValue) {
@@ -805,12 +946,33 @@ export class DOMRenderer {
               this.recordAttributeWrite()
             }
           }
+
+          applied[property] = element.style.getPropertyValue(kebabProperty)
         }
       })
 
       // Track applied styles for next render
-      ;(element as any).__appliedStyles = { ...styles }
+      ;(element as any).__appliedStyles = applied
     }
+  }
+
+  /**
+   * Whether an inline property currently holds a value this renderer did not
+   * write — a modifier's `frame({ width: 40 })` over a component's own `width`,
+   * say. Precedence rule: the external value wins, and the reactive prop
+   * resumes control once that value is removed.
+   *
+   * A property never written (`written === undefined`) is not yet contested,
+   * and an empty live value means nothing external is set.
+   */
+  private isExternallyOwned(
+    element: HTMLElement,
+    kebabProperty: string,
+    written: string | undefined
+  ): boolean {
+    if (written === undefined) return false
+    const live = element.style.getPropertyValue(kebabProperty)
+    return live !== '' && live !== written
   }
 
   /**
@@ -924,6 +1086,17 @@ export class DOMRenderer {
   }
 
   /**
+   * Dispose a node (and its descendants) without removing it from the DOM.
+   *
+   * For callers that swap a whole subtree out themselves — `Show` replaces the
+   * container's children wholesale — and would otherwise leave this renderer's
+   * per-element cleanups and `reactiveElement` bindings running.
+   */
+  disposeNode(node: DOMNode): void {
+    this.cleanupNode(node, false)
+  }
+
+  /**
    * Cleanup a node (and its descendants) and optionally remove from DOM.
    */
   private cleanupNode(node: DOMNode, removeFromDom: boolean): void {
@@ -941,11 +1114,16 @@ export class DOMRenderer {
       }
       this.renderedNodes.delete(node)
       this.nodeMap.delete(node)
+      this.retireBinding(node)
       return
     }
 
     // Run cleanup functions
     this.runCleanups(element)
+
+    // The binding's disposer is node-lifetime, so it is not among the element's
+    // cleanups (see `bindOwnedElement`) and is drained here instead.
+    this.retireBinding(node)
 
     // Remove from DOM
     if (removeFromDom && element.parentNode) {
@@ -960,6 +1138,21 @@ export class DOMRenderer {
 
     this.renderedNodes.delete(node)
     this.metrics.removed++
+  }
+
+  /**
+   * Dispose a node's `reactiveElement` binding, if it has one.
+   */
+  private retireBinding(node: DOMNode): void {
+    const bound = this.bindings.get(node)
+    if (!bound) return
+
+    this.bindings.delete(node)
+    try {
+      bound.binding()
+    } catch (error) {
+      console.error('Cleanup error:', error)
+    }
   }
 
   /**
@@ -1058,7 +1251,25 @@ export class DOMRenderer {
     // so the owner keeps its element and the mapping follows it.
     let swapped = false
 
-    if (newNode.owned && newNode.element) {
+    if (newNode.reactiveElement) {
+      // The accessor is not evaluated here: adoption runs inside whatever
+      // effect is reconciling, so calling it would subscribe that effect — the
+      // very leak `reactiveElement` exists to close. The mounted element is
+      // carried over as the hint the new binding compares its first result
+      // against, and the swap, if there is one, happens there.
+      newNode.element = element
+      this.nodeMap.set(newNode, element)
+
+      // Retiring the old binding has to be explicit. The execution owner
+      // disposes it only when `render` ran inside an effect; a `render` called
+      // outside one would otherwise leave two live bindings on the same slot.
+      this.retireBinding(oldNode)
+
+      // `oldNode.dispose` is deliberately not transferred: it composes the old
+      // binding, and the owner half is already registered against the still
+      // mounted element, where it runs when that element is replaced or
+      // removed.
+    } else if (newNode.owned && newNode.element) {
       // A different element means the owner rebuilt its content, so the one
       // already mounted is swapped out for it. This is the only place the two
       // are paired, since each render supplies a fresh node object.
@@ -1084,7 +1295,7 @@ export class DOMRenderer {
     // against the still-mounted element carries across. After a swap it belongs
     // to the discarded element and has already run; `newNode` keeps its own,
     // which `renderSingle` registers against the newly mounted element.
-    if (!swapped && oldNode.dispose) {
+    if (!swapped && !newNode.reactiveElement && oldNode.dispose) {
       newNode.dispose = oldNode.dispose
     }
 
