@@ -22,6 +22,12 @@ Resolving at the loader rather than in `Symbol()` keeps every entry point on one
 
 No mapping entries changed: all 140 targets already existed in Lucide, so the table was correct and simply unused. `isSFSymbolSupported()` now agrees with what renders, which is asserted directly rather than assumed.
 
+**The name as written wins when the backend has an icon of that name.** Seven SF keys — `trash`, `house`, `bolt`, `cross`, `ellipsis`, `forward`, `speaker` — are also real Lucide icons, so resolving them unconditionally would send `Symbol('trash')` to `trash-2`: a different glyph from the one the caller named, and a regression against the behaviour when the table was not consulted at all. Resolution asks Lucide whether it holds the name as written and only maps when it does not.
+
+That check is exact membership rather than a spelling heuristic. Dot-free is not a usable signal — `checkmark`, `magnifyingglass`, `xmark`, `archivebox`, `person` and `mappin` are dot-free SF names that genuinely need mapping.
+
+One consequence for `IconLoader`'s cache: entries key on the name the *caller* asked for rather than the resolved one. Two spellings of the same glyph therefore no longer share an entry. They cannot — `trash` and the SF key mapping to `trash-2` mean different icons, so a shared entry would serve one caller the other's glyph — and the requested name is also the only key available synchronously, now that resolution has to consult the icon set. `isIconCached()` and `getCachedIcon()` are unchanged in signature and stay synchronous.
+
 ## The symbol never left the loading spinner
 
 Fixing name resolution alone was not enough to make a glyph appear. Measured in jsdom, no `Symbol` ever painted an SVG — not a valid name, not a warm cache, not with a fallback, not after a signal change. Every one stayed on `⟳`.

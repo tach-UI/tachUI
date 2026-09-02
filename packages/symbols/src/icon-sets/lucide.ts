@@ -2,8 +2,12 @@ import type { IconSet, IconDefinition, IconMetadata, SymbolVariant, SymbolWeight
 
 /**
  * Convert kebab-case to PascalCase for Lucide icon names
+ *
+ * Exported for `IconLoader`, which needs the same spelling rule to tell whether
+ * a name is one of Lucide's own. Not re-exported from the `icon-sets` barrel, so
+ * it stays internal to the package.
  */
-function toPascalCase(str: string): string {
+export function toPascalCase(str: string): string {
   return str
     .split('-')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
