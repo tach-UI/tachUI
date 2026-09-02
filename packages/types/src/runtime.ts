@@ -187,6 +187,23 @@ export interface DOMNode {
    * For content the renderer cannot express as nodes: an SVG subtree built with
    * `createElementNS`, or a third-party widget that owns its own DOM. Content
    * that can be expressed as `children` should be, so it reconciles normally.
+   *
+   * ## The element is trusted; the owner is responsible for it
+   *
+   * This is a trust boundary, and it points at the caller. The framework's
+   * escaping applies to `props`, `children` and text — none of which describe
+   * an owned element. The element is mounted as built on the client, and
+   * serialized as `element.outerHTML` on the server: whatever nodes it holds
+   * become markup, `<script>` included. Nothing sanitizes it in between, and
+   * nothing can — the point of `owned` is that the renderer does not interpret
+   * the subtree.
+   *
+   * **Never build an owned element from unsanitized HTML.** Construct it
+   * node-by-node (`createElement`/`createElementNS`, `setAttribute`,
+   * `textContent`), or run untrusted markup through a sanitizer before it
+   * reaches an `innerHTML` sink. `Symbol` does the latter: icon bodies come
+   * from pluggable icon sets, so every one goes through the allowlist
+   * sanitizer first (see `@tachui/symbols`' `getSanitizedIconBody`).
    */
   owned?: boolean
   /**

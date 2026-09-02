@@ -658,14 +658,34 @@ function serializeNode(
     // A bound node has no `element` until the renderer mounts it, so the
     // accessor is the only source of truth server-side. `untrack` keeps the
     // read out of whatever computation is serializing.
-    const owned =
-      typeof (node.element as any)?.outerHTML === 'string'
-        ? node.element
-        : node.reactiveElement
-          ? untrack(() => node.reactiveElement!())
-          : undefined
+    //
+    // The accessor is the owner's code and may throw — `DOMNode.owned` tells an
+    // owner that needs a DOM to emit no owned node server-side, but a violation
+    // should degrade to the empty shell rather than take down the whole render.
+    let owned: unknown
+    if (typeof (node.element as any)?.outerHTML === 'string') {
+      owned = node.element
+    } else if (node.reactiveElement) {
+      try {
+        owned = untrack(() => node.reactiveElement!())
+      } catch (error) {
+        console.warn(
+          '[tachUI/ssr] reactiveElement accessor threw during serialization; ' +
+            'emitting the empty shell. An accessor that needs a DOM must not be ' +
+            'emitted server-side (see DOMNode.owned).',
+          error
+        )
+      }
+    }
 
     if (typeof (owned as any)?.outerHTML === 'string') {
+      // Emitted verbatim, by design: an owned node's element *is* its markup,
+      // and the renderer mounts the same element unaltered on the client.
+      // Escaping it here would emit the owner's DOM as visible text, and
+      // sanitizing it would corrupt legitimate third-party widget output while
+      // still diverging from the client. `DOMNode.owned` therefore makes the
+      // owner responsible: an owned element must never be built from
+      // unsanitized HTML.
       return (owned as any).outerHTML
     }
   }

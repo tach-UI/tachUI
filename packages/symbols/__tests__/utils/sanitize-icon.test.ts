@@ -214,4 +214,34 @@ describe('DOM-free SSR fallback (#218 review)', () => {
 
     vi.unstubAllGlobals()
   })
+
+  /**
+   * `href`/`xlink:href` are allowlisted attributes, so the protocol check is
+   * what stands between a `<use>` reference and script execution. The DOM path
+   * is covered by `@tachui/core`'s sanitizer tests; this pins the DOM-free
+   * rebuilder, which reimplements the rule and has to stay in step with it.
+   */
+  test('DOM-free sanitizer drops unsafe href protocols', () => {
+    vi.stubGlobal('DOMParser', undefined)
+    vi.stubGlobal('document', undefined)
+
+    // Each case on its own definition: a value containing angle brackets fails
+    // the token grammar outright and drops everything after it (fail closed,
+    // asserted above), which would mask the per-attribute filtering under test.
+    const sanitize = (name: string, svg: string) =>
+      getSanitizedIconBody(makeDefinition({ name, svg }))
+
+    expect(sanitize('h1', '<use href="javascript:alert(1)"/>')).toBe('<use/>')
+    expect(sanitize('h2', '<use xlink:href="JaVaScRiPt:alert(1)"/>')).toBe('<use/>')
+    // Control characters are stripped before the protocol check, so padding
+    // does not sneak it past.
+    expect(sanitize('h3', '<use href="java\tscript:alert(1)"/>')).toBe('<use/>')
+    expect(sanitize('h4', '<use href="data:text/html;base64,PHN2Zz4="/>')).toBe('<use/>')
+
+    // The safe fragment reference survives, so the rule is a filter on the
+    // value and not a blanket drop of the attribute.
+    expect(sanitize('h5', '<use href="#legit"/>')).toBe('<use href="#legit"/>')
+
+    vi.unstubAllGlobals()
+  })
 })
