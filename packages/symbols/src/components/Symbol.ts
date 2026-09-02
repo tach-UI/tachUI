@@ -518,7 +518,12 @@ export function Symbol(
       // this is a server render, where there is no DOM to paint into and the
       // icon is drawn on hydration. No DOM is touched in either case, so
       // constructing a Symbol stays free of side effects.
-      if (!(wrapper instanceof Element)) return
+      //
+      // `Element` has to be tested for before it is named: in a real Node
+      // process it is not defined at all, and this effect runs eagerly while
+      // the Symbol is being constructed, so naming it would throw a
+      // ReferenceError before `@tachui/ssr` could emit anything.
+      if (typeof Element === 'undefined' || !(wrapper instanceof Element)) return
 
       const content = contentElement()
 
