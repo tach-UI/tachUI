@@ -2,7 +2,7 @@
  * Test setup for TachUI Symbols
  */
 
-import { vi, beforeEach } from 'vitest'
+import { beforeEach } from 'vitest'
 import { IconSetRegistry } from '../src/icon-sets/registry'
 import { LucideIconSet } from '../src/icon-sets/lucide'
 import { stderrSuppressor } from './utils/stderr-suppressor'
@@ -149,81 +149,3 @@ globalThis.restoreConsole = () => {
 const lucideIconSet = new LucideIconSet()
 IconSetRegistry.register(lucideIconSet)
 IconSetRegistry.setDefault('lucide')
-
-// Mock DOM globals for tests
-global.document = {
-  createElement: vi.fn((tag: string) => {
-    const style = {}
-    const element = {
-      id: '',
-      className: '',
-      style: new Proxy(style, {
-        set(target, property, value) {
-          target[property] = value
-          return true
-        },
-        get(target, property) {
-          return target[property]
-        },
-      }),
-      setAttribute: vi.fn(),
-      getAttribute: vi.fn(),
-      appendChild: vi.fn(),
-      removeChild: vi.fn(),
-      innerHTML: '',
-      textContent: '',
-    }
-
-    // Mock cssText property
-    Object.defineProperty(element.style, 'cssText', {
-      set(value) {
-        // Clear existing styles
-        Object.keys(element.style).forEach(key => {
-          if (key !== 'cssText' && typeof element.style[key] !== 'function') {
-            delete element.style[key]
-          }
-        })
-
-        const rules = value.split(';').filter(rule => rule.trim())
-        rules.forEach(rule => {
-          const colonIndex = rule.indexOf(':')
-          if (colonIndex === -1) return
-
-          const property = rule.slice(0, colonIndex).trim()
-          const val = rule.slice(colonIndex + 1).trim()
-
-          if (property && val) {
-            // Convert kebab-case CSS properties to camelCase
-            const camelProperty = property.replace(
-              /-([a-z])/g,
-              (match, letter) => letter.toUpperCase()
-            )
-            element.style[camelProperty] = val
-          }
-        })
-      },
-      get() {
-        return Object.entries(element.style)
-          .filter(
-            ([key]) =>
-              key !== 'cssText' && typeof element.style[key] !== 'function'
-          )
-          .map(([key, value]) => `${key}: ${value}`)
-          .join('; ')
-      },
-    })
-
-    return element
-  }),
-  getElementById: vi.fn(),
-  body: {
-    appendChild: vi.fn(),
-    insertBefore: vi.fn(),
-    firstChild: null,
-  },
-  head: {
-    appendChild: vi.fn(),
-  },
-  readyState: 'complete',
-  addEventListener: vi.fn(),
-} as any
