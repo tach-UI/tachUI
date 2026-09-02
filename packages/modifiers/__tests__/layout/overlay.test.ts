@@ -6,7 +6,12 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createRoot, createSignal, flushSync } from '@tachui/core/reactive'
+import {
+  createEffect,
+  createRoot,
+  createSignal,
+  flushSync,
+} from '@tachui/core/reactive'
 import { h, text as textNode } from '@tachui/core/runtime'
 import {
   OverlayModifier,
@@ -537,6 +542,56 @@ describe('Overlay Modifier', () => {
       first.cleanup!.forEach(fn => fn())
 
       expect(mockElement.children).toHaveLength(0)
+    })
+
+    it('should dispose the last overlay when it leaves the chain', () => {
+      // Nothing runs from apply() on a pass with no overlay modifier, so the
+      // reconciliation above cannot see this. Modifiers are applied inside the
+      // render effect, so an execution-scoped cleanup covers it.
+      const [show, setShow] = createSignal(true)
+      const modifier = overlay(mockComponent, 'bottomTrailing')
+
+      const dispose = createRoot(dispose => {
+        createEffect(() => {
+          if (show()) modifier.apply({} as DOMNode, pass())
+        })
+        return dispose
+      })
+
+      expect(mockElement.children).toHaveLength(1)
+
+      setShow(false)
+      flushSync()
+
+      expect(mockElement.children).toHaveLength(0)
+
+      dispose()
+    })
+
+    it('should remount when the overlay returns to the chain', () => {
+      const [show, setShow] = createSignal(true)
+      const modifier = overlay(mockComponent, 'bottomTrailing')
+
+      const dispose = createRoot(dispose => {
+        createEffect(() => {
+          if (show()) modifier.apply({} as DOMNode, pass())
+        })
+        return dispose
+      })
+
+      setShow(false)
+      flushSync()
+      expect(mockElement.children).toHaveLength(0)
+
+      setShow(true)
+      flushSync()
+      expect(mockElement.children).toHaveLength(1)
+
+      setShow(false)
+      flushSync()
+      expect(mockElement.children).toHaveLength(0)
+
+      dispose()
     })
 
     it('should remount cleanly after teardown', () => {
