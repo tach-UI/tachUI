@@ -10,9 +10,11 @@
  * Only SF Symbols spelled identically in Lucide — `calendar`, `clock`,
  * `pencil`, `plus` — ever rendered, which is what masked it.
  *
- * These assert at the loader boundary: what name `Symbol` hands to
- * `IconLoader`, and whether the icon set can actually draw it. The package had
- * no coverage of the render path at all, which is how this shipped.
+ * These assert at the icon set boundary: what name a render ultimately asks
+ * the icon set for, and whether the icon set can actually draw it. That is the
+ * guarantee regardless of which layer performs the mapping — resolution lives
+ * in `IconLoader`, so that every entry point keys on the same name. The package
+ * had no coverage of the render path at all, which is how this shipped.
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
@@ -27,12 +29,12 @@ import {
   isSFSymbolSupported,
 } from '../../src/compatibility/sf-symbols-mapping.js'
 
-/** Render and let the load effect issue its call. */
-async function namesPassedToLoader(
+/** Render and report the names the icon set was asked for. */
+async function namesReachingIconSet(
   name: string,
   props: Record<string, unknown> = {}
 ): Promise<string[]> {
-  const spy = vi.spyOn(IconLoader, 'loadIcon')
+  const spy = vi.spyOn(LucideIconSet.prototype, 'getIcon')
   spy.mockClear()
   const host = document.createElement('div')
   renderComponent(Symbol(name, props) as any, host)
@@ -46,6 +48,9 @@ describe('Symbol name resolution (#303)', () => {
   beforeEach(() => {
     IconSetRegistry.clear()
     IconSetRegistry.register(new LucideIconSet())
+    // The loader caches by resolved name, and a cache hit never reaches the
+    // icon set — which is what these spy on.
+    IconLoader.clearCache()
   })
 
   afterEach(() => {
@@ -76,7 +81,7 @@ describe('Symbol name resolution (#303)', () => {
     test.each(reported)('resolves %s to %s', async (sfName, lucideName) => {
       // Guard against the table drifting under the test.
       expect(getLucideForSFSymbol(sfName)).toBe(lucideName)
-      expect(await namesPassedToLoader(sfName)).toContain(lucideName)
+      expect(await namesReachingIconSet(sfName)).toContain(lucideName)
     })
   })
 
@@ -85,18 +90,18 @@ describe('Symbol name resolution (#303)', () => {
       // `chevron-right` is the only spelling that worked before the mapping was
       // wired up, so anyone using the component today is likely passing these.
       expect(getLucideForSFSymbol('chevron-right')).toBeUndefined()
-      expect(await namesPassedToLoader('chevron-right')).toEqual(['chevron-right'])
+      expect(await namesReachingIconSet('chevron-right')).toEqual(['chevron-right'])
     })
 
     test('an unmapped name is not rewritten', async () => {
       expect(isSFSymbolSupported('checkmark.circle.fill')).toBe(false)
-      expect(await namesPassedToLoader('checkmark.circle.fill')).toEqual([
+      expect(await namesReachingIconSet('checkmark.circle.fill')).toEqual([
         'checkmark.circle.fill',
       ])
     })
 
     test('a name identical in both is unaffected', async () => {
-      expect(await namesPassedToLoader('plus')).toEqual(['plus'])
+      expect(await namesReachingIconSet('plus')).toEqual(['plus'])
     })
   })
 
@@ -105,7 +110,7 @@ describe('Symbol name resolution (#303)', () => {
       // The fallback is a symbol name like any other. It was the only reason
       // the component was usable before this fix, so it must keep working —
       // and it has to resolve, or an SF Symbol fallback fails the same way.
-      const names = await namesPassedToLoader('definitely.not.a.symbol', {
+      const names = await namesReachingIconSet('definitely.not.a.symbol', {
         fallback: 'car.fill',
       })
 
@@ -161,11 +166,12 @@ describe('Symbol name resolution (#303)', () => {
     })
 
     test('the symbol leaves the loading spinner', async () => {
-      // The paint is driven from a microtask as well as from the effect,
-      // because an effect created during render() can never paint on its first
-      // run — `element` is assigned after render() returns — and the root it
-      // lives in is torn down whenever the renderer's effect re-runs. Without
-      // that, every symbol stayed on the spinner no matter what it resolved to.
+      // The icon is built during render() and handed to the renderer as an
+      // owned node, rather than patched in from an effect afterwards. An effect
+      // created during render() cannot paint on its first run — `element` is
+      // assigned after render() returns — and `updateChildren` overwrote
+      // whatever it managed to write later, so every symbol stayed on the
+      // spinner no matter what it resolved to (#303).
       const host = document.createElement('div')
       renderComponent(Symbol('chevron.right') as any, host)
       await new Promise(resolve => setTimeout(resolve, 10))
@@ -195,6 +201,76 @@ describe('Symbol name resolution (#303)', () => {
       }
 
       expect(undrawable).toEqual([])
+    })
+  })
+
+  /**
+   * `IconLoader` is exported from the package root and the compatibility guide
+   * documents preloading with SF Symbol spellings. Resolving in `Symbol()`
+   * alone left every entry point keyed differently, so a documented preload
+   * warmed a key the render never asked for.
+   */
+  describe('every IconLoader entry point keys on the same name', () => {
+    test('a preload under an SF name serves the render, and vice versa', async () => {
+      await IconLoader.preloadIcons(['heart.fill'])
+
+      // Both spellings name one cache entry, not two.
+      expect(IconLoader.isIconCached('heart.fill')).toBe(true)
+      expect(IconLoader.isIconCached('heart')).toBe(true)
+      expect(IconLoader.getCachedIcon('heart.fill')).toBe(
+        IconLoader.getCachedIcon('heart')
+      )
+
+      // The preload actually serves the render: the icon set is never asked.
+      expect(await namesReachingIconSet('heart.fill')).toEqual([])
+    })
+
+    test('the preload loads the resolved name, not the SF spelling', async () => {
+      const spy = vi.spyOn(LucideIconSet.prototype, 'getIcon')
+      await IconLoader.preloadIcons(['bell.fill'])
+
+      // `bell.fill` is not a name any icon set has; asking for it would be a
+      // guaranteed miss plus a wasted load.
+      expect(spy.mock.calls.map(call => call[0])).toEqual(['bell'])
+      spy.mockRestore()
+    })
+  })
+
+  /**
+   * `@tachui/ssr` calls `render()` in Node, where there is no DOM to build the
+   * icon into. Building it during `render()` — rather than patching it in from
+   * an effect, as this did before — made that a throw instead of an empty
+   * wrapper. The icon is drawn when the component hydrates.
+   */
+  describe('rendering without a DOM', () => {
+    function withoutDocument<T>(body: () => T): T {
+      const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'document')
+      // @ts-expect-error - deleting a global for the duration of the call
+      delete globalThis.document
+      try {
+        return body()
+      } finally {
+        if (descriptor) Object.defineProperty(globalThis, 'document', descriptor)
+      }
+    }
+
+    test('render() does not require a document', () => {
+      const node = withoutDocument(() => (Symbol('heart.fill') as any).render())
+
+      const wrapper = Array.isArray(node) ? node[0] : node
+      expect(wrapper.tag).toBe('span')
+      // No owned child: an owned node describes its subtree through its
+      // element, so emitting one without an element would serialize as an
+      // empty tag rather than nothing.
+      expect(wrapper.children).toEqual([])
+    })
+
+    test('the wrapper still carries its classes and accessibility props', () => {
+      const node = withoutDocument(() => (Symbol('heart.fill') as any).render())
+
+      const wrapper = Array.isArray(node) ? node[0] : node
+      expect(wrapper.props.className).toContain('tachui-symbol')
+      expect(wrapper.props['aria-hidden'] ?? wrapper.props.role).toBeDefined()
     })
   })
 })

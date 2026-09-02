@@ -1,5 +1,22 @@
 import type { IconDefinition, SymbolVariant } from '../types.js'
 import { IconSetRegistry } from '../icon-sets/registry.js'
+import { getLucideForSFSymbol } from '../compatibility/sf-symbols-mapping.js'
+
+/**
+ * Resolve an SF Symbol name to its icon-set-native equivalent.
+ *
+ * Applied at this boundary rather than by each caller so that loading, the
+ * cache key and the cache probes all agree on one name. Resolving in `Symbol()`
+ * alone meant `preloadIcons(['heart.fill'])` — the spelling the compatibility
+ * guide documents — cached under `heart.fill` while the render asked for
+ * `heart`: a guaranteed miss, plus a wasted load of a name no icon set has.
+ *
+ * An unmapped name passes through unchanged, so icon-set-native names such as
+ * `chevron-right`, and names belonging to a non-Lucide set, keep working.
+ */
+function resolveIconName(name: string): string {
+  return getLucideForSFSymbol(name) ?? name
+}
 
 /**
  * Tree-shakeable icon loading utilities
@@ -16,7 +33,8 @@ export class IconLoader {
     variant: SymbolVariant = 'none',
     iconSetName?: string
   ): Promise<IconDefinition | undefined> {
-    const cacheKey = `${iconSetName || 'default'}-${name}-${variant}`
+    const resolvedName = resolveIconName(name)
+    const cacheKey = `${iconSetName || 'default'}-${resolvedName}-${variant}`
     
     // Return cached icon if available
     if (this.iconCache.has(cacheKey)) {
@@ -29,7 +47,7 @@ export class IconLoader {
     }
     
     // Start loading the icon
-    const loadPromise = this.loadIconInternal(name, variant, iconSetName)
+    const loadPromise = this.loadIconInternal(resolvedName, variant, iconSetName)
     this.loadingPromises.set(cacheKey, loadPromise)
     
     try {
@@ -103,7 +121,7 @@ export class IconLoader {
     variant: SymbolVariant = 'none',
     iconSetName?: string
   ): boolean {
-    const cacheKey = `${iconSetName || 'default'}-${name}-${variant}`
+    const cacheKey = `${iconSetName || 'default'}-${resolveIconName(name)}-${variant}`
     return this.iconCache.has(cacheKey)
   }
   
@@ -115,7 +133,7 @@ export class IconLoader {
     variant: SymbolVariant = 'none',
     iconSetName?: string
   ): IconDefinition | undefined {
-    const cacheKey = `${iconSetName || 'default'}-${name}-${variant}`
+    const cacheKey = `${iconSetName || 'default'}-${resolveIconName(name)}-${variant}`
     return this.iconCache.get(cacheKey)
   }
   
