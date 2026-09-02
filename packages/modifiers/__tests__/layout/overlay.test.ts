@@ -412,78 +412,143 @@ describe('Overlay Modifier', () => {
 
   describe('Re-application on re-render', () => {
     // `renderSingle` applies modifiers on every render of a node, not only when
-    // the element is created. A base component that re-renders therefore drives
-    // apply() again on the same element, and the pipeline's cleanup does not
-    // run until unmount.
+    // the element is created, so a base component that re-renders drives
+    // apply() again on the same element. The pipeline's cleanup does not run
+    // until unmount, so nothing removes the previous pass's overlay.
+    //
+    // `applyModifiersToNode` builds one ModifierContext per element render and
+    // hands the same object to every modifier in that pass, so a fresh context
+    // here is exactly what a re-render looks like.
+    const pass = (): ModifierContext => ({
+      componentId: 'test-component',
+      element: mockElement,
+      phase: 'update',
+    })
+
     it('should replace its overlay rather than append another', () => {
       const modifier = overlay(mockComponent, 'bottomTrailing')
 
-      modifier.apply({} as DOMNode, mockContext)
-      modifier.apply({} as DOMNode, mockContext)
-      modifier.apply({} as DOMNode, mockContext)
+      modifier.apply({} as DOMNode, pass())
+      modifier.apply({} as DOMNode, pass())
+      modifier.apply({} as DOMNode, pass())
 
       expect(mockElement.children).toHaveLength(1)
     })
 
-    it('should leave the surviving overlay holding the current content', () => {
-      const first = createMockComponent('b')
-      const second = createMockComponent('i')
+    it('should replace overlays mounted by a previous modifier instance', () => {
+      // A component that builds its chain inline produces a fresh modifier
+      // every render while the renderer reuses the element, so the new instance
+      // has no knowledge of its predecessor. State has to live on the element.
+      overlay(createMockComponent('b'), 'center').apply({} as DOMNode, pass())
+      overlay(createMockComponent('i'), 'center').apply({} as DOMNode, pass())
 
-      new OverlayModifier({ content: first }).apply({} as DOMNode, mockContext)
-
-      const modifier = new OverlayModifier({ content: second })
-      modifier.apply({} as DOMNode, mockContext)
-      modifier.apply({} as DOMNode, mockContext)
-
-      // One container from the first modifier, one from the second — the
-      // second's re-apply replaced its own, and left the first alone.
-      expect(mockElement.children).toHaveLength(2)
-      expect(mockElement.children[1]!.querySelector('i')).not.toBeNull()
+      expect(mockElement.children).toHaveLength(1)
+      expect(mockElement.children[0]!.querySelector('i')).not.toBeNull()
     })
 
-    it('should not clobber a sibling overlay when one re-applies', () => {
+    it('should mount every overlay applied within a single pass', () => {
+      const shared = pass()
+      overlay(createMockComponent('b'), 'center').apply({} as DOMNode, shared)
+      overlay(createMockComponent('i'), 'bottomTrailing').apply(
+        {} as DOMNode,
+        shared
+      )
+
+      expect(mockElement.children).toHaveLength(2)
+    })
+
+    it('should carry sibling overlays across a re-render', () => {
       const ring = overlay(createMockComponent('b'), 'center')
       const badge = overlay(createMockComponent('i'), 'bottomTrailing')
 
-      ring.apply({} as DOMNode, mockContext)
-      badge.apply({} as DOMNode, mockContext)
+      const first = pass()
+      ring.apply({} as DOMNode, first)
+      badge.apply({} as DOMNode, first)
       expect(mockElement.children).toHaveLength(2)
 
-      // A second pass over both, as a re-render would do.
-      ring.apply({} as DOMNode, mockContext)
-      badge.apply({} as DOMNode, mockContext)
+      const second = pass()
+      ring.apply({} as DOMNode, second)
+      badge.apply({} as DOMNode, second)
 
       expect(mockElement.children).toHaveLength(2)
       expect(mockElement.children[0]!.querySelector('b')).not.toBeNull()
       expect(mockElement.children[1]!.querySelector('i')).not.toBeNull()
     })
 
+    it('should drop an overlay that leaves a chain which still has others', () => {
+      const ring = overlay(createMockComponent('b'), 'center')
+      const badge = overlay(createMockComponent('i'), 'bottomTrailing')
+
+      const first = pass()
+      ring.apply({} as DOMNode, first)
+      badge.apply({} as DOMNode, first)
+      expect(mockElement.children).toHaveLength(2)
+
+      // Next pass renders the ring only — the badge is gone from the chain.
+      ring.apply({} as DOMNode, pass())
+
+      expect(mockElement.children).toHaveLength(1)
+      expect(mockElement.children[0]!.querySelector('b')).not.toBeNull()
+    })
+
     it('should track elements independently when applied to several', () => {
       const modifier = overlay(mockComponent)
       const other = document.createElement('div')
 
-      modifier.apply({} as DOMNode, mockContext)
-      modifier.apply({} as DOMNode, { ...mockContext, element: other })
-      modifier.apply({} as DOMNode, mockContext)
+      modifier.apply({} as DOMNode, pass())
+      modifier.apply({} as DOMNode, {
+        componentId: 'other',
+        element: other,
+        phase: 'creation',
+      })
+      modifier.apply({} as DOMNode, pass())
 
       // Re-applying to one element must not tear down the other's overlay.
       expect(mockElement.children).toHaveLength(1)
       expect(other.children).toHaveLength(1)
     })
 
-    it('should survive cleanup running after a re-apply', () => {
+    it('should hand back cleanup once, not once per re-render', () => {
       const modifier = overlay(mockComponent)
 
-      const first = modifier.apply({} as DOMNode, mockContext) as ModifierResult
-      const second = modifier.apply({} as DOMNode, mockContext) as ModifierResult
+      const results = [pass(), pass(), pass(), pass()].map(
+        ctx => modifier.apply({} as DOMNode, ctx) as ModifierResult
+      )
 
-      // The pipeline still holds the first pass's cleanup. Running it must not
-      // double-dispose, nor remove the overlay the second pass mounted.
-      expect(() => first.cleanup!.forEach(fn => fn())).not.toThrow()
+      // The pipeline chains every returned cleanup onto node.dispose and never
+      // drops the previous one, so returning one per pass would accumulate
+      // stale teardowns that all replay at unmount.
+      const withCleanup = results.filter(r => r.cleanup?.length)
+      expect(withCleanup).toHaveLength(1)
+      expect(results[0]!.cleanup).toBeDefined()
+    })
+
+    it('should tear down the current overlay from the single cleanup', () => {
+      const modifier = overlay(mockComponent)
+
+      const first = modifier.apply({} as DOMNode, pass()) as ModifierResult
+      modifier.apply({} as DOMNode, pass())
+      modifier.apply({} as DOMNode, pass())
+
       expect(mockElement.children).toHaveLength(1)
 
-      second.cleanup!.forEach(fn => fn())
+      // The one cleanup handed back on the first pass must dispose whatever is
+      // mounted now, not the container it happened to see back then.
+      first.cleanup!.forEach(fn => fn())
+
       expect(mockElement.children).toHaveLength(0)
+    })
+
+    it('should remount cleanly after teardown', () => {
+      const modifier = overlay(mockComponent)
+
+      const first = modifier.apply({} as DOMNode, pass()) as ModifierResult
+      first.cleanup!.forEach(fn => fn())
+      expect(mockElement.children).toHaveLength(0)
+
+      const again = modifier.apply({} as DOMNode, pass()) as ModifierResult
+      expect(mockElement.children).toHaveLength(1)
+      expect(again.cleanup?.length).toBe(1)
     })
   })
 

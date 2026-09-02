@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { createSignal, flushSync } from '@tachui/core'
-import { renderComponent } from '@tachui/core/runtime'
+import { h, renderComponent } from '@tachui/core/runtime'
 import { overlay } from '@tachui/modifiers'
 import { Text } from '../../src'
 
@@ -128,6 +128,76 @@ describe('overlay() content rendering (#302)', () => {
 
     expect(overlays()).toHaveLength(1)
     expect(overlays()[0]!.textContent).toBe('z')
+  })
+
+  it('does not accumulate when the chain is rebuilt on every render', () => {
+    // Inline composition — `Text(...).overlay(...)` inside a parent's render —
+    // produces a fresh overlay modifier every pass while the renderer reuses
+    // the element. Bookkeeping held on the modifier instance cannot see the
+    // previous pass's container; it has to live on the element.
+    const [n, setN] = createSignal(0)
+    const container = document.createElement('div')
+
+    const parent: any = {
+      type: 'component',
+      id: 'rebuilds-chain',
+      props: {},
+      render: () => {
+        const child: any = Text(`v${n()}`)
+          .modifier.overlay(Text('D'), 'bottomTrailing')
+          .build()
+        const result = child.render()
+        return Array.isArray(result) ? result : [result]
+      },
+    }
+    renderComponent(parent, container)
+
+    const overlays = () =>
+      container.querySelectorAll('[style*="position: absolute"]')
+
+    expect(overlays()).toHaveLength(1)
+
+    setN(1)
+    flushSync()
+    expect(overlays()).toHaveLength(1)
+
+    setN(2)
+    flushSync()
+    expect(overlays()).toHaveLength(1)
+  })
+
+  it('drops an overlay removed from a chain that still has others', () => {
+    const [both, setBoth] = createSignal(true)
+    const container = document.createElement('div')
+
+    const parent: any = {
+      type: 'component',
+      id: 'conditional-overlay',
+      props: {},
+      render: () => {
+        const node: any = h('div', { class: 'base' })
+        node.modifiers = both()
+          ? [
+              overlay(Text('ring'), 'center'),
+              overlay(Text('badge'), 'bottomTrailing'),
+            ]
+          : [overlay(Text('ring'), 'center')]
+        return node
+      },
+    }
+    renderComponent(parent, container)
+
+    const labels = () =>
+      Array.from(
+        container.querySelectorAll('[style*="position: absolute"]')
+      ).map(el => el.textContent)
+
+    expect(labels()).toEqual(['ring', 'badge'])
+
+    setBoth(false)
+    flushSync()
+
+    expect(labels()).toEqual(['ring'])
   })
 
   it('keeps each layer distinct when a multi-overlay base re-renders', () => {

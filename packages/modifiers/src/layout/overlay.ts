@@ -74,24 +74,47 @@ function isComponentContent(value: unknown): value is ComponentInstance {
   )
 }
 
+interface OverlayElementState {
+  /**
+   * Identity of the `ModifierContext` for the pass currently being built.
+   * `applyModifiersToNode` builds one context object per element render and
+   * hands the same one to every modifier in that pass, so a change of identity
+   * is exactly a change of pass.
+   */
+  pass: ModifierContext
+  /** Disposers for every overlay mounted on this element during that pass. */
+  mounts: (() => void)[]
+}
+
+/**
+ * Overlay bookkeeping is owned by the **element**, not by the modifier.
+ *
+ * `renderSingle` applies modifiers on every render of a node, not only when the
+ * element is created, and the pipeline's cleanup does not run until unmount. So
+ * a re-render mounts a second overlay over the first unless something tears the
+ * stale one down.
+ *
+ * Keying this off the modifier instance is not enough: a component that builds
+ * its chain inline — `Text(label()).overlay(badge)` inside a parent's render —
+ * produces a *fresh* modifier every pass while the renderer reuses the element,
+ * so the new instance knows nothing about its predecessor. Keying off the
+ * element covers that, and covers an overlay being dropped from a chain that
+ * still has others.
+ *
+ * Weak so a discarded element does not pin its overlays' closures.
+ */
+const overlayStates = new WeakMap<Element, OverlayElementState>()
+
+function disposeMounts(state: OverlayElementState): void {
+  // Swap first: a disposer must not observe the list it is being drained from.
+  const mounts = state.mounts
+  state.mounts = []
+  for (const dispose of mounts) dispose()
+}
+
 export class OverlayModifier extends BaseModifier<OverlayOptions> {
   readonly type = 'overlay'
   readonly priority = 10 // Apply late so positioning is relative to final layout
-
-  /**
-   * Teardown for the overlay this modifier last mounted on a given element.
-   *
-   * `renderSingle` applies modifiers on every render of a node, not only when
-   * the element is created, so a base component that re-renders drives
-   * `apply()` again on the same element. Without this, each pass would append
-   * another container and leave the previous one — and its content — in the
-   * DOM, because the pipeline's cleanup only runs at unmount.
-   *
-   * Keyed per element rather than held as a single field so that one modifier
-   * instance applied to several elements tears each down independently, and
-   * weakly so a discarded element does not pin its overlay's closures.
-   */
-  private readonly mounted = new WeakMap<Element, () => void>()
 
   apply(
     node: DOMNode,
@@ -105,23 +128,43 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
 
     const { content } = this.properties
 
-    // Re-applied to an element this modifier already decorated: drop the stale
-    // overlay before mounting the replacement.
-    this.mounted.get(element)?.()
+    let state = overlayStates.get(element)
+    const firstMount = state === undefined
 
-    const cleanup = this.applyOverlay(element, content)
-
-    let torndown = false
-    const teardown = () => {
-      // The pipeline may run this after a re-apply already has; the disposers
-      // below are not all safe to invoke twice.
-      if (torndown) return
-      torndown = true
-      for (const dispose of cleanup) dispose()
-      this.mounted.delete(element)
+    if (state === undefined) {
+      state = { pass: context, mounts: [] }
+      overlayStates.set(element, state)
+    } else if (state.pass !== context) {
+      // A new render pass over this element: everything the previous pass
+      // mounted is stale, including overlays whose modifier is gone from the
+      // chain. Whatever this pass still wants will re-mount below.
+      disposeMounts(state)
+      state.pass = context
     }
 
-    this.mounted.set(element, teardown)
+    const cleanup = this.applyOverlay(element, content)
+    let disposed = false
+    state.mounts.push(() => {
+      // Reachable twice — a pass boundary and an unmount can both drain this.
+      if (disposed) return
+      disposed = true
+      for (const dispose of cleanup) dispose()
+    })
+
+    // Only the pass that created the element's state hands cleanup back. The
+    // pipeline chains every returned cleanup onto `node.dispose` and pushes it
+    // onto the element's cleanup list without ever dropping the previous one,
+    // so returning one per re-apply would grow an unbounded chain of stale
+    // teardowns, all replayed at unmount. One stable teardown per element
+    // disposes whatever is mounted at that point, which is all unmount needs.
+    if (!firstMount) return { node }
+
+    const teardown = () => {
+      const current = overlayStates.get(element)
+      if (!current) return
+      overlayStates.delete(element)
+      disposeMounts(current)
+    }
 
     // The node passes through untouched — overlay never rewrites the tree, it
     // only appends a container and hands back the teardown for it.
