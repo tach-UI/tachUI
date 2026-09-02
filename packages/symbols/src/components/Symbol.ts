@@ -393,9 +393,20 @@ export function Symbol(
       dispose: undefined,
     }
 
-    // Create reactive effect that updates the DOM when signals change
-    const cleanup = createRoot(() => {
-      const effect = createEffect(() => {
+    // Paint the current load state onto the element.
+    //
+    // Split out of the effect below so it can also be driven from a
+    // microtask. The renderer assigns `node.element` *after* `render()`
+    // returns, so an effect created here can never paint on its first run — it
+    // depends entirely on a later signal change to fire again while the
+    // element exists. That is not something to rely on: `createRoot` parents
+    // to `currentOwner`, which inside a computation is that computation's
+    // per-execution owner (#270), so when the renderer's effect re-runs it
+    // tears this root down, and the replacement effect runs once — again
+    // before its element exists — and then sits idle because the signals have
+    // already settled. The symbol was left showing the loading spinner
+    // forever, whatever it had resolved to (#303).
+    const paintDom = () => {
         const loading = isLoading()
         const errorMsg = error()
         const iconDef = iconDefinition()
@@ -448,7 +459,19 @@ export function Symbol(
             element.appendChild(svgElement)
           }
         }
+    }
+
+    // Create reactive effect that updates the DOM when signals change
+    const cleanup = createRoot(() => {
+      const effect = createEffect(() => {
+        paintDom()
       })
+
+      // Guarantee a first paint. This runs after the synchronous render that
+      // assigns `element`, and after any re-render that has reset the node's
+      // children back to the spinner, so it lands whatever the effect above
+      // could not.
+      queueMicrotask(paintDom)
 
       // Return cleanup function
       return () => {
