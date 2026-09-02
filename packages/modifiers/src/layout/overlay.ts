@@ -8,7 +8,12 @@ import { BaseModifier } from '../base'
 import type { ModifierContext, ModifierResult } from '../types'
 import type { ComponentInstance, DOMNode } from '@tachui/types/runtime'
 import type { Signal } from '@tachui/types/reactive'
-import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
+import {
+  createEffect,
+  isSignal,
+  isComputed,
+  onCleanup,
+} from '@tachui/core/reactive'
 import { renderComponent } from '@tachui/core/runtime'
 
 export type OverlayAlignment =
@@ -83,7 +88,7 @@ interface OverlayElementState {
    */
   pass: ModifierContext
   /** Disposers for every overlay mounted on this element during that pass. */
-  mounts: (() => void)[]
+  mounts: Set<() => void>
 }
 
 /**
@@ -106,10 +111,9 @@ interface OverlayElementState {
 const overlayStates = new WeakMap<Element, OverlayElementState>()
 
 function disposeMounts(state: OverlayElementState): void {
-  // Swap first: a disposer must not observe the list it is being drained from.
-  const mounts = state.mounts
-  state.mounts = []
-  for (const dispose of mounts) dispose()
+  // Copy first: each disposer removes itself from the set as it runs.
+  for (const dispose of Array.from(state.mounts)) dispose()
+  state.mounts.clear()
 }
 
 export class OverlayModifier extends BaseModifier<OverlayOptions> {
@@ -132,24 +136,40 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     const firstMount = state === undefined
 
     if (state === undefined) {
-      state = { pass: context, mounts: [] }
+      state = { pass: context, mounts: new Set() }
       overlayStates.set(element, state)
     } else if (state.pass !== context) {
       // A new render pass over this element: everything the previous pass
-      // mounted is stale, including overlays whose modifier is gone from the
-      // chain. Whatever this pass still wants will re-mount below.
+      // mounted is stale. Whatever this pass still wants re-mounts below.
       disposeMounts(state)
       state.pass = context
     }
 
+    const mounted = state
     const cleanup = this.applyOverlay(element, content)
+
     let disposed = false
-    state.mounts.push(() => {
-      // Reachable twice — a pass boundary and an unmount can both drain this.
+    const dispose = () => {
+      // Reachable more than once: a pass boundary, the execution-scoped
+      // cleanup below, and unmount can each drain this mount.
       if (disposed) return
       disposed = true
-      for (const dispose of cleanup) dispose()
-    })
+      mounted.mounts.delete(dispose)
+      for (const fn of cleanup) fn()
+    }
+    mounted.mounts.add(dispose)
+
+    // Modifiers are applied inside the render effect's body, so an
+    // execution-scoped cleanup runs just before that effect's next execution
+    // (#270). That is the only signal available for a pass in which *no*
+    // overlay modifier runs at all — the last overlay leaving the chain — which
+    // the reconciliation above can never see, because it is only ever driven
+    // from apply(). Whatever is still in the chain re-mounts on that pass.
+    //
+    // Outside a computation `onCleanup` degrades to owner-scoped, then to a
+    // no-op; the reconciliation above covers those paths, and both routes end
+    // at the same idempotent disposer.
+    onCleanup(dispose)
 
     // Only the pass that created the element's state hands cleanup back. The
     // pipeline chains every returned cleanup onto `node.dispose` and pushes it

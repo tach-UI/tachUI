@@ -200,6 +200,47 @@ describe('overlay() content rendering (#302)', () => {
     expect(labels()).toEqual(['ring'])
   })
 
+  it('drops the sole overlay when it leaves the chain, and restores it', () => {
+    // The pass with no overlay runs no overlay modifier at all, so nothing in
+    // apply() can observe it. Modifiers are applied inside the render effect,
+    // so the mount's execution-scoped cleanup fires before the next pass.
+    const [show, setShow] = createSignal(true)
+    const container = document.createElement('div')
+
+    const parent: any = {
+      type: 'component',
+      id: 'sole-overlay',
+      props: {},
+      render: () => {
+        const node: any = h('div', { class: 'base' })
+        node.modifiers = show()
+          ? [overlay(Text('badge'), 'bottomTrailing')]
+          : []
+        return node
+      },
+    }
+    renderComponent(parent, container)
+
+    const labels = () =>
+      Array.from(
+        container.querySelectorAll('[style*="position: absolute"]')
+      ).map(el => el.textContent)
+
+    expect(labels()).toEqual(['badge'])
+
+    setShow(false)
+    flushSync()
+    expect(labels()).toEqual([])
+
+    setShow(true)
+    flushSync()
+    expect(labels()).toEqual(['badge'])
+
+    setShow(false)
+    flushSync()
+    expect(labels()).toEqual([])
+  })
+
   it('keeps each layer distinct when a multi-overlay base re-renders', () => {
     const [badge, setBadge] = createSignal('1')
     const container = render(
