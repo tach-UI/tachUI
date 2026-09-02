@@ -31,6 +31,29 @@ import {
   generateReducedMotionAnimation
 } from '../animations/SymbolAnimations.js'
 import { getWeightStyles, WEIGHT_TO_STROKE_WIDTH } from '../compatibility/weight-mapping.js'
+import { getLucideForSFSymbol } from '../compatibility/sf-symbols-mapping.js'
+
+/**
+ * Resolve an SF Symbol name to the icon-set name that actually draws it.
+ *
+ * `Symbol()` is documented to take SF Symbol names — `heart.fill`,
+ * `chevron.right`, `person.circle` — but icon sets are keyed by their own
+ * names, so the name has to go through the mapping table before it reaches
+ * one. Without this the raw name is PascalCased and looked up directly, which
+ * only ever matched the handful of SF Symbols spelled identically in Lucide
+ * (`calendar`, `clock`, `pencil`, `plus`); everything else drew the error
+ * glyph even though `isSFSymbolSupported()` reported it as supported (#303).
+ *
+ * An unmapped name passes through unchanged, so an icon-set-native name —
+ * `chevron-right`, the only thing that worked before this was wired up — keeps
+ * working, as does any name belonging to a non-Lucide icon set.
+ *
+ * This mirrors `Image({ systemName })` in the SwiftUI shim, which has always
+ * resolved through the same table.
+ */
+function resolveIconName(name: string): string {
+  return getLucideForSFSymbol(name) ?? name
+}
 
 /**
  * Symbol component - SwiftUI-inspired icon system
@@ -108,11 +131,20 @@ export function Symbol(
     // Handle async loading
     const loadIcon = async () => {
       try {
-        let icon = await IconLoader.loadIcon(iconName, variant, props.iconSet)
-        
-        // Try fallback if icon not found
+        let icon = await IconLoader.loadIcon(
+          resolveIconName(iconName),
+          variant,
+          props.iconSet
+        )
+
+        // Try fallback if icon not found. The fallback is a symbol name like
+        // any other, so it resolves the same way.
         if (!icon && props.fallback) {
-          icon = await IconLoader.loadIcon(props.fallback, variant, props.iconSet)
+          icon = await IconLoader.loadIcon(
+            resolveIconName(props.fallback),
+            variant,
+            props.iconSet
+          )
         }
         
         if (!icon) {
