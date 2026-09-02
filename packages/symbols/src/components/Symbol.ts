@@ -1,9 +1,9 @@
-import { 
-  ComponentInstance, 
-  createSignal, 
+import type { DOMNode } from '@tachui/core'
+import {
+  ComponentInstance,
+  createSignal,
   createEffect,
-  createRoot,
-  untrack,
+  createMemo,
   Signal,
   ModifiableComponent,
   ModifierBuilder,
@@ -48,11 +48,6 @@ export function Symbol(
   // unrelated re-render does not swap identical DOM.
   let cachedContent: { signature: string; element: Element } | undefined
 
-  // The most recent wrapper node handed to the renderer. The repaint effect
-  // reaches the mounted element through it, since the renderer assigns
-  // `element` only after `render()` has returned.
-  let wrapperNode: any | undefined
-  
   // Resolve signal values
   const getName = () => typeof name === 'function' ? name() : name
   const getVariant = (): SymbolVariant => {
@@ -351,39 +346,47 @@ export function Symbol(
     name,
   }
   
-  // Create a reactive DOM node that updates itself when signals change
-  const createReactiveSymbol = () => {
-    const styleString = styleStringFrom(getStyles())
-    
+  /**
+   * Describe the symbol; do not read its state.
+   *
+   * `render()` is called inline inside the *enclosing* component's render
+   * effect, so a signal read here would subscribe that effect and every icon
+   * that resolved would re-render the whole surrounding subtree (#303). The
+   * classes and styles go over as memos and the icon as an accessor, so each
+   * subscription belongs to a renderer-owned binding scoped to the mounted
+   * element instead.
+   *
+   * The memos are created here rather than in the constructor so each pass gets
+   * memos parented to itself: a computed disposed with its constructing pass
+   * returns its last value rather than throwing, which would freeze the class
+   * and style silently. They are also load-bearing, not an optimisation — the
+   * renderer gates on `isSignal || isComputed`, and a bare function would be
+   * stringified.
+   */
+  const createReactiveSymbol = (): DOMNode => {
+    const className = createMemo(getClasses)
+    // Object form, not a string: the renderer kebab-cases object keys and
+    // writes them per property, which both keeps camelCase keys like
+    // `lineHeight` (a string built from them is not valid CSS) and leaves
+    // properties a modifier owns alone.
+    const style = createMemo(getStyles)
+
     // Generate accessibility attributes
     const accessibilityProps = SymbolAccessibility.generateAccessibilityProps({
       ...props,
       name
     })
-      
-    const symbolElement: any = {
+
+    return {
       type: 'element',
       tag: 'span',
       props: {
-        className: getClasses(),
-        style: styleString,
+        className,
+        style,
         ...accessibilityProps
       },
-      // The content is built below and mounted as an owned child, so the
-      // renderer reconciles it like anything else.
       children: contentChildren(),
-      dispose: disposeRepaint,
     }
-
-    wrapperNode = symbolElement
-
-    return symbolElement
-  }
-
-  function styleStringFrom(styles: Record<string, any>): string {
-    return Object.entries(styles)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join('; ')
   }
 
   /**
@@ -394,12 +397,11 @@ export function Symbol(
    * the element is built here with `createElementNS` and handed over as an
    * owned node for the renderer to mount (see `DOMNode.owned`).
    *
-   * The first paint comes from `render()`; every later one comes from the
-   * repaint effect, which is only safe because `owned` stops `updateChildren`
-   * reconciling this subtree away. That overwriting is what made the earlier
-   * effect-based attempt fail (#303).
+   * The renderer subscribes to `contentElement` and repaints by swapping the
+   * mounted element, so the first paint and every later one take the same path
+   * and neither reads a signal in this component's `render()`.
    */
-  function contentChildren(): any[] {
+  function contentChildren(): DOMNode[] {
     // Server-side there is no DOM to build into, and no icon has resolved yet
     // either, so the wrapper serializes alone and the icon is drawn when the
     // component hydrates. Emitting nothing keeps the server markup a prefix of
@@ -410,18 +412,25 @@ export function Symbol(
     return [contentNode()]
   }
 
-  function contentNode(): any {
-    const element = contentElement()
+  function contentNode(): DOMNode {
     return {
       type: 'element',
-      tag: element.tagName.toLowerCase(),
+      // The slot's name, not the current element's — the spinner is a `div`.
+      // It has to be stable so the reconciler pairs this node with its
+      // predecessor across renders (see `DOMNode.reactiveElement`).
+      tag: 'svg',
       props: {},
       children: [],
-      element,
+      reactiveElement: contentElement,
       owned: true,
     }
   }
 
+  /**
+   * The element for the current load state, and the renderer's subscription:
+   * its reads — `isLoading`, `error`, `iconDefinition`, size and colours — are
+   * exactly the dependencies a repaint should have.
+   */
   function contentElement(): Element {
     const loading = isLoading()
     const errorMsg = error()
@@ -486,68 +495,9 @@ export function Symbol(
     return svgElement
   }
 
-  /**
-   * Repaint this symbol, and only this symbol, when its state changes.
-   *
-   * The signal reads have to happen here rather than in `render()`. A child's
-   * `render()` is called inline by `renderChildrenArray`, inside the *enclosing*
-   * component's render effect, so reading `isLoading`/`error`/`iconDefinition`
-   * there subscribes the parent: every icon that resolved would re-render the
-   * whole surrounding subtree, once per symbol on the screen.
-   *
-   * Owning a root instead keeps each symbol's updates to itself, and patching
-   * the mounted element directly is safe because `owned` stops the renderer
-   * reconciling this subtree (see `DOMNode.owned`).
-   */
-  const disposeRepaint = createRoot(() => {
-    const effect = createEffect(() => {
-      // Subscribed explicitly, so that a pass with nothing to paint into still
-      // re-runs when the load resolves. Reaching them through `contentElement()`
-      // alone would mean never subscribing on the passes that return early.
-      isLoading()
-      error()
-      iconDefinition()
-
-      const classes = getClasses()
-      const styleString = styleStringFrom(getStyles())
-
-      const wrapper = wrapperNode?.element
-
-      // Nothing mounted: either the first paint has not happened — `render()`
-      // builds it from these same values, so there is nothing to catch up — or
-      // this is a server render, where there is no DOM to paint into and the
-      // icon is drawn on hydration. No DOM is touched in either case, so
-      // constructing a Symbol stays free of side effects.
-      //
-      // `Element` has to be tested for before it is named: in a real Node
-      // process it is not defined at all, and this effect runs eagerly while
-      // the Symbol is being constructed, so naming it would throw a
-      // ReferenceError before `@tachui/ssr` could emit anything.
-      if (typeof Element === 'undefined' || !(wrapper instanceof Element)) return
-
-      const content = contentElement()
-
-      wrapper.className = classes
-      wrapper.setAttribute('style', styleString)
-
-      const mounted = wrapper.firstElementChild
-      if (content === mounted) return
-
-      if (mounted) {
-        wrapper.replaceChild(content, mounted)
-      } else {
-        wrapper.appendChild(content)
-      }
-    })
-
-    return () => effect.dispose()
-  })
-
   const instance: ComponentInstance<SymbolProps> = {
     type: 'component',
-    // Untracked so the reads above stay this symbol's business: `render()` runs
-    // inside whichever effect the caller is rendering under.
-    render: () => untrack(() => [createReactiveSymbol()]),
+    render: () => [createReactiveSymbol()],
     props: symbolProps,
     children: [],
     cleanup: [],

@@ -3,6 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach, vi } from 'vitest'
+import { renderComponent } from '@tachui/core'
 import { Symbol } from '../../src/components/Symbol.js'
 import { IconSetRegistry } from '../../src/icon-sets/registry.js'
 import { LucideIconSet } from '../../src/icon-sets/lucide.js'
@@ -97,36 +98,22 @@ vi.stubGlobal('window', {
   matchMedia: mockMatchMedia
 })
 
-// Helper function to extract HTML content from render output
+/**
+ * Render a symbol and read the markup back off the DOM.
+ *
+ * The wrapper's classes and styles reach the renderer as memos, so they only
+ * become markup once something renders them — and the styles land as real
+ * kebab-case CSS properties rather than the camelCase string the node used to
+ * carry, which was never valid CSS.
+ */
 const getRenderedHtml = async (symbol: any): Promise<string> => {
+  const host = document.createElement('div')
+  renderComponent(symbol, host)
+
   // Wait for icon to load
   await new Promise(resolve => setTimeout(resolve, 150))
-  
-  const rendered = symbol.render()
-  
-  // Symbol component returns an array of DOM element objects
-  if (Array.isArray(rendered) && rendered.length > 0) {
-    const element = rendered[0]
-    if (element && element.props) {
-      // Extract all props from the DOM element
-      const className = element.props.className || ''
-      const style = element.props.style || ''
-      
-      // Build attributes string from all props
-      const attributes = Object.entries(element.props)
-        .filter(([key]) => key !== 'className' && key !== 'style')
-        .map(([key, value]) => `${key}="${value}"`)
-        .join(' ')
-      
-      const classAttr = className ? ` class="${className}"` : ''
-      const styleAttr = style ? ` style="${style}"` : ''
-      const otherAttrs = attributes ? ` ${attributes}` : ''
-      
-      return `<${element.tag || 'span'}${classAttr}${styleAttr}${otherAttrs}></${element.tag || 'span'}>`
-    }
-  }
-  
-  return typeof rendered === 'string' ? rendered : JSON.stringify(rendered)
+
+  return host.innerHTML
 }
 
 describe('Symbol Component - Animation Integration', () => {
@@ -270,8 +257,10 @@ describe('Symbol Component - Animation Integration', () => {
       })
       const renderedHtml = await getRenderedHtml(symbol)
 
-      // Should contain some animation duration
-      expect(renderedHtml).toContain('animationDuration') || expect(renderedHtml).toContain('animation-duration')
+      // Halved speed doubles the duration, and the key is real CSS: the styles
+      // go over as an object the renderer kebab-cases, not a string built from
+      // camelCase keys the browser would drop.
+      expect(renderedHtml).toContain('animation-duration: 4s')
     })
 
     test('should add speed modifier classes', async () => {
