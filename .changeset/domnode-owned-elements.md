@@ -43,6 +43,8 @@ The renderer subscribes at mount and, when the accessor yields a different eleme
 
 `tag` names the slot rather than the current element, and must stay stable across renders so the reconciler pairs the node with its predecessor.
 
+The binding is parented to the render pass that created it, so it dies when that pass re-runs and the next pass builds a fresh one. A caller that reuses the *same node object* across passes outlives its own binding, and the reconciler's identity fast path routes that node to `updateExistingNode`, which leaves an owned element alone — so the renderer checks for a dead binding there and rebinds rather than leaving a slot nothing maintains.
+
 ## Reactive props now yield to external writes
 
 Two supporting changes, both needed for modifiers to coexist with content that repaints:
