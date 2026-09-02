@@ -165,7 +165,14 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
         this.disposeNodes(node.children)
       }
 
-      if (typeof node.dispose === 'function') {
+      // A branch this renderer mounted goes back through it, so its
+      // per-element cleanups run and it leaves the renderer's rendered-node
+      // set. Calling `node.dispose` alone leaves reactive prop effects and
+      // `reactiveElement` bindings running and the set growing per toggle.
+      if (this.renderer.hasNode(node)) {
+        this.renderer.disposeNode(node)
+      } else if (typeof node.dispose === 'function') {
+        // Never rendered — a branch swapped out before it was mounted.
         node.dispose()
       }
     })

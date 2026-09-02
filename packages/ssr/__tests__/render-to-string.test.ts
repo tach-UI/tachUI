@@ -715,6 +715,72 @@ describe('renderToString', () => {
     expect(collected).toContain('font-size')
   })
 
+  /**
+   * An owned node's `tag`, `props` and `children` describe an empty shell — the
+   * element is the only description of the subtree — so the serializer reads it
+   * rather than the shell. A bound node has no `element` until the renderer
+   * mounts it, so its accessor is the only source of truth server-side.
+   */
+  describe('owned nodes', () => {
+    it('serializes an owned node from the element it supplied', () => {
+      const node: DOMNode = {
+        type: 'element',
+        tag: 'svg',
+        props: {},
+        children: [],
+        element: { outerHTML: '<svg><path d="A"/></svg>' } as unknown as Element,
+        owned: true,
+      }
+
+      expect(renderToString(h('span', null, node))).toBe(
+        '<span><svg><path d="A"/></svg></span>'
+      )
+    })
+
+    it('resolves a reactiveElement accessor without subscribing to it', () => {
+      const [marker, setMarker] = createSignal('A')
+      let renders = 0
+
+      const node: DOMNode = {
+        type: 'element',
+        tag: 'svg',
+        props: {},
+        children: [],
+        reactiveElement: () => {
+          renders++
+          return { outerHTML: `<svg data-marker="${marker()}"/>` } as unknown as Element
+        },
+      }
+
+      expect(renderToString(h('span', null, node))).toBe(
+        '<span><svg data-marker="A"/></span>'
+      )
+
+      // Read under `untrack`, so nothing outside is subscribed to the signal and
+      // a later change does not re-run anything on its own.
+      setMarker('B')
+      expect(renders).toBe(1)
+
+      expect(renderToString(h('span', null, node))).toBe(
+        '<span><svg data-marker="B"/></span>'
+      )
+    })
+
+    it('serializes the shell when a bound owner emitted no element', () => {
+      // The contract for an accessor that needs a DOM: emit no owned node at
+      // all server-side. This is what a stray one degrades to.
+      const node: DOMNode = {
+        type: 'element',
+        tag: 'svg',
+        props: {},
+        children: [],
+        reactiveElement: () => undefined as unknown as Element,
+      }
+
+      expect(renderToString(h('span', null, node))).toBe('<span><svg></svg></span>')
+    })
+  })
+
   describe('padding/margin object serialization', () => {
     it('serializes padding object with horizontal/vertical to CSS properties', () => {
       const html = renderToString(
