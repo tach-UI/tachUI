@@ -792,6 +792,61 @@ describe('renderToString', () => {
       expect(context.styles.join('\n')).not.toContain('font-size')
     })
 
+    /**
+     * The trust boundary, pinned so it is a stated contract rather than an
+     * accident of implementation.
+     *
+     * An owned element *is* its markup: the renderer mounts it unaltered on the
+     * client, and the serializer emits it unaltered here. Escaping would render
+     * the owner's DOM as visible text; sanitizing would corrupt legitimate
+     * third-party widget output and still diverge from the client. So neither
+     * happens, and `DOMNode.owned` puts the responsibility on the owner —
+     * never build an owned element from unsanitized HTML.
+     *
+     * This test asserts the passthrough, not that anything is made safe. It
+     * exists so that a future change which silently starts escaping or
+     * stripping owned markup has to confront the decision.
+     */
+    it('emits an owned element verbatim, escaping nothing', () => {
+      const node: DOMNode = {
+        type: 'element',
+        tag: 'svg',
+        props: {},
+        children: [],
+        element: {
+          outerHTML: '<svg><script>alert(1)</script></svg>',
+        } as unknown as Element,
+        owned: true,
+      }
+
+      // Everything the owner put in the element reaches the output. An owner
+      // that builds this from untrusted input has created the hole, not the
+      // serializer.
+      expect(renderToString(h('span', null, node))).toBe(
+        '<span><svg><script>alert(1)</script></svg></span>'
+      )
+    })
+
+    it('falls back to the shell when a reactiveElement accessor throws', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const node: DOMNode = {
+        type: 'element',
+        tag: 'svg',
+        props: {},
+        children: [],
+        reactiveElement: () => {
+          // What a real owner reaching for `createElementNS` does in Node.
+          throw new ReferenceError('document is not defined')
+        },
+      }
+
+      // One owner violating the no-DOM contract degrades to an empty shell
+      // rather than taking down the whole page render.
+      expect(renderToString(h('span', null, node))).toBe('<span><svg></svg></span>')
+      expect(warn).toHaveBeenCalled()
+      warn.mockRestore()
+    })
+
     it('serializes the shell when a bound owner emitted no element', () => {
       // The contract for an accessor that needs a DOM: emit no owned node at
       // all server-side. This is what a stray one degrades to.

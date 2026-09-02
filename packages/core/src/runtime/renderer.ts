@@ -258,6 +258,11 @@ export class DOMRenderer {
       // An owned node's contents belong to whoever supplied the element, so
       // props and children are left alone. Reconciling children here would
       // erase the subtree the owner built (see DOMNode.owned).
+      //
+      // The element is mounted as built: this renderer's escaping covers
+      // `props`, `children` and text, none of which describe it. An owner is
+      // responsible for never building one from unsanitized HTML — the trust
+      // boundary is documented on `DOMNode.owned`.
       if (node.owned) {
         return element
       }
