@@ -149,7 +149,14 @@ export interface DOMNode {
    * An owned node is never adopted over — a previously rendered element is not
    * transferred onto it — and its children are not reconciled, so whatever the
    * owner built inside stays untouched across renders. Supplying a *different*
-   * element on a later render replaces the mounted one.
+   * element on a later render replaces the mounted one, disposing the element
+   * it replaced.
+   *
+   * `tag`, `props` and `children` describe an empty shell, so the element is
+   * the only description of the subtree. Server-side rendering therefore reads
+   * `element.outerHTML`, which means an owner that cannot build an element
+   * without a DOM must emit no owned node at all rather than an elementless
+   * one — otherwise it serializes as an empty tag.
    *
    * For content the renderer cannot express as nodes: an SVG subtree built with
    * `createElementNS`, or a third-party widget that owns its own DOM. Content

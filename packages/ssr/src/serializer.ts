@@ -649,6 +649,15 @@ function serializeNode(
     return `<!--${safeComment}-->`
   }
 
+  // An owned node's contents belong to whoever supplied the element and are
+  // deliberately not expressed as child nodes, so `tag`/`props`/`children`
+  // describe an empty shell. Where a DOM is present (a shimmed server render)
+  // the element itself is the only source of truth for its markup; where one is
+  // not, the owner emits no owned node at all. See `DOMNode.owned`.
+  if (node.owned && typeof (node.element as any)?.outerHTML === 'string') {
+    return (node.element as any).outerHTML
+  }
+
   const preparedNode = applyNodeModifiersForSSR(node, context, seenStaticStyles)
   const fragmentMarker = insideFragmentBoundary
     ? undefined
