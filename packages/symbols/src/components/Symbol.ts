@@ -2,6 +2,8 @@ import {
   ComponentInstance, 
   createSignal, 
   createEffect,
+  createRoot,
+  untrack,
   Signal,
   ModifiableComponent,
   ModifierBuilder,
@@ -29,29 +31,6 @@ import {
   generateReducedMotionAnimation
 } from '../animations/SymbolAnimations.js'
 import { getWeightStyles, WEIGHT_TO_STROKE_WIDTH } from '../compatibility/weight-mapping.js'
-import { getLucideForSFSymbol } from '../compatibility/sf-symbols-mapping.js'
-
-/**
- * Resolve an SF Symbol name to the icon-set name that actually draws it.
- *
- * `Symbol()` is documented to take SF Symbol names — `heart.fill`,
- * `chevron.right`, `person.circle` — but icon sets are keyed by their own
- * names, so the name has to go through the mapping table before it reaches
- * one. Without this the raw name is PascalCased and looked up directly, which
- * only ever matched the handful of SF Symbols spelled identically in Lucide
- * (`calendar`, `clock`, `pencil`, `plus`); everything else drew the error
- * glyph even though `isSFSymbolSupported()` reported it as supported (#303).
- *
- * An unmapped name passes through unchanged, so an icon-set-native name —
- * `chevron-right`, the only thing that worked before this was wired up — keeps
- * working, as does any name belonging to a non-Lucide icon set.
- *
- * This mirrors `Image({ systemName })` in the SwiftUI shim, which has always
- * resolved through the same table.
- */
-function resolveIconName(name: string): string {
-  return getLucideForSFSymbol(name) ?? name
-}
 
 /**
  * Symbol component - SwiftUI-inspired icon system
@@ -68,6 +47,11 @@ export function Symbol(
   // The element handed to the renderer for the current state, kept so an
   // unrelated re-render does not swap identical DOM.
   let cachedContent: { signature: string; element: Element } | undefined
+
+  // The most recent wrapper node handed to the renderer. The repaint effect
+  // reaches the mounted element through it, since the renderer assigns
+  // `element` only after `render()` has returned.
+  let wrapperNode: any | undefined
   
   // Resolve signal values
   const getName = () => typeof name === 'function' ? name() : name
@@ -133,17 +117,14 @@ export function Symbol(
     // Handle async loading
     const loadIcon = async () => {
       try {
-        let icon = await IconLoader.loadIcon(
-          resolveIconName(iconName),
-          variant,
-          props.iconSet
-        )
+        // `IconLoader` resolves SF Symbol names to their icon-set-native
+        // equivalents, so both the name and the fallback are passed through as
+        // the caller spelled them.
+        let icon = await IconLoader.loadIcon(iconName, variant, props.iconSet)
 
-        // Try fallback if icon not found. The fallback is a symbol name like
-        // any other, so it resolves the same way.
         if (!icon && props.fallback) {
           icon = await IconLoader.loadIcon(
-            resolveIconName(props.fallback),
+            props.fallback,
             variant,
             props.iconSet
           )
@@ -372,10 +353,7 @@ export function Symbol(
   
   // Create a reactive DOM node that updates itself when signals change
   const createReactiveSymbol = () => {
-    const allStyles = getStyles()
-    const styleString = Object.entries(allStyles)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join('; ')
+    const styleString = styleStringFrom(getStyles())
     
     // Generate accessibility attributes
     const accessibilityProps = SymbolAccessibility.generateAccessibilityProps({
@@ -393,27 +371,45 @@ export function Symbol(
       },
       // The content is built below and mounted as an owned child, so the
       // renderer reconciles it like anything else.
-      children: [contentNode()],
-      dispose: undefined,
+      children: contentChildren(),
+      dispose: disposeRepaint,
     }
 
+    wrapperNode = symbolElement
+
     return symbolElement
+  }
+
+  function styleStringFrom(styles: Record<string, any>): string {
+    return Object.entries(styles)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('; ')
   }
 
   /**
    * Build the element for the current load state.
    *
-   * Handed to the renderer as an owned node rather than patched in afterwards.
    * An SVG subtree cannot be expressed as ordinary `DOMNode` children — the
-   * renderer has no namespace support and would produce HTMLUnknownElement —
-   * so the element is built here with `createElementNS` and the renderer mounts
-   * it, swapping it when the state changes (see `DOMNode.owned`).
+   * renderer has no namespace support and would produce HTMLUnknownElement — so
+   * the element is built here with `createElementNS` and handed over as an
+   * owned node for the renderer to mount (see `DOMNode.owned`).
    *
-   * Patching it in from an effect, as this did before, could not work: the
-   * renderer assigns `node.element` after `render()` returns, so the effect had
-   * no element on its first run, and `updateChildren` overwrote anything it did
-   * manage to write later (#303).
+   * The first paint comes from `render()`; every later one comes from the
+   * repaint effect, which is only safe because `owned` stops `updateChildren`
+   * reconciling this subtree away. That overwriting is what made the earlier
+   * effect-based attempt fail (#303).
    */
+  function contentChildren(): any[] {
+    // Server-side there is no DOM to build into, and no icon has resolved yet
+    // either, so the wrapper serializes alone and the icon is drawn when the
+    // component hydrates. Emitting nothing keeps the server markup a prefix of
+    // the hydrated markup; before the icon moved into `render()` this position
+    // was empty server-side too.
+    if (typeof document === 'undefined') return []
+
+    return [contentNode()]
+  }
+
   function contentNode(): any {
     const element = contentElement()
     return {
@@ -490,11 +486,63 @@ export function Symbol(
     return svgElement
   }
 
+  /**
+   * Repaint this symbol, and only this symbol, when its state changes.
+   *
+   * The signal reads have to happen here rather than in `render()`. A child's
+   * `render()` is called inline by `renderChildrenArray`, inside the *enclosing*
+   * component's render effect, so reading `isLoading`/`error`/`iconDefinition`
+   * there subscribes the parent: every icon that resolved would re-render the
+   * whole surrounding subtree, once per symbol on the screen.
+   *
+   * Owning a root instead keeps each symbol's updates to itself, and patching
+   * the mounted element directly is safe because `owned` stops the renderer
+   * reconciling this subtree (see `DOMNode.owned`).
+   */
+  const disposeRepaint = createRoot(() => {
+    const effect = createEffect(() => {
+      // Subscribed explicitly, so that a pass with nothing to paint into still
+      // re-runs when the load resolves. Reaching them through `contentElement()`
+      // alone would mean never subscribing on the passes that return early.
+      isLoading()
+      error()
+      iconDefinition()
+
+      const classes = getClasses()
+      const styleString = styleStringFrom(getStyles())
+
+      const wrapper = wrapperNode?.element
+
+      // Nothing mounted: either the first paint has not happened — `render()`
+      // builds it from these same values, so there is nothing to catch up — or
+      // this is a server render, where there is no DOM to paint into and the
+      // icon is drawn on hydration. No DOM is touched in either case, so
+      // constructing a Symbol stays free of side effects.
+      if (!(wrapper instanceof Element)) return
+
+      const content = contentElement()
+
+      wrapper.className = classes
+      wrapper.setAttribute('style', styleString)
+
+      const mounted = wrapper.firstElementChild
+      if (content === mounted) return
+
+      if (mounted) {
+        wrapper.replaceChild(content, mounted)
+      } else {
+        wrapper.appendChild(content)
+      }
+    })
+
+    return () => effect.dispose()
+  })
+
   const instance: ComponentInstance<SymbolProps> = {
     type: 'component',
-    render: () => {
-      return [createReactiveSymbol()]
-    },
+    // Untracked so the reads above stay this symbol's business: `render()` runs
+    // inside whichever effect the caller is rendering under.
+    render: () => untrack(() => [createReactiveSymbol()]),
     props: symbolProps,
     children: [],
     cleanup: [],

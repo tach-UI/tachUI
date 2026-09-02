@@ -23,7 +23,9 @@ wrapper.children = [
 ]
 ```
 
-The renderer mounts that element, never adopts a previously rendered element over it, and does not reconcile its children — so the subtree survives re-renders untouched while the surrounding tree updates normally. Supplying a *different* element on a later render replaces the mounted one, which is how owned content changes.
+The renderer mounts that element, never adopts a previously rendered element over it, and does not reconcile its children — so the subtree survives re-renders untouched while the surrounding tree updates normally. Supplying a *different* element on a later render replaces the mounted one, which is how owned content changes; the element it replaced is disposed as it goes, so a widget's listeners and timers tear down rather than leaking.
+
+Because an owned node's `tag`, `props` and `children` describe an empty shell, the element is the only description of the subtree, and server-side rendering reads `element.outerHTML`. An owner that cannot build an element without a DOM should emit no owned node at all rather than an elementless one.
 
 Content that can be expressed as children still should be; this is for the cases that genuinely cannot.
 
