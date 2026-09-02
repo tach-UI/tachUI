@@ -22,11 +22,11 @@ No mapping entries changed: all 140 targets already existed in Lucide, so the ta
 
 ## The symbol never left the loading spinner
 
-Fixing name resolution alone was not enough to make a glyph appear. `Symbol` painted its icon from an effect created inside `render()`, but the renderer assigns `node.element` *after* `render()` returns, so that effect could never paint on its first run — it depended on a later signal change firing while the element existed.
+Fixing name resolution alone was not enough to make a glyph appear. Measured in jsdom, no `Symbol` ever painted an SVG — not a valid name, not a warm cache, not with a fallback, not after a signal change. Every one stayed on `⟳`.
 
-That later run was not reliable. `createRoot` parents to `currentOwner`, which inside a computation is that computation's per-execution owner, so when the renderer's effect re-runs it tears the symbol's root down; the replacement effect runs once — again before its element exists — and then sits idle because the signals have already settled. Measured in jsdom, no `Symbol` ever painted an SVG: not a valid name, not a warm cache, not with a fallback, not after a signal change. Every one stayed on `⟳`.
+`Symbol` painted from an effect created inside `render()`, but the renderer assigns `node.element` *after* `render()` returns, so that effect could never paint on its first run. Anything it did manage to write later was overwritten by `updateChildren`, which reconciles the node's declared children on every render.
 
-The paint is now a plain function driven from a microtask as well as from the effect. The microtask runs after the synchronous render that assigns `element`, and after any re-render that has reset the node's children back to the spinner.
+It now hands the renderer the element instead of patching behind it — see the `@tachui/core` note below — so the icon, the error glyph and the spinner are all ordinary reconciled content. The effect and its root are gone.
 
 With both fixes, all 23 of the reporter's claimed-supported symbols draw a real glyph, up from 4. The 11 that still fail are exactly the ones with no mapping-table entry, for which `isSFSymbolSupported()` correctly returns `false`.
 
