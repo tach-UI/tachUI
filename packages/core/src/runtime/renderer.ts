@@ -1285,6 +1285,31 @@ export class DOMRenderer {
   /**
    * Adopt an existing DOM mapping from one node to another.
    */
+  /**
+   * Tear down the descendants of a node an owned node is taking the place of.
+   *
+   * `runCleanups` is per element, and the owned paths below never walk the old
+   * node's children, so nothing else would reach them. Normally there is
+   * nothing there — an owned node declares an empty shell, so an owned-to-owned
+   * pairing recurses over an empty list. It matters when keyless matching pairs
+   * a *regular* node carrying children against an owned one: that is positional
+   * with no tag check (`previousKeyless.shift()`), so the discarded subtree's
+   * reactive effects, delegated listeners and modifier cleanups would keep
+   * running and its nodes would linger in `nodeMap` and `renderedNodes`.
+   *
+   * The non-owned path has no equivalent problem: `updateChildren` removes
+   * unmatched previous children through `removeNode`, which recurses.
+   */
+  private disposeReplacedSubtree(oldNode: DOMNode, newNode: DOMNode): void {
+    if (oldNode === newNode) return
+    if (!oldNode.children || oldNode.children.length === 0) return
+
+    oldNode.children.forEach(child => {
+      if (!child || child === newNode) return
+      this.cleanupNode(child, false)
+    })
+  }
+
   adoptNode(oldNode: DOMNode, newNode: DOMNode): void {
     const element = this.nodeMap.get(oldNode)
     if (!element) return
@@ -1306,6 +1331,7 @@ export class DOMRenderer {
       // against, and the swap, if there is one, happens there.
       newNode.element = element
       this.nodeMap.set(newNode, element)
+      this.disposeReplacedSubtree(oldNode, newNode)
 
       // Retiring the old binding has to be explicit. The execution owner
       // disposes it only when `render` ran inside an effect; a `render` called
@@ -1325,6 +1351,7 @@ export class DOMRenderer {
         // cleanups have to run here or they never run at all — for an owned
         // node that is the previous widget's listeners and timers.
         this.runCleanups(element)
+        this.disposeReplacedSubtree(oldNode, newNode)
 
         if (element.parentNode) {
           element.parentNode.replaceChild(newNode.element, element)

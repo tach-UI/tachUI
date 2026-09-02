@@ -29,6 +29,10 @@ To replace the mounted element, supply a different element on a **fresh node obj
 
 Because an owned node's `tag`, `props` and `children` describe an empty shell, the element is the only description of the subtree, and server-side rendering reads `element.outerHTML`. An owner that cannot build an element without a DOM should emit no owned node at all rather than an elementless one.
 
+Two limits come with that, both now documented on `DOMNode.owned` and pinned by tests. **Modifiers on an owned node are client-only**: the element is the markup server-side, so the modifier pass never runs over it, which also means an owned node cannot be a fragment island and contributes no extracted CSS. And client-side they apply to the first mounted element only, since a `reactiveElement` swap disposes that element's cleanups and nothing re-applies them. Put modifiers on a wrapper instead — which is what `Symbol` does, and why it is unaffected by either.
+
+An owned swap also tears down the replaced node's *subtree*, not just its element. Keyless child matching is positional with no tag check, so a regular node carrying children can be paired against an owned one; without this its descendants' effects and listeners kept running on detached DOM and their nodes lingered in the renderer's maps.
+
 ## `reactiveElement`: the renderer subscribes, the component describes
 
 Replacement-on-a-fresh-node only fires when the parent re-renders, which is the wrong trigger for content that changes on its own schedule — an icon finishing an async load, say. The obvious workaround is worse: a component's `render()` does not run in its own reactive scope, so reading a signal there subscribes the *enclosing* component and the whole surrounding subtree re-renders.

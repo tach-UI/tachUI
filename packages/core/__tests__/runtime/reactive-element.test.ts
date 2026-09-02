@@ -288,6 +288,45 @@ describe('DOMNode.reactiveElement', () => {
       expect(host.childElementCount).toBe(1)
     })
 
+    /**
+     * Keyless child matching is positional with no tag check, so a regular node
+     * carrying children can be paired against an owned node. The swap runs
+     * cleanups for the replaced *element*; without walking the old node's
+     * children, everything they registered — reactive effects, delegated
+     * listeners, modifier cleanups — kept running on detached DOM.
+     */
+    it('tears down the replaced node\'s subtree, not just its element', () => {
+      const renderer = new DOMRenderer()
+      const host = document.createElement('div')
+      const disposed: string[] = []
+
+      const grandchild: DOMNode = {
+        type: 'element',
+        tag: 'em',
+        props: {},
+        children: [],
+        dispose: () => disposed.push('grandchild'),
+      }
+      const oldNode: DOMNode = {
+        type: 'element',
+        tag: 'div',
+        props: {},
+        children: [grandchild],
+        dispose: () => disposed.push('child'),
+      }
+      renderer.render(oldNode, host)
+
+      expect(renderer.hasNode(grandchild)).toBe(true)
+
+      const newNode = boundNode(cachingAccessor(() => 'A'))
+      renderer.adoptNode(oldNode, newNode)
+      renderer.render(newNode, host)
+
+      expect(disposed).toContain('grandchild')
+      expect(renderer.hasNode(grandchild)).toBe(false)
+      expect(grandchild.element).toBeUndefined()
+    })
+
     it('does not carry the old node\'s dispose onto the new one', () => {
       const renderer = new DOMRenderer()
       const host = document.createElement('div')
