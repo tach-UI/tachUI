@@ -243,19 +243,39 @@ describe('Symbol name resolution (#303)', () => {
    * wrapper. The icon is drawn when the component hydrates.
    */
   describe('rendering without a DOM', () => {
-    function withoutDocument<T>(body: () => T): T {
-      const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'document')
-      // @ts-expect-error - deleting a global for the duration of the call
-      delete globalThis.document
+    // A real Node process has neither of these. Removing only `document` and
+    // leaving jsdom's `Element` in place is what let a `wrapper instanceof
+    // Element` guard past this suite while throwing a ReferenceError under
+    // @tachui/ssr.
+    const DOM_GLOBALS = ['document', 'Element'] as const
+
+    function withoutDom<T>(body: () => T): T {
+      const saved = DOM_GLOBALS.map(key => [
+        key,
+        Object.getOwnPropertyDescriptor(globalThis, key),
+      ] as const)
+
+      for (const key of DOM_GLOBALS) {
+        // @ts-expect-error - removing a global for the duration of the call
+        delete globalThis[key]
+      }
+
       try {
         return body()
       } finally {
-        if (descriptor) Object.defineProperty(globalThis, 'document', descriptor)
+        for (const [key, descriptor] of saved) {
+          if (descriptor) Object.defineProperty(globalThis, key, descriptor)
+        }
       }
     }
 
+    test('constructing a Symbol does not reference a DOM global', () => {
+      // The repaint effect runs eagerly here, before any render.
+      expect(() => withoutDom(() => Symbol('heart.fill'))).not.toThrow()
+    })
+
     test('render() does not require a document', () => {
-      const node = withoutDocument(() => (Symbol('heart.fill') as any).render())
+      const node = withoutDom(() => (Symbol('heart.fill') as any).render())
 
       const wrapper = Array.isArray(node) ? node[0] : node
       expect(wrapper.tag).toBe('span')
@@ -266,11 +286,77 @@ describe('Symbol name resolution (#303)', () => {
     })
 
     test('the wrapper still carries its classes and accessibility props', () => {
-      const node = withoutDocument(() => (Symbol('heart.fill') as any).render())
+      const node = withoutDom(() => (Symbol('heart.fill') as any).render())
 
       const wrapper = Array.isArray(node) ? node[0] : node
       expect(wrapper.props.className).toContain('tachui-symbol')
       expect(wrapper.props['aria-hidden'] ?? wrapper.props.role).toBeDefined()
+    })
+  })
+
+  /**
+   * The mapping table maps SF Symbol names onto *Lucide's* names. Applying it
+   * to any other backend makes that backend's own icons unreachable: a custom
+   * set holding an icon literally named `heart.fill` would only ever be asked
+   * for `heart`. The registry documents alternate and custom sets.
+   */
+  describe('the mapping table applies only to the Lucide backend', () => {
+    class CustomIconSet {
+      name = 'custom'
+      version = '1.0.0'
+      icons = {}
+      asked: string[] = []
+
+      async getIcon(name: string) {
+        this.asked.push(name)
+        return {
+          name,
+          variant: 'none' as const,
+          weight: 'regular' as const,
+          svg: '<path d="M0 0"/>',
+          viewBox: '0 0 24 24',
+        }
+      }
+
+      hasIcon() { return true }
+      listIcons() { return [] }
+      getIconMetadata() { return undefined }
+      supportsVariant() { return true }
+      supportsWeight() { return true }
+    }
+
+    test('a named custom set is asked for the name as written', async () => {
+      const custom = new CustomIconSet()
+      IconSetRegistry.register(custom as any)
+
+      await IconLoader.loadIcon('heart.fill', 'none', 'custom')
+
+      // Not `heart` — that icon may not exist in this set at all.
+      expect(custom.asked).toEqual(['heart.fill'])
+    })
+
+    test('a custom set installed as the default is too', async () => {
+      const custom = new CustomIconSet()
+      IconSetRegistry.register(custom as any)
+      IconSetRegistry.setDefault('custom')
+
+      await IconLoader.loadIcon('heart.fill')
+
+      expect(custom.asked).toEqual(['heart.fill'])
+    })
+
+    test('Lucide still resolves once the default moves back', async () => {
+      const custom = new CustomIconSet()
+      IconSetRegistry.register(custom as any)
+      IconSetRegistry.setDefault('custom')
+      IconSetRegistry.setDefault('lucide')
+
+      const spy = vi.spyOn(LucideIconSet.prototype, 'getIcon')
+      await IconLoader.loadIcon('heart.fill')
+
+      expect(spy.mock.calls.map(call => call[0])).toEqual(['heart'])
+      expect(custom.asked).toEqual([])
+      spy.mockRestore()
     })
   })
 })

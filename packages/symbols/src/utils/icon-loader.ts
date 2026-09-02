@@ -3,7 +3,26 @@ import { IconSetRegistry } from '../icon-sets/registry.js'
 import { getLucideForSFSymbol } from '../compatibility/sf-symbols-mapping.js'
 
 /**
- * Resolve an SF Symbol name to its icon-set-native equivalent.
+ * Is the icon set being asked for backed by Lucide?
+ *
+ * `IconSetRegistry` keys a set by its own `name`, so an explicit request names
+ * the backend directly. With no name the registry's current default decides,
+ * which `setDefault()` can move to a custom set at any point.
+ */
+function isLucideBackend(iconSetName?: string): boolean {
+  if (iconSetName !== undefined) return iconSetName === 'lucide'
+
+  try {
+    return IconSetRegistry.get().name === 'lucide'
+  } catch {
+    // Nothing registered yet: `loadIconInternal` auto-registers Lucide for the
+    // unnamed case, so that is the backend this will end up asking.
+    return true
+  }
+}
+
+/**
+ * Resolve an SF Symbol name to its Lucide equivalent.
  *
  * Applied at this boundary rather than by each caller so that loading, the
  * cache key and the cache probes all agree on one name. Resolving in `Symbol()`
@@ -11,10 +30,14 @@ import { getLucideForSFSymbol } from '../compatibility/sf-symbols-mapping.js'
  * guide documents — cached under `heart.fill` while the render asked for
  * `heart`: a guaranteed miss, plus a wasted load of a name no icon set has.
  *
- * An unmapped name passes through unchanged, so icon-set-native names such as
- * `chevron-right`, and names belonging to a non-Lucide set, keep working.
+ * The table maps SF Symbol names onto *Lucide's* names, so it only applies when
+ * Lucide is the backend being asked. A custom or SF-Symbols-native set may hold
+ * an icon whose own name is `heart.fill`; rewriting that to `heart` would make
+ * it permanently unloadable. An unmapped name passes through unchanged, so
+ * icon-set-native names such as `chevron-right` keep working either way.
  */
-function resolveIconName(name: string): string {
+function resolveIconName(name: string, iconSetName?: string): string {
+  if (!isLucideBackend(iconSetName)) return name
   return getLucideForSFSymbol(name) ?? name
 }
 
@@ -33,7 +56,7 @@ export class IconLoader {
     variant: SymbolVariant = 'none',
     iconSetName?: string
   ): Promise<IconDefinition | undefined> {
-    const resolvedName = resolveIconName(name)
+    const resolvedName = resolveIconName(name, iconSetName)
     const cacheKey = `${iconSetName || 'default'}-${resolvedName}-${variant}`
     
     // Return cached icon if available
@@ -121,7 +144,7 @@ export class IconLoader {
     variant: SymbolVariant = 'none',
     iconSetName?: string
   ): boolean {
-    const cacheKey = `${iconSetName || 'default'}-${resolveIconName(name)}-${variant}`
+    const cacheKey = `${iconSetName || 'default'}-${resolveIconName(name, iconSetName)}-${variant}`
     return this.iconCache.has(cacheKey)
   }
   
@@ -133,7 +156,7 @@ export class IconLoader {
     variant: SymbolVariant = 'none',
     iconSetName?: string
   ): IconDefinition | undefined {
-    const cacheKey = `${iconSetName || 'default'}-${resolveIconName(name)}-${variant}`
+    const cacheKey = `${iconSetName || 'default'}-${resolveIconName(name, iconSetName)}-${variant}`
     return this.iconCache.get(cacheKey)
   }
   
