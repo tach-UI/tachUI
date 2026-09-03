@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EnhancedList, List, ListUtils } from '../src/list'
 import { For, ForEach, ForEachComponent } from '@tachui/flow-control'
-import { createSignal, flushSync } from '@tachui/core'
+import { createSignal, flushSync, DOMRenderer } from '@tachui/core'
 
 // Create a simple mock Text component for testing
 const Text = (content: string) => ({
@@ -19,9 +19,14 @@ const Text = (content: string) => ({
 
 import type { ListProps, ListSection, VirtualScrollConfig } from '../src/list'
 
+// Mock createElement
+const originalCreateElement = document.createElement
+
 // Mock DOM environment
 function createMockListElement(): HTMLElement {
-  const element = document.createElement('div')
+  // The real one: `document.createElement` is mocked below to return this, so
+  // going back through it would recur until the stack ran out.
+  const element = originalCreateElement.call(document, 'div') as HTMLElement
 
   // Mock scroll and size properties
   Object.defineProperties(element, {
@@ -47,8 +52,6 @@ function collectElements(node: any, acc: any[] = []): any[] {
   return acc
 }
 
-// Mock createElement
-const originalCreateElement = document.createElement
 beforeEach(() => {
   document.createElement = vi.fn((tagName: string) => {
     if (tagName === 'div') {
@@ -724,11 +727,18 @@ describe('ForEach Component', () => {
       const initialRender = forEach.render()
       expect(initialRender.length).toBe(1) // Reactive container
 
-      // For reactive data, ForEach creates a container with current children
-      const container = initialRender[0]
-      expect(container.type).toBe('element')
-      expect(container.props?.style?.display).toBe('contents')
-      expect(container.children).toHaveLength(1) // Initial 1 item
+      // The container owns its element, so the items are read off the element
+      // rather than off the node: ForEach fills the element and the renderer
+      // mounts it without reconciling children, which is what keeps the two
+      // from drifting apart (#318).
+      const containerNode = initialRender[0]
+      expect(containerNode.type).toBe('element')
+      expect(containerNode.owned).toBe(true)
+
+      const renderer = new DOMRenderer()
+      const container = renderer.render(containerNode) as HTMLElement
+      expect(container.style.display).toBe('contents')
+      expect(container.childNodes).toHaveLength(1) // Initial 1 item
 
       // Change signal data
       setData(sampleData) // Now 5 items (sampleData has 5 items)
@@ -736,8 +746,8 @@ describe('ForEach Component', () => {
       // Flush reactive updates to ensure they complete
       flushSync()
 
-      // The container's children should be updated reactively
-      expect(container.children).toHaveLength(5) // Now 5 items
+      // The mounted items should be updated reactively
+      expect(container.childNodes).toHaveLength(5) // Now 5 items
     })
 
     it('should handle static data without reactive container', () => {

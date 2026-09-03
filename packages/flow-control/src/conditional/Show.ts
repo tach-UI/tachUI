@@ -4,7 +4,7 @@
  * Reactive implementation that works with TachUI's reactive architecture
  */
 
-import { createEffect, createRoot } from '@tachui/core'
+import { untrack } from '@tachui/core'
 import type { ComponentInstance, DOMNode } from '@tachui/core'
 import { DOMRenderer } from '@tachui/core'
 
@@ -36,6 +36,15 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
   public cleanup: (() => void)[] = []
   private readonly renderer = new DOMRenderer()
   private currentBranchNodes: DOMNode[] = []
+  private container: HTMLElement | undefined
+  // The container as this component's own renderer sees it. Holds the record of
+  // what is mounted, which is what lets a re-render reconcile against the
+  // mounted branch instead of rebuilding it.
+  private containerNode: DOMNode | undefined
+  private mountedCondition: boolean | undefined
+  // Stable across renders so the element it is registered against collects one
+  // entry rather than one per render of the enclosing component.
+  private readonly disposeSelf = () => this.dispose()
 
   constructor(props: ShowProps) {
     this.props = props
@@ -76,7 +85,25 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
   }
 
   /**
-   * Render the Show component with self-contained reactivity like text() function
+   * Render the Show component.
+   *
+   * A reactive condition produces an *owned* container: this component fills it
+   * and the renderer mounts it without reconciling its children. That single
+   * writer is the whole point. When the container was an ordinary node, both
+   * this component (patching the element from an effect) and the mounting
+   * renderer (reconciling `children` against its own record of them) wrote to
+   * it, and the two records drifted apart the moment the branch changed without
+   * a re-render — the next re-render then paired the incoming branch against
+   * elements that were no longer mounted and left both branches in the DOM
+   * (#318).
+   *
+   * The subscription goes over as `reactiveElement` rather than being created
+   * here. `render()` runs on every render of the enclosing element, so an
+   * effect created here is created again per render, and it is parented to that
+   * render's execution owner, which disposes it when the pass re-runs. The
+   * renderer owns the binding instead: it retires the previous one when it
+   * adopts this node's successor, and rebinds one that outlived its pass, so
+   * exactly one effect is maintaining the container at any time.
    */
   render(): DOMNode[] {
     const { when } = this.props
@@ -85,76 +112,138 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
 
     if (!isReactive) {
       // Static condition - simple render
-      const content = this.getContent()
-      if (!content) return []
-
-      const rendered = content.render()
-      return Array.isArray(rendered) ? rendered : [rendered]
+      return this.renderBranch()
     }
 
-    // Ensure prior render cleanups do not accumulate across repeated renders.
-    this.dispose()
+    // No DOM to own. An owned node serializes as its element, so emitting one
+    // without a DOM to build it in would serialize as an empty shell (see
+    // `DOMNode.owned`); the branch goes over as ordinary children instead, for
+    // the serializer to walk. Untracked because a read here would subscribe the
+    // enclosing component's render.
+    if (typeof document === 'undefined') {
+      return [
+        {
+          type: 'element',
+          tag: 'div',
+          props: { style: { display: 'contents' } },
+          children: untrack(() => this.renderBranch()),
+        },
+      ]
+    }
 
-    // Reactive condition - always create reactive container for consistency
-    const containerNode: DOMNode = {
-      type: 'element',
-      tag: 'div',
-      props: {
-        style: { display: 'contents' }, // Make container invisible
+    return [
+      {
+        type: 'element',
+        tag: 'div',
+        // Describes the shell only: the renderer applies neither props nor
+        // children to an owned element, so the container styles itself in
+        // `ensureContainer`. Kept so the node still serializes correctly if it
+        // ever reaches the empty-shell path.
+        props: { style: { display: 'contents' } },
+        children: [],
+        element: this.ensureContainer(),
+        owned: true,
+        reactiveElement: () => this.reconcile(),
+        dispose: this.disposeSelf,
       },
-      children: [],
-      dispose: undefined,
-    }
-
-    let disposeRoot = () => {}
-    createRoot(dispose => {
-      disposeRoot = dispose
-      createEffect(() => {
-        const condition = this.evaluateCondition()
-        const { children, fallback } = this.props
-        const content = condition ? children : fallback
-
-        // Dispose previously rendered branch nodes/effects before swapping branches.
-        this.disposeNodes(this.currentBranchNodes)
-
-        if (content) {
-          const rendered = content.render()
-          const nodes = Array.isArray(rendered) ? rendered : [rendered]
-          this.currentBranchNodes = nodes
-          containerNode.children = nodes
-        } else {
-          this.currentBranchNodes = []
-          containerNode.children = []
-        }
-
-        // Update DOM if already rendered
-        if (
-          containerNode.element &&
-          containerNode.element instanceof HTMLElement
-        ) {
-          this.updateContainerDOM(containerNode.element, containerNode.children)
-        }
-      })
-    })
-
-    this.cleanup = [disposeRoot]
-
-    containerNode.dispose = () => this.dispose()
-
-    return [containerNode]
+    ]
   }
 
   /**
-   * Update the container DOM element with new children using TachUI's renderer
+   * The container element, created once and kept for the life of the component.
+   *
+   * Stable identity is what makes a re-render idempotent: the node handed over
+   * on the second render carries the same element as the first, so the
+   * reconciler pairs the two and mounts nothing new. It also keeps modifiers
+   * applied to this component on the element they were applied to, which a
+   * swapped element would lose.
    */
-  private updateContainerDOM(
-    container: HTMLElement,
-    children: DOMNode[]
-  ): void {
-    const renderedChildren = children.map(
-      child => this.renderer.render(child) as Element | Text | Comment
-    )
-    container.replaceChildren(...renderedChildren)
+  private ensureContainer(): HTMLElement {
+    if (!this.container) {
+      const element = document.createElement('div')
+      // Owned, so the renderer never applies this node's props.
+      element.style.display = 'contents'
+      this.container = element
+    }
+    return this.container
+  }
+
+  /**
+   * Render the current branch and put it in the container.
+   *
+   * Runs inside the renderer's binding for this node, so its reads — the
+   * condition, and whatever the branch reads while rendering — are the
+   * dependencies that bring it back. Each run renders the branch afresh rather
+   * than reusing the previous nodes: a branch whose own `render()` reads a
+   * signal is only correct if it is re-run when that signal changes, and the
+   * binding cannot tell that case apart from being re-created by the renderer.
+   *
+   * Rendering afresh is not the same as rebuilding the DOM. The new nodes are
+   * reconciled against the mounted ones, so a run that produces the same shape
+   * — the common one, since most reasons to re-run leave the branch alone —
+   * updates elements in place and moves nothing.
+   */
+  private reconcile(): Element {
+    const container = this.ensureContainer()
+    const condition = this.evaluateCondition()
+
+    if (condition !== this.mountedCondition) {
+      // A branch swap is a teardown, not an update. Reconciling the incoming
+      // branch against the outgoing one would pair elements by position with no
+      // regard for what they are, so a `span` from one branch would be handed to
+      // the other carrying whatever a modifier had left on it.
+      this.disposeNodes(this.currentBranchNodes)
+      this.currentBranchNodes = []
+      this.forgetMountedBranch(container)
+      this.mountedCondition = condition
+    }
+
+    const { children, fallback } = this.props
+    const content = condition ? children : fallback
+    const rendered = content ? content.render() : []
+    const nodes = (Array.isArray(rendered) ? rendered : [rendered]) as DOMNode[]
+
+    this.currentBranchNodes = nodes
+    this.mountBranch(container, nodes)
+    return container
+  }
+
+  /**
+   * Render the current branch as plain nodes, for a caller that mounts them
+   * itself (a static condition, or a server render with no DOM to own).
+   */
+  private renderBranch(): DOMNode[] {
+    const content = this.getContent()
+    const rendered = content ? content.render() : []
+    return (Array.isArray(rendered) ? rendered : [rendered]) as DOMNode[]
+  }
+
+  private mountBranch(container: HTMLElement, nodes: DOMNode[]): void {
+    const containerNode = (this.containerNode ??= {
+      type: 'element',
+      tag: 'div',
+      props: {},
+      children: [],
+      element: container,
+    })
+
+    containerNode.children = nodes
+    this.renderer.render(containerNode)
+  }
+
+  /**
+   * Drop the record of the mounted branch, and the branch itself.
+   *
+   * The nodes are already disposed by the time this runs, which leaves their
+   * elements in place — disposal is not removal — so the container is emptied
+   * here rather than left for the next reconciliation to sort out.
+   */
+  private forgetMountedBranch(container: HTMLElement): void {
+    if (this.containerNode) {
+      this.containerNode.children = []
+      delete (this.containerNode as any).__renderedChildren
+    }
+    container.replaceChildren()
   }
 
   private disposeNodes(nodes: DOMNode[]): void {
@@ -185,6 +274,8 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
     this.cleanup.forEach(fn => fn())
     this.disposeNodes(this.currentBranchNodes)
     this.currentBranchNodes = []
+    if (this.container) this.forgetMountedBranch(this.container)
+    this.mountedCondition = undefined
     this.cleanup = []
   }
 }

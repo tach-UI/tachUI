@@ -1084,13 +1084,20 @@ export class DOMRenderer {
   }
 
   /**
-   * Add cleanup function for an element
+   * Add cleanup function for an element.
+   *
+   * Registering the same function twice registers it once. A node's `dispose`
+   * is registered against its element on every render of that node, so a
+   * component that hands over a stable disposer — as one holding DOM across
+   * renders must, to be disposed at all — would otherwise collect one entry per
+   * render of the enclosing element for the life of the mount.
    */
   private addCleanup(
     element: Element | Text | Comment,
     cleanup: () => void
   ): void {
     const existing = this.cleanupMap.get(element) || []
+    if (existing.includes(cleanup)) return
     existing.push(cleanup)
     this.cleanupMap.set(element, existing)
   }
@@ -1164,6 +1171,7 @@ export class DOMRenderer {
       if (node.element !== undefined) {
         node.element = undefined
       }
+      this.forgetRenderRecord(node)
       this.renderedNodes.delete(node)
       this.nodeMap.delete(node)
       this.retireBinding(node)
@@ -1187,9 +1195,26 @@ export class DOMRenderer {
     if (node.element !== undefined) {
       node.element = undefined
     }
+    this.forgetRenderRecord(node)
 
     this.renderedNodes.delete(node)
     this.metrics.removed++
+  }
+
+  /**
+   * Drop what a node remembers about the render that mounted it.
+   *
+   * A node object can outlive its element — a component that caches the nodes
+   * it built (`ForEach` does, per item) hands the same objects back after they
+   * have been disposed. Reconciliation is driven by these records, so a node
+   * that kept them would be diffed against children whose elements are gone:
+   * identical child lists take the update path, find nothing mounted, and
+   * render nothing. Cleared, the node rebuilds from scratch, which is the only
+   * thing it can do once its element has been let go.
+   */
+  private forgetRenderRecord(node: DOMNode): void {
+    delete (node as any).__renderedChildren
+    delete (node as any).__appliedProps
   }
 
   /**
