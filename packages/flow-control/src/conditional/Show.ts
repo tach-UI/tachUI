@@ -168,14 +168,19 @@ export class ShowComponent implements ComponentInstance<ShowProps> {
   /**
    * Drop the record of the mounted branch, and the branch itself.
    *
-   * The nodes are already disposed by the time this runs, which leaves their
-   * elements in place — disposal is not removal — so the container is emptied
-   * here rather than left for the next reconciliation to sort out.
+   * The record goes back through the renderer that made it rather than being
+   * edited in place: what it remembers is the renderer's business, and it is
+   * also holding a slot in that renderer's rendered-node set, which a record
+   * per branch swap would grow. `mountBranch` starts a fresh one.
+   *
+   * The branch nodes are already disposed by the time this runs, which leaves
+   * their elements in place — disposal is not removal — so the container is
+   * emptied here rather than left for the next reconciliation to sort out.
    */
   private clearMountedBranch(container: HTMLElement): void {
     if (this.containerRecord) {
-      this.containerRecord.children = []
-      delete (this.containerRecord as any).__renderedChildren
+      this.renderer.disposeNode(this.containerRecord)
+      this.containerRecord = undefined
     }
     container.replaceChildren()
   }
