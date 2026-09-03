@@ -21,6 +21,10 @@ Both now update rather than rebuild. `Show` reconciles the re-rendered branch ag
 
 Where there is no DOM, both emit an ordinary node carrying the current content as children, as `DOMNode.owned` requires of an owner that cannot build its element server-side.
 
+Disposal goes through the container too. The subscription belongs to the renderer now, so a component can no longer end it by dropping its own state: `show.dispose()` on a mounted component emptied the element, left the binding subscribed, and the next change to the condition refilled it. `dispose()` retires the binding first, through the composite disposer the renderer installs on an owned node.
+
+The shared piece is `OwnedContainer`, which both components use rather than each keeping its own copy of the element, the node, the server-render fallback and the disposal handshake — the duplication is how #318 came to exist in two places at once.
+
 Two supporting fixes in `@tachui/core`'s renderer, both only reachable once a node outlives a single render:
 
 - Registering the same cleanup function against an element twice now registers it once. A node's `dispose` is registered on every render of that node, so a component handing over a stable disposer — as one holding DOM across renders must, to be disposed at all — collected one entry per render of the enclosing element for the life of the mount.
