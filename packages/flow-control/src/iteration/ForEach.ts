@@ -4,7 +4,6 @@
  * Reactive implementation that works with TachUI's reactive architecture
  */
 
-import { untrack } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import type {
   ComponentInstance,
@@ -13,8 +12,18 @@ import type {
   DOMNode,
 } from '@tachui/core'
 import { DOMRenderer } from '@tachui/core'
+import { OwnedContainer } from '../owned-container'
 
 type ListSource<T> = T[] | Signal<T[]> | (() => T[])
+
+/** Already this container's child, and already the one before `nextSibling`. */
+function isInPlace(
+  element: Node,
+  container: Node,
+  nextSibling: Node | null
+): boolean {
+  return element.parentNode === container && element.nextSibling === nextSibling
+}
 
 /**
  * ForEach component properties
@@ -72,10 +81,11 @@ export class ForEachComponent<T = any>
   private readonly renderer = new DOMRenderer()
   private disposedNodes = new WeakSet<DOMNode>()
   private fallbackNodes: DOMNode[] = []
-  private container: HTMLElement | undefined
-  // Stable across renders so the element it is registered against collects one
-  // entry rather than one per render of the enclosing component.
-  private readonly disposeSelf = () => this.dispose()
+  private readonly container = new OwnedContainer({
+    fill: element => this.reconcile(element),
+    serverChildren: () => this.renderChildren(),
+    teardown: () => this.teardown(),
+  })
   private itemNodeCache = new Map<
     string | number,
     { item: T; nodes: DOMNode[]; snapshot: ReadonlyArray<readonly [string, unknown]> }
@@ -225,83 +235,18 @@ export class ForEachComponent<T = any>
   /**
    * Render the collection.
    *
-   * A reactive collection produces an *owned* container: this component fills
-   * it and the renderer mounts it without reconciling its children. That single
-   * writer is the whole point. When the container was an ordinary node, both
-   * this component (patching the element from an effect) and the mounting
-   * renderer (reconciling `children` against its own record of them) wrote to
-   * it, and the two records drifted apart the moment the collection changed
-   * without a re-render — the next re-render then paired the incoming items
-   * against elements that were no longer mounted and left the list scrambled
-   * (#318).
-   *
-   * The subscription goes over as `reactiveElement` rather than being created
-   * here. `render()` runs on every render of the enclosing element, so an effect
-   * created here is created again per render, and it is parented to that
-   * render's execution owner, which disposes it when the pass re-runs. The
-   * renderer owns the binding instead: it retires the previous one when it
-   * adopts this node's successor, and rebinds one that outlived its pass, so
-   * exactly one effect is maintaining the container at any time.
+   * A reactive collection produces an owned container: this component fills it
+   * and the renderer mounts it without reconciling its children, which is what
+   * keeps the two from writing to the same element behind each other's backs
+   * (#318). See `OwnedContainer` for the contract.
    */
   render(): DOMNode[] {
-    const isReactive = typeof this.props.data === 'function'
-
-    if (!isReactive) {
+    if (typeof this.props.data !== 'function') {
       // Static data - simple render
       return this.renderChildren()
     }
 
-    // No DOM to own. An owned node serializes as its element, so emitting one
-    // without a DOM to build it in would serialize as an empty shell (see
-    // `DOMNode.owned`); the items go over as ordinary children instead, for the
-    // serializer to walk. Untracked because a read here would subscribe the
-    // enclosing component's render.
-    if (typeof document === 'undefined') {
-      return [
-        {
-          type: 'element',
-          tag: 'div',
-          props: { style: { display: 'contents' } },
-          children: untrack(() => this.renderChildren()),
-        },
-      ]
-    }
-
-    return [
-      {
-        type: 'element',
-        tag: 'div',
-        // Describes the shell only: the renderer applies neither props nor
-        // children to an owned element, so the container styles itself in
-        // `ensureContainer`. Kept so the node still serializes correctly if it
-        // ever reaches the empty-shell path.
-        props: { style: { display: 'contents' } },
-        children: [],
-        element: this.ensureContainer(),
-        owned: true,
-        reactiveElement: () => this.reconcile(),
-        dispose: this.disposeSelf,
-      },
-    ]
-  }
-
-  /**
-   * The container element, created once and kept for the life of the component.
-   *
-   * Stable identity is what makes a re-render idempotent: the node handed over
-   * on the second render carries the same element as the first, so the
-   * reconciler pairs the two and mounts nothing new. It also keeps modifiers
-   * applied to this component on the element they were applied to, which a
-   * swapped element would lose.
-   */
-  private ensureContainer(): HTMLElement {
-    if (!this.container) {
-      const element = document.createElement('div')
-      // Owned, so the renderer never applies this node's props.
-      element.style.display = 'contents'
-      this.container = element
-    }
-    return this.container
+    return this.container.render()
   }
 
   /**
@@ -314,10 +259,8 @@ export class ForEachComponent<T = any>
    * binding rather than by a change re-mounts the same elements, and
    * `mountItems` leaves them where they are.
    */
-  private reconcile(): Element {
-    const container = this.ensureContainer()
+  private reconcile(container: HTMLElement): void {
     this.mountItems(container, this.renderChildren())
-    return container
   }
 
   /**
@@ -348,7 +291,7 @@ export class ForEachComponent<T = any>
     let nextSibling: Node | null = null
     for (let index = elements.length - 1; index >= 0; index -= 1) {
       const element = elements[index]!
-      if (element.parentNode !== container || element.nextSibling !== nextSibling) {
+      if (!isInPlace(element, container, nextSibling)) {
         container.insertBefore(element, nextSibling)
       }
       nextSibling = element
@@ -379,15 +322,24 @@ export class ForEachComponent<T = any>
   }
 
   /**
-   * Cleanup resources
+   * Cleanup resources.
+   *
+   * Routed through the container so that disposing a *mounted* component
+   * retires the renderer's binding as well. Clearing the items alone would
+   * leave that subscription live, and the next change to the collection would
+   * refill the element this just emptied.
    */
   dispose(): void {
+    this.container.dispose()
+  }
+
+  private teardown(): void {
     this.cleanup.forEach(fn => fn())
     this.disposeNodes(this.fallbackNodes)
     this.fallbackNodes = []
     this.itemNodeCache.forEach(entry => this.disposeNodes(entry.nodes))
     this.itemNodeCache.clear()
-    this.container?.replaceChildren()
+    this.container.peek()?.replaceChildren()
     this.cleanup = []
     this.disposedNodes = new WeakSet<DOMNode>()
   }

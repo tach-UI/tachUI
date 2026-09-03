@@ -16,56 +16,12 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { createSignal, flushSync, h, renderComponent } from '@tachui/core'
-import type { ComponentInstance, DOMNode } from '@tachui/core'
+import { createSignal, h } from '@tachui/core'
+import type { ComponentInstance } from '@tachui/core'
+import { leaf, reRenderingParent, settle } from './helpers'
+import { renderComponent } from '@tachui/core'
 import { Show } from '../src/conditional/Show'
 import { ForEach } from '../src/iteration/ForEach'
-
-async function settle(): Promise<void> {
-  flushSync()
-  for (let i = 0; i < 3; i += 1) {
-    await new Promise(resolve => setTimeout(resolve, 0))
-  }
-}
-
-function leaf(label: string): ComponentInstance {
-  return {
-    type: 'component',
-    id: `leaf-${label}`,
-    props: {},
-    children: [],
-    cleanup: [],
-    render: () => [h('span', {}, label)],
-  }
-}
-
-/**
- * A parent that re-renders on its own signal and mounts `child` inline.
- *
- * The child is hoisted — created once, outside the render — so a repeat render
- * of the *same* component instance is what is under test, rather than inline
- * composition building a new one each pass.
- */
-function reRenderingParent(
-  child: ComponentInstance,
-  bump: () => number
-): ComponentInstance {
-  return {
-    type: 'component',
-    id: 'parent',
-    props: {},
-    children: [],
-    cleanup: [],
-    render: () => {
-      const node = h('div', { class: `pass-${bump()}` })
-      const rendered = child.render()
-      node.children = (
-        Array.isArray(rendered) ? rendered : [rendered]
-      ) as DOMNode[]
-      return node
-    },
-  }
-}
 
 describe('re-render stability', () => {
   it('leaves Show on the current branch when its parent re-renders', async () => {

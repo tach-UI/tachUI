@@ -9,22 +9,11 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createEffect, createRoot, createSignal, flushSync, h } from '@tachui/core'
-import type { ComponentInstance } from '@tachui/core'
+import { createEffect, createRoot, createSignal, flushSync } from '@tachui/core'
+import { leaf } from './helpers'
 import { getSubscriberCount } from '../../core/tools/testing/reactive-test-helpers'
 import { Show } from '../src/conditional/Show'
 import { ForEach } from '../src/iteration/ForEach'
-
-function leaf(label: string): ComponentInstance {
-  return {
-    type: 'component',
-    id: `leaf-${label}`,
-    props: {},
-    children: [],
-    cleanup: [],
-    render: () => [h('span', {}, label)],
-  }
-}
 
 function withoutDocument<T>(render: () => T): T {
   vi.stubGlobal('document', undefined)

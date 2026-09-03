@@ -66,7 +66,9 @@ type RendererMetrics = {
 
 export class DOMRenderer {
   private nodeMap = new WeakMap<DOMNode, Element | Text | Comment>()
-  private cleanupMap = new WeakMap<Element | Text | Comment, (() => void)[]>()
+  // A set, not a list: registering the same function twice registers it once,
+  // and insertion order is preserved. See `addCleanup`.
+  private cleanupMap = new WeakMap<Element | Text | Comment, Set<() => void>>()
   // Disposers for `reactiveElement` bindings, held here rather than on the
   // element. See `bindOwnedElement` for why the two lifetimes are separate.
   private bindings = new WeakMap<
@@ -1090,16 +1092,21 @@ export class DOMRenderer {
    * is registered against its element on every render of that node, so a
    * component that hands over a stable disposer — as one holding DOM across
    * renders must, to be disposed at all — would otherwise collect one entry per
-   * render of the enclosing element for the life of the mount.
+   * render of the enclosing element for the life of the mount. Deduplication is
+   * by function identity, so a disposer built fresh on each render still
+   * accumulates; a component that holds DOM across renders needs a stable one
+   * either way, or nothing can dispose it.
    */
   private addCleanup(
     element: Element | Text | Comment,
     cleanup: () => void
   ): void {
-    const existing = this.cleanupMap.get(element) || []
-    if (existing.includes(cleanup)) return
-    existing.push(cleanup)
-    this.cleanupMap.set(element, existing)
+    let existing = this.cleanupMap.get(element)
+    if (!existing) {
+      existing = new Set()
+      this.cleanupMap.set(element, existing)
+    }
+    existing.add(cleanup)
   }
 
   /**
