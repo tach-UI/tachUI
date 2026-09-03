@@ -327,6 +327,100 @@ describe('DOMNode.reactiveElement', () => {
       expect(grandchild.element).toBeUndefined()
     })
 
+    /**
+     * The binding never survives adoption, whatever replaces the node — not
+     * only another bound node. Left live it stays subscribed to its accessor,
+     * and the next change swaps against the element its *successor* is now
+     * mounted on: the successor is detached, its `nodeMap` entry strands, and
+     * the accessor's element takes its place.
+     *
+     * Reachable in ordinary reconciliation, since keyless child matching is
+     * positional with no tag check.
+     */
+    describe('when the slot stops being reactive', () => {
+      function adoptAway(makeSuccessor: () => DOMNode) {
+        const renderer = new DOMRenderer()
+        const host = document.createElement('div')
+        const [marker, setMarker] = createSignal('A')
+
+        const oldNode = boundNode(cachingAccessor(marker))
+        renderer.render(oldNode, host)
+
+        const newNode = makeSuccessor()
+        renderer.adoptNode(oldNode, newNode)
+        renderer.render(newNode, host)
+
+        const mounted = renderer.getRenderedNode(newNode)
+
+        setMarker('B')
+        flushSync()
+
+        return { renderer, host, newNode, mounted }
+      }
+
+      it('a plain node keeps its element', () => {
+        const { renderer, host, newNode, mounted } = adoptAway(() => ({
+          type: 'element',
+          tag: 'i',
+          props: { id: 'plain' },
+          children: [],
+        }))
+
+        expect(host.childElementCount).toBe(1)
+        expect(host.firstElementChild).toBe(mounted)
+        expect(host.firstElementChild?.getAttribute('id')).toBe('plain')
+        expect(renderer.getRenderedNode(newNode)).toBe(host.firstElementChild)
+      })
+
+      it('a static owned node keeps its element', () => {
+        const supplied = buildSvg('owned')
+        const { renderer, host, newNode } = adoptAway(() => ({
+          type: 'element',
+          tag: 'svg',
+          props: {},
+          children: [],
+          element: supplied,
+          owned: true,
+        }))
+
+        expect(host.childElementCount).toBe(1)
+        expect(host.firstElementChild).toBe(supplied)
+        expect(renderer.getRenderedNode(newNode)).toBe(supplied)
+      })
+
+      it('does not hand the successor the retired binding\'s composite disposer', () => {
+        const renderer = new DOMRenderer()
+        const host = document.createElement('div')
+        const [marker, setMarker] = createSignal('A')
+        const disposed: string[] = []
+
+        const oldNode = boundNode(cachingAccessor(marker))
+        oldNode.dispose = () => disposed.push('owner')
+        renderer.render(oldNode, host)
+
+        const newNode: DOMNode = {
+          type: 'element',
+          tag: 'i',
+          props: {},
+          children: [],
+        }
+        renderer.adoptNode(oldNode, newNode)
+
+        // `oldNode.dispose` is the composite the binding installed. Handing it
+        // over would give the successor a retired binding's disposer, and the
+        // owner half is already registered against the mounted element.
+        expect(newNode.dispose).toBeUndefined()
+
+        renderer.render(newNode, host)
+        setMarker('B')
+        flushSync()
+
+        expect(disposed).toEqual([])
+        renderer.removeNode(newNode)
+        expect(disposed).toEqual(['owner'])
+      })
+    })
+
     it('does not carry the old node\'s dispose onto the new one', () => {
       const renderer = new DOMRenderer()
       const host = document.createElement('div')

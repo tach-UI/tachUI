@@ -1323,6 +1323,17 @@ export class DOMRenderer {
     this.renderedNodes.delete(oldNode)
     this.renderedNodes.add(newNode)
 
+    // The old node's binding never survives adoption, whatever replaces it.
+    // Left live it stays subscribed to its accessor, and the next change runs a
+    // swap against the element its successor is now mounted on: the successor
+    // is detached, its `nodeMap` entry strands, and the accessor's element
+    // takes its place in the DOM.
+    //
+    // Retiring has to be explicit rather than left to the execution owner,
+    // which disposes the binding only when `render` ran inside an effect.
+    const oldBinding = this.bindings.get(oldNode)
+    this.retireBinding(oldNode)
+
     // An owned node brings its own element. Adopting over it would discard
     // whatever the owner built and freeze the mounted DOM at the first render,
     // so the owner keeps its element and the mapping follows it.
@@ -1337,11 +1348,6 @@ export class DOMRenderer {
       newNode.element = element
       this.nodeMap.set(newNode, element)
       this.disposeReplacedSubtree(oldNode, newNode)
-
-      // Retiring the old binding has to be explicit. The execution owner
-      // disposes it only when `render` ran inside an effect; a `render` called
-      // outside one would otherwise leave two live bindings on the same slot.
-      this.retireBinding(oldNode)
 
       // `oldNode.dispose` is deliberately not transferred: it composes the old
       // binding, and the owner half is already registered against the still
@@ -1374,7 +1380,12 @@ export class DOMRenderer {
     // against the still-mounted element carries across. After a swap it belongs
     // to the discarded element and has already run; `newNode` keeps its own,
     // which `renderSingle` registers against the newly mounted element.
-    if (!swapped && !newNode.reactiveElement && oldNode.dispose) {
+    //
+    // A node that *was* bound transfers nothing. Its `dispose` is the composite
+    // the binding installed, so handing it to a successor would carry a retired
+    // binding's disposer along, and its owner half is already registered
+    // against the still-mounted element either way.
+    if (!swapped && !newNode.reactiveElement && !oldBinding && oldNode.dispose) {
       newNode.dispose = oldNode.dispose
     }
 
