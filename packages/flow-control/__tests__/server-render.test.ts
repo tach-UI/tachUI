@@ -66,7 +66,8 @@ describe('rendering without a DOM', () => {
     const [items] = createSignal(['a', 'b'])
     const list = ForEach({ data: items, children: (item: string) => leaf(item) })
 
-    const [node] = withoutDocument(() => list.render())
+    const rendered = withoutDocument(() => list.render())
+    const [node] = Array.isArray(rendered) ? rendered : [rendered]
 
     expect(node?.owned).toBeUndefined()
     expect(node?.reactiveElement).toBeUndefined()
