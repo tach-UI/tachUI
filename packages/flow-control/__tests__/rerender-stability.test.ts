@@ -2,13 +2,13 @@
  * `Show` and `ForEach` survive a re-render of the element they live in.
  *
  * Both used to build a container node in `render()` and then patch its element
- * from an effect created there too. `render()` runs on every render of the
- * node, so each one left another live effect writing into the same element, and
- * the mounting renderer kept reconciling `children` against its own record of
- * what was there. The two records drifted apart the moment the branch or the
- * collection changed without a re-render, and the next re-render paired the
- * incoming content against elements that were no longer mounted: `NONO` for a
- * `Show` sitting on its fallback, `bab` for a two-item `ForEach` (#318).
+ * from an effect created there too, while the mounting renderer went on
+ * reconciling the node's declared `children` into the same element. Two writers
+ * and two records of what was mounted: the renderer's record named the branch
+ * that was there at the last render, the element held whatever the effect had
+ * patched in since, and the next re-render diffed the incoming content against
+ * the stale record and adopted a detached element. `NONO` for a `Show` sitting
+ * on its fallback, `bab` for a two-item `ForEach` (#318).
  *
  * The container is now owned, so exactly one writer fills it, and the
  * subscription is a `reactiveElement` binding the renderer owns, so exactly one
@@ -124,6 +124,10 @@ describe('re-render stability', () => {
     expect(host.textContent).toBe('abc')
   })
 
+  // Held by the old code too, which disposed its previous root at the top of
+  // `render()`. It is asserted here because the guarantee now rests on the
+  // renderer retiring the previous binding and rebinding a dead one, which is a
+  // different mechanism with its own ways to end up with two.
   it('keeps one live effect maintaining Show however often it is rendered', async () => {
     const host = document.createElement('div')
     const [on, setOn] = createSignal(true)
@@ -151,8 +155,8 @@ describe('re-render stability', () => {
       await settle()
     }
 
-    // A stale effect per render would show up here: with four live effects, one
-    // toggle renders the branch four times.
+    // A second live binding would show up here: two of them render the branch
+    // twice for one toggle.
     branchRenders = 0
     setOn(false)
     await settle()
