@@ -7,7 +7,11 @@ Fix `Show` and `ForEach` corrupting their output when the element they live in r
 
 A `Show` sitting on its fallback rendered `NONO` the next time its parent re-rendered, and a two-item `ForEach` rendered `bab`. The wrong content stayed on screen until the condition or the collection changed again, at which point it silently corrected itself.
 
-Two writers, and neither knew about the other. Both components built a container node in `render()` and then patched that node's element directly from an effect created in the same call. `render()` runs on every render of the node, not only the first, so each one left another live effect writing into the same element — and the mounting renderer went on reconciling the node's declared `children` against its own record of what it had put there. The moment the branch changed without a re-render, the two records disagreed: the renderer still believed the *previous* branch was mounted, and the next re-render paired the incoming branch against elements that had been swapped out, leaving both in the DOM.
+Two writers, and neither knew about the other. Both components built a container node in `render()` and then patched that node's element directly from an effect created in the same call, while the mounting renderer went on reconciling the node's declared `children` into that same element.
+
+That leaves two records of what is mounted. The renderer's names the branch that was there at the last render; the element holds whatever the effect has patched in since. They agree until the branch changes without a re-render — and then the next re-render diffs the incoming branch against the stale record, pairs it positionally with an element that is no longer mounted, and adopts it, leaving the branch that *is* mounted where it was.
+
+Note that stale effects were not the cause, despite being the obvious suspect: `render()` disposed its previous root before creating the next, so only one was ever live. Fixing it that way is what made an ancestor's re-render tear the branch down and rebuild it.
 
 The container is now an owned node (`DOMNode.owned`), so the component fills it and the renderer mounts it without reconciling its children — one writer, one record. The subscription goes over as `reactiveElement` rather than being created in `render()`, so the renderer owns it: it retires the previous binding when it adopts the node's successor and rebinds one that outlived its render pass, which means exactly one effect maintains the container however many times the node is rendered.
 
