@@ -807,24 +807,48 @@ describe('renderToString', () => {
      * exists so that a future change which silently starts escaping or
      * stripping owned markup has to confront the decision.
      */
-    it('emits an owned element verbatim, escaping nothing', () => {
-      const node: DOMNode = {
-        type: 'element',
-        tag: 'svg',
-        props: {},
-        children: [],
-        element: {
-          outerHTML: '<svg><script>alert(1)</script></svg>',
-        } as unknown as Element,
-        owned: true,
-      }
+    const hostileMarkup: [name: string, outerHTML: string][] = [
+      ['script element', '<svg><script>alert(1)</script></svg>'],
+      ['event handler attribute', '<svg><image onerror="alert(1)" href="x"/></svg>'],
+      ['javascript: protocol', '<svg><use href="javascript:alert(1)"/></svg>'],
+    ]
 
-      // Everything the owner put in the element reaches the output. An owner
-      // that builds this from untrusted input has created the hole, not the
-      // serializer.
-      expect(renderToString(h('span', null, node))).toBe(
-        '<span><svg><script>alert(1)</script></svg></span>'
+    it.each(hostileMarkup)(
+      'emits an owned element verbatim — %s',
+      (_name, outerHTML) => {
+        const node: DOMNode = {
+          type: 'element',
+          tag: 'svg',
+          props: {},
+          children: [],
+          element: { outerHTML } as unknown as Element,
+          owned: true,
+        }
+
+        // Everything the owner put in the element reaches the output. An owner
+        // that builds this from untrusted input has created the hole, not the
+        // serializer.
+        expect(renderToString(h('span', null, node))).toBe(`<span>${outerHTML}</span>`)
+      }
+    )
+
+    /**
+     * The other half of the boundary, and the reason the passthrough above is a
+     * contract rather than a hole: everything the serializer *does* describe is
+     * still escaped. The same hostile string as content, or as an attribute
+     * value, comes out inert. Only the owned element — which the framework does
+     * not interpret — passes through.
+     */
+    it('still escapes the same markup everywhere it is not owned', () => {
+      const hostile = '<script>alert(1)</script>'
+
+      expect(renderToString(h('p', null, text(hostile)))).toBe(
+        '<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>'
       )
+
+      const withAttribute = renderToString(h('p', { 'data-x': hostile }))
+      expect(withAttribute).not.toContain('<script>')
+      expect(withAttribute).toContain('&lt;script&gt;')
     })
 
     it('falls back to the shell when a reactiveElement accessor throws', () => {

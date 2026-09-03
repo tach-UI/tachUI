@@ -6,7 +6,7 @@
  * validated/escaped attribute values.
  */
 
-import { describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import {
   escapeHtmlAttr,
   getSafeViewBox,
@@ -17,7 +17,11 @@ import {
   OptimizedSVGRenderer,
 } from '../../src/utils/performance.js'
 import { IconRenderingStrategy } from '../../src/types.js'
-import type { IconDefinition } from '../../src/types.js'
+import type { IconDefinition, IconSet, SymbolVariant } from '../../src/types.js'
+import { renderComponent } from '@tachui/core'
+import { Symbol } from '../../src/components/Symbol.js'
+import { IconSetRegistry } from '../../src/icon-sets/registry.js'
+import { IconLoader } from '../../src/utils/icon-loader.js'
 
 const LEGACY_BODY =
   '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'
@@ -243,5 +247,76 @@ describe('DOM-free SSR fallback (#218 review)', () => {
     expect(sanitize('h5', '<use href="#legit"/>')).toBe('<use href="#legit"/>')
 
     vi.unstubAllGlobals()
+  })
+})
+
+/**
+ * The component's own sink.
+ *
+ * `Symbol` builds its icon element with `createElementNS` and sets the body via
+ * `innerHTML`. The renderer paths above are covered separately; this is the one
+ * the component itself uses, and the premise the whole file rests on — icon
+ * sets are pluggable, so a definition is not trusted — only holds end to end if
+ * this path sanitizes too.
+ */
+describe('Symbol component render path', () => {
+  class HostileIconSet implements IconSet {
+    name = 'hostile'
+    version = '1.0.0'
+    icons: Record<string, IconDefinition> = {}
+
+    async getIcon(
+      name: string,
+      variant: SymbolVariant = 'none'
+    ): Promise<IconDefinition | undefined> {
+      return {
+        name,
+        variant,
+        weight: 'regular',
+        svg: '<script>alert(1)</script><path d="M10 10" onload="alert(1)"/>',
+        viewBox: '0 0 24 24" onload="x',
+      }
+    }
+
+    hasIcon(): boolean {
+      return true
+    }
+    listIcons(): string[] {
+      return ['evil']
+    }
+    getIconMetadata(): undefined {
+      return undefined
+    }
+    supportsVariant(): boolean {
+      return true
+    }
+    supportsWeight(): boolean {
+      return true
+    }
+  }
+
+  beforeEach(() => {
+    IconSetRegistry.clear()
+    IconSetRegistry.register(new HostileIconSet())
+    IconLoader.clearCache()
+  })
+
+  afterEach(() => {
+    IconSetRegistry.clear()
+    IconLoader.clearCache()
+  })
+
+  test('sanitizes the icon body before it reaches the component innerHTML sink', async () => {
+    const host = document.createElement('div')
+    renderComponent(Symbol('evil', { iconSet: 'hostile' }) as any, host)
+    await new Promise(resolve => setTimeout(resolve, 30))
+
+    const svg = host.querySelector('svg')
+    expect(svg).not.toBeNull()
+    expect(svg!.innerHTML).not.toContain('<script')
+    expect(svg!.innerHTML).not.toContain('onload')
+    expect(svg!.innerHTML).toContain('<path')
+    // The crafted viewBox falls back rather than breaking out of the attribute.
+    expect(svg!.getAttribute('viewBox')).toBe('0 0 24 24')
   })
 })
