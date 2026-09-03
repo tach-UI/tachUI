@@ -32,6 +32,31 @@ function toKebabCase(property: string): string {
   return property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
 }
 
+/**
+ * What the renderer remembers about a node between renders.
+ *
+ * Deliberately *not* part of `DOMNode`. This is the renderer's working state,
+ * not a description of the node, and `DOMNode` is the type every package builds
+ * its output against — putting reconciler bookkeeping in that shape would
+ * publish it as something callers may set. Reaching it through `recordOf` keeps
+ * the access typed and the key names in one place, without either.
+ *
+ * It rides on the node object rather than a side table because nodes are
+ * handed back and forth across renderers and adopted between passes, and the
+ * record has to follow the node when it is.
+ */
+interface RenderRecord {
+  /** The children as of the last render, diffed against on the next one. */
+  __renderedChildren?: DOMNode[]
+  /** The props as of the last render, so unchanged ones are not rewritten. */
+  __appliedProps?: Record<string, any>
+}
+
+/** The renderer's own bookkeeping on a node, typed. */
+function recordOf(node: DOMNode): DOMNode & RenderRecord {
+  return node as DOMNode & RenderRecord
+}
+
 function sanitizeDOMProps(
   props: Record<string, any> | null | undefined
 ): Record<string, any> {
@@ -394,7 +419,7 @@ export class DOMRenderer {
 
   private updateProps(element: Element, node: DOMNode, container?: Element): void {
     const newProps = sanitizeDOMProps(node.props)
-    const previousProps = (node as any).__appliedProps || {}
+    const previousProps = recordOf(node).__appliedProps || {}
 
     // Remove props that are no longer present
     Object.keys(previousProps).forEach(key => {
@@ -434,7 +459,7 @@ export class DOMRenderer {
       }
     }
 
-    ;(node as any).__appliedProps = { ...newProps }
+    ;recordOf(node).__appliedProps = { ...newProps }
 
     if ('componentMetadata' in node && (node as any).componentMetadata) {
       const metadata = (node as any).componentMetadata
@@ -456,7 +481,7 @@ export class DOMRenderer {
   }
 
   private updateChildren(element: Element, node: DOMNode): void {
-    const previousChildren: DOMNode[] = (node as any).__renderedChildren || []
+    const previousChildren: DOMNode[] = recordOf(node).__renderedChildren || []
     const newChildren = node.children || []
 
     // Get delegation container for this element's children
@@ -472,7 +497,7 @@ export class DOMRenderer {
       newChildren.forEach(child => {
         this.updateExistingNode(child)
       })
-      ;(node as any).__renderedChildren = newChildren
+      ;recordOf(node).__renderedChildren = newChildren
       return
     }
 
@@ -483,7 +508,7 @@ export class DOMRenderer {
         const childElement = this.renderSingle(child, delegationContainer)
         this.appendNode(element, childElement)
       })
-      ;(node as any).__renderedChildren = newChildren
+      ;recordOf(node).__renderedChildren = newChildren
       return
     }
 
@@ -558,7 +583,7 @@ export class DOMRenderer {
       }
     }
 
-    ;(node as any).__renderedChildren = newChildren
+    ;recordOf(node).__renderedChildren = newChildren
   }
 
   private updateExistingNode(node: DOMNode): void {
@@ -1220,8 +1245,9 @@ export class DOMRenderer {
    * thing it can do once its element has been let go.
    */
   private forgetRenderRecord(node: DOMNode): void {
-    delete (node as any).__renderedChildren
-    delete (node as any).__appliedProps
+    const record = recordOf(node)
+    delete record.__renderedChildren
+    delete record.__appliedProps
   }
 
   /**
@@ -1421,12 +1447,12 @@ export class DOMRenderer {
       newNode.dispose = oldNode.dispose
     }
 
-    if ((oldNode as any).__renderedChildren) {
-      (newNode as any).__renderedChildren = (oldNode as any).__renderedChildren
+    if (recordOf(oldNode).__renderedChildren) {
+      recordOf(newNode).__renderedChildren = recordOf(oldNode).__renderedChildren
     }
 
-    if ((oldNode as any).__appliedProps) {
-      ;(newNode as any).__appliedProps = { ...(oldNode as any).__appliedProps }
+    if (recordOf(oldNode).__appliedProps) {
+      recordOf(newNode).__appliedProps = { ...recordOf(oldNode).__appliedProps }
     }
 
     this.metrics.adopted++
@@ -1578,11 +1604,11 @@ export function renderComponent(
           // Transfer the DOM element reference to the new node
           node.element = cached.element
           // Also transfer internal state for reconciliation
-          if ((cached as any).__appliedProps) {
-            ;(node as any).__appliedProps = { ...(cached as any).__appliedProps }
+          if (recordOf(cached).__appliedProps) {
+            recordOf(node).__appliedProps = { ...recordOf(cached).__appliedProps }
           }
-          if ((cached as any).__renderedChildren) {
-            (node as any).__renderedChildren = (cached as any).__renderedChildren
+          if (recordOf(cached).__renderedChildren) {
+            recordOf(node).__renderedChildren = recordOf(cached).__renderedChildren
           }
           globalRenderer.recordCacheHit()
         } else {

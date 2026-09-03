@@ -25,6 +25,8 @@ Disposal goes through the container too. The subscription belongs to the rendere
 
 The shared piece is `OwnedContainer`, which both components use rather than each keeping its own copy of the element, the node, the server-render fallback and the disposal handshake — the duplication is how #318 came to exist in two places at once.
 
+The renderer's own per-node bookkeeping — the children and props it last wrote — is reached through a typed `recordOf(node)` rather than sixteen separate `as any` casts. It stays off `DOMNode`, which is the type every package builds its output against: this is the renderer's working state, not a description of the node.
+
 Two supporting fixes in `@tachui/core`'s renderer, both only reachable once a node outlives a single render:
 
 - Registering the same cleanup function against an element twice now registers it once. A node's `dispose` is registered on every render of that node, so a component handing over a stable disposer — as one holding DOM across renders must, to be disposed at all — collected one entry per render of the enclosing element for the life of the mount.
