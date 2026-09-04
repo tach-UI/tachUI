@@ -29,8 +29,11 @@ describe('@tachui/query barrel', () => {
       'DEFAULT_SNAPSHOT',
       'DEFAULT_STALE_TIME',
       'QueryError',
+      'createQueryClient',
       'isDevelopment',
       'isServer',
+      'provideQueryClient',
+      'useQueryClient',
     ])
   })
 })
