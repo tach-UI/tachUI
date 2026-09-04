@@ -1,5 +1,150 @@
 # @tachui/types
 
+## 0.9.0
+
+### Minor Changes
+
+- [#317](https://github.com/tach-UI/tachUI/pull/317) [`1fe6910`](https://github.com/tach-UI/tachUI/commit/1fe69104fadafa3663163b2d749e963b84620427) Thanks [@whoughton](https://github.com/whoughton)! - Add `DOMNode.owned` and `DOMNode.reactiveElement`, so a component can hand the renderer an element it built itself — and keep it up to date without re-rendering anything around it.
+
+  Some content cannot be expressed as `DOMNode` children. An SVG subtree is the clearest case: node tags are created with `document.createElement`, and there is no namespace support, so `<path>` would come out as `HTMLUnknownElement` and never draw. Third-party widgets that own their own DOM have the same problem.
+
+  Components in that position had no option but to patch the DOM behind the renderer's back, from an effect created during `render()`. That does not work, for two reasons that were not obvious:
+
+  - `node.element` is assigned _after_ `render()` returns, so such an effect has no element on its first run.
+  - `updateChildren` reconciles the node's declared children on every render and overwrites whatever was patched in.
+
+  ## `owned`: the renderer mounts an element it did not build
+
+  ```typescript
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  // … build the subtree …
+
+  wrapper.children = [
+    {
+      type: "element",
+      tag: "svg",
+      props: {},
+      children: [],
+      element: svg,
+      owned: true,
+    },
+  ];
+  ```
+
+  The renderer mounts that element, never adopts a previously rendered element over it, and does not reconcile its children — so the subtree survives re-renders untouched while the surrounding tree updates normally.
+
+  To replace the mounted element, supply a different element on a **fresh node object**: the reconciler pairs it with its predecessor and swaps, disposing the element it replaced so a widget's listeners and timers tear down rather than leaking. Mutating `element` on a node object the renderer has already mounted does nothing — that node reaches `updateExistingNode`, which leaves an owned element alone.
+
+  Because an owned node's `tag`, `props` and `children` describe an empty shell, the element is the only description of the subtree, and server-side rendering reads `element.outerHTML`. An owner that cannot build an element without a DOM should emit no owned node at all rather than an elementless one.
+
+  **The owned element is a trust boundary, and it points at the caller.** The framework's escaping covers `props`, `children` and text — none of which describe an owned element. It is mounted as built on the client and serialized as `outerHTML` on the server, so whatever nodes it holds become markup. Nothing sanitizes it in between, and nothing can: escaping would emit the owner's DOM as visible text, and sanitizing would corrupt legitimate widget output. Never build an owned element from unsanitized HTML — construct it node-by-node, or sanitize before it reaches an `innerHTML` sink, as `@tachui/symbols` does with icon bodies from pluggable icon sets.
+
+  Two further limits, both now documented on `DOMNode.owned` and pinned by tests. **Modifiers on an owned node are client-only**: the element is the markup server-side, so the modifier pass never runs over it, which also means an owned node cannot be a fragment island and contributes no extracted CSS. And client-side they apply to the first mounted element only, since a `reactiveElement` swap disposes that element's cleanups and nothing re-applies them. Put modifiers on a wrapper instead — which is what `Symbol` does, and why it is unaffected by either.
+
+  An owned swap also tears down the replaced node's _subtree_, not just its element. Keyless child matching is positional with no tag check, so a regular node carrying children can be paired against an owned one; without this its descendants' effects and listeners kept running on detached DOM and their nodes lingered in the renderer's maps.
+
+  ## `reactiveElement`: the renderer subscribes, the component describes
+
+  Replacement-on-a-fresh-node only fires when the parent re-renders, which is the wrong trigger for content that changes on its own schedule — an icon finishing an async load, say. The obvious workaround is worse: a component's `render()` does not run in its own reactive scope, so reading a signal there subscribes the _enclosing_ component and the whole surrounding subtree re-renders.
+
+  `reactiveElement` closes that gap by giving the renderer an accessor instead:
+
+  ```typescript
+  { type: 'element', tag: 'svg', props: {}, children: [], reactiveElement: buildCurrentIcon }
+  ```
+
+  The renderer subscribes at mount and, when the accessor yields a different element, swaps the mounted one for it — running the replaced element's cleanups and keeping its own bookkeeping in step. This is the same mechanism a reactive `className` or `style` prop already uses: a per-element binding created inside the enclosing render pass, which dies with that pass and is rebuilt by the next one. The component reads no signals in `render()`, holds no scope of its own, and never touches the element the renderer built.
+
+  `tag` names the slot rather than the current element, and must stay stable across renders so the reconciler pairs the node with its predecessor.
+
+  A binding never survives adoption, whatever replaces the node. Left live it stays subscribed to its accessor, and the next change swaps against the element its _successor_ is now mounted on — detaching the successor and stranding its `nodeMap` entry. That is reachable in ordinary reconciliation, since keyless child matching is positional with no tag check.
+
+  The binding is parented to the render pass that created it, so it dies when that pass re-runs and the next pass builds a fresh one. A caller that reuses the _same node object_ across passes outlives its own binding, and the reconciler's identity fast path routes that node to `updateExistingNode`, which leaves an owned element alone — so the renderer checks for a dead binding there and rebinds rather than leaving a slot nothing maintains.
+
+  ## Reactive props now yield to external writes
+
+  Two supporting changes, both needed for modifiers to coexist with content that repaints:
+
+  - **`setElementStyles`** compared against the live DOM value, so a reactive style run re-asserted every property a modifier had changed — `frame({ width: 40 })` was clobbered back the moment an unrelated value updated. It now records what it wrote, read back off the element so browser normalisation of colours and lengths is absorbed, and skips a property whose live value it did not write. The reactive prop resumes control once that external value is removed.
+  - **`applyClassName`** assigned `className`, dropping every class a modifier had added to the same element. It now diffs the class list.
+
+  ## `DOMRenderer.disposeNode`
+
+  Dispose a node and its descendants without removing them from the DOM, for callers that swap a whole subtree out themselves. `Show` and `ForEach` do exactly that and previously called `node.dispose` alone, which reaches only what a component put on the node — leaving the renderer's per-element cleanups running and its rendered-node set growing.
+
+### Patch Changes
+
+- [#325](https://github.com/tach-UI/tachUI/pull/325) [`d5cd030`](https://github.com/tach-UI/tachUI/commit/d5cd030464dee0be84b8a2c6013fed716e53f551) Thanks [@whoughton](https://github.com/whoughton)! - Accept CSS Color 4 syntax in `ColorAsset.validateColor` and gradient stop validation.
+
+  `oklch()`, `oklab()`, `lab()`, `lch()`, `hwb()`, `color()` and the space-separated / slash-alpha forms of `rgb()` and `hsl()` no longer throw from the `ColorAsset` constructor. The legacy comma forms keep their range checks; the new forms are validated against a per-function grammar (angle units only in a hue slot: first in `hsl()`/`hwb()`, last in `lch()`/`oklch()`, never in `rgb()`, `lab()`, `oklab()` or `color()`) and otherwise left to the browser. `ColorValidationResult.format` gains the corresponding values.
+
+  The space-separated `rgb()` / `hsl()` forms are also parsed by the transforms and by `opacity()`, so `rgb(255 0 0 / 50%)` brightens, saturates, rotates and re-alphas exactly like `rgba(255, 0, 0, 0.5)`; `none` channels (alpha included) compute as 0 per CSS Color 4 §4.4, percentage channels and `deg` / `grad` / `rad` / `turn` hues are converted, a bare S or L number reads as a percentage per §7.1, and out-of-range rgb channels clamp. `opacity()` on a modern `hsl()` emits the modern form (`hsl(359.9 33.33% 50% / 0.5)`) so fractional and out-of-range hues survive revalidation. Values the transforms cannot convert to sRGB (`oklch()`, `color()`, `var()`, …) pass through unchanged, as `var()` tokens already did. `GradientValidation.validateColor` defers to the same validator so the new syntax is accepted as a gradient stop too.
+
+- [#325](https://github.com/tach-UI/tachUI/pull/325) [`7245d29`](https://github.com/tach-UI/tachUI/commit/7245d29aaf569483c16ff9d51788fb4815895caf) Thanks [@whoughton](https://github.com/whoughton)! - Add a gradient `interpolation` option and emit an sRGB fallback pair for it.
+
+  `GradientColors` gains `interpolation?: 'srgb' | 'oklab' | 'oklch'`, emitted as an `in <space>` hint (`linear-gradient(in oklab to right, …)`). A browser that cannot parse the hint drops the whole declaration and the element gets no background at all, so anything other than `'srgb'` is written as a pair: the plain sRGB gradient first, the hinted one second. CSSOM rejects a value it cannot parse as a no-op, so the browser keeps whichever it understood.
+
+  - `gradientToDeclarations(def)` returns that pair (length 1 for `'srgb'`); `gradientToCSS` keeps returning the single preferred string.
+  - `GradientAsset`, `StateGradientAsset` and `ReactiveGradientAsset` gain `resolveDeclarations()`; `resolve()` is unchanged. The reactive option types accept `interpolation` too.
+  - The background modifier writes every declaration in order at all three of its paths (static value, theme-reactive asset, stateful hover/active/focus/disabled), preferring `resolveDeclarations()` on an asset when present.
+  - The SSR style shim appends repeated writes to a property instead of overwriting, and the serializer emits one entry per write, so `renderToString` output carries the same pair in one `style` attribute. A property genuinely overridden by a later modifier now emits both values; the cascade keeps the last, as it does on the client. A write whose `!important` priority differs from the stored value still overwrites, matching `setProperty`, so an inline `red !important` followed by a normal gradient renders the gradient on both server and client.
+  - `CSSUtils.withFallback` emits the solid color, then the sRGB gradient, then the hinted one. `CSSUtils.toCustomProperties` always emits the sRGB form: a custom property cannot carry the pair, because an unsupported gradient only fails at `var()` substitution, where the using declaration becomes `unset` rather than falling back. It warns in development when the gradient explicitly asked for a non-sRGB interpolation.
+  - A stateful background (`{ default, hover, … }`) rendered where there is no DOM element to attach listeners to, such as `renderToString`, now emits its resting `default` state. Previously the modifier threw a `ReferenceError` on the bare `HTMLElement` check under Node.
+
+  The default interpolation is unchanged in this release step.
+
+- [#305](https://github.com/tach-UI/tachUI/pull/305) [`985a84b`](https://github.com/tach-UI/tachUI/commit/985a84b800dab2413ca563bac943f9ca3efc41db) Thanks [@whoughton](https://github.com/whoughton)! - Fix nested reactive roots surviving their parent's disposal.
+
+  Ownership was tracked through a single child registry, `OwnerImpl.sources`, typed `Set<Computation>`. Computations registered themselves into it from their constructor; owners never did. `createRoot` stored `this.parent` on the new owner, so the link was one-directional — a child knew its parent, a parent had no idea its child existed.
+
+  A nested `createRoot` was therefore orphaned. Disposing the enclosing root never reached it, so its cleanups never ran **and its computations were never disposed**: they kept their signal subscriptions and kept executing after their owner was gone. Measured on a nested pair of effects reading one signal, disposing the outer root and then setting the signal twice:
+
+  |              | runs recorded |
+  | ------------ | ------------- |
+  | outer effect | `[0]`         |
+  | inner effect | `[0, 1, 2]`   |
+
+  `OwnerImpl.dispose` ended with `this.parent.sources.delete(this as any)` — the deregistration half, written against a registration that did not exist, cast past the type error that would have caught it. It could never match.
+
+  Owners now register with their parent through a dedicated `childOwners` set, and disposal walks the whole owner subtree deepest-first before disposing the owner's own computations and running its cleanups. Sibling roots dispose in creation order. Self-disposal deregisters from the parent, and a second dispose is still a no-op.
+
+  Two consequences worth noting:
+
+  - `createDetachedRoot` now means something. It clears the current owner so the new root has no parent; previously parentage conferred nothing, so a plain nested `createRoot` was already detached.
+  - `createRoot` and `runWithOwner` now close any enclosing execution cleanup scope, so an `onCleanup` written directly in their body belongs to that owner rather than to whichever effect happened to be running.
+
+  `Owner` in `@tachui/types` gains **optional** `childOwners?: Set<Owner>` and `dispose?(): void`. Both are optional so an `Owner` from an older runtime, a hand-rolled JS object, or a downstream structural implementation still satisfies the interface — `runWithOwner` is public and accepts any `Owner`. The core guards both members at runtime and degrades such an owner to the previous unparented behaviour rather than throwing before the root body runs. `dispose` was already assumed by `@tachui/core`'s `dispose(owner)` helper behind exactly such a guard.
+
+  **Computations now open an owner scope for each execution.** Previously `ComputationImpl.execute()` restored `currentComputation` but not `currentOwner`, so once the flush arrived on a later microtask — the normal asynchronous case — `getOwner()` was null during a rerun and any root or nested effect created there was orphaned, surviving disposal of the enclosing root with its subscriptions live and its cleanups unrun.
+
+  Each run now gets its own owner, parented to the computation's owner and disposed as part of that run's teardown. So anything created during a run dies with that run:
+
+  ```typescript
+  createEffect(() => {
+    outer();
+    // Disposed automatically when this effect reruns — no explicit disposer.
+    createEffect(() => inner());
+  });
+  ```
+
+  Parenting these children to the computation's own owner instead would have traded the orphan leak for an unbounded one, piling every rerun's children onto the root until the root died.
+
+- [#328](https://github.com/tach-UI/tachUI/pull/328) [`2984b3c`](https://github.com/tach-UI/tachUI/commit/2984b3ccd461f7126acc9286f145d322d190373e) Thanks [@whoughton](https://github.com/whoughton)! - Bridge theme state to the DOM, so stylesheet theming and `Asset` theming stay in step.
+
+  `setTheme()` wrote a signal and nothing else — no attribute, no class — and nothing in tachUI read one. `ColorAsset` theming and CSS-custom-property theming were therefore two independent systems: `setTheme('dark')` did not flip a stylesheet's variables, writing `data-theme="dark"` did not flip any `ColorAsset`, and an app using both had to drive them in lockstep by hand, with any divergence showing as a half-themed UI.
+
+  The bridge now runs both ways through `data-theme` on `<html>`, exported as `THEME_ATTRIBUTE`. The name matches the convention CSS-side design systems already key off (`:root[data-theme="dark"]`), so an existing stylesheet and an existing pre-paint script work against tachUI unmodified — which is the point.
+
+  - **Reflect**: `setTheme('light' | 'dark')` writes the attribute. `setTheme('system')` _removes_ it rather than writing `data-theme="system"`, because the attribute is an override and its absence is what lets `@media (prefers-color-scheme: dark)` apply.
+  - **Observe**: the attribute is read at load, so an explicit choice a pre-paint script wrote is honoured from the first `getCurrentTheme()` with no boot-time `setTheme()` call, and a `MutationObserver` makes later external writes a reactive theme change that already-rendered components re-resolve in place. A `'system'` choice writes no attribute, so it still needs one `setTheme('system')` at boot until #309 changes the default preference.
+  - **Follow the OS**: a `prefers-color-scheme` listener makes `'system'` live for rendered components. `getCurrentTheme()` always re-read the media query, but `getThemeSignal()` is a computed and `prefers-color-scheme` is not a signal, so anything already rendered cached the appearance it first painted with and never followed an OS flip.
+  - **Native controls**: the CSS `color-scheme` property is written on `<html>` too, so scrollbars and form controls follow the theme rather than staying light under a dark UI (`'system'` maps to `light dark`). It is an inline style and so outranks author CSS, so it is written only once the theme system has actually been used — a `setTheme()` call, or a `data-theme` attribute already on the page; importing the package writes nothing. `configureTheme({ reflectColorScheme: false })` turns it off and clears what was written, for apps that declare `color-scheme` themselves.
+  - **Precedence**, highest first: an explicit `data-theme` on `<html>` > the preference passed to `setTheme()` > `prefers-color-scheme` (consulted when the preference is `'system'`). The DOM outranks the preference so that an app already setting the attribute gets tachUI following along without calling a tachUI API at all.
+
+  New: `THEME_ATTRIBUTE`, `configureTheme()` and the `ThemeConfiguration` type, `getThemePreference()` (the preference as stated, which a settings UI needs in order to show `system` as selected rather than what it resolved to), `startObservingThemeAttribute()` / `stopObservingThemeAttribute()` for hosts that tear down an instance without tearing down the document, and the `ResolvedTheme` type. Starting is idempotent and re-syncs from the attribute, since a write made while not observing leaves no mutation record to catch up on. `getCurrentTheme()`'s declared return type narrows from `Theme` to `ResolvedTheme` — it never could return `'system'`, so this only removes a branch that was already unreachable. The docs gain the attribute name, the precedence chain, and a pre-paint recipe for avoiding a flash of the wrong theme.
+
+  Separately, `ColorAsset.validateColor()` now reports `format: 'custom-property'` for `var(--token)` and `format: 'color-mix'` for `color-mix(…)`, instead of bucketing both as `'named'`. Both are accepted as before; what changes is that a caller can now tell a literal colour apart from one only the browser can resolve, which `'named'` made indistinguishable.
+
 ## 0.8.32
 
 ### Patch Changes

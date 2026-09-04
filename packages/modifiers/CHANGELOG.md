@@ -1,5 +1,73 @@
 # @tachui/modifiers
 
+## 0.8.34
+
+### Patch Changes
+
+- [#327](https://github.com/tach-UI/tachUI/pull/327) [`11a792d`](https://github.com/tach-UI/tachUI/commit/11a792db9d51db5182bc7877f5a8719c15fae11f) Thanks [@whoughton](https://github.com/whoughton)! - Name animation keyframes from their content, so they stop accumulating and SSR agrees with the client.
+
+  `AnimationModifier` derived its `@keyframes` name from `componentId` and `Date.now()`, which minted a fresh name on every apply. Because `addKeyframesToStylesheet` appended to the shared `<style id="tachui-animations">` without deduping or cleanup, every re-render of an animated component left another block behind — five renders of one component produced five blocks — and the element moved to the newest name, so the earlier blocks were dead weight the browser still parsed. Nothing removed them on unmount.
+
+  The same scheme also made the prerendered CSS unusable: `getStaticCSS` named from the selector while `apply` named from the clock, so the server's `@keyframes` was always orphaned and the client always re-injected its own.
+
+  Names are now a hash of the keyframes' own content, via the new `createAnimationKeyframeRule` and `ensureAnimationKeyframes` exports on `@tachui/core/modifiers/base`. Identical keyframes resolve to one name and one block across renders, across components, and across server and client. Duration, easing, iteration count and direction are excluded from the hash — they belong to the element's `animation` shorthand rather than the keyframes block — so components sharing a keyframes object at different speeds share one block. The set of injected names is tracked on the stylesheet element under a registered symbol, so it is discarded exactly when the element is and is shared by all three `AnimationModifier` copies (`@tachui/core` plus both `@tachui/modifiers` builds) that write to it.
+
+  Because content hashing makes a name a reliable statement about a block's contents, the client now also adopts animation keyframes it finds already in the document rather than duplicating them. `@tachui/ssr` emits each static rule in its own anonymous `<style>` rather than into `#tachui-animations`, so prerendered blocks were still being re-injected on hydration even once the names agreed.
+
+  **Breaking for deep importers of `@tachui/core/modifiers/base`**, which is a published subpath export and so reaches beyond this repo: `collectStaticAnimationCSSRules` no longer takes a `createKeyframeRule` callback, deriving the name itself. Emitted keyframe names also change shape, from `tachui-animation-<componentId>-<timestamp>` and `tachui-animation-<selector>` to `tachui-animation-<hash>`. Nothing should depend on the old spelling — the client's was unpredictable by construction — but anything asserting on a literal keyframe name needs updating.
+
+- [#325](https://github.com/tach-UI/tachUI/pull/325) [`7245d29`](https://github.com/tach-UI/tachUI/commit/7245d29aaf569483c16ff9d51788fb4815895caf) Thanks [@whoughton](https://github.com/whoughton)! - Add a gradient `interpolation` option and emit an sRGB fallback pair for it.
+
+  `GradientColors` gains `interpolation?: 'srgb' | 'oklab' | 'oklch'`, emitted as an `in <space>` hint (`linear-gradient(in oklab to right, …)`). A browser that cannot parse the hint drops the whole declaration and the element gets no background at all, so anything other than `'srgb'` is written as a pair: the plain sRGB gradient first, the hinted one second. CSSOM rejects a value it cannot parse as a no-op, so the browser keeps whichever it understood.
+
+  - `gradientToDeclarations(def)` returns that pair (length 1 for `'srgb'`); `gradientToCSS` keeps returning the single preferred string.
+  - `GradientAsset`, `StateGradientAsset` and `ReactiveGradientAsset` gain `resolveDeclarations()`; `resolve()` is unchanged. The reactive option types accept `interpolation` too.
+  - The background modifier writes every declaration in order at all three of its paths (static value, theme-reactive asset, stateful hover/active/focus/disabled), preferring `resolveDeclarations()` on an asset when present.
+  - The SSR style shim appends repeated writes to a property instead of overwriting, and the serializer emits one entry per write, so `renderToString` output carries the same pair in one `style` attribute. A property genuinely overridden by a later modifier now emits both values; the cascade keeps the last, as it does on the client. A write whose `!important` priority differs from the stored value still overwrites, matching `setProperty`, so an inline `red !important` followed by a normal gradient renders the gradient on both server and client.
+  - `CSSUtils.withFallback` emits the solid color, then the sRGB gradient, then the hinted one. `CSSUtils.toCustomProperties` always emits the sRGB form: a custom property cannot carry the pair, because an unsupported gradient only fails at `var()` substitution, where the using declaration becomes `unset` rather than falling back. It warns in development when the gradient explicitly asked for a non-sRGB interpolation.
+  - A stateful background (`{ default, hover, … }`) rendered where there is no DOM element to attach listeners to, such as `renderToString`, now emits its resting `default` state. Previously the modifier threw a `ReferenceError` on the bare `HTMLElement` check under Node.
+
+  The default interpolation is unchanged in this release step.
+
+- [#316](https://github.com/tach-UI/tachUI/pull/316) [`850d557`](https://github.com/tach-UI/tachUI/commit/850d557b19c763c296f9457e4401b0c4b822cc68) Thanks [@whoughton](https://github.com/whoughton)! - Render `overlay()` content instead of an empty container (#302).
+
+  `overlay()` built its absolutely-positioned container, positioned it correctly, and then rendered nothing inside it. Every content form was dropped: a plain string, a `ComponentInstance`, a `.build()`-ed component, and a content closure all produced `<div style="position: absolute; ...">` with no children.
+
+  The cause was `renderContent` reading `component.render().element`. A component's `render()` returns DOMNode _descriptions_; `element` is populated by the renderer when the node is mounted, so it is always `undefined` on a freshly rendered node. Strings were never handled at all. Content now goes through `renderComponent`, which materializes the nodes, builds an unbuilt modifier chain, and keeps the content reactive.
+
+  ```typescript
+  Text("base").overlay(Text("D"), "bottomTrailing");
+  // before: <div style="position: absolute; bottom: 0px; right: 0px;"></div>
+  // after:  <div style="position: absolute; bottom: 0px; right: 0px;"><span>D</span></div>
+  ```
+
+  Accepted content, matching SwiftUI's `.overlay(alignment:content:)`:
+
+  - a `ComponentInstance`, built or not
+  - a content closure, `() => Text('D')`
+  - a `string` or `number`, rendered as text
+  - a `Signal<string | number>`, rendered as reactive text
+  - a DOM `Element`
+
+  `OverlayOptions['content']` and the `overlay()` parameter were typed `any`; they are now `OverlayContent`, so an unsupported form is a compile error rather than a silent empty overlay.
+
+  `apply()` now returns a `ModifierResult` carrying cleanup. The positioning effect was previously created and never disposed, and the overlay container was never removed; both are now torn down with the modifier.
+
+  Overlays are also reconciled per render pass. `renderSingle` applies modifiers on every render of a node, not only when the element is created, so a base component that re-renders drives `apply()` again on the same element — and the pipeline's cleanup does not run until unmount. Each pass therefore appended another container and left the previous one behind. That accumulation predates this change, but was invisible while the containers were empty; now that they hold content it would have shown as duplicate, stale layers.
+
+  Bookkeeping is owned by the element rather than the modifier, because a component that builds its chain inline — `Text(label()).overlay(badge)` inside a parent's render — produces a fresh modifier instance on every pass while the renderer reuses the element. A pass boundary is detected from the `ModifierContext` identity, which `applyModifiersToNode` creates once per element render and shares across that pass's modifiers. Entering a new pass disposes what the previous one mounted; the modifiers still in the chain re-mount.
+
+  A pass in which _no_ overlay modifier runs — the last overlay leaving the chain — cannot be seen that way, since the reconciliation is only ever driven from `apply()`. Modifiers are applied inside the render effect's body, so each mount also registers an execution-scoped cleanup (#270), which runs just before that effect's next execution whether or not an overlay applies on it. Outside a computation this degrades to owner-scoped and then to a no-op, and the pass reconciliation covers those paths; both routes end at the same idempotent disposer.
+
+  Cleanup is handed back once per element rather than once per apply. The pipeline chains every returned cleanup onto `node.dispose` and pushes it onto the element's cleanup list without dropping the previous one, so a long-lived reactive overlay would otherwise accumulate stale teardowns and replay them all at unmount.
+
+  `@tachui/core/runtime` was added to the package's Rollup externals. Without it the renderer was inlined into the modifiers bundle, which would have given the package its own `globalRenderer` separate from the app's.
+
+- Updated dependencies [[`11a792d`](https://github.com/tach-UI/tachUI/commit/11a792db9d51db5182bc7877f5a8719c15fae11f), [`d5cd030`](https://github.com/tach-UI/tachUI/commit/d5cd030464dee0be84b8a2c6013fed716e53f551), [`0da0398`](https://github.com/tach-UI/tachUI/commit/0da03983bd74252a0ad917e7443b52781980b0bb), [`746b2be`](https://github.com/tach-UI/tachUI/commit/746b2bed20d71335f04e47097b135196d9f2caad), [`1fe6910`](https://github.com/tach-UI/tachUI/commit/1fe69104fadafa3663163b2d749e963b84620427), [`5cd2e02`](https://github.com/tach-UI/tachUI/commit/5cd2e0236f0336bf86d71744cb4b557145462c5d), [`327e8de`](https://github.com/tach-UI/tachUI/commit/327e8dea132e3a2f26d6afa724cc130b323413fa), [`7245d29`](https://github.com/tach-UI/tachUI/commit/7245d29aaf569483c16ff9d51788fb4815895caf), [`df5c539`](https://github.com/tach-UI/tachUI/commit/df5c5390072163b73ef16509f569b517ce916ea4), [`985a84b`](https://github.com/tach-UI/tachUI/commit/985a84b800dab2413ca563bac943f9ca3efc41db), [`2984b3c`](https://github.com/tach-UI/tachUI/commit/2984b3ccd461f7126acc9286f145d322d190373e)]:
+  - @tachui/core@0.9.0
+  - @tachui/types@0.9.0
+  - @tachui/registry@0.9.0
+
 ## 0.8.33
 
 ### Patch Changes
