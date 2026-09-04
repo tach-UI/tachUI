@@ -105,22 +105,36 @@ describe('ButtonStyles call forms', () => {
     assertType(ButtonStyles.Filled('a', undefined, { css: 'y' }))
   })
 
-  it('FOOT-GUN: accepts a props object AND a third argument, then drops one', () => {
-    // Unlike `Button`, the `ButtonStyles.*` helpers are single non-overloaded
-    // signatures — `(title, actionOrProps?, props?)` — so this call compiles.
-    // It should not. At runtime the implementation branches on
-    // `typeof actionOrProps === 'function'`; with an object second it takes
-    // the else branch and forwards only `actionOrProps`, discarding the third
-    // argument entirely.
+  it('rejects passing both a props object and a third argument', () => {
+    // These helpers used to be single non-overloaded signatures —
+    // `(title, actionOrProps?, props?)` — so this compiled, and the
+    // implementation then branched on `typeof actionOrProps === 'function'`,
+    // took the object path, and forwarded only the second argument. The third
+    // vanished with no type error and no runtime warning (#307).
     //
-    // Verified: `ButtonStyles.Filled('a', { css: 'x' }, { disabled: true })`
-    // yields props `{ css: 'x', variant: 'filled' }` — `disabled` is gone,
-    // silently, with no type error.
-    //
-    // Pinned as current behaviour, NOT endorsed. Tracked as #307: fixing it
-    // means giving these helpers the same overload treatment `Button` already
-    // has, at which point this assertion flips to `@ts-expect-error`.
-    assertType(ButtonStyles.Filled('a', { css: 'x' }, { disabled: true }))
-    assertType(ButtonStyles.Destructive('a', { css: 'x' }, { disabled: true }))
+    // They now carry the same two overloads `Button` has: the action form
+    // requires a function second, and the props form takes no third parameter,
+    // so this call matches nothing. `ButtonProps` extends a type with a
+    // `[key: string]: any` index signature, so `disabled` is not itself the
+    // error — arity is, which is the point.
+    // @ts-expect-error - no overload accepts (string, props, props)
+    ButtonStyles.Filled('a', { css: 'x' }, { disabled: true })
+    // @ts-expect-error - no overload accepts (string, props, props)
+    ButtonStyles.Destructive('a', { css: 'x' }, { disabled: true })
+  })
+
+  it('still satisfies the pre-#307 three-argument signature', () => {
+    // Back-compat guard, matching the one on `Button`: a consumer holding a
+    // helper in a variable of the old shape must keep compiling. Replacing a
+    // single signature with overloads can break assignability even when every
+    // direct call still resolves.
+    type PreChangeStyle = (
+      title: string,
+      action?: () => void,
+      props?: { css?: string }
+    ) => unknown
+
+    expectTypeOf(ButtonStyles.Filled).toExtend<PreChangeStyle>()
+    expectTypeOf(ButtonStyles.Destructive).toExtend<PreChangeStyle>()
   })
 })
