@@ -53,6 +53,86 @@ Text('Always Light').foregroundColor(Assets.primaryColor.light)
 Text('Always Dark').foregroundColor(Assets.primaryColor.dark)
 ```
 
+### Theming and the DOM
+
+tachUI's theme state is bridged to the DOM through a single attribute on
+`<html>`:
+
+```
+data-theme="light" | "dark"   // absent means "follow prefers-color-scheme"
+```
+
+The name is exported as `THEME_ATTRIBUTE` if you would rather not hard-code it.
+
+The bridge runs in both directions, so a stylesheet-driven design system and
+tachUI's `Asset`s stay in step without being driven by hand:
+
+```typescript
+import { setTheme, getCurrentTheme, getThemePreference } from '@tachui/core'
+
+setTheme('dark')    // writes data-theme="dark" — your CSS custom properties flip
+setTheme('system')  // removes the attribute — prefers-color-scheme takes over
+```
+
+```css
+/* Keys off the same attribute tachUI writes */
+:root { --brand: #2A9D8F; }
+@media (prefers-color-scheme: dark) { :root { --brand: #5FD0C1; } }
+:root[data-theme="dark"] { --brand: #5FD0C1; }
+:root[data-theme="light"] { --brand: #2A9D8F; }
+```
+
+Writing the attribute yourself works too — tachUI observes it, and already
+rendered components re-resolve their `ColorAsset`s in place:
+
+```typescript
+document.documentElement.setAttribute('data-theme', 'dark')
+// every ColorAsset on the page now resolves to its dark variant
+```
+
+#### Precedence
+
+`getCurrentTheme()` resolves in this order, highest first:
+
+1. An explicit `data-theme` on `<html>` — a decision made about *this document*,
+   by a pre-paint script, your server, or `setTheme()` itself
+2. The preference passed to `setTheme()`, when it names an appearance
+3. `prefers-color-scheme`, when the preference is `'system'`
+
+`getCurrentTheme()` gives you the resolved appearance (`'light'` or `'dark'`);
+`getThemePreference()` gives you the preference as stated, which is what a
+settings UI needs in order to show `system` as selected rather than whatever it
+resolved to.
+
+#### Avoiding a flash of the wrong theme
+
+No JavaScript API can fix this on its own — the attribute has to be on `<html>`
+*before first paint*, which means an inline, render-blocking script in `<head>`,
+above your stylesheets:
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <script>
+      // Inline and synchronous on purpose: deferring this to your bundle paints
+      // the default theme first and then corrects it, which is the flash.
+      try {
+        var saved = localStorage.getItem('theme')
+        if (saved === 'light' || saved === 'dark') {
+          document.documentElement.setAttribute('data-theme', saved)
+        }
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+```
+
+tachUI reads the attribute when it loads, so the saved choice is honoured from
+the first `getCurrentTheme()` — no `setTheme()` call needed on boot, and no
+flash. A `'system'` choice should store nothing (or be cleared), leaving the
+attribute absent so the media query applies.
+
 ### Image Assets
 
 ```typescript
