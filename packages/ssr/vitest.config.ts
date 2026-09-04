@@ -17,6 +17,18 @@ export default defineConfig({
         replacement: resolve(__dirname, '../core/src/reactive/index.ts'),
       },
       {
+        find: /^@tachui\/core\/runtime$/,
+        replacement: resolve(__dirname, '../core/src/runtime/index.ts'),
+      },
+      {
+        find: /^@tachui\/core\/assets$/,
+        replacement: resolve(__dirname, '../core/src/assets/index.ts'),
+      },
+      {
+        find: /^@tachui\/core\/gradients$/,
+        replacement: resolve(__dirname, '../core/src/gradients/index.ts'),
+      },
+      {
         find: /^@tachui\/core$/,
         replacement: resolve(__dirname, '../core/src/index.ts'),
       },

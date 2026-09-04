@@ -7,6 +7,7 @@ import {
   createGoogleFont,
   createImageAsset,
   getCurrentComponentContext,
+  LinearGradient,
   createSignal,
   h,
   registerAsset,
@@ -14,6 +15,7 @@ import {
 } from '@tachui/core'
 import { AnimationModifier } from '@tachui/core/modifiers'
 import { animation, transform } from '@tachui/modifiers/animation'
+import { BackgroundModifier } from '@tachui/modifiers/appearance/background'
 import { blendMode } from '@tachui/modifiers/appearance/blend-mode'
 import { zIndex } from '@tachui/modifiers/layout/z-index'
 import { describe, expect, it, vi } from 'vitest'
@@ -692,6 +694,76 @@ describe('renderToString', () => {
     expect(collected).toContain('[data-component-id="cmp-static-css"]')
     expect(collected).toContain(':hover')
     expect(collected).not.toContain('!important')
+  })
+
+  it('emits both declarations of a gradient fallback pair in one style attribute', () => {
+    const node = h('div') as DOMNode & { modifiers: unknown[]; componentId: string }
+    node.componentId = 'cmp-gradient-pair'
+    node.modifiers = [
+      new BackgroundModifier({
+        background: LinearGradient({
+          colors: ['#3B82F6', '#FFD400'],
+          startPoint: 'leading',
+          endPoint: 'trailing',
+          interpolation: 'oklab',
+        }),
+        cssProperty: 'background',
+      }),
+    ]
+
+    expect(renderToString(node)).toContain(
+      'style="background:linear-gradient(to right, #3B82F6, #FFD400);background:linear-gradient(in oklab to right, #3B82F6, #FFD400)"'
+    )
+  })
+
+  it('emits a stateful background default state as its fallback pair', () => {
+    const node = h('div') as DOMNode & { modifiers: unknown[]; componentId: string }
+    node.componentId = 'cmp-stateful-gradient'
+    node.modifiers = [
+      new BackgroundModifier({
+        background: {
+          default: LinearGradient({
+            colors: ['#3B82F6', '#FFD400'],
+            startPoint: 'leading',
+            endPoint: 'trailing',
+            interpolation: 'oklab',
+          }),
+          hover: '#FFFFFF',
+        },
+        cssProperty: 'background',
+      }),
+    ]
+
+    expect(renderToString(node)).toContain(
+      'style="background:linear-gradient(to right, #3B82F6, #FFD400);background:linear-gradient(in oklab to right, #3B82F6, #FFD400)"'
+    )
+  })
+
+  it('keeps every write to a property so the cascade resolves overrides', () => {
+    const node = h('div') as DOMNode & { modifiers: unknown[]; componentId: string }
+    node.componentId = 'cmp-override'
+    node.modifiers = [
+      new BackgroundModifier({ background: 'red', cssProperty: 'background' }),
+      new BackgroundModifier({ background: 'red', cssProperty: 'background' }),
+      new BackgroundModifier({ background: 'blue', cssProperty: 'background' }),
+    ]
+
+    // The repeated identical write collapses; the override stays last.
+    expect(renderToString(node)).toContain('style="background:red;background:blue"')
+  })
+
+  it('serializes a list style value as one declaration per entry', () => {
+    const html = renderToString(
+      h('div', {
+        style: {
+          background: ['red', 'linear-gradient(in oklab to right, red, blue)'],
+        },
+      })
+    )
+
+    expect(html).toBe(
+      '<div style="background:red;background:linear-gradient(in oklab to right, red, blue)"></div>'
+    )
   })
 
   it('collects static @media rules from responsive modifiers during SSR', () => {

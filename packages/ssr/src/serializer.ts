@@ -167,6 +167,15 @@ function normalizeStyle(value: unknown): string {
       continue
     }
 
+    // A list is one declaration per entry, in order — the fallback pair a
+    // gradient background emits (see `createSSRVirtualElement`).
+    if (Array.isArray(reactiveValue)) {
+      for (const entry of reactiveValue) {
+        styleEntries.push(`${cssProperty}:${String(entry)}`)
+      }
+      continue
+    }
+
     styleEntries.push(`${cssProperty}:${String(reactiveValue)}`)
   }
 
@@ -252,7 +261,11 @@ function serializeAttributes(node: DOMNode): string {
   return attributes.length > 0 ? ` ${attributes.join(' ')}` : ''
 }
 
-type SSRStyleObject = Record<string, string>
+// A property holds a list once it has been written more than once: every
+// write is emitted, in order, so the browser cascade — which keeps the last
+// declaration it can parse — resolves fallback pairs exactly as it does on
+// the client (#310).
+type SSRStyleObject = Record<string, string | string[]>
 
 interface SSRStyleTarget {
   setProperty: (name: string, value: string, priority?: string) => void
@@ -419,16 +432,35 @@ function createSSRVirtualElement(initialStyle: unknown): {
   getStyles: () => SSRStyleObject
 } {
   const styleState = collectStyleObject(initialStyle)
+
+  // CSSOM rejects a value it cannot parse as a no-op, so a modifier that
+  // writes `background` twice — sRGB gradient, then the `in oklab` form —
+  // leaves whichever the browser understood. A keyed object can only hold one
+  // value, so the shim appends instead of overwriting and `normalizeStyle`
+  // emits every entry; the cascade picks the last parseable one either way.
+  const writeStyle = (name: string, declaration: string): void => {
+    const existing = styleState[name]
+    if (existing === undefined) {
+      styleState[name] = declaration
+      return
+    }
+    const entries = Array.isArray(existing) ? existing : [existing]
+    if (entries[entries.length - 1] !== declaration) {
+      entries.push(declaration)
+    }
+    styleState[name] = entries
+  }
+
   const styleTargetBase: SSRStyleTarget & Record<string, unknown> = {
     setProperty(name: string, value: string, priority?: string) {
       const suffix = priority === 'important' ? ' !important' : ''
-      styleState[name] = `${value}${suffix}`
+      writeStyle(name, `${value}${suffix}`)
     },
   }
   const styleTarget = new Proxy(styleTargetBase, {
     set(target, property, value) {
       if (typeof property === 'string' && property !== 'setProperty') {
-        styleState[property] = String(value)
+        writeStyle(property, String(value))
       }
       ;(target as Record<string, unknown>)[property as string] = value
       return true

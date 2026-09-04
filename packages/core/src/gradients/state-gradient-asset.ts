@@ -4,17 +4,19 @@ import type {
   GradientDefinition, 
   GradientAnimationOptions 
 } from './types'
-import { gradientToCSS } from './css-generator'
+import { gradientToDeclarations } from './css-generator'
 
 /**
  * State-aware gradient asset that manages different gradients for interaction states
- * 
+ *
  * Provides hover, active, focus, and disabled state support with smooth transitions.
  */
 export class StateGradientAsset extends Asset<string> {
   private currentState: keyof StateGradientOptions = 'default'
   private animationOptions: GradientAnimationOptions
-  private resolvedGradientCache: Map<string, string> = new Map()
+  // Each state caches its full declaration list (see `gradientToDeclarations`);
+  // `resolve()` reads the preferred (last) entry.
+  private resolvedGradientCache: Map<string, string[]> = new Map()
   private isTransitioning: boolean = false
 
   constructor(
@@ -60,15 +62,24 @@ export class StateGradientAsset extends Asset<string> {
    * Resolve the current gradient to CSS
    */
   resolve(): string {
+    return StateGradientAsset.preferredDeclaration(this.resolveDeclarations())
+  }
+
+  /**
+   * The fallback pair for the current state (see `gradientToDeclarations`).
+   * Background modifiers prefer this over `resolve()` when present.
+   */
+  resolveDeclarations(): string[] {
     // Use cached result if available
     const cacheKey = this.currentState
-    if (this.resolvedGradientCache.has(cacheKey)) {
-      return this.resolvedGradientCache.get(cacheKey)!
+    const cached = this.resolvedGradientCache.get(cacheKey)
+    if (cached) {
+      return cached
     }
-    
+
     const gradient = this.stateGradients[this.currentState] || this.stateGradients.default
-    const resolved = this.resolveGradientValue(gradient as GradientDefinition | string | Asset)
-    
+    const resolved = this.resolveGradientDeclarations(gradient as GradientDefinition | string | Asset)
+
     // Cache the result
     this.resolvedGradientCache.set(cacheKey, resolved)
     return resolved
@@ -79,7 +90,9 @@ export class StateGradientAsset extends Asset<string> {
    */
   getStateGradient(state: keyof StateGradientOptions): string {
     const gradient = this.stateGradients[state] || this.stateGradients.default
-    return this.resolveGradientValue(gradient as GradientDefinition | string | Asset)
+    return StateGradientAsset.preferredDeclaration(
+      this.resolveGradientDeclarations(gradient as GradientDefinition | string | Asset)
+    )
   }
 
   /**
@@ -113,24 +126,40 @@ export class StateGradientAsset extends Asset<string> {
     this.animationOptions = { ...this.animationOptions, ...options }
   }
 
-  private resolveGradientValue(value: GradientDefinition | string | Asset): string {
+  private static preferredDeclaration(declarations: string[]): string {
+    return declarations[declarations.length - 1] ?? ''
+  }
+
+  private resolveGradientDeclarations(
+    value: GradientDefinition | string | Asset
+  ): string[] {
     if (typeof value === 'string') {
-      return value
+      return [value]
+    }
+
+    if (this.hasResolveDeclarations(value)) {
+      return value.resolveDeclarations()
     }
 
     if (this.isAsset(value)) {
-      return value.resolve() as string
+      return [value.resolve() as string]
     }
 
     if (this.isGradientDefinition(value)) {
-      return gradientToCSS(value)
+      return gradientToDeclarations(value)
     }
 
-    return ''
+    return []
   }
 
   private isAsset(value: any): value is Asset {
     return value && typeof value === 'object' && typeof value.resolve === 'function'
+  }
+
+  private hasResolveDeclarations(
+    value: any
+  ): value is Asset & { resolveDeclarations: () => string[] } {
+    return this.isAsset(value) && typeof (value as any).resolveDeclarations === 'function'
   }
 
   private isGradientDefinition(value: any): value is GradientDefinition {
@@ -144,7 +173,7 @@ export class StateGradientAsset extends Asset<string> {
     Object.keys(this.stateGradients).forEach(stateKey => {
       const state = stateKey as keyof StateGradientOptions
       if (state !== 'animation' && this.stateGradients[state]) {
-        const resolved = this.resolveGradientValue(this.stateGradients[state]!)
+        const resolved = this.resolveGradientDeclarations(this.stateGradients[state]!)
         this.resolvedGradientCache.set(state, resolved)
       }
     })

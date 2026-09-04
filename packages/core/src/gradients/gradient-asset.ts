@@ -1,6 +1,6 @@
 import { Asset } from '../assets/Asset'
-import type { GradientAssetDefinitions } from './types'
-import { gradientToCSS } from './css-generator'
+import type { GradientAssetDefinitions, GradientDefinition } from './types'
+import { gradientToCSS, gradientToDeclarations } from './css-generator'
 
 export class GradientAsset extends Asset<string> {
   constructor(
@@ -11,9 +11,20 @@ export class GradientAsset extends Asset<string> {
   }
 
   resolve(): string {
+    return gradientToCSS(this.currentDefinition())
+  }
+
+  /**
+   * The fallback pair for the current theme (see `gradientToDeclarations`).
+   * Background modifiers prefer this over `resolve()` when present.
+   */
+  resolveDeclarations(): string[] {
+    return gradientToDeclarations(this.currentDefinition())
+  }
+
+  private currentDefinition(): GradientDefinition {
     const currentTheme = this.getCurrentTheme()
-    const gradientDef = this.definitions[currentTheme] || this.definitions.light
-    return gradientToCSS(gradientDef)
+    return this.definitions[currentTheme] || this.definitions.light
   }
 
   private getCurrentTheme(): string {

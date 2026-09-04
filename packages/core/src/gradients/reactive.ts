@@ -14,6 +14,7 @@ import type { Asset } from '../assets/types'
 import { Asset as AssetClass } from '../assets/Asset'
 import type {
   GradientDefinition,
+  GradientInterpolation,
   LinearGradientOptions,
   RadialGradientOptions,
   AngularGradientOptions,
@@ -22,7 +23,7 @@ import type {
 } from './types'
 import { LinearGradient, RadialGradient, AngularGradient } from './index'
 import { StateGradientAsset } from './state-gradient-asset'
-import { gradientToCSS } from './css-generator'
+import { gradientToCSS, gradientToDeclarations } from './css-generator'
 
 /**
  * Reactive gradient options supporting signal-based values
@@ -37,6 +38,7 @@ export interface ReactiveLinearGradientOptions {
     | LinearGradientOptions['endPoint']
     | Signal<LinearGradientOptions['endPoint']>
   angle?: number | Signal<number>
+  interpolation?: GradientInterpolation
 }
 
 export interface ReactiveRadialGradientOptions {
@@ -50,6 +52,7 @@ export interface ReactiveRadialGradientOptions {
   shape?:
     | RadialGradientOptions['shape']
     | Signal<RadialGradientOptions['shape']>
+  interpolation?: GradientInterpolation
 }
 
 export interface ReactiveAngularGradientOptions {
@@ -60,6 +63,7 @@ export interface ReactiveAngularGradientOptions {
     | Signal<AngularGradientOptions['center']>
   startAngle: number | Signal<number>
   endAngle: number | Signal<number>
+  interpolation?: GradientInterpolation
 }
 
 /**
@@ -97,7 +101,15 @@ export class ReactiveGradientAsset extends AssetClass<string> {
    * Resolve current gradient to CSS
    */
   resolve(): string {
-    return this.gradientToCSS(this.currentGradient)
+    return gradientToCSS(this.currentGradient)
+  }
+
+  /**
+   * The fallback pair for the current gradient (see `gradientToDeclarations`).
+   * Background modifiers prefer this over `resolve()` when present.
+   */
+  resolveDeclarations(): string[] {
+    return gradientToDeclarations(this.currentGradient)
   }
 
   /**
@@ -157,6 +169,7 @@ export class ReactiveGradientAsset extends AssetClass<string> {
       startPoint: this.resolveValue(options.startPoint),
       endPoint: this.resolveValue(options.endPoint),
       angle: options.angle ? this.resolveValue(options.angle) : undefined,
+      interpolation: options.interpolation,
     }
   }
 
@@ -170,6 +183,7 @@ export class ReactiveGradientAsset extends AssetClass<string> {
       startRadius: this.resolveValue(options.startRadius),
       endRadius: this.resolveValue(options.endRadius),
       shape: options.shape ? this.resolveValue(options.shape) : undefined,
+      interpolation: options.interpolation,
     }
   }
 
@@ -182,6 +196,7 @@ export class ReactiveGradientAsset extends AssetClass<string> {
       center: this.resolveValue(options.center),
       startAngle: this.resolveValue(options.startAngle),
       endAngle: this.resolveValue(options.endAngle),
+      interpolation: options.interpolation,
     }
   }
 
@@ -236,11 +251,6 @@ export class ReactiveGradientAsset extends AssetClass<string> {
     if (this.updateCallback) {
       this.updateCallback()
     }
-  }
-
-  private gradientToCSS(gradient: GradientDefinition): string {
-    // Use the imported gradientToCSS function
-    return gradientToCSS(gradient)
   }
 }
 
