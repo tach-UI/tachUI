@@ -11,6 +11,7 @@
     "unicorn/prefer-add-event-listener": "off",
     "unicorn/no-useless-spread": "off",
     "unicorn/no-empty-file": "off",
+    "unicorn/no-array-reverse": "off",
     "unicorn/require-post-message-target-origin": "off",
     "unicorn/consistent-function-scoping": "off",
     "unicorn/no-array-sort": "off",

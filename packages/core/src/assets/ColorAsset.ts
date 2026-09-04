@@ -515,6 +515,10 @@ export class ColorAsset extends Asset {
   // contrast, C saturation, H hue. Results that leave the sRGB gamut have
   // their chroma reduced at constant L and H (see `color-space.ts`), so the
   // emitted hex never clips a channel and never drifts in hue.
+  //
+  // `parseColorToRgba` only reads the legacy comma forms. The CSS Color 4
+  // forms `validateColor` accepts (`rgb(255 0 0 / 50%)`, `oklch(...)`, ...)
+  // take the passthrough branch below and come back unchanged — see #326.
 
   private static applySaturation(color: string, amount: number): string {
     const rgba = ColorAsset.parseColorToRgba(color)

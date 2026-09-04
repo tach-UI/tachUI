@@ -130,14 +130,9 @@ export const GradientTransforms = {
   reverse: <T extends GradientDefinition>(gradient: T): T => {
     const newGradient = { ...gradient }
     if ('colors' in newGradient.options) {
-      // `.reverse()` on a copy, not `.toReversed()`: the latter is ES2023 and
-      // the package compiles against the ES2022 lib, so the lint autofix
-      // would break `bun run build`.
       newGradient.options = {
         ...newGradient.options,
-        // oxlint-disable-next-line unicorn/no-array-reverse
         colors: [...newGradient.options.colors].reverse(),
-        // oxlint-disable-next-line unicorn/no-array-reverse
         stops: newGradient.options.stops ? [...newGradient.options.stops].reverse() : undefined
       }
     }
@@ -518,6 +513,20 @@ export const CSSUtils = {
    */
   toCustomProperties: (gradient: GradientDefinition, prefix: string = 'gradient'): Record<string, string> => {
     const [srgbGradient] = gradientToDeclarations(gradient)
+
+    // An explicit non-sRGB request is one this helper cannot honor; say so in
+    // development. The framework default is not a request, so it stays quiet.
+    const requested = gradient.options.interpolation
+    if (
+      requested !== undefined &&
+      requested !== 'srgb' &&
+      process.env.NODE_ENV === 'development'
+    ) {
+      console.warn(
+        `[tachUI] CSSUtils.toCustomProperties emits the sRGB form of a gradient that asked for '${requested}' interpolation: a custom property cannot carry the fallback pair past var() substitution. Write gradientToDeclarations() to the background itself to keep the hint.`
+      )
+    }
+
     return {
       [`--${prefix}-background`]: srgbGradient
     }

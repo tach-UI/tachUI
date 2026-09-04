@@ -438,6 +438,9 @@ function createSSRVirtualElement(initialStyle: unknown): {
   // leaves whichever the browser understood. A keyed object can only hold one
   // value, so the shim appends instead of overwriting and `normalizeStyle`
   // emits every entry; the cascade picks the last parseable one either way.
+  const isImportant = (declaration: string): boolean =>
+    /\s*!important\s*$/i.test(declaration)
+
   const writeStyle = (name: string, declaration: string): void => {
     const existing = styleState[name]
     if (existing === undefined) {
@@ -445,7 +448,19 @@ function createSSRVirtualElement(initialStyle: unknown): {
       return
     }
     const entries = Array.isArray(existing) ? existing : [existing]
-    if (entries[entries.length - 1] !== declaration) {
+    const last = entries[entries.length - 1]
+
+    // `setProperty` replaces the declaration *and its priority*, so a write
+    // whose priority differs from what is stored is an overwrite: an inline
+    // `red !important` followed by a normal gradient write yields the
+    // gradient on the client, and must here too. Accumulating across the
+    // priority change would let the old value win in server output only.
+    if (isImportant(last) !== isImportant(declaration)) {
+      styleState[name] = declaration
+      return
+    }
+
+    if (last !== declaration) {
       entries.push(declaration)
     }
     styleState[name] = entries
