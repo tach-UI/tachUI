@@ -8,6 +8,7 @@
 
 import { createSignal } from './signal'
 import { createComputed, type Computed } from './computed'
+import { untrack } from './context'
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -126,6 +127,72 @@ export function getThemePreference(): Theme {
 }
 
 /**
+ * Options for how tachUI reflects theme state to the document.
+ */
+export interface ThemeConfiguration {
+  /**
+   * Whether to write the CSS `color-scheme` property on `<html>`.
+   *
+   * On by default: without it a dark theme leaves native UI — scrollbars, form
+   * controls, the canvas behind the page — rendering light, which is the same
+   * half-themed result the `data-theme` bridge exists to prevent.
+   *
+   * Turn it off if your own CSS declares `color-scheme`. tachUI writes an
+   * *inline* style, and inline styles outrank author stylesheets, so leaving
+   * this on would silently override a `:root { color-scheme: … }` of your own.
+   * Switching it off clears anything tachUI already wrote, handing the property
+   * back to your stylesheet.
+   */
+  reflectColorScheme?: boolean
+}
+
+let reflectColorScheme = true
+
+/**
+ * Configure how theme state reaches the document.
+ *
+ * Call before the first `setTheme()` where possible, though changing
+ * `reflectColorScheme` later takes effect immediately either way.
+ */
+export function configureTheme(config: ThemeConfiguration): void {
+  if (config.reflectColorScheme === undefined) return
+
+  reflectColorScheme = config.reflectColorScheme
+  reflectColorSchemeToDOM()
+}
+
+/**
+ * Mirror the theme into `color-scheme` so native UI follows it.
+ *
+ * `'system'` maps to `light dark` rather than to the appearance it currently
+ * resolves to: that is the value that tells the browser to follow the OS
+ * itself, so native UI keeps up even between our own updates.
+ *
+ * Reads are untracked. `setTheme()` may well be called from inside an effect,
+ * and this must not make that effect a subscriber of the theme it just set.
+ */
+function reflectColorSchemeToDOM(): void {
+  const root = themeRoot()
+  if (!root?.style) return
+
+  if (!reflectColorScheme) {
+    // Hand the property back to whatever CSS the app has for it.
+    root.style.colorScheme = ''
+    return
+  }
+
+  const value = untrack(() => {
+    const fromDOM = domTheme()
+    if (fromDOM) return fromDOM
+
+    const preference = themePreference()
+    return preference === 'system' ? 'light dark' : preference
+  })
+
+  root.style.colorScheme = value
+}
+
+/**
  * Write the theme to `<html>`, or clear it.
  *
  * `'system'` removes the attribute rather than writing `data-theme="system"`,
@@ -155,6 +222,7 @@ export function setTheme(theme: Theme): void {
   setDomTheme(theme === 'system' ? undefined : theme)
 
   reflectThemeToDOM(theme)
+  reflectColorSchemeToDOM()
 }
 
 let themeObserver: MutationObserver | undefined
@@ -173,7 +241,10 @@ function startListeningForSystemTheme(): void {
   if (typeof window === 'undefined' || !window.matchMedia) return
 
   systemThemeQuery = window.matchMedia(SYSTEM_THEME_QUERY)
-  systemThemeListener = () => bumpSystemThemeEpoch(epoch => epoch + 1)
+  systemThemeListener = () => {
+    bumpSystemThemeEpoch(epoch => epoch + 1)
+    reflectColorSchemeToDOM()
+  }
 
   if (typeof systemThemeQuery.addEventListener === 'function') {
     systemThemeQuery.addEventListener('change', systemThemeListener)
@@ -231,9 +302,11 @@ export function startObservingThemeAttribute(): void {
   // not watching produced no record, so without this a restart would observe
   // only the *next* change and stay wrong about the current one.
   setDomTheme(readThemeAttribute())
+  reflectColorSchemeToDOM()
 
   themeObserver = new MutationObserver(() => {
     setDomTheme(readThemeAttribute())
+    reflectColorSchemeToDOM()
   })
 
   themeObserver.observe(root, {

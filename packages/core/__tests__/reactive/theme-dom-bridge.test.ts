@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ColorAsset } from '../../src/assets/ColorAsset'
 import { createEffect, createRoot } from '../../src/reactive'
 import {
+  configureTheme,
   detectSystemTheme,
   getCurrentTheme,
   getThemePreference,
@@ -58,6 +59,7 @@ describe('theme DOM bridge', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    configureTheme({ reflectColorScheme: true })
     document.documentElement.removeAttribute(THEME_ATTRIBUTE)
     setTheme('light')
   })
@@ -112,6 +114,66 @@ describe('theme DOM bridge', () => {
       } finally {
         style.remove()
       }
+    })
+  })
+
+  describe('color-scheme reflection', () => {
+    const colorScheme = () => document.documentElement.style.colorScheme
+
+    it('writes the appearance for an explicit theme', () => {
+      setTheme('dark')
+      expect(colorScheme()).toBe('dark')
+
+      setTheme('light')
+      expect(colorScheme()).toBe('light')
+    })
+
+    it('writes "light dark" for system', () => {
+      // Not the currently resolved appearance: `light dark` is what tells the
+      // browser to follow the OS itself, so native UI keeps up between our
+      // own updates.
+      setTheme('system')
+      expect(colorScheme()).toBe('light dark')
+    })
+
+    it('follows an externally written attribute', async () => {
+      setTheme('system')
+      document.documentElement.setAttribute(THEME_ATTRIBUTE, 'dark')
+      await flushMutations()
+
+      // Otherwise a CSS-first app gets themed variables and assets but light
+      // scrollbars — the half-themed result this bridge exists to prevent.
+      expect(colorScheme()).toBe('dark')
+    })
+
+    it('can be turned off, handing the property back to app CSS', () => {
+      setTheme('dark')
+      expect(colorScheme()).toBe('dark')
+
+      configureTheme({ reflectColorScheme: false })
+
+      // Cleared rather than left stale: tachUI writes an inline style, which
+      // outranks an app's own `:root { color-scheme }`, so switching off has to
+      // stop overriding it.
+      expect(colorScheme()).toBe('')
+
+      setTheme('light')
+      expect(colorScheme()).toBe('')
+    })
+
+    it('resumes on the current theme when switched back on', () => {
+      configureTheme({ reflectColorScheme: false })
+      setTheme('dark')
+      expect(colorScheme()).toBe('')
+
+      configureTheme({ reflectColorScheme: true })
+      expect(colorScheme()).toBe('dark')
+    })
+
+    it('ignores a config that does not mention it', () => {
+      setTheme('dark')
+      configureTheme({})
+      expect(colorScheme()).toBe('dark')
     })
   })
 
