@@ -146,12 +146,22 @@ let themeObserver: MutationObserver | undefined
  * Self-inflicted mutations are harmless: `setTheme` has already set `domTheme`
  * to the same value, and setting a signal to the value it holds notifies
  * nothing.
+ *
+ * Called once on import and safe to call again: idempotent while already
+ * observing, and it re-syncs from the attribute when it is not. That makes it
+ * the way back from `stopObservingThemeAttribute`, and the way in for a host
+ * that imported this module before a document existed.
  */
-function startObservingThemeAttribute(): void {
+export function startObservingThemeAttribute(): void {
   if (themeObserver) return
 
   const root = themeRoot()
   if (!root || typeof MutationObserver === 'undefined') return
+
+  // Catch up on whatever the attribute says now. Anything written while we were
+  // not watching produced no record, so without this a restart would observe
+  // only the *next* change and stay wrong about the current one.
+  setDomTheme(readThemeAttribute())
 
   themeObserver = new MutationObserver(() => {
     setDomTheme(readThemeAttribute())
@@ -167,7 +177,10 @@ function startObservingThemeAttribute(): void {
  * Stop following external writes to `data-theme`.
  *
  * Exported for tests and for hosts that tear down a tachUI instance without
- * tearing down the document; app code does not normally need it.
+ * tearing down the document; app code does not normally need it. Pair it with
+ * `startObservingThemeAttribute` — stopping without a way back would leave the
+ * next instance silently deaf to external writes, which is the divergence this
+ * bridge exists to remove.
  */
 export function stopObservingThemeAttribute(): void {
   themeObserver?.disconnect()

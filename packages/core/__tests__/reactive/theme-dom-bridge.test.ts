@@ -16,6 +16,8 @@ import {
   getThemePreference,
   getThemeSignal,
   setTheme,
+  startObservingThemeAttribute,
+  stopObservingThemeAttribute,
   THEME_ATTRIBUTE,
 } from '../../src/reactive/theme'
 
@@ -231,6 +233,103 @@ describe('theme DOM bridge', () => {
       expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
         'light'
       )
+    })
+  })
+
+  describe('the documented pre-paint recipe', () => {
+    it('follows the OS for a system choice, with no attribute written', async () => {
+      // The `'system'` branch of the documented boot snippet: nothing saved, so
+      // no attribute was written pre-paint, and the app calls setTheme('system').
+      // The suite's own `beforeEach` calls `setTheme('light')`, which writes the
+      // attribute, so clear it to model a genuinely fresh boot.
+      setSystemPrefersDark(true)
+      document.documentElement.removeAttribute(THEME_ATTRIBUTE)
+      await flushMutations()
+
+      setTheme('system')
+
+      const asset = ColorAsset.init({
+        name: 'primary',
+        default: '#ffffff',
+        light: '#ffffff',
+        dark: '#000000',
+      })
+
+      // Without this call the preference would still be its `'light'` default
+      // and the asset would resolve light while the stylesheet's media query
+      // went dark — the half-themed state the recipe exists to avoid.
+      expect(getCurrentTheme()).toBe('dark')
+      expect(asset.resolve()).toBe('#000000')
+
+      // Still no attribute, so `prefers-color-scheme` keeps driving the CSS.
+      expect(document.documentElement.hasAttribute(THEME_ATTRIBUTE)).toBe(false)
+    })
+
+    it('honours an explicit saved choice with no setTheme call', async () => {
+      // The other branch: the pre-paint script wrote the attribute, and the app
+      // deliberately does not call setTheme.
+      setSystemPrefersDark(true)
+      document.documentElement.setAttribute(THEME_ATTRIBUTE, 'light')
+      await flushMutations()
+
+      const asset = ColorAsset.init({
+        name: 'primary',
+        default: '#ffffff',
+        light: '#ffffff',
+        dark: '#000000',
+      })
+
+      expect(getCurrentTheme()).toBe('light')
+      expect(asset.resolve()).toBe('#ffffff')
+    })
+  })
+
+  describe('start/stop observing', () => {
+    afterEach(() => {
+      // Never leave the suite deaf for the tests that follow.
+      startObservingThemeAttribute()
+    })
+
+    it('ignores external writes while stopped, and picks them up again', async () => {
+      setTheme('light')
+      stopObservingThemeAttribute()
+
+      document.documentElement.setAttribute(THEME_ATTRIBUTE, 'dark')
+      await flushMutations()
+      expect(getCurrentTheme()).toBe('light')
+
+      startObservingThemeAttribute()
+
+      // Restarting re-syncs from the attribute rather than waiting for the
+      // next mutation: the write above produced no record to catch up on.
+      expect(getCurrentTheme()).toBe('dark')
+
+      document.documentElement.setAttribute(THEME_ATTRIBUTE, 'light')
+      await flushMutations()
+      expect(getCurrentTheme()).toBe('light')
+    })
+
+    it('is idempotent, so a second start does not double-observe', async () => {
+      const seen: string[] = []
+
+      startObservingThemeAttribute()
+      startObservingThemeAttribute()
+
+      const dispose = createRoot(disposer => {
+        createEffect(() => {
+          seen.push(getThemeSignal()())
+        })
+        return disposer
+      })
+
+      try {
+        document.documentElement.setAttribute(THEME_ATTRIBUTE, 'dark')
+        await flushMutations()
+
+        expect(seen.at(-1)).toBe('dark')
+      } finally {
+        dispose()
+      }
     })
   })
 

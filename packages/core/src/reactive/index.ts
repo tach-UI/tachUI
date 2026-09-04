@@ -134,6 +134,7 @@ export {
   getThemePreference,
   getThemeSignal,
   setTheme,
+  startObservingThemeAttribute,
   stopObservingThemeAttribute,
   THEME_ATTRIBUTE,
   type ResolvedTheme,
