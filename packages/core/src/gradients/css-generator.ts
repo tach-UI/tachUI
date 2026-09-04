@@ -1,6 +1,8 @@
 import type { Asset } from '../assets/types'
-import type { 
-  GradientDefinition, 
+import type {
+  GradientDefinition,
+  GradientColors,
+  GradientInterpolation,
   LinearGradientOptions,
   RadialGradientOptions,
   AngularGradientOptions,
@@ -12,7 +14,18 @@ import type {
   GradientCenter
 } from './types'
 
-// Removed unused DIRECTION_MAP - using calculateDirection function instead
+/**
+ * Interpolation space used when a gradient definition does not set
+ * `interpolation`. Anything other than `'srgb'` makes every gradient emit a
+ * fallback pair (see `gradientToDeclarations`).
+ */
+export const DEFAULT_GRADIENT_INTERPOLATION: GradientInterpolation = 'srgb'
+
+export function resolveGradientInterpolation(
+  options: GradientColors
+): GradientInterpolation {
+  return options.interpolation ?? DEFAULT_GRADIENT_INTERPOLATION
+}
 
 const POSITION_MAP: Record<string, string> = {
   'center': 'center',
@@ -20,6 +33,27 @@ const POSITION_MAP: Record<string, string> = {
   'bottom': 'bottom',
   'leading': 'left',
   'trailing': 'right'
+}
+
+/**
+ * A gradient split at the color stops so the same resolved stops can be
+ * rendered with and without an interpolation hint. Assets in `colors` are
+ * resolved once, when the parts are built.
+ */
+interface GradientParts {
+  functionName: string
+  /** Everything before the stops: direction, shape / size / position, from-angle. */
+  head: string
+  colorStops: string
+  interpolation: GradientInterpolation
+}
+
+function renderGradient(
+  parts: GradientParts,
+  interpolation: GradientInterpolation
+): string {
+  const hint = interpolation === 'srgb' ? '' : `in ${interpolation} `
+  return `${parts.functionName}(${hint}${parts.head}, ${parts.colorStops})`
 }
 
 function resolveColor(color: string | Asset): string {
@@ -39,6 +73,17 @@ function formatColorStops(colors: (string | Asset)[], stops?: number[]): string 
   }).join(', ')
 }
 
+function formatRepeatingColorStops(
+  colors: (string | Asset)[],
+  colorStops: string[]
+): string {
+  return colors.map((color, index) => {
+    const resolvedColor = resolveColor(color)
+    const stop = colorStops[index] || `${index * 10}px`
+    return `${resolvedColor} ${stop}`
+  }).join(', ')
+}
+
 function formatPosition(center: GradientCenter): string {
   if (Array.isArray(center)) {
     return `${center[0]}% ${center[1]}%`
@@ -50,7 +95,7 @@ function calculateDirection(startPoint: GradientStartPoint, endPoint: GradientSt
   if (angle !== undefined) {
     return `${angle}deg`
   }
-  
+
   // Simple direction mapping for common cases
   const directionKey = `${startPoint}-${endPoint}`
   const directionMappings: Record<string, string> = {
@@ -63,22 +108,23 @@ function calculateDirection(startPoint: GradientStartPoint, endPoint: GradientSt
     'bottomLeading-topTrailing': 'to top right',
     'bottomTrailing-topLeading': 'to top left'
   }
-  
+
   return directionMappings[directionKey] || 'to bottom'
 }
 
-export function generateLinearGradientCSS(options: LinearGradientOptions): string {
-  const direction = calculateDirection(options.startPoint, options.endPoint, options.angle)
-  const colorStops = formatColorStops(options.colors, options.stops)
-  
-  return `linear-gradient(${direction}, ${colorStops})`
+function describeLinearGradient(options: LinearGradientOptions): GradientParts {
+  return {
+    functionName: 'linear-gradient',
+    head: calculateDirection(options.startPoint, options.endPoint, options.angle),
+    colorStops: formatColorStops(options.colors, options.stops),
+    interpolation: resolveGradientInterpolation(options)
+  }
 }
 
-export function generateRadialGradientCSS(options: RadialGradientOptions): string {
+function describeRadialGradient(options: RadialGradientOptions): GradientParts {
   const shape = options.shape || 'circle'
   const position = formatPosition(options.center)
-  const colorStops = formatColorStops(options.colors, options.stops)
-  
+
   // Handle radius specification based on shape
   let sizeSpec: string
   if (shape === 'circle') {
@@ -87,72 +133,132 @@ export function generateRadialGradientCSS(options: RadialGradientOptions): strin
     // For ellipse, use endRadius for both axes unless specified differently
     sizeSpec = `${options.endRadius}px ${options.endRadius}px`
   }
-  
-  return `radial-gradient(${shape} ${sizeSpec} at ${position}, ${colorStops})`
+
+  return {
+    functionName: 'radial-gradient',
+    head: `${shape} ${sizeSpec} at ${position}`,
+    colorStops: formatColorStops(options.colors, options.stops),
+    interpolation: resolveGradientInterpolation(options)
+  }
 }
 
-export function generateAngularGradientCSS(options: AngularGradientOptions): string {
-  const position = formatPosition(options.center)
-  const fromAngle = `from ${options.startAngle}deg`
-  const colorStops = formatColorStops(options.colors, options.stops)
-  
-  return `conic-gradient(${fromAngle} at ${position}, ${colorStops})`
+function describeConicGradient(
+  options: AngularGradientOptions | ConicGradientOptions
+): GradientParts {
+  return {
+    functionName: 'conic-gradient',
+    head: `from ${options.startAngle}deg at ${formatPosition(options.center)}`,
+    colorStops: formatColorStops(options.colors, options.stops),
+    interpolation: resolveGradientInterpolation(options)
+  }
 }
 
-export function generateConicGradientCSS(options: ConicGradientOptions): string {
-  const position = formatPosition(options.center)
-  const fromAngle = `from ${options.startAngle}deg`
-  const colorStops = formatColorStops(options.colors, options.stops)
-  
-  return `conic-gradient(${fromAngle} at ${position}, ${colorStops})`
+function describeRepeatingLinearGradient(options: RepeatingLinearGradientOptions): GradientParts {
+  return {
+    functionName: 'repeating-linear-gradient',
+    head: options.direction,
+    colorStops: formatRepeatingColorStops(options.colors, options.colorStops),
+    interpolation: resolveGradientInterpolation(options)
+  }
 }
 
-export function generateRepeatingLinearGradientCSS(options: RepeatingLinearGradientOptions): string {
-  const colorStops = options.colors.map((color, index) => {
-    const resolvedColor = resolveColor(color)
-    const stop = options.colorStops[index] || `${index * 10}px`
-    return `${resolvedColor} ${stop}`
-  }).join(', ')
-  
-  return `repeating-linear-gradient(${options.direction}, ${colorStops})`
-}
-
-export function generateRepeatingRadialGradientCSS(options: RepeatingRadialGradientOptions): string {
+function describeRepeatingRadialGradient(options: RepeatingRadialGradientOptions): GradientParts {
   const shape = options.shape || 'circle'
-  const position = formatPosition(options.center)
-  const colorStops = options.colors.map((color, index) => {
-    const resolvedColor = resolveColor(color)
-    const stop = options.colorStops[index] || `${index * 10}px`
-    return `${resolvedColor} ${stop}`
-  }).join(', ')
-  
-  return `repeating-radial-gradient(${shape} at ${position}, ${colorStops})`
+  return {
+    functionName: 'repeating-radial-gradient',
+    head: `${shape} at ${formatPosition(options.center)}`,
+    colorStops: formatRepeatingColorStops(options.colors, options.colorStops),
+    interpolation: resolveGradientInterpolation(options)
+  }
 }
 
-export function generateEllipticalGradientCSS(options: EllipticalGradientOptions): string {
-  const position = formatPosition(options.center)
-  const colorStops = formatColorStops(options.colors, options.stops)
-  
-  return `radial-gradient(ellipse ${options.radiusX}px ${options.radiusY}px at ${position}, ${colorStops})`
+function describeEllipticalGradient(options: EllipticalGradientOptions): GradientParts {
+  return {
+    functionName: 'radial-gradient',
+    head: `ellipse ${options.radiusX}px ${options.radiusY}px at ${formatPosition(options.center)}`,
+    colorStops: formatColorStops(options.colors, options.stops),
+    interpolation: resolveGradientInterpolation(options)
+  }
 }
 
-export function gradientToCSS(gradient: GradientDefinition): string {
+function describeGradient(gradient: GradientDefinition): GradientParts {
   switch (gradient.type) {
     case 'linear':
-      return generateLinearGradientCSS(gradient.options as LinearGradientOptions)
+      return describeLinearGradient(gradient.options as LinearGradientOptions)
     case 'radial':
-      return generateRadialGradientCSS(gradient.options as RadialGradientOptions)
+      return describeRadialGradient(gradient.options as RadialGradientOptions)
     case 'angular':
-      return generateAngularGradientCSS(gradient.options as AngularGradientOptions)
+      return describeConicGradient(gradient.options as AngularGradientOptions)
     case 'conic':
-      return generateConicGradientCSS(gradient.options as ConicGradientOptions)
+      return describeConicGradient(gradient.options as ConicGradientOptions)
     case 'repeating-linear':
-      return generateRepeatingLinearGradientCSS(gradient.options as RepeatingLinearGradientOptions)
+      return describeRepeatingLinearGradient(gradient.options as RepeatingLinearGradientOptions)
     case 'repeating-radial':
-      return generateRepeatingRadialGradientCSS(gradient.options as RepeatingRadialGradientOptions)
+      return describeRepeatingRadialGradient(gradient.options as RepeatingRadialGradientOptions)
     case 'elliptical':
-      return generateEllipticalGradientCSS(gradient.options as EllipticalGradientOptions)
+      return describeEllipticalGradient(gradient.options as EllipticalGradientOptions)
     default:
       throw new Error(`Unknown gradient type: ${gradient.type}`)
   }
+}
+
+function renderPreferred(parts: GradientParts): string {
+  return renderGradient(parts, parts.interpolation)
+}
+
+export function generateLinearGradientCSS(options: LinearGradientOptions): string {
+  return renderPreferred(describeLinearGradient(options))
+}
+
+export function generateRadialGradientCSS(options: RadialGradientOptions): string {
+  return renderPreferred(describeRadialGradient(options))
+}
+
+export function generateAngularGradientCSS(options: AngularGradientOptions): string {
+  return renderPreferred(describeConicGradient(options))
+}
+
+export function generateConicGradientCSS(options: ConicGradientOptions): string {
+  return renderPreferred(describeConicGradient(options))
+}
+
+export function generateRepeatingLinearGradientCSS(options: RepeatingLinearGradientOptions): string {
+  return renderPreferred(describeRepeatingLinearGradient(options))
+}
+
+export function generateRepeatingRadialGradientCSS(options: RepeatingRadialGradientOptions): string {
+  return renderPreferred(describeRepeatingRadialGradient(options))
+}
+
+export function generateEllipticalGradientCSS(options: EllipticalGradientOptions): string {
+  return renderPreferred(describeEllipticalGradient(options))
+}
+
+/**
+ * The single preferred CSS string for a gradient: hinted with
+ * `in <space>` unless its interpolation resolves to `'srgb'`.
+ *
+ * A browser that cannot parse the hint drops the whole declaration and the
+ * element gets no background at all, so anything that writes this to a
+ * `background` should write `gradientToDeclarations` instead.
+ */
+export function gradientToCSS(gradient: GradientDefinition): string {
+  return renderPreferred(describeGradient(gradient))
+}
+
+/**
+ * The declarations a `background` needs for this gradient, in cascade order:
+ * the plain sRGB form first, then the hinted form. A browser that cannot
+ * parse `in oklab` rejects only the second write and keeps the first — this
+ * holds for stylesheet rules, `style` attributes and CSSOM `setProperty`
+ * alike, as long as both writes actually reach the target.
+ *
+ * Length 1 when the interpolation resolves to `'srgb'`.
+ */
+export function gradientToDeclarations(gradient: GradientDefinition): string[] {
+  const parts = describeGradient(gradient)
+  if (parts.interpolation === 'srgb') {
+    return [renderGradient(parts, 'srgb')]
+  }
+  return [renderGradient(parts, 'srgb'), renderPreferred(parts)]
 }
