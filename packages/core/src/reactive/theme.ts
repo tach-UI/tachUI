@@ -36,6 +36,31 @@ function themeRoot(): HTMLElement | undefined {
 }
 
 /**
+ * Whether the app has actually engaged the theme system.
+ *
+ * Importing `@tachui/core` must not, on its own, write `color-scheme`. The
+ * write is an inline style that outranks author CSS, so reflecting the untouched
+ * default would hand every importer a `color-scheme: light` they never asked
+ * for — overriding an app's own `:root { color-scheme: dark }` and lighting up
+ * its native controls under a dark UI. `configureTheme()` cannot prevent that
+ * either, since it necessarily runs after the import.
+ *
+ * A source counts as engaged once the app has demonstrably made a decision
+ * about this document: `setTheme()` was called, a `data-theme` attribute is
+ * present, or reflection was explicitly configured on.
+ *
+ * Declared above `readThemeAttribute` deliberately: that function engages the
+ * source during module initialisation, so a `let` further down would be in its
+ * temporal dead zone — an import that throws, and only on the pre-paint path
+ * this feature exists to serve.
+ */
+let themeSourceEngaged = false
+
+function engageThemeSource(): void {
+  themeSourceEngaged = true
+}
+
+/**
  * The theme the DOM is currently asserting, or `undefined` if it asserts none.
  *
  * Read once at module load so a pre-paint script's choice is honoured from the
@@ -48,7 +73,13 @@ function readThemeAttribute(): ResolvedTheme | undefined {
   if (!root || typeof root.getAttribute !== 'function') return undefined
 
   const value = root.getAttribute(THEME_ATTRIBUTE)
-  return isResolvedTheme(value) ? value : undefined
+  if (!isResolvedTheme(value)) return undefined
+
+  // An attribute already on `<html>` is a decision someone made about this
+  // document — a pre-paint script, a server, an app driving CSS itself — so
+  // reflecting alongside it is wanted rather than presumptuous.
+  engageThemeSource()
+  return value
 }
 
 // The app's stated preference. `'system'` means "defer to the OS".
@@ -99,10 +130,6 @@ function resolveTheme(preference: Theme, fromDOM?: ResolvedTheme): ResolvedTheme
   if (fromDOM) return fromDOM
   if (preference !== 'system') return preference
 
-  // Tracked, not used: reading it inside a computed is what makes an OS flip
-  // invalidate that computed. Outside a reactive context this is a no-op.
-  // Tracked, not used: reading it inside a computed is what makes an OS flip
-  // invalidate that computed. Outside a reactive context this is a no-op.
   // Tracked, not used: reading it inside a computed is what makes an OS flip
   // invalidate that computed. Outside a reactive context this is a no-op.
   systemThemeEpoch()
@@ -158,6 +185,7 @@ export function configureTheme(config: ThemeConfiguration): void {
   if (config.reflectColorScheme === undefined) return
 
   reflectColorScheme = config.reflectColorScheme
+  if (reflectColorScheme) engageThemeSource()
   reflectColorSchemeToDOM()
 }
 
@@ -180,6 +208,10 @@ function reflectColorSchemeToDOM(): void {
     root.style.colorScheme = ''
     return
   }
+
+  // Nothing has asked tachUI to manage the theme yet, so leave the property to
+  // the app's own stylesheet rather than pinning it to our default.
+  if (!themeSourceEngaged) return
 
   const value = untrack(() => {
     const fromDOM = domTheme()
@@ -214,6 +246,7 @@ function reflectThemeToDOM(theme: Theme): void {
 
 // Function to set the theme
 export function setTheme(theme: Theme): void {
+  engageThemeSource()
   setThemePreference(theme)
 
   // Kept in step directly rather than waiting for the observer below, which
@@ -346,9 +379,7 @@ export function getThemeSignal(): Computed<ResolvedTheme> {
 // Auto-detect system theme
 export function detectSystemTheme(): ResolvedTheme {
   if (typeof window !== 'undefined' && window.matchMedia) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
+    return window.matchMedia(SYSTEM_THEME_QUERY).matches ? 'dark' : 'light'
   }
   return 'light'
 }

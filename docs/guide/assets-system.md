@@ -97,9 +97,14 @@ form controls and the canvas behind the page follow the theme instead of staying
 light under a dark UI. `'system'` maps to `light dark`, the value that tells the
 browser to follow the OS itself.
 
-This is an **inline** style, and inline styles outrank author stylesheets. If
-your own CSS declares `color-scheme`, turn tachUI's off so it stops overriding
-you — that also clears anything already written, handing the property back:
+This is an **inline** style, and inline styles outrank author stylesheets, so
+tachUI only writes it once you have actually used the theme system — a
+`setTheme()` call, or a `data-theme` attribute on the page. Importing
+`@tachui/core` on its own writes nothing and leaves your CSS alone.
+
+If your own CSS declares `color-scheme` and you do use `setTheme()`, turn
+tachUI's off so it stops overriding you — that also clears anything already
+written, handing the property back:
 
 ```typescript
 import { configureTheme } from '@tachui/core'
