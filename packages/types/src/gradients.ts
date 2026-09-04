@@ -5,9 +5,28 @@
  * These types are extracted from @tachui/core to enable shared usage.
  */
 
+/**
+ * Color space a gradient interpolates through (`linear-gradient(in oklab ...)`).
+ *
+ * - `'srgb'` is the legacy browser default: complementary pairs pass through a
+ *   desaturated gray midpoint.
+ * - `'oklab'` takes the straight, perceptually uniform path and never introduces
+ *   an intermediate hue.
+ * - `'oklch'` interpolates hue, giving the more colorful arc; on hue-distant
+ *   endpoints it can route through a hue neither stop has.
+ */
+export type GradientInterpolation = 'srgb' | 'oklab' | 'oklch'
+
 export interface GradientColors {
   colors: (string | any)[] // Asset type reference removed to avoid circular dependencies
   stops?: number[]
+  /**
+   * Interpolation space. Anything other than `'srgb'` is emitted as a pair of
+   * declarations — the plain sRGB gradient first, the hinted gradient second —
+   * so a browser that cannot parse the hint keeps the sRGB one rather than
+   * dropping the background. See `gradientToDeclarations`.
+   */
+  interpolation?: GradientInterpolation
 }
 
 export type GradientStartPoint =
