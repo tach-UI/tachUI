@@ -207,21 +207,23 @@ function enterStructure(
 }
 
 /**
- * Whether any part of the key is a `Date`. Dates hash deterministically
- * in-session but ISO-shift on the wire (`Date` revives as a string), so a
- * snapshot entry keyed by one could never be matched after a round trip.
+ * Whether any part of the key cannot survive the wire. `undefined` segments
+ * become `null` under JSON serialization and `Date`s revive as strings, so a
+ * snapshot entry keyed by either could never be matched after a round trip —
+ * a wasted snapshot plus a dead entry. Anything else unserializable is
+ * already rejected at insert time, so it cannot reach this gate.
  */
-function containsDate(value: unknown): boolean {
-  if (isDateValue(value)) {
-    return true
+function keySurvivesWire(value: unknown): boolean {
+  if (value === undefined || isDateValue(value)) {
+    return false
   }
   if (Array.isArray(value)) {
-    return value.some(containsDate)
+    return value.every(keySurvivesWire)
   }
   if (typeof value === 'object' && value !== null) {
-    return Object.values(value).some(containsDate)
+    return Object.values(value).every(keySurvivesWire)
   }
-  return false
+  return true
 }
 
 /**
@@ -514,10 +516,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         if (entry.invalidated) {
           continue
         }
-        // Keys containing Dates hash deterministically in-session but revive
-        // as strings on the wire, so the restored entry could never be
-        // matched by the original key — a wasted snapshot plus a dead entry.
-        if (containsDate(entry.key)) {
+        // Keys that cannot survive the wire are skipped for the same
+        // reason: the restored entry could never be matched.
+        if (!keySurvivesWire(entry.key)) {
           continue
         }
         // Entries whose data is undefined stay cached but are not serialized:
