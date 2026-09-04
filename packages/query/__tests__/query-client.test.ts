@@ -139,6 +139,59 @@ describe('fetchQuery caching', () => {
     expect(client.dehydrate().queries).toHaveLength(0)
   })
 
+  it('shares the slot with a reentrant fetch from inside the loader', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    let inner: Promise<string> | undefined
+    const options = {
+      key: keyOf('users'),
+      load: () => {
+        loads += 1
+        // The slot is claimed before the loader runs, so this observes the
+        // in-flight request instead of starting a second loader.
+        inner = client.fetchQuery({
+          key: keyOf('users'),
+          load: async () => 'second',
+        })
+        return Promise.resolve('first')
+      },
+    }
+
+    await expect(client.fetchQuery(options)).resolves.toBe('first')
+    await expect(inner).resolves.toBe('first')
+    expect(loads).toBe(1)
+  })
+
+  it('aborts when the loader reentrantly clears the client', async () => {
+    const client = createQueryClient()
+    let observedAborted: boolean | undefined
+    const options = {
+      key: keyOf('users'),
+      load: (ctx: { signal: AbortSignal }) => {
+        // The in-flight request is registered before the loader runs, so the
+        // reentrant clear aborts it; the late value still resolves to its
+        // caller but is never cached.
+        client.clear()
+        observedAborted = ctx.signal.aborted
+        return Promise.resolve('late')
+      },
+    }
+
+    await expect(client.fetchQuery(options)).resolves.toBe('late')
+    expect(observedAborted).toBe(true)
+    let reloads = 0
+    await expect(
+      client.fetchQuery({
+        key: keyOf('users'),
+        load: async () => {
+          reloads += 1
+          return 'fresh'
+        },
+      })
+    ).resolves.toBe('fresh')
+    expect(reloads).toBe(1)
+  })
+
   it('recovers when the loader throws synchronously', async () => {
     const client = createQueryClient()
     let loads = 0

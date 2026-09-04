@@ -227,17 +227,29 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     entry.fetchStatus = 'fetching'
     const requestGeneration = entry.generation
 
-    // The loader is invoked inside `try`: a synchronously throwing loader
-    // becomes a rejection rather than skipping the slot assignment below and
-    // parking a settled promise in the entry forever.
-    let loadOutcome: Promise<TRaw>
-    try {
-      loadOutcome = Promise.resolve(
-        options.load({ signal: controller.signal, key: resolvedKey })
-      )
-    } catch (syncError) {
-      loadOutcome = Promise.reject(syncError)
-    }
+    // The slot is claimed before the loader runs: a loader that reentrantly
+    // calls clear()/dispose()/fetchQuery must observe the real request, not
+    // an empty slot. Otherwise a reentrant clear cannot abort the flight, and
+    // a reentrant same-key fetch starts a second loader that fights the first
+    // over the slot. The resolvers release the slot as they settle the shared
+    // promise, so every path — including a synchronously throwing loader —
+    // settles and cleans up exactly once.
+    let resolveRequest!: (value: TRaw) => void
+    let rejectRequest!: (reason?: unknown) => void
+    const requestPromise = new Promise<TRaw>((resolve, reject) => {
+      // The executor runs synchronously, so both handles are assigned before
+      // the promise escapes; the assertions only silence the definite-
+      // assignment check, they never observe an unassigned binding.
+      resolveRequest = (value) => {
+        releaseSlot()
+        resolve(value)
+      }
+      rejectRequest = (reason) => {
+        releaseSlot()
+        reject(reason)
+      }
+    })
+    entry.inFlight = { promise: requestPromise, controller }
 
     function ownsSlot(): boolean {
       return entry.inFlight?.promise === requestPromise
@@ -253,7 +265,18 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       }
     }
 
-    const requestPromise: Promise<TRaw> = loadOutcome.then(
+    // A synchronously throwing loader becomes a rejection rather than
+    // escaping before the slot exists and poisoning the key.
+    let loadOutcome: Promise<TRaw>
+    try {
+      loadOutcome = Promise.resolve(
+        options.load({ signal: controller.signal, key: resolvedKey })
+      )
+    } catch (syncError) {
+      loadOutcome = Promise.reject(syncError)
+    }
+
+    loadOutcome.then(
       (loaded) => {
         // clear() and dispose() abort before dropping the entry, so a live
         // signal means this entry is still current. A newer generation
@@ -276,13 +299,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         }
         throw loadError
       }
-    )
-    void requestPromise.finally(releaseSlot).catch(() => {
-      // The finally chain duplicates the rejection the caller already
-      // receives through requestPromise; swallowing it here only keeps the
-      // runtime from reporting an unhandled rejection for our internal copy.
-    })
-    entry.inFlight = { promise: requestPromise, controller }
+    ).then(resolveRequest, rejectRequest)
     return requestPromise
   }
 
