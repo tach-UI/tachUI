@@ -413,18 +413,22 @@ color.light      // string - always light variant
 color.dark       // string - always dark variant  
 color.resolve()  // string - current theme variant
 color.opacity(0.4)   // string - rgba/hsla/color-mix output
-color.saturate(0.25) // string - color with adjusted saturation
-color.brighten(0.25) // string - color with adjusted brightness
-color.contrast(0.25) // string - color with midpoint-pivot contrast adjustment
-color.rotateHue(120) // string - color with rotated hue
+color.saturate(0.25) // string - OKLCH chroma raised 25% of the way to the sRGB ceiling
+color.brighten(0.25) // string - OKLab lightness raised 25% of the way to white
+color.contrast(0.25) // string - OKLab coordinates scaled 1.25x about mid-gray
+color.rotateHue(120) // string - OKLCH hue rotated, lightness and chroma preserved
 color.toString() // string - current theme variant (implicit conversion)
 ```
 
+The numeric transforms run in OKLab / OKLCH, so a nominal amount is the same perceptual step on every hue: `brighten(0.3)` raises lightness by the same amount whether the input is yellow or maroon, `rotateHue` keeps lightness constant around the whole wheel, and `saturate(-1)` yields the gray of the same lightness rather than a fixed `#808080`. A result that would leave the sRGB gamut has its chroma reduced at constant lightness and hue instead of having channels clipped, so hue never drifts on saturated inputs.
+
 Color transform output format is normalized for predictability:
-- opaque outputs return uppercase hex (for example, `#C2D7D7`)
+- opaque outputs return uppercase hex (for example, `#A7DDDE`)
 - alpha-bearing outputs return `rgba(...)`
+- `saturate(0)`, `brighten(0)`, `contrast(0)` and `rotateHue(360)` are exact identities
+- `brighten(1)` and `brighten(-1)` reach white and black; `saturate(1)` reaches the most chromatic sRGB color at that lightness and hue
 - `contrast(0)` is identity (unlike CSS `filter: contrast(1)`)
-- `contrast(-1)` maps opaque colors to `#808080`
+- `contrast(-1)` maps opaque colors to OKLab mid-gray, `#636363`
 
 ## Implementation Details
 

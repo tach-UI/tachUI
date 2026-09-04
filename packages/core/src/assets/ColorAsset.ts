@@ -10,6 +10,14 @@ import {
 } from '../reactive/theme'
 import { getCurrentComputation } from '../reactive/context'
 import { Asset } from './Asset'
+import {
+  maxChroma,
+  oklabToOklch,
+  oklabToRgb,
+  oklchToRgb,
+  rgbToOklab,
+  type RGBChannels,
+} from './color-space'
 import { getSSRAssetHeadCollector } from './ssr-context'
 import type { ColorValidationResult } from './types'
 
@@ -319,7 +327,7 @@ export class ColorAsset extends Asset {
   brighten(amount: number): ColorAsset {
     // `amount` is intentionally not CSS `filter: brightness(...)`.
     // It is a deterministic token transform in [-1, 1] where:
-    // -1 lerps channels to black, 0 is unchanged, 1 lerps channels to white.
+    // -1 lerps OKLab lightness to black, 0 is unchanged, 1 lerps it to white.
     if (!this.isFiniteInput(amount, 'brighten(amount)')) {
       return this
     }
@@ -334,8 +342,8 @@ export class ColorAsset extends Asset {
   }
 
   contrast(amount: number): ColorAsset {
-    // Deterministic midpoint-pivot contrast transform in [-1, 1]:
-    // x' = (x - 0.5) * (1 + amount) + 0.5 where x is channel/255.
+    // Deterministic midpoint-pivot contrast transform in [-1, 1], scaling the
+    // OKLab coordinates about mid-gray (L 0.5, a 0, b 0) by (1 + amount).
     if (!this.isFiniteInput(amount, 'contrast(amount)')) {
       return this
     }
@@ -502,30 +510,36 @@ export class ColorAsset extends Asset {
     return [r, g, b, alpha]
   }
 
+  // The four numeric transforms run in OKLab / OKLCH so a nominal amount is
+  // the same perceptual step on every hue (#310): L carries brightness and
+  // contrast, C saturation, H hue. Results that leave the sRGB gamut have
+  // their chroma reduced at constant L and H (see `color-space.ts`), so the
+  // emitted hex never clips a channel and never drifts in hue.
+
   private static applySaturation(color: string, amount: number): string {
-    const hsla = ColorAsset.parseColorToHsla(color)
-    if (!hsla) {
+    const rgba = ColorAsset.parseColorToRgba(color)
+    if (!rgba) {
       // Unlike `opacity` (which can use `color-mix` as a generic CSS fallback),
       // saturation requires channel math; passthrough keeps unresolved tokens
       // (e.g. CSS vars / unsupported named colors) stable instead of guessing.
       return color
     }
 
-    const saturation =
+    const [lightness, chroma, hue] = oklabToOklch(
+      rgbToOklab(rgba.r, rgba.g, rgba.b)
+    )
+    // saturate(1) reaches the most chromatic sRGB color at this L and H;
+    // saturate(-1) reaches the gray of the same L.
+    const chromaCeiling = Math.max(chroma, maxChroma(lightness, hue))
+    const nextChroma =
       amount >= 0
-        ? hsla.s + (1 - hsla.s) * amount
-        : hsla.s * (1 + amount)
+        ? chroma + (chromaCeiling - chroma) * amount
+        : chroma * (1 + amount)
 
-    const nextSaturation = ColorAsset.clamp(saturation, 0, 1)
-    const [r, g, b] = ColorAsset.hslToRgb(hsla.h, nextSaturation, hsla.l)
-
-    // Note: `saturate(0)` can be a color-space round-trip (RGB->HSL->RGB) for
-    // non-HSL inputs, so exact channel identity is not guaranteed for every color.
-    if (hsla.a < 1) {
-      return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(hsla.a)})`
-    }
-
-    return ColorAsset.rgbToHex(r, g, b)
+    return ColorAsset.formatTransformed(
+      oklchToRgb(lightness, nextChroma, hue),
+      rgba.a
+    )
   }
 
   private static applyBrightness(color: string, amount: number): string {
@@ -536,28 +550,17 @@ export class ColorAsset extends Asset {
       return color
     }
 
-    // Deterministic model from Issue #99:
-    // a >= 0: c' = c + (255 - c) * a
-    // a < 0:  c' = c * (1 + a)
-    const brightenChannel = (channel: number): number => {
-      const next =
-        amount >= 0
-          ? channel + (255 - channel) * amount
-          : channel * (1 + amount)
-      return Math.round(ColorAsset.clamp(next, 0, 255))
-    }
+    const [lightness, a, b] = rgbToOklab(rgba.r, rgba.g, rgba.b)
+    // a >= 0 lerps L toward white (1), a < 0 toward black (0).
+    const nextLightness =
+      amount >= 0
+        ? lightness + (1 - lightness) * amount
+        : lightness * (1 + amount)
 
-    const r = brightenChannel(rgba.r)
-    const g = brightenChannel(rgba.g)
-    const b = brightenChannel(rgba.b)
-
-    // Output format is normalized for determinism:
-    // `rgba(...)` when alpha is present, uppercase hex otherwise.
-    if (rgba.a < 1) {
-      return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(rgba.a)})`
-    }
-
-    return ColorAsset.rgbToHex(r, g, b)
+    return ColorAsset.formatTransformed(
+      oklabToRgb(nextLightness, a, b),
+      rgba.a
+    )
   }
 
   private static applyContrast(color: string, amount: number): string {
@@ -569,39 +572,43 @@ export class ColorAsset extends Asset {
       return color
     }
 
+    const [lightness, a, b] = rgbToOklab(rgba.r, rgba.g, rgba.b)
+    // Scale about OKLab mid-gray: contrast(-1) collapses every opaque color to
+    // the same L 0.5 gray, contrast(1) doubles its distance from it.
     const factor = 1 + amount
-    const contrastChannel = (channel: number): number => {
-      const normalized = channel / 255
-      const next = (normalized - 0.5) * factor + 0.5
-      return Math.round(ColorAsset.clamp(next, 0, 1) * 255)
-    }
 
-    const r = contrastChannel(rgba.r)
-    const g = contrastChannel(rgba.g)
-    const b = contrastChannel(rgba.b)
-
-    if (rgba.a < 1) {
-      return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(rgba.a)})`
-    }
-
-    return ColorAsset.rgbToHex(r, g, b)
+    return ColorAsset.formatTransformed(
+      oklabToRgb(0.5 + (lightness - 0.5) * factor, a * factor, b * factor),
+      rgba.a
+    )
   }
 
   private static applyHueRotation(color: string, degrees: number): string {
-    const hsla = ColorAsset.parseColorToHsla(color)
-    if (!hsla) {
+    const rgba = ColorAsset.parseColorToRgba(color)
+    if (!rgba) {
       // Same fallback shape as `saturate`: hue rotation requires channel math, so
       // unresolved tokens (e.g. CSS vars / unsupported named colors) pass through.
       return color
     }
 
-    const rotatedHue = (hsla.h + degrees) % 360
-    const [r, g, b] = ColorAsset.hslToRgb(rotatedHue, hsla.s, hsla.l)
+    const [lightness, chroma, hue] = oklabToOklch(
+      rgbToOklab(rgba.r, rgba.g, rgba.b)
+    )
 
-    // Note: `rotateHue(0)` is a color-space round-trip (RGB->HSL->RGB) for
-    // non-HSL inputs, so exact channel identity is not guaranteed for every color.
-    if (hsla.a < 1) {
-      return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(hsla.a)})`
+    return ColorAsset.formatTransformed(
+      oklchToRgb(lightness, chroma, hue + degrees),
+      rgba.a
+    )
+  }
+
+  // Output format is normalized for determinism:
+  // `rgba(...)` when alpha is present, uppercase hex otherwise.
+  private static formatTransformed(
+    [r, g, b]: RGBChannels,
+    alpha: number
+  ): string {
+    if (alpha < 1) {
+      return `rgba(${r}, ${g}, ${b}, ${ColorAsset.formatAlpha(alpha)})`
     }
 
     return ColorAsset.rgbToHex(r, g, b)
@@ -654,72 +661,6 @@ export class ColorAsset extends Asset {
     }
 
     return null
-  }
-
-  private static parseColorToHsla(
-    color: string
-  ): { h: number; s: number; l: number; a: number } | null {
-    const trimmed = color.trim()
-
-    // Preserve exact HSL/HSLA channels without an RGB round-trip.
-    const hslMatch = trimmed.match(ColorAsset.HSL_REGEX)
-    if (hslMatch) {
-      const [, h, s, l] = hslMatch.map(Number)
-      return { h, s: s / 100, l: l / 100, a: 1 }
-    }
-
-    const hslaMatch = trimmed.match(ColorAsset.HSLA_REGEX)
-    if (hslaMatch) {
-      const [, h, s, l, a] = hslaMatch
-      return {
-        h: Number(h),
-        s: Number(s) / 100,
-        l: Number(l) / 100,
-        a: Number(a),
-      }
-    }
-
-    const rgba = ColorAsset.parseColorToRgba(trimmed)
-    if (!rgba) {
-      return null
-    }
-
-    const [h, s, l] = ColorAsset.rgbToHsl(rgba.r, rgba.g, rgba.b)
-    return { h, s, l, a: rgba.a }
-  }
-
-  private static rgbToHsl(
-    red: number,
-    green: number,
-    blue: number
-  ): [number, number, number] {
-    const r = red / 255
-    const g = green / 255
-    const b = blue / 255
-
-    const max = Math.max(r, g, b)
-    const min = Math.min(r, g, b)
-    const delta = max - min
-
-    let h = 0
-    const l = (max + min) / 2
-    const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1))
-
-    if (delta !== 0) {
-      if (max === r) {
-        h = ((g - b) / delta) % 6
-      } else if (max === g) {
-        h = (b - r) / delta + 2
-      } else {
-        h = (r - g) / delta + 4
-      }
-      h *= 60
-      if (h < 0) {
-        h += 360
-      }
-    }
-
-    return [h, s, l]
   }
 
   private static hslToRgb(
