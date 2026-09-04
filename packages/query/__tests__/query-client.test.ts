@@ -14,7 +14,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createComponentContext,
   createRoot,
-  onCleanup,
   runWithComponentContext,
 } from '@tachui/core'
 
@@ -119,7 +118,7 @@ describe('fetchQuery caching', () => {
     expect(loads).toBe(2)
   })
 
-  it('does not treat an undefined resolution as cached data', async () => {
+  it('caches a loader resolution of undefined instead of refetching', async () => {
     const client = createQueryClient()
     let loads = 0
     const options = {
@@ -130,8 +129,34 @@ describe('fetchQuery caching', () => {
       },
     }
 
+    // Presence is tracked by entry status, not by the data value: a 204, an
+    // empty body, or a "not found" lookup still populates the entry.
     await expect(client.fetchQuery(options)).resolves.toBeUndefined()
     await expect(client.fetchQuery(options)).resolves.toBeUndefined()
+    expect(loads).toBe(1)
+    // JSON cannot carry undefined, so the cached entry stays out of payloads
+    // that hydrate() itself would reject.
+    expect(client.dehydrate().queries).toHaveLength(0)
+  })
+
+  it('recovers when the loader throws synchronously', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const options = {
+      key: keyOf('users'),
+      load: () => {
+        loads += 1
+        if (loads === 1) {
+          throw new Error('sync boom')
+        }
+        return Promise.resolve('recovered')
+      },
+    }
+
+    // The slot is claimed before the loader runs, so the sync throw settles
+    // and releases it instead of parking a rejected promise in the entry.
+    await expect(client.fetchQuery(options)).rejects.toThrow('sync boom')
+    await expect(client.fetchQuery(options)).resolves.toBe('recovered')
     expect(loads).toBe(2)
   })
 
@@ -271,6 +296,94 @@ describe('invalidate and clear', () => {
     expect(loads).toBe(1)
   })
 
+  it('drops a response that lands after invalidate()', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    let releaseLoad: (() => void) | undefined
+    const gate = new Promise<void>((resolveGate) => {
+      releaseLoad = resolveGate
+    })
+    const options = {
+      key: keyOf('users'),
+      load: async () => {
+        loads += 1
+        const seen = loads
+        await gate
+        return `v${seen}`
+      },
+    }
+
+    const first = client.fetchQuery(options)
+    client.invalidate(['users'])
+    releaseLoad?.()
+    // The pre-invalidation response still resolves to its waiter, but it must
+    // not un-invalidate the entry: the next fetch reloads.
+    await expect(first).resolves.toBe('v1')
+    await expect(client.fetchQuery(options)).resolves.toBe('v2')
+    expect(loads).toBe(2)
+  })
+
+  it('starts a fresh load for fetches issued after invalidate() but before landing', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    let releaseLoad: (() => void) | undefined
+    const gate = new Promise<void>((resolveGate) => {
+      releaseLoad = resolveGate
+    })
+    const options = {
+      key: keyOf('users'),
+      load: async () => {
+        loads += 1
+        const seen = loads
+        await gate
+        return `v${seen}`
+      },
+    }
+
+    const first = client.fetchQuery(options)
+    client.invalidate(['users'])
+    // The detached pre-invalidation flight no longer occupies the slot, so
+    // this starts its own load instead of sharing stale data.
+    const second = client.fetchQuery(options)
+    releaseLoad?.()
+    await expect(first).resolves.toBe('v1')
+    await expect(second).resolves.toBe('v2')
+    await expect(client.fetchQuery(options)).resolves.toBe('v2')
+    expect(loads).toBe(2)
+  })
+
+  it('drops an error that lands after invalidate()', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    let releaseLoad: (() => void) | undefined
+    const gate = new Promise<void>((resolveGate) => {
+      releaseLoad = resolveGate
+    })
+
+    const first = client.fetchQuery({
+      key: keyOf('users'),
+      load: async (): Promise<string> => {
+        loads += 1
+        await gate
+        throw new Error('stale failure')
+      },
+    })
+    client.invalidate(['users'])
+    releaseLoad?.()
+    await expect(first).rejects.toThrow('stale failure')
+    // The stale error marked nothing: the retry runs the loader again.
+    await expect(
+      client.fetchQuery({
+        key: keyOf('users'),
+        load: async () => {
+          loads += 1
+          return 'fresh'
+        },
+      })
+    ).resolves.toBe('fresh')
+    expect(loads).toBe(2)
+  })
+
   it('drops every entry on clear()', async () => {
     const client = createQueryClient()
     let loads = 0
@@ -320,29 +433,34 @@ describe('invalidate and clear', () => {
 })
 
 describe('two-level ownership', () => {
-  it('runs observer cleanup with the component owner while the entry survives', async () => {
+  it('lets in-flight work and entries survive component-owner disposal', async () => {
     const client = createQueryClient()
     let loads = 0
-    let observerCleaned = false
+    let releaseLoad: (() => void) | undefined
+    const gate = new Promise<void>((resolveGate) => {
+      releaseLoad = resolveGate
+    })
     const options = {
       key: keyOf('user'),
       load: async () => {
         loads += 1
+        await gate
         return { name: 'ada' }
       },
     }
 
-    let first: Promise<{ name: string }> | undefined
+    // The flight is owned by the client root, not the calling owner, so
+    // disposing the component mid-flight neither aborts the load nor drops
+    // the entry it populates. (Observer-side disposal — an `onCleanup` that
+    // detaches the observation — arrives with `createQuery` in #280; there
+    // are no observers yet to dispose.)
+    let pending: Promise<{ name: string }> | undefined
     createRoot((disposeComponent) => {
-      onCleanup(() => {
-        observerCleaned = true
-      })
-      first = client.fetchQuery(options)
+      pending = client.fetchQuery(options)
       disposeComponent()
     })
-    await first
-
-    expect(observerCleaned).toBe(true)
+    releaseLoad?.()
+    await expect(pending).resolves.toEqual({ name: 'ada' })
     await expect(client.fetchQuery(options)).resolves.toEqual({ name: 'ada' })
     expect(loads).toBe(1)
   })
@@ -433,6 +551,21 @@ describe('environment provision', () => {
     await expect(
       first.fetchQuery({ key: keyOf('k'), load: async () => 'ambient' })
     ).resolves.toBe('ambient')
+  })
+
+  it('serves an ambient client that names itself in options.client', async () => {
+    const ambient = useQueryClient()
+
+    // The ambient client is the object fetchQuery closed over — not a wrapper
+    // — so the identity guard takes the normal path instead of delegating to
+    // itself forever. This is the shape `createQuery` will use in #280.
+    await expect(
+      ambient.fetchQuery({
+        key: keyOf('k'),
+        load: async () => 'v',
+        client: ambient,
+      })
+    ).resolves.toBe('v')
   })
 
   it('drops the ambient fallback on reset and on direct dispose', () => {
@@ -564,6 +697,63 @@ describe('dehydrate and hydrate', () => {
     target.hydrate(source.dehydrate())
 
     await expect(target.fetchQuery(options)).resolves.toBe('ada')
+    expect(loads).toBe(1)
+  })
+
+  it('upgrades a hydrated entry policy from later options', async () => {
+    const source = createQueryClient()
+    const target = createQueryClient()
+    await source.fetchQuery({
+      key: keyOf('users'),
+      load: async () => 'ada',
+      snapshot: true,
+    })
+    target.hydrate(source.dehydrate())
+
+    // Served from the restored entry without loading, and the snapshot flag
+    // carried over, so the entry re-serializes.
+    await expect(
+      target.fetchQuery({
+        key: keyOf('users'),
+        load: async (): Promise<string> => {
+          throw new Error('must not load')
+        },
+        snapshot: true,
+      })
+    ).resolves.toBe('ada')
+    expect(target.dehydrate().queries).toHaveLength(1)
+  })
+
+  it('serves restored data instead of a flight that started before hydrate()', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    let releaseLoad: (() => void) | undefined
+    const gate = new Promise<void>((resolveGate) => {
+      releaseLoad = resolveGate
+    })
+
+    const pending = client.fetchQuery({
+      key: keyOf('users'),
+      load: async () => {
+        loads += 1
+        await gate
+        return 'stale'
+      },
+    })
+    client.hydrate({
+      queries: [{ key: ['users'], data: 'restored', updatedAt: Date.now() }],
+    })
+    releaseLoad?.()
+
+    // The stale flight still resolves to its waiter, but the entry keeps the
+    // restored data and serves it without reloading.
+    await expect(pending).resolves.toBe('stale')
+    await expect(
+      client.fetchQuery({
+        key: keyOf('users'),
+        load: async () => 'unreached',
+      })
+    ).resolves.toBe('restored')
     expect(loads).toBe(1)
   })
 

@@ -19,9 +19,9 @@
  */
 
 import {
-  consumeEnvironmentValue,
   createEnvironmentKey,
   createRoot,
+  getCurrentComponentContextOrNull,
   provideEnvironmentValue,
   runWithOwner,
 } from '@tachui/core'
@@ -68,10 +68,16 @@ interface ClientCacheEntry {
   fetchStatus: FetchStatus
   updatedAt: number | undefined
   readonly observerCount: number
-  readonly staleTime: number
-  readonly gcTime: number
-  readonly snapshot: boolean
+  staleTime: number
+  gcTime: number
+  snapshot: boolean
   invalidated: boolean
+  /**
+   * Bumped by `invalidate()` and `hydrate()`. A landing response writes back
+   * only for the generation it was started under, so a stale outcome can
+   * neither overwrite fresh data nor silently un-invalidate the entry.
+   */
+  generation: number
   inFlight: InFlightRequest | null
 }
 
@@ -120,7 +126,7 @@ function isDehydratedState(state: unknown): state is DehydratedState {
   )
 }
 
-function buildClient(disposeClientRoot: () => void): QueryClient {
+function buildClient(disposeClientRoot: () => void, onDispose?: () => void): QueryClient {
   const entries = new Map<QueryKeyHash, ClientCacheEntry>()
   let disposed = false
 
@@ -137,7 +143,6 @@ function buildClient(disposeClientRoot: () => void): QueryClient {
     hash: QueryKeyHash,
     policy: { staleTime: number; gcTime: number; snapshot: boolean }
   ): ClientCacheEntry {
-    // Entry policy is fixed at creation; the first options to name a key win.
     const entry: ClientCacheEntry = {
       key,
       hash,
@@ -151,6 +156,7 @@ function buildClient(disposeClientRoot: () => void): QueryClient {
       gcTime: policy.gcTime,
       snapshot: policy.snapshot,
       invalidated: false,
+      generation: 0,
       inFlight: null,
     }
     entries.set(hash, entry)
@@ -185,18 +191,6 @@ function buildClient(disposeClientRoot: () => void): QueryClient {
     const resolvedKey = options.key()
     const hash = hashQueryKey(resolvedKey)
     const cached = entries.get(hash)
-    const activeRequest = cached?.inFlight ?? null
-    if (activeRequest !== null) {
-      return activeRequest.promise as Promise<TRaw>
-    }
-    if (
-      cached !== undefined &&
-      cached.status === 'success' &&
-      cached.data !== undefined &&
-      !cached.invalidated
-    ) {
-      return cached.data as TRaw
-    }
     const entry =
       cached ??
       createEntry(resolvedKey, hash, {
@@ -205,44 +199,91 @@ function buildClient(disposeClientRoot: () => void): QueryClient {
         snapshot: options.snapshot ?? DEFAULT_SNAPSHOT,
       })
     entry.key = resolvedKey
-    entry.fetchStatus = 'fetching'
+    // Explicitly passed options update the entry policy, on both the hit and
+    // miss paths; absent options leave it alone. An entry restored by
+    // hydrate() starts on defaults and picks up the developer's configuration
+    // from the first query that names the key instead of keeping snapshot
+    // defaults forever.
+    if (options.staleTime !== undefined) {
+      entry.staleTime = options.staleTime
+    }
+    if (options.gcTime !== undefined) {
+      entry.gcTime = options.gcTime
+    }
+    if (options.snapshot !== undefined) {
+      entry.snapshot = options.snapshot
+    }
+    const activeRequest = entry.inFlight
+    if (activeRequest !== null) {
+      return activeRequest.promise as Promise<TRaw>
+    }
+    // Presence is tracked by status, not by the data value: a loader that
+    // legitimately resolves `undefined` (a 204, an empty body, a "not found"
+    // lookup) still populates the entry and must not refetch on every call.
+    if (entry.status === 'success' && !entry.invalidated) {
+      return entry.data as TRaw
+    }
     const controller = new AbortController()
+    entry.fetchStatus = 'fetching'
+    const requestGeneration = entry.generation
 
-    async function runLoad(): Promise<TRaw> {
-      try {
-        const loaded = await options.load({
-          signal: controller.signal,
-          key: resolvedKey,
-        })
+    // The loader is invoked inside `try`: a synchronously throwing loader
+    // becomes a rejection rather than skipping the slot assignment below and
+    // parking a settled promise in the entry forever.
+    let loadOutcome: Promise<TRaw>
+    try {
+      loadOutcome = Promise.resolve(
+        options.load({ signal: controller.signal, key: resolvedKey })
+      )
+    } catch (syncError) {
+      loadOutcome = Promise.reject(syncError)
+    }
+
+    function ownsSlot(): boolean {
+      return entry.inFlight?.promise === requestPromise
+    }
+
+    function releaseSlot(): void {
+      // `fetchStatus` mirrors `inFlight`: whatever clears the slot marks it
+      // idle, so no path leaves a settled entry reading as fetching, and no
+      // stale flight clears a newer flight's slot.
+      if (ownsSlot()) {
+        entry.inFlight = null
+        entry.fetchStatus = 'idle'
+      }
+    }
+
+    const requestPromise: Promise<TRaw> = loadOutcome.then(
+      (loaded) => {
         // clear() and dispose() abort before dropping the entry, so a live
-        // signal means this entry is still current. A late result after an
-        // abort resolves to its caller but never repopulates the cache.
-        if (!controller.signal.aborted) {
+        // signal means this entry is still current. A newer generation
+        // (invalidate() or hydrate() during the flight) owns the entry now:
+        // resolve to the caller but drop the stale outcome instead of
+        // un-invalidating it or overwriting fresh data.
+        if (!controller.signal.aborted && entry.generation === requestGeneration) {
           entry.data = loaded
           entry.error = undefined
           entry.status = 'success'
-          entry.fetchStatus = 'idle'
           entry.updatedAt = Date.now()
           entry.invalidated = false
         }
         return loaded
-      } catch (loadError) {
-        if (!controller.signal.aborted) {
+      },
+      (loadError) => {
+        if (!controller.signal.aborted && entry.generation === requestGeneration) {
           entry.error = loadError
           entry.status = 'error'
-          entry.fetchStatus = 'idle'
         }
         throw loadError
-      } finally {
-        // Only one request can occupy the slot: a second fetch while one is
-        // in flight shares it instead of replacing it.
-        entry.inFlight = null
       }
-    }
-
-    const loadPromise: Promise<TRaw> = runLoad()
-    entry.inFlight = { promise: loadPromise, controller }
-    return loadPromise
+    )
+    void requestPromise.finally(releaseSlot).catch(() => {
+      // The finally chain duplicates the rejection the caller already
+      // receives through requestPromise; swallowing it here only keeps the
+      // runtime from reporting an unhandled rejection for our internal copy.
+    })
+    entry.inFlight = { promise: requestPromise, controller }
+    return requestPromise
   }
 
   const client: QueryClient = {
@@ -267,6 +308,15 @@ function buildClient(disposeClientRoot: () => void): QueryClient {
       for (const entry of entries.values()) {
         if (isKeyPrefixMatch(prefix, entry.key)) {
           entry.invalidated = true
+          entry.generation += 1
+          if (entry.inFlight !== null) {
+            // Detach the pre-invalidation flight: its waiter still settles,
+            // but it no longer blocks a fresh load, and the generation guard
+            // drops its stale outcome instead of un-invalidating the entry.
+            // `fetchStatus` mirrors the slot, so it goes idle here.
+            entry.inFlight = null
+            entry.fetchStatus = 'idle'
+          }
         }
       }
     },
@@ -275,7 +325,13 @@ function buildClient(disposeClientRoot: () => void): QueryClient {
       ensureUsable('dehydrate')
       const queries: DehydratedQuery[] = []
       for (const entry of entries.values()) {
-        if (entry.status !== 'success' || entry.data === undefined) {
+        if (entry.status !== 'success') {
+          continue
+        }
+        // Entries whose data is undefined stay cached but are not serialized:
+        // JSON cannot carry an undefined value, so including one would produce
+        // a payload that hydrate() itself rejects.
+        if (entry.data === undefined) {
           continue
         }
         // Snapshot serialization is opt-in per query; a filter narrows the
@@ -316,9 +372,15 @@ function buildClient(disposeClientRoot: () => void): QueryClient {
         entry.data = item.data
         entry.error = undefined
         entry.status = 'success'
-        entry.fetchStatus = 'idle'
         entry.updatedAt = item.updatedAt
         entry.invalidated = false
+        // The restored snapshot is newer than any flight started before it:
+        // release the slot so a later fetch serves the restored data instead
+        // of sharing the stale flight (its waiter still settles, but the
+        // generation guard drops its outcome). `fetchStatus` mirrors the slot.
+        entry.generation += 1
+        entry.inFlight = null
+        entry.fetchStatus = 'idle'
       }
     },
 
@@ -340,6 +402,7 @@ function buildClient(disposeClientRoot: () => void): QueryClient {
       entries.clear()
       disposed = true
       disposeClientRoot()
+      onDispose?.()
     },
   }
 
@@ -369,23 +432,28 @@ export function provideQueryClient(client: QueryClient): void {
 let defaultClient: QueryClient | null = null
 
 /**
- * The implicit browser fallback, created on first use. Disposing it drops the
- * slot so the next resolution creates a fresh client instead of handing back a
- * dead one.
+ * The implicit browser fallback, created on first use. This is the same object
+ * `buildClient` closed over — not a wrapper — so the `options.client` identity
+ * guard in `fetchQuery` recognizes it instead of delegating to itself forever.
+ * Disposing it clears the module slot so the next resolution creates a fresh
+ * client rather than handing back a dead one.
  */
-function getDefaultQueryClient(): QueryClient {
-  if (defaultClient === null) {
-    const owned = createQueryClient()
-    const ambient: QueryClient = {
-      ...owned,
-      dispose: () => {
-        owned.dispose()
+function createAmbientClient(): QueryClient {
+  const ambient = runWithOwner(null, () =>
+    createRoot((disposeRoot) =>
+      buildClient(disposeRoot, () => {
         if (defaultClient === ambient) {
           defaultClient = null
         }
-      },
-    }
-    defaultClient = ambient
+      })
+    )
+  )
+  return ambient
+}
+
+function getDefaultQueryClient(): QueryClient {
+  if (defaultClient === null) {
+    defaultClient = createAmbientClient()
   }
   return defaultClient
 }
@@ -409,12 +477,13 @@ export function resetDefaultQueryClient(): void {
  * an actionable error naming the per-request shape.
  */
 export function useQueryClient(): QueryClient {
-  let ambient: QueryClient | undefined
-  try {
-    ambient = consumeEnvironmentValue(QueryClientKey)
-  } catch {
-    ambient = undefined
-  }
+  // A direct context read rather than consumeEnvironmentValue: that helper
+  // throws for both "no context" and "no value", and a blanket catch would
+  // also swallow a genuine lookup fault and silently degrade to shared global
+  // state. Here absence and failure stay distinct — a null context or a
+  // missing value simply falls through to the server guard below.
+  const context = getCurrentComponentContextOrNull()
+  const ambient = context?.consume<QueryClient>(QueryClientKey.symbol)
   if (ambient !== undefined) {
     return ambient
   }
