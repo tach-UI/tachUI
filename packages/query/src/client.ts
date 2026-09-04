@@ -22,7 +22,6 @@ import {
   createEnvironmentKey,
   createRoot,
   getCurrentComponentContextOrNull,
-  provideEnvironmentValue,
   runWithOwner,
 } from '@tachui/core'
 
@@ -82,13 +81,23 @@ interface ClientCacheEntry {
 }
 
 /**
- * Provisional key hash. Plain `JSON.stringify` until #278 replaces it with a
- * stable stringify (sorted object keys, `bigint`/`Uint8Array`/`Date` handling)
- * and development errors for non-serializable input.
+ * Marker standing in for `undefined` key segments. Plain `JSON.stringify`
+ * maps `undefined` to `null` in array positions (and drops it from objects),
+ * which would collide `['user', undefined]` with `['user', null]` and serve
+ * one key's data for another. #278 replaces all of this with a stable
+ * stringify (sorted object keys, `bigint`/`Uint8Array`/`Date` handling) and
+ * development errors for non-serializable input.
+ */
+const UNDEFINED_SEGMENT = { __tachuiQueryUndefined: true }
+
+/**
+ * Provisional key hash. See {@link UNDEFINED_SEGMENT} and #278.
  */
 function hashQueryKey(key: QueryKey): QueryKeyHash {
   try {
-    return JSON.stringify(key)
+    return JSON.stringify(key, (_segment, value: unknown) =>
+      value === undefined ? UNDEFINED_SEGMENT : value
+    )
   } catch (serializationError) {
     throw new QueryError(
       'Query key is not serializable. Keys must be structured arrays of JSON-compatible values.',
@@ -210,18 +219,18 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         snapshot: options.snapshot ?? DEFAULT_SNAPSHOT,
       })
     entry.key = resolvedKey
-    // Explicitly passed options update the entry policy, on both the hit and
-    // miss paths; absent options leave it alone. An entry restored by
-    // hydrate() starts on defaults and picks up the developer's configuration
-    // from the first query that names the key instead of keeping snapshot
-    // defaults forever.
-    if (options.staleTime !== undefined) {
+    // Explicitly passed options upgrade the entry policy — but only while the
+    // field still holds its default. An entry restored by hydrate() starts on
+    // defaults and picks up the developer's configuration from the first
+    // query that names the key; once claimed, a later caller sharing the key
+    // cannot silently revoke another consumer's snapshot opt-in or freshness.
+    if (options.staleTime !== undefined && entry.staleTime === DEFAULT_STALE_TIME) {
       entry.staleTime = options.staleTime
     }
-    if (options.gcTime !== undefined) {
+    if (options.gcTime !== undefined && entry.gcTime === DEFAULT_GC_TIME) {
       entry.gcTime = options.gcTime
     }
-    if (options.snapshot !== undefined) {
+    if (options.snapshot !== undefined && entry.snapshot === DEFAULT_SNAPSHOT) {
       entry.snapshot = options.snapshot
     }
     const activeRequest = entry.inFlight
@@ -362,6 +371,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         if (entry.status !== 'success') {
           continue
         }
+        // Invalidated entries are stale by definition: serializing one would
+        // let the invalidation silently not survive the dehydrate/hydrate
+        // boundary, serving pre-mutation data on the other side indefinitely.
+        if (entry.invalidated) {
+          continue
+        }
         // Entries whose data is undefined stay cached but are not serialized:
         // JSON cannot carry an undefined value, so including one would produce
         // a payload that hydrate() itself rejects.
@@ -456,7 +471,17 @@ export function createQueryClient(): QueryClient {
  * its parent without clobbering it.
  */
 export function provideQueryClient(client: QueryClient): void {
-  provideEnvironmentValue(QueryClientKey, client)
+  // Resolved directly rather than through provideEnvironmentValue so a call
+  // outside any component context raises an actionable QueryError naming this
+  // function — not core's `@State`-flavored missing-context error, which
+  // misdirects and cannot be discriminated as a query misuse.
+  const context = getCurrentComponentContextOrNull()
+  if (context === null) {
+    throw new QueryError(
+      'provideQueryClient() requires a component context. Call it during a component render, or inside runWithComponentContext() in tests and setup code.'
+    )
+  }
+  context.provide(QueryClientKey.symbol, client)
 }
 
 let defaultClient: QueryClient | null = null

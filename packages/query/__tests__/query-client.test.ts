@@ -567,6 +567,29 @@ describe('two-level ownership', () => {
     await expect(pending).rejects.toThrow('aborted')
   })
 
+  it('aborts a hydrate-detached flight when the client is disposed', async () => {
+    const client = createQueryClient()
+    let observedSignal: AbortSignal | undefined
+    const pending = client.fetchQuery({
+      key: keyOf('slow'),
+      load: (ctx: { signal: AbortSignal }) =>
+        new Promise<never>((_resolve, reject) => {
+          observedSignal = ctx.signal
+          ctx.signal.addEventListener('abort', () => reject(new Error('aborted')))
+        }),
+    })
+
+    // Same reachability rule as invalidate-detach: releasing the slot must
+    // not drop the client's only abort handle.
+    client.hydrate({
+      queries: [{ key: ['slow'], data: 'restored', updatedAt: Date.now() }],
+    })
+    client.dispose()
+
+    expect(observedSignal?.aborted).toBe(true)
+    await expect(pending).rejects.toThrow('aborted')
+  })
+
   it('aborts in-flight work on dispose()', async () => {
     const client = createQueryClient()
     let observedSignal: AbortSignal | undefined
@@ -587,6 +610,16 @@ describe('two-level ownership', () => {
 })
 
 describe('environment provision', () => {
+  it('throws an actionable QueryError when providing outside a component context', () => {
+    const client = createQueryClient()
+    try {
+      expect(() => provideQueryClient(client)).toThrowError(QueryError)
+      expect(() => provideQueryClient(client)).toThrowError(/component context/)
+    } finally {
+      client.dispose()
+    }
+  })
+
   it('round-trips the provided client instead of the ambient fallback', () => {
     const client = createQueryClient()
     const context = createComponentContext('provision')
@@ -738,6 +771,79 @@ describe('dehydrate and hydrate', () => {
     expect(typeof state.queries[0]?.updatedAt).toBe('number')
   })
 
+  it('does not serialize invalidated entries, so invalidation survives a round trip', async () => {
+    const server = createQueryClient()
+    await server.fetchQuery({
+      key: keyOf('u'),
+      load: async () => 'stale-v1',
+      snapshot: true,
+    })
+    // A mutation landed during the request: the stale value must not cross
+    // the process boundary and serve indefinitely on the other side.
+    server.invalidate(['u'])
+    expect(server.dehydrate().queries).toHaveLength(0)
+
+    const browser = createQueryClient()
+    browser.hydrate(server.dehydrate())
+    let loads = 0
+    await expect(
+      browser.fetchQuery({
+        key: keyOf('u'),
+        load: async () => {
+          loads += 1
+          return 'fresh-v2'
+        },
+      })
+    ).resolves.toBe('fresh-v2')
+    expect(loads).toBe(1)
+  })
+
+  it('does not let a later caller revoke an earlier snapshot opt-in', async () => {
+    const client = createQueryClient()
+    await client.fetchQuery({
+      key: keyOf('u'),
+      load: async () => 'v',
+      snapshot: true,
+      staleTime: 60_000,
+    })
+    expect(client.dehydrate().queries).toHaveLength(1)
+
+    // Policy upgrades apply only while the field still holds its default, so
+    // a call that performs no fetch at all still cannot revoke the opt-in —
+    // or the freshness — another consumer configured.
+    await client.fetchQuery({
+      key: keyOf('u'),
+      load: async () => 'v',
+      snapshot: false,
+      staleTime: 0,
+    })
+    expect(client.dehydrate().queries).toHaveLength(1)
+    const seen = client.dehydrate((entry) => {
+      expect(entry.options.staleTime).toBe(60_000)
+      return true
+    })
+    expect(seen.queries).toHaveLength(1)
+  })
+
+  it('hashes undefined key segments distinctly from null', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const counting = (value: string) => async () => {
+      loads += 1
+      return value
+    }
+
+    // `['user', userId()]` with an unset id is ordinary; it must not share an
+    // entry with an explicit null.
+    await expect(
+      client.fetchQuery({ key: () => ['u', undefined], load: counting('A') })
+    ).resolves.toBe('A')
+    await expect(
+      client.fetchQuery({ key: () => ['u', null], load: counting('B') })
+    ).resolves.toBe('B')
+    expect(loads).toBe(2)
+  })
+
   it('lets a filter narrow the snapshot set, never widen it', async () => {
     const client = createQueryClient()
     await client.fetchQuery({
@@ -793,9 +899,15 @@ describe('dehydrate and hydrate', () => {
           throw new Error('must not load')
         },
         snapshot: true,
+        staleTime: 60_000,
+        gcTime: 60_000,
       })
     ).resolves.toBe('ada')
-    expect(target.dehydrate().queries).toHaveLength(1)
+    const restored = target.dehydrate((entry) => {
+      expect(entry.options).toEqual({ staleTime: 60_000, gcTime: 60_000, snapshot: true })
+      return true
+    })
+    expect(restored.queries).toHaveLength(1)
   })
 
   it('serves restored data instead of a flight that started before hydrate()', async () => {
