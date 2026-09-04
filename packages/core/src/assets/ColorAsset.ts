@@ -510,8 +510,11 @@ export class ColorAsset extends Asset {
 
     const modernHsl = ColorAsset.parseModernHsl(trimmed)
     if (modernHsl) {
+      // Emit the modern form, not legacy hsla(): the parsed hue and S/L can be
+      // fractional or outside 0-360, which the legacy grammar (integer channels,
+      // range-checked) rejects when the new asset revalidates its value.
       const format = (value: number): string => Number(value.toFixed(4)).toString()
-      return `hsla(${format(modernHsl.h)}, ${format(modernHsl.s * 100)}%, ${format(modernHsl.l * 100)}%, ${alphaString})`
+      return `hsl(${format(modernHsl.h)} ${format(modernHsl.s * 100)}% ${format(modernHsl.l * 100)}% / ${alphaString})`
     }
 
     const namedRgb = ColorAsset.NAMED_COLOR_RGB[trimmed.toLowerCase()]
@@ -523,7 +526,8 @@ export class ColorAsset extends Asset {
     return ColorAsset.toColorMix(trimmed, alpha)
   }
 
-  // `none` is a missing component and computes as 0 (CSS Color 4 §4.4).
+  // `none` is a missing component and computes as 0 (CSS Color 4 §4.4). That
+  // holds for alpha too: `rgb(255 0 0 / none)` renders fully transparent.
   private static parseChannelToken(token: string, scale: number): number {
     if (token.toLowerCase() === 'none') {
       return 0
@@ -586,7 +590,10 @@ export class ColorAsset extends Asset {
       return null
     }
     const [, hue, saturation, lightness, alpha] = match
-    // A bare number in the modern syntax is a percentage (CSS Color 4 §7.1).
+    // A bare S or L number reads as a percentage: CSS Color 4 §7.1 allows
+    // `<number>` in the modern hsl() grammar with that meaning. Older engines
+    // that predate the change reject the token instead; the validator still
+    // admits it because the spec does.
     const fraction = (token: string): number =>
       ColorAsset.clamp(
         ColorAsset.parseChannelToken(token, 1) * (token.endsWith('%') ? 1 : 0.01),

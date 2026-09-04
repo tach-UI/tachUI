@@ -1258,10 +1258,28 @@ describe('Asset System', () => {
       expect(hsl.rotateHue(120).resolve()).toBe(
         ColorAsset.init({ name: 'legacy', default: 'hsla(181, 21%, 51%, 0.4)' }).rotateHue(120).resolve()
       )
-      expect(hsl.opacity(0.5).resolve()).toBe('hsla(181, 21%, 51%, 0.5)')
+      expect(hsl.opacity(0.5).resolve()).toBe('hsl(181 21% 51% / 0.5)')
       expect(
         ColorAsset.init({ name: 'turn', default: 'hsl(0.5turn 21 51)' }).opacity(0.5).resolve()
-      ).toBe('hsla(180, 21%, 51%, 0.5)')
+      ).toBe('hsl(180 21% 51% / 0.5)')
+    })
+
+    it.each([
+      ['hsl(359.9 33.33% 50%)', 'hsl(359.9 33.33% 50% / 0.5)'],
+      ['hsl(180 33.3333% 50%)', 'hsl(180 33.3333% 50% / 0.5)'],
+      ['hsl(1080 50% 50%)', 'hsl(1080 50% 50% / 0.5)'],
+      ['hsl(-120 50% 50%)', 'hsl(-120 50% 50% / 0.5)'],
+      ['hsl(3.14159265rad 50% 50%)', 'hsl(180 50% 50% / 0.5)'],
+      ['hsl(none 50% 50% / none)', 'hsl(0 50% 50% / 0.5)'],
+    ])('should keep opacity() on modern hsl %s revalidatable and chainable', (input, expected) => {
+      const asset = ColorAsset.init({ name: 'modern', default: input })
+
+      // The emitted value must pass the constructor's validation again (the
+      // legacy hsla() grammar would have rejected fractional or out-of-range
+      // channels) and keep feeding the transforms.
+      expect(asset.opacity(0.5).resolve()).toBe(expected)
+      expect(asset.opacity(0.5).opacity(0.25).resolve()).toBe(expected.replace('/ 0.5', '/ 0.25'))
+      expect(asset.opacity(0.5).brighten(0.3).resolve()).toMatch(/^rgba\(\d+, \d+, \d+, 0\.5\)$/)
     })
 
     it('should clamp out-of-range CSS Color 4 channels instead of throwing', () => {

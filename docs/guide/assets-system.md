@@ -412,7 +412,7 @@ const color: ColorAssetProxy = Assets.systemBlue
 color.light      // string - always light variant
 color.dark       // string - always dark variant  
 color.resolve()  // string - current theme variant
-color.opacity(0.4)   // string - rgba/hsla/color-mix output
+color.opacity(0.4)   // string - rgba() / hsla() / hsl(... / a) / color-mix() output
 color.saturate(0.25) // string - OKLCH chroma raised 25% of the way to the sRGB ceiling
 color.brighten(0.25) // string - OKLab lightness raised 25% of the way to white
 color.contrast(0.25) // string - OKLab coordinates scaled 1.25x about mid-gray
