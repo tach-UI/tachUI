@@ -1183,11 +1183,65 @@ describe('Asset System', () => {
       expect(asset.contrast(0.3).default).toBe('oklch(70% 0.15 250)')
       expect(asset.rotateHue(90).default).toBe('oklch(70% 0.15 250)')
       expect(asset.brighten(0.3).dark).toBe('color(display-p3 1 0 0)')
-      expect(asset.brighten(0.3).light).toBe('rgb(255 0 0 / 50%)')
+
+      // The CSS Color 4 rgb() form is parsed, so it transforms like rgba().
+      expect(asset.brighten(0.3).light).toBe(
+        ColorAsset.init({ name: 'legacy', default: 'rgba(255, 0, 0, 0.5)' }).brighten(0.3).default
+      )
 
       // opacity() has a generic color-mix() path, so it still composes.
       expect(asset.opacity(0.5).default).toBe(
         'color-mix(in srgb, oklch(70% 0.15 250) 50%, transparent)'
+      )
+    })
+
+    it.each([
+      ['rgb(103 155 156)', 'rgb(103, 155, 156)'],
+      ['rgba(103 155 156)', 'rgb(103, 155, 156)'],
+      ['RGB(103 155 156)', 'rgb(103, 155, 156)'],
+      ['rgb(40.39% 60.78% 61.18%)', 'rgb(103, 155, 156)'],
+      ['rgb(none 155 156)', 'rgb(0, 155, 156)'],
+      ['rgb(103 155 156 / 0.4)', 'rgba(103, 155, 156, 0.4)'],
+      ['rgb(103 155 156 / 40%)', 'rgba(103, 155, 156, 0.4)'],
+      ['hsl(181 21% 51%)', 'hsl(181, 21%, 51%)'],
+      ['hsl(181deg 21% 51%)', 'hsl(181, 21%, 51%)'],
+      ['hsl(181 21 51)', 'hsl(181, 21%, 51%)'],
+      ['hsl(0.5turn 21% 51%)', 'hsl(180, 21%, 51%)'],
+      ['hsl(200grad 21% 51%)', 'hsl(180, 21%, 51%)'],
+      ['hsl(3.14159265rad 21% 51%)', 'hsl(180, 21%, 51%)'],
+      ['hsl(none 21% 51%)', 'hsl(0, 21%, 51%)'],
+      ['hsl(181deg 21% 51% / 0.4)', 'hsla(181, 21%, 51%, 0.4)'],
+      ['hsla(181 21% 51% / 40%)', 'hsla(181, 21%, 51%, 0.4)'],
+    ])('should transform CSS Color 4 form %s exactly like legacy %s', (modern, legacy) => {
+      const modernAsset = ColorAsset.init({ name: 'modern', default: modern })
+      const legacyAsset = ColorAsset.init({ name: 'legacy', default: legacy })
+
+      expect(modernAsset.brighten(0.6).resolve()).toBe(legacyAsset.brighten(0.6).resolve())
+      expect(modernAsset.saturate(0.6).resolve()).toBe(legacyAsset.saturate(0.6).resolve())
+      expect(modernAsset.contrast(0.6).resolve()).toBe(legacyAsset.contrast(0.6).resolve())
+      expect(modernAsset.rotateHue(120).resolve()).toBe(legacyAsset.rotateHue(120).resolve())
+      expect(modernAsset.brighten(0.6).resolve()).toMatch(/^(#[0-9A-F]{6}|rgba\()/)
+    })
+
+    it('should preserve slash alpha from CSS Color 4 forms through transforms and opacity()', () => {
+      const rgb = ColorAsset.init({ name: 'rgb', default: 'rgb(103 155 156 / 0.4)' })
+      expect(rgb.brighten(0.6).resolve()).toBe('rgba(167, 221, 222, 0.4)')
+      expect(rgb.opacity(0.33).resolve()).toBe('rgba(103, 155, 156, 0.33)')
+
+      const hsl = ColorAsset.init({ name: 'hsl', default: 'hsl(181deg 21% 51% / 40%)' })
+      expect(hsl.rotateHue(120).resolve()).toBe(
+        ColorAsset.init({ name: 'legacy', default: 'hsla(181, 21%, 51%, 0.4)' }).rotateHue(120).resolve()
+      )
+      expect(hsl.opacity(0.5).resolve()).toBe('hsla(181, 21%, 51%, 0.5)')
+      expect(
+        ColorAsset.init({ name: 'turn', default: 'hsl(0.5turn 21 51)' }).opacity(0.5).resolve()
+      ).toBe('hsla(180, 21%, 51%, 0.5)')
+    })
+
+    it('should clamp out-of-range CSS Color 4 channels instead of throwing', () => {
+      const asset = ColorAsset.init({ name: 'clamped', default: 'rgb(300 -20 120% / 150%)' })
+      expect(asset.brighten(0).resolve()).toBe(
+        ColorAsset.init({ name: 'legacy', default: 'rgb(255, 0, 255)' }).brighten(0).resolve()
       )
     })
 

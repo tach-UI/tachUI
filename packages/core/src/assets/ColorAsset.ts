@@ -57,6 +57,20 @@ export class ColorAsset extends Asset {
     `^(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\\(\\s*${ColorAsset.CSS_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
     'i'
   )
+  // Capturing forms of the CSS Color 4 rgb()/hsl() syntax, so the transforms
+  // and opacity() read them like the legacy comma forms. Channels may be
+  // `none`; rgb channels may be percentages; the hue may carry an angle unit.
+  private static readonly CSS_PERCENT_OR_NUMBER = `(none|${ColorAsset.CSS_NUMBER}%?)`
+  private static readonly CSS_HUE = `(none|${ColorAsset.CSS_NUMBER}(?:deg|grad|rad|turn)?)`
+  private static readonly CSS_ALPHA_SLOT = `(?:\\s*/\\s*(none|${ColorAsset.CSS_NUMBER}%?))?`
+  private static readonly MODERN_RGB_REGEX = new RegExp(
+    `^rgba?\\(\\s*${ColorAsset.CSS_PERCENT_OR_NUMBER}\\s+${ColorAsset.CSS_PERCENT_OR_NUMBER}\\s+${ColorAsset.CSS_PERCENT_OR_NUMBER}${ColorAsset.CSS_ALPHA_SLOT}\\s*\\)$`,
+    'i'
+  )
+  private static readonly MODERN_HSL_REGEX = new RegExp(
+    `^hsla?\\(\\s*${ColorAsset.CSS_HUE}\\s+${ColorAsset.CSS_PERCENT_OR_NUMBER}\\s+${ColorAsset.CSS_PERCENT_OR_NUMBER}${ColorAsset.CSS_ALPHA_SLOT}\\s*\\)$`,
+    'i'
+  )
   // color(<colorspace> c1 c2 c3 [/ alpha]) — predefined spaces plus @color-profile dashed idents.
   private static readonly COLOR_FUNCTION_REGEX = new RegExp(
     `^color\\(\\s*(?:srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65|--[a-z0-9-]+)\\s+${ColorAsset.CSS_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
@@ -144,8 +158,8 @@ export class ColorAsset extends Asset {
    * a basic named-color set, `var(--*)` and `color-mix()`.
    *
    * Acceptance does not imply the numeric transforms can operate on the value:
-   * `brighten`, `saturate`, `contrast` and `rotateHue` pass through anything
-   * they cannot parse to sRGB unchanged (see `applyBrightness`).
+   * `brighten`, `saturate`, `contrast` and `rotateHue` read hex, named colors
+   * and every rgb()/hsl() form, and pass anything else through unchanged.
    */
   static validateColor(color: string): ColorValidationResult {
     if (!color || typeof color !== 'string') {
@@ -475,6 +489,17 @@ export class ColorAsset extends Asset {
       return `hsla(${h}, ${s}%, ${l}%, ${alphaString})`
     }
 
+    const modernRgb = ColorAsset.parseModernRgb(trimmed)
+    if (modernRgb) {
+      return `rgba(${modernRgb.r}, ${modernRgb.g}, ${modernRgb.b}, ${alphaString})`
+    }
+
+    const modernHsl = ColorAsset.parseModernHsl(trimmed)
+    if (modernHsl) {
+      const format = (value: number): string => Number(value.toFixed(4)).toString()
+      return `hsla(${format(modernHsl.h)}, ${format(modernHsl.s * 100)}%, ${format(modernHsl.l * 100)}%, ${alphaString})`
+    }
+
     const namedRgb = ColorAsset.NAMED_COLOR_RGB[trimmed.toLowerCase()]
     if (namedRgb) {
       const [r, g, b] = namedRgb
@@ -482,6 +507,84 @@ export class ColorAsset extends Asset {
     }
 
     return ColorAsset.toColorMix(trimmed, alpha)
+  }
+
+  // `none` is a missing component and computes as 0 (CSS Color 4 §4.4).
+  private static parseChannelToken(token: string, scale: number): number {
+    if (token.toLowerCase() === 'none') {
+      return 0
+    }
+    if (token.endsWith('%')) {
+      return (Number(token.slice(0, -1)) / 100) * scale
+    }
+    return Number(token)
+  }
+
+  private static parseHueToken(token: string): number {
+    const lowered = token.toLowerCase()
+    if (lowered === 'none') {
+      return 0
+    }
+    const unitMatch = lowered.match(/(deg|grad|rad|turn)$/)
+    const magnitude = Number(unitMatch ? lowered.slice(0, -unitMatch[1].length) : lowered)
+    switch (unitMatch?.[1]) {
+      case 'grad':
+        return magnitude * 0.9
+      case 'rad':
+        return (magnitude * 180) / Math.PI
+      case 'turn':
+        return magnitude * 360
+      default:
+        return magnitude
+    }
+  }
+
+  private static parseAlphaToken(token: string | undefined): number {
+    if (token === undefined) {
+      return 1
+    }
+    return ColorAsset.clamp(ColorAsset.parseChannelToken(token, 1), 0, 1)
+  }
+
+  private static parseModernRgb(
+    color: string
+  ): { r: number; g: number; b: number; a: number } | null {
+    const match = color.match(ColorAsset.MODERN_RGB_REGEX)
+    if (!match) {
+      return null
+    }
+    const [, red, green, blue, alpha] = match
+    const channel = (token: string): number =>
+      Math.round(ColorAsset.clamp(ColorAsset.parseChannelToken(token, 255), 0, 255))
+    return {
+      r: channel(red),
+      g: channel(green),
+      b: channel(blue),
+      a: ColorAsset.parseAlphaToken(alpha),
+    }
+  }
+
+  private static parseModernHsl(
+    color: string
+  ): { h: number; s: number; l: number; a: number } | null {
+    const match = color.match(ColorAsset.MODERN_HSL_REGEX)
+    if (!match) {
+      return null
+    }
+    const [, hue, saturation, lightness, alpha] = match
+    // A bare number in the modern syntax is a percentage (CSS Color 4 §7.1).
+    const fraction = (token: string): number =>
+      ColorAsset.clamp(
+        ColorAsset.parseChannelToken(token, 1) * (token.endsWith('%') ? 1 : 0.01),
+        0,
+        1
+      )
+    return {
+      h: ColorAsset.parseHueToken(hue),
+      s: fraction(saturation),
+      l: fraction(lightness),
+      a: ColorAsset.parseAlphaToken(alpha),
+    }
   }
 
   private static parseHex(hexColor: string): [number, number, number] {
@@ -516,9 +619,9 @@ export class ColorAsset extends Asset {
   // their chroma reduced at constant L and H (see `color-space.ts`), so the
   // emitted hex never clips a channel and never drifts in hue.
   //
-  // `parseColorToRgba` only reads the legacy comma forms. The CSS Color 4
-  // forms `validateColor` accepts (`rgb(255 0 0 / 50%)`, `oklch(...)`, ...)
-  // take the passthrough branch below and come back unchanged — see #326.
+  // `parseColorToRgba` reads hex, named colors and both the comma and the
+  // CSS Color 4 forms of rgb()/hsl(). Anything else `validateColor` accepts
+  // (`oklch()`, `color()`, `var()`, ...) takes the passthrough branch below.
 
   private static applySaturation(color: string, amount: number): string {
     const rgba = ColorAsset.parseColorToRgba(color)
@@ -662,6 +765,17 @@ export class ColorAsset extends Asset {
     if (named) {
       const [r, g, b, a] = named
       return { r, g, b, a }
+    }
+
+    const modernRgb = ColorAsset.parseModernRgb(trimmed)
+    if (modernRgb) {
+      return modernRgb
+    }
+
+    const modernHsl = ColorAsset.parseModernHsl(trimmed)
+    if (modernHsl) {
+      const [r, g, b] = ColorAsset.hslToRgb(modernHsl.h, modernHsl.s, modernHsl.l)
+      return { r, g, b, a: modernHsl.a }
     }
 
     return null

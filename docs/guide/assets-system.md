@@ -375,7 +375,7 @@ Supported color formats:
 - **CSS custom properties**: `var(--primary-color)`
 - **`color-mix()`**: `color-mix(in srgb, red 50%, transparent)`
 
-The legacy comma forms are range-checked; the space-separated CSS Color 4 forms are validated structurally and left to the browser. Values the numeric transforms cannot convert to sRGB (`oklch()`, `color()`, `var()`, and so on) pass through `brighten`, `saturate`, `contrast` and `rotateHue` unchanged instead of throwing; `opacity()` composes with any of them via `color-mix()`.
+The legacy comma forms are range-checked; the space-separated CSS Color 4 forms are validated structurally and left to the browser. The space-separated `rgb()` / `hsl()` forms (including `none`, percentage channels, angle units on the hue and `/ alpha`) transform exactly like their comma forms. Values the numeric transforms cannot convert to sRGB (`oklch()`, `color()`, `var()`, and so on) pass through `brighten`, `saturate`, `contrast` and `rotateHue` unchanged instead of throwing; `opacity()` composes with any of them via `color-mix()`.
 
 ### Asset Discovery & Debugging
 
