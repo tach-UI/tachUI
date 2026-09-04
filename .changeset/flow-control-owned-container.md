@@ -19,7 +19,7 @@ The container element is created once and kept for the life of the component. Th
 
 Both now update rather than rebuild. `Show` reconciles the re-rendered branch against the mounted one, so a re-render that produces the same shape updates elements in place; a genuine branch swap is still a teardown, since reconciling one branch against the other would pair elements by position with no regard for what they are. `ForEach` inserts and removes rather than calling `replaceChildren`, which re-inserted every element and so dropped focus and reset scroll inside items that had not changed.
 
-Where there is no DOM, both emit an ordinary node carrying the current content as children, as `DOMNode.owned` requires of an owner that cannot build its element server-side.
+Server-side rendering takes one of two paths. Where there is no DOM, both emit an ordinary node carrying the current content as children, as `DOMNode.owned` requires of an owner that cannot build its element. Where a DOM shim is present they emit the owned node, and the serializer reaches the content by calling the accessor — which it does only for a node with no `element` of its own, since an element is preferred over an accessor and an unfilled one would serialize as an empty shell. Neither node carries an element for that reason.
 
 Disposal goes through the container too. The subscription belongs to the renderer now, so a component can no longer end it by dropping its own state: `show.dispose()` on a mounted component emptied the element, left the binding subscribed, and the next change to the condition refilled it. `dispose()` retires the binding first, through the composite disposer the renderer installs on an owned node.
 
