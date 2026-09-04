@@ -71,12 +71,12 @@ function getModifierInstanceId(modifier: object): number {
 /**
  * Convert a camelCase style property to its CSS kebab-case spelling.
  *
- * `BaseModifier.toCSSProperty` does the same thing, but the keyframe helpers
- * below run outside any modifier instance and have to spell properties
- * identically to it — the emitted text is what gets hashed into the animation
- * name, so the two spellings must not drift.
+ * Module-level rather than a method because the keyframe helpers below run
+ * outside any modifier instance, and their output is what gets hashed into an
+ * animation's name. `BaseModifier.toCSSProperty` delegates here so there is one
+ * spelling rule rather than two that must be kept in step.
  */
-function keyframePropertyToCSS(property: string): string {
+function toCSSPropertyName(property: string): string {
   return property.replace(/([A-Z])/g, '-$1').toLowerCase()
 }
 
@@ -106,7 +106,7 @@ function buildKeyframeBody(
   for (const [percentage, styles] of Object.entries(keyframes)) {
     body += `  ${percentage} {\n`
     for (const [property, value] of Object.entries(styles)) {
-      body += `    ${keyframePropertyToCSS(property)}: ${value};\n`
+      body += `    ${toCSSPropertyName(property)}: ${value};\n`
     }
     body += `  }\n`
   }
@@ -117,10 +117,13 @@ function buildKeyframeBody(
 /**
  * Hash a keyframes body into a short, CSS-identifier-safe token.
  *
- * FNV-1a run twice with different constants, so the token carries ~64 bits
- * rather than 32. A collision would silently make two different animations
- * share one block — the kind of bug that renders wrong and never throws — and
- * four extra characters is a cheap insurance premium.
+ * FNV-1a run twice over the same stream with a different initial value and
+ * multiplier, then concatenated. The two halves are correlated — they read the
+ * same bytes in the same order — so this is wider than a single 32-bit hash
+ * without being a true 64-bit one. That is the right trade here: a collision
+ * would silently make two different animations share a block, which renders
+ * wrong and never throws, and the realistic population is dozens of distinct
+ * animations, not billions.
  *
  * Deliberately arithmetic rather than `btoa`: this has to produce the same
  * token under Node during SSR as it does in the browser, and base64's `+/=`
@@ -172,9 +175,47 @@ const injectedKeyframeNamesKey = Symbol.for(
   'tachui.animations.injectedKeyframeNames'
 )
 
+const ANIMATION_KEYFRAME_NAME_PATTERN =
+  /@keyframes\s+(tachui-animation-[A-Za-z0-9_-]+)/g
+
+/**
+ * Record the animation keyframes already present elsewhere in the document, so
+ * the client does not re-inject what the server prerendered.
+ *
+ * The SSR serializer emits each static rule into its own anonymous `<style>`
+ * (`@tachui/ssr`'s `buildHeadEntries`), not into `#tachui-animations`, so the
+ * id lookup below never finds the server's block and the sheet we create starts
+ * out believing the document is empty. Reading the names back out is what
+ * closes that gap.
+ *
+ * Adopting a name on sight is sound *because* names are content hashes: a block
+ * already called `tachui-animation-<hash>` necessarily holds the same rule we
+ * were about to write. That would not be safe under the old naming, and it is
+ * the second thing content addressing buys after bounded growth.
+ *
+ * Scoped to our own prefix — a page's other `@keyframes` are none of our
+ * business, and matching them could only ever suppress a block we do need.
+ */
+function adoptKeyframesAlreadyInDocument(injected: Set<string>): void {
+  // `querySelectorAll` is unavailable in some minimal DOM shims; having nothing
+  // to adopt is the safe answer, since the worst it costs is one duplicate
+  // block of identical content.
+  const styles = document.querySelectorAll?.('style')
+  if (!styles) return
+
+  for (const style of Array.from(styles)) {
+    const text = style.textContent
+    if (!text || !text.includes('@keyframes')) continue
+
+    for (const match of text.matchAll(ANIMATION_KEYFRAME_NAME_PATTERN)) {
+      injected.add(match[1])
+    }
+  }
+}
+
 /**
  * Inject a keyframes rule into the shared `#tachui-animations` stylesheet,
- * skipping one already present.
+ * skipping one the document already carries.
  *
  * The set of injected names is stored on the stylesheet element itself rather
  * than in a module-level variable, for two reasons. It is discarded exactly
@@ -184,10 +225,14 @@ const injectedKeyframeNamesKey = Symbol.for(
  * module shares one registry: `AnimationModifier` is duplicated across
  * `@tachui/core` and both `@tachui/modifiers` builds, all writing to the same
  * element, and a per-module `Set` would let each inject the same rule again.
+ *
+ * Not exported: the dedupe keys on the name alone, so a caller that paired a
+ * name with someone else's rule would suppress the real block and leave the
+ * wrong animation standing — silently. `ensureAnimationKeyframes` is the public
+ * entry point precisely because it derives both from the same keyframes and
+ * makes that pairing unexpressible.
  */
-export function injectAnimationKeyframes(name: string, rule: string): void {
-  if (typeof document === 'undefined') return
-
+function injectAnimationKeyframes(name: string, rule: string): void {
   let stylesheet = document.querySelector(
     '#tachui-animations'
   ) as HTMLStyleElement | null
@@ -206,12 +251,40 @@ export function injectAnimationKeyframes(name: string, rule: string): void {
   if (!injected) {
     injected = new Set<string>()
     holder[injectedKeyframeNamesKey] = injected
+    // Once per stylesheet lifetime, not once per animation. The sheet we just
+    // found or made is scanned along with the rest: when it is one we made, it
+    // is still empty at this point and contributes nothing, and when it is one
+    // that outlived our bookkeeping — a hot reload, a sheet some other code
+    // put there — its contents are exactly what we must not duplicate.
+    adoptKeyframesAlreadyInDocument(injected)
   }
 
   if (injected.has(name)) return
   injected.add(name)
 
   stylesheet.appendChild(document.createTextNode(rule))
+}
+
+/**
+ * Make an animation's keyframes available in the document, and return the name
+ * to reference them by.
+ *
+ * The single entry point for the client-side path: it derives the name and the
+ * rule from the same keyframes, so the two cannot disagree, and it is a no-op
+ * beyond the first call for any given animation. Use
+ * `createAnimationKeyframeRule` instead when the rule text is wanted without
+ * touching the document, as the SSR path does.
+ */
+export function ensureAnimationKeyframes(
+  keyframes: Record<string, Record<string, string>>
+): string {
+  const { name, rule } = createAnimationKeyframeRule(keyframes)
+
+  if (typeof document !== 'undefined') {
+    injectAnimationKeyframes(name, rule)
+  }
+
+  return name
 }
 
 export function collectStaticAnimationCSSRules(
@@ -363,7 +436,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Convert camelCase property to CSS kebab-case
    */
   protected toCSSProperty(property: string): string {
-    return property.replace(/([A-Z])/g, '-$1').toLowerCase()
+    return toCSSPropertyName(property)
   }
 
   /**
@@ -1371,12 +1444,9 @@ export class AnimationModifier extends BaseModifier {
 
       if (anim.keyframes && typeof document !== 'undefined') {
         // The name comes from the keyframes' content, so re-applying this
-        // modifier re-uses the block already in the stylesheet instead of
+        // modifier re-uses the block already in the document instead of
         // appending another one.
-        const { name: keyframeName, rule } = createAnimationKeyframeRule(
-          anim.keyframes
-        )
-        injectAnimationKeyframes(keyframeName, rule)
+        const keyframeName = ensureAnimationKeyframes(anim.keyframes)
 
         // Apply animation
         const duration = anim.duration || 1000

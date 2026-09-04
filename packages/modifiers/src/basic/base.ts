@@ -13,8 +13,7 @@ import {
 import {
   bindReactiveStyle,
   collectStaticAnimationCSSRules,
-  createAnimationKeyframeRule,
-  injectAnimationKeyframes,
+  ensureAnimationKeyframes,
 } from '@tachui/core/modifiers/base'
 import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
@@ -1598,12 +1597,9 @@ export class AnimationModifier extends BaseModifier {
 
       if (anim.keyframes && canUseDocument()) {
         // The name comes from the keyframes' content, so re-applying this
-        // modifier re-uses the block already in the stylesheet instead of
+        // modifier re-uses the block already in the document instead of
         // appending another one.
-        const { name: keyframeName, rule } = createAnimationKeyframeRule(
-          anim.keyframes
-        )
-        injectAnimationKeyframes(keyframeName, rule)
+        const keyframeName = ensureAnimationKeyframes(anim.keyframes)
 
         // Apply animation
         const duration = anim.duration || 1000
