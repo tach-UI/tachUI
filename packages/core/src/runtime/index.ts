@@ -25,6 +25,7 @@ export {
   createEnvironmentKey,
   EnvironmentSymbol,
   getCurrentComponentContext,
+  getCurrentComponentContextOrNull,
   provideEnvironmentValue,
   runWithComponentContext,
   setCurrentComponentContext,
