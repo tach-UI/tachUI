@@ -1,5 +1,53 @@
 # @tachui/flow-control
 
+## 0.8.33
+
+### Patch Changes
+
+- [#317](https://github.com/tach-UI/tachUI/pull/317) [`603a6f7`](https://github.com/tach-UI/tachUI/commit/603a6f720c43b69c9bfb72cea14f9aafca9eab01) Thanks [@whoughton](https://github.com/whoughton)! - Dispose `Show` branches and `ForEach` items through the renderer that mounted them.
+
+  Both components own a private `DOMRenderer`, but dropped content by calling `node.dispose` alone. That reaches only what a component put on the node — everything the renderer registered against the element stayed live: reactive prop effects, reactive `style`/`className` effects, event delegation, and the `reactiveElement` bindings added in this release.
+
+  The renderer's `renderedNodes` is a strong `Set`, so the discarded nodes were retained as well. Twelve tracked nodes after five add/remove cycles of a single `ForEach` item, where two is correct; `Show` grew the same way per toggle.
+
+  Both now route through the new `DOMRenderer.disposeNode` for content that renderer has, keeping `node.dispose` for nodes dropped before they were ever mounted.
+
+  This is not the `Show`/`ForEach` defect in #318, where each `render()` spawns another `createRoot` and the stale effects keep writing into the same element. That one is untouched.
+
+- [#324](https://github.com/tach-UI/tachUI/pull/324) [`327e8de`](https://github.com/tach-UI/tachUI/commit/327e8dea132e3a2f26d6afa724cc130b323413fa) Thanks [@whoughton](https://github.com/whoughton)! - Fix `Show` and `ForEach` corrupting their output when the element they live in re-renders.
+
+  A `Show` sitting on its fallback rendered `NONO` the next time its parent re-rendered, and a two-item `ForEach` rendered `bab`. The wrong content stayed on screen until the condition or the collection changed again, at which point it silently corrected itself.
+
+  Two writers, and neither knew about the other. Both components built a container node in `render()` and then patched that node's element directly from an effect created in the same call, while the mounting renderer went on reconciling the node's declared `children` into that same element.
+
+  That leaves two records of what is mounted. The renderer's names the branch that was there at the last render; the element holds whatever the effect has patched in since. They agree until the branch changes without a re-render — and then the next re-render diffs the incoming branch against the stale record, pairs it positionally with an element that is no longer mounted, and adopts it, leaving the branch that _is_ mounted where it was.
+
+  Note that stale effects were not the cause, despite being the obvious suspect: `render()` disposed its previous root before creating the next, so only one was ever live. Fixing it that way is what made an ancestor's re-render tear the branch down and rebuild it.
+
+  The container is now an owned node (`DOMNode.owned`), so the component fills it and the renderer mounts it without reconciling its children — one writer, one record. The subscription goes over as `reactiveElement` rather than being created in `render()`, so the renderer owns it: it retires the previous binding when it adopts the node's successor and rebinds one that outlived its render pass, which means exactly one effect maintains the container however many times the node is rendered.
+
+  The container element is created once and kept for the life of the component. That is what makes a re-render idempotent — the node handed over on the second render carries the same element as the first, so the reconciler pairs the two and mounts nothing new — and it keeps modifiers applied to a `Show` or `ForEach` on the element they were applied to.
+
+  Both now update rather than rebuild. `Show` reconciles the re-rendered branch against the mounted one, so a re-render that produces the same shape updates elements in place; a genuine branch swap is still a teardown, since reconciling one branch against the other would pair elements by position with no regard for what they are. `ForEach` inserts and removes rather than calling `replaceChildren`, which re-inserted every element and so dropped focus and reset scroll inside items that had not changed.
+
+  Server-side rendering takes one of two paths. Where there is no DOM, both emit an ordinary node carrying the current content as children, as `DOMNode.owned` requires of an owner that cannot build its element. Where a DOM shim is present they emit the owned node, and the serializer reaches the content by calling the accessor — which it does only for a node with no `element` of its own, since an element is preferred over an accessor and an unfilled one would serialize as an empty shell. Neither node carries an element for that reason.
+
+  Disposal goes through the container too. The subscription belongs to the renderer now, so a component can no longer end it by dropping its own state: `show.dispose()` on a mounted component emptied the element, left the binding subscribed, and the next change to the condition refilled it. `dispose()` retires the binding first, through the composite disposer the renderer installs on an owned node.
+
+  The shared piece is `OwnedContainer`, which both components use rather than each keeping its own copy of the element, the node, the server-render fallback and the disposal handshake — the duplication is how #318 came to exist in two places at once.
+
+  The renderer's own per-node bookkeeping — the children and props it last wrote — is reached through a typed `recordOf(node)` rather than sixteen separate `as any` casts. It stays off `DOMNode`, which is the type every package builds its output against: this is the renderer's working state, not a description of the node.
+
+  Two supporting fixes in `@tachui/core`'s renderer, both only reachable once a node outlives a single render:
+
+  - Registering the same cleanup function against an element twice now registers it once. A node's `dispose` is registered on every render of that node, so a component handing over a stable disposer — as one holding DOM across renders must, to be disposed at all — collected one entry per render of the enclosing element for the life of the mount.
+  - Disposing a node now clears what it remembers about the render that mounted it. A node object can outlive its element, since a component that caches the nodes it built hands the same objects back later; kept, those records were diffed against children whose elements were gone, and an identical child list took the update path, found nothing mounted, and rendered nothing.
+
+  Fixes #318.
+
+- Updated dependencies [[`11a792d`](https://github.com/tach-UI/tachUI/commit/11a792db9d51db5182bc7877f5a8719c15fae11f), [`d5cd030`](https://github.com/tach-UI/tachUI/commit/d5cd030464dee0be84b8a2c6013fed716e53f551), [`0da0398`](https://github.com/tach-UI/tachUI/commit/0da03983bd74252a0ad917e7443b52781980b0bb), [`746b2be`](https://github.com/tach-UI/tachUI/commit/746b2bed20d71335f04e47097b135196d9f2caad), [`1fe6910`](https://github.com/tach-UI/tachUI/commit/1fe69104fadafa3663163b2d749e963b84620427), [`5cd2e02`](https://github.com/tach-UI/tachUI/commit/5cd2e0236f0336bf86d71744cb4b557145462c5d), [`327e8de`](https://github.com/tach-UI/tachUI/commit/327e8dea132e3a2f26d6afa724cc130b323413fa), [`7245d29`](https://github.com/tach-UI/tachUI/commit/7245d29aaf569483c16ff9d51788fb4815895caf), [`df5c539`](https://github.com/tach-UI/tachUI/commit/df5c5390072163b73ef16509f569b517ce916ea4), [`985a84b`](https://github.com/tach-UI/tachUI/commit/985a84b800dab2413ca563bac943f9ca3efc41db), [`2984b3c`](https://github.com/tach-UI/tachUI/commit/2984b3ccd461f7126acc9286f145d322d190373e)]:
+  - @tachui/core@0.9.0
+
 ## 0.8.32
 
 ### Patch Changes
