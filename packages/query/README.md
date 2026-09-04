@@ -25,12 +25,14 @@ for the reasoning.
 workspace `@tachui/core`. It reaches npm at the 0.10.0 line move; until then the
 install below will not resolve.
 
-The package currently ships its public type surface and shared defaults. The
-runtime — `QueryClient`, the cache, `createQuery`, `createMutation`,
-`createAsyncStream`, and `createAsyncStreamList` — lands across the 0.10.0
-milestone. The types are declared ahead of their implementations on purpose:
-several of these shapes are effectively irreversible once released, so they are
-fixed before anything depends on them.
+The package currently ships its public type surface, shared defaults, and
+`QueryClient` with environment provision (`createQueryClient`,
+`provideQueryClient`, `useQueryClient`). The rest of the runtime — the cache
+lifecycle, `createQuery`, `createMutation`, `createAsyncStream`, and
+`createAsyncStreamList` — lands across the 0.10.0 milestone. The types are
+declared ahead of their implementations on purpose: several of these shapes
+are effectively irreversible once released, so they are fixed before anything
+depends on them.
 
 ## Installation
 

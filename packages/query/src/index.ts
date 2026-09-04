@@ -15,6 +15,7 @@ export {
   DEFAULT_SNAPSHOT,
   DEFAULT_STALE_TIME,
 } from './defaults'
+export { createQueryClient, provideQueryClient, useQueryClient } from './client'
 export { isDevelopment, isServer, QueryError } from './errors'
 export type {
   AsyncStreamBaseOptions,
