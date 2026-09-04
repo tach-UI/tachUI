@@ -936,6 +936,33 @@ describe('dehydrate and hydrate', () => {
     expect(loads).toBe(2)
   })
 
+  it('does not serialize entries keyed by undefined', async () => {
+    const server = createQueryClient()
+    await server.fetchQuery({
+      key: () => ['user', undefined],
+      load: async () => 'anon',
+      snapshot: true,
+    })
+
+    // The key would become null on the wire, leaving a dead entry behind, so
+    // nothing is emitted and the browser refetches on first paint.
+    expect(server.dehydrate().queries).toHaveLength(0)
+
+    const browser = createQueryClient()
+    browser.hydrate(JSON.parse(JSON.stringify(server.dehydrate())))
+    let loads = 0
+    await expect(
+      browser.fetchQuery({
+        key: () => ['user', undefined],
+        load: async () => {
+          loads += 1
+          return 'fetched'
+        },
+      })
+    ).resolves.toBe('fetched')
+    expect(loads).toBe(1)
+  })
+
   it('does not serialize entries whose keys cannot survive the wire', async () => {
     const client = createQueryClient()
     const load = async () => 'v'
