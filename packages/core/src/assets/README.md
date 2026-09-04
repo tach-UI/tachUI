@@ -128,13 +128,15 @@ Assets.brandPrimary  // Auto-adapts
 Assets.brandPrimary.light  // Always light
 Assets.brandPrimary.dark   // Always dark
 Assets.brandPrimary.opacity(0.5)  // rgba(...) with 50% alpha
-Assets.brandPrimary.saturate(0.4) // More vivid color output
-Assets.brandPrimary.brighten(0.4) // Lighter color output
-Assets.brandPrimary.contrast(0.6) // Midpoint-pivot contrast adjustment in [-1, 1]
-Assets.brandPrimary.rotateHue(120) // Hue-rotated color output
+Assets.brandPrimary.saturate(0.4) // More vivid: OKLCH chroma toward the sRGB ceiling
+Assets.brandPrimary.brighten(0.4) // Lighter: OKLab lightness toward white
+Assets.brandPrimary.contrast(0.6) // Midpoint-pivot contrast adjustment in [-1, 1], about OKLab mid-gray
+Assets.brandPrimary.rotateHue(120) // Hue-rotated, lightness preserved
+// Note: transforms run in OKLab/OKLCH so an amount is the same perceptual step on every hue;
+//       out-of-gamut results have chroma reduced rather than channels clipped
 // Note: color transforms return uppercase hex for opaque colors and rgba(...) when alpha is present
 // Note: unlike CSS filter contrast(), TachUI contrast(0) is the identity baseline
-// Note: contrast(-1) collapses any opaque input to mid-gray (#808080)
+// Note: contrast(-1) collapses any opaque input to OKLab mid-gray (#636363)
 ```
 
 ### Image Assets

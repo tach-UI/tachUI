@@ -305,7 +305,7 @@ describe('Modifier System', () => {
         phase: 'creation',
       })
 
-      expect(element.style.color).toBe('rgb(4, 250, 255)')
+      expect(element.style.color).toBe('rgb(0, 164, 168)')
     })
 
     it('should accept ColorAsset.brighten output in background modifiers', () => {
@@ -326,7 +326,7 @@ describe('Modifier System', () => {
         phase: 'creation',
       })
 
-      expect(element.style.backgroundColor).toBe('rgb(194, 215, 215)')
+      expect(element.style.backgroundColor).toBe('rgb(167, 221, 222)')
     })
 
     it('should accept ColorAsset.rotateHue output in appearance modifiers', () => {
@@ -347,7 +347,7 @@ describe('Modifier System', () => {
         phase: 'creation',
       })
 
-      expect(element.style.color).toBe('rgb(156, 103, 155)')
+      expect(element.style.color).toBe('rgb(158, 134, 167)')
     })
 
     it('should accept ColorAsset.contrast output in appearance modifiers', () => {
@@ -368,7 +368,7 @@ describe('Modifier System', () => {
         phase: 'creation',
       })
 
-      expect(element.style.color).toBe('rgb(88, 171, 173)')
+      expect(element.style.color).toBe('rgb(97, 190, 192)')
     })
 
     it('should handle event modifiers', () => {
