@@ -104,6 +104,10 @@ document.documentElement.setAttribute('data-theme', 'dark')
 settings UI needs in order to show `system` as selected rather than whatever it
 resolved to.
 
+Tier 3 is live: in `'system'` mode, changing the OS appearance re-resolves
+already-rendered components in place, the same way writing the attribute does.
+No reload, and no `setTheme()` call of your own.
+
 #### Avoiding a flash of the wrong theme
 
 No JavaScript API can fix this on its own — the attribute has to be on `<html>`
