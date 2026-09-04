@@ -128,10 +128,36 @@ above your stylesheets:
   </head>
 ```
 
-tachUI reads the attribute when it loads, so the saved choice is honoured from
-the first `getCurrentTheme()` — no `setTheme()` call needed on boot, and no
-flash. A `'system'` choice should store nothing (or be cleared), leaving the
-attribute absent so the media query applies.
+A `'system'` choice stores nothing (or clears the key), leaving the attribute
+absent so the media query applies.
+
+Then, once at boot:
+
+```typescript
+import { setTheme } from '@tachui/core'
+
+// Only when no explicit choice was saved. An explicit one is already on <html>
+// from the script above, and calling setTheme('system') would erase it.
+const saved = localStorage.getItem('theme')
+if (saved !== 'light' && saved !== 'dark') {
+  setTheme('system')
+}
+```
+
+For an explicit saved choice, tachUI reads the attribute when it loads, so it is
+honoured from the first `getCurrentTheme()` with no `setTheme()` call at all.
+
+The `setTheme('system')` call is what the `'system'` case needs today: with no
+attribute to read, tachUI falls back to its stated preference, which currently
+defaults to `'light'`. Without the call your stylesheet would follow
+`prefers-color-scheme` into dark while literal-valued `ColorAsset`s stayed
+light — the half-themed state this bridge exists to prevent. It writes no
+attribute, so the media query still drives the CSS side.
+
+::: tip
+Once [#309](https://github.com/tach-UI/tachUI/issues/309) lands, the preference
+will default to `'system'` and this call becomes redundant. It stays harmless.
+:::
 
 ### Image Assets
 
