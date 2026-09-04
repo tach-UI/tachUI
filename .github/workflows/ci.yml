@@ -25,7 +25,16 @@ jobs:
 
   changeset:
     name: Changeset Policy
-    if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'
+    # `release/*` joins `changeset-release/main` as an exempt prefix. A release
+    # PR consumes changesets rather than adding one, so it can never satisfy
+    # this check: after the version run there are no `.changeset/*.md` left for
+    # the diff to find, while every publishable package shows a version and
+    # CHANGELOG change. The automated PR was already exempt by branch name; a
+    # release cut by hand had no path through, which is how #345 got stuck.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.head_ref != 'changeset-release/main' &&
+      !startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

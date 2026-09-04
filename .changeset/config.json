@@ -9,17 +9,39 @@
   "commit": false,
   "fixed": [
     [
+      "@tachui/cli",
       "@tachui/core",
+      "@tachui/data",
+      "@tachui/devtools",
+      "@tachui/eslint-plugin",
+      "@tachui/flow-control",
+      "@tachui/forms",
+      "@tachui/fragments",
+      "@tachui/grid",
+      "@tachui/mobile",
+      "@tachui/modifiers",
+      "@tachui/navigation",
+      "@tachui/primitives",
+      "@tachui/registry",
+      "@tachui/responsive",
+      "@tachui/ssr",
+      "@tachui/symbols",
       "@tachui/types",
-      "@tachui/registry"
+      "@tachui/viewport"
     ]
   ],
   "linked": [],
-  "privatePackages": { "version": true, "tag": false },
+  "privatePackages": {
+    "version": true,
+    "tag": false
+  },
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
     "@tachui/docs"
-  ]
+  ],
+  "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+    "onlyUpdatePeerDependentsWhenOutOfRange": true
+  }
 }
