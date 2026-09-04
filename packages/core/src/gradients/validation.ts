@@ -6,6 +6,7 @@
  */
 
 import type { Asset } from '../assets/types'
+import { ColorAsset } from '../assets/ColorAsset'
 import type {
   GradientDefinition,
   LinearGradientOptions,
@@ -159,6 +160,12 @@ export const GradientValidation = {
     // CSS custom property pattern
     const customPropertyPattern = /^var\(--[a-zA-Z][a-zA-Z0-9-]*\)$/
     if (customPropertyPattern.test(color)) {
+      return { valid: true }
+    }
+
+    // Anything a ColorAsset accepts (named colors, color-mix(), CSS Color 4
+    // syntax such as oklch()) is also a valid gradient stop.
+    if (ColorAsset.validateColor(color).isValid) {
       return { valid: true }
     }
 

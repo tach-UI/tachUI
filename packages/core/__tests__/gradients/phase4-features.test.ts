@@ -154,6 +154,19 @@ describe('Phase 4 Features', () => {
       expect(invalidColor.valid).toBe(false)
     })
 
+    it('should accept CSS Color 4 syntax as gradient stops', () => {
+      expect(GradientValidation.validateColor('oklch(70% 0.15 250)').valid).toBe(true)
+      expect(GradientValidation.validateColor('rgb(255 0 0 / 50%)').valid).toBe(true)
+      expect(GradientValidation.validateColor('color(display-p3 1 0 0)').valid).toBe(true)
+      expect(GradientValidation.validateColor('oklch(70% 0.15)').valid).toBe(false)
+
+      const modernStops = GradientValidation.validateColors([
+        'oklch(70% 0.15 250)',
+        'hwb(200 30% 20%)',
+      ])
+      expect(modernStops.valid).toBe(true)
+    })
+
     it('should validate color arrays', () => {
       const validColors = GradientValidation.validateColors([
         '#ff0000',

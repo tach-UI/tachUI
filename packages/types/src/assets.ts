@@ -111,7 +111,19 @@ export interface AssetInfo {
  */
 export interface ColorValidationResult {
   isValid: boolean
-  format?: 'hex' | 'rgb' | 'rgba' | 'hsl' | 'hsla' | 'named'
+  format?:
+    | 'hex'
+    | 'rgb'
+    | 'rgba'
+    | 'hsl'
+    | 'hsla'
+    | 'hwb'
+    | 'lab'
+    | 'lch'
+    | 'oklab'
+    | 'oklch'
+    | 'color'
+    | 'named'
   error?: string
 }
 

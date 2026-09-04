@@ -1119,6 +1119,78 @@ describe('Asset System', () => {
       expect(result.format).toBe('named')
     })
 
+    it.each([
+      ['oklch(70% 0.15 250)', 'oklch'],
+      ['oklch(0.7 0.15 250deg / 0.5)', 'oklch'],
+      ['oklch(none 0 0)', 'oklch'],
+      ['oklab(0.7 0.1 -0.1)', 'oklab'],
+      ['lab(50% 40 30)', 'lab'],
+      ['lch(50% 40 30)', 'lch'],
+      ['color(display-p3 1 0 0)', 'color'],
+      ['color(srgb-linear 0.5 0.5 0.5 / 50%)', 'color'],
+      ['color(--my-profile 0.1 0.2 0.3)', 'color'],
+      ['hwb(200 30% 20%)', 'hwb'],
+      ['rgb(255 0 0)', 'rgb'],
+      ['rgb(255 0 0 / 50%)', 'rgb'],
+      ['rgb(100% 0% 0% / 0.5)', 'rgb'],
+      ['rgba(255 0 0 / 0.5)', 'rgba'],
+      ['hsl(200deg 50% 40%)', 'hsl'],
+      ['hsl(0.5turn 50% 40% / 0.5)', 'hsl'],
+      ['hsla(200 50% 40% / 0.5)', 'hsla'],
+      ['OKLCH(70% 0.15 250)', 'oklch'],
+    ] as const)(
+      'should accept CSS Color 4 syntax %s',
+      (input, format) => {
+        const result = ColorAsset.validateColor(input)
+        expect(result.isValid).toBe(true)
+        expect(result.format).toBe(format)
+      }
+    )
+
+    it.each([
+      'oklch(70% 0.15)',
+      'oklch(70% 0.15 250 300)',
+      'oklch(70%, 0.15, 250)',
+      'oklch(70% 0.15 250 /)',
+      'oklch(70% 0.15 250) extra',
+      'oklch(70% abc 250)',
+      'color(1 0 0)',
+      'color(display-p3 1 0)',
+      'color(unknown-space 1 0 0)',
+      'rgb(255 0)',
+      'hsl(200deg 50%)',
+      'lab(50% 40 30 20 10)',
+    ])('should reject malformed CSS Color 4 syntax %s', input => {
+      const result = ColorAsset.validateColor(input)
+      expect(result.isValid).toBe(false)
+      expect(result.error).toContain('Unsupported color format')
+    })
+
+    it('should construct assets from CSS Color 4 syntax and pass them through transforms', () => {
+      const asset = ColorAsset.init({
+        name: 'modern',
+        default: 'oklch(70% 0.15 250)',
+        light: 'rgb(255 0 0 / 50%)',
+        dark: 'color(display-p3 1 0 0)',
+      })
+
+      expect(asset.resolve()).toBe('rgb(255 0 0 / 50%)')
+
+      // Accepted-but-untransformable values flow through the numeric transforms
+      // unchanged rather than throwing.
+      expect(asset.brighten(0.3).default).toBe('oklch(70% 0.15 250)')
+      expect(asset.saturate(0.3).default).toBe('oklch(70% 0.15 250)')
+      expect(asset.contrast(0.3).default).toBe('oklch(70% 0.15 250)')
+      expect(asset.rotateHue(90).default).toBe('oklch(70% 0.15 250)')
+      expect(asset.brighten(0.3).dark).toBe('color(display-p3 1 0 0)')
+      expect(asset.brighten(0.3).light).toBe('rgb(255 0 0 / 50%)')
+
+      // opacity() has a generic color-mix() path, so it still composes.
+      expect(asset.opacity(0.5).default).toBe(
+        'color-mix(in srgb, oklch(70% 0.15 250) 50%, transparent)'
+      )
+    })
+
     it('should reject invalid color formats', () => {
       const result1 = ColorAsset.validateColor('invalid-color')
       expect(result1.isValid).toBe(false)
