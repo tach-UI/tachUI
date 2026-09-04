@@ -79,13 +79,20 @@ export class OwnedContainer {
     const node: DOMNode = {
       type: 'element',
       tag: 'div',
-      // Describes the shell only: the renderer applies neither props nor
-      // children to an owned element, so the element styles itself in
-      // `ensureElement`. Kept so the node still serializes correctly if it ever
-      // reaches the empty-shell path.
+      // The shell, which the renderer applies to nothing — neither props nor
+      // children reach an owned element, so it styles itself in
+      // `ensureElement`. Carried so the node still describes itself if it ever
+      // reaches a reader that cannot get an element out of it.
       props: { style: { ...CONTENTS_STYLE } },
       children: [],
-      element: this.ensureElement(),
+      // No `element`, deliberately: only the accessor returns one that has been
+      // filled, and a node carrying an element short-circuits the readers that
+      // would otherwise call the accessor. Serialization prefers
+      // `element.outerHTML` when there is one, so an element here goes to
+      // markup as the empty shell it is at that moment and the content never
+      // arrives. `bindOwnedElement` reads the field as a hint about the
+      // *previously mounted* element, which only adoption is in a position to
+      // know.
       owned: true,
       reactiveElement: () => {
         const element = this.ensureElement()
