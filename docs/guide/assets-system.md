@@ -90,6 +90,23 @@ document.documentElement.setAttribute('data-theme', 'dark')
 // every ColorAsset on the page now resolves to its dark variant
 ```
 
+#### Native controls
+
+tachUI also writes the CSS `color-scheme` property on `<html>`, so scrollbars,
+form controls and the canvas behind the page follow the theme instead of staying
+light under a dark UI. `'system'` maps to `light dark`, the value that tells the
+browser to follow the OS itself.
+
+This is an **inline** style, and inline styles outrank author stylesheets. If
+your own CSS declares `color-scheme`, turn tachUI's off so it stops overriding
+you — that also clears anything already written, handing the property back:
+
+```typescript
+import { configureTheme } from '@tachui/core'
+
+configureTheme({ reflectColorScheme: false })
+```
+
 #### Precedence
 
 `getCurrentTheme()` resolves in this order, highest first:

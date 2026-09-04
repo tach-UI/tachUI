@@ -129,6 +129,7 @@ export {
 
 // Theme management
 export {
+  configureTheme,
   detectSystemTheme,
   getCurrentTheme,
   getThemePreference,
@@ -139,6 +140,7 @@ export {
   THEME_ATTRIBUTE,
   type ResolvedTheme,
   type Theme,
+  type ThemeConfiguration,
 } from './theme'
 // Core types
 export type {
