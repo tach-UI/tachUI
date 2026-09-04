@@ -546,6 +546,27 @@ describe('two-level ownership', () => {
     expect(() => client.dispose()).not.toThrow()
   })
 
+  it('aborts a detached flight when the client is disposed', async () => {
+    const client = createQueryClient()
+    let observedSignal: AbortSignal | undefined
+    const pending = client.fetchQuery({
+      key: keyOf('slow'),
+      load: (ctx: { signal: AbortSignal }) =>
+        new Promise<never>((_resolve, reject) => {
+          observedSignal = ctx.signal
+          ctx.signal.addEventListener('abort', () => reject(new Error('aborted')))
+        }),
+    })
+
+    // Detaching via invalidate() must not drop the client's only handle to
+    // the flight: disposal still aborts it.
+    client.invalidate(['slow'])
+    client.dispose()
+
+    expect(observedSignal?.aborted).toBe(true)
+    await expect(pending).rejects.toThrow('aborted')
+  })
+
   it('aborts in-flight work on dispose()', async () => {
     const client = createQueryClient()
     let observedSignal: AbortSignal | undefined

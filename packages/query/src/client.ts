@@ -128,6 +128,7 @@ function isDehydratedState(state: unknown): state is DehydratedState {
 
 function buildClient(disposeClientRoot: () => void, onDispose?: () => void): QueryClient {
   const entries = new Map<QueryKeyHash, ClientCacheEntry>()
+  const activeControllers = new Set<AbortController>()
   let disposed = false
 
   function ensureUsable(method: string): void {
@@ -136,6 +137,16 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         `QueryClient.${method}() called after dispose(). Create a new client with createQueryClient().`
       )
     }
+  }
+
+  function abortActive(): void {
+    // Attached and detached flights alike: invalidate() and hydrate() release
+    // the entry slot, but a detached request is still the client's to cancel
+    // until it settles and removes itself below.
+    for (const controller of activeControllers) {
+      controller.abort()
+    }
+    activeControllers.clear()
   }
 
   function createEntry(
@@ -250,12 +261,16 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       }
     })
     entry.inFlight = { promise: requestPromise, controller }
+    activeControllers.add(controller)
 
     function ownsSlot(): boolean {
       return entry.inFlight?.promise === requestPromise
     }
 
     function releaseSlot(): void {
+      // Always runs exactly once per request, attached or detached, so the
+      // client-level set never outlives the flight it tracks.
+      activeControllers.delete(controller)
       // `fetchStatus` mirrors `inFlight`: whatever clears the slot marks it
       // idle, so no path leaves a settled entry reading as fetching, and no
       // stale flight clears a newer flight's slot.
@@ -330,7 +345,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             // Detach the pre-invalidation flight: its waiter still settles,
             // but it no longer blocks a fresh load, and the generation guard
             // drops its stale outcome instead of un-invalidating the entry.
-            // `fetchStatus` mirrors the slot, so it goes idle here.
+            // `fetchStatus` mirrors the slot, so it goes idle here. The
+            // flight stays in the client-level set, so clear()/dispose()
+            // still abort it.
             entry.inFlight = null
             entry.fetchStatus = 'idle'
           }
@@ -403,9 +420,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
 
     clear(): void {
       ensureUsable('clear')
-      for (const entry of entries.values()) {
-        entry.inFlight?.controller.abort()
-      }
+      abortActive()
       entries.clear()
     },
 
@@ -413,9 +428,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       if (disposed) {
         return
       }
-      for (const entry of entries.values()) {
-        entry.inFlight?.controller.abort()
-      }
+      abortActive()
       entries.clear()
       disposed = true
       disposeClientRoot()
