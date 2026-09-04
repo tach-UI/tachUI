@@ -136,9 +136,15 @@ Then, once at boot:
 ```typescript
 import { setTheme } from '@tachui/core'
 
+// Guarded like the pre-paint script above: reading localStorage throws in
+// blocked-cookie contexts, and an unhandled throw here breaks startup.
+let saved = null
+try {
+  saved = localStorage.getItem('theme')
+} catch (e) {}
+
 // Only when no explicit choice was saved. An explicit one is already on <html>
 // from the script above, and calling setTheme('system') would erase it.
-const saved = localStorage.getItem('theme')
 if (saved !== 'light' && saved !== 'dark') {
   setTheme('system')
 }

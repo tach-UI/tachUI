@@ -309,26 +309,32 @@ describe('theme DOM bridge', () => {
       expect(getCurrentTheme()).toBe('light')
     })
 
-    it('is idempotent, so a second start does not double-observe', async () => {
-      const seen: string[] = []
-
-      startObservingThemeAttribute()
-      startObservingThemeAttribute()
-
-      const dispose = createRoot(disposer => {
-        createEffect(() => {
-          seen.push(getThemeSignal()())
-        })
-        return disposer
+    it('is idempotent, so a second start does not construct a second observer', () => {
+      // Asserted on construction rather than on the resulting theme: a leaked
+      // second observer would set `domTheme` to the same value the first one
+      // did, and signal equality collapses that to a single notification, so
+      // an outcome-based test here would pass with the guard removed.
+      const RealMutationObserver = globalThis.MutationObserver
+      const construct = vi.fn(function (
+        this: unknown,
+        callback: MutationCallback
+      ) {
+        return new RealMutationObserver(callback)
       })
 
-      try {
-        document.documentElement.setAttribute(THEME_ATTRIBUTE, 'dark')
-        await flushMutations()
+      stopObservingThemeAttribute()
+      vi.stubGlobal('MutationObserver', construct)
 
-        expect(seen.at(-1)).toBe('dark')
+      try {
+        startObservingThemeAttribute()
+        startObservingThemeAttribute()
+
+        expect(construct).toHaveBeenCalledTimes(1)
       } finally {
-        dispose()
+        vi.unstubAllGlobals()
+        // Leave a real observer behind for whatever runs next.
+        stopObservingThemeAttribute()
+        startObservingThemeAttribute()
       }
     })
   })
