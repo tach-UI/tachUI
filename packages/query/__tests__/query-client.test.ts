@@ -221,6 +221,98 @@ describe('fetchQuery caching', () => {
     ).rejects.toThrowError(QueryError)
   })
 
+  it('rejects keys that JSON.stringify would silently collapse', async () => {
+    const client = createQueryClient()
+    const load = async () => 'unreached'
+    const collapsing: Array<() => readonly unknown[]> = [
+      () => ['u', new Set(['a'])],
+      () => ['u', new Map([['a', 1]])],
+      () => ['u', () => 'id'],
+      () => ['u', Symbol('id')],
+      () => ['u', NaN],
+      () => ['u', 10n],
+    ]
+
+    // Each resolves today to a shared wrong entry; all must raise instead.
+    // (Explicit undefined stays supported via the sentinel — see the test
+    // below — as does toJSON, null-prototype objects, and cross-realm input.)
+    const circular: unknown[] = ['u']
+    circular.push(circular)
+    await expect(
+      client.fetchQuery({
+        key: () => circular as readonly unknown[],
+        load,
+      })
+    ).rejects.toThrowError(/circular/)
+    for (const key of collapsing) {
+      await expect(client.fetchQuery({ key, load })).rejects.toThrowError(
+        QueryError
+      )
+    }
+  })
+
+  it('accepts a shared reference used twice in one key', async () => {
+    const client = createQueryClient()
+    const shared = { id: 1 }
+
+    // Seen entries are removed once their subtree is done: only a true
+    // revisit while still inside is circular.
+    await expect(
+      client.fetchQuery({
+        key: () => ['u', shared, shared],
+        load: async () => 'v',
+      })
+    ).resolves.toBe('v')
+  })
+
+  it('keeps undefined and null key segments apart', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const counting = (value: string) => async () => {
+      loads += 1
+      return value
+    }
+
+    await expect(
+      client.fetchQuery({ key: () => ['u', undefined], load: counting('A') })
+    ).resolves.toBe('A')
+    await expect(
+      client.fetchQuery({ key: () => ['u', null], load: counting('B') })
+    ).resolves.toBe('B')
+    expect(loads).toBe(2)
+  })
+
+  it('accepts toJSON classes, null-prototype objects, and cross-realm clones', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    class NamedId {
+      constructor(private readonly id: string) {}
+      toJSON(): unknown {
+        return { id: this.id };
+      }
+    }
+    const nullProto: Record<string, unknown> = Object.create(null)
+    nullProto.id = 1
+
+    const keys: Array<() => readonly unknown[]> = [
+      () => ['u', new NamedId('x')],
+      () => ['u', nullProto],
+      () => structuredClone(['u', { id: 2 }]),
+    ]
+    for (const key of keys) {
+      await expect(
+        client.fetchQuery({
+          key,
+          load: async () => {
+            loads += 1
+            return 'v'
+          },
+        })
+      ).resolves.toBe('v')
+    }
+    expect(loads).toBe(3)
+  })
+
   it('delegates to an explicit client option, bypassing its own cache', async () => {
     const clientA = createQueryClient()
     const clientB = createQueryClient()
@@ -844,6 +936,32 @@ describe('dehydrate and hydrate', () => {
     expect(loads).toBe(2)
   })
 
+  it('does not serialize entries whose keys cannot survive the wire', async () => {
+    const client = createQueryClient()
+    const load = async () => 'v'
+    await client.fetchQuery({
+      key: () => ['plain', { a: 1 }],
+      load,
+      snapshot: true,
+    })
+    // Dates hash deterministically in-session, but revive as strings — the
+    // restored entry could never be matched by the original key.
+    await client.fetchQuery({
+      key: () => ['d', new Date('2024-01-01T00:00:00.000Z')],
+      load,
+      snapshot: true,
+    })
+    await client.fetchQuery({
+      key: () => ['d', { at: new Date('2024-01-01T00:00:00.000Z') }],
+      load,
+      snapshot: true,
+    })
+
+    const state = client.dehydrate()
+    expect(state.queries).toHaveLength(1)
+    expect(state.queries[0]?.key).toEqual(['plain', { a: 1 }])
+  })
+
   it('lets a filter narrow the snapshot set, never widen it', async () => {
     const client = createQueryClient()
     await client.fetchQuery({
@@ -878,6 +996,51 @@ describe('dehydrate and hydrate', () => {
 
     await expect(target.fetchQuery(options)).resolves.toBe('ada')
     expect(loads).toBe(1)
+  })
+
+  it('lets an explicit opt-out claim the field against later upgrades', async () => {
+    const client = createQueryClient()
+    const load = async () => 'v'
+    await client.fetchQuery({
+      key: keyOf('u'),
+      load,
+      snapshot: false,
+      staleTime: 0,
+    })
+
+    // Both fields were explicitly set to their defaults, so the later
+    // upgrade is refused on both: nothing leaks into the SSR payload, and
+    // the explicit freshness stands.
+    await client.fetchQuery({
+      key: keyOf('u'),
+      load,
+      snapshot: true,
+      staleTime: 60_000,
+    })
+    expect(client.dehydrate().queries).toHaveLength(0)
+  })
+
+  it('keeps the first explicit freshness when a later caller disagrees', async () => {
+    const client = createQueryClient()
+    const load = async () => 'v'
+    await client.fetchQuery({
+      key: keyOf('u'),
+      load,
+      snapshot: true,
+      staleTime: 0,
+    })
+    await client.fetchQuery({
+      key: keyOf('u'),
+      load,
+      snapshot: false,
+      staleTime: 60_000,
+    })
+
+    const seen = client.dehydrate((entry) => {
+      expect(entry.options.staleTime).toBe(0)
+      return true
+    })
+    expect(seen.queries).toHaveLength(1)
   })
 
   it('upgrades a hydrated entry policy from later options', async () => {
