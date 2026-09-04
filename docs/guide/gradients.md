@@ -78,6 +78,36 @@ const preciseGradient = LinearGradient({
 })
 ```
 
+## Interpolation Space
+
+Gradients interpolate in OKLab by default, so a pair of hue-distant stops takes the perceptually straight path instead of dipping through the desaturated gray midpoint that legacy sRGB interpolation produces. Set `interpolation` per gradient to choose otherwise:
+
+```typescript
+LinearGradient({
+  colors: ['#3B82F6', '#FFD400'],
+  startPoint: 'leading',
+  endPoint: 'trailing',
+  interpolation: 'oklch', // 'srgb' | 'oklab' (default) | 'oklch'
+})
+```
+
+- **`'oklab'`** (default): straight, predictable path; never introduces a hue neither stop has.
+- **`'oklch'`**: interpolates hue for a more colorful arc; on hue-distant endpoints it can route through an intermediate hue nobody asked for.
+- **`'srgb'`**: the legacy browser behavior. Pin this on gradients that are the visual spec of an existing design system, since the OKLab default changes their rendered pixels.
+
+### The fallback pair
+
+A browser that cannot parse `linear-gradient(in oklab …)` drops the whole declaration and the element gets no background at all. tachUI therefore writes two declarations for any gradient that is not `'srgb'`, plain sRGB first:
+
+```css
+background: linear-gradient(to right, #3B82F6, #FFD400);
+background: linear-gradient(in oklab to right, #3B82F6, #FFD400);
+```
+
+The cascade keeps the last declaration a browser can parse, and CSSOM setters reject an unparseable value as a no-op, so the pair works in stylesheets, `style` attributes and `element.style.setProperty` alike. The background modifiers, the gradient assets and server rendering all emit it; `gradientToDeclarations(gradient)` returns it for anything you write yourself. Note that Chrome serializes the hint after the direction (`to right in oklab`) when you read a style back, while the generator authors it first (`in oklab to right`); both parse.
+
+One helper cannot carry the pair: `CSSUtils.toCustomProperties` always emits the sRGB form. A custom property accepts almost any token when declared, so an unsupported gradient in `--gradient-background` only fails at `var()` substitution, where the using declaration becomes invalid at computed-value time and resolves to `unset` rather than falling back.
+
 ## Asset Integration
 
 ### Theme-Reactive Gradients
@@ -246,6 +276,8 @@ TachUI gradients generate standard CSS that works across all modern browsers:
 - **Firefox**: Full support  
 - **Safari**: Full support
 - **Mobile browsers**: Full support
+
+OKLab gradient interpolation (the default, see [Interpolation Space](#interpolation-space)) is Baseline widely available: Chrome 111+, Firefox 113+, Safari 16.2+. Older browsers receive the sRGB fallback declaration that every gradient emits ahead of the hinted one, so they render the gradient with legacy interpolation rather than no gradient at all.
 
 ## Best Practices
 
@@ -717,6 +749,7 @@ const themedButton = Button('Themed')
 interface LinearGradientOptions {
   colors: (string | Asset)[]     // Gradient colors (hex, rgb, Assets)
   stops?: number[]               // Optional color stop positions (0-100)
+  interpolation?: 'srgb' | 'oklab' | 'oklch' // Interpolation space, default 'oklab'
   startPoint: GradientStartPoint // SwiftUI-style start position
   endPoint: GradientStartPoint   // SwiftUI-style end position  
   angle?: number                 // Optional angle override (degrees)
@@ -922,6 +955,35 @@ const GradientUtils = {
   clone: <T extends GradientDefinition>(gradient: T) => T,
   equals: (a: GradientDefinition, b: GradientDefinition) => boolean
 }
+```
+
+#### CSS Generation
+
+```typescript
+import {
+  gradientToCSS,
+  gradientToDeclarations,
+  DEFAULT_GRADIENT_INTERPOLATION, // 'oklab'
+} from '@tachui/core'
+
+// The single preferred string: hinted unless interpolation is 'srgb'
+gradientToCSS(gradient)
+// 'linear-gradient(in oklab to right, #3B82F6, #FFD400)'
+
+// What a background should actually receive: sRGB fallback first, hinted second
+gradientToDeclarations(gradient)
+// ['linear-gradient(to right, #3B82F6, #FFD400)',
+//  'linear-gradient(in oklab to right, #3B82F6, #FFD400)']
+
+// Gradient assets expose the same pair; resolve() stays on the preferred string
+gradientAsset.resolveDeclarations()
+stateGradientAsset.resolveDeclarations()
+
+// Inline-style helpers
+CSSUtils.withFallback(gradient, '#3B82F6')
+// 'background: #3B82F6; background: linear-gradient(to right, …); background: linear-gradient(in oklab to right, …);'
+CSSUtils.toCustomProperties(gradient)
+// { '--gradient-background': 'linear-gradient(to right, …)' }  — always sRGB, see Interpolation Space
 ```
 
 #### Performance and Debugging

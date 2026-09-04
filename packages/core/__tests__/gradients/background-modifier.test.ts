@@ -41,7 +41,7 @@ describe('BackgroundModifier', () => {
     modifier.apply({} as any, mockContext)
 
     expect(mockElement.style.background).toBe(
-      'linear-gradient(to bottom, #FF0000, #00FF00)'
+      'linear-gradient(in oklab to bottom, #FF0000, #00FF00)'
     )
   })
 

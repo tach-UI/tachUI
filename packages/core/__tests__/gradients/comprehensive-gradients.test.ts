@@ -37,7 +37,7 @@ describe('Comprehensive Gradient Integration', () => {
       modifier.apply({} as any, mockContext)
 
       expect(mockElement.style.background).toBe(
-        'linear-gradient(to bottom, #FF0000, #00FF00)'
+        'linear-gradient(in oklab to bottom, #FF0000, #00FF00)'
       )
     })
 
@@ -53,7 +53,7 @@ describe('Comprehensive Gradient Integration', () => {
       modifier.apply({} as any, mockContext)
 
       expect(mockElement.style.background).toBe(
-        'radial-gradient(circle 100px at center, #FF0000, #00FF00)'
+        'radial-gradient(in oklab circle 100px at center, #FF0000, #00FF00)'
       )
     })
 
@@ -69,7 +69,7 @@ describe('Comprehensive Gradient Integration', () => {
       modifier.apply({} as any, mockContext)
 
       expect(mockElement.style.background).toBe(
-        'conic-gradient(from 0deg at center, #FF0000, #00FF00)'
+        'conic-gradient(in oklab from 0deg at center, #FF0000, #00FF00)'
       )
     })
 
@@ -84,7 +84,7 @@ describe('Comprehensive Gradient Integration', () => {
       modifier.apply({} as any, mockContext)
 
       expect(mockElement.style.background).toBe(
-        'repeating-linear-gradient(45deg, #FF0000 0px, #00FF00 20px)'
+        'repeating-linear-gradient(in oklab 45deg, #FF0000 0px, #00FF00 20px)'
       )
     })
 
@@ -99,7 +99,7 @@ describe('Comprehensive Gradient Integration', () => {
       modifier.apply({} as any, mockContext)
 
       expect(mockElement.style.background).toBe(
-        'repeating-radial-gradient(circle at center, #FF0000 0px, #00FF00 30px)'
+        'repeating-radial-gradient(in oklab circle at center, #FF0000 0px, #00FF00 30px)'
       )
     })
   })
@@ -290,7 +290,7 @@ describe('Comprehensive Gradient Integration', () => {
 
       const css = gradientToCSS(stripes)
       expect(css).toBe(
-        'repeating-linear-gradient(90deg, #000000 0px, #ffffff 10px)'
+        'repeating-linear-gradient(in oklab 90deg, #000000 0px, #ffffff 10px)'
       )
     })
 
@@ -303,7 +303,7 @@ describe('Comprehensive Gradient Integration', () => {
 
       const css = gradientToCSS(circles)
       expect(css).toBe(
-        'repeating-radial-gradient(circle at center, #ff0000 0px, transparent 20px)'
+        'repeating-radial-gradient(in oklab circle at center, #ff0000 0px, transparent 20px)'
       )
     })
   })

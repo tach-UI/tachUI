@@ -130,10 +130,15 @@ export const GradientTransforms = {
   reverse: <T extends GradientDefinition>(gradient: T): T => {
     const newGradient = { ...gradient }
     if ('colors' in newGradient.options) {
+      // `.reverse()` on a copy, not `.toReversed()`: the latter is ES2023 and
+      // the package compiles against the ES2022 lib, so the lint autofix
+      // would break `bun run build`.
       newGradient.options = {
         ...newGradient.options,
-        colors: [...newGradient.options.colors].toReversed(),
-        stops: newGradient.options.stops ? [...newGradient.options.stops].toReversed() : undefined
+        // oxlint-disable-next-line unicorn/no-array-reverse
+        colors: [...newGradient.options.colors].reverse(),
+        // oxlint-disable-next-line unicorn/no-array-reverse
+        stops: newGradient.options.stops ? [...newGradient.options.stops].reverse() : undefined
       }
     }
     return newGradient
@@ -215,6 +220,7 @@ export const GradientTransforms = {
     return RadialGradient({
       colors: options.colors,
       stops: options.stops,
+      interpolation: options.interpolation,
       center: 'center',
       startRadius: 0,
       endRadius: radius
@@ -229,6 +235,7 @@ export const GradientTransforms = {
       return AngularGradient({
         colors: gradient.options.colors,
         stops: gradient.options.stops,
+        interpolation: gradient.options.interpolation,
         center: 'center',
         startAngle: 0,
         endAngle: 360

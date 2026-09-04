@@ -28,7 +28,7 @@ describe('RadialGradient', () => {
     })
 
     expect(css).toBe(
-      'radial-gradient(circle 100px at center, #FF0000, #00FF00)'
+      'radial-gradient(in oklab circle 100px at center, #FF0000, #00FF00)'
     )
   })
 
@@ -42,7 +42,7 @@ describe('RadialGradient', () => {
     })
 
     expect(css).toBe(
-      'radial-gradient(ellipse 100px 100px at center, #FF0000, #00FF00)'
+      'radial-gradient(in oklab ellipse 100px 100px at center, #FF0000, #00FF00)'
     )
   })
 
@@ -54,7 +54,7 @@ describe('RadialGradient', () => {
       endRadius: 50,
     })
 
-    expect(css).toBe('radial-gradient(circle 50px at top, #FF0000, #00FF00)')
+    expect(css).toBe('radial-gradient(in oklab circle 50px at top, #FF0000, #00FF00)')
   })
 
   it('supports array-based center positioning', () => {
@@ -66,7 +66,7 @@ describe('RadialGradient', () => {
     })
 
     expect(css).toBe(
-      'radial-gradient(circle 80px at 25% 75%, #FF0000, #00FF00)'
+      'radial-gradient(in oklab circle 80px at 25% 75%, #FF0000, #00FF00)'
     )
   })
 
@@ -80,7 +80,7 @@ describe('RadialGradient', () => {
     })
 
     expect(css).toBe(
-      'radial-gradient(circle 100px at center, #FF0000 0%, #FFFF00 50%, #00FF00 100%)'
+      'radial-gradient(in oklab circle 100px at center, #FF0000 0%, #FFFF00 50%, #00FF00 100%)'
     )
   })
 
@@ -95,7 +95,7 @@ describe('RadialGradient', () => {
       endRadius: 100,
     })
 
-    expect(css).toContain('radial-gradient(circle 100px at center,')
+    expect(css).toContain('radial-gradient(in oklab circle 100px at center,')
     expect(css).toContain('#FF0000')
     expect(css).toContain('#00FF00')
   })
@@ -110,7 +110,7 @@ describe('RadialGradient', () => {
       endRadius: 100,
     })
 
-    expect(css).toContain('radial-gradient(circle 100px at center,')
+    expect(css).toContain('radial-gradient(in oklab circle 100px at center,')
     expect(css).toContain('#FF0000')
     expect(css).toContain('#0000FF')
     expect(css).toContain('#00FF00')

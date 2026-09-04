@@ -16,10 +16,16 @@ import type {
 
 /**
  * Interpolation space used when a gradient definition does not set
- * `interpolation`. Anything other than `'srgb'` makes every gradient emit a
- * fallback pair (see `gradientToDeclarations`).
+ * `interpolation`.
+ *
+ * `'oklab'` (#310): the legacy sRGB default routes hue-distant stops through
+ * a desaturated gray midpoint; OKLab takes the perceptually straight path and,
+ * unlike OKLCH, never introduces a hue neither stop has. Because this is not
+ * `'srgb'`, every gradient emits a fallback pair (see `gradientToDeclarations`)
+ * so a browser that cannot parse the hint still gets the sRGB gradient. Set
+ * `interpolation: 'srgb'` per gradient to pin the legacy rendering.
  */
-export const DEFAULT_GRADIENT_INTERPOLATION: GradientInterpolation = 'srgb'
+export const DEFAULT_GRADIENT_INTERPOLATION: GradientInterpolation = 'oklab'
 
 export function resolveGradientInterpolation(
   options: GradientColors
