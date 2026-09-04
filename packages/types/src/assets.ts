@@ -124,6 +124,11 @@ export interface ColorValidationResult {
     | 'oklch'
     | 'color'
     | 'named'
+    // Accepted, but opaque: what a `var()` resolves to and what a `color-mix()`
+    // computes to are only knowable at paint time, so these say "valid CSS, not
+    // a literal colour" rather than claiming a channel model.
+    | 'custom-property'
+    | 'color-mix'
   error?: string
 }
 

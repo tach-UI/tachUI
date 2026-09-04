@@ -287,13 +287,20 @@ export class ColorAsset extends Asset {
     }
 
     // CSS custom property format
+    //
+    // Reported as its own format rather than as `named`: whether `--wp-primary`
+    // is defined is a question about the document, not about this string, so a
+    // caller that needs to distinguish "a colour tachUI can reason about" from
+    // "a token only the browser can resolve" has no other signal. It also stops
+    // a typo like `var(--wp-primaryy)` from being indistinguishable from `red`.
     if (trimmed.startsWith('var(--') && trimmed.endsWith(')')) {
-      return { isValid: true, format: 'named' }
+      return { isValid: true, format: 'custom-property' }
     }
 
-    // CSS color-mix() — produced by opacity() on CSS vars, and valid CSS in its own right
+    // CSS color-mix() — produced by opacity() on CSS vars, and valid CSS in its
+    // own right. Opaque for the same reason: the result is computed at paint.
     if (trimmed.startsWith('color-mix(')) {
-      return { isValid: true, format: 'named' }
+      return { isValid: true, format: 'color-mix' }
     }
 
     // CSS Color 4 functional notation (space-separated channels, slash alpha),

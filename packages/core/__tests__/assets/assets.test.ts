@@ -1116,7 +1116,17 @@ describe('Asset System', () => {
     it('should validate CSS custom properties correctly', () => {
       const result = ColorAsset.validateColor('var(--primary-color)')
       expect(result.isValid).toBe(true)
-      expect(result.format).toBe('named')
+      // Not `named`: a token the browser resolves is a different kind of thing
+      // from a literal colour, and callers need to be able to tell them apart.
+      expect(result.format).toBe('custom-property')
+    })
+
+    it('should validate color-mix() correctly', () => {
+      const result = ColorAsset.validateColor(
+        'color-mix(in oklab, red 90%, transparent)'
+      )
+      expect(result.isValid).toBe(true)
+      expect(result.format).toBe('color-mix')
     })
 
     it.each([

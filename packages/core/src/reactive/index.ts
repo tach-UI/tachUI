@@ -131,8 +131,12 @@ export {
 export {
   detectSystemTheme,
   getCurrentTheme,
+  getThemePreference,
   getThemeSignal,
   setTheme,
+  stopObservingThemeAttribute,
+  THEME_ATTRIBUTE,
+  type ResolvedTheme,
   type Theme,
 } from './theme'
 // Core types
