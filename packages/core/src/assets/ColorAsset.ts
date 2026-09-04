@@ -37,6 +37,23 @@ export class ColorAsset extends Asset {
     /^hsl\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*\)$/i
   private static readonly HSLA_REGEX =
     /^hsla\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]*\.?[0-9]+)\s*\)$/i
+  // CSS Color 4 functional notation: three space-separated channels and an
+  // optional `/ alpha`. Channels are numbers, percentages, angles or `none`.
+  // The legacy comma forms above stay on their own regexes because those also
+  // range-check; these forms are accepted structurally and left to the browser.
+  private static readonly CSS_NUMBER = '[-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[-+]?\\d+)?'
+  private static readonly CSS_CHANNEL = `(?:none|${ColorAsset.CSS_NUMBER}(?:%|deg|grad|rad|turn)?)`
+  private static readonly CSS_CHANNELS = `${ColorAsset.CSS_CHANNEL}(?:\\s+${ColorAsset.CSS_CHANNEL}){2}`
+  private static readonly CSS_ALPHA = `(?:\\s*/\\s*(?:none|${ColorAsset.CSS_NUMBER}%?))?`
+  private static readonly MODERN_COLOR_FUNCTION_REGEX = new RegExp(
+    `^(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\\(\\s*${ColorAsset.CSS_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
+    'i'
+  )
+  // color(<colorspace> c1 c2 c3 [/ alpha]) — predefined spaces plus @color-profile dashed idents.
+  private static readonly COLOR_FUNCTION_REGEX = new RegExp(
+    `^color\\(\\s*(?:srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65|--[a-z0-9-]+)\\s+${ColorAsset.CSS_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
+    'i'
+  )
   // Deliberately partial named-color mapping used for numeric saturation transforms.
   // Unlisted CSS color names fall through and are returned unchanged by `saturate`.
   private static readonly NAMED_COLOR_RGB: Record<string, [number, number, number, number]> = {
@@ -111,8 +128,16 @@ export class ColorAsset extends Asset {
   }
 
   /**
-   * Validates a color string format
-   * Supports: hex, rgb, rgba, hsl, hsla, and named colors
+   * Validates a color string format.
+   *
+   * Accepts hex, the legacy comma forms of rgb()/rgba()/hsl()/hsla() (with
+   * range checks), the CSS Color 4 space-separated forms of rgb()/hsl()/hwb()/
+   * lab()/lch()/oklab()/oklch()/color() (structurally, including `/ alpha`),
+   * a basic named-color set, `var(--*)` and `color-mix()`.
+   *
+   * Acceptance does not imply the numeric transforms can operate on the value:
+   * `brighten`, `saturate`, `contrast` and `rotateHue` pass through anything
+   * they cannot parse to sRGB unchanged (see `applyBrightness`).
    */
   static validateColor(color: string): ColorValidationResult {
     if (!color || typeof color !== 'string') {
@@ -234,10 +259,23 @@ export class ColorAsset extends Asset {
       return { isValid: true, format: 'named' }
     }
 
+    // CSS Color 4 functional notation (space-separated channels, slash alpha)
+    const modernMatch = trimmed.match(ColorAsset.MODERN_COLOR_FUNCTION_REGEX)
+    if (modernMatch) {
+      return {
+        isValid: true,
+        format: modernMatch[1].toLowerCase() as ColorValidationResult['format'],
+      }
+    }
+
+    if (ColorAsset.COLOR_FUNCTION_REGEX.test(trimmed)) {
+      return { isValid: true, format: 'color' }
+    }
+
     return {
       isValid: false,
       error:
-        'Unsupported color format. Supported: hex, rgb, rgba, hsl, hsla, named colors, CSS custom properties, color-mix()',
+        'Unsupported color format. Supported: hex, rgb, rgba, hsl, hsla, hwb, lab, lch, oklab, oklch, color(), named colors, CSS custom properties, color-mix()',
     }
   }
 

@@ -366,12 +366,16 @@ try {
 
 Supported color formats:
 - **Hex**: `#FF0000`, `#F00`, `#FF000080` (with alpha)
-- **RGB**: `rgb(255, 0, 0)`
+- **RGB**: `rgb(255, 0, 0)`, `rgb(255 0 0)`, `rgb(255 0 0 / 50%)`
 - **RGBA**: `rgba(255, 0, 0, 0.5)`
-- **HSL**: `hsl(360, 100%, 50%)`
+- **HSL**: `hsl(360, 100%, 50%)`, `hsl(200deg 50% 40%)`, `hsl(200deg 50% 40% / 0.5)`
 - **HSLA**: `hsla(360, 100%, 50%, 0.8)`
+- **CSS Color 4 spaces**: `oklch(70% 0.15 250)`, `oklab(0.7 0.1 -0.1)`, `lab(50% 40 30)`, `lch(50% 40 30)`, `hwb(200 30% 20%)`, `color(display-p3 1 0 0)`
 - **Named colors**: `red`, `blue`, `transparent`, etc.
 - **CSS custom properties**: `var(--primary-color)`
+- **`color-mix()`**: `color-mix(in srgb, red 50%, transparent)`
+
+The legacy comma forms are range-checked; the space-separated CSS Color 4 forms are validated structurally and left to the browser. Values the numeric transforms cannot convert to sRGB (`oklch()`, `color()`, `var()`, and so on) pass through `brighten`, `saturate`, `contrast` and `rotateHue` unchanged instead of throwing; `opacity()` composes with any of them via `color-mix()`.
 
 ### Asset Discovery & Debugging
 
