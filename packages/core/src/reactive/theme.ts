@@ -59,6 +59,23 @@ const [domTheme, setDomTheme] = createSignal<ResolvedTheme | undefined>(
   readThemeAttribute()
 )
 
+const SYSTEM_THEME_QUERY = '(prefers-color-scheme: dark)'
+
+/**
+ * Bumped whenever the OS appearance changes.
+ *
+ * Purely an invalidation token: `resolveTheme` still *reads* the live
+ * `detectSystemTheme()`, so a direct `getCurrentTheme()` is correct whether or
+ * not the listener below ever fires. What the token adds is a reactive edge —
+ * `prefers-color-scheme` is not a signal, so a computed that consulted it had
+ * no way to learn it had changed and cached the appearance forever.
+ *
+ * Without this, tier 3 of the documented precedence chain was live for direct
+ * reads and dead for rendered components: an app in `'system'` mode stayed at
+ * whatever the OS said when it first painted.
+ */
+const [systemThemeEpoch, bumpSystemThemeEpoch] = createSignal(0)
+
 /**
  * Resolve the effective theme.
  *
@@ -80,6 +97,15 @@ const [domTheme, setDomTheme] = createSignal<ResolvedTheme | undefined>(
 function resolveTheme(preference: Theme, fromDOM?: ResolvedTheme): ResolvedTheme {
   if (fromDOM) return fromDOM
   if (preference !== 'system') return preference
+
+  // Tracked, not used: reading it inside a computed is what makes an OS flip
+  // invalidate that computed. Outside a reactive context this is a no-op.
+  // Tracked, not used: reading it inside a computed is what makes an OS flip
+  // invalidate that computed. Outside a reactive context this is a no-op.
+  // Tracked, not used: reading it inside a computed is what makes an OS flip
+  // invalidate that computed. Outside a reactive context this is a no-op.
+  systemThemeEpoch()
+
   return detectSystemTheme()
 }
 
@@ -132,6 +158,45 @@ export function setTheme(theme: Theme): void {
 }
 
 let themeObserver: MutationObserver | undefined
+let systemThemeQuery: MediaQueryList | undefined
+let systemThemeListener: (() => void) | undefined
+
+/**
+ * Follow OS appearance changes.
+ *
+ * `addEventListener` on a `MediaQueryList` is the modern spelling; older
+ * WebKit only has `addListener`, and Safari 13 is still within tachUI's
+ * support window, so fall back rather than silently never firing there.
+ */
+function startListeningForSystemTheme(): void {
+  if (systemThemeListener) return
+  if (typeof window === 'undefined' || !window.matchMedia) return
+
+  systemThemeQuery = window.matchMedia(SYSTEM_THEME_QUERY)
+  systemThemeListener = () => bumpSystemThemeEpoch(epoch => epoch + 1)
+
+  if (typeof systemThemeQuery.addEventListener === 'function') {
+    systemThemeQuery.addEventListener('change', systemThemeListener)
+  } else if (typeof (systemThemeQuery as any).addListener === 'function') {
+    ;(systemThemeQuery as any).addListener(systemThemeListener)
+  } else {
+    systemThemeQuery = undefined
+    systemThemeListener = undefined
+  }
+}
+
+function stopListeningForSystemTheme(): void {
+  if (!systemThemeQuery || !systemThemeListener) return
+
+  if (typeof systemThemeQuery.removeEventListener === 'function') {
+    systemThemeQuery.removeEventListener('change', systemThemeListener)
+  } else if (typeof (systemThemeQuery as any).removeListener === 'function') {
+    ;(systemThemeQuery as any).removeListener(systemThemeListener)
+  }
+
+  systemThemeQuery = undefined
+  systemThemeListener = undefined
+}
 
 /**
  * Follow external writes to `data-theme`.
@@ -153,6 +218,10 @@ let themeObserver: MutationObserver | undefined
  * that imported this module before a document existed.
  */
 export function startObservingThemeAttribute(): void {
+  // The media listener is independent of the document, so it starts even where
+  // there is no `<html>` to observe.
+  startListeningForSystemTheme()
+
   if (themeObserver) return
 
   const root = themeRoot()
@@ -174,17 +243,19 @@ export function startObservingThemeAttribute(): void {
 }
 
 /**
- * Stop following external writes to `data-theme`.
+ * Stop following the external theme sources: writes to `data-theme`, and OS
+ * appearance changes.
  *
  * Exported for tests and for hosts that tear down a tachUI instance without
  * tearing down the document; app code does not normally need it. Pair it with
  * `startObservingThemeAttribute` — stopping without a way back would leave the
- * next instance silently deaf to external writes, which is the divergence this
+ * next instance silently deaf to external changes, which is the divergence this
  * bridge exists to remove.
  */
 export function stopObservingThemeAttribute(): void {
   themeObserver?.disconnect()
   themeObserver = undefined
+  stopListeningForSystemTheme()
 }
 
 startObservingThemeAttribute()

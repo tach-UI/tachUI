@@ -24,17 +24,34 @@ import {
 /** Let the MutationObserver deliver; it is a microtask, not a task. */
 const flushMutations = () => new Promise<void>(resolve => setTimeout(resolve, 0))
 
+let systemPrefersDark = false
+const systemThemeListeners = new Set<() => void>()
+
 function setSystemPrefersDark(prefersDark: boolean): void {
+  systemPrefersDark = prefersDark
+
   vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: query.includes('prefers-color-scheme: dark') && prefersDark,
+    get matches() {
+      return query.includes('prefers-color-scheme: dark') && systemPrefersDark
+    },
     media: query,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
+    addEventListener: (_: string, listener: () => void) =>
+      systemThemeListeners.add(listener),
+    removeEventListener: (_: string, listener: () => void) =>
+      systemThemeListeners.delete(listener),
   }))
+}
+
+/** Flip the OS appearance the way a real `MediaQueryList` would report it. */
+function flipSystemTheme(prefersDark: boolean): void {
+  systemPrefersDark = prefersDark
+  for (const listener of systemThemeListeners) listener()
 }
 
 describe('theme DOM bridge', () => {
   beforeEach(() => {
+    systemPrefersDark = false
+    systemThemeListeners.clear()
     document.documentElement.removeAttribute(THEME_ATTRIBUTE)
     setTheme('light')
   })
@@ -233,6 +250,125 @@ describe('theme DOM bridge', () => {
       expect(document.documentElement.getAttribute(THEME_ATTRIBUTE)).toBe(
         'light'
       )
+    })
+  })
+
+  describe('following the OS in system mode', () => {
+    /**
+     * Re-registers the media listener against the stubbed `matchMedia`. The
+     * one created at import time holds the real query object, which no stub can
+     * reach.
+     */
+    function observeStubbedMediaQuery(): void {
+      stopObservingThemeAttribute()
+      startObservingThemeAttribute()
+    }
+
+    it('updates already-rendered consumers when the OS flips', async () => {
+      document.documentElement.removeAttribute(THEME_ATTRIBUTE)
+      setSystemPrefersDark(false)
+      observeStubbedMediaQuery()
+      setTheme('system')
+
+      const seen: string[] = []
+      const dispose = createRoot(disposer => {
+        createEffect(() => {
+          seen.push(getThemeSignal()())
+        })
+        return disposer
+      })
+
+      try {
+        expect(seen).toEqual(['light'])
+
+        flipSystemTheme(true)
+        await flushMutations()
+
+        // `prefers-color-scheme` is tier 3 of the precedence chain. Before the
+        // media listener it was live for a direct `getCurrentTheme()` but dead
+        // for anything already rendered, which froze `'system'` apps at the
+        // appearance they first painted with.
+        expect(seen.at(-1)).toBe('dark')
+      } finally {
+        dispose()
+      }
+    })
+
+    it('re-resolves a ColorAsset rendered inside a reactive scope', async () => {
+      document.documentElement.removeAttribute(THEME_ATTRIBUTE)
+      setSystemPrefersDark(false)
+      observeStubbedMediaQuery()
+      setTheme('system')
+
+      const asset = ColorAsset.init({
+        name: 'primary',
+        default: '#ffffff',
+        light: '#ffffff',
+        dark: '#000000',
+      })
+
+      // Resolved inside an effect on purpose. Called bare, `resolve()` takes
+      // the direct `getCurrentTheme()` path, which was always live — so a bare
+      // assertion here would pass with or without the fix. What was broken is
+      // the path a rendered component takes, through the cached computed.
+      const resolved: string[] = []
+      const dispose = createRoot(disposer => {
+        createEffect(() => {
+          resolved.push(asset.resolve())
+        })
+        return disposer
+      })
+
+      try {
+        expect(resolved).toEqual(['#ffffff'])
+
+        flipSystemTheme(true)
+        await flushMutations()
+
+        expect(resolved.at(-1)).toBe('#000000')
+      } finally {
+        dispose()
+      }
+    })
+
+    it('leaves an explicit choice alone when the OS flips', async () => {
+      setSystemPrefersDark(false)
+      observeStubbedMediaQuery()
+      setTheme('light')
+
+      flipSystemTheme(true)
+      await flushMutations()
+
+      // Tiers 1 and 2 outrank the OS: an explicit choice must not be
+      // overridden by an appearance change.
+      expect(getCurrentTheme()).toBe('light')
+    })
+
+    it('stops following the OS after stopObserving', async () => {
+      document.documentElement.removeAttribute(THEME_ATTRIBUTE)
+      setSystemPrefersDark(false)
+      observeStubbedMediaQuery()
+      setTheme('system')
+
+      const dispose = createRoot(disposer => {
+        createEffect(() => {
+          getThemeSignal()()
+        })
+        return disposer
+      })
+
+      try {
+        stopObservingThemeAttribute()
+        flipSystemTheme(true)
+        await flushMutations()
+
+        // The listener is detached, so nothing invalidated the computed even
+        // though a direct read would now say dark.
+        expect(getThemeSignal()()).toBe('light')
+      } finally {
+        dispose()
+        startObservingThemeAttribute()
+      }
     })
   })
 
