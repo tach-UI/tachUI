@@ -44,11 +44,12 @@ describe('importing the theme module', () => {
     const theme = await loadIsolated()
 
     // The regression this guards: initialisation used to reflect the untouched
-    // `'light'` default, so merely importing `@tachui/core` planted an inline
-    // `color-scheme: light` that outranks an app's own `:root` declaration and
-    // lights up its native controls under a dark UI. `configureTheme()` cannot
+    // default, so merely importing `@tachui/core` planted an inline
+    // `color-scheme` that outranks an app's own `:root` declaration and can
+    // light up its native controls under a dark UI. `configureTheme()` cannot
     // undo it in time, since it necessarily runs after the import.
     expect(document.documentElement.style.colorScheme).toBe('')
+    // jsdom provides no `matchMedia`, so `detectSystemTheme()` reports light.
     expect(theme.getCurrentTheme()).toBe('light')
   })
 
@@ -102,6 +103,80 @@ describe('importing the theme module', () => {
     expect(document.documentElement.style.colorScheme).toBe('dark')
   })
 
+  it('respects prefers-color-scheme with no setTheme call', async () => {
+    // #309: the preference used to default to `'light'`, so `getCurrentTheme()`
+    // consulted the OS only once something had set the literal `'system'` — and
+    // nothing did. A user on a dark OS got light `ColorAsset` values, silently,
+    // and honouring the OS was opt-in through an undocumented sentinel.
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('prefers-color-scheme: dark'),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+
+    try {
+      const theme = await loadIsolated()
+
+      expect(theme.detectSystemTheme()).toBe('dark')
+      expect(theme.getCurrentTheme()).toBe('dark')
+      // Reported unresolved, so a settings UI shows `system` as selected rather
+      // than the appearance it happens to resolve to.
+      expect(theme.getThemePreference()).toBe('system')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('resolves a dark-OS ColorAsset to its dark variant', async () => {
+    // The end of the chain the issue actually reproduced: an asset rendering
+    // its light value for a user whose OS asked for dark.
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('prefers-color-scheme: dark'),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+
+    try {
+      await loadIsolated()
+      const { ColorAsset } = await import('../../src/assets/ColorAsset')
+
+      const asset = ColorAsset.init({
+        name: 'p',
+        default: '#2A9D8F',
+        light: '#2A9D8F',
+        dark: '#5FD0C1',
+      })
+
+      expect(asset.resolve()).toBe('#5FD0C1')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('still lets an explicit choice override the OS', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('prefers-color-scheme: dark'),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+
+    try {
+      const theme = await loadIsolated()
+      expect(theme.getCurrentTheme()).toBe('dark')
+
+      theme.setTheme('light')
+
+      // Defaulting to `'system'` must not make an explicit choice unstateable.
+      expect(theme.getCurrentTheme()).toBe('light')
+      expect(theme.getThemePreference()).toBe('light')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('can be engaged explicitly without setting a theme', async () => {
     const theme = await loadIsolated()
     expect(document.documentElement.style.colorScheme).toBe('')
@@ -109,7 +184,9 @@ describe('importing the theme module', () => {
     theme.configureTheme({ reflectColorScheme: true })
 
     // Opting in is itself a decision, so it takes effect immediately rather
-    // than waiting for a theme change that may never come.
-    expect(document.documentElement.style.colorScheme).toBe('light')
+    // than waiting for a theme change that may never come. `light dark`
+    // because the untouched preference is `'system'`: that is the value that
+    // hands the choice to the OS, which is what deferring to it means.
+    expect(document.documentElement.style.colorScheme).toBe('light dark')
   })
 })

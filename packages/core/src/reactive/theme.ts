@@ -82,8 +82,17 @@ function readThemeAttribute(): ResolvedTheme | undefined {
   return value
 }
 
-// The app's stated preference. `'system'` means "defer to the OS".
-const [themePreference, setThemePreference] = createSignal<Theme>('light')
+/**
+ * The app's stated preference. `'system'` means "defer to the OS".
+ *
+ * Defaults to `'system'`, so an app that never calls `setTheme()` respects
+ * `prefers-color-scheme`. It used to default to `'light'`, which meant
+ * `getCurrentTheme()` consulted the OS only once something had set the literal
+ * `'system'` — and nothing did. A user on a dark OS got light `ColorAsset`
+ * values, silently, and honouring the OS was opt-in through an undocumented
+ * sentinel.
+ */
+const [themePreference, setThemePreference] = createSignal<Theme>('system')
 
 // What the DOM asserts, mirrored into a signal so that an external write is a
 // reactive event and not just a silent divergence.

@@ -119,7 +119,8 @@ configureTheme({ reflectColorScheme: false })
 1. An explicit `data-theme` on `<html>` — a decision made about *this document*,
    by a pre-paint script, your server, or `setTheme()` itself
 2. The preference passed to `setTheme()`, when it names an appearance
-3. `prefers-color-scheme`, when the preference is `'system'`
+3. `prefers-color-scheme`, when the preference is `'system'` — which is the
+   default, so an app that never calls `setTheme()` follows the OS
 
 `getCurrentTheme()` gives you the resolved appearance (`'light'` or `'dark'`);
 `getThemePreference()` gives you the preference as stated, which is what a
@@ -157,39 +158,18 @@ above your stylesheets:
 A `'system'` choice stores nothing (or clears the key), leaving the attribute
 absent so the media query applies.
 
-Then, once at boot:
+That is the whole recipe — there is no boot-time `setTheme()` call to make in
+either branch:
 
-```typescript
-import { setTheme } from '@tachui/core'
+- **An explicit saved choice** is already on `<html>` from the script above, and
+  tachUI reads the attribute when it loads, so it is honoured from the first
+  `getCurrentTheme()`.
+- **No saved choice** leaves the preference at its default of `'system'`, which
+  resolves through `prefers-color-scheme`. Your stylesheet and your
+  `ColorAsset`s follow the OS together.
 
-// Guarded like the pre-paint script above: reading localStorage throws in
-// blocked-cookie contexts, and an unhandled throw here breaks startup.
-let saved = null
-try {
-  saved = localStorage.getItem('theme')
-} catch (e) {}
-
-// Only when no explicit choice was saved. An explicit one is already on <html>
-// from the script above, and calling setTheme('system') would erase it.
-if (saved !== 'light' && saved !== 'dark') {
-  setTheme('system')
-}
-```
-
-For an explicit saved choice, tachUI reads the attribute when it loads, so it is
-honoured from the first `getCurrentTheme()` with no `setTheme()` call at all.
-
-The `setTheme('system')` call is what the `'system'` case needs today: with no
-attribute to read, tachUI falls back to its stated preference, which currently
-defaults to `'light'`. Without the call your stylesheet would follow
-`prefers-color-scheme` into dark while literal-valued `ColorAsset`s stayed
-light — the half-themed state this bridge exists to prevent. It writes no
-attribute, so the media query still drives the CSS side.
-
-::: tip
-Once [#309](https://github.com/tach-UI/tachUI/issues/309) lands, the preference
-will default to `'system'` and this call becomes redundant. It stays harmless.
-:::
+Reserve `setTheme()` for when the user actually changes the theme — a toggle in
+your settings UI — rather than for reasserting a choice already on the page.
 
 ### Image Assets
 
