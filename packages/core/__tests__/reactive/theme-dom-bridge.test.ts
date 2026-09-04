@@ -234,6 +234,25 @@ describe('theme DOM bridge', () => {
     })
   })
 
+  describe('without a document', () => {
+    it('reflects and resolves without throwing', () => {
+      // SSR: `setTheme` has nothing to write to and `getCurrentTheme` has
+      // nothing to read, so both must fall back to the preference signal
+      // rather than reaching for `document`.
+      vi.stubGlobal('document', undefined)
+
+      try {
+        expect(() => setTheme('dark')).not.toThrow()
+        expect(getCurrentTheme()).toBe('dark')
+
+        expect(() => setTheme('light')).not.toThrow()
+        expect(getCurrentTheme()).toBe('light')
+      } finally {
+        vi.unstubAllGlobals()
+      }
+    })
+  })
+
   describe('getThemePreference', () => {
     it('reports the preference as stated, unresolved', () => {
       setSystemPrefersDark(true)
