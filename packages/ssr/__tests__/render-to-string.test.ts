@@ -752,6 +752,42 @@ describe('renderToString', () => {
     expect(renderToString(node)).toContain('style="background:red;background:blue"')
   })
 
+  it('lets a normal write replace an !important inline value, as setProperty does', () => {
+    const node = h('div', {
+      style: 'background: red !important',
+    }) as DOMNode & { modifiers: unknown[]; componentId: string }
+    node.componentId = 'cmp-priority-drop'
+    node.modifiers = [
+      new BackgroundModifier({
+        background: LinearGradient({
+          colors: ['#3B82F6', '#FFD400'],
+          startPoint: 'leading',
+          endPoint: 'trailing',
+          interpolation: 'oklab',
+        }),
+        cssProperty: 'background',
+      }),
+    ]
+
+    const html = renderToString(node)
+    expect(html).toContain(
+      'style="background:linear-gradient(to right, #3B82F6, #FFD400);background:linear-gradient(in oklab to right, #3B82F6, #FFD400)"'
+    )
+    expect(html).not.toContain('red')
+  })
+
+  it('lets an !important write replace accumulated normal values', () => {
+    const node = h('div') as DOMNode & { modifiers: unknown[]; componentId: string }
+    node.componentId = 'cmp-priority-raise'
+    node.modifiers = [
+      new BackgroundModifier({ background: 'red', cssProperty: 'background' }),
+      new BackgroundModifier({ background: 'green', cssProperty: 'background' }),
+      new BackgroundModifier({ background: 'blue !important', cssProperty: 'background' }),
+    ]
+
+    expect(renderToString(node)).toContain('style="background:blue !important"')
+  })
+
   it('serializes a list style value as one declaration per entry', () => {
     const html = renderToString(
       h('div', {

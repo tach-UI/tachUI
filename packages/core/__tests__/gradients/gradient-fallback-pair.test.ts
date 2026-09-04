@@ -197,10 +197,21 @@ describe('site 5: StateGradientAsset', () => {
   it('serves the cached list on repeat reads and rebuilds it after an update', () => {
     const asset = StateGradient('cta', { default: BLUE_TO_YELLOW })
 
-    expect(asset.resolveDeclarations()).toBe(asset.resolveDeclarations())
+    expect(asset.resolveDeclarations()).toEqual(asset.resolveDeclarations())
 
     asset.updateStateGradients({ default: RED_TO_TEAL })
     expect(asset.resolveDeclarations()).toEqual(RED_TO_TEAL_PAIR)
+  })
+
+  it('hands out a copy so a caller cannot corrupt the cache', () => {
+    const asset = StateGradient('cta', { default: BLUE_TO_YELLOW })
+
+    const first = asset.resolveDeclarations()
+    first.push('background: hacked')
+    first[0] = 'hacked'
+
+    expect(asset.resolveDeclarations()).toEqual(BLUE_TO_YELLOW_PAIR)
+    expect(asset.resolve()).toBe(BLUE_TO_YELLOW_PAIR[1])
   })
 })
 
@@ -276,5 +287,40 @@ describe('CSSUtils', () => {
     expect(CSSUtils.toCustomProperties(BLUE_TO_YELLOW, 'hero')).toEqual({
       '--hero-background': 'linear-gradient(to right, #3B82F6, #FFD400)',
     })
+  })
+
+  it('toCustomProperties warns in development when a non-sRGB interpolation was asked for', () => {
+    const previousNodeEnv = process.env.NODE_ENV
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    process.env.NODE_ENV = 'development'
+
+    try {
+      CSSUtils.toCustomProperties(BLUE_TO_YELLOW)
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(warn.mock.calls[0][0]).toContain("'oklab'")
+      expect(warn.mock.calls[0][0]).toContain('gradientToDeclarations')
+
+      warn.mockClear()
+      // The framework default is not an explicit request; an explicit 'srgb' asks for exactly what it gets.
+      CSSUtils.toCustomProperties(
+        LinearGradient({ colors: ['#3B82F6', '#FFD400'], startPoint: 'top', endPoint: 'bottom' })
+      )
+      CSSUtils.toCustomProperties(
+        LinearGradient({
+          colors: ['#3B82F6', '#FFD400'],
+          startPoint: 'top',
+          endPoint: 'bottom',
+          interpolation: 'srgb',
+        })
+      )
+      expect(warn).not.toHaveBeenCalled()
+
+      process.env.NODE_ENV = 'production'
+      CSSUtils.toCustomProperties(BLUE_TO_YELLOW)
+      expect(warn).not.toHaveBeenCalled()
+    } finally {
+      process.env.NODE_ENV = previousNodeEnv
+      warn.mockRestore()
+    }
   })
 })

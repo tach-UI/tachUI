@@ -70,19 +70,20 @@ export class StateGradientAsset extends Asset<string> {
    * Background modifiers prefer this over `resolve()` when present.
    */
   resolveDeclarations(): string[] {
-    // Use cached result if available
+    // Callers get a copy: the cached list is shared by every later read of
+    // this state, so handing it out by reference would let one caller's
+    // mutation corrupt the cache.
     const cacheKey = this.currentState
     const cached = this.resolvedGradientCache.get(cacheKey)
     if (cached) {
-      return cached
+      return [...cached]
     }
 
     const gradient = this.stateGradients[this.currentState] || this.stateGradients.default
     const resolved = this.resolveGradientDeclarations(gradient as GradientDefinition | string | Asset)
 
-    // Cache the result
     this.resolvedGradientCache.set(cacheKey, resolved)
-    return resolved
+    return [...resolved]
   }
 
   /**
