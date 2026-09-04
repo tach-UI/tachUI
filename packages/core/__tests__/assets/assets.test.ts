@@ -1138,6 +1138,14 @@ describe('Asset System', () => {
       ['hsl(0.5turn 50% 40% / 0.5)', 'hsl'],
       ['hsla(200 50% 40% / 0.5)', 'hsla'],
       ['OKLCH(70% 0.15 250)', 'oklch'],
+      // Angle units belong to hue slots: first in hsl()/hwb(), last in lch()/oklch().
+      ['hwb(0.5turn 30% 20%)', 'hwb'],
+      ['hwb(200deg 30 20 / none)', 'hwb'],
+      ['lch(50% 40 30deg)', 'lch'],
+      ['oklch(70% 0.15 250deg)', 'oklch'],
+      ['oklch(0.7 0.15 4.36rad / 50%)', 'oklch'],
+      ['lab(50% -40 30.5)', 'lab'],
+      ['oklab(none 0.1 -0.1)', 'oklab'],
     ] as const)(
       'should accept CSS Color 4 syntax %s',
       (input, format) => {
@@ -1160,6 +1168,24 @@ describe('Asset System', () => {
       'rgb(255 0)',
       'hsl(200deg 50%)',
       'lab(50% 40 30 20 10)',
+      // Angle units outside a hue slot are invalid per function (CSS Color 4).
+      'rgb(10deg 20deg 30deg)',
+      'rgb(255 0 0deg)',
+      'rgba(255deg 0 0 / 0.5)',
+      'color(srgb 10deg 20deg 30deg)',
+      'color(display-p3 1 0 0deg)',
+      'lab(50% 40deg 30)',
+      'lab(50deg 40 30)',
+      'oklab(0.7 0.1deg -0.1)',
+      'lch(50% 40deg 30)',
+      'lch(50deg 40 30)',
+      'oklch(70deg 0.15 250)',
+      'oklch(70% 0.15deg 250)',
+      'hsl(200 50deg 40%)',
+      'hsl(200 50% 40deg)',
+      'hwb(200 30deg 20%)',
+      'hwb(200 30% 20turn)',
+      'rgb(255 0 0 / 50deg)',
     ])('should reject malformed CSS Color 4 syntax %s', input => {
       const result = ColorAsset.validateColor(input)
       expect(result.isValid).toBe(false)

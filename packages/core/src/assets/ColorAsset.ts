@@ -46,22 +46,42 @@ export class ColorAsset extends Asset {
   private static readonly HSLA_REGEX =
     /^hsla\s*\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]{1,3})%\s*,\s*([0-9]*\.?[0-9]+)\s*\)$/i
   // CSS Color 4 functional notation: three space-separated channels and an
-  // optional `/ alpha`. Channels are numbers, percentages, angles or `none`.
-  // The legacy comma forms above stay on their own regexes because those also
+  // optional `/ alpha`. Each function has its own grammar (CSS Color 4 §4-§10):
+  // angle units are legal only in a hue slot — first in hsl()/hwb(), last in
+  // lch()/oklch() — and never in rgb(), lab(), oklab() or color(). The legacy
+  // comma forms above stay on their own regexes because those also
   // range-check; these forms are accepted structurally and left to the browser.
   private static readonly CSS_NUMBER = '[-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[-+]?\\d+)?'
-  private static readonly CSS_CHANNEL = `(?:none|${ColorAsset.CSS_NUMBER}(?:%|deg|grad|rad|turn)?)`
-  private static readonly CSS_CHANNELS = `${ColorAsset.CSS_CHANNEL}(?:\\s+${ColorAsset.CSS_CHANNEL}){2}`
+  private static readonly CSS_RECT_CHANNEL = `(?:none|${ColorAsset.CSS_NUMBER}%?)`
+  private static readonly CSS_HUE_CHANNEL = `(?:none|${ColorAsset.CSS_NUMBER}(?:deg|grad|rad|turn)?)`
   private static readonly CSS_ALPHA = `(?:\\s*/\\s*(?:none|${ColorAsset.CSS_NUMBER}%?))?`
-  private static readonly MODERN_COLOR_FUNCTION_REGEX = new RegExp(
-    `^(rgba?|hsla?|hwb|lab|lch|oklab|oklch)\\(\\s*${ColorAsset.CSS_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
-    'i'
-  )
-  // Capturing forms of the CSS Color 4 rgb()/hsl() syntax, so the transforms
-  // and opacity() read them like the legacy comma forms. Channels may be
-  // `none`; rgb channels may be percentages; the hue may carry an angle unit.
-  private static readonly CSS_PERCENT_OR_NUMBER = `(none|${ColorAsset.CSS_NUMBER}%?)`
-  private static readonly CSS_HUE = `(none|${ColorAsset.CSS_NUMBER}(?:deg|grad|rad|turn)?)`
+  private static readonly CSS_RECT_CHANNELS = `${ColorAsset.CSS_RECT_CHANNEL}\\s+${ColorAsset.CSS_RECT_CHANNEL}\\s+${ColorAsset.CSS_RECT_CHANNEL}`
+  private static readonly CSS_HUE_FIRST_CHANNELS = `${ColorAsset.CSS_HUE_CHANNEL}\\s+${ColorAsset.CSS_RECT_CHANNEL}\\s+${ColorAsset.CSS_RECT_CHANNEL}`
+  private static readonly CSS_HUE_LAST_CHANNELS = `${ColorAsset.CSS_RECT_CHANNEL}\\s+${ColorAsset.CSS_RECT_CHANNEL}\\s+${ColorAsset.CSS_HUE_CHANNEL}`
+  // Each grammar captures the function name, which becomes the reported format.
+  private static readonly MODERN_COLOR_GRAMMARS: readonly RegExp[] = [
+    new RegExp(
+      `^(rgba?|lab|oklab)\\(\\s*${ColorAsset.CSS_RECT_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
+      'i'
+    ),
+    new RegExp(
+      `^(hsla?|hwb)\\(\\s*${ColorAsset.CSS_HUE_FIRST_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
+      'i'
+    ),
+    new RegExp(
+      `^(lch|oklch)\\(\\s*${ColorAsset.CSS_HUE_LAST_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
+      'i'
+    ),
+    // color(<colorspace> c1 c2 c3 [/ alpha]) — predefined spaces plus @color-profile dashed idents.
+    new RegExp(
+      `^(color)\\(\\s*(?:srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65|--[a-z0-9-]+)\\s+${ColorAsset.CSS_RECT_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
+      'i'
+    ),
+  ]
+  // Capturing forms of the rgb()/hsl() grammars, so the transforms and
+  // opacity() read them like the legacy comma forms.
+  private static readonly CSS_PERCENT_OR_NUMBER = `(${ColorAsset.CSS_RECT_CHANNEL})`
+  private static readonly CSS_HUE = `(${ColorAsset.CSS_HUE_CHANNEL})`
   private static readonly CSS_ALPHA_SLOT = `(?:\\s*/\\s*(none|${ColorAsset.CSS_NUMBER}%?))?`
   private static readonly MODERN_RGB_REGEX = new RegExp(
     `^rgba?\\(\\s*${ColorAsset.CSS_PERCENT_OR_NUMBER}\\s+${ColorAsset.CSS_PERCENT_OR_NUMBER}\\s+${ColorAsset.CSS_PERCENT_OR_NUMBER}${ColorAsset.CSS_ALPHA_SLOT}\\s*\\)$`,
@@ -69,11 +89,6 @@ export class ColorAsset extends Asset {
   )
   private static readonly MODERN_HSL_REGEX = new RegExp(
     `^hsla?\\(\\s*${ColorAsset.CSS_HUE}\\s+${ColorAsset.CSS_PERCENT_OR_NUMBER}\\s+${ColorAsset.CSS_PERCENT_OR_NUMBER}${ColorAsset.CSS_ALPHA_SLOT}\\s*\\)$`,
-    'i'
-  )
-  // color(<colorspace> c1 c2 c3 [/ alpha]) — predefined spaces plus @color-profile dashed idents.
-  private static readonly COLOR_FUNCTION_REGEX = new RegExp(
-    `^color\\(\\s*(?:srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65|--[a-z0-9-]+)\\s+${ColorAsset.CSS_CHANNELS}${ColorAsset.CSS_ALPHA}\\s*\\)$`,
     'i'
   )
   // Deliberately partial named-color mapping used for numeric saturation transforms.
@@ -281,17 +296,16 @@ export class ColorAsset extends Asset {
       return { isValid: true, format: 'named' }
     }
 
-    // CSS Color 4 functional notation (space-separated channels, slash alpha)
-    const modernMatch = trimmed.match(ColorAsset.MODERN_COLOR_FUNCTION_REGEX)
-    if (modernMatch) {
-      return {
-        isValid: true,
-        format: modernMatch[1].toLowerCase() as ColorValidationResult['format'],
+    // CSS Color 4 functional notation (space-separated channels, slash alpha),
+    // one grammar per function family
+    for (const grammar of ColorAsset.MODERN_COLOR_GRAMMARS) {
+      const modernMatch = trimmed.match(grammar)
+      if (modernMatch) {
+        return {
+          isValid: true,
+          format: modernMatch[1].toLowerCase() as ColorValidationResult['format'],
+        }
       }
-    }
-
-    if (ColorAsset.COLOR_FUNCTION_REGEX.test(trimmed)) {
-      return { isValid: true, format: 'color' }
     }
 
     return {
