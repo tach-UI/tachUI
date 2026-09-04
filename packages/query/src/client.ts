@@ -70,6 +70,7 @@ interface ClientCacheEntry {
   staleTime: number
   gcTime: number
   snapshot: boolean
+  policyClaimed: { staleTime: boolean; gcTime: boolean; snapshot: boolean }
   invalidated: boolean
   /**
    * Bumped by `invalidate()` and `hydrate()`. A landing response writes back
@@ -90,20 +91,149 @@ interface ClientCacheEntry {
  */
 const UNDEFINED_SEGMENT = { __tachuiQueryUndefined: true }
 
+/** Brand check that holds across realms (structured clones, SSR payloads). */
+function isDateValue(value: unknown): value is Date {
+  return Object.prototype.toString.call(value) === '[object Date]'
+}
+
 /**
- * Provisional key hash. See {@link UNDEFINED_SEGMENT} and #278.
+ * Plain-or-protoless check that holds across realms: a plain object has at
+ * most one link above it (its realm's object prototype, or nothing).
  */
-function hashQueryKey(key: QueryKey): QueryKeyHash {
-  try {
-    return JSON.stringify(key, (_segment, value: unknown) =>
-      value === undefined ? UNDEFINED_SEGMENT : value
-    )
-  } catch (serializationError) {
+function isPlainObject(value: object): boolean {
+  const prototype: unknown = Object.getPrototypeOf(value)
+  return (
+    prototype === Object.prototype ||
+    prototype === null ||
+    Object.getPrototypeOf(prototype) === null
+  )
+}
+
+/**
+ * Provisional key validation. `JSON.stringify` silently collapses several
+ * inputs — Sets, Maps, and class instances to `{}`, functions and symbols in
+ * array positions to `null` — so distinct keys would share an entry and serve
+ * each other's data. Anything the hash cannot render exactly is rejected here
+ * with a path instead of colliding silently. `undefined` stays supported via
+ * the sentinel above; `Date` hashes deterministically in-session via ISO.
+ * #278 canonicalizes the rest instead of rejecting it.
+ */
+function assertHashable(value: unknown, path: string, seen: Set<object> = new Set()): void {
+  if (value === null || value === undefined) {
+    return
+  }
+  switch (typeof value) {
+    case 'string':
+    case 'boolean':
+      return
+    case 'number':
+      if (!Number.isFinite(value)) {
+        throw new QueryError(
+          `Cannot hash query key: non-finite numbers are not supported at ${path}.`
+        )
+      }
+      return
+    case 'bigint':
+      throw new QueryError(
+        `Cannot hash query key: bigint is not supported yet at ${path} (stable canonicalization lands in #278).`
+      )
+    case 'function':
+      throw new QueryError(
+        `Cannot hash query key: functions are not supported at ${path}.`
+      )
+    case 'symbol':
+      throw new QueryError(
+        `Cannot hash query key: symbols are not supported at ${path}.`
+      )
+    default:
+      break
+  }
+  if (Array.isArray(value)) {
+    // Index loop rather than forEach: holes read as undefined, which the
+    // sentinel distinguishes instead of collapsing to null.
+    enterStructure(value, path, seen, () => {
+      for (let index = 0; index < value.length; index += 1) {
+        assertHashable(value[index], `${path}[${index}]`, seen)
+      }
+    })
+    return
+  }
+  if (isDateValue(value)) {
+    return
+  }
+  const toJSON = (value as { toJSON?: unknown }).toJSON
+  if (typeof toJSON === 'function') {
+    assertHashable(toJSON.call(value), path, seen)
+    return
+  }
+  if (!isPlainObject(value)) {
     throw new QueryError(
-      'Query key is not serializable. Keys must be structured arrays of JSON-compatible values.',
-      { cause: serializationError }
+      `Cannot hash query key: class instances without toJSON are not supported at ${path}.`
     )
   }
+  enterStructure(value, path, seen, () => {
+    for (const member of Object.keys(value)) {
+      assertHashable(
+        (value as Record<string, unknown>)[member],
+        `${path}.${member}`,
+        seen
+      )
+    }
+  })
+}
+
+/**
+ * Cycle guard for the scan. A shared (non-circular) reference revisits after
+ * its subtree is done, so entries are removed on the way out; only a true
+ * revisit while still inside throws.
+ */
+function enterStructure(
+  value: object,
+  path: string,
+  seen: Set<object>,
+  visit: () => void
+): void {
+  if (seen.has(value)) {
+    throw new QueryError(
+      `Cannot hash query key: circular reference detected at ${path}.`
+    )
+  }
+  seen.add(value)
+  try {
+    visit()
+  } finally {
+    seen.delete(value)
+  }
+}
+
+/**
+ * Whether any part of the key is a `Date`. Dates hash deterministically
+ * in-session but ISO-shift on the wire (`Date` revives as a string), so a
+ * snapshot entry keyed by one could never be matched after a round trip.
+ */
+function containsDate(value: unknown): boolean {
+  if (isDateValue(value)) {
+    return true
+  }
+  if (Array.isArray(value)) {
+    return value.some(containsDate)
+  }
+  if (typeof value === 'object' && value !== null) {
+    return Object.values(value).some(containsDate)
+  }
+  return false
+}
+
+/**
+ * Provisional key hash. The scan above rejects everything `stringify` could
+ * choke on, so there is no fallback: anything reaching serialization is
+ * exactly renderable. See {@link UNDEFINED_SEGMENT} and #278.
+ */
+function hashQueryKey(key: QueryKey): QueryKeyHash {
+  assertHashable(key, 'key')
+  return JSON.stringify(key, (_segment, value: unknown) =>
+    value === undefined ? UNDEFINED_SEGMENT : value
+  )
 }
 
 /**
@@ -161,7 +291,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
   function createEntry(
     key: QueryKey,
     hash: QueryKeyHash,
-    policy: { staleTime: number; gcTime: number; snapshot: boolean }
+    policy: { staleTime?: number; gcTime?: number; snapshot?: boolean }
   ): ClientCacheEntry {
     const entry: ClientCacheEntry = {
       key,
@@ -172,9 +302,18 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       fetchStatus: 'idle',
       updatedAt: undefined,
       observerCount: 0,
-      staleTime: policy.staleTime,
-      gcTime: policy.gcTime,
-      snapshot: policy.snapshot,
+      staleTime: policy.staleTime ?? DEFAULT_STALE_TIME,
+      gcTime: policy.gcTime ?? DEFAULT_GC_TIME,
+      snapshot: policy.snapshot ?? DEFAULT_SNAPSHOT,
+      // Claimedness is tracked separately from value: a field explicitly set
+      // to its default (staleTime: 0, snapshot: false) is still a deliberate
+      // choice, and a later caller must not override it. Value-equality with
+      // the default cannot tell "unset" from "explicitly default".
+      policyClaimed: {
+        staleTime: policy.staleTime !== undefined,
+        gcTime: policy.gcTime !== undefined,
+        snapshot: policy.snapshot !== undefined,
+      },
       invalidated: false,
       generation: 0,
       inFlight: null,
@@ -211,27 +350,25 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     const resolvedKey = options.key()
     const hash = hashQueryKey(resolvedKey)
     const cached = entries.get(hash)
-    const entry =
-      cached ??
-      createEntry(resolvedKey, hash, {
-        staleTime: options.staleTime ?? DEFAULT_STALE_TIME,
-        gcTime: options.gcTime ?? DEFAULT_GC_TIME,
-        snapshot: options.snapshot ?? DEFAULT_SNAPSHOT,
-      })
+    const entry = cached ?? createEntry(resolvedKey, hash, options)
     entry.key = resolvedKey
     // Explicitly passed options upgrade the entry policy — but only while the
-    // field still holds its default. An entry restored by hydrate() starts on
-    // defaults and picks up the developer's configuration from the first
-    // query that names the key; once claimed, a later caller sharing the key
-    // cannot silently revoke another consumer's snapshot opt-in or freshness.
-    if (options.staleTime !== undefined && entry.staleTime === DEFAULT_STALE_TIME) {
+    // field is still unclaimed. An entry restored by hydrate() starts
+    // unclaimed and picks up the developer's configuration from the first
+    // query that names the key; once any caller sets a field — even to its
+    // default value — a later caller sharing the key cannot silently revoke
+    // another consumer's snapshot opt-in or freshness.
+    if (options.staleTime !== undefined && !entry.policyClaimed.staleTime) {
       entry.staleTime = options.staleTime
+      entry.policyClaimed.staleTime = true
     }
-    if (options.gcTime !== undefined && entry.gcTime === DEFAULT_GC_TIME) {
+    if (options.gcTime !== undefined && !entry.policyClaimed.gcTime) {
       entry.gcTime = options.gcTime
+      entry.policyClaimed.gcTime = true
     }
-    if (options.snapshot !== undefined && entry.snapshot === DEFAULT_SNAPSHOT) {
+    if (options.snapshot !== undefined && !entry.policyClaimed.snapshot) {
       entry.snapshot = options.snapshot
+      entry.policyClaimed.snapshot = true
     }
     const activeRequest = entry.inFlight
     if (activeRequest !== null) {
@@ -377,6 +514,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         if (entry.invalidated) {
           continue
         }
+        // Keys containing Dates hash deterministically in-session but revive
+        // as strings on the wire, so the restored entry could never be
+        // matched by the original key — a wasted snapshot plus a dead entry.
+        if (containsDate(entry.key)) {
+          continue
+        }
         // Entries whose data is undefined stay cached but are not serialized:
         // JSON cannot carry an undefined value, so including one would produce
         // a payload that hydrate() itself rejects.
@@ -412,11 +555,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         const hash = hashQueryKey(item.key)
         const entry =
           entries.get(hash) ??
-          createEntry(item.key, hash, {
-            staleTime: DEFAULT_STALE_TIME,
-            gcTime: DEFAULT_GC_TIME,
-            snapshot: DEFAULT_SNAPSHOT,
-          })
+          // Unclaimed defaults: the first query that names the key configures
+          // the restored entry.
+          createEntry(item.key, hash, {})
         entry.key = item.key
         entry.data = item.data
         entry.error = undefined
