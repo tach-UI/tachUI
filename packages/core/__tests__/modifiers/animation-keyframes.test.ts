@@ -12,7 +12,7 @@ import type { ModifierContext } from '../../src/modifiers/types'
 import {
   AnimationModifier,
   createAnimationKeyframeRule,
-  injectAnimationKeyframes,
+  ensureAnimationKeyframes,
 } from '../../src/modifiers/base'
 
 const PULSE = {
@@ -221,25 +221,112 @@ describe('animation keyframes', () => {
     })
   })
 
-  describe('injectAnimationKeyframes', () => {
+  describe('ensureAnimationKeyframes', () => {
     it('creates the shared stylesheet on first use', () => {
       expect(stylesheet()).toBeNull()
 
-      const { name, rule } = createAnimationKeyframeRule(PULSE)
-      injectAnimationKeyframes(name, rule)
+      const name = ensureAnimationKeyframes(PULSE)
 
       expect(stylesheet()).not.toBeNull()
-      expect(stylesheet()!.textContent).toContain(rule)
+      expect(stylesheet()!.textContent).toContain(
+        createAnimationKeyframeRule(PULSE).rule
+      )
+      expect(name).toBe(createAnimationKeyframeRule(PULSE).name)
     })
 
-    it('is idempotent for a name already present', () => {
-      const { name, rule } = createAnimationKeyframeRule(PULSE)
-
-      injectAnimationKeyframes(name, rule)
+    it('is idempotent for keyframes already present', () => {
+      ensureAnimationKeyframes(PULSE)
       const afterFirst = stylesheet()!.textContent
 
-      injectAnimationKeyframes(name, rule)
+      ensureAnimationKeyframes({ ...PULSE })
       expect(stylesheet()!.textContent).toBe(afterFirst)
+    })
+  })
+
+  describe('adopting prerendered keyframes', () => {
+    /**
+     * Stand in for what `@tachui/ssr` emits: each static rule in its own
+     * anonymous <style>, with no `#tachui-animations` id to find it by.
+     */
+    function prerender(...rules: string[]): void {
+      for (const rule of rules) {
+        const style = document.createElement('style')
+        style.textContent = rule
+        document.head.appendChild(style)
+      }
+    }
+
+    it('does not re-inject what the server already sent', () => {
+      const { name, rule } = createAnimationKeyframeRule(PULSE)
+      prerender(rule)
+
+      new AnimationModifier({ animation: { keyframes: PULSE } }).apply(
+        {} as any,
+        makeContext('a')
+      )
+
+      // The block stays where the server put it; the client's own sheet is
+      // either absent or empty of it.
+      expect(injectedNames()).not.toContain(name)
+      expect(document.head.textContent).toContain(rule)
+    })
+
+    it('still injects an animation the server did not prerender', () => {
+      prerender(createAnimationKeyframeRule(PULSE).rule)
+
+      const context = makeContext('a')
+      new AnimationModifier({ animation: { keyframes: SLIDE } }).apply(
+        {} as any,
+        context
+      )
+
+      expect(injectedNames()).toEqual([animationName(context)])
+    })
+
+    it('leaves keyframes belonging to other libraries alone', () => {
+      // Adoption is scoped to our own prefix: a page's other @keyframes must
+      // never suppress a block we do need.
+      prerender('@keyframes spin { from { rotate: 0deg; } }')
+
+      new AnimationModifier({ animation: { keyframes: PULSE } }).apply(
+        {} as any,
+        makeContext('a')
+      )
+
+      expect(injectedNames()).toHaveLength(1)
+    })
+
+    it('recovers when the shared stylesheet outlives its bookkeeping', () => {
+      const modifier = new AnimationModifier({ animation: { keyframes: PULSE } })
+      modifier.apply({} as any, makeContext('a'))
+
+      // A hot reload, or anything else that drops the element's expando while
+      // leaving the element in place: the sheet still holds the block, so a
+      // second apply must adopt it rather than append a copy.
+      delete (stylesheet() as any)[
+        Symbol.for('tachui.animations.injectedKeyframeNames')
+      ]
+
+      modifier.apply({} as any, makeContext('b'))
+
+      expect(injectedNames()).toHaveLength(1)
+    })
+
+    it('adopts only once, so later animations still inject', () => {
+      prerender(createAnimationKeyframeRule(PULSE).rule)
+
+      const first = makeContext('a')
+      const second = makeContext('b')
+      new AnimationModifier({ animation: { keyframes: SLIDE } }).apply(
+        {} as any,
+        first
+      )
+      new AnimationModifier({ animation: { keyframes: PULSE } }).apply(
+        {} as any,
+        second
+      )
+
+      expect(injectedNames()).toEqual([animationName(first)])
     })
   })
 })

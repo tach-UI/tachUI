@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { ModifierContext } from '@tachui/types/modifiers'
 import {
   createAnimationKeyframeRule,
-  injectAnimationKeyframes,
+  ensureAnimationKeyframes,
 } from '@tachui/core/modifiers/base'
 import { AnimationModifier } from '../../src/basic/base'
 import { AnimationModifier as FullAnimationModifier } from '../../src/base'
@@ -107,8 +107,7 @@ describe('animation keyframes', () => {
   })
 
   it('skips a block core already injected', () => {
-    const { name, rule } = createAnimationKeyframeRule(PULSE)
-    injectAnimationKeyframes(name, rule)
+    ensureAnimationKeyframes(PULSE)
     expect(injectedNames()).toHaveLength(1)
 
     new AnimationModifier({ animation: { keyframes: PULSE } }).apply(
