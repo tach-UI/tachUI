@@ -1,6 +1,6 @@
 # @tachui/core
 
-## 0.9.0
+## 0.10.0
 
 ### Minor Changes
 
@@ -277,8 +277,8 @@
   Separately, `ColorAsset.validateColor()` now reports `format: 'custom-property'` for `var(--token)` and `format: 'color-mix'` for `color-mix(…)`, instead of bucketing both as `'named'`. Both are accepted as before; what changes is that a caller can now tell a literal colour apart from one only the browser can resolve, which `'named'` made indistinguishable.
 
 - Updated dependencies [[`d5cd030`](https://github.com/tach-UI/tachUI/commit/d5cd030464dee0be84b8a2c6013fed716e53f551), [`1fe6910`](https://github.com/tach-UI/tachUI/commit/1fe69104fadafa3663163b2d749e963b84620427), [`7245d29`](https://github.com/tach-UI/tachUI/commit/7245d29aaf569483c16ff9d51788fb4815895caf), [`985a84b`](https://github.com/tach-UI/tachUI/commit/985a84b800dab2413ca563bac943f9ca3efc41db), [`2984b3c`](https://github.com/tach-UI/tachUI/commit/2984b3ccd461f7126acc9286f145d322d190373e)]:
-  - @tachui/types@0.9.0
-  - @tachui/registry@0.9.0
+  - @tachui/types@0.10.0
+  - @tachui/registry@0.10.0
 
 ## 0.8.32
 
