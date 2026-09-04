@@ -962,6 +962,69 @@ export function Button(
   return withModifiers(component)
 }
 
+type ButtonTitle = string | (() => string) | Signal<string>
+type ButtonAction = () => void | Promise<void>
+
+/**
+ * The call shapes every `ButtonStyles.*` helper accepts.
+ *
+ * Two overloads rather than one signature admitting both, mirroring `Button`
+ * itself. A single `(title, actionOrProps?, props?)` signature compiles
+ * `Filled('a', { css: 'x' }, { disabled: true })` — an object second *and* a
+ * third argument — which the implementation cannot honour: it branches on
+ * `typeof actionOrProps === 'function'`, takes the object path, and forwards
+ * only the second, dropping the third with no error and no warning (#307).
+ * Splitting the shapes makes that call match no overload, so it fails to
+ * compile instead of silently losing props.
+ *
+ * `TReserved` names the prop the helper sets for you — `variant` for `Filled`
+ * and friends, `role` for `Destructive` and `Cancel` — and `Omit`s it from both
+ * forms, carrying forward what these signatures already declared.
+ *
+ * Note that the `Omit` documents the intent without enforcing it: `ButtonProps`
+ * inherits `[key: string]: any` from `ComponentProps`, so the index signature
+ * still admits the key that `Omit` removed. Passing `variant` to `Filled`
+ * compiles and is then overwritten. Closing that would mean intersecting a
+ * `{ [K in TReserved]?: never }`, which turns a call that compiles today into
+ * an error — a separate change from this one, and not a patch-safe one.
+ */
+interface ButtonStyleHelper<TReserved extends keyof ButtonProps> {
+  (
+    title: ButtonTitle,
+    action?: ButtonAction,
+    props?: Omit<ButtonProps, 'title' | 'action' | TReserved>
+  ): ModifiableComponentWithModifiers<ButtonProps>
+  (
+    title: ButtonTitle,
+    props?: Omit<ButtonProps, 'title' | TReserved>
+  ): ModifiableComponentWithModifiers<ButtonProps>
+}
+
+/**
+ * Build a `ButtonStyles` helper that applies `overrides` on top of the caller's
+ * props.
+ *
+ * The overrides go last in both spreads so the helper's own reason for existing
+ * cannot be overwritten by a caller — and `TReserved` keeps them from trying.
+ */
+function createButtonStyle<TReserved extends keyof ButtonProps>(
+  overrides: Pick<ButtonProps, TReserved>
+): ButtonStyleHelper<TReserved> {
+  const helper = (
+    title: ButtonTitle,
+    actionOrProps?: ButtonAction | Omit<ButtonProps, 'title'>,
+    props: Omit<ButtonProps, 'title' | 'action'> = {}
+  ): ModifiableComponentWithModifiers<ButtonProps> =>
+    actionOrProps == null || typeof actionOrProps === 'function'
+      ? Button(title, actionOrProps as ButtonAction | undefined, {
+          ...props,
+          ...overrides,
+        })
+      : Button(title, { ...actionOrProps, ...overrides })
+
+  return helper as ButtonStyleHelper<TReserved>
+}
+
 /**
  * Button variant shortcuts
  */
@@ -969,74 +1032,32 @@ export const ButtonStyles = {
   /**
    * Filled button (primary)
    */
-  Filled: (
-    title: string | (() => string) | Signal<string>,
-    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'variant'>,
-    props: Omit<ButtonProps, 'title' | 'action' | 'variant'> = {}
-  ) =>
-    actionOrProps == null || typeof actionOrProps === 'function'
-      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, variant: 'filled' })
-      : Button(title, { ...(actionOrProps ?? {}), variant: 'filled' }),
+  Filled: createButtonStyle<'variant'>({ variant: 'filled' }),
 
   /**
    * Outlined button
    */
-  Outlined: (
-    title: string | (() => string) | Signal<string>,
-    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'variant'>,
-    props: Omit<ButtonProps, 'title' | 'action' | 'variant'> = {}
-  ) =>
-    actionOrProps == null || typeof actionOrProps === 'function'
-      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, variant: 'outlined' })
-      : Button(title, { ...(actionOrProps ?? {}), variant: 'outlined' }),
+  Outlined: createButtonStyle<'variant'>({ variant: 'outlined' }),
 
   /**
    * Plain button (text only)
    */
-  Plain: (
-    title: string | (() => string) | Signal<string>,
-    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'variant'>,
-    props: Omit<ButtonProps, 'title' | 'action' | 'variant'> = {}
-  ) =>
-    actionOrProps == null || typeof actionOrProps === 'function'
-      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, variant: 'plain' })
-      : Button(title, { ...(actionOrProps ?? {}), variant: 'plain' }),
+  Plain: createButtonStyle<'variant'>({ variant: 'plain' }),
 
   /**
    * Bordered button
    */
-  Bordered: (
-    title: string | (() => string) | Signal<string>,
-    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'variant'>,
-    props: Omit<ButtonProps, 'title' | 'action' | 'variant'> = {}
-  ) =>
-    actionOrProps == null || typeof actionOrProps === 'function'
-      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, variant: 'bordered' })
-      : Button(title, { ...(actionOrProps ?? {}), variant: 'bordered' }),
+  Bordered: createButtonStyle<'variant'>({ variant: 'bordered' }),
 
   /**
    * Destructive button
    */
-  Destructive: (
-    title: string | (() => string) | Signal<string>,
-    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'role'>,
-    props: Omit<ButtonProps, 'title' | 'action' | 'role'> = {}
-  ) =>
-    actionOrProps == null || typeof actionOrProps === 'function'
-      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, role: 'destructive' })
-      : Button(title, { ...(actionOrProps ?? {}), role: 'destructive' }),
+  Destructive: createButtonStyle<'role'>({ role: 'destructive' }),
 
   /**
    * Cancel button
    */
-  Cancel: (
-    title: string | (() => string) | Signal<string>,
-    actionOrProps?: (() => void | Promise<void>) | Omit<ButtonProps, 'title' | 'role'>,
-    props: Omit<ButtonProps, 'title' | 'action' | 'role'> = {}
-  ) =>
-    actionOrProps == null || typeof actionOrProps === 'function'
-      ? Button(title, actionOrProps as () => void | Promise<void>, { ...props, role: 'cancel' })
-      : Button(title, { ...(actionOrProps ?? {}), role: 'cancel' }),
+  Cancel: createButtonStyle<'role'>({ role: 'cancel' }),
 }
 
 /**
