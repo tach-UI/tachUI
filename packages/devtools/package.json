@@ -1,6 +1,6 @@
 {
   "name": "@tachui/devtools",
-  "version": "0.8.35",
+  "version": "0.10.0",
   "description": "Development & debugging tools for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -53,9 +53,9 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "0.9.0",
-    "@tachui/primitives": "0.8.35",
-    "@tachui/registry": "0.9.0",
+    "@tachui/core": "0.10.0",
+    "@tachui/primitives": "0.10.0",
+    "@tachui/registry": "0.10.0",
     "magic-string": "^0.30.0"
   },
   "devDependencies": {
