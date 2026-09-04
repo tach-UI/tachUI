@@ -13,7 +13,7 @@ import type {
   StatefulBackgroundValue
 } from './types'
 import { LinearGradient, RadialGradient, AngularGradient } from './index'
-import { gradientToCSS } from './css-generator'
+import { gradientToCSS, gradientToDeclarations } from './css-generator'
 
 /**
  * Color manipulation utilities
@@ -132,8 +132,8 @@ export const GradientTransforms = {
     if ('colors' in newGradient.options) {
       newGradient.options = {
         ...newGradient.options,
-        colors: [...newGradient.options.colors].reverse(),
-        stops: newGradient.options.stops ? [...newGradient.options.stops].reverse() : undefined
+        colors: [...newGradient.options.colors].toReversed(),
+        stops: newGradient.options.stops ? [...newGradient.options.stops].toReversed() : undefined
       }
     }
     return newGradient
@@ -499,21 +499,33 @@ export const StateGradientUtils = {
  */
 export const CSSUtils = {
   /**
-   * Generate CSS custom properties for gradient
+   * Generate CSS custom properties for gradient.
+   *
+   * Always the plain sRGB form, whatever `interpolation` says: a custom
+   * property cannot carry the fallback pair. Custom properties accept almost
+   * any token at declaration time, so an unsupported `in oklab` gradient only
+   * fails at `var()` substitution, where the using declaration becomes invalid
+   * at computed-value time and resolves to `unset` instead of falling back to
+   * an earlier declaration. Put `gradientToDeclarations` on the `background`
+   * itself to get an interpolation hint with a fallback.
    */
   toCustomProperties: (gradient: GradientDefinition, prefix: string = 'gradient'): Record<string, string> => {
-    const css = gradientToCSS(gradient)
+    const [srgbGradient] = gradientToDeclarations(gradient)
     return {
-      [`--${prefix}-background`]: css
+      [`--${prefix}-background`]: srgbGradient
     }
   },
 
   /**
-   * Generate fallback CSS for older browsers
+   * Generate fallback CSS for older browsers: a solid color, then the sRGB
+   * gradient, then the interpolation-hinted gradient when one applies. Later
+   * declarations a browser cannot parse are dropped in favor of earlier ones.
    */
   withFallback: (gradient: GradientDefinition, fallbackColor: string): string => {
-    const gradientCSS = gradientToCSS(gradient)
-    return `background: ${fallbackColor}; background: ${gradientCSS};`
+    const declarations = gradientToDeclarations(gradient).map(
+      declaration => `background: ${declaration};`
+    )
+    return [`background: ${fallbackColor};`, ...declarations].join(' ')
   },
 
   /**

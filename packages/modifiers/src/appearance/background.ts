@@ -30,10 +30,12 @@ import type {
 } from '@tachui/core/gradients/types'
 import type { Asset } from '@tachui/core/assets'
 import type { ImageAssetProxy } from '@tachui/types/assets'
-import { gradientToCSS } from '@tachui/core/gradients/css-generator'
+import { gradientToDeclarations } from '@tachui/core/gradients/css-generator'
 
 type BackgroundState = 'default' | 'hover' | 'active' | 'focus' | 'disabled'
 type BasicBackgroundValue = string | GradientDefinition | Asset | undefined | null
+type ResolvableValue = { resolve: () => unknown }
+type DeclarationsAsset = ResolvableValue & { resolveDeclarations: () => string[] }
 
 export interface BackgroundOptions {
   background: StatefulBackgroundValue
@@ -68,21 +70,33 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     // Handle stateful gradients/backgrounds.
     // Important: this must run after asset detection because ColorAsset objects
     // expose a "default" field and would otherwise be misclassified here.
-    if (
-      context.element instanceof HTMLElement &&
-      this.isStateGradientOption(backgroundValue)
-    ) {
-      this.applyStatefulBackground(context.element, backgroundValue, cssProperty)
+    if (this.isStateGradientOption(backgroundValue)) {
+      if (
+        typeof HTMLElement !== 'undefined' &&
+        context.element instanceof HTMLElement
+      ) {
+        this.applyStatefulBackground(context.element, backgroundValue, cssProperty)
+        return undefined
+      }
+
+      // No DOM element to attach interaction listeners to (the SSR virtual
+      // element): render the resting state, which is what the client shows
+      // before any interaction.
+      const restingDeclarations = this.resolveBackgroundDeclarations(
+        backgroundValue.default as BasicBackgroundValue
+      )
+      if (restingDeclarations !== undefined) {
+        this.applyDeclarations(context.element, cssProperty, restingDeclarations)
+      }
       return undefined
     }
 
-    const resolvedBackground = this.resolveBackgroundValue(
+    const declarations = this.resolveBackgroundDeclarations(
       backgroundValue as BasicBackgroundValue
     )
 
-    if (resolvedBackground !== undefined) {
-      const styles = { [cssProperty]: resolvedBackground }
-      this.applyStyles(context.element, styles)
+    if (declarations !== undefined) {
+      this.applyDeclarations(context.element, cssProperty, declarations)
     }
 
     return undefined
@@ -95,7 +109,7 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
   private applyColorAssetWithThemeReactivity(
     element: Element,
     property: string,
-    asset: { resolve: () => string }
+    asset: ResolvableValue
   ): void {
     const themeSignal = getThemeSignal()
 
@@ -103,8 +117,8 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
       // Watch theme changes to trigger re-resolution
       themeSignal()
       // Re-resolve Asset when theme changes
-      const resolved = asset.resolve()
-      this.applyStyleChange(element, property, resolved)
+      const declarations = this.resolveBackgroundDeclarations(asset) ?? []
+      this.applyDeclarations(element, property, declarations)
     })
   }
 
@@ -117,21 +131,55 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     )
   }
 
-  private resolveBackgroundValue(value: BasicBackgroundValue): string | undefined {
+  private hasResolveDeclarations(value: unknown): value is DeclarationsAsset {
+    return (
+      this.isAssetValue(value) &&
+      typeof (value as { resolveDeclarations?: unknown }).resolveDeclarations ===
+        'function'
+    )
+  }
+
+  /**
+   * Every declaration a background value needs, in cascade order. Gradient
+   * definitions and gradient assets yield the plain sRGB gradient followed by
+   * the interpolation-hinted one (#310); everything else yields one value.
+   */
+  private resolveBackgroundDeclarations(
+    value: BasicBackgroundValue | ResolvableValue
+  ): string[] | undefined {
     if (value === null || value === undefined) {
       return undefined
     }
 
     if (this.isGradientDefinition(value)) {
-      return gradientToCSS(value)
+      return gradientToDeclarations(value)
+    }
+
+    if (this.hasResolveDeclarations(value)) {
+      return value.resolveDeclarations()
     }
 
     if (this.isAssetValue(value)) {
       const resolved = value.resolve()
-      return typeof resolved === 'string' ? resolved : String(resolved)
+      return [typeof resolved === 'string' ? resolved : String(resolved)]
     }
 
-    return String(value)
+    return [String(value)]
+  }
+
+  /**
+   * Write the declarations in order. A browser that cannot parse a later one
+   * rejects only that write and keeps the earlier value; the SSR style shim
+   * appends rather than replaces for the same reason.
+   */
+  private applyDeclarations(
+    element: Element,
+    property: string,
+    declarations: string[]
+  ): void {
+    for (const declaration of declarations) {
+      this.applyStyles(element, { [property]: declaration })
+    }
   }
 
   private isStateGradientOption(
@@ -156,19 +204,19 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
     stateOptions: StateGradientOptions,
     cssProperty: 'background' | 'backgroundColor'
   ): void {
-    const resolvedStates: Partial<Record<BackgroundState, string>> = {
-      default: this.resolveBackgroundValue(stateOptions.default),
+    const resolvedStates: Partial<Record<BackgroundState, string[]>> = {
+      default: this.resolveBackgroundDeclarations(stateOptions.default),
       hover: stateOptions.hover
-        ? this.resolveBackgroundValue(stateOptions.hover as BasicBackgroundValue)
+        ? this.resolveBackgroundDeclarations(stateOptions.hover as BasicBackgroundValue)
         : undefined,
       active: stateOptions.active
-        ? this.resolveBackgroundValue(stateOptions.active as BasicBackgroundValue)
+        ? this.resolveBackgroundDeclarations(stateOptions.active as BasicBackgroundValue)
         : undefined,
       focus: stateOptions.focus
-        ? this.resolveBackgroundValue(stateOptions.focus as BasicBackgroundValue)
+        ? this.resolveBackgroundDeclarations(stateOptions.focus as BasicBackgroundValue)
         : undefined,
       disabled: stateOptions.disabled
-        ? this.resolveBackgroundValue(
+        ? this.resolveBackgroundDeclarations(
             stateOptions.disabled as BasicBackgroundValue
           )
         : undefined,
@@ -176,9 +224,9 @@ export class BackgroundModifier extends BaseModifier<BackgroundOptions> {
 
     const applyState = (state?: BackgroundState): void => {
       if (!state) return
-      const value = resolvedStates[state]
-      if (value !== undefined) {
-        this.applyStyleChange(element, cssProperty, value)
+      const declarations = resolvedStates[state]
+      if (declarations !== undefined) {
+        this.applyDeclarations(element, cssProperty, declarations)
       }
     }
 
