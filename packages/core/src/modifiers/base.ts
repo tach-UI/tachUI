@@ -68,6 +68,152 @@ function getModifierInstanceId(modifier: object): number {
   return nextId
 }
 
+/**
+ * Convert a camelCase style property to its CSS kebab-case spelling.
+ *
+ * `BaseModifier.toCSSProperty` does the same thing, but the keyframe helpers
+ * below run outside any modifier instance and have to spell properties
+ * identically to it — the emitted text is what gets hashed into the animation
+ * name, so the two spellings must not drift.
+ */
+function keyframePropertyToCSS(property: string): string {
+  return property.replace(/([A-Z])/g, '-$1').toLowerCase()
+}
+
+/**
+ * Build the body of an `@keyframes` rule: everything the browser renders, with
+ * the name left out.
+ *
+ * This is the text that gets hashed, so any change that alters the rendered
+ * animation alters the name. Duration, easing, iteration count and direction
+ * are deliberately *not* part of it — they belong to the element's `animation`
+ * shorthand rather than to the keyframes block, so two components sharing a
+ * keyframes object but animating at different speeds can share one block.
+ *
+ * Property order follows the object's own insertion order rather than being
+ * sorted. `@keyframes` selectors are order-independent to the browser, so
+ * sorting would be free correctness-wise, but it would also reorder the CSS
+ * that `getStaticCSS` emits for no benefit: two equivalent objects written in
+ * different orders are a rare authoring accident, and the worst it costs is a
+ * second block under a second name — still bounded per source literal, not per
+ * render.
+ */
+function buildKeyframeBody(
+  keyframes: Record<string, Record<string, string>>
+): string {
+  let body = ''
+
+  for (const [percentage, styles] of Object.entries(keyframes)) {
+    body += `  ${percentage} {\n`
+    for (const [property, value] of Object.entries(styles)) {
+      body += `    ${keyframePropertyToCSS(property)}: ${value};\n`
+    }
+    body += `  }\n`
+  }
+
+  return body
+}
+
+/**
+ * Hash a keyframes body into a short, CSS-identifier-safe token.
+ *
+ * FNV-1a run twice with different constants, so the token carries ~64 bits
+ * rather than 32. A collision would silently make two different animations
+ * share one block — the kind of bug that renders wrong and never throws — and
+ * four extra characters is a cheap insurance premium.
+ *
+ * Deliberately arithmetic rather than `btoa`: this has to produce the same
+ * token under Node during SSR as it does in the browser, and base64's `+/=`
+ * are not valid in a CSS identifier anyway.
+ */
+function hashKeyframeBody(body: string): string {
+  let h1 = 0x811c9dc5
+  let h2 = 0x01000193
+
+  for (let i = 0; i < body.length; i++) {
+    const char = body.charCodeAt(i)
+    h1 = Math.imul(h1 ^ char, 0x01000193)
+    h2 = Math.imul(h2 ^ char, 0x85ebca6b)
+  }
+
+  return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36)
+}
+
+/**
+ * A keyframes block and the name that identifies it.
+ */
+export interface AnimationKeyframeRule {
+  /** The `@keyframes` name, derived from the block's content. */
+  name: string
+  /** The complete `@keyframes` rule, ready to inject or serialize. */
+  rule: string
+}
+
+/**
+ * Build an `@keyframes` rule whose name is derived from its own content.
+ *
+ * Content addressing is what makes the name stable: the same keyframes produce
+ * the same name on every render, in every component, and — critically — on both
+ * the server and the client. The previous scheme mixed in `componentId` and
+ * `Date.now()`, which meant a fresh name per apply (so the stylesheet grew
+ * without bound) and a name the server could not possibly predict (so
+ * prerendered keyframes were always orphaned).
+ */
+export function createAnimationKeyframeRule(
+  keyframes: Record<string, Record<string, string>>
+): AnimationKeyframeRule {
+  const body = buildKeyframeBody(keyframes)
+  const name = `tachui-animation-${hashKeyframeBody(body)}`
+
+  return { name, rule: `@keyframes ${name} {\n${body}}` }
+}
+
+const injectedKeyframeNamesKey = Symbol.for(
+  'tachui.animations.injectedKeyframeNames'
+)
+
+/**
+ * Inject a keyframes rule into the shared `#tachui-animations` stylesheet,
+ * skipping one already present.
+ *
+ * The set of injected names is stored on the stylesheet element itself rather
+ * than in a module-level variable, for two reasons. It is discarded exactly
+ * when the stylesheet is — a test resetting `document.head`, an SPA teardown —
+ * so the bookkeeping can never claim a rule is present after the element
+ * holding it is gone. And a registered symbol key means every copy of this
+ * module shares one registry: `AnimationModifier` is duplicated across
+ * `@tachui/core` and both `@tachui/modifiers` builds, all writing to the same
+ * element, and a per-module `Set` would let each inject the same rule again.
+ */
+export function injectAnimationKeyframes(name: string, rule: string): void {
+  if (typeof document === 'undefined') return
+
+  let stylesheet = document.querySelector(
+    '#tachui-animations'
+  ) as HTMLStyleElement | null
+
+  if (!stylesheet) {
+    stylesheet = document.createElement('style')
+    stylesheet.id = 'tachui-animations'
+    document.head.appendChild(stylesheet)
+  }
+
+  const holder = stylesheet as unknown as {
+    [key: symbol]: Set<string> | undefined
+  }
+
+  let injected = holder[injectedKeyframeNamesKey]
+  if (!injected) {
+    injected = new Set<string>()
+    holder[injectedKeyframeNamesKey] = injected
+  }
+
+  if (injected.has(name)) return
+  injected.add(name)
+
+  stylesheet.appendChild(document.createTextNode(rule))
+}
+
 export function collectStaticAnimationCSSRules(
   selector: string,
   props: {
@@ -84,11 +230,7 @@ export function collectStaticAnimationCSSRules(
       iterations?: number | 'infinite'
       direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse'
     }
-  },
-  createKeyframeRule: (
-    name: string,
-    keyframes: Record<string, Record<string, string>>
-  ) => string
+  }
 ): string[] {
   const rules: string[] = []
 
@@ -109,9 +251,14 @@ export function collectStaticAnimationCSSRules(
 
   const anim = props.animation
   if (anim?.keyframes) {
-    const normalized = selector.replace(/[^a-zA-Z0-9_-]/g, '')
-    const keyframeName = `tachui-animation-${normalized || 'component'}`
-    rules.push(createKeyframeRule(keyframeName, anim.keyframes))
+    // Named from the keyframes' own content, exactly as `AnimationModifier.apply`
+    // names them, so the prerendered block and the one the client would inject
+    // are the same block. Deriving the name from the selector — as this used to —
+    // could never agree with the client, which was naming from `Date.now()`.
+    const { name: keyframeName, rule } = createAnimationKeyframeRule(
+      anim.keyframes
+    )
+    rules.push(rule)
 
     const duration = anim.duration || 1000
     const easing = anim.easing || 'ease'
@@ -1223,15 +1370,13 @@ export class AnimationModifier extends BaseModifier {
       const anim = props.animation
 
       if (anim.keyframes && typeof document !== 'undefined') {
-        // Create keyframes
-        const keyframeName = `tachui-animation-${context.componentId}-${Date.now()}`
-        const keyframeRule = this.createKeyframeRule(
-          keyframeName,
+        // The name comes from the keyframes' content, so re-applying this
+        // modifier re-uses the block already in the stylesheet instead of
+        // appending another one.
+        const { name: keyframeName, rule } = createAnimationKeyframeRule(
           anim.keyframes
         )
-
-        // Add keyframes to stylesheet
-        this.addKeyframesToStylesheet(keyframeRule)
+        injectAnimationKeyframes(keyframeName, rule)
 
         // Apply animation
         const duration = anim.duration || 1000
@@ -1302,44 +1447,7 @@ export class AnimationModifier extends BaseModifier {
   }
 
   override getStaticCSS(selector: string): string[] {
-    return collectStaticAnimationCSSRules(
-      selector,
-      this.properties as any,
-      this.createKeyframeRule.bind(this)
-    )
-  }
-
-  private createKeyframeRule(
-    name: string,
-    keyframes: Record<string, Record<string, string>>
-  ): string {
-    let rule = `@keyframes ${name} {\n`
-
-    for (const [percentage, styles] of Object.entries(keyframes)) {
-      rule += `  ${percentage} {\n`
-      for (const [property, value] of Object.entries(styles)) {
-        const cssProperty = this.toCSSProperty(property)
-        rule += `    ${cssProperty}: ${value};\n`
-      }
-      rule += `  }\n`
-    }
-
-    rule += '}'
-    return rule
-  }
-
-  private addKeyframesToStylesheet(rule: string): void {
-    let stylesheet = document.querySelector(
-      '#tachui-animations'
-    ) as HTMLStyleElement
-
-    if (!stylesheet) {
-      stylesheet = document.createElement('style')
-      stylesheet.id = 'tachui-animations'
-      document.head.appendChild(stylesheet)
-    }
-
-    stylesheet.appendChild(document.createTextNode(rule))
+    return collectStaticAnimationCSSRules(selector, this.properties as any)
   }
 }
 

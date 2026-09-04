@@ -325,11 +325,30 @@ global.document = {
     // swallowed by its catch, so the rules under test are never really written.
     if (element.tagName === 'STYLE') {
       ;(element as any).sheet = new (global.CSSStyleSheet as any)()
+      // A <style> also accumulates the text nodes appended to it, the way a
+      // browser does. `MockHTMLElement.appendChild` is otherwise a no-op, so
+      // source that writes CSS by appending text nodes — the shared
+      // `#tachui-animations` sheet does — left nothing a test could read back.
+      ;(element as any).textContent = ''
+      ;(element as any).appendChild = vi.fn((node: any) => {
+        ;(element as any).textContent += node?.textContent ?? ''
+        return node
+      })
     }
     return element
   }),
   getElementById: vi.fn((id: string) => elementsById.get(id) ?? null),
-  querySelector: vi.fn(() => null),
+  // Same reasoning as `getElementById` above, for the source that reaches for
+  // its singleton <style> with `querySelector('#some-id')` instead — the
+  // shared `#tachui-animations` sheet, for one. Returning null unconditionally
+  // made every such lookup a cache miss, so dedupe-on-inject could never be
+  // observed. Only id selectors resolve; anything else stays null, which is
+  // all the callers in this package ask for.
+  querySelector: vi.fn((selector: string) =>
+    typeof selector === 'string' && /^#[\w-]+$/.test(selector)
+      ? (elementsById.get(selector.slice(1)) ?? null)
+      : null
+  ),
   querySelectorAll: vi.fn(() => []),
   addEventListener: documentListeners.addEventListener,
   removeEventListener: documentListeners.removeEventListener,

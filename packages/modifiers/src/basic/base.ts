@@ -13,6 +13,8 @@ import {
 import {
   bindReactiveStyle,
   collectStaticAnimationCSSRules,
+  createAnimationKeyframeRule,
+  injectAnimationKeyframes,
 } from '@tachui/core/modifiers/base'
 import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
@@ -1595,15 +1597,13 @@ export class AnimationModifier extends BaseModifier {
       const anim = props.animation
 
       if (anim.keyframes && canUseDocument()) {
-        // Create keyframes
-        const keyframeName = `tachui-animation-${context.componentId}-${Date.now()}`
-        const keyframeRule = this.createKeyframeRule(
-          keyframeName,
+        // The name comes from the keyframes' content, so re-applying this
+        // modifier re-uses the block already in the stylesheet instead of
+        // appending another one.
+        const { name: keyframeName, rule } = createAnimationKeyframeRule(
           anim.keyframes
         )
-
-        // Add keyframes to stylesheet
-        this.addKeyframesToStylesheet(keyframeRule)
+        injectAnimationKeyframes(keyframeName, rule)
 
         // Apply animation
         const duration = anim.duration || 1000
@@ -1705,11 +1705,7 @@ export class AnimationModifier extends BaseModifier {
   }
 
   override getStaticCSS(selector: string): string[] {
-    return collectStaticAnimationCSSRules(
-      selector,
-      this.properties as any,
-      this.createKeyframeRule.bind(this)
-    )
+    return collectStaticAnimationCSSRules(selector, this.properties as any)
   }
 
   private applyOverlay(
@@ -1805,40 +1801,6 @@ export class AnimationModifier extends BaseModifier {
     }
 
     return alignments[alignment] || alignments.center
-  }
-
-  private createKeyframeRule(
-    name: string,
-    keyframes: Record<string, Record<string, string>>
-  ): string {
-    let rule = `@keyframes ${name} {\n`
-
-    for (const [percentage, styles] of Object.entries(keyframes)) {
-      rule += `  ${percentage} {\n`
-      for (const [property, value] of Object.entries(styles)) {
-        const cssProperty = this.toCSSProperty(property)
-        rule += `    ${cssProperty}: ${value};\n`
-      }
-      rule += `  }\n`
-    }
-
-    rule += '}'
-    return rule
-  }
-
-  private addKeyframesToStylesheet(rule: string): void {
-    if (!canUseDocument()) return
-    let stylesheet = document.querySelector(
-      '#tachui-animations'
-    ) as HTMLStyleElement
-
-    if (!stylesheet) {
-      stylesheet = document.createElement('style')
-      stylesheet.id = 'tachui-animations'
-      document.head.appendChild(stylesheet)
-    }
-
-    stylesheet.appendChild(document.createTextNode(rule))
   }
 }
 
