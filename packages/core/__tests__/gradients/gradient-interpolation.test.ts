@@ -18,6 +18,7 @@ import {
   gradientToDeclarations,
   resolveGradientInterpolation,
 } from '../../src/gradients/css-generator'
+import { GradientTransforms } from '../../src/gradients/utils'
 
 const STOPS = ['#3B82F6', '#FFD400']
 
@@ -62,6 +63,43 @@ describe('gradient interpolation option', () => {
     expect(gradientToDeclarations(gradient)).toEqual([
       'linear-gradient(to right, #3B82F6, #FFD400)',
     ])
+  })
+
+  it('defaults to oklab, so an unhinted gradient emits the fallback pair', () => {
+    expect(DEFAULT_GRADIENT_INTERPOLATION).toBe('oklab')
+
+    const gradient = LinearGradient({
+      colors: STOPS,
+      startPoint: 'leading',
+      endPoint: 'trailing',
+    })
+
+    expect(gradientToCSS(gradient)).toBe(
+      'linear-gradient(in oklab to right, #3B82F6, #FFD400)'
+    )
+    expect(gradientToDeclarations(gradient)).toEqual([
+      'linear-gradient(to right, #3B82F6, #FFD400)',
+      'linear-gradient(in oklab to right, #3B82F6, #FFD400)',
+    ])
+  })
+
+  it('survives the shape-changing gradient transforms', () => {
+    const linear = LinearGradient({
+      colors: STOPS,
+      startPoint: 'leading',
+      endPoint: 'trailing',
+      interpolation: 'srgb',
+    })
+
+    expect(gradientToCSS(GradientTransforms.toRadial(linear, 40))).toBe(
+      'radial-gradient(circle 40px at center, #3B82F6, #FFD400)'
+    )
+    expect(gradientToCSS(GradientTransforms.toAngular(linear))).toBe(
+      'conic-gradient(from 0deg at center, #3B82F6, #FFD400)'
+    )
+    expect(gradientToCSS(GradientTransforms.mirror(linear))).toBe(
+      'linear-gradient(to left, #3B82F6, #FFD400)'
+    )
   })
 
   it('falls back to the framework default when interpolation is not set', () => {

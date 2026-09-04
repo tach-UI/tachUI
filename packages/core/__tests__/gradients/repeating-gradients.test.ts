@@ -31,7 +31,7 @@ describe('RepeatingLinearGradient', () => {
     })
 
     expect(css).toBe(
-      'repeating-linear-gradient(45deg, #FF0000 0px, #00FF00 20px)'
+      'repeating-linear-gradient(in oklab 45deg, #FF0000 0px, #00FF00 20px)'
     )
   })
 
@@ -43,7 +43,7 @@ describe('RepeatingLinearGradient', () => {
     })
 
     expect(css).toBe(
-      'repeating-linear-gradient(90deg, #000000 0px, #ffffff 10px, #000000 20px)'
+      'repeating-linear-gradient(in oklab 90deg, #000000 0px, #ffffff 10px, #000000 20px)'
     )
   })
 
@@ -57,7 +57,7 @@ describe('RepeatingLinearGradient', () => {
       colorStops: ['0px', '15px'],
     })
 
-    expect(css).toContain('repeating-linear-gradient(0deg,')
+    expect(css).toContain('repeating-linear-gradient(in oklab 0deg,')
     expect(css).toContain('#FF0000 0px')
     expect(css).toContain('#0000FF 15px')
   })
@@ -85,7 +85,7 @@ describe('RepeatingRadialGradient', () => {
     })
 
     expect(css).toBe(
-      'repeating-radial-gradient(circle at center, #FF0000 0px, #00FF00 30px)'
+      'repeating-radial-gradient(in oklab circle at center, #FF0000 0px, #00FF00 30px)'
     )
   })
 
@@ -98,7 +98,7 @@ describe('RepeatingRadialGradient', () => {
     })
 
     expect(css).toBe(
-      'repeating-radial-gradient(ellipse at top, #FF0000 0px, #00FF00 40px)'
+      'repeating-radial-gradient(in oklab ellipse at top, #FF0000 0px, #00FF00 40px)'
     )
   })
 
@@ -110,7 +110,7 @@ describe('RepeatingRadialGradient', () => {
     })
 
     expect(css).toBe(
-      'repeating-radial-gradient(circle at 30% 70%, #FF0000 0px, #00FF00 20px)'
+      'repeating-radial-gradient(in oklab circle at 30% 70%, #FF0000 0px, #00FF00 20px)'
     )
   })
 
@@ -124,7 +124,7 @@ describe('RepeatingRadialGradient', () => {
       colorStops: ['0px', '35px'],
     })
 
-    expect(css).toContain('repeating-radial-gradient(circle at center,')
+    expect(css).toContain('repeating-radial-gradient(in oklab circle at center,')
     expect(css).toContain('#FFFF00 0px')
     expect(css).toContain('#800080 35px')
   })
@@ -137,7 +137,7 @@ describe('RepeatingRadialGradient', () => {
     })
 
     expect(css).toBe(
-      'repeating-radial-gradient(circle at center, #ff0000 0px, transparent 5px, #ff0000 10px, transparent 15px)'
+      'repeating-radial-gradient(in oklab circle at center, #ff0000 0px, transparent 5px, #ff0000 10px, transparent 15px)'
     )
   })
 })

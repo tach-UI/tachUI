@@ -56,7 +56,7 @@ describe('GradientAsset', () => {
     })
 
     const css = gradientAsset.resolve()
-    expect(css).toBe('linear-gradient(to bottom, #FFFFFF, #F0F0F0)')
+    expect(css).toBe('linear-gradient(in oklab to bottom, #FFFFFF, #F0F0F0)')
   })
 
   it('resolves to dark theme when preferred', () => {
@@ -86,7 +86,7 @@ describe('GradientAsset', () => {
     })
 
     const css = gradientAsset.resolve()
-    expect(css).toBe('linear-gradient(to bottom, #333333, #000000)')
+    expect(css).toBe('linear-gradient(in oklab to bottom, #333333, #000000)')
   })
 
   it('falls back to light theme if dark is not available', () => {
@@ -110,7 +110,7 @@ describe('GradientAsset', () => {
     })
 
     const css = gradientAsset.resolve()
-    expect(css).toBe('linear-gradient(to bottom, #FFFFFF, #F0F0F0)')
+    expect(css).toBe('linear-gradient(in oklab to bottom, #FFFFFF, #F0F0F0)')
   })
 
   it('works in server-side environment', () => {
@@ -136,7 +136,7 @@ describe('GradientAsset', () => {
     delete (global as any).window
 
     const css = gradientAsset.resolve()
-    expect(css).toBe('linear-gradient(to bottom, #FFFFFF, #F0F0F0)')
+    expect(css).toBe('linear-gradient(in oklab to bottom, #FFFFFF, #F0F0F0)')
 
     // Restore window
     global.window = originalWindow

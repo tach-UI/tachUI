@@ -27,7 +27,7 @@ describe('AngularGradient', () => {
       endAngle: 360,
     })
 
-    expect(css).toBe('conic-gradient(from 0deg at center, #FF0000, #00FF00)')
+    expect(css).toBe('conic-gradient(in oklab from 0deg at center, #FF0000, #00FF00)')
   })
 
   it('supports custom center positioning', () => {
@@ -38,7 +38,7 @@ describe('AngularGradient', () => {
       endAngle: 225,
     })
 
-    expect(css).toBe('conic-gradient(from 45deg at top, #FF0000, #00FF00)')
+    expect(css).toBe('conic-gradient(in oklab from 45deg at top, #FF0000, #00FF00)')
   })
 
   it('supports array-based center positioning', () => {
@@ -49,7 +49,7 @@ describe('AngularGradient', () => {
       endAngle: 270,
     })
 
-    expect(css).toBe('conic-gradient(from 90deg at 30% 70%, #FF0000, #00FF00)')
+    expect(css).toBe('conic-gradient(in oklab from 90deg at 30% 70%, #FF0000, #00FF00)')
   })
 
   it('supports rainbow gradients', () => {
@@ -68,7 +68,7 @@ describe('AngularGradient', () => {
       endAngle: 360,
     })
 
-    expect(css).toContain('conic-gradient(from 0deg at center,')
+    expect(css).toContain('conic-gradient(in oklab from 0deg at center,')
     expect(css).toContain('#ff0000')
     expect(css).toContain('#9400d3')
   })
@@ -83,7 +83,7 @@ describe('AngularGradient', () => {
     })
 
     expect(css).toBe(
-      'conic-gradient(from 0deg at center, #FF0000 0%, #FFFF00 50%, #00FF00 100%)'
+      'conic-gradient(in oklab from 0deg at center, #FF0000 0%, #FFFF00 50%, #00FF00 100%)'
     )
   })
 
@@ -98,7 +98,7 @@ describe('AngularGradient', () => {
       endAngle: 180,
     })
 
-    expect(css).toContain('conic-gradient(from 0deg at center,')
+    expect(css).toContain('conic-gradient(in oklab from 0deg at center,')
     expect(css).toContain('#FF0000')
     expect(css).toContain('#0000FF')
   })
@@ -113,7 +113,7 @@ describe('AngularGradient', () => {
       endAngle: 315,
     })
 
-    expect(css).toContain('conic-gradient(from 45deg at center,')
+    expect(css).toContain('conic-gradient(in oklab from 45deg at center,')
     expect(css).toContain('#FF0000')
     expect(css).toContain('#00FF00')
     expect(css).toContain('#0000FF')

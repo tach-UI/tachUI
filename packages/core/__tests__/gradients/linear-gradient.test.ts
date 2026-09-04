@@ -24,7 +24,7 @@ describe('LinearGradient', () => {
       endPoint: 'bottom',
     })
 
-    expect(css).toBe('linear-gradient(to bottom, #FF0000, #00FF00)')
+    expect(css).toBe('linear-gradient(in oklab to bottom, #FF0000, #00FF00)')
   })
 
   it('generates correct CSS for diagonal gradient', () => {
@@ -34,7 +34,7 @@ describe('LinearGradient', () => {
       endPoint: 'bottomTrailing',
     })
 
-    expect(css).toBe('linear-gradient(to bottom right, #FF0000, #00FF00)')
+    expect(css).toBe('linear-gradient(in oklab to bottom right, #FF0000, #00FF00)')
   })
 
   it('generates correct CSS with angle override', () => {
@@ -45,7 +45,7 @@ describe('LinearGradient', () => {
       angle: 45,
     })
 
-    expect(css).toBe('linear-gradient(45deg, #FF0000, #00FF00)')
+    expect(css).toBe('linear-gradient(in oklab 45deg, #FF0000, #00FF00)')
   })
 
   it('supports color stops', () => {
@@ -57,7 +57,7 @@ describe('LinearGradient', () => {
     })
 
     expect(css).toBe(
-      'linear-gradient(to bottom, #FF0000 0%, #00FF00 50%, #0000FF 100%)'
+      'linear-gradient(in oklab to bottom, #FF0000 0%, #00FF00 50%, #0000FF 100%)'
     )
   })
 
@@ -72,7 +72,7 @@ describe('LinearGradient', () => {
       endPoint: 'bottom',
     })
 
-    expect(css).toContain('linear-gradient(to bottom,')
+    expect(css).toContain('linear-gradient(in oklab to bottom,')
     expect(css).toContain('#FF0000')
     expect(css).toContain('#00FF00')
   })
@@ -86,7 +86,7 @@ describe('LinearGradient', () => {
       endPoint: 'bottom',
     })
 
-    expect(css).toContain('linear-gradient(to bottom,')
+    expect(css).toContain('linear-gradient(in oklab to bottom,')
     expect(css).toContain('#FF0000')
     expect(css).toContain('#0000FF')
     expect(css).toContain('#00FF00')
