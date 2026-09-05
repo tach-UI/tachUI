@@ -613,6 +613,15 @@ describe('invalidate and clear', () => {
     expect(loads).toBe(4)
   })
 
+  it('rejects an unhashable prefix even against an empty cache', () => {
+    const client = createQueryClient()
+
+    // Prefix hashes are hoisted out of the entry loop: with no entries the
+    // loop would never run, silently no-op-ing instead of raising like
+    // fetchQuery does.
+    expect(() => client.invalidate(['u', new Set(['a'])])).toThrowError(QueryError)
+  })
+
   it('ignores a prefix longer than the stored key', async () => {
     const client = createQueryClient()
     let loads = 0
@@ -1024,6 +1033,44 @@ describe('prefetchQueries', () => {
     expect(loads.get('a')).toBe(1)
     expect(loads.get('b')).toBe(2)
   })
+
+  it('surfaces prefetch misuse instead of swallowing it', async () => {
+    const client = createQueryClient()
+
+    // An unhashable key or a disposed explicit client is a programmer error:
+    // silent resolution would leave server prefetch with an empty cache.
+    await expect(
+      client.prefetchQueries([
+        { key: () => ['u', new Set(['a'])], load: async () => 'x' },
+      ])
+    ).rejects.toThrowError(QueryError)
+    const doomed = createQueryClient()
+    doomed.dispose()
+    await expect(
+      client.prefetchQueries([
+        { key: keyOf('k'), load: async () => 'x', client: doomed },
+      ])
+    ).rejects.toThrowError(/after dispose/)
+
+    // Load failures — including QueryErrors raised BY a loader — still warm
+    // without rejecting.
+    await expect(
+      client.prefetchQueries([
+        {
+          key: keyOf('down'),
+          load: async () => {
+            throw new Error('down')
+          },
+        },
+        {
+          key: keyOf('denied'),
+          load: async () => {
+            throw new QueryError('backend says no')
+          },
+        },
+      ])
+    ).resolves.toBeUndefined()
+  })
 })
 
 describe('dehydrate and hydrate', () => {
@@ -1201,6 +1248,31 @@ describe('dehydrate and hydrate', () => {
     expect(loads).toBe(0)
   })
 
+  it('fails the wire gate safe when serialization throws mid-check', async () => {
+    const client = createQueryClient()
+    let calls = 0
+    const flaky = {
+      toJSON: () => {
+        calls += 1
+        // Each hash invokes the hook twice (scan, then serialize), so the
+        // insert succeeds and only the gate's re-serialization throws.
+        if (calls > 2) {
+          throw new Error('flaky')
+        }
+        return { a: 1 }
+      },
+    }
+
+    // The insert-time hash succeeds; the gate's re-serialization throws and
+    // the entry is skipped rather than taking dehydrate down.
+    await client.fetchQuery({
+      key: () => ['f', flaky],
+      load: async () => 'v',
+      snapshot: true,
+    })
+    expect(client.dehydrate().queries).toHaveLength(0)
+  })
+
   it('does not serialize entries keyed by nested undefined', async () => {
     const client = createQueryClient()
     await client.fetchQuery({
@@ -1261,6 +1333,174 @@ describe('dehydrate and hydrate', () => {
       })
     ).resolves.toBe('v')
     expect(loads).toBe(0)
+  })
+
+  it('decouples dehydrated payloads from the cache in both directions', async () => {
+    const client = createQueryClient()
+    const key = keyOf('obj')
+    const throwing = (): Promise<{ n: number }> => {
+      throw new Error('must not load')
+    }
+    await client.fetchQuery({ key, load: async () => ({ n: 1 }), snapshot: true })
+
+    const payload = client.dehydrate()
+    // Payload mutated after the fact: the cache still serves pristine data.
+    const payloadData = payload.queries[0]?.data as { n: number }
+    payloadData.n = 999
+    await expect(client.fetchQuery({ key, load: throwing })).resolves.toEqual({
+      n: 1,
+    })
+
+    // Cache mutated after the fact: the payload keeps pristine data.
+    const served = await client.fetchQuery({ key, load: throwing })
+    served.n = 555
+    expect(payload.queries[0]?.data).toEqual({ n: 999 })
+  })
+
+  it('decouples hydrated entries from the payload in both directions', async () => {
+    const client = createQueryClient()
+    const throwing = (): Promise<{ n: number }> => {
+      throw new Error('must not load')
+    }
+    const external = {
+      queries: [{ key: ['h'], data: { n: 1 }, updatedAt: Date.now() }],
+    }
+    client.hydrate(external as DehydratedState)
+
+    // Source mutated after the fact: the cache still serves pristine data.
+    const externalData = external.queries[0]?.data as { n: number }
+    externalData.n = 999
+    await expect(
+      client.fetchQuery({ key: () => ['h'], load: throwing })
+    ).resolves.toEqual({ n: 1 })
+
+    // Cache mutated after the fact: the source keeps pristine data.
+    const served = await client.fetchQuery({ key: () => ['h'], load: throwing })
+    served.n = 555
+    expect(external.queries[0]?.data).toEqual({ n: 999 })
+  })
+
+  it('does not serialize entries whose data cannot survive the wire', async () => {
+    const server = createQueryClient()
+    const instant = '2024-01-01T00:00:00.000Z'
+    await server.fetchQuery({
+      key: keyOf('when'),
+      load: async () => ({ at: new Date(instant) }),
+      snapshot: true,
+    })
+    await server.fetchQuery({
+      key: keyOf('hole'),
+      load: async () => ({ a: 1, missing: undefined }),
+      snapshot: true,
+    })
+    await server.fetchQuery({
+      key: keyOf('plain'),
+      load: async () => ({ n: 1 }),
+      snapshot: true,
+    })
+
+    // The Date would revive as a string and the undefined member would
+    // vanish, so both entries are skipped and refetch on the other side.
+    const wire = JSON.parse(JSON.stringify(server.dehydrate()))
+    expect(wire.queries).toHaveLength(1)
+    expect(wire.queries[0]?.key).toEqual(['plain'])
+
+    const browser = createQueryClient()
+    browser.hydrate(wire)
+    let loads = 0
+    await expect(
+      browser.fetchQuery({
+        key: keyOf('when'),
+        load: async () => {
+          loads += 1
+          return { at: new Date(instant) }
+        },
+      })
+    ).resolves.toEqual({ at: new Date(instant) })
+    expect(loads).toBe(1)
+  })
+
+  it('skips snapshot data the wire cannot preserve exactly', async () => {
+    const server = createQueryClient()
+    const circular: Record<string, unknown> = { a: 1 }
+    circular.self = circular
+    const sparseData: unknown[] = [1]
+    sparseData.length = 2
+    const lossy: unknown[] = [
+      10n,
+      () => 'fn',
+      Symbol('s'),
+      NaN,
+      Number.POSITIVE_INFINITY,
+      undefined,
+      new Date('2024-01-01T00:00:00.000Z'),
+      new Map([['a', 1]]),
+      { toJSON: () => ({ a: 1 }) },
+      Object.assign({ a: 1 }, { [Symbol('tag')]: 'x' }),
+      Object.assign(['x'], { toJSON: () => ['x'] }),
+      circular,
+      sparseData,
+    ]
+    for (const [index, data] of lossy.entries()) {
+      await server.fetchQuery({
+        key: () => ['lossy', index],
+        load: async () => data,
+        snapshot: true,
+      })
+    }
+    await server.fetchQuery({
+      key: keyOf('plain'),
+      load: async () => ({ n: 1, list: [1, 'a', true, null] }),
+      snapshot: true,
+    })
+
+    // Every lossy shape stays cached but unserialized; only the plain entry
+    // ships. (In-session reads are unaffected — this gate is wire-only.)
+    expect(server.dehydrate().queries).toHaveLength(1)
+  })
+
+  it('shares one entry between a Date segment and its ISO string', async () => {
+    // The wire renders Dates as ISO strings, so distinguishing them would
+    // make every Date snapshot miss after hydration (round 5). Proper
+    // distinction needs type tags — #278's canonicalization — not the
+    // stringly hash.
+    const client = createQueryClient()
+    const instant = '2024-01-01T00:00:00.000Z'
+    let loads = 0
+    await client.fetchQuery({
+      key: () => ['d', new Date(instant)],
+      load: async () => {
+        loads += 1
+        return 'date'
+      },
+    })
+    await expect(
+      client.fetchQuery({
+        key: () => ['d', instant],
+        load: async () => {
+          loads += 1
+          return 'string'
+        },
+      })
+    ).resolves.toBe('date')
+    expect(loads).toBe(1)
+  })
+
+  it('reports observerCount 0 in dehydrate views until observers exist (#280)', async () => {
+    const client = createQueryClient()
+    await client.fetchQuery({
+      key: keyOf('u'),
+      load: async () => 'v',
+      snapshot: true,
+    })
+
+    let seen = -1
+    const state = client.dehydrate((entry) => {
+      seen = entry.observerCount
+      return true
+    })
+    expect(state.queries).toHaveLength(1)
+    expect(seen).toBe(0)
   })
 
   it('lets a filter narrow the snapshot set, never widen it', async () => {
@@ -1461,5 +1701,19 @@ describe('dehydrate and hydrate', () => {
       })
     ).resolves.toBe('fresh')
     expect(loads).toBe(1)
+  })
+
+  it('rejects hydration payloads that cannot cross the boundary', () => {
+    const client = createQueryClient()
+    const payload = {
+      queries: [{ key: ['f'], data: { run: () => 'x' }, updatedAt: Date.now() }],
+    }
+
+    // Functions pass the shape check and the key validates, but the boundary
+    // copy cannot clone them: loud QueryError instead of silent aliasing
+    // (the wire would drop them).
+    expect(() => client.hydrate(payload as DehydratedState)).toThrowError(
+      /cannot cross the hydration boundary/
+    )
   })
 })

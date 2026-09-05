@@ -40,6 +40,7 @@ import type {
   QueryClient,
   QueryKey,
   QueryKeyHash,
+  QueryLoadContext,
   QueryStatus,
 } from './types'
 
@@ -98,19 +99,102 @@ function isDateValue(value: unknown): value is Date {
 }
 
 /**
- * Rejects own enumerable symbol properties: Object.keys and JSON.stringify
- * both drop them, so sibling objects differing only by one would hash
- * identically and serve each other's data.
+ * Own enumerable symbol properties: Object.keys and JSON.stringify both drop
+ * them, so siblings differing only by one hash identically.
  */
-function assertNoSymbolKeys(value: object, path: string): void {
-  const hidden = Object.getOwnPropertySymbols(value).some((symbol) =>
+function hasOwnEnumerableSymbol(value: object): boolean {
+  return Object.getOwnPropertySymbols(value).some((symbol) =>
     Object.prototype.propertyIsEnumerable.call(value, symbol)
   )
-  if (hidden) {
+}
+
+/**
+ * Rejects own enumerable symbol properties: siblings differing only by one
+ * would hash identically and serve each other's data.
+ */
+function assertNoSymbolKeys(value: object, path: string): void {
+  if (hasOwnEnumerableSymbol(value)) {
     throw new QueryError(
       `Cannot hash query key: symbol-keyed properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
     )
   }
+}
+
+/**
+ * Whether snapshot data round-trips through the wire codec unchanged. Unlike
+ * keys, data has no sentinel and no hook rendering: a Date revives as a
+ * string, undefined members vanish, class instances lose their prototype, so
+ * serving the revived value as success would contradict TRaw. Only plain
+ * JSON survives exactly; anything else skips the snapshot and refetches on
+ * the other side.
+ */
+function dataSurvivesWire(value: unknown, seen: Set<object> = new Set()): boolean {
+  if (value === undefined) {
+    return false
+  }
+  if (value === null) {
+    return true
+  }
+  switch (typeof value) {
+    case 'string':
+    case 'boolean':
+      return true
+    case 'number':
+      return Number.isFinite(value)
+    case 'bigint':
+    case 'function':
+    case 'symbol':
+      return false
+    default:
+      break
+  }
+  const target = value as object
+  if (hasOwnEnumerableSymbol(target)) {
+    return false
+  }
+  // A hook replaces the rendering, so the carrier never survives it — even
+  // when the output is plain JSON, the revived value has lost the carrier.
+  if (typeof (target as { toJSON?: unknown }).toJSON === 'function') {
+    return false
+  }
+  if (seen.has(target)) {
+    // Circular: the wire throws, so this could never round-trip.
+    return false
+  }
+  seen.add(target)
+  try {
+    if (Array.isArray(value)) {
+      // Index loop, mirroring the scan: holes read as undefined, which the
+      // wire renders as null.
+      for (let index = 0; index < value.length; index += 1) {
+        if (!dataSurvivesWire(value[index], seen)) {
+          return false
+        }
+      }
+      return true
+    }
+    if (!isPlainObject(value)) {
+      return false
+    }
+    for (const member of Object.keys(value)) {
+      if (!dataSurvivesWire((value as Record<string, unknown>)[member], seen)) {
+        return false
+      }
+    }
+    return true
+  } finally {
+    seen.delete(target)
+  }
+}
+
+/**
+ * Wire-true copy for the dehydrate boundary: the payload must equal what
+ * survives serialization, so mutating either side afterwards cannot rewrite
+ * the other. Total on gated keys and data (both already survived a JSON
+ * round trip to reach the push).
+ */
+function wireClone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
 }
 
 /**
@@ -299,16 +383,16 @@ function hashQueryKey(key: QueryKey): QueryKeyHash {
 /**
  * Provisional prefix match over the structured key. Segments compare by hash,
  * not identity, so Date and object segments are reachable by value — the same
- * entries fetchQuery would serve. (An unhashable segment raises here exactly
- * as it would from fetchQuery.) Index loop: every/some skip holes, and a
- * hole prefix must compare as undefined, not match vacuously.
+ * entries fetchQuery would serve. Takes caller-hashed prefix segments (see
+ * invalidate): an unhashable segment raises exactly as it would from
+ * fetchQuery.
  */
-function isKeyPrefixMatch(prefix: QueryKey, key: QueryKey): boolean {
-  if (prefix.length > key.length) {
+function isKeyPrefixMatch(prefixHashes: readonly QueryKeyHash[], key: QueryKey): boolean {
+  if (prefixHashes.length > key.length) {
     return false
   }
-  for (let index = 0; index < prefix.length; index += 1) {
-    if (hashQueryKey([prefix[index]]) !== hashQueryKey([key[index]])) {
+  for (let index = 0; index < prefixHashes.length; index += 1) {
+    if (prefixHashes[index] !== hashQueryKey([key[index]])) {
       return false
     }
   }
@@ -391,10 +475,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
   }
 
   function toCacheEntryView(entry: ClientCacheEntry): CacheEntry {
+    // Decoupled copies: the filter — and the payload built from this view —
+    // must not alias the cache, so mutating either side cannot rewrite the
+    // other. Errors stay live references; they never cross the boundary.
     return {
-      key: entry.key,
+      key: wireClone(entry.key),
       hash: entry.hash,
-      data: entry.data,
+      data: wireClone(entry.data),
       error: entry.error as Error | undefined,
       updatedAt: entry.updatedAt,
       status: entry.status,
@@ -493,6 +580,20 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       return entry.inFlight?.promise === requestPromise
     }
 
+    function unwindStaleOutcome(): void {
+      // A dropped outcome must not leave the first-fetch marker up: with no
+      // newer flight owning the slot, the entry reads never-fetched (idle),
+      // not loading-forever, for createQuery's isLoading (#280). A newer
+      // flight in progress keeps 'loading' — its own landing settles status.
+      if (
+        entry.generation !== requestGeneration &&
+        entry.inFlight === null &&
+        entry.status === 'loading'
+      ) {
+        entry.status = 'idle'
+      }
+    }
+
     function releaseSlot(): void {
       // Always runs exactly once per request, attached or detached, so the
       // client-level set never outlives the flight it tracks.
@@ -524,6 +625,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // (invalidate() or hydrate() during the flight) owns the entry now:
         // resolve to the caller but drop the stale outcome instead of
         // un-invalidating it or overwriting fresh data.
+        unwindStaleOutcome()
         if (!controller.signal.aborted && entry.generation === requestGeneration) {
           entry.data = loaded
           entry.error = undefined
@@ -534,6 +636,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         return loaded
       },
       (loadError) => {
+        unwindStaleOutcome()
         if (!controller.signal.aborted && entry.generation === requestGeneration) {
           entry.error = loadError
           entry.status = 'error'
@@ -549,22 +652,44 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
 
     async prefetchQueries(requests: readonly FetchQueryOptions<any, any>[]): Promise<void> {
       ensureUsable('prefetchQueries')
-      return Promise.all(
-        requests.map((request) =>
-          client
-            .fetchQuery(request)
-            .then(
-              () => undefined,
-              () => undefined
-            )
-        )
-      ).then(() => undefined)
+      await Promise.all(
+        requests.map(async (request) => {
+          // Whether the loader ran distinguishes the two failure classes:
+          // load failures are swallowed (prefetch only warms), but a
+          // QueryError raised before the loader ran — unhashable key,
+          // disposed explicit client — is misuse and surfaces. (A QueryError
+          // thrown BY a loader counts as a load failure.)
+          let loaderRan = false
+          try {
+            await client.fetchQuery({
+              ...request,
+              load: (ctx: QueryLoadContext) => {
+                loaderRan = true
+                return request.load(ctx)
+              },
+            })
+          } catch (error) {
+            if (error instanceof QueryError && !loaderRan) {
+              throw error
+            }
+          }
+        })
+      )
     },
 
     invalidate(prefix: QueryKey): void {
       ensureUsable('invalidate')
+      // Hoisted out of the entry loop: an unhashable prefix raises
+      // consistently even against an empty cache (instead of no-op-ing),
+      // and segments hash once rather than per entry. Index loop, mirroring
+      // the scan: every/map skip holes, and a hole prefix must compare as
+      // undefined, not match vacuously.
+      const prefixHashes: QueryKeyHash[] = []
+      for (let index = 0; index < prefix.length; index += 1) {
+        prefixHashes.push(hashQueryKey([prefix[index]]))
+      }
       for (const entry of entries.values()) {
-        if (isKeyPrefixMatch(prefix, entry.key)) {
+        if (isKeyPrefixMatch(prefixHashes, entry.key)) {
           entry.invalidated = true
           entry.generation += 1
           if (entry.inFlight !== null) {
@@ -599,10 +724,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         if (!keySurvivesWire(entry.key)) {
           continue
         }
-        // Entries whose data is undefined stay cached but are not serialized:
-        // JSON cannot carry an undefined value, so including one would produce
-        // a payload that hydrate() itself rejects.
-        if (entry.data === undefined) {
+        // Data that cannot survive the wire stays cached but is not
+        // serialized: a Date revives as a string, undefined members vanish,
+        // class instances lose their prototype — serving any of those as
+        // success on the other side would contradict TRaw. Skipped entries
+        // refetch instead.
+        if (!dataSurvivesWire(entry.data)) {
           continue
         }
         // Snapshot serialization is opt-in per query; a filter narrows the
@@ -615,9 +742,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           continue
         }
         queries.push({
-          key: entry.key,
-          data: entry.data,
-          updatedAt: entry.updatedAt ?? Date.now(),
+          key: view.key,
+          data: view.data,
+          updatedAt: view.updatedAt ?? Date.now(),
         })
       }
       return { queries }
@@ -638,13 +765,29 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         hash: hashQueryKey(item.key),
       }))
       for (const { item, hash } of restored) {
+        // Decoupled copies: the cache must not alias the payload, so
+        // mutating either side afterwards cannot rewrite the other. Dates,
+        // undefined segments, and circular graphs survive the clone;
+        // functions and symbols cannot cross the boundary and raise loudly
+        // instead of aliasing silently (the wire would drop them).
+        let key: QueryKey
+        let data: unknown
+        try {
+          key = structuredClone(item.key)
+          data = structuredClone(item.data)
+        } catch (cloneError) {
+          throw new QueryError(
+            'hydrate() payload contains values that cannot cross the hydration boundary.',
+            { cause: cloneError }
+          )
+        }
         const entry =
           entries.get(hash) ??
           // Unclaimed defaults: the first query that names the key configures
           // the restored entry.
-          createEntry(item.key, hash, {})
-        entry.key = item.key
-        entry.data = item.data
+          createEntry(key, hash, {})
+        entry.key = key
+        entry.data = data
         entry.error = undefined
         entry.status = 'success'
         entry.updatedAt = item.updatedAt
