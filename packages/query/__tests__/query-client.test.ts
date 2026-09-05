@@ -296,6 +296,93 @@ describe('fetchQuery caching', () => {
     ).rejects.toThrowError(/circular/)
   })
 
+  it('validates the serialized form of arrays with custom toJSON hooks', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const counting = (value: string) => async () => {
+      loads += 1
+      return value
+    }
+    // The hook replaces the rendering, so the key hashes as null — and
+    // shares the null entry consistently, on both sides of the hash.
+    const hooked = Object.assign(['a'], { toJSON: () => null })
+    await expect(
+      client.fetchQuery({ key: () => ['u', hooked], load: counting('H') })
+    ).resolves.toBe('H')
+    await expect(
+      client.fetchQuery({ key: () => ['u', null], load: counting('N') })
+    ).resolves.toBe('H')
+    expect(loads).toBe(1)
+
+    // A hook whose output is unhashable is rejected, not collided with '{}'.
+    const sneakyHook = Object.assign(['a'], { toJSON: () => new Set(['a']) })
+    await expect(
+      client.fetchQuery({ key: () => ['u', sneakyHook], load: counting('X') })
+    ).rejects.toThrowError(QueryError)
+    expect(loads).toBe(1)
+  })
+
+  it('rejects Dates that cannot survive serialization', async () => {
+    const client = createQueryClient()
+    const load = async () => 'unreached'
+    const instant = '2024-01-01T00:00:00.000Z'
+
+    // An invalid Date renders as null, colliding with a null segment.
+    await expect(
+      client.fetchQuery({ key: () => ['u', new Date(NaN)], load })
+    ).rejects.toThrowError(/invalid Date/)
+    // An overridden hook rendering an unhashable value is validated, not
+    // silently collided with '{}'.
+    const hooked = Object.assign(new Date(instant), {
+      toJSON: () => new Set(['a']),
+    })
+    await expect(
+      client.fetchQuery({ key: () => ['u', hooked], load })
+    ).rejects.toThrowError(QueryError)
+    // A brand spoof is not a genuine Date, and its symbol key is unhashable.
+    await expect(
+      client.fetchQuery({
+        key: () => ['u', { [Symbol.toStringTag]: 'Date' }],
+        load,
+      })
+    ).rejects.toThrowError(/symbol/)
+    // A genuine valid Date still works.
+    await expect(
+      client.fetchQuery({
+        key: () => ['u', new Date(instant)],
+        load: async () => 'v',
+      })
+    ).resolves.toBe('v')
+  })
+
+  it('rejects object segments that differ only by symbol properties', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const tagged = Object.assign({ id: 1 }, { [Symbol('tag')]: 'x' })
+
+    // Stringify drops the symbol, so accepting this would serve the plain
+    // twin's entry for it.
+    await expect(
+      client.fetchQuery({
+        key: () => ['u', tagged],
+        load: async () => {
+          loads += 1
+          return 'S'
+        },
+      })
+    ).rejects.toThrowError(/symbol/)
+    await expect(
+      client.fetchQuery({
+        key: () => ['u', { id: 1 }],
+        load: async () => {
+          loads += 1
+          return 'P'
+        },
+      })
+    ).resolves.toBe('P')
+    expect(loads).toBe(1)
+  })
+
   it('accepts a shared reference used twice in one key', async () => {
     const client = createQueryClient()
     const shared = { id: 1 }
@@ -1345,5 +1432,34 @@ describe('dehydrate and hydrate', () => {
     for (const payload of malformed) {
       expect(() => client.hydrate(payload as DehydratedState)).toThrowError(QueryError)
     }
+  })
+
+  it('installs nothing when a later hydration entry is malformed', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const state = {
+      queries: [
+        { key: ['ok'], data: 'stale-partial', updatedAt: Date.now() },
+        {
+          key: ['bad', { __tachuiQueryUndefined: true }],
+          data: 'x',
+          updatedAt: Date.now(),
+        },
+      ],
+    }
+
+    // The shape check passes, but the second key is unhashable — and the
+    // first entry must not survive the throw for a fallback fetch to serve.
+    expect(() => client.hydrate(state as DehydratedState)).toThrowError(QueryError)
+    await expect(
+      client.fetchQuery({
+        key: () => ['ok'],
+        load: async () => {
+          loads += 1
+          return 'fresh'
+        },
+      })
+    ).resolves.toBe('fresh')
+    expect(loads).toBe(1)
   })
 })
