@@ -98,6 +98,22 @@ function isDateValue(value: unknown): value is Date {
 }
 
 /**
+ * Rejects own enumerable symbol properties: Object.keys and JSON.stringify
+ * both drop them, so sibling objects differing only by one would hash
+ * identically and serve each other's data.
+ */
+function assertNoSymbolKeys(value: object, path: string): void {
+  const hidden = Object.getOwnPropertySymbols(value).some((symbol) =>
+    Object.prototype.propertyIsEnumerable.call(value, symbol)
+  )
+  if (hidden) {
+    throw new QueryError(
+      `Cannot hash query key: symbol-keyed properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
+    )
+  }
+}
+
+/**
  * Plain-or-protoless check that holds across realms: a plain object has at
  * most one link above it (its realm's object prototype, or nothing).
  */
@@ -111,12 +127,12 @@ function isPlainObject(value: object): boolean {
 }
 
 /**
- * Provisional key validation. `JSON.stringify` silently collapses several
- * inputs — Sets, Maps, and class instances to `{}`, functions and symbols in
- * array positions to `null` — so distinct keys would share an entry and serve
- * each other's data. Anything the hash cannot render exactly is rejected here
- * with a path instead of colliding silently. `undefined` stays supported via
- * the sentinel above; `Date` hashes deterministically in-session via ISO.
+ * Provisional key validation. The rule is to validate what the hash renders:
+ * `JSON.stringify` silently collapses several inputs — Sets, Maps, and class
+ * instances to `{}`, functions and symbols in array positions to `null` — so
+ * distinct keys would share an entry and serve each other's data. Anything
+ * the hash cannot render exactly is rejected here with a path instead of
+ * colliding silently. `undefined` stays supported via the sentinel above.
  * #278 canonicalizes the rest instead of rejecting it.
  */
 function assertHashable(value: unknown, path: string, seen: Set<object> = new Set()): void {
@@ -149,19 +165,28 @@ function assertHashable(value: unknown, path: string, seen: Set<object> = new Se
     default:
       break
   }
-  if (Array.isArray(value)) {
-    // Index loop rather than forEach: holes read as undefined, which the
-    // sentinel distinguishes instead of collapsing to null.
-    enterStructure(value, path, seen, () => {
-      for (let index = 0; index < value.length; index += 1) {
-        assertHashable(value[index], `${path}[${index}]`, seen)
-      }
-    })
-    return
-  }
+  // Invalid Dates carry no identity — the engines render them as null, which
+  // would collide with an ordinary null segment — so they are rejected before
+  // any hook runs. A brand spoof without a Date internal slot falls through
+  // to the symbol check below.
   if (isDateValue(value)) {
-    return
+    let time: number | undefined
+    try {
+      time = Date.prototype.getTime.call(value)
+    } catch {
+      time = undefined
+    }
+    if (time !== undefined && Number.isNaN(time)) {
+      throw new QueryError(
+        `Cannot hash query key: invalid Dates cannot be hashed at ${path} (they serialize as null).`
+      )
+    }
   }
+  // A toJSON hook replaces the rendering, so it is validated first: the scan
+  // must see the serialized representation, not the carrier. This covers
+  // plain objects, class instances, genuine Dates (via the prototype hook,
+  // which renders ISO strings), and arrays with custom hooks (whose indexed
+  // elements the hash would otherwise never render).
   const toJSON = (value as { toJSON?: unknown }).toJSON
   if (typeof toJSON === 'function') {
     let serialized: unknown
@@ -180,11 +205,23 @@ function assertHashable(value: unknown, path: string, seen: Set<object> = new Se
     })
     return
   }
+  if (Array.isArray(value)) {
+    assertNoSymbolKeys(value, path)
+    // Index loop rather than forEach: holes read as undefined, which the
+    // sentinel distinguishes instead of collapsing to null.
+    enterStructure(value, path, seen, () => {
+      for (let index = 0; index < value.length; index += 1) {
+        assertHashable(value[index], `${path}[${index}]`, seen)
+      }
+    })
+    return
+  }
   if (!isPlainObject(value)) {
     throw new QueryError(
       `Cannot hash query key: class instances without toJSON are not supported at ${path}.`
     )
   }
+  assertNoSymbolKeys(value, path)
   if (UNDEFINED_MARKER in (value as Record<string, unknown>)) {
     // A user object with this shape would hash identically to an undefined
     // segment and be served the other key's data, so the shape is reserved.
@@ -593,8 +630,14 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           'hydrate() requires a DehydratedState with a queries array, as produced by dehydrate().'
         )
       }
-      for (const item of state.queries) {
-        const hash = hashQueryKey(item.key)
+      // Validate every key before committing any entry: a malformed later
+      // entry must not leave earlier ones partially installed for a fallback
+      // fetch to serve.
+      const restored = state.queries.map((item) => ({
+        item,
+        hash: hashQueryKey(item.key),
+      }))
+      for (const { item, hash } of restored) {
         const entry =
           entries.get(hash) ??
           // Unclaimed defaults: the first query that names the key configures
