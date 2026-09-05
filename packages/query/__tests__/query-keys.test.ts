@@ -280,6 +280,36 @@ describe('payload codec', () => {
     expect(decodeQueryKey([{ __tachuiQuery: 'undefined' }])).toEqual([undefined])
   })
 
+  it('resolves toJSON carriers in a raw payload, as a fetch would', () => {
+    // The hook renders the key into something else entirely, so walking the
+    // carrier's members instead would reject a key fetchQuery accepts — the
+    // hook reads as a non-index array property, or as a forbidden function.
+    const hookedArray = Object.assign(['raw'], { toJSON: () => ['wire'] })
+    expect(hashQueryKey(decodeQueryKey(hookedArray))).toBe(
+      hashQueryKey(hookedArray)
+    )
+    expect(decodeQueryKey(hookedArray)).toEqual(['wire'])
+
+    const nested = ['u', { toJSON: () => ({ kept: 1 }) }]
+    expect(hashQueryKey(decodeQueryKey(nested))).toBe(hashQueryKey(nested))
+    expect(decodeQueryKey(nested)).toEqual(['u', { kept: 1 }])
+  })
+
+  it('rejects a circular raw payload instead of exhausting the stack', () => {
+    const selfReferencing: Record<string, unknown> = {}
+    selfReferencing.self = selfReferencing
+    expect(() => decodeQueryKey(['u', selfReferencing])).toThrowError(/circular/)
+
+    const circularArray: unknown[] = ['u']
+    circularArray.push(circularArray)
+    expect(() => decodeQueryKey(circularArray)).toThrowError(/circular/)
+
+    // A shared reference is not a cycle: it revisits after its subtree is
+    // done, so it must still decode.
+    const shared = { id: 1 }
+    expect(() => decodeQueryKey(['u', shared, shared])).not.toThrow()
+  })
+
   it('accepts a payload handed over in process rather than through JSON', () => {
     // An SSR framework can pass the object straight across, so raw Dates,
     // byte arrays, bigints, and undefined decode as themselves.

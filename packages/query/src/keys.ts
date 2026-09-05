@@ -477,7 +477,11 @@ function decodeTagged(value: TaggedValue, path: string): unknown {
   }
 }
 
-function decodeValue(value: unknown, path: string): unknown {
+function decodeValue(
+  value: unknown,
+  path: string,
+  seen: Set<object> = new Set()
+): unknown {
   if (value === null) {
     return null
   }
@@ -494,7 +498,17 @@ function decodeValue(value: unknown, path: string): unknown {
       // `bigint` are canonical values in their own right. Encoding then
       // decoding normalizes them, and rejects a function or symbol with the
       // encoder's message rather than a vaguer one.
-      return decodeValue(encodeValue(value, path, new Set()), path)
+      return decodeValue(encodeValue(value, path, new Set()), path, seen)
+  }
+  // Hook precedence, matching the encoder: a raw carrier — an augmented
+  // array or a plain object with toJSON — renders to something else entirely,
+  // so walking its members would reject a key `fetchQuery` accepts (the hook
+  // reads as a non-index property, or as a forbidden function). Encoding
+  // resolves the hook and the result decodes as ordinary data. A genuine
+  // Date's stock hook is handled by the encoder, and an encoded payload can
+  // never carry a function.
+  if (typeof (value as { toJSON?: unknown }).toJSON === 'function') {
+    return decodeValue(encodeValue(value, path, new Set()), path, seen)
   }
   if (Array.isArray(value)) {
     // A raw array — one handed over in process rather than through JSON —
@@ -506,11 +520,19 @@ function decodeValue(value: unknown, path: string): unknown {
         `Cannot decode query key: arrays with non-index properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
       )
     }
-    return value.map((member, index) => decodeValue(member, `${path}[${index}]`))
+    // Guarded like the encoder: a raw payload can hold a cycle, and an
+    // unguarded walk exhausts the stack with a RangeError instead of naming
+    // the malformed key. JSON cannot express one, so encoded payloads never
+    // reach this.
+    return enterStructure(value, path, seen, () =>
+      value.map((member, index) =>
+        decodeValue(member, `${path}[${index}]`, seen)
+      )
+    )
   }
   if (!isPlainObject(value as object)) {
-    // Likewise for a Date, a Uint8Array, or a toJSON carrier arriving raw.
-    return decodeValue(encodeValue(value, path, new Set()), path)
+    // Likewise for a Date or a Uint8Array arriving raw.
+    return decodeValue(encodeValue(value, path, new Set()), path, seen)
   }
   // Same reasoning as the array branch: Object.keys would silently drop a
   // symbol or non-enumerable member that the encoder refuses outright. Run
@@ -530,18 +552,21 @@ function decodeValue(value: unknown, path: string): unknown {
   if (KEY_MARKER in (value as Record<string, unknown>)) {
     return decodeTagged(value as TaggedValue, path)
   }
-  const decoded: Record<string, unknown> = {}
-  for (const member of Object.keys(value as object)) {
-    setOwnMember(
-      decoded,
-      member,
-      decodeValue(
-        (value as Record<string, unknown>)[member],
-        `${path}.${member}`
+  return enterStructure(value as object, path, seen, () => {
+    const decoded: Record<string, unknown> = {}
+    for (const member of Object.keys(value as object)) {
+      setOwnMember(
+        decoded,
+        member,
+        decodeValue(
+          (value as Record<string, unknown>)[member],
+          `${path}.${member}`,
+          seen
+        )
       )
-    )
-  }
-  return decoded
+    }
+    return decoded
+  })
 }
 
 /**
