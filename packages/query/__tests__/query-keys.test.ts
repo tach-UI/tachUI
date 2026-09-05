@@ -47,6 +47,27 @@ describe('stable hashing', () => {
     expect(hashQueryKey(build())).toBe(hashQueryKey(build()))
   })
 
+  it('keeps an own __proto__ member distinct from its absence', () => {
+    // A plain `acc[member] = value` reaches Object.prototype's setter for
+    // this one name and creates no own property, so the two would encode
+    // alike and share a cache entry.
+    const withProto = JSON.parse('{"__proto__":1}') as Record<string, unknown>
+    const other = JSON.parse('{"__proto__":2}') as Record<string, unknown>
+
+    expect(Object.keys(withProto)).toEqual(['__proto__'])
+    expect(hashQueryKey([withProto])).not.toBe(hashQueryKey([{}]))
+    expect(hashQueryKey([withProto])).not.toBe(hashQueryKey([other]))
+    expect(hashQueryKey([withProto])).toBe(
+      hashQueryKey([JSON.parse('{"__proto__":1}')])
+    )
+
+    // ... and it survives the wire rather than being dropped on the way back.
+    const revived = roundTrip([withProto])[0] as Record<string, unknown>
+    expect(Object.keys(revived)).toEqual(['__proto__'])
+    expect(revived['__proto__']).toBe(1)
+    expect(Object.getPrototypeOf(revived)).toBe(Object.prototype)
+  })
+
   it('is insensitive to object property order', () => {
     expect(hashQueryKey([{ a: 1, b: 2, c: 3 }])).toBe(
       hashQueryKey([{ c: 3, b: 2, a: 1 }])
@@ -174,6 +195,41 @@ describe('payload codec', () => {
     )
     expect(() => decodeQueryKey([{ __tachuiQuery: 'date', value: 7 }])).toThrowError(
       /malformed date/
+    )
+  })
+
+  it('rejects base64 that this encoder would never emit', () => {
+    // Length and charset alone accept these, and they would decode to
+    // arbitrary bytes — a value named in a form the encoder never produces.
+    for (const malformed of ['====', 'AB=C', 'A===', '=ABC', 'A', '=']) {
+      expect(
+        () => decodeQueryKey([{ __tachuiQuery: 'bytes', value: malformed }]),
+        malformed
+      ).toThrowError(/malformed base64/)
+    }
+    for (const valid of ['', '/w==', '/wA=', '/wAQ', '/wAQ/w==']) {
+      expect(
+        () => decodeQueryKey([{ __tachuiQuery: 'bytes', value: valid }]),
+        valid
+      ).not.toThrow()
+    }
+  })
+
+  it('rejects tagged wrappers carrying anything extra', () => {
+    expect(() =>
+      decodeQueryKey([{ __tachuiQuery: 'undefined', extra: 1 }])
+    ).toThrowError(/malformed undefined wrapper/)
+    expect(() =>
+      decodeQueryKey([{ __tachuiQuery: 'undefined', value: 'x' }])
+    ).toThrowError(/malformed undefined wrapper/)
+    expect(() =>
+      decodeQueryKey([
+        { __tachuiQuery: 'date', value: instant, extra: 1 },
+      ])
+    ).toThrowError(/malformed date wrapper/)
+    // A valued tag with no value is equally not the canonical encoding.
+    expect(() => decodeQueryKey([{ __tachuiQuery: 'date' }])).toThrowError(
+      /malformed date wrapper/
     )
   })
 
