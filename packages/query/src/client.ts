@@ -40,7 +40,6 @@ import type {
   QueryClient,
   QueryKey,
   QueryKeyHash,
-  QueryLoadContext,
   QueryStatus,
 } from './types'
 
@@ -93,6 +92,19 @@ interface ClientCacheEntry {
 const UNDEFINED_MARKER = '__tachuiQueryUndefined'
 const UNDEFINED_SEGMENT = { [UNDEFINED_MARKER]: true }
 
+/**
+ * QueryErrors raised before any loader runs (unhashable key, use after
+ * dispose). Prefetch rethrows these and swallows everything else; a WeakSet
+ * (not a subclass) keeps the public error type stable, and entries die with
+ * their error objects.
+ */
+const dispatchErrors = new WeakSet<object>()
+
+function markDispatchError(error: QueryError): QueryError {
+  dispatchErrors.add(error)
+  return error
+}
+
 /** Brand check that holds across realms (structured clones, SSR payloads). */
 function isDateValue(value: unknown): value is Date {
   return Object.prototype.toString.call(value) === '[object Date]'
@@ -106,6 +118,26 @@ function hasOwnEnumerableSymbol(value: object): boolean {
   return Object.getOwnPropertySymbols(value).some((symbol) =>
     Object.prototype.propertyIsEnumerable.call(value, symbol)
   )
+}
+
+/**
+ * Arrays render only their indexed elements: extra own properties (named or
+ * symbol) are dropped by the hash and the wire alike, so an augmented array
+ * would collide with its bare twin.
+ */
+function hasNonIndexProps(value: unknown[]): boolean {
+  if (hasOwnEnumerableSymbol(value)) {
+    return true
+  }
+  return Object.keys(value).some((member) => {
+    const index = Number(member)
+    return (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= value.length ||
+      String(index) !== member
+    )
+  })
 }
 
 /**
@@ -140,7 +172,9 @@ function dataSurvivesWire(value: unknown, seen: Set<object> = new Set()): boolea
     case 'boolean':
       return true
     case 'number':
-      return Number.isFinite(value)
+      // -0 renders as 0 on the wire, so a hydrated entry would serve a value
+      // TRaw never held (notably with a flipped reciprocal).
+      return Number.isFinite(value) && !Object.is(value, -0)
     case 'bigint':
     case 'function':
     case 'symbol':
@@ -164,6 +198,11 @@ function dataSurvivesWire(value: unknown, seen: Set<object> = new Set()): boolea
   seen.add(target)
   try {
     if (Array.isArray(value)) {
+      // Extra own properties never survive the wire, so an augmented array
+      // would hydrate altered.
+      if (hasNonIndexProps(value)) {
+        return false
+      }
       // Index loop, mirroring the scan: holes read as undefined, which the
       // wire renders as null.
       for (let index = 0; index < value.length; index += 1) {
@@ -233,6 +272,13 @@ function assertHashable(value: unknown, path: string, seen: Set<object> = new Se
           `Cannot hash query key: non-finite numbers are not supported at ${path}.`
         )
       }
+      // -0 stringifies as 0, so the two would share an entry and serve each
+      // other's data (notably with flipped reciprocals).
+      if (Object.is(value, -0)) {
+        throw new QueryError(
+          `Cannot hash query key: -0 is not supported at ${path} (it serializes as 0).`
+        )
+      }
       return
     case 'bigint':
       throw new QueryError(
@@ -290,7 +336,14 @@ function assertHashable(value: unknown, path: string, seen: Set<object> = new Se
     return
   }
   if (Array.isArray(value)) {
-    assertNoSymbolKeys(value, path)
+    // Extra own properties never render, so an augmented array would collide
+    // with its bare twin. (Holes are absent from Object.keys and stay
+    // allowed via the sentinel path.)
+    if (hasNonIndexProps(value)) {
+      throw new QueryError(
+        `Cannot hash query key: arrays with non-index properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
+      )
+    }
     // Index loop rather than forEach: holes read as undefined, which the
     // sentinel distinguishes instead of collapsing to null.
     enterStructure(value, path, seen, () => {
@@ -350,25 +403,6 @@ function enterStructure(
 }
 
 /**
- * Whether the key round-trips through the wire codec to the same hash. The
- * hash runs on post-toJSON values, so walking the raw key disagrees in both
- * directions: a toJSON value carrying a raw `undefined` would be dropped
- * although it matches, and a toJSON resolving to `undefined` would be
- * emitted as a dead entry. The self-consistency check below compares the
- * hash before and after a JSON round trip instead of enumerating lossy
- * shapes. Anything unserializable is already rejected at insert time; the
- * catch is for a non-deterministic toJSON, which fails safe (skipped).
- */
-function keySurvivesWire(key: QueryKey): boolean {
-  try {
-    const revived = JSON.parse(JSON.stringify(key)) as QueryKey
-    return hashQueryKey(key) === hashQueryKey(revived)
-  } catch {
-    return false
-  }
-}
-
-/**
  * Provisional key hash. The scan above rejects everything `stringify` could
  * choke on, so there is no fallback: anything reaching serialization is
  * exactly renderable. See {@link UNDEFINED_SEGMENT} and #278.
@@ -413,7 +447,9 @@ function isDehydratedState(state: unknown): state is DehydratedState {
       item !== null &&
       Array.isArray((item as { key?: unknown }).key) &&
       'data' in item &&
-      typeof (item as { updatedAt?: unknown }).updatedAt === 'number'
+      // Finite: NaN rides the wire as null, which the next hop rejects —
+      // fail the whole malformed payload here instead.
+      Number.isFinite((item as { updatedAt?: unknown }).updatedAt)
   )
 }
 
@@ -498,17 +534,45 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
   async function fetchQuery<TRaw, TError = Error>(
     options: FetchQueryOptions<TRaw, TError>
   ): Promise<TRaw> {
-    if (options.client !== undefined && options.client !== client) {
-      // Strip the forwarder: a decorated/proxied client that delegates back
-      // here would otherwise recurse on the intact options to RangeError.
-      return options.client.fetchQuery({ ...options, client: undefined })
+    // Dispatch first: lifecycle before delegation, so a disposed client
+    // naming a live explicit client still rejects for use after dispose()
+    // like every other method. Dispatch failures are tagged (see
+    // dispatchErrors) so prefetch can tell misuse from load failure. The
+    // forward is returned without await, so the inner call's loader failures
+    // never pass through this frame's tag.
+    let resolvedKey: QueryKey
+    let hash: QueryKeyHash
+    try {
+      ensureUsable('fetchQuery')
+      if (options.client !== undefined && options.client !== client) {
+        // Strip the forwarder: a decorated/proxied client that delegates back
+        // here would otherwise recurse on the intact options to RangeError.
+        return options.client.fetchQuery({ ...options, client: undefined })
+      }
+      resolvedKey = options.key()
+      hash = hashQueryKey(resolvedKey)
+    } catch (error) {
+      if (error instanceof QueryError) {
+        throw markDispatchError(error)
+      }
+      throw error
     }
-    ensureUsable('fetchQuery')
-    const resolvedKey = options.key()
-    const hash = hashQueryKey(resolvedKey)
     const cached = entries.get(hash)
-    const entry = cached ?? createEntry(resolvedKey, hash, options)
-    entry.key = resolvedKey
+    // Decoupled copy: the entry must not alias the caller's array, or a
+    // later mutation desyncs entry.key from entry.hash (breaking both the
+    // snapshot key and prefix matching). Wire-true rendering keeps the hash
+    // identical by construction — and that identity is the dehydrate gate
+    // below. A key that cannot even be rendered is refused loudly.
+    let storedKey: QueryKey
+    try {
+      storedKey = wireClone(resolvedKey)
+    } catch (cloneError) {
+      throw new QueryError('Cannot cache query: its key cannot be serialized.', {
+        cause: cloneError,
+      })
+    }
+    const entry = cached ?? createEntry(storedKey, hash, options)
+    entry.key = storedKey
     // Explicitly passed options upgrade the entry policy — but only while the
     // field is still unclaimed. An entry restored by hydrate() starts
     // unclaimed and picks up the developer's configuration from the first
@@ -653,27 +717,21 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     async prefetchQueries(requests: readonly FetchQueryOptions<any, any>[]): Promise<void> {
       ensureUsable('prefetchQueries')
       await Promise.all(
-        requests.map(async (request) => {
-          // Whether the loader ran distinguishes the two failure classes:
-          // load failures are swallowed (prefetch only warms), but a
-          // QueryError raised before the loader ran — unhashable key,
-          // disposed explicit client — is misuse and surfaces. (A QueryError
-          // thrown BY a loader counts as a load failure.)
-          let loaderRan = false
-          try {
-            await client.fetchQuery({
-              ...request,
-              load: (ctx: QueryLoadContext) => {
-                loaderRan = true
-                return request.load(ctx)
-              },
-            })
-          } catch (error) {
-            if (error instanceof QueryError && !loaderRan) {
-              throw error
+        requests.map((request) =>
+          client.fetchQuery(request).then(
+            () => undefined,
+            (error: unknown) => {
+              // Load failures are swallowed — prefetch only warms — but
+              // dispatch-phase misuse (unhashable key, disposed client)
+              // surfaces. The tag, not the type, decides: a QueryError thrown
+              // BY a loader — including one shared via dedup onto another
+              // caller's flight — is a load failure.
+              if (error instanceof QueryError && dispatchErrors.has(error)) {
+                throw error
+              }
             }
-          }
-        })
+          )
+        )
       )
     },
 
@@ -720,8 +778,11 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           continue
         }
         // Keys that cannot survive the wire are skipped for the same
-        // reason: the restored entry could never be matched.
-        if (!keySurvivesWire(entry.key)) {
+        // reason: the restored entry could never be matched. entry.key is
+        // the wire-rendered copy, so a hash mismatch against the insert-time
+        // hash proves the round trip is lossy (undefined became null, a hook
+        // resolved away, a hole filled in).
+        if (entry.hash !== hashQueryKey(entry.key)) {
           continue
         }
         // Data that cannot survive the wire stays cached but is not
@@ -764,12 +825,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         item,
         hash: hashQueryKey(item.key),
       }))
-      for (const { item, hash } of restored) {
-        // Decoupled copies: the cache must not alias the payload, so
-        // mutating either side afterwards cannot rewrite the other. Dates,
-        // undefined segments, and circular graphs survive the clone;
-        // functions and symbols cannot cross the boundary and raise loudly
-        // instead of aliasing silently (the wire would drop them).
+      // Clone every entry before committing any, for the same atomicity: a
+      // clone failure must not leave earlier entries partially installed.
+      // Dates, undefined segments, and circular graphs survive the clone;
+      // functions and symbols cannot cross the boundary and raise loudly
+      // instead of aliasing silently (the wire would drop them).
+      const staged = restored.map(({ item, hash }) => {
         let key: QueryKey
         let data: unknown
         try {
@@ -781,6 +842,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             { cause: cloneError }
           )
         }
+        return { item, hash, key, data }
+      })
+      for (const { item, hash, key, data } of staged) {
         const entry =
           entries.get(hash) ??
           // Unclaimed defaults: the first query that names the key configures
