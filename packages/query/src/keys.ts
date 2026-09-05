@@ -121,7 +121,21 @@ function fromBase64(text: string, path: string): Uint8Array {
       `Cannot decode query key: malformed base64 at ${path}.`
     )
   }
+  // Padding placement is not enough: the bits a padded quartet does not use
+  // must be zero, or one byte string has several spellings (AB== and AA==
+  // both decode to [0]). Only the spelling this encoder emits is accepted.
   const padding = text.endsWith('==') ? 2 : text.endsWith('=') ? 1 : 0
+  const unusedBits =
+    padding === 1
+      ? BASE64_ALPHABET.indexOf(text[text.length - 2]!) & 0b11
+      : padding === 2
+        ? BASE64_ALPHABET.indexOf(text[text.length - 3]!) & 0b1111
+        : 0
+  if (unusedBits !== 0) {
+    throw new QueryError(
+      `Cannot decode query key: malformed base64 at ${path}.`
+    )
+  }
   const bytes = new Uint8Array((text.length / 4) * 3 - padding)
   let offset = 0
   for (let index = 0; index < text.length; index += 4) {
@@ -536,11 +550,29 @@ export function canonicalizeQueryKey(key: QueryKey): QueryKey {
 }
 
 /**
+ * The hash of an already-encoded key. Callers that need the encoding, the
+ * hash, and the segment hashes together take them from one pass rather than
+ * encoding three times — which also means a `toJSON` hook is invoked once per
+ * insert, so a non-deterministic one cannot produce an entry whose key, hash,
+ * and segments disagree with each other.
+ */
+export function hashEncodedKey(encoded: readonly unknown[]): QueryKeyHash {
+  return JSON.stringify(encoded)
+}
+
+/** The per-segment hashes of an already-encoded key. */
+export function hashEncodedSegments(
+  encoded: readonly unknown[]
+): QueryKeyHash[] {
+  return encoded.map((segment) => JSON.stringify(segment))
+}
+
+/**
  * The deterministic hash used as the cache map key. Equal keys always produce
  * it; property order, `Date` identity, and `bigint` width never change it.
  */
 export function hashQueryKey(key: QueryKey): QueryKeyHash {
-  return JSON.stringify(encodeQueryKey(key))
+  return hashEncodedKey(encodeQueryKey(key))
 }
 
 /**
@@ -549,7 +581,7 @@ export function hashQueryKey(key: QueryKey): QueryKeyHash {
  * is keyed by.
  */
 export function hashKeySegments(key: QueryKey): QueryKeyHash[] {
-  return encodeQueryKey(key).map((segment) => JSON.stringify(segment))
+  return hashEncodedSegments(encodeQueryKey(key))
 }
 
 /**

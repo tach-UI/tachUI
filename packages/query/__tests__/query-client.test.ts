@@ -1279,25 +1279,20 @@ describe('prefetchQueries', () => {
     ).resolves.toBeUndefined()
   })
 
-  it('surfaces a key that cannot be stored, like any other misuse', async () => {
+  it('surfaces a throwing key hook, like any other misuse', async () => {
     const client = createQueryClient()
-    let calls = 0
-    const flaky = {
+    const hostile = {
       toJSON: () => {
-        calls += 1
-        // Each hash invokes the hook twice (scan, then serialize), so the
-        // insert-time hash succeeds and only the storing copy throws.
-        if (calls > 2) {
-          throw new Error('flaky')
-        }
-        return { a: 1 }
+        throw new Error('hook failed')
       },
     }
 
     // Raised in the dispatch frame, before any loader runs, so it is misuse
     // rather than a load failure and must not be swallowed.
     await expect(
-      client.prefetchQueries([{ key: () => ['f', flaky], load: async () => 'v' }])
+      client.prefetchQueries([
+        { key: () => ['f', hostile], load: async () => 'v' },
+      ])
     ).rejects.toThrowError(/toJSON threw/)
   })
 
@@ -1542,31 +1537,45 @@ describe('dehydrate and hydrate', () => {
     expect(loads).toBe(0)
   })
 
-  it('refuses keys that cannot be rendered for storage', async () => {
+  it('renders a key once per insert, so nothing derived can disagree', async () => {
     const client = createQueryClient()
     let calls = 0
-    const flaky = {
+    // A hook whose output drifts between calls. Deriving the hash, the
+    // segments, and the stored key from separate renderings would seat an
+    // entry whose parts disagree — invalidate() missing the key its own
+    // fetch created, or the snapshot shipping a key the hash never named.
+    const drifting = {
       toJSON: () => {
         calls += 1
-        // Each hash invokes the hook twice (scan, then serialize), so the
-        // insert-time hash succeeds and only the storing copy throws.
-        if (calls > 2) {
-          throw new Error('flaky')
-        }
-        return { a: 1 }
+        return { call: calls }
       },
     }
 
-    // A key that cannot be rendered cannot be hashed, so the fetch is
-    // refused loudly and nothing lingers.
+    await client.fetchQuery({
+      key: () => ['f', drifting],
+      load: async () => 'v',
+      snapshot: true,
+    })
+    expect(calls).toBe(1)
+
+    // Every part agrees: the payload carries the rendering the hash named,
+    // and a prefix built from the same rendering still reaches the entry.
+    const state = client.dehydrate()
+    expect(state.queries).toHaveLength(1)
+    expect(state.queries[0]?.key).toEqual(['f', { call: 1 }])
+
+    let loads = 0
+    client.invalidate(['f', { call: 1 }])
     await expect(
       client.fetchQuery({
-        key: () => ['f', flaky],
-        load: async () => 'v',
-        snapshot: true,
+        key: () => ['f', { call: 1 }],
+        load: async () => {
+          loads += 1
+          return 'fresh'
+        },
       })
-    ).rejects.toThrowError(/toJSON threw/)
-    expect(client.dehydrate().queries).toHaveLength(0)
+    ).resolves.toBe('fresh')
+    expect(loads).toBe(1)
   })
 
   it('round-trips entries keyed by nested undefined', async () => {

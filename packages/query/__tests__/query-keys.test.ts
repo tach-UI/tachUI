@@ -207,7 +207,15 @@ describe('payload codec', () => {
         malformed
       ).toThrowError(/malformed base64/)
     }
-    for (const valid of ['', '/w==', '/wA=', '/wAQ', '/wAQ/w==']) {
+    // Padding placement is not enough: a padded quartet's unused bits must
+    // be zero, or one byte string has several spellings.
+    for (const aliased of ['AB==', 'AC==', 'AAB=', 'AAC=']) {
+      expect(
+        () => decodeQueryKey([{ __tachuiQuery: 'bytes', value: aliased }]),
+        aliased
+      ).toThrowError(/malformed base64/)
+    }
+    for (const valid of ['', '/w==', '/wA=', '/wAQ', '/wAQ/w==', 'AA==', 'AAA=']) {
       expect(
         () => decodeQueryKey([{ __tachuiQuery: 'bytes', value: valid }]),
         valid

@@ -32,12 +32,12 @@ import {
 } from './defaults'
 import { isServer, QueryError } from './errors'
 import {
-  canonicalizeQueryKey,
   decodeQueryKey,
   encodeQueryKey,
   hasUnrenderedOwnProps,
+  hashEncodedKey,
+  hashEncodedSegments,
   hashKeySegments,
-  hashQueryKey,
   isKeyPrefixMatch,
   isPlainObject,
 } from './keys'
@@ -330,22 +330,25 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         return options.client.fetchQuery({ ...options, client: undefined })
       }
       resolvedKey = options.key()
-      const hash = hashQueryKey(resolvedKey)
+      // One encoding pass feeds the hash, the segments, and the stored key.
+      // Encoding three times would invoke each toJSON hook three times, so a
+      // non-deterministic hook could seat an entry whose key, hash, and
+      // segments disagree with one another.
+      const encodedKey = encodeQueryKey(resolvedKey)
+      const hash = hashEncodedKey(encodedKey)
       const cached = entries.get(hash)
       if (cached !== undefined) {
-        // The hash is derived from the canonical encoding, so an equal hash
-        // means an equal stored key and equal segments: the hit path neither
-        // re-canonicalizes the key nor overwrites what the entry holds.
+        // An equal hash means an equal stored key and equal segments, so the
+        // hit path neither decodes the key nor overwrites what the entry
+        // holds.
         entry = cached
       } else {
         // Decoupled canonical copy: the entry must not alias the caller's
         // array, or a later mutation desyncs entry.key from entry.hash.
-        // Canonicalizing cannot fail here — the hash above already encoded
-        // the same key — so any failure is the key's, not the storage step's.
         entry = createEntry(
-          canonicalizeQueryKey(resolvedKey),
+          decodeQueryKey(encodedKey),
           hash,
-          hashKeySegments(resolvedKey),
+          hashEncodedSegments(encodedKey),
           options
         )
       }
@@ -605,11 +608,15 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       // trusting a payload that crossed a process boundary.
       const restored = state.queries.map((item) => {
         const key = decodeQueryKey(item.key)
+        // Re-encoded once, so a payload that arrived in a non-canonical but
+        // acceptable form (raw Dates, a hand-built object) is keyed by the
+        // same hash a fetch would compute for it.
+        const encoded = encodeQueryKey(key)
         return {
           item,
           key,
-          hash: hashQueryKey(key),
-          segmentHashes: hashKeySegments(key),
+          hash: hashEncodedKey(encoded),
+          segmentHashes: hashEncodedSegments(encoded),
         }
       })
       // Clone data before committing any entry, for the same atomicity: a
