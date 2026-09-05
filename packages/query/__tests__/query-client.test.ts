@@ -232,7 +232,10 @@ describe('fetchQuery caching', () => {
     const client = createQueryClient()
 
     await expect(
-      client.fetchQuery({ key: () => [10n], load: async () => 'unreachable' })
+      client.fetchQuery({
+        key: () => [new Set(['a'])],
+        load: async () => 'unreachable',
+      })
     ).rejects.toThrowError(QueryError)
   })
 
@@ -244,16 +247,14 @@ describe('fetchQuery caching', () => {
       () => ['u', new Map([['a', 1]])],
       () => ['u', () => 'id'],
       () => ['u', Symbol('id')],
-      () => ['u', NaN],
-      () => ['u', 10n],
-      () => ['u', -0],
       () => ['u', Object.assign(['x'], { tag: 'sneaky' })],
       () => ['u', Object.assign(['x'], { [Symbol('s')]: 1 })],
     ]
 
     // Each resolves today to a shared wrong entry; all must raise instead.
-    // (Explicit undefined stays supported via the sentinel — see the test
-    // below — as does toJSON, null-prototype objects, and cross-realm input.)
+    // (Explicit undefined, NaN, Infinity, -0, bigint, Uint8Array, and Date
+    // are canonicalized rather than refused — see the encoding tests below —
+    // as are toJSON, null-prototype objects, and cross-realm input.)
     const circular: unknown[] = ['u']
     circular.push(circular)
     await expect(
@@ -269,7 +270,7 @@ describe('fetchQuery caching', () => {
     }
   })
 
-  it('rejects keys shaped like the undefined sentinel', async () => {
+  it('rejects keys shaped like the canonical encoding', async () => {
     const client = createQueryClient()
     let loads = 0
     const counting = (value: string) => async () => {
@@ -277,11 +278,12 @@ describe('fetchQuery caching', () => {
       return value
     }
 
-    // The shape is the sentinel's encoding, so accepting it would serve
-    // undefined-keyed data for it (or vice versa).
+    // The shape is a tagged wrapper, so accepting it would serve
+    // undefined-keyed data for it (or vice versa) and decode into a value
+    // the caller never wrote.
     await expect(
       client.fetchQuery({
-        key: () => ['u', { __tachuiQueryUndefined: true }],
+        key: () => ['u', { __tachuiQuery: 'undefined' }],
         load: counting('spoof'),
       })
     ).rejects.toThrowError(/reserved/)
@@ -1296,7 +1298,7 @@ describe('prefetchQueries', () => {
     // rather than a load failure and must not be swallowed.
     await expect(
       client.prefetchQueries([{ key: () => ['f', flaky], load: async () => 'v' }])
-    ).rejects.toThrowError(/cannot be serialized/)
+    ).rejects.toThrowError(/toJSON threw/)
   })
 
   it('swallows loader QueryErrors shared via dedup during prefetch', async () => {
@@ -1425,25 +1427,24 @@ describe('dehydrate and hydrate', () => {
     expect(seen.queries).toHaveLength(1)
   })
 
-  it('does not re-emit a hydrated undefined key as null', async () => {
+  it('re-emits a hydrated undefined key as undefined, never as null', async () => {
     const client = createQueryClient()
     await client.fetchQuery({
       key: () => ['u', undefined],
       load: async () => 'anon',
       snapshot: true,
     })
-    // The insert-time rendering is lossy, so the gate already skips it.
-    expect(client.dehydrate().queries).toHaveLength(0)
 
     // A payload assembled in process — an SSR framework handing the object
-    // over directly rather than through a socket — can still carry
-    // undefined. Storing it verbatim would make the gate vacuous for this
-    // entry: the stored key hashes with the sentinel, matches, and then
-    // ships as null for the next hop to mismatch.
+    // over directly rather than through a socket — can still carry a raw
+    // undefined, so hydrate() accepts both that and the encoded form.
     client.hydrate({
       queries: [{ key: ['u', undefined], data: 'restored', updatedAt: Date.now() }],
     })
-    expect(client.dehydrate().queries).toHaveLength(0)
+    const state = client.dehydrate()
+    expect(state.queries).toHaveLength(1)
+    // Encoded, not collapsed: null would be a different key on the far side.
+    expect(state.queries[0]?.key).toEqual(['u', { __tachuiQuery: 'undefined' }])
 
     // The restored data is still served, and only by the original key.
     let loads = 0
@@ -1460,7 +1461,7 @@ describe('dehydrate and hydrate', () => {
     expect(loads).toBe(1)
   })
 
-  it('does not serialize entries keyed by undefined', async () => {
+  it('round-trips entries keyed by undefined', async () => {
     const server = createQueryClient()
     await server.fetchQuery({
       key: () => ['user', undefined],
@@ -1468,9 +1469,10 @@ describe('dehydrate and hydrate', () => {
       snapshot: true,
     })
 
-    // The key would become null on the wire, leaving a dead entry behind, so
-    // nothing is emitted and the browser refetches on first paint.
-    expect(server.dehydrate().queries).toHaveLength(0)
+    // The tag distinguishes an explicit undefined from null and from an
+    // absent property, so the key survives JSON instead of becoming a dead
+    // entry the browser could never match.
+    expect(server.dehydrate().queries).toHaveLength(1)
 
     const browser = createQueryClient()
     browser.hydrate(JSON.parse(JSON.stringify(server.dehydrate())))
@@ -1478,6 +1480,17 @@ describe('dehydrate and hydrate', () => {
     await expect(
       browser.fetchQuery({
         key: () => ['user', undefined],
+        load: async () => {
+          loads += 1
+          return 'fetched'
+        },
+      })
+    ).resolves.toBe('anon')
+    expect(loads).toBe(0)
+    // ... and it is still a different entry from an explicit null.
+    await expect(
+      browser.fetchQuery({
+        key: () => ['user', null],
         load: async () => {
           loads += 1
           return 'fetched'
@@ -1544,19 +1557,19 @@ describe('dehydrate and hydrate', () => {
       },
     }
 
-    // A key that cannot be rendered cannot be stored safely (the entry would
-    // alias or desync), so the fetch is refused loudly and nothing lingers.
+    // A key that cannot be rendered cannot be hashed, so the fetch is
+    // refused loudly and nothing lingers.
     await expect(
       client.fetchQuery({
         key: () => ['f', flaky],
         load: async () => 'v',
         snapshot: true,
       })
-    ).rejects.toThrowError(/cannot be serialized/)
+    ).rejects.toThrowError(/toJSON threw/)
     expect(client.dehydrate().queries).toHaveLength(0)
   })
 
-  it('does not serialize entries keyed by nested undefined', async () => {
+  it('round-trips entries keyed by nested undefined', async () => {
     const client = createQueryClient()
     await client.fetchQuery({
       key: () => ['u', { id: undefined }],
@@ -1564,27 +1577,50 @@ describe('dehydrate and hydrate', () => {
       snapshot: true,
     })
 
-    // The undefined member is dropped on the wire, so the restored entry
-    // could never be matched by the original key.
-    expect(client.dehydrate().queries).toHaveLength(0)
+    // An undefined member is tagged rather than dropped, so it stays
+    // distinct from an object that simply lacks the property.
+    const wire = JSON.parse(JSON.stringify(client.dehydrate()))
+    expect(wire.queries).toHaveLength(1)
+
+    const browser = createQueryClient()
+    browser.hydrate(wire)
+    let loads = 0
+    await expect(
+      browser.fetchQuery({
+        key: () => ['u', { id: undefined }],
+        load: async () => {
+          loads += 1
+          return 'fresh'
+        },
+      })
+    ).resolves.toBe('v')
+    await expect(
+      browser.fetchQuery({
+        key: () => ['u', {}],
+        load: async () => {
+          loads += 1
+          return 'fresh'
+        },
+      })
+    ).resolves.toBe('fresh')
+    expect(loads).toBe(1)
   })
 
-  it('never emits a payload its own hydrate() would reject', async () => {
+  it('refuses a key whose own toJSON renders a non-array', async () => {
     const client = createQueryClient()
     const scalarKey = Object.assign(['x'], { toJSON: () => 'rendered' })
 
-    // A hook on the key array can render a non-array. That hashes
-    // consistently, so the wire gate clears it — but hydrate() checks the
-    // payload shape and refuses a key that is not an array.
-    await client.fetchQuery({
-      key: () => scalarKey,
-      load: async () => 'v',
-      snapshot: true,
-    })
-
-    const state = client.dehydrate()
-    expect(state.queries).toHaveLength(0)
-    expect(() => createQueryClient().hydrate(state)).not.toThrow()
+    // Such a key has no addressable segments, so no prefix could name it and
+    // the payload could not round-trip as a key. Refused at insert rather
+    // than cached under a shape nothing can reach (#278).
+    await expect(
+      client.fetchQuery({
+        key: () => scalarKey,
+        load: async () => 'v',
+        snapshot: true,
+      })
+    ).rejects.toThrowError(/must be an array/)
+    expect(client.dehydrate().queries).toHaveLength(0)
   })
 
   it('does not serialize data carrying properties the wire drops', async () => {
@@ -1612,16 +1648,35 @@ describe('dehydrate and hydrate', () => {
     expect(state.queries[0]?.key).toEqual(['plain'])
   })
 
-  it('does not serialize sparse keys: holes hash as undefined but wire as null', async () => {
+  it('round-trips sparse keys: a hole encodes as undefined, not null', async () => {
     const client = createQueryClient()
     const sparse: unknown[] = ['u', 'x']
     sparse.length = 3
     await client.fetchQuery({ key: () => sparse, load: async () => 'v', snapshot: true })
 
-    // The replacer runs on holes, so the hash carries the undefined sentinel
-    // while the wire carries null: the self-consistency check disagrees and
-    // the entry is skipped instead of restored dead.
-    expect(client.dehydrate().queries).toHaveLength(0)
+    // The hole is tagged as undefined rather than collapsing to null, so the
+    // restored entry is the one the original key names.
+    const wire = JSON.parse(JSON.stringify(client.dehydrate()))
+    expect(wire.queries).toHaveLength(1)
+    expect(wire.queries[0]?.key).toEqual([
+      'u',
+      'x',
+      { __tachuiQuery: 'undefined' },
+    ])
+
+    const browser = createQueryClient()
+    browser.hydrate(wire)
+    let loads = 0
+    await expect(
+      browser.fetchQuery({
+        key: () => sparse,
+        load: async () => {
+          loads += 1
+          return 'fresh'
+        },
+      })
+    ).resolves.toBe('v')
+    expect(loads).toBe(0)
   })
 
   it('judges the wire gate on post-toJSON values, not the raw key', async () => {
@@ -1634,8 +1689,8 @@ describe('dehydrate and hydrate', () => {
       load,
       snapshot: true,
     })
-    // The hashed form is undefined, which the wire renders as null — a raw
-    // walk would emit this as a dead entry.
+    // The hashed form is undefined, which the encoding tags rather than
+    // collapsing, so this one survives the wire too.
     await server.fetchQuery({
       key: () => ['b', { toJSON: () => undefined }],
       load,
@@ -1643,8 +1698,9 @@ describe('dehydrate and hydrate', () => {
     })
 
     const wire = JSON.parse(JSON.stringify(server.dehydrate()))
-    expect(wire.queries).toHaveLength(1)
+    expect(wire.queries).toHaveLength(2)
     expect(wire.queries[0]?.key).toEqual(['a', { kept: 1 }])
+    expect(wire.queries[1]?.key).toEqual(['b', { __tachuiQuery: 'undefined' }])
 
     const browser = createQueryClient()
     browser.hydrate(wire)
@@ -1787,11 +1843,9 @@ describe('dehydrate and hydrate', () => {
     expect(server.dehydrate().queries).toHaveLength(1)
   })
 
-  it('shares one entry between a Date segment and its ISO string', async () => {
-    // The wire renders Dates as ISO strings, so distinguishing them would
-    // make every Date snapshot miss after hydration (round 5). Proper
-    // distinction needs type tags — #278's canonicalization — not the
-    // stringly hash.
+  it('keeps a Date segment and its ISO string in separate entries', async () => {
+    // The tagged encoding carries the type, so the two no longer share an
+    // entry the way the stringly hash made them (#278).
     const client = createQueryClient()
     const instant = '2024-01-01T00:00:00.000Z'
     let loads = 0
@@ -1810,8 +1864,8 @@ describe('dehydrate and hydrate', () => {
           return 'string'
         },
       })
-    ).resolves.toBe('date')
-    expect(loads).toBe(1)
+    ).resolves.toBe('string')
+    expect(loads).toBe(2)
   })
 
   it('reports observerCount 0 in dehydrate views until observers exist (#280)', async () => {
@@ -2009,15 +2063,16 @@ describe('dehydrate and hydrate', () => {
       queries: [
         { key: ['ok'], data: 'stale-partial', updatedAt: Date.now() },
         {
-          key: ['bad', { __tachuiQueryUndefined: true }],
+          key: ['bad', { __tachuiQuery: 'not-a-tag' }],
           data: 'x',
           updatedAt: Date.now(),
         },
       ],
     }
 
-    // The shape check passes, but the second key is unhashable — and the
-    // first entry must not survive the throw for a fallback fetch to serve.
+    // The shape check passes, but the second key carries an unknown tag —
+    // and the first entry must not survive the throw for a fallback fetch
+    // to serve.
     expect(() => client.hydrate(state as DehydratedState)).toThrowError(QueryError)
     await expect(
       client.fetchQuery({
