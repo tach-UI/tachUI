@@ -389,6 +389,29 @@ describe('fetchQuery caching', () => {
     ).resolves.toBe('self')
     expect(loadsB).toBe(1)
   })
+
+  it('strips a forwarding client so decorated clients terminate', async () => {
+    const backend = createQueryClient()
+    let loads = 0
+    const decorated: QueryClient = {
+      ...backend,
+      fetchQuery: (request) => backend.fetchQuery(request),
+    }
+
+    // Without the strip, the intact options.client would bounce between the
+    // decorator and the backend to RangeError.
+    await expect(
+      decorated.fetchQuery({
+        key: keyOf('k'),
+        load: async () => {
+          loads += 1
+          return 'v'
+        },
+        client: decorated,
+      })
+    ).resolves.toBe('v')
+    expect(loads).toBe(1)
+  })
 })
 
 describe('client isolation', () => {
@@ -466,6 +489,41 @@ describe('invalidate and clear', () => {
     expect(loads.get('list')).toBe(2)
     expect(loads.get('one')).toBe(2)
     expect(loads.get('orders')).toBe(1)
+  })
+
+  it('invalidates Date and object segments by value, not reference', async () => {
+    const client = createQueryClient()
+    const instant = '2024-01-01T00:00:00.000Z'
+    let loads = 0
+    const counting = (value: string) => async () => {
+      loads += 1
+      return value
+    }
+
+    await client.fetchQuery({
+      key: () => ['d', new Date(instant)],
+      load: counting('a'),
+    })
+    await client.fetchQuery({
+      key: () => ['o', { id: 1 }],
+      load: counting('b'),
+    })
+    expect(loads).toBe(2)
+
+    // Equal instants and shapes, different references: identity matching
+    // would leave both entries stale forever.
+    client.invalidate(['d', new Date(instant)])
+    client.invalidate(['o', { id: 1 }])
+    await expect(
+      client.fetchQuery({
+        key: () => ['d', new Date(instant)],
+        load: counting('a2'),
+      })
+    ).resolves.toBe('a2')
+    await expect(
+      client.fetchQuery({ key: () => ['o', { id: 1 }], load: counting('b2') })
+    ).resolves.toBe('b2')
+    expect(loads).toBe(4)
   })
 
   it('ignores a prefix longer than the stored key', async () => {
@@ -935,26 +993,32 @@ describe('dehydrate and hydrate', () => {
     expect(loads).toBe(1)
   })
 
-  it('does not let a later caller revoke an earlier snapshot opt-in', async () => {
+  it('lets an explicit snapshot opt-out veto a claimed opt-in, in either order', async () => {
     const client = createQueryClient()
+    const load = async () => 'v'
+    // Opt-in first, opt-out second: false is the safe value, so the opt-out
+    // wins even though the field is already claimed.
+    await client.fetchQuery({ key: keyOf('vetoed'), load, snapshot: true })
+    await client.fetchQuery({ key: keyOf('vetoed'), load, snapshot: false })
+    // Opt-out first, opt-in second: the veto sticks, not first-writer.
+    await client.fetchQuery({ key: keyOf('sealed'), load, snapshot: false })
+    await client.fetchQuery({ key: keyOf('sealed'), load, snapshot: true })
+    // An unvetoed opt-in still ships, with first-writer freshness intact.
     await client.fetchQuery({
-      key: keyOf('u'),
-      load: async () => 'v',
+      key: keyOf('kept'),
+      load,
       snapshot: true,
       staleTime: 60_000,
     })
-    expect(client.dehydrate().queries).toHaveLength(1)
-
-    // Policy upgrades apply only while the field still holds its default, so
-    // a call that performs no fetch at all still cannot revoke the opt-in —
-    // or the freshness — another consumer configured.
     await client.fetchQuery({
-      key: keyOf('u'),
-      load: async () => 'v',
-      snapshot: false,
+      key: keyOf('kept'),
+      load,
       staleTime: 0,
     })
-    expect(client.dehydrate().queries).toHaveLength(1)
+
+    const state = client.dehydrate()
+    expect(state.queries).toHaveLength(1)
+    expect(state.queries[0]?.key).toEqual(['kept'])
     const seen = client.dehydrate((entry) => {
       expect(entry.options.staleTime).toBe(60_000)
       return true
@@ -1050,21 +1114,66 @@ describe('dehydrate and hydrate', () => {
     expect(loads).toBe(0)
   })
 
-  it('does not serialize entries keyed by sparse arrays or nested undefined', async () => {
+  it('does not serialize entries keyed by nested undefined', async () => {
     const client = createQueryClient()
-    const load = async () => 'v'
-    const sparse: unknown[] = ['u', 'x']
-    sparse.length = 3
-    await client.fetchQuery({ key: () => sparse, load, snapshot: true })
     await client.fetchQuery({
       key: () => ['u', { id: undefined }],
+      load: async () => 'v',
+      snapshot: true,
+    })
+
+    // The undefined member is dropped on the wire, so the restored entry
+    // could never be matched by the original key.
+    expect(client.dehydrate().queries).toHaveLength(0)
+  })
+
+  it('does not serialize sparse keys: holes hash as undefined but wire as null', async () => {
+    const client = createQueryClient()
+    const sparse: unknown[] = ['u', 'x']
+    sparse.length = 3
+    await client.fetchQuery({ key: () => sparse, load: async () => 'v', snapshot: true })
+
+    // The replacer runs on holes, so the hash carries the undefined sentinel
+    // while the wire carries null: the self-consistency check disagrees and
+    // the entry is skipped instead of restored dead.
+    expect(client.dehydrate().queries).toHaveLength(0)
+  })
+
+  it('judges the wire gate on post-toJSON values, not the raw key', async () => {
+    const server = createQueryClient()
+    const load = async () => 'v'
+    // The raw key carries undefined, but the hashed (serialized) form does
+    // not — a raw walk would drop a round-trippable entry.
+    await server.fetchQuery({
+      key: () => ['a', { extra: undefined, toJSON: () => ({ kept: 1 }) }],
+      load,
+      snapshot: true,
+    })
+    // The hashed form is undefined, which the wire renders as null — a raw
+    // walk would emit this as a dead entry.
+    await server.fetchQuery({
+      key: () => ['b', { toJSON: () => undefined }],
       load,
       snapshot: true,
     })
 
-    // Holes read as undefined and nested undefined is dropped from objects,
-    // so neither key would match after the round trip.
-    expect(client.dehydrate().queries).toHaveLength(0)
+    const wire = JSON.parse(JSON.stringify(server.dehydrate()))
+    expect(wire.queries).toHaveLength(1)
+    expect(wire.queries[0]?.key).toEqual(['a', { kept: 1 }])
+
+    const browser = createQueryClient()
+    browser.hydrate(wire)
+    let loads = 0
+    await expect(
+      browser.fetchQuery({
+        key: () => ['a', { extra: undefined, toJSON: () => ({ kept: 1 }) }],
+        load: async () => {
+          loads += 1
+          return 'fresh'
+        },
+      })
+    ).resolves.toBe('v')
+    expect(loads).toBe(0)
   })
 
   it('lets a filter narrow the snapshot set, never widen it', async () => {
@@ -1134,10 +1243,11 @@ describe('dehydrate and hydrate', () => {
       snapshot: true,
       staleTime: 0,
     })
+    // No snapshot field here: this test pins freshness first-writer-wins,
+    // while an explicit false is a veto (see the test above).
     await client.fetchQuery({
       key: keyOf('u'),
       load,
-      snapshot: false,
       staleTime: 60_000,
     })
 
