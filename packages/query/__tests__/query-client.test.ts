@@ -251,6 +251,51 @@ describe('fetchQuery caching', () => {
     }
   })
 
+  it('rejects keys shaped like the undefined sentinel', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const counting = (value: string) => async () => {
+      loads += 1
+      return value
+    }
+
+    // The shape is the sentinel's encoding, so accepting it would serve
+    // undefined-keyed data for it (or vice versa).
+    await expect(
+      client.fetchQuery({
+        key: () => ['u', { __tachuiQueryUndefined: true }],
+        load: counting('spoof'),
+      })
+    ).rejects.toThrowError(/reserved/)
+    await expect(
+      client.fetchQuery({ key: () => ['u', undefined], load: counting('real') })
+    ).resolves.toBe('real')
+    expect(loads).toBe(1)
+  })
+
+  it('wraps throwing and self-returning toJSON in QueryError', async () => {
+    const client = createQueryClient()
+    const load = async () => 'unreached'
+    const sneaky: { toJSON: () => unknown } = { toJSON: () => sneaky }
+
+    await expect(
+      client.fetchQuery({
+        key: () => [
+          'u',
+          {
+            toJSON: () => {
+              throw new Error('nope')
+            },
+          },
+        ],
+        load,
+      })
+    ).rejects.toThrowError(/toJSON threw/)
+    await expect(
+      client.fetchQuery({ key: () => ['u', sneaky], load })
+    ).rejects.toThrowError(/circular/)
+  })
+
   it('accepts a shared reference used twice in one key', async () => {
     const client = createQueryClient()
     const shared = { id: 1 }
@@ -630,7 +675,7 @@ describe('two-level ownership', () => {
     await expect(
       client.fetchQuery({ key: keyOf('k'), load: async () => 'v' })
     ).rejects.toThrowError(/after dispose/)
-    expect(() => client.prefetchQueries([])).toThrowError(/after dispose/)
+    await expect(client.prefetchQueries([])).rejects.toThrowError(/after dispose/)
     expect(() => client.invalidate(['k'])).toThrowError(/after dispose/)
     expect(() => client.dehydrate()).toThrowError(/after dispose/)
     expect(() => client.hydrate({ queries: [] })).toThrowError(/after dispose/)
@@ -963,30 +1008,63 @@ describe('dehydrate and hydrate', () => {
     expect(loads).toBe(1)
   })
 
-  it('does not serialize entries whose keys cannot survive the wire', async () => {
-    const client = createQueryClient()
+  it('serializes Date-keyed entries because toJSON is stable across the wire', async () => {
+    const server = createQueryClient()
+    const instant = '2024-01-01T00:00:00.000Z'
     const load = async () => 'v'
-    await client.fetchQuery({
-      key: () => ['plain', { a: 1 }],
+    await server.fetchQuery({
+      key: () => ['d', new Date(instant)],
       load,
       snapshot: true,
     })
-    // Dates hash deterministically in-session, but revive as strings — the
-    // restored entry could never be matched by the original key.
-    await client.fetchQuery({
-      key: () => ['d', new Date('2024-01-01T00:00:00.000Z')],
-      load,
-      snapshot: true,
-    })
-    await client.fetchQuery({
-      key: () => ['d', { at: new Date('2024-01-01T00:00:00.000Z') }],
+    await server.fetchQuery({
+      key: () => ['d', { at: new Date(instant) }],
       load,
       snapshot: true,
     })
 
-    const state = client.dehydrate()
-    expect(state.queries).toHaveLength(1)
-    expect(state.queries[0]?.key).toEqual(['plain', { a: 1 }])
+    // toJSON runs on both sides, so the hash is identical after the round
+    // trip and the browser serves both entries without loading.
+    const wire = JSON.parse(JSON.stringify(server.dehydrate()))
+    expect(wire.queries).toHaveLength(2)
+
+    const browser = createQueryClient()
+    browser.hydrate(wire)
+    let loads = 0
+    const counting = (value: string) => async () => {
+      loads += 1
+      return value
+    }
+    await expect(
+      browser.fetchQuery({
+        key: () => ['d', new Date(instant)],
+        load: counting('fresh'),
+      })
+    ).resolves.toBe('v')
+    await expect(
+      browser.fetchQuery({
+        key: () => ['d', { at: new Date(instant) }],
+        load: counting('fresh'),
+      })
+    ).resolves.toBe('v')
+    expect(loads).toBe(0)
+  })
+
+  it('does not serialize entries keyed by sparse arrays or nested undefined', async () => {
+    const client = createQueryClient()
+    const load = async () => 'v'
+    const sparse: unknown[] = ['u', 'x']
+    sparse.length = 3
+    await client.fetchQuery({ key: () => sparse, load, snapshot: true })
+    await client.fetchQuery({
+      key: () => ['u', { id: undefined }],
+      load,
+      snapshot: true,
+    })
+
+    // Holes read as undefined and nested undefined is dropped from objects,
+    // so neither key would match after the round trip.
+    expect(client.dehydrate().queries).toHaveLength(0)
   })
 
   it('lets a filter narrow the snapshot set, never widen it', async () => {
