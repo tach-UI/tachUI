@@ -229,31 +229,22 @@ function enterStructure(
 }
 
 /**
- * Whether any part of the key cannot survive the wire. An `undefined` segment
- * becomes `null` under JSON serialization, so a snapshot entry keyed by one
- * could never be matched after a round trip — a wasted snapshot plus a dead
- * entry. (`Date` segments need no gate: `toJSON` runs on both sides, so the
- * hash is identical across the wire. Anything else unserializable is already
- * rejected at insert time.)
+ * Whether the key round-trips through the wire codec to the same hash. The
+ * hash runs on post-toJSON values, so walking the raw key disagrees in both
+ * directions: a toJSON value carrying a raw `undefined` would be dropped
+ * although it matches, and a toJSON resolving to `undefined` would be
+ * emitted as a dead entry. The self-consistency check below compares the
+ * hash before and after a JSON round trip instead of enumerating lossy
+ * shapes. Anything unserializable is already rejected at insert time; the
+ * catch is for a non-deterministic toJSON, which fails safe (skipped).
  */
-function keySurvivesWire(value: unknown): boolean {
-  if (value === undefined) {
+function keySurvivesWire(key: QueryKey): boolean {
+  try {
+    const revived = JSON.parse(JSON.stringify(key)) as QueryKey
+    return hashQueryKey(key) === hashQueryKey(revived)
+  } catch {
     return false
   }
-  if (Array.isArray(value)) {
-    // Index loop, mirroring the scan: every/some skip holes, and a hole
-    // reads as undefined — exactly the dead entry this gate prevents.
-    for (let index = 0; index < value.length; index += 1) {
-      if (!keySurvivesWire(value[index])) {
-        return false
-      }
-    }
-    return true
-  }
-  if (typeof value === 'object' && value !== null) {
-    return Object.values(value).every(keySurvivesWire)
-  }
-  return true
 }
 
 /**
@@ -269,14 +260,22 @@ function hashQueryKey(key: QueryKey): QueryKeyHash {
 }
 
 /**
- * Provisional prefix match over the structured key. Element identity only
- * until #278 defines structural comparison.
+ * Provisional prefix match over the structured key. Segments compare by hash,
+ * not identity, so Date and object segments are reachable by value — the same
+ * entries fetchQuery would serve. (An unhashable segment raises here exactly
+ * as it would from fetchQuery.) Index loop: every/some skip holes, and a
+ * hole prefix must compare as undefined, not match vacuously.
  */
 function isKeyPrefixMatch(prefix: QueryKey, key: QueryKey): boolean {
   if (prefix.length > key.length) {
     return false
   }
-  return prefix.every((segment, index) => Object.is(segment, key[index]))
+  for (let index = 0; index < prefix.length; index += 1) {
+    if (hashQueryKey([prefix[index]]) !== hashQueryKey([key[index]])) {
+      return false
+    }
+  }
+  return true
 }
 
 function isDehydratedState(state: unknown): state is DehydratedState {
@@ -376,7 +375,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     options: FetchQueryOptions<TRaw, TError>
   ): Promise<TRaw> {
     if (options.client !== undefined && options.client !== client) {
-      return options.client.fetchQuery(options)
+      // Strip the forwarder: a decorated/proxied client that delegates back
+      // here would otherwise recurse on the intact options to RangeError.
+      return options.client.fetchQuery({ ...options, client: undefined })
     }
     ensureUsable('fetchQuery')
     const resolvedKey = options.key()
@@ -387,9 +388,10 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     // Explicitly passed options upgrade the entry policy — but only while the
     // field is still unclaimed. An entry restored by hydrate() starts
     // unclaimed and picks up the developer's configuration from the first
-    // query that names the key; once any caller sets a field — even to its
-    // default value — a later caller sharing the key cannot silently revoke
-    // another consumer's snapshot opt-in or freshness.
+    // query that names the key; once any caller sets a freshness field —
+    // even to its default value — a later caller sharing the key cannot
+    // silently revoke it. snapshot is the exception: it is veto-wins (see
+    // below), because only false keeps data out of the SSR payload.
     if (options.staleTime !== undefined && !entry.policyClaimed.staleTime) {
       entry.staleTime = options.staleTime
       entry.policyClaimed.staleTime = true
@@ -398,7 +400,11 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       entry.gcTime = options.gcTime
       entry.policyClaimed.gcTime = true
     }
-    if (options.snapshot !== undefined && !entry.policyClaimed.snapshot) {
+    // snapshot is veto-wins, not first-writer-wins: false is the safe value
+    // (it keeps data out of the SSR payload), so an explicit opt-out
+    // overrides a claimed opt-in and seals the entry — a later opt-in cannot
+    // silently re-ship another consumer's opted-out data.
+    if (options.snapshot !== undefined && (!entry.policyClaimed.snapshot || options.snapshot === false)) {
       entry.snapshot = options.snapshot
       entry.policyClaimed.snapshot = true
     }
@@ -413,6 +419,11 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       return entry.data as TRaw
     }
     const controller = new AbortController()
+    // First fetch, no data yet: distinguishable from "never fetched" for
+    // createQuery (#280). Retries keep 'error' and refreshes keep 'success'.
+    if (entry.status === 'idle') {
+      entry.status = 'loading'
+    }
     entry.fetchStatus = 'fetching'
     const requestGeneration = entry.generation
 
