@@ -401,6 +401,38 @@ describe('fetchQuery caching', () => {
     expect(loads).toBe(1)
   })
 
+  it('rejects key segments carrying properties the hash drops', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const counting = (value: string) => async () => {
+      loads += 1
+      return value
+    }
+    const tenanted = Object.defineProperty({ id: 1 }, 'tenant', { value: 'a' })
+    const hiddenTag = Object.defineProperty({ id: 1 }, Symbol('tag'), {
+      value: 'x',
+    })
+    const augmented = Object.defineProperty([1], 'tag', { value: 'x' })
+
+    // Stringify emits an object's own *enumerable* string keys and an
+    // array's indexed elements, nothing else. A non-enumerable member — or a
+    // non-enumerable symbol, which Object.keys never reported either — is
+    // dropped, so accepting these would serve the plain twin's entry.
+    await expect(
+      client.fetchQuery({ key: () => ['u', tenanted], load: counting('T') })
+    ).rejects.toThrowError(/non-enumerable/)
+    await expect(
+      client.fetchQuery({ key: () => ['u', hiddenTag], load: counting('H') })
+    ).rejects.toThrowError(/symbol/)
+    await expect(
+      client.fetchQuery({ key: () => ['u', augmented], load: counting('A') })
+    ).rejects.toThrowError(/non-index/)
+    await expect(
+      client.fetchQuery({ key: () => ['u', { id: 1 }], load: counting('P') })
+    ).resolves.toBe('P')
+    expect(loads).toBe(1)
+  })
+
   it('decouples stored keys from the caller array', async () => {
     const client = createQueryClient()
     const key: unknown[] = ['user', 1]
@@ -722,6 +754,32 @@ describe('invalidate and clear', () => {
     await client.fetchQuery({ key: () => ['u', { id: undefined }], load: counting() })
     await client.fetchQuery({ key: () => sparse, load: counting() })
     expect(loads).toBe(4)
+  })
+
+  it('matches segments through a hook on the key array itself', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const counting = (value: string) => async () => {
+      loads += 1
+      return value
+    }
+    const hooked = Object.assign(['raw'], { toJSON: () => ['wire'] })
+
+    // The hook replaces the whole key before any element is read, so the
+    // entry is keyed by ['wire'] — fetchQuery already shares it.
+    await client.fetchQuery({ key: () => hooked, load: counting('a') })
+    await expect(
+      client.fetchQuery({ key: () => ['wire'], load: counting('b') })
+    ).resolves.toBe('a')
+    expect(loads).toBe(1)
+
+    // Segments read from the raw elements would name ['raw'], which no
+    // prefix can reach: the entry would stay stale after a mutation.
+    client.invalidate(['wire'])
+    await expect(
+      client.fetchQuery({ key: () => ['wire'], load: counting('c') })
+    ).resolves.toBe('c')
+    expect(loads).toBe(2)
   })
 
   it('rejects an unhashable prefix even against an empty cache', () => {
@@ -1473,6 +1531,31 @@ describe('dehydrate and hydrate', () => {
     // The undefined member is dropped on the wire, so the restored entry
     // could never be matched by the original key.
     expect(client.dehydrate().queries).toHaveLength(0)
+  })
+
+  it('does not serialize data carrying properties the wire drops', async () => {
+    const client = createQueryClient()
+    const load = async () =>
+      Object.defineProperty({ id: 1 }, 'token', { value: 'x' })
+
+    await client.fetchQuery({ key: keyOf('hidden'), load, snapshot: true })
+    await client.fetchQuery({
+      key: keyOf('augmented'),
+      load: async () => Object.defineProperty([1], 'tag', { value: 'x' }),
+      snapshot: true,
+    })
+    // The wire keeps only enumerable string keys and indexed elements, so
+    // both would hydrate stripped and be served as a successful result that
+    // never equals TRaw. A plain twin still ships.
+    await client.fetchQuery({
+      key: keyOf('plain'),
+      load: async () => ({ id: 1 }),
+      snapshot: true,
+    })
+
+    const state = client.dehydrate()
+    expect(state.queries).toHaveLength(1)
+    expect(state.queries[0]?.key).toEqual(['plain'])
   })
 
   it('does not serialize sparse keys: holes hash as undefined but wire as null', async () => {
