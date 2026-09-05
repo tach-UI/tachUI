@@ -241,6 +241,27 @@ describe('payload codec', () => {
     )
   })
 
+  it('validates a raw payload as strictly as a fetched key', () => {
+    // Decoding must not quietly strip what the encoder refuses: the entry
+    // would be stored under a key the caller never named, while a direct
+    // fetch with the same key raises.
+    expect(() => decodeQueryKey(Object.assign(['u'], { extra: 1 }))).toThrowError(
+      /non-index properties/
+    )
+    expect(() =>
+      decodeQueryKey(['u', Object.assign({ id: 1 }, { [Symbol('s')]: 2 })])
+    ).toThrowError(/symbol-keyed/)
+    expect(() =>
+      decodeQueryKey([
+        'u',
+        Object.defineProperty({ id: 1 }, 'hidden', { value: 2 }),
+      ])
+    ).toThrowError(/non-enumerable/)
+    expect(() =>
+      decodeQueryKey(['u', { 0: 65, length: 1, [Symbol.toStringTag]: 'Uint8Array' }])
+    ).toThrowError(/symbol-keyed/)
+  })
+
   it('accepts a payload handed over in process rather than through JSON', () => {
     // An SSR framework can pass the object straight across, so raw Dates,
     // byte arrays, bigints, and undefined decode as themselves.
@@ -279,6 +300,30 @@ describe('development errors', () => {
       expect(() => hashQueryKey(key), String(message)).toThrowError(message)
       expect(() => hashQueryKey(key)).toThrowError(QueryError)
     }
+  })
+
+  it('refuses values impersonating a Uint8Array', () => {
+    // Object.prototype.toString respects Symbol.toStringTag, so a plain
+    // array-like carrying the tag would be read through as bytes and hash
+    // identically to the real thing. The brand check reads the internal
+    // slot instead, so both of these fall through to their own rejections.
+    const arrayLike = Object.assign(
+      { 0: 65, length: 1 },
+      { [Symbol.toStringTag]: 'Uint8Array' }
+    )
+    expect(() => hashQueryKey([arrayLike])).toThrowError(/symbol-keyed/)
+
+    // A genuine typed array of another width, tagged to look like one.
+    const masked = new Int8Array([65])
+    Object.defineProperty(masked, Symbol.toStringTag, { value: 'Uint8Array' })
+    expect(() => hashQueryKey([masked])).toThrowError(
+      /class instances without toJSON/
+    )
+
+    // The real thing still encodes, including a structured clone of one.
+    expect(hashQueryKey([new Uint8Array([65])])).toBe(
+      hashQueryKey([structuredClone(new Uint8Array([65]))])
+    )
   })
 
   it('reports the path to the offending segment', () => {
