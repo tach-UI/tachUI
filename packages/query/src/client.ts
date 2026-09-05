@@ -126,44 +126,59 @@ function isDateValue(value: unknown): value is Date {
   return Object.prototype.toString.call(value) === '[object Date]'
 }
 
+/** Whether a property name is one of the indices an array renders. */
+function isRenderedIndex(member: string, length: number): boolean {
+  const index = Number(member)
+  return (
+    Number.isInteger(index) &&
+    index >= 0 &&
+    index < length &&
+    String(index) === member
+  )
+}
+
+/** Own symbol properties, enumerable or not: nothing renders them. */
+function hasOwnSymbol(value: object): boolean {
+  return Object.getOwnPropertySymbols(value).length > 0
+}
+
 /**
- * Own enumerable symbol properties: Object.keys and JSON.stringify both drop
- * them, so siblings differing only by one hash identically.
+ * Own properties neither the hash nor the wire renders. `JSON.stringify`
+ * emits a plain object's own *enumerable* string keys and an array's indexed
+ * elements — nothing else — so any other own property is silently dropped and
+ * siblings differing only by one would hash identically and serve each
+ * other's data. That covers symbols (enumerable or not), non-enumerable
+ * string keys on an object, and non-index names on an array. Array indices
+ * render regardless of enumerability, and an array's own `length` is
+ * structural rather than a property.
  */
-function hasOwnEnumerableSymbol(value: object): boolean {
-  return Object.getOwnPropertySymbols(value).some((symbol) =>
-    Object.prototype.propertyIsEnumerable.call(value, symbol)
+function hasUnrenderedOwnProps(value: object): boolean {
+  if (hasOwnSymbol(value)) {
+    return true
+  }
+  if (Array.isArray(value)) {
+    return Object.getOwnPropertyNames(value).some(
+      (member) => member !== 'length' && !isRenderedIndex(member, value.length)
+    )
+  }
+  return Object.getOwnPropertyNames(value).some(
+    (member) => !Object.prototype.propertyIsEnumerable.call(value, member)
   )
 }
 
 /**
- * Arrays render only their indexed elements: extra own properties (named or
- * symbol) are dropped by the hash and the wire alike, so an augmented array
- * would collide with its bare twin.
+ * Rejects own properties the hash cannot render: siblings differing only by
+ * one would hash identically and serve each other's data.
  */
-function hasNonIndexProps(value: unknown[]): boolean {
-  if (hasOwnEnumerableSymbol(value)) {
-    return true
-  }
-  return Object.keys(value).some((member) => {
-    const index = Number(member)
-    return (
-      !Number.isInteger(index) ||
-      index < 0 ||
-      index >= value.length ||
-      String(index) !== member
-    )
-  })
-}
-
-/**
- * Rejects own enumerable symbol properties: siblings differing only by one
- * would hash identically and serve each other's data.
- */
-function assertNoSymbolKeys(value: object, path: string): void {
-  if (hasOwnEnumerableSymbol(value)) {
+function assertRenderableOwnProps(value: object, path: string): void {
+  if (hasOwnSymbol(value)) {
     throw new QueryError(
       `Cannot hash query key: symbol-keyed properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
+    )
+  }
+  if (hasUnrenderedOwnProps(value)) {
+    throw new QueryError(
+      `Cannot hash query key: non-enumerable properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
     )
   }
 }
@@ -199,7 +214,10 @@ function dataSurvivesWire(value: unknown, seen: Set<object> = new Set()): boolea
       break
   }
   const target = value as object
-  if (hasOwnEnumerableSymbol(target)) {
+  // Own properties the wire drops — symbols, non-enumerable string keys, an
+  // array's non-index names — would hydrate as altered data served as a
+  // success, so the snapshot is skipped instead.
+  if (hasUnrenderedOwnProps(target)) {
     return false
   }
   // A hook replaces the rendering, so the carrier never survives it — even
@@ -214,11 +232,6 @@ function dataSurvivesWire(value: unknown, seen: Set<object> = new Set()): boolea
   seen.add(target)
   try {
     if (Array.isArray(value)) {
-      // Extra own properties never survive the wire, so an augmented array
-      // would hydrate altered.
-      if (hasNonIndexProps(value)) {
-        return false
-      }
       // Index loop, mirroring the scan: holes read as undefined, which the
       // wire renders as null.
       for (let index = 0; index < value.length; index += 1) {
@@ -355,7 +368,7 @@ function assertHashable(value: unknown, path: string, seen: Set<object> = new Se
     // Extra own properties never render, so an augmented array would collide
     // with its bare twin. (Holes are absent from Object.keys and stay
     // allowed via the sentinel path.)
-    if (hasNonIndexProps(value)) {
+    if (hasUnrenderedOwnProps(value)) {
       throw new QueryError(
         `Cannot hash query key: arrays with non-index properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
       )
@@ -374,7 +387,7 @@ function assertHashable(value: unknown, path: string, seen: Set<object> = new Se
       `Cannot hash query key: class instances without toJSON are not supported at ${path}.`
     )
   }
-  assertNoSymbolKeys(value, path)
+  assertRenderableOwnProps(value, path)
   if (UNDEFINED_MARKER in (value as Record<string, unknown>)) {
     // A user object with this shape would hash identically to an undefined
     // segment and be served the other key's data, so the shape is reserved.
@@ -431,14 +444,40 @@ function hashQueryKey(key: QueryKey): QueryKeyHash {
 }
 
 /**
- * Per-segment hashes of a key as supplied. Index loop rather than map: holes
- * read as undefined, which the sentinel distinguishes from null instead of
- * skipping (map) or matching vacuously.
+ * The segments the hash actually renders. A `toJSON` hook on the key array
+ * itself replaces the whole key — `JSON.stringify` applies it before looking
+ * at any element — so the raw elements are not what the entry is keyed by.
+ * Reading them would hash segments no prefix could ever name, and
+ * `invalidate()` would miss the very entry `fetchQuery` served.
+ */
+function renderKeySegments(key: QueryKey): readonly unknown[] {
+  const hook = (key as { toJSON?: unknown }).toJSON
+  if (typeof hook !== 'function') {
+    return key
+  }
+  let rendered: unknown
+  try {
+    rendered = hook.call(key)
+  } catch (hookError) {
+    throw new QueryError('Cannot hash query key: toJSON threw at key.', {
+      cause: hookError,
+    })
+  }
+  // A hook rendering something other than an array leaves no addressable
+  // segments: only the empty prefix matches, which it still does.
+  return Array.isArray(rendered) ? rendered : []
+}
+
+/**
+ * Per-segment hashes of a key. Index loop rather than map: holes read as
+ * undefined, which the sentinel distinguishes from null instead of skipping
+ * (map) or matching vacuously.
  */
 function hashKeySegments(key: QueryKey): QueryKeyHash[] {
+  const segments = renderKeySegments(key)
   const hashes: QueryKeyHash[] = []
-  for (let index = 0; index < key.length; index += 1) {
-    hashes.push(hashQueryKey([key[index]]))
+  for (let index = 0; index < segments.length; index += 1) {
+    hashes.push(hashQueryKey([segments[index]]))
   }
   return hashes
 }
