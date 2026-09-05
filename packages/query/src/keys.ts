@@ -512,11 +512,11 @@ function decodeValue(value: unknown, path: string): unknown {
     // Likewise for a Date, a Uint8Array, or a toJSON carrier arriving raw.
     return decodeValue(encodeValue(value, path, new Set()), path)
   }
-  if (KEY_MARKER in (value as Record<string, unknown>)) {
-    return decodeTagged(value as TaggedValue, path)
-  }
   // Same reasoning as the array branch: Object.keys would silently drop a
-  // symbol or non-enumerable member that the encoder refuses outright.
+  // symbol or non-enumerable member that the encoder refuses outright. Run
+  // ahead of the tag branch so a tag-shaped object is held to it too — its
+  // own surplus check reads only enumerable string keys, so a hidden extra
+  // would otherwise ride through and be dropped.
   if (hasOwnSymbol(value as object)) {
     throw new QueryError(
       `Cannot decode query key: symbol-keyed properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
@@ -526,6 +526,9 @@ function decodeValue(value: unknown, path: string): unknown {
     throw new QueryError(
       `Cannot decode query key: non-enumerable properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
     )
+  }
+  if (KEY_MARKER in (value as Record<string, unknown>)) {
+    return decodeTagged(value as TaggedValue, path)
   }
   const decoded: Record<string, unknown> = {}
   for (const member of Object.keys(value as object)) {
