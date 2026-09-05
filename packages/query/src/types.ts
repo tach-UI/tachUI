@@ -264,6 +264,10 @@ export interface CacheEntry<TRaw = unknown, E = Error> {
   readonly updatedAt: number | undefined
   readonly status: QueryStatus
   readonly fetchStatus: FetchStatus
+  /**
+   * Live observer count. Always 0 until #280 introduces observers, so a
+   * dehydrate filter on observerCount matches nothing today.
+   */
   readonly observerCount: number
   readonly options: CacheEntryPolicy
 }
