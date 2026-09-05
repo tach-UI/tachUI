@@ -213,6 +213,21 @@ describe('fetchQuery caching', () => {
     expect(loads).toBe(2)
   })
 
+  it('lets a throwing key function reject with its own error', async () => {
+    const client = createQueryClient()
+
+    // Dispatch failures that are not QueryErrors pass through untagged —
+    // prefetch still swallows them as non-misuse.
+    await expect(
+      client.fetchQuery({
+        key: () => {
+          throw new TypeError('bad key fn')
+        },
+        load: async () => 'unreached',
+      })
+    ).rejects.toThrowError(TypeError)
+  })
+
   it('raises QueryError for an unserializable key', async () => {
     const client = createQueryClient()
 
@@ -231,6 +246,9 @@ describe('fetchQuery caching', () => {
       () => ['u', Symbol('id')],
       () => ['u', NaN],
       () => ['u', 10n],
+      () => ['u', -0],
+      () => ['u', Object.assign(['x'], { tag: 'sneaky' })],
+      () => ['u', Object.assign(['x'], { [Symbol('s')]: 1 })],
     ]
 
     // Each resolves today to a shared wrong entry; all must raise instead.
@@ -381,6 +399,37 @@ describe('fetchQuery caching', () => {
       })
     ).resolves.toBe('P')
     expect(loads).toBe(1)
+  })
+
+  it('decouples stored keys from the caller array', async () => {
+    const client = createQueryClient()
+    const key: unknown[] = ['user', 1]
+    let loads = 0
+    await client.fetchQuery({
+      key: () => key,
+      load: async () => {
+        loads += 1
+        return 'u1'
+      },
+      snapshot: true,
+    })
+
+    // Mutating the caller's array after the fetch must not desync the entry
+    // from its hash: invalidating the original key still matches, and the
+    // snapshot still names it.
+    key[1] = 2
+    client.invalidate(['user', 1])
+    await expect(
+      client.fetchQuery({
+        key: () => ['user', 1],
+        load: async () => {
+          loads += 1
+          return 'u1b'
+        },
+      })
+    ).resolves.toBe('u1b')
+    expect(loads).toBe(2)
+    expect(client.dehydrate().queries[0]?.key).toEqual(['user', 1])
   })
 
   it('accepts a shared reference used twice in one key', async () => {
@@ -1071,6 +1120,44 @@ describe('prefetchQueries', () => {
       ])
     ).resolves.toBeUndefined()
   })
+
+  it('swallows loader QueryErrors shared via dedup during prefetch', async () => {
+    const client = createQueryClient()
+    let release!: (value: string) => void
+    const gate = new Promise<string>((resolve) => {
+      release = resolve
+    })
+
+    // A direct fetch starts the flight; prefetch dedups onto it without ever
+    // running a loader of its own.
+    const direct = client.fetchQuery({
+      key: keyOf('shared'),
+      load: () =>
+        gate.then(() => {
+          throw new QueryError('shared loader failure')
+        }),
+    })
+    const warming = client.prefetchQueries([
+      { key: keyOf('shared'), load: async () => 'warm' },
+    ])
+    release('late')
+    await expect(warming).resolves.toBeUndefined()
+    await expect(direct).rejects.toThrowError(/shared loader failure/)
+  })
+
+  it('rejects use after dispose before forwarding an explicit client', async () => {
+    const live = createQueryClient()
+    const doomed = createQueryClient()
+    doomed.dispose()
+
+    await expect(
+      doomed.fetchQuery({
+        key: keyOf('k'),
+        load: async () => 'x',
+        client: live,
+      })
+    ).rejects.toThrowError(/after dispose/)
+  })
 })
 
 describe('dehydrate and hydrate', () => {
@@ -1248,14 +1335,14 @@ describe('dehydrate and hydrate', () => {
     expect(loads).toBe(0)
   })
 
-  it('fails the wire gate safe when serialization throws mid-check', async () => {
+  it('refuses keys that cannot be rendered for storage', async () => {
     const client = createQueryClient()
     let calls = 0
     const flaky = {
       toJSON: () => {
         calls += 1
         // Each hash invokes the hook twice (scan, then serialize), so the
-        // insert succeeds and only the gate's re-serialization throws.
+        // insert-time hash succeeds and only the storing copy throws.
         if (calls > 2) {
           throw new Error('flaky')
         }
@@ -1263,13 +1350,15 @@ describe('dehydrate and hydrate', () => {
       },
     }
 
-    // The insert-time hash succeeds; the gate's re-serialization throws and
-    // the entry is skipped rather than taking dehydrate down.
-    await client.fetchQuery({
-      key: () => ['f', flaky],
-      load: async () => 'v',
-      snapshot: true,
-    })
+    // A key that cannot be rendered cannot be stored safely (the entry would
+    // alias or desync), so the fetch is refused loudly and nothing lingers.
+    await expect(
+      client.fetchQuery({
+        key: () => ['f', flaky],
+        load: async () => 'v',
+        snapshot: true,
+      })
+    ).rejects.toThrowError(/cannot be serialized/)
     expect(client.dehydrate().queries).toHaveLength(0)
   })
 
@@ -1432,12 +1521,14 @@ describe('dehydrate and hydrate', () => {
       Symbol('s'),
       NaN,
       Number.POSITIVE_INFINITY,
+      -0,
       undefined,
       new Date('2024-01-01T00:00:00.000Z'),
       new Map([['a', 1]]),
       { toJSON: () => ({ a: 1 }) },
       Object.assign({ a: 1 }, { [Symbol('tag')]: 'x' }),
       Object.assign(['x'], { toJSON: () => ['x'] }),
+      Object.assign([1], { tag: 'x' }),
       circular,
       sparseData,
     ]
@@ -1701,6 +1792,44 @@ describe('dehydrate and hydrate', () => {
       })
     ).resolves.toBe('fresh')
     expect(loads).toBe(1)
+  })
+
+  it('installs nothing when a later entry fails boundary cloning', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const payload = {
+      queries: [
+        { key: ['a'], data: 'stale-partial', updatedAt: Date.now() },
+        { key: ['b'], data: { run: () => 'x' }, updatedAt: Date.now() },
+      ],
+    }
+
+    // Keys validate, but the second entry cannot be cloned: the throw must
+    // leave the first entry uninstalled for a fallback fetch to miss.
+    expect(() => client.hydrate(payload as DehydratedState)).toThrowError(
+      /cannot cross the hydration boundary/
+    )
+    await expect(
+      client.fetchQuery({
+        key: () => ['a'],
+        load: async () => {
+          loads += 1
+          return 'fresh'
+        },
+      })
+    ).resolves.toBe('fresh')
+    expect(loads).toBe(1)
+  })
+
+  it('rejects hydration payloads with a non-finite updatedAt', () => {
+    const client = createQueryClient()
+    const payload = {
+      queries: [{ key: ['n'], data: 'x', updatedAt: NaN }],
+    }
+
+    // NaN rides the wire as null, which the next hop rejects — fail the
+    // whole malformed payload here instead.
+    expect(() => client.hydrate(payload as DehydratedState)).toThrowError(QueryError)
   })
 
   it('rejects hydration payloads that cannot cross the boundary', () => {
