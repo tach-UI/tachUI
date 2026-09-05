@@ -51,6 +51,23 @@ interface TaggedValue {
   readonly [KEY_VALUE]?: string
 }
 
+/** Tags whose wrapper carries a payload; the rest stand alone. */
+const VALUED_TAGS: ReadonlySet<string> = new Set(['bigint', 'bytes', 'date'])
+const VALUELESS_TAGS: ReadonlySet<string> = new Set([
+  'undefined',
+  'NaN',
+  'Infinity',
+  '-Infinity',
+  '-0',
+])
+
+function isKeyTag(name: unknown): name is KeyTag {
+  return (
+    typeof name === 'string' &&
+    (VALUED_TAGS.has(name) || VALUELESS_TAGS.has(name))
+  )
+}
+
 function tag(name: KeyTag, value?: string): TaggedValue {
   return value === undefined
     ? { [KEY_MARKER]: name }
@@ -68,6 +85,10 @@ function isByteArray(value: unknown): value is Uint8Array {
 
 const BASE64_ALPHABET =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+/** Whole quartets, optionally closed by one padded quartet. */
+const BASE64_PATTERN =
+  /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/
 
 /**
  * Base64 without `btoa` or `Buffer`. Both exist in most runtimes but neither
@@ -92,7 +113,10 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 function fromBase64(text: string, path: string): Uint8Array {
-  if (text.length % 4 !== 0 || /[^A-Za-z0-9+/=]/.test(text)) {
+  // Full shape, not just length and charset: `====`, `A===`, and `=ABC` all
+  // satisfy those and would decode to arbitrary bytes, so a payload could
+  // name a value in a form this encoder never emits.
+  if (!BASE64_PATTERN.test(text)) {
     throw new QueryError(
       `Cannot decode query key: malformed base64 at ${path}.`
     )
@@ -111,6 +135,30 @@ function fromBase64(text: string, path: string): Uint8Array {
     if (offset < bytes.length) bytes[offset++] = chunk & 255
   }
   return bytes
+}
+
+/**
+ * Assigns an own property, including the one name a plain assignment cannot
+ * create. `target.__proto__ = v` reaches Object.prototype's setter, which
+ * changes the prototype (or does nothing at all for a primitive) and leaves no
+ * own property behind — so a key carrying an own `__proto__` member would
+ * encode exactly like one without it, and decoding would drop it again.
+ */
+function setOwnMember(
+  target: Record<string, unknown>,
+  member: string,
+  value: unknown
+): void {
+  if (member === '__proto__') {
+    Object.defineProperty(target, member, {
+      value,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    })
+    return
+  }
+  target[member] = value
 }
 
 /** Whether a property name is one of the indices an array renders. */
@@ -309,10 +357,14 @@ function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
   return enterStructure(target, path, seen, () => {
     const encoded: Record<string, unknown> = {}
     for (const member of Object.keys(value as object).sort()) {
-      encoded[member] = encodeValue(
-        (value as Record<string, unknown>)[member],
-        `${path}.${member}`,
-        seen
+      setOwnMember(
+        encoded,
+        member,
+        encodeValue(
+          (value as Record<string, unknown>)[member],
+          `${path}.${member}`,
+          seen
+        )
       )
     }
     return encoded
@@ -333,7 +385,26 @@ export function isPlainObject(value: object): boolean {
 }
 
 function decodeTagged(value: TaggedValue, path: string): unknown {
-  const name = value[KEY_MARKER]
+  const name: unknown = value[KEY_MARKER]
+  if (!isKeyTag(name)) {
+    throw new QueryError(
+      `Cannot decode query key: unknown tag ${JSON.stringify(name)} at ${path}.`
+    )
+  }
+  // The encoder emits the marker and, for the tags that carry one, a value —
+  // nothing else. Accepting a surplus property would silently drop data the
+  // payload claimed to carry.
+  const valued = VALUED_TAGS.has(name)
+  const members = Object.keys(value)
+  if (
+    members.length !== (valued ? 2 : 1) ||
+    members.some((member) => member !== KEY_MARKER && member !== KEY_VALUE) ||
+    (valued && !members.includes(KEY_VALUE))
+  ) {
+    throw new QueryError(
+      `Cannot decode query key: malformed ${name} wrapper at ${path}.`
+    )
+  }
   const payload = value[KEY_VALUE]
   switch (name) {
     case 'undefined':
@@ -374,10 +445,6 @@ function decodeTagged(value: TaggedValue, path: string): unknown {
       }
       return revived
     }
-    default:
-      throw new QueryError(
-        `Cannot decode query key: unknown tag ${JSON.stringify(name)} at ${path}.`
-      )
   }
 }
 
@@ -412,9 +479,13 @@ function decodeValue(value: unknown, path: string): unknown {
   }
   const decoded: Record<string, unknown> = {}
   for (const member of Object.keys(value as object)) {
-    decoded[member] = decodeValue(
-      (value as Record<string, unknown>)[member],
-      `${path}.${member}`
+    setOwnMember(
+      decoded,
+      member,
+      decodeValue(
+        (value as Record<string, unknown>)[member],
+        `${path}.${member}`
+      )
     )
   }
   return decoded
@@ -434,7 +505,7 @@ export function encodeQueryKey(key: QueryKey): readonly unknown[] {
     // the payload could not round-trip as a key — an unstable key rather
     // than a usable one.
     throw new QueryError(
-      'Cannot hash query key: a key must be an array, but its toJSON rendered a non-array.'
+      'Cannot hash query key: a key must be an array (a toJSON hook on the key itself may have rendered one thing into another).'
     )
   }
   return encoded
