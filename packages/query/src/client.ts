@@ -89,7 +89,8 @@ interface ClientCacheEntry {
  * stringify (sorted object keys, `bigint`/`Uint8Array`/`Date` handling) and
  * development errors for non-serializable input.
  */
-const UNDEFINED_SEGMENT = { __tachuiQueryUndefined: true }
+const UNDEFINED_MARKER = '__tachuiQueryUndefined'
+const UNDEFINED_SEGMENT = { [UNDEFINED_MARKER]: true }
 
 /** Brand check that holds across realms (structured clones, SSR payloads). */
 function isDateValue(value: unknown): value is Date {
@@ -163,12 +164,33 @@ function assertHashable(value: unknown, path: string, seen: Set<object> = new Se
   }
   const toJSON = (value as { toJSON?: unknown }).toJSON
   if (typeof toJSON === 'function') {
-    assertHashable(toJSON.call(value), path, seen)
+    let serialized: unknown
+    try {
+      serialized = toJSON.call(value)
+    } catch (toJSONError) {
+      throw new QueryError(
+        `Cannot hash query key: toJSON threw at ${path}.`,
+        { cause: toJSONError }
+      )
+    }
+    // Validated inside the parent's frame so a self-returning toJSON trips
+    // the circular check instead of overflowing the stack.
+    enterStructure(value as object, path, seen, () => {
+      assertHashable(serialized, path, seen)
+    })
     return
   }
   if (!isPlainObject(value)) {
     throw new QueryError(
       `Cannot hash query key: class instances without toJSON are not supported at ${path}.`
+    )
+  }
+  if (UNDEFINED_MARKER in (value as Record<string, unknown>)) {
+    // A user object with this shape would hash identically to an undefined
+    // segment and be served the other key's data, so the shape is reserved.
+    // #278 encodes undefined as a bare token and lifts this restriction.
+    throw new QueryError(
+      `Cannot hash query key: the shape { ${UNDEFINED_MARKER}: ... } is reserved for the undefined encoding at ${path}.`
     )
   }
   enterStructure(value, path, seen, () => {
@@ -207,18 +229,26 @@ function enterStructure(
 }
 
 /**
- * Whether any part of the key cannot survive the wire. `undefined` segments
- * become `null` under JSON serialization and `Date`s revive as strings, so a
- * snapshot entry keyed by either could never be matched after a round trip —
- * a wasted snapshot plus a dead entry. Anything else unserializable is
- * already rejected at insert time, so it cannot reach this gate.
+ * Whether any part of the key cannot survive the wire. An `undefined` segment
+ * becomes `null` under JSON serialization, so a snapshot entry keyed by one
+ * could never be matched after a round trip — a wasted snapshot plus a dead
+ * entry. (`Date` segments need no gate: `toJSON` runs on both sides, so the
+ * hash is identical across the wire. Anything else unserializable is already
+ * rejected at insert time.)
  */
 function keySurvivesWire(value: unknown): boolean {
-  if (value === undefined || isDateValue(value)) {
+  if (value === undefined) {
     return false
   }
   if (Array.isArray(value)) {
-    return value.every(keySurvivesWire)
+    // Index loop, mirroring the scan: every/some skip holes, and a hole
+    // reads as undefined — exactly the dead entry this gate prevents.
+    for (let index = 0; index < value.length; index += 1) {
+      if (!keySurvivesWire(value[index])) {
+        return false
+      }
+    }
+    return true
   }
   if (typeof value === 'object' && value !== null) {
     return Object.values(value).every(keySurvivesWire)
@@ -469,7 +499,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
   const client: QueryClient = {
     fetchQuery,
 
-    prefetchQueries(requests: readonly FetchQueryOptions<any, any>[]): Promise<void> {
+    async prefetchQueries(requests: readonly FetchQueryOptions<any, any>[]): Promise<void> {
       ensureUsable('prefetchQueries')
       return Promise.all(
         requests.map((request) =>
