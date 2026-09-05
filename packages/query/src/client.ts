@@ -109,15 +109,24 @@ const UNDEFINED_MARKER = '__tachuiQueryUndefined'
 const UNDEFINED_SEGMENT = { [UNDEFINED_MARKER]: true }
 
 /**
- * QueryErrors raised before any loader runs (unhashable key, use after
- * dispose). Prefetch rethrows these and swallows everything else; a WeakSet
- * (not a subclass) keeps the public error type stable, and entries die with
- * their error objects.
+ * Errors raised before any loader runs (unhashable key, use after dispose, a
+ * garbage `options.client`, a key accessor that throws). Prefetch rethrows
+ * these and swallows everything else; a WeakSet (not a subclass) keeps the
+ * public error type stable and lets any thrown object be tagged, not just
+ * QueryError — a misconfigured prefetch must not resolve silently just
+ * because the failure was a TypeError. Entries die with their error objects.
+ * A thrown primitive cannot be tagged and stays swallowed.
  */
 const dispatchErrors = new WeakSet<object>()
 
-function markDispatchError(error: QueryError): QueryError {
-  dispatchErrors.add(error)
+function isTaggableError(error: unknown): error is object {
+  return typeof error === 'object' && error !== null
+}
+
+function markDispatchError<T>(error: T): T {
+  if (isTaggableError(error)) {
+    dispatchErrors.add(error)
+  }
   return error
 }
 
@@ -615,14 +624,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     // forward is returned without await, so the inner call's loader failures
     // never pass through this frame's tag.
     let resolvedKey: QueryKey
-    let hash: QueryKeyHash
-    let segmentHashes: QueryKeyHash[]
-    // Decoupled copy: the entry must not alias the caller's array, or a
-    // later mutation desyncs entry.key from entry.hash (breaking the
-    // snapshot key). It is the wire rendering, so the dehydrate gate below
-    // can test it directly; matching uses segmentHashes, which the rendering
-    // cannot skew. A key that cannot even be rendered is refused loudly.
-    let storedKey: QueryKey
+    let entry: ClientCacheEntry
     try {
       ensureUsable('fetchQuery')
       if (options.client !== undefined && options.client !== client) {
@@ -631,29 +633,41 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         return options.client.fetchQuery({ ...options, client: undefined })
       }
       resolvedKey = options.key()
-      hash = hashQueryKey(resolvedKey)
-      try {
-        storedKey = wireClone(resolvedKey)
-      } catch (cloneError) {
-        // Raised inside the dispatch frame: nothing has been cached and no
-        // loader has run, so prefetch must surface this as misuse rather
-        // than swallow it as a load failure.
-        throw new QueryError('Cannot cache query: its key cannot be serialized.', {
-          cause: cloneError,
-        })
+      const hash = hashQueryKey(resolvedKey)
+      const cached = entries.get(hash)
+      if (cached !== undefined) {
+        // The hash *is* the rendering, so an equal hash means an equal
+        // stored key and equal segments: the hit path neither re-renders the
+        // key nor overwrites what the entry already holds.
+        entry = cached
+      } else {
+        // Decoupled copy: the entry must not alias the caller's array, or a
+        // later mutation desyncs entry.key from entry.hash (breaking the
+        // snapshot key). It is the wire rendering, so the dehydrate gate can
+        // test it directly; matching uses segment hashes, which the
+        // rendering cannot skew. A key that cannot even be rendered is
+        // refused loudly.
+        let storedKey: QueryKey
+        try {
+          storedKey = wireClone(resolvedKey)
+        } catch (cloneError) {
+          // Raised inside the dispatch frame: nothing has been cached and no
+          // loader has run, so prefetch must surface this as misuse rather
+          // than swallow it as a load failure.
+          throw new QueryError('Cannot cache query: its key cannot be serialized.', {
+            cause: cloneError,
+          })
+        }
+        // Segmented last, so a key that renders inconsistently is reported by
+        // the storage step above rather than as a second hashing failure.
+        entry = createEntry(storedKey, hash, hashKeySegments(resolvedKey), options)
       }
-      // Last, so a key that renders inconsistently is reported by the
-      // storage step above rather than as a second hashing failure.
-      segmentHashes = hashKeySegments(resolvedKey)
     } catch (error) {
-      if (error instanceof QueryError) {
-        throw markDispatchError(error)
-      }
-      throw error
+      // Every dispatch-phase failure is tagged, whatever its type: a garbage
+      // options.client throws a TypeError, and a prefetch that swallowed it
+      // would warm nothing with no signal at all.
+      throw markDispatchError(error)
     }
-    const cached = entries.get(hash)
-    const entry = cached ?? createEntry(storedKey, hash, segmentHashes, options)
-    entry.key = storedKey
     // Explicitly passed options upgrade the entry policy — but only while the
     // field is still unclaimed. An entry restored by hydrate() starts
     // unclaimed and picks up the developer's configuration from the first
@@ -803,11 +817,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             () => undefined,
             (error: unknown) => {
               // Load failures are swallowed — prefetch only warms — but
-              // dispatch-phase misuse (unhashable key, disposed client)
-              // surfaces. The tag, not the type, decides: a QueryError thrown
-              // BY a loader — including one shared via dedup onto another
-              // caller's flight — is a load failure.
-              if (error instanceof QueryError && dispatchErrors.has(error)) {
+              // dispatch-phase misuse (unhashable key, disposed client, a
+              // garbage explicit client) surfaces. The tag alone decides, so
+              // type is irrelevant in both directions: a QueryError thrown BY
+              // a loader — including one shared via dedup onto another
+              // caller's flight — is a load failure, and a TypeError raised
+              // before any loader ran is not.
+              if (isTaggableError(error) && dispatchErrors.has(error)) {
                 throw error
               }
             }
@@ -860,6 +876,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // is lossy (undefined became null, a hook resolved away, a hole
         // filled in).
         if (entry.hash !== hashQueryKey(entry.key)) {
+          continue
+        }
+        // A hook on the key array can render a non-array, which hashes
+        // consistently and so clears the gate above — but hydrate() rejects
+        // the payload on its shape check. Nothing is emitted that this
+        // client's own hydrate() would refuse.
+        if (!Array.isArray(entry.key)) {
           continue
         }
         // Data that cannot survive the wire stays cached but is not

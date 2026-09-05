@@ -1203,6 +1203,42 @@ describe('prefetchQueries', () => {
     expect(loads.get('b')).toBe(2)
   })
 
+  it('surfaces prefetch misuse that is not a QueryError', async () => {
+    const client = createQueryClient()
+
+    // A garbage explicit client throws a TypeError, and a key accessor can
+    // throw anything at all. Both are raised before a loader runs, so
+    // classifying by type instead of by tag would leave a misconfigured SSR
+    // prefetch warming nothing with no signal.
+    await expect(
+      client.prefetchQueries([
+        { key: keyOf('k'), load: async () => 'v', client: {} as never },
+      ])
+    ).rejects.toThrowError(TypeError)
+    await expect(
+      client.prefetchQueries([
+        {
+          key: () => {
+            throw new TypeError('key accessor blew up')
+          },
+          load: async () => 'v',
+        },
+      ])
+    ).rejects.toThrowError(/key accessor blew up/)
+
+    // A loader throwing the same type is still just a load failure.
+    await expect(
+      client.prefetchQueries([
+        {
+          key: keyOf('down'),
+          load: async () => {
+            throw new TypeError('backend blew up')
+          },
+        },
+      ])
+    ).resolves.toBeUndefined()
+  })
+
   it('surfaces prefetch misuse instead of swallowing it', async () => {
     const client = createQueryClient()
 
@@ -1531,6 +1567,24 @@ describe('dehydrate and hydrate', () => {
     // The undefined member is dropped on the wire, so the restored entry
     // could never be matched by the original key.
     expect(client.dehydrate().queries).toHaveLength(0)
+  })
+
+  it('never emits a payload its own hydrate() would reject', async () => {
+    const client = createQueryClient()
+    const scalarKey = Object.assign(['x'], { toJSON: () => 'rendered' })
+
+    // A hook on the key array can render a non-array. That hashes
+    // consistently, so the wire gate clears it — but hydrate() checks the
+    // payload shape and refuses a key that is not an array.
+    await client.fetchQuery({
+      key: () => scalarKey,
+      load: async () => 'v',
+      snapshot: true,
+    })
+
+    const state = client.dehydrate()
+    expect(state.queries).toHaveLength(0)
+    expect(() => createQueryClient().hydrate(state)).not.toThrow()
   })
 
   it('does not serialize data carrying properties the wire drops', async () => {
