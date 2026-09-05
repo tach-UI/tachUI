@@ -59,8 +59,24 @@ interface InFlightRequest {
 
 /** Cache entry state. Lifecycle policy (freshness, eviction) lands in #279. */
 interface ClientCacheEntry {
+  /**
+   * The key as the wire renders it — `undefined` collapsed to `null`, hooks
+   * applied — decoupled from whatever array the caller handed in. This is
+   * what the snapshot payload carries, and `dehydrate()` emits it only when
+   * it hashes back to {@link ClientCacheEntry.hash}, so a lossy rendering is
+   * skipped rather than restored dead. Matching never reads it: the
+   * rendering is lossy by design, so prefix comparison uses
+   * {@link ClientCacheEntry.segmentHashes} instead.
+   */
   key: QueryKey
   readonly hash: QueryKeyHash
+  /**
+   * Per-segment hashes of the key as supplied, captured at insert. Prefix
+   * matching compares these rather than re-hashing `key`: the stored
+   * rendering collapses `undefined` to `null`, so matching on it would miss
+   * the very entry `fetchQuery` created and hit a null-keyed sibling instead.
+   */
+  readonly segmentHashes: readonly QueryKeyHash[]
   data: unknown
   error: unknown
   status: QueryStatus
@@ -415,18 +431,35 @@ function hashQueryKey(key: QueryKey): QueryKeyHash {
 }
 
 /**
- * Provisional prefix match over the structured key. Segments compare by hash,
- * not identity, so Date and object segments are reachable by value — the same
- * entries fetchQuery would serve. Takes caller-hashed prefix segments (see
- * invalidate): an unhashable segment raises exactly as it would from
- * fetchQuery.
+ * Per-segment hashes of a key as supplied. Index loop rather than map: holes
+ * read as undefined, which the sentinel distinguishes from null instead of
+ * skipping (map) or matching vacuously.
  */
-function isKeyPrefixMatch(prefixHashes: readonly QueryKeyHash[], key: QueryKey): boolean {
-  if (prefixHashes.length > key.length) {
+function hashKeySegments(key: QueryKey): QueryKeyHash[] {
+  const hashes: QueryKeyHash[] = []
+  for (let index = 0; index < key.length; index += 1) {
+    hashes.push(hashQueryKey([key[index]]))
+  }
+  return hashes
+}
+
+/**
+ * Provisional prefix match over hashed segments. Comparing hashes rather than
+ * values keeps Date and object segments reachable by value — the same entries
+ * fetchQuery would serve — and keeps matching independent of the entry's
+ * stored key, which is the (lossy) wire rendering. Both sides are hashed by
+ * their owners, so an unhashable prefix segment raises exactly as it would
+ * from fetchQuery.
+ */
+function isKeyPrefixMatch(
+  prefixHashes: readonly QueryKeyHash[],
+  segmentHashes: readonly QueryKeyHash[]
+): boolean {
+  if (prefixHashes.length > segmentHashes.length) {
     return false
   }
   for (let index = 0; index < prefixHashes.length; index += 1) {
-    if (prefixHashes[index] !== hashQueryKey([key[index]])) {
+    if (prefixHashes[index] !== segmentHashes[index]) {
       return false
     }
   }
@@ -479,11 +512,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
   function createEntry(
     key: QueryKey,
     hash: QueryKeyHash,
+    segmentHashes: readonly QueryKeyHash[],
     policy: { staleTime?: number; gcTime?: number; snapshot?: boolean }
   ): ClientCacheEntry {
     const entry: ClientCacheEntry = {
       key,
       hash,
+      segmentHashes,
       data: undefined,
       error: undefined,
       status: 'idle',
@@ -542,6 +577,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     // never pass through this frame's tag.
     let resolvedKey: QueryKey
     let hash: QueryKeyHash
+    let segmentHashes: QueryKeyHash[]
+    // Decoupled copy: the entry must not alias the caller's array, or a
+    // later mutation desyncs entry.key from entry.hash (breaking the
+    // snapshot key). It is the wire rendering, so the dehydrate gate below
+    // can test it directly; matching uses segmentHashes, which the rendering
+    // cannot skew. A key that cannot even be rendered is refused loudly.
+    let storedKey: QueryKey
     try {
       ensureUsable('fetchQuery')
       if (options.client !== undefined && options.client !== client) {
@@ -551,6 +593,19 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       }
       resolvedKey = options.key()
       hash = hashQueryKey(resolvedKey)
+      try {
+        storedKey = wireClone(resolvedKey)
+      } catch (cloneError) {
+        // Raised inside the dispatch frame: nothing has been cached and no
+        // loader has run, so prefetch must surface this as misuse rather
+        // than swallow it as a load failure.
+        throw new QueryError('Cannot cache query: its key cannot be serialized.', {
+          cause: cloneError,
+        })
+      }
+      // Last, so a key that renders inconsistently is reported by the
+      // storage step above rather than as a second hashing failure.
+      segmentHashes = hashKeySegments(resolvedKey)
     } catch (error) {
       if (error instanceof QueryError) {
         throw markDispatchError(error)
@@ -558,20 +613,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       throw error
     }
     const cached = entries.get(hash)
-    // Decoupled copy: the entry must not alias the caller's array, or a
-    // later mutation desyncs entry.key from entry.hash (breaking both the
-    // snapshot key and prefix matching). Wire-true rendering keeps the hash
-    // identical by construction — and that identity is the dehydrate gate
-    // below. A key that cannot even be rendered is refused loudly.
-    let storedKey: QueryKey
-    try {
-      storedKey = wireClone(resolvedKey)
-    } catch (cloneError) {
-      throw new QueryError('Cannot cache query: its key cannot be serialized.', {
-        cause: cloneError,
-      })
-    }
-    const entry = cached ?? createEntry(storedKey, hash, options)
+    const entry = cached ?? createEntry(storedKey, hash, segmentHashes, options)
     entry.key = storedKey
     // Explicitly passed options upgrade the entry policy — but only while the
     // field is still unclaimed. An entry restored by hydrate() starts
@@ -739,15 +781,10 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       ensureUsable('invalidate')
       // Hoisted out of the entry loop: an unhashable prefix raises
       // consistently even against an empty cache (instead of no-op-ing),
-      // and segments hash once rather than per entry. Index loop, mirroring
-      // the scan: every/map skip holes, and a hole prefix must compare as
-      // undefined, not match vacuously.
-      const prefixHashes: QueryKeyHash[] = []
-      for (let index = 0; index < prefix.length; index += 1) {
-        prefixHashes.push(hashQueryKey([prefix[index]]))
-      }
+      // and segments hash once rather than per entry.
+      const prefixHashes = hashKeySegments(prefix)
       for (const entry of entries.values()) {
-        if (isKeyPrefixMatch(prefixHashes, entry.key)) {
+        if (isKeyPrefixMatch(prefixHashes, entry.segmentHashes)) {
           entry.invalidated = true
           entry.generation += 1
           if (entry.inFlight !== null) {
@@ -779,9 +816,10 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         }
         // Keys that cannot survive the wire are skipped for the same
         // reason: the restored entry could never be matched. entry.key is
-        // the wire-rendered copy, so a hash mismatch against the insert-time
-        // hash proves the round trip is lossy (undefined became null, a hook
-        // resolved away, a hole filled in).
+        // always the wire rendering — inserted and hydrated alike — so a
+        // hash mismatch against the insert-time hash proves the round trip
+        // is lossy (undefined became null, a hook resolved away, a hole
+        // filled in).
         if (entry.hash !== hashQueryKey(entry.key)) {
           continue
         }
@@ -824,17 +862,23 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       const restored = state.queries.map((item) => ({
         item,
         hash: hashQueryKey(item.key),
+        segmentHashes: hashKeySegments(item.key),
       }))
       // Clone every entry before committing any, for the same atomicity: a
       // clone failure must not leave earlier entries partially installed.
-      // Dates, undefined segments, and circular graphs survive the clone;
-      // functions and symbols cannot cross the boundary and raise loudly
-      // instead of aliasing silently (the wire would drop them).
-      const staged = restored.map(({ item, hash }) => {
+      // The key is stored as its wire rendering, exactly as fetchQuery
+      // stores it, so a hydrated entry faces the dehydrate gate on the same
+      // terms — a structured clone would preserve undefined segments the
+      // wire cannot carry and let the gate pass vacuously, re-emitting the
+      // key as null for the next hop to mismatch. Matching is unaffected:
+      // it reads segmentHashes, taken from the payload key above. Data
+      // keeps the structured clone — it has no gate of its own, so
+      // functions and symbols must raise loudly rather than be dropped.
+      const staged = restored.map(({ item, hash, segmentHashes }) => {
         let key: QueryKey
         let data: unknown
         try {
-          key = structuredClone(item.key)
+          key = wireClone(item.key)
           data = structuredClone(item.data)
         } catch (cloneError) {
           throw new QueryError(
@@ -842,14 +886,14 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             { cause: cloneError }
           )
         }
-        return { item, hash, key, data }
+        return { item, hash, segmentHashes, key, data }
       })
-      for (const { item, hash, key, data } of staged) {
+      for (const { item, hash, segmentHashes, key, data } of staged) {
         const entry =
           entries.get(hash) ??
           // Unclaimed defaults: the first query that names the key configures
           // the restored entry.
-          createEntry(key, hash, {})
+          createEntry(key, hash, segmentHashes, {})
         entry.key = key
         entry.data = data
         entry.error = undefined
