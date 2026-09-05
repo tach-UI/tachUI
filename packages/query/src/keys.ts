@@ -79,8 +79,23 @@ function isDateValue(value: unknown): value is Date {
   return Object.prototype.toString.call(value) === '[object Date]'
 }
 
+/**
+ * The %TypedArray%.prototype[@@toStringTag] getter, borrowed once. It reports
+ * the [[TypedArrayName]] internal slot and returns undefined for anything
+ * without one, so unlike `Object.prototype.toString` it cannot be spoofed —
+ * neither by a plain object carrying `Symbol.toStringTag: 'Uint8Array'` (which
+ * would otherwise be read through as array-like and hash as real bytes) nor by
+ * a genuine Int8Array with that tag defined on it. It holds across realms, and
+ * it has existed since ES2015, so a missing descriptor is a broken runtime
+ * rather than a case to degrade quietly for.
+ */
+const typedArrayTag = Object.getOwnPropertyDescriptor(
+  Object.getPrototypeOf(Uint8Array.prototype) as object,
+  Symbol.toStringTag
+)!.get as (this: unknown) => string | undefined
+
 function isByteArray(value: unknown): value is Uint8Array {
-  return Object.prototype.toString.call(value) === '[object Uint8Array]'
+  return typedArrayTag.call(value) === 'Uint8Array'
 }
 
 const BASE64_ALPHABET =
@@ -482,6 +497,15 @@ function decodeValue(value: unknown, path: string): unknown {
       return decodeValue(encodeValue(value, path, new Set()), path)
   }
   if (Array.isArray(value)) {
+    // A raw array — one handed over in process rather than through JSON —
+    // can carry properties the encoding never renders. Mapping over it would
+    // quietly drop them and store the data under a key the caller never
+    // named, while a direct fetch with the same key raises.
+    if (hasUnrenderedOwnProps(value)) {
+      throw new QueryError(
+        `Cannot decode query key: arrays with non-index properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
+      )
+    }
     return value.map((member, index) => decodeValue(member, `${path}[${index}]`))
   }
   if (!isPlainObject(value as object)) {
@@ -490,6 +514,18 @@ function decodeValue(value: unknown, path: string): unknown {
   }
   if (KEY_MARKER in (value as Record<string, unknown>)) {
     return decodeTagged(value as TaggedValue, path)
+  }
+  // Same reasoning as the array branch: Object.keys would silently drop a
+  // symbol or non-enumerable member that the encoder refuses outright.
+  if (hasOwnSymbol(value as object)) {
+    throw new QueryError(
+      `Cannot decode query key: symbol-keyed properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
+    )
+  }
+  if (hasUnrenderedOwnProps(value as object)) {
+    throw new QueryError(
+      `Cannot decode query key: non-enumerable properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
+    )
   }
   const decoded: Record<string, unknown> = {}
   for (const member of Object.keys(value as object)) {
