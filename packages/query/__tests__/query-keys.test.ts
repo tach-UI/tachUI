@@ -260,6 +260,24 @@ describe('payload codec', () => {
     expect(() =>
       decodeQueryKey(['u', { 0: 65, length: 1, [Symbol.toStringTag]: 'Uint8Array' }])
     ).toThrowError(/symbol-keyed/)
+
+    // A tag-shaped object is held to the same rule: its own surplus check
+    // reads only enumerable string keys, so a hidden extra would otherwise
+    // ride through and be dropped.
+    expect(() =>
+      decodeQueryKey([
+        Object.assign({ __tachuiQuery: 'undefined' }, { [Symbol('s')]: 1 }),
+      ])
+    ).toThrowError(/symbol-keyed/)
+    expect(() =>
+      decodeQueryKey([
+        Object.defineProperty({ __tachuiQuery: 'undefined' }, 'hidden', {
+          value: 1,
+        }),
+      ])
+    ).toThrowError(/non-enumerable/)
+    // The clean wrapper still decodes.
+    expect(decodeQueryKey([{ __tachuiQuery: 'undefined' }])).toEqual([undefined])
   })
 
   it('accepts a payload handed over in process rather than through JSON', () => {
