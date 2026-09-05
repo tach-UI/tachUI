@@ -662,6 +662,68 @@ describe('invalidate and clear', () => {
     expect(loads).toBe(4)
   })
 
+  it('invalidates an undefined-keyed entry without matching its null twin', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const counting = (value: string) => async () => {
+      loads += 1
+      return value
+    }
+
+    await client.fetchQuery({
+      key: () => ['users', undefined],
+      load: counting('anon'),
+    })
+    await client.fetchQuery({ key: () => ['users', null], load: counting('none') })
+    expect(loads).toBe(2)
+
+    // The stored key is the wire rendering, where undefined reads as null:
+    // matching on it would miss the entry fetchQuery created and hit its null
+    // twin instead, serving pre-mutation data forever.
+    client.invalidate(['users', undefined])
+    await expect(
+      client.fetchQuery({ key: () => ['users', undefined], load: counting('anon2') })
+    ).resolves.toBe('anon2')
+    await expect(
+      client.fetchQuery({ key: () => ['users', null], load: counting('none2') })
+    ).resolves.toBe('none')
+    expect(loads).toBe(3)
+
+    // And the reverse: an explicit null must not invalidate the undefined entry.
+    client.invalidate(['users', null])
+    await expect(
+      client.fetchQuery({ key: () => ['users', undefined], load: counting('anon3') })
+    ).resolves.toBe('anon2')
+    await expect(
+      client.fetchQuery({ key: () => ['users', null], load: counting('none3') })
+    ).resolves.toBe('none3')
+    expect(loads).toBe(4)
+  })
+
+  it('invalidates keys whose undefined is nested or a hole', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const counting = () => async () => {
+      loads += 1
+      return 'v'
+    }
+    const sparse: unknown[] = ['s', 'x']
+    sparse.length = 3
+
+    await client.fetchQuery({ key: () => ['u', { id: undefined }], load: counting() })
+    await client.fetchQuery({ key: () => sparse, load: counting() })
+    expect(loads).toBe(2)
+
+    // Both renderings lose the undefined on the wire — the member vanishes,
+    // the hole fills with null — so matching on the stored key would leave
+    // these entries permanently unreachable by invalidate().
+    client.invalidate(['u', { id: undefined }])
+    client.invalidate(sparse)
+    await client.fetchQuery({ key: () => ['u', { id: undefined }], load: counting() })
+    await client.fetchQuery({ key: () => sparse, load: counting() })
+    expect(loads).toBe(4)
+  })
+
   it('rejects an unhashable prefix even against an empty cache', () => {
     const client = createQueryClient()
 
@@ -1121,6 +1183,28 @@ describe('prefetchQueries', () => {
     ).resolves.toBeUndefined()
   })
 
+  it('surfaces a key that cannot be stored, like any other misuse', async () => {
+    const client = createQueryClient()
+    let calls = 0
+    const flaky = {
+      toJSON: () => {
+        calls += 1
+        // Each hash invokes the hook twice (scan, then serialize), so the
+        // insert-time hash succeeds and only the storing copy throws.
+        if (calls > 2) {
+          throw new Error('flaky')
+        }
+        return { a: 1 }
+      },
+    }
+
+    // Raised in the dispatch frame, before any loader runs, so it is misuse
+    // rather than a load failure and must not be swallowed.
+    await expect(
+      client.prefetchQueries([{ key: () => ['f', flaky], load: async () => 'v' }])
+    ).rejects.toThrowError(/cannot be serialized/)
+  })
+
   it('swallows loader QueryErrors shared via dedup during prefetch', async () => {
     const client = createQueryClient()
     let release!: (value: string) => void
@@ -1247,23 +1331,39 @@ describe('dehydrate and hydrate', () => {
     expect(seen.queries).toHaveLength(1)
   })
 
-  it('hashes undefined key segments distinctly from null', async () => {
+  it('does not re-emit a hydrated undefined key as null', async () => {
     const client = createQueryClient()
-    let loads = 0
-    const counting = (value: string) => async () => {
-      loads += 1
-      return value
-    }
+    await client.fetchQuery({
+      key: () => ['u', undefined],
+      load: async () => 'anon',
+      snapshot: true,
+    })
+    // The insert-time rendering is lossy, so the gate already skips it.
+    expect(client.dehydrate().queries).toHaveLength(0)
 
-    // `['user', userId()]` with an unset id is ordinary; it must not share an
-    // entry with an explicit null.
+    // A payload assembled in process — an SSR framework handing the object
+    // over directly rather than through a socket — can still carry
+    // undefined. Storing it verbatim would make the gate vacuous for this
+    // entry: the stored key hashes with the sentinel, matches, and then
+    // ships as null for the next hop to mismatch.
+    client.hydrate({
+      queries: [{ key: ['u', undefined], data: 'restored', updatedAt: Date.now() }],
+    })
+    expect(client.dehydrate().queries).toHaveLength(0)
+
+    // The restored data is still served, and only by the original key.
+    let loads = 0
+    const counting = () => async () => {
+      loads += 1
+      return 'fresh'
+    }
     await expect(
-      client.fetchQuery({ key: () => ['u', undefined], load: counting('A') })
-    ).resolves.toBe('A')
+      client.fetchQuery({ key: () => ['u', undefined], load: counting() })
+    ).resolves.toBe('restored')
     await expect(
-      client.fetchQuery({ key: () => ['u', null], load: counting('B') })
-    ).resolves.toBe('B')
-    expect(loads).toBe(2)
+      client.fetchQuery({ key: () => ['u', null], load: counting() })
+    ).resolves.toBe('fresh')
+    expect(loads).toBe(1)
   })
 
   it('does not serialize entries keyed by undefined', async () => {
