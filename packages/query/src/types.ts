@@ -19,11 +19,21 @@ import type { Signal } from '@tachui/core'
  * Keys stay arrays rather than opaque hashes because prefix invalidation needs to
  * match a prefix of the array, and devtools need to display the structure. The
  * array is hashed separately for map lookup.
+ *
+ * Segments may be any of: strings, booleans, `null`, an explicit `undefined`,
+ * finite numbers including `-0`, `NaN` and `Infinity`, `bigint`, `Date`,
+ * `Uint8Array`, plain objects, arrays, and anything carrying `toJSON`. Object
+ * property order never matters. Functions, symbols, and class instances
+ * without `toJSON` raise a {@link QueryError} rather than producing a key that
+ * would collide with its neighbours (#278).
  */
 export type QueryKey = readonly unknown[]
 
 /**
  * The deterministic hash derived from a {@link QueryKey}, used as the cache map key.
+ *
+ * Equal keys always produce it, whatever order their object properties were
+ * written in and whichever `Date` or `Uint8Array` instance carried the value.
  */
 export type QueryKeyHash = string
 
@@ -279,6 +289,13 @@ export interface CacheEntry<TRaw = unknown, E = Error> {
  * interceptor context, and error stacks are never included.
  */
 export interface DehydratedQuery<TRaw = unknown> {
+  /**
+   * The key in its canonical encoding: JSON-safe, and decoded back to an equal
+   * key by {@link QueryClient.hydrate}, so `Date`, `bigint`, `Uint8Array`, and
+   * explicit `undefined` segments survive the boundary instead of collapsing.
+   * A key that is already plain JSON encodes to itself, so the common payload
+   * is exactly the key the caller wrote.
+   */
   readonly key: QueryKey
   readonly data: TRaw
   readonly updatedAt: number

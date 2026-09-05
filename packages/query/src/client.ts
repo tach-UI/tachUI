@@ -13,9 +13,9 @@
  *
  * `prefetchQueries`, `dehydrate`, and `hydrate` are declared here so the
  * interface does not change later, with baseline behavior only; Phase 4 (#291)
- * owns the SSR prefetch sequence and payload rules. Key hashing and prefix
- * matching are provisional until #278 lands stable canonicalization, and entry
- * lifecycle policy (dedup, freshness, `gcTime` eviction) lands in #279.
+ * owns the SSR prefetch sequence and payload rules. Key hashing, prefix
+ * matching, and the payload key codec live in `./keys` (#278); entry lifecycle
+ * policy (dedup, freshness, `gcTime` eviction) lands in #279.
  */
 
 import {
@@ -31,6 +31,16 @@ import {
   DEFAULT_STALE_TIME,
 } from './defaults'
 import { isServer, QueryError } from './errors'
+import {
+  canonicalizeQueryKey,
+  decodeQueryKey,
+  encodeQueryKey,
+  hasUnrenderedOwnProps,
+  hashKeySegments,
+  hashQueryKey,
+  isKeyPrefixMatch,
+  isPlainObject,
+} from './keys'
 import type {
   CacheEntry,
   DehydratedQuery,
@@ -60,13 +70,11 @@ interface InFlightRequest {
 /** Cache entry state. Lifecycle policy (freshness, eviction) lands in #279. */
 interface ClientCacheEntry {
   /**
-   * The key as the wire renders it — `undefined` collapsed to `null`, hooks
-   * applied — decoupled from whatever array the caller handed in. This is
-   * what the snapshot payload carries, and `dehydrate()` emits it only when
-   * it hashes back to {@link ClientCacheEntry.hash}, so a lossy rendering is
-   * skipped rather than restored dead. Matching never reads it: the
-   * rendering is lossy by design, so prefix comparison uses
-   * {@link ClientCacheEntry.segmentHashes} instead.
+   * The canonical structured key: equal to what the caller supplied, with
+   * every `toJSON` hook resolved and sharing no references with it, so a
+   * later mutation of the caller's array cannot desync the entry from its
+   * hash. Retained for prefix matching and devtools (#278); the payload
+   * carries {@link encodeQueryKey} of it, which decodes back to an equal key.
    */
   key: QueryKey
   readonly hash: QueryKeyHash
@@ -98,17 +106,6 @@ interface ClientCacheEntry {
 }
 
 /**
- * Marker standing in for `undefined` key segments. Plain `JSON.stringify`
- * maps `undefined` to `null` in array positions (and drops it from objects),
- * which would collide `['user', undefined]` with `['user', null]` and serve
- * one key's data for another. #278 replaces all of this with a stable
- * stringify (sorted object keys, `bigint`/`Uint8Array`/`Date` handling) and
- * development errors for non-serializable input.
- */
-const UNDEFINED_MARKER = '__tachuiQueryUndefined'
-const UNDEFINED_SEGMENT = { [UNDEFINED_MARKER]: true }
-
-/**
  * Errors raised before any loader runs (unhashable key, use after dispose, a
  * garbage `options.client`, a key accessor that throws). Prefetch rethrows
  * these and swallows everything else; a WeakSet (not a subclass) keeps the
@@ -128,68 +125,6 @@ function markDispatchError<T>(error: T): T {
     dispatchErrors.add(error)
   }
   return error
-}
-
-/** Brand check that holds across realms (structured clones, SSR payloads). */
-function isDateValue(value: unknown): value is Date {
-  return Object.prototype.toString.call(value) === '[object Date]'
-}
-
-/** Whether a property name is one of the indices an array renders. */
-function isRenderedIndex(member: string, length: number): boolean {
-  const index = Number(member)
-  return (
-    Number.isInteger(index) &&
-    index >= 0 &&
-    index < length &&
-    String(index) === member
-  )
-}
-
-/** Own symbol properties, enumerable or not: nothing renders them. */
-function hasOwnSymbol(value: object): boolean {
-  return Object.getOwnPropertySymbols(value).length > 0
-}
-
-/**
- * Own properties neither the hash nor the wire renders. `JSON.stringify`
- * emits a plain object's own *enumerable* string keys and an array's indexed
- * elements — nothing else — so any other own property is silently dropped and
- * siblings differing only by one would hash identically and serve each
- * other's data. That covers symbols (enumerable or not), non-enumerable
- * string keys on an object, and non-index names on an array. Array indices
- * render regardless of enumerability, and an array's own `length` is
- * structural rather than a property.
- */
-function hasUnrenderedOwnProps(value: object): boolean {
-  if (hasOwnSymbol(value)) {
-    return true
-  }
-  if (Array.isArray(value)) {
-    return Object.getOwnPropertyNames(value).some(
-      (member) => member !== 'length' && !isRenderedIndex(member, value.length)
-    )
-  }
-  return Object.getOwnPropertyNames(value).some(
-    (member) => !Object.prototype.propertyIsEnumerable.call(value, member)
-  )
-}
-
-/**
- * Rejects own properties the hash cannot render: siblings differing only by
- * one would hash identically and serve each other's data.
- */
-function assertRenderableOwnProps(value: object, path: string): void {
-  if (hasOwnSymbol(value)) {
-    throw new QueryError(
-      `Cannot hash query key: symbol-keyed properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
-    )
-  }
-  if (hasUnrenderedOwnProps(value)) {
-    throw new QueryError(
-      `Cannot hash query key: non-enumerable properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
-    )
-  }
 }
 
 /**
@@ -272,246 +207,6 @@ function dataSurvivesWire(value: unknown, seen: Set<object> = new Set()): boolea
  */
 function wireClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
-}
-
-/**
- * Plain-or-protoless check that holds across realms: a plain object has at
- * most one link above it (its realm's object prototype, or nothing).
- */
-function isPlainObject(value: object): boolean {
-  const prototype: unknown = Object.getPrototypeOf(value)
-  return (
-    prototype === Object.prototype ||
-    prototype === null ||
-    Object.getPrototypeOf(prototype) === null
-  )
-}
-
-/**
- * Provisional key validation. The rule is to validate what the hash renders:
- * `JSON.stringify` silently collapses several inputs — Sets, Maps, and class
- * instances to `{}`, functions and symbols in array positions to `null` — so
- * distinct keys would share an entry and serve each other's data. Anything
- * the hash cannot render exactly is rejected here with a path instead of
- * colliding silently. `undefined` stays supported via the sentinel above.
- * #278 canonicalizes the rest instead of rejecting it.
- */
-function assertHashable(value: unknown, path: string, seen: Set<object> = new Set()): void {
-  if (value === null || value === undefined) {
-    return
-  }
-  switch (typeof value) {
-    case 'string':
-    case 'boolean':
-      return
-    case 'number':
-      if (!Number.isFinite(value)) {
-        throw new QueryError(
-          `Cannot hash query key: non-finite numbers are not supported at ${path}.`
-        )
-      }
-      // -0 stringifies as 0, so the two would share an entry and serve each
-      // other's data (notably with flipped reciprocals).
-      if (Object.is(value, -0)) {
-        throw new QueryError(
-          `Cannot hash query key: -0 is not supported at ${path} (it serializes as 0).`
-        )
-      }
-      return
-    case 'bigint':
-      throw new QueryError(
-        `Cannot hash query key: bigint is not supported yet at ${path} (stable canonicalization lands in #278).`
-      )
-    case 'function':
-      throw new QueryError(
-        `Cannot hash query key: functions are not supported at ${path}.`
-      )
-    case 'symbol':
-      throw new QueryError(
-        `Cannot hash query key: symbols are not supported at ${path}.`
-      )
-    default:
-      break
-  }
-  // Invalid Dates carry no identity — the engines render them as null, which
-  // would collide with an ordinary null segment — so they are rejected before
-  // any hook runs. A brand spoof without a Date internal slot falls through
-  // to the symbol check below.
-  if (isDateValue(value)) {
-    let time: number | undefined
-    try {
-      time = Date.prototype.getTime.call(value)
-    } catch {
-      time = undefined
-    }
-    if (time !== undefined && Number.isNaN(time)) {
-      throw new QueryError(
-        `Cannot hash query key: invalid Dates cannot be hashed at ${path} (they serialize as null).`
-      )
-    }
-  }
-  // A toJSON hook replaces the rendering, so it is validated first: the scan
-  // must see the serialized representation, not the carrier. This covers
-  // plain objects, class instances, genuine Dates (via the prototype hook,
-  // which renders ISO strings), and arrays with custom hooks (whose indexed
-  // elements the hash would otherwise never render).
-  const toJSON = (value as { toJSON?: unknown }).toJSON
-  if (typeof toJSON === 'function') {
-    let serialized: unknown
-    try {
-      serialized = toJSON.call(value)
-    } catch (toJSONError) {
-      throw new QueryError(
-        `Cannot hash query key: toJSON threw at ${path}.`,
-        { cause: toJSONError }
-      )
-    }
-    // Validated inside the parent's frame so a self-returning toJSON trips
-    // the circular check instead of overflowing the stack.
-    enterStructure(value as object, path, seen, () => {
-      assertHashable(serialized, path, seen)
-    })
-    return
-  }
-  if (Array.isArray(value)) {
-    // Extra own properties never render, so an augmented array would collide
-    // with its bare twin. (Holes are absent from Object.keys and stay
-    // allowed via the sentinel path.)
-    if (hasUnrenderedOwnProps(value)) {
-      throw new QueryError(
-        `Cannot hash query key: arrays with non-index properties are not supported at ${path} (they are dropped from the hash, so distinct keys would collide).`
-      )
-    }
-    // Index loop rather than forEach: holes read as undefined, which the
-    // sentinel distinguishes instead of collapsing to null.
-    enterStructure(value, path, seen, () => {
-      for (let index = 0; index < value.length; index += 1) {
-        assertHashable(value[index], `${path}[${index}]`, seen)
-      }
-    })
-    return
-  }
-  if (!isPlainObject(value)) {
-    throw new QueryError(
-      `Cannot hash query key: class instances without toJSON are not supported at ${path}.`
-    )
-  }
-  assertRenderableOwnProps(value, path)
-  if (UNDEFINED_MARKER in (value as Record<string, unknown>)) {
-    // A user object with this shape would hash identically to an undefined
-    // segment and be served the other key's data, so the shape is reserved.
-    // #278 encodes undefined as a bare token and lifts this restriction.
-    throw new QueryError(
-      `Cannot hash query key: the shape { ${UNDEFINED_MARKER}: ... } is reserved for the undefined encoding at ${path}.`
-    )
-  }
-  enterStructure(value, path, seen, () => {
-    for (const member of Object.keys(value)) {
-      assertHashable(
-        (value as Record<string, unknown>)[member],
-        `${path}.${member}`,
-        seen
-      )
-    }
-  })
-}
-
-/**
- * Cycle guard for the scan. A shared (non-circular) reference revisits after
- * its subtree is done, so entries are removed on the way out; only a true
- * revisit while still inside throws.
- */
-function enterStructure(
-  value: object,
-  path: string,
-  seen: Set<object>,
-  visit: () => void
-): void {
-  if (seen.has(value)) {
-    throw new QueryError(
-      `Cannot hash query key: circular reference detected at ${path}.`
-    )
-  }
-  seen.add(value)
-  try {
-    visit()
-  } finally {
-    seen.delete(value)
-  }
-}
-
-/**
- * Provisional key hash. The scan above rejects everything `stringify` could
- * choke on, so there is no fallback: anything reaching serialization is
- * exactly renderable. See {@link UNDEFINED_SEGMENT} and #278.
- */
-function hashQueryKey(key: QueryKey): QueryKeyHash {
-  assertHashable(key, 'key')
-  return JSON.stringify(key, (_segment, value: unknown) =>
-    value === undefined ? UNDEFINED_SEGMENT : value
-  )
-}
-
-/**
- * The segments the hash actually renders. A `toJSON` hook on the key array
- * itself replaces the whole key — `JSON.stringify` applies it before looking
- * at any element — so the raw elements are not what the entry is keyed by.
- * Reading them would hash segments no prefix could ever name, and
- * `invalidate()` would miss the very entry `fetchQuery` served.
- */
-function renderKeySegments(key: QueryKey): readonly unknown[] {
-  const hook = (key as { toJSON?: unknown }).toJSON
-  if (typeof hook !== 'function') {
-    return key
-  }
-  let rendered: unknown
-  try {
-    rendered = hook.call(key)
-  } catch (hookError) {
-    throw new QueryError('Cannot hash query key: toJSON threw at key.', {
-      cause: hookError,
-    })
-  }
-  // A hook rendering something other than an array leaves no addressable
-  // segments: only the empty prefix matches, which it still does.
-  return Array.isArray(rendered) ? rendered : []
-}
-
-/**
- * Per-segment hashes of a key. Index loop rather than map: holes read as
- * undefined, which the sentinel distinguishes from null instead of skipping
- * (map) or matching vacuously.
- */
-function hashKeySegments(key: QueryKey): QueryKeyHash[] {
-  const segments = renderKeySegments(key)
-  const hashes: QueryKeyHash[] = []
-  for (let index = 0; index < segments.length; index += 1) {
-    hashes.push(hashQueryKey([segments[index]]))
-  }
-  return hashes
-}
-
-/**
- * Provisional prefix match over hashed segments. Comparing hashes rather than
- * values keeps Date and object segments reachable by value — the same entries
- * fetchQuery would serve — and keeps matching independent of the entry's
- * stored key, which is the (lossy) wire rendering. Both sides are hashed by
- * their owners, so an unhashable prefix segment raises exactly as it would
- * from fetchQuery.
- */
-function isKeyPrefixMatch(
-  prefixHashes: readonly QueryKeyHash[],
-  segmentHashes: readonly QueryKeyHash[]
-): boolean {
-  if (prefixHashes.length > segmentHashes.length) {
-    return false
-  }
-  for (let index = 0; index < prefixHashes.length; index += 1) {
-    if (prefixHashes[index] !== segmentHashes[index]) {
-      return false
-    }
-  }
-  return true
 }
 
 function isDehydratedState(state: unknown): state is DehydratedState {
@@ -598,7 +293,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     // must not alias the cache, so mutating either side cannot rewrite the
     // other. Errors stay live references; they never cross the boundary.
     return {
-      key: wireClone(entry.key),
+      // The key is canonical, so a structured clone is lossless — Dates,
+      // bigints, and byte arrays all survive it, unlike a JSON round trip.
+      key: structuredClone(entry.key) as QueryKey,
       hash: entry.hash,
       data: wireClone(entry.data),
       error: entry.error as Error | undefined,
@@ -636,31 +333,21 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       const hash = hashQueryKey(resolvedKey)
       const cached = entries.get(hash)
       if (cached !== undefined) {
-        // The hash *is* the rendering, so an equal hash means an equal
-        // stored key and equal segments: the hit path neither re-renders the
-        // key nor overwrites what the entry already holds.
+        // The hash is derived from the canonical encoding, so an equal hash
+        // means an equal stored key and equal segments: the hit path neither
+        // re-canonicalizes the key nor overwrites what the entry holds.
         entry = cached
       } else {
-        // Decoupled copy: the entry must not alias the caller's array, or a
-        // later mutation desyncs entry.key from entry.hash (breaking the
-        // snapshot key). It is the wire rendering, so the dehydrate gate can
-        // test it directly; matching uses segment hashes, which the
-        // rendering cannot skew. A key that cannot even be rendered is
-        // refused loudly.
-        let storedKey: QueryKey
-        try {
-          storedKey = wireClone(resolvedKey)
-        } catch (cloneError) {
-          // Raised inside the dispatch frame: nothing has been cached and no
-          // loader has run, so prefetch must surface this as misuse rather
-          // than swallow it as a load failure.
-          throw new QueryError('Cannot cache query: its key cannot be serialized.', {
-            cause: cloneError,
-          })
-        }
-        // Segmented last, so a key that renders inconsistently is reported by
-        // the storage step above rather than as a second hashing failure.
-        entry = createEntry(storedKey, hash, hashKeySegments(resolvedKey), options)
+        // Decoupled canonical copy: the entry must not alias the caller's
+        // array, or a later mutation desyncs entry.key from entry.hash.
+        // Canonicalizing cannot fail here — the hash above already encoded
+        // the same key — so any failure is the key's, not the storage step's.
+        entry = createEntry(
+          canonicalizeQueryKey(resolvedKey),
+          hash,
+          hashKeySegments(resolvedKey),
+          options
+        )
       }
     } catch (error) {
       // Every dispatch-phase failure is tagged, whatever its type: a garbage
@@ -869,22 +556,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         if (entry.invalidated) {
           continue
         }
-        // Keys that cannot survive the wire are skipped for the same
-        // reason: the restored entry could never be matched. entry.key is
-        // always the wire rendering — inserted and hydrated alike — so a
-        // hash mismatch against the insert-time hash proves the round trip
-        // is lossy (undefined became null, a hook resolved away, a hole
-        // filled in).
-        if (entry.hash !== hashQueryKey(entry.key)) {
-          continue
-        }
-        // A hook on the key array can render a non-array, which hashes
-        // consistently and so clears the gate above — but hydrate() rejects
-        // the payload on its shape check. Nothing is emitted that this
-        // client's own hydrate() would refuse.
-        if (!Array.isArray(entry.key)) {
-          continue
-        }
+        // The key rides the wire as its canonical encoding, which is
+        // JSON-safe by construction and decodes back to an equal key — so
+        // undefined segments, Dates, bigints, and byte arrays all survive
+        // rather than being skipped as unrepresentable (#278). Nothing here
+        // can fail: entry.key is already canonical, and a key that could not
+        // encode was refused at insert.
+        const encodedKey = encodeQueryKey(entry.key)
         // Data that cannot survive the wire stays cached but is not
         // serialized: a Date revives as a string, undefined members vanish,
         // class instances lose their prototype — serving any of those as
@@ -903,7 +581,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           continue
         }
         queries.push({
-          key: view.key,
+          key: encodedKey,
           data: view.data,
           updatedAt: view.updatedAt ?? Date.now(),
         })
@@ -918,29 +596,30 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           'hydrate() requires a DehydratedState with a queries array, as produced by dehydrate().'
         )
       }
-      // Validate every key before committing any entry: a malformed later
-      // entry must not leave earlier ones partially installed for a fallback
-      // fetch to serve.
-      const restored = state.queries.map((item) => ({
-        item,
-        hash: hashQueryKey(item.key),
-        segmentHashes: hashKeySegments(item.key),
-      }))
-      // Clone every entry before committing any, for the same atomicity: a
+      // Decode and validate every key before committing any entry: a
+      // malformed later entry must not leave earlier ones partially
+      // installed for a fallback fetch to serve. The payload carries the
+      // canonical encoding, so decoding restores Dates, bigints, byte
+      // arrays, and explicit undefined exactly as the producing client held
+      // them — and rejects an unknown tag or a malformed token rather than
+      // trusting a payload that crossed a process boundary.
+      const restored = state.queries.map((item) => {
+        const key = decodeQueryKey(item.key)
+        return {
+          item,
+          key,
+          hash: hashQueryKey(key),
+          segmentHashes: hashKeySegments(key),
+        }
+      })
+      // Clone data before committing any entry, for the same atomicity: a
       // clone failure must not leave earlier entries partially installed.
-      // The key is stored as its wire rendering, exactly as fetchQuery
-      // stores it, so a hydrated entry faces the dehydrate gate on the same
-      // terms — a structured clone would preserve undefined segments the
-      // wire cannot carry and let the gate pass vacuously, re-emitting the
-      // key as null for the next hop to mismatch. Matching is unaffected:
-      // it reads segmentHashes, taken from the payload key above. Data
-      // keeps the structured clone — it has no gate of its own, so
-      // functions and symbols must raise loudly rather than be dropped.
-      const staged = restored.map(({ item, hash, segmentHashes }) => {
-        let key: QueryKey
+      // Keys need no clone — decoding already built fresh structures. Data
+      // has no codec of its own, so functions and symbols must raise loudly
+      // rather than be dropped.
+      const staged = restored.map(({ item, key, hash, segmentHashes }) => {
         let data: unknown
         try {
-          key = wireClone(item.key)
           data = structuredClone(item.data)
         } catch (cloneError) {
           throw new QueryError(
