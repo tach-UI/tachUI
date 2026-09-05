@@ -1,5 +1,12 @@
 # @tachui/mobile
 
+## 0.10.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/modifiers@0.10.1
+
 ## 0.10.0
 
 ### Patch Changes

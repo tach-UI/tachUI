@@ -1,5 +1,15 @@
 # @tachui/core
 
+## 0.10.1
+
+### Patch Changes
+
+- [#344](https://github.com/tach-UI/tachUI/pull/344) [`a6d0668`](https://github.com/tach-UI/tachUI/commit/a6d06680e3212b5e5dfe11c60d43ad04ae7e131a) Thanks [@whoughton](https://github.com/whoughton)! - Expose `getCurrentComponentContextOrNull` from `@tachui/core` for ambient client resolution in `@tachui/query` (#277).
+
+- Updated dependencies []:
+  - @tachui/registry@0.10.1
+  - @tachui/types@0.10.1
+
 ## 0.10.0
 
 ### Minor Changes
