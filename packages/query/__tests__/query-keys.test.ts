@@ -9,7 +9,9 @@ import { describe, expect, it } from 'vitest'
 import {
   canonicalizeQueryKey,
   decodeQueryKey,
+  decodeSnapshotData,
   encodeQueryKey,
+  encodeSnapshotData,
   hashKeySegments,
   hashQueryKey,
   isKeyPrefixMatch,
@@ -332,6 +334,69 @@ describe('payload codec', () => {
     )
     // ... while a value no key may hold is still refused.
     expect(() => decodeQueryKey([() => 'id'])).toThrowError(/functions/)
+  })
+})
+
+describe('snapshot data encoding', () => {
+  it('carries the types plain JSON flattens, in the loader\'s order', () => {
+    const data = {
+      zeta: new Date(instant),
+      alpha: 10n,
+      middle: { bytes: new Uint8Array([1, 2]), missing: undefined },
+      nums: [Number.NaN, Number.POSITIVE_INFINITY, -0],
+    }
+    const revived = JSON.parse(
+      JSON.stringify(encodeSnapshotData(data))
+    ) as unknown
+    const decoded = decodeSnapshotData(revived) as typeof data
+
+    expect(decoded).toEqual(data)
+    expect(decoded.zeta).toBeInstanceOf(Date)
+    expect(decoded.middle.bytes).toBeInstanceOf(Uint8Array)
+    expect(Object.is(decoded.nums[2], -0)).toBe(true)
+    // Unlike a key, data is not sorted: the other side observes the order the
+    // loader produced.
+    expect(Object.keys(decoded)).toEqual(['zeta', 'alpha', 'middle', 'nums'])
+    expect(Object.keys(encodeSnapshotData(data) as object)).toEqual([
+      'zeta',
+      'alpha',
+      'middle',
+      'nums',
+    ])
+  })
+
+  it('refuses a toJSON carrier, which a key would happily follow', () => {
+    const carrier = { toJSON: () => ({ kept: 1 }) }
+
+    // For a key the hook's output is the identity, so following it is right.
+    expect(() => hashQueryKey([carrier])).not.toThrow()
+    // For data the carrier is the value: the revived object would not be the
+    // TRaw the loader returned, so the entry goes unsnapshotted instead.
+    expect(() => encodeSnapshotData(carrier)).toThrowError(/toJSON carriers/)
+    expect(() =>
+      encodeSnapshotData({ nested: [carrier] })
+    ).toThrowError(/toJSON carriers/)
+    // A Date's stock hook is not an override and still encodes.
+    expect(() => encodeSnapshotData(new Date(instant))).not.toThrow()
+  })
+
+  it('refuses what no encoding can represent', () => {
+    const circular: Record<string, unknown> = {}
+    circular.self = circular
+
+    for (const value of [
+      () => 'fn',
+      Symbol('s'),
+      new Map(),
+      new Set(),
+      Object.assign([1], { tag: 'x' }),
+      Object.assign({ a: 1 }, { [Symbol('t')]: 1 }),
+      circular,
+    ]) {
+      expect(() => encodeSnapshotData(value), String(value)).toThrowError(
+        QueryError
+      )
+    }
   })
 })
 

@@ -297,6 +297,15 @@ export interface DehydratedQuery<TRaw = unknown> {
    * is exactly the key the caller wrote.
    */
   readonly key: QueryKey
+  /**
+   * The data in its canonical encoding, decoded back to an equal value by
+   * {@link QueryClient.hydrate}, so a `Date`, `bigint`, `Uint8Array`, or
+   * explicit `undefined` inside the payload survives instead of costing the
+   * entry its snapshot. Plain JSON data encodes to itself. Values no encoding
+   * can represent — a class instance, a `toJSON` carrier, a function, a cycle
+   * — leave the entry cached but unserialized rather than hydrating as
+   * something that was never `TRaw`.
+   */
   readonly data: TRaw
   readonly updatedAt: number
 }

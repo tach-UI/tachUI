@@ -1771,7 +1771,7 @@ describe('dehydrate and hydrate', () => {
     expect(external.queries[0]?.data).toEqual({ n: 999 })
   })
 
-  it('does not serialize entries whose data cannot survive the wire', async () => {
+  it('round-trips snapshot data the wire alone would flatten', async () => {
     const server = createQueryClient()
     const instant = '2024-01-01T00:00:00.000Z'
     await server.fetchQuery({
@@ -1790,49 +1790,99 @@ describe('dehydrate and hydrate', () => {
       snapshot: true,
     })
 
-    // The Date would revive as a string and the undefined member would
-    // vanish, so both entries are skipped and refetch on the other side.
+    // A Date would revive as a string and the undefined member would vanish
+    // under plain JSON, so both entries used to be dropped. The tagged
+    // encoding carries them, so all three ship.
     const wire = JSON.parse(JSON.stringify(server.dehydrate()))
-    expect(wire.queries).toHaveLength(1)
-    expect(wire.queries[0]?.key).toEqual(['plain'])
+    expect(wire.queries).toHaveLength(3)
 
     const browser = createQueryClient()
     browser.hydrate(wire)
     let loads = 0
-    await expect(
-      browser.fetchQuery({
-        key: keyOf('when'),
-        load: async () => {
-          loads += 1
-          return { at: new Date(instant) }
-        },
-      })
-    ).resolves.toEqual({ at: new Date(instant) })
-    expect(loads).toBe(1)
+    const counting = () => async () => {
+      loads += 1
+      return { fresh: true }
+    }
+    const when = (await browser.fetchQuery({
+      key: keyOf('when'),
+      load: counting(),
+    })) as unknown as { at: Date }
+    // Revived as a Date, not the string a JSON round trip would leave.
+    expect(when.at).toBeInstanceOf(Date)
+    expect(when.at.toISOString()).toBe(instant)
+
+    const hole = (await browser.fetchQuery({
+      key: keyOf('hole'),
+      load: counting(),
+    })) as unknown as Record<string, unknown>
+    expect(Object.keys(hole)).toEqual(['a', 'missing'])
+    expect(hole.missing).toBeUndefined()
+    expect(loads).toBe(0)
   })
 
-  it('skips snapshot data the wire cannot preserve exactly', async () => {
+  it('carries every data type the encoding can represent', async () => {
     const server = createQueryClient()
-    const circular: Record<string, unknown> = { a: 1 }
-    circular.self = circular
+    const instant = '2024-01-01T00:00:00.000Z'
     const sparseData: unknown[] = [1]
     sparseData.length = 2
-    const lossy: unknown[] = [
+    const carried: unknown[] = [
       10n,
-      () => 'fn',
-      Symbol('s'),
-      NaN,
+      Number.NaN,
       Number.POSITIVE_INFINITY,
       -0,
       undefined,
-      new Date('2024-01-01T00:00:00.000Z'),
+      new Date(instant),
+      new Uint8Array([1, 2, 3]),
+      sparseData,
+      { n: 1, list: [1, 'a', true, null] },
+    ]
+    for (const [index, data] of carried.entries()) {
+      await server.fetchQuery({
+        key: () => ['carried', index],
+        load: async () => data,
+        snapshot: true,
+      })
+    }
+
+    const wire = JSON.parse(JSON.stringify(server.dehydrate()))
+    expect(wire.queries).toHaveLength(carried.length)
+
+    const browser = createQueryClient()
+    browser.hydrate(wire)
+    let loads = 0
+    for (const [index, original] of carried.entries()) {
+      const revived = await browser.fetchQuery({
+        key: () => ['carried', index],
+        load: async () => {
+          loads += 1
+          return 'refetched'
+        },
+      })
+      expect(revived, `entry ${index}`).toEqual(original)
+    }
+    // Property order survives too: data is not sorted the way a key is.
+    expect(loads).toBe(0)
+    expect(Object.is(await browser.fetchQuery({
+      key: () => ['carried', 3],
+      load: async () => 0,
+    }), -0)).toBe(true)
+  })
+
+  it('skips snapshot data no encoding can represent', async () => {
+    const server = createQueryClient()
+    const circular: Record<string, unknown> = { a: 1 }
+    circular.self = circular
+    const lossy: unknown[] = [
+      () => 'fn',
+      Symbol('s'),
       new Map([['a', 1]]),
+      // A hook renders the carrier into something else: for data the carrier
+      // is the value, so the revived object would not be the TRaw returned.
       { toJSON: () => ({ a: 1 }) },
-      Object.assign({ a: 1 }, { [Symbol('tag')]: 'x' }),
       Object.assign(['x'], { toJSON: () => ['x'] }),
+      Object.assign({ a: 1 }, { [Symbol('tag')]: 'x' }),
       Object.assign([1], { tag: 'x' }),
       circular,
-      sparseData,
     ]
     for (const [index, data] of lossy.entries()) {
       await server.fetchQuery({
@@ -1843,13 +1893,15 @@ describe('dehydrate and hydrate', () => {
     }
     await server.fetchQuery({
       key: keyOf('plain'),
-      load: async () => ({ n: 1, list: [1, 'a', true, null] }),
+      load: async () => ({ n: 1 }),
       snapshot: true,
     })
 
-    // Every lossy shape stays cached but unserialized; only the plain entry
-    // ships. (In-session reads are unaffected — this gate is wire-only.)
-    expect(server.dehydrate().queries).toHaveLength(1)
+    // Each stays cached but unserialized rather than hydrating as a value
+    // that was never TRaw. (In-session reads are unaffected — wire-only.)
+    const state = server.dehydrate()
+    expect(state.queries).toHaveLength(1)
+    expect(state.queries[0]?.key).toEqual(['plain'])
   })
 
   it('keeps a Date segment and its ISO string in separate entries', async () => {

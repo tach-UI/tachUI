@@ -24,3 +24,13 @@ Functions, symbols, and class instances without `toJSON` raise a `QueryError`
 naming the path to the offending segment rather than producing an unstable key.
 Prefix invalidation matches on the structured form, so `Date`, `bigint`,
 `Uint8Array`, and object segments are reachable by value.
+
+Also extends the encoding to snapshot data and to the environment probe. A
+`Date`, `bigint`, `Uint8Array`, explicit `undefined`, `-0`, `NaN`, or
+`Infinity` inside `data` now survives the SSR boundary instead of costing the
+entry its snapshot; data keeps the loader's property order and refuses
+`toJSON` carriers, because there the carrier is the value rather than a
+spelling of it. `isServer()` asks about isolation rather than the presence of
+a DOM, so a Web Worker — its own global scope, no sharing — is treated as
+browser-like instead of being handed a "create one per request" error naming
+a shape it does not have.

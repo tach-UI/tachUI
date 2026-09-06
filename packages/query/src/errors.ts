@@ -55,11 +55,40 @@ export function isDevelopment(): boolean {
 }
 
 /**
- * Whether this code is running outside a browser document.
+ * Whether this code runs where a module-global cache would be shared across
+ * requests — the one condition that makes an implicit client unsafe, because
+ * one request's data would leak into the next.
  *
- * Used to refuse an implicit module-global query client on the server, where a
- * shared cache would leak one request's data into the next.
+ * The question is isolation, not the presence of a DOM. A browser tab and a
+ * Web Worker each have their own global scope and their own module instances,
+ * so a module-global client in either is scoped to that one context; a server
+ * process serving many requests is the case to refuse. A bare `document`
+ * check answers the wrong question for a worker: no `document`, but also no
+ * sharing, and the "create one per request" error it produced named a shape
+ * that does not exist there.
+ *
+ * The converse — a server process carrying a DOM shim, jsdom included — reads
+ * as a browser here and cannot be told apart from one from the inside: the
+ * probe that would separate them (`process.versions.node`) is equally true of
+ * every test run, which legitimately wants the browser behaviour. SSR code
+ * must therefore create a client per request explicitly (see #291) rather
+ * than rely on this probe to catch the mistake; the probe is a backstop for
+ * the ordinary case, not a guarantee.
  */
 export function isServer(): boolean {
-  return typeof document === 'undefined'
+  // A document means a browser main thread.
+  if (typeof document !== 'undefined') {
+    return false
+  }
+  // WorkerGlobalScope exists only inside a worker, so this distinguishes one
+  // from a server runtime without reaching for `self`, which Node also
+  // defines in some versions. Read off globalThis because the DOM lib is not
+  // in this package's type-check program.
+  if (
+    (globalThis as { WorkerGlobalScope?: unknown }).WorkerGlobalScope !==
+    undefined
+  ) {
+    return false
+  }
+  return true
 }
