@@ -228,19 +228,22 @@ export function hasUnrenderedOwnProps(value: object): boolean {
 }
 
 /**
- * Cycle guard. A shared (non-circular) reference revisits after its subtree is
- * done, so entries are removed on the way out; only a true revisit while still
- * inside throws.
+ * Cycle guard shared by both walks. A shared (non-circular) reference revisits
+ * after its subtree is done, so entries are removed on the way out; only a
+ * true revisit while still inside throws. The operation is passed in so the
+ * message names what actually failed — a circular payload reaching `hydrate`
+ * was never hashed.
  */
 function enterStructure<T>(
   value: object,
   path: string,
   seen: Set<object>,
+  operation: 'hash' | 'decode',
   visit: () => T
 ): T {
   if (seen.has(value)) {
     throw new QueryError(
-      `Cannot hash query key: circular reference detected at ${path}.`
+      `Cannot ${operation} query key: circular reference detected at ${path}.`
     )
   }
   seen.add(value)
@@ -337,7 +340,7 @@ function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
         cause: hookError,
       })
     }
-    return enterStructure(target, path, seen, () =>
+    return enterStructure(target, path, seen, 'hash', () =>
       encodeValue(rendered, path, seen)
     )
   }
@@ -351,7 +354,7 @@ function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
     }
     // Index loop rather than map: holes read as undefined, which the tag
     // distinguishes instead of collapsing to null.
-    return enterStructure(target, path, seen, () => {
+    return enterStructure(target, path, seen, 'hash', () => {
       const encoded: unknown[] = []
       for (let index = 0; index < value.length; index += 1) {
         encoded.push(encodeValue(value[index], `${path}[${index}]`, seen))
@@ -383,7 +386,7 @@ function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
     )
   }
   // Sorted, so property order cannot split one logical key across two entries.
-  return enterStructure(target, path, seen, () => {
+  return enterStructure(target, path, seen, 'hash', () => {
     const encoded: Record<string, unknown> = {}
     for (const member of Object.keys(value as object).sort()) {
       setOwnMember(
@@ -524,7 +527,7 @@ function decodeValue(
     // unguarded walk exhausts the stack with a RangeError instead of naming
     // the malformed key. JSON cannot express one, so encoded payloads never
     // reach this.
-    return enterStructure(value, path, seen, () =>
+    return enterStructure(value, path, seen, 'decode', () =>
       value.map((member, index) =>
         decodeValue(member, `${path}[${index}]`, seen)
       )
@@ -552,7 +555,7 @@ function decodeValue(
   if (KEY_MARKER in (value as Record<string, unknown>)) {
     return decodeTagged(value as TaggedValue, path)
   }
-  return enterStructure(value as object, path, seen, () => {
+  return enterStructure(value as object, path, seen, 'decode', () => {
     const decoded: Record<string, unknown> = {}
     for (const member of Object.keys(value as object)) {
       setOwnMember(
