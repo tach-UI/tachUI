@@ -213,7 +213,7 @@ function hasOwnSymbol(value: object): boolean {
  * other's data. An array's own `length` is structural, and array indices are
  * carried regardless of enumerability.
  */
-export function hasUnrenderedOwnProps(value: object): boolean {
+function hasUnrenderedOwnProps(value: object): boolean {
   if (hasOwnSymbol(value)) {
     return true
   }
@@ -254,7 +254,28 @@ function enterStructure<T>(
   }
 }
 
-function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
+/**
+ * What is being encoded. Keys and snapshot data share the tagged wrappers —
+ * both must survive JSON without collapsing — but differ in two rules:
+ *
+ * - **Property order.** A key sorts its object properties so two equivalent
+ *   keys hash alike. Data has no hash to stabilize, and sorting it would hand
+ *   the other side an object whose `Object.keys` order differs from what the
+ *   loader produced.
+ * - **`toJSON`.** For a key the hook's output *is* the identity: both sides
+ *   render it the same way, so following it is correct. For data the carrier
+ *   is the value, and a hook renders it into something else — the revived
+ *   value would not be the `TRaw` the loader returned — so a carrier is
+ *   refused and the entry simply goes unsnapshotted.
+ */
+type EncodeMode = 'key' | 'data'
+
+function encodeValue(
+  value: unknown,
+  path: string,
+  seen: Set<object>,
+  mode: EncodeMode
+): unknown {
   if (value === undefined) {
     // Distinguished from an absent property and from null, so
     // ['user', undefined] and ['user', null] stay separate entries.
@@ -329,6 +350,11 @@ function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
       return tag('date', Date.prototype.toISOString.call(value))
     }
   }
+  if (mode === 'data' && hasOwnHook) {
+    throw new QueryError(
+      `Cannot serialize query data: toJSON carriers do not survive the wire at ${path} (the revived value would have lost the carrier).`
+    )
+  }
   // Validated inside the parent's frame so a self-returning hook trips the
   // cycle guard instead of overflowing the stack.
   if (typeof toJSON === 'function') {
@@ -341,7 +367,7 @@ function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
       })
     }
     return enterStructure(target, path, seen, 'hash', () =>
-      encodeValue(rendered, path, seen)
+      encodeValue(rendered, path, seen, mode)
     )
   }
   if (Array.isArray(value)) {
@@ -357,7 +383,7 @@ function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
     return enterStructure(target, path, seen, 'hash', () => {
       const encoded: unknown[] = []
       for (let index = 0; index < value.length; index += 1) {
-        encoded.push(encodeValue(value[index], `${path}[${index}]`, seen))
+        encoded.push(encodeValue(value[index], `${path}[${index}]`, seen, mode))
       }
       return encoded
     })
@@ -388,14 +414,21 @@ function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
   // Sorted, so property order cannot split one logical key across two entries.
   return enterStructure(target, path, seen, 'hash', () => {
     const encoded: Record<string, unknown> = {}
-    for (const member of Object.keys(value as object).sort()) {
+    const members = Object.keys(value as object)
+    // Sorted for keys only: it is what makes two equivalent keys hash alike.
+    // Data keeps the loader's order, which the other side observes.
+    if (mode === 'key') {
+      members.sort()
+    }
+    for (const member of members) {
       setOwnMember(
         encoded,
         member,
         encodeValue(
           (value as Record<string, unknown>)[member],
           `${path}.${member}`,
-          seen
+          seen,
+          mode
         )
       )
     }
@@ -407,7 +440,7 @@ function encodeValue(value: unknown, path: string, seen: Set<object>): unknown {
  * Plain-or-protoless check that holds across realms: a plain object has at
  * most one link above it (its realm's object prototype, or nothing).
  */
-export function isPlainObject(value: object): boolean {
+function isPlainObject(value: object): boolean {
   const prototype: unknown = Object.getPrototypeOf(value)
   return (
     prototype === Object.prototype ||
@@ -483,7 +516,8 @@ function decodeTagged(value: TaggedValue, path: string): unknown {
 function decodeValue(
   value: unknown,
   path: string,
-  seen: Set<object> = new Set()
+  seen: Set<object> = new Set(),
+  mode: EncodeMode = 'key'
 ): unknown {
   if (value === null) {
     return null
@@ -501,7 +535,7 @@ function decodeValue(
       // `bigint` are canonical values in their own right. Encoding then
       // decoding normalizes them, and rejects a function or symbol with the
       // encoder's message rather than a vaguer one.
-      return decodeValue(encodeValue(value, path, new Set()), path, seen)
+      return decodeValue(encodeValue(value, path, new Set(), mode), path, seen, mode)
   }
   // Hook precedence, matching the encoder: a raw carrier — an augmented
   // array or a plain object with toJSON — renders to something else entirely,
@@ -511,7 +545,7 @@ function decodeValue(
   // Date's stock hook is handled by the encoder, and an encoded payload can
   // never carry a function.
   if (typeof (value as { toJSON?: unknown }).toJSON === 'function') {
-    return decodeValue(encodeValue(value, path, new Set()), path, seen)
+    return decodeValue(encodeValue(value, path, new Set(), mode), path, seen, mode)
   }
   if (Array.isArray(value)) {
     // A raw array — one handed over in process rather than through JSON —
@@ -529,13 +563,13 @@ function decodeValue(
     // reach this.
     return enterStructure(value, path, seen, 'decode', () =>
       value.map((member, index) =>
-        decodeValue(member, `${path}[${index}]`, seen)
+        decodeValue(member, `${path}[${index}]`, seen, mode)
       )
     )
   }
   if (!isPlainObject(value as object)) {
     // Likewise for a Date or a Uint8Array arriving raw.
-    return decodeValue(encodeValue(value, path, new Set()), path, seen)
+    return decodeValue(encodeValue(value, path, new Set(), mode), path, seen, mode)
   }
   // Same reasoning as the array branch: Object.keys would silently drop a
   // symbol or non-enumerable member that the encoder refuses outright. Run
@@ -564,7 +598,8 @@ function decodeValue(
         decodeValue(
           (value as Record<string, unknown>)[member],
           `${path}.${member}`,
-          seen
+          seen,
+          mode
         )
       )
     }
@@ -579,7 +614,7 @@ function decodeValue(
  * is already plain JSON.
  */
 export function encodeQueryKey(key: QueryKey): readonly unknown[] {
-  const encoded = encodeValue(key, 'key', new Set())
+  const encoded = encodeValue(key, 'key', new Set(), 'key')
   if (!Array.isArray(encoded)) {
     // Reachable only through a toJSON hook on the key array itself. Such a
     // key has no addressable segments, so no prefix could ever name it and
@@ -632,6 +667,23 @@ export function hashEncodedSegments(
   encoded: readonly unknown[]
 ): QueryKeyHash[] {
   return encoded.map((segment) => JSON.stringify(segment))
+}
+
+/**
+ * The canonical, JSON-safe encoding of snapshot data. Same wrappers as a key,
+ * so a `Date`, `bigint`, `Uint8Array`, explicit `undefined`, `-0`, `NaN`, or
+ * `Infinity` survives the wire instead of the entry being dropped — but with
+ * the loader's property order kept and `toJSON` carriers refused, because
+ * here the carrier is the value rather than a spelling of it. Raises for
+ * anything that cannot round-trip exactly; `dehydrate` skips such an entry.
+ */
+export function encodeSnapshotData(data: unknown): unknown {
+  return encodeValue(data, 'data', new Set(), 'data')
+}
+
+/** Rebuilds snapshot data from {@link encodeSnapshotData} output. */
+export function decodeSnapshotData(encoded: unknown, path = 'data'): unknown {
+  return decodeValue(encoded, path, new Set(), 'data')
 }
 
 /**

@@ -131,9 +131,19 @@ describe('isServer', () => {
     expect(isServer()).toBe(false)
   })
 
-  it('is true when there is no document', () => {
+  it('is true when there is no document and no worker scope', () => {
     vi.stubGlobal('document', undefined)
     expect(isServer()).toBe(true)
+  })
+
+  it('is false in a worker, which has its own global scope', () => {
+    // A worker has no document but also no sharing: its module-global state
+    // is scoped to that worker, exactly like a tab. Reporting it as a server
+    // would refuse the implicit client and hand back a "create one per
+    // request" message naming a shape workers do not have.
+    vi.stubGlobal('document', undefined)
+    vi.stubGlobal('WorkerGlobalScope', class {})
+    expect(isServer()).toBe(false)
   })
 })
 

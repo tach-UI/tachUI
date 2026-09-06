@@ -33,13 +33,13 @@ import {
 import { isServer, QueryError } from './errors'
 import {
   decodeQueryKey,
+  decodeSnapshotData,
   encodeQueryKey,
-  hasUnrenderedOwnProps,
+  encodeSnapshotData,
   hashEncodedKey,
   hashEncodedSegments,
   hashKeySegments,
   isKeyPrefixMatch,
-  isPlainObject,
 } from './keys'
 import type {
   CacheEntry,
@@ -125,88 +125,6 @@ function markDispatchError<T>(error: T): T {
     dispatchErrors.add(error)
   }
   return error
-}
-
-/**
- * Whether snapshot data round-trips through the wire codec unchanged. Unlike
- * keys, data has no sentinel and no hook rendering: a Date revives as a
- * string, undefined members vanish, class instances lose their prototype, so
- * serving the revived value as success would contradict TRaw. Only plain
- * JSON survives exactly; anything else skips the snapshot and refetches on
- * the other side.
- */
-function dataSurvivesWire(value: unknown, seen: Set<object> = new Set()): boolean {
-  if (value === undefined) {
-    return false
-  }
-  if (value === null) {
-    return true
-  }
-  switch (typeof value) {
-    case 'string':
-    case 'boolean':
-      return true
-    case 'number':
-      // -0 renders as 0 on the wire, so a hydrated entry would serve a value
-      // TRaw never held (notably with a flipped reciprocal).
-      return Number.isFinite(value) && !Object.is(value, -0)
-    case 'bigint':
-    case 'function':
-    case 'symbol':
-      return false
-    default:
-      break
-  }
-  const target = value as object
-  // Own properties the wire drops — symbols, non-enumerable string keys, an
-  // array's non-index names — would hydrate as altered data served as a
-  // success, so the snapshot is skipped instead.
-  if (hasUnrenderedOwnProps(target)) {
-    return false
-  }
-  // A hook replaces the rendering, so the carrier never survives it — even
-  // when the output is plain JSON, the revived value has lost the carrier.
-  if (typeof (target as { toJSON?: unknown }).toJSON === 'function') {
-    return false
-  }
-  if (seen.has(target)) {
-    // Circular: the wire throws, so this could never round-trip.
-    return false
-  }
-  seen.add(target)
-  try {
-    if (Array.isArray(value)) {
-      // Index loop, mirroring the scan: holes read as undefined, which the
-      // wire renders as null.
-      for (let index = 0; index < value.length; index += 1) {
-        if (!dataSurvivesWire(value[index], seen)) {
-          return false
-        }
-      }
-      return true
-    }
-    if (!isPlainObject(value)) {
-      return false
-    }
-    for (const member of Object.keys(value)) {
-      if (!dataSurvivesWire((value as Record<string, unknown>)[member], seen)) {
-        return false
-      }
-    }
-    return true
-  } finally {
-    seen.delete(target)
-  }
-}
-
-/**
- * Wire-true copy for the dehydrate boundary: the payload must equal what
- * survives serialization, so mutating either side afterwards cannot rewrite
- * the other. Total on gated keys and data (both already survived a JSON
- * round trip to reach the push).
- */
-function wireClone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T
 }
 
 function isDehydratedState(state: unknown): state is DehydratedState {
@@ -297,7 +215,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       // bigints, and byte arrays all survive it, unlike a JSON round trip.
       key: structuredClone(entry.key) as QueryKey,
       hash: entry.hash,
-      data: wireClone(entry.data),
+      // Lossless: the entry's data may hold Dates or byte arrays, which a
+      // JSON round trip would flatten before the filter ever sees them.
+      data: structuredClone(entry.data),
       error: entry.error as Error | undefined,
       updatedAt: entry.updatedAt,
       status: entry.status,
@@ -566,12 +486,17 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // can fail: entry.key is already canonical, and a key that could not
         // encode was refused at insert.
         const encodedKey = encodeQueryKey(entry.key)
-        // Data that cannot survive the wire stays cached but is not
-        // serialized: a Date revives as a string, undefined members vanish,
-        // class instances lose their prototype — serving any of those as
-        // success on the other side would contradict TRaw. Skipped entries
-        // refetch instead.
-        if (!dataSurvivesWire(entry.data)) {
+        // Data rides the wire as its canonical encoding too, so a Date,
+        // bigint, byte array, or explicit undefined inside the payload
+        // survives rather than costing the whole entry its snapshot. What
+        // still cannot round-trip exactly — a class instance, a toJSON
+        // carrier, a function, a cycle — raises here, and the entry stays
+        // cached but unserialized rather than hydrating as a value that was
+        // never TRaw.
+        let encodedData: unknown
+        try {
+          encodedData = encodeSnapshotData(entry.data)
+        } catch {
           continue
         }
         // Snapshot serialization is opt-in per query; a filter narrows the
@@ -585,7 +510,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         }
         queries.push({
           key: encodedKey,
-          data: view.data,
+          data: encodedData,
           updatedAt: view.updatedAt ?? Date.now(),
         })
       }
@@ -619,19 +544,20 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           segmentHashes: hashEncodedSegments(encoded),
         }
       })
-      // Clone data before committing any entry, for the same atomicity: a
-      // clone failure must not leave earlier entries partially installed.
-      // Keys need no clone — decoding already built fresh structures. Data
-      // has no codec of its own, so functions and symbols must raise loudly
-      // rather than be dropped.
+      // Decode data before committing any entry, for the same atomicity: a
+      // malformed later entry must not leave earlier ones installed. Decoding
+      // restores Dates, bigints, byte arrays, and explicit undefined exactly
+      // as the producing client held them, builds fresh structures so nothing
+      // aliases the payload, and refuses a value no snapshot could carry
+      // rather than dropping it silently.
       const staged = restored.map(({ item, key, hash, segmentHashes }) => {
         let data: unknown
         try {
-          data = structuredClone(item.data)
-        } catch (cloneError) {
+          data = decodeSnapshotData(item.data)
+        } catch (decodeError) {
           throw new QueryError(
             'hydrate() payload contains values that cannot cross the hydration boundary.',
-            { cause: cloneError }
+            { cause: decodeError }
           )
         }
         return { item, hash, segmentHashes, key, data }
