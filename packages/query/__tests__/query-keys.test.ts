@@ -298,11 +298,17 @@ describe('payload codec', () => {
   it('rejects a circular raw payload instead of exhausting the stack', () => {
     const selfReferencing: Record<string, unknown> = {}
     selfReferencing.self = selfReferencing
-    expect(() => decodeQueryKey(['u', selfReferencing])).toThrowError(/circular/)
+    // Named for the operation that actually failed: such a key reaching
+    // hydrate() was never hashed.
+    expect(() => decodeQueryKey(['u', selfReferencing])).toThrowError(
+      /Cannot decode query key: circular reference detected at key\[1\]/
+    )
 
     const circularArray: unknown[] = ['u']
     circularArray.push(circularArray)
-    expect(() => decodeQueryKey(circularArray)).toThrowError(/circular/)
+    expect(() => decodeQueryKey(circularArray)).toThrowError(
+      /Cannot decode query key: circular/
+    )
 
     // A shared reference is not a cycle: it revisits after its subtree is
     // done, so it must still decode.
@@ -388,7 +394,9 @@ describe('development errors', () => {
     const selfRendering: { toJSON: () => unknown } = {
       toJSON: () => selfRendering,
     }
-    expect(() => hashQueryKey([selfRendering])).toThrowError(/circular/)
+    expect(() => hashQueryKey([selfRendering])).toThrowError(
+      /Cannot hash query key: circular/
+    )
   })
 
   it('accepts a shared reference used twice', () => {
