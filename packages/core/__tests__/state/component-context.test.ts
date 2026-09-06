@@ -362,13 +362,21 @@ describe('Component Context System', () => {
 
   describe('Performance Metrics', () => {
     it('tracks context performance metrics', () => {
-      const context = createComponentContext('test-component') as any
+      // Bracket the construction. `createdAt` is stamped in the constructor,
+      // so reading the lower bound afterwards inverted the relation and made
+      // the assertion pass only while both landed in the same millisecond —
+      // a coin flip on a loaded runner. Bounding both sides is also stronger
+      // than the original: it proves the stamp came from this construction
+      // rather than merely being some earlier instant.
       const startTime = Date.now()
+      const context = createComponentContext('test-component') as any
+      const endTime = Date.now()
 
       const metrics = context.getMetrics()
 
       expect(metrics.id).toBe('test-component')
       expect(metrics.createdAt).toBeGreaterThanOrEqual(startTime)
+      expect(metrics.createdAt).toBeLessThanOrEqual(endTime)
       expect(metrics.updateCount).toBe(0)
       expect(metrics.stateCount).toBe(0)
       expect(metrics.bindingCount).toBe(0)
