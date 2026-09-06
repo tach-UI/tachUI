@@ -136,14 +136,16 @@ describe('isServer', () => {
     expect(isServer()).toBe(true)
   })
 
-  it('is false in a worker, which has its own global scope', () => {
-    // A worker has no document but also no sharing: its module-global state
-    // is scoped to that worker, exactly like a tab. Reporting it as a server
-    // would refuse the implicit client and hand back a "create one per
-    // request" message naming a shape workers do not have.
+  it('stays true in a worker scope, which it cannot tell from a shared isolate', () => {
+    // A browser Web Worker would in fact be safe — its own global scope, its
+    // own module instances. But edge runtimes that reuse one isolate across
+    // overlapping requests define WorkerGlobalScope too, and admitting those
+    // would hand several users one shared cache. Refusing a safe worker
+    // costs an explicit provideQueryClient call; admitting a shared isolate
+    // leaks data between users, so this fails closed.
     vi.stubGlobal('document', undefined)
     vi.stubGlobal('WorkerGlobalScope', class {})
-    expect(isServer()).toBe(false)
+    expect(isServer()).toBe(true)
   })
 })
 

@@ -383,6 +383,16 @@ function encodeValue(
     return enterStructure(target, path, seen, 'hash', () => {
       const encoded: unknown[] = []
       for (let index = 0; index < value.length; index += 1) {
+        if (mode === 'data' && !(index in value)) {
+          // A key may hold holes: the tag distinguishes one from null, and a
+          // key is an identity rather than a value handed back. Data is
+          // handed back, and a hole revives as an own undefined member that
+          // `Object.keys` reports — observably not the TRaw the loader
+          // returned, so the entry goes unsnapshotted instead.
+          throw new QueryError(
+            `Cannot serialize query data: sparse arrays do not survive the wire at ${path}[${index}] (the hole would revive as an own undefined member).`
+          )
+        }
         encoded.push(encodeValue(value[index], `${path}[${index}]`, seen, mode))
       }
       return encoded

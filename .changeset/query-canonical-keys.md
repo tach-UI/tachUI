@@ -30,7 +30,10 @@ Also extends the encoding to snapshot data and to the environment probe. A
 `Infinity` inside `data` now survives the SSR boundary instead of costing the
 entry its snapshot; data keeps the loader's property order and refuses
 `toJSON` carriers, because there the carrier is the value rather than a
-spelling of it. `isServer()` asks about isolation rather than the presence of
-a DOM, so a Web Worker — its own global scope, no sharing — is treated as
-browser-like instead of being handed a "create one per request" error naming
-a shape it does not have.
+spelling of it. `isServer()` keeps failing closed — only a browser main
+thread gets the implicit client — because `WorkerGlobalScope` is defined both
+by isolated browser workers and by edge runtimes that reuse one isolate
+across overlapping requests, and admitting the latter would hand several
+users a shared cache. Its error message no longer assumes a server request,
+so a worker is told how to proceed rather than pointed at a per-request shape
+it does not have.
