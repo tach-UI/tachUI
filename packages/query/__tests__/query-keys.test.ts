@@ -380,6 +380,21 @@ describe('snapshot data encoding', () => {
     expect(() => encodeSnapshotData(new Date(instant))).not.toThrow()
   })
 
+  it('refuses a sparse array, whose hole revives as an own member', () => {
+    const sparse: unknown[] = [1]
+    sparse.length = 2
+
+    // A key keeps holes: there the tag distinguishes a hole from null and the
+    // key is an identity, not a value handed back.
+    expect(() => hashQueryKey(sparse)).not.toThrow()
+    // Data is handed back, and Object.keys observes the difference.
+    expect(() => encodeSnapshotData(sparse)).toThrowError(/sparse arrays/)
+    expect(() => encodeSnapshotData({ list: sparse })).toThrowError(
+      /sparse arrays/
+    )
+    expect(() => encodeSnapshotData([1, undefined])).not.toThrow()
+  })
+
   it('refuses what no encoding can represent', () => {
     const circular: Record<string, unknown> = {}
     circular.self = circular

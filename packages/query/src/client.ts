@@ -695,7 +695,7 @@ export function useQueryClient(): QueryClient {
   }
   if (isServer()) {
     throw new QueryError(
-      'No QueryClient provided. Create one per request with createQueryClient() and expose it with provideQueryClient(), or pass an explicit client option. A module-global client would leak cached data between server requests.'
+      'No QueryClient provided. Create one with createQueryClient() and expose it with provideQueryClient(), or pass an explicit client option. Outside a browser document there is no implicit client: on a server that would leak one request\'s cached data into the next, and in a worker or edge runtime this cannot tell an isolated scope from one shared across requests.'
     )
   }
   return getDefaultQueryClient()

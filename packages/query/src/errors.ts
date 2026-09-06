@@ -55,40 +55,34 @@ export function isDevelopment(): boolean {
 }
 
 /**
- * Whether this code runs where a module-global cache would be shared across
- * requests — the one condition that makes an implicit client unsafe, because
- * one request's data would leak into the next.
+ * Whether an implicit module-global client would be unsafe here.
  *
- * The question is isolation, not the presence of a DOM. A browser tab and a
- * Web Worker each have their own global scope and their own module instances,
- * so a module-global client in either is scoped to that one context; a server
- * process serving many requests is the case to refuse. A bare `document`
- * check answers the wrong question for a worker: no `document`, but also no
- * sharing, and the "create one per request" error it produced named a shape
- * that does not exist there.
+ * The question is isolation — one global scope serving many requests leaks
+ * one request's data into the next — but isolation cannot be probed for
+ * directly, so this fails closed: only a browser main thread, identified by
+ * its `document`, gets the implicit client. Everything else must be handed a
+ * client explicitly.
  *
- * The converse — a server process carrying a DOM shim, jsdom included — reads
- * as a browser here and cannot be told apart from one from the inside: the
+ * That deliberately refuses some contexts that would in fact be safe. A Web
+ * Worker in a browser has its own global scope and its own module instances,
+ * so a module-global client there would be scoped to that one worker. But
+ * `WorkerGlobalScope` is also defined by edge runtimes that reuse an isolate
+ * across overlapping requests — Cloudflare's workerd among them — where the
+ * same probe would hand several users one shared cache. No available signal
+ * separates the two reliably, and the two failure modes are not comparable:
+ * refusing a safe worker costs one explicit `provideQueryClient` call, while
+ * admitting a shared isolate leaks data between users. So workers are
+ * refused, and {@link useQueryClient}'s message says how to proceed rather
+ * than assuming a server request.
+ *
+ * The converse — a server process carrying a DOM shim, jsdom included —
+ * reads as a browser and cannot be told apart from one from the inside: the
  * probe that would separate them (`process.versions.node`) is equally true of
  * every test run, which legitimately wants the browser behaviour. SSR code
  * must therefore create a client per request explicitly (see #291) rather
- * than rely on this probe to catch the mistake; the probe is a backstop for
- * the ordinary case, not a guarantee.
+ * than rely on this probe to catch the mistake; it is a backstop for the
+ * ordinary case, not a guarantee.
  */
 export function isServer(): boolean {
-  // A document means a browser main thread.
-  if (typeof document !== 'undefined') {
-    return false
-  }
-  // WorkerGlobalScope exists only inside a worker, so this distinguishes one
-  // from a server runtime without reaching for `self`, which Node also
-  // defines in some versions. Read off globalThis because the DOM lib is not
-  // in this package's type-check program.
-  if (
-    (globalThis as { WorkerGlobalScope?: unknown }).WorkerGlobalScope !==
-    undefined
-  ) {
-    return false
-  }
-  return true
+  return typeof document === 'undefined'
 }

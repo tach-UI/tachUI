@@ -1153,7 +1153,11 @@ describe('environment provision', () => {
     vi.stubGlobal('document', undefined)
 
     expect(() => useQueryClient()).toThrowError(QueryError)
-    expect(() => useQueryClient()).toThrowError(/per request/)
+    // Names what to do rather than assuming a server request: the same
+    // refusal covers workers and edge runtimes, where "per request" would
+    // describe a shape that does not exist.
+    expect(() => useQueryClient()).toThrowError(/no implicit client/)
+    expect(() => useQueryClient()).toThrowError(/provideQueryClient/)
   })
 
   it('still serves provided and explicit clients on the server', async () => {
@@ -1823,8 +1827,6 @@ describe('dehydrate and hydrate', () => {
   it('carries every data type the encoding can represent', async () => {
     const server = createQueryClient()
     const instant = '2024-01-01T00:00:00.000Z'
-    const sparseData: unknown[] = [1]
-    sparseData.length = 2
     const carried: unknown[] = [
       10n,
       Number.NaN,
@@ -1833,7 +1835,6 @@ describe('dehydrate and hydrate', () => {
       undefined,
       new Date(instant),
       new Uint8Array([1, 2, 3]),
-      sparseData,
       { n: 1, list: [1, 'a', true, null] },
     ]
     for (const [index, data] of carried.entries()) {
@@ -1872,7 +1873,12 @@ describe('dehydrate and hydrate', () => {
     const server = createQueryClient()
     const circular: Record<string, unknown> = { a: 1 }
     circular.self = circular
+    // A hole revives as an own undefined member that Object.keys reports, so
+    // it is not the array the loader returned.
+    const sparseData: unknown[] = [1]
+    sparseData.length = 2
     const lossy: unknown[] = [
+      sparseData,
       () => 'fn',
       Symbol('s'),
       new Map([['a', 1]]),
