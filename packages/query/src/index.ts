@@ -41,6 +41,7 @@ export type {
   QueryKey,
   QueryKeyHash,
   QueryLoadContext,
+  QueryObservation,
   QueryOptions,
   QueryOptionsBase,
   QueryResult,

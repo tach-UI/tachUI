@@ -14,8 +14,16 @@
  * `prefetchQueries`, `dehydrate`, and `hydrate` are declared here so the
  * interface does not change later, with baseline behavior only; Phase 4 (#291)
  * owns the SSR prefetch sequence and payload rules. Key hashing, prefix
- * matching, and the payload key codec live in `./keys` (#278); entry lifecycle
- * policy (dedup, freshness, `gcTime` eviction) lands in #279.
+ * matching, and the payload codec live in `./keys` (#278).
+ *
+ * Entry lifecycle is #279: identical active keys share one execution, a
+ * refresh keeps the prior value, and an entry with no observations is evicted
+ * `gcTime` after it settles — a timer that an observation cancels outright and
+ * a release restarts. Freshness is a calculation, not a trigger: `isStale`
+ * marks data as worth refetching, `fetchQuery` still serves it, and nothing
+ * refetches in the background. What acts on staleness is an observer's policy
+ * (#280) and explicit `invalidate()`, which keeps a hydrated snapshot from
+ * refetching on first paint (#291).
  */
 
 import {
@@ -38,6 +46,7 @@ import {
   encodeSnapshotData,
   hashEncodedKey,
   hashEncodedSegments,
+  hashQueryKey,
   hashKeySegments,
   isKeyPrefixMatch,
 } from './keys'
@@ -50,6 +59,7 @@ import type {
   QueryClient,
   QueryKey,
   QueryKeyHash,
+  QueryObservation,
   QueryStatus,
 } from './types'
 
@@ -90,7 +100,18 @@ interface ClientCacheEntry {
   status: QueryStatus
   fetchStatus: FetchStatus
   updatedAt: number | undefined
-  readonly observerCount: number
+  /**
+   * Live observations. While this is above zero the entry is retained; the
+   * `gcTime` timer runs only at zero, so an observed entry is never evicted
+   * out from under its observer.
+   */
+  observerCount: number
+  /**
+   * Pending eviction, or null when none is scheduled — either because the
+   * entry is observed, because a request is in flight, or because `gcTime`
+   * is not finite.
+   */
+  gcTimer: ReturnType<typeof setTimeout> | null
   staleTime: number
   gcTime: number
   snapshot: boolean
@@ -147,6 +168,27 @@ function isDehydratedState(state: unknown): state is DehydratedState {
   )
 }
 
+/**
+ * Test support. Entry state is otherwise visible only through `dehydrate`,
+ * whose filter runs *after* the snapshot gates — an idle, invalidated, or
+ * failed entry never reaches it — so the lifecycle in this module could not be
+ * asserted through the public surface. Keyed by client in a WeakMap rather
+ * than added to {@link QueryClient}: what a cache inspector should expose to
+ * real consumers is #293's call, not something to settle by accident here.
+ */
+const inspectors = new WeakMap<
+  QueryClient,
+  (key: QueryKey) => CacheEntry | undefined
+>()
+
+/** Test support. See {@link inspectors}. Not part of the public barrel. */
+export function inspectQueryEntry(
+  client: QueryClient,
+  key: QueryKey
+): CacheEntry | undefined {
+  return inspectors.get(client)?.(key)
+}
+
 function buildClient(disposeClientRoot: () => void, onDispose?: () => void): QueryClient {
   const entries = new Map<QueryKeyHash, ClientCacheEntry>()
   const activeControllers = new Set<AbortController>()
@@ -158,6 +200,19 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         `QueryClient.${method}() called after dispose(). Create a new client with createQueryClient().`
       )
     }
+  }
+
+  /**
+   * Empties the cache, cancelling every pending eviction first. A dangling
+   * timer would keep its entry — and whatever the loader captured — alive
+   * past the client that owned it, which is the leak this cache exists
+   * inside a reactive root to avoid.
+   */
+  function dropEntries(): void {
+    for (const entry of entries.values()) {
+      cancelEviction(entry)
+    }
+    entries.clear()
   }
 
   function abortActive(): void {
@@ -186,6 +241,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       fetchStatus: 'idle',
       updatedAt: undefined,
       observerCount: 0,
+      gcTimer: null,
       staleTime: policy.staleTime ?? DEFAULT_STALE_TIME,
       gcTime: policy.gcTime ?? DEFAULT_GC_TIME,
       snapshot: policy.snapshot ?? DEFAULT_SNAPSHOT,
@@ -203,7 +259,62 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       inFlight: null,
     }
     entries.set(hash, entry)
+    scheduleEviction(entry)
     return entry
+  }
+
+  function cancelEviction(entry: ClientCacheEntry): void {
+    if (entry.gcTimer !== null) {
+      clearTimeout(entry.gcTimer)
+      entry.gcTimer = null
+    }
+  }
+
+  /**
+   * (Re)starts the retention timer for an unobserved entry.
+   *
+   * Called wherever the inputs change — creation, each settle, invalidate,
+   * hydrate, and observer release — because `gcTime` measures time spent
+   * unobserved rather than time since the entry was written. An observed
+   * entry, an in-flight one, and an entry whose `gcTime` is not finite are
+   * all held indefinitely; the in-flight case matters because a load slower
+   * than `gcTime` would otherwise resolve into an entry that no longer
+   * exists.
+   */
+  function scheduleEviction(entry: ClientCacheEntry): void {
+    cancelEviction(entry)
+    if (
+      entry.observerCount > 0 ||
+      entry.inFlight !== null ||
+      !Number.isFinite(entry.gcTime)
+    ) {
+      return
+    }
+    entry.gcTimer = setTimeout(() => {
+      // No re-check here, deliberately. Every event that would make this
+      // entry unevictable cancels the timer first — observe() and the slot
+      // claim in fetchQuery both call cancelEviction, and clear()/dispose()
+      // drop the whole map through dropEntries — so a firing timer means the
+      // entry is still unobserved, settled, and current. Re-checking would be
+      // an unreachable branch pretending to be a safety net; the guarantee
+      // lives at those call sites, which is where a future path must keep it.
+      entry.gcTimer = null
+      entries.delete(entry.hash)
+    }, entry.gcTime)
+    // Node keeps the process alive for a pending timer; a cache entry must
+    // not hold a server open past its work.
+    entry.gcTimer.unref?.()
+  }
+
+  /**
+   * Whether an entry has aged past its freshness window. An entry that has
+   * never been written is stale: there is nothing to be fresh.
+   */
+  function isStale(entry: ClientCacheEntry): boolean {
+    return (
+      entry.updatedAt === undefined ||
+      Date.now() - entry.updatedAt >= entry.staleTime
+    )
   }
 
   function toCacheEntryView(entry: ClientCacheEntry): CacheEntry {
@@ -223,6 +334,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       status: entry.status,
       fetchStatus: entry.fetchStatus,
       observerCount: entry.observerCount,
+      isStale: isStale(entry),
       options: {
         staleTime: entry.staleTime,
         gcTime: entry.gcTime,
@@ -344,6 +456,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     })
     entry.inFlight = { promise: requestPromise, controller }
     activeControllers.add(controller)
+    cancelEviction(entry)
 
     function ownsSlot(): boolean {
       return entry.inFlight?.promise === requestPromise
@@ -373,6 +486,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       if (ownsSlot()) {
         entry.inFlight = null
         entry.fetchStatus = 'idle'
+        // Retention resumes from the settle rather than from the insert: a
+        // load slower than gcTime must not resolve into an evicted entry.
+        scheduleEviction(entry)
       }
     }
 
@@ -442,6 +558,40 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       )
     },
 
+    observe(key: QueryKey): QueryObservation {
+      ensureUsable('observe')
+      const encoded = encodeQueryKey(key)
+      const hash = hashEncodedKey(encoded)
+      const entry =
+        entries.get(hash) ??
+        // Unclaimed defaults: an observer can arrive before any query names
+        // the key, and the first fetch that does configures the entry.
+        createEntry(
+          decodeQueryKey(encoded),
+          hash,
+          hashEncodedSegments(encoded),
+          {}
+        )
+      entry.observerCount += 1
+      cancelEviction(entry)
+      let released = false
+      return {
+        release: () => {
+          // Idempotent: an owner may clean up more than once, and a second
+          // release must not drive the count negative and retain the entry
+          // forever.
+          if (released) {
+            return
+          }
+          released = true
+          entry.observerCount -= 1
+          if (entry.observerCount === 0) {
+            scheduleEviction(entry)
+          }
+        },
+      }
+    },
+
     invalidate(prefix: QueryKey): void {
       ensureUsable('invalidate')
       // Hoisted out of the entry loop: an unhashable prefix raises
@@ -462,6 +612,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             entry.inFlight = null
             entry.fetchStatus = 'idle'
           }
+          scheduleEviction(entry)
         }
       }
     },
@@ -581,13 +732,14 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         entry.generation += 1
         entry.inFlight = null
         entry.fetchStatus = 'idle'
+        scheduleEviction(entry)
       }
     },
 
     clear(): void {
       ensureUsable('clear')
       abortActive()
-      entries.clear()
+      dropEntries()
     },
 
     dispose(): void {
@@ -595,12 +747,17 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         return
       }
       abortActive()
-      entries.clear()
+      dropEntries()
       disposed = true
       disposeClientRoot()
       onDispose?.()
     },
   }
+
+  inspectors.set(client, (key) => {
+    const entry = entries.get(hashQueryKey(key))
+    return entry === undefined ? undefined : toCacheEntryView(entry)
+  })
 
   return client
 }
