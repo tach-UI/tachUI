@@ -21,3 +21,12 @@ whether a value has aged past its `staleTime`, `fetchQuery` still serves a
 stale entry, and nothing refetches in the background. What acts on staleness
 is an observer's policy (#280) and explicit `invalidate()` — which is what
 keeps a hydrated SSR snapshot from refetching on first paint (#291).
+
+Retention is also guarded against entries the cache no longer holds: an
+observation released after `clear()`, or a request settling after it, no
+longer arms a timer that would later evict whichever entry has taken that
+key — and after `dispose()` no timer is armed at all. A `gcTime` first
+configured after the entry exists, the shape `hydrate()` then a first fetch
+produces, now replaces the default timer instead of leaving it running.
+`staleTime` and `gcTime` reject NaN and negative values, which previously
+retained forever or never went stale in silence.

@@ -135,6 +135,56 @@ describe('gcTime retention', () => {
     expect(loads).toBe(1)
   })
 
+  it('replaces the default timer when gcTime is first claimed later', async () => {
+    const client = createQueryClient()
+    // hydrate() creates the entry with unclaimed defaults and a 300s timer;
+    // the first query to name the key configures it. This is the shape #291's
+    // SSR flow produces, so the configured window has to take effect.
+    client.hydrate({
+      queries: [{ key: ['u'], data: 'restored', updatedAt: Date.now() }],
+    })
+    await client.fetchQuery({
+      key: keyOf('u'),
+      load: async () => 'fresh',
+      gcTime: 1_000,
+    })
+
+    await vi.advanceTimersByTimeAsync(999)
+    expect(inspectQueryEntry(client, ['u'])).toBeDefined()
+    await vi.advanceTimersByTimeAsync(1)
+    expect(inspectQueryEntry(client, ['u'])).toBeUndefined()
+  })
+
+  it('rejects a window no caller could have meant', async () => {
+    const client = createQueryClient()
+    const load = async () => 'v'
+
+    // Both fail silently when malformed: a NaN gcTime takes the same branch
+    // as an intentional Infinity and retains forever, and a NaN staleTime
+    // makes every comparison false.
+    for (const bad of [Number.NaN, -1]) {
+      await expect(
+        client.fetchQuery({ key: keyOf('u'), load, gcTime: bad })
+      ).rejects.toThrowError(/gcTime must be a non-negative/)
+      await expect(
+        client.fetchQuery({ key: keyOf('u'), load, staleTime: bad })
+      ).rejects.toThrowError(/staleTime must be a non-negative/)
+    }
+    // Infinity stays valid for both: "never evict" and "never stale" are
+    // real choices, and zero is the documented default.
+    await expect(
+      client.fetchQuery({
+        key: keyOf('ok'),
+        load,
+        gcTime: Number.POSITIVE_INFINITY,
+        staleTime: Number.POSITIVE_INFINITY,
+      })
+    ).resolves.toBe('v')
+    await expect(
+      client.fetchQuery({ key: keyOf('zero'), load, gcTime: 0, staleTime: 0 })
+    ).resolves.toBe('v')
+  })
+
   it('restarts retention after invalidate', async () => {
     const client = createQueryClient()
     const { state, load } = counter()
@@ -165,6 +215,60 @@ describe('gcTime retention', () => {
     client.dispose()
     // A dangling timer would keep its entry, and whatever the loader
     // captured, alive past the client that owned it.
+    expect(vi.getTimerCount()).toBe(0)
+  })
+})
+
+describe('entries dropped by clear() and dispose()', () => {
+  it('does not let an observation held across clear() evict the replacement', async () => {
+    const client = createQueryClient()
+    await client.fetchQuery({ key: keyOf('u'), load: async () => 'a', gcTime: 100 })
+    const observation = client.observe(['u'])
+
+    // The observation still points at the dropped entry. Releasing it must
+    // not arm a timer that later deletes by hash and takes out whichever
+    // entry holds that hash by then.
+    client.clear()
+    await client.fetchQuery({ key: keyOf('u'), load: async () => 'b', gcTime: 5_000 })
+    observation.release()
+
+    await vi.advanceTimersByTimeAsync(150)
+    expect(inspectQueryEntry(client, ['u'])?.data).toBe('b')
+  })
+
+  it('does not let a flight settling after clear() evict the replacement', async () => {
+    const client = createQueryClient()
+    let release!: (value: string) => void
+    const gate = new Promise<string>((resolve) => {
+      release = resolve
+    })
+    const pending = client.fetchQuery({
+      key: keyOf('u'),
+      load: () => gate,
+      gcTime: 50,
+    })
+
+    // clear() aborts the flight but does not null its slot, so the settling
+    // request still owns it and would otherwise schedule against the orphan.
+    client.clear()
+    await client.fetchQuery({ key: keyOf('u'), load: async () => 'b', gcTime: 5_000 })
+    release('late')
+    await pending.catch(() => undefined)
+
+    await vi.advanceTimersByTimeAsync(150)
+    expect(inspectQueryEntry(client, ['u'])?.data).toBe('b')
+  })
+
+  it('arms no timer when an observation is released after dispose()', async () => {
+    const client = createQueryClient()
+    await client.fetchQuery({ key: keyOf('u'), load: async () => 'a' })
+    const observation = client.observe(['u'])
+
+    client.dispose()
+    expect(vi.getTimerCount()).toBe(0)
+    // A timer here would hold the entry, and whatever its loader captured,
+    // for a full gcTime past the client that owned it.
+    observation.release()
     expect(vi.getTimerCount()).toBe(0)
   })
 })
