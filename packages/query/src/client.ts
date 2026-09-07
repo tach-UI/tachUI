@@ -189,6 +189,26 @@ export function inspectQueryEntry(
   return inspectors.get(client)?.(key)
 }
 
+/**
+ * Rejects a freshness or retention window that would put the cache into a
+ * state no caller could have meant. Both are load-bearing as of #279, and both
+ * fail silently when malformed: a NaN `gcTime` takes the same branch as an
+ * intentional Infinity and retains the entry forever, and a NaN `staleTime`
+ * makes every comparison false so the entry is never stale. A negative window
+ * evicts on the next tick. Infinity stays valid for both — "never evict" and
+ * "never stale" are real choices.
+ */
+function assertPolicyWindow(value: number | undefined, name: string): void {
+  if (value === undefined) {
+    return
+  }
+  if (Number.isNaN(value) || value < 0) {
+    throw new QueryError(
+      `Cannot configure query: ${name} must be a non-negative number of milliseconds, or Infinity. Received ${String(value)}.`
+    )
+  }
+}
+
 function buildClient(disposeClientRoot: () => void, onDispose?: () => void): QueryClient {
   const entries = new Map<QueryKeyHash, ClientCacheEntry>()
   const activeControllers = new Set<AbortController>()
@@ -282,6 +302,18 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
    * exists.
    */
   function scheduleEviction(entry: ClientCacheEntry): void {
+    // Currency first. An entry dropped by clear() or dispose() can still be
+    // reached afterwards — by an observation held across the boundary, or by
+    // a flight that was in the air when the map was emptied and whose
+    // releaseSlot still owns its slot. Arming a timer for one of those would
+    // delete by hash later and take out whichever entry then holds it, and
+    // after dispose() it would keep the entry, and whatever its loader
+    // captured, alive for a whole gcTime past the client. Every legitimate
+    // caller holds a live entry, so this filters only orphans.
+    if (entries.get(entry.hash) !== entry) {
+      cancelEviction(entry)
+      return
+    }
     cancelEviction(entry)
     if (
       entry.observerCount > 0 ||
@@ -361,6 +393,8 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // here would otherwise recurse on the intact options to RangeError.
         return options.client.fetchQuery({ ...options, client: undefined })
       }
+      assertPolicyWindow(options.staleTime, 'staleTime')
+      assertPolicyWindow(options.gcTime, 'gcTime')
       resolvedKey = options.key()
       // One encoding pass feeds the hash, the segments, and the stored key.
       // Encoding three times would invoke each toJSON hook three times, so a
@@ -404,6 +438,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     if (options.gcTime !== undefined && !entry.policyClaimed.gcTime) {
       entry.gcTime = options.gcTime
       entry.policyClaimed.gcTime = true
+      // The pending timer was armed against the default window, so it has to
+      // be replaced or the configured one never takes effect — the shape
+      // hydrate() then a first fetch produces, which #291's SSR flow relies
+      // on. This restarts a full window from the claim rather than preserving
+      // elapsed time, matching how invalidate() and hydrate() restart it, and
+      // it happens at most once per entry.
+      scheduleEviction(entry)
     }
     // snapshot is veto-wins, not first-writer-wins: false is the safe value
     // (it keeps data out of the SSR payload), so an explicit opt-out

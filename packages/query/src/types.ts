@@ -359,7 +359,16 @@ export interface QueryClient {
    */
   prefetchQueries(requests: readonly FetchQueryOptions<any, any>[]): Promise<void>
 
-  /** Marks every entry whose key starts with `prefix` stale, refetching observed ones. */
+  /**
+   * Marks every entry whose key starts with `prefix` as needing a reload, and
+   * detaches any request already in flight for one so its result cannot
+   * un-mark it.
+   *
+   * Nothing is refetched here: the next `fetchQuery` for a marked key runs its
+   * loader instead of serving the cached value. Refetching an *observed* entry
+   * immediately is an observer's behaviour and arrives with `createQuery`
+   * (#280).
+   */
   invalidate(prefix: QueryKey): void
 
   /**
