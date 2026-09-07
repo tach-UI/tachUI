@@ -42,6 +42,7 @@ import type {
   QueryKey,
   QueryKeyHash,
   QueryLoadContext,
+  QueryObservation,
   QueryOptions,
   QueryResult,
   QueryStatus,
@@ -101,6 +102,7 @@ export type PublicTypeSurface = {
   QueryKey: QueryKey
   QueryKeyHash: QueryKeyHash
   QueryLoadContext: QueryLoadContext
+  QueryObservation: QueryObservation
   QueryOptions: QueryOptions<RawUser>
   QueryResult: QueryResult<RawUser>
   QueryStatus: QueryStatus
@@ -199,6 +201,7 @@ export type CacheEntryShape = Assert<
       readonly status: QueryStatus
       readonly fetchStatus: FetchStatus
       readonly observerCount: number
+      readonly isStale: boolean
       readonly options: CacheEntryPolicy
     }
   >
@@ -237,8 +240,25 @@ export type MutationHasNoFetchStatus = Assert<
 export type QueryClientMembers = Assert<
   Equals<
     keyof QueryClient,
-    'fetchQuery' | 'prefetchQueries' | 'invalidate' | 'dehydrate' | 'hydrate' | 'clear' | 'dispose'
+    | 'fetchQuery'
+    | 'prefetchQueries'
+    | 'invalidate'
+    | 'observe'
+    | 'dehydrate'
+    | 'hydrate'
+    | 'clear'
+    | 'dispose'
   >
+>
+
+/**
+ * An observation is a release handle and nothing more. Widening it later is
+ * additive, but growing it into a second query-result surface is not what it
+ * is for: `createQuery` (#280) returns `QueryResult`, and this only governs
+ * how long the entry behind it is retained.
+ */
+export type QueryObservationMembers = Assert<
+  Equals<keyof QueryObservation, 'release'>
 >
 
 export type QueryResultMembers = Assert<
