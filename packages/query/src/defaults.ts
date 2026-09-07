@@ -12,6 +12,10 @@
  *
  * Distinct from {@link DEFAULT_GC_TIME}: `staleTime` decides when data is worth
  * refetching, `gcTime` decides how long an unobserved entry is kept at all.
+ *
+ * Staleness is a signal rather than a trigger. `fetchQuery` serves a stale
+ * entry and nothing refetches in the background (#279); what acts on it is an
+ * observer's policy (#280) and explicit `invalidate()`.
  */
 export const DEFAULT_STALE_TIME = 0
 

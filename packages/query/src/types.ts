@@ -263,6 +263,23 @@ export interface CacheEntryPolicy {
 }
 
 /**
+ * A live observation of one query, holding its entry against `gcTime`
+ * eviction for as long as it is held.
+ *
+ * `createQuery` (#280) takes one per observer and releases it from the
+ * calling owner's `onCleanup`, so an entry outlives the component that
+ * rendered it by exactly `gcTime`.
+ */
+export interface QueryObservation {
+  /**
+   * Drops this observation. When the last one for an entry is released the
+   * `gcTime` timer starts; observing again before it fires cancels it.
+   * Releasing twice is a no-op, so an owner may clean up more than once.
+   */
+  release(): void
+}
+
+/**
  * A read-only view of one cache entry, as handed to a `dehydrate` filter.
  */
 export interface CacheEntry<TRaw = unknown, E = Error> {
@@ -274,11 +291,18 @@ export interface CacheEntry<TRaw = unknown, E = Error> {
   readonly updatedAt: number | undefined
   readonly status: QueryStatus
   readonly fetchStatus: FetchStatus
-  /**
-   * Live observer count. Always 0 until #280 introduces observers, so a
-   * dehydrate filter on observerCount matches nothing today.
-   */
+  /** Live observation count, as held by {@link QueryClient.observe}. */
   readonly observerCount: number
+  /**
+   * Whether the cached value has aged past its `staleTime`.
+   *
+   * Staleness marks data as worth refetching; it does not itself fetch.
+   * `fetchQuery` serves a stale entry rather than reloading it, and nothing
+   * refetches in the background. What acts on this is an observer's policy
+   * (#280) and explicit `invalidate()`. An entry that has never been written
+   * is stale.
+   */
+  readonly isStale: boolean
   readonly options: CacheEntryPolicy
 }
 
@@ -337,6 +361,16 @@ export interface QueryClient {
 
   /** Marks every entry whose key starts with `prefix` stale, refetching observed ones. */
   invalidate(prefix: QueryKey): void
+
+  /**
+   * Observes a query, holding its entry against `gcTime` eviction until the
+   * returned observation is released. Creates the entry if none exists, so an
+   * observer can be registered before the first fetch resolves.
+   *
+   * This is the retention mechanism `createQuery` (#280) builds on; it starts
+   * no request of its own.
+   */
+  observe(key: QueryKey): QueryObservation
 
   /**
    * Serializes cached data for transfer to the client.
