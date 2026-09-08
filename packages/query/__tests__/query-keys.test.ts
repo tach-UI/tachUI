@@ -4,6 +4,8 @@
  * canonicalized, and prefix matching over the structured form.
  */
 
+import vm from 'node:vm'
+
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -380,6 +382,25 @@ describe('snapshot data encoding', () => {
     expect(() => encodeSnapshotData(new Date(instant))).not.toThrow()
   })
 
+  it('refuses a Uint8Array subclass as data, but keys it by its bytes', () => {
+    const buffer = Buffer.from([1, 2, 3])
+
+    // Hydration rebuilds a plain Uint8Array, so a Buffer would come back
+    // missing everything that made it one and a cache hit would not return
+    // the TRaw the loader gave.
+    expect(() => encodeSnapshotData(buffer)).toThrowError(/subclasses/)
+    expect(() => encodeSnapshotData({ payload: buffer })).toThrowError(
+      /subclasses/
+    )
+
+    // A key is identified by its bytes and need not revive as the same class.
+    expect(hashQueryKey([buffer])).toBe(hashQueryKey([new Uint8Array([1, 2, 3])]))
+    // A plain byte array is still data, including one from another realm.
+    expect(() => encodeSnapshotData(new Uint8Array([1, 2, 3]))).not.toThrow()
+    const foreign = vm.runInNewContext('new Uint8Array([1, 2, 3])') as Uint8Array
+    expect(() => encodeSnapshotData(foreign)).not.toThrow()
+  })
+
   it('refuses a sparse array, whose hole revives as an own member', () => {
     const sparse: unknown[] = [1]
     sparse.length = 2
@@ -434,6 +455,28 @@ describe('development errors', () => {
       expect(() => hashQueryKey(key), String(message)).toThrowError(message)
       expect(() => hashQueryKey(key)).toThrowError(QueryError)
     }
+  })
+
+  it('tags a Date from another realm, whose hook is a different function', () => {
+    const foreign = vm.runInNewContext(
+      `new Date(${JSON.stringify(instant)})`
+    ) as Date
+    expect(Object.prototype.toString.call(foreign)).toBe('[object Date]')
+
+    // Its inherited toJSON is not this realm's, so comparing hook identity
+    // would read it as overridden, render a bare ISO string, and put it in
+    // the same entry as that string.
+    expect(encodeQueryKey([foreign])).toEqual([
+      { __tachuiQuery: 'date', value: instant },
+    ])
+    expect(hashQueryKey([foreign])).toBe(hashQueryKey([new Date(instant)]))
+    expect(hashQueryKey([foreign])).not.toBe(hashQueryKey([instant]))
+
+    // An own hook is still an override, in either realm.
+    const overridden = Object.assign(new Date(instant), {
+      toJSON: () => 'custom',
+    })
+    expect(encodeQueryKey([overridden])).toEqual(['custom'])
   })
 
   it('refuses values impersonating a Uint8Array', () => {

@@ -190,6 +190,25 @@ function setOwnMember(
   target[member] = value
 }
 
+/**
+ * Whether a byte array is a plain `Uint8Array` rather than a subclass.
+ *
+ * Counted by prototype depth rather than compared against this realm's
+ * `Uint8Array.prototype`, so a byte array from another realm still reads as
+ * plain: every realm gives one the same three links — its own
+ * `Uint8Array.prototype`, `%TypedArray%.prototype`, `Object.prototype` — while
+ * a subclass such as `Buffer` inserts a fourth.
+ */
+function isPlainByteArray(value: object): boolean {
+  let prototype: unknown = Object.getPrototypeOf(value)
+  let links = 0
+  while (prototype !== null) {
+    links += 1
+    prototype = Object.getPrototypeOf(prototype)
+  }
+  return links === 3
+}
+
 /** Whether a property name is one of the indices an array renders. */
 function isRenderedIndex(member: string, length: number): boolean {
   const index = Number(member)
@@ -319,6 +338,16 @@ function encodeValue(
   }
   const target = value as object
   if (isByteArray(value)) {
+    // Hydration always rebuilds a plain Uint8Array, so a subclass — a Node
+    // Buffer above all — would come back missing everything that made it one,
+    // and a cache hit after hydration would not return the TRaw the loader
+    // gave. A key is identified by its bytes and need not revive as the same
+    // class, so only data refuses.
+    if (mode === 'data' && !isPlainByteArray(value)) {
+      throw new QueryError(
+        `Cannot serialize query data: Uint8Array subclasses such as Buffer do not survive the wire at ${path} (hydration rebuilds a plain Uint8Array).`
+      )
+    }
     return tag('bytes', toBase64(value))
   }
   // A toJSON hook replaces the rendering, so the encoding follows it — but
@@ -326,10 +355,19 @@ function encodeValue(
   // through it would render a bare ISO string that collides with the string
   // itself. Only an *overridden* hook wins; the stock one yields to the
   // tagged form below.
+  //
+  // "Overridden" means an *own* toJSON. Comparing identity against this
+  // realm's Date.prototype.toJSON instead would misread a Date from an iframe
+  // or a vm context — whose inherited hook is a different function object — as
+  // overridden, render it as a bare ISO string, and drop it into the same
+  // entry as that string: exactly the collision the date tag exists to
+  // prevent.
   const toJSON = (target as { toJSON?: unknown }).toJSON
+  const hasHook = typeof toJSON === 'function'
   const hasOwnHook =
-    typeof toJSON === 'function' && toJSON !== Date.prototype.toJSON
-  if (isDateValue(value) && !hasOwnHook) {
+    hasHook && Object.prototype.hasOwnProperty.call(target, 'toJSON')
+  const rendersAsStockDate = isDateValue(value) && !hasOwnHook
+  if (rendersAsStockDate) {
     // Symbol.toStringTag makes the brand check spoofable, and the prototype
     // methods throw on an impostor. A spoof falls through to the ordinary
     // object path below, where its symbol key is rejected on its own terms.
@@ -350,7 +388,7 @@ function encodeValue(
       return tag('date', Date.prototype.toISOString.call(value))
     }
   }
-  if (mode === 'data' && hasOwnHook) {
+  if (mode === 'data' && hasHook && !rendersAsStockDate) {
     throw new QueryError(
       `Cannot serialize query data: toJSON carriers do not survive the wire at ${path} (the revived value would have lost the carrier).`
     )
