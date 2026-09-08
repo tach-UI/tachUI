@@ -40,3 +40,9 @@ still identified by its bytes or its instant. And `dehydrate()` builds its filte
 the payload it is about to ship rather than a structured clone, which throws
 for a `Proxy` the encoding handles fine and would fail a whole snapshot over
 one entry.
+
+Values carrying state the encoding cannot carry are refused rather than
+quietly stripped: a byte array or `Date` with extra own properties, in keys as
+well as data, since two values differing only by one would otherwise collide;
+and, for data alone, a `Uint8Array` that is a window onto part of a larger
+buffer, since hydration rebuilds an offset-zero array of its own.

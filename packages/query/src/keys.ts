@@ -200,6 +200,13 @@ function setOwnMember(
  * a plain `Uint8Array` is 3 (its own prototype, `%TypedArray%.prototype`,
  * `Object.prototype`).
  */
+/** Names the operation in a message, since both modes share these checks. */
+function encodeSubject(mode: EncodeMode): string {
+  return mode === 'data'
+    ? 'Cannot serialize query data'
+    : 'Cannot hash query key'
+}
+
 function prototypeDepth(value: object): number {
   let prototype: unknown = Object.getPrototypeOf(value)
   let links = 0
@@ -339,15 +346,39 @@ function encodeValue(
   }
   const target = value as object
   if (isByteArray(value)) {
-    // Hydration always rebuilds a plain Uint8Array, so a subclass — a Node
-    // Buffer above all — would come back missing everything that made it one,
-    // and a cache hit after hydration would not return the TRaw the loader
-    // gave. A key is identified by its bytes and need not revive as the same
-    // class, so only data refuses.
-    if (mode === 'data' && prototypeDepth(target) !== 3) {
-      throw new QueryError(
-        `Cannot serialize query data: Uint8Array subclasses such as Buffer do not survive the wire at ${path} (hydration rebuilds a plain Uint8Array).`
+    // Only the bytes are carried, so an extra own property is dropped — which
+    // makes two keys differing solely by one collide, exactly as an augmented
+    // plain array would. Refused in both modes for that reason.
+    if (
+      hasOwnSymbol(target) ||
+      Object.getOwnPropertyNames(target).some(
+        (member) => !isRenderedIndex(member, value.length)
       )
+    ) {
+      throw new QueryError(
+        `${encodeSubject(mode)}: byte arrays with extra properties are not supported at ${path} (only their bytes are carried, so distinct values would collide).`
+      )
+    }
+    if (mode === 'data') {
+      // Hydration always rebuilds a plain, offset-zero Uint8Array. A subclass
+      // — a Node Buffer above all — would come back missing everything that
+      // made it one, and a window onto a larger buffer would come back having
+      // lost its offset and its sharing, so a cache hit would not return the
+      // TRaw the loader gave. A key is identified by its bytes and need not
+      // revive as the same class or the same view, so only data refuses.
+      if (prototypeDepth(target) !== 3) {
+        throw new QueryError(
+          `Cannot serialize query data: Uint8Array subclasses such as Buffer do not survive the wire at ${path} (hydration rebuilds a plain Uint8Array).`
+        )
+      }
+      if (
+        value.byteOffset !== 0 ||
+        value.byteLength !== value.buffer.byteLength
+      ) {
+        throw new QueryError(
+          `Cannot serialize query data: a Uint8Array view onto part of a larger buffer does not survive the wire at ${path} (hydration rebuilds an offset-zero array of its own).`
+        )
+      }
     }
     return tag('bytes', toBase64(value))
   }
@@ -380,19 +411,11 @@ function encodeValue(
     hasHook && Object.prototype.hasOwnProperty.call(target, 'toJSON')
   const rendersAsStockDate = isDateValue(value) && !hasOwnHook
   if (rendersAsStockDate) {
-    // Same rule as a Uint8Array subclass: hydration rebuilds a plain Date, so
-    // a subclass would come back as something `instanceof` no longer
-    // recognises and a cache hit after hydration would not return the TRaw
-    // the loader gave. A key is identified by its instant and need not revive
-    // as the same class, so only data refuses.
-    if (mode === 'data' && prototypeDepth(target) !== 2) {
-      throw new QueryError(
-        `Cannot serialize query data: Date subclasses do not survive the wire at ${path} (hydration rebuilds a plain Date).`
-      )
-    }
     // Symbol.toStringTag makes the brand check spoofable, and the prototype
-    // methods throw on an impostor. A spoof falls through to the ordinary
-    // object path below, where its symbol key is rejected on its own terms.
+    // methods throw on an impostor. The genuineness probe runs first so a
+    // spoof falls through to the ordinary object path below, where its symbol
+    // key is rejected on its own terms rather than by a Date-specific rule
+    // that would misdescribe it.
     let time: number | undefined
     try {
       time = Date.prototype.getTime.call(value)
@@ -405,6 +428,27 @@ function encodeValue(
         // Date would otherwise render alike regardless of how it was built.
         throw new QueryError(
           `Cannot hash query key: invalid Dates cannot be hashed at ${path}.`
+        )
+      }
+      // Only the instant is carried, so a field hung on the Date is dropped
+      // and two keys differing solely by one collide. Refused in both modes,
+      // like an augmented array or byte array.
+      if (
+        hasOwnSymbol(target) ||
+        Object.getOwnPropertyNames(target).length > 0
+      ) {
+        throw new QueryError(
+          `${encodeSubject(mode)}: Dates with own properties are not supported at ${path} (only the instant is carried, so distinct values would collide).`
+        )
+      }
+      // Same rule as a Uint8Array subclass: hydration rebuilds a plain Date,
+      // so a subclass would come back as something `instanceof` no longer
+      // recognises and a cache hit after hydration would not return the TRaw
+      // the loader gave. A key is identified by its instant and need not
+      // revive as the same class, so only data refuses.
+      if (mode === 'data' && prototypeDepth(target) !== 2) {
+        throw new QueryError(
+          `Cannot serialize query data: Date subclasses do not survive the wire at ${path} (hydration rebuilds a plain Date).`
         )
       }
       return tag('date', Date.prototype.toISOString.call(value))
