@@ -438,6 +438,48 @@ describe('snapshot data encoding', () => {
     ).toEqual(['own'])
   })
 
+  it('refuses values whose extra state the encoding would drop', () => {
+    // Only the bytes, or only the instant, are carried. A property hung on
+    // either is dropped, so two values differing solely by one would collide
+    // — the same reasoning that refuses an augmented plain array, and it
+    // applies to keys as much as to data.
+    const taggedBytes = Object.assign(new Uint8Array([1, 2]), { tag: 'x' })
+    const labelledDate = Object.assign(new Date(instant), { label: 'x' })
+
+    expect(() => hashQueryKey([taggedBytes])).toThrowError(
+      /byte arrays with extra properties/
+    )
+    expect(() => encodeSnapshotData(taggedBytes)).toThrowError(
+      /byte arrays with extra properties/
+    )
+    expect(() => hashQueryKey([labelledDate])).toThrowError(
+      /Dates with own properties/
+    )
+    expect(() => encodeSnapshotData(labelledDate)).toThrowError(
+      /Dates with own properties/
+    )
+    // A symbol-keyed one is caught too, not silently carried.
+    expect(() =>
+      hashQueryKey([Object.assign(new Uint8Array([1]), { [Symbol('s')]: 1 })])
+    ).toThrowError(/byte arrays with extra properties/)
+  })
+
+  it('refuses a byte array that is a window onto a larger buffer', () => {
+    const backing = new Uint8Array([9, 9, 1, 2]).buffer
+    const window = new Uint8Array(backing, 2, 2)
+    expect(window.byteOffset).toBe(2)
+
+    // Hydration rebuilds an offset-zero array of its own, so the view loses
+    // both its offset and its sharing with the backing buffer.
+    expect(() => encodeSnapshotData(window)).toThrowError(/larger buffer/)
+    // A full-length view over its own buffer round-trips exactly.
+    expect(() =>
+      encodeSnapshotData(new Uint8Array(new Uint8Array([1, 2]).buffer))
+    ).not.toThrow()
+    // Keys are identified by their bytes, so a window is still hashable.
+    expect(hashQueryKey([window])).toBe(hashQueryKey([new Uint8Array([1, 2])]))
+  })
+
   it('refuses a sparse array, whose hole revives as an own member', () => {
     const sparse: unknown[] = [1]
     sparse.length = 2
