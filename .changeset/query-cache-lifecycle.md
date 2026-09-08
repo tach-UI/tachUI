@@ -33,10 +33,10 @@ retained forever or never went stale in silence.
 
 The key and data encodings also gained three corrections. A `Date` from
 another realm is tagged rather than rendered as a bare ISO string, so it no
-longer shares an entry with that string. A `Uint8Array` subclass such as a
-Node `Buffer` is refused as snapshot data, since hydration rebuilds a plain
-`Uint8Array` and a cache hit would not return the loader's value; a key is
-still identified by its bytes. And `dehydrate()` builds its filter view from
+longer shares an entry with that string. A `Uint8Array` or `Date` subclass — a Node
+`Buffer` above all — is refused as snapshot data, since hydration rebuilds the
+plain built-in and a cache hit would not return the loader's value; a key is
+still identified by its bytes or its instant. And `dehydrate()` builds its filter view from
 the payload it is about to ship rather than a structured clone, which throws
 for a `Proxy` the encoding handles fine and would fail a whole snapshot over
 one entry.

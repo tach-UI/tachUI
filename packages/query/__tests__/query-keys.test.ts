@@ -401,6 +401,43 @@ describe('snapshot data encoding', () => {
     expect(() => encodeSnapshotData(foreign)).not.toThrow()
   })
 
+  it('refuses a Date subclass as data, but keys it by its instant', () => {
+    class Scheduled extends Date {}
+    class Rendered extends Date {
+      toJSON(): string {
+        return 'custom'
+      }
+    }
+    const subclass = new Scheduled(instant)
+
+    // Same rule as a Uint8Array subclass: hydration rebuilds a plain Date, so
+    // the far side would hold something `instanceof Scheduled` rejects.
+    expect(() => encodeSnapshotData(subclass)).toThrowError(/Date subclasses/)
+    expect(() => encodeSnapshotData({ at: subclass })).toThrowError(
+      /Date subclasses/
+    )
+    // A hook on the subclass prototype does not rescue it either.
+    expect(() => encodeSnapshotData(new Rendered(instant))).toThrowError(
+      /Date subclasses/
+    )
+    expect(() => encodeSnapshotData(new Date(instant))).not.toThrow()
+
+    // A key is identified by its instant and need not revive as the same
+    // class. This is the deliberate narrowing that comes with reading an
+    // override as an *own* toJSON: a hook inherited from a subclass
+    // prototype no longer decides the key's identity.
+    expect(hashQueryKey([subclass])).toBe(hashQueryKey([new Date(instant)]))
+    expect(hashQueryKey([new Rendered(instant)])).toBe(
+      hashQueryKey([new Date(instant)])
+    )
+    // An own hook is still an override, on a subclass as much as on a Date.
+    expect(
+      encodeQueryKey([Object.assign(new Scheduled(instant), {
+        toJSON: () => 'own',
+      })])
+    ).toEqual(['own'])
+  })
+
   it('refuses a sparse array, whose hole revives as an own member', () => {
     const sparse: unknown[] = [1]
     sparse.length = 2
