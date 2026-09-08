@@ -349,7 +349,19 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     )
   }
 
-  function toCacheEntryView(entry: ClientCacheEntry): CacheEntry {
+  /**
+   * @param dataCopy A decoupled copy of the entry's data, chosen by the
+   * caller rather than defaulted here — an entry's data may legitimately be
+   * `undefined`, so there is no value left to mean "not supplied".
+   * `dehydrate` passes what it decodes from the payload it is about to ship,
+   * which is both exactly what the far side will see and always cloneable; a
+   * structured clone throws for values the encoding handles fine (a Proxy
+   * above all), and one awkward entry must not take down a whole snapshot.
+   */
+  function toCacheEntryView(
+    entry: ClientCacheEntry,
+    dataCopy: unknown
+  ): CacheEntry {
     // Decoupled copies: the filter — and the payload built from this view —
     // must not alias the cache, so mutating either side cannot rewrite the
     // other. Errors stay live references; they never cross the boundary.
@@ -360,7 +372,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       hash: entry.hash,
       // Lossless: the entry's data may hold Dates or byte arrays, which a
       // JSON round trip would flatten before the filter ever sees them.
-      data: structuredClone(entry.data),
+      data: dataCopy,
       error: entry.error as Error | undefined,
       updatedAt: entry.updatedAt,
       status: entry.status,
@@ -696,7 +708,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         if (!entry.snapshot) {
           continue
         }
-        const view = toCacheEntryView(entry)
+        const view = toCacheEntryView(entry, decodeSnapshotData(encodedData))
         if (filter !== undefined && !filter(view)) {
           continue
         }
@@ -797,7 +809,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
 
   inspectors.set(client, (key) => {
     const entry = entries.get(hashQueryKey(key))
-    return entry === undefined ? undefined : toCacheEntryView(entry)
+    return entry === undefined
+      ? undefined
+      : toCacheEntryView(entry, structuredClone(entry.data))
   })
 
   return client

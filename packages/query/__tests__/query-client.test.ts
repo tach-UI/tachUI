@@ -1636,6 +1636,26 @@ describe('dehydrate and hydrate', () => {
     expect(client.dehydrate().queries).toHaveLength(0)
   })
 
+  it('snapshots proxy data the encoding can represent', async () => {
+    const client = createQueryClient()
+    await client.fetchQuery({
+      key: keyOf('p'),
+      load: async () => new Proxy({ id: 1 }, {}),
+      snapshot: true,
+    })
+
+    // structuredClone throws DataCloneError for every Proxy, so building the
+    // filter's view that way would fail the whole dehydrate over an entry
+    // whose payload was already safe.
+    expect(() => client.dehydrate()).not.toThrow()
+    const state = client.dehydrate((entry) => {
+      expect(entry.data).toEqual({ id: 1 })
+      return true
+    })
+    expect(state.queries).toHaveLength(1)
+    expect(state.queries[0]?.data).toEqual({ id: 1 })
+  })
+
   it('does not serialize data carrying properties the wire drops', async () => {
     const client = createQueryClient()
     const load = async () =>
