@@ -191,22 +191,23 @@ function setOwnMember(
 }
 
 /**
- * Whether a byte array is a plain `Uint8Array` rather than a subclass.
+ * How many links sit between a value and the end of its prototype chain.
  *
- * Counted by prototype depth rather than compared against this realm's
- * `Uint8Array.prototype`, so a byte array from another realm still reads as
- * plain: every realm gives one the same three links — its own
- * `Uint8Array.prototype`, `%TypedArray%.prototype`, `Object.prototype` — while
- * a subclass such as `Buffer` inserts a fourth.
+ * Used to tell a plain built-in from a subclass without comparing against
+ * this realm's constructors, so a value from another realm still reads as
+ * plain: every realm builds the same chain, and a subclass inserts exactly
+ * one more link. A plain `Date` is 2 (`Date.prototype`, `Object.prototype`);
+ * a plain `Uint8Array` is 3 (its own prototype, `%TypedArray%.prototype`,
+ * `Object.prototype`).
  */
-function isPlainByteArray(value: object): boolean {
+function prototypeDepth(value: object): number {
   let prototype: unknown = Object.getPrototypeOf(value)
   let links = 0
   while (prototype !== null) {
     links += 1
     prototype = Object.getPrototypeOf(prototype)
   }
-  return links === 3
+  return links
 }
 
 /** Whether a property name is one of the indices an array renders. */
@@ -343,7 +344,7 @@ function encodeValue(
     // and a cache hit after hydration would not return the TRaw the loader
     // gave. A key is identified by its bytes and need not revive as the same
     // class, so only data refuses.
-    if (mode === 'data' && !isPlainByteArray(value)) {
+    if (mode === 'data' && prototypeDepth(target) !== 3) {
       throw new QueryError(
         `Cannot serialize query data: Uint8Array subclasses such as Buffer do not survive the wire at ${path} (hydration rebuilds a plain Uint8Array).`
       )
@@ -364,10 +365,31 @@ function encodeValue(
   // prevent.
   const toJSON = (target as { toJSON?: unknown }).toJSON
   const hasHook = typeof toJSON === 'function'
+  //
+  // A deliberate narrowing: a `toJSON` inherited from a *subclass* prototype
+  // (`class D extends Date { toJSON() {...} }`) is treated as stock rather
+  // than as an override, so such a key is identified by its instant instead
+  // of by what the hook renders. Two such keys with the same instant collide
+  // where they once did not — value-equal Dates, which is the rule for Date
+  // segments anyway. The risky half of that trade is closed below: data
+  // refuses Date subclasses outright, so nothing hydrates having quietly lost
+  // its class. Distinguishing an inherited-from-Date hook from an
+  // inherited-from-subclass one needs the chain walked for the property's
+  // owner, which is not worth it for this shape.
   const hasOwnHook =
     hasHook && Object.prototype.hasOwnProperty.call(target, 'toJSON')
   const rendersAsStockDate = isDateValue(value) && !hasOwnHook
   if (rendersAsStockDate) {
+    // Same rule as a Uint8Array subclass: hydration rebuilds a plain Date, so
+    // a subclass would come back as something `instanceof` no longer
+    // recognises and a cache hit after hydration would not return the TRaw
+    // the loader gave. A key is identified by its instant and need not revive
+    // as the same class, so only data refuses.
+    if (mode === 'data' && prototypeDepth(target) !== 2) {
+      throw new QueryError(
+        `Cannot serialize query data: Date subclasses do not survive the wire at ${path} (hydration rebuilds a plain Date).`
+      )
+    }
     // Symbol.toStringTag makes the brand check spoofable, and the prototype
     // methods throw on an impostor. A spoof falls through to the ordinary
     // object path below, where its symbol key is rejected on its own terms.
