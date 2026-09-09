@@ -14,7 +14,7 @@ SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorep
 - Be direct; ask for clarification if needed
 - Minimize code changes; check existing implementations first
 - `bun run build` MUST succeed after every change
-- Maintain 95%+ test coverage; ask before removing tests
+- Maintain 100%+ test coverage; ask before removing tests
 - Add tests for new code in `__tests__/`
 - "SwiftUI" OK in docs/comments, NOT in code/filenames
 - Limit emojis
