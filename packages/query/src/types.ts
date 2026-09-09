@@ -279,6 +279,16 @@ export interface QueryObservation {
   entry(): CacheEntry
 
   /**
+   * Marks this one entry as needing a reload, without touching the entries
+   * beneath its key.
+   *
+   * {@link QueryClient.invalidate} matches by prefix, so an observer of
+   * `['users']` reloading itself through that would also invalidate a fresh
+   * `['users', 1]` that nothing asked about.
+   */
+  markForReload(): void
+
+  /**
    * Whether this observation may treat a hydrated value as fresh, consuming
    * the allowance so no later one can.
    *
@@ -313,6 +323,16 @@ export interface CacheEntry<TRaw = unknown, E = Error> {
   readonly fetchStatus: FetchStatus
   /** Live observation count, as held by {@link QueryClient.observe}. */
   readonly observerCount: number
+  /**
+   * Whether this entry has been explicitly marked as needing a reload, by
+   * {@link QueryClient.invalidate} or by an observer reloading itself.
+   *
+   * Distinct from {@link CacheEntry.isStale}, which is the clock's opinion:
+   * an entry can be fresh and invalidated at once, and it is the invalidation
+   * that makes the cached value ineligible to be served. Cleared by the next
+   * successful load.
+   */
+  readonly invalidated: boolean
   /**
    * Whether the cached value has aged past its `staleTime`.
    *

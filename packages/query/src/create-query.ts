@@ -139,6 +139,21 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
    */
   let observing: string | null | undefined
   let disposed = false
+  /**
+   * Fires when the current value ages out of its freshness window.
+   *
+   * `isStale` is derived from the clock, and nothing in the cache writes when
+   * a window merely elapses, so without this a query with a positive
+   * `staleTime` would keep reporting itself fresh forever after.
+   */
+  let freshnessTimer: ReturnType<typeof setTimeout> | undefined
+
+  function clearFreshnessTimer(): void {
+    if (freshnessTimer !== undefined) {
+      clearTimeout(freshnessTimer)
+      freshnessTimer = undefined
+    }
+  }
 
   /** Runs the loader, applying this observer's retry policy. */
   async function runLoad(
@@ -173,7 +188,9 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
    * refresh rather than a return to loading.
    */
   function forceFetch(resolvedKey: QueryKey): Promise<TRaw> {
-    client.invalidate(resolvedKey)
+    // Through the observation, so only this entry is marked. Prefix
+    // invalidation would take fresh children down with it.
+    observation?.markForReload()
     return fetch(resolvedKey)
   }
 
@@ -213,6 +230,48 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
     return !current.consumeHydrationGrace()
   }
 
+  /**
+   * Publishes an entry's state, and arranges for whatever the entry will not
+   * announce on its own.
+   *
+   * Two things fall to the observer here. A window that elapses is not a
+   * cache event, so `isStale` needs a timer to become true. And an entry
+   * marked for reload — by this query, or by a mutation invalidating a prefix
+   * — has to be reloaded by someone, and the observer watching it is who.
+   */
+  function publish(current: QueryObservation, resolvedKey: QueryKey): void {
+    const entry = current.entry()
+    setState(readState<TRaw, E>(entry))
+    clearFreshnessTimer()
+
+    if (entry.invalidated && entry.fetchStatus === 'idle') {
+      // Already ineligible, so an ordinary fetch runs the loader rather than
+      // serving what is there. Guarded on fetchStatus so the fetch's own
+      // notification cannot start a second one.
+      void fetch(resolvedKey).catch(() => undefined)
+      return
+    }
+
+    const window = entry.options.staleTime
+    if (
+      entry.status === 'success' &&
+      entry.updatedAt !== undefined &&
+      Number.isFinite(window) &&
+      window > 0
+    ) {
+      const remaining = entry.updatedAt + window - Date.now()
+      if (remaining > 0) {
+        freshnessTimer = setTimeout(() => {
+          freshnessTimer = undefined
+          if (!disposed && observation === current) {
+            setState(readState<TRaw, E>(current.entry()))
+          }
+        }, remaining)
+        freshnessTimer.unref?.()
+      }
+    }
+  }
+
   createEffect(() => {
     const resolvedKey = key()
     const isEnabled = enabled()
@@ -246,17 +305,18 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
     if (!isEnabled) {
       // `idle` means never fetched, and that includes "gated off". A
       // previously loaded value is not shown through a closed gate.
+      clearFreshnessTimer()
       setState(idleState())
       return
     }
 
     const current = client.observe(resolvedKey, () => {
-      if (!disposed) {
-        setState(readState<TRaw, E>(current.entry()))
+      if (!disposed && observation === current) {
+        publish(current, resolvedKey)
       }
     })
     observation = current
-    setState(readState<TRaw, E>(current.entry()))
+    publish(current, resolvedKey)
 
     if (untrack(() => shouldFetchOnObserve(current.entry(), current))) {
       // A rejection here is recorded on the entry and surfaced through
@@ -272,6 +332,7 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
   onCleanup(() => {
     disposed = true
     observing = null
+    clearFreshnessTimer()
     observation?.release()
     observation = undefined
   })
@@ -332,16 +393,21 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
       return projection as TData
     },
     invalidate: () => {
+      // Prefix semantics, matching the client method it mirrors: this query's
+      // key and everything beneath it. The reload of *this* entry follows
+      // from the notification, which `publish` acts on.
       client.invalidate(untrack(key))
     },
     cancel: () => {
       observing = null
+      clearFreshnessTimer()
       observation?.release()
       observation = undefined
     },
     dispose: () => {
       disposed = true
       observing = null
+      clearFreshnessTimer()
       observation?.release()
       observation = undefined
     },
