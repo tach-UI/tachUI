@@ -30,8 +30,25 @@ vi.mock('lucide/dist/esm/icons/heart.js', () => ({
   },
 }))
 
-/** The load path always awaits, so even a warm cache resolves a tick later. */
-const settle = () => new Promise(resolve => setTimeout(resolve, 30))
+/**
+ * Waits until the symbol has painted its icon. The load path always awaits —
+ * a dynamic import plus reactive propagation — so a fixed sleep flakes under
+ * parallel-suite load, when settling can take longer than any quiet-machine
+ * delay; polling waits exactly as long as the load needs and resolves
+ * immediately when it is already done.
+ *
+ * Only the positive condition is awaited: spinner-gone and single-child stay
+ * plain assertions at the call sites, so regressions there fail with a clear
+ * diff instead of a timeout.
+ */
+function waitForPaint(host: HTMLElement): Promise<void> {
+  return vi.waitFor(
+    () => {
+      expect(host.querySelector('svg')).not.toBeNull()
+    },
+    { timeout: 2000 }
+  )
+}
 
 /**
  * Flush a synchronous signal change all the way to the DOM.
@@ -63,7 +80,7 @@ describe('Symbol repaint', () => {
 
     expect(host.querySelector('.tachui-symbol__spinner')).not.toBeNull()
 
-    await settle()
+    await waitForPaint(host)
 
     expect(host.querySelector('svg')).not.toBeNull()
     expect(host.querySelector('.tachui-symbol__spinner')).toBeNull()
@@ -82,7 +99,7 @@ describe('Symbol repaint', () => {
       host
     )
 
-    await settle()
+    await waitForPaint(host)
 
     expect(host.querySelector('svg')).not.toBeNull()
     expect(host.querySelector('.tachui-symbol__spinner')).toBeNull()
@@ -95,7 +112,7 @@ describe('Symbol repaint', () => {
       host
     )
 
-    await settle()
+    await waitForPaint(host)
 
     expect(host.querySelector('svg')).not.toBeNull()
   })
@@ -121,7 +138,7 @@ describe('Symbol repaint', () => {
       const second = nodesOf(symbol.build ? symbol.build() : symbol)
       host.appendChild(renderer.render(second[0]) as Element)
 
-      await settle()
+      await waitForPaint(host)
 
       expect(host.querySelector('svg')).not.toBeNull()
       expect(host.querySelector('.tachui-symbol__spinner')).toBeNull()
@@ -135,7 +152,7 @@ describe('Symbol repaint', () => {
 
       const first = nodesOf(symbol)
       host.appendChild(renderer.render(first[0]) as Element)
-      await settle()
+      await waitForPaint(host)
 
       renderer.disposeNode(first[0])
       host.replaceChildren()
@@ -168,7 +185,7 @@ describe('Symbol repaint', () => {
       const wrapper = host.querySelector('.tachui-symbol') as HTMLElement
       expect(wrapper.style.getPropertyValue('width')).toBe('40px')
 
-      await settle()
+      await waitForPaint(host)
 
       expect(host.querySelector('svg')).not.toBeNull()
       expect(wrapper.style.getPropertyValue('padding')).toBe('8px')
@@ -183,7 +200,7 @@ describe('Symbol repaint', () => {
         host
       )
 
-      await settle()
+      await waitForPaint(host)
 
       setScale('large')
       await flushToDom()
@@ -197,7 +214,7 @@ describe('Symbol repaint', () => {
       const host = document.createElement('div')
       renderComponent((Symbol('heart') as any).foregroundColor('red'), host)
 
-      await settle()
+      await waitForPaint(host)
 
       const wrapper = host.querySelector('.tachui-symbol') as HTMLElement
       expect(wrapper.style.getPropertyValue('color')).toBe('red')
@@ -228,13 +245,13 @@ describe('Symbol repaint', () => {
     }
 
     renderComponent(parent, host)
-    await settle()
+    await waitForPaint(host)
 
     expect(host.querySelectorAll('.tachui-symbol > *')).toHaveLength(1)
 
     setBump(1)
     flushSync()
-    await settle()
+    await waitForPaint(host)
 
     expect(host.querySelectorAll('.tachui-symbol > *')).toHaveLength(1)
     expect(host.querySelector('svg')).not.toBeNull()
