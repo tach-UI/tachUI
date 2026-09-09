@@ -18,6 +18,7 @@ SwiftUI-inspired web UI framework for web with SolidJS-style reactivity. Monorep
 - Add tests for new code in `__tests__/`
 - "SwiftUI" OK in docs/comments, NOT in code/filenames
 - Limit emojis
+- Never use ticket or issue names in files or tests
 
 ## Essential Commands
 Standard scripts are in `package.json`. What is not obvious from reading it:
@@ -54,4 +55,3 @@ exist and cannot run (#229).
 - **Absolute Paths**: Use workspace aliases (e.g., `@tachui/core`)
 - **No Side Effects**: Pure functions, explicit reactivity
 - **Design Docs**: Check `planning/` for planning docs; design decisions are captured in GitHub issues directly
-
