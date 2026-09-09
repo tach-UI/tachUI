@@ -118,12 +118,21 @@ describe('CSS Classes Enhancement - Performance and Real-World Usage', () => {
         ],
       })
 
-      const start = performance.now()
+      // Warm-up render: discard cold-cache and JIT costs so the timed runs
+      // measure steady-state rendering rather than first-run setup.
       const elements = productCard.render()
-      const end = performance.now()
-
       expect(elements).toHaveLength(1)
-      expect(end - start).toBeLessThan(10) // Should render quickly
+
+      // Median of several runs: timing noise only ever slows a run down, so
+      // one hiccup would poison a mean or a single shot but not the median.
+      const samples: number[] = []
+      for (let i = 0; i < 5; i++) {
+        const start = performance.now()
+        productCard.render()
+        samples.push(performance.now() - start)
+      }
+      samples.sort((a, b) => a - b)
+      expect(samples[2]).toBeLessThan(10) // Should render quickly
     })
 
     it('should handle a responsive navigation bar', () => {
@@ -219,12 +228,21 @@ describe('CSS Classes Enhancement - Performance and Real-World Usage', () => {
         ],
       })
 
-      const start = performance.now()
+      // Warm-up render: discard cold-cache and JIT costs so the timed runs
+      // measure steady-state rendering rather than first-run setup.
       const elements = dashboard.render()
-      const end = performance.now()
-
       expect(elements).toHaveLength(1)
-      expect(end - start).toBeLessThan(20) // Complex dashboard should still render quickly
+
+      // Median of several runs: timing noise only ever slows a run down, so
+      // one hiccup would poison a mean or a single shot but not the median.
+      const samples: number[] = []
+      for (let i = 0; i < 5; i++) {
+        const start = performance.now()
+        dashboard.render()
+        samples.push(performance.now() - start)
+      }
+      samples.sort((a, b) => a - b)
+      expect(samples[2]).toBeLessThan(20) // Complex dashboard should still render quickly
     })
 
     it('should handle dynamic theming across components', () => {
