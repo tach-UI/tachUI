@@ -206,7 +206,12 @@ export type QueryOptions<TRaw, TData = TRaw, E = Error> = QueryOptionsBase<
  */
 export type FetchQueryOptions<TRaw, E = Error> = Omit<
   QueryOptionsBase<TRaw, TRaw, E>,
-  'placeholderData' | 'enabled' | 'refetchOnFocus' | 'refetchOnReconnect'
+  | 'placeholderData'
+  | 'enabled'
+  | 'retry'
+  | 'retryDelay'
+  | 'refetchOnFocus'
+  | 'refetchOnReconnect'
 > & {
   // `Omit` alone only rejects a fresh object literal. A `QueryOptions` variable
   // carrying `enabled: false` stays structurally assignable and slips through,
@@ -215,6 +220,13 @@ export type FetchQueryOptions<TRaw, E = Error> = Omit<
   select?: never
   placeholderData?: never
   enabled?: never
+  /**
+   * Retry is an observer's policy, applied by `createQuery` around its own
+   * loader, so an imperative fetch would accept these and never read them.
+   * Wrap the retrying in `load` instead, which is what `createQuery` does.
+   */
+  retry?: never
+  retryDelay?: never
   refetchOnFocus?: never
   refetchOnReconnect?: never
 }
@@ -275,6 +287,9 @@ export interface QueryObservation {
    * The entry's state as of now. Cache entries are plain mutable objects, so
    * a reactive result cannot track them by reading; it re-reads this when the
    * observation's change callback fires.
+   *
+   * {@link CacheEntry.data} is the cached value itself rather than a copy —
+   * see that field for what an observer must not do with it.
    */
   entry(): CacheEntry
 
@@ -287,6 +302,15 @@ export interface QueryObservation {
    * `['users', 1]` that nothing asked about.
    */
   markForReload(): void
+
+  /**
+   * Ends the entry's in-flight request without giving up the observation.
+   *
+   * Releasing would do the aborting too, but it also detaches the observer,
+   * freezing a `QueryResult`'s signals wherever they stood. A caller that
+   * cancels a request has not stopped caring about the query.
+   */
+  abortInFlight(): void
 
   /**
    * Whether this observation may treat a hydrated value as fresh, consuming
@@ -315,6 +339,18 @@ export interface QueryObservation {
 export interface CacheEntry<TRaw = unknown, E = Error> {
   readonly key: QueryKey
   readonly hash: QueryKeyHash
+  /**
+   * The cached value.
+   *
+   * `readonly` reaches one level: an observation is handed the cached value
+   * *itself*, not a copy, because a copy cannot carry a class prototype and
+   * throws outright on a `Proxy` — and the cache is entitled to hold both.
+   * Mutating what you read here therefore mutates what every other observer
+   * projects and what a snapshot ships. Treat it as immutable, and return a
+   * new value from the loader rather than editing the old one in place. A
+   * `dehydrate` filter is the exception: its view is a decoupled copy, since
+   * that one is about to cross a process boundary.
+   */
   readonly data: TRaw | undefined
   readonly error: E | undefined
   /** Epoch milliseconds of the last successful write, or undefined if never. */
@@ -330,7 +366,8 @@ export interface CacheEntry<TRaw = unknown, E = Error> {
    * Distinct from {@link CacheEntry.isStale}, which is the clock's opinion:
    * an entry can be fresh and invalidated at once, and it is the invalidation
    * that makes the cached value ineligible to be served. Cleared by the next
-   * successful load.
+   * *completed* load, successful or not — a failure that left the mark set
+   * would be reloaded again the instant it landed, forever.
    */
   readonly invalidated: boolean
   /**

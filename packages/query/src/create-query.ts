@@ -65,6 +65,21 @@ function idleState<TRaw, E>(): ObservedState<TRaw, E> {
   }
 }
 
+/**
+ * Whether a snapshot has a value worth projecting.
+ *
+ * `updatedAt` is written only by a successful load, so it distinguishes a
+ * failure that still has a previous value to show from one that has never had
+ * anything — which is what lets a failed refresh keep rendering rather than
+ * blanking the view.
+ */
+function hasValue<TRaw, E>(snapshot: ObservedState<TRaw, E>): boolean {
+  return (
+    snapshot.status === 'success' ||
+    (snapshot.status === 'error' && snapshot.updatedAt !== undefined)
+  )
+}
+
 function readState<TRaw, E>(entry: CacheEntry): ObservedState<TRaw, E> {
   return {
     data: entry.data as TRaw | undefined,
@@ -97,6 +112,7 @@ function wait(milliseconds: number, signal: AbortSignal): Promise<void> {
       signal.removeEventListener('abort', onAbort)
       resolve()
     }, milliseconds)
+    timer.unref?.()
     function onAbort(): void {
       clearTimeout(timer)
       reject(signal.reason)
@@ -188,6 +204,12 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
    * refresh rather than a return to loading.
    */
   function forceFetch(resolvedKey: QueryKey): Promise<TRaw> {
+    if (observation?.entry().fetchStatus === 'fetching') {
+      // Already loading: joining that execution is what the caller wants.
+      // Marking first would detach it and start a second loader alongside,
+      // so one refetch would cost two requests.
+      return fetch(resolvedKey)
+    }
     // Through the observation, so only this entry is marked. Prefix
     // invalidation would take fresh children down with it.
     observation?.markForReload()
@@ -224,6 +246,14 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
     if (entry.status === 'idle') {
       return true
     }
+    if (entry.status === 'error') {
+      // Checked before freshness and before the grace: an error entry has
+      // nothing worth keeping, and a failure that happens to be recent is
+      // still a failure. Leaving it to staleness would strand a query whose
+      // staleTime has not elapsed, and spending the hydration allowance on
+      // one would suppress the recovery it exists to protect.
+      return true
+    }
     if (!entry.isStale) {
       return false
     }
@@ -245,9 +275,14 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
     clearFreshnessTimer()
 
     if (entry.invalidated && entry.fetchStatus === 'idle') {
-      // Already ineligible, so an ordinary fetch runs the loader rather than
-      // serving what is there. Guarded on fetchStatus so the fetch's own
-      // notification cannot start a second one.
+      // Marked for reload — by this query, by a prefix invalidation, or by
+      // clear() emptying an entry someone is still watching. An ordinary
+      // fetch runs the loader, since a marked entry is not servable. Guarded
+      // on fetchStatus so the fetch's own notification cannot start a second.
+      //
+      // Deliberately not "status is idle": cancel() leaves the entry idle too,
+      // and restarting the request a caller just cancelled is the opposite of
+      // what they asked for.
       void fetch(resolvedKey).catch(() => undefined)
       return
     }
@@ -273,6 +308,12 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
   }
 
   createEffect(() => {
+    if (disposed) {
+      // Signals outlive an explicit dispose(): without this, later activity
+      // re-observes and runs side-effectful loads for an observer nobody is
+      // reading, and holds the entry against eviction until owner cleanup.
+      return
+    }
     const resolvedKey = key()
     const isEnabled = enabled()
     let desired: string | null = null
@@ -284,6 +325,7 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
         // would take down the render that produced it. It surfaces through
         // `error` like any other failure, and `observing` is left unset so a
         // corrected key is picked up on the next run.
+        clearFreshnessTimer()
         observation?.release()
         observation = undefined
         observing = undefined
@@ -310,11 +352,21 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
       return
     }
 
-    const current = client.observe(resolvedKey, () => {
-      if (!disposed && observation === current) {
-        publish(current, resolvedKey)
-      }
-    })
+    let current: QueryObservation
+    try {
+      current = client.observe(resolvedKey, () => {
+        if (!disposed && observation === current) {
+          publish(current, resolvedKey)
+        }
+      })
+    } catch (error) {
+      // A client disposed while this query was mounted. Surfaced like any
+      // other failure rather than thrown from inside the effect, where it
+      // would take down whatever re-rendered.
+      observing = undefined
+      setState({ ...idleState<TRaw, E>(), status: 'error', error: error as E })
+      return
+    }
     observation = current
     publish(current, resolvedKey)
 
@@ -338,21 +390,38 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
   })
 
   // Memoized per observer and outside the cache: one cached TRaw serves many
-  // projections, and each recomputes only when the raw value changes.
+  // projections. Keyed on the raw value's identity rather than on the state
+  // snapshot, which is a fresh object on every notification — otherwise
+  // `select` re-runs for a refetch that returned the same value, and the
+  // projection's identity churns for consumers downstream.
+  let projectedRaw: TRaw | undefined
+  let projectedValue: TData | undefined
+  let hasProjection = false
   const projected = createMemo<TData | undefined>(() => {
-    const raw = state().data
-    if (state().status !== 'success') {
+    const snapshot = state()
+    if (!hasValue(snapshot)) {
       return undefined
     }
-    return options.select === undefined
-      ? (raw as unknown as TData)
-      : options.select(raw as TRaw)
+    const raw = snapshot.data as TRaw
+    if (hasProjection && Object.is(raw, projectedRaw)) {
+      return projectedValue
+    }
+    projectedRaw = raw
+    projectedValue =
+      options.select === undefined
+        ? (raw as unknown as TData)
+        : options.select(raw)
+    hasProjection = true
+    return projectedValue
   })
 
   let lastProjected: TData | undefined
   const data = createMemo<TData | undefined>(() => {
     const value = projected()
-    if (value !== undefined || state().status === 'success') {
+    // Read from the current snapshot, not from whether a projection was ever
+    // made: after a key change the previous one is still cached, and using it
+    // here would suppress the placeholder for the new key.
+    if (hasValue(state())) {
       lastProjected = value
       return value
     }
@@ -399,10 +468,11 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
       client.invalidate(untrack(key))
     },
     cancel: () => {
-      observing = null
-      clearFreshnessTimer()
-      observation?.release()
-      observation = undefined
+      // Aborts the request and keeps observing. Releasing would abort too,
+      // but it also detaches the listener, freezing these signals wherever
+      // they stood — a first fetch cancelled that way reads `loading` and
+      // `fetching` forever.
+      observation?.abortInFlight()
     },
     dispose: () => {
       disposed = true

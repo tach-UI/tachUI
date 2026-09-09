@@ -136,9 +136,12 @@ interface ClientCacheEntry {
   policyClaimed: { staleTime: boolean; gcTime: boolean; snapshot: boolean }
   invalidated: boolean
   /**
-   * Bumped by `invalidate()` and `hydrate()`. A landing response writes back
-   * only for the generation it was started under, so a stale outcome can
-   * neither overwrite fresh data nor silently un-invalidate the entry.
+   * Bumped wherever an in-flight request stops being the one the entry is
+   * waiting for: `invalidate()`, `hydrate()`, an observation marking the
+   * entry for reload or aborting it, and the last observer leaving. A landing
+   * response writes back only for the generation it was started under, so a
+   * stale outcome can neither overwrite fresh data nor silently un-invalidate
+   * the entry.
    */
   generation: number
   inFlight: InFlightRequest | null
@@ -247,10 +250,33 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
    * inside a reactive root to avoid.
    */
   function dropEntries(): void {
+    const observed: ClientCacheEntry[] = []
     for (const entry of entries.values()) {
       cancelEviction(entry)
+      detachFlight(entry)
+      if (entry.listeners.size > 0) {
+        // An observed entry is emptied in place rather than removed. Its
+        // observers hold this object; dropping it would leave them watching
+        // something the cache no longer has, reading whatever it last held
+        // forever while their own reloads populated a different entry
+        // entirely. Emptied and kept, they see the reset and reload.
+        entry.data = undefined
+        entry.error = undefined
+        entry.status = 'idle'
+        entry.updatedAt = undefined
+        entry.hydrationGrace = false
+        // Marked, not merely emptied. An observer reloads what is marked, and
+        // marking says why the entry is empty — cleared, rather than
+        // cancelled, which also leaves an entry idle and must not restart.
+        entry.invalidated = true
+        observed.push(entry)
+      }
     }
     entries.clear()
+    for (const entry of observed) {
+      entries.set(entry.hash, entry)
+      notify(entry)
+    }
   }
 
   function abortActive(): void {
@@ -317,6 +343,28 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // An observer's own failure is its business; the cache has already
         // committed and the remaining observers still need telling.
       }
+    }
+  }
+
+  /**
+   * Ends the entry's in-flight request and frees its slot.
+   *
+   * Aborting alone is not enough: a filled slot tells the next caller that a
+   * request is already on its way, so it waits for one that has been
+   * abandoned. The generation bump makes the abandoned outcome unwelcome if
+   * it lands anyway, and a first fetch that never produced anything returns
+   * to `idle` rather than sitting at `loading` with nothing running.
+   */
+  function detachFlight(entry: ClientCacheEntry): void {
+    if (entry.inFlight === null) {
+      return
+    }
+    entry.inFlight.controller.abort()
+    entry.inFlight = null
+    entry.fetchStatus = 'idle'
+    entry.generation += 1
+    if (entry.status === 'loading') {
+      entry.status = 'idle'
     }
   }
 
@@ -621,6 +669,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         if (!controller.signal.aborted && entry.generation === requestGeneration) {
           entry.error = loadError
           entry.status = 'error'
+          // A completed attempt consumes the mark, success or not. Leaving it
+          // set means an observer that reloads on seeing it marked reloads
+          // again the instant the failure lands, and again, with no delay
+          // between attempts — an unbounded storm against a backend that is
+          // already failing. An error entry is refetched on its status
+          // anyway, and an explicit invalidation still marks it afresh.
+          entry.invalidated = false
           notify(entry)
         }
         throw loadError
@@ -684,6 +739,14 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // dehydrate filter, which is about to ship its argument over a wire,
         // needs a decoupled one.
         entry: () => toCacheEntryView(entry, entry.data),
+        abortInFlight: () => {
+          // Without releasing: the observer is still watching, and a caller
+          // that cancels a request has not stopped caring about the query.
+          // Releasing instead would detach the listener and freeze the
+          // result's signals wherever they happened to be.
+          detachFlight(entry)
+          notify(entry)
+        },
         markForReload: () => {
           // This one entry, not the prefix beneath it. Going through the
           // public invalidate() would mark every key starting with this one,
@@ -720,23 +783,11 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             // with it: nothing is left to receive the result, and a key
             // change must not leave the abandoned key loading. A shared
             // flight survives, because the others are still listening.
-            if (entry.inFlight !== null) {
-              entry.inFlight.controller.abort()
-              // Detached the way invalidate() detaches, not merely aborted.
-              // Leaving the slot filled would tell the next observer — a
-              // synchronous remount above all — that a request is already in
-              // flight for it, so it would wait for one that has been
-              // abandoned and never arrives.
-              entry.inFlight = null
-              entry.fetchStatus = 'idle'
-              entry.generation += 1
-              if (entry.status === 'loading') {
-                // Nothing was ever loaded, and nothing is loading now.
-                entry.status = 'idle'
-              }
-            }
+            // Detached rather than merely aborted: see detachFlight.
+            detachFlight(entry)
             scheduleEviction(entry)
-            notify(entry)
+            // No notify: the count is zero, so every listener has just been
+            // removed and there is nobody left to tell.
           }
         },
       }
@@ -911,7 +962,10 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     const entry = entries.get(hashQueryKey(key))
     return entry === undefined
       ? undefined
-      : toCacheEntryView(entry, structuredClone(entry.data))
+      // Not cloned, for the same reason an observation is not: the cache is
+      // entitled to hold a Proxy or a class instance, and a test that cannot
+      // inspect those is worse than one that reads the live value.
+      : toCacheEntryView(entry, entry.data)
   })
 
   return client
