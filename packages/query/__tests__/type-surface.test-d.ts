@@ -201,6 +201,7 @@ export type CacheEntryShape = Assert<
       readonly status: QueryStatus
       readonly fetchStatus: FetchStatus
       readonly observerCount: number
+      readonly invalidated: boolean
       readonly isStale: boolean
       readonly options: CacheEntryPolicy
     }
@@ -259,7 +260,10 @@ export type QueryClientMembers = Assert<
  * consumes belongs there rather than here.
  */
 export type QueryObservationMembers = Assert<
-  Equals<keyof QueryObservation, 'entry' | 'consumeHydrationGrace' | 'release'>
+  Equals<
+    keyof QueryObservation,
+    'entry' | 'markForReload' | 'consumeHydrationGrace' | 'release'
+  >
 >
 
 export type QueryResultMembers = Assert<

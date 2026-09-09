@@ -13,7 +13,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createRoot, createSignal } from '@tachui/core'
 
 import { createQuery } from '../src/create-query'
-import { createQueryClient, resetDefaultQueryClient } from '../src/client'
+import {
+  createQueryClient,
+  inspectQueryEntry,
+  resetDefaultQueryClient,
+} from '../src/client'
 
 afterEach(() => {
   resetDefaultQueryClient()
@@ -668,5 +672,185 @@ describe('teardown during a retry backoff', () => {
     dispose()
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(attempts).toBe(1)
+  })
+})
+
+describe('reacting to invalidation', () => {
+  it('reloads an observed query when its entry is invalidated', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u'],
+        load: async () => `load ${(loads += 1)}`,
+        staleTime: 60_000,
+        client,
+      })
+    )
+    await settle()
+    expect(loads).toBe(1)
+
+    // The contract is that an observed query refetches, so marking it is not
+    // enough — someone has to act, and the observer watching it is who.
+    value.invalidate()
+    await settle()
+    expect(loads).toBe(2)
+    expect(value.data()).toBe('load 2')
+    dispose()
+  })
+
+  it('reloads when something else invalidates the prefix', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['users', 1],
+        load: async () => `load ${(loads += 1)}`,
+        staleTime: 60_000,
+        client,
+      })
+    )
+    await settle()
+
+    // This is the shape a mutation's `invalidates` will take (#281).
+    client.invalidate(['users'])
+    await settle()
+    expect(loads).toBe(2)
+    expect(value.data()).toBe('load 2')
+    dispose()
+  })
+
+  it('reloads only its own entry when refreshing a prefix key', async () => {
+    const client = createQueryClient()
+    let childLoads = 0
+    const childLoad = async () => `child ${(childLoads += 1)}`
+    await client.fetchQuery({
+      key: () => ['users', 1],
+      load: childLoad,
+      staleTime: 60_000,
+      client,
+    })
+
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['users'],
+        load: async () => 'list',
+        staleTime: 60_000,
+        client,
+      })
+    )
+    await settle()
+    await value.refetch()
+    await settle()
+
+    // Refreshing ['users'] through prefix invalidation would have taken a
+    // fresh ['users', 1] down with it, for a child nothing asked about.
+    expect(inspectQueryEntry(client, ['users', 1])?.isStale).toBe(false)
+    await client.fetchQuery({
+      key: () => ['users', 1],
+      load: childLoad,
+      staleTime: 60_000,
+      client,
+    })
+    expect(childLoads).toBe(1)
+    dispose()
+  })
+})
+
+describe('data the cache is allowed to hold', () => {
+  it('projects a class instance with its methods intact', async () => {
+    const client = createQueryClient()
+    class User {
+      constructor(readonly name: string) {}
+      greet(): string {
+        return `hi ${this.name}`
+      }
+    }
+
+    // A structured copy would strip the prototype, so select would call a
+    // method that no longer exists.
+    const { value, dispose } = withOwner(() =>
+      createQuery<User, string>({
+        key: () => ['u'],
+        load: async () => new User('Ada'),
+        select: (user) => user.greet(),
+        client,
+      })
+    )
+    await settle()
+
+    expect(value.data()).toBe('hi Ada')
+    dispose()
+  })
+
+  it('does not wedge on data that cannot be cloned', async () => {
+    const client = createQueryClient()
+    const { value, dispose } = withOwner(() =>
+      createQuery<{ id: number }>({
+        key: () => ['p'],
+        load: async () => new Proxy({ id: 1 }, {}),
+        client,
+      })
+    )
+    await settle()
+
+    // structuredClone throws DataCloneError for every Proxy; the query is
+    // entitled to cache one even though it could never be dehydrated.
+    expect(value.status()).toBe('success')
+    expect(value.data()?.id).toBe(1)
+    dispose()
+  })
+})
+
+describe('remounting', () => {
+  it('fetches again after the previous observer left mid-flight', async () => {
+    const client = createQueryClient()
+    let starts = 0
+    const first = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u'],
+        load: () =>
+          new Promise<string>(() => {
+            starts += 1
+          }),
+        client,
+      })
+    )
+    await settle()
+    expect(starts).toBe(1)
+    first.dispose()
+
+    // The abandoned request is detached, not merely aborted: leaving the slot
+    // filled would tell the remount a request was already in flight for it,
+    // so it would wait for one that never arrives.
+    const second = withOwner(() =>
+      createQuery<string>({ key: () => ['u'], load: async () => 'second', client })
+    )
+    await settle()
+    expect(second.value.status()).toBe('success')
+    expect(second.value.data()).toBe('second')
+    second.dispose()
+  })
+})
+
+describe('freshness over time', () => {
+  it('reports itself stale once the window elapses', async () => {
+    const client = createQueryClient()
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u'],
+        load: async () => 'v',
+        staleTime: 20,
+        client,
+      })
+    )
+    await settle()
+    expect(value.isStale()).toBe(false)
+
+    // A window elapsing is not a cache event, so nothing would announce it;
+    // the observer schedules its own wake-up.
+    await new Promise((resolve) => setTimeout(resolve, 40))
+    expect(value.isStale()).toBe(true)
+    dispose()
   })
 })

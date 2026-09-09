@@ -29,3 +29,13 @@ it would double every server-rendered page (#291).
 `QueryClient.observe` grows an optional change callback, and a `QueryObservation`
 now exposes the entry state an observer renders plus the one-shot hydration
 allowance.
+
+An observed query now reloads when its entry is invalidated — by its own
+`invalidate()`, or by anything invalidating a prefix above it, which is the
+shape a mutation's `invalidates` will take (#281). Reloading one query no
+longer invalidates the entries beneath its key, `isStale` becomes true when
+the freshness window elapses rather than only on the next cache event, and an
+observer projects the cached value itself, so class instances keep their
+methods and data that cannot be cloned no longer wedges the query. A request
+abandoned by its last observer is detached rather than merely aborted, so a
+remount fetches instead of waiting on a result that never arrives.

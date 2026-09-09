@@ -415,6 +415,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       status: entry.status,
       fetchStatus: entry.fetchStatus,
       observerCount: entry.observerCount,
+      invalidated: entry.invalidated,
       isStale: isStale(entry),
       options: {
         staleTime: entry.staleTime,
@@ -675,7 +676,28 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       }
       let released = false
       return {
-        entry: () => toCacheEntryView(entry, structuredClone(entry.data)),
+        // The cached value itself, not a copy. An observer projects TRaw
+        // through `select`, and a structured clone would strip class
+        // prototypes — methods and all — and throw outright for a Proxy or a
+        // function, wedging a query whose data the cache is perfectly
+        // entitled to hold. The view is read-only by contract; only the
+        // dehydrate filter, which is about to ship its argument over a wire,
+        // needs a decoupled one.
+        entry: () => toCacheEntryView(entry, entry.data),
+        markForReload: () => {
+          // This one entry, not the prefix beneath it. Going through the
+          // public invalidate() would mark every key starting with this one,
+          // so an observer of ['users'] refreshing itself would also
+          // invalidate a perfectly fresh ['users', 1].
+          entry.invalidated = true
+          entry.generation += 1
+          if (entry.inFlight !== null) {
+            entry.inFlight = null
+            entry.fetchStatus = 'idle'
+          }
+          scheduleEviction(entry)
+          notify(entry)
+        },
         consumeHydrationGrace: () => {
           const granted = entry.hydrationGrace
           entry.hydrationGrace = false
@@ -698,8 +720,23 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             // with it: nothing is left to receive the result, and a key
             // change must not leave the abandoned key loading. A shared
             // flight survives, because the others are still listening.
-            entry.inFlight?.controller.abort()
+            if (entry.inFlight !== null) {
+              entry.inFlight.controller.abort()
+              // Detached the way invalidate() detaches, not merely aborted.
+              // Leaving the slot filled would tell the next observer — a
+              // synchronous remount above all — that a request is already in
+              // flight for it, so it would wait for one that has been
+              // abandoned and never arrives.
+              entry.inFlight = null
+              entry.fetchStatus = 'idle'
+              entry.generation += 1
+              if (entry.status === 'loading') {
+                // Nothing was ever loaded, and nothing is loading now.
+                entry.status = 'idle'
+              }
+            }
             scheduleEviction(entry)
+            notify(entry)
           }
         },
       }
