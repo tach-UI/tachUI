@@ -131,31 +131,6 @@ describe('enabled', () => {
     expect(value.isLoading()).toBe(false)
     dispose()
   })
-
-  it('fetches once the gate opens', async () => {
-    const client = createQueryClient()
-    let open = false
-    let loads = 0
-    const { dispose } = withOwner(() =>
-      createQuery<string>({
-        key: () => ['gated'],
-        load: async () => {
-          loads += 1
-          return 'v'
-        },
-        enabled: () => open,
-        client,
-      })
-    )
-    await settle()
-    expect(loads).toBe(0)
-
-    open = true
-    // The gate is read through the same memo the key is, so re-running the
-    // effect is what a signal change would do.
-    dispose()
-    expect(loads).toBe(0)
-  })
 })
 
 describe('select', () => {
@@ -1092,5 +1067,80 @@ describe('shared requests', () => {
     expect(second.value.data()).toBe('shared')
     expect(loads).toBe(1)
     second.dispose()
+  })
+})
+
+describe('client disposal', () => {
+  it('starts no replacement load while tearing down', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const { dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u'],
+        load: async () => `load ${(loads += 1)}`,
+        staleTime: 60_000,
+        client,
+      })
+    )
+    await settle()
+    expect(loads).toBe(1)
+
+    // Only clear() resets and reloads. Doing it on dispose would run real
+    // loaders, with real side effects, into a cache nobody will read again.
+    client.dispose()
+    await settle()
+    expect(loads).toBe(1)
+    dispose()
+  })
+})
+
+describe('policy on a hydrated entry', () => {
+  it('claims the observer freshness even when it declines to fetch', async () => {
+    const client = createQueryClient()
+    client.hydrate({
+      queries: [{ key: ['u'], data: 'from server', updatedAt: Date.now() }],
+    })
+    let loads = 0
+    const load = async () => `load ${(loads += 1)}`
+
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({ key: () => ['u'], load, staleTime: 60_000, client })
+    )
+    await settle()
+
+    expect(loads).toBe(0)
+    // fetchQuery is otherwise the only thing that claims policy, so a
+    // hydrated entry would keep the default window of 0, read as stale the
+    // moment its hydration allowance was spent, and refetch on remount.
+    expect(inspectQueryEntry(client, ['u'])?.options.staleTime).toBe(60_000)
+    expect(value.isStale()).toBe(false)
+    dispose()
+  })
+})
+
+describe('refetch without an observation', () => {
+  it('reloads and projects even while gated off', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const load = async () => `load ${(loads += 1)}`
+    await client.fetchQuery({ key: () => ['u'], load, staleTime: 60_000 })
+
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u'],
+        load,
+        enabled: false,
+        staleTime: 60_000,
+        client,
+      })
+    )
+    await settle()
+
+    // `enabled: false` never observes, so there is nothing to mark — and
+    // reading the observer's state afterwards would report undefined for a
+    // load that succeeded.
+    await expect(value.refetch()).resolves.toBe('load 2')
+    expect(loads).toBe(2)
+    dispose()
   })
 })

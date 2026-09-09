@@ -53,3 +53,16 @@ failed refresh, joins an in-flight request rather than starting a second, runs
 `select` only when the raw value changes, and starts no work after an explicit
 `dispose()`. `FetchQueryOptions` now rejects `retry`/`retryDelay`, which the
 imperative path never read.
+
+A third round closes the remainder. `dispose()` no longer resets and reloads
+observed entries — that is `clear()`'s behaviour, and doing it during teardown
+started real loader executions into a cache nobody would read. An observer
+claims its cache policy when it observes, not only when it fetches, so a
+hydrated entry keeps the freshness window its query configured instead of the
+default. `refetch()` marks and reloads the key it was asked for rather than
+whichever entry the query happens to be observing, so it works while gated off
+and cannot reload the key being left during a key change; it also returns the
+value it loaded rather than reading state that may not have been published.
+`clear()` decides retention by observer count rather than by registered
+callbacks, and releases the entry's claimed policy along with its data. Two
+observations sharing one change callback now both stay notified.
