@@ -112,6 +112,24 @@ interface ClientCacheEntry {
    * is not finite.
    */
   gcTimer: ReturnType<typeof setTimeout> | null
+  /**
+   * Observers to notify when this entry's state changes. Entries are plain
+   * mutable objects, so a reactive result cannot track them by reading; the
+   * writes announce themselves instead.
+   */
+  readonly listeners: Set<() => void>
+  /**
+   * Set by `hydrate()` and consumed by the first observation that would
+   * otherwise refetch this entry for being stale.
+   *
+   * A snapshot arrives already stale at the default `staleTime` of 0, so
+   * without this every server-rendered page would refetch everything it just
+   * shipped on first paint — the double fetch #291's criterion forbids. The
+   * server produced this value moments ago as part of the same page load, so
+   * one observation is allowed to trust it; anything after that is ordinary
+   * staleness.
+   */
+  hydrationGrace: boolean
   staleTime: number
   gcTime: number
   snapshot: boolean
@@ -262,6 +280,8 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       updatedAt: undefined,
       observerCount: 0,
       gcTimer: null,
+      listeners: new Set(),
+      hydrationGrace: false,
       staleTime: policy.staleTime ?? DEFAULT_STALE_TIME,
       gcTime: policy.gcTime ?? DEFAULT_GC_TIME,
       snapshot: policy.snapshot ?? DEFAULT_SNAPSHOT,
@@ -281,6 +301,23 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     entries.set(hash, entry)
     scheduleEviction(entry)
     return entry
+  }
+
+  /**
+   * Announces a state change to this entry's observers. Called after the
+   * write rather than around it, so a listener always reads settled state.
+   * A listener that throws must not stop the others from hearing, nor leave
+   * the write half-announced.
+   */
+  function notify(entry: ClientCacheEntry): void {
+    for (const listener of [...entry.listeners]) {
+      try {
+        listener()
+      } catch {
+        // An observer's own failure is its business; the cache has already
+        // committed and the remaining observers still need telling.
+      }
+    }
   }
 
   function cancelEviction(entry: ClientCacheEntry): void {
@@ -483,6 +520,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       entry.status = 'loading'
     }
     entry.fetchStatus = 'fetching'
+    notify(entry)
     const requestGeneration = entry.generation
 
     // The slot is claimed before the loader runs: a loader that reentrantly
@@ -526,6 +564,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         entry.status === 'loading'
       ) {
         entry.status = 'idle'
+        notify(entry)
       }
     }
 
@@ -542,6 +581,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // Retention resumes from the settle rather than from the insert: a
         // load slower than gcTime must not resolve into an evicted entry.
         scheduleEviction(entry)
+        notify(entry)
       }
     }
 
@@ -570,6 +610,8 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           entry.status = 'success'
           entry.updatedAt = Date.now()
           entry.invalidated = false
+          entry.hydrationGrace = false
+          notify(entry)
         }
         return loaded
       },
@@ -578,6 +620,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         if (!controller.signal.aborted && entry.generation === requestGeneration) {
           entry.error = loadError
           entry.status = 'error'
+          notify(entry)
         }
         throw loadError
       }
@@ -611,7 +654,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       )
     },
 
-    observe(key: QueryKey): QueryObservation {
+    observe(key: QueryKey, onChange?: () => void): QueryObservation {
       ensureUsable('observe')
       const encoded = encodeQueryKey(key)
       const hash = hashEncodedKey(encoded)
@@ -627,8 +670,17 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         )
       entry.observerCount += 1
       cancelEviction(entry)
+      if (onChange !== undefined) {
+        entry.listeners.add(onChange)
+      }
       let released = false
       return {
+        entry: () => toCacheEntryView(entry, structuredClone(entry.data)),
+        consumeHydrationGrace: () => {
+          const granted = entry.hydrationGrace
+          entry.hydrationGrace = false
+          return granted
+        },
         release: () => {
           // Idempotent: an owner may clean up more than once, and a second
           // release must not drive the count negative and retain the entry
@@ -637,8 +689,16 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             return
           }
           released = true
+          if (onChange !== undefined) {
+            entry.listeners.delete(onChange)
+          }
           entry.observerCount -= 1
           if (entry.observerCount === 0) {
+            // The last observer leaving takes any request it was waiting on
+            // with it: nothing is left to receive the result, and a key
+            // change must not leave the abandoned key loading. A shared
+            // flight survives, because the others are still listening.
+            entry.inFlight?.controller.abort()
             scheduleEviction(entry)
           }
         },
@@ -666,6 +726,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             entry.fetchStatus = 'idle'
           }
           scheduleEviction(entry)
+          notify(entry)
         }
       }
     },
@@ -782,10 +843,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // release the slot so a later fetch serves the restored data instead
         // of sharing the stale flight (its waiter still settles, but the
         // generation guard drops its outcome). `fetchStatus` mirrors the slot.
+        entry.hydrationGrace = true
         entry.generation += 1
         entry.inFlight = null
         entry.fetchStatus = 'idle'
         scheduleEviction(entry)
+        notify(entry)
       }
     },
 

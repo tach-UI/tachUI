@@ -252,13 +252,14 @@ export type QueryClientMembers = Assert<
 >
 
 /**
- * An observation is a release handle and nothing more. Widening it later is
- * additive, but growing it into a second query-result surface is not what it
- * is for: `createQuery` (#280) returns `QueryResult`, and this only governs
- * how long the entry behind it is retained.
+ * An observation is the seam `createQuery` (#280) sits on: it retains the
+ * entry, reads its state, and spends the one allowance that lets a hydrated
+ * value be treated as fresh. It is deliberately not a second query-result
+ * surface — `createQuery` returns `QueryResult`, and anything an application
+ * consumes belongs there rather than here.
  */
 export type QueryObservationMembers = Assert<
-  Equals<keyof QueryObservation, 'release'>
+  Equals<keyof QueryObservation, 'entry' | 'consumeHydrationGrace' | 'release'>
 >
 
 export type QueryResultMembers = Assert<

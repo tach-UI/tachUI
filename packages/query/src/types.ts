@@ -272,9 +272,29 @@ export interface CacheEntryPolicy {
  */
 export interface QueryObservation {
   /**
+   * The entry's state as of now. Cache entries are plain mutable objects, so
+   * a reactive result cannot track them by reading; it re-reads this when the
+   * observation's change callback fires.
+   */
+  entry(): CacheEntry
+
+  /**
+   * Whether this observation may treat a hydrated value as fresh, consuming
+   * the allowance so no later one can.
+   *
+   * A snapshot arrives already stale at the default `staleTime` of 0, so
+   * without this every server-rendered page would refetch everything it just
+   * shipped on first paint. The server produced the value moments ago as part
+   * of the same page load, so one observation is allowed to trust it.
+   */
+  consumeHydrationGrace(): boolean
+
+  /**
    * Drops this observation. When the last one for an entry is released the
-   * `gcTime` timer starts; observing again before it fires cancels it.
-   * Releasing twice is a no-op, so an owner may clean up more than once.
+   * `gcTime` timer starts, and any request still in flight for it is aborted
+   * — nothing is left to receive the result. Observing again before the timer
+   * fires cancels it. Releasing twice is a no-op, so an owner may clean up
+   * more than once.
    */
   release(): void
 }
@@ -379,7 +399,7 @@ export interface QueryClient {
    * This is the retention mechanism `createQuery` (#280) builds on; it starts
    * no request of its own.
    */
-  observe(key: QueryKey): QueryObservation
+  observe(key: QueryKey, onChange?: () => void): QueryObservation
 
   /**
    * Serializes cached data for transfer to the client.
