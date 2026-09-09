@@ -39,3 +39,17 @@ observer projects the cached value itself, so class instances keep their
 methods and data that cannot be cloned no longer wedges the query. A request
 abandoned by its last observer is detached rather than merely aborted, so a
 remount fetches instead of waiting on a result that never arrives.
+
+Closes a second review round. A completed load now clears the reload mark
+whether it succeeded or not — leaving it set meant a failed reload was
+reloaded again the instant it landed, with no delay, until the process ran out
+of memory. `cancel()` aborts the request without giving up the observation, so
+the result stays usable instead of freezing at `loading`. `clear()` empties
+and marks entries that still have observers rather than dropping them, so an
+observer sees the reset and reloads instead of reading a value the cache no
+longer holds. An observer re-observing an entry that failed retries it even
+while the failure is fresh, keeps rendering the value it already had through a
+failed refresh, joins an in-flight request rather than starting a second, runs
+`select` only when the raw value changes, and starts no work after an explicit
+`dispose()`. `FetchQueryOptions` now rejects `retry`/`retryDelay`, which the
+imperative path never read.

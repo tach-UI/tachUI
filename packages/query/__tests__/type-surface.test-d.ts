@@ -262,7 +262,11 @@ export type QueryClientMembers = Assert<
 export type QueryObservationMembers = Assert<
   Equals<
     keyof QueryObservation,
-    'entry' | 'markForReload' | 'consumeHydrationGrace' | 'release'
+    | 'entry'
+    | 'markForReload'
+    | 'abortInFlight'
+    | 'consumeHydrationGrace'
+    | 'release'
   >
 >
 
@@ -397,8 +401,19 @@ export const fetchQueryAcceptsCachePolicy: FetchQueryOptions<RawUser> = {
   ...fetchBase,
   staleTime: 30_000,
   gcTime: 60_000,
-  retry: 2,
   snapshot: true,
+}
+
+/**
+ * Retry is an observer's policy: `createQuery` applies it around its own
+ * loader, and nothing reads it on the imperative path. Accepting it there
+ * would be silent no-op configuration, so it is rejected like the other
+ * per-observer options.
+ */
+export const fetchQueryRejectsRetry: FetchQueryOptions<RawUser> = {
+  ...fetchBase,
+  // @ts-expect-error - retry is applied by an observer, not by fetchQuery
+  retry: 2,
 }
 
 /**

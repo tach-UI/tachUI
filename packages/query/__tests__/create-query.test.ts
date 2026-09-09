@@ -854,3 +854,243 @@ describe('freshness over time', () => {
     dispose()
   })
 })
+
+describe('a reload that fails', () => {
+  it('stops after one attempt instead of looping', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const { value } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u'],
+        load: async () => {
+          loads += 1
+          if (loads === 1) {
+            return 'first'
+          }
+          throw new Error('backend down')
+        },
+        staleTime: 60_000,
+        client,
+      })
+    )
+    await settle()
+    expect(loads).toBe(1)
+
+    // A completed attempt consumes the reload mark. Leaving it set means the
+    // failure notification looks like "needs reloading" again, and the next
+    // reload fails the same way, with no delay between attempts.
+    await expect(value.refetch()).rejects.toThrow('backend down')
+    await settle()
+    await settle()
+
+    expect(loads).toBe(2)
+    expect(value.status()).toBe('error')
+    expect(value.error()?.message).toBe('backend down')
+  })
+
+  it('keeps rendering the value it already had', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u'],
+        load: async () => {
+          loads += 1
+          if (loads === 1) {
+            return 'first'
+          }
+          throw new Error('down')
+        },
+        staleTime: 60_000,
+        client,
+      })
+    )
+    await settle()
+
+    await expect(value.refetch()).rejects.toThrow('down')
+    await settle()
+
+    // A failed background refresh must not blank the view.
+    expect(value.status()).toBe('error')
+    expect(value.data()).toBe('first')
+    dispose()
+  })
+
+  it('retries on re-observation even while the failure is fresh', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const load = async () => {
+      loads += 1
+      if (loads === 1) {
+        throw new Error('down')
+      }
+      return 'recovered'
+    }
+    const first = withOwner(() =>
+      createQuery<string>({ key: () => ['u'], load, staleTime: 60_000, client })
+    )
+    await settle()
+    expect(first.value.status()).toBe('error')
+    first.dispose()
+
+    // An error has nothing worth keeping, so freshness must not strand it.
+    const second = withOwner(() =>
+      createQuery<string>({ key: () => ['u'], load, staleTime: 60_000, client })
+    )
+    await settle()
+    expect(second.value.data()).toBe('recovered')
+    second.dispose()
+  })
+})
+
+describe('cancel()', () => {
+  it('aborts the request and keeps the result usable', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u'],
+        load: () =>
+          new Promise<string>(() => {
+            loads += 1
+          }),
+        client,
+      })
+    )
+    await settle()
+    expect(value.fetchStatus()).toBe('fetching')
+
+    value.cancel()
+    await settle()
+
+    // Releasing the observation would abort too, but it also detaches the
+    // listener and freezes these signals at loading/fetching forever.
+    expect(value.fetchStatus()).toBe('idle')
+    expect(value.status()).toBe('idle')
+
+    // Still observing, so it can still be driven — which is the whole point
+    // of aborting without releasing.
+    void value.refetch().catch(() => undefined)
+    await settle()
+    expect(loads).toBe(2)
+    expect(value.fetchStatus()).toBe('fetching')
+    dispose()
+  })
+})
+
+describe('client-level teardown', () => {
+  it('resets an observed query when the cache is cleared', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u'],
+        load: async () => `load ${(loads += 1)}`,
+        staleTime: 60_000,
+        client,
+      })
+    )
+    await settle()
+    expect(value.data()).toBe('load 1')
+
+    // Dropping the entry silently would leave the observer reading a value
+    // the cache no longer has, while its own reloads populated a different
+    // entry it was not watching.
+    client.clear()
+    await settle()
+    expect(loads).toBe(2)
+    expect(value.data()).toBe('load 2')
+    dispose()
+  })
+
+  it('starts no work after an explicit dispose()', async () => {
+    const client = createQueryClient()
+    const [id, setId] = createSignal(1)
+    let loads = 0
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['u', id()],
+        load: async () => `load ${(loads += 1)}`,
+        client,
+      })
+    )
+    await settle()
+    expect(loads).toBe(1)
+
+    value.dispose()
+    setId(2)
+    await settle()
+
+    // Signals outlive dispose(); a dead observer must not re-observe or load.
+    expect(loads).toBe(1)
+    dispose()
+  })
+})
+
+describe('projection identity', () => {
+  it('re-runs select only when the raw value changes', async () => {
+    const client = createQueryClient()
+    const shared = { id: 1 }
+    let selects = 0
+    const { value, dispose } = withOwner(() =>
+      createQuery<{ id: number }, string>({
+        key: () => ['u'],
+        // The same object every time, as a cache serving unchanged data does.
+        load: async () => shared,
+        select: (raw) => {
+          selects += 1
+          return `id=${raw.id}`
+        },
+        staleTime: 60_000,
+        client,
+      })
+    )
+    await settle()
+    // Memos are lazy, so the projection runs on first read.
+    const firstProjection = value.data()
+    expect(selects).toBe(1)
+
+    await value.refetch()
+    await settle()
+    await value.refetch()
+    await settle()
+
+    // Every notification replaces the state snapshot, so keying the memo on
+    // that would re-project for refetches that changed nothing — and hand
+    // consumers a new identity each time.
+    expect(selects).toBe(1)
+    expect(value.data()).toBe(firstProjection)
+    dispose()
+  })
+})
+
+describe('shared requests', () => {
+  it('survives one of two observers leaving', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    let release!: (value: string) => void
+    const load = () => {
+      loads += 1
+      return new Promise<string>((resolve) => {
+        release = resolve
+      })
+    }
+    const first = withOwner(() =>
+      createQuery<string>({ key: () => ['u'], load, client })
+    )
+    const second = withOwner(() =>
+      createQuery<string>({ key: () => ['u'], load, client })
+    )
+    await settle()
+    expect(loads).toBe(1)
+
+    // One leaving is not the last: the other is still waiting on the result.
+    first.dispose()
+    release('shared')
+    await settle()
+
+    expect(second.value.data()).toBe('shared')
+    expect(loads).toBe(1)
+    second.dispose()
+  })
+})
