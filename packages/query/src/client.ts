@@ -249,22 +249,42 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
    * past the client that owned it, which is the leak this cache exists
    * inside a reactive root to avoid.
    */
-  function dropEntries(): void {
+  function dropEntries(retainObserved: boolean): void {
     const observed: ClientCacheEntry[] = []
     for (const entry of entries.values()) {
       cancelEviction(entry)
       detachFlight(entry)
-      if (entry.listeners.size > 0) {
+      // Only clear() resets and reloads. On dispose the client is finished:
+      // notifying observers there would have them start replacement loads —
+      // real loader executions, with real side effects — whose results land
+      // in a map nobody will ever read again.
+      if (retainObserved && entry.observerCount > 0) {
         // An observed entry is emptied in place rather than removed. Its
         // observers hold this object; dropping it would leave them watching
         // something the cache no longer has, reading whatever it last held
         // forever while their own reloads populated a different entry
         // entirely. Emptied and kept, they see the reset and reload.
+        //
+        // Keyed on the observer count rather than on registered callbacks:
+        // observe() does not require one, and such an observation still reads
+        // the entry through entry().
         entry.data = undefined
         entry.error = undefined
         entry.status = 'idle'
         entry.updatedAt = undefined
         entry.hydrationGrace = false
+        // Policy is released with the data. What is left is a placeholder,
+        // and a placeholder should be configurable by whoever fills it —
+        // which is the observer's own reload, carrying the same options it
+        // would have configured a new entry with.
+        entry.staleTime = DEFAULT_STALE_TIME
+        entry.gcTime = DEFAULT_GC_TIME
+        entry.snapshot = DEFAULT_SNAPSHOT
+        entry.policyClaimed = {
+          staleTime: false,
+          gcTime: false,
+          snapshot: false,
+        }
         // Marked, not merely emptied. An observer reloads what is marked, and
         // marking says why the entry is empty — cleared, rather than
         // cancelled, which also leaves an entry idle and must not restart.
@@ -443,6 +463,53 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
    * structured clone throws for values the encoding handles fine (a Proxy
    * above all), and one awkward entry must not take down a whole snapshot.
    */
+  /**
+   * Applies a caller's cache policy to an entry.
+   *
+   * Each field is first-writer-wins while unclaimed. An entry restored by
+   * `hydrate()` starts unclaimed and picks up the developer's configuration
+   * from the first query that names the key; once any caller sets a freshness
+   * field — even to its default value — a later caller sharing the key cannot
+   * silently revoke it.
+   *
+   * Called from `observe` as well as `fetchQuery`, because an observer that
+   * declines to fetch still declares a policy. A hydrated entry observed with
+   * a `staleTime` would otherwise keep the default of 0, read as stale the
+   * moment the hydration allowance was spent, and refetch on the next mount
+   * despite the window its query configured.
+   */
+  function claimPolicy(
+    entry: ClientCacheEntry,
+    policy: { staleTime?: number; gcTime?: number; snapshot?: boolean }
+  ): void {
+    if (policy.staleTime !== undefined && !entry.policyClaimed.staleTime) {
+      entry.staleTime = policy.staleTime
+      entry.policyClaimed.staleTime = true
+    }
+    if (policy.gcTime !== undefined && !entry.policyClaimed.gcTime) {
+      entry.gcTime = policy.gcTime
+      entry.policyClaimed.gcTime = true
+      // The pending timer was armed against the default window, so it has to
+      // be replaced or the configured one never takes effect — the shape
+      // hydrate() then a first fetch produces, which #291's SSR flow relies
+      // on. This restarts a full window from the claim rather than preserving
+      // elapsed time, matching how invalidate() and hydrate() restart it, and
+      // it happens at most once per entry.
+      scheduleEviction(entry)
+    }
+    // snapshot is veto-wins, not first-writer-wins: false is the safe value
+    // (it keeps data out of the SSR payload), so an explicit opt-out
+    // overrides a claimed opt-in and seals the entry — a later opt-in cannot
+    // silently re-ship another consumer's opted-out data.
+    if (
+      policy.snapshot !== undefined &&
+      (!entry.policyClaimed.snapshot || policy.snapshot === false)
+    ) {
+      entry.snapshot = policy.snapshot
+      entry.policyClaimed.snapshot = true
+    }
+  }
+
   function toCacheEntryView(
     entry: ClientCacheEntry,
     dataCopy: unknown
@@ -522,36 +589,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       // would warm nothing with no signal at all.
       throw markDispatchError(error)
     }
-    // Explicitly passed options upgrade the entry policy — but only while the
-    // field is still unclaimed. An entry restored by hydrate() starts
-    // unclaimed and picks up the developer's configuration from the first
-    // query that names the key; once any caller sets a freshness field —
-    // even to its default value — a later caller sharing the key cannot
-    // silently revoke it. snapshot is the exception: it is veto-wins (see
-    // below), because only false keeps data out of the SSR payload.
-    if (options.staleTime !== undefined && !entry.policyClaimed.staleTime) {
-      entry.staleTime = options.staleTime
-      entry.policyClaimed.staleTime = true
-    }
-    if (options.gcTime !== undefined && !entry.policyClaimed.gcTime) {
-      entry.gcTime = options.gcTime
-      entry.policyClaimed.gcTime = true
-      // The pending timer was armed against the default window, so it has to
-      // be replaced or the configured one never takes effect — the shape
-      // hydrate() then a first fetch produces, which #291's SSR flow relies
-      // on. This restarts a full window from the claim rather than preserving
-      // elapsed time, matching how invalidate() and hydrate() restart it, and
-      // it happens at most once per entry.
-      scheduleEviction(entry)
-    }
-    // snapshot is veto-wins, not first-writer-wins: false is the safe value
-    // (it keeps data out of the SSR payload), so an explicit opt-out
-    // overrides a claimed opt-in and seals the entry — a later opt-in cannot
-    // silently re-ship another consumer's opted-out data.
-    if (options.snapshot !== undefined && (!entry.policyClaimed.snapshot || options.snapshot === false)) {
-      entry.snapshot = options.snapshot
-      entry.policyClaimed.snapshot = true
-    }
+    claimPolicy(entry, options)
     const activeRequest = entry.inFlight
     if (activeRequest !== null) {
       return activeRequest.promise as Promise<TRaw>
@@ -710,7 +748,11 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       )
     },
 
-    observe(key: QueryKey, onChange?: () => void): QueryObservation {
+    observe(
+      key: QueryKey,
+      onChange?: () => void,
+      policy?: { staleTime?: number; gcTime?: number; snapshot?: boolean }
+    ): QueryObservation {
       ensureUsable('observe')
       const encoded = encodeQueryKey(key)
       const hash = hashEncodedKey(encoded)
@@ -724,10 +766,18 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           hashEncodedSegments(encoded),
           {}
         )
+      if (policy !== undefined) {
+        claimPolicy(entry, policy)
+      }
       entry.observerCount += 1
       cancelEviction(entry)
-      if (onChange !== undefined) {
-        entry.listeners.add(onChange)
+      // Wrapped per observation rather than stored directly: a Set holds one
+      // copy of a function, so two observations sharing a callback would
+      // register once, and releasing either would silence the other.
+      const listener =
+        onChange === undefined ? undefined : () => { onChange() }
+      if (listener !== undefined) {
+        entry.listeners.add(listener)
       }
       let released = false
       return {
@@ -774,8 +824,8 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             return
           }
           released = true
-          if (onChange !== undefined) {
-            entry.listeners.delete(onChange)
+          if (listener !== undefined) {
+            entry.listeners.delete(listener)
           }
           entry.observerCount -= 1
           if (entry.observerCount === 0) {
@@ -943,16 +993,18 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     clear(): void {
       ensureUsable('clear')
       abortActive()
-      dropEntries()
+      dropEntries(true)
     },
 
     dispose(): void {
       if (disposed) {
         return
       }
-      abortActive()
-      dropEntries()
+      // Marked first: an observer notified during teardown must find the
+      // client already unusable rather than be told to reload it.
       disposed = true
+      abortActive()
+      dropEntries(false)
       disposeClientRoot()
       onDispose?.()
     },

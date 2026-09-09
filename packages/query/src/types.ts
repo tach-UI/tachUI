@@ -259,7 +259,16 @@ export interface QueryResult<TData, E = Error> {
   refetch(): Promise<TData>
   /** Marks this query's entry stale and refetches it if observed. */
   invalidate(): void
-  /** Aborts the in-flight request, if any. */
+  /**
+   * Aborts the in-flight request, if any, and keeps observing — the result
+   * stays usable and can be driven again.
+   *
+   * A request is per entry rather than per observer, so cancelling one that
+   * two observers share ends it for both; the other is left with whatever the
+   * entry held, and reloads on its next key change or explicit action. This
+   * matches how cancellation works elsewhere in the ecosystem: an observer
+   * that wants only to stop listening should release its owner instead.
+   */
   cancel(): void
   /** Releases this observer. Called automatically on owner disposal. */
   dispose(): void
@@ -455,8 +464,17 @@ export interface QueryClient {
    *
    * This is the retention mechanism `createQuery` (#280) builds on; it starts
    * no request of its own.
+   *
+   * A `policy` is claimed on the entry the same way a fetch would claim it,
+   * because an observer that declines to fetch still declares one. Without
+   * that, a hydrated entry observed with a `staleTime` would keep the default
+   * of 0 and read as stale the moment its hydration allowance was spent.
    */
-  observe(key: QueryKey, onChange?: () => void): QueryObservation
+  observe(
+    key: QueryKey,
+    onChange?: () => void,
+    policy?: Partial<CacheEntryPolicy>
+  ): QueryObservation
 
   /**
    * Serializes cached data for transfer to the client.

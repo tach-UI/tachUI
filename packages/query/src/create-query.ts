@@ -30,7 +30,6 @@ import {
 import { useQueryClient } from './client'
 import { hashQueryKey } from './keys'
 import { DEFAULT_ENABLED, DEFAULT_RETRY } from './defaults'
-import { QueryError } from './errors'
 import type {
   CacheEntry,
   FetchStatus,
@@ -204,15 +203,43 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
    * refresh rather than a return to loading.
    */
   function forceFetch(resolvedKey: QueryKey): Promise<TRaw> {
-    if (observation?.entry().fetchStatus === 'fetching') {
-      // Already loading: joining that execution is what the caller wants.
-      // Marking first would detach it and start a second loader alongside,
-      // so one refetch would cost two requests.
+    // Marked through an observation of *this* key, not through whichever one
+    // this query happens to hold. There may be none — `enabled: false` never
+    // observes — and just after a key change the one it holds still watches
+    // the old entry, so marking that would reload the key being left while
+    // the new one served a cache hit.
+    let held = observation
+    if (held !== undefined) {
+      let matches = false
+      try {
+        matches = held.entry().hash === hashQueryKey(resolvedKey)
+      } catch {
+        matches = false
+      }
+      if (!matches) {
+        held = undefined
+      }
+    }
+    if (held !== undefined) {
+      if (held.entry().fetchStatus === 'fetching') {
+        // Already loading: joining that execution is what the caller wants.
+        // Marking first would detach it and start a second loader alongside,
+        // so one refetch would cost two requests.
+        return fetch(resolvedKey)
+      }
+      held.markForReload()
       return fetch(resolvedKey)
     }
-    // Through the observation, so only this entry is marked. Prefix
-    // invalidation would take fresh children down with it.
-    observation?.markForReload()
+    // No observation of this key: take one just long enough to mark the
+    // entry, which is also what creates it if the cache has never held it.
+    const transient = client.observe(resolvedKey)
+    try {
+      if (transient.entry().fetchStatus !== 'fetching') {
+        transient.markForReload()
+      }
+    } finally {
+      transient.release()
+    }
     return fetch(resolvedKey)
   }
 
@@ -354,15 +381,27 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
 
     let current: QueryObservation
     try {
-      current = client.observe(resolvedKey, () => {
-        if (!disposed && observation === current) {
-          publish(current, resolvedKey)
+      current = client.observe(
+        resolvedKey,
+        () => {
+          if (!disposed && observation === current) {
+            publish(current, resolvedKey)
+          }
+        },
+        // Claimed even when this observation declines to fetch: otherwise a
+        // hydrated entry keeps the default freshness of 0 and reads as stale
+        // the moment its hydration allowance is spent.
+        {
+          staleTime: options.staleTime,
+          gcTime: options.gcTime,
+          snapshot: options.snapshot,
         }
-      })
+      )
     } catch (error) {
       // A client disposed while this query was mounted. Surfaced like any
       // other failure rather than thrown from inside the effect, where it
       // would take down whatever re-rendered.
+      clearFreshnessTimer()
       observing = undefined
       setState({ ...idleState<TRaw, E>(), status: 'error', error: error as E })
       return
@@ -397,14 +436,11 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
   let projectedRaw: TRaw | undefined
   let projectedValue: TData | undefined
   let hasProjection = false
-  const projected = createMemo<TData | undefined>(() => {
-    const snapshot = state()
-    if (!hasValue(snapshot)) {
-      return undefined
-    }
-    const raw = snapshot.data as TRaw
+
+  /** Projects a raw value, reusing the last result for the same one. */
+  function project(raw: TRaw): TData {
     if (hasProjection && Object.is(raw, projectedRaw)) {
-      return projectedValue
+      return projectedValue as TData
     }
     projectedRaw = raw
     projectedValue =
@@ -413,6 +449,14 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
         : options.select(raw)
     hasProjection = true
     return projectedValue
+  }
+
+  const projected = createMemo<TData | undefined>(() => {
+    const snapshot = state()
+    if (!hasValue(snapshot)) {
+      return undefined
+    }
+    return project(snapshot.data as TRaw)
   })
 
   let lastProjected: TData | undefined
@@ -453,13 +497,15 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
     updatedAt: createMemo(() => state().updatedAt),
 
     refetch: async () => {
-      const resolvedKey = untrack(key)
-      await forceFetch(resolvedKey)
-      const projection = untrack(data)
-      if (projection === undefined && untrack(status) === 'error') {
-        throw untrack(() => state().error) ?? new QueryError('refetch failed.')
-      }
-      return projection as TData
+      // Projects what this call loaded rather than reading the observer's
+      // state afterwards. That state may not have been published yet, and
+      // with `enabled: false` there is no observation to publish into at all
+      // — a gated query can still be refetched on demand, and returning
+      // `undefined` for a load that succeeded would be a lie. A failure
+      // rejects, because forceFetch does.
+      // Through the same projection cache the signals use, so a reload that
+      // returned an unchanged value does not run `select` a second time.
+      return project(await forceFetch(untrack(key)))
     },
     invalidate: () => {
       // Prefix semantics, matching the client method it mirrors: this query's

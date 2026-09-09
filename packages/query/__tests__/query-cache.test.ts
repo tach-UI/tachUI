@@ -513,3 +513,38 @@ describe('refresh', () => {
     expect((failed?.error as Error | undefined)?.message).toBe('backend down')
   })
 })
+
+describe('observations without a change callback', () => {
+  it('keeps its entry through clear()', async () => {
+    const client = createQueryClient()
+    await client.fetchQuery({ key: keyOf('u'), load: async () => 'first' })
+    const observation = client.observe(['u'])
+    expect(observation.entry().data).toBe('first')
+
+    // observe() does not require a callback, and such an observation still
+    // reads the entry. Dropping it would leave that read returning the
+    // pre-clear value forever.
+    client.clear()
+    expect(observation.entry().data).toBeUndefined()
+    expect(observation.entry().status).toBe('idle')
+    observation.release()
+  })
+
+  it('notifies both observations that share one callback', async () => {
+    const client = createQueryClient()
+    let notifications = 0
+    const onChange = (): void => {
+      notifications += 1
+    }
+    const first = client.observe(['u'], onChange)
+    const second = client.observe(['u'], onChange)
+
+    // A Set holds one copy of a function, so registering the same callback
+    // twice and releasing once would silence the survivor.
+    first.release()
+    await client.fetchQuery({ key: keyOf('u'), load: async () => 'v' })
+
+    expect(notifications).toBeGreaterThan(0)
+    second.release()
+  })
+})
