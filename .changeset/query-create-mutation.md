@@ -47,3 +47,20 @@ server's answer for the code branching on it. `onSettled` runs on both paths.
 
 A mutation with nothing to invalidate resolves no client at all, so a
 server-rendered form does not throw for a dependency it does not have.
+
+Closes a review round. `cancel()` now ends a call whose `run` ignores its
+signal and never settles: the run is raced against the abort rather than
+simply awaited, so a non-cooperative transport can no longer leave the promise
+pending for good, the status stuck at `pending`, a form permanently
+submitting, and an optimistic update with nothing to undo it. Cancellation
+surfaces the abort reason whatever the run reports, so a transport adapter
+mapping cancellation onto its own error codes has an invariant to rely on.
+
+`optimisticUpdate` runs synchronously, and an `async` one — which infers
+`TContext` as a promise and type-checks — is now refused rather than handing
+`onError` a pending promise as the value to roll back to. Every `invalidates`
+prefix is attempted rather than the list abandoned at the first unusable one,
+which would leave the prefixes before it marked and the ones after it
+untouched. The prefix list is copied at creation, so the caller's array stays
+theirs and a later push cannot change what the mutation invalidates — or ask
+for an invalidation with no client ever resolved to perform it.

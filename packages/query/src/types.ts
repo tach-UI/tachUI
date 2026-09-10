@@ -576,6 +576,12 @@ export type MutationOptions<I, O, E = Error, TContext = unknown> =
            * Applies an optimistic update before `run` starts. Whatever it
            * returns is handed to `onError` to undo the change. Opt-in: the
            * server stays authoritative.
+           *
+           * Runs synchronously — it changes what is on screen now, so there is
+           * nothing for it to await. An `async` one infers `TContext` as a
+           * promise and type-checks, so returning a thenable raises a
+           * {@link QueryError} rather than handing `onError` a pending promise
+           * as the value to roll back to.
            */
           optimisticUpdate: (input: I) => TContext
           /**

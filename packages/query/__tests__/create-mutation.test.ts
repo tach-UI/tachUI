@@ -20,6 +20,7 @@ import {
   resetDefaultQueryClient,
 } from '../src/client'
 import { QueryError } from '../src/errors'
+import type { QueryKey } from '../src/types'
 
 afterEach(() => {
   resetDefaultQueryClient()
@@ -288,6 +289,99 @@ describe('cancellation', () => {
     dispose()
   })
 
+  it('settles even when the run never answers the abort', async () => {
+    // The run is asked to respect its signal and nothing can make it. Waiting
+    // on one that never settles would leave the promise pending for good, the
+    // status stuck at `pending`, a form permanently submitting, and an
+    // optimistic update with nothing left to undo it.
+    let displayed = 'saved'
+    const { value: mutation, dispose } = withOwner(() =>
+      createMutation<string, string, Error, string>({
+        run: () =>
+          new Promise<string>(() => {
+            // never settles, and never listens for the abort either
+          }),
+        optimisticUpdate: (input) => {
+          const previous = displayed
+          displayed = input
+          return previous
+        },
+        onError: (_error, _input, context) => {
+          displayed = context as string
+        },
+      })
+    )
+
+    const settled = mutation.mutate('typed')
+    await settle()
+    expect(mutation.isPending()).toBe(true)
+
+    mutation.cancel()
+    await expect(settled).rejects.toThrow()
+
+    expect(mutation.status()).toBe('error')
+    expect(mutation.isPending()).toBe(false)
+    expect(displayed).toBe('saved')
+    dispose()
+  })
+
+  it('reports the abort even when the run rejected with an error of its own', async () => {
+    const ownFailure = new Error('connection reset')
+    const gate = deferred<string>()
+    const { value: mutation, dispose } = withOwner(() =>
+      createMutation<void, string>({
+        run: (_input, ctx) =>
+          new Promise<string>((resolve, reject) => {
+            // Rejects with its own error once cancelled, the way a transport
+            // reports a request torn down beneath it.
+            ctx.signal.addEventListener('abort', () => reject(ownFailure))
+            void gate.promise.then(resolve)
+          }),
+      })
+    )
+
+    const settled = mutation.mutate()
+    await settle()
+    mutation.cancel()
+
+    // One predictable answer for a caller who cancelled, rather than a coin
+    // toss between `AbortError` and whatever the transport reported.
+    await expect(settled).rejects.not.toBe(ownFailure)
+    expect((mutation.error() as unknown as DOMException).name).toBe('AbortError')
+    dispose()
+  })
+
+  it('hands an already-aborted signal to a run cancelled before it started', async () => {
+    // `optimisticUpdate` runs before the request goes out, so a cancel from
+    // inside it aborts a controller nothing has waited on yet. Listening for
+    // an abort that has already happened would wait for good, so the race has
+    // to answer from the flag rather than the event.
+    let observed: AbortSignal | undefined
+    let mutation!: ReturnType<typeof createMutation<void, string, Error, string>>
+    const { dispose } = withOwner(() => {
+      mutation = createMutation<void, string, Error, string>({
+        run: (_input, ctx) => {
+          observed = ctx.signal
+          return new Promise<string>(() => {
+            // never settles; the run is expected to see the abort instead
+          })
+        },
+        optimisticUpdate: () => {
+          mutation.cancel()
+          return 'previous'
+        },
+        onError: () => undefined,
+      })
+      return mutation
+    })
+
+    await expect(mutation.mutate()).rejects.toThrow()
+
+    expect(observed?.aborted).toBe(true)
+    expect(mutation.status()).toBe('error')
+    dispose()
+  })
+
   it('does nothing when there is no call in flight', async () => {
     const { value: mutation, dispose } = withOwner(() =>
       createMutation<void, string>({
@@ -427,6 +521,115 @@ describe('concurrent calls', () => {
   })
 })
 
+describe('superseded calls', () => {
+  it('rolls back a superseded failure without touching the state', async () => {
+    const first = deferred<string>()
+    const second = deferred<string>()
+    const rolledBack: (string | undefined)[] = []
+    const { value: mutation, dispose } = withOwner(() =>
+      createMutation<string, string, Error, string>({
+        run: (input) => (input === 'a' ? first.promise : second.promise),
+        optimisticUpdate: (input) => `before:${input}`,
+        onError: (_error, _input, context) => {
+          rolledBack.push(context)
+        },
+      })
+    )
+
+    const firstCall = mutation.mutate('a')
+    const secondCall = mutation.mutate('b')
+
+    second.resolve('second')
+    await secondCall
+
+    first.reject(new Error('stale failure'))
+    await expect(firstCall).rejects.toThrow('stale failure')
+
+    // The superseded call no longer owns the signals, but its optimistic
+    // change was real and still has to come undone — with its own context,
+    // not the newer call's.
+    expect(rolledBack).toEqual(['before:a'])
+    expect(mutation.status()).toBe('success')
+    expect(mutation.data()).toBe('second')
+    dispose()
+  })
+
+  it('rolls back a call that failed after a reset', async () => {
+    const gate = deferred<string>()
+    let displayed = 'saved'
+    const { value: mutation, dispose } = withOwner(() =>
+      createMutation<string, string, Error, string>({
+        run: () => gate.promise,
+        optimisticUpdate: (input) => {
+          const previous = displayed
+          displayed = input
+          return previous
+        },
+        onError: (_error, _input, context) => {
+          displayed = context as string
+        },
+      })
+    )
+
+    const settled = mutation.mutate('typed')
+    mutation.reset()
+    expect(mutation.status()).toBe('idle')
+
+    gate.reject(new Error('rejected'))
+    await expect(settled).rejects.toThrow('rejected')
+
+    // Reset gave up the state, not the obligation: the optimistic change was
+    // applied outside this mutation and would otherwise stay.
+    expect(displayed).toBe('saved')
+    expect(mutation.status()).toBe('idle')
+    dispose()
+  })
+
+  it('invalidates for a superseded call that succeeded', async () => {
+    const client = createQueryClient()
+    const first = deferred<string>()
+    const second = deferred<string>()
+    let loads = 0
+    const { value, dispose } = withOwner(() => {
+      const users = createQuery<string>({
+        key: () => ['users'],
+        load: async () => {
+          loads += 1
+          return `user@${loads}`
+        },
+        client,
+      })
+      const rename = createMutation<string, string>({
+        run: (input) => (input === 'a' ? first.promise : second.promise),
+        invalidates: [['users']],
+        client,
+      })
+      return { users, rename }
+    })
+    await settle()
+    expect(loads).toBe(1)
+
+    const firstCall = value.rename.mutate('a')
+    const secondCall = value.rename.mutate('b')
+
+    second.resolve('second')
+    await secondCall
+    await settle()
+    expect(loads).toBe(2)
+
+    first.resolve('first')
+    await firstCall
+    await settle()
+
+    // The superseded call reached the server too. Its write is as real as the
+    // newer one's, so the queries it names reload whether or not its result is
+    // what the signals show.
+    expect(loads).toBe(3)
+    dispose()
+    client.dispose()
+  })
+})
+
 describe('invalidation on success', () => {
   it('reloads an observed query whose key sits under an invalidated prefix', async () => {
     const client = createQueryClient()
@@ -514,6 +717,30 @@ describe('invalidation on success', () => {
     expect(inspectQueryEntry(client, ['users'])?.invalidated).toBe(false)
 
     await mutation.mutate()
+    dispose()
+    client.dispose()
+  })
+
+  it('takes its prefixes as they were at creation', async () => {
+    const client = createQueryClient()
+    const prefixes: QueryKey[] = [['users']]
+    const { value: mutation, dispose } = withOwner(() =>
+      createMutation<void, string>({
+        run: async () => 'ok',
+        invalidates: prefixes,
+        client,
+      })
+    )
+
+    await client.fetchQuery<string>({ key: () => ['a'], load: async () => 'a' })
+    // The caller's array stays theirs to use. Aliasing it would let a push
+    // after creation change what this mutation invalidates — and for one that
+    // started empty, ask for an invalidation with no client ever resolved to
+    // perform it.
+    prefixes.push(['a'])
+
+    await mutation.mutate()
+    expect(inspectQueryEntry(client, ['a'])?.invalidated).toBe(false)
     dispose()
     client.dispose()
   })
@@ -666,6 +893,28 @@ describe('optimistic updates', () => {
     client.dispose()
   })
 
+  it('refuses an optimistic update that returns a promise', async () => {
+    let runs = 0
+    const { value: mutation, dispose } = withOwner(() =>
+      createMutation<string, string, Error, Promise<string>>({
+        run: async () => {
+          runs += 1
+          return 'unreachable'
+        },
+        // Types allow it: an `async` optimisticUpdate infers `TContext` as a
+        // promise. `onError` would then be handed a pending promise as the
+        // value to roll back to, and the rollback would silently do nothing.
+        optimisticUpdate: async () => 'previous',
+        onError: () => undefined,
+      })
+    )
+
+    await expect(mutation.mutate('x')).rejects.toBeInstanceOf(QueryError)
+    expect(runs).toBe(0)
+    expect(mutation.status()).toBe('error')
+    dispose()
+  })
+
   it('reaches onError with no context when the optimistic update itself throws', async () => {
     const failure = new Error('bad optimistic write')
     let runs = 0
@@ -811,6 +1060,30 @@ describe('hooks that throw', () => {
     await expect(mutation.mutate()).rejects.toBe(failure)
     expect(mutation.error()).toBe(failure)
     dispose()
+  })
+
+  it('attempts every prefix even when one of them is unusable', async () => {
+    const client = createQueryClient()
+    const { value: mutation, dispose } = withOwner(() =>
+      createMutation<void, string>({
+        run: async () => 'ok',
+        // The bad prefix sits between two good ones: a loop that gave up at
+        // the first failure would mark ['a'] and leave ['z'] untouched, which
+        // is a half-applied invalidation and far harder to spot than the key.
+        invalidates: [['a'], [() => 'not hashable'], ['z']],
+        client,
+      })
+    )
+
+    await client.fetchQuery<string>({ key: () => ['a'], load: async () => 'a' })
+    await client.fetchQuery<string>({ key: () => ['z'], load: async () => 'z' })
+
+    await expect(mutation.mutate()).rejects.toBeInstanceOf(QueryError)
+
+    expect(inspectQueryEntry(client, ['a'])?.invalidated).toBe(true)
+    expect(inspectQueryEntry(client, ['z'])?.invalidated).toBe(true)
+    dispose()
+    client.dispose()
   })
 
   it('still runs onSuccess when an invalidation prefix is unusable', async () => {

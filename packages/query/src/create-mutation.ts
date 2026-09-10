@@ -26,6 +26,53 @@ import type {
   QueryKey,
 } from './types'
 
+/** Whether a value carries a `then`, and so would be awaited rather than used. */
+function isThenable(value: unknown): boolean {
+  if (
+    value === null ||
+    (typeof value !== 'object' && typeof value !== 'function')
+  ) {
+    return false
+  }
+  return typeof (value as { then?: unknown }).then === 'function'
+}
+
+/**
+ * Settles as `work` does, or rejects the moment the signal aborts — whichever
+ * happens first.
+ *
+ * A `run` is *asked* to respect its signal and nothing can make it. One that
+ * ignores the signal and never settles would leave `cancel()` holding an
+ * aborted controller, a promise pending for good, a form stuck submitting, and
+ * an optimistic update with nothing left to undo it. Racing the two means
+ * cancellation ends the call whatever the transport does; the run is left to
+ * finish into a result nobody holds, which is the most anyone can do about a
+ * request already sent.
+ */
+function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) {
+    return Promise.reject(signal.reason)
+  }
+  return new Promise<T>((resolve, reject) => {
+    function onAbort(): void {
+      reject(signal.reason)
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+    // Both handlers are attached here, so a rejection that loses the race is
+    // still handled and never surfaces as an unhandled rejection.
+    work.then(
+      (value) => {
+        signal.removeEventListener('abort', onAbort)
+        resolve(value)
+      },
+      (error) => {
+        signal.removeEventListener('abort', onAbort)
+        reject(error)
+      }
+    )
+  })
+}
+
 /**
  * Creates a mutation bound to the calling owner.
  *
@@ -40,7 +87,12 @@ import type {
 export function createMutation<I, O, E = Error, TContext = unknown>(
   options: MutationOptions<I, O, E, TContext>
 ): MutationResult<I, O, E> {
-  const invalidates: readonly QueryKey[] = options.invalidates ?? []
+  // Copied, not aliased: the caller's array is theirs to keep mutating, and a
+  // prefix pushed onto it after creation would change what this mutation
+  // invalidates — including, for an array that started empty, asking for an
+  // invalidation with no client ever resolved to perform it.
+  const invalidates: readonly QueryKey[] =
+    options.invalidates === undefined ? [] : [...options.invalidates]
   /**
    * Resolved at creation rather than inside `mutate`: the ambient client
    * comes from the component context, and by the time an event handler fires
@@ -95,13 +147,20 @@ export function createMutation<I, O, E = Error, TContext = unknown>(
     let failure: unknown
     let failed = false
     if (client !== undefined) {
-      try {
-        for (const prefix of invalidates) {
+      // Each prefix is attempted, rather than the list abandoned at the first
+      // failure. `client.invalidate` is atomic per prefix, so a fail-fast loop
+      // leaves the prefixes before the bad one marked and the ones after it
+      // untouched — a half-applied invalidation that is far harder to see than
+      // one unhashable key.
+      for (const prefix of invalidates) {
+        try {
           client.invalidate(prefix)
+        } catch (hookError) {
+          if (!failed) {
+            failure = hookError
+            failed = true
+          }
         }
-      } catch (hookError) {
-        failure = hookError
-        failed = true
       }
     }
     try {
@@ -179,6 +238,16 @@ export function createMutation<I, O, E = Error, TContext = unknown>(
     let context: TContext | undefined
     try {
       context = options.optimisticUpdate?.(input)
+      if (isThenable(context)) {
+        // `optimisticUpdate` is synchronous, but an `async` one infers
+        // `TContext` as a promise and type-checks, and `onError` would then be
+        // handed a pending promise to roll back with — a rollback that does
+        // nothing, silently. The point of an optimistic update is to change
+        // what is on screen now, so there is nothing for it to await.
+        throw new QueryError(
+          'optimisticUpdate() returned a promise. It runs synchronously, before the mutation starts, and whatever it returns is handed to onError as the value to roll back to — a promise there would be undoable. Apply the change synchronously and return the previous state.'
+        )
+      }
     } catch (optimisticError) {
       // `run` never starts, so the state this was to be optimistic about was
       // never changed. It still reaches `onError`, with nothing to roll back,
@@ -194,9 +263,24 @@ export function createMutation<I, O, E = Error, TContext = unknown>(
 
     let value: O
     try {
-      value = await options.run(input, { signal: controller.signal })
+      // Raced rather than simply awaited, so an abort ends the call even when
+      // the run never answers. A run that answers anyway loses: the result
+      // arrived after the caller had said to stop.
+      value = await raceAbort(
+        options.run(input, { signal: controller.signal }),
+        controller.signal
+      )
     } catch (runError) {
       inFlight.delete(controller)
+      // Cancellation surfaces the abort reason, always. The race delivers it
+      // for every abort that lands while the run is outstanding, which is all
+      // of them in practice; this normalizes the hair's-breadth remainder,
+      // where the run's own rejection won the race and the abort arrived
+      // before that rejection was handled. A caller who cancelled then has
+      // one predictable answer to branch on rather than a coin toss between
+      // `AbortError` and whatever a transport reports for a request torn down
+      // beneath it — which is the guarantee a transport adapter mapping
+      // cancellation onto its own error codes has to be able to rely on.
       return await settleError(
         controller.signal.aborted
           ? (controller.signal.reason as E)
@@ -207,19 +291,6 @@ export function createMutation<I, O, E = Error, TContext = unknown>(
       )
     }
     inFlight.delete(controller)
-
-    if (controller.signal.aborted) {
-      // A `run` that ignores its signal can resolve after the abort. The
-      // cancellation still wins: an optimistic update has to be rolled back,
-      // and a caller who cancelled and then saw `success` would have no way to
-      // tell which of the two had happened.
-      return await settleError(
-        controller.signal.reason as E,
-        input,
-        context,
-        generation
-      )
-    }
 
     if (owns(generation)) {
       setError(() => undefined)
