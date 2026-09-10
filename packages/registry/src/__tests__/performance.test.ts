@@ -69,30 +69,40 @@ describe('Performance Characteristics', () => {
       }
     })
 
-    it('should find modifiers in constant time', () => {
-      const times: number[] = []
-
-      for (let i = 0; i < 100; i++) {
-        const start = performance.now()
-        hasModifier(`mod${Math.floor(Math.random() * 1000)}`)
-        times.push(performance.now() - start)
+    /**
+     * Median lookup cost over `samples` runs.
+     *
+     * A mean is the wrong summary for wall-clock timing: noise only ever
+     * makes a run slower, so one GC pause among a hundred samples is enough
+     * to move it past a 0.1ms budget on its own — which is how this flaked
+     * (0.181 against 0.1) while every individual lookup was fast. The median
+     * says what "constant time" is actually claiming: the typical lookup,
+     * not the unluckiest one.
+     */
+    function medianLookupTime(lookup: (name: string) => unknown): number {
+      const name = (): string => `mod${Math.floor(Math.random() * 1000)}`
+      // Warm-up: discard JIT and cold-cache costs so the timed runs measure
+      // steady state.
+      for (let i = 0; i < 20; i++) {
+        lookup(name())
       }
 
-      const avgTime = times.reduce((a, b) => a + b, 0) / times.length
-      expect(avgTime).toBeLessThan(0.1) // Should be < 0.1ms
+      const times: number[] = []
+      for (let i = 0; i < 100; i++) {
+        const start = performance.now()
+        lookup(name())
+        times.push(performance.now() - start)
+      }
+      times.sort((a, b) => a - b)
+      return times[Math.floor(times.length / 2)]!
+    }
+
+    it('should find modifiers in constant time', () => {
+      expect(medianLookupTime(hasModifier)).toBeLessThan(0.1) // Should be < 0.1ms
     })
 
     it('should get modifiers in constant time', () => {
-      const times: number[] = []
-
-      for (let i = 0; i < 100; i++) {
-        const start = performance.now()
-        getModifier(`mod${Math.floor(Math.random() * 1000)}`)
-        times.push(performance.now() - start)
-      }
-
-      const avgTime = times.reduce((a, b) => a + b, 0) / times.length
-      expect(avgTime).toBeLessThan(0.1)
+      expect(medianLookupTime(getModifier)).toBeLessThan(0.1)
     })
   })
 
