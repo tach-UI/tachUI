@@ -326,7 +326,13 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
         freshnessTimer = setTimeout(() => {
           freshnessTimer = undefined
           if (!disposed && observation === current) {
-            setState(readState<TRaw, E>(current.entry()))
+            // Republished rather than merely re-read, so the wake-up arms
+            // itself again if the window has not in fact elapsed. A timer is
+            // allowed to land a hair early — Node's fire up to a millisecond
+            // ahead of the delay they were given — and a one-shot wake-up
+            // that lands early publishes a still-fresh snapshot and schedules
+            // nothing, leaving the query reporting itself fresh forever.
+            publish(current, resolvedKey)
           }
         }, remaining)
         freshnessTimer.unref?.()
