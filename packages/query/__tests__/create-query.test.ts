@@ -8,7 +8,7 @@
  * deferred here and the retry policy.
  */
 
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createRoot, createSignal } from '@tachui/core'
 
@@ -41,6 +41,24 @@ function withOwner<T>(body: () => T): { value: T; dispose: () => void } {
  */
 async function settle(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+/**
+ * Polls until `condition` holds, or gives up after `timeout`.
+ *
+ * For the things nothing announces — a freshness window elapsing — where the
+ * test is that the wake-up arrives, not that it arrives inside a particular
+ * number of milliseconds. A fixed sleep tuned to a developer machine turns a
+ * loaded CI runner into a failure that says nothing about the code.
+ */
+async function waitUntil(
+  condition: () => boolean,
+  timeout = 2000
+): Promise<void> {
+  const deadline = Date.now() + timeout
+  while (!condition() && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 5))
+  }
 }
 
 describe('key changes', () => {
@@ -823,10 +841,53 @@ describe('freshness over time', () => {
     expect(value.isStale()).toBe(false)
 
     // A window elapsing is not a cache event, so nothing would announce it;
-    // the observer schedules its own wake-up.
-    await new Promise((resolve) => setTimeout(resolve, 40))
+    // the observer schedules its own wake-up. Polled rather than slept on a
+    // fixed budget: the assertion is that the wake-up happens at all, and a
+    // loaded runner can overshoot a 20ms window by more than any margin worth
+    // hard-coding.
+    await waitUntil(() => value.isStale())
     expect(value.isStale()).toBe(true)
     dispose()
+  })
+
+  it('arms the wake-up again when the timer lands a hair early', async () => {
+    // Node fires a timer up to a millisecond ahead of the delay it was given,
+    // so the observer can wake to find its window has not elapsed after all.
+    // A one-shot wake-up publishes that still-fresh snapshot and schedules
+    // nothing further, and the query then reports itself fresh forever.
+    //
+    // Reproduced by running the clock five milliseconds behind for as long as
+    // the first wake-up takes to arrive, which is exactly what an early timer
+    // shows the observer.
+    const client = createQueryClient()
+    const realNow = Date.now
+    let skew = 0
+    vi.spyOn(Date, 'now').mockImplementation(() => realNow() + skew)
+    try {
+      const { value, dispose } = withOwner(() =>
+        createQuery<string>({
+          key: () => ['u'],
+          load: async () => 'v',
+          staleTime: 20,
+          client,
+        })
+      )
+      await settle()
+      expect(value.isStale()).toBe(false)
+
+      skew = -5
+      // Real time, unaffected by the skewed clock: the window has genuinely
+      // elapsed by the time this lands, so only a re-armed wake-up can see it.
+      setTimeout(() => {
+        skew = 0
+      }, 30)
+
+      await waitUntil(() => value.isStale())
+      expect(value.isStale()).toBe(true)
+      dispose()
+    } finally {
+      vi.restoreAllMocks()
+    }
   })
 })
 
