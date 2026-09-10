@@ -48,6 +48,7 @@ import type {
   QueryStatus,
   RetryPolicy,
 } from '@tachui/query'
+import { createMutation } from '@tachui/query'
 
 type Assert<T extends true> = T
 
@@ -663,4 +664,38 @@ const inferredRaw = inferQuery({
 
 export type InferredRawStaysRaw = Assert<
   Equals<typeof inferredRaw, QueryResult<RawUser, Error>>
+>
+
+/**
+ * `createMutation` exists now, so its inference is checked against the real
+ * signature rather than a stand-in. Both sides of the call matter: `I` comes
+ * from `run`'s parameter and `O` from what it resolves to, and losing either
+ * would leave `mutate` accepting anything or `data` typed as `unknown`.
+ */
+const inferredMutation = createMutation({
+  run: async (input: string): Promise<number> => input.length,
+})
+
+export type InferredMutationCarriesBothSides = Assert<
+  Equals<typeof inferredMutation, MutationResult<string, number, Error>>
+>
+
+/**
+ * `TContext` is inferred from `optimisticUpdate`'s return, so a rollback needs
+ * no hand-written annotations. This is the property the union in
+ * `MutationOptions` is most at risk of costing: inference has to survive a
+ * branch being selected.
+ */
+const inferredOptimisticMutation = createMutation({
+  run: async (input: string): Promise<number> => input.length,
+  optimisticUpdate: (input: string) => ({ previous: input }),
+  onError: (error, input, context) => {
+    void error.message
+    void input.length
+    void context?.previous
+  },
+})
+
+export type InferredOptimisticMutationKeepsItsShape = Assert<
+  Equals<typeof inferredOptimisticMutation, MutationResult<string, number, Error>>
 >
