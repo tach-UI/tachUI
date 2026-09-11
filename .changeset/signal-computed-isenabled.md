@@ -73,12 +73,17 @@ button suppresses clicks natively in a browser but not in every environment,
 and `handlePress` has always refused a press while loading — so a click and a
 press could disagree about whether a loading button acts. They no longer do.
 
-What this does **not** fix: a disabled Button still does not *look* disabled.
-`getButtonStyles` computes the right values now, but neither path applies them
-— the reactive style effect runs on DOM-ready, which the ordinary render path
-never fires, and on the mount path the style application skips any property
-that already has a value. The attribute, the action gating and the accessible
-state are fixed; the appearance is not.
+A disabled Button also *looks* disabled now, which it did not before and does
+not on the released version either. Its styles travel with the element as a
+prop the renderer owns, rather than being written onto the element afterwards
+by an effect that ran on DOM ready — an effect the ordinary render path never
+fires, so a Button rendered that way had no styles at all, disabled or
+otherwise. Applying them before modifiers rather than after also makes modifier
+precedence a matter of ordering rather than of inspecting what is already on
+the element: the component no longer has to guess whether a value it finds
+there was a modifier's or its own from a previous pass, which it guessed wrong,
+so every pass after the first stood down and a button that became disabled kept
+the appearance of one that was not.
 
 The other half of the report — signal-driven style modifier values reading once
 — was not reproducible: effects flush on a microtask, so a read in the same

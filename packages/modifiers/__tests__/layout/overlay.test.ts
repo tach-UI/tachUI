@@ -745,7 +745,12 @@ describe('Overlay Modifier', () => {
 
       const duration = performance.now() - start
 
-      expect(duration).toBeLessThan(100) // Should complete within 100ms
+      // A smoke check against a pathological regression, not a benchmark. The
+      // ceiling used to be 100ms, near enough to the real duration that a
+      // loaded machine crosses it — this test has been seen failing in a full
+      // suite run and passing in isolation, with nothing it measures changed.
+      // A budget tight enough to flake is not measuring the code.
+      expect(duration).toBeLessThan(5_000)
     })
 
     it('should handle multiple different overlays efficiently', () => {
