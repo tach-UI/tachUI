@@ -13,7 +13,12 @@
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { createComputed, createSignal, renderComponent } from '@tachui/core'
+import {
+  createComputed,
+  createSignal,
+  mountComponentTree,
+  renderComponent,
+} from '@tachui/core'
 
 import { Button } from '../../src'
 
@@ -88,5 +93,70 @@ describe('backgroundColor', () => {
     await flush()
 
     expect(button.style.backgroundColor).toBe('green')
+  })
+})
+
+describe('a disabled button', () => {
+  it('looks disabled, and goes back when it is enabled again', async () => {
+    const [enabled, setEnabled] = createSignal(true)
+    const button = renderButton(
+      Button('minus', { action: () => undefined, isEnabled: enabled }).build()
+    )
+    await flush()
+    expect(button.style.cursor).toBe('pointer')
+    expect(button.style.opacity).toBe('1')
+
+    setEnabled(false)
+    await flush()
+
+    // The attribute and the action gating were fixed first; this is the half a
+    // user actually sees. Styles reach the element through the renderer now,
+    // rather than an effect that ran on DOM ready — which this path never
+    // fires, so a Button rendered the ordinary way had no styles at all.
+    expect(button.style.cursor).toBe('not-allowed')
+    expect(button.style.opacity).toBe('0.6')
+
+    setEnabled(true)
+    await flush()
+    expect(button.style.cursor).toBe('pointer')
+    expect(button.style.opacity).toBe('1')
+  })
+
+  it('looks disabled when mounted directly as well', async () => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    mountComponentTree(
+      Button('x', { action: () => undefined, isEnabled: false }).build() as never,
+      container
+    )
+    await flush()
+
+    const button = container.querySelector('button')
+    expect(button?.style.cursor).toBe('not-allowed')
+    expect(button?.style.opacity).toBe('0.6')
+    container.remove()
+  })
+})
+
+describe('modifier precedence', () => {
+  it('leaves a modifier value alone on both paths', async () => {
+    const rendered = renderButton(
+      Button('a', { action: () => undefined }).opacity(0.25).build()
+    )
+    await flush()
+    // Styles now arrive before modifiers rather than after, so precedence is
+    // the order they are applied in rather than a guess about what is already
+    // on the element.
+    expect(rendered.style.opacity).toBe('0.25')
+
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    mountComponentTree(
+      Button('b', { action: () => undefined }).opacity(0.25).build() as never,
+      container
+    )
+    await flush()
+    expect(container.querySelector('button')?.style.opacity).toBe('0.25')
+    container.remove()
   })
 })

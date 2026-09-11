@@ -176,6 +176,14 @@ export class EnhancedButton
   private setState: (value: ButtonState) => void
   public theme: ButtonTheme
 
+  /**
+   * CSS properties this component has written to its element.
+   *
+   * What separates "a modifier set this" from "I set this last time", which the
+   * element's own value cannot answer.
+   */
+  private readonly ownStyleProperties = new Set<string>()
+
   constructor(
     public props: ButtonProps,
     theme: ButtonTheme = defaultButtonTheme
@@ -288,10 +296,22 @@ export class EnhancedButton
     Object.entries(styles).forEach(([property, value]) => {
       const cssProperty = this.camelToKebabCase(property)
       if (typeof value === 'string' || typeof value === 'number') {
-        // Check if this property is already set by a modifier
+        // Check if this property is already set by a modifier.
+        //
+        // "By a modifier" is the part that needs care: a non-empty value alone
+        // cannot tell a modifier's styling from this component's own, written
+        // on an earlier pass. Reading it that way meant the first pass claimed
+        // every property and every pass after it stood down — so a button that
+        // became disabled kept the `cursor`, `opacity` and `pointer-events` of
+        // one that was not. Properties this component wrote are recorded, and
+        // it is allowed to change its mind about those; anything else on the
+        // element still belongs to whoever set it.
         const currentValue = element.style.getPropertyValue(cssProperty)
         const hasModifierValue =
-          currentValue && currentValue !== '' && currentValue !== 'inherit'
+          currentValue &&
+          currentValue !== '' &&
+          currentValue !== 'inherit' &&
+          !this.ownStyleProperties.has(cssProperty)
 
         if (process.env.NODE_ENV === 'development' && cssProperty === 'font-family') {
           console.log('[Button.applyButtonStyles] Font-family check:')
@@ -303,9 +323,11 @@ export class EnhancedButton
 
         // Special handling for transform: Button state transforms should override modifier transforms
         if (cssProperty === 'transform') {
+          this.ownStyleProperties.add(cssProperty)
           element.style.setProperty(cssProperty, String(value))
         } else if (!hasModifierValue) {
           // For other properties, only apply Button styles if no modifier has set this property
+          this.ownStyleProperties.add(cssProperty)
           element.style.setProperty(cssProperty, String(value))
           
           if (process.env.NODE_ENV === 'development' && cssProperty === 'font-family') {
@@ -393,6 +415,26 @@ export class EnhancedButton
    * leaving the attribute frozen at whatever it last read. A new memo each
    * time is a prop that has changed, which is precisely what has happened.
    */
+  /**
+   * The computed styles, as the renderer wants them.
+   *
+   * Owned the same way `disabled` is, and for the same reason: a subscription
+   * made where nothing disposes it is held for the life of the process. With an
+   * owner the renderer tracks the styles and re-applies them; without one they
+   * are a snapshot, which is still more than the DOM-ready effect managed on
+   * that path.
+   *
+   * Applied *before* modifiers, which is the ordering that makes modifier
+   * precedence work by construction rather than by inspecting what is already
+   * on the element.
+   */
+  private styleProp(): Record<string, any> | (() => Record<string, any>) {
+    if (getOwner() === null) {
+      return this.getButtonStyles()
+    }
+    return createMemo(() => this.getButtonStyles())
+  }
+
   private disabledProp(): boolean | (() => boolean) {
     const source = this.enabledSource()
     if (typeof source === 'boolean') {
@@ -477,6 +519,13 @@ export class EnhancedButton
         // to a reactive prop and re-applies it, which is what makes `disabled`
         // follow its signal instead of freezing at whatever it read on mount.
         disabled: this.disabledProp(),
+        // Styles travel with the element rather than being written onto it
+        // afterwards. The effect that used to do it runs on DOM ready, which
+        // the ordinary render path never fires — so a Button rendered that way
+        // had no styles at all, disabled or otherwise. Here the renderer owns
+        // the subscription, applies it before modifiers run, and disposes it
+        // with the element.
+        style: this.styleProp(),
         onClick: this.props.action
           ? () => {
               // Gated in JS as well as by the attribute. A disabled button
