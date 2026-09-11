@@ -60,6 +60,7 @@ function channel<T>() {
   let finished = false
   let returned = 0
   let nexts = 0
+  let iterators = 0
 
   function deliver(step: IteratorResult<T>): void {
     const resolve = waiting
@@ -83,8 +84,17 @@ function channel<T>() {
     nexts: () => nexts,
     /** How many times the consumer released the source. */
     returned: () => returned,
+    /**
+     * How many iterators the consumer asked this source for.
+     *
+     * Without this a release cannot be told from a re-invocation of the
+     * factory: closing a brand-new iterator while the live one runs on looks
+     * identical through a shared `returned` counter.
+     */
+    iterators: () => iterators,
     iterable: {
       [Symbol.asyncIterator](): AsyncIterator<T> {
+        iterators += 1
         return {
           next(): Promise<IteratorResult<T>> {
             nexts += 1
@@ -107,6 +117,42 @@ function channel<T>() {
           },
         }
       },
+    } as AsyncIterable<T>,
+  }
+}
+
+/**
+ * A source whose iterators are themselves iterable, and hand back a *fresh*
+ * iterator each time they are asked.
+ *
+ * The shape that separates "closed the iterator that was running" from "asked
+ * the source for a new one and closed that instead". An async generator hides
+ * the difference — its `[Symbol.asyncIterator]` returns `this` — and so does a
+ * harness that counts releases in one shared closure.
+ */
+function multiShotSource<T>() {
+  const created: { returned: boolean }[] = []
+
+  function makeIterator(): AsyncIterator<T> & AsyncIterable<T> {
+    const record = { returned: false }
+    created.push(record)
+    return {
+      next: () =>
+        new Promise<IteratorResult<T>>(() => {
+          // never settles; the release is what ends it
+        }),
+      return: () => {
+        record.returned = true
+        return Promise.resolve({ value: undefined, done: true })
+      },
+      [Symbol.asyncIterator]: () => makeIterator(),
+    }
+  }
+
+  return {
+    created,
+    iterable: {
+      [Symbol.asyncIterator]: () => makeIterator(),
     } as AsyncIterable<T>,
   }
 }
@@ -453,6 +499,86 @@ describe('the lifecycle', () => {
     }
   })
 
+  it('fails at the call site when the very first seed throws', () => {
+    const failure = new Error('bad seed')
+
+    // The accumulator is seeded before there is anywhere to publish to, and a
+    // result cannot honestly hand back `value: Signal<A>` when `initial` never
+    // produced an `A`. This one failure belongs at the call site; every seed
+    // after it has a previous value to keep and an error to publish instead.
+    expect(() =>
+      withOwner(() =>
+        createAsyncStream<Message, Map<string, Message>>({
+          key: () => ['feed'],
+          open: () => channel<Message>().iterable,
+          initial: () => {
+            throw failure
+          },
+          reduce: (seen) => seen,
+        })
+      )
+    ).toThrow(failure)
+  })
+
+  it('does not leave a stream reading open when a seed throws on reconnection', async () => {
+    const first = channel<Message>()
+    let seeds = 0
+    const [room, setRoom] = createSignal('a')
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message, number>({
+        key: () => ['room', room()],
+        open: () => first.iterable,
+        initial: () => {
+          seeds += 1
+          if (seeds > 1) {
+            throw new Error('bad seed')
+          }
+          return 0
+        },
+        reduce: (count) => count + 1,
+      })
+    )
+    await settle()
+    first.send({ id: '1', body: 'one' })
+    await settle()
+    expect(stream.status()).toBe('open')
+
+    setRoom('b')
+    await settle()
+
+    // The previous source has already been detached and released by the time
+    // the seed throws. A status still reading `open` would be the exact false
+    // claim the establishment guard exists to prevent: nothing attached, no
+    // message loop, and nothing published.
+    expect(stream.status()).toBe('error')
+    expect(stream.error()).toBeInstanceOf(Error)
+    expect(first.returned()).toBe(1)
+    dispose()
+  })
+
+  it('seeds the accumulator once when it connects on creation', async () => {
+    let seeds = 0
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message, number>({
+        key: () => ['feed'],
+        open: () => channel<Message>().iterable,
+        initial: () => {
+          seeds += 1
+          return 0
+        },
+        reduce: (count) => count + 1,
+      })
+    )
+    await settle()
+
+    // The eager seed already left the accumulator where a reset would put it,
+    // so connecting has nothing to clear. `initial` is caller code and free to
+    // be expensive or to have side effects.
+    expect(seeds).toBe(1)
+    expect(stream.value()).toBe(0)
+    dispose()
+  })
+
   it('refuses a connect after its owner was disposed', async () => {
     const { value: stream, dispose } = withOwner(() =>
       createAsyncStream<Message>({
@@ -504,6 +630,31 @@ describe('cancellation', () => {
     expect(observed?.aborted).toBe(true)
     // Offered on the way out so a cooperative source can release what it holds.
     expect(source.returned()).toBe(1)
+    // And offered to the iterator that was actually running. Asking the source
+    // for a fresh one closes that instead, leaving the live subscription open.
+    expect(source.iterators()).toBe(1)
+    dispose()
+  })
+
+  it('releases the iterator that was running, not a fresh one', async () => {
+    const source = multiShotSource<Message>()
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => ['feed'],
+        open: () => source.iterable,
+      })
+    )
+    await settle()
+    expect(source.created).toHaveLength(1)
+
+    stream.cancel()
+    await settle()
+
+    // Asking a self-iterable iterator for its iterator hands back a new one;
+    // closing that leaves the live subscription open, which is the opposite of
+    // what releasing it means.
+    expect(source.created[0]?.returned).toBe(true)
+    expect(source.created).toHaveLength(1)
     dispose()
   })
 
@@ -631,6 +782,78 @@ describe('cancellation', () => {
 
     stream.cancel()
     expect(stream.status()).toBe('completed')
+    dispose()
+  })
+
+  it('publishes an ending when the result is disposed while its owner lives', async () => {
+    const source = channel<Message>()
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => ['feed'],
+        open: () => source.iterable,
+      })
+    )
+    await settle()
+    expect(stream.status()).toBe('open')
+
+    stream.dispose()
+    await settle()
+
+    // A view driven by `status() === 'open'` would otherwise go on claiming to
+    // be live after the stream it renders was explicitly torn down.
+    expect(stream.status()).toBe('cancelled')
+    expect(source.returned()).toBe(1)
+
+    // And disposal is terminal: nothing may repaint over it afterwards.
+    stream.cancel()
+    expect(stream.status()).toBe('cancelled')
+    dispose()
+  })
+
+  it('leaves a terminal ending alone when the result is disposed', async () => {
+    const source = channel<Message>()
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => ['feed'],
+        open: () => source.iterable,
+      })
+    )
+    await settle()
+    source.finish()
+    await settle()
+    expect(stream.status()).toBe('completed')
+
+    stream.dispose()
+
+    // Disposal is a fourth way to end, but it is not a truer one than the
+    // source saying there was no more.
+    expect(stream.status()).toBe('completed')
+    dispose()
+  })
+
+  it('releases the signal open was handed when the stream ends on its own', async () => {
+    let observed: AbortSignal | undefined
+    const source = channel<Message>()
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => ['feed'],
+        open: ({ signal }) => {
+          observed = signal
+          return source.iterable
+        },
+      })
+    )
+    await settle()
+
+    source.finish()
+    await settle()
+
+    // A source that cleans up in an abort listener rather than in `return()` —
+    // `open` is handed the signal and invited to — would otherwise hold what
+    // it has until the owner is disposed, since `cancel()` does nothing once
+    // the status is terminal.
+    expect(stream.status()).toBe('completed')
+    expect(observed?.aborted).toBe(true)
     dispose()
   })
 
@@ -815,6 +1038,52 @@ describe('the key', () => {
     expect(stream.status()).toBe('idle')
     expect(opens).toBe(0)
     dispose()
+  })
+
+  it('survives an abandoned source whose iterator factory throws', async () => {
+    const unhandled: unknown[] = []
+    const onUnhandled = (reason: unknown): void => {
+      unhandled.push(reason)
+    }
+    process.on('unhandledRejection', onUnhandled)
+    try {
+      const current = channel<Message>()
+      let releaseFirstOpen!: (iterable: AsyncIterable<Message>) => void
+      const [room, setRoom] = createSignal('a')
+      const { value: stream, dispose } = withOwner(() =>
+        createAsyncStream<Message>({
+          key: () => ['room', room()],
+          open: ({ key }) =>
+            key[1] === 'a'
+              ? new Promise<AsyncIterable<Message>>((resolve) => {
+                  releaseFirstOpen = resolve
+                })
+              : current.iterable,
+        })
+      )
+      await settle()
+
+      setRoom('b')
+      await settle()
+
+      // The abandoned source is asked for an iterator purely so it can be
+      // closed, and the ask throws. Tidying up after a source nobody wanted
+      // must not become a failure of the stream that replaced it — or an
+      // unhandled rejection, since this runs in a `then` nothing catches.
+      releaseFirstOpen({
+        [Symbol.asyncIterator]: () => {
+          throw new Error('cannot iterate')
+        },
+      })
+      await settle()
+
+      expect(stream.status()).toBe('open')
+      expect(stream.error()).toBeUndefined()
+      expect(unhandled).toEqual([])
+      dispose()
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+    }
   })
 
   it('stops watching the key once the result is disposed', async () => {
