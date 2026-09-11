@@ -11,12 +11,14 @@
  * Two modes, because one shape cannot serve both. Reduction mode folds
  * messages into a bounded value: counters, a latest reading, a small derived
  * summary. Collection mode routes through `createSignalList`, so a list of a
- * thousand rows updates the one row a message touches instead of re-rendering,
- * and per-message cost stays flat as the collection grows. The naive
- * `reduce: (items, m) => [...items, m]` is neither — it copies the whole array
- * per message and grows without bound — which is why `bufferSize` exists for
- * the folds that do accumulate arrays, and why collections have a mode of
- * their own.
+ * thousand rows updates the one row a message touches instead of re-rendering
+ * — a repeat key costs one item-signal write whatever the collection holds,
+ * and `limit` is what keeps a live feed's cost flat, since adding a *new* key
+ * rewrites the key array and so scales with what is retained. The naive
+ * `reduce: (items, m) => [...items, m]` has neither property — it copies the
+ * whole array per message and grows without bound — which is why `bufferSize`
+ * exists for the folds that do accumulate arrays, and why collections have a
+ * mode of their own.
  */
 
 import {
@@ -40,6 +42,45 @@ import type {
   AsyncStreamStatus,
   QueryKey,
 } from './types'
+
+/** Whether a value can actually be iterated as a stream of messages. */
+function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
+  if (value === null || (typeof value !== 'object' && typeof value !== 'function')) {
+    return false
+  }
+  return (
+    typeof (value as AsyncIterable<T>)[Symbol.asyncIterator] === 'function'
+  )
+}
+
+/** Names what arrived, for a message about what should have. */
+function describe(value: unknown): string {
+  if (value === null) {
+    return 'null'
+  }
+  return Array.isArray(value) ? 'an array' : typeof value
+}
+
+/**
+ * Offers a source the chance to clean up, and never throws doing it.
+ *
+ * Called from a message loop nobody awaits and from a `then` handler nothing
+ * catches, on objects that reached here without being verified — a `return`
+ * that is present but not callable, or an iterator factory that throws, would
+ * otherwise surface as an unhandled rejection, or replace the reason the
+ * stream ended with the noise of tidying up after it.
+ */
+function safeReturn(source: AsyncIterable<unknown> | AsyncIterator<unknown>): void {
+  try {
+    const iterator =
+      Symbol.asyncIterator in source
+        ? (source as AsyncIterable<unknown>)[Symbol.asyncIterator]()
+        : (source as AsyncIterator<unknown>)
+    void Promise.resolve(iterator.return?.()).catch(() => undefined)
+  } catch {
+    // Nothing left to do: the source is being abandoned either way.
+  }
+}
 
 /** Whether a stream is currently attached to a source. */
 function isActive(status: AsyncStreamStatus): boolean {
@@ -139,14 +180,31 @@ function createStreamConnection<T, E = Error>(
     current: number
   ): Promise<void> {
     for (;;) {
-      let step: IteratorResult<T>
       try {
-        step = await raceAbort(Promise.resolve(iterator.next()), signal)
+        const step = await raceAbort(Promise.resolve(iterator.next()), signal)
+
+        // Checked before the message is delivered, not after: a cancellation
+        // is a promise that nothing further reaches the consumer, and a
+        // message already in flight when it landed is exactly what that
+        // promise is about.
+        if (!owns(current) || signal.aborted) {
+          return
+        }
+        if (step.done === true) {
+          setStatus('completed')
+          return
+        }
+        // `itemKey`, `reduce`, and the eviction they drive are caller code
+        // running per message. One that throws ends the stream rather than
+        // silently dropping messages into a value nobody can trust.
+        sink.receive(step.value)
       } catch (failure) {
-        // Offered on the way out, and its own failure ignored: the source is
-        // being abandoned either way, and a cleanup that throws must not
-        // replace the reason the stream ended.
-        void Promise.resolve(iterator.return?.()).catch(() => undefined)
+        // Everything above is inside the guard, including reading `step`: a
+        // source that breaks the iterator protocol — resolving `undefined`
+        // rather than a result — throws here, and outside the guard that
+        // became an unhandled rejection with the status still reading `open`.
+        // Nothing in a loop nobody awaits may throw.
+        safeReturn(iterator)
         if (!owns(current)) {
           // Cancelled, disposed, or replaced. Every one of those raises the
           // generation before it aborts, so the abort arrives here already
@@ -155,28 +213,6 @@ function createStreamConnection<T, E = Error>(
           // ending from inside the loop would only overwrite a truer one.
           return
         }
-        setError(() => failure as E)
-        setStatus('error')
-        return
-      }
-
-      // Checked before the message is delivered, not after: a cancellation is
-      // a promise that nothing further reaches the consumer, and a message
-      // already in flight when it landed is exactly what that promise is about.
-      if (!owns(current) || signal.aborted) {
-        return
-      }
-      if (step.done === true) {
-        setStatus('completed')
-        return
-      }
-      try {
-        sink.receive(step.value)
-      } catch (failure) {
-        // `itemKey`, `reduce`, and the eviction they drive are caller code
-        // running per message. One that throws ends the stream rather than
-        // silently dropping messages into a collection nobody can trust.
-        void Promise.resolve(iterator.return?.()).catch(() => undefined)
         setError(() => failure as E)
         setStatus('error')
         return
@@ -198,33 +234,63 @@ function createStreamConnection<T, E = Error>(
     setError(() => undefined)
     setStatus('connecting')
 
-    const resolvedKey = untrack(key)
     let released = false
-    /** Closes a source this connection no longer has any use for. */
-    function releaseIfAbandoned(source: AsyncIterable<T>): void {
+    /**
+     * Closes a source this connection no longer has any use for.
+     *
+     * Total by construction: it runs from a `then` handler whose rejection
+     * nothing would catch, and the value it is handed may not be a source at
+     * all — an `open` that resolved the wrong thing reaches here before
+     * anything has checked it.
+     */
+    function releaseIfAbandoned(
+      source: AsyncIterable<T> | AsyncIterator<T>
+    ): void {
       if (owns(current) || released) {
         return
       }
       released = true
-      void Promise.resolve(source[Symbol.asyncIterator]().return?.()).catch(
-        () => undefined
-      )
+      safeReturn(source)
     }
 
-    const opening = Promise.resolve(
-      options.open({ signal: attempt.signal, key: resolvedKey })
-    )
-    // Watched separately from the race below, because losing that race is
-    // precisely when this matters: the connection is replaced while `open` is
-    // still working, the race rejects on the abort, and the source arrives
-    // afterwards with nobody waiting for it. `open` is handed the signal, but
-    // one that ignores it would otherwise hand back a live subscription
-    // nothing is left to close. A rejection here is the race's to report.
-    opening.then(releaseIfAbandoned, () => undefined)
-
     let iterable: AsyncIterable<T>
+    let iterator: AsyncIterator<T>
     try {
+      // The key read and the `open` call are both inside the guard, not above
+      // it. `open` is an ordinary function and may throw before it ever
+      // returns — `new EventSource(badUrl)` is the shape — and a key accessor
+      // may throw too. Outside the guard, either one left the stream sitting
+      // at `connecting` with nothing published, and under `autoConnect` the
+      // rejection has nobody to reach: a silent failure in a primitive whose
+      // whole purpose is an honest lifecycle.
+      const opening = Promise.resolve(
+        options.open({ signal: attempt.signal, key: untrack(key) })
+      )
+      // Watched separately from the race below, because losing that race is
+      // precisely when this matters: the connection is replaced while `open`
+      // is still working, the race rejects on the abort, and the source
+      // arrives afterwards with nobody waiting for it. `open` is handed the
+      // signal, but one that ignores it would otherwise hand back a live
+      // subscription nothing is left to close. A rejection here is the race's
+      // to report.
+      opening.then(releaseIfAbandoned, () => undefined)
       iterable = await raceAbort(opening, attempt.signal)
+      if (!isAsyncIterable(iterable)) {
+        // Checked before `open` is announced rather than discovered by the
+        // first `next()`, which happens after `status` already said `open` —
+        // an actively false claim, with no pump behind it and nothing to
+        // publish the eventual `TypeError`.
+        throw new QueryError(
+          'open() must return an async iterable, or a promise of one. Received ' +
+            describe(iterable) +
+            '. An async generator, or any object with a Symbol.asyncIterator method, satisfies this.'
+        )
+      }
+      // Taken here rather than at the handoff below, because asking an object
+      // for its iterator runs caller code too, and one that throws after the
+      // status already read `open` would strand the same false claim this
+      // check exists to prevent.
+      iterator = iterable[Symbol.asyncIterator]()
     } catch (failure) {
       // Disowned means this attempt was cancelled or replaced, and whoever did
       // that has already said so; only a genuine failure to open is this
@@ -240,7 +306,9 @@ function createStreamConnection<T, E = Error>(
       // Superseded in the hair's breadth between the race resolving and this
       // line. The source is nobody's, so it is closed rather than left running
       // against a stream that has moved on.
-      releaseIfAbandoned(iterable)
+      // The iterator, not the iterable: it has already been created, and
+      // asking for a second one would run the factory again.
+      releaseIfAbandoned(iterator)
       return
     }
     setStatus('open')
@@ -250,12 +318,14 @@ function createStreamConnection<T, E = Error>(
     // never return. A failure after this point has no promise left to reject,
     // so it reaches the consumer through `status` and `error`, which is where
     // a subscription's failures belong anyway.
-    void pump(iterable[Symbol.asyncIterator](), attempt.signal, current)
+    void pump(iterator, attempt.signal, current)
   }
 
   const autoConnect = options.autoConnect ?? true
   /** The key the effect last acted on; undefined until it has run once. */
   let actedOn: string | undefined
+  /** Whether the published error is one the key itself caused. */
+  let keyFault = false
 
   createEffect(() => {
     if (disposed) {
@@ -270,9 +340,20 @@ function createStreamConnection<T, E = Error>(
       // `error` like any other failure, and `actedOn` is left alone so a
       // corrected key is picked up on the next run.
       detach()
+      keyFault = true
       setError(() => failure as E)
       setStatus('error')
       return
+    }
+    if (keyFault) {
+      // The key that failed has been corrected. Leaving its error standing
+      // would describe a stream that is merely waiting to be connected as
+      // broken — and without `autoConnect` nothing else would ever clear it,
+      // since `connect()` is the only other thing that does and the caller has
+      // no reason to think one is needed.
+      keyFault = false
+      setError(() => undefined)
+      setStatus('idle')
     }
     if (hash === actedOn) {
       return
@@ -341,11 +422,16 @@ export function createAsyncStream<T, A = undefined, E = Error>(
       setValue(() => seed())
     },
     receive: (message) => {
-      setLatest(() => message)
       if (options.reduce === undefined) {
+        setLatest(() => message)
         return
       }
+      // Folded before anything is published, so a `reduce` that throws leaves
+      // `latest` as it was rather than pointing at the message the stream
+      // could not process — which is what collection mode does, where the key
+      // is read first.
       const folded = options.reduce(untrack(value), message)
+      setLatest(() => message)
       const cap = options.bufferSize
       setValue(() =>
         cap !== undefined && Array.isArray(folded) && folded.length > cap

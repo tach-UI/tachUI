@@ -39,3 +39,23 @@ has moved off is worse than streaming nothing.
 
 `raceAbort` moves to a shared internal module, unchanged, now that both
 mutations and streams hand a signal to caller code that may ignore it.
+
+Closes a review round. Everything that can fail while a subscription is being
+established now publishes that failure rather than stranding the lifecycle: an
+`open` that throws before it returns — `new EventSource(badUrl)` is the shape —
+a key accessor that throws inside `connect()`, an iterator factory that throws,
+and an `open` that resolves something that is not an async iterable at all.
+The last of those was the worst of the four: the stream reported `open`, which
+is an active claim with no message loop behind it. Under the default
+`autoConnect` none of these had a promise left to reject, so a stream sat at
+`connecting` for good with nothing published anywhere.
+
+The message loop guards delivery as well as the pull, so a source that breaks
+the iterator protocol ends the stream instead of throwing where nothing can
+catch it, and offering a source the chance to clean up can no longer become the
+reason the stream ended.
+
+A key corrected after an unhashable one clears the error it published, rather
+than describing a stream merely waiting to be connected as broken. In reduction
+mode `latest` is now the last message the stream accepted rather than the one a
+throwing `reduce` choked on, matching what collection mode already did.
