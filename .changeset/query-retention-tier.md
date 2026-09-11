@@ -35,8 +35,15 @@ pool-agnostic — Node rejects the flag in a `worker_threads` `execArgv`, so a
 config carrying it kills every threads-pool run before a file is collected, and
 the vm pools read a different key again. Taking it in-process works under all of
 them, leaves no `globalThis.gc` behind to wake the heap-growth suites' dormant
-collection branches, and fails at import when no collector can be had, because a
-retention suite that skips is a green suite that checks nothing.
+collection branches.
+
+When no collector can be had, the retention suites fail at import wherever the
+run asked for them — the memory tier, which exists to make these checks, and CI,
+whose green is read as the answer — because a retention suite that skips there
+is a green suite that checks nothing. On a developer's machine they skip loudly
+instead: `v8.setFlagsFromString` is documented as unsafe and unguaranteed after
+startup, and an exotic local runtime should cost the retention coverage rather
+than every other test in the repository.
 
 `detachFlight` now drops the aborted controller from the client's active set,
 which only the settle path did before. A loader that ignores its abort and never

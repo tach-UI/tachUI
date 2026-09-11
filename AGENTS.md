@@ -37,6 +37,8 @@ four files sit under it with three different coverages:
 - `packages/query/__tests__/memory` — deterministic retention checks, ungated.
   They run in the normal suite and in CI as well, and obtain a collector
   in-process, so they need nothing from the runner and work under every pool.
+  If no collector can be obtained they fail under this script and on CI, and
+  skip loudly on a developer's machine.
 - `memory-usage-tracking` — ungated too, and runs everywhere including CI.
 - `memory-leak-component` — skips on CI unless `FORCE_MEMORY_TESTS=true`, which
   nothing in `.github/workflows` sets. So on CI it runs only through this

@@ -16,14 +16,19 @@
  * `if (global.gc)` branches would otherwise wake up and change what they
  * measure.
  *
- * Whether a missing collector is fatal depends on who is asking. Under
- * `test:memory-leaks` it is: that tier exists to run these checks, and one that
- * quietly ran none of them would be the disease, not the cure. Everywhere else
- * these files are swept up by the ordinary suite, and `v8.setFlagsFromString`
- * is documented as unsafe and unguaranteed after startup — so a runtime that
- * stops yielding a collector should cost the retention coverage, not every
- * other test in the repository. There it skips instead, which is visible in the
- * run and cannot be mistaken for a pass.
+ * Whether a missing collector is fatal depends on who is asking. Two callers
+ * are asking for these checks specifically rather than sweeping them up: the
+ * memory tier, which exists to run them, and CI, where a green run is the whole
+ * claim being made. For both, a collector that cannot be obtained is fatal — a
+ * tier that quietly ran none of these is the disease rather than the cure, and a
+ * CI run that skipped them behind a warning nobody reads says "checked" when
+ * nothing was.
+ *
+ * A developer's machine is the exception. `v8.setFlagsFromString` is documented
+ * as unsafe and unguaranteed after startup, and these files are swept up by the
+ * ordinary suite, so an exotic local runtime should cost the retention coverage
+ * rather than every other test in the repository. There it skips, which is
+ * visible in the run and cannot be mistaken for a pass.
  */
 
 import v8 from 'node:v8'
@@ -53,14 +58,24 @@ const collect: (() => void) | null = (() => {
 const MISSING_COLLECTOR =
   'Retention checks need a forced garbage collector, and none could be obtained from v8.setFlagsFromString("--expose-gc") + vm.runInNewContext("gc").'
 
+/**
+ * Whether the caller asked for these checks rather than merely collecting them.
+ *
+ * The memory tier asked by name. CI asked by being the thing whose green is
+ * read as an answer: skipping there is how retention coverage would disappear
+ * without anyone learning it had.
+ */
+const demanded =
+  process.env.FORCE_MEMORY_TESTS === 'true' || process.env.CI === 'true'
+
 if (collect === null) {
-  if (process.env.FORCE_MEMORY_TESTS === 'true') {
+  if (demanded) {
     throw new Error(
-      `${MISSING_COLLECTOR} The memory tier is what asked for them, so this is fatal rather than skipped: a tier that runs no checks is the failure it exists to prevent.`
+      `${MISSING_COLLECTOR} This run asked for the retention checks — the memory tier, or CI — so it is fatal rather than skipped: a run that reports success having made none of these checks is the failure they exist to prevent.`
     )
   }
   // Loud, because the alternative to noticing this is retention coverage
-  // disappearing from the ordinary suite without anything saying so.
+  // disappearing from a local suite without anything saying so.
   console.warn(
     `${MISSING_COLLECTOR} Retention suites are skipped here; run \`bun run test:memory-leaks\`, where the same condition fails instead.`
   )
@@ -71,8 +86,8 @@ if (collect === null) {
  *
  * A retention suite gates itself on this — `describe.skipIf(!canForceCollection)`
  * — so a tooling regression costs these checks rather than the whole run. Under
- * the memory tier the condition never reaches a test: importing this module has
- * already failed.
+ * the memory tier, and under CI, the condition never reaches a test: importing
+ * this module has already failed.
  */
 export const canForceCollection = collect !== null
 
