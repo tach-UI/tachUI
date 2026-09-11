@@ -94,6 +94,25 @@ export class DOMRenderer {
   // A set, not a list: registering the same function twice registers it once,
   // and insertion order is preserved. See `addCleanup`.
   private cleanupMap = new WeakMap<Element | Text | Comment, Set<() => void>>()
+  /**
+   * The reactive binding currently installed for each element/prop pair.
+   *
+   * A re-render re-applies an element's props, and a prop whose value is
+   * reactive gets a fresh effect each time. Registering those as ordinary
+   * cleanups only ever appends: the render owner disposes the old *effect*,
+   * but the closure holding it stays in the set until the element unmounts,
+   * and with it the effect, whatever it subscribed to, and — when a component
+   * is rebuilt per render — that component's props. A long-lived element that
+   * re-renders often accumulates every generation it has ever had.
+   *
+   * Keying by prop means a new binding replaces the one it supersedes instead
+   * of stacking on it. It also disposes that predecessor, which matters on the
+   * paths where nothing else would.
+   */
+  private reactiveBindings = new WeakMap<
+    Element | Text | Comment,
+    Map<string, () => void>
+  >()
   // Disposers for `reactiveElement` bindings, held here rather than on the
   // element. See `bindOwnedElement` for why the two lifetimes are separate.
   private bindings = new WeakMap<
@@ -783,8 +802,7 @@ export class DOMRenderer {
         this.setElementProp(element, key, currentValue)
       })
 
-      // Add cleanup for the effect
-      this.addCleanup(element, () => {
+      this.addReactiveBinding(element, `prop:${key}`, () => {
         effect.dispose()
       })
       return
@@ -856,8 +874,7 @@ export class DOMRenderer {
         this.setElementClasses(element, value())
       })
 
-      // Add cleanup
-      this.addCleanup(element, () => {
+      this.addReactiveBinding(element, 'class', () => {
         effect.dispose()
       })
     } else {
@@ -930,8 +947,7 @@ export class DOMRenderer {
         this.setElementStyles(htmlElement, currentValue)
       })
 
-      // Add cleanup
-      this.addCleanup(element, () => {
+      this.addReactiveBinding(element, 'style', () => {
         effect.dispose()
       })
     } else {
@@ -1122,6 +1138,35 @@ export class DOMRenderer {
    * accumulates; a component that holds DOM across renders needs a stable one
    * either way, or nothing can dispose it.
    */
+  /**
+   * Registers a reactive binding for one element/prop pair, replacing and
+   * disposing whatever was bound there before.
+   */
+  private addReactiveBinding(
+    element: Element | Text | Comment,
+    key: string,
+    cleanup: () => void
+  ): void {
+    let bound = this.reactiveBindings.get(element)
+    if (!bound) {
+      bound = new Map()
+      this.reactiveBindings.set(element, bound)
+    }
+    const previous = bound.get(key)
+    if (previous) {
+      // Disposing twice is a no-op where the render owner already did it, and
+      // the only disposal on paths where it did not.
+      try {
+        previous()
+      } catch (error) {
+        console.error('Cleanup error:', error)
+      }
+      this.cleanupMap.get(element)?.delete(previous)
+    }
+    bound.set(key, cleanup)
+    this.addCleanup(element, cleanup)
+  }
+
   private addCleanup(
     element: Element | Text | Comment,
     cleanup: () => void
