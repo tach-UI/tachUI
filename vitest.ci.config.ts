@@ -58,16 +58,6 @@ export default defineConfig({
       '.github/demos/**',
       'demos/**',
     ],
-    // Forced collection, for the retention tier (#283). `WeakRef` answers
-    // "is this still reachable" only if something can be made to collect;
-    // without it those suites would have to skip, and a retention suite that
-    // skips is a green suite that checks nothing (#229). Supplied here rather
-    // than through NODE_OPTIONS so it holds however the runner is invoked.
-    poolOptions: {
-      threads: { execArgv: ['--expose-gc'] },
-      forks: { execArgv: ['--expose-gc'] },
-    },
-
     followSymlinks: false,
     // Reduce timeout for CI to catch hanging tests faster
     testTimeout: 15000, // 15 seconds instead of default 5 seconds

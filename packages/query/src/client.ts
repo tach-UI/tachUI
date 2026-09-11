@@ -380,6 +380,15 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       return
     }
     entry.inFlight.controller.abort()
+    // Dropped from the client-level set as well, which only `releaseSlot`
+    // did before — and that runs when the *loader* settles. A loader that
+    // ignores its abort and never settles therefore left its controller
+    // here for the life of the client, holding every abort listener
+    // registered on its signal and everything those close over. Safe to
+    // remove precisely because this path aborts first: `abortActive` has
+    // nothing left to do for it. The flights `markForReload` drops without
+    // aborting stay in the set, which is what keeps those cancellable.
+    activeControllers.delete(entry.inFlight.controller)
     entry.inFlight = null
     entry.fetchStatus = 'idle'
     entry.generation += 1
