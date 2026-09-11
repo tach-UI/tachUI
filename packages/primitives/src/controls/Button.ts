@@ -184,6 +184,9 @@ export class EnhancedButton
    */
   private readonly ownStyleProperties = new Set<string>()
 
+  /** So the ownerless-render notice is said once, not once per prop. */
+  private warnedOwnerless = false
+
   constructor(
     public props: ButtonProps,
     theme: ButtonTheme = defaultButtonTheme
@@ -428,8 +431,31 @@ export class EnhancedButton
    * precedence work by construction rather than by inspecting what is already
    * on the element.
    */
+  /**
+   * Says once, in development, that this Button is rendering where nothing can
+   * dispose a subscription — so its reactive props are snapshots.
+   *
+   * The alternative is a control that silently stops tracking depending on how
+   * its container happened to mount it. The comparison is written inline so a
+   * bundler can drop it.
+   */
+  private warnOwnerlessRender(): void {
+    if (process.env.NODE_ENV === 'production' || this.warnedOwnerless) {
+      return
+    }
+    this.warnedOwnerless = true
+    console.warn(
+      '[tachUI] Button is rendering outside a reactive owner, which is how sheets, popovers and split-view regions mount their contents. Its `disabled` attribute and its styles are snapshots of the current values and will not follow their signals. Subscribing here would never be released, since nothing on that path disposes what a render creates.'
+    )
+  }
+
   private styleProp(): Record<string, any> | (() => Record<string, any>) {
     if (getOwner() === null) {
+      // Same condition and same reason as `disabledProp`, so the same thing is
+      // said about it: styles are a snapshot here, and a state or colour
+      // change will not restyle. Warned once per render rather than per prop —
+      // both branches are the same fact about how this Button was mounted.
+      this.warnOwnerlessRender()
       return this.getButtonStyles()
     }
     return createMemo(() => this.getButtonStyles())
@@ -451,11 +477,7 @@ export class EnhancedButton
       // Said out loud, because the alternative is a control that silently
       // stops tracking depending on how its container happened to mount it.
       // The comparison is written inline so a bundler can drop it.
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn(
-          '[tachUI] Button received a signal for `isEnabled` but is rendering outside a reactive owner, which is how sheets, popovers and split-view regions mount their contents. Its `disabled` attribute is a snapshot of the current value and will not follow the signal. Subscribing here would never be released, since nothing on that path disposes what a render creates.'
-        )
-      }
+      this.warnOwnerlessRender()
       return !source()
     }
     // Fresh per render, and owned by that render. The renderer diffs props by

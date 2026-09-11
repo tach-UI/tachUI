@@ -9,7 +9,7 @@ import type { ComponentInstance } from '@tachui/core'
 import {
   createEffect,
   createSignal,
-  getSignalImpl,
+  writeSignal,
   h,
   isBinding,
   isSignal,
@@ -168,9 +168,7 @@ export function TabView(
       if (isBinding(options.selection)) {
         options.selection.set(newTabId)
       } else if (isSignal(options.selection)) {
-        getSignalImpl(
-          options.selection as (() => string) & { peek: () => string }
-        )?.set(newTabId)
+        writeSignal(options.selection, newTabId)
       }
     }
 

@@ -220,6 +220,34 @@ export function isSignal<T = any>(
 }
 
 /**
+ * Writes a value through a two-way prop, and says so when it cannot.
+ *
+ * A prop declared `T | Signal<T>` is written back through the accessor it was
+ * given — but only a `createSignal` accessor has anything to write to. A
+ * computed passes `isSignal` (it is one) and has no setter, so the write is a
+ * no-op, and silence there is the worst answer: the control moves, the value
+ * does not, and nothing says why.
+ *
+ * Returns whether the write landed, so a caller that has somewhere else to put
+ * the value can.
+ */
+export function writeSignal<T>(target: unknown, value: T): boolean {
+  const impl = isSignal(target)
+    ? getSignalImpl(target as (() => T) & { peek: () => T })
+    : null
+  if (impl) {
+    impl.set(value)
+    return true
+  }
+  if (typeof target === 'function' && process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[tachUI] A value was written back to a derived signal, which has no setter, so nothing changed. Two-way props need a signal created with createSignal; a computed can only be read. Pass the underlying signal, or handle the change with the component\'s onChange callback.'
+    )
+  }
+  return false
+}
+
+/**
  * Get the underlying signal implementation for debugging
  */
 export function getSignalImpl<T>(
