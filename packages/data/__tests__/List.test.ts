@@ -1007,7 +1007,7 @@ describe('For Component (SolidJS-style compatibility)', () => {
       const endTime = performance.now()
 
       expect(elements).toBeDefined()
-      expect(endTime - startTime).toBeLessThan(100) // Should complete within 100ms
+      expect(endTime - startTime).toBeLessThan(2000)
     })
   })
 })

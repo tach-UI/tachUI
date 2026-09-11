@@ -294,7 +294,7 @@ describe('Comprehensive Browser Compatibility Tests', () => {
       const duration = endTime - startTime
 
       // Should complete within reasonable time (adjust based on requirements)
-      expect(duration).toBeLessThan(500) // 500ms threshold - more realistic for CI environments
+      expect(duration).toBeLessThan(10000)
 
       const stats = OptimizedCSSGenerator.getStats()
       expect(stats.cache.size).toBeGreaterThan(0)

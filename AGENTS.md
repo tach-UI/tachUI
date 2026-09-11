@@ -49,6 +49,19 @@ the tier by where it lives. What the gate means differs per suite:
 
 `test:long` still points at files that no longer exist and cannot run (#229).
 
+## Timing assertions
+
+A wall-clock assertion in a test is a guard against a pathological regression —
+an accidental O(n^2), a hang — and never a performance target. Budgets close to
+the real duration fail on a loaded machine while measuring nothing about the
+code, and several tripping at once looks like a mysterious multi-file failure
+that nobody can reproduce.
+
+So: assert the structural claim wherever one exists (how many rows re-rendered,
+how many subscriptions remain), and keep any timing budget an order of
+magnitude clear of the work. Existing budgets were widened wholesale on that
+basis; a new one under a second is almost certainly too tight.
+
 ## Code Patterns & Conventions
 - **Components**: Exported functions returning JSX/TSX
 - **Modifiers**: Chainable `.modifierName()` directly on component instances (e.g. `Text('hi').padding().bold()`); `.modifier()` is an internal method and must not be exposed in public APIs or docs

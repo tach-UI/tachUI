@@ -150,7 +150,7 @@ describe('Navigation Stack Transitions', () => {
 
       // Should be a reasonable positive number within clamped range
       expect(duration).toBeGreaterThanOrEqual(100)
-      expect(duration).toBeLessThanOrEqual(3000) // clamped at 3s
+      expect(duration).toBeLessThanOrEqual(3000)
     })
 
     it('calculates duration for critically damped spring (zeta = 1)', () => {

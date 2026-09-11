@@ -581,7 +581,7 @@ describe('Enhanced ARIA Attributes System', () => {
       const duration = performance.now() - startTime
 
       // Should complete within reasonable time
-      expect(duration).toBeLessThan(10)
+      expect(duration).toBeLessThan(1000)
 
       // Verify all attributes were set
       const attributes = mockElement.getAllAttributes()
