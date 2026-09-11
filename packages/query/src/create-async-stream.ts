@@ -72,11 +72,20 @@ function describe(value: unknown): string {
  */
 function safeReturn(source: AsyncIterable<unknown> | AsyncIterator<unknown>): void {
   try {
+    // The object's own `return` comes first. Most callers here hand over the
+    // live iterator, and a self-iterable one would otherwise match the factory
+    // branch and be asked for a *fresh* iterator — closing that one instead
+    // and leaving the live subscription open, which is the opposite of the
+    // point. The factory is for the one caller that holds only an iterable: a
+    // source that arrived after its connection was replaced, never iterated.
+    const own = (source as AsyncIterator<unknown>).return
     const iterator =
-      Symbol.asyncIterator in source
-        ? (source as AsyncIterable<unknown>)[Symbol.asyncIterator]()
-        : (source as AsyncIterator<unknown>)
-    void Promise.resolve(iterator.return?.()).catch(() => undefined)
+      typeof own === 'function'
+        ? (source as AsyncIterator<unknown>)
+        : Symbol.asyncIterator in source
+          ? (source as AsyncIterable<unknown>)[Symbol.asyncIterator]()
+          : undefined
+    void Promise.resolve(iterator?.return?.()).catch(() => undefined)
   } catch {
     // Nothing left to do: the source is being abandoned either way.
   }
@@ -176,9 +185,25 @@ function createStreamConnection<T, E = Error>(
    */
   async function pump(
     iterator: AsyncIterator<T>,
-    signal: AbortSignal,
+    attempt: AbortController,
     current: number
   ): Promise<void> {
+    const signal = attempt.signal
+    /**
+     * Publishes how the stream ended and lets the source go.
+     *
+     * The abort is what a source cleaning up in an abort listener is waiting
+     * for — `open` is handed that signal and invited to use it — and without
+     * it a stream that completed or broke held its resources until the owner
+     * was disposed, since `cancel()` does nothing once the status is terminal.
+     * Ownership was already decided by the generation, so aborting here costs
+     * nothing else.
+     */
+    function finish(ending: AsyncStreamStatus): void {
+      attempt.abort()
+      setStatus(ending)
+    }
+
     for (;;) {
       try {
         const step = await raceAbort(Promise.resolve(iterator.next()), signal)
@@ -196,7 +221,7 @@ function createStreamConnection<T, E = Error>(
           return
         }
         if (step.done === true) {
-          setStatus('completed')
+          finish('completed')
           return
         }
         // `itemKey`, `reduce`, and the eviction they drive are caller code
@@ -219,7 +244,7 @@ function createStreamConnection<T, E = Error>(
           return
         }
         setError(() => failure as E)
-        setStatus('error')
+        finish('error')
         return
       }
     }
@@ -235,7 +260,6 @@ function createStreamConnection<T, E = Error>(
     const current = generation
     const attempt = new AbortController()
     controller = attempt
-    sink.reset()
     setError(() => undefined)
     setStatus('connecting')
 
@@ -261,6 +285,12 @@ function createStreamConnection<T, E = Error>(
     let iterable: AsyncIterable<T>
     let iterator: AsyncIterator<T>
     try {
+      // Inside the guard along with the rest: resetting the sink runs the
+      // `initial()` a fold was seeded with, which is caller code like any
+      // other. Above the guard, a throwing seed left a stream whose previous
+      // source had already been detached and released still reading `open`,
+      // with no message loop behind it and nothing published anywhere.
+      sink.reset()
       // The key read and the `open` call are both inside the guard, not above
       // it. `open` is an ordinary function and may throw before it ever
       // returns — `new EventSource(badUrl)` is the shape — and a key accessor
@@ -323,7 +353,7 @@ function createStreamConnection<T, E = Error>(
     // never return. A failure after this point has no promise left to reject,
     // so it reaches the consumer through `status` and `error`, which is where
     // a subscription's failures belong anyway.
-    void pump(iterator, attempt.signal, current)
+    void pump(iterator, attempt, current)
   }
 
   const autoConnect = options.autoConnect ?? true
@@ -382,27 +412,45 @@ function createStreamConnection<T, E = Error>(
     }
   })
 
-  function teardown(): void {
+  /**
+   * Ends the stream for good.
+   *
+   * `publish` is false for owner cleanup: nothing is left to read a status
+   * written while the owner is being torn down. An explicit `dispose()` is a
+   * different thing — the owner is alive and may still be rendering off these
+   * signals, so a stream that stopped has to say so, or a view driven by
+   * `status() === 'open'` goes on claiming to be live.
+   */
+  function teardown(publish: boolean): void {
+    const wasActive = untrack(() => isActive(status()))
     disposed = true
     detach()
+    if (publish && wasActive) {
+      setStatus('cancelled')
+    }
   }
 
-  onCleanup(teardown)
+  onCleanup(() => {
+    teardown(false)
+  })
 
   return {
     status,
     error,
     connect,
     cancel: () => {
-      if (!untrack(() => isActive(status()))) {
+      if (disposed || !untrack(() => isActive(status()))) {
         // Nothing is attached. Reporting `cancelled` here would overwrite the
-        // `completed` or `error` that says how the stream actually ended.
+        // `completed`, `error`, or disposal that says how the stream actually
+        // ended — disposal being the one that publishes `cancelled` itself.
         return
       }
       detach()
       setStatus('cancelled')
     },
-    dispose: teardown,
+    dispose: () => {
+      teardown(true)
+    },
   }
 }
 
@@ -413,7 +461,8 @@ function createStreamConnection<T, E = Error>(
  * `bufferSize` whenever `reduce` accumulates an array: a fold that keeps
  * everything is unbounded by construction, and a long-lived subscription with
  * one is a memory leak with a schedule. Collections belong in
- * {@link createAsyncStreamList} instead, where per-message cost stays flat.
+ * {@link createAsyncStreamList} instead, where a repeat key costs one
+ * item-signal write however much is retained, and `limit` bounds the rest.
  */
 export function createAsyncStream<T, A = undefined, E = Error>(
   options: AsyncStreamOptions<T, A>
@@ -425,12 +474,28 @@ export function createAsyncStream<T, A = undefined, E = Error>(
     options.initial === undefined ? (undefined as A) : options.initial()
   const [value, setValue] = createSignal<A>(seed())
 
+  /**
+   * Whether the sink is already in the state a reset would put it in.
+   *
+   * The accumulator is seeded eagerly, because a stream with `autoConnect`
+   * off publishes `value()` long before anything resets it. Connecting then
+   * reset it straight back to a seed it already held, running `initial()` a
+   * second time at creation — caller code, and free to be expensive or to
+   * have side effects.
+   */
+  let pristine = true
+
   const connection = createStreamConnection<T, E>(options, {
     reset: () => {
+      if (pristine) {
+        return
+      }
+      pristine = true
       setLatest(() => undefined)
       setValue(() => seed())
     },
     receive: (message) => {
+      pristine = false
       if (options.reduce === undefined) {
         setLatest(() => message)
         return
@@ -495,8 +560,15 @@ export function createAsyncStreamList<
   let order: K[] = []
   let retained = new Set<K>()
 
+  /** Whether the list is already in the state a reset would put it in. */
+  let pristine = true
+
   const connection = createStreamConnection<T, E>(options, {
     reset: () => {
+      if (pristine) {
+        return
+      }
+      pristine = true
       order = []
       retained = new Set<K>()
       controls.clear()
@@ -504,6 +576,7 @@ export function createAsyncStreamList<
     },
     receive: (message) => {
       const itemKey = options.itemKey(message)
+      pristine = false
       setLatest(() => message)
       if (retained.has(itemKey)) {
         // A repeat key is the same item saying something new. It updates in

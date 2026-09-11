@@ -19,8 +19,11 @@ schedule. With no fold at all there is no accumulation — unbounded array
 reduction is not what you get by default.
 
 Collection mode routes through `createSignalList`, so a list updates the one
-row a message touches instead of re-rendering, and per-message cost stays flat
-as the collection grows. A repeat `itemKey` updates that row in place without
+row a message touches instead of re-rendering: a repeat key costs one
+item-signal write however much is retained, while a new key also rewrites the
+key array, so `limit` is what keeps a live feed's cost flat rather than
+proportional to how long the page has been open. A repeat `itemKey` updates
+that row in place without
 moving it or ageing anything out, `limit` evicts from the far end from the one
 messages arrive at, and `get` reports absence for a key that has been evicted
 rather than throwing — `limit` can evict a key between reading it from `ids`
@@ -77,3 +80,18 @@ Owner-scoped also matches `createQuery`, which fetches on creation rather than
 on first read. Set `autoConnect: false` and drive `connect()`/`cancel()` by hand
 where a subscription should outlive less than its owner. Observation scoping is
 tracked in #357, for both primitives together.
+
+A third round closes the lifecycle's remaining gaps. Seeding a fold is caller
+code — `initial()` runs on every connection — so it moved inside the guard that
+publishes failures: a seed that threw on reconnection left a stream whose
+previous source had already been detached and released still reading `open`.
+The seed now also runs once at creation rather than twice, since the eager one
+already leaves the accumulator where a reset would put it. An explicit
+`dispose()` publishes `cancelled` when the stream was still running, so a view
+bound to `status() === 'open'` stops claiming to be live, and disposal is
+terminal: `cancel()` no longer paints over it. A stream that completes or
+breaks now aborts the signal `open` was handed, which a source cleaning up in
+an abort listener was otherwise left waiting for until its owner was disposed.
+Releasing a source prefers its own `return` over asking it for another
+iterator, which for a multi-shot source closed a fresh iterator and left the
+live one running.
