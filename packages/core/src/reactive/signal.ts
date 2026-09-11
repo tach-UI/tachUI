@@ -197,12 +197,26 @@ export function createSignal<T>(initialValue: T): [() => T, SignalSetter<T>] {
 }
 
 /**
- * Type guard to check if a value is a signal
+ * Type guard to check if a value is a signal.
+ *
+ * Both kinds count, because both *are* one. `createSignal` marks its accessor
+ * `tachui.signal` and `createMemo`/`createComputed` mark theirs
+ * `tachui.computed`, but the `Signal<T>` type covers both and every consumer
+ * treats them alike: a callable getter carrying `peek`, read the same way and
+ * subscribed to the same way. Checking only the first marker made a computed
+ * fail its own type's guard, which is not a narrow miss — the standard
+ * `isSignal(x) ? x() : x` split then hands the *function* on as if it were a
+ * value, so a prop reads as permanently truthy, a style is set to a function,
+ * and nothing subscribes (#364).
  */
 export function isSignal<T = any>(
   value: any
 ): value is (() => T) & { peek: () => T } {
-  return typeof value === 'function' && Symbol.for('tachui.signal') in value
+  return (
+    typeof value === 'function' &&
+    (Symbol.for('tachui.signal') in value ||
+      Symbol.for('tachui.computed') in value)
+  )
 }
 
 /**
