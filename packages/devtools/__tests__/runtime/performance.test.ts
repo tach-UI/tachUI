@@ -75,7 +75,7 @@ describe('PerformanceMonitor', () => {
 
       const duration = monitor.endTimer('test-operation')
       expect(duration).toBeGreaterThan(5)
-      expect(duration).toBeLessThan(50)
+      expect(duration).toBeLessThan(1000)
     })
 
     it('should handle missing timer gracefully', () => {

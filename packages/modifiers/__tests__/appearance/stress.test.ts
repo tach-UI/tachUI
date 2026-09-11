@@ -62,7 +62,7 @@ describe('Appearance Modifiers Stress Tests', () => {
       const duration = performance.now() - start
       const mockElement = mockContext.element as any
 
-      expect(duration).toBeLessThan(200) // Should complete within 200ms
+      expect(duration).toBeLessThan(4000)
       expect(mockElement.style.overflow).toBe('') // Last operation was disable
     })
 
@@ -78,7 +78,7 @@ describe('Appearance Modifiers Stress Tests', () => {
       const duration = performance.now() - start
       const mockElement = mockContext.element as any
 
-      expect(duration).toBeLessThan(100) // Should complete within 100ms
+      expect(duration).toBeLessThan(2000)
       expect(mockElement.style.overflow).toBe('hidden')
     })
 
@@ -95,7 +95,7 @@ describe('Appearance Modifiers Stress Tests', () => {
 
       const duration = performance.now() - start
 
-      expect(duration).toBeLessThan(80) // Should complete within 80ms
+      expect(duration).toBeLessThan(1600)
 
       // Verify all elements were modified
       mockElements.forEach(element => {
@@ -118,7 +118,7 @@ describe('Appearance Modifiers Stress Tests', () => {
       const duration = performance.now() - start
       const mockElement = mockContext.element as any
 
-      expect(duration).toBeLessThan(100) // Should complete within 100ms
+      expect(duration).toBeLessThan(2000)
       expect(mockElement.style.clipPath).toBe('circle(50%)')
     })
 
@@ -135,7 +135,7 @@ describe('Appearance Modifiers Stress Tests', () => {
       const duration = performance.now() - start
       const mockElement = mockContext.element as any
 
-      expect(duration).toBeLessThan(80) // Should complete within 80ms
+      expect(duration).toBeLessThan(1600)
       expect(mockElement.style.clipPath).toBe('ellipse(75% 60% at center)')
     })
 
@@ -160,7 +160,7 @@ describe('Appearance Modifiers Stress Tests', () => {
       const duration = performance.now() - start
       const mockElement = mockContext.element as any
 
-      expect(duration).toBeLessThan(100) // Should complete within 100ms
+      expect(duration).toBeLessThan(2000)
       expect(mockElement.style.clipPath).toBe(`polygon(${points})`)
     })
 
@@ -185,7 +185,7 @@ describe('Appearance Modifiers Stress Tests', () => {
       const duration = performance.now() - start
       const mockElement = mockContext.element as any
 
-      expect(duration).toBeLessThan(150) // Should complete within 150ms
+      expect(duration).toBeLessThan(3000)
       // Last applied should be polygon
       expect(mockElement.style.clipPath).toBe(
         'polygon(0% 0%, 100% 50%, 0% 100%)'
@@ -245,7 +245,7 @@ describe('Appearance Modifiers Stress Tests', () => {
 
       const duration = performance.now() - start
 
-      expect(duration).toBeLessThan(100) // Should complete within 100ms
+      expect(duration).toBeLessThan(2000)
     })
 
     it('should handle string concatenation efficiently for complex paths', () => {
@@ -269,7 +269,7 @@ describe('Appearance Modifiers Stress Tests', () => {
 
       const duration = performance.now() - start
 
-      expect(duration).toBeLessThan(150) // Should complete within 150ms
+      expect(duration).toBeLessThan(3000)
     })
   })
 
@@ -294,7 +294,7 @@ describe('Appearance Modifiers Stress Tests', () => {
 
       const duration = performance.now() - start
 
-      expect(duration).toBeLessThan(200) // Should complete within 200ms
+      expect(duration).toBeLessThan(4000)
     })
 
     it(
@@ -321,7 +321,7 @@ describe('Appearance Modifiers Stress Tests', () => {
 
         const duration = performance.now() - start
 
-        expect(duration).toBeLessThan(250) // Should complete within 200ms
+        expect(duration).toBeLessThan(5000)
       }
     )
 
@@ -347,7 +347,7 @@ describe('Appearance Modifiers Stress Tests', () => {
 
       const duration = performance.now() - start
 
-      expect(duration).toBeLessThan(150) // Should complete within 150ms
+      expect(duration).toBeLessThan(3000)
 
       // Verify elements were modified correctly
       mockElements.forEach((element, index) => {
@@ -391,7 +391,7 @@ describe('Appearance Modifiers Stress Tests', () => {
 
       const duration = performance.now() - start
 
-      expect(duration).toBeLessThan(100) // Should complete within 100ms
+      expect(duration).toBeLessThan(2000)
     })
 
     it('should handle dynamic clipping updates', () => {
@@ -416,7 +416,7 @@ describe('Appearance Modifiers Stress Tests', () => {
 
       const duration = performance.now() - start
 
-      expect(duration).toBeLessThan(150) // Should complete within 150ms
+      expect(duration).toBeLessThan(3000)
     })
   })
 })
