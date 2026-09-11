@@ -64,3 +64,7 @@ which would leave the prefixes before it marked and the ones after it
 untouched. The prefix list is copied at creation, so the caller's array stays
 theirs and a later push cannot change what the mutation invalidates — or ask
 for an invalidation with no client ever resolved to perform it.
+
+A run abandoned before anything waited on it — cancelled from inside
+`optimisticUpdate`, which runs before the request goes out — now has its
+rejection observed rather than left to surface as an unhandled rejection.

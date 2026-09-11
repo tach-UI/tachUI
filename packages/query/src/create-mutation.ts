@@ -51,6 +51,13 @@ function isThenable(value: unknown): boolean {
  */
 function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   if (signal.aborted) {
+    // Abandoned before anything waited on it — cancelled from inside
+    // `optimisticUpdate`, which runs before the request goes out. The run is
+    // abandoned but still real, and a rejection nobody has attached a handler
+    // to is an unhandled rejection: a warning at best, a killed process or a
+    // failed test run at worst. Observed and dropped, the same as the result
+    // of any call whose outcome no longer has anywhere to go.
+    work.catch(() => undefined)
     return Promise.reject(signal.reason)
   }
   return new Promise<T>((resolve, reject) => {
