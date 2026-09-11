@@ -1,9 +1,10 @@
 import type { ComponentInstance, CloneOptions } from '../runtime/types'
-import type { Signal } from '../reactive/types'
-
-function isSignal(value: unknown): value is Signal<any> {
-  return typeof value === 'function' && value !== null && typeof (value as any).set === 'function'
-}
+// The real guard, rather than a local one testing for a `.set` that a signal
+// accessor has never had — a getter carries `peek`, and the setter is a
+// separate function. Nothing matched it, so every signal fell through to the
+// generic branch, which happens to pass functions along by reference: right
+// answer, for no reason (#364).
+import { isSignal } from '../reactive/signal'
 
 function isAsset(value: unknown): boolean {
   return (

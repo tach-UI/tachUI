@@ -11,6 +11,7 @@ import type {
   Signal,
 } from '@tachui/core'
 import {
+  createMemo,
   createSignal,
   isSignal,
   createEffect,
@@ -173,6 +174,9 @@ export class EnhancedButton
   private setState: (value: ButtonState) => void
   public theme: ButtonTheme
 
+  /** Built once, so the renderer binds to one stable inverted signal. */
+  private cachedDisabled?: () => boolean
+
   constructor(
     public props: ButtonProps,
     theme: ButtonTheme = defaultButtonTheme
@@ -327,9 +331,27 @@ export class EnhancedButton
   }
 
   /**
-   * Check if button is enabled
+   * Check if button is enabled.
+   *
+   * Resolves, the way `isLoading` already did. Handing back the signal itself
+   * made every consumer wrong in the same direction: `if (!isEnabled)` on a
+   * function is never true, so disabled styling never applied and the press
+   * guard never fired, while a reactive effect reading this subscribed to
+   * nothing (#364).
    */
-  isEnabled(): boolean | (() => boolean) {
+  isEnabled(): boolean {
+    const source = this.enabledSource()
+    return typeof source === 'function' ? source() : source
+  }
+
+  /**
+   * The `isEnabled` prop in the form it was given, signal and all.
+   *
+   * `render` needs the unresolved form: a boolean it can hand straight to the
+   * renderer, or a signal the renderer can subscribe to. Everything else wants
+   * the resolved value and should use {@link isEnabled}.
+   */
+  private enabledSource(): boolean | (() => boolean) {
     const { isEnabled } = this.props
 
     if (isEnabled === undefined) return true
@@ -339,11 +361,28 @@ export class EnhancedButton
   }
 
   /**
+   * `disabled` as the renderer wants it, built once per instance.
+   *
+   * The renderer subscribes to a prop whose value is a signal and re-applies
+   * it on change, which is the only path that works here — the reactive style
+   * effect runs on DOM-ready, which `renderComponent` never fires. Memoized so
+   * the inversion is one subscription rather than one per render, and so the
+   * identity the renderer binds to stays stable.
+   */
+  private disabledProp(): boolean | (() => boolean) {
+    const source = this.enabledSource()
+    if (typeof source === 'boolean') {
+      return !source
+    }
+    this.cachedDisabled ??= createMemo(() => !source())
+    return this.cachedDisabled
+  }
+
+  /**
    * Render the button component
    */
   render() {
     // Use reactive pattern - pass signals/functions directly to runtime
-    const enabled = this.isEnabled() // Get signal/value for enabled state
 
     // Create button content - always include title
     const children = []
@@ -388,9 +427,19 @@ export class EnhancedButton
       props: {
         className: classString,
         type: 'button',
-        disabled: typeof enabled === 'boolean' ? !enabled : !enabled(), // Invert enabled to disabled
+        // A signal here rather than a snapshot of one: the renderer subscribes
+        // to a reactive prop and re-applies it, which is what makes `disabled`
+        // follow its signal instead of freezing at whatever it read on mount.
+        disabled: this.disabledProp(),
         onClick: this.props.action
           ? () => {
+              // Gated in JS as well as by the attribute. A disabled button
+              // suppresses clicks natively in a browser but not in jsdom, and
+              // an action that fires anyway is the difference between a
+              // control that looks disabled and one that is.
+              if (!this.isEnabled() || this.isLoading()) {
+                return
+              }
               try {
                 this.props.action?.()
               } catch (error) {
