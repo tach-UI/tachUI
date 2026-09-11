@@ -47,4 +47,10 @@ keeps those cancellable. The retention test for it is the one an earlier draft
 dropped as unprovable: the sentinel has to be held by an abort listener, not by
 the loader closure, which is collectible on its own.
 
+Detaching also leaves the entry in its detached state before the abort fires.
+`abort()` runs its listeners synchronously, and a listener is entitled to call
+`clear()` or `dispose()` — which re-enters the same detach and empties the slot
+the outer one is still working through, so anything read back from the entry
+afterwards is whatever that nested call left.
+
 `test:long` is still broken and stays with #229.

@@ -31,12 +31,19 @@ bun run test      # full suite, ~30-40s
 Package-specific: each has `dev`, `build`, `test`, and `valid` (the full check).
 
 Note: `test:memory-leaks` runs `vitest.memory.config.ts`, which globs the memory
-suites and sets `FORCE_MEMORY_TESTS`. Two tiers live under it. The deterministic
-retention checks (`packages/query/__tests__/memory`) also run in the normal suite
-and in CI — they obtain a collector in-process, so they need nothing from the
-runner and work under every pool. The component and modifier-lifecycle suites are
-heap-growth tests and stay **manual**: both skip unless `FORCE_MEMORY_TESTS=true`,
-which nothing in `.github/workflows` sets, so they run only through this script.
+suites and sets `FORCE_MEMORY_TESTS`. What that gate means differs per suite, so
+four files sit under it with three different coverages:
+
+- `packages/query/__tests__/memory` — deterministic retention checks, ungated.
+  They run in the normal suite and in CI as well, and obtain a collector
+  in-process, so they need nothing from the runner and work under every pool.
+- `memory-usage-tracking` — ungated too, and runs everywhere including CI.
+- `memory-leak-component` — skips on CI unless `FORCE_MEMORY_TESTS=true`, which
+  nothing in `.github/workflows` sets. So on CI it runs only through this
+  script; locally it runs in the normal suite too.
+- `modifier-lifecycle` — its memory subset skips without `FORCE_MEMORY_TESTS`
+  anywhere, CI or not; the rest of the file runs normally.
+
 `test:long` still points at files that no longer exist and cannot run (#229).
 
 ## Code Patterns & Conventions

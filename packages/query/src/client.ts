@@ -379,7 +379,20 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     if (entry.inFlight === null) {
       return
     }
-    entry.inFlight.controller.abort()
+    // The entry is left in its detached state before anything foreign runs.
+    // `abort()` invokes its listeners synchronously, and a listener is
+    // entitled to call `clear()` or `dispose()` — which re-enters here for
+    // this same entry and clears the slot. Anything read back from the entry
+    // afterwards is whatever that nested call left behind, so the controller
+    // is taken first and the entry is consistent before the abort fires.
+    const { controller } = entry.inFlight
+    entry.inFlight = null
+    entry.fetchStatus = 'idle'
+    entry.generation += 1
+    if (entry.status === 'loading') {
+      entry.status = 'idle'
+    }
+    controller.abort()
     // Dropped from the client-level set as well, which only `releaseSlot`
     // did before — and that runs when the *loader* settles. A loader that
     // ignores its abort and never settles therefore left its controller
@@ -388,13 +401,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     // remove precisely because this path aborts first: `abortActive` has
     // nothing left to do for it. The flights `markForReload` drops without
     // aborting stay in the set, which is what keeps those cancellable.
-    activeControllers.delete(entry.inFlight.controller)
-    entry.inFlight = null
-    entry.fetchStatus = 'idle'
-    entry.generation += 1
-    if (entry.status === 'loading') {
-      entry.status = 'idle'
-    }
+    activeControllers.delete(controller)
   }
 
   function cancelEviction(entry: ClientCacheEntry): void {
