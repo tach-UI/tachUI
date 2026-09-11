@@ -207,7 +207,7 @@ export function createSignal<T>(initialValue: T): [() => T, SignalSetter<T>] {
  * fail its own type's guard, which is not a narrow miss — the standard
  * `isSignal(x) ? x() : x` split then hands the *function* on as if it were a
  * value, so a prop reads as permanently truthy, a style is set to a function,
- * and nothing subscribes (#364).
+ * and nothing subscribes.
  */
 export function isSignal<T = any>(
   value: any

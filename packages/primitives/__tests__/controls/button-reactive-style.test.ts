@@ -1,5 +1,5 @@
 /**
- * Signal-driven style modifier values (#364).
+ * Signal-driven style modifier values.
  *
  * The report said a `Signal` colour was read once and never updated. It is
  * not: effects flush on a microtask, so a read in the same task as the write
