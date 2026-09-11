@@ -22,6 +22,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createRoot } from '@tachui/core'
 
 import {
+  canForceCollection,
   createSentinel,
   isRetained,
   weaklyHoldAsync,
@@ -33,6 +34,12 @@ import {
 } from '../../src/client'
 import { createAsyncStream } from '../../src/create-async-stream'
 import { createQuery } from '../../src/create-query'
+
+/**
+ * Skipped only where no collector could be obtained and nothing demanded one;
+ * under `test:memory-leaks` that condition is fatal at import instead.
+ */
+const describeRetention = describe.skipIf(!canForceCollection)
 
 afterEach(() => {
   resetDefaultQueryClient()
@@ -46,7 +53,7 @@ async function settle(milliseconds = 0): Promise<void> {
 /** Short enough to wait out in a test, long enough not to race the loader. */
 const GC_TIME = 20
 
-describe('cache entries', () => {
+describeRetention('cache entries', () => {
   it('lets an unobserved entry go once gcTime has elapsed', async () => {
     const client = createQueryClient()
     const ref = await weaklyHoldAsync(async () => {
@@ -103,7 +110,7 @@ describe('cache entries', () => {
   })
 })
 
-describe('observers', () => {
+describeRetention('observers', () => {
   it('releases an observed entry when the owner that made it is disposed', async () => {
     const client = createQueryClient()
     let disposeOwner!: () => void
@@ -173,7 +180,7 @@ describe('observers', () => {
   })
 })
 
-describe('in-flight requests', () => {
+describeRetention('in-flight requests', () => {
   it('releases the controller and entry of a request that was abandoned', async () => {
     const client = createQueryClient()
     let disposeOwner!: () => void
@@ -261,7 +268,7 @@ describe('in-flight requests', () => {
   })
 })
 
-describe('streams', () => {
+describeRetention('streams', () => {
   it('lets its iterator go when the owner is disposed', async () => {
     const refs: WeakRef<object>[] = []
     /**
