@@ -48,7 +48,11 @@ import type {
   QueryStatus,
   RetryPolicy,
 } from '@tachui/query'
-import { createMutation } from '@tachui/query'
+import {
+  createAsyncStream,
+  createAsyncStreamList,
+  createMutation,
+} from '@tachui/query'
 
 type Assert<T extends true> = T
 
@@ -699,3 +703,46 @@ const inferredOptimisticMutation = createMutation({
 export type InferredOptimisticMutationKeepsItsShape = Assert<
   Equals<typeof inferredOptimisticMutation, MutationResult<string, number, Error>>
 >
+
+/**
+ * The stream primitives infer both sides of a subscription. `T` comes from
+ * what the source yields, and the accumulator from the fold — a stream with no
+ * fold keeps `A` at its `undefined` default rather than widening to whatever
+ * the messages are, which is what makes `value` honest about there being no
+ * accumulation to read.
+ */
+const inferredStream = createAsyncStream({
+  key: () => ['feed'],
+  open: (): AsyncIterable<RawUser> => messageSource(),
+})
+
+export type InferredStreamHasNoAccumulator = Assert<
+  Equals<typeof inferredStream, AsyncStreamResult<RawUser, undefined, Error>>
+>
+
+const inferredFold = createAsyncStream({
+  key: () => ['feed'],
+  open: (): AsyncIterable<RawUser> => messageSource(),
+  initial: () => 0,
+  reduce: (count: number) => count + 1,
+})
+
+export type InferredFoldCarriesItsAccumulator = Assert<
+  Equals<typeof inferredFold, AsyncStreamResult<RawUser, number, Error>>
+>
+
+/**
+ * Collection mode infers its key type from `itemKey`, so `ids` and `get` are
+ * typed in the caller's own key rather than in `PropertyKey`.
+ */
+const inferredList = createAsyncStreamList({
+  key: () => ['feed'],
+  open: (): AsyncIterable<RawUser> => messageSource(),
+  itemKey: (user: RawUser) => user.id,
+})
+
+export type InferredListCarriesItsKey = Assert<
+  Equals<typeof inferredList, AsyncStreamListResult<RawUser, string, Error>>
+>
+
+declare function messageSource(): AsyncIterable<RawUser>
