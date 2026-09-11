@@ -188,6 +188,11 @@ function createStreamConnection<T, E = Error>(
         // message already in flight when it landed is exactly what that
         // promise is about.
         if (!owns(current) || signal.aborted) {
+          // Cleaned up here as well as on the failure path below: a cancel
+          // landing in this gap — after the message was handed over, before it
+          // was delivered — ends the loop without the race ever rejecting, so
+          // this is the only place left to offer the source its release.
+          safeReturn(iterator)
           return
         }
         if (step.done === true) {
@@ -354,6 +359,10 @@ function createStreamConnection<T, E = Error>(
       keyFault = false
       setError(() => undefined)
       setStatus('idle')
+      // Forgotten along with the error: the last key the effect acted on was
+      // the broken one's predecessor, so a correction back to that same hash
+      // would look like no change at all and never reconnect.
+      actedOn = undefined
     }
     if (hash === actedOn) {
       return
