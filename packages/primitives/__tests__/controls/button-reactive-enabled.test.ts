@@ -1,5 +1,5 @@
 /**
- * Reactive `isEnabled` on Button (#364).
+ * Reactive `isEnabled` on Button.
  *
  * `isEnabled` is typed `boolean | Signal<boolean>`, and a signal in that slot
  * did nothing at all: no `disabled` attribute, no disabled styling, and the
@@ -139,6 +139,45 @@ describe('Button isEnabled', () => {
     await flush()
     button.click()
     expect(fired).toBe(1)
+  })
+})
+
+describe('an enclosing re-render', () => {
+  it('keeps disabled tracking when a parent re-renders for its own reasons', async () => {
+    const [tick, setTick] = createSignal(0)
+    const [enabled, setEnabled] = createSignal(true)
+    const child = Button('x', {
+      action: () => undefined,
+      isEnabled: enabled,
+    }).build()
+
+    // A render runs inside an effect, so a parent reading any signal at all
+    // re-renders its children and disposes the scope their subscriptions were
+    // made in. The renderer then diffs new props against old by identity and
+    // skips whatever is unchanged — so an accessor cached across renders is
+    // recognised, skipped, and never resubscribed.
+    const parent = {
+      type: 'component' as const,
+      id: 'parent',
+      props: {},
+      render: () => {
+        tick()
+        return (child as unknown as { render: () => unknown }).render()
+      },
+    }
+    renderComponent(parent as never, host)
+    await flush()
+
+    const button = host.querySelector('button')
+    expect(button?.hasAttribute('disabled')).toBe(false)
+
+    setTick(1)
+    await flush()
+
+    setEnabled(false)
+    await flush()
+
+    expect(host.querySelector('button')?.hasAttribute('disabled')).toBe(true)
   })
 })
 

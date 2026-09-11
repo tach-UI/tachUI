@@ -174,9 +174,6 @@ export class EnhancedButton
   private setState: (value: ButtonState) => void
   public theme: ButtonTheme
 
-  /** Built once, so the renderer binds to one stable inverted signal. */
-  private cachedDisabled?: () => boolean
-
   constructor(
     public props: ButtonProps,
     theme: ButtonTheme = defaultButtonTheme
@@ -337,7 +334,7 @@ export class EnhancedButton
    * made every consumer wrong in the same direction: `if (!isEnabled)` on a
    * function is never true, so disabled styling never applied and the press
    * guard never fired, while a reactive effect reading this subscribed to
-   * nothing (#364).
+   * nothing.
    */
   isEnabled(): boolean {
     const source = this.enabledSource()
@@ -361,21 +358,27 @@ export class EnhancedButton
   }
 
   /**
-   * `disabled` as the renderer wants it, built once per instance.
+   * `disabled` as the renderer wants it.
    *
    * The renderer subscribes to a prop whose value is a signal and re-applies
    * it on change, which is the only path that works here — the reactive style
-   * effect runs on DOM-ready, which `renderComponent` never fires. Memoized so
-   * the inversion is one subscription rather than one per render, and so the
-   * identity the renderer binds to stays stable.
+   * effect runs on DOM-ready, which `renderComponent` never fires.
+   *
+   * Built fresh on every render rather than cached, and the identity matters
+   * as much as the value. A render happens inside an effect, so an enclosing
+   * component re-rendering for any reason at all disposes this scope and takes
+   * the renderer's prop subscription with it. The renderer then diffs the new
+   * props against the old by identity and skips anything unchanged — so a
+   * cached accessor would be recognised, skipped, and never resubscribed,
+   * leaving the attribute frozen at whatever it last read. A new memo each
+   * time is a prop that has changed, which is precisely what has happened.
    */
   private disabledProp(): boolean | (() => boolean) {
     const source = this.enabledSource()
     if (typeof source === 'boolean') {
       return !source
     }
-    this.cachedDisabled ??= createMemo(() => !source())
-    return this.cachedDisabled
+    return createMemo(() => !source())
   }
 
   /**

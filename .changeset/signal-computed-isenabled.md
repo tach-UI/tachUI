@@ -4,7 +4,7 @@
 ---
 
 `isSignal` now recognises a computed, and `Button`'s `isEnabled` follows a
-signal (#364).
+signal.
 
 `createSignal` marks its accessor `tachui.signal` and `createComputed` marks
 its own `tachui.computed`, but `isSignal` looked only for the first — so a
@@ -24,6 +24,13 @@ instead of freezing at what it read on mount, and the click handler declines
 in JS as well — a disabled button suppresses clicks natively in a browser but
 not everywhere, and an action that fires anyway is the difference between a
 control that looks disabled and one that is.
+
+`disabled` is built fresh on each render rather than cached, and the identity
+matters as much as the value. A render runs inside an effect, so an enclosing
+component re-rendering for any reason disposes that scope and takes the
+renderer's subscription with it; the renderer then diffs props by identity and
+skips what has not changed, so a cached accessor would be recognised, skipped,
+and never resubscribed — leaving the attribute frozen at whatever it last read.
 
 The other half of the report — signal-driven style modifier values reading once
 — was not reproducible: effects flush on a microtask, so a read in the same
