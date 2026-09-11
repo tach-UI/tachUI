@@ -190,7 +190,6 @@ describe('the lifecycle', () => {
 
   it('keeps completion, failure, and cancellation apart', async () => {
     const completing = channel<Message>()
-    const failing = channel<Message>()
     const cancelling = channel<Message>()
     const failure = new Error('socket closed')
 
@@ -235,7 +234,6 @@ describe('the lifecycle', () => {
     done.dispose()
     broken.dispose()
     hungUp.dispose()
-    void failing
   })
 
   it('reports a failure to open and rejects the connect that asked for it', async () => {
@@ -279,6 +277,180 @@ describe('the lifecycle', () => {
     expect(stream.status()).toBe('error')
     expect(stream.error()).toBe(failure)
     dispose()
+  })
+
+  it('publishes an open that throws before it ever returns', async () => {
+    const failure = new Error('bad url')
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => ['feed'],
+        open: () => {
+          // `new EventSource(badUrl)` is the realistic shape: an ordinary
+          // function that throws before it has anything to return.
+          throw failure
+        },
+      })
+    )
+    await settle()
+
+    // Under autoConnect there is no promise for the rejection to reach, so a
+    // status left at `connecting` would be the only thing the consumer ever
+    // saw — a silent failure in the primitive whose point is an honest
+    // lifecycle.
+    expect(stream.status()).toBe('error')
+    expect(stream.error()).toBe(failure)
+    dispose()
+  })
+
+  it.each([
+    // An async `open` that forgets to return resolves undefined; the others
+    // are the shapes a caller most plausibly hands over by mistake, and the
+    // message has to name what actually arrived to be worth reading.
+    { resolved: undefined, named: 'undefined' },
+    { resolved: null, named: 'null' },
+    { resolved: [{ id: 'a', body: 'an array is not a stream' }], named: 'an array' },
+    { resolved: { messages: [] }, named: 'object' },
+  ])(
+    'rejects and publishes when open resolves $named instead of a source',
+    async ({ resolved, named }) => {
+      const { value: stream, dispose } = withOwner(() =>
+        createAsyncStream<Message>({
+          key: () => ['feed'],
+          open: (() =>
+            Promise.resolve(resolved)) as unknown as () => AsyncIterable<Message>,
+          autoConnect: false,
+        })
+      )
+
+      await expect(stream.connect()).rejects.toBeInstanceOf(QueryError)
+
+      // Never `open`: claiming the subscription is established with no pump
+      // behind it is worse than reporting the failure.
+      expect(stream.status()).toBe('error')
+      expect((stream.error() as unknown as Error).message).toContain(named)
+      dispose()
+    }
+  )
+
+  it('publishes a key accessor that throws inside a manual connect', async () => {
+    const failure = new Error('key blew up')
+    const [broken, setBroken] = createSignal(false)
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => {
+          if (broken()) {
+            throw failure
+          }
+          return ['feed']
+        },
+        open: () => channel<Message>().iterable,
+        autoConnect: false,
+      })
+    )
+    await settle()
+
+    setBroken(true)
+    await settle()
+
+    // Reading the key is caller code too, and it runs inside `connect` as well
+    // as inside the effect. Outside the guard it left the stream at
+    // `connecting` and cleared the error the effect had already published.
+    await expect(stream.connect()).rejects.toBe(failure)
+    expect(stream.status()).toBe('error')
+    expect(stream.error()).toBe(failure)
+    dispose()
+  })
+
+  it('publishes an iterator factory that throws', async () => {
+    const failure = new Error('cannot iterate')
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => ['feed'],
+        open: () => ({
+          [Symbol.asyncIterator]: () => {
+            throw failure
+          },
+        }),
+      })
+    )
+    await settle()
+
+    expect(stream.status()).toBe('error')
+    expect(stream.error()).toBe(failure)
+    dispose()
+  })
+
+  it('ends a source that breaks the iterator protocol, with nothing left unhandled', async () => {
+    const unhandled: unknown[] = []
+    const onUnhandled = (reason: unknown): void => {
+      unhandled.push(reason)
+    }
+    process.on('unhandledRejection', onUnhandled)
+    try {
+      const { value: stream, dispose } = withOwner(() =>
+        createAsyncStream<Message>({
+          key: () => ['feed'],
+          open: () => ({
+            [Symbol.asyncIterator]: () => ({
+              // A result is what `next()` owes its consumer. Reading `done`
+              // off this throws, inside a loop nobody awaits.
+              next: () =>
+                Promise.resolve(undefined) as unknown as Promise<
+                  IteratorResult<Message>
+                >,
+            }),
+          }),
+        })
+      )
+      await settle()
+
+      expect(stream.status()).toBe('error')
+      expect(stream.error()).toBeInstanceOf(TypeError)
+      expect(unhandled).toEqual([])
+      dispose()
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+    }
+  })
+
+  it('cancels a source whose return is not callable', async () => {
+    const unhandled: unknown[] = []
+    const onUnhandled = (reason: unknown): void => {
+      unhandled.push(reason)
+    }
+    process.on('unhandledRejection', onUnhandled)
+    try {
+      const { value: stream, dispose } = withOwner(() =>
+        createAsyncStream<Message>({
+          key: () => ['feed'],
+          open: () => ({
+            [Symbol.asyncIterator]: () => ({
+              next: () =>
+                new Promise<IteratorResult<Message>>(() => {
+                  // never settles
+                }),
+              // Present, and not a function. Offering it the chance to clean
+              // up happens inside the loop's own failure handler, where a
+              // throw has nothing above it to catch.
+              return: 'not callable' as unknown as () => Promise<
+                IteratorResult<Message>
+              >,
+            }),
+          }),
+        })
+      )
+      await settle()
+
+      stream.cancel()
+      await settle()
+
+      expect(stream.status()).toBe('cancelled')
+      expect(stream.error()).toBeUndefined()
+      expect(unhandled).toEqual([])
+      dispose()
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+    }
   })
 
   it('refuses a connect after its owner was disposed', async () => {
@@ -566,6 +738,29 @@ describe('the key', () => {
     dispose()
   })
 
+  it('clears the error a bad key published once the key is corrected', async () => {
+    const [broken, setBroken] = createSignal(true)
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => (broken() ? [() => 'not hashable'] : ['feed']),
+        open: () => channel<Message>().iterable,
+        autoConnect: false,
+      })
+    )
+    await settle()
+    expect(stream.status()).toBe('error')
+
+    setBroken(false)
+    await settle()
+
+    // Without autoConnect nothing else would ever clear it: `connect()` is the
+    // only other thing that does, and the caller has no reason to think one is
+    // needed.
+    expect(stream.status()).toBe('idle')
+    expect(stream.error()).toBeUndefined()
+    dispose()
+  })
+
   it('leaves an idle stream alone when its key changes', async () => {
     let opens = 0
     const [room, setRoom] = createSignal('a')
@@ -586,6 +781,31 @@ describe('the key', () => {
 
     expect(stream.status()).toBe('idle')
     expect(opens).toBe(0)
+    dispose()
+  })
+
+  it('stops watching the key once the result is disposed', async () => {
+    let opens = 0
+    const [room, setRoom] = createSignal('a')
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => ['room', room()],
+        open: () => {
+          opens += 1
+          return channel<Message>().iterable
+        },
+      })
+    )
+    await settle()
+    expect(opens).toBe(1)
+
+    // The owner is still alive, so the effect is too. Disposing through the
+    // result has to stop it reconnecting on its own.
+    stream.dispose()
+    setRoom('b')
+    await settle()
+
+    expect(opens).toBe(1)
     dispose()
   })
 
@@ -620,33 +840,6 @@ describe('the key', () => {
     expect(abandoned.returned()).toBe(1)
     expect(abandoned.nexts()).toBe(0)
     expect(stream.status()).toBe('open')
-    dispose()
-  })
-})
-
-describe('the key', () => {
-  it('stops watching the key once the result is disposed', async () => {
-    let opens = 0
-    const [room, setRoom] = createSignal('a')
-    const { value: stream, dispose } = withOwner(() =>
-      createAsyncStream<Message>({
-        key: () => ['room', room()],
-        open: () => {
-          opens += 1
-          return channel<Message>().iterable
-        },
-      })
-    )
-    await settle()
-    expect(opens).toBe(1)
-
-    // The owner is still alive, so the effect is too. Disposing through the
-    // result has to stop it reconnecting on its own.
-    stream.dispose()
-    setRoom('b')
-    await settle()
-
-    expect(opens).toBe(1)
     dispose()
   })
 })
@@ -757,6 +950,38 @@ describe('reduction mode', () => {
     expect(stream.status()).toBe('error')
     expect(stream.error()).toBe(failure)
     expect(source.returned()).toBe(1)
+    dispose()
+  })
+
+  it('leaves latest where it was when the fold throws', async () => {
+    const source = channel<Message>()
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message, number>({
+        key: () => ['feed'],
+        open: () => source.iterable,
+        initial: () => 0,
+        reduce: (count, message) => {
+          if (message.id === '2') {
+            throw new Error('bad fold')
+          }
+          return count + 1
+        },
+      })
+    )
+    await settle()
+
+    source.send({ id: '1', body: 'fine' })
+    await settle()
+    expect(stream.latest()).toEqual({ id: '1', body: 'fine' })
+
+    source.send({ id: '2', body: 'poison' })
+    await settle()
+
+    // `latest` is the latest message the stream accepted, not the one it
+    // choked on — which is what collection mode already does, where the key is
+    // read before anything is published.
+    expect(stream.status()).toBe('error')
+    expect(stream.latest()).toEqual({ id: '1', body: 'fine' })
     dispose()
   })
 
