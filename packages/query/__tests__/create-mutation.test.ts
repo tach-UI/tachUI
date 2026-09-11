@@ -382,6 +382,44 @@ describe('cancellation', () => {
     dispose()
   })
 
+  it('observes the rejection of a run abandoned before the race began', async () => {
+    // Cancelled from inside `optimisticUpdate`, the signal is already aborted
+    // when the run is handed over, so nothing waits on it. The run is
+    // abandoned but still real: its rejection needs a handler, or it surfaces
+    // as an unhandled rejection and takes the process — or the test run —
+    // down with it.
+    const unhandled: unknown[] = []
+    const onUnhandled = (reason: unknown): void => {
+      unhandled.push(reason)
+    }
+    process.on('unhandledRejection', onUnhandled)
+    try {
+      let mutation!: ReturnType<
+        typeof createMutation<void, string, Error, string>
+      >
+      const { dispose } = withOwner(() => {
+        mutation = createMutation<void, string, Error, string>({
+          run: () => Promise.reject(new Error('connection reset')),
+          optimisticUpdate: () => {
+            mutation.cancel()
+            return 'previous'
+          },
+          onError: () => undefined,
+        })
+        return mutation
+      })
+
+      await expect(mutation.mutate()).rejects.toThrow()
+      // Node reports an unhandled rejection a turn later, not inline.
+      await settle()
+
+      expect(unhandled).toEqual([])
+      dispose()
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+    }
+  })
+
   it('does nothing when there is no call in flight', async () => {
     const { value: mutation, dispose } = withOwner(() =>
       createMutation<void, string>({
