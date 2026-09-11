@@ -577,6 +577,9 @@ describe('cancellation', () => {
 
     expect(stream.status()).toBe('cancelled')
     expect(stream.latest()).toEqual({ id: '1', body: 'before' })
+    // The race never rejected — the message had already been handed over — so
+    // the loop's own exit is the only place left to release the source.
+    expect(source.returned()).toBe(1)
     dispose()
   })
 
@@ -758,6 +761,36 @@ describe('the key', () => {
     // needed.
     expect(stream.status()).toBe('idle')
     expect(stream.error()).toBeUndefined()
+    dispose()
+  })
+
+  it('reconnects when a bad key is corrected back to the one before it', async () => {
+    const opened: unknown[] = []
+    const [key, setKey] = createSignal<'good' | 'bad'>('good')
+    const { value: stream, dispose } = withOwner(() =>
+      createAsyncStream<Message>({
+        key: () => (key() === 'bad' ? [() => 'not hashable'] : ['feed']),
+        open: ({ key: resolved }) => {
+          opened.push(resolved[0])
+          return channel<Message>().iterable
+        },
+      })
+    )
+    await settle()
+    expect(opened).toHaveLength(1)
+
+    setKey('bad')
+    await settle()
+    expect(stream.status()).toBe('error')
+
+    // Back to the hash it had before the bad one. The key the effect last
+    // acted on is that same hash, so an equality check alone would read this
+    // as no change and leave the stream disconnected for good.
+    setKey('good')
+    await settle()
+
+    expect(opened).toHaveLength(2)
+    expect(stream.status()).toBe('open')
     dispose()
   })
 

@@ -59,3 +59,10 @@ A key corrected after an unhashable one clears the error it published, rather
 than describing a stream merely waiting to be connected as broken. In reduction
 mode `latest` is now the last message the stream accepted rather than the one a
 throwing `reduce` choked on, matching what collection mode already did.
+
+A second round closes two narrower gaps. A cancel landing between a message
+being handed over and the loop delivering it now offers the source its release
+— the abort race never rejects in that window, so the loop's own exit is the
+only place left to do it. And a key corrected back to the hash it had before an
+unhashable one reconnects, rather than reading as no change at all and staying
+disconnected for good.

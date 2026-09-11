@@ -692,7 +692,11 @@ export type AsyncStreamOptions<T, A = undefined> = AsyncStreamBaseOptions<T> &
 
 /**
  * Mode B - collection mode, backed by `createSignalList` so a List updates one row
- * instead of re-rendering, and per-message cost stays constant.
+ * instead of re-rendering.
+ *
+ * A repeat key costs one item-signal write whatever the collection holds. A new
+ * key also rewrites the key array, so an unbounded feed's per-message cost grows
+ * with what it has retained; `limit` is what keeps it flat.
  */
 export interface AsyncStreamListOptions<T, K extends PropertyKey = PropertyKey>
   extends AsyncStreamBaseOptions<T> {
