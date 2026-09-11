@@ -51,7 +51,7 @@
     "benchmark:navigation:quick": "bun run --filter @tachui/navigation benchmark:quick",
     "benchmark:navigation:bundle": "bun run --filter @tachui/navigation benchmark:bundle",
     "benchmark:navigation:all": "bun run --filter @tachui/navigation benchmark:all",
-    "test:memory-leaks": "FORCE_MEMORY_TESTS=true vitest run packages/primitives/__tests__/integration/memory-leak-component.test.ts packages/core/__tests__/reactive/modifier-lifecycle.test.ts packages/query/__tests__/memory",
+    "test:memory-leaks": "vitest run --config vitest.memory.config.ts",
     "docs:dev": "bun run --filter @tachui/docs dev",
     "docs:build": "bun run --filter @tachui/docs build",
     "docs:api": "typedoc",

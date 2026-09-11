@@ -30,12 +30,14 @@ bun run test      # full suite, ~30-40s
 
 Package-specific: each has `dev`, `build`, `test`, and `valid` (the full check).
 
-Note: `test:memory-leaks` runs the retention tier — `packages/query/__tests__/memory`
-plus the component and modifier-lifecycle suites. The deterministic retention checks
-in it also run in the normal suite and in CI; they need `globalThis.gc`, which the
-vitest configs supply through `poolOptions.<pool>.execArgv` and which
-`packages/query/__tests__/support/retention.ts` treats as required rather than optional. `test:long`
-still points at files that no longer exist and cannot run (#229).
+Note: `test:memory-leaks` runs `vitest.memory.config.ts`, which globs the memory
+suites and sets `FORCE_MEMORY_TESTS`. Two tiers live under it. The deterministic
+retention checks (`packages/query/__tests__/memory`) also run in the normal suite
+and in CI — they obtain a collector in-process, so they need nothing from the
+runner and work under every pool. The component and modifier-lifecycle suites are
+heap-growth tests and stay **manual**: both skip unless `FORCE_MEMORY_TESTS=true`,
+which nothing in `.github/workflows` sets, so they run only through this script.
+`test:long` still points at files that no longer exist and cannot run (#229).
 
 ## Code Patterns & Conventions
 - **Components**: Exported functions returning JSX/TSX

@@ -149,12 +149,14 @@ describe('observers', () => {
    */
   it('sees an observer that was never released', async () => {
     const client = createQueryClient()
-    const leaked: object[] = []
     const ref = await weaklyHoldAsync(async () => {
       const payload = createSentinel('leaked-observer')
-      // Taken and deliberately never released: exactly what a component that
-      // forgets its cleanup leaves behind.
-      leaked.push(client.observe(['leaked']))
+      // Taken and deliberately never released, which is what a component that
+      // forgets its cleanup leaves behind. The handle is dropped on purpose:
+      // what pins the entry is the observer count this raised and nothing
+      // lowers, not a reference anyone is holding — so keeping the handle
+      // would retain no more than throwing it away does.
+      client.observe(['leaked'])
       await client.fetchQuery<object>({
         key: () => ['leaked'],
         load: async () => payload,
@@ -167,7 +169,6 @@ describe('observers', () => {
 
     expect(inspectQueryEntry(client, ['leaked'])).toBeDefined()
     expect(await isRetained(ref)).toBe(true)
-    expect(leaked).toHaveLength(1)
     client.dispose()
   })
 })
@@ -214,6 +215,47 @@ describe('in-flight requests', () => {
     // controller left in the client's active set would keep its listeners —
     // and everything they close over — for the life of the client.
     expect(inspectQueryEntry(client, ['abandoned'])).toBeUndefined()
+    expect(await isRetained(ref)).toBe(false)
+    client.dispose()
+  })
+
+  it('releases the controller of a loader that never answers its abort', async () => {
+    const client = createQueryClient()
+    let disposeOwner!: () => void
+    const ref = await weaklyHoldAsync(async () => {
+      const payload = createSentinel('deaf-request')
+      createRoot((dispose) => {
+        disposeOwner = dispose
+        createQuery<object>({
+          key: () => ['deaf'],
+          load: ({ signal }) =>
+            new Promise<object>(() => {
+              // Registers interest in the abort and then ignores it, never
+              // settling. The listener is what holds the response: a signal
+              // keeps its listeners, a controller keeps its signal, and the
+              // client keeps the controller — so this is reachable for as long
+              // as the client tracks the flight.
+              signal.addEventListener('abort', () => {
+                void payload
+              })
+            }),
+          gcTime: GC_TIME,
+          client,
+        })
+      })
+      await settle()
+      return payload
+    })
+
+    expect(await isRetained(ref)).toBe(true)
+
+    disposeOwner()
+    await settle(GC_TIME * 3)
+
+    // Abandoning the flight releases the controller, rather than leaving it
+    // tracked until the whole client goes. Nothing else can clean this up:
+    // the loader never settles, so the slot-release path never runs.
+    expect(inspectQueryEntry(client, ['deaf'])).toBeUndefined()
     expect(await isRetained(ref)).toBe(false)
     client.dispose()
   })
