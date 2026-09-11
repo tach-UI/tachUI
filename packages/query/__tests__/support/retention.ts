@@ -16,38 +16,65 @@
  * `if (global.gc)` branches would otherwise wake up and change what they
  * measure.
  *
- * Importing this module is the guarantee: if no collector can be obtained, that
- * fails here, at load, rather than inside whichever assertion happened to ask
- * first — or not at all, for a test that only ever checks bookkeeping.
+ * Whether a missing collector is fatal depends on who is asking. Under
+ * `test:memory-leaks` it is: that tier exists to run these checks, and one that
+ * quietly ran none of them would be the disease, not the cure. Everywhere else
+ * these files are swept up by the ordinary suite, and `v8.setFlagsFromString`
+ * is documented as unsafe and unguaranteed after startup — so a runtime that
+ * stops yielding a collector should cost the retention coverage, not every
+ * other test in the repository. There it skips instead, which is visible in the
+ * run and cannot be mistaken for a pass.
  */
 
 import v8 from 'node:v8'
 import vm from 'node:vm'
 
-/** The forced collector, obtained once at import. */
-const collect: () => void = (() => {
+/** The forced collector, obtained once at import, or null if none can be. */
+const collect: (() => void) | null = (() => {
   const existing = (globalThis as { gc?: () => void }).gc
   if (typeof existing === 'function') {
     return existing
   }
-  v8.setFlagsFromString('--expose-gc')
   try {
-    const exposed = vm.runInNewContext('gc') as unknown
-    if (typeof exposed !== 'function') {
-      throw new TypeError('v8 exposed no collector')
+    v8.setFlagsFromString('--expose-gc')
+    try {
+      const exposed = vm.runInNewContext('gc') as unknown
+      return typeof exposed === 'function' ? (exposed as () => void) : null
+    } finally {
+      // Put the flag back: it is the isolate's, not this module's, and leaving
+      // it set is how the collector would reach code that never asked for one.
+      v8.setFlagsFromString('--no-expose-gc')
     }
-    return exposed as () => void
-  } catch (cause) {
-    throw new Error(
-      'Retention checks need a forced garbage collector, and none could be obtained from v8.setFlagsFromString("--expose-gc") + vm.runInNewContext("gc"). Skipping instead would leave the suite green while checking nothing.',
-      { cause }
-    )
-  } finally {
-    // Put the flag back: it is the isolate's, not this module's, and leaving it
-    // set is how the collector would reach code that never asked for one.
-    v8.setFlagsFromString('--no-expose-gc')
+  } catch {
+    return null
   }
 })()
+
+const MISSING_COLLECTOR =
+  'Retention checks need a forced garbage collector, and none could be obtained from v8.setFlagsFromString("--expose-gc") + vm.runInNewContext("gc").'
+
+if (collect === null) {
+  if (process.env.FORCE_MEMORY_TESTS === 'true') {
+    throw new Error(
+      `${MISSING_COLLECTOR} The memory tier is what asked for them, so this is fatal rather than skipped: a tier that runs no checks is the failure it exists to prevent.`
+    )
+  }
+  // Loud, because the alternative to noticing this is retention coverage
+  // disappearing from the ordinary suite without anything saying so.
+  console.warn(
+    `${MISSING_COLLECTOR} Retention suites are skipped here; run \`bun run test:memory-leaks\`, where the same condition fails instead.`
+  )
+}
+
+/**
+ * Whether collection can be forced here.
+ *
+ * A retention suite gates itself on this — `describe.skipIf(!canForceCollection)`
+ * — so a tooling regression costs these checks rather than the whole run. Under
+ * the memory tier the condition never reaches a test: importing this module has
+ * already failed.
+ */
+export const canForceCollection = collect !== null
 
 /**
  * Runs collection until weak references have had a chance to clear.
@@ -57,6 +84,9 @@ const collect: () => void = (() => {
  * something a previous cycle collected needs the next one to go itself.
  */
 async function collectGarbage(cycles = 4): Promise<void> {
+  if (collect === null) {
+    throw new Error(MISSING_COLLECTOR)
+  }
   for (let cycle = 0; cycle < cycles; cycle += 1) {
     await new Promise((resolve) => setTimeout(resolve, 0))
     collect()

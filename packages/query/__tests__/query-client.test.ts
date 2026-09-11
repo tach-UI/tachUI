@@ -222,6 +222,40 @@ describe('fetchQuery caching', () => {
     expect(inspectQueryEntry(client, keyOf('users')())).toBeUndefined()
   })
 
+  it('lets an abort listener claim the slot the detach is releasing', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const key = keyOf('users')
+    const load = ({ signal }: { signal: AbortSignal }): Promise<string> => {
+      loads += 1
+      return new Promise<string>(() => {
+        // Re-enters the client from inside the abort that is detaching this
+        // very flight. The entry it finds has to read as having no request —
+        // an entry still advertising the flight being torn down hands this
+        // caller the abandoned promise, and the detach then clears the slot
+        // that caller had just claimed, without aborting it.
+        signal.addEventListener('abort', () => {
+          if (loads === 1) {
+            void client.fetchQuery({ key, load }).catch(() => undefined)
+          }
+        })
+      })
+    }
+
+    const observation = client.observe(key())
+    void client.fetchQuery({ key, load }).catch(() => undefined)
+    expect(loads).toBe(1)
+
+    // Detaches the flight while the entry stays observed, so there is still
+    // an entry for the reentrant caller to find.
+    observation.abortInFlight()
+
+    expect(loads).toBe(2)
+    expect(inspectQueryEntry(client, key())?.fetchStatus).toBe('fetching')
+    observation.release()
+    client.dispose()
+  })
+
   it('recovers when the loader throws synchronously', async () => {
     const client = createQueryClient()
     let loads = 0
