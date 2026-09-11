@@ -19,6 +19,7 @@ import {
 
 import {
   createQueryClient,
+  inspectQueryEntry,
   provideQueryClient,
   resetDefaultQueryClient,
   useQueryClient,
@@ -190,6 +191,35 @@ describe('fetchQuery caching', () => {
       })
     ).resolves.toBe('fresh')
     expect(reloads).toBe(1)
+  })
+
+  it('survives an abort listener that clears the client', async () => {
+    const client = createQueryClient()
+    let cleared = 0
+    const observation = client.observe(keyOf('users')())
+    void client
+      .fetchQuery({
+        key: keyOf('users'),
+        load: ({ signal }: { signal: AbortSignal }) =>
+          new Promise<string>(() => {
+            // `abort()` runs its listeners synchronously, so this re-enters
+            // the client from inside the detach that is aborting it — and the
+            // nested clear releases the very slot the outer call is midway
+            // through releasing.
+            signal.addEventListener('abort', () => {
+              cleared += 1
+              client.clear()
+            })
+          }),
+      })
+      .catch(() => undefined)
+
+    expect(() => {
+      observation.release()
+    }).not.toThrow()
+
+    expect(cleared).toBe(1)
+    expect(inspectQueryEntry(client, keyOf('users')())).toBeUndefined()
   })
 
   it('recovers when the loader throws synchronously', async () => {
