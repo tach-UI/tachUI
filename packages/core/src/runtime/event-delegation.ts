@@ -71,6 +71,12 @@ export class EventDelegator {
     if (elementMap && elementMap.has(eventType)) {
       // Handler already exists - unregister the old one first to prevent leaks
       this.unregister(container, element, eventType)
+      // Re-read it: `unregister` drops the map from the WeakMap as soon as it
+      // empties, and this binding still points at that detached map. Writing
+      // the new handler into it files the handler where dispatch will never
+      // look — and the count below still goes up, so the element ends up with
+      // a live root listener, a count of one, and nothing to call.
+      elementMap = this.elementHandlers.get(element)
     }
 
     // Store handler data

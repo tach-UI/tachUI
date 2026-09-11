@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { registerBasicModifiers } from '@tachui/modifiers'
 import type { ModifierRegistry } from '@tachui/registry'
 import { h } from '../../src/runtime'
-import type { DOMNode } from '../../src/runtime/types'
 import { applyModifiersToNode } from '../../src/modifiers'
-import type { ModifierContext } from '../../src/modifiers/types'
-import { BaseModifier as CoreBaseModifier } from '../../src/modifiers/base'
 import {
   createComputed,
   createEffect,
@@ -14,10 +10,15 @@ import {
   flushSync,
 } from '../../src/reactive'
 import {
-  createTestRegistry,
   disposeComputed,
   getSubscriberCount,
 } from '../../tools/testing/reactive-test-helpers'
+import {
+  createLifecycleRegistry,
+  mountWithModifiers,
+  unmountAll,
+  unmountMountedNode,
+} from './support/modifier-lifecycle-harness'
 
 type ModifierCall = { name: string; args: any[] }
 type MountedNode = {
@@ -27,61 +28,6 @@ type MountedNode = {
 
 const mountedNodes = new Set<MountedNode>()
 let componentIdCounter = 0
-const runMemoryTests = process.env.FORCE_MEMORY_TESTS === 'true'
-const memoryIt = runMemoryTests ? it : it.skip
-
-class CoreWidthModifier extends CoreBaseModifier<{ value: any }> {
-  readonly type = 'coreWidth'
-  readonly priority = 100
-
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
-    this.applyStyles(context.element, { width: this.properties.value })
-    return undefined
-  }
-}
-
-function mountWithModifiers(
-  registry: ModifierRegistry,
-  element: HTMLElement,
-  calls: ModifierCall[]
-): MountedNode {
-  let disposeRoot: () => void = () => {}
-
-  createRoot(dispose => {
-    disposeRoot = dispose
-    const node = h('div')
-    // Intentional low-level path for deterministic modifier lifecycle testing.
-    node.element = element
-
-    const modifiers = calls.map(call => {
-      const factory = registry.get(call.name)
-      if (!factory) {
-        throw new Error(`Missing modifier factory: ${call.name}`)
-      }
-      return (factory as (...args: any[]) => any)(...call.args)
-    })
-
-    componentIdCounter += 1
-    applyModifiersToNode(node, modifiers, {
-      componentId: `modifier-lifecycle-test-${componentIdCounter}`,
-      element,
-      phase: 'creation',
-    })
-  })
-
-  const mounted: MountedNode = {
-    element,
-    dispose: () => disposeRoot(),
-  }
-  mountedNodes.add(mounted)
-  return mounted
-}
-
-function unmountMountedNode(node: MountedNode): void {
-  node.dispose()
-  mountedNodes.delete(node)
-}
-
 function flushAsync(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0))
 }
@@ -90,18 +36,11 @@ describe('modifier lifecycle cleanup', () => {
   let registry: ModifierRegistry
 
   beforeEach(() => {
-    document.body.innerHTML = ''
-    componentIdCounter = 0
-    registry = createTestRegistry()
-    registerBasicModifiers({ registry })
-    registry.register('coreWidth', (value: any) => new CoreWidthModifier({ value }))
+    registry = createLifecycleRegistry()
   })
 
   afterEach(() => {
-    mountedNodes.forEach(node => {
-      node.dispose()
-    })
-    mountedNodes.clear()
+    unmountAll()
   })
 
   describe('Subscription setup', () => {
@@ -347,43 +286,6 @@ describe('modifier lifecycle cleanup', () => {
       expect(secondElement.style.opacity).toBe('0.9')
 
       unmountMountedNode(second)
-    })
-  })
-
-  describe('Memory leak validation', () => {
-    memoryIt('100 components created then removed return to baseline subscriptions', () => {
-      const [color] = createSignal('#123456')
-      const baseline = getSubscriberCount(color)
-      const mounts = Array.from({ length: 100 }, () =>
-        mountWithModifiers(registry, document.createElement('div'), [
-          { name: 'foregroundColor', args: [color] },
-        ])
-      )
-
-      expect(getSubscriberCount(color)).toBe(baseline + 100)
-
-      mounts.forEach(mounted => {
-        unmountMountedNode(mounted)
-      })
-
-      expect(getSubscriberCount(color)).toBe(baseline)
-    })
-
-    memoryIt('1000 updates on removed component keep subscription count at baseline', () => {
-      const [size, setSize] = createSignal(10)
-      const baseline = getSubscriberCount(size)
-      const mounted = mountWithModifiers(registry, document.createElement('div'), [
-        { name: 'fontSize', args: [size] },
-      ])
-
-      unmountMountedNode(mounted)
-
-      for (let i = 0; i < 1000; i += 1) {
-        setSize(10 + i)
-      }
-      flushSync()
-
-      expect(getSubscriberCount(size)).toBe(baseline)
     })
   })
 

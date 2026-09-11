@@ -402,4 +402,58 @@ describe('Event Delegation System (Phase 3)', () => {
       unmount()
     })
   })
+
+  describe('Re-registering a handler on the same element', () => {
+    it('keeps the element reachable when its only handler is replaced', () => {
+      const element = document.createElement('button')
+      container.appendChild(element)
+      let calls: string[] = []
+
+      // The first registration is the element's only handler, so replacing it
+      // empties the element's handler map — and an empty map is dropped from
+      // the WeakMap that dispatch looks in.
+      globalEventDelegator.register(container, element, 'click', () => {
+        calls.push('first')
+      })
+      const cleanup = globalEventDelegator.register(
+        container,
+        element,
+        'click',
+        () => {
+          calls.push('second')
+        }
+      )
+
+      element.click()
+
+      // Silent loss is the failure this guards: the count still reads one and
+      // the root listener is still live, so nothing about the delegator looks
+      // wrong from the outside — the click simply goes nowhere.
+      expect(calls).toEqual(['second'])
+
+      calls = []
+      cleanup()
+      element.click()
+      expect(calls).toEqual([])
+    })
+
+    it('survives repeated replacement, as a re-rendering component does', () => {
+      const element = document.createElement('button')
+      container.appendChild(element)
+      const calls: number[] = []
+
+      for (let generation = 0; generation < 5; generation += 1) {
+        globalEventDelegator.register(container, element, 'click', () => {
+          calls.push(generation)
+        })
+      }
+
+      element.click()
+
+      // Only the newest handler, and it is reachable: a re-render that
+      // re-registers the same element must neither stack handlers nor lose
+      // the one it just installed.
+      expect(calls).toEqual([4])
+    })
+  })
 })
