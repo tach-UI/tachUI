@@ -16,6 +16,7 @@
 
 import { createMemo, createSignal, onCleanup } from '@tachui/core'
 
+import { raceAbort } from './abort'
 import { useQueryClient } from './client'
 import { QueryError } from './errors'
 import type {
@@ -35,49 +36,6 @@ function isThenable(value: unknown): boolean {
     return false
   }
   return typeof (value as { then?: unknown }).then === 'function'
-}
-
-/**
- * Settles as `work` does, or rejects the moment the signal aborts — whichever
- * happens first.
- *
- * A `run` is *asked* to respect its signal and nothing can make it. One that
- * ignores the signal and never settles would leave `cancel()` holding an
- * aborted controller, a promise pending for good, a form stuck submitting, and
- * an optimistic update with nothing left to undo it. Racing the two means
- * cancellation ends the call whatever the transport does; the run is left to
- * finish into a result nobody holds, which is the most anyone can do about a
- * request already sent.
- */
-function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
-  if (signal.aborted) {
-    // Abandoned before anything waited on it — cancelled from inside
-    // `optimisticUpdate`, which runs before the request goes out. The run is
-    // abandoned but still real, and a rejection nobody has attached a handler
-    // to is an unhandled rejection: a warning at best, a killed process or a
-    // failed test run at worst. Observed and dropped, the same as the result
-    // of any call whose outcome no longer has anywhere to go.
-    work.catch(() => undefined)
-    return Promise.reject(signal.reason)
-  }
-  return new Promise<T>((resolve, reject) => {
-    function onAbort(): void {
-      reject(signal.reason)
-    }
-    signal.addEventListener('abort', onAbort, { once: true })
-    // Both handlers are attached here, so a rejection that loses the race is
-    // still handled and never surfaces as an unhandled rejection.
-    work.then(
-      (value) => {
-        signal.removeEventListener('abort', onAbort)
-        resolve(value)
-      },
-      (error) => {
-        signal.removeEventListener('abort', onAbort)
-        reject(error)
-      }
-    )
-  })
 }
 
 /**

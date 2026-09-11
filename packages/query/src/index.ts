@@ -16,6 +16,10 @@ export {
   DEFAULT_STALE_TIME,
 } from './defaults'
 export { createQueryClient, provideQueryClient, useQueryClient } from './client'
+export {
+  createAsyncStream,
+  createAsyncStreamList,
+} from './create-async-stream'
 export { createMutation } from './create-mutation'
 export { createQuery } from './create-query'
 export { isDevelopment, isServer, QueryError } from './errors'
