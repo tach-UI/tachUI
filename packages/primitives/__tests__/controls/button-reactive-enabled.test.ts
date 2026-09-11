@@ -20,9 +20,9 @@ import {
   createSignal,
   getSignalImpl,
   isSignal,
+  mountComponentTree,
   renderComponent,
 } from '@tachui/core'
-import { mountComponentTree } from '@tachui/core/runtime/dom-bridge'
 
 import { Button } from '../../src'
 
@@ -236,6 +236,68 @@ describe('mounting directly', () => {
     // the life of the process, one more for every sheet, popover or split view
     // that has ever been opened.
     expect(observers()).toBe(baseline)
+  })
+
+  it('leaves nothing subscribed to a colour signal either', () => {
+    const [tint] = createSignal('#ff0000')
+    const observers = (): number =>
+      (getSignalImpl(tint as never) as unknown as { observers: Set<unknown> })
+        .observers.size
+    const baseline = observers()
+
+    for (let cycle = 0; cycle < 10; cycle += 1) {
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const dispose = mountComponentTree(
+        Button('x', { action: () => undefined, tint }).build() as never,
+        container
+      )
+      dispose()
+      container.remove()
+    }
+
+    // Same path, same undisposable effect, different prop: the reactive style
+    // effect reads `tint`, `backgroundColor` and `foregroundColor`, and each
+    // one it subscribes to is a caller's signal held for good.
+    expect(observers()).toBe(baseline)
+  })
+
+  it('does not follow the signal there, and says so', async () => {
+    const warnings: unknown[] = []
+    const realWarn = console.warn
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args[0])
+    }
+    try {
+      const [enabled, setEnabled] = createSignal(true)
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const dispose = mountComponentTree(
+        Button('x', { action: () => undefined, isEnabled: enabled }).build() as never,
+        container
+      )
+      const button = container.querySelector('button')
+      expect(button?.hasAttribute('disabled')).toBe(false)
+
+      setEnabled(false)
+      await flush()
+
+      // Documented behaviour, pinned so a later change cannot quietly restore
+      // the subscription — and the leak with it — while looking like a fix.
+      expect(button?.hasAttribute('disabled')).toBe(false)
+      expect(
+        warnings.some(
+          warning =>
+            typeof warning === 'string' &&
+            warning.includes('outside a reactive owner')
+        )
+      ).toBe(true)
+
+      dispose()
+      container.remove()
+    } finally {
+      console.warn = realWarn
+    }
   })
 })
 

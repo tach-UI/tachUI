@@ -212,48 +212,60 @@ export class EnhancedButton
    * Set up reactive style updates based on state changes
    */
   private setupReactiveStyles(button: HTMLButtonElement): void {
-    // Create a reactive effect that updates styles when state changes
+    /**
+     * Restyles on this component's own state changes, and subscribes to
+     * nothing else.
+     *
+     * The constraint is the path rather than the styling: this effect is
+     * created on DOM ready, and nothing there disposes it. The component's
+     * cleanup array was copied by `build()` before render could add to it, and
+     * the renderer's element cleanup does not run on that path either. So
+     * every signal this effect reads is held for the life of the process, one
+     * observer per mount — and these are the caller's signals, shared across
+     * every Button that was handed the same one.
+     *
+     * `stateSignal` is the exception, and the only dependency: it belongs to
+     * this instance, so retaining it retains nothing anyone else can see.
+     * Everything else — the enabled and loading state, `tint`,
+     * `backgroundColor`, `foregroundColor`, and the theme a `ColorAsset`
+     * resolves against — is read untracked, as a snapshot at the moment this
+     * runs.
+     *
+     * What that costs: a caller's colour signal changing no longer restyles
+     * through here. Today that changes nothing observable, because
+     * `applyStylesToElement` skips any property that already has a value, so
+     * only the first pass of this effect ever reaches the DOM. When that skip
+     * is fixed, or when this path learns to dispose what it creates, this is
+     * the place to restore the subscriptions — not before, or they leak.
+     */
     const effect = createEffect(() => {
-      // Reading the state signal makes this effect reactive to state changes
       this.stateSignal()
 
-      // Deliberately *not* subscribed to here. This effect is created on DOM
-      // ready, a path where nothing disposes it — neither the component's
-      // cleanup, which `build()` copied before render could add to it, nor the
-      // renderer's element cleanup. Reading a caller's `isEnabled` signal from
-      // inside it would therefore hold that signal for the life of the
-      // process, one observer per mount. The enabled state reaches the DOM
-      // through the `disabled` prop instead, which the renderer owns.
+      untrack(() => {
+        const { tint, backgroundColor, foregroundColor } = this.props
 
-      // Watch color properties for reactivity
-      const { tint, backgroundColor, foregroundColor } = this.props
+        // Resolved, not subscribed to: a `ColorAsset` resolves against the
+        // theme, which is as shared as any caller's signal.
+        if (tint && isSignal(tint)) {
+          ;(tint as () => string)()
+        } else if (tint instanceof ColorAsset) {
+          tint.resolve()
+        }
 
-      // Make reactive to tint changes
-      if (tint && isSignal(tint)) {
-        ;(tint as () => string)() // Read the signal to make effect reactive to it
-      } else if (tint instanceof ColorAsset) {
-        tint.resolve() // Make effect reactive to theme changes
-      }
+        if (backgroundColor && isSignal(backgroundColor)) {
+          ;(backgroundColor as () => string)()
+        } else if (backgroundColor instanceof ColorAsset) {
+          backgroundColor.resolve()
+        }
 
-      // Make reactive to backgroundColor changes
-      if (backgroundColor && isSignal(backgroundColor)) {
-        ;(backgroundColor as () => string)()
-      } else if (backgroundColor instanceof ColorAsset) {
-        backgroundColor.resolve()
-      }
+        if (foregroundColor && isSignal(foregroundColor)) {
+          ;(foregroundColor as () => string)()
+        } else if (foregroundColor instanceof ColorAsset) {
+          foregroundColor.resolve()
+        }
 
-      // Make reactive to foregroundColor changes
-      if (foregroundColor && isSignal(foregroundColor)) {
-        ;(foregroundColor as () => string)()
-      } else if (foregroundColor instanceof ColorAsset) {
-        foregroundColor.resolve()
-      }
-
-      // Untracked for the same reason: `getButtonStyles` reads the enabled and
-      // loading state, and this effect must not be what keeps those signals
-      // alive. It still recomputes whenever anything read above changes.
-      const styles = untrack(() => this.getButtonStyles())
-      this.applyStylesToElement(button, styles)
+        this.applyStylesToElement(button, this.getButtonStyles())
+      })
     })
 
     // Store the effect cleanup function
@@ -393,6 +405,15 @@ export class EnhancedButton
       // would keep reading this signal for the life of the process, one more
       // for every mount. A snapshot subscribes to nothing and leaves the
       // attribute where the ordinary render path already puts it correctly.
+      //
+      // Said out loud, because the alternative is a control that silently
+      // stops tracking depending on how its container happened to mount it.
+      // The comparison is written inline so a bundler can drop it.
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          '[tachUI] Button received a signal for `isEnabled` but is rendering outside a reactive owner, which is how sheets, popovers and split-view regions mount their contents. Its `disabled` attribute is a snapshot of the current value and will not follow the signal. Subscribing here would never be released, since nothing on that path disposes what a render creates.'
+        )
+      }
       return !source()
     }
     // Fresh per render, and owned by that render. The renderer diffs props by

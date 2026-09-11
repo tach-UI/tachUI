@@ -51,6 +51,23 @@ path behind sheets, popovers and split views, `disabled` is a plain value
 instead: nothing there disposes what a render creates, so a subscription made
 in that path would be held for the life of the process, one per mount.
 
+Button's reactive style effect no longer subscribes to anything a caller owns.
+It is created on DOM ready, a path where nothing disposes it — the component's
+cleanup array is copied by `build()` before a render can add to it, and the
+renderer's element cleanup does not run there either — so every signal it read
+was held for the life of the process, one observer per mount, and those signals
+are shared across every component handed the same one. It now reads the enabled
+and loading state, `tint`, `backgroundColor`, `foregroundColor`, and the theme a
+`ColorAsset` resolves against as snapshots, and depends only on the component's
+own state signal.
+
+That removes reactivity as well as the leak: a caller's colour or loading signal
+changing no longer restyles through this effect. Nothing observable changes
+today, because the style application skips any property that already has a
+value and so only the first pass ever reaches the DOM — but when that skip is
+fixed, or when the mount path learns to dispose what a render creates, the
+subscriptions belong back here and not before.
+
 The click handler also declines while disabled **or loading**. A disabled
 button suppresses clicks natively in a browser but not in every environment,
 and `handlePress` has always refused a press while loading — so a click and a

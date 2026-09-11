@@ -20,14 +20,6 @@ import {
   unmountMountedNode,
 } from './support/modifier-lifecycle-harness'
 
-type ModifierCall = { name: string; args: any[] }
-type MountedNode = {
-  element: HTMLElement
-  dispose: () => void
-}
-
-const mountedNodes = new Set<MountedNode>()
-let componentIdCounter = 0
 function flushAsync(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0))
 }
