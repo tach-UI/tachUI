@@ -53,7 +53,11 @@ async function settle(): Promise<void> {
  */
 async function waitUntil(
   condition: () => boolean,
-  timeout = 2000
+  // A deadline, not a budget: it exists so a condition that never arrives
+  // fails as a test rather than hanging the run. Generous on purpose — the
+  // window being waited on here is 20ms, and anything tight enough to be
+  // crossed by a loaded machine is measuring the machine.
+  timeout = 30_000
 ): Promise<void> {
   const deadline = Date.now() + timeout
   while (!condition() && Date.now() < deadline) {
@@ -846,7 +850,21 @@ describe('freshness over time', () => {
     // loaded runner can overshoot a 20ms window by more than any margin worth
     // hard-coding.
     await waitUntil(() => value.isStale())
-    expect(value.isStale()).toBe(true)
+
+    // Reported with its surroundings rather than as a bare boolean. This test
+    // has failed on CI twice for two different reasons — once a one-shot
+    // freshness timer that never re-armed, once unexplained — and
+    // `expected false to be true` says nothing about which. If it goes again,
+    // the entry's state is in the failure.
+    expect({
+      isStale: value.isStale(),
+      status: value.status(),
+      fetchStatus: value.fetchStatus(),
+      updatedAt: value.updatedAt(),
+      entryIsStale: inspectQueryEntry(client, ['u'])?.isStale,
+      entryUpdatedAt: inspectQueryEntry(client, ['u'])?.updatedAt,
+      now: Date.now(),
+    }).toMatchObject({ isStale: true })
     dispose()
   })
 
