@@ -68,6 +68,16 @@ export default defineConfig({
     // Timeout
     testTimeout: 10000,
 
+    // Forced collection, for the retention tier (#283). `WeakRef` answers
+    // "is this still reachable" only if something can be made to collect;
+    // without it those suites would have to skip, and a retention suite that
+    // skips is a green suite that checks nothing (#229). Supplied here rather
+    // than through NODE_OPTIONS so it holds however the runner is invoked.
+    poolOptions: {
+      threads: { execArgv: ['--expose-gc'] },
+      forks: { execArgv: ['--expose-gc'] },
+    },
+
     followSymlinks: false,
   },
 

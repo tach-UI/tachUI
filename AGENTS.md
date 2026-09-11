@@ -30,8 +30,12 @@ bun run test      # full suite, ~30-40s
 
 Package-specific: each has `dev`, `build`, `test`, and `valid` (the full check).
 
-Note: `test:memory-leaks` and `test:long` currently point at files that no longer
-exist and cannot run (#229).
+Note: `test:memory-leaks` runs the retention tier — `packages/query/__tests__/memory`
+plus the component and modifier-lifecycle suites. The deterministic retention checks
+in it also run in the normal suite and in CI; they need `globalThis.gc`, which the
+vitest configs supply through `poolOptions.<pool>.execArgv` and which
+`packages/query/__tests__/support/retention.ts` treats as required rather than optional. `test:long`
+still points at files that no longer exist and cannot run (#229).
 
 ## Code Patterns & Conventions
 - **Components**: Exported functions returning JSX/TSX
