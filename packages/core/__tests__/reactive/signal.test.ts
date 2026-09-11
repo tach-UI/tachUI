@@ -15,6 +15,7 @@ import {
   flushSync,
   isSignal,
   untrack,
+  writeSignal,
 } from '../../src/reactive'
 
 describe('Signal', () => {
@@ -413,5 +414,52 @@ describe('Signal Performance', () => {
     expect(spy).toHaveBeenCalledWith(999)
     expect(spy).toHaveBeenCalledTimes(2) // Initial + final batched update
     expect(endTime - startTime).toBeLessThan(1000) // Should be fast
+  })
+})
+
+describe('writeSignal', () => {
+  it('writes through a signal and reports that it landed', () => {
+    const [value, setValue] = createSignal(1)
+    void setValue
+    expect(writeSignal(value, 7)).toBe(true)
+    expect(value()).toBe(7)
+  })
+
+  it('refuses a computed, and says so rather than doing nothing quietly', () => {
+    const [source] = createSignal(1)
+    const derived = createComputed(() => source() * 2)
+    const warnings: unknown[] = []
+    const realWarn = console.warn
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args[0])
+    }
+    try {
+      // A computed satisfies `Signal` and has no setter. Before, a two-way
+      // prop handed one moved its control and changed nothing, silently.
+      expect(writeSignal(derived, 99)).toBe(false)
+      expect(derived()).toBe(2)
+      expect(
+        warnings.some(
+          warning =>
+            typeof warning === 'string' && warning.includes('derived signal')
+        )
+      ).toBe(true)
+    } finally {
+      console.warn = realWarn
+    }
+  })
+
+  it('says nothing about a plain value, which was never a signal', () => {
+    const warnings: unknown[] = []
+    const realWarn = console.warn
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args[0])
+    }
+    try {
+      expect(writeSignal(42, 7)).toBe(false)
+      expect(warnings).toEqual([])
+    } finally {
+      console.warn = realWarn
+    }
   })
 })

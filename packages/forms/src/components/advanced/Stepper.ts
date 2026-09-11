@@ -6,7 +6,7 @@
  */
 
 import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
-import { createEffect, getSignalImpl, isSignal } from '@tachui/core'
+import { createEffect, isSignal, writeSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h } from '@tachui/core'
 import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
@@ -154,12 +154,10 @@ export class StepperComponent implements ComponentInstance<StepperProps> {
   private setValue(newValue: StepperValue): void {
     const constrainedValue = this.constrainValue(newValue)
 
-    if (isSignal(this.props.value)) {
-      const signalImpl = getSignalImpl(this.props.value as any)
-      if (signalImpl) {
-        signalImpl.set(constrainedValue)
-      }
-    }
+    // Reports rather than swallows a write to something that cannot take one:
+    // a computed satisfies `Signal` and has no setter, so the stepper would
+    // move and the value would not.
+    writeSignal(this.props.value, constrainedValue)
 
     if (this.props.onChange) {
       this.props.onChange(constrainedValue)

@@ -808,7 +808,11 @@ export class DOMRenderer {
       return
     }
 
-    // Handle regular props
+    // Handle regular props. A prop that was reactive and is not any more has a
+    // binding still writing to it — the two would fight, and the effect would
+    // win whenever its source next changed — so the binding goes before the
+    // static value lands.
+    this.clearReactiveBinding(element, `prop:${key}`)
     this.setElementProp(element, key, value)
   }
 
@@ -878,6 +882,7 @@ export class DOMRenderer {
         effect.dispose()
       })
     } else {
+      this.clearReactiveBinding(element, 'class')
       this.setElementClasses(element, value)
     }
   }
@@ -951,6 +956,7 @@ export class DOMRenderer {
         effect.dispose()
       })
     } else {
+      this.clearReactiveBinding(element, 'style')
       this.setElementStyles(htmlElement, value)
     }
   }
@@ -1165,6 +1171,34 @@ export class DOMRenderer {
     }
     bound.set(key, cleanup)
     this.addCleanup(element, cleanup)
+  }
+
+  /**
+   * Disposes and forgets the binding for one element/prop pair, if any.
+   *
+   * For a prop that stops being reactive. No observable failure was found from
+   * leaving it: every path that can make a prop static again is a re-render,
+   * and the render owner disposes the old effect as it re-runs. What is left
+   * without this is a map entry holding a dead closure until the element
+   * unmounts, so this is hygiene rather than a fix — recorded as such so the
+   * next reader does not go hunting for the bug it prevents.
+   */
+  private clearReactiveBinding(
+    element: Element | Text | Comment,
+    key: string
+  ): void {
+    const bound = this.reactiveBindings.get(element)
+    const previous = bound?.get(key)
+    if (!bound || !previous) {
+      return
+    }
+    bound.delete(key)
+    try {
+      previous()
+    } catch (error) {
+      console.error('Cleanup error:', error)
+    }
+    this.cleanupMap.get(element)?.delete(previous)
   }
 
   private addCleanup(

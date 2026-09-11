@@ -114,6 +114,7 @@ export {
   createSignal,
   flushSync,
   getSignalImpl,
+  writeSignal,
   isSignal,
   type Signal,
   type SignalSetter,
