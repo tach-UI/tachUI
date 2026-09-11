@@ -15,6 +15,8 @@ import {
   createSignal,
   isSignal,
   createEffect,
+  getOwner,
+  untrack,
   text,
   h,
   withModifiers,
@@ -215,9 +217,13 @@ export class EnhancedButton
       // Reading the state signal makes this effect reactive to state changes
       this.stateSignal()
 
-      // Also watch for changes in enabled/loading states if they're reactive
-      this.isEnabled()
-      this.isLoading()
+      // Deliberately *not* subscribed to here. This effect is created on DOM
+      // ready, a path where nothing disposes it — neither the component's
+      // cleanup, which `build()` copied before render could add to it, nor the
+      // renderer's element cleanup. Reading a caller's `isEnabled` signal from
+      // inside it would therefore hold that signal for the life of the
+      // process, one observer per mount. The enabled state reaches the DOM
+      // through the `disabled` prop instead, which the renderer owns.
 
       // Watch color properties for reactivity
       const { tint, backgroundColor, foregroundColor } = this.props
@@ -243,8 +249,10 @@ export class EnhancedButton
         foregroundColor.resolve()
       }
 
-      // Trigger style update whenever any dependency changes
-      const styles = this.getButtonStyles()
+      // Untracked for the same reason: `getButtonStyles` reads the enabled and
+      // loading state, and this effect must not be what keeps those signals
+      // alive. It still recomputes whenever anything read above changes.
+      const styles = untrack(() => this.getButtonStyles())
       this.applyStylesToElement(button, styles)
     })
 
@@ -378,6 +386,20 @@ export class EnhancedButton
     if (typeof source === 'boolean') {
       return !source
     }
+    if (getOwner() === null) {
+      // Nothing here can dispose a subscription. A render with no owner comes
+      // from the direct mount path, where neither the component's cleanup nor
+      // the renderer's element cleanup is ever run — so a memo minted here
+      // would keep reading this signal for the life of the process, one more
+      // for every mount. A snapshot subscribes to nothing and leaves the
+      // attribute where the ordinary render path already puts it correctly.
+      return !source()
+    }
+    // Fresh per render, and owned by that render. The renderer diffs props by
+    // identity, so a cached accessor would be skipped after the enclosing
+    // scope was disposed and never resubscribed; a new memo is a prop that has
+    // changed, which is exactly what has happened. The render's own owner
+    // disposes it, so nothing outlives the component.
     return createMemo(() => !source())
   }
 
