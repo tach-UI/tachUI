@@ -636,7 +636,22 @@ export interface AsyncStreamOpenContext {
 export interface AsyncStreamBaseOptions<T> {
   key: () => QueryKey
   open: (ctx: AsyncStreamOpenContext) => AsyncIterable<T> | Promise<AsyncIterable<T>>
-  /** Connect when first observed and disconnect when unobserved. Defaults to true. */
+  /**
+   * Connect when the stream is created and disconnect when its owner is
+   * disposed. Defaults to true.
+   *
+   * Owner-scoped rather than observation-scoped: a subscription's lifetime is
+   * the lifetime of the thing that made it, not of whoever happens to be
+   * reading its signals. Nothing here can see who is reading — and a result
+   * has four signals, so a consumer bound only to `status` is as much an
+   * observer as one rendering `latest`. Disconnecting on unobservation would
+   * also drop and re-establish a real server subscription across a transient
+   * gap between renders, losing whatever the stream had accumulated.
+   *
+   * Set false and drive `connect()` and `cancel()` by hand where a
+   * subscription is expensive enough that its lifetime should be narrower than
+   * its owner's.
+   */
   autoConnect?: boolean
 }
 

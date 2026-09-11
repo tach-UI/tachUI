@@ -66,3 +66,14 @@ being handed over and the loop delivering it now offers the source its release
 only place left to do it. And a key corrected back to the hash it had before an
 unhashable one reconnects, rather than reading as no change at all and staying
 disconnected for good.
+
+`autoConnect` is documented as what it does: connect when the stream is created,
+disconnect when the owner is disposed. ADR 0001 decision 28 said "when observed
+/ when unobserved", which the reactive core cannot express — it exposes no
+observe/unobserve hook, a stream result has four signals so "observed" has no
+single answer, and disconnecting across a transient gap between renders would
+drop and re-establish a real subscription and lose what it had accumulated.
+Owner-scoped also matches `createQuery`, which fetches on creation rather than
+on first read. Set `autoConnect: false` and drive `connect()`/`cancel()` by hand
+where a subscription should outlive less than its owner. Observation scoping is
+tracked in #357, for both primitives together.
