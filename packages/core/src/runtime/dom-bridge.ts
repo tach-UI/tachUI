@@ -412,6 +412,21 @@ export function mountComponentTree(
     return () => {
       // Clean up child components first
       childCleanupFunctions.forEach(cleanup => cleanup())
+      // Then the renderer's own bindings for the nodes this mount created.
+      // Everything the renderer sets up for a reactive prop — the effect that
+      // tracks it and the subscription that effect holds — is registered
+      // against the element and released by disposing the node. Without this
+      // the mount path released none of it: a component with a reactive prop
+      // retained one observer on the caller's signal per mount, for the life
+      // of the process, and every sheet, popover or split-view region that had
+      // ever been opened was still recomputing.
+      nodeArray.forEach(node => {
+        try {
+          globalRenderer.disposeNode(node)
+        } catch (error) {
+          console.error('Node disposal error:', error)
+        }
+      })
       // Then clean up this component
       unmountComponentEnhanced(component, container)
     }
