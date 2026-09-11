@@ -157,17 +157,15 @@ export function NavigationLink(
         return result
       }
     } else {
-      createEffect(() => {
-        const active =
-          typeof options.isActive === 'function'
-            ? (options.isActive as () => boolean)()
-            : (options.isActive as any)?.get?.()
-        if (active) {
-          handleNavigation()
-          const impl2 = getSignalImpl(options.isActive as any)
-          impl2?.set(false)
-        }
-      })
+      // A source with no settable implementation behind it — a computed, now
+      // that computeds count as signals — is deliberately not driven from
+      // here. This block exists to intercept the *write* that sets `isActive`
+      // true, navigate, and immediately set it back to false. A computed has
+      // no write to intercept and cannot be reset, so an effect watching it
+      // would navigate the moment it is truthy, on mount and on every
+      // recomputation after, with nothing able to stop it. `isActive` is
+      // declared `boolean | Binding<boolean>`; a binding takes the branch
+      // above.
     }
   }
 

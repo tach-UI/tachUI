@@ -18,9 +18,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createComputed,
   createSignal,
+  getSignalImpl,
   isSignal,
   renderComponent,
 } from '@tachui/core'
+import { mountComponentTree } from '@tachui/core/runtime/dom-bridge'
 
 import { Button } from '../../src'
 
@@ -178,6 +180,62 @@ describe('an enclosing re-render', () => {
     await flush()
 
     expect(host.querySelector('button')?.hasAttribute('disabled')).toBe(true)
+  })
+})
+
+describe('isLoading', () => {
+  it('declines the action while loading, as the press guard always has', async () => {
+    const [loading, setLoading] = createSignal(true)
+    let fired = 0
+    const button = renderButton(
+      Button('save', {
+        action: () => {
+          fired += 1
+        },
+        isLoading: loading,
+      }).build()
+    )
+    await flush()
+
+    // `handlePress` has always refused while loading; the click handler had no
+    // such guard, so the two disagreed depending on which path a press took.
+    // A loading button now declines on both.
+    button.click()
+    expect(fired).toBe(0)
+
+    setLoading(false)
+    await flush()
+    button.click()
+    expect(fired).toBe(1)
+  })
+})
+
+describe('mounting directly', () => {
+  it('leaves nothing subscribed to the caller\'s signal after unmount', () => {
+    const [enabled] = createSignal(true)
+    const observers = (): number =>
+      (getSignalImpl(enabled as never) as unknown as { observers: Set<unknown> })
+        .observers.size
+    const baseline = observers()
+
+    for (let cycle = 0; cycle < 10; cycle += 1) {
+      const container = document.createElement('div')
+      document.body.appendChild(container)
+      const dispose = mountComponentTree(
+        Button('x', { action: () => undefined, isEnabled: enabled }).build() as never,
+        container
+      )
+      dispose()
+      container.remove()
+    }
+
+    // The direct mount path disposes nothing a render created — `build()`
+    // copies the component's cleanup array before render can add to it, and
+    // the renderer's element cleanup does not run either. So anything that
+    // subscribes to a caller's signal from inside a render here is held for
+    // the life of the process, one more for every sheet, popover or split view
+    // that has ever been opened.
+    expect(observers()).toBe(baseline)
   })
 })
 
