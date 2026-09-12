@@ -149,11 +149,22 @@ export function createInfiniteQuery<
     return async (ctx) => {
       assertPageParam(base.initialPageParam, 'createInfiniteQuery')
       const held = ctx.held ?? emptySet<TPage, TPageParam>()
-      const param = paramBeyond(
-        held,
-        towards === 'forward' ? base.getNextPageParam : base.getPreviousPageParam,
-        towards
-      )
+      // Extending a set that holds nothing means loading its first page. The
+      // guard in `extend` asks the observer, whose published state can still
+      // describe the previous key for a tick after a key change, so an append
+      // can arrive here against an entry that has never loaded. Writing the
+      // empty set back would leave the new key `success` with no pages and
+      // nothing to extend from.
+      const param =
+        held.pages.length === 0
+          ? base.initialPageParam
+          : paramBeyond(
+              held,
+              towards === 'forward'
+                ? base.getNextPageParam
+                : base.getPreviousPageParam,
+              towards
+            )
 
       if (param === undefined) {
         // Nothing that way. Returning what is held makes this an idempotent
@@ -162,11 +173,13 @@ export function createInfiniteQuery<
         return held
       }
 
+      const direction = held.pages.length === 0 ? 'forward' : towards
+
       const page = await base.load({
         signal: ctx.signal,
         key: ctx.key,
         pageParam: param,
-        direction: towards,
+        direction,
       })
 
       // Merged onto the pages this execution started from. An invalidation
@@ -175,9 +188,9 @@ export function createInfiniteQuery<
       // Existing page objects are carried by reference, which is what lets a
       // row projection leave untouched rows alone.
       const pages =
-        towards === 'forward' ? [...held.pages, page] : [page, ...held.pages]
+        direction === 'forward' ? [...held.pages, page] : [page, ...held.pages]
       const pageParams =
-        towards === 'forward'
+        direction === 'forward'
           ? [...held.pageParams, param]
           : [param, ...held.pageParams]
 
@@ -185,7 +198,7 @@ export function createInfiniteQuery<
       if (cap !== undefined && pages.length > cap) {
         // Trimmed from the end opposite the one that grew, which is what makes
         // `fetchPreviousPage` able to recover a head that an append dropped.
-        if (towards === 'forward') {
+        if (direction === 'forward') {
           const over = pages.length - cap
           pages.splice(0, over)
           pageParams.splice(0, over)

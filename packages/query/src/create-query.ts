@@ -48,12 +48,16 @@ import type {
 /**
  * What an internal loader is told, beyond what a public one is.
  *
- * `held` is the value the entry carries as this execution starts. A pagination
- * refetch needs it — how many pages are held, and where the first one began —
- * and cannot read it back off the observer, because the first load runs
- * synchronously inside `createQueryInternals`, before anything it returns
- * exists. Handing the value down removes that ordering rather than working
- * around it.
+ * `held` is the value *the entry being written* carries as this execution
+ * starts. A pagination refetch needs it — how many pages are held, and where
+ * the first one began.
+ *
+ * It comes from the entry rather than from the observer's published state, and
+ * the difference is not academic: the effect that follows a key change is
+ * scheduled, so an append issued in the same tick sees the new key and the old
+ * key's data, and builds the new entry's set out of the previous key's pages.
+ * Reading the observer would also hand a gated observer's `undefined` to a
+ * refetch of a shared entry, truncating everyone else's set to one page.
  */
 export interface InternalLoadContext<TRaw> extends QueryLoadContext {
   readonly held: TRaw | undefined
@@ -270,11 +274,21 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     }
   }
 
+  /** An observation's entry value, or nothing if the client went away. */
+  function readEntryData(from: QueryObservation): TRaw | undefined {
+    try {
+      return from.entry().data as TRaw | undefined
+    } catch {
+      return undefined
+    }
+  }
+
   /** Runs the loader, applying this observer's retry policy. */
   async function runLoad(
     resolvedKey: QueryKey,
     signal: AbortSignal,
-    intent: QueryLoadIntent<TRaw> | undefined
+    intent: QueryLoadIntent<TRaw> | undefined,
+    heldFrom: () => TRaw | undefined
   ): Promise<TRaw> {
     for (let attempt = 0; ; attempt += 1) {
       try {
@@ -287,7 +301,7 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
         return await (intent ?? options.load)({
           signal,
           key: resolvedKey,
-          held: untrack(() => state().data),
+          held: heldFrom(),
         })
       } catch (error) {
         // Retries stay inside one cache execution, so the entry reads as
@@ -335,19 +349,21 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       }
     }
     if (held !== undefined) {
-      if (held.entry().fetchStatus === 'fetching') {
+      const watching = held
+      const heldFrom = () => readEntryData(watching)
+      if (watching.entry().fetchStatus === 'fetching') {
         // Already loading: joining that execution is what the caller wants.
         // Marking first would detach it and start a second loader alongside,
         // so one refetch would cost two requests.
-        return fetch(resolvedKey, intent)
+        return fetch(resolvedKey, heldFrom, intent)
       }
       markingOwnReload = true
       try {
-        held.markForReload()
+        watching.markForReload()
       } finally {
         markingOwnReload = false
       }
-      return fetch(resolvedKey, intent)
+      return fetch(resolvedKey, heldFrom, intent)
     }
     // No observation of this key: take one just long enough to mark the
     // entry, which is also what creates it if the cache has never held it.
@@ -361,17 +377,21 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       markingOwnReload = false
       transient.release()
     }
-    return fetch(resolvedKey, intent)
+    // Read through the released observation's view, which still names the same
+    // entry: what the loader needs is the entry's own value, and this observer
+    // may be watching a different key or gated off entirely.
+    return fetch(resolvedKey, () => readEntryData(transient), intent)
   }
 
   function fetch(
     resolvedKey: QueryKey,
+    heldFrom: () => TRaw | undefined,
     intent?: QueryLoadIntent<TRaw>
   ): Promise<TRaw> {
     return client.fetchQuery<TRaw, E>({
       key: () => resolvedKey,
       load: ({ signal, key: loadingKey }) =>
-        runLoad(loadingKey, signal, intent),
+        runLoad(loadingKey, signal, intent, heldFrom),
       staleTime: options.staleTime,
       gcTime: options.gcTime,
       snapshot: options.snapshot,
@@ -435,7 +455,9 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       // Deliberately not "status is idle": cancel() leaves the entry idle too,
       // and restarting the request a caller just cancelled is the opposite of
       // what they asked for.
-      void fetch(resolvedKey).catch(() => undefined)
+      void fetch(resolvedKey, () => readEntryData(current)).catch(
+        () => undefined
+      )
       return
     }
 
@@ -545,7 +567,7 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       // `error`; nothing is left to catch it at the call site.
       void (
         untrack(() => state().status) === 'idle'
-          ? fetch(resolvedKey)
+          ? fetch(resolvedKey, () => readEntryData(current))
           : forceFetch(resolvedKey)
       ).catch(() => undefined)
     }

@@ -644,6 +644,99 @@ describe('failure', () => {
   })
 })
 
+describe('the entry a load is writing', () => {
+  it('builds the new key\'s set from the new key, not from the old one', async () => {
+    const client = createQueryClient()
+    const [feed, setFeed] = createSignal('a')
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed', feed()],
+        load: async ({ pageParam, key }) => ({
+          at: pageParam,
+          items: [`${String(key[1])}-${pageParam}`],
+          next: pageParam + 1 < 9 ? pageParam + 1 : undefined,
+          previous: pageParam > 0 ? pageParam - 1 : undefined,
+        }),
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+    await value.fetchNextPage()
+    await value.fetchNextPage()
+
+    // Appended in the same tick as the key change. The effect that follows a
+    // key change is scheduled, so the observer still publishes feed a's set
+    // while the key already reads feed b.
+    setFeed('b')
+    await value.fetchNextPage()
+    await settle()
+
+    const moved = inspectQueryEntry(client, ['feed', 'b'])?.data as InfiniteData<
+      Page,
+      number
+    >
+    expect(moved.pages.flatMap((page) => page.items)).toEqual(['b-0'])
+    expect(moved.pageParams).toEqual([0])
+
+    // And the key being left keeps what it had.
+    const left = inspectQueryEntry(client, ['feed', 'a'])?.data as InfiniteData<
+      Page,
+      number
+    >
+    expect(left.pages.flatMap((page) => page.items)).toEqual([
+      'a-0',
+      'a-1',
+      'a-2',
+    ])
+    dispose()
+    client.dispose()
+  })
+
+  it('does not truncate a shared set on behalf of a gated observer', async () => {
+    const client = createQueryClient()
+    const watcher = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: pages(9),
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+    await watcher.value.fetchNextPage()
+    await watcher.value.fetchNextPage()
+    expect(
+      (watcher.value.data() as InfiniteData<Page, number>).pages
+    ).toHaveLength(3)
+
+    // A gated observer has no data of its own, and refetching through it must
+    // reload the entry's three pages rather than the observer's nothing.
+    const gated = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: pages(9),
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        enabled: false,
+        client,
+      })
+    )
+    await settle()
+    await gated.value.refetch()
+    await settle()
+
+    expect(
+      (watcher.value.data() as InfiniteData<Page, number>).pageParams
+    ).toEqual([0, 1, 2])
+    gated.dispose()
+    watcher.dispose()
+    client.dispose()
+  })
+})
+
 describe('what it keeps from the observer beneath it', () => {
   it('shares one entry between observers with different projections', async () => {
     const client = createQueryClient()
