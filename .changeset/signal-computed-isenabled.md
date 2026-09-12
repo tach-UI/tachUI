@@ -1,5 +1,5 @@
 ---
-"@tachui/core": minor
+"@tachui/core": patch
 "@tachui/primitives": patch
 "@tachui/forms": patch
 "@tachui/navigation": patch
