@@ -11,7 +11,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { createEffect, createRoot, createSignal } from '@tachui/core'
+import { createEffect, createRoot, createSignal, isSignal } from '@tachui/core'
 
 import { createInfiniteQueryList } from '../src/create-infinite-query-list'
 import { createQueryClient, resetDefaultQueryClient } from '../src/client'
@@ -398,6 +398,108 @@ describe('what it reports about the query beneath it', () => {
     // The rows stay: a failed refresh is not a reason to empty the screen.
     expect(value.ids()).toHaveLength(4)
 
+    dispose()
+    client.dispose()
+  })
+})
+
+describe('what a consumer binds to', () => {
+  it('exposes ids as a signal core recognises', async () => {
+    const client = createQueryClient()
+    const feed = source(5)
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQueryList<Page, number, Row, string>({
+        key: () => ['feed'],
+        load: feed.load,
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        items: (page) => page.rows,
+        itemKey: (item) => item.id,
+        client,
+      })
+    )
+    await settle()
+
+    // `List` consults this before it subscribes at all. A bare accessor with a
+    // `peek` property satisfies the type and fails the check, and the binding
+    // renders empty forever with nothing to explain it.
+    expect(isSignal(value.ids)).toBe(true)
+    expect(typeof value.ids.peek).toBe('function')
+    expect(value.ids.peek()).toEqual(['0a', '0b'])
+    dispose()
+    client.dispose()
+  })
+
+  it('moves ids when a refetch reorders the rows', async () => {
+    const client = createQueryClient()
+    let reversed = false
+    const rows: Record<string, Row> = {
+      x: { id: 'x', label: 'ex' },
+      y: { id: 'y', label: 'why' },
+    }
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQueryList<Page, number, Row, string>({
+        key: () => ['feed'],
+        load: async () => ({
+          rows: reversed ? [rows.y, rows.x] : [rows.x, rows.y],
+          next: undefined,
+          previous: undefined,
+        }),
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        items: (page) => page.rows,
+        itemKey: (item) => item.id,
+        client,
+      })
+    )
+    await settle()
+    expect(value.ids()).toEqual(['x', 'y'])
+
+    reversed = true
+    await value.refetch()
+    await settle()
+
+    // Membership never changes in a feed ordered by recency or rank; only the
+    // order does. Reporting the old order renders fresh rows in stale
+    // positions, which is worse than a visible break.
+    expect(value.ids()).toEqual(['y', 'x'])
+    dispose()
+    client.dispose()
+  })
+
+  it('reports a throwing row projection instead of freezing the list', async () => {
+    const client = createQueryClient()
+    const feed = source(5)
+    let broken = false
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQueryList<Page, number, Row, string>({
+        key: () => ['feed'],
+        load: feed.load,
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        items: (page) => {
+          if (broken) {
+            throw new Error('rows are not where I left them')
+          }
+          return page.rows
+        },
+        itemKey: (item) => item.id,
+        client,
+      })
+    )
+    await settle()
+    expect(value.ids()).toEqual(['0a', '0b'])
+
+    broken = true
+    await value.refetch()
+    await settle()
+
+    expect((value.error() as Error).message).toBe(
+      'rows are not where I left them'
+    )
+    // The rows already on screen stay: a projection that threw says nothing
+    // about the rows it had already produced.
+    expect(value.ids()).toEqual(['0a', '0b'])
     dispose()
     client.dispose()
   })

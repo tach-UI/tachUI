@@ -803,8 +803,17 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       options: FetchInfiniteQueryOptions<TPage, TPageParam, E>
     ): Promise<InfiniteData<TPage, TPageParam>> {
       const count = options.pages ?? 1
-      assertPageCount(count, 'fetchInfiniteQuery')
-      assertPageParam(options.initialPageParam, 'fetchInfiniteQuery')
+      try {
+        ensureUsable('fetchInfiniteQuery')
+        assertPageCount(count, 'fetchInfiniteQuery')
+        assertPageParam(options.initialPageParam, 'fetchInfiniteQuery')
+      } catch (error) {
+        // Tagged like every other dispatch-phase failure, so `prefetchQueries`
+        // surfaces it instead of swallowing it as a load failure. Warming a
+        // cache is allowed to fail quietly; being told the request is malformed
+        // is not.
+        throw markDispatchError(error)
+      }
       // Through `client.fetchQuery` rather than the closure-local one, so a
       // decorated client's override is honoured here the way `prefetchQueries`
       // honours it two functions below.

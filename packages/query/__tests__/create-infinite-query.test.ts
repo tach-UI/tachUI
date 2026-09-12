@@ -739,6 +739,219 @@ describe('the entry a load is writing', () => {
   })
 })
 
+describe('the ends of a set', () => {
+  it('treats a null cursor as the end, the way a JSON API spells it', async () => {
+    const client = createQueryClient()
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number | null>({
+        key: () => ['feed'],
+        load: async ({ pageParam }) => ({
+          at: Number(pageParam),
+          items: [`row ${String(pageParam)}`],
+          next: undefined,
+          previous: undefined,
+        }),
+        initialPageParam: 0,
+        // What a cursor API returns at the end of a feed, forwarded verbatim.
+        getNextPageParam: () => null,
+        client,
+      })
+    )
+    await settle()
+
+    expect(value.hasNextPage()).toBe(false)
+    const resolved = (await value.fetchNextPage()) as InfiniteData<
+      Page,
+      number | null
+    >
+    expect(resolved.pages).toHaveLength(1)
+    dispose()
+    client.dispose()
+  })
+
+  it('refuses a cap that leaves nothing to hold', () => {
+    const client = createQueryClient()
+    expect(() =>
+      withOwner(() =>
+        createInfiniteQuery<Page, number>({
+          key: () => ['feed'],
+          load: pages(9),
+          initialPageParam: 0,
+          getNextPageParam: nextParam,
+          getPreviousPageParam: previousParam,
+          maxPages: 0,
+          client,
+        })
+      )
+    ).toThrow('maxPages must be a positive integer')
+    client.dispose()
+  })
+
+  it('reports loading backwards only to the observer going that way', async () => {
+    const client = createQueryClient()
+    let release!: (page: Page) => void
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) =>
+          pageParam === 2
+            ? new Promise<Page>((resolve) => {
+                release = resolve
+              })
+            : pages(9)({ pageParam }),
+        initialPageParam: 3,
+        getNextPageParam: nextParam,
+        getPreviousPageParam: previousParam,
+        client,
+      })
+    )
+    await settle()
+
+    const back = value.fetchPreviousPage()
+    await settle()
+    expect(value.isFetchingPreviousPage()).toBe(true)
+    expect(value.isFetchingNextPage()).toBe(false)
+
+    release(await pages(9)({ pageParam: 2 }))
+    await back
+    expect(value.isFetchingPreviousPage()).toBe(false)
+    expect((value.data() as InfiniteData<Page, number>).pageParams).toEqual([
+      2, 3,
+    ])
+    dispose()
+    client.dispose()
+  })
+})
+
+describe('stopping', () => {
+  it('does not reload every held page when a load-more is cancelled', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) => {
+          asked.push(pageParam)
+          return pageParam === 3
+            ? new Promise<Page>(() => {
+                // never settles: the cancel is what ends it
+              })
+            : pages(9)({ pageParam })
+        },
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+    await value.fetchNextPage()
+    await value.fetchNextPage()
+    asked.length = 0
+
+    void value.fetchNextPage().catch(() => undefined)
+    await settle()
+    value.cancel()
+    await settle()
+
+    // Just the page that was abandoned. Restarting the set is the opposite of
+    // what tapping "stop" asks for, and on a long feed it is one request per
+    // page held.
+    expect(asked).toEqual([3])
+    expect((value.data() as InfiniteData<Page, number>).pageParams).toEqual([
+      0, 1, 2,
+    ])
+    dispose()
+    client.dispose()
+  })
+
+  it('stops a multi-page reload partway when the owner goes away', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    let release: ((page: Page) => void) | undefined
+    let holding = false
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) => {
+          asked.push(pageParam)
+          if (holding && pageParam === 1) {
+            return new Promise<Page>((resolve) => {
+              release = resolve
+            })
+          }
+          return pages(9)({ pageParam })
+        },
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+    await value.fetchNextPage()
+    await value.fetchNextPage()
+    asked.length = 0
+
+    holding = true
+    void value.refetch().catch(() => undefined)
+    await settle()
+    expect(asked).toEqual([0, 1])
+
+    dispose()
+    release?.(await pages(9)({ pageParam: 1 }))
+    await settle()
+
+    // The run checks the abort between pages, so the two pages still ahead of
+    // it are never requested against a key nothing is watching.
+    expect(asked).toEqual([0, 1])
+    client.dispose()
+  })
+
+  it('refuses to be woken by a cancel it was parked behind', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    let release!: (page: Page) => void
+    let holding = false
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) => {
+          asked.push(pageParam)
+          if (holding) {
+            return new Promise<Page>((resolve) => {
+              release = resolve
+            })
+          }
+          return pages(9)({ pageParam })
+        },
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+    asked.length = 0
+
+    holding = true
+    const refreshed = value.refetch()
+    await settle()
+    // Parks behind the refresh rather than racing it.
+    const appended = value.fetchNextPage()
+    await settle()
+
+    value.cancel()
+    holding = false
+    release(await pages(9)({ pageParam: 0 }))
+    await refreshed.catch(() => undefined)
+    await appended.catch(() => undefined)
+    await settle()
+
+    // The append was cancelled while parked, so page 1 is never requested.
+    expect(asked).not.toContain(1)
+    dispose()
+    client.dispose()
+  })
+})
+
 describe('what it keeps from the observer beneath it', () => {
   it('shares one entry between observers with different projections', async () => {
     const client = createQueryClient()

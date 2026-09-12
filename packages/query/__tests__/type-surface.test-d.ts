@@ -31,6 +31,7 @@ import type {
   DehydratedQuery,
   DehydratedState,
   FetchDirection,
+  FetchInfiniteQueryOptions,
   FetchQueryOptions,
   FetchStatus,
   GetPageParam,
@@ -281,6 +282,7 @@ export type QueryClientMembers = Assert<
 export type QueryObservationMembers = Assert<
   Equals<
     keyof QueryObservation,
+    | 'clearReloadMark'
     | 'entry'
     | 'markForReload'
     | 'abortInFlight'
@@ -916,17 +918,24 @@ export type InfiniteListAccepted = Assert<
   >
 >
 
-/** The rows are the projection, so a second one has nowhere to go. */
+/**
+ * The rows are the projection, so a second one has nowhere to go — and it is
+ * declared `never` rather than merely left out.
+ *
+ * Omission alone rejects a fresh object literal and lets a prebuilt variable
+ * through, which is the likelier mistake: options get built once and passed
+ * around. Such a `select` reaches the query underneath, replaces the set with
+ * its own shape, and the flatten then finds no pages — a permanently empty
+ * list reporting success, with no error anywhere.
+ */
 export type InfiniteListRejectsSelect = Assert<
   Equals<
-    'select' extends keyof InfiniteQueryListOptions<
-      RawUser,
-      string,
-      Message,
-      string
-    >
-      ? true
-      : false,
+    Assignable<
+      InfiniteListBase & {
+        select: (data: InfiniteData<RawUser, string>) => string[]
+      },
+      InfiniteQueryListOptions<RawUser, string, Message, string>
+    >,
     false
   >
 >
@@ -969,5 +978,28 @@ export type InfiniteListActionsResolveVoid = Assert<
   Equals<
     ReturnType<InfiniteQueryListResult<Message, string>['fetchNextPage']>,
     Promise<void>
+  >
+>
+
+
+/** An imperative fetch takes no cap: it has no backward direction to undo one. */
+export type FetchInfiniteRejectsMaxPages = Assert<
+  Equals<
+    Assignable<
+      InfiniteBase & {
+        maxPages: 3
+        getPreviousPageParam: GetPageParam<RawUser, string>
+      },
+      FetchInfiniteQueryOptions<RawUser, string>
+    >,
+    false
+  >
+>
+
+/** Both spellings of "no page that way" are accepted from a page-param function. */
+export type GetPageParamAcceptsNull = Assert<
+  Assignable<
+    (lastPage: RawUser) => string | null,
+    GetPageParam<RawUser, string>
   >
 >
