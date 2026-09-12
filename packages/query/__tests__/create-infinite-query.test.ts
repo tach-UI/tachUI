@@ -549,24 +549,96 @@ describe('failure', () => {
 
   it('reports a throwing getNextPageParam instead of throwing out of a memo', async () => {
     const client = createQueryClient()
+    let asked = 0
     const { value, dispose } = withOwner(() =>
       createInfiniteQuery<Page, number>({
         key: () => ['feed'],
         load: pages(5),
         initialPageParam: 0,
         getNextPageParam: () => {
+          // Lands the first page, then throws when the memo asks where the set
+          // ends — so the failure happens on the read path a render takes,
+          // which is the path under test.
+          asked += 1
+          if (asked === 1) {
+            return undefined
+          }
           throw new Error('cursor is not a number')
         },
         client,
       })
     )
     await settle()
+    expect(value.status()).toBe('success')
 
     // Reading it is what a render does, and a render must not be taken down by
     // a page-param function.
     expect(() => value.hasNextPage()).not.toThrow()
     expect(value.hasNextPage()).toBe(false)
-    expect((value.error() as Error).message).toBe('cursor is not a number')
+    const reported = value.error() as Error
+    expect(reported.message).toContain('a page-param function threw')
+    expect((reported.cause as Error).message).toBe('cursor is not a number')
+    dispose()
+    client.dispose()
+  })
+
+  it('lets a real load failure outrank a throwing page-param function', async () => {
+    const client = createQueryClient()
+    let failing = false
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) =>
+          failing
+            ? Promise.reject(new Error('the feed is down'))
+            : pages(5)({ pageParam }),
+        initialPageParam: 0,
+        getNextPageParam: (page) => {
+          if (failing) {
+            throw new Error('cursor is not a number')
+          }
+          return page.next
+        },
+        client,
+      })
+    )
+    await settle()
+
+    failing = true
+    await expect(value.refetch()).rejects.toThrow('the feed is down')
+    await settle()
+
+    // The load failure is the one a consumer can act on; the param fault will
+    // report itself again the moment anything reads the ends.
+    expect((value.error() as Error).message).toBe('the feed is down')
+    dispose()
+    client.dispose()
+  })
+
+  it('does not retry a page-param fault the way it retries a load', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) => {
+          loads += 1
+          return pages(5)({ pageParam })
+        },
+        initialPageParam: 0,
+        getNextPageParam: () => {
+          throw new Error('cursor is not a number')
+        },
+        retry: 2,
+        client,
+      })
+    )
+    await settle()
+
+    // One attempt, not three: the same input throws the same way every time,
+    // so a retry spends the policy to arrive at the same error more slowly.
+    expect(loads).toBe(1)
+    expect(value.status()).toBe('error')
     dispose()
     client.dispose()
   })

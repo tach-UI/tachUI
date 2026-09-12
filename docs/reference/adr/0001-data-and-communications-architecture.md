@@ -101,26 +101,26 @@ would silently break any communications layer built on top of them.
 
 ### Pagination
 
-25. An infinite query is one cache entry holding `{ pages, pageParams }` under the base key.
+24. An infinite query is one cache entry holding `{ pages, pageParams }` under the base key.
     Pages are never separate entries: cursors chain, so a per-page entry could refetch with
     a stale token, be evicted from the middle of a set, or dehydrate half of one.
-26. Every write to a set goes through the loader path. Appending a page is an ordinary cache
+25. Every write to a set goes through the loader path. Appending a page is an ordinary cache
     execution whose loader fetches one page and returns the merged set, so the entry's
     generation guard drops an append an invalidation overtook, and no cache-write primitive
     is introduced.
-27. A refetch reloads the pages currently held, in sequence from the first held param,
+26. A refetch reloads the pages currently held, in sequence from the first held param,
     stopping early when the source says there are no more. The set swaps in one write, so
     the pages on screen are never a mixture of two loads.
-28. `maxPages` requires `getPreviousPageParam`, in the type rather than in prose: a cap that
+27. `maxPages` requires `getPreviousPageParam`, in the type rather than in prose: a cap that
     drops pages from the far end without a way to ask for the page before the new head makes
     what it dropped unrecoverable.
-29. `isFetchingNextPage` and `isFetchingPreviousPage` are per observer, not per entry. Two
+28. `isFetchingNextPage` and `isFetchingPreviousPage` are per observer, not per entry. Two
     observers share the entry and both see `isFetching`; only the one that asked for the page
     sees the direction.
 
 ### Sequencing
 
-30. The reactive correctness gate (Phase 0) lands before any communications work. A
+29. The reactive correctness gate (Phase 0) lands before any communications work. A
     communications layer built on the exported enhanced reactive branch would silently stop
     propagating updates.
 

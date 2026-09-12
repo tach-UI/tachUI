@@ -39,6 +39,7 @@ import {
   DEFAULT_STALE_TIME,
 } from './defaults'
 import { isServer, QueryError } from './errors'
+import { assertPageCount, assertPageParam, loadPageRun } from './pagination'
 import {
   decodeQueryKey,
   decodeSnapshotData,
@@ -61,7 +62,6 @@ import type {
   QueryClient,
   QueryKey,
   QueryKeyHash,
-  QueryLoadContext,
   QueryObservation,
   QueryStatus,
 } from './types'
@@ -741,62 +741,30 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     return requestPromise
   }
 
-  /**
-   * Loads a run of pages, front to back, feeding each result to
-   * `getNextPageParam` to find the next.
-   *
-   * Sequential by necessity rather than by choice: a cursor is only known once
-   * the page before it has landed. Stops early when the source says there is
-   * no next page, so asking for more pages than exist is not an error.
-   *
-   * Shared by the imperative fetch here and by `createInfiniteQuery`'s
-   * refetch, so both accumulate a set the same way.
-   */
-  async function loadInfinitePages<TPage, TPageParam, E>(
-    options: FetchInfiniteQueryOptions<TPage, TPageParam, E>,
-    ctx: QueryLoadContext,
-    count: number,
-    from: TPageParam
-  ): Promise<InfiniteData<TPage, TPageParam>> {
-    const pages: TPage[] = []
-    const pageParams: TPageParam[] = []
-    let pageParam: TPageParam | undefined = from
-
-    for (let index = 0; index < count; index += 1) {
-      if (pageParam === undefined) {
-        break
-      }
-      const param = pageParam
-      const page = await options.load({
-        signal: ctx.signal,
-        key: ctx.key,
-        pageParam: param,
-        direction: 'forward',
-      })
-      pages.push(page)
-      pageParams.push(param)
-      pageParam = options.getNextPageParam(page, pages, param, pageParams)
-    }
-
-    return { pages, pageParams }
-  }
-
   const client: QueryClient = {
     fetchQuery,
 
     async fetchInfiniteQuery<TPage, TPageParam, E = Error>(
       options: FetchInfiniteQueryOptions<TPage, TPageParam, E>
     ): Promise<InfiniteData<TPage, TPageParam>> {
-      // Through `fetchQuery`, so the set is one ordinary cache entry under the
-      // base key: dedup, freshness, retention, dehydration and the generation
-      // guard all apply to it exactly as they do to any other value.
-      return fetchQuery<InfiniteData<TPage, TPageParam>, E>({
+      const count = options.pages ?? 1
+      assertPageCount(count, 'fetchInfiniteQuery')
+      assertPageParam(options.initialPageParam, 'fetchInfiniteQuery')
+      // Through `client.fetchQuery` rather than the closure-local one, so a
+      // decorated client's override is honoured here the way `prefetchQueries`
+      // honours it two functions below.
+      //
+      // The set is one ordinary cache entry under the base key: dedup,
+      // freshness, retention, dehydration and the generation guard all apply to
+      // it exactly as they do to any other value.
+      return client.fetchQuery<InfiniteData<TPage, TPageParam>, E>({
         key: options.key,
         load: (ctx) =>
-          loadInfinitePages(
+          loadPageRun(
             options,
-            ctx,
-            options.pages ?? 1,
+            ctx.signal,
+            ctx.key,
+            count,
             options.initialPageParam
           ),
         staleTime: options.staleTime,
@@ -817,11 +785,16 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         requests.map((request) =>
           // `initialPageParam` is the discriminator, and it is declared absent
           // on the plain shape so this narrowing is sound rather than a guess.
-          (request.initialPageParam === undefined
-            ? client.fetchQuery(request as FetchQueryOptions<any, any>)
-            : client.fetchInfiniteQuery(
+          // Asked as presence, not as value: a cursor API's first page
+          // legitimately takes no cursor, and reading the value would route
+          // that infinite request to the plain fetch — caching a bare page
+          // object where the set belongs, for a later reader to trip over with
+          // an error pointing nowhere near the prefetch that caused it.
+          ('initialPageParam' in request
+            ? client.fetchInfiniteQuery(
                 request as FetchInfiniteQueryOptions<any, any, any>
               )
+            : client.fetchQuery(request as FetchQueryOptions<any, any>)
           ).then(
             () => undefined,
             (error: unknown) => {
