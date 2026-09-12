@@ -162,11 +162,11 @@ describe('the set as an ordinary cached value', () => {
 
     // Both halves of the set cross the boundary: pages without their params
     // would be a set nothing could extend.
-    const entry = inspectQueryEntry(restored, ['feed'])
-    expect(entry?.data).toEqual(original)
-    expect((entry?.data as InfiniteData<Page, number>).pageParams).toEqual([
-      0, 1,
-    ])
+    const restoredSet = inspectQueryEntry(restored, ['feed'])?.data as
+      | InfiniteData<Page, number>
+      | undefined
+    expect(restoredSet).toEqual(original)
+    expect(restoredSet?.pageParams).toEqual([0, 1])
     restored.dispose()
   })
 

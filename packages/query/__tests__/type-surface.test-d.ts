@@ -35,9 +35,11 @@ import type {
   FetchStatus,
   GetPageParam,
   InfiniteData,
+  InfiniteQueryListOptions,
   InfiniteQueryListResult,
   InfiniteQueryLoadContext,
   InfiniteQueryOptions,
+  InfiniteQueryResult,
   MutationOptions,
   MutationOptionsBase,
   MutationResult,
@@ -57,6 +59,8 @@ import type {
 import {
   createAsyncStream,
   createAsyncStreamList,
+  createInfiniteQuery,
+  createInfiniteQueryList,
   createMutation,
 } from '@tachui/query'
 
@@ -878,5 +882,92 @@ export type InfiniteListResultMembers = Assert<
       ? true
       : false,
     false
+  >
+>
+
+
+/**
+ * The primitives return the result types the surface declares, rather than
+ * something structurally close to them.
+ */
+export type InfiniteQueryReturnsInfiniteResult = Assert<
+  Equals<
+    ReturnType<typeof createInfiniteQuery<RawUser, string>>,
+    InfiniteQueryResult<InfiniteData<RawUser, string>>
+  >
+>
+
+export type InfiniteListReturnsListResult = Assert<
+  Equals<
+    ReturnType<typeof createInfiniteQueryList<RawUser, string, Message, string>>,
+    InfiniteQueryListResult<Message, string>
+  >
+>
+
+type InfiniteListBase = InfiniteBase & {
+  items: (page: RawUser) => readonly Message[]
+  itemKey: (item: Message) => string
+}
+
+export type InfiniteListAccepted = Assert<
+  Assignable<
+    InfiniteListBase,
+    InfiniteQueryListOptions<RawUser, string, Message, string>
+  >
+>
+
+/** The rows are the projection, so a second one has nowhere to go. */
+export type InfiniteListRejectsSelect = Assert<
+  Equals<
+    'select' extends keyof InfiniteQueryListOptions<
+      RawUser,
+      string,
+      Message,
+      string
+    >
+      ? true
+      : false,
+    false
+  >
+>
+
+/**
+ * The list carries the same `maxPages` pairing as the query. Its result offers
+ * `fetchPreviousPage`, so a list that could take a cap without a way back would
+ * expose an action it can never perform.
+ */
+export type InfiniteListMaxPagesWithoutPreviousRejected = Assert<
+  Equals<
+    Assignable<
+      InfiniteListBase & { maxPages: 3 },
+      InfiniteQueryListOptions<RawUser, string, Message, string>
+    >,
+    false
+  >
+>
+
+export type InfiniteListMaxPagesWithPreviousAccepted = Assert<
+  Assignable<
+    InfiniteListBase & {
+      maxPages: 3
+      getPreviousPageParam: GetPageParam<RawUser, string>
+    },
+    InfiniteQueryListOptions<RawUser, string, Message, string>
+  >
+>
+
+/** A key the list does not hold has no accessor, so the absence is in the type. */
+export type InfiniteListGetIsOptional = Assert<
+  Equals<
+    ReturnType<InfiniteQueryListResult<Message, string>['get']>,
+    (() => Message) | undefined
+  >
+>
+
+/** The page actions resolve nothing, so nobody is tempted to copy the set out. */
+export type InfiniteListActionsResolveVoid = Assert<
+  Equals<
+    ReturnType<InfiniteQueryListResult<Message, string>['fetchNextPage']>,
+    Promise<void>
   >
 >

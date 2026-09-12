@@ -162,7 +162,7 @@ type IsExactly<A, B> =
  * Declaring a second parameter is the act of promising a projection, so the type
  * requires one.
  */
-type SelectRequirement<TRaw, TData> =
+export type SelectRequirement<TRaw, TData> =
   IsExactly<TRaw, TData> extends true
     ? {
         /**
@@ -377,23 +377,27 @@ export type FetchInfiniteQueryOptions<TPage, TPageParam, E = Error> = Omit<
  *
  * No `select`: the list is the projection, and a second one would fight it.
  */
-export interface InfiniteQueryListOptions<
+export type InfiniteQueryListOptions<
   TPage,
   TPageParam,
   T,
   K extends PropertyKey = PropertyKey,
   E = Error,
-> extends InfiniteQueryOptionsBase<
-    TPage,
-    TPageParam,
-    InfiniteData<TPage, TPageParam>,
-    E
-  > {
-  /** The rows a page contributes, in display order. */
-  items: (page: TPage) => readonly T[]
-  /** Row identity. Repeat keys across pages update in place rather than duplicating. */
-  itemKey: (item: T) => K
-}
+> = InfiniteQueryOptionsBase<
+  TPage,
+  TPageParam,
+  InfiniteData<TPage, TPageParam>,
+  E
+> &
+  // Carried here too, and not only on `InfiniteQueryOptions`: a list result
+  // offers `fetchPreviousPage`, so a list that could not be given
+  // `getPreviousPageParam` would expose an action it can never perform.
+  PreviousPageOptions<TPage, TPageParam> & {
+    /** The rows a page contributes, in display order. */
+    items: (page: TPage) => readonly T[]
+    /** Row identity. Repeat keys across pages update in place rather than duplicating. */
+    itemKey: (item: T) => K
+  }
 
 /**
  * The reactive result of an infinite query projected into a list.

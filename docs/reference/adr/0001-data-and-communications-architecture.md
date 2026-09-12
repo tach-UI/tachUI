@@ -99,9 +99,28 @@ would silently break any communications layer built on top of them.
     never serialized.
 23. The cache is restored before `hydrateFragments()`.
 
+### Pagination
+
+25. An infinite query is one cache entry holding `{ pages, pageParams }` under the base key.
+    Pages are never separate entries: cursors chain, so a per-page entry could refetch with
+    a stale token, be evicted from the middle of a set, or dehydrate half of one.
+26. Every write to a set goes through the loader path. Appending a page is an ordinary cache
+    execution whose loader fetches one page and returns the merged set, so the entry's
+    generation guard drops an append an invalidation overtook, and no cache-write primitive
+    is introduced.
+27. A refetch reloads the pages currently held, in sequence from the first held param,
+    stopping early when the source says there are no more. The set swaps in one write, so
+    the pages on screen are never a mixture of two loads.
+28. `maxPages` requires `getPreviousPageParam`, in the type rather than in prose: a cap that
+    drops pages from the far end without a way to ask for the page before the new head makes
+    what it dropped unrecoverable.
+29. `isFetchingNextPage` and `isFetchingPreviousPage` are per observer, not per entry. Two
+    observers share the entry and both see `isFetching`; only the one that asked for the page
+    sees the direction.
+
 ### Sequencing
 
-24. The reactive correctness gate (Phase 0) lands before any communications work. A
+30. The reactive correctness gate (Phase 0) lands before any communications work. A
     communications layer built on the exported enhanced reactive branch would silently stop
     propagating updates.
 
@@ -120,11 +139,13 @@ on receiving it back as `previousValue`; Phase 0 audits for this before the chan
 
 **New names.** `createAsyncResource`, `createQuery`, `createMutation`, `createAsyncStream`,
 and `createAsyncStreamList` avoid colliding with the existing `createResource`, which means
-"create a disposable and register its cleanup".
+"create a disposable and register its cleanup". `createInfiniteQuery` and
+`createInfiniteQueryList` join them for pagination.
 
-**Deferred.** Pagination and infinite queries have no designed API yet and are scheduled
-separately. Persistent cache storage does not ship in the first release. Server-stream
-reconnection policy is unresolved.
+**Deferred.** Persistent cache storage does not ship in the first release. Server-stream
+reconnection policy is unresolved. Binding a paginated list to `List` goes through
+`createInfiniteQuery` with a flattening `select` for now, because `List` accepts
+`T[] | Signal<T[]>` only; a signal-list input for `List` is a `@tachui/data` follow-up.
 
 ## References
 
