@@ -445,7 +445,7 @@ export class EnhancedButton
     }
     this.warnedOwnerless = true
     console.warn(
-      '[tachUI] Button is rendering outside a reactive owner, which is how sheets, popovers and split-view regions mount their contents. Its `disabled` attribute and its styles are snapshots of the current values and will not follow their signals. Subscribing here would never be released, since nothing on that path disposes what a render creates.'
+      '[tachUI] Button is rendering outside a reactive owner, so its `disabled` attribute and its styles are snapshots and will not follow their signals. Subscribing here would never be released, because nothing would dispose it. Both of the framework\'s own mount paths provide an owner; reaching this means render() was called directly. Render through renderComponent() or mountComponentTree(), or wrap the call in createRoot().'
     )
   }
 
@@ -467,12 +467,11 @@ export class EnhancedButton
       return !source
     }
     if (getOwner() === null) {
-      // Nothing here can dispose a subscription. A render with no owner comes
-      // from the direct mount path, where neither the component's cleanup nor
-      // the renderer's element cleanup is ever run — so a memo minted here
-      // would keep reading this signal for the life of the process, one more
-      // for every mount. A snapshot subscribes to nothing and leaves the
-      // attribute where the ordinary render path already puts it correctly.
+      // Nothing here can dispose a subscription, so none is made. Both mount
+      // paths in the framework render under an owner, so this is reached only
+      // by calling `render()` directly — where a memo would be owned by
+      // nothing and would keep reading this signal for the life of the
+      // process. A snapshot subscribes to nothing.
       //
       // Said out loud, because the alternative is a control that silently
       // stops tracking depending on how its container happened to mount it.
