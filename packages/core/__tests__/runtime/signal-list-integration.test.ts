@@ -105,10 +105,25 @@ describe('createSignalList integration', () => {
     flushSync()
 
     const metrics = getRendererMetrics()
+    // Churn is whether nodes were thrown away and rebuilt. Every one of the 26
+    // is reused, so a swap costs no construction and no teardown.
     expect(metrics.created).toBe(0)
     expect(metrics.removed).toBe(0)
-    expect(metrics.inserted).toBeLessThanOrEqual(10)
-    expect(metrics.moved).toBeLessThanOrEqual(10)
+    expect(metrics.adopted).toBeGreaterThan(0)
+
+    // And the swap actually reaches the DOM, which is the part that went
+    // unasserted: `set` used to treat the same keys in a new order as no
+    // change, so this test measured a structural update that never happened.
+    expect(
+      Array.from(container.querySelectorAll('tr')).map(row =>
+        row.getAttribute('data-id')
+      )
+    ).toEqual(['1', '7', '3', '4', '5', '6', '2', '8'])
+
+    // Deliberately no budget on `inserted`/`moved`. They count re-attachment
+    // while the re-rendered tree is applied, not churn: this component reads
+    // `ids()`, so any structural change re-renders the whole table, and
+    // appending a single row to it costs more insertions than this swap does.
 
     dispose()
     container.remove()

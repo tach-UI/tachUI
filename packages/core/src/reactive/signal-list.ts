@@ -169,33 +169,6 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
     }
   }
 
-  // Smart detection of structural changes vs reordering
-  const detectStructuralChange = (oldKeys: K[], newKeys: K[]): boolean => {
-    // If lengths differ, it's definitely a structural change
-    if (oldKeys.length !== newKeys.length) {
-      return true
-    }
-
-    // Check if all keys are the same (order doesn't matter for structural check)
-    const oldKeySet = new Set(oldKeys)
-    const newKeySet = new Set(newKeys)
-    
-    // If sets are different, keys were added/removed
-    if (oldKeySet.size !== newKeySet.size) {
-      return true
-    }
-
-    // Check if all new keys exist in old keys (but order may differ)
-    for (const key of newKeys) {
-      if (!oldKeySet.has(key)) {
-        return true
-      }
-    }
-
-    // All keys exist, no structural change - just reordering
-    return false
-  }
-
   // Replace entire list
   const set = (items: T[]): void => {
     const newKeys = items.map(keyFn)
@@ -223,11 +196,13 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
       }
     })
 
-    // Smart detection of structural changes vs reordering
-    const structureChanged = detectStructuralChange(currentKeys, newKeys)
-    if (structureChanged) {
-      setIds(newKeys)
-    }
+    // Order is part of the structure, so the new keys go through as they came.
+    // `setIds` compares element by element and writes only on a real
+    // difference. Deciding here whether the change "counted" treated the same
+    // keys in a new order as no change at all, which left `ids` - the thing a
+    // component renders from - describing the previous order while every row
+    // held current data.
+    setIds(newKeys)
   }
 
   const readItemValue = (key: K, shouldTrack: boolean): T | null => {
