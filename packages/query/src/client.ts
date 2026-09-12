@@ -54,11 +54,14 @@ import type {
   CacheEntry,
   DehydratedQuery,
   DehydratedState,
+  FetchInfiniteQueryOptions,
   FetchQueryOptions,
   FetchStatus,
+  InfiniteData,
   QueryClient,
   QueryKey,
   QueryKeyHash,
+  QueryLoadContext,
   QueryObservation,
   QueryStatus,
 } from './types'
@@ -738,14 +741,88 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     return requestPromise
   }
 
+  /**
+   * Loads a run of pages, front to back, feeding each result to
+   * `getNextPageParam` to find the next.
+   *
+   * Sequential by necessity rather than by choice: a cursor is only known once
+   * the page before it has landed. Stops early when the source says there is
+   * no next page, so asking for more pages than exist is not an error.
+   *
+   * Shared by the imperative fetch here and by `createInfiniteQuery`'s
+   * refetch, so both accumulate a set the same way.
+   */
+  async function loadInfinitePages<TPage, TPageParam, E>(
+    options: FetchInfiniteQueryOptions<TPage, TPageParam, E>,
+    ctx: QueryLoadContext,
+    count: number,
+    from: TPageParam
+  ): Promise<InfiniteData<TPage, TPageParam>> {
+    const pages: TPage[] = []
+    const pageParams: TPageParam[] = []
+    let pageParam: TPageParam | undefined = from
+
+    for (let index = 0; index < count; index += 1) {
+      if (pageParam === undefined) {
+        break
+      }
+      const param = pageParam
+      const page = await options.load({
+        signal: ctx.signal,
+        key: ctx.key,
+        pageParam: param,
+        direction: 'forward',
+      })
+      pages.push(page)
+      pageParams.push(param)
+      pageParam = options.getNextPageParam(page, pages, param, pageParams)
+    }
+
+    return { pages, pageParams }
+  }
+
   const client: QueryClient = {
     fetchQuery,
 
-    async prefetchQueries(requests: readonly FetchQueryOptions<any, any>[]): Promise<void> {
+    async fetchInfiniteQuery<TPage, TPageParam, E = Error>(
+      options: FetchInfiniteQueryOptions<TPage, TPageParam, E>
+    ): Promise<InfiniteData<TPage, TPageParam>> {
+      // Through `fetchQuery`, so the set is one ordinary cache entry under the
+      // base key: dedup, freshness, retention, dehydration and the generation
+      // guard all apply to it exactly as they do to any other value.
+      return fetchQuery<InfiniteData<TPage, TPageParam>, E>({
+        key: options.key,
+        load: (ctx) =>
+          loadInfinitePages(
+            options,
+            ctx,
+            options.pages ?? 1,
+            options.initialPageParam
+          ),
+        staleTime: options.staleTime,
+        gcTime: options.gcTime,
+        snapshot: options.snapshot,
+        client: options.client,
+      })
+    },
+
+    async prefetchQueries(
+      requests: readonly (
+        | FetchQueryOptions<any, any>
+        | FetchInfiniteQueryOptions<any, any, any>
+      )[]
+    ): Promise<void> {
       ensureUsable('prefetchQueries')
       await Promise.all(
         requests.map((request) =>
-          client.fetchQuery(request).then(
+          // `initialPageParam` is the discriminator, and it is declared absent
+          // on the plain shape so this narrowing is sound rather than a guess.
+          (request.initialPageParam === undefined
+            ? client.fetchQuery(request as FetchQueryOptions<any, any>)
+            : client.fetchInfiniteQuery(
+                request as FetchInfiniteQueryOptions<any, any, any>
+              )
+          ).then(
             () => undefined,
             (error: unknown) => {
               // Load failures are swallowed — prefetch only warms — but
