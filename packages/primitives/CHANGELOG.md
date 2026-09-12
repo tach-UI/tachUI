@@ -1,5 +1,100 @@
 # @tachui/primitives
 
+## 0.11.0
+
+### Patch Changes
+
+- [#365](https://github.com/tach-UI/tachUI/pull/365) [`1c3099d`](https://github.com/tach-UI/tachUI/commit/1c3099d059b03af704ed91ead50079bc36e92007) Thanks [@whoughton](https://github.com/whoughton)! - `isSignal` now recognises a computed, and `Button`'s `isEnabled` follows a
+  signal.
+
+  `createSignal` marks its accessor `tachui.signal` and `createComputed` marks
+  its own `tachui.computed`, but `isSignal` looked only for the first — so a
+  computed failed the guard for the `Signal` type it satisfies. That is not a
+  narrow miss. The standard `isSignal(x) ? x() : x` split then passes the
+  _function_ on as if it were a value, so a prop reads as permanently truthy, a
+  style is set to a function, and nothing subscribes.
+
+  **This changes runtime behaviour wherever that split appears, which is roughly a
+  hundred call sites** — `Stepper`, `DatePicker`, `Picker`, `TextField` and
+  `Slider` in forms; `tab-view`, `navigation-link` and the navigation modifiers;
+  `List` and `Menu` in data; `Alert` and `ActionSheet` in mobile; and reactive
+  class handling in modifiers and grid. A prop that accepts `boolean | Signal`
+  and was handed a computed now honours it. `isSignal` is public API and this
+  widens what it accepts deliberately, hence a minor rather than a patch on core.
+
+  `NavigationLink` is the one place where widening did more than fix a split. Its
+  `isActive` handling intercepts the _write_ that sets the value true, navigates,
+  and sets it back to false. A computed has no write to intercept, and the
+  fallback path it now reaches would navigate the moment the value was truthy —
+  on mount, and again on every recomputation, with nothing able to reset it. A
+  source with no settable implementation behind it is no longer driven from
+  there.
+
+  `Button.isEnabled()` returned the signal itself rather than its value, which
+  made every consumer wrong the same way: `if (!isEnabled)` on a function is
+  never true, so the press guard never fired and `getButtonStyles` computed its
+  disabled appearance from a truthy function. It resolves now, the way
+  `isLoading` already did.
+
+  `disabled` reaches the renderer as an inverted signal, built fresh on each
+  render. Identity matters as much as value: a render runs inside an effect, so
+  an enclosing component re-rendering for any reason disposes that scope and
+  takes the renderer's subscription with it, and the renderer diffs props by
+  identity — a cached accessor would be recognised, skipped, and never
+  resubscribed. Where a render has no owner at all, which is the direct mount
+  path behind sheets, popovers and split views, `disabled` is a plain value
+  instead: nothing there disposes what a render creates, so a subscription made
+  in that path would be held for the life of the process, one per mount.
+
+  Button's reactive style effect no longer subscribes to anything a caller owns.
+  It is created on DOM ready, a path where nothing disposes it — the component's
+  cleanup array is copied by `build()` before a render can add to it, and the
+  renderer's element cleanup does not run there either — so every signal it read
+  was held for the life of the process, one observer per mount, and those signals
+  are shared across every component handed the same one. It now reads the enabled
+  and loading state, `tint`, `backgroundColor`, `foregroundColor`, and the theme a
+  `ColorAsset` resolves against as snapshots, and depends only on the component's
+  own state signal.
+
+  That removes reactivity as well as the leak: a caller's colour or loading signal
+  changing no longer restyles through this effect. Nothing observable changes
+  today, because the style application skips any property that already has a
+  value and so only the first pass ever reaches the DOM — but when that skip is
+  fixed, or when the mount path learns to dispose what a render creates, the
+  subscriptions belong back here and not before.
+
+  The click handler also declines while disabled **or loading**. A disabled
+  button suppresses clicks natively in a browser but not in every environment,
+  and `handlePress` has always refused a press while loading — so a click and a
+  press could disagree about whether a loading button acts. They no longer do.
+
+  A disabled Button also _looks_ disabled now, which it did not before and does
+  not on the released version either. Its styles travel with the element as a
+  prop the renderer owns, rather than being written onto the element afterwards
+  by an effect that ran on DOM ready — an effect the ordinary render path never
+  fires, so a Button rendered that way had no styles at all, disabled or
+  otherwise. Applying them before modifiers rather than after also makes modifier
+  precedence a matter of ordering rather than of inspecting what is already on
+  the element: the component no longer has to guess whether a value it finds
+  there was a modifier's or its own from a previous pass, which it guessed wrong,
+  so every pass after the first stood down and a button that became disabled kept
+  the appearance of one that was not.
+
+  The other half of the report — signal-driven style modifier values reading once
+  — was not reproducible: effects flush on a microtask, so a read in the same
+  task as the write is stale by design. Nothing pinned it either way, which is
+  why it was plausible enough to report, so `foregroundColor` and
+  `backgroundColor` now carry signal-update tests.
+
+  `clone-helpers` drops a local `isSignal` that tested for a `.set` no signal
+  accessor has ever had. It matched nothing, and signals reached the generic
+  branch that passes functions through by reference — the right answer for no
+  reason.
+
+- Updated dependencies [[`a6d0668`](https://github.com/tach-UI/tachUI/commit/a6d06680e3212b5e5dfe11c60d43ad04ae7e131a), [`b30f4a3`](https://github.com/tach-UI/tachUI/commit/b30f4a3c80a816398ed644fe2f489c1ca532318b), [`a2e553b`](https://github.com/tach-UI/tachUI/commit/a2e553b39c649240e5f361c6d925394ccba17d2b), [`0c10b49`](https://github.com/tach-UI/tachUI/commit/0c10b4945aefaf290a2779fa44c0a12ff2fc0d8a), [`eabe555`](https://github.com/tach-UI/tachUI/commit/eabe55501766e5da320e42e65420dbd64e71e616), [`1c3099d`](https://github.com/tach-UI/tachUI/commit/1c3099d059b03af704ed91ead50079bc36e92007), [`eabe555`](https://github.com/tach-UI/tachUI/commit/eabe55501766e5da320e42e65420dbd64e71e616)]:
+  - @tachui/core@0.11.0
+  - @tachui/modifiers@0.11.0
+
 ## 0.10.0
 
 ### Patch Changes
