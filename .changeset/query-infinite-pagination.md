@@ -44,3 +44,26 @@ function that makes it work.
 
 ADR 0001 records the pagination decisions and drops pagination from its
 deferred list.
+
+Review follow-ups, each reproduced before it was fixed:
+
+- A pagination loader was handed the value from the *observer's* published
+  state rather than from the entry the execution was about to write. The effect
+  that follows a key change is scheduled, so an append in the same tick wrote
+  three pages of the previous feed under the new key. The same gap let a gated
+  observer's `refetch()` truncate a shared three-page set to one page.
+- `fetchQuery` returned the in-flight promise before looking at the loader it
+  had been handed, which was sound only while every execution of a key ran the
+  same loader. A pull-to-refresh fired during a load-more reloaded nothing and
+  reported success. Executions are named now, and a name that differs from the
+  one in flight queues behind it.
+- `cancel()` left the reload mark it had set, so the abort's own notification
+  found the entry marked and idle and restarted the work — a sequential reload
+  of every page held.
+- `ids` was not a signal core recognises, so `List` would have rendered it
+  empty forever and never subscribed.
+- `null` now ends a set alongside `undefined`, which is how a JSON cursor API
+  spells it; a reorder reaches `ids`; both page loops stop on an abort; a
+  throwing page-param function is not retried and no longer outranks a real
+  load failure; `maxPages` and `pages` are validated; and `fetchNextPage`
+  declares `Promise<TData | undefined>`, which is the truth.
