@@ -23,6 +23,7 @@
 import { createMemo, createSignal, untrack } from '@tachui/core'
 
 import {
+  assertPageCap,
   assertPageParam,
   callPageParam,
   isEndOfSet,
@@ -102,6 +103,12 @@ export function createInfiniteQuery<
   options: InfiniteQueryOptions<TPage, TPageParam, TData, E>
 ): InfiniteQueryResult<TData, E> {
   const base = options as ResolvedOptions<TPage, TPageParam, TData, E>
+  // Checked once, at construction, beside where a query's other policy values
+  // are checked. A fractional cap reaches `pages.length = 2.5` inside the
+  // loader and throws a RangeError the retry loop then replays; a cap of zero
+  // splices the whole set away and leaves a query that reports success, holds
+  // nothing, and has no way back.
+  assertPageCap(base.maxPages, 'createInfiniteQuery')
 
   /**
    * Which direction *this observer* asked for, if any.
@@ -185,13 +192,13 @@ export function createInfiniteQuery<
         return held
       }
 
-      const direction = held.pages.length === 0 ? 'forward' : towards
+      const growing = held.pages.length === 0 ? 'forward' : towards
 
       const page = await base.load({
         signal: ctx.signal,
         key: ctx.key,
         pageParam: param,
-        direction,
+        direction: growing,
       })
 
       // Merged onto the pages this execution started from. An invalidation
@@ -200,9 +207,9 @@ export function createInfiniteQuery<
       // Existing page objects are carried by reference, which is what lets a
       // row projection leave untouched rows alone.
       const pages =
-        direction === 'forward' ? [...held.pages, page] : [page, ...held.pages]
+        growing === 'forward' ? [...held.pages, page] : [page, ...held.pages]
       const pageParams =
-        direction === 'forward'
+        growing === 'forward'
           ? [...held.pageParams, param]
           : [param, ...held.pageParams]
 
@@ -210,7 +217,7 @@ export function createInfiniteQuery<
       if (cap !== undefined && pages.length > cap) {
         // Trimmed from the end opposite the one that grew, which is what makes
         // `fetchPreviousPage` able to recover a head that an append dropped.
-        if (direction === 'forward') {
+        if (growing === 'forward') {
           const over = pages.length - cap
           pages.splice(0, over)
           pageParams.splice(0, over)

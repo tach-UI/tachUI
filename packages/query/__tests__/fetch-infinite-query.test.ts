@@ -192,6 +192,35 @@ describe('the set as an ordinary cached value', () => {
   })
 })
 
+describe('what the imperative fetch refuses', () => {
+  it('rejects a page count that is not a positive whole number', async () => {
+    const client = createQueryClient()
+    await expect(
+      client.fetchInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: pageSource(3),
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        pages: 0,
+      })
+    ).rejects.toThrow('pages must be a positive integer')
+    client.dispose()
+  })
+
+  it('rejects a first cursor spelled the way "no more pages" is spelled', async () => {
+    const client = createQueryClient()
+    await expect(
+      client.fetchInfiniteQuery<Page, number | undefined>({
+        key: () => ['feed'],
+        load: async () => ({ items: [], next: undefined }),
+        initialPageParam: undefined,
+        getNextPageParam: nextParam,
+      })
+    ).rejects.toThrow('initialPageParam cannot be')
+    client.dispose()
+  })
+})
+
 describe('prefetchQueries', () => {
   it('warms a mixed list of plain and infinite requests', async () => {
     const client = createQueryClient()
@@ -210,8 +239,8 @@ describe('prefetchQueries', () => {
       },
     ])
 
-    // Told apart by `initialPageParam`, which the plain shape declares absent
-    // so the narrowing is sound rather than a guess.
+    // Told apart by whether `initialPageParam` is present, which the plain
+    // shape declares absent so the narrowing is sound rather than a guess.
     expect(inspectQueryEntry(client, ['plain'])?.data).toBe('a plain value')
     const infinite = inspectQueryEntry(client, ['feed'])?.data as InfiniteData<
       Page,
@@ -219,6 +248,33 @@ describe('prefetchQueries', () => {
     >
     expect(infinite.pages).toHaveLength(2)
     expect(infinite.pageParams).toEqual([0, 1])
+    client.dispose()
+  })
+})
+
+describe('telling a plain request from an infinite one', () => {
+  it('routes on the presence of initialPageParam, not on its value', async () => {
+    const client = createQueryClient()
+
+    // `undefined` and `null` are how `getNextPageParam` says there is no page
+    // in a direction, so neither can also be a first cursor — a source whose
+    // page one takes no cursor picks a sentinel of its own, or ignores the
+    // param. Read by value, such a request looked exactly like a plain one and
+    // cached a bare page where the set belongs, for a later reader to trip
+    // over with an error pointing nowhere near the prefetch. Read by presence,
+    // it is recognised as infinite and refused where the mistake was made.
+    await expect(
+      client.prefetchQueries([
+        {
+          key: () => ['cursor'],
+          load: async () => ({ items: ['only'], next: undefined }),
+          initialPageParam: undefined,
+          getNextPageParam: () => undefined,
+        } as never,
+      ])
+    ).rejects.toThrow('initialPageParam cannot be')
+
+    expect(inspectQueryEntry(client, ['cursor'])?.data).toBeUndefined()
     client.dispose()
   })
 })

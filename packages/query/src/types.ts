@@ -370,10 +370,24 @@ export type FetchInfiniteQueryOptions<TPage, TPageParam, E = Error> = Omit<
   | 'retryDelay'
   | 'refetchOnFocus'
   | 'refetchOnReconnect'
-> &
-  PreviousPageOptions<TPage, TPageParam> & {
-    /** How many pages to load. Defaults to 1. */
+> & {
+    /**
+     * How many pages to load. Defaults to 1. Must be a positive integer.
+     *
+     * A hint for the load, not a guarantee about the result: a fresh entry is
+     * served as it stands, so a call asking for three pages against a key that
+     * already holds one gets the one. Prefetch the key before anything else
+     * touches it, or reload it deliberately.
+     */
     pages?: number
+    /**
+     * Never, both of them. An imperative fetch has no backward direction to
+     * recover a trimmed head with, and nothing here applies a cap — accepting
+     * `maxPages` would take a bound and silently ignore it, while the type
+     * forced the caller to supply `getPreviousPageParam` to set it.
+     */
+    maxPages?: never
+    getPreviousPageParam?: never
     select?: never
     placeholderData?: never
     enabled?: never

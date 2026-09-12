@@ -100,6 +100,20 @@ export function assertPageParam<TPageParam>(
   }
 }
 
+/** A positive whole retained-page bound, or a message naming what arrived. */
+export function assertPageCap(cap: number | undefined, from: string): void {
+  if (cap === undefined) {
+    return
+  }
+  if (!Number.isInteger(cap) || cap < 1) {
+    throw new QueryError(
+      `${from}: maxPages must be a positive integer, received ${String(cap)}. ` +
+        'A cap below one leaves a set that holds nothing and cannot be ' +
+        'extended from either end.'
+    )
+  }
+}
+
 /** Positive whole pages, or a message naming what arrived. */
 export function assertPageCount(count: number, from: string): void {
   if (!Number.isInteger(count) || count < 1) {
