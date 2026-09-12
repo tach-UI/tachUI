@@ -532,6 +532,16 @@ export interface QueryObservation {
   markForReload(): void
 
   /**
+   * Undoes a reload mark this observation set, without notifying.
+   *
+   * Only whoever marked knows when the reload it was for is no longer wanted.
+   * `cancel()` is the case: aborting notifies, and an entry left marked and
+   * idle is reloaded by whichever observer is watching — so a cancel would
+   * restart the work it had just stopped.
+   */
+  clearReloadMark(): void
+
+  /**
    * Ends the entry's in-flight request without giving up the observation.
    *
    * Releasing would do the aborting too, but it also detaches the observer,

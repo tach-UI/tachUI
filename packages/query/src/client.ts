@@ -74,10 +74,45 @@ import type {
  */
 export const QueryClientKey = createEnvironmentKey<QueryClient>('QueryClient')
 
+/**
+ * Names what an execution is doing, so dedup can tell two of them apart.
+ *
+ * `'own'` is a query loading itself, and every plain query uses it — so two
+ * observers of one key still share a single request. A primitive that swaps in
+ * a loader for one execution passes its own name instead: an append and a
+ * refetch are not the same request, and joining one to the other silently
+ * performs the wrong one.
+ */
+export const OWN_LOADER = 'own'
+
+/**
+ * `fetchQuery`'s options as the package passes them internally.
+ *
+ * Identical to the public shape but for `intent`, which no public option
+ * produces: a primitive that swaps in a loader for one execution names it here
+ * so dedup can tell it apart from the query's own.
+ */
+export type InternalFetchQueryOptions<TRaw, TError = Error> =
+  FetchQueryOptions<TRaw, TError> & {
+    intent?: string
+    /**
+     * Refuses the cached value for this call.
+     *
+     * An observer that has decided to revalidate cannot be answered with what
+     * it is trying to replace. Marking the entry says the same thing, but a
+     * call that had to queue behind someone else's execution arrives after that
+     * execution consumed the mark — and would then be served the very value it
+     * asked to reload.
+     */
+    force?: boolean
+  }
+
 /** An in-flight loader execution owned by the client root. */
 interface InFlightRequest {
   readonly promise: Promise<unknown>
   readonly controller: AbortController
+  /** Which execution this is. See {@link OWN_LOADER}. */
+  readonly intent: string
 }
 
 /** Cache entry state. Lifecycle policy (freshness, eviction) lands in #279. */
@@ -560,7 +595,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
   }
 
   async function fetchQuery<TRaw, TError = Error>(
-    options: FetchQueryOptions<TRaw, TError>
+    options: InternalFetchQueryOptions<TRaw, TError>
   ): Promise<TRaw> {
     // Dispatch first: lifecycle before delegation, so a disposed client
     // naming a live explicit client still rejects for use after dispose()
@@ -609,14 +644,34 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       throw markDispatchError(error)
     }
     claimPolicy(entry, options)
+    const requestedIntent = options.intent ?? OWN_LOADER
     const activeRequest = entry.inFlight
     if (activeRequest !== null) {
-      return activeRequest.promise as Promise<TRaw>
+      if (activeRequest.intent === requestedIntent) {
+        return activeRequest.promise as Promise<TRaw>
+      }
+      // A different execution holds the slot. Joining it would hand this
+      // caller someone else's work and quietly drop its own — a pull-to-refresh
+      // fired while a "load more" is in flight would report success without
+      // reloading anything. Queue behind it instead, then run this one.
+      return activeRequest.promise.then(
+        () => fetchQuery<TRaw, TError>(options),
+        () => fetchQuery<TRaw, TError>(options)
+      )
     }
     // Presence is tracked by status, not by the data value: a loader that
     // legitimately resolves `undefined` (a 204, an empty body, a "not found"
     // lookup) still populates the entry and must not refetch on every call.
-    if (entry.status === 'success' && !entry.invalidated) {
+    //
+    // Only for a query loading itself. A caller that supplied a loader for this
+    // one execution is asking for that loader to run; there is no cached answer
+    // to the question "append the next page".
+    if (
+      requestedIntent === OWN_LOADER &&
+      options.force !== true &&
+      entry.status === 'success' &&
+      !entry.invalidated
+    ) {
       return entry.data as TRaw
     }
     const controller = new AbortController()
@@ -651,7 +706,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         reject(reason)
       }
     })
-    entry.inFlight = { promise: requestPromise, controller }
+    entry.inFlight = { promise: requestPromise, controller, intent: requestedIntent }
     activeControllers.add(controller)
     cancelEviction(entry)
 
@@ -876,6 +931,15 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           }
           scheduleEviction(entry)
           notify(entry)
+        },
+        clearReloadMark: () => {
+          // Undoes a mark this observation set, without the notification a
+          // mark carries. Only meaningful between marking and the reload
+          // landing: whoever marked is the only one who knows the reload is no
+          // longer wanted.
+          if (entry.invalidated) {
+            entry.invalidated = false
+          }
         },
         consumeHydrationGrace: () => {
           const granted = entry.hydrationGrace

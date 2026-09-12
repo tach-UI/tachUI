@@ -142,6 +142,18 @@ export function createInfiniteQuery<
     )
   }
 
+  /**
+   * Names an append for the cache's dedup.
+   *
+   * Stable per direction rather than per call, so two `fetchNextPage()` calls —
+   * from one observer or from two watching the same key — cost one request,
+   * while a refetch racing an append is recognised as different work and queues
+   * instead of being handed the append's result.
+   */
+  function intentName(towards: FetchDirection): string {
+    return `append:${towards}`
+  }
+
   /** Fetches the page beyond one end and returns the set it belongs to. */
   function appendPage(
     towards: FetchDirection
@@ -371,7 +383,7 @@ export function createInfiniteQuery<
       }
 
       setDirection(towards)
-      await internals.refetchWith(appendPage(towards))
+      await internals.refetchWith(appendPage(towards), intentName(towards))
       settle({ ok: true })
       return currentData()
     } catch (error) {
