@@ -262,7 +262,7 @@ describe('mounting directly', () => {
     expect(observers()).toBe(baseline)
   })
 
-  it('does not follow the signal there, and says so', async () => {
+  it('follows the signal there too, and says nothing', async () => {
     const warnings: unknown[] = []
     const realWarn = console.warn
     console.warn = (...args: unknown[]) => {
@@ -282,9 +282,50 @@ describe('mounting directly', () => {
       setEnabled(false)
       await flush()
 
-      // Documented behaviour, pinned so a later change cannot quietly restore
-      // the subscription — and the leak with it — while looking like a fix.
-      expect(button?.hasAttribute('disabled')).toBe(false)
+      // This path used to hand over a snapshot, because a render here happened
+      // in no reactive scope and a subscription made in one could never be
+      // released. The mount now renders under an owner of its own, so the
+      // control behaves the same way in a sheet as on a page — and there is
+      // nothing left to warn about.
+      expect(button?.hasAttribute('disabled')).toBe(true)
+      expect(
+        warnings.some(
+          warning =>
+            typeof warning === 'string' &&
+            warning.includes('outside a reactive owner')
+        )
+      ).toBe(false)
+
+      dispose()
+      container.remove()
+    } finally {
+      console.warn = realWarn
+    }
+  })
+})
+
+describe('rendering outside any owner', () => {
+  it('hands over a snapshot and says why', () => {
+    const warnings: unknown[] = []
+    const realWarn = console.warn
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args[0])
+    }
+    try {
+      const [enabled] = createSignal(true)
+      const built = Button('x', {
+        action: () => undefined,
+        isEnabled: enabled,
+      }).build() as unknown as {
+        render: () => { props: { disabled: unknown } } | { props: { disabled: unknown } }[]
+      }
+
+      // Both framework mount paths render under an owner, so this is only
+      // reached by calling render() directly. A memo made here would belong to
+      // nothing and never be released, so a plain value goes over instead.
+      const rendered = built.render()
+      const node = Array.isArray(rendered) ? rendered[0] : rendered
+      expect(typeof node?.props.disabled).toBe('boolean')
       expect(
         warnings.some(
           warning =>
@@ -292,9 +333,6 @@ describe('mounting directly', () => {
             warning.includes('outside a reactive owner')
         )
       ).toBe(true)
-
-      dispose()
-      container.remove()
     } finally {
       console.warn = realWarn
     }

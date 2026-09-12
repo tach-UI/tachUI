@@ -13,7 +13,7 @@ import {
   setCurrentComponentContext,
 } from './component-context'
 import { DOMRenderer } from './renderer'
-import type { ComponentInstance } from './types'
+import type { ComponentInstance, DOMNode } from './types'
 
 /**
  * Global DOM renderer instance
@@ -316,28 +316,47 @@ export function mountComponentTree(
       componentToRender = component.build()
     }
 
-    const domNodes = componentToRender.render()
-    const nodeArray = Array.isArray(domNodes) ? domNodes : [domNodes]
-
-    // Convert DOM nodes to actual DOM elements
+    // Rendered under an owner of this mount's own.
+    //
+    // Without one, a render here happens in no reactive scope at all: a memo
+    // or effect a component creates while rendering belongs to nothing, so
+    // nothing disposes it and it holds whatever it subscribed to for the life
+    // of the process. Components were left to work around that by not being
+    // reactive on this path — which is most of the reason a control mounted in
+    // a sheet behaved differently from the same control on a page.
+    //
+    // The root is detached from whatever owner happens to be ambient at the
+    // call, because this mount's lifetime is its own: it ends when the
+    // disposer this function returns is called, and not before.
+    let disposeOwner: (() => void) | undefined
+    let domNodes!: DOMNode | DOMNode[]
     const elements: Element[] = []
-    for (const node of nodeArray) {
-      const element = globalRenderer.render(node, container)
 
-      if (element instanceof DocumentFragment) {
-        // Handle fragments by adding all child nodes
-        const children = Array.from(element.childNodes)
-        for (const child of children) {
-          if (child instanceof Element) {
-            elements.push(child)
-            container.appendChild(child)
+    createReactiveRoot(dispose => {
+      disposeOwner = dispose
+      domNodes = componentToRender.render()
+      const owned = Array.isArray(domNodes) ? domNodes : [domNodes]
+
+      for (const node of owned) {
+        const element = globalRenderer.render(node, container)
+
+        if (element instanceof DocumentFragment) {
+          // Handle fragments by adding all child nodes
+          const children = Array.from(element.childNodes)
+          for (const child of children) {
+            if (child instanceof Element) {
+              elements.push(child)
+              container.appendChild(child)
+            }
           }
+        } else if (element instanceof Element) {
+          elements.push(element)
+          container.appendChild(element)
         }
-      } else if (element instanceof Element) {
-        elements.push(element)
-        container.appendChild(element)
       }
-    }
+    })
+
+    const nodeArray = Array.isArray(domNodes) ? domNodes : [domNodes]
 
     // ENHANCED: Set up DOM element tracking for lifecycle hooks
     if (elements.length > 0) {
@@ -412,14 +431,10 @@ export function mountComponentTree(
     return () => {
       // Clean up child components first
       childCleanupFunctions.forEach(cleanup => cleanup())
-      // Then the renderer's own bindings for the nodes this mount created.
-      // Everything the renderer sets up for a reactive prop — the effect that
-      // tracks it and the subscription that effect holds — is registered
-      // against the element and released by disposing the node. Without this
-      // the mount path released none of it: a component with a reactive prop
-      // retained one observer on the caller's signal per mount, for the life
-      // of the process, and every sheet, popover or split-view region that had
-      // ever been opened was still recomputing.
+      // The renderer's own record of these nodes: its element map, its
+      // bindings, its rendered-node set. The owner disposed below now takes
+      // care of the effects themselves — this releases the renderer's
+      // references to a tree that is going away.
       nodeArray.forEach(node => {
         try {
           globalRenderer.disposeNode(node)
@@ -427,6 +442,9 @@ export function mountComponentTree(
           console.error('Node disposal error:', error)
         }
       })
+      // Then the owner this mount rendered under, which disposes every memo
+      // and effect the component created while rendering.
+      disposeOwner?.()
       // Then clean up this component
       unmountComponentEnhanced(component, container)
     }

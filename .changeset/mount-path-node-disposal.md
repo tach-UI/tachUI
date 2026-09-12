@@ -17,8 +17,11 @@ for every surface that had ever been opened.
 Measured over five mount/unmount cycles of a component with a signal-valued
 prop: five retained before, none after.
 
-This is the general case of a leak worked around in `Button` one commit
-earlier. What remains outside it is narrower and belongs to whoever creates it:
-a component that builds its own memo during a render with no owner still has
-nothing to dispose it, which is why `Button` hands the renderer a plain value
-on that path rather than a memo it could not release.
+That mount also renders under a reactive owner of its own now. Without one, a
+render there happened in no scope at all, so a memo or effect a component
+created while rendering belonged to nothing and held whatever it subscribed to
+for good — which components had been working around by not being reactive on
+that path. That is most of the reason a control mounted in a sheet behaved
+differently from the same control on a page: a `Button` given a signal for
+`isEnabled` now follows it inside a sheet, popover or split-view region exactly
+as it does elsewhere, and unmounting leaves nothing subscribed.
