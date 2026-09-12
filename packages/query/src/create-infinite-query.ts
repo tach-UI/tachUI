@@ -145,7 +145,8 @@ export function createInfiniteQuery<
       Math.max(held.pages.length, 1),
       held.pageParams.length > 0
         ? (held.pageParams[0] as TPageParam)
-        : base.initialPageParam
+        : base.initialPageParam,
+      ctx.withRetry
     )
   }
 
@@ -194,12 +195,14 @@ export function createInfiniteQuery<
 
       const growing = held.pages.length === 0 ? 'forward' : towards
 
-      const page = await base.load({
-        signal: ctx.signal,
-        key: ctx.key,
-        pageParam: param,
-        direction: growing,
-      })
+      const page = await ctx.withRetry(() =>
+        base.load({
+          signal: ctx.signal,
+          key: ctx.key,
+          pageParam: param,
+          direction: growing,
+        })
+      )
 
       // Merged onto the pages this execution started from. An invalidation
       // that landed meanwhile has already raised the entry's generation, so
@@ -213,7 +216,10 @@ export function createInfiniteQuery<
           ? [...held.pageParams, param]
           : [param, ...held.pageParams]
 
-      const cap = base.maxPages
+      // The entry's bound, not this observer's. First declarer wins, the same
+      // way `staleTime` and `gcTime` are claimed, so every observer of the key
+      // trims to one number.
+      const cap = internals.policy()?.maxPages ?? base.maxPages
       if (cap !== undefined && pages.length > cap) {
         // Trimmed from the end opposite the one that grew, which is what makes
         // `fetchPreviousPage` able to recover a head that an append dropped.
@@ -256,6 +262,14 @@ export function createInfiniteQuery<
     // for infinite queries on the day it starts working for plain ones.
     refetchOnFocus: base.refetchOnFocus,
     refetchOnReconnect: base.refetchOnReconnect,
+    // Claimed on the entry like every other shared policy. The bound describes
+    // the set, and the set is shared: an observer applying its own while
+    // another applied none trimmed pages out from under it, leaving a set it
+    // never capped and — with no `getPreviousPageParam` of its own — no way to
+    // get them back.
+    maxPages: base.maxPages,
+    // The policy goes on each page, not on the run. See `withRetry`.
+    retriesInternally: true,
   } as InternalQueryOptions<InfiniteData<TPage, TPageParam>, TData, E>)
 
   const result = internals.result

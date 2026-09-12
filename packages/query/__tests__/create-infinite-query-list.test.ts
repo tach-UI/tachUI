@@ -504,3 +504,32 @@ describe('what a consumer binds to', () => {
     client.dispose()
   })
 })
+
+describe('letting go', () => {
+  it('stops projecting and drops the rows on dispose', async () => {
+    const client = createQueryClient()
+    const feed = source(5)
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQueryList<Page, number, Row, string>({
+        key: () => ['feed'],
+        load: feed.load,
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        items: (page) => page.rows,
+        itemKey: (item) => item.id,
+        client,
+      })
+    )
+    await settle()
+    expect(value.ids()).toEqual(['0a', '0b'])
+
+    value.dispose()
+
+    // The rows go with it. Left alone, the flatten effect kept projecting into
+    // row signals nobody reads, holding every page object the set had carried.
+    expect(value.ids()).toEqual([])
+    expect(value.get('0a')).toBeUndefined()
+    dispose()
+    client.dispose()
+  })
+})

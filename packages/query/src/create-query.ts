@@ -33,6 +33,7 @@ import { hashQueryKey } from './keys'
 import { DEFAULT_ENABLED, DEFAULT_RETRY } from './defaults'
 import type {
   CacheEntry,
+  CacheEntryPolicy,
   FetchStatus,
   QueryClient,
   QueryKey,
@@ -62,6 +63,17 @@ import type {
  */
 export interface InternalLoadContext<TRaw> extends QueryLoadContext {
   readonly held: TRaw | undefined
+  /**
+   * Applies this query's retry policy to one unit of work.
+   *
+   * A loader that performs several requests has to retry them individually.
+   * Retrying the whole loader replays the requests that already succeeded: a
+   * four-page set with `retry: 2` and the last page failing issues twelve
+   * requests, and a twenty-page set with `retry: 3` issues eighty — against a
+   * backend that is already failing, which is the storm the cache's own error
+   * path exists to prevent, one level up.
+   */
+  readonly withRetry: <T>(work: () => Promise<T>) => Promise<T>
 }
 
 /**
@@ -91,6 +103,18 @@ export type InternalQueryOptions<TRaw, TData, E> = Omit<
 > &
   SelectRequirement<TRaw, TData> & {
     load: QueryLoadIntent<TRaw>
+    /**
+     * Retained page bound, claimed on the entry rather than held per observer.
+     * Internal: only `createInfiniteQuery` supplies one.
+     */
+    maxPages?: number
+    /**
+     * The loader applies the retry policy itself, through `ctx.withRetry`.
+     *
+     * Set by a loader that performs more than one request, so the policy lands
+     * on each of them rather than on the sequence.
+     */
+    retriesInternally?: boolean
   }
 
 /** The slice of entry state an observer renders. */
@@ -217,6 +241,8 @@ export interface QueryInternals<TRaw, TData, E> {
    * own `fetchStatus` moves the instant the slot is claimed.
    */
   readonly isFetchingNow: () => boolean
+  /** The entry's claimed policy, or nothing while not observing one. */
+  readonly policy: () => CacheEntryPolicy | undefined
   /**
    * Reloads with a loader of the caller's choosing, for this execution only.
    *
@@ -307,25 +333,14 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
   }
 
   /** Runs the loader, applying this observer's retry policy. */
-  async function runLoad(
-    resolvedKey: QueryKey,
-    signal: AbortSignal,
-    intent: QueryLoadIntent<TRaw> | undefined,
-    heldFrom: () => TRaw | undefined
-  ): Promise<TRaw> {
+  /** Applies the retry policy to one unit of work. */
+  async function withRetry<T>(
+    work: () => Promise<T>,
+    signal: AbortSignal
+  ): Promise<T> {
     for (let attempt = 0; ; attempt += 1) {
       try {
-        // The intent is bound into this closure rather than read from
-        // somewhere shared, so a retry re-runs the same one: an append that
-        // failed and retries is still an append, not a refetch.
-        //
-        // `held` is read per attempt rather than captured once: a retry that
-        // follows an invalidation should build on what the entry holds now.
-        return await (intent ?? options.load)({
-          signal,
-          key: resolvedKey,
-          held: heldFrom(),
-        })
+        return await work()
       } catch (error) {
         // Retries stay inside one cache execution, so the entry reads as
         // fetching throughout and its prior value keeps rendering. Only the
@@ -339,6 +354,30 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
         }
       }
     }
+  }
+
+  async function runLoad(
+    resolvedKey: QueryKey,
+    signal: AbortSignal,
+    intent: QueryLoadIntent<TRaw> | undefined,
+    heldFrom: () => TRaw | undefined
+  ): Promise<TRaw> {
+    // The intent is bound into this closure rather than read from somewhere
+    // shared, so a retry re-runs the same one: an append that failed and
+    // retries is still an append, not a refetch.
+    //
+    // `held` is read per attempt rather than captured once: a retry that
+    // follows an invalidation should build on what the entry holds now.
+    const call = () =>
+      (intent ?? options.load)({
+        signal,
+        key: resolvedKey,
+        held: heldFrom(),
+        withRetry: (work) => withRetry(work, signal),
+      })
+    // A loader that retries internally has already placed the policy where it
+    // belongs; wrapping it again would multiply the attempts.
+    return options.retriesInternally === true ? call() : withRetry(call, signal)
   }
 
   /**
@@ -589,6 +628,7 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
           staleTime: options.staleTime,
           gcTime: options.gcTime,
           snapshot: options.snapshot,
+          maxPages: options.maxPages,
         }
       )
     } catch (error) {
@@ -734,6 +774,16 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     result,
     raw: () => state().data,
     project,
+    policy: () => {
+      if (observation === undefined) {
+        return undefined
+      }
+      try {
+        return observation.entry().options
+      } catch {
+        return undefined
+      }
+    },
     isFetchingNow: () => {
       if (observation === undefined) {
         return false

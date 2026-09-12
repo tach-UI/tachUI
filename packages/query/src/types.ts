@@ -514,6 +514,15 @@ export interface CacheEntryPolicy {
   readonly staleTime: number
   readonly gcTime: number
   readonly snapshot: boolean
+  /**
+   * Retained page bound for an infinite set, if one was declared.
+   *
+   * A property of the set, not of one observer. The entry is shared, and pages
+   * trimmed from it are trimmed for everyone — so the bound is claimed here
+   * like every other shared policy, and every observer of the key trims to the
+   * same number rather than each applying its own and truncating the others.
+   */
+  readonly maxPages?: number
 }
 
 /**

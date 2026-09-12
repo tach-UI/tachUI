@@ -77,7 +77,7 @@ of `@tachui/types` to a release cadence they have no stake in. Adapters import f
 ### One entry point, no subpath exports
 
 `@tachui/core` splits into subpaths because it is large and consumers want slices
-of it. This package is small — the whole surface has a 15 KB gzipped budget — and
+of it. This package is small — the whole surface has a 12 KB gzipped budget — and
 is marked `sideEffects: false`, so a bundler already drops whatever an application
 does not import. Subpath exports would add permanent release surface and a way to
 get import paths wrong, in exchange for no bundle savings. Revisit if the budget
