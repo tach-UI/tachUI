@@ -31,6 +31,8 @@ describe('@tachui/query barrel', () => {
       'QueryError',
       'createAsyncStream',
       'createAsyncStreamList',
+      'createInfiniteQuery',
+      'createInfiniteQueryList',
       'createMutation',
       'createQuery',
       'createQueryClient',
