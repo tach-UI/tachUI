@@ -92,7 +92,7 @@ describe('package manifest', () => {
   it('declares the size budget the CI gate enforces', () => {
     expect(manifest.tachui?.sizeBudget).toEqual({
       entry: 'dist/index.js',
-      gzipBytes: 15360,
+      gzipBytes: 12288,
     })
   })
 })

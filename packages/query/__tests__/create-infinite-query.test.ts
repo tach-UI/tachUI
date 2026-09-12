@@ -952,6 +952,89 @@ describe('stopping', () => {
   })
 })
 
+describe('bounds that belong to the set', () => {
+  it('retries the page that failed, not the pages that landed', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    let failures = 2
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) => {
+          asked.push(pageParam)
+          if (pageParam === 3 && failures > 0) {
+            failures -= 1
+            return Promise.reject(new Error('flaky'))
+          }
+          return pages(9)({ pageParam })
+        },
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        retry: 2,
+        client,
+      })
+    )
+    await settle()
+    await value.fetchNextPage()
+    await value.fetchNextPage()
+    await value.fetchNextPage()
+    asked.length = 0
+    failures = 2
+
+    await value.refetch()
+
+    // Retrying the run would replay the pages that already landed: four pages
+    // with two failures is twelve requests that way, against a backend that is
+    // already failing.
+    expect(asked).toEqual([0, 1, 2, 3, 3, 3])
+    dispose()
+    client.dispose()
+  })
+
+  it('trims every observer of a key to one bound', async () => {
+    const client = createQueryClient()
+    const capped = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: pages(9),
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        getPreviousPageParam: previousParam,
+        maxPages: 2,
+        client,
+      })
+    )
+    const sharing = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: pages(9),
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+
+    // The bound describes the set, and the set is shared. Applied per observer,
+    // the capped one trimmed pages out from under this one mid-append — pages
+    // it never capped, and with no `getPreviousPageParam` of its own, no way
+    // back. Claimed on the entry, both trim to the same number from the start.
+    await sharing.value.fetchNextPage()
+    await sharing.value.fetchNextPage()
+    expect(
+      (sharing.value.data() as InfiniteData<Page, number>).pageParams
+    ).toEqual([1, 2])
+
+    await capped.value.fetchNextPage()
+    expect(
+      (sharing.value.data() as InfiniteData<Page, number>).pageParams
+    ).toEqual([2, 3])
+    sharing.dispose()
+    capped.dispose()
+    client.dispose()
+  })
+})
+
 describe('what it keeps from the observer beneath it', () => {
   it('shares one entry between observers with different projections', async () => {
     const client = createQueryClient()

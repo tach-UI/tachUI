@@ -144,7 +144,12 @@ export async function loadPageRun<TPage, TPageParam>(
   signal: AbortSignal,
   key: QueryKey,
   count: number,
-  from: TPageParam
+  from: TPageParam,
+  // Applied per page. Retrying the run would replay the pages that already
+  // landed, so one flaky page in a long set costs a request per page per
+  // attempt. Defaults to a single try for the imperative fetch, which declares
+  // no retry policy at all.
+  withRetry: <T>(work: () => Promise<T>) => Promise<T> = (work) => work()
 ): Promise<InfiniteData<TPage, TPageParam>> {
   const pages: TPage[] = []
   const pageParams: TPageParam[] = []
@@ -158,14 +163,16 @@ export async function loadPageRun<TPage, TPageParam>(
       break
     }
     const param = pageParam as TPageParam
-    const page = await options.load({
-      signal,
-      key,
-      pageParam: param,
-      // A run from the front is a series of forward loads, including the
-      // first: there is nothing behind it to go backward from.
-      direction: 'forward',
-    })
+    const page = await withRetry(() =>
+      options.load({
+        signal,
+        key,
+        pageParam: param,
+        // A run from the front is a series of forward loads, including the
+        // first: there is nothing behind it to go backward from.
+        direction: 'forward',
+      })
+    )
     pages.push(page)
     pageParams.push(param)
     pageParam = callPageParam(

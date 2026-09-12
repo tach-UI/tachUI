@@ -171,7 +171,13 @@ interface ClientCacheEntry {
   staleTime: number
   gcTime: number
   snapshot: boolean
-  policyClaimed: { staleTime: boolean; gcTime: boolean; snapshot: boolean }
+  maxPages?: number
+  policyClaimed: {
+    staleTime: boolean
+    gcTime: boolean
+    snapshot: boolean
+    maxPages: boolean
+  }
   invalidated: boolean
   /**
    * Bumped wherever an in-flight request stops being the one the entry is
@@ -318,10 +324,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         entry.staleTime = DEFAULT_STALE_TIME
         entry.gcTime = DEFAULT_GC_TIME
         entry.snapshot = DEFAULT_SNAPSHOT
+        entry.maxPages = undefined
         entry.policyClaimed = {
           staleTime: false,
           gcTime: false,
           snapshot: false,
+          maxPages: false,
         }
         // Marked, not merely emptied. An observer reloads what is marked, and
         // marking says why the entry is empty — cleared, rather than
@@ -351,7 +359,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     key: QueryKey,
     hash: QueryKeyHash,
     segmentHashes: readonly QueryKeyHash[],
-    policy: { staleTime?: number; gcTime?: number; snapshot?: boolean }
+    policy: {
+      staleTime?: number
+      gcTime?: number
+      snapshot?: boolean
+      maxPages?: number
+    }
   ): ClientCacheEntry {
     const entry: ClientCacheEntry = {
       key,
@@ -373,10 +386,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       // to its default (staleTime: 0, snapshot: false) is still a deliberate
       // choice, and a later caller must not override it. Value-equality with
       // the default cannot tell "unset" from "explicitly default".
+      maxPages: policy.maxPages,
       policyClaimed: {
         staleTime: policy.staleTime !== undefined,
         gcTime: policy.gcTime !== undefined,
         snapshot: policy.snapshot !== undefined,
+        maxPages: policy.maxPages !== undefined,
       },
       invalidated: false,
       generation: 0,
@@ -534,8 +549,17 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
    */
   function claimPolicy(
     entry: ClientCacheEntry,
-    policy: { staleTime?: number; gcTime?: number; snapshot?: boolean }
+    policy: {
+      staleTime?: number
+      gcTime?: number
+      snapshot?: boolean
+      maxPages?: number
+    }
   ): void {
+    if (policy.maxPages !== undefined && !entry.policyClaimed.maxPages) {
+      entry.maxPages = policy.maxPages
+      entry.policyClaimed.maxPages = true
+    }
     if (policy.staleTime !== undefined && !entry.policyClaimed.staleTime) {
       entry.staleTime = policy.staleTime
       entry.policyClaimed.staleTime = true
@@ -587,6 +611,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       invalidated: entry.invalidated,
       isStale: isStale(entry),
       options: {
+        maxPages: entry.maxPages,
         staleTime: entry.staleTime,
         gcTime: entry.gcTime,
         snapshot: entry.snapshot,

@@ -91,7 +91,7 @@ export function createInfiniteQueryList<
     undefined
   )
 
-  createEffect(() => {
+  const flatten = createEffect(() => {
     const data = query.data()
     const rows: T[] = []
     const at = new Map<K, number>()
@@ -143,11 +143,30 @@ export function createInfiniteQueryList<
    */
   const ids = controls.ids
 
-  const { data: _data, refetch, fetchNextPage, fetchPreviousPage, ...rest } = query
+  const {
+    data: _data,
+    refetch,
+    fetchNextPage,
+    fetchPreviousPage,
+    dispose: disposeQuery,
+    ...rest
+  } = query
   void _data
 
   return {
     ...rest,
+    dispose: () => {
+      // The rows outlive the query otherwise. The observation goes on the
+      // owner's cleanup, but an explicit dispose is a caller saying it is done
+      // now — and the flatten effect would keep projecting into row signals
+      // nobody reads, holding every page object the set ever carried.
+      flatten.dispose()
+      controls.clear()
+      // Cleared alongside the signals it indexes: `get` answers from this, and
+      // core's `get` throws for a key it no longer holds.
+      retained = new Set<K>()
+      disposeQuery()
+    },
     // A real load failure outranks a projection fault: the load error is the
     // one a consumer can act on, and the projection will report itself again
     // on the next write.
