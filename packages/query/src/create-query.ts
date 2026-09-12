@@ -27,7 +27,8 @@ import {
   untrack,
 } from '@tachui/core'
 
-import { useQueryClient } from './client'
+import { OWN_LOADER, useQueryClient } from './client'
+import type { InternalFetchQueryOptions } from './client'
 import { hashQueryKey } from './keys'
 import { DEFAULT_ENABLED, DEFAULT_RETRY } from './defaults'
 import type {
@@ -216,8 +217,19 @@ export interface QueryInternals<TRaw, TData, E> {
    * own `fetchStatus` moves the instant the slot is claimed.
    */
   readonly isFetchingNow: () => boolean
-  /** Reloads with a loader of the caller's choosing, for this execution only. */
-  refetchWith(intent?: QueryLoadIntent<TRaw>): Promise<TRaw>
+  /**
+   * Reloads with a loader of the caller's choosing, for this execution only.
+   *
+   * `intentKey` names the execution for the cache's dedup. Two calls sharing a
+   * name join into one request; a call whose name differs from the execution in
+   * flight queues behind it rather than being handed its result. Stable per
+   * kind of execution, not per call, so two observers appending the same
+   * direction on one key still cost one request.
+   */
+  refetchWith(
+    intent?: QueryLoadIntent<TRaw>,
+    intentKey?: string
+  ): Promise<TRaw>
 }
 
 /**
@@ -258,6 +270,17 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
    */
   let observing: string | null | undefined
   let disposed = false
+  /**
+   * Whether this observer marked the entry for reload and has not seen that
+   * mark consumed.
+   *
+   * `cancel()` has to undo it. `detachFlight` clears `fetchStatus` without
+   * clearing the mark, so the abort's own notification finds the entry marked
+   * and idle and starts the reload nobody asked for — for an infinite query,
+   * a sequential reload of every page held, which is the opposite of what
+   * "stop" means.
+   */
+  let markedReload = false
   /**
    * Fires when the current value ages out of its freshness window.
    *
@@ -329,7 +352,8 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
    */
   function forceFetch(
     resolvedKey: QueryKey,
-    intent?: QueryLoadIntent<TRaw>
+    intent?: QueryLoadIntent<TRaw>,
+    intentKey: string = OWN_LOADER
   ): Promise<TRaw> {
     // Marked through an observation of *this* key, not through whichever one
     // this query happens to hold. There may be none — `enabled: false` never
@@ -355,15 +379,16 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
         // Already loading: joining that execution is what the caller wants.
         // Marking first would detach it and start a second loader alongside,
         // so one refetch would cost two requests.
-        return fetch(resolvedKey, heldFrom, intent)
+        return fetch(resolvedKey, heldFrom, intent, intentKey, true)
       }
       markingOwnReload = true
       try {
         watching.markForReload()
+        markedReload = true
       } finally {
         markingOwnReload = false
       }
-      return fetch(resolvedKey, heldFrom, intent)
+      return fetch(resolvedKey, heldFrom, intent, intentKey, true)
     }
     // No observation of this key: take one just long enough to mark the
     // entry, which is also what creates it if the cache has never held it.
@@ -380,15 +405,31 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     // Read through the released observation's view, which still names the same
     // entry: what the loader needs is the entry's own value, and this observer
     // may be watching a different key or gated off entirely.
-    return fetch(resolvedKey, () => readEntryData(transient), intent)
+    return fetch(
+      resolvedKey,
+      () => readEntryData(transient),
+      intent,
+      intentKey,
+      true
+    )
   }
 
   function fetch(
     resolvedKey: QueryKey,
     heldFrom: () => TRaw | undefined,
-    intent?: QueryLoadIntent<TRaw>
+    intent?: QueryLoadIntent<TRaw>,
+    intentKey: string = OWN_LOADER,
+    force = false
   ): Promise<TRaw> {
-    return client.fetchQuery<TRaw, E>({
+    // Through the internal shape: `intent` is not a public option — no caller
+    // outside this package produces one — but the client's own fetchQuery
+    // reads it to tell one execution from another.
+    const dispatch = client.fetchQuery as (
+      options: InternalFetchQueryOptions<TRaw, E>
+    ) => Promise<TRaw>
+    return dispatch({
+      intent: intentKey,
+      force,
       key: () => resolvedKey,
       load: ({ signal, key: loadingKey }) =>
         runLoad(loadingKey, signal, intent, heldFrom),
@@ -667,6 +708,13 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       client.invalidate(untrack(key))
     },
     cancel: () => {
+      // The mark goes first. Aborting notifies, and an entry left marked and
+      // idle is reloaded by whoever is watching it — so cancelling would
+      // immediately restart the work it just stopped.
+      if (markedReload) {
+        markedReload = false
+        observation?.clearReloadMark()
+      }
       // Aborts the request and keeps observing. Releasing would abort too,
       // but it also detaches the listener, freezing these signals wherever
       // they stood — a first fetch cancelled that way reads `loading` and
@@ -698,6 +746,7 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
         return false
       }
     },
-    refetchWith: (intent) => forceFetch(untrack(key), intent),
+    refetchWith: (intent, intentKey) =>
+      forceFetch(untrack(key), intent, intentKey),
   }
 }

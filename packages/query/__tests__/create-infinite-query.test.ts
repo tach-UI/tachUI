@@ -437,11 +437,13 @@ describe('an append racing something else', () => {
 
     holding = true
     const refreshed = value.refetch()
-    await settle()
-    expect(asked).toEqual([0])
-
+    // No settle between them: the append is issued in the same tick as the
+    // refresh, which is what a component firing both from one handler does.
+    // The derived `isFetching` memo is not dirtied synchronously, so a guard
+    // reading it here sees `false` and skips the wait entirely.
     const appended = value.fetchNextPage()
     await settle()
+    expect(asked).toEqual([0])
     // Nothing started alongside the refresh, and the refresh was not cancelled.
     expect(asked).toEqual([0])
 
