@@ -136,7 +136,7 @@ function readState<TRaw, E>(entry: CacheEntry): ObservedState<TRaw, E> {
   }
 }
 
-function shouldRetry<E>(
+export function shouldRetry<E>(
   policy: RetryPolicy<E> | undefined,
   attempt: number,
   error: E
@@ -184,14 +184,6 @@ function wait(milliseconds: number, signal: AbortSignal): Promise<void> {
 let markingOwnReload = false
 
 /**
- * Observes a query and projects it for one consumer.
- *
- * The returned signals track one cache entry, following the key as it
- * changes. `select` runs outside the cache and is memoized per observer, so
- * two observers of the same key with different projections share a single
- * entry and a single request.
- */
-/**
  * What an observer exposes to a primitive built on top of it.
  *
  * `createInfiniteQuery` needs two things the public result deliberately does
@@ -210,6 +202,16 @@ export interface QueryInternals<TRaw, TData, E> {
    * a second time.
    */
   readonly project: (raw: TRaw) => TData
+  /**
+   * Whether the entry this observer watches has a request in flight, read off
+   * the entry rather than off published state.
+   *
+   * `isFetching` is a memo over a memo over a signal, and core does not dirty
+   * those synchronously — so a caller acting in the same tick as a fetch it
+   * started sees `false` and decides there is nothing to wait for. The entry's
+   * own `fetchStatus` moves the instant the slot is claimed.
+   */
+  readonly isFetchingNow: () => boolean
   /** Reloads with a loader of the caller's choosing, for this execution only. */
   refetchWith(intent?: QueryLoadIntent<TRaw>): Promise<TRaw>
 }
@@ -662,6 +664,18 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     result,
     raw: () => state().data,
     project,
+    isFetchingNow: () => {
+      if (observation === undefined) {
+        return false
+      }
+      try {
+        return observation.entry().fetchStatus === 'fetching'
+      } catch {
+        // The client was disposed out from under the observation; nothing of
+        // ours is in flight either way.
+        return false
+      }
+    },
     refetchWith: (intent) => forceFetch(untrack(key), intent),
   }
 }

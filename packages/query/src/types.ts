@@ -266,15 +266,17 @@ export interface InfiniteQueryLoadContext<TPageParam> extends QueryLoadContext {
 /**
  * Derives the param for the page beyond one end of the set.
  *
- * Returning `undefined` is how a source says there is no page that way, which
- * is what `hasNextPage` and `hasPreviousPage` report.
+ * Returning `undefined` or `null` is how a source says there is no page that
+ * way, which is what `hasNextPage` and `hasPreviousPage` report. Both spellings
+ * count: `null` is what a JSON cursor API sends at the end of a feed, and a
+ * source forwarding `page.cursor` would otherwise never reach the end.
  */
 export type GetPageParam<TPage, TPageParam> = (
   lastPage: TPage,
   pages: readonly TPage[],
   lastPageParam: TPageParam,
   pageParams: readonly TPageParam[]
-) => TPageParam | undefined
+) => TPageParam | null | undefined
 
 /**
  * Everything an infinite query configures except the projection and the
@@ -339,9 +341,18 @@ export interface InfiniteQueryResult<TData, E = Error> extends QueryResult<TData
   readonly hasPreviousPage: Signal<boolean>
   readonly isFetchingNextPage: Signal<boolean>
   readonly isFetchingPreviousPage: Signal<boolean>
-  /** Appends one page. Joins an identical in-flight append; waits for an in-flight refetch. */
-  fetchNextPage(): Promise<TData>
-  fetchPreviousPage(): Promise<TData>
+  /**
+   * Appends one page. Joins an identical in-flight append; waits for an
+   * in-flight refetch.
+   *
+   * Resolves the set the page joined, or `undefined` when there is no set —
+   * a gated query, or one whose first load has not landed. Deliberately not
+   * `placeholderData`: a placeholder is what an observer shows while there is
+   * nothing cached, and returning one here would be indistinguishable from a
+   * real load.
+   */
+  fetchNextPage(): Promise<TData | undefined>
+  fetchPreviousPage(): Promise<TData | undefined>
 }
 
 /**
@@ -397,6 +408,18 @@ export type InfiniteQueryListOptions<
     items: (page: TPage) => readonly T[]
     /** Row identity. Repeat keys across pages update in place rather than duplicating. */
     itemKey: (item: T) => K
+    /**
+     * Never: the rows are the projection, and a second one would fight them.
+     *
+     * Declared rather than merely absent, for the reason `FetchQueryOptions`
+     * gives: omission alone rejects only a fresh object literal, while a
+     * prebuilt options variable carrying `select` stays structurally
+     * assignable — and options get built once and passed around. Forwarded to
+     * `createInfiniteQuery`, such a `select` replaces the set with its own
+     * projection, the flatten reads `pages` off it, finds nothing, and the list
+     * reports `success` with no rows and no error.
+     */
+    select?: never
   }
 
 /**

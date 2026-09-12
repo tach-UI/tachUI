@@ -31,6 +31,7 @@
  */
 
 import { createSignal } from './signal'
+import type { Signal } from './types'
 
 export type SignalListKeyFn<T, K extends PropertyKey = PropertyKey> = (
   item: T
@@ -40,8 +41,15 @@ export interface SignalListControls<T, K extends PropertyKey = PropertyKey> {
   /**
    * Get array of item keys/IDs. Track this in components to know which items exist.
    * When this changes, component re-renders with new list structure.
+   *
+   * Typed as the signal it actually is. It comes from `createSignal`, so it
+   * carries the brand `isSignal` looks for and the `peek` that goes with it —
+   * and consumers like `List` decide whether to subscribe at all on the
+   * strength of that check. Declaring it as a bare accessor forced anyone
+   * handing it on as a `Signal` to rebuild one, and a rebuilt accessor is not
+   * branded.
    */
-  ids: () => K[]
+  ids: Signal<K[]>
 
   /**
    * Get reactive getter for a specific item by key.
@@ -116,8 +124,13 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
   // Use a custom setter that checks array equality before updating
   const [_getIds, _setIds] = createSignal<K[]>(initialItems.map(keyFn))
 
-  // Expose getIds without the custom wrapper for external use
-  const getIds = _getIds
+  // Expose getIds without the custom wrapper for external use.
+  //
+  // Named as the signal it is. `createSignal` attaches the brand and `peek` to
+  // its accessor at runtime but declares only `() => T`, so both are invisible
+  // here; widening that declaration is a core-wide change and belongs on its
+  // own rather than inside a consumer's.
+  const getIds = _getIds as Signal<K[]>
 
   // Type assertion to access peek() method
   const peekIds = () => (_getIds as any).peek()

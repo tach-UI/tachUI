@@ -22,7 +22,14 @@
 
 import { createMemo, createSignal, untrack } from '@tachui/core'
 
-import { createQueryInternals } from './create-query'
+import {
+  assertPageParam,
+  callPageParam,
+  isEndOfSet,
+  isPageParamFault,
+  loadPageRun,
+} from './pagination'
+import { createQueryInternals, shouldRetry } from './create-query'
 import type {
   InternalLoadContext,
   InternalQueryOptions,
@@ -71,12 +78,16 @@ function paramBeyond<TPage, TPageParam>(
     return undefined
   }
   const index = end === 'forward' ? data.pages.length - 1 : 0
-  return get(
+  const param = callPageParam(
+    get,
     data.pages[index] as TPage,
     data.pages,
     data.pageParams[index] as TPageParam,
     data.pageParams
   )
+  // Both spellings of "no page that way" collapse to one here, so every caller
+  // below can ask a single question.
+  return isEndOfSet(param) ? undefined : (param as TPageParam)
 }
 
 /**
@@ -111,41 +122,24 @@ export function createInfiniteQuery<
    * change, `refetch()`. Sequential by necessity rather than by choice, since
    * a cursor is only known once the page before it has landed.
    */
-  const refetchPages: QueryLoadIntent<InfiniteData<TPage, TPageParam>> = async (
+  const refetchPages: QueryLoadIntent<InfiniteData<TPage, TPageParam>> = (
     ctx: InternalLoadContext<InfiniteData<TPage, TPageParam>>
   ) => {
+    assertPageParam(base.initialPageParam, 'createInfiniteQuery')
     const held = ctx.held ?? emptySet<TPage, TPageParam>()
-    // At least one: a set that has never loaded, and one a previous run left
-    // empty, both still have a first page to fetch.
-    const wanted = Math.max(held.pages.length, 1)
-    const pages: TPage[] = []
-    const pageParams: TPageParam[] = []
-    let pageParam: TPageParam | undefined =
+    // Returned as one value by `loadPageRun`, so the set swaps atomically: no
+    // render ever sees half the old pages beside half the new.
+    return loadPageRun(
+      base,
+      ctx.signal,
+      ctx.key,
+      // At least one: a set that has never loaded, and one a previous run left
+      // empty, both still have a first page to fetch.
+      Math.max(held.pages.length, 1),
       held.pageParams.length > 0
         ? (held.pageParams[0] as TPageParam)
         : base.initialPageParam
-
-    for (let index = 0; index < wanted; index += 1) {
-      if (pageParam === undefined) {
-        // The source has fewer pages than it did. Stopping short is the
-        // answer, not an error.
-        break
-      }
-      const param = pageParam
-      const page = await base.load({
-        signal: ctx.signal,
-        key: ctx.key,
-        pageParam: param,
-        direction: 'forward',
-      })
-      pages.push(page)
-      pageParams.push(param)
-      pageParam = base.getNextPageParam(page, pages, param, pageParams)
-    }
-
-    // Returned as one value, so the set swaps atomically: no render ever sees
-    // half the old pages beside half the new.
-    return { pages, pageParams }
+    )
   }
 
   /** Fetches the page beyond one end and returns the set it belongs to. */
@@ -153,6 +147,7 @@ export function createInfiniteQuery<
     towards: FetchDirection
   ): QueryLoadIntent<InfiniteData<TPage, TPageParam>> {
     return async (ctx) => {
+      assertPageParam(base.initialPageParam, 'createInfiniteQuery')
       const held = ctx.held ?? emptySet<TPage, TPageParam>()
       const param = paramBeyond(
         held,
@@ -215,11 +210,20 @@ export function createInfiniteQuery<
     placeholderData: base.placeholderData,
     staleTime: base.staleTime,
     gcTime: base.gcTime,
-    retry: base.retry,
+    // A param function that threw will throw again on identical input, so a
+    // retry spends the whole policy to arrive at the same error more slowly.
+    // Load failures still retry exactly as configured.
+    retry: (attempt: number, error: E) =>
+      !isPageParamFault(error) && shouldRetry(base.retry, attempt, error),
     retryDelay: base.retryDelay,
     snapshot: base.snapshot,
     client: base.client,
     select: base.select,
+    // Forwarded rather than dropped. They do nothing yet, but the options are
+    // enumerated explicitly here, so anything left out silently stops working
+    // for infinite queries on the day it starts working for plain ones.
+    refetchOnFocus: base.refetchOnFocus,
+    refetchOnReconnect: base.refetchOnReconnect,
   } as InternalQueryOptions<InfiniteData<TPage, TPageParam>, TData, E>)
 
   const result = internals.result
@@ -258,10 +262,16 @@ export function createInfiniteQuery<
    * by `dispose()` leaves a loader that may never settle at all, and a later
    * append waiting on that promise would wait forever.
    */
+  /** How an append ended, for whoever joined it. */
+  type Outcome =
+    | { readonly ok: true }
+    | { readonly ok: false; readonly error: unknown }
+    | { readonly ok: 'abandoned' }
+
   let pending:
     | {
         readonly towards: FetchDirection
-        readonly joinable: Promise<void>
+        readonly joinable: Promise<Outcome>
         readonly abandon: () => void
       }
     | undefined
@@ -273,68 +283,105 @@ export function createInfiniteQuery<
     setDirection(undefined)
   }
 
-  /** What the caller of a no-op or a completed page fetch gets back. */
-  function currentData(): TData {
+  /**
+   * The set this call's page belongs to, or nothing if there is no set.
+   *
+   * Deliberately not `result.data()`, which falls back to `placeholderData` —
+   * a placeholder is what an observer shows while there is nothing cached, not
+   * the set a page was just appended to, and returning one here would be
+   * indistinguishable from a real load.
+   */
+  function currentData(): TData | undefined {
     return untrack(() => {
       const raw = internals.raw()
-      return raw === undefined
-        ? (result.data() as TData)
-        : internals.project(raw)
+      return raw === undefined ? undefined : internals.project(raw)
     })
   }
 
-  async function extend(towards: FetchDirection): Promise<TData> {
+  async function extend(
+    towards: FetchDirection
+  ): Promise<TData | undefined> {
     const running = pending
-    if (
-      running !== undefined &&
-      running.towards === towards &&
-      untrack(() => result.isFetching())
-    ) {
-      // The same append is already in the air, so this call joins it: the
-      // cache would dedup a second request anyway, but without this the
-      // second caller would go on to append the page after it, not the same
-      // one.
-      await running.joinable
-      return currentData()
-    }
-
-    if (untrack(() => result.isFetching())) {
-      // A refetch, or an append the other way, is in flight. It has to land
-      // first: appending onto a set that is about to be replaced would write
-      // pages the refetch has already superseded. Waiting joins that
-      // execution rather than cancelling it, so the refresh is not lost.
-      await internals.refetchWith().then(
-        () => undefined,
-        () => undefined
-      )
-    }
-
-    // Re-asked after the wait, against whatever the refresh left behind.
-    if (untrack(() => (towards === 'forward' ? ends().next : ends().previous))) {
-      setDirection(towards)
-      let release!: () => void
-      pending = {
-        towards,
-        joinable: new Promise<void>((resolve) => {
-          release = resolve
-        }),
-        abandon: () => release(),
+    if (running !== undefined) {
+      const outcome = await running.joinable
+      if (running.towards === towards) {
+        // The same append was already in the air, so this call rides it rather
+        // than appending the page after it. The leader's outcome is this
+        // caller's too: a joiner told nothing would report success for a page
+        // that failed, and its retry UI would never appear.
+        if (outcome.ok === false) {
+          throw outcome.error
+        }
+        return currentData()
       }
-      try {
-        await internals.refetchWith(appendPage(towards))
-      } finally {
+      // An append the other way. It has to land before this one can ask where
+      // the set now ends.
+    }
+
+    // The slot is claimed before parking, not after. `cancel()` and `dispose()`
+    // let go of whatever they find here, and an append that parked without
+    // claiming would wake afterwards and start the request that was cancelled.
+    let settle!: (outcome: Outcome) => void
+    const slot = {
+      towards,
+      joinable: new Promise<Outcome>((resolve) => {
+        settle = resolve
+      }),
+      abandon: () => settle({ ok: 'abandoned' }),
+    }
+    pending = slot
+
+    try {
+      if (internals.isFetchingNow()) {
+        // A refetch is in flight. It has to land first: appending onto a set
+        // that is about to be replaced would write pages the refresh has
+        // already superseded. Waiting joins that execution rather than
+        // cancelling it, so the refresh is not lost.
+        await internals.refetchWith().then(
+          () => undefined,
+          () => undefined
+        )
+      }
+
+      if (pending !== slot) {
+        // Abandoned while parked, or replaced by a later dispatch. Either way
+        // this call no longer speaks for the observer.
+        return currentData()
+      }
+
+      // Re-asked after the wait, against whatever the refresh left behind.
+      if (
+        !untrack(() => (towards === 'forward' ? ends().next : ends().previous))
+      ) {
+        settle({ ok: true })
+        return currentData()
+      }
+
+      setDirection(towards)
+      await internals.refetchWith(appendPage(towards))
+      settle({ ok: true })
+      return currentData()
+    } catch (error) {
+      settle({ ok: false, error })
+      throw error
+    } finally {
+      // Only ever this call's own bookkeeping: an append abandoned and replaced
+      // by a newer one must not clear the newer one's direction flag, which
+      // would drop a spinner mid-load and let a third call append a second
+      // extra page.
+      if (pending === slot) {
         pending = undefined
-        release()
         setDirection(undefined)
       }
     }
-
-    return currentData()
   }
 
   return {
     ...result,
-    error: createMemo(() => ends().error ?? result.error()),
+    // A real load failure outranks a page-param fault: the load error is what
+    // a consumer can act on, and a throwing param function reports itself again
+    // the moment anything reads the ends.
+    error: createMemo(() => result.error() ?? ends().error),
     hasNextPage: createMemo(() => ends().next),
     hasPreviousPage: createMemo(() => ends().previous),
     isFetchingNextPage: createMemo(
