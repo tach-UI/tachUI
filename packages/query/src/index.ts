@@ -20,6 +20,8 @@ export {
   createAsyncStream,
   createAsyncStreamList,
 } from './create-async-stream'
+export { createInfiniteQuery } from './create-infinite-query'
+export { createInfiniteQueryList } from './create-infinite-query-list'
 export { createMutation } from './create-mutation'
 export { createQuery } from './create-query'
 export { isDevelopment, isServer, QueryError } from './errors'
@@ -35,8 +37,18 @@ export type {
   CacheEntryPolicy,
   DehydratedQuery,
   DehydratedState,
+  FetchDirection,
+  FetchInfiniteQueryOptions,
   FetchQueryOptions,
   FetchStatus,
+  GetPageParam,
+  InfiniteData,
+  InfiniteQueryListOptions,
+  InfiniteQueryListResult,
+  InfiniteQueryLoadContext,
+  InfiniteQueryOptions,
+  InfiniteQueryOptionsBase,
+  InfiniteQueryResult,
   MutationOptions,
   MutationOptionsBase,
   MutationResult,

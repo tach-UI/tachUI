@@ -39,6 +39,7 @@ import {
   DEFAULT_STALE_TIME,
 } from './defaults'
 import { isServer, QueryError } from './errors'
+import { assertPageCount, assertPageParam, loadPageRun } from './pagination'
 import {
   decodeQueryKey,
   decodeSnapshotData,
@@ -54,8 +55,10 @@ import type {
   CacheEntry,
   DehydratedQuery,
   DehydratedState,
+  FetchInfiniteQueryOptions,
   FetchQueryOptions,
   FetchStatus,
+  InfiniteData,
   QueryClient,
   QueryKey,
   QueryKeyHash,
@@ -71,10 +74,45 @@ import type {
  */
 export const QueryClientKey = createEnvironmentKey<QueryClient>('QueryClient')
 
+/**
+ * Names what an execution is doing, so dedup can tell two of them apart.
+ *
+ * `'own'` is a query loading itself, and every plain query uses it — so two
+ * observers of one key still share a single request. A primitive that swaps in
+ * a loader for one execution passes its own name instead: an append and a
+ * refetch are not the same request, and joining one to the other silently
+ * performs the wrong one.
+ */
+export const OWN_LOADER = 'own'
+
+/**
+ * `fetchQuery`'s options as the package passes them internally.
+ *
+ * Identical to the public shape but for `intent`, which no public option
+ * produces: a primitive that swaps in a loader for one execution names it here
+ * so dedup can tell it apart from the query's own.
+ */
+export type InternalFetchQueryOptions<TRaw, TError = Error> =
+  FetchQueryOptions<TRaw, TError> & {
+    intent?: string
+    /**
+     * Refuses the cached value for this call.
+     *
+     * An observer that has decided to revalidate cannot be answered with what
+     * it is trying to replace. Marking the entry says the same thing, but a
+     * call that had to queue behind someone else's execution arrives after that
+     * execution consumed the mark — and would then be served the very value it
+     * asked to reload.
+     */
+    force?: boolean
+  }
+
 /** An in-flight loader execution owned by the client root. */
 interface InFlightRequest {
   readonly promise: Promise<unknown>
   readonly controller: AbortController
+  /** Which execution this is. See {@link OWN_LOADER}. */
+  readonly intent: string
 }
 
 /** Cache entry state. Lifecycle policy (freshness, eviction) lands in #279. */
@@ -133,7 +171,13 @@ interface ClientCacheEntry {
   staleTime: number
   gcTime: number
   snapshot: boolean
-  policyClaimed: { staleTime: boolean; gcTime: boolean; snapshot: boolean }
+  maxPages?: number
+  policyClaimed: {
+    staleTime: boolean
+    gcTime: boolean
+    snapshot: boolean
+    maxPages: boolean
+  }
   invalidated: boolean
   /**
    * Bumped wherever an in-flight request stops being the one the entry is
@@ -280,10 +324,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         entry.staleTime = DEFAULT_STALE_TIME
         entry.gcTime = DEFAULT_GC_TIME
         entry.snapshot = DEFAULT_SNAPSHOT
+        entry.maxPages = undefined
         entry.policyClaimed = {
           staleTime: false,
           gcTime: false,
           snapshot: false,
+          maxPages: false,
         }
         // Marked, not merely emptied. An observer reloads what is marked, and
         // marking says why the entry is empty — cleared, rather than
@@ -313,7 +359,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     key: QueryKey,
     hash: QueryKeyHash,
     segmentHashes: readonly QueryKeyHash[],
-    policy: { staleTime?: number; gcTime?: number; snapshot?: boolean }
+    policy: {
+      staleTime?: number
+      gcTime?: number
+      snapshot?: boolean
+      maxPages?: number
+    }
   ): ClientCacheEntry {
     const entry: ClientCacheEntry = {
       key,
@@ -335,10 +386,12 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       // to its default (staleTime: 0, snapshot: false) is still a deliberate
       // choice, and a later caller must not override it. Value-equality with
       // the default cannot tell "unset" from "explicitly default".
+      maxPages: policy.maxPages,
       policyClaimed: {
         staleTime: policy.staleTime !== undefined,
         gcTime: policy.gcTime !== undefined,
         snapshot: policy.snapshot !== undefined,
+        maxPages: policy.maxPages !== undefined,
       },
       invalidated: false,
       generation: 0,
@@ -496,8 +549,17 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
    */
   function claimPolicy(
     entry: ClientCacheEntry,
-    policy: { staleTime?: number; gcTime?: number; snapshot?: boolean }
+    policy: {
+      staleTime?: number
+      gcTime?: number
+      snapshot?: boolean
+      maxPages?: number
+    }
   ): void {
+    if (policy.maxPages !== undefined && !entry.policyClaimed.maxPages) {
+      entry.maxPages = policy.maxPages
+      entry.policyClaimed.maxPages = true
+    }
     if (policy.staleTime !== undefined && !entry.policyClaimed.staleTime) {
       entry.staleTime = policy.staleTime
       entry.policyClaimed.staleTime = true
@@ -549,6 +611,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       invalidated: entry.invalidated,
       isStale: isStale(entry),
       options: {
+        maxPages: entry.maxPages,
         staleTime: entry.staleTime,
         gcTime: entry.gcTime,
         snapshot: entry.snapshot,
@@ -557,7 +620,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
   }
 
   async function fetchQuery<TRaw, TError = Error>(
-    options: FetchQueryOptions<TRaw, TError>
+    options: InternalFetchQueryOptions<TRaw, TError>
   ): Promise<TRaw> {
     // Dispatch first: lifecycle before delegation, so a disposed client
     // naming a live explicit client still rejects for use after dispose()
@@ -606,14 +669,34 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       throw markDispatchError(error)
     }
     claimPolicy(entry, options)
+    const requestedIntent = options.intent ?? OWN_LOADER
     const activeRequest = entry.inFlight
     if (activeRequest !== null) {
-      return activeRequest.promise as Promise<TRaw>
+      if (activeRequest.intent === requestedIntent) {
+        return activeRequest.promise as Promise<TRaw>
+      }
+      // A different execution holds the slot. Joining it would hand this
+      // caller someone else's work and quietly drop its own — a pull-to-refresh
+      // fired while a "load more" is in flight would report success without
+      // reloading anything. Queue behind it instead, then run this one.
+      return activeRequest.promise.then(
+        () => fetchQuery<TRaw, TError>(options),
+        () => fetchQuery<TRaw, TError>(options)
+      )
     }
     // Presence is tracked by status, not by the data value: a loader that
     // legitimately resolves `undefined` (a 204, an empty body, a "not found"
     // lookup) still populates the entry and must not refetch on every call.
-    if (entry.status === 'success' && !entry.invalidated) {
+    //
+    // Only for a query loading itself. A caller that supplied a loader for this
+    // one execution is asking for that loader to run; there is no cached answer
+    // to the question "append the next page".
+    if (
+      requestedIntent === OWN_LOADER &&
+      options.force !== true &&
+      entry.status === 'success' &&
+      !entry.invalidated
+    ) {
       return entry.data as TRaw
     }
     const controller = new AbortController()
@@ -648,7 +731,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         reject(reason)
       }
     })
-    entry.inFlight = { promise: requestPromise, controller }
+    entry.inFlight = { promise: requestPromise, controller, intent: requestedIntent }
     activeControllers.add(controller)
     cancelEviction(entry)
 
@@ -741,11 +824,67 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
   const client: QueryClient = {
     fetchQuery,
 
-    async prefetchQueries(requests: readonly FetchQueryOptions<any, any>[]): Promise<void> {
+    async fetchInfiniteQuery<TPage, TPageParam, E = Error>(
+      options: FetchInfiniteQueryOptions<TPage, TPageParam, E>
+    ): Promise<InfiniteData<TPage, TPageParam>> {
+      const count = options.pages ?? 1
+      try {
+        ensureUsable('fetchInfiniteQuery')
+        assertPageCount(count, 'fetchInfiniteQuery')
+        assertPageParam(options.initialPageParam, 'fetchInfiniteQuery')
+      } catch (error) {
+        // Tagged like every other dispatch-phase failure, so `prefetchQueries`
+        // surfaces it instead of swallowing it as a load failure. Warming a
+        // cache is allowed to fail quietly; being told the request is malformed
+        // is not.
+        throw markDispatchError(error)
+      }
+      // Through `client.fetchQuery` rather than the closure-local one, so a
+      // decorated client's override is honoured here the way `prefetchQueries`
+      // honours it two functions below.
+      //
+      // The set is one ordinary cache entry under the base key: dedup,
+      // freshness, retention, dehydration and the generation guard all apply to
+      // it exactly as they do to any other value.
+      return client.fetchQuery<InfiniteData<TPage, TPageParam>, E>({
+        key: options.key,
+        load: (ctx) =>
+          loadPageRun(
+            options,
+            ctx.signal,
+            ctx.key,
+            count,
+            options.initialPageParam
+          ),
+        staleTime: options.staleTime,
+        gcTime: options.gcTime,
+        snapshot: options.snapshot,
+        client: options.client,
+      })
+    },
+
+    async prefetchQueries(
+      requests: readonly (
+        | FetchQueryOptions<any, any>
+        | FetchInfiniteQueryOptions<any, any, any>
+      )[]
+    ): Promise<void> {
       ensureUsable('prefetchQueries')
       await Promise.all(
         requests.map((request) =>
-          client.fetchQuery(request).then(
+          // `initialPageParam` is the discriminator, and it is declared absent
+          // on the plain shape so this narrowing is sound rather than a guess.
+          // Asked as presence, not as value: a cursor API's first page
+          // legitimately takes no cursor, and reading the value would route
+          // that infinite request to the plain fetch — caching a bare page
+          // object where the set belongs, for a later reader to trip over with
+          // an error pointing nowhere near the prefetch that caused it.
+          ('initialPageParam' in request
+            ? client.fetchInfiniteQuery(
+                request as FetchInfiniteQueryOptions<any, any, any>
+              )
+            : client.fetchQuery(request as FetchQueryOptions<any, any>)
+          ).then(
             () => undefined,
             (error: unknown) => {
               // Load failures are swallowed — prefetch only warms — but
@@ -826,6 +965,15 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           }
           scheduleEviction(entry)
           notify(entry)
+        },
+        clearReloadMark: () => {
+          // Undoes a mark this observation set, without the notification a
+          // mark carries. Only meaningful between marking and the reload
+          // landing: whoever marked is the only one who knows the reload is no
+          // longer wanted.
+          if (entry.invalidated) {
+            entry.invalidated = false
+          }
         },
         consumeHydrationGrace: () => {
           const granted = entry.hydrationGrace

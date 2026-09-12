@@ -31,6 +31,8 @@ describe('@tachui/query barrel', () => {
       'QueryError',
       'createAsyncStream',
       'createAsyncStreamList',
+      'createInfiniteQuery',
+      'createInfiniteQueryList',
       'createMutation',
       'createQuery',
       'createQueryClient',
@@ -39,6 +41,20 @@ describe('@tachui/query barrel', () => {
       'provideQueryClient',
       'useQueryClient',
     ])
+  })
+})
+
+describe('the QueryClient surface', () => {
+  it('carries fetchInfiniteQuery, which could not be added later', () => {
+    const client = query.createQueryClient()
+    try {
+      // Adding a method to a released interface breaks everyone who
+      // implements it, so this one had to land with the freeze rather than
+      // with the primitive that uses it.
+      expect(typeof client.fetchInfiniteQuery).toBe('function')
+    } finally {
+      client.dispose()
+    }
   })
 })
 

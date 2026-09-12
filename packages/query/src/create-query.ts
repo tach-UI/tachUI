@@ -27,20 +27,95 @@ import {
   untrack,
 } from '@tachui/core'
 
-import { useQueryClient } from './client'
+import { OWN_LOADER, useQueryClient } from './client'
+import type { InternalFetchQueryOptions } from './client'
 import { hashQueryKey } from './keys'
 import { DEFAULT_ENABLED, DEFAULT_RETRY } from './defaults'
 import type {
   CacheEntry,
+  CacheEntryPolicy,
   FetchStatus,
   QueryClient,
   QueryKey,
+  QueryLoadContext,
   QueryObservation,
   QueryOptions,
+  QueryOptionsBase,
   QueryResult,
   QueryStatus,
   RetryPolicy,
+  SelectRequirement,
 } from './types'
+
+/**
+ * What an internal loader is told, beyond what a public one is.
+ *
+ * `held` is the value *the entry being written* carries as this execution
+ * starts. A pagination refetch needs it — how many pages are held, and where
+ * the first one began.
+ *
+ * It comes from the entry rather than from the observer's published state, and
+ * the difference is not academic: the effect that follows a key change is
+ * scheduled, so an append issued in the same tick sees the new key and the old
+ * key's data, and builds the new entry's set out of the previous key's pages.
+ * Reading the observer would also hand a gated observer's `undefined` to a
+ * refetch of a shared entry, truncating everyone else's set to one page.
+ */
+export interface InternalLoadContext<TRaw> extends QueryLoadContext {
+  readonly held: TRaw | undefined
+  /**
+   * Applies this query's retry policy to one unit of work.
+   *
+   * A loader that performs several requests has to retry them individually.
+   * Retrying the whole loader replays the requests that already succeeded: a
+   * four-page set with `retry: 2` and the last page failing issues twelve
+   * requests, and a twenty-page set with `retry: 3` issues eighty — against a
+   * backend that is already failing, which is the storm the cache's own error
+   * path exists to prevent, one level up.
+   */
+  readonly withRetry: <T>(work: () => Promise<T>) => Promise<T>
+}
+
+/**
+ * A loader for one execution, standing in for the query's own.
+ *
+ * `createInfiniteQuery` builds on this observer rather than beside it, so that
+ * retention, cancellation, freshness, the hydration grace and key changes are
+ * shared rather than written twice. What differs between an append and a
+ * refetch is only which loader runs, and that is what this carries.
+ *
+ * Internal: no public option produces one.
+ */
+export type QueryLoadIntent<TRaw> = (
+  ctx: InternalLoadContext<TRaw>
+) => Promise<TRaw>
+
+/**
+ * Options as the observer takes them internally.
+ *
+ * Identical to {@link QueryOptions} but for the loader, which is allowed the
+ * wider context. A public `load` ignores the extra field and stays assignable,
+ * so `createQuery` passes its options straight through.
+ */
+export type InternalQueryOptions<TRaw, TData, E> = Omit<
+  QueryOptionsBase<TRaw, TData, E>,
+  'load'
+> &
+  SelectRequirement<TRaw, TData> & {
+    load: QueryLoadIntent<TRaw>
+    /**
+     * Retained page bound, claimed on the entry rather than held per observer.
+     * Internal: only `createInfiniteQuery` supplies one.
+     */
+    maxPages?: number
+    /**
+     * The loader applies the retry policy itself, through `ctx.withRetry`.
+     *
+     * Set by a loader that performs more than one request, so the policy lands
+     * on each of them rather than on the sequence.
+     */
+    retriesInternally?: boolean
+  }
 
 /** The slice of entry state an observer renders. */
 interface ObservedState<TRaw, E> {
@@ -90,7 +165,7 @@ function readState<TRaw, E>(entry: CacheEntry): ObservedState<TRaw, E> {
   }
 }
 
-function shouldRetry<E>(
+export function shouldRetry<E>(
   policy: RetryPolicy<E> | undefined,
   attempt: number,
   error: E
@@ -121,16 +196,83 @@ function wait(milliseconds: number, signal: AbortSignal): Promise<void> {
 }
 
 /**
+ * Set across a `markForReload()` whose caller is about to reload the entry
+ * itself.
+ *
+ * Marking notifies synchronously, and every observer of the entry reloads what
+ * it finds marked and idle — so without this the notification front-runs the
+ * caller. With no intent in play that costs a redundant call the cache dedups;
+ * with one, the caller's fetch joins the reload that beat it to the slot and
+ * the intent is silently dropped, turning an append into a refetch.
+ *
+ * Module-scoped rather than per-observer because the notification reaches
+ * observers other than the one marking, and any of them can front-run it. Set
+ * and cleared around one synchronous call, so there is no window in which it
+ * could suppress an unrelated reload.
+ */
+let markingOwnReload = false
+
+/**
+ * What an observer exposes to a primitive built on top of it.
+ *
+ * `createInfiniteQuery` needs two things the public result deliberately does
+ * not carry: the raw cached value, because page params and `getNextPageParam`
+ * are defined on pages rather than on whatever `select` produced, and a
+ * refetch it can hand its own loader to.
+ */
+export interface QueryInternals<TRaw, TData, E> {
+  readonly result: QueryResult<TData, E>
+  /** The cached value as stored, before any projection. */
+  readonly raw: () => TRaw | undefined
+  /**
+   * Projects a raw value through this observer's `select`, reusing the last
+   * result for the same one — the same memoization the signals read through,
+   * so a primitive resolving with what it just loaded does not run `select`
+   * a second time.
+   */
+  readonly project: (raw: TRaw) => TData
+  /**
+   * Whether the entry this observer watches has a request in flight, read off
+   * the entry rather than off published state.
+   *
+   * `isFetching` is a memo over a memo over a signal, and core does not dirty
+   * those synchronously — so a caller acting in the same tick as a fetch it
+   * started sees `false` and decides there is nothing to wait for. The entry's
+   * own `fetchStatus` moves the instant the slot is claimed.
+   */
+  readonly isFetchingNow: () => boolean
+  /** The entry's claimed policy, or nothing while not observing one. */
+  readonly policy: () => CacheEntryPolicy | undefined
+  /**
+   * Reloads with a loader of the caller's choosing, for this execution only.
+   *
+   * `intentKey` names the execution for the cache's dedup. Two calls sharing a
+   * name join into one request; a call whose name differs from the execution in
+   * flight queues behind it rather than being handed its result. Stable per
+   * kind of execution, not per call, so two observers appending the same
+   * direction on one key still cost one request.
+   */
+  refetchWith(
+    intent?: QueryLoadIntent<TRaw>,
+    intentKey?: string
+  ): Promise<TRaw>
+}
+
+/**
  * Observes a query and projects it for one consumer.
  *
- * The returned signals track one cache entry, following the key as it
- * changes. `select` runs outside the cache and is memoized per observer, so
- * two observers of the same key with different projections share a single
- * entry and a single request.
+ * The public entry point. See {@link createQueryInternals} for what a
+ * primitive built on this observer gets in addition.
  */
 export function createQuery<TRaw, TData = TRaw, E = Error>(
   options: QueryOptions<TRaw, TData, E>
 ): QueryResult<TData, E> {
+  return createQueryInternals(options).result
+}
+
+export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
+  options: InternalQueryOptions<TRaw, TData, E>
+): QueryInternals<TRaw, TData, E> {
   const client: QueryClient = options.client ?? useQueryClient()
   // Memoized so a key change triggers exactly once rather than once per
   // dependency the accessor happens to read.
@@ -155,6 +297,17 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
   let observing: string | null | undefined
   let disposed = false
   /**
+   * Whether this observer marked the entry for reload and has not seen that
+   * mark consumed.
+   *
+   * `cancel()` has to undo it. `detachFlight` clears `fetchStatus` without
+   * clearing the mark, so the abort's own notification finds the entry marked
+   * and idle and starts the reload nobody asked for — for an infinite query,
+   * a sequential reload of every page held, which is the opposite of what
+   * "stop" means.
+   */
+  let markedReload = false
+  /**
    * Fires when the current value ages out of its freshness window.
    *
    * `isStale` is derived from the clock, and nothing in the cache writes when
@@ -170,14 +323,24 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
     }
   }
 
+  /** An observation's entry value, or nothing if the client went away. */
+  function readEntryData(from: QueryObservation): TRaw | undefined {
+    try {
+      return from.entry().data as TRaw | undefined
+    } catch {
+      return undefined
+    }
+  }
+
   /** Runs the loader, applying this observer's retry policy. */
-  async function runLoad(
-    resolvedKey: QueryKey,
+  /** Applies the retry policy to one unit of work. */
+  async function withRetry<T>(
+    work: () => Promise<T>,
     signal: AbortSignal
-  ): Promise<TRaw> {
+  ): Promise<T> {
     for (let attempt = 0; ; attempt += 1) {
       try {
-        return await options.load({ signal, key: resolvedKey })
+        return await work()
       } catch (error) {
         // Retries stay inside one cache execution, so the entry reads as
         // fetching throughout and its prior value keeps rendering. Only the
@@ -193,6 +356,30 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
     }
   }
 
+  async function runLoad(
+    resolvedKey: QueryKey,
+    signal: AbortSignal,
+    intent: QueryLoadIntent<TRaw> | undefined,
+    heldFrom: () => TRaw | undefined
+  ): Promise<TRaw> {
+    // The intent is bound into this closure rather than read from somewhere
+    // shared, so a retry re-runs the same one: an append that failed and
+    // retries is still an append, not a refetch.
+    //
+    // `held` is read per attempt rather than captured once: a retry that
+    // follows an invalidation should build on what the entry holds now.
+    const call = () =>
+      (intent ?? options.load)({
+        signal,
+        key: resolvedKey,
+        held: heldFrom(),
+        withRetry: (work) => withRetry(work, signal),
+      })
+    // A loader that retries internally has already placed the policy where it
+    // belongs; wrapping it again would multiply the attempts.
+    return options.retriesInternally === true ? call() : withRetry(call, signal)
+  }
+
   /**
    * Reloads regardless of what is cached.
    *
@@ -202,7 +389,11 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
    * its data and its `success` status throughout, so this is a background
    * refresh rather than a return to loading.
    */
-  function forceFetch(resolvedKey: QueryKey): Promise<TRaw> {
+  function forceFetch(
+    resolvedKey: QueryKey,
+    intent?: QueryLoadIntent<TRaw>,
+    intentKey: string = OWN_LOADER
+  ): Promise<TRaw> {
     // Marked through an observation of *this* key, not through whichever one
     // this query happens to hold. There may be none — `enabled: false` never
     // observes — and just after a key change the one it holds still watches
@@ -221,32 +412,66 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
       }
     }
     if (held !== undefined) {
-      if (held.entry().fetchStatus === 'fetching') {
+      const watching = held
+      const heldFrom = () => readEntryData(watching)
+      if (watching.entry().fetchStatus === 'fetching') {
         // Already loading: joining that execution is what the caller wants.
         // Marking first would detach it and start a second loader alongside,
         // so one refetch would cost two requests.
-        return fetch(resolvedKey)
+        return fetch(resolvedKey, heldFrom, intent, intentKey, true)
       }
-      held.markForReload()
-      return fetch(resolvedKey)
+      markingOwnReload = true
+      try {
+        watching.markForReload()
+        markedReload = true
+      } finally {
+        markingOwnReload = false
+      }
+      return fetch(resolvedKey, heldFrom, intent, intentKey, true)
     }
     // No observation of this key: take one just long enough to mark the
     // entry, which is also what creates it if the cache has never held it.
     const transient = client.observe(resolvedKey)
+    markingOwnReload = true
     try {
       if (transient.entry().fetchStatus !== 'fetching') {
         transient.markForReload()
       }
     } finally {
+      markingOwnReload = false
       transient.release()
     }
-    return fetch(resolvedKey)
+    // Read through the released observation's view, which still names the same
+    // entry: what the loader needs is the entry's own value, and this observer
+    // may be watching a different key or gated off entirely.
+    return fetch(
+      resolvedKey,
+      () => readEntryData(transient),
+      intent,
+      intentKey,
+      true
+    )
   }
 
-  function fetch(resolvedKey: QueryKey): Promise<TRaw> {
-    return client.fetchQuery<TRaw, E>({
+  function fetch(
+    resolvedKey: QueryKey,
+    heldFrom: () => TRaw | undefined,
+    intent?: QueryLoadIntent<TRaw>,
+    intentKey: string = OWN_LOADER,
+    force = false
+  ): Promise<TRaw> {
+    // Through the internal shape: `intent` is not a public option — no caller
+    // outside this package produces one — but the client's own fetchQuery
+    // reads it to tell one execution from another.
+    const dispatch = client.fetchQuery as (
+      options: InternalFetchQueryOptions<TRaw, E>
+    ) => Promise<TRaw>
+    return dispatch({
+      intent: intentKey,
+      force,
       key: () => resolvedKey,
-      load: ({ signal, key: loadingKey }) => runLoad(loadingKey, signal),
+      load: ({ signal, key: loadingKey }) =>
+        runLoad(loadingKey, signal, intent, heldFrom),
       staleTime: options.staleTime,
       gcTime: options.gcTime,
       snapshot: options.snapshot,
@@ -301,7 +526,7 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
     setState(readState<TRaw, E>(entry))
     clearFreshnessTimer()
 
-    if (entry.invalidated && entry.fetchStatus === 'idle') {
+    if (entry.invalidated && entry.fetchStatus === 'idle' && !markingOwnReload) {
       // Marked for reload — by this query, by a prefix invalidation, or by
       // clear() emptying an entry someone is still watching. An ordinary
       // fetch runs the loader, since a marked entry is not servable. Guarded
@@ -310,7 +535,9 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
       // Deliberately not "status is idle": cancel() leaves the entry idle too,
       // and restarting the request a caller just cancelled is the opposite of
       // what they asked for.
-      void fetch(resolvedKey).catch(() => undefined)
+      void fetch(resolvedKey, () => readEntryData(current)).catch(
+        () => undefined
+      )
       return
     }
 
@@ -401,6 +628,7 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
           staleTime: options.staleTime,
           gcTime: options.gcTime,
           snapshot: options.snapshot,
+          maxPages: options.maxPages,
         }
       )
     } catch (error) {
@@ -420,7 +648,7 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
       // `error`; nothing is left to catch it at the call site.
       void (
         untrack(() => state().status) === 'idle'
-          ? fetch(resolvedKey)
+          ? fetch(resolvedKey, () => readEntryData(current))
           : forceFetch(resolvedKey)
       ).catch(() => undefined)
     }
@@ -489,7 +717,7 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
   const status = createMemo(() => state().status)
   const fetchStatus = createMemo(() => state().fetchStatus)
 
-  return {
+  const result: QueryResult<TData, E> = {
     data,
     error: createMemo(() => state().error),
     status,
@@ -520,6 +748,13 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
       client.invalidate(untrack(key))
     },
     cancel: () => {
+      // The mark goes first. Aborting notifies, and an entry left marked and
+      // idle is reloaded by whoever is watching it — so cancelling would
+      // immediately restart the work it just stopped.
+      if (markedReload) {
+        markedReload = false
+        observation?.clearReloadMark()
+      }
       // Aborts the request and keeps observing. Releasing would abort too,
       // but it also detaches the listener, freezing these signals wherever
       // they stood — a first fetch cancelled that way reads `loading` and
@@ -533,5 +768,35 @@ export function createQuery<TRaw, TData = TRaw, E = Error>(
       observation?.release()
       observation = undefined
     },
+  }
+
+  return {
+    result,
+    raw: () => state().data,
+    project,
+    policy: () => {
+      if (observation === undefined) {
+        return undefined
+      }
+      try {
+        return observation.entry().options
+      } catch {
+        return undefined
+      }
+    },
+    isFetchingNow: () => {
+      if (observation === undefined) {
+        return false
+      }
+      try {
+        return observation.entry().fetchStatus === 'fetching'
+      } catch {
+        // The client was disposed out from under the observation; nothing of
+        // ours is in flight either way.
+        return false
+      }
+    },
+    refetchWith: (intent, intentKey) =>
+      forceFetch(untrack(key), intent, intentKey),
   }
 }

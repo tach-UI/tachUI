@@ -162,7 +162,7 @@ type IsExactly<A, B> =
  * Declaring a second parameter is the act of promising a projection, so the type
  * requires one.
  */
-type SelectRequirement<TRaw, TData> =
+export type SelectRequirement<TRaw, TData> =
   IsExactly<TRaw, TData> extends true
     ? {
         /**
@@ -221,6 +221,13 @@ export type FetchQueryOptions<TRaw, E = Error> = Omit<
   placeholderData?: never
   enabled?: never
   /**
+   * The discriminator `prefetchQueries` reads to tell a plain request from an
+   * infinite one. Declared absent here so the union is sound: without it a
+   * plain request would be assignable to both halves and the narrowing would
+   * be a guess.
+   */
+  initialPageParam?: never
+  /**
    * Retry is an observer's policy, applied by `createQuery` around its own
    * loader, so an imperative fetch would accept these and never read them.
    * Wrap the retrying in `load` instead, which is what `createQuery` does.
@@ -229,6 +236,232 @@ export type FetchQueryOptions<TRaw, E = Error> = Omit<
   retryDelay?: never
   refetchOnFocus?: never
   refetchOnReconnect?: never
+}
+
+/**
+ * What one infinite entry stores. Pages and their params stay parallel.
+ *
+ * One entry per infinite query, not one per page. Cursors chain, so per-page
+ * entries could refetch with a stale token, be evicted from the middle of a
+ * set, or dehydrate half of one.
+ */
+export interface InfiniteData<TPage, TPageParam> {
+  readonly pages: readonly TPage[]
+  readonly pageParams: readonly TPageParam[]
+}
+
+/** Which end of the set a load extends. */
+export type FetchDirection = 'forward' | 'backward'
+
+/**
+ * Context handed to an infinite query's `load` function.
+ */
+export interface InfiniteQueryLoadContext<TPageParam> extends QueryLoadContext {
+  /** The param for the page being loaded. Opaque to this package. */
+  readonly pageParam: TPageParam
+  /** Which way the page extends the set. A refetch is a series of `forward` loads. */
+  readonly direction: FetchDirection
+}
+
+/**
+ * Derives the param for the page beyond one end of the set.
+ *
+ * Returning `undefined` or `null` is how a source says there is no page that
+ * way, which is what `hasNextPage` and `hasPreviousPage` report. Both spellings
+ * count: `null` is what a JSON cursor API sends at the end of a feed, and a
+ * source forwarding `page.cursor` would otherwise never reach the end.
+ */
+export type GetPageParam<TPage, TPageParam> = (
+  lastPage: TPage,
+  pages: readonly TPage[],
+  lastPageParam: TPageParam,
+  pageParams: readonly TPageParam[]
+) => TPageParam | null | undefined
+
+/**
+ * Everything an infinite query configures except the projection and the
+ * backward-pagination pair, which are conditional and split out below.
+ *
+ * `load` fetches one page rather than the set: the set is this package's to
+ * accumulate, and a loader that returned it would have to know what is already
+ * held.
+ */
+export interface InfiniteQueryOptionsBase<TPage, TPageParam, TData, E = Error>
+  extends Omit<QueryOptionsBase<InfiniteData<TPage, TPageParam>, TData, E>, 'load'> {
+  load: (ctx: InfiniteQueryLoadContext<TPageParam>) => Promise<TPage>
+  /** Where the first page comes from. */
+  initialPageParam: TPageParam
+  /** `undefined` means there is no next page. */
+  getNextPageParam: GetPageParam<TPage, TPageParam>
+}
+
+/**
+ * `maxPages` requires `getPreviousPageParam`.
+ *
+ * A cap drops pages from the far end as the set grows, and without a way to
+ * ask for the page before the one now at the head, what was dropped can never
+ * come back. Paired in the type rather than in prose, the same way
+ * `optimisticUpdate` and `onError` are.
+ */
+type PreviousPageOptions<TPage, TPageParam> =
+  | { getPreviousPageParam?: never; maxPages?: never }
+  | {
+      getPreviousPageParam: GetPageParam<TPage, TPageParam>
+      /** Retained page bound. Appending past it drops from the far end. */
+      maxPages?: number
+    }
+
+/**
+ * Options for `createInfiniteQuery`.
+ *
+ * `select` is required exactly when `TData` differs from `InfiniteData`, by the
+ * same rule that governs a plain query: declaring a second type parameter is
+ * the act of promising a projection.
+ */
+export type InfiniteQueryOptions<
+  TPage,
+  TPageParam,
+  TData = InfiniteData<TPage, TPageParam>,
+  E = Error,
+> = InfiniteQueryOptionsBase<TPage, TPageParam, TData, E> &
+  PreviousPageOptions<TPage, TPageParam> &
+  SelectRequirement<InfiniteData<TPage, TPageParam>, TData>
+
+/**
+ * The reactive result of observing an infinite query.
+ *
+ * Everything a plain query reports, plus which ends of the set can still grow
+ * and which direction is currently loading. The direction flags are per
+ * observer: two observers sharing one entry both see `isFetching`, and only
+ * the one that asked sees `isFetchingNextPage`.
+ */
+export interface InfiniteQueryResult<TData, E = Error> extends QueryResult<TData, E> {
+  /** Whether `getNextPageParam` yields a param for the current set. */
+  readonly hasNextPage: Signal<boolean>
+  readonly hasPreviousPage: Signal<boolean>
+  readonly isFetchingNextPage: Signal<boolean>
+  readonly isFetchingPreviousPage: Signal<boolean>
+  /**
+   * Appends one page. Joins an identical in-flight append; waits for an
+   * in-flight refetch.
+   *
+   * Resolves the set the page joined, or `undefined` when there is no set —
+   * a gated query, or one whose first load has not landed. Deliberately not
+   * `placeholderData`: a placeholder is what an observer shows while there is
+   * nothing cached, and returning one here would be indistinguishable from a
+   * real load.
+   */
+  fetchNextPage(): Promise<TData | undefined>
+  fetchPreviousPage(): Promise<TData | undefined>
+}
+
+/**
+ * Options an imperative infinite fetch can honour.
+ *
+ * The same exclusions as {@link FetchQueryOptions}, for the same reasons: there
+ * is no observer here to project for, to show a placeholder to, or to re-open a
+ * gate for.
+ */
+export type FetchInfiniteQueryOptions<TPage, TPageParam, E = Error> = Omit<
+  InfiniteQueryOptionsBase<TPage, TPageParam, InfiniteData<TPage, TPageParam>, E>,
+  | 'placeholderData'
+  | 'enabled'
+  | 'retry'
+  | 'retryDelay'
+  | 'refetchOnFocus'
+  | 'refetchOnReconnect'
+> & {
+    /**
+     * How many pages to load. Defaults to 1. Must be a positive integer.
+     *
+     * A hint for the load, not a guarantee about the result: a fresh entry is
+     * served as it stands, so a call asking for three pages against a key that
+     * already holds one gets the one. Prefetch the key before anything else
+     * touches it, or reload it deliberately.
+     */
+    pages?: number
+    /**
+     * Never, both of them. An imperative fetch has no backward direction to
+     * recover a trimmed head with, and nothing here applies a cap — accepting
+     * `maxPages` would take a bound and silently ignore it, while the type
+     * forced the caller to supply `getPreviousPageParam` to set it.
+     */
+    maxPages?: never
+    getPreviousPageParam?: never
+    select?: never
+    placeholderData?: never
+    enabled?: never
+    retry?: never
+    retryDelay?: never
+    refetchOnFocus?: never
+    refetchOnReconnect?: never
+  }
+
+/**
+ * Options for `createInfiniteQueryList`.
+ *
+ * No `select`: the list is the projection, and a second one would fight it.
+ */
+export type InfiniteQueryListOptions<
+  TPage,
+  TPageParam,
+  T,
+  K extends PropertyKey = PropertyKey,
+  E = Error,
+> = InfiniteQueryOptionsBase<
+  TPage,
+  TPageParam,
+  InfiniteData<TPage, TPageParam>,
+  E
+> &
+  // Carried here too, and not only on `InfiniteQueryOptions`: a list result
+  // offers `fetchPreviousPage`, so a list that could not be given
+  // `getPreviousPageParam` would expose an action it can never perform.
+  PreviousPageOptions<TPage, TPageParam> & {
+    /** The rows a page contributes, in display order. */
+    items: (page: TPage) => readonly T[]
+    /** Row identity. Repeat keys across pages update in place rather than duplicating. */
+    itemKey: (item: T) => K
+    /**
+     * Never: the rows are the projection, and a second one would fight them.
+     *
+     * Declared rather than merely absent, for the reason `FetchQueryOptions`
+     * gives: omission alone rejects only a fresh object literal, while a
+     * prebuilt options variable carrying `select` stays structurally
+     * assignable — and options get built once and passed around. Forwarded to
+     * `createInfiniteQuery`, such a `select` replaces the set with its own
+     * projection, the flatten reads `pages` off it, finds nothing, and the list
+     * reports `success` with no rows and no error.
+     */
+    select?: never
+  }
+
+/**
+ * The reactive result of an infinite query projected into a list.
+ *
+ * `data` is gone, replaced by `ids` and `get`: the rows are the data, and
+ * handing back the set as well would invite the copy this exists to avoid. The
+ * page actions resolve `void` for the same reason.
+ */
+export interface InfiniteQueryListResult<
+  T,
+  K extends PropertyKey = PropertyKey,
+  E = Error,
+> extends Omit<
+    InfiniteQueryResult<InfiniteData<unknown, unknown>, E>,
+    'data' | 'refetch' | 'fetchNextPage' | 'fetchPreviousPage'
+  > {
+  /** Retained row keys, in display order. */
+  readonly ids: Signal<readonly K[]>
+  /**
+   * Per-row reactive accessor. Undefined for a key the list does not hold:
+   * `maxPages` can drop a page between reading a key from `ids` and looking
+   * it up.
+   */
+  get(key: K): (() => T) | undefined
+  refetch(): Promise<void>
+  fetchNextPage(): Promise<void>
+  fetchPreviousPage(): Promise<void>
 }
 
 /**
@@ -281,6 +514,15 @@ export interface CacheEntryPolicy {
   readonly staleTime: number
   readonly gcTime: number
   readonly snapshot: boolean
+  /**
+   * Retained page bound for an infinite set, if one was declared.
+   *
+   * A property of the set, not of one observer. The entry is shared, and pages
+   * trimmed from it are trimmed for everyone — so the bound is claimed here
+   * like every other shared policy, and every observer of the key trims to the
+   * same number rather than each applying its own and truncating the others.
+   */
+  readonly maxPages?: number
 }
 
 /**
@@ -311,6 +553,16 @@ export interface QueryObservation {
    * `['users', 1]` that nothing asked about.
    */
   markForReload(): void
+
+  /**
+   * Undoes a reload mark this observation set, without notifying.
+   *
+   * Only whoever marked knows when the reload it was for is no longer wanted.
+   * `cancel()` is the case: aborting notifies, and an entry left marked and
+   * idle is reloaded by whichever observer is watching — so a cancel would
+   * restart the work it had just stopped.
+   */
+  clearReloadMark(): void
 
   /**
    * Ends the entry's in-flight request without giving up the observation.
@@ -440,10 +692,29 @@ export interface QueryClient {
   fetchQuery<TRaw, E = Error>(options: FetchQueryOptions<TRaw, E>): Promise<TRaw>
 
   /**
+   * Resolves an infinite query imperatively, loading `pages` pages from
+   * `initialPageParam` and storing the accumulated set under the base key.
+   *
+   * Declared on the interface rather than added later because adding a method
+   * to a released interface breaks everyone who implements it — this is the
+   * one part of the pagination surface that is not additive.
+   */
+  fetchInfiniteQuery<TPage, TPageParam, E = Error>(
+    options: FetchInfiniteQueryOptions<TPage, TPageParam, E>
+  ): Promise<InfiniteData<TPage, TPageParam>>
+
+  /**
    * Warms the cache for a set of queries. Intended for the server's prefetch
    * phase, which must complete before the synchronous render begins.
+   *
+   * Takes plain and infinite requests alike, told apart by `initialPageParam`.
    */
-  prefetchQueries(requests: readonly FetchQueryOptions<any, any>[]): Promise<void>
+  prefetchQueries(
+    requests: readonly (
+      | FetchQueryOptions<any, any>
+      | FetchInfiniteQueryOptions<any, any, any>
+    )[]
+  ): Promise<void>
 
   /**
    * Marks every entry whose key starts with `prefix` as needing a reload, and

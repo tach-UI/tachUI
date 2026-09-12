@@ -30,8 +30,17 @@ import type {
   CacheEntryPolicy,
   DehydratedQuery,
   DehydratedState,
+  FetchDirection,
+  FetchInfiniteQueryOptions,
   FetchQueryOptions,
   FetchStatus,
+  GetPageParam,
+  InfiniteData,
+  InfiniteQueryListOptions,
+  InfiniteQueryListResult,
+  InfiniteQueryLoadContext,
+  InfiniteQueryOptions,
+  InfiniteQueryResult,
   MutationOptions,
   MutationOptionsBase,
   MutationResult,
@@ -51,6 +60,8 @@ import type {
 import {
   createAsyncStream,
   createAsyncStreamList,
+  createInfiniteQuery,
+  createInfiniteQueryList,
   createMutation,
 } from '@tachui/query'
 
@@ -247,6 +258,10 @@ export type QueryClientMembers = Assert<
   Equals<
     keyof QueryClient,
     | 'fetchQuery'
+    // The method the freeze existed for: adding it to a released interface
+    // would break every implementer, so it lands with the types rather than
+    // with the primitive that uses it.
+    | 'fetchInfiniteQuery'
     | 'prefetchQueries'
     | 'invalidate'
     | 'observe'
@@ -267,6 +282,7 @@ export type QueryClientMembers = Assert<
 export type QueryObservationMembers = Assert<
   Equals<
     keyof QueryObservation,
+    | 'clearReloadMark'
     | 'entry'
     | 'markForReload'
     | 'abortInFlight'
@@ -350,10 +366,24 @@ export type FetchQueryKeepsHonourableOptions = Assert<
   Equals<
     Exclude<
       keyof FetchQueryOptions<RawUser>,
-      'select' | 'placeholderData' | 'enabled' | 'refetchOnFocus' | 'refetchOnReconnect'
+      // `initialPageParam` joins these: it is not an option an imperative
+      // fetch declines to honour but the discriminator that tells a plain
+      // request from an infinite one, declared absent so the narrowing in
+      // `prefetchQueries` is sound.
+      | 'select'
+      | 'placeholderData'
+      | 'enabled'
+      | 'refetchOnFocus'
+      | 'refetchOnReconnect'
+      | 'initialPageParam'
     >,
     'key' | 'load' | 'staleTime' | 'gcTime' | 'retry' | 'retryDelay' | 'snapshot' | 'client'
   >
+>
+
+/** And it is declared the same way, so a prebuilt variable carrying one is rejected too. */
+export type FetchQueryNevertypesInitialPageParam = Assert<
+  Equals<FetchQueryOptions<RawUser>['initialPageParam'], undefined>
 >
 
 /**
@@ -746,3 +776,230 @@ export type InferredListCarriesItsKey = Assert<
 >
 
 declare function messageSource(): AsyncIterable<RawUser>
+
+/**
+ * The pagination surface, reserved by #290's design and frozen here.
+ *
+ * These matter more than most: the shapes are effectively irreversible once
+ * released, and `fetchInfiniteQuery` is the one piece that could not have been
+ * added later without breaking every implementer of `QueryClient`.
+ */
+export type InfiniteDataMembers = Assert<
+  Equals<keyof InfiniteData<RawUser, string>, 'pages' | 'pageParams'>
+>
+
+export type FetchDirectionMembers = Assert<
+  Equals<FetchDirection, 'forward' | 'backward'>
+>
+
+/** A page load is told which param it is fetching and which way it extends. */
+export type LoadContextCarriesPageParam = Assert<
+  Equals<
+    'pageParam' extends keyof InfiniteQueryLoadContext<string> ? true : false,
+    true
+  >
+>
+
+type InfiniteBase = {
+  key: () => QueryKey
+  load: (ctx: InfiniteQueryLoadContext<string>) => Promise<RawUser>
+  initialPageParam: string
+  getNextPageParam: GetPageParam<RawUser, string>
+}
+
+/** The minimum is accepted: no backward pagination, no projection. */
+export type PlainInfiniteAccepted = Assert<
+  Assignable<InfiniteBase, InfiniteQueryOptions<RawUser, string>>
+>
+
+/**
+ * `maxPages` without `getPreviousPageParam` is rejected. A cap drops pages from
+ * the far end, and with no way to ask for the page before the new head, what
+ * was dropped could never be recovered.
+ */
+export type MaxPagesWithoutPreviousRejected = Assert<
+  Equals<
+    Assignable<
+      InfiniteBase & { maxPages: 3 },
+      InfiniteQueryOptions<RawUser, string>
+    >,
+    false
+  >
+>
+
+/** Paired, it is accepted. */
+export type MaxPagesWithPreviousAccepted = Assert<
+  Assignable<
+    InfiniteBase & {
+      maxPages: 3
+      getPreviousPageParam: GetPageParam<RawUser, string>
+    },
+    InfiniteQueryOptions<RawUser, string>
+  >
+>
+
+/**
+ * `select` is required when the projection differs from the set, by the same
+ * rule a plain query follows.
+ */
+export type InfiniteProjectionRequiresSelect = Assert<
+  Equals<
+    Assignable<InfiniteBase, InfiniteQueryOptions<RawUser, string, string[]>>,
+    false
+  >
+>
+
+export type InfiniteProjectionWithSelectAccepted = Assert<
+  Assignable<
+    InfiniteBase & {
+      select: (data: InfiniteData<RawUser, string>) => string[]
+    },
+    InfiniteQueryOptions<RawUser, string, string[]>
+  >
+>
+
+/**
+ * A plain query cannot carry `initialPageParam`. That property is what
+ * `prefetchQueries` reads to tell the two apart, so a plain request that could
+ * carry one would make the narrowing a guess.
+ */
+export type PlainQueryRejectsInitialPageParam = Assert<
+  Equals<
+    Assignable<
+      {
+        key: () => QueryKey
+        load: () => Promise<RawUser>
+        initialPageParam: string
+      },
+      FetchQueryOptions<RawUser>
+    >,
+    false
+  >
+>
+
+/** The list result trades `data` for rows, and its actions resolve nothing. */
+export type InfiniteListResultMembers = Assert<
+  Equals<
+    'data' extends keyof InfiniteQueryListResult<RawUser, string>
+      ? true
+      : false,
+    false
+  >
+>
+
+
+/**
+ * The primitives return the result types the surface declares, rather than
+ * something structurally close to them.
+ */
+export type InfiniteQueryReturnsInfiniteResult = Assert<
+  Equals<
+    ReturnType<typeof createInfiniteQuery<RawUser, string>>,
+    InfiniteQueryResult<InfiniteData<RawUser, string>>
+  >
+>
+
+export type InfiniteListReturnsListResult = Assert<
+  Equals<
+    ReturnType<typeof createInfiniteQueryList<RawUser, string, Message, string>>,
+    InfiniteQueryListResult<Message, string>
+  >
+>
+
+type InfiniteListBase = InfiniteBase & {
+  items: (page: RawUser) => readonly Message[]
+  itemKey: (item: Message) => string
+}
+
+export type InfiniteListAccepted = Assert<
+  Assignable<
+    InfiniteListBase,
+    InfiniteQueryListOptions<RawUser, string, Message, string>
+  >
+>
+
+/**
+ * The rows are the projection, so a second one has nowhere to go — and it is
+ * declared `never` rather than merely left out.
+ *
+ * Omission alone rejects a fresh object literal and lets a prebuilt variable
+ * through, which is the likelier mistake: options get built once and passed
+ * around. Such a `select` reaches the query underneath, replaces the set with
+ * its own shape, and the flatten then finds no pages — a permanently empty
+ * list reporting success, with no error anywhere.
+ */
+export type InfiniteListRejectsSelect = Assert<
+  Equals<
+    Assignable<
+      InfiniteListBase & {
+        select: (data: InfiniteData<RawUser, string>) => string[]
+      },
+      InfiniteQueryListOptions<RawUser, string, Message, string>
+    >,
+    false
+  >
+>
+
+/**
+ * The list carries the same `maxPages` pairing as the query. Its result offers
+ * `fetchPreviousPage`, so a list that could take a cap without a way back would
+ * expose an action it can never perform.
+ */
+export type InfiniteListMaxPagesWithoutPreviousRejected = Assert<
+  Equals<
+    Assignable<
+      InfiniteListBase & { maxPages: 3 },
+      InfiniteQueryListOptions<RawUser, string, Message, string>
+    >,
+    false
+  >
+>
+
+export type InfiniteListMaxPagesWithPreviousAccepted = Assert<
+  Assignable<
+    InfiniteListBase & {
+      maxPages: 3
+      getPreviousPageParam: GetPageParam<RawUser, string>
+    },
+    InfiniteQueryListOptions<RawUser, string, Message, string>
+  >
+>
+
+/** A key the list does not hold has no accessor, so the absence is in the type. */
+export type InfiniteListGetIsOptional = Assert<
+  Equals<
+    ReturnType<InfiniteQueryListResult<Message, string>['get']>,
+    (() => Message) | undefined
+  >
+>
+
+/** The page actions resolve nothing, so nobody is tempted to copy the set out. */
+export type InfiniteListActionsResolveVoid = Assert<
+  Equals<
+    ReturnType<InfiniteQueryListResult<Message, string>['fetchNextPage']>,
+    Promise<void>
+  >
+>
+
+
+/** An imperative fetch takes no cap: it has no backward direction to undo one. */
+export type FetchInfiniteRejectsMaxPages = Assert<
+  Equals<
+    Assignable<
+      InfiniteBase & {
+        maxPages: 3
+        getPreviousPageParam: GetPageParam<RawUser, string>
+      },
+      FetchInfiniteQueryOptions<RawUser, string>
+    >,
+    false
+  >
+>
+
+/** Both spellings of "no page that way" are accepted from a page-param function. */
+export type GetPageParamAcceptsNull = Assert<
+  Assignable<
+    (lastPage: RawUser) => string | null,
+    GetPageParam<RawUser, string>
+  >
+>
