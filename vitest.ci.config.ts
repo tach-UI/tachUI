@@ -26,8 +26,12 @@ export default defineConfig({
       '**/node_modules/**',
       '**/packages/**/node_modules/**',
       '**/packages/**/benchmarks/**/*.spec.ts',
-      'packages/cli/',
-      // Exclude long-running tests from CI (run separately with pnpm test:long)
+      // Excluded from PR CI for speed. Everything below runs in one of the
+      // extended tiers instead — `bun run test:long`, `test:stress`,
+      // `test:memory-leaks` — which `.github/workflows/extended-tests.yml`
+      // runs nightly. A pattern removed here must be removed from that tier's
+      // config too, or the suite stops running anywhere (#229).
+      'packages/cli/', // has its own vitest config; the `cli` job runs it
       '**/long-running-simulation.test.ts', // ~30s simulation tests
       '**/stress-test.test.ts', // Future stress testing
       '**/performance-regression.test.ts', // Future performance regression tests

@@ -5,58 +5,23 @@
  * high-volume DOM manipulation and complex overlay scenarios.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { h, text as textNode } from '@tachui/core/runtime'
 import { overlay, type OverlayAlignment } from '../../src/layout/overlay'
 import type { ModifierContext } from '../../src/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 
-// Mock DOM element
-class MockElement {
-  style: {
-    [key: string]: string
-    setProperty: (property: string, value: string) => void
-  }
-  children: MockElement[] = []
-  nodeType: number = 1 // Element node
-
-  constructor() {
-    this.style = new Proxy({} as any, {
-      set: (target, prop, value) => {
-        target[prop] = value
-        return true
-      },
-      get: (target, prop) => {
-        if (prop === 'setProperty') {
-          return (property: string, value: string) => {
-            target[property] = value
-          }
-        }
-        return target[prop] || ''
-      },
-    })
-  }
-
-  appendChild(child: MockElement) {
-    this.children.push(child)
-    return child
-  }
-
-  removeChild(child: MockElement) {
-    const index = this.children.indexOf(child)
-    if (index !== -1) {
-      this.children.splice(index, 1)
-    }
-  }
-}
-
 // Mock component factory
+//
+// `render()` returns DOMNode *descriptions*, the way the framework actually
+// produces them, so the overlay materializes them through the renderer (#302).
+// The older shape here returned a node with no `type` and the renderer threw on
+// every one of these tests; nothing noticed, because the tier never ran (#229).
 const createMockComponent = (id: string) => ({
   type: 'component' as const,
   id,
-  render: vi.fn().mockReturnValue({
-    element: new MockElement(),
-    children: [],
-  }),
+  props: {},
+  render: vi.fn(() => h('span', { class: 'overlay-content' }, textNode(id))),
 })
 
 describe('Overlay Modifier Stress Tests', () => {
@@ -65,16 +30,9 @@ describe('Overlay Modifier Stress Tests', () => {
   beforeEach(() => {
     baseContext = {
       componentId: 'stress-test-component',
-      element: new MockElement() as any,
+      element: document.createElement('div'),
       phase: 'creation',
     }
-
-    // Mock document.createElement to return MockElement
-    vi.spyOn(document, 'createElement').mockImplementation(
-      (tagName: string) => {
-        return new MockElement() as any
-      }
-    )
   })
 
   afterEach(() => {
@@ -91,8 +49,8 @@ describe('Overlay Modifier Stress Tests', () => {
 
       for (let i = 0; i < iterations; i++) {
         // Use fresh element for each iteration to avoid DOM accumulation
-        const freshElement = new MockElement()
-        const context = { ...baseContext, element: freshElement as any }
+        const freshElement = document.createElement('div')
+        const context = { ...baseContext, element: freshElement }
         modifier.apply({} as DOMNode, context)
       }
 
@@ -104,8 +62,8 @@ describe('Overlay Modifier Stress Tests', () => {
 
     it('should handle multiple overlays on single element', () => {
       const overlayCount = 100
-      const parentElement = new MockElement()
-      const context = { ...baseContext, element: parentElement as any }
+      const parentElement = document.createElement('div')
+      const context = { ...baseContext, element: parentElement }
 
       const overlays = Array.from({ length: overlayCount }, (_, i) =>
         overlay(createMockComponent(`component-${i}`), 'center')
@@ -145,8 +103,8 @@ describe('Overlay Modifier Stress Tests', () => {
         for (let i = 0; i < iterationsPerAlignment; i++) {
           const component = createMockComponent(`${alignment}-${i}`)
           const modifier = overlay(component, alignment)
-          const freshElement = new MockElement()
-          const context = { ...baseContext, element: freshElement as any }
+          const freshElement = document.createElement('div')
+          const context = { ...baseContext, element: freshElement }
 
           modifier.apply({} as DOMNode, context)
         }
@@ -160,31 +118,35 @@ describe('Overlay Modifier Stress Tests', () => {
 
   describe('Complex Content Rendering Stress', () => {
     it('should handle complex component hierarchies', () => {
+      const createComplexContent = (depth: number, width: number): DOMNode =>
+        depth > 0
+          ? h(
+              'div',
+              { class: `depth-${depth}` },
+              ...Array.from({ length: width }, () =>
+                createComplexContent(depth - 1, Math.min(width, 3))
+              )
+            )
+          : h('span', null, textNode('leaf'))
+
       const createComplexComponent = (depth: number, width: number): any => ({
         type: 'component' as const,
         id: `complex-${depth}-${width}`,
-        render: vi.fn().mockReturnValue({
-          element: new MockElement(),
-          children:
-            depth > 0
-              ? Array.from({ length: width }, (_, i) =>
-                  createComplexComponent(depth - 1, Math.min(width, 3))
-                )
-              : [],
-        }),
+        props: {},
+        render: vi.fn(() => createComplexContent(depth, width)),
       })
 
       const complexComponents = Array.from(
         { length: 50 },
-        (_, i) => createComplexComponent(3, 2) // 3 levels deep, 2 children per level
+        () => createComplexComponent(3, 2) // 3 levels deep, 2 children per level
       )
 
       const start = performance.now()
 
       complexComponents.forEach(component => {
         const modifier = overlay(component, 'center')
-        const freshElement = new MockElement()
-        const context = { ...baseContext, element: freshElement as any }
+        const freshElement = document.createElement('div')
+        const context = { ...baseContext, element: freshElement }
 
         modifier.apply({} as DOMNode, context)
       })
@@ -203,8 +165,8 @@ describe('Overlay Modifier Stress Tests', () => {
 
       contentFunctions.forEach(contentFunc => {
         const modifier = overlay(contentFunc, 'center')
-        const freshElement = new MockElement()
-        const context = { ...baseContext, element: freshElement as any }
+        const freshElement = document.createElement('div')
+        const context = { ...baseContext, element: freshElement }
 
         modifier.apply({} as DOMNode, context)
       })
@@ -220,14 +182,16 @@ describe('Overlay Modifier Stress Tests', () => {
     })
 
     it('should handle HTMLElement content efficiently', () => {
-      const htmlElements = Array.from({ length: 1000 }, () => new MockElement())
+      const htmlElements = Array.from({ length: 1000 }, () =>
+        document.createElement('div')
+      )
 
       const start = performance.now()
 
       htmlElements.forEach(element => {
         const modifier = overlay(element, 'center')
-        const freshElement = new MockElement()
-        const context = { ...baseContext, element: freshElement as any }
+        const freshElement = document.createElement('div')
+        const context = { ...baseContext, element: freshElement }
 
         modifier.apply({} as DOMNode, context)
       })
@@ -254,8 +218,8 @@ describe('Overlay Modifier Stress Tests', () => {
 
       // Apply all overlays
       overlays.forEach(modifier => {
-        const freshElement = new MockElement()
-        const context = { ...baseContext, element: freshElement as any }
+        const freshElement = document.createElement('div')
+        const context = { ...baseContext, element: freshElement }
         modifier.apply({} as DOMNode, context)
       })
 
@@ -277,8 +241,8 @@ describe('Overlay Modifier Stress Tests', () => {
     })
 
     it('should handle DOM tree cleanup efficiently', () => {
-      const parentElement = new MockElement()
-      const context = { ...baseContext, element: parentElement as any }
+      const parentElement = document.createElement('div')
+      const context = { ...baseContext, element: parentElement }
 
       // Add many overlays
       for (let i = 0; i < 500; i++) {
@@ -325,8 +289,8 @@ describe('Overlay Modifier Stress Tests', () => {
         for (let i = 0; i < iterations; i++) {
           invalidContents.forEach(content => {
             const modifier = overlay(content, 'center')
-            const freshElement = new MockElement()
-            const context = { ...baseContext, element: freshElement as any }
+            const freshElement = document.createElement('div')
+            const context = { ...baseContext, element: freshElement }
 
             expect(() => {
               modifier.apply({} as DOMNode, context)
@@ -385,8 +349,8 @@ describe('Overlay Modifier Stress Tests', () => {
       for (let i = 0; i < iterations; i++) {
         const alignment = invalidAlignments[i % invalidAlignments.length]
         const modifier = overlay(component, alignment)
-        const freshElement = new MockElement()
-        const context = { ...baseContext, element: freshElement as any }
+        const freshElement = document.createElement('div')
+        const context = { ...baseContext, element: freshElement }
 
         modifier.apply({} as DOMNode, context)
 
@@ -419,8 +383,8 @@ describe('Overlay Modifier Stress Tests', () => {
         for (let i = 0; i < count; i++) {
           const component = createMockComponent(`${type}-${i}`)
           const modifier = overlay(component, alignment)
-          const freshElement = new MockElement()
-          const context = { ...baseContext, element: freshElement as any }
+          const freshElement = document.createElement('div')
+          const context = { ...baseContext, element: freshElement }
 
           modifier.apply({} as DOMNode, context)
         }
@@ -432,8 +396,8 @@ describe('Overlay Modifier Stress Tests', () => {
     })
 
     it('should handle dynamic overlay updates', () => {
-      const parentElement = new MockElement()
-      const context = { ...baseContext, element: parentElement as any }
+      const parentElement = document.createElement('div')
+      const context = { ...baseContext, element: parentElement }
       const component = createMockComponent('dynamic-test')
 
       const alignments: OverlayAlignment[] = [
@@ -450,7 +414,7 @@ describe('Overlay Modifier Stress Tests', () => {
 
       for (let cycle = 0; cycle < updateCycles; cycle++) {
         // Clear existing overlays (simulate removal)
-        parentElement.children.length = 0
+        parentElement.replaceChildren()
 
         // Apply new overlay with different alignment
         const alignment = alignments[cycle % alignments.length]
@@ -465,26 +429,21 @@ describe('Overlay Modifier Stress Tests', () => {
     })
 
     it('should handle nested overlay scenarios', () => {
-      // Simulate nested overlays (overlay within overlay)
-      const createNestedOverlay = (depth: number): any => {
-        if (depth <= 0) {
-          return createMockComponent('leaf-component')
-        }
+      // Overlay within overlay: each level mounts its container into the
+      // container the level above it created, so the nesting is real rather
+      // than five independent applications.
+      const applyNested = (root: Element, depth: number) => {
+        let host = root
 
-        const childOverlay = createNestedOverlay(depth - 1)
-        return {
-          type: 'component' as const,
-          id: `nested-${depth}`,
-          render: vi.fn().mockImplementation(() => {
-            const element = new MockElement()
-            const context = { ...baseContext, element: element as any }
+        for (let level = depth; level > 0; level--) {
+          overlay(createMockComponent(`nested-${level}`), 'center').apply(
+            {} as DOMNode,
+            { ...baseContext, element: host }
+          )
 
-            // Apply child overlay
-            const modifier = overlay(childOverlay, 'center')
-            modifier.apply({} as DOMNode, context)
-
-            return { element, children: [] }
-          }),
+          const container = host.lastElementChild
+          expect(container).not.toBeNull()
+          host = container!
         }
       }
 
@@ -494,12 +453,7 @@ describe('Overlay Modifier Stress Tests', () => {
       const start = performance.now()
 
       for (let i = 0; i < nestedCount; i++) {
-        const nestedComponent = createNestedOverlay(nestedDepth)
-        const modifier = overlay(nestedComponent, 'center')
-        const freshElement = new MockElement()
-        const context = { ...baseContext, element: freshElement as any }
-
-        modifier.apply({} as DOMNode, context)
+        applyNested(document.createElement('div'), nestedDepth)
       }
 
       const duration = performance.now() - start

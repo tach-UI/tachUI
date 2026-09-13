@@ -75,6 +75,7 @@ bun run dev:docs           # Documentation development
 bun run test               # Run all tests
 bun run test:coverage      # Run tests with coverage
 bun run benchmark          # Run performance benchmarks
+                           # (extended tiers: see "Test Tiers" under Testing)
 
 # Building
 bun run build              # Build all packages
@@ -277,6 +278,31 @@ export { MyComponent } from './components/MyComponent'
 - **Integration tests**: Multi-component interactions
 - **Performance tests**: Benchmarks and memory usage
 - **Security tests**: XSS prevention, CSP compliance
+
+### Test Tiers
+
+Not every suite runs on every command. `bun run test` is the default tier; the
+rest are slow enough that PR CI excludes them, and they run nightly instead.
+
+| Tier | Command | Covers | Where it runs |
+| --- | --- | --- | --- |
+| default | `bun run test` | everything not listed below, plus the tool suites | locally |
+| ci | `bun run test:ci` | the default tier minus the slow suites (`vitest.ci.config.ts` excludes), plus tree-shaking verification | every PR, and the pre-push hook |
+| stress | `bun run test:stress` | `*stress*.test.ts` — high-volume DOM and modifier application | nightly |
+| memory | `bun run test:memory-leaks` | a `memory/` directory or `memory` in the filename; sets `FORCE_MEMORY_TESTS` for the heap-growth suites that gate on it | nightly |
+| long | `bun run test:long` | multi-second simulations, real-world flow integrations, and the benchmark-shaped performance checks | nightly |
+| cli | `bun run --filter @tachui/cli test:ci` | `packages/cli`, which has its own vitest config and scaffolds from built `dist` | nightly |
+| types | `bun run test:types` | `*.test-d.ts`, resolved against built declarations | CI only — needs a build, so neither `test` nor `test:ci` reaches it |
+
+The nightly tiers live in `.github/workflows/extended-tests.yml`, which is also
+`workflow_dispatch`-triggerable.
+
+Each extended tier is registered **by convention, not by path**: its config
+globs a filename or directory shape, so moving a file keeps it in its tier.
+Naming files literally is what let three whole tiers rot unnoticed (#229). When
+you add a pattern to the `exclude` list in `vitest.ci.config.ts`, add the
+matching `include` to the tier config that should pick it up — otherwise the
+suite stops running anywhere.
 
 ### Workspace Package Aliases in Tests
 
