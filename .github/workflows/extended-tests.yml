@@ -1,0 +1,60 @@
+name: Extended Tests
+
+# The tiers `vitest.ci.config.ts` excludes from PR CI. They exist in the repo
+# but ran nowhere automated until #229; a green PR said nothing about them.
+#
+# Nightly rather than per-PR: they cost minutes, not seconds, and PR CI is the
+# fast gate. Each tier is its own job so one red tier names itself.
+
+on:
+  schedule:
+    # 07:00 UTC daily — after the working day in every timezone the repo sees.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '24'
+  BUN_VERSION: '1.2.0'
+
+jobs:
+  extended:
+    name: ${{ matrix.tier }}
+    runs-on: ubuntu-latest
+    # One red tier should not hide the others.
+    continue-on-error: false
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tier: stress
+            command: bun run test:stress
+          - tier: memory
+            command: bun run test:memory-leaks
+          - tier: long
+            command: bun run test:long
+          - tier: cli
+            command: bun run --filter @tachui/cli test:ci
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # The full chain rather than ci.yml's hand-listed subset: the CLI tier
+      # scaffolds from built `dist`, and a per-tier build list is one more
+      # thing to fall out of date the way the scripts in #229 did.
+      - name: Build packages
+        run: bun run build
+
+      - name: Run ${{ matrix.tier }} tier
+        run: ${{ matrix.command }}
