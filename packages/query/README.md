@@ -77,7 +77,7 @@ of `@tachui/types` to a release cadence they have no stake in. Adapters import f
 ### One entry point, no subpath exports
 
 `@tachui/core` splits into subpaths because it is large and consumers want slices
-of it. This package is small — the whole surface has a 12 KB gzipped budget — and
+of it. This package is small — the whole surface has a 13 KB gzipped budget — and
 is marked `sideEffects: false`, so a bundler already drops whatever an application
 does not import. Subpath exports would add permanent release surface and a way to
 get import paths wrong, in exchange for no bundle savings. Revisit if the budget
@@ -93,6 +93,18 @@ Run it locally with:
 bun run --filter @tachui/query build
 bun run --filter @tachui/query size
 ```
+
+The number is a ceiling for a scope, not a measurement of one. The original
+12 KB was chosen when this package held four files and 0.33 KB of runtime, to
+cover what ADR 0001 planned: the client, key hashing, `createQuery`,
+`createMutation` and the stream primitives. That scope landed at roughly 8.6 KB.
+
+Pagination was not in it — ADR 0001 listed infinite queries under *Deferred*,
+with no designed API — and it added about 2.6 KB, so the ceiling moved to 13 KB
+with it. Read a budget breach as a question about what grew, not as a number to
+raise: twice during the pagination work it was raised when the real cause was
+that the built chunk shipped formatted, which inflated every measurement by
+about 20% until `vite.config.ts` gained a pass to collapse it.
 
 ## License
 
