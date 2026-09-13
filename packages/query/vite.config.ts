@@ -10,7 +10,7 @@ import { defineConfig, transformWithEsbuild, type Plugin } from 'vite'
  * removed — a quarter of the bundle, for nothing. Source comments cost nothing
  * either way; they are gone long before this runs.
  */
-function collapseWhitespace(): Plugin {
+function collapseWhitespace(sourcemap: boolean): Plugin {
   return {
     name: 'tachui:collapse-whitespace',
     // After Vite's own minifier, which is what leaves the formatting behind.
@@ -20,15 +20,22 @@ function collapseWhitespace(): Plugin {
         minify: true,
         target: 'es2020',
         format: 'esm',
-        sourcemap: false,
+        sourcemap,
       })
-      return { code: minified.code, map: null }
+      // Rollup composes the maps its plugins return, so handing this one back
+      // keeps a dev build's sourcemap pointing at the original sources.
+      // Returning `null` would silently drop it, and a plugin that runs on
+      // every chunk would take every map with it.
+      return {
+        code: minified.code,
+        map: sourcemap ? (minified.map ?? null) : null,
+      }
     },
   }
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [collapseWhitespace()],
+  plugins: [collapseWhitespace(mode !== 'production')],
   build: {
     // The size-budget gate reads the chunk graph from this manifest rather than
     // re-deriving it by parsing the emitted JavaScript (tools/check-size-budget.mjs).

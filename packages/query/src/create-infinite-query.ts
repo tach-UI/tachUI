@@ -109,6 +109,10 @@ export function createInfiniteQuery<
   // splices the whole set away and leaves a query that reports success, holds
   // nothing, and has no way back.
   assertPageCap(base.maxPages, 'createInfiniteQuery')
+  // Alongside the cap, and for the same reason: a configuration mistake should
+  // be a throw where it was written, not an error state a component has to
+  // render its way into once a load has already been dispatched.
+  assertPageParam(base.initialPageParam, 'createInfiniteQuery')
 
   /**
    * Which direction *this observer* asked for, if any.
@@ -132,7 +136,6 @@ export function createInfiniteQuery<
   const refetchPages: QueryLoadIntent<InfiniteData<TPage, TPageParam>> = (
     ctx: InternalLoadContext<InfiniteData<TPage, TPageParam>>
   ) => {
-    assertPageParam(base.initialPageParam, 'createInfiniteQuery')
     const held = ctx.held ?? emptySet<TPage, TPageParam>()
     // Returned as one value by `loadPageRun`, so the set swaps atomically: no
     // render ever sees half the old pages beside half the new.
@@ -167,7 +170,6 @@ export function createInfiniteQuery<
     towards: FetchDirection
   ): QueryLoadIntent<InfiniteData<TPage, TPageParam>> {
     return async (ctx) => {
-      assertPageParam(base.initialPageParam, 'createInfiniteQuery')
       const held = ctx.held ?? emptySet<TPage, TPageParam>()
       // Extending a set that holds nothing means loading its first page. The
       // guard in `extend` asks the observer, whose published state can still

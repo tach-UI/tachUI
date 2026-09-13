@@ -110,6 +110,14 @@ export type InternalFetchQueryOptions<TRaw, TError = Error> =
      * asked to reload.
      */
     force?: boolean
+    /**
+     * Whether the caller has lost interest since it dispatched.
+     *
+     * Consulted only where this call can be left waiting — queuing behind
+     * another execution — because that is the only window in which a caller can
+     * be cancelled after dispatch and before its loader runs.
+     */
+    isAbandoned?: () => boolean
   }
 
 /** An in-flight loader execution owned by the client root. */
@@ -691,10 +699,30 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       // caller someone else's work and quietly drop its own — a pull-to-refresh
       // fired while a "load more" is in flight would report success without
       // reloading anything. Queue behind it instead, then run this one.
-      return activeRequest.promise.then(
-        () => fetchQuery<TRaw, TError>(options),
-        () => fetchQuery<TRaw, TError>(options)
-      )
+      //
+      // Queuing means this call is still pending when the caller may lose
+      // interest, so the wait is not unconditional: a caller that was cancelled
+      // or disposed while parked here must not have its request started
+      // afterwards, writing into an entry on behalf of something that is gone.
+      const resume = (): Promise<TRaw> => {
+        if (options.isAbandoned?.() === true) {
+          throw new QueryError(
+            'the request was cancelled while queued behind another execution.'
+          )
+        }
+        return fetchQuery<TRaw, TError>(options)
+      }
+      // Waits for the execution ahead to finish *or* to be abandoned. A loader
+      // is not obliged to settle once its signal aborts, and several here
+      // deliberately do not — so waiting only on the promise would strand every
+      // queued caller behind a request that was cancelled and will never land.
+      return new Promise<void>(resolve => {
+        const proceed = (): void => resolve()
+        activeRequest.promise.then(proceed, proceed)
+        activeRequest.controller.signal.addEventListener('abort', proceed, {
+          once: true,
+        })
+      }).then(resume)
     }
     // Presence is tracked by status, not by the data value: a loader that
     // legitimately resolves `undefined` (a 204, an empty body, a "not found"
@@ -964,7 +992,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           detachFlight(entry)
           notify(entry)
         },
-        markForReload: () => {
+        markForReload: (): number => {
           // This one entry, not the prefix beneath it. Going through the
           // public invalidate() would mark every key starting with this one,
           // so an observer of ['users'] refreshing itself would also
@@ -977,14 +1005,22 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           }
           scheduleEviction(entry)
           notify(entry)
+          // The generation names this mark. Whoever set it can ask to undo it
+          // later, and will be refused if anything has marked the entry since.
+          return entry.generation
         },
         inFlightIntent: () => entry.inFlight?.intent,
-        clearReloadMark: () => {
+        clearReloadMark: (token: number) => {
           // Undoes a mark this observation set, without the notification a
           // mark carries. Only meaningful between marking and the reload
           // landing: whoever marked is the only one who knows the reload is no
           // longer wanted.
-          if (entry.invalidated) {
+          //
+          // Refused unless the entry still carries that exact mark. A prefix
+          // invalidation landing in between raises the generation, and clearing
+          // then would throw away someone else's reload on the strength of
+          // "I marked this once".
+          if (entry.invalidated && entry.generation === token) {
             entry.invalidated = false
           }
         },

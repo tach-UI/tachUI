@@ -569,7 +569,7 @@ export interface QueryObservation {
    * `['users']` reloading itself through that would also invalidate a fresh
    * `['users', 1]` that nothing asked about.
    */
-  markForReload(): void
+  markForReload(): number
 
   /**
    * Undoes a reload mark this observation set, without notifying.
@@ -578,8 +578,12 @@ export interface QueryObservation {
    * `cancel()` is the case: aborting notifies, and an entry left marked and
    * idle is reloaded by whichever observer is watching — so a cancel would
    * restart the work it had just stopped.
+   *
+   * Takes the token {@link QueryObservation.markForReload} returned, and is
+   * refused if anything has marked the entry since — a prefix invalidation
+   * that landed in between is not this caller's to discard.
    */
-  clearReloadMark(): void
+  clearReloadMark(token: number): void
 
   /**
    * Names the execution in flight for this entry, or nothing if none is.
