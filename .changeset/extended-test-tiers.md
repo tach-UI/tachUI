@@ -26,8 +26,9 @@ inside the 950–1,900 band its own comment recorded, so it failed whenever the
 tier ran whole; it drops to 100. `baseline-benchmarks`'s proxy-overhead gate
 read `process.env.CI ? 0.5 : 4` — tighter on CI, on the assumption that CI is
 the controlled environment — and a hosted runner read 1.36 on the first run the
-gate ever had; 4 is now the only ceiling. Both stay an order of magnitude clear
-of the observed rate and still fail the regressions they name.
+gate ever had; 4 is now the only ceiling — roughly 3x the worst runner reading
+rather than an order of magnitude, and its companion warning moves from 0.65 to
+2 so it stops firing on every run. Both still fail the regressions they name.
 
 `extended-tests.yml` runs what genuinely costs minutes — stress, memory, and
 the CLI package — nightly and on dispatch. `test:error-recovery` is gone with

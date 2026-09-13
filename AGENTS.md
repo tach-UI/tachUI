@@ -48,14 +48,20 @@ the tier by where it lives. What the gate means differs per suite:
   anywhere, CI or not, so this script is the only thing that runs it.
 
 The other extended tiers are `test:stress` (globs `*stress*.test.ts`) and the
-CLI package, which has its own vitest config. All three run nightly through
-`.github/workflows/extended-tests.yml`, and nowhere else — `test` and `test:ci`
-do not reach them.
+CLI package, which has its own vitest config. `.github/workflows/extended-tests.yml`
+runs all three nightly, but only one of them runs *only* there:
+
+- **stress** is excluded from both the root config and `vitest.ci.config.ts`,
+  so nightly is genuinely its only run.
+- **memory**'s ungated suites already run in `test` and in `test:ci`, per the
+  list above. What the nightly run adds is the `FORCE_MEMORY_TESTS`-gated ones.
+- **`packages/cli`** runs in `test` locally — the root config does not exclude
+  it — but is excluded from `test:ci`, so nightly is its only CI coverage.
 
 There is no `test:long`. The slow integration and benchmark suites it named
-were folded into `test:ci`, where 94 tests cost 9 seconds of a 34 second run.
-Before adding a tier, measure: one that saves seconds is not worth the suites
-falling out of sight.
+were folded into `test:ci`, where 94 tests cost 9 seconds of a 34 second run
+locally (about 33 seconds of a runner's longer one). Before adding a tier,
+measure: one that saves seconds is not worth the suites falling out of sight.
 
 ## Timing assertions
 

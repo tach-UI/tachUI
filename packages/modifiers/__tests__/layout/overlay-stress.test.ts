@@ -5,10 +5,11 @@
  * high-volume DOM manipulation and complex overlay scenarios.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createRoot } from '@tachui/core/reactive'
 import { h, text as textNode } from '@tachui/core/runtime'
 import { overlay, type OverlayAlignment } from '../../src/layout/overlay'
-import type { ModifierContext } from '../../src/types'
+import type { ModifierContext, ModifierResult } from '../../src/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 
 // Mock component factory
@@ -33,10 +34,6 @@ describe('Overlay Modifier Stress Tests', () => {
       element: document.createElement('div'),
       phase: 'creation',
     }
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
   })
 
   describe('High-Volume Overlay Creation', () => {
@@ -203,41 +200,74 @@ describe('Overlay Modifier Stress Tests', () => {
   })
 
   describe('Memory and Resource Management', () => {
-    it('should not leak memory with many overlay applications', () => {
-      const initialMemory = (performance as any).memory?.usedJSHeapSize || 0
-
-      // Create many overlays
+    it('should release every overlay it mounts', () => {
+      // This used to read `performance.memory`, which jsdom does not define —
+      // both samples came back 0, the only assertion sat behind
+      // `if (initialMemory > 0 …)`, and the test asserted nothing at all. It
+      // passed for the same reason it would have passed with an empty body.
+      //
+      // What "released" can actually mean here is structural, so assert that
+      // instead: the container leaves the host, and the element's entry leaves
+      // the module's WeakMap-keyed state — which is what the teardown does.
       const overlayCount = 5000
-      const overlays: any[] = []
+      const hosts: HTMLElement[] = []
+      const teardowns: (() => void)[] = []
 
-      for (let i = 0; i < overlayCount; i++) {
-        const component = createMockComponent(`mem-test-${i}`)
-        const modifier = overlay(component, 'center')
-        overlays.push(modifier)
-      }
+      const disposeRoot = createRoot(dispose => {
+        for (let i = 0; i < overlayCount; i++) {
+          const host = document.createElement('div')
+          const result = overlay(
+            createMockComponent(`mem-test-${i}`),
+            'center'
+          ).apply({} as DOMNode, { ...baseContext, element: host }) as
+            | ModifierResult
+            | undefined
 
-      // Apply all overlays
-      overlays.forEach(modifier => {
-        const freshElement = document.createElement('div')
-        const context = { ...baseContext, element: freshElement }
-        modifier.apply({} as DOMNode, context)
+          hosts.push(host)
+          // A first mount on a fresh element always hands its teardown back.
+          expect(result?.cleanup).toHaveLength(1)
+          teardowns.push(...(result!.cleanup as (() => void)[]))
+        }
+
+        return dispose
       })
 
-      // Clear references
-      overlays.length = 0
+      expect(hosts.every(host => host.children.length === 1)).toBe(true)
 
-      // Force garbage collection if available
-      if (typeof global !== 'undefined' && (global as any).gc) {
-        ;(global as any).gc()
-      }
+      teardowns.forEach(teardown => teardown())
 
-      const finalMemory = (performance as any).memory?.usedJSHeapSize || 0
+      expect(hosts.every(host => host.children.length === 0)).toBe(true)
 
-      // Memory usage should not grow excessively
-      if (initialMemory > 0 && finalMemory > 0) {
-        const memoryGrowth = finalMemory - initialMemory
-        expect(memoryGrowth).toBeLessThan(100 * 1024 * 1024) // Less than 100MB growth
-      }
+      // Idempotent: the owner disposing after an explicit teardown must not
+      // throw or re-run what already ran.
+      expect(() => disposeRoot()).not.toThrow()
+      expect(hosts.every(host => host.children.length === 0)).toBe(true)
+    })
+
+    it('releases mounted overlays when the owner is disposed', () => {
+      // The other half of the same claim: nothing calls the teardown, the
+      // reactive owner just goes away. Small n — this one is about the path,
+      // not the volume.
+      const hosts = Array.from({ length: 50 }, () =>
+        document.createElement('div')
+      )
+
+      const disposeRoot = createRoot(dispose => {
+        hosts.forEach((host, i) => {
+          overlay(createMockComponent(`owner-${i}`), 'center').apply(
+            {} as DOMNode,
+            { ...baseContext, element: host }
+          )
+        })
+
+        return dispose
+      })
+
+      expect(hosts.every(host => host.children.length === 1)).toBe(true)
+
+      disposeRoot()
+
+      expect(hosts.every(host => host.children.length === 0)).toBe(true)
     })
 
     it('should handle DOM tree cleanup efficiently', () => {
