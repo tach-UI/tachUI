@@ -42,7 +42,7 @@ export function createInfiniteQueryList<
 >(
   options: InfiniteQueryListOptions<TPage, TPageParam, T, K, E>
 ): InfiniteQueryListResult<T, K, E> {
-  const { items, itemKey, ...queryOptions } = options
+  const { items, itemKey, trackedRows, ...queryOptions } = options
 
   const query = createInfiniteQuery<
     TPage,
@@ -58,26 +58,9 @@ export function createInfiniteQueryList<
     >
   )
 
-  const controls = createSignalListControls<T, K>([], itemKey)
-
-  /**
-   * The keys the list currently holds.
-   *
-   * Kept alongside the controls so `get` can answer for a key it does not hold
-   * without reading `ids` — which would make every row depend on the list's
-   * structure, and re-render all of them whenever a page arrives.
-   */
-  /**
-   * The keys the list currently holds.
-   *
-   * A plain value, not a signal, and `get` reads it without subscribing. `ids`
-   * is the structural signal — a consumer tracks that to learn which rows
-   * exist, then looks each one up here. Making `get` reactive was measured to
-   * cost exactly what rows own signals for: every consumer holding any row
-   * accessor re-ran whenever membership changed anywhere in the set, so an
-   * append touched every row on screen.
-   */
-  let retained: ReadonlySet<K> = new Set<K>()
+  const controls = createSignalListControls<T, K>([], itemKey, {
+    trackedKeys: trackedRows,
+  })
 
   /**
    * Whatever `items` or `itemKey` last threw.
@@ -122,7 +105,6 @@ export function createInfiniteQueryList<
 
     untrack(() => {
       setProjectionError(() => undefined)
-      retained = new Set(at.keys())
     })
     // Untracked: this effect depends on the set and on nothing else. `set`
     // only writes today, but a dependency picked up from inside core's list
@@ -162,9 +144,6 @@ export function createInfiniteQueryList<
       // nobody reads, holding every page object the set ever carried.
       flatten.dispose()
       controls.clear()
-      // Cleared alongside the signals it indexes: `get` answers from this, and
-      // core's `get` throws for a key it no longer holds.
-      retained = new Set<K>()
       disposeQuery()
     },
     // A real load failure outranks a projection fault: the load error is the
@@ -172,7 +151,10 @@ export function createInfiniteQueryList<
     // on the next write.
     error: createMemo(() => rest.error() ?? projectionError()),
     ids,
-    get: (key: K) => (retained.has(key) ? controls.get(key) : undefined),
+    // Tracked, not looked up. The row is subscribed to on its own, so it hears
+    // about its own arrival, edit and departure and nothing else — which is why
+    // this can be reactive without an append touching every row on screen.
+    get: (key: K) => controls.track(key),
     // Resolving `void` rather than the set: the rows are the data here, and
     // handing back the pages as well would invite exactly the copy this exists
     // to avoid.

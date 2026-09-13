@@ -67,3 +67,16 @@ Review follow-ups, each reproduced before it was fixed:
   throwing page-param function is not retried and no longer outranks a real
   load failure; `maxPages` and `pages` are validated; and `fetchNextPage`
   declares `Promise<TData | undefined>`, which is the truth.
+
+Row accessors are reactive and stable. `get(key)` returns an accessor that
+answers whether or not the row is held, subscribes to that row alone, and is
+the same accessor across the row leaving and coming back — so a row dropped by
+`maxPages` and re-fetched is not orphaned, and a key asked for before its page
+lands is told when it arrives. It subscribes per key rather than to membership,
+which is what keeps an append from waking every row on screen.
+
+This needed `createSignalList` to stop deleting a row's signal on removal, so
+the retained accessors are bounded and the bound is the developer's to set:
+`trackedRows` on the list options, `trackedKeys` on the core primitive, 256 by
+default. `createAsyncStreamList` gets the same treatment, having carried the
+identical lookup.

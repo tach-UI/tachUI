@@ -1319,7 +1319,7 @@ describe('collection mode', () => {
     await settle()
 
     expect(stream.ids()).toEqual(['a', 'b'])
-    expect(stream.get('a')?.()).toEqual({ id: 'a', body: 'first' })
+    expect(stream.get('a')()).toEqual({ id: 'a', body: 'first' })
     expect(stream.latest()).toEqual({ id: 'b', body: 'second' })
     dispose()
   })
@@ -1343,7 +1343,7 @@ describe('collection mode', () => {
     await settle()
 
     expect(stream.ids()).toEqual(['a', 'b'])
-    expect(stream.get('a')?.()).toEqual({ id: 'a', body: 'edited' })
+    expect(stream.get('a')()).toEqual({ id: 'a', body: 'edited' })
     dispose()
   })
 
@@ -1367,8 +1367,8 @@ describe('collection mode', () => {
     expect(stream.ids()).toEqual(['3', '4', '5'])
     // `limit` evicts as messages arrive, so a key read from `ids` can be gone
     // by the time it is looked up. That has to report absence, not throw.
-    expect(stream.get('1')).toBeUndefined()
-    expect(stream.get('5')?.()).toEqual({ id: '5', body: 'm5' })
+    expect(stream.get('1')()).toBeUndefined()
+    expect(stream.get('5')()).toEqual({ id: '5', body: 'm5' })
     dispose()
   })
 
@@ -1391,7 +1391,7 @@ describe('collection mode', () => {
     await settle()
 
     expect(stream.ids()).toEqual(['5', '4', '3'])
-    expect(stream.get('1')).toBeUndefined()
+    expect(stream.get('1')()).toBeUndefined()
     dispose()
   })
 
@@ -1459,7 +1459,7 @@ describe('collection mode', () => {
     // Rows from the room that was left would otherwise mix two sources into
     // one list.
     expect(stream.ids()).toEqual([])
-    expect(stream.get('a1')).toBeUndefined()
+    expect(stream.get('a1')()).toBeUndefined()
     expect(stream.latest()).toBeUndefined()
     dispose()
   })

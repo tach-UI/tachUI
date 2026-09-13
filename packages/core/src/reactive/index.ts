@@ -126,6 +126,7 @@ export {
   createSignalListControls,
   type SignalListControls,
   type SignalListKeyFn,
+  type SignalListOptions,
 } from './signal-list'
 
 // Theme management

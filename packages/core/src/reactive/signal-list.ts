@@ -37,6 +37,25 @@ export type SignalListKeyFn<T, K extends PropertyKey = PropertyKey> = (
   item: T
 ) => K
 
+/** Options for a fine-grained reactive list. */
+export interface SignalListOptions {
+  /**
+   * How many accessors handed out by `track` are kept alive after their row
+   * leaves the list. Defaults to 256.
+   *
+   * `track` returns a stable accessor, which means the list has to hold the
+   * row's signal after the row is gone — otherwise a consumer that is still
+   * holding one would never hear about the row coming back. That store cannot
+   * grow forever, so it is bounded and least-recently-used entries are dropped.
+   *
+   * The cost of the bound is precise: an accessor whose key is evicted keeps
+   * reading `undefined` even if the row returns, because the row returns into a
+   * new signal. Raise it for a list that churns through keys a consumer may ask
+   * for again; lower it for one that never revisits a key.
+   */
+  trackedKeys?: number
+}
+
 export interface SignalListControls<T, K extends PropertyKey = PropertyKey> {
   /**
    * Get array of item keys/IDs. Track this in components to know which items exist.
@@ -54,8 +73,25 @@ export interface SignalListControls<T, K extends PropertyKey = PropertyKey> {
   /**
    * Get reactive getter for a specific item by key.
    * Returns a function that reactively returns the current item data.
+   *
+   * Throws for a key the list does not hold. Use {@link SignalListControls.track}
+   * when the key may be absent now, or may leave and come back.
    */
   get: (key: K) => () => T
+
+  /**
+   * A stable reactive accessor for a key, whether or not the list holds it.
+   *
+   * Differs from `get` in three ways that matter to a consumer rendering one
+   * row. It never throws, reading `undefined` for a key that is not held. It
+   * subscribes to *that key alone*, so a row is told when it arrives, changes,
+   * or leaves, and is told nothing when the rest of the list changes around it.
+   * And it is the same accessor across a key leaving and returning, so a row
+   * dropped by a bound and re-fetched is not orphaned.
+   *
+   * The retained accessors are bounded — see {@link SignalListOptions.trackedKeys}.
+   */
+  track: (key: K) => () => T | undefined
 
   /**
    * Update a single item by key. Only triggers reactive updates for that item.
@@ -115,10 +151,79 @@ export interface SignalListControls<T, K extends PropertyKey = PropertyKey> {
  */
 export function createSignalList<T, K extends PropertyKey = PropertyKey>(
   initialItems: T[],
-  keyFn: SignalListKeyFn<T, K>
+  keyFn: SignalListKeyFn<T, K>,
+  options: SignalListOptions = {}
 ): [() => T[], SignalListControls<T, K>] {
-  // Map of key -> [getter, setter] for each item's signal
-  const itemSignals = new Map<K, [() => T, (value: T) => void]>()
+  // Map of key -> [getter, setter] for each item's signal. A cell outlives its
+  // row only when someone tracked the key; see `tombstones`.
+  const itemSignals = new Map<
+    K,
+    [() => T | undefined, (value: T | undefined) => void]
+  >()
+
+  /**
+   * Keys that are tracked but no longer held, in least-recently-used order.
+   *
+   * A Map iterates in insertion order, so re-inserting a key moves it to the
+   * end and the front is always the least recently touched.
+   */
+  const tombstones = new Map<K, true>()
+  /** Keys the list currently holds a row for. */
+  const present = new Set<K>(initialItems.map(keyFn))
+  const trackedKeys = options.trackedKeys ?? 256
+
+  /** Marks a tracked-but-absent key as most recently used. */
+  const touch = (key: K): void => {
+    if (tombstones.delete(key)) {
+      tombstones.set(key, true)
+    }
+  }
+
+  /** Drops the least recently used tombstones until the bound is met. */
+  const evictTombstones = (): void => {
+    while (tombstones.size > trackedKeys) {
+      const oldest = tombstones.keys().next()
+      if (oldest.done === true) {
+        return
+      }
+      tombstones.delete(oldest.value)
+      itemSignals.delete(oldest.value)
+    }
+  }
+
+  /** The cell for a key, created empty if there is none. */
+  const cellFor = (
+    key: K
+  ): [() => T | undefined, (value: T | undefined) => void] => {
+    const existing = itemSignals.get(key)
+    if (existing !== undefined) {
+      return existing
+    }
+    const made = createSignal<T | undefined>(undefined)
+    itemSignals.set(key, made)
+    return made
+  }
+
+  /** Keys anyone has ever tracked, so removal knows whether to keep the cell. */
+  const trackedEver = new Set<K>()
+
+  /**
+   * Lets go of a key's row, keeping the cell alive if anyone tracked it.
+   *
+   * Writing `undefined` rather than deleting is what makes a tracked accessor
+   * both stable and reactive: the holder is told the row left, and is still
+   * subscribed if it comes back.
+   */
+  const release = (key: K): void => {
+    if (!tombstones.has(key) && !trackedEver.has(key)) {
+      itemSignals.delete(key)
+      return
+    }
+    itemSignals.get(key)?.[1](undefined)
+    tombstones.delete(key)
+    tombstones.set(key, true)
+    evictTombstones()
+  }
 
   // Signal for the array of keys (tracks list structure)
   // Use a custom setter that checks array equality before updating
@@ -155,27 +260,38 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
 
   // Initialize signals for all items
   initialItems.forEach(item => {
-    const key = keyFn(item)
-    itemSignals.set(key, createSignal(item))
+    cellFor(keyFn(item))[1](item)
   })
 
   // Get reactive getter for a specific item
   const get = (key: K): (() => T) => {
     const signal = itemSignals.get(key)
-    if (!signal) {
+    if (!signal || tombstones.has(key)) {
       throw new Error(`SignalList: Item with key "${String(key)}" not found`)
     }
-    return signal[0]
+    return signal[0] as () => T
+  }
+
+  const track = (key: K): (() => T | undefined) => {
+    trackedEver.add(key)
+    const cell = cellFor(key)
+    if (!present.has(key)) {
+      // A key asked for before its row exists is a tombstone from the start:
+      // it has to be held, and it has to be subject to the same bound.
+      tombstones.set(key, true)
+      evictTombstones()
+    }
+    touch(key)
+    return cell[0]
   }
 
   // Update a single item
   const update = (key: K, item: T): void => {
-    const signal = itemSignals.get(key)
-    if (signal) {
-      signal[1](item)
-    } else {
-      // Create new signal if doesn't exist
-      itemSignals.set(key, createSignal(item))
+    const known = present.has(key)
+    tombstones.delete(key)
+    present.add(key)
+    cellFor(key)[1](item)
+    if (!known) {
       // Add to IDs array - use peek() to avoid tracking
       const currentIds = peekIds()
       setIds([...currentIds, key])
@@ -192,20 +308,16 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
     // Update existing items and create new ones
     items.forEach(item => {
       const key = keyFn(item)
-      const signal = itemSignals.get(key)
-      if (signal) {
-        // Update existing item signal
-        signal[1](item)
-      } else {
-        // Create new item signal
-        itemSignals.set(key, createSignal(item))
-      }
+      tombstones.delete(key)
+      present.add(key)
+      cellFor(key)[1](item)
     })
 
     // Remove items that no longer exist
     currentKeys.forEach((key: K) => {
       if (!newKeySet.has(key)) {
-        itemSignals.delete(key)
+        present.delete(key)
+        release(key)
       }
     })
 
@@ -219,7 +331,7 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
   }
 
   const readItemValue = (key: K, shouldTrack: boolean): T | null => {
-    const signal = itemSignals.get(key)
+    const signal = present.has(key) ? itemSignals.get(key) : undefined
     if (!signal) return null
     const getter = signal[0] as (() => T) & { peek?: () => T }
     if (!getter) return null
@@ -234,13 +346,17 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
 
   // Clear all items
   const clear = (): void => {
-    itemSignals.clear()
+    for (const key of [...present]) {
+      present.delete(key)
+      release(key)
+    }
     setIds([])
   }
 
   // Remove a specific item
   const remove = (key: K): void => {
-    itemSignals.delete(key)
+    present.delete(key)
+    release(key)
     // Use peek() to avoid tracking
     const currentIds = peekIds()
     setIds(currentIds.filter((k: K) => k !== key))
@@ -248,7 +364,7 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
 
   const reorder = (newIds: K[]): void => {
     // Ensure all provided ids exist before reordering
-    const allExist = newIds.every(id => itemSignals.has(id))
+    const allExist = newIds.every(id => present.has(id))
     if (!allExist) {
       throw new Error('[SignalList.reorder] Cannot reorder with unknown ids')
     }
@@ -279,6 +395,7 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
     {
       ids: getIds,
       get,
+      track,
       update,
       set,
       clear,
@@ -295,8 +412,9 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
  */
 export function createSignalListControls<T, K extends PropertyKey = PropertyKey>(
   initialItems: T[],
-  keyFn: SignalListKeyFn<T, K>
+  keyFn: SignalListKeyFn<T, K>,
+  options: SignalListOptions = {}
 ): SignalListControls<T, K> {
-  const [, controls] = createSignalList<T, K>(initialItems, keyFn)
+  const [, controls] = createSignalList<T, K>(initialItems, keyFn, options)
   return controls
 }

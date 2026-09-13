@@ -615,8 +615,11 @@ export function createAsyncStreamList<
 
   return {
     ids: createMemo<readonly K[]>(() => controls.ids()),
-    get: (itemKey) =>
-      retained.has(itemKey) ? controls.get(itemKey) : undefined,
+    // Tracked rather than looked up, for the reason the pagination list gives:
+    // a row subscribes to itself, so it hears about its own arrival, edit and
+    // eviction and nothing else, and the accessor survives `limit` evicting a
+    // key that later returns.
+    get: (itemKey) => controls.track(itemKey),
     latest: createMemo(() => latest()),
     status: createMemo(() => connection.status()),
     error: createMemo(() => connection.error()),

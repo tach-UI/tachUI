@@ -636,12 +636,16 @@ export type ListModeRequiresItemKey = Assert<
 >
 
 /**
- * `get` is partial. `limit` evicts as messages arrive, so a key taken from
- * `ids()` can already be gone by the time it is looked up, and a total signature
- * would leave the consumer no branch to write.
+ * A row accessor answers whether or not the row is held.
+ *
+ * It used to be the accessor that went missing, which made the absence
+ * something a consumer had to re-ask about rather than something it was told.
  */
 export type StreamGetIsPartial = Assert<
-  Equals<ReturnType<AsyncStreamListResult<Message, string>['get']>, (() => Message) | undefined>
+  Equals<
+    ReturnType<AsyncStreamListResult<Message, string>['get']>,
+    () => Message | undefined
+  >
 >
 
 
@@ -965,11 +969,15 @@ export type InfiniteListMaxPagesWithPreviousAccepted = Assert<
   >
 >
 
-/** A key the list does not hold has no accessor, so the absence is in the type. */
-export type InfiniteListGetIsOptional = Assert<
+/**
+ * A key the list does not hold still has an accessor; the absence is in the
+ * value, where a consumer is told about it, rather than in the lookup, where it
+ * could only be discovered by asking again.
+ */
+export type InfiniteListGetIsReactive = Assert<
   Equals<
     ReturnType<InfiniteQueryListResult<Message, string>['get']>,
-    (() => Message) | undefined
+    () => Message | undefined
   >
 >
 
