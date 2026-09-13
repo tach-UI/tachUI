@@ -117,3 +117,32 @@ A further round, each reproduced first:
 - `initialPageParam` is validated at construction, beside `maxPages`, rather
   than per execution inside the loaders, so a configuration mistake throws where
   it was written instead of arriving as an async error state.
+
+A re-review round, each reproduced first:
+
+- An observation taken to read or mark an entry and released immediately counted
+  as the last observer leaving, and took any request in flight with it: a
+  four-page prefetch came back as one page, reporting success. Such a release
+  now keeps the flight. A run stopped by an abort throws rather than resolving
+  with the pages it happened to reach.
+- Waiting for an in-flight execution dispatched a reload in order to have
+  something to wait on, so a next-page and a previous-page call in the same tick
+  refetched the whole set between them. Waiting is now a wait.
+- A superseded run kept issuing the requests it had left. Invalidating a
+  four-page reload mid-run issued eight requests, the abandoned run interleaved
+  with its replacement; superseded flights are aborted, not merely unhooked.
+- `fetchNextPage` on a gated query did nothing: the guard asked the observer
+  where its set ended, and a gated observer publishes none.
+- The imperative fetch shared its execution name with an observer's reload, so a
+  prefetch could be handed a reload's outcome.
+- The page bound is read from the entry being written rather than from an
+  observer that may hold none, a refetch brings an over-cap set back under it,
+  and an invalid bound is refused before an entry carrying it is seated.
+- `prefetchQueries` discriminates on `getNextPageParam`, which an infinite
+  request cannot omit and a plain one has nowhere to put — `initialPageParam`
+  presence was defeated by a plain request carrying the key explicitly set to
+  `undefined`.
+- In core: the tracked-accessor register is ordered by access rather than by
+  removal, evicted entries are dropped from it, a reorder must be a permutation
+  of what is held, `trackedKeys` is validated, and reading a row that is on
+  screen mutates nothing.

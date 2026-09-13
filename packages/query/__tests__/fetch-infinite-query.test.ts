@@ -278,3 +278,79 @@ describe('telling a plain request from an infinite one', () => {
     client.dispose()
   })
 })
+
+describe('a prefetch nothing else is waiting on', () => {
+  it('is not truncated by an observation taken and released beside it', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    const prefetched = client.fetchInfiniteQuery<Page, number>({
+      key: () => ['feed'],
+      load: async ({ pageParam }) => {
+        asked.push(pageParam)
+        await new Promise((resolve) => setTimeout(resolve, 5))
+        return {
+          items: [`item-${pageParam}`],
+          next: pageParam + 1 < 9 ? pageParam + 1 : undefined,
+        }
+      },
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      pages: 4,
+    })
+
+    // Taken to read and mark the entry, then released immediately — which
+    // counted as the last observer leaving and took the prefetch with it. The
+    // four-page run came back as one page, reporting success.
+    const transient = client.observe(['feed'])
+    transient.release({ keepInFlight: true })
+
+    const set = await prefetched
+    expect(set.pages).toHaveLength(4)
+    expect(asked).toEqual([0, 1, 2, 3])
+    client.dispose()
+  })
+
+  it('does not join work that is not its own', async () => {
+    const client = createQueryClient()
+    const asked: string[] = []
+    let fail!: (reason: unknown) => void
+
+    // Something else holds the slot for this key, under the name a query uses
+    // for loading itself.
+    void client
+      .fetchQuery({
+        key: () => ['feed'],
+        load: () => {
+          asked.push('other')
+          return new Promise((_resolve, reject) => {
+            fail = reject
+          })
+        },
+      })
+      .catch(() => undefined)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const prefetched = client.fetchInfiniteQuery<Page, number>({
+      key: () => ['feed'],
+      load: async ({ pageParam }) => {
+        asked.push(`infinite:${pageParam}`)
+        return {
+          items: [`item-${pageParam}`],
+          next: pageParam + 1 < 3 ? pageParam + 1 : undefined,
+        }
+      },
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      pages: 3,
+    })
+
+    fail(new Error('the other load failed'))
+    const set = await prefetched
+
+    // Sharing one name for both handed this caller the other's outcome. Named
+    // apart, it queues and then runs the run it actually asked for.
+    expect(set.pages).toHaveLength(3)
+    expect(asked).toEqual(['other', 'infinite:0', 'infinite:1', 'infinite:2'])
+    client.dispose()
+  })
+})

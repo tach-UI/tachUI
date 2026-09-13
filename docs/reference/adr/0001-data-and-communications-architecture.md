@@ -111,9 +111,13 @@ would silently break any communications layer built on top of them.
 26. A refetch reloads the pages currently held, in sequence from the first held param,
     stopping early when the source says there are no more. The set swaps in one write, so
     the pages on screen are never a mixture of two loads.
-27. `maxPages` requires `getPreviousPageParam`, in the type rather than in prose: a cap that
-    drops pages from the far end without a way to ask for the page before the new head makes
-    what it dropped unrecoverable.
+27. `maxPages` is a property of the set, claimed on the entry like `staleTime` and `gcTime`,
+    first definer winning. The entry is shared and a trim is shared with it, so a cap applied
+    per observer truncated sets other observers never bounded. The type still pairs `maxPages`
+    with `getPreviousPageParam` on the options that declare one — a cap whose head cannot be
+    re-fetched makes what it dropped unrecoverable — but an observer that declares neither
+    inherits the claimed bound, and should supply `getPreviousPageParam` if it means to scroll
+    back through a key someone else has capped.
 28. `isFetchingNextPage` and `isFetchingPreviousPage` are per observer, not per entry. Two
     observers share the entry and both see `isFetching`; only the one that asked for the page
     sees the direction.

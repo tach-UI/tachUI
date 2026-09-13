@@ -285,6 +285,7 @@ export type QueryObservationMembers = Assert<
     | 'clearReloadMark'
     | 'entry'
     | 'inFlightIntent'
+    | 'whenSettled'
     | 'markForReload'
     | 'abortInFlight'
     | 'consumeHydrationGrace'
@@ -354,7 +355,13 @@ export type AsyncStreamListResultMembers = Assert<
 export type AsyncStreamListOptionsMembers = Assert<
   Equals<
     keyof AsyncStreamListOptions<Message, string>,
-    'key' | 'open' | 'autoConnect' | 'itemKey' | 'limit' | 'insert'
+    | 'key'
+    | 'open'
+    | 'autoConnect'
+    | 'itemKey'
+    | 'limit'
+    | 'insert'
+    | 'trackedRows'
   >
 >
 

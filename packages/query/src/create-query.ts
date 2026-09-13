@@ -74,6 +74,15 @@ export interface InternalLoadContext<TRaw> extends QueryLoadContext {
    * path exists to prevent, one level up.
    */
   readonly withRetry: <T>(work: () => Promise<T>) => Promise<T>
+  /**
+   * The policy claimed on the entry being written.
+   *
+   * Sourced here for the same reason `held` is: the first load runs
+   * synchronously inside `createQueryInternals`, so a loader cannot reach back
+   * through anything it returns, and a gated observer holds no observation to
+   * read a policy through at all.
+   */
+  readonly policy: CacheEntryPolicy | undefined
 }
 
 /**
@@ -243,6 +252,10 @@ export interface QueryInternals<TRaw, TData, E> {
   readonly isFetchingNow: () => boolean
   /** Names the execution in flight for the observed entry, if any. */
   readonly inFlightIntent: () => string | undefined
+  /** Resolves when the observed entry's current execution is over. */
+  readonly whenSettled: () => Promise<void>
+  /** The policy claimed on the entry being observed, or nothing. */
+  readonly entryPolicy: () => CacheEntryPolicy | undefined
   /** The entry's claimed policy, or nothing while not observing one. */
   readonly policy: () => CacheEntryPolicy | undefined
   /**
@@ -338,6 +351,17 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     }
   }
 
+  /** An observation's claimed policy, or nothing if the client went away. */
+  function readEntryPolicy(
+    from: QueryObservation
+  ): CacheEntryPolicy | undefined {
+    try {
+      return from.entry().options
+    } catch {
+      return undefined
+    }
+  }
+
   /** An observation's entry value, or nothing if the client went away. */
   function readEntryData(from: QueryObservation): TRaw | undefined {
     try {
@@ -375,7 +399,8 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     resolvedKey: QueryKey,
     signal: AbortSignal,
     intent: QueryLoadIntent<TRaw> | undefined,
-    heldFrom: () => TRaw | undefined
+    heldFrom: () => TRaw | undefined,
+    policyFrom: () => CacheEntryPolicy | undefined
   ): Promise<TRaw> {
     // The intent is bound into this closure rather than read from somewhere
     // shared, so a retry re-runs the same one: an append that failed and
@@ -388,6 +413,7 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
         signal,
         key: resolvedKey,
         held: heldFrom(),
+        policy: policyFrom(),
         withRetry: (work) => withRetry(work, signal),
       })
     // A loader that retries internally has already placed the policy where it
@@ -429,11 +455,12 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     if (held !== undefined) {
       const watching = held
       const heldFrom = () => readEntryData(watching)
+      const policyFrom = () => readEntryPolicy(watching)
       if (watching.entry().fetchStatus === 'fetching') {
         // Already loading: joining that execution is what the caller wants.
         // Marking first would detach it and start a second loader alongside,
         // so one refetch would cost two requests.
-        return fetch(resolvedKey, heldFrom, intent, intentKey, true)
+        return fetch(resolvedKey, heldFrom, policyFrom, intent, intentKey, true)
       }
       markingOwnReload = true
       try {
@@ -444,11 +471,16 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       } finally {
         markingOwnReload = false
       }
-      return fetch(resolvedKey, heldFrom, intent, intentKey, true)
+      return fetch(resolvedKey, heldFrom, policyFrom, intent, intentKey, true)
     }
     // No observation of this key: take one just long enough to mark the
     // entry, which is also what creates it if the cache has never held it.
-    const transient = client.observe(resolvedKey)
+    const transient = client.observe(resolvedKey, undefined, {
+      staleTime: options.staleTime,
+      gcTime: options.gcTime,
+      snapshot: options.snapshot,
+      maxPages: options.maxPages,
+    })
     markingOwnReload = true
     try {
       if (transient.entry().fetchStatus !== 'fetching') {
@@ -463,7 +495,7 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       }
     } finally {
       markingOwnReload = false
-      transient.release()
+      transient.release({ keepInFlight: true })
     }
     // Read through the released observation's view, which still names the same
     // entry: what the loader needs is the entry's own value, and this observer
@@ -471,6 +503,7 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     return fetch(
       resolvedKey,
       () => readEntryData(transient),
+      () => readEntryPolicy(transient),
       intent,
       intentKey,
       true
@@ -480,6 +513,7 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
   function fetch(
     resolvedKey: QueryKey,
     heldFrom: () => TRaw | undefined,
+    policyFrom: () => CacheEntryPolicy | undefined,
     intent?: QueryLoadIntent<TRaw>,
     intentKey: string = OWN_LOADER,
     force = false
@@ -500,10 +534,11 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       isAbandoned: () => disposed || cancellations !== dispatchedAt,
       key: () => resolvedKey,
       load: ({ signal, key: loadingKey }) =>
-        runLoad(loadingKey, signal, intent, heldFrom),
+        runLoad(loadingKey, signal, intent, heldFrom, policyFrom),
       staleTime: options.staleTime,
       gcTime: options.gcTime,
       snapshot: options.snapshot,
+      maxPages: options.maxPages,
       client,
     })
   }
@@ -564,9 +599,11 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       // Deliberately not "status is idle": cancel() leaves the entry idle too,
       // and restarting the request a caller just cancelled is the opposite of
       // what they asked for.
-      void fetch(resolvedKey, () => readEntryData(current)).catch(
-        () => undefined
-      )
+      void fetch(
+        resolvedKey,
+        () => readEntryData(current),
+        () => readEntryPolicy(current)
+      ).catch(() => undefined)
       return
     }
 
@@ -677,7 +714,11 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       // `error`; nothing is left to catch it at the call site.
       void (
         untrack(() => state().status) === 'idle'
-          ? fetch(resolvedKey, () => readEntryData(current))
+          ? fetch(
+              resolvedKey,
+              () => readEntryData(current),
+              () => readEntryPolicy(current)
+            )
           : forceFetch(resolvedKey)
       ).catch(() => undefined)
     }
@@ -804,7 +845,9 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       try {
         transient.abortInFlight()
       } finally {
-        transient.release()
+        // The abort above is the whole point of this observation; releasing it
+        // must not repeat that against whatever starts next.
+        transient.release({ keepInFlight: true })
       }
     },
     dispose: () => {
@@ -827,6 +870,38 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       }
       try {
         return observation.entry().options
+      } catch {
+        return undefined
+      }
+    },
+    whenSettled: async () => {
+      if (observation === undefined) {
+        return
+      }
+      try {
+        await observation.whenSettled()
+      } catch {
+        // The client went away while waiting; there is nothing left to wait on.
+      }
+    },
+    entryPolicy: () => {
+      const resolvedKey = untrack(key)
+      if (observation !== undefined) {
+        try {
+          return observation.entry().options
+        } catch {
+          return undefined
+        }
+      }
+      // Gated, or between keys: the entry is still the authority on a policy
+      // claimed for it, and this observer may hold none of its own.
+      try {
+        const transient = client.observe(resolvedKey)
+        try {
+          return transient.entry().options
+        } finally {
+          transient.release({ keepInFlight: true })
+        }
       } catch {
         return undefined
       }
