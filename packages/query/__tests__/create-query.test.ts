@@ -1223,3 +1223,70 @@ describe('refetch without an observation', () => {
     dispose()
   })
 })
+
+describe('losing interest in a request', () => {
+  it('cancels a gated query’s own in-flight refetch', async () => {
+    const client = createQueryClient()
+    const aborted: string[] = []
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['gated'],
+        // Explicitly supported: a gated query never fetches on its own but can
+        // still be refetched on demand.
+        enabled: false,
+        load: ({ signal }) => {
+          signal.addEventListener('abort', () => aborted.push('gated'))
+          return new Promise<string>(() => {
+            // never settles: the abort is what ends it
+          })
+        },
+        client,
+      })
+    )
+    await settle()
+
+    void value.refetch().catch(() => undefined)
+    await settle()
+    value.cancel()
+
+    // There is no observation to abort through when the gate is shut, so this
+    // used to be a no-op for the very request it was asked to stop.
+    expect(aborted).toEqual(['gated'])
+    dispose()
+    client.dispose()
+  })
+
+  it('does not discard an invalidation that landed while it was fetching', async () => {
+    const client = createQueryClient()
+    const { value, dispose } = withOwner(() =>
+      createQuery<string>({
+        key: () => ['users'],
+        // Gated, so the observer never reloads on its own and the mark on the
+        // entry is the only thing under test.
+        enabled: false,
+        load: () =>
+          new Promise<string>(() => {
+            // never settles: the cancel is what ends it
+          }),
+        client,
+      })
+    )
+    await settle()
+
+    void value.refetch().catch(() => undefined)
+    await settle()
+
+    // A prefix invalidation marks the entry again while this observer's own
+    // mark is still outstanding.
+    client.invalidate(['users'])
+    value.cancel()
+    await settle()
+
+    // The cancel undoes its own mark and leaves the invalidation's alone: the
+    // entry is still owed a reload. Tracking only "I marked something" threw
+    // someone else's reload away with it.
+    expect(inspectQueryEntry(client, ['users'])?.invalidated).toBe(true)
+    dispose()
+    client.dispose()
+  })
+})

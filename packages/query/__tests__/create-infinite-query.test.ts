@@ -461,6 +461,62 @@ describe('an append racing something else', () => {
   })
 })
 
+describe('a request queued behind another', () => {
+  it('does not start after the caller cancels it', async () => {
+    const client = createQueryClient()
+    const asked: string[] = []
+    let release!: (page: Page) => void
+    let holding = false
+    const request = (who: string) => ({
+      key: () => ['feed'],
+      load: ({ pageParam }: { pageParam: number }) => {
+        asked.push(`${who}:${pageParam}`)
+        return holding
+          ? new Promise<Page>((resolve) => {
+              release = resolve
+            })
+          : pages(9)({ pageParam })
+      },
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      client,
+    })
+    const appender = withOwner(() =>
+      createInfiniteQuery<Page, number>(request('appender'))
+    )
+    const refresher = withOwner(() =>
+      createInfiniteQuery<Page, number>(request('refresher'))
+    )
+    await settle()
+    asked.length = 0
+
+    holding = true
+    const appended = appender.value.fetchNextPage()
+    await settle()
+
+    // A refetch is different work from an append, so it queues rather than
+    // being handed the append's result.
+    const queued = refresher.value.refetch()
+    await settle()
+    expect(asked).toEqual(['appender:1'])
+
+    refresher.value.cancel()
+    await expect(queued).rejects.toThrow('cancelled while queued')
+
+    // Queuing is the one window where a caller can be cancelled after
+    // dispatching and before its loader runs. Nothing of the refresher's ran.
+    expect(asked.filter((call) => call.startsWith('refresher'))).toEqual([])
+
+    // Left pending deliberately: disposing the client aborts it, and settling
+    // it here would race the appender's own reload for the same handle.
+    void appended.catch(() => undefined)
+    void release
+    refresher.dispose()
+    appender.dispose()
+    client.dispose()
+  })
+})
+
 describe('two observers of one key', () => {
   it('join a next-page request instead of loading two pages', async () => {
     const client = createQueryClient()

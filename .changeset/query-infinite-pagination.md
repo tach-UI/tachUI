@@ -27,10 +27,13 @@ racing it. `maxPages` trims from the end opposite the one that grew, so
 both see `isFetching`, only the one that asked sees the direction.
 
 `createInfiniteQueryList` projects that into `createSignalList`, so an append
-creates row signals only for the new rows and a refetch writes only the rows
-whose data changed. `ids` is rewritten only when membership changes, and a key
-that repeats across pages updates the row it already has rather than adding a
-second one with the same identity.
+creates row signals only for the new rows and leaves the rows already on screen
+untouched. A refetch writes every row and the signals discard the writes that
+changed nothing, so "only what changed notifies" holds as far as the source's
+row identities are stable — a loader that rebuilds equal-but-new objects
+notifies every row. `ids` is rewritten when membership or order changes, and a
+key that repeats across pages updates the row it already has rather than adding
+a second one with the same identity.
 
 Two fixes fell out of building it. `markForReload` notifies synchronously, and
 every observer reloads what it finds marked and idle — so the notification could
@@ -94,3 +97,23 @@ Three more from review, each reproduced first:
   the public policy path, and the next append spliced the whole set away and
   left it successful, empty and unextendable. The bound is validated where it is
   claimed, so every path that can set one is covered.
+
+A further round, each reproduced first:
+
+- A request that queued behind a different execution started anyway when its
+  caller cancelled or disposed while it waited — the cousin of the cancel
+  finding, reintroduced by the dedup fix. Queuing is the one window where a
+  caller can be cancelled after dispatch and before its loader runs, so that is
+  where the check goes. A queued caller also stops waiting when the execution
+  ahead is abandoned, rather than waiting on a loader that is not obliged to
+  settle once aborted.
+- A reload mark is named rather than remembered. The observer tracked "I marked
+  something", which could not tell its own mark from a prefix invalidation that
+  landed in between — so a cancel discarded someone else's reload — and did not
+  record marks set through the transient path at all.
+- `cancel()` on a gated query reached nothing: there is no observation to abort
+  through when the gate is shut, so the refetch it was asked to stop kept
+  running.
+- `initialPageParam` is validated at construction, beside `maxPages`, rather
+  than per execution inside the loaders, so a configuration mistake throws where
+  it was written instead of arriving as an async error state.

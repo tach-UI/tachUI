@@ -299,16 +299,29 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
   let observing: string | null | undefined
   let disposed = false
   /**
-   * Whether this observer marked the entry for reload and has not seen that
-   * mark consumed.
+   * The reload mark this observer set, if it still owns one.
    *
    * `cancel()` has to undo it. `detachFlight` clears `fetchStatus` without
    * clearing the mark, so the abort's own notification finds the entry marked
    * and idle and starts the reload nobody asked for — for an infinite query,
    * a sequential reload of every page held, which is the opposite of what
    * "stop" means.
+   *
+   * The mark is named rather than merely remembered, and the clear goes through
+   * the observation that set it. A boolean could only say "I marked something":
+   * it could not tell a mark on the key this observer watches now from one it
+   * set on a key it has since left, and it would happily discard a prefix
+   * invalidation that arrived in between.
    */
-  let markedReload = false
+  let ownedMark:
+    | { readonly clear: (token: number) => void; readonly token: number }
+    | undefined
+
+  /**
+   * Counts cancellations, so a request left queued behind another execution can
+   * tell it was abandoned before it ever started.
+   */
+  let cancellations = 0
   /**
    * Fires when the current value ages out of its freshness window.
    *
@@ -424,8 +437,10 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       }
       markingOwnReload = true
       try {
-        watching.markForReload()
-        markedReload = true
+        ownedMark = {
+          clear: watching.clearReloadMark,
+          token: watching.markForReload(),
+        }
       } finally {
         markingOwnReload = false
       }
@@ -437,7 +452,14 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     markingOwnReload = true
     try {
       if (transient.entry().fetchStatus !== 'fetching') {
-        transient.markForReload()
+        // Owned exactly as the watched branch's mark is. The observation is
+        // released immediately, but `clearReloadMark` closes over the entry, so
+        // a later cancel can still undo this one — which it could not when only
+        // the watched branch recorded what it had done.
+        ownedMark = {
+          clear: transient.clearReloadMark,
+          token: transient.markForReload(),
+        }
       }
     } finally {
       markingOwnReload = false
@@ -462,6 +484,10 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     intentKey: string = OWN_LOADER,
     force = false
   ): Promise<TRaw> {
+    // Captured per call: `cancel()` stops the work in flight, it does not
+    // retire the observer, so what matters is whether a cancellation happened
+    // after this particular dispatch.
+    const dispatchedAt = cancellations
     // Through the internal shape: `intent` is not a public option — no caller
     // outside this package produces one — but the client's own fetchQuery
     // reads it to tell one execution from another.
@@ -471,6 +497,7 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     return dispatch({
       intent: intentKey,
       force,
+      isAbandoned: () => disposed || cancellations !== dispatchedAt,
       key: () => resolvedKey,
       load: ({ signal, key: loadingKey }) =>
         runLoad(loadingKey, signal, intent, heldFrom),
@@ -750,20 +777,38 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       client.invalidate(untrack(key))
     },
     cancel: () => {
-      // The mark goes first. Aborting notifies, and an entry left marked and
+      // Counted before anything else, so a request still queued behind another
+      // execution finds this when it wakes and declines to start.
+      cancellations += 1
+      // The mark goes next. Aborting notifies, and an entry left marked and
       // idle is reloaded by whoever is watching it — so cancelling would
       // immediately restart the work it just stopped.
-      if (markedReload) {
-        markedReload = false
-        observation?.clearReloadMark()
+      if (ownedMark !== undefined) {
+        const held = ownedMark
+        ownedMark = undefined
+        held.clear(held.token)
       }
       // Aborts the request and keeps observing. Releasing would abort too,
       // but it also detaches the listener, freezing these signals wherever
       // they stood — a first fetch cancelled that way reads `loading` and
       // `fetching` forever.
-      observation?.abortInFlight()
+      if (observation !== undefined) {
+        observation.abortInFlight()
+        return
+      }
+      // Nothing observed — gated off, or between keys — and a gated query can
+      // still have been refetched on demand. Taking an observation just long
+      // enough to abort reaches that request; without it, cancel() on a gated
+      // query was a no-op for the very fetch it was asked to stop.
+      const transient = client.observe(untrack(key))
+      try {
+        transient.abortInFlight()
+      } finally {
+        transient.release()
+      }
     },
     dispose: () => {
+      cancellations += 1
       disposed = true
       observing = null
       clearFreshnessTimer()
