@@ -26,39 +26,18 @@ export default defineConfig({
       '**/node_modules/**',
       '**/packages/**/node_modules/**',
       '**/packages/**/benchmarks/**/*.spec.ts',
-      // Excluded from PR CI for speed. Everything below runs in one of the
-      // extended tiers instead — `bun run test:long`, `test:stress`,
-      // `test:memory-leaks` — which `.github/workflows/extended-tests.yml`
-      // runs nightly. A pattern removed here must be removed from that tier's
-      // config too, or the suite stops running anywhere (#229).
+      // Excluded from PR CI. What is left here is the stress tier and the
+      // CLI package, both of which run nightly through
+      // `.github/workflows/extended-tests.yml`. Removing a pattern here
+      // without adding it to that tier's config stops the suite running
+      // anywhere, which is how #229 happened.
+      //
+      // The slow integration and benchmark suites used to be excluded too,
+      // behind a `test:long` tier. Measured, they cost 9 seconds of a 34
+      // second run, so they gate every PR now instead — a tier nobody looks
+      // at is worth less than nine seconds.
       'packages/cli/', // has its own vitest config; the `cli` job runs it
-      '**/long-running-simulation.test.ts', // ~30s simulation tests
-      '**/stress-test.test.ts', // Future stress testing
-      '**/performance-regression.test.ts', // Future performance regression tests
-      // Exclude real-world integration tests (5000ms+ each)
-      '**/integration/real-world-auth.test.ts', // 8217ms - User authentication flow
-      '**/integration/real-world-dashboard.test.ts', // 4838ms + 4243ms - Dashboard tests
-      '**/integration/real-world-simple.test.ts', // 5051ms + 4960ms + 5550ms - Multiple flows
-      '**/integration/real-world-*.test.ts', // All real-world integration tests
-      // Exclude stress tests (2000ms+ each)
-      '**/*stress.test.ts', // All stress tests including modifiers stress tests
-      '**/elements/stress.test.ts', // 1486ms - Element stress tests
-      '**/appearance/stress.test.ts', // Appearance stress tests
-      '**/layout/overlay-stress.test.ts', // Overlay stress tests
-      // Exclude long-running simulation tests (2000-4000ms each)
-      '**/long-running-*.test.ts', // Long-running application simulations
-      '**/simulation*.test.ts', // Application simulation tests
-      // Exclude memory-intensive security tests that cause memory exhaustion
-      '**/security/malicious-plugin-detection.test.ts', // Memory-intensive malicious plugin tests
-      '**/security/sandbox-security.test.ts', // Memory-intensive sandbox tests
-      // Exclude benchmarking tests from CI
-      '**/performance/benchmark*.test.ts', // All benchmark performance tests
-      '**/performance/*benchmark*.test.ts', // Pattern for benchmark tests
-      '**/bundle-size-monitoring.test.ts', // Bundle size benchmarks
-      // Exclude flaky error recovery tests from CI
-      '**/integration/error-recovery.test.ts', // Flaky timing-sensitive error recovery tests
-      // Exclude flaky memory tests that depend on GC timing
-      '**/integration/foundation-demo.test.ts', // Memory leak tests with non-deterministic GC
+      '**/*stress.test.ts', // the stress tier; `test:stress` globs the same shape
       '.github/demos/**',
       'demos/**',
     ],
