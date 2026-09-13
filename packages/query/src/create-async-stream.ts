@@ -545,7 +545,9 @@ export function createAsyncStreamList<
 >(options: AsyncStreamListOptions<T, K>): AsyncStreamListResult<T, K, E> {
   assertRetentionBound(options.limit, 'limit')
   const prepend = options.insert === 'prepend'
-  const controls = createSignalListControls<T, K>([], options.itemKey)
+  const controls = createSignalListControls<T, K>([], options.itemKey, {
+    trackedKeys: options.trackedRows,
+  })
 
   const [latest, setLatest] = createSignal<T | undefined>(undefined)
   /**

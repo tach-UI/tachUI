@@ -27,10 +27,9 @@ import {
   assertPageParam,
   callPageParam,
   isEndOfSet,
-  isPageParamFault,
   loadPageRun,
 } from './pagination'
-import { createQueryInternals, shouldRetry } from './create-query'
+import { createQueryInternals } from './create-query'
 import type {
   InternalLoadContext,
   InternalQueryOptions,
@@ -144,8 +143,14 @@ export function createInfiniteQuery<
       ctx.signal,
       ctx.key,
       // At least one: a set that has never loaded, and one a previous run left
-      // empty, both still have a first page to fetch.
-      Math.max(held.pages.length, 1),
+      // empty, both still have a first page to fetch. Never more than the
+      // bound, so a set that is over it — claimed after the set grew, or
+      // lowered since — comes back under rather than reloading its excess
+      // forever.
+      Math.max(
+        Math.min(held.pages.length, ctx.policy?.maxPages ?? base.maxPages ?? Infinity),
+        1
+      ),
       held.pageParams.length > 0
         ? (held.pageParams[0] as TPageParam)
         : base.initialPageParam,
@@ -220,8 +225,9 @@ export function createInfiniteQuery<
 
       // The entry's bound, not this observer's. First declarer wins, the same
       // way `staleTime` and `gcTime` are claimed, so every observer of the key
-      // trims to one number.
-      const cap = internals.policy()?.maxPages ?? base.maxPages
+      // trims to one number — including an observer that is gated, or between
+      // keys, and so holds no observation to read a policy through.
+      const cap = ctx.policy?.maxPages ?? base.maxPages
       if (cap !== undefined && pages.length > cap) {
         // Trimmed from the end opposite the one that grew, which is what makes
         // `fetchPreviousPage` able to recover a head that an append dropped.
@@ -250,11 +256,12 @@ export function createInfiniteQuery<
     placeholderData: base.placeholderData,
     staleTime: base.staleTime,
     gcTime: base.gcTime,
-    // A param function that threw will throw again on identical input, so a
-    // retry spends the whole policy to arrive at the same error more slowly.
-    // Load failures still retry exactly as configured.
-    retry: (attempt: number, error: E) =>
-      !isPageParamFault(error) && shouldRetry(base.retry, attempt, error),
+    // Passed straight through. A page-param function that throws is never
+    // retried, but not because of a guard here: the retry wrapper goes around
+    // each `load` call, and the param functions are invoked outside it, so a
+    // fault escapes the policy by construction rather than by a check that has
+    // to be kept true.
+    retry: base.retry,
     retryDelay: base.retryDelay,
     snapshot: base.snapshot,
     client: base.client,
@@ -409,18 +416,22 @@ export function createInfiniteQuery<
           // The direction is reported while joining: this observer did ask for
           // the next page, and is waiting on one.
           setDirection(towards)
-          await internals.refetchWith(appendPage(towards), intentName(towards))
+          const joined = await internals.refetchWith(
+            appendPage(towards),
+            intentName(towards)
+          )
           settle({ ok: true })
-          return currentData()
+          return internals.project(joined)
         }
         // A refetch, or an append the other way. It has to land first:
         // appending onto a set that is about to be replaced would write pages
-        // the refresh has already superseded. Waiting joins that execution
-        // rather than cancelling it, so the refresh is not lost.
-        await internals.refetchWith().then(
-          () => undefined,
-          () => undefined
-        )
+        // the refresh has already superseded.
+        //
+        // Waited on, not dispatched. Asking for a reload in order to have
+        // something to wait for marks the entry and performs a refetch nobody
+        // requested — a next-page and a previous-page call in the same tick
+        // reloaded the whole set between them.
+        await internals.whenSettled()
       }
 
       if (stoodDown() || pending !== slot) {
@@ -430,7 +441,15 @@ export function createInfiniteQuery<
       }
 
       // Re-asked after the wait, against whatever the refresh left behind.
+      //
+      // Only when this observer has a set to ask about. A gated one never
+      // publishes data, and one that has just changed key publishes the
+      // previous key's — so a `false` here says nothing about the entry. The
+      // loader reads the entry itself and stops there if there is no page that
+      // way, which costs one dispatch and is the only answer that is true.
+      const knowsTheSet = untrack(internals.raw) !== undefined
       if (
+        knowsTheSet &&
         !untrack(() => (towards === 'forward' ? ends().next : ends().previous))
       ) {
         settle({ ok: true })
@@ -438,9 +457,16 @@ export function createInfiniteQuery<
       }
 
       setDirection(towards)
-      await internals.refetchWith(appendPage(towards), intentName(towards))
+      const loaded = await internals.refetchWith(
+        appendPage(towards),
+        intentName(towards)
+      )
       settle({ ok: true })
-      return currentData()
+      // Projects what this call loaded rather than reading published state
+      // afterwards, for the reason `refetch` gives: a gated observer publishes
+      // nothing at all, and returning `undefined` for a page that loaded would
+      // be a lie.
+      return internals.project(loaded)
     } catch (error) {
       settle({ ok: false, error })
       throw error

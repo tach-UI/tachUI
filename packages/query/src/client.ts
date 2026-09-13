@@ -118,6 +118,14 @@ export type InternalFetchQueryOptions<TRaw, TError = Error> =
      * be cancelled after dispatch and before its loader runs.
      */
     isAbandoned?: () => boolean
+    /**
+     * Retained page bound to claim on the entry, when the caller has one.
+     *
+     * Carried with the other policy values rather than left to whichever path
+     * happened to observe first: a fetch that seats an entry should claim the
+     * same bound an observation of it would.
+     */
+    maxPages?: number
   }
 
 /** An in-flight loader execution owned by the client root. */
@@ -379,6 +387,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       maxPages?: number
     }
   ): ClientCacheEntry {
+    // Before anything is built or seated. Checking only at claim time left a
+    // rejected entry in the map carrying the very bound that was refused.
+    assertPageCap(policy.maxPages, 'creating a cache entry')
     const entry: ClientCacheEntry = {
       key,
       hash,
@@ -728,11 +739,11 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
     // legitimately resolves `undefined` (a 204, an empty body, a "not found"
     // lookup) still populates the entry and must not refetch on every call.
     //
-    // Only for a query loading itself. A caller that supplied a loader for this
-    // one execution is asking for that loader to run; there is no cached answer
-    // to the question "append the next page".
+    // `force` is what says the cached value will not do. An observer that has
+    // decided to revalidate sets it, and so does an append — there is no cached
+    // answer to "append the next page". An imperative fetch does not, so a
+    // fresh set is still served as it stands.
     if (
-      requestedIntent === OWN_LOADER &&
       options.force !== true &&
       entry.status === 'success' &&
       !entry.invalidated
@@ -886,7 +897,16 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       // The set is one ordinary cache entry under the base key: dedup,
       // freshness, retention, dehydration and the generation guard all apply to
       // it exactly as they do to any other value.
-      return client.fetchQuery<InfiniteData<TPage, TPageParam>, E>({
+      return (
+        client.fetchQuery as (
+          o: InternalFetchQueryOptions<InfiniteData<TPage, TPageParam>, E>
+        ) => Promise<InfiniteData<TPage, TPageParam>>
+      )({
+        // Named for what it is, and for how many pages it wants. An observer's
+        // refetch reloads the pages it holds; this loads a fixed run from the
+        // front. Sharing `own` with the observer let a four-page prefetch be
+        // answered by a one-page reload that happened to be in flight.
+        intent: `fetch-infinite:${count}`,
         key: options.key,
         load: (ctx) =>
           loadPageRun(
@@ -912,14 +932,15 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       ensureUsable('prefetchQueries')
       await Promise.all(
         requests.map((request) =>
-          // `initialPageParam` is the discriminator, and it is declared absent
-          // on the plain shape so this narrowing is sound rather than a guess.
-          // Asked as presence, not as value: a cursor API's first page
-          // legitimately takes no cursor, and reading the value would route
-          // that infinite request to the plain fetch — caching a bare page
-          // object where the set belongs, for a later reader to trip over with
-          // an error pointing nowhere near the prefetch that caused it.
-          ('initialPageParam' in request
+          // `getNextPageParam` is the discriminator: an infinite request
+          // cannot omit it and a plain one has nowhere to put it. Presence of
+          // `initialPageParam` looked equivalent and is not — without
+          // `exactOptionalPropertyTypes` a plain request may carry the key
+          // explicitly set to `undefined`, which `in` reports as present, and
+          // the plain fetch would then be routed to the infinite one and
+          // rejected for a cursor it never meant to supply.
+          (typeof (request as { getNextPageParam?: unknown })
+            .getNextPageParam === 'function'
             ? client.fetchInfiniteQuery(
                 request as FetchInfiniteQueryOptions<any, any, any>
               )
@@ -999,10 +1020,10 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           // invalidate a perfectly fresh ['users', 1].
           entry.invalidated = true
           entry.generation += 1
-          if (entry.inFlight !== null) {
-            entry.inFlight = null
-            entry.fetchStatus = 'idle'
-          }
+          // Aborted rather than merely unhooked, for the reason invalidate()
+          // gives: the run this supersedes would otherwise keep issuing the
+          // requests it had left.
+          detachFlight(entry)
           scheduleEviction(entry)
           notify(entry)
           // The generation names this mark. Whoever set it can ask to undo it
@@ -1010,6 +1031,23 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           return entry.generation
         },
         inFlightIntent: () => entry.inFlight?.intent,
+        whenSettled: () => {
+          const running = entry.inFlight
+          if (running === null) {
+            return Promise.resolve()
+          }
+          // Resolves when the execution finishes *or* is abandoned: a loader is
+          // not obliged to settle once its signal aborts, and waiting on the
+          // promise alone would strand the caller behind a request that will
+          // never land.
+          return new Promise<void>(resolve => {
+            const proceed = (): void => resolve()
+            running.promise.then(proceed, proceed)
+            running.controller.signal.addEventListener('abort', proceed, {
+              once: true,
+            })
+          })
+        },
         clearReloadMark: (token: number) => {
           // Undoes a mark this observation set, without the notification a
           // mark carries. Only meaningful between marking and the reload
@@ -1029,7 +1067,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           entry.hydrationGrace = false
           return granted
         },
-        release: () => {
+        release: (releaseOptions?: { keepInFlight?: boolean }) => {
           // Idempotent: an owner may clean up more than once, and a second
           // release must not drive the count negative and retain the entry
           // forever.
@@ -1041,7 +1079,19 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             entry.listeners.delete(listener)
           }
           entry.observerCount -= 1
-          if (entry.observerCount === 0) {
+          if (entry.observerCount !== 0) {
+            return
+          }
+          if (releaseOptions?.keepInFlight === true) {
+            // This observation was never really an observer: it was taken to
+            // read or mark the entry and released immediately. Treating it as
+            // the last one leaving would abandon a request it did not start
+            // and nobody asked to stop — a four-page prefetch cut to one page
+            // and resolved, in the case that found this.
+            scheduleEviction(entry)
+            return
+          }
+          {
             // The last observer leaving takes any request it was waiting on
             // with it: nothing is left to receive the result, and a key
             // change must not leave the abandoned key loading. A shared
@@ -1066,16 +1116,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         if (isKeyPrefixMatch(prefixHashes, entry.segmentHashes)) {
           entry.invalidated = true
           entry.generation += 1
-          if (entry.inFlight !== null) {
-            // Detach the pre-invalidation flight: its waiter still settles,
-            // but it no longer blocks a fresh load, and the generation guard
-            // drops its stale outcome instead of un-invalidating the entry.
-            // `fetchStatus` mirrors the slot, so it goes idle here. The
-            // flight stays in the client-level set, so clear()/dispose()
-            // still abort it.
-            entry.inFlight = null
-            entry.fetchStatus = 'idle'
-          }
+          // Aborted, not merely unhooked. A detached run is superseded work,
+          // and a loader that performs several requests keeps performing them:
+          // a four-page set invalidated mid-reload issued eight requests, the
+          // abandoned run interleaved with its replacement. Its waiter is told
+          // rather than handed an outcome the generation guard has already
+          // dropped.
+          detachFlight(entry)
           scheduleEviction(entry)
           notify(entry)
         }

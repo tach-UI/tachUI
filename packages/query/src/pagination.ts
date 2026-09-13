@@ -156,10 +156,19 @@ export async function loadPageRun<TPage, TPageParam>(
   let pageParam: TPageParam | null | undefined = from
 
   for (let index = 0; index < count; index += 1) {
-    // Broken rather than thrown, so a partly loaded set still comes back as one
-    // value and the generation guard decides whether it lands — the same way
-    // the loop already handles a source that shortened.
-    if (isEndOfSet(pageParam) || signal.aborted) {
+    if (signal.aborted) {
+      // Thrown, not broken. A run stopped part way has not loaded the set it
+      // was asked for, and resolving with what it happened to reach hands the
+      // caller a short set that looks complete — a four-page prefetch that
+      // returns one page and reports success. The entry write is dropped by
+      // the generation guard either way; this is about the caller.
+      throw signal.reason instanceof Error
+        ? signal.reason
+        : new QueryError('the page run was aborted before it finished.')
+    }
+    // A source that has fewer pages than it did is not an error: stopping
+    // short is the answer.
+    if (isEndOfSet(pageParam)) {
       break
     }
     const param = pageParam as TPageParam

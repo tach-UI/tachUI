@@ -3,15 +3,21 @@
  *
  * The same relationship `createAsyncStreamList` has to `createAsyncStream`: the
  * primitive underneath produces a value, and this turns it into rows that each
- * own their signal. An append then creates signals for the new rows only, and a
- * refetch writes only the rows whose data actually changed — signal writes
- * compare by reference, and an append carries the pages it already held by
- * reference, so a list of a thousand rows costs one row write when one row
- * moves.
+ * own their signal. An append creates row signals only for the new rows, and the
+ * rows already on screen are not written at all, because an append carries the
+ * pages it already held by reference.
  *
- * `ids` is what a component tracks for structure. It is rewritten only when
- * membership changes, so growing the set re-renders the list once and editing a
- * row never does.
+ * A refetch writes every row it is given, and the signals discard the writes
+ * that changed nothing — they compare by reference. So "only the rows that
+ * changed notify" holds exactly as far as the source's row identities are
+ * stable: a loader returning the same objects for unchanged rows costs one
+ * notification when one row moves, and one that rebuilds equal-but-new objects
+ * notifies every row however little moved. That is the source's property, not
+ * this primitive's.
+ *
+ * `ids` is what a component tracks for structure, and it is rewritten when
+ * membership *or order* changes — a reorder is a structural change, since a
+ * list rendering from `ids` would otherwise show fresh rows in stale positions.
  */
 
 import {

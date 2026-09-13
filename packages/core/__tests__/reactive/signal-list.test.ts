@@ -198,3 +198,30 @@ describe('track', () => {
     expect(() => list.get(1)).toThrow('not found')
   })
 })
+
+describe('guards', () => {
+  it('refuses a reorder that is not a permutation of what is held', () => {
+    const [, list] = createSignalList(
+      [...makeItems(), { id: 3, label: 'Charlie' }],
+      item => item.id
+    )
+    const held = [...list.ids()]
+    // Short by one: every id given exists, so a one-directional check passed
+    // it — and the omitted key left `ids` while its row stayed in the list,
+    // present and addressable but unrenderable.
+    expect(() => list.reorder([held[1], held[0]])).toThrow('permutation')
+    expect(list.ids()).toEqual(held)
+
+    // A genuine permutation still goes through.
+    list.reorder([held[2], held[0], held[1]])
+    expect(list.ids()).toEqual([held[2], held[0], held[1]])
+  })
+
+  it('refuses a tracked-key bound that is not a whole count', () => {
+    expect(() =>
+      createSignalList([], (item: { id: number }) => item.id, {
+        trackedKeys: 2.5,
+      })
+    ).toThrow('trackedKeys must be a non-negative integer')
+  })
+})

@@ -1400,3 +1400,108 @@ describe('what it keeps from the observer beneath it', () => {
     client.dispose()
   })
 })
+
+describe('waiting without asking for work', () => {
+  it('does not reload the set just to have something to wait for', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) => {
+          asked.push(pageParam)
+          return pages(9)({ pageParam })
+        },
+        initialPageParam: 3,
+        getNextPageParam: nextParam,
+        getPreviousPageParam: previousParam,
+        client,
+      })
+    )
+    await settle()
+    asked.length = 0
+
+    // Both in one tick: the second parks behind the first.
+    const forward = value.fetchNextPage()
+    const backward = value.fetchPreviousPage()
+    await forward
+    await backward
+    await settle()
+
+    // Just the two pages asked for. Dispatching a reload in order to have a
+    // promise to wait on marked the entry and refetched the whole set between
+    // them.
+    expect(asked).toEqual([4, 2])
+    expect((value.data() as InfiniteData<Page, number>).pageParams).toEqual([
+      2, 3, 4,
+    ])
+    dispose()
+    client.dispose()
+  })
+
+  it('appends for a gated query, which never publishes a set of its own', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) => {
+          asked.push(pageParam)
+          return pages(9)({ pageParam })
+        },
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        // Gated: it fetches nothing on its own, and can still be driven.
+        enabled: false,
+        client,
+      })
+    )
+    await settle()
+    await value.refetch()
+    asked.length = 0
+
+    const set = (await value.fetchNextPage()) as InfiniteData<Page, number>
+
+    // The guard asked this observer where its set ended, and a gated observer
+    // publishes no set — so the answer was "nowhere" and the call did nothing.
+    expect(asked).toEqual([1])
+    expect(set.pageParams).toEqual([0, 1])
+    dispose()
+    client.dispose()
+  })
+
+  it('stops a run that has been superseded', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: async ({ pageParam }) => {
+          asked.push(pageParam)
+          await new Promise((resolve) => setTimeout(resolve, 5))
+          return pages(9)({ pageParam })
+        },
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+    await value.fetchNextPage()
+    await value.fetchNextPage()
+    await value.fetchNextPage()
+    asked.length = 0
+
+    void value.refetch().catch(() => undefined)
+    await new Promise((resolve) => setTimeout(resolve, 8))
+    client.invalidate(['feed'])
+    await new Promise((resolve) => setTimeout(resolve, 80))
+
+    // The superseded run stops where the invalidation found it rather than
+    // working through the pages it had left, interleaved with its replacement.
+    expect(asked.length).toBeLessThanOrEqual(6)
+    expect(asked.slice(-4)).toEqual([0, 1, 2, 3])
+    dispose()
+    client.dispose()
+  })
+})

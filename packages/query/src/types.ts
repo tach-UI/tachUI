@@ -596,6 +596,17 @@ export interface QueryObservation {
   inFlightIntent(): string | undefined
 
   /**
+   * Resolves when the entry's current execution is over, or immediately if
+   * there is none.
+   *
+   * Waiting, as distinct from asking for work. A caller that must let an
+   * execution finish before starting its own would otherwise have to dispatch
+   * something to wait on, which marks the entry and performs a reload nobody
+   * asked for.
+   */
+  whenSettled(): Promise<void>
+
+  /**
    * Ends the entry's in-flight request without giving up the observation.
    *
    * Releasing would do the aborting too, but it also detaches the observer,
@@ -622,7 +633,16 @@ export interface QueryObservation {
    * fires cancels it. Releasing twice is a no-op, so an owner may clean up
    * more than once.
    */
-  release(): void
+  release(options?: {
+    /**
+     * Keep any request in flight rather than taking it along.
+     *
+     * For an observation taken to read or mark an entry and released straight
+     * away: it was never really an observer, and treating it as the last one
+     * leaving abandons a request it did not start and nobody asked to stop.
+     */
+    keepInFlight?: boolean
+  }): void
 }
 
 /**
@@ -1023,6 +1043,15 @@ export interface AsyncStreamListOptions<T, K extends PropertyKey = PropertyKey>
   limit?: number
   /** Where new messages go. Defaults to 'append'. */
   insert?: 'append' | 'prepend'
+  /**
+   * How many rows stay addressable after leaving the list. Defaults to 256.
+   *
+   * `get` hands back a stable accessor, so the list holds a message's signal
+   * after `limit` evicts it — otherwise a consumer still rendering that row
+   * would never hear about the key arriving again. Raise it for a feed that
+   * revisits keys; lower it for one that never does.
+   */
+  trackedRows?: number
 }
 
 /**
