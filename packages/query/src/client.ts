@@ -879,10 +879,16 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       options: FetchInfiniteQueryOptions<TPage, TPageParam, E>
     ): Promise<InfiniteData<TPage, TPageParam>> {
       const count = options.pages ?? 1
+      let held: InfiniteData<TPage, TPageParam> | undefined
       try {
         ensureUsable('fetchInfiniteQuery')
         assertPageCount(count, 'fetchInfiniteQuery')
         assertPageParam(options.initialPageParam, 'fetchInfiniteQuery')
+        // What the cache holds for this key right now, if it is servable.
+        const cached = entries.get(hashQueryKey(options.key()))
+        if (cached?.status === 'success' && !cached.invalidated) {
+          held = cached.data as InfiniteData<TPage, TPageParam> | undefined
+        }
       } catch (error) {
         // Tagged like every other dispatch-phase failure, so `prefetchQueries`
         // surfaces it instead of swallowing it as a load failure. Warming a
@@ -890,6 +896,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // is not.
         throw markDispatchError(error)
       }
+      const shortfall = held !== undefined && held.pages.length < count
       // Through `client.fetchQuery` rather than the closure-local one, so a
       // decorated client's override is honoured here the way `prefetchQueries`
       // honours it two functions below.
@@ -907,6 +914,11 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         // front. Sharing `own` with the observer let a four-page prefetch be
         // answered by a one-page reload that happened to be in flight.
         intent: `fetch-infinite:${count}`,
+        // A set shorter than the one asked for is not an answer to this call,
+        // so the cached value is refused and the run tops it up. Without this,
+        // prefetching a feed with `pages: 3` after anything else had touched
+        // the key returned whatever that left — one page, silently.
+        force: shortfall,
         key: options.key,
         load: (ctx) =>
           loadPageRun(
@@ -914,7 +926,11 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
             ctx.signal,
             ctx.key,
             count,
-            options.initialPageParam
+            options.initialPageParam,
+            undefined,
+            // Extended, not reloaded: the pages already held are not fetched
+            // again on the way to the length requested.
+            shortfall ? held : undefined
           ),
         staleTime: options.staleTime,
         gcTime: options.gcTime,

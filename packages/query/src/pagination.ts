@@ -149,13 +149,30 @@ export async function loadPageRun<TPage, TPageParam>(
   // landed, so one flaky page in a long set costs a request per page per
   // attempt. Defaults to a single try for the imperative fetch, which declares
   // no retry policy at all.
-  withRetry: <T>(work: () => Promise<T>) => Promise<T> = (work) => work()
+  withRetry: <T>(work: () => Promise<T>) => Promise<T> = (work) => work(),
+  /**
+   * Pages already held, which the run extends rather than replaces.
+   *
+   * For a caller topping a set up to the length it asked for: the pages it
+   * already has are not fetched again, and `count` is the size of the finished
+   * set rather than the number of requests.
+   */
+  seed?: InfiniteData<TPage, TPageParam>
 ): Promise<InfiniteData<TPage, TPageParam>> {
-  const pages: TPage[] = []
-  const pageParams: TPageParam[] = []
-  let pageParam: TPageParam | null | undefined = from
+  const pages: TPage[] = seed === undefined ? [] : [...seed.pages]
+  const pageParams: TPageParam[] = seed === undefined ? [] : [...seed.pageParams]
+  let pageParam: TPageParam | null | undefined =
+    seed === undefined || seed.pages.length === 0
+      ? from
+      : callPageParam(
+          options.getNextPageParam,
+          seed.pages[seed.pages.length - 1] as TPage,
+          pages,
+          seed.pageParams[seed.pageParams.length - 1] as TPageParam,
+          pageParams
+        )
 
-  for (let index = 0; index < count; index += 1) {
+  for (let index = pages.length; index < count; index += 1) {
     if (signal.aborted) {
       // Thrown, not broken. A run stopped part way has not loaded the set it
       // was asked for, and resolving with what it happened to reach hands the

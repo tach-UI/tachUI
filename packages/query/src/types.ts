@@ -372,12 +372,12 @@ export type FetchInfiniteQueryOptions<TPage, TPageParam, E = Error> = Omit<
   | 'refetchOnReconnect'
 > & {
     /**
-     * How many pages to load. Defaults to 1. Must be a positive integer.
+     * How many pages the finished set should hold. Defaults to 1. Must be a
+     * positive integer.
      *
-     * A hint for the load, not a guarantee about the result: a fresh entry is
-     * served as it stands, so a call asking for three pages against a key that
-     * already holds one gets the one. Prefetch the key before anything else
-     * touches it, or reload it deliberately.
+     * A floor, not a reload: a key already holding fewer is topped up from
+     * where it left off, and one holding more is served as it stands rather
+     * than trimmed. Asking for more pages than the source has is not an error.
      */
     pages?: number
     /**

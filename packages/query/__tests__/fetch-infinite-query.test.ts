@@ -170,6 +170,60 @@ describe('the set as an ordinary cached value', () => {
     restored.dispose()
   })
 
+  it('tops a short set up to the number of pages asked for', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    const request = (pages: number) => ({
+      key: () => ['feed'],
+      load: async ({ pageParam }: { pageParam: number }) => {
+        asked.push(pageParam)
+        return pageSource(9)({ pageParam })
+      },
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      staleTime: 60_000,
+      pages,
+    })
+
+    await client.fetchInfiniteQuery<Page, number>(request(1))
+    expect(asked).toEqual([0])
+
+    const set = await client.fetchInfiniteQuery<Page, number>(request(3))
+
+    // The page already held is not fetched again, and the caller gets the
+    // three it asked for — rather than whatever an earlier call happened to
+    // leave behind, which is what a prefetch warming a feed would have shipped.
+    expect(asked).toEqual([0, 1, 2])
+    expect(set.pageParams).toEqual([0, 1, 2])
+    client.dispose()
+  })
+
+  it('serves a set that is already long enough', async () => {
+    const client = createQueryClient()
+    let loads = 0
+    const request = (pages: number) => ({
+      key: () => ['feed'],
+      load: async ({ pageParam }: { pageParam: number }) => {
+        loads += 1
+        return pageSource(9)({ pageParam })
+      },
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      staleTime: 60_000,
+      pages,
+    })
+
+    await client.fetchInfiniteQuery<Page, number>(request(3))
+    expect(loads).toBe(3)
+
+    const set = await client.fetchInfiniteQuery<Page, number>(request(2))
+    expect(loads).toBe(3)
+    // Not trimmed either: a caller asking for fewer than are held is answered,
+    // not obeyed.
+    expect(set.pageParams).toEqual([0, 1, 2])
+    client.dispose()
+  })
+
   it('serves a fresh set rather than reloading it', async () => {
     const client = createQueryClient()
     let loads = 0
