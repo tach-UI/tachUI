@@ -2,51 +2,48 @@ import { resolve } from 'path'
 import { defineConfig, transformWithEsbuild, type Plugin } from 'vite'
 
 /**
- * Collapses whitespace in the emitted chunks.
+ * Collapses whitespace in the emitted chunk.
  *
- * Vite's library mode minifies identifiers and syntax but leaves the output
- * formatted, and gzip does not absorb the difference: measured on this package,
- * the same chunk is 13.8 KB gzipped as emitted and 10.4 KB once whitespace is
- * removed — a quarter of the bundle, for nothing. Source comments cost nothing
- * either way; they are gone long before this runs.
+ * Vite's library mode minifies identifiers and syntax but leaves the chunk
+ * formatted, and gzip does not absorb the difference. Measured on this package:
+ * 15,177 bytes gzipped as Vite emits it, 12,086 with this pass — a fifth of the
+ * bundle, for nothing. Source comments cost nothing either way; they are gone
+ * long before this runs.
  *
- * In `generateBundle` rather than `renderChunk`, which is where this started and
- * why it did nothing: Vite's own `esbuild-transpile` is itself a `renderChunk`
- * hook, it runs after a `post` plugin's, and it re-prints the chunk it is given.
- * A collapsed chunk handed to it came back formatted, `__PURE__` annotations and
- * all. `generateBundle` runs once every chunk is final.
- *
- * Production only. A development build keeps its formatting and its sourcemap;
- * rewriting the code here would invalidate the map, and the size budget this
- * exists for is measured against the production bundle.
+ * A `renderChunk` hook deliberately, and not `generateBundle`, even though
+ * Vite's own `esbuild-transpile` runs after this one and re-prints what it is
+ * given — so this pass recovers less than it could. Running later recovers the
+ * remaining ~1 KB and strips every `/* @__PURE__ *\/` annotation with it, because
+ * esbuild consumes them and does not re-emit; terser does the same, with or
+ * without `compress`. A published library keeps its tree-shaking metadata: the
+ * annotations were measured to make no difference to an esbuild consumer, but
+ * that is one bundler, and they are not ours to discard on its behalf.
  */
-function collapseWhitespace(): Plugin {
+function collapseWhitespace(sourcemap: boolean): Plugin {
   return {
     name: 'tachui:collapse-whitespace',
     enforce: 'post',
     apply: 'build',
-    async generateBundle(outputOptions, bundle) {
-      if (outputOptions.sourcemap !== false) {
-        return
-      }
-      for (const output of Object.values(bundle)) {
-        if (output.type !== 'chunk') {
-          continue
-        }
-        const minified = await transformWithEsbuild(output.code, 'chunk.js', {
-          minify: true,
-          target: 'es2020',
-          format: 'esm',
-          sourcemap: false,
-        })
-        output.code = minified.code
+    async renderChunk(code) {
+      const minified = await transformWithEsbuild(code, 'chunk.js', {
+        minify: true,
+        target: 'es2020',
+        format: 'esm',
+        sourcemap,
+      })
+      // Rollup composes the maps its plugins return, so handing this one back
+      // keeps a development build's sourcemap pointing at the original
+      // sources. Returning `null` would silently drop it.
+      return {
+        code: minified.code,
+        map: sourcemap ? (minified.map ?? null) : null,
       }
     },
   }
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [collapseWhitespace()],
+  plugins: [collapseWhitespace(mode !== 'production')],
   build: {
     // The size-budget gate reads the chunk graph from this manifest rather than
     // re-deriving it by parsing the emitted JavaScript (tools/check-size-budget.mjs).
