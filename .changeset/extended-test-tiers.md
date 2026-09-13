@@ -32,3 +32,22 @@ of the observed rate and still fail the regressions they name.
 `extended-tests.yml` runs what genuinely costs minutes — stress, memory, and
 the CLI package — nightly and on dispatch. `test:error-recovery` is gone with
 `test:long`: its file had moved too, and it now runs in `test:ci` with the rest.
+
+Two things the repaired tiers made visible, now fixed rather than filed.
+
+The CLI package's 74 disabled cases move from `it.skip` to `it.todo`. They are
+not coverage someone switched off: `generate` asserts a dozen flags that do not
+exist, `migrate` two more, and `analyze` a `--json` mode and three report
+sections that were never written, while several `dev` cases would start a real
+dev server if they ran. `skip` reads as "temporarily off" and hid that; `todo`
+reads as "specified, not built", which is what they are. The reporter now says
+74 todo, and each file says what is missing.
+
+`registry`'s `createdAt` test asked whether the global registry's timestamp was
+within 1000ms of the moment the test ran. `createdAt` is stamped in the
+constructor and the global is built when the module first loads, so that
+measured how long the suite took to reach the test — it had been seen failing
+in a full run and passing alone. It now constructs a registry through
+`createIsolatedRegistry()` and makes the same claim about that one, where it is
+deterministic, keeping only what holds for the global: a real moment, in the
+past.

@@ -24,7 +24,7 @@ describe('TachUI CLI - Optimize Command', () => {
   })
 
   describe('Basic Optimization', () => {
-    it.skip('should run optimization analysis (FUTURE IMPLEMENTATION)', async () => {
+    it.todo('should run optimization analysis (FUTURE IMPLEMENTATION)', async () => {
       const result = await cliTester.expectSuccess('optimize', {
         args: ['--dry-run'],
         cwd: tempDir
@@ -34,7 +34,7 @@ describe('TachUI CLI - Optimize Command', () => {
       expect(result.stdout).toContain('improvements')
     })
 
-    it.skip('should apply optimizations (FUTURE IMPLEMENTATION)', async () => {
+    it.todo('should apply optimizations (FUTURE IMPLEMENTATION)', async () => {
       const result = await cliTester.expectSuccess('optimize', {
         args: ['--yes'],
         cwd: tempDir
@@ -46,7 +46,7 @@ describe('TachUI CLI - Optimize Command', () => {
   })
 
   describe('Optimization Rules', () => {
-    it.skip('should apply bundle size optimizations (FUTURE IMPLEMENTATION)', async () => {
+    it.todo('should apply bundle size optimizations (FUTURE IMPLEMENTATION)', async () => {
       const result = await cliTester.expectSuccess('optimize', {
         args: ['--category', 'bundle-size', '--dry-run'],
         cwd: tempDir
@@ -56,7 +56,7 @@ describe('TachUI CLI - Optimize Command', () => {
       expect(result.stdout).toContain('import')
     })
 
-    it.skip('should apply performance optimizations (FUTURE IMPLEMENTATION)', async () => {
+    it.todo('should apply performance optimizations (FUTURE IMPLEMENTATION)', async () => {
       const result = await cliTester.expectSuccess('optimize', {
         args: ['--category', 'performance', '--dry-run'],
         cwd: tempDir

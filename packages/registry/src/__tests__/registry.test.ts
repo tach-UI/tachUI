@@ -151,12 +151,28 @@ describe('Registry API', () => {
     })
 
     it('should report createdAt timestamp', () => {
+      // `createdAt` is stamped in the constructor, and the global registry is
+      // constructed the first time this module is imported — `clearRegistry()`
+      // in beforeEach clears modifiers, not the timestamp. So asking whether
+      // the global's timestamp is recent measures how long the suite took to
+      // reach this test, which is why a 1000ms grace window used to fail
+      // under load. Construct a registry here and the claim is about
+      // construction again, with no window left to tune.
       const beforeCreation = Date.now()
-      const health = validateRegistry()
-      const afterCheck = Date.now()
+      const isolated = createIsolatedRegistry()
+      const afterCreation = Date.now()
 
-      expect(health.createdAt).toBeGreaterThanOrEqual(beforeCreation - 1000)
-      expect(health.createdAt).toBeLessThanOrEqual(afterCheck)
+      const health = isolated.validateRegistry()
+
+      expect(health.createdAt).toBeGreaterThanOrEqual(beforeCreation)
+      expect(health.createdAt).toBeLessThanOrEqual(afterCreation)
+
+      // What holds for the global however long ago it loaded: a real moment,
+      // in the past.
+      const globalHealth = validateRegistry()
+
+      expect(globalHealth.createdAt).toBeGreaterThan(0)
+      expect(globalHealth.createdAt).toBeLessThanOrEqual(Date.now())
     })
 
     it('should calculate totalModifiers correctly', () => {

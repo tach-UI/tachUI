@@ -21,7 +21,7 @@ describe('TachUI CLI - Basic Functionality', () => {
   })
 
   describe('CLI Core', () => {
-    it.skip('should show help when no arguments provided', async () => {
+    it.todo('should show help when no arguments provided', async () => {
       // TODO: CLI should show help or usage information when no args provided
       const result = await cliTester.run('')
       
@@ -29,7 +29,7 @@ describe('TachUI CLI - Basic Functionality', () => {
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should display help with --help flag', async () => {
+    it.todo('should display help with --help flag', async () => {
       // TODO: --help flag should display usage and commands
       const result = await cliTester.run('--help')
       
@@ -38,7 +38,7 @@ describe('TachUI CLI - Basic Functionality', () => {
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should display version with --version flag', async () => {
+    it.todo('should display version with --version flag', async () => {
       // TODO: --version flag should return clean version without banner
       const result = await cliTester.run('--version')
       
@@ -55,7 +55,7 @@ describe('TachUI CLI - Basic Functionality', () => {
   })
 
   describe('Command Discovery', () => {
-    it.skip('should list available commands in help', async () => {
+    it.todo('should list available commands in help', async () => {
       // TODO: Help should properly list all available commands
       const result = await cliTester.run('--help')
       

@@ -1,6 +1,10 @@
 /**
  * Analyze Command Tests
  *
+ * Every case here is `it.todo`: `analyze` has no `--json` flag and reports
+ * none of the detail, performance or suggestion output asserted below. They
+ * describe a surface that was never built rather than one that broke.
+ *
  * Tests for the code analysis command which analyzes TachUI projects
  * for patterns, performance issues, and improvement opportunities.
  */
@@ -25,7 +29,7 @@ describe('TachUI CLI - Analyze Command', () => {
   })
 
   describe('Basic Analysis', () => {
-    it.skip('should analyze TachUI project files', async () => {
+    it.todo('should analyze TachUI project files', async () => {
       const result = await cliTester.expectSuccess('analyze', {
         cwd: tempDir
       })
@@ -35,7 +39,7 @@ describe('TachUI CLI - Analyze Command', () => {
       expect(result.stdout).toContain('Health Score')
     })
 
-    it.skip('should detect TachUI components', async () => {
+    it.todo('should detect TachUI components', async () => {
       const result = await cliTester.expectSuccess('analyze', {
         cwd: tempDir
       })
@@ -44,7 +48,7 @@ describe('TachUI CLI - Analyze Command', () => {
       // Component detection is working, just not showing specific component names
     })
 
-    it.skip('should analyze state usage', async () => {
+    it.todo('should analyze state usage', async () => {
       const result = await cliTester.expectSuccess('analyze', {
         cwd: tempDir
       })
@@ -55,7 +59,7 @@ describe('TachUI CLI - Analyze Command', () => {
   })
 
   describe('Analysis Options', () => {
-    it.skip('should support detailed analysis', async () => {
+    it.todo('should support detailed analysis', async () => {
       const result = await cliTester.expectSuccess('analyze', {
         args: ['--detailed'],
         cwd: tempDir
@@ -65,7 +69,7 @@ describe('TachUI CLI - Analyze Command', () => {
       expect(result.stdout).toContain('detailed')
     })
 
-    it.skip('should support performance analysis', async () => {
+    it.todo('should support performance analysis', async () => {
       const result = await cliTester.expectSuccess('analyze', {
         args: ['--performance'],
         cwd: tempDir
@@ -75,7 +79,7 @@ describe('TachUI CLI - Analyze Command', () => {
       expect(result.stdout).toContain('optimization')
     })
 
-    it.skip('should generate JSON output', async () => {
+    it.todo('should generate JSON output', async () => {
       const result = await cliTester.expectSuccess('analyze', {
         args: ['--json'],
         cwd: tempDir
@@ -86,7 +90,7 @@ describe('TachUI CLI - Analyze Command', () => {
   })
 
   describe('Suggestions Generation', () => {
-    it.skip('should provide improvement suggestions', async () => {
+    it.todo('should provide improvement suggestions', async () => {
       const result = await cliTester.expectSuccess('analyze', {
         cwd: tempDir
       })
@@ -97,7 +101,7 @@ describe('TachUI CLI - Analyze Command', () => {
   })
 
   describe('Error Handling', () => {
-    it.skip('should handle non-TachUI projects', async () => {
+    it.todo('should handle non-TachUI projects', async () => {
       // Create non-TachUI project
       await fsTestUtils.createTestFile(
         path.join(tempDir, 'package.json'),
