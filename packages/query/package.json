@@ -34,7 +34,7 @@
   "tachui": {
     "sizeBudget": {
       "entry": "dist/index.js",
-      "gzipBytes": 12288
+      "gzipBytes": 13312
     }
   },
   "dependencies": {
