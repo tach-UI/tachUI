@@ -423,6 +423,15 @@ export type InfiniteQueryListOptions<
     /** Row identity. Repeat keys across pages update in place rather than duplicating. */
     itemKey: (item: T) => K
     /**
+     * How many rows stay addressable after leaving the list. Defaults to 256.
+     *
+     * `get` hands back a stable accessor, so the list holds a row's signal
+     * after `maxPages` drops it — otherwise a consumer still rendering that row
+     * would never hear about it coming back. Raise it for a set that revisits
+     * keys; lower it for a feed that never does.
+     */
+    trackedRows?: number
+    /**
      * Never: the rows are the projection, and a second one would fight them.
      *
      * Declared rather than merely absent, for the reason `FetchQueryOptions`
@@ -454,11 +463,19 @@ export interface InfiniteQueryListResult<
   /** Retained row keys, in display order. */
   readonly ids: Signal<readonly K[]>
   /**
-   * Per-row reactive accessor. Undefined for a key the list does not hold:
-   * `maxPages` can drop a page between reading a key from `ids` and looking
-   * it up.
+   * Per-row reactive accessor, for a key the list holds now or may hold later.
+   *
+   * Reads `undefined` when the row is not held — `maxPages` can drop a page
+   * between reading a key from `ids` and looking it up, and a key can be asked
+   * for before its page has landed. It subscribes to that row alone, so it is
+   * told when the row arrives, changes, or leaves, and told nothing when the
+   * rest of the list moves around it.
+   *
+   * The same accessor comes back across a row leaving and returning, so a row
+   * dropped by `maxPages` and re-fetched does not orphan whatever was rendering
+   * it. How many departed rows stay addressable is bounded by `trackedRows`.
    */
-  get(key: K): (() => T) | undefined
+  get(key: K): () => T | undefined
   refetch(): Promise<void>
   fetchNextPage(): Promise<void>
   fetchPreviousPage(): Promise<void>
@@ -1028,10 +1045,14 @@ export interface AsyncStreamListResult<T, K extends PropertyKey = PropertyKey, E
   readonly ids: Signal<readonly K[]>
   /**
    * Per-item reactive accessor, so one row can update without touching the rest.
-   * Undefined for a key that is not retained: `limit` evicts as messages arrive,
-   * so a key read from `ids()` can be gone by the time it is looked up.
+   *
+   * Reads `undefined` for a key that is not retained: `limit` evicts as messages
+   * arrive, so a key read from `ids()` can be gone by the time it is looked up,
+   * and a key can be asked for before its message has come. It subscribes to
+   * that row alone, and the same accessor survives a key being evicted and
+   * arriving again.
    */
-  get(key: K): (() => T) | undefined
+  get(key: K): () => T | undefined
   readonly latest: Signal<T | undefined>
   readonly status: Signal<AsyncStreamStatus>
   readonly error: Signal<E | undefined>

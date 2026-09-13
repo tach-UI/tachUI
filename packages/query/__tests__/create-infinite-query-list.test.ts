@@ -120,7 +120,7 @@ describe('appending', () => {
         seen.tick('ids')
       })
       createEffect(() => {
-        value.get('0a')?.()
+        value.get('0a')()
         seen.tick('row 0a')
       })
     })
@@ -138,7 +138,7 @@ describe('appending', () => {
     // were already there.
     expect(seen.of('ids')).toBe(idsAfterFirstPage + 1)
     expect(seen.of('row 0a')).toBe(rowAfterFirstPage)
-    expect(value.get('1a')?.()).toEqual({ id: '1a', label: 'row 1a' })
+    expect(value.get('1a')()).toEqual({ id: '1a', label: 'row 1a' })
 
     watching.dispose()
     dispose()
@@ -173,7 +173,7 @@ describe('refetching', () => {
       })
       for (const id of ['0a', '0b', '1a', '1b']) {
         createEffect(() => {
-          value.get(id)?.()
+          value.get(id)()
           seen.tick(id)
         })
       }
@@ -218,7 +218,7 @@ describe('refetching', () => {
       })
       for (const id of ['0a', '0b', '1a', '1b']) {
         createEffect(() => {
-          value.get(id)?.()
+          value.get(id)()
           seen.tick(id)
         })
       }
@@ -228,7 +228,7 @@ describe('refetching', () => {
     await value.refetch()
     await settle()
 
-    expect(value.get('1a')?.().label).toBe('edited')
+    expect(value.get('1a')()?.label).toBe('edited')
     expect(seen.of('1a')).toBe(2)
     // Membership did not change, so the structure was never rewritten and the
     // other three rows were never told anything.
@@ -284,7 +284,7 @@ describe('rows that repeat across pages', () => {
     // holds now, which is what a component reading `ids` has in hand.
     const watching = withOwner(() => {
       createEffect(() => {
-        value.get('b')?.()
+        value.get('b')()
         seen.tick('b')
       })
     })
@@ -294,7 +294,7 @@ describe('rows that repeat across pages', () => {
 
     // Once in the list, at the position it already had.
     expect(value.ids()).toEqual(['a', 'b', 'c'])
-    expect(value.get('b')?.().label).toBe('second, revised')
+    expect(value.get('b')()?.label).toBe('second, revised')
     expect(seen.of('b')).toBe(2)
 
     watching.dispose()
@@ -323,22 +323,25 @@ describe('rows the list no longer holds', () => {
     )
     await settle()
     await value.fetchNextPage()
-    expect(value.get('0a')).toBeDefined()
+    expect(value.get('0a')()).toBeDefined()
 
     await value.fetchNextPage()
     await settle()
 
     // The cap dropped the head page, and with it the rows it carried.
     expect(value.ids()).toEqual(['1a', '1b', '2a', '2b'])
-    expect(value.get('0a')).toBeUndefined()
-    expect(value.get('2a')?.().id).toBe('2a')
+    expect(value.get('0a')()).toBeUndefined()
+    expect(value.get('2a')()?.id).toBe('2a')
 
+    // The accessor handed out before the drop is the one that reports the
+    // return, rather than being orphaned by it.
+    const dropped = value.get('0a')
     await value.fetchPreviousPage()
     await settle()
 
     expect(value.ids()).toEqual(['0a', '0b', '1a', '1b'])
-    expect(value.get('0a')?.().id).toBe('0a')
-    expect(value.get('2a')).toBeUndefined()
+    expect(dropped()?.id).toBe('0a')
+    expect(value.get('2a')()).toBeUndefined()
 
     dispose()
     client.dispose()
@@ -528,7 +531,101 @@ describe('letting go', () => {
     // The rows go with it. Left alone, the flatten effect kept projecting into
     // row signals nobody reads, holding every page object the set had carried.
     expect(value.ids()).toEqual([])
-    expect(value.get('0a')).toBeUndefined()
+    expect(value.get('0a')()).toBeUndefined()
+    dispose()
+    client.dispose()
+  })
+})
+
+describe('rows a consumer asks for', () => {
+  it('hears about its own arrival without waiting for anything else', async () => {
+    const client = createQueryClient()
+    const feed = source(5)
+    const seen = counter()
+
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQueryList<Page, number, Row, string>({
+        key: () => ['feed'],
+        load: feed.load,
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        items: (page) => page.rows,
+        itemKey: (item) => item.id,
+        client,
+      })
+    )
+    // Subscribed before the row exists, which a lookup could never answer.
+    const watching = withOwner(() => {
+      createEffect(() => {
+        value.get('1a')()
+        seen.tick('1a')
+      })
+      createEffect(() => {
+        value.get('0a')()
+        seen.tick('0a')
+      })
+    })
+    expect(seen.of('1a')).toBe(1)
+
+    await settle()
+    // Page 0 landed: row 0a is told, row 1a is not.
+    expect(seen.of('0a')).toBe(2)
+    expect(seen.of('1a')).toBe(1)
+
+    await value.fetchNextPage()
+    await settle()
+
+    // Page 1 landed: row 1a is told and row 0a is left alone. This is what a
+    // reactive `get` has to preserve — reading membership instead would wake
+    // every row on screen for every append.
+    expect(seen.of('1a')).toBe(2)
+    expect(seen.of('0a')).toBe(2)
+    expect(value.get('1a')()?.label).toBe('row 1a')
+
+    watching.dispose()
+    dispose()
+    client.dispose()
+  })
+
+  it('tells a row when maxPages drops it, and when it comes back', async () => {
+    const client = createQueryClient()
+    const feed = source(9)
+    const seen: (string | undefined)[] = []
+
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQueryList<Page, number, Row, string>({
+        key: () => ['feed'],
+        load: feed.load,
+        initialPageParam: 0,
+        getNextPageParam: nextParam,
+        getPreviousPageParam: previousParam,
+        maxPages: 2,
+        items: (page) => page.rows,
+        itemKey: (item) => item.id,
+        client,
+      })
+    )
+    await settle()
+    const watching = withOwner(() => {
+      createEffect(() => {
+        seen.push(value.get('0a')()?.id)
+      })
+    })
+    expect(seen).toEqual(['0a'])
+
+    await value.fetchNextPage()
+    await value.fetchNextPage()
+    await settle()
+    // Dropped by the cap: the row rendering it is told, rather than left
+    // holding a stale value or an accessor that throws.
+    expect(seen).toEqual(['0a', undefined])
+
+    await value.fetchPreviousPage()
+    await value.fetchPreviousPage()
+    await settle()
+    expect(seen).toEqual(['0a', undefined, '0a'])
+
+    watching.dispose()
     dispose()
     client.dispose()
   })
