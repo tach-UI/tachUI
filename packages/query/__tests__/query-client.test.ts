@@ -2289,3 +2289,20 @@ describe('dehydrate and hydrate', () => {
     )
   })
 })
+
+describe('policy a consumer supplies directly', () => {
+  it('refuses a page bound that would empty the set it governs', () => {
+    const client = createQueryClient()
+    // `observe` takes a partial policy straight from a consumer, so a cap that
+    // never passed through an infinite query's construction still reaches the
+    // entry. Zero makes the next append splice the whole set away and leaves a
+    // successful, empty, unextendable entry.
+    expect(() =>
+      client.observe(['feed'], undefined, { maxPages: 0 })
+    ).toThrow('maxPages must be a positive integer')
+    expect(() =>
+      client.observe(['feed'], undefined, { maxPages: 2.5 })
+    ).toThrow('maxPages must be a positive integer')
+    client.dispose()
+  })
+})

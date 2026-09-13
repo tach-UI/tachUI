@@ -582,6 +582,16 @@ export interface QueryObservation {
   clearReloadMark(): void
 
   /**
+   * Names the execution in flight for this entry, or nothing if none is.
+   *
+   * A primitive that swaps in a loader needs to know whether the work already
+   * running is the work it was about to start. Two observers of one key that
+   * both ask for the next page should cost one request, and neither can see the
+   * other's bookkeeping — the entry is the only thing they share.
+   */
+  inFlightIntent(): string | undefined
+
+  /**
    * Ends the entry's in-flight request without giving up the observation.
    *
    * Releasing would do the aborting too, but it also detaches the observer,

@@ -241,6 +241,8 @@ export interface QueryInternals<TRaw, TData, E> {
    * own `fetchStatus` moves the instant the slot is claimed.
    */
   readonly isFetchingNow: () => boolean
+  /** Names the execution in flight for the observed entry, if any. */
+  readonly inFlightIntent: () => string | undefined
   /** The entry's claimed policy, or nothing while not observing one. */
   readonly policy: () => CacheEntryPolicy | undefined
   /**
@@ -780,6 +782,16 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
       }
       try {
         return observation.entry().options
+      } catch {
+        return undefined
+      }
+    },
+    inFlightIntent: () => {
+      if (observation === undefined) {
+        return undefined
+      }
+      try {
+        return observation.inFlightIntent()
       } catch {
         return undefined
       }

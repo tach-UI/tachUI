@@ -284,6 +284,7 @@ export type QueryObservationMembers = Assert<
     keyof QueryObservation,
     | 'clearReloadMark'
     | 'entry'
+    | 'inFlightIntent'
     | 'markForReload'
     | 'abortInFlight'
     | 'consumeHydrationGrace'

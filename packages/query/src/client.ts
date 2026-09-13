@@ -39,7 +39,12 @@ import {
   DEFAULT_STALE_TIME,
 } from './defaults'
 import { isServer, QueryError } from './errors'
-import { assertPageCount, assertPageParam, loadPageRun } from './pagination'
+import {
+  assertPageCap,
+  assertPageCount,
+  assertPageParam,
+  loadPageRun,
+} from './pagination'
 import {
   decodeQueryKey,
   decodeSnapshotData,
@@ -556,6 +561,13 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       maxPages?: number
     }
   ): void {
+    // Validated here rather than at each caller: `observe` takes a
+    // `Partial<CacheEntryPolicy>` straight from a consumer, so a cap that never
+    // passed through an infinite query's own construction still reaches the
+    // entry. A zero cap makes the next append splice the whole set away and
+    // leaves a successful, empty, unextendable entry; a fractional one throws
+    // a RangeError from inside the loader during a backward trim.
+    assertPageCap(policy.maxPages, 'claiming a cache policy')
     if (policy.maxPages !== undefined && !entry.policyClaimed.maxPages) {
       entry.maxPages = policy.maxPages
       entry.policyClaimed.maxPages = true
@@ -966,6 +978,7 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
           scheduleEviction(entry)
           notify(entry)
         },
+        inFlightIntent: () => entry.inFlight?.intent,
         clearReloadMark: () => {
           // Undoes a mark this observation set, without the notification a
           // mark carries. Only meaningful between marking and the reload

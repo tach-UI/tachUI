@@ -322,8 +322,19 @@ export function createInfiniteQuery<
       }
     | undefined
 
+  /**
+   * Counts abandonments, so a call parked on someone else's work can tell that
+   * the ground moved while it waited.
+   *
+   * `cancel()` resolves the slot it finds, which releases whoever was waiting
+   * on it — and without this that waiter would go on to start the very request
+   * the cancel was meant to stop.
+   */
+  let abandonments = 0
+
   /** Lets go of the append in flight without waiting for it to settle. */
   function abandon(): void {
+    abandonments += 1
     pending?.abandon()
     pending = undefined
     setDirection(undefined)
@@ -347,9 +358,16 @@ export function createInfiniteQuery<
   async function extend(
     towards: FetchDirection
   ): Promise<TData | undefined> {
+    const startedAt = abandonments
+    /** Whether a cancel or a disposal landed while this call was waiting. */
+    const stoodDown = (): boolean => abandonments !== startedAt
+
     const running = pending
     if (running !== undefined) {
       const outcome = await running.joinable
+      if (stoodDown()) {
+        return currentData()
+      }
       if (running.towards === towards) {
         // The same append was already in the air, so this call rides it rather
         // than appending the page after it. The leader's outcome is this
@@ -379,17 +397,31 @@ export function createInfiniteQuery<
 
     try {
       if (internals.isFetchingNow()) {
-        // A refetch is in flight. It has to land first: appending onto a set
-        // that is about to be replaced would write pages the refresh has
-        // already superseded. Waiting joins that execution rather than
-        // cancelling it, so the refresh is not lost.
+        if (internals.inFlightIntent() === intentName(towards)) {
+          // An append this way is already running — started by this observer or
+          // by another one watching the same key, whose bookkeeping is not
+          // visible from here. The entry is what they share, so it is what
+          // decides. Joining costs one request; waiting it out and then
+          // appending would load the page after it instead of the same one.
+          //
+          // The direction is reported while joining: this observer did ask for
+          // the next page, and is waiting on one.
+          setDirection(towards)
+          await internals.refetchWith(appendPage(towards), intentName(towards))
+          settle({ ok: true })
+          return currentData()
+        }
+        // A refetch, or an append the other way. It has to land first:
+        // appending onto a set that is about to be replaced would write pages
+        // the refresh has already superseded. Waiting joins that execution
+        // rather than cancelling it, so the refresh is not lost.
         await internals.refetchWith().then(
           () => undefined,
           () => undefined
         )
       }
 
-      if (pending !== slot) {
+      if (stoodDown() || pending !== slot) {
         // Abandoned while parked, or replaced by a later dispatch. Either way
         // this call no longer speaks for the observer.
         return currentData()
