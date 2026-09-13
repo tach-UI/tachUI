@@ -3,8 +3,9 @@ name: Extended Tests
 # The tiers `vitest.ci.config.ts` excludes from PR CI. They exist in the repo
 # but ran nowhere automated until #229; a green PR said nothing about them.
 #
-# Nightly rather than per-PR: they cost minutes, not seconds, and PR CI is the
-# fast gate. Each tier is its own job so one red tier names itself.
+# Nightly rather than per-PR, because these cost minutes rather than the nine
+# seconds that bought the slow integration suites a place in `test:ci`. Each
+# tier is its own job so one red tier names itself.
 
 on:
   schedule:
@@ -30,8 +31,6 @@ jobs:
             command: bun run test:stress
           - tier: memory
             command: bun run test:memory-leaks
-          - tier: long
-            command: bun run test:long
           - tier: cli
             command: bun run --filter @tachui/cli test:ci
     steps:

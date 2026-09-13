@@ -47,7 +47,15 @@ the tier by where it lives. What the gate means differs per suite:
 - `reactive/memory/modifier-subscriptions` — skips without `FORCE_MEMORY_TESTS`
   anywhere, CI or not, so this script is the only thing that runs it.
 
-`test:long` still points at files that no longer exist and cannot run (#229).
+The other extended tiers are `test:stress` (globs `*stress*.test.ts`) and the
+CLI package, which has its own vitest config. All three run nightly through
+`.github/workflows/extended-tests.yml`, and nowhere else — `test` and `test:ci`
+do not reach them.
+
+There is no `test:long`. The slow integration and benchmark suites it named
+were folded into `test:ci`, where 94 tests cost 9 seconds of a 34 second run.
+Before adding a tier, measure: one that saves seconds is not worth the suites
+falling out of sight.
 
 ## Timing assertions
 

@@ -287,10 +287,9 @@ rest are slow enough that PR CI excludes them, and they run nightly instead.
 | Tier | Command | Covers | Where it runs |
 | --- | --- | --- | --- |
 | default | `bun run test` | everything not listed below, plus the tool suites | locally |
-| ci | `bun run test:ci` | the default tier minus the slow suites (`vitest.ci.config.ts` excludes), plus tree-shaking verification | every PR, and the pre-push hook |
+| ci | `bun run test:ci` | the default tier minus the stress suites and `packages/cli`, plus tree-shaking verification | every PR, and the pre-push hook |
 | stress | `bun run test:stress` | `*stress*.test.ts` — high-volume DOM and modifier application | nightly |
 | memory | `bun run test:memory-leaks` | a `memory/` directory or `memory` in the filename; sets `FORCE_MEMORY_TESTS` for the heap-growth suites that gate on it | nightly |
-| long | `bun run test:long` | multi-second simulations, real-world flow integrations, and the benchmark-shaped performance checks | nightly |
 | cli | `bun run --filter @tachui/cli test:ci` | `packages/cli`, which has its own vitest config and scaffolds from built `dist` | nightly |
 | types | `bun run test:types` | `*.test-d.ts`, resolved against built declarations | CI only — needs a build, so neither `test` nor `test:ci` reaches it |
 
@@ -299,10 +298,15 @@ The nightly tiers live in `.github/workflows/extended-tests.yml`, which is also
 
 Each extended tier is registered **by convention, not by path**: its config
 globs a filename or directory shape, so moving a file keeps it in its tier.
-Naming files literally is what let three whole tiers rot unnoticed (#229). When
-you add a pattern to the `exclude` list in `vitest.ci.config.ts`, add the
-matching `include` to the tier config that should pick it up — otherwise the
-suite stops running anywhere.
+Naming files literally is what let whole tiers rot unnoticed (#229). When you
+add a pattern to the `exclude` list in `vitest.ci.config.ts`, add the matching
+`include` to the tier config that should pick it up — otherwise the suite stops
+running anywhere.
+
+Prefer not excluding it at all. The slow integration and benchmark suites had a
+`test:long` tier of their own until it was measured: 94 tests for 9 seconds of a
+34 second run. They gate every PR now. A tier is worth adding only when the cost
+is minutes, not seconds — a suite nobody watches is barely a suite.
 
 ### Workspace Package Aliases in Tests
 
