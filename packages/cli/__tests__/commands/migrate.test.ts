@@ -1,6 +1,9 @@
 /**
  * Migrate Command Tests
  *
+ * Every case here is `it.todo`: `migrate` has no `--from` or `--yes` flag, so
+ * these describe a surface that was never built rather than one that broke.
+ *
  * Tests for migration command which converts React/Vue code to TachUI
  */
 
@@ -23,7 +26,7 @@ describe('TachUI CLI - Migrate Command', () => {
   })
 
   describe('React Migration', () => {
-    it.skip('should migrate React components', async () => {
+    it.todo('should migrate React components', async () => {
       // Create React component
       await fsTestUtils.createTestFile(
         path.join(tempDir, 'Counter.jsx'),
@@ -50,7 +53,7 @@ describe('TachUI CLI - Migrate Command', () => {
   })
 
   describe('Vue Migration', () => {
-    it.skip('should migrate Vue components', async () => {
+    it.todo('should migrate Vue components', async () => {
       await fsTestUtils.createTestFile(
         path.join(tempDir, 'Counter.vue'),
         vueComponentSamples['Counter.vue']
@@ -71,7 +74,7 @@ describe('TachUI CLI - Migrate Command', () => {
   })
 
   describe('Migration Options', () => {
-    it.skip('should generate migration report', async () => {
+    it.todo('should generate migration report', async () => {
       await fsTestUtils.createTestFile(
         path.join(tempDir, 'test.jsx'),
         reactComponentSamples['Counter.jsx']
@@ -86,7 +89,7 @@ describe('TachUI CLI - Migrate Command', () => {
       expect(result.stdout).toContain('files processed')
     })
 
-    it.skip('should create backups', async () => {
+    it.todo('should create backups', async () => {
       await fsTestUtils.createTestFile(
         path.join(tempDir, 'test.jsx'),
         reactComponentSamples['Counter.jsx']

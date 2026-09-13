@@ -3,6 +3,13 @@
  *
  * Tests for the code generation command which scaffolds components,
  * screens, stores, and other TachUI code structures.
+ *
+ * Every case here is `it.todo`: they describe a `generate` surface that was
+ * never built. Run against the CLI as it is, they fail on `unknown option` for
+ * `--props`, `--type`, `--style`, `--fields`, `--methods`, `--force`,
+ * `--verbose`, `--quiet`, and the four `--with-*` flags. Marking them todo
+ * rather than skip keeps the reporter honest — these are a specification
+ * waiting on an implementation, not coverage that someone switched off.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
@@ -27,7 +34,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('Component Generation', () => {
-    it.skip('should generate a basic component', async () => {
+    it.todo('should generate a basic component', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'TestComponent', '--yes'],
         cwd: tempDir
@@ -47,7 +54,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('@tachui/core')
     })
 
-    it.skip('should generate component with props', async () => {
+    it.todo('should generate component with props', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'PropsComponent', '--props', 'title:string,count:number', '--yes'],
         cwd: tempDir
@@ -61,7 +68,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('PropsComponentProps')
     })
 
-    it.skip('should generate component with state', async () => {
+    it.todo('should generate component with state', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'StatefulComponent', '--with-state', '--yes'],
         cwd: tempDir
@@ -75,7 +82,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toMatch(/State\(\s*\w+\s*\)/)
     })
 
-    it.skip('should support different component styles', async () => {
+    it.todo('should support different component styles', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'StyledComponent', '--style', 'card', '--yes'],
         cwd: tempDir
@@ -91,7 +98,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('Screen Generation', () => {
-    it.skip('should generate a basic screen', async () => {
+    it.todo('should generate a basic screen', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['screen', 'TestScreen', '--yes'],
         cwd: tempDir
@@ -105,7 +112,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('NavigationView')
     })
 
-    it.skip('should generate screen with navigation', async () => {
+    it.todo('should generate screen with navigation', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['screen', 'NavScreen', '--with-navigation', '--yes'],
         cwd: tempDir
@@ -118,7 +125,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('navigationTitle')
     })
 
-    it.skip('should generate tab screen', async () => {
+    it.todo('should generate tab screen', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['screen', 'TabScreen', '--type', 'tab', '--yes'],
         cwd: tempDir
@@ -132,7 +139,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('Store Generation', () => {
-    it.skip('should generate a basic store', async () => {
+    it.todo('should generate a basic store', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['store', 'UserStore', '--yes'],
         cwd: tempDir
@@ -147,7 +154,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('State')
     })
 
-    it.skip('should generate store with methods', async () => {
+    it.todo('should generate store with methods', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['store', 'ActionStore', '--methods', 'load,save,delete', '--yes'],
         cwd: tempDir
@@ -161,7 +168,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('delete()')
     })
 
-    it.skip('should generate store with persistence', async () => {
+    it.todo('should generate store with persistence', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['store', 'PersistentStore', '--with-persistence', '--yes'],
         cwd: tempDir
@@ -176,7 +183,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('Form Generation', () => {
-    it.skip('should generate a basic form', async () => {
+    it.todo('should generate a basic form', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['form', 'ContactForm', '--yes'],
         cwd: tempDir
@@ -191,7 +198,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('TextField')
     })
 
-    it.skip('should generate form with specific fields', async () => {
+    it.todo('should generate form with specific fields', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['form', 'UserForm', '--fields', 'name:text,email:email,age:number', '--yes'],
         cwd: tempDir
@@ -205,7 +212,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('NumberField') // for age
     })
 
-    it.skip('should generate form with validation', async () => {
+    it.todo('should generate form with validation', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['form', 'ValidatedForm', '--with-validation', '--yes'],
         cwd: tempDir
@@ -220,7 +227,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('Generator Selection', () => {
-    it.skip('should list available generators', async () => {
+    it.todo('should list available generators', async () => {
       const result = await cliTester.run('generate --list')
 
       expect(result.stdout).toContain('component')
@@ -230,7 +237,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should show generator help', async () => {
+    it.todo('should show generator help', async () => {
       const result = await cliTester.run('generate component --help')
 
       expect(result.stdout).toContain('component')
@@ -240,7 +247,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('Interactive Mode', () => {
-    it.skip('should handle interactive generator selection', async () => {
+    it.todo('should handle interactive generator selection', async () => {
       // This would require prompt mocking in a real test
       const result = await cliTester.run('generate --interactive', {
         cwd: tempDir,
@@ -253,7 +260,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('File Handling', () => {
-    it.skip('should handle existing file conflicts', async () => {
+    it.todo('should handle existing file conflicts', async () => {
       // Create existing component
       await fsTestUtils.createTestFile(
         path.join(tempDir, 'src/components/ExistingComponent.ts'),
@@ -269,7 +276,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(result.exitCode).toBe(1)
     })
 
-    it.skip('should support force flag for overwriting', async () => {
+    it.todo('should support force flag for overwriting', async () => {
       // Create existing component
       await fsTestUtils.createTestFile(
         path.join(tempDir, 'src/components/ForceComponent.ts'),
@@ -288,7 +295,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('ForceComponent')
     })
 
-    it.skip('should create directory structure if needed', async () => {
+    it.todo('should create directory structure if needed', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'nested/deep/NestedComponent', '--yes'],
         cwd: tempDir
@@ -300,7 +307,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('Template Processing', () => {
-    it.skip('should replace template variables correctly', async () => {
+    it.todo('should replace template variables correctly', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'TemplateTest', '--yes'],
         cwd: tempDir
@@ -316,7 +323,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(content).toContain('TemplateTest')
     })
 
-    it.skip('should handle PascalCase conversion', async () => {
+    it.todo('should handle PascalCase conversion', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'kebab-case-component', '--yes'],
         cwd: tempDir
@@ -331,7 +338,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('Error Handling', () => {
-    it.skip('should validate component names', async () => {
+    it.todo('should validate component names', async () => {
       const result = await cliTester.expectFailure('generate', {
         args: ['component', 'invalid-name!@#', '--yes'],
         cwd: tempDir
@@ -341,7 +348,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(result.exitCode).toBe(1)
     })
 
-    it.skip('should require component name', async () => {
+    it.todo('should require component name', async () => {
       const result = await cliTester.expectFailure('generate', {
         args: ['component'],
         cwd: tempDir
@@ -351,7 +358,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(result.exitCode).toBe(1)
     })
 
-    it.skip('should handle invalid generator type', async () => {
+    it.todo('should handle invalid generator type', async () => {
       const result = await cliTester.expectFailure('generate', {
         args: ['invalid-generator', 'TestName'],
         cwd: tempDir
@@ -364,7 +371,7 @@ describe('TachUI CLI - Generate Command', () => {
   })
 
   describe('Output and Progress', () => {
-    it.skip('should show generation progress', async () => {
+    it.todo('should show generation progress', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'ProgressTest', '--yes'],
         cwd: tempDir
@@ -375,7 +382,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(result.stdout).toContain('ProgressTest')
     })
 
-    it.skip('should support quiet mode', async () => {
+    it.todo('should support quiet mode', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'QuietTest', '--quiet', '--yes'],
         cwd: tempDir
@@ -384,7 +391,7 @@ describe('TachUI CLI - Generate Command', () => {
       expect(result.stdout.length).toBeLessThan(100)
     })
 
-    it.skip('should support verbose mode', async () => {
+    it.todo('should support verbose mode', async () => {
       const result = await cliTester.expectSuccess('generate', {
         args: ['component', 'VerboseTest', '--verbose', '--yes'],
         cwd: tempDir

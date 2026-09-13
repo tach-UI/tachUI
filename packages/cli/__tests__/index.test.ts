@@ -116,7 +116,7 @@ describe('TachUI CLI - Main Entry Point', () => {
       expect(result.stderr).toContain('unknown')
     })
 
-    it.skip('should support help flag', async () => {
+    it.todo('should support help flag', async () => {
       // TODO: Help should always work without banner interference
       const result = await cliTester.run('--help')
 
@@ -126,7 +126,7 @@ describe('TachUI CLI - Main Entry Point', () => {
   })
 
   describe('Environment Detection', () => {
-    it.skip('should work in different node environments', async () => {
+    it.todo('should work in different node environments', async () => {
       // TODO: Test with different NODE_ENV values - help should always work
       const result = await cliTester.run('--help', {
         env: { NODE_ENV: 'test' },
@@ -136,7 +136,7 @@ describe('TachUI CLI - Main Entry Point', () => {
       expect(result.stdout).toContain('Usage')
     })
 
-    it.skip('should show version regardless of directory context', async () => {
+    it.todo('should show version regardless of directory context', async () => {
       // TODO: Test version command works in any directory without banner
       const result = await cliTester.run('--version')
 

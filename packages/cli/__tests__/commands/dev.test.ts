@@ -3,6 +3,11 @@
  *
  * Tests for the development server command which launches Vite dev server
  * with TachUI configuration and performance monitoring.
+ *
+ * Every case here is `it.todo`: the project detection, config discovery and
+ * `--dry-run` behaviour they describe does not exist yet. Note that several
+ * would start a real dev server if they ran, so they need that behaviour
+ * before they can be enabled, not just an assertion fix.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
@@ -24,7 +29,7 @@ describe('TachUI CLI - Dev Command', () => {
   })
 
   describe('TachUI Project Detection', () => {
-    it.skip('should detect valid TachUI project', async () => {
+    it.todo('should detect valid TachUI project', async () => {
       // Create a valid TachUI project
       await createSampleProject(tempDir, basicTachUIProject)
 
@@ -37,7 +42,7 @@ describe('TachUI CLI - Dev Command', () => {
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should fail in non-TachUI project', async () => {
+    it.todo('should fail in non-TachUI project', async () => {
       // Create project without TachUI dependency
       await fsTestUtils.createTestFile(
         path.join(tempDir, 'package.json'),
@@ -59,7 +64,7 @@ describe('TachUI CLI - Dev Command', () => {
       expect(result.exitCode).toBe(1)
     })
 
-    it.skip('should fail without package.json', async () => {
+    it.todo('should fail without package.json', async () => {
       const result = await cliTester.expectFailure('dev', {
         cwd: tempDir,
         timeout: 5000
@@ -71,7 +76,7 @@ describe('TachUI CLI - Dev Command', () => {
   })
 
   describe('Vite Configuration Detection', () => {
-    it.skip('should detect vite.config.ts', async () => {
+    it.todo('should detect vite.config.ts', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --dry-run', {
@@ -82,7 +87,7 @@ describe('TachUI CLI - Dev Command', () => {
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should handle missing vite config', async () => {
+    it.todo('should handle missing vite config', async () => {
       // Create project without vite config
       const projectWithoutVite = { ...basicTachUIProject }
       delete projectWithoutVite['vite.config.ts']
@@ -97,7 +102,7 @@ describe('TachUI CLI - Dev Command', () => {
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should handle vite.config.js', async () => {
+    it.todo('should handle vite.config.js', async () => {
       const projectWithJS = { ...basicTachUIProject }
       delete projectWithJS['vite.config.ts']
       projectWithJS['vite.config.js'] = `import { defineConfig } from 'vite'
@@ -117,7 +122,7 @@ export default defineConfig({
   })
 
   describe('Development Server Options', () => {
-    it.skip('should support custom port', async () => {
+    it.todo('should support custom port', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --port 4000 --dry-run', {
@@ -128,7 +133,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should support custom host', async () => {
+    it.todo('should support custom host', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --host 0.0.0.0 --dry-run', {
@@ -139,7 +144,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should support HTTPS mode', async () => {
+    it.todo('should support HTTPS mode', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --https --dry-run', {
@@ -150,7 +155,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should support open browser flag', async () => {
+    it.todo('should support open browser flag', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --open --dry-run', {
@@ -163,7 +168,7 @@ export default defineConfig({
   })
 
   describe('Performance Monitoring', () => {
-    it.skip('should enable performance monitoring', async () => {
+    it.todo('should enable performance monitoring', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --perf --dry-run', {
@@ -174,7 +179,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should support performance config', async () => {
+    it.todo('should support performance config', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --perf-config memory,timing --dry-run', {
@@ -188,7 +193,7 @@ export default defineConfig({
   })
 
   describe('Debug Mode', () => {
-    it.skip('should enable debug mode', async () => {
+    it.todo('should enable debug mode', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --debug --dry-run', {
@@ -199,7 +204,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should show debug information', async () => {
+    it.todo('should show debug information', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --debug --verbose --dry-run', {
@@ -213,7 +218,7 @@ export default defineConfig({
   })
 
   describe('Environment Variables', () => {
-    it.skip('should set NODE_ENV to development', async () => {
+    it.todo('should set NODE_ENV to development', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --dry-run', {
@@ -225,7 +230,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should preserve existing environment variables', async () => {
+    it.todo('should preserve existing environment variables', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --dry-run', {
@@ -240,7 +245,7 @@ export default defineConfig({
   })
 
   describe('Process Management', () => {
-    it.skip('should handle graceful shutdown', async () => {
+    it.todo('should handle graceful shutdown', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       // Test signal handling - this is complex to test properly
@@ -252,7 +257,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should cleanup on process termination', async () => {
+    it.todo('should cleanup on process termination', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       // Mock process termination
@@ -267,7 +272,7 @@ export default defineConfig({
   })
 
   describe('Error Handling', () => {
-    it.skip('should handle port conflicts', async () => {
+    it.todo('should handle port conflicts', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       // Test with occupied port (this would need port mocking in real tests)
@@ -279,7 +284,7 @@ export default defineConfig({
       expect([0, 1]).toContain(result.exitCode)
     })
 
-    it.skip('should handle missing dependencies', async () => {
+    it.todo('should handle missing dependencies', async () => {
       // Create project with missing vite dependency
       const invalidProject = { ...basicTachUIProject }
       const packageJson = JSON.parse(invalidProject['package.json'])
@@ -296,7 +301,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(1)
     })
 
-    it.skip('should handle invalid vite config', async () => {
+    it.todo('should handle invalid vite config', async () => {
       const projectWithInvalidConfig = { ...basicTachUIProject }
       projectWithInvalidConfig['vite.config.ts'] = 'invalid typescript syntax {'
 
@@ -312,7 +317,7 @@ export default defineConfig({
   })
 
   describe('Output and Logging', () => {
-    it.skip('should provide startup information', async () => {
+    it.todo('should provide startup information', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --dry-run', {
@@ -324,7 +329,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should support quiet mode', async () => {
+    it.todo('should support quiet mode', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --quiet --dry-run', {
@@ -335,7 +340,7 @@ export default defineConfig({
       expect(result.exitCode).toBe(0)
     })
 
-    it.skip('should support verbose mode', async () => {
+    it.todo('should support verbose mode', async () => {
       await createSampleProject(tempDir, basicTachUIProject)
 
       const result = await cliTester.run('dev --verbose --dry-run', {
