@@ -52,3 +52,13 @@ in a full run and passing alone. It now constructs a registry through
 `createIsolatedRegistry()` and makes the same claim about that one, where it is
 deterministic, keeping only what holds for the global: a real moment, in the
 past.
+
+Two of the folded suites had been excluded as "flaky timing-sensitive" and
+"non-deterministic GC", and now gate every PR. `foundation-demo`'s memory
+budgets resolve through `performance.memory`, which jsdom does not define, so
+they read 0 and are stable — and its riskiest case already skips on CI.
+`error-recovery` had a real one: a jittered 50-100ms backoff measured against a
+120ms ceiling, twenty milliseconds above its own maximum. It keeps the lower
+bound, which says jitter did not collapse the delay to nothing, and loses the
+upper one to 1000ms, because wall-clock on a shared runner cannot tell 100ms
+from 200ms and should not claim to.

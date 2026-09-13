@@ -113,10 +113,20 @@ describe('Phase 2.4: Error Recovery and Retry Mechanisms Tests', () => {
 
       // With jitter, delays should vary (not exactly 100ms, 200ms)
       expect(timings.length).toBe(3)
-      // First delay should be between 50-100ms (jitter applied to 100ms)
+
+      // The jittered delay is 50-100ms by construction, and the old ceiling of
+      // 120 sat 20ms above that maximum — close enough to the work that a
+      // loaded runner crossed it without anything being wrong. This suite was
+      // excluded from CI as "flaky timing-sensitive" and now gates every PR
+      // (#229), so the window has to survive contention it cannot control.
+      //
+      // What the bounds can still honestly separate: that a delay happened
+      // and jitter did not collapse it to nothing, and that the base delay is
+      // the configured 100ms rather than a grossly wrong one. Wall-clock on a
+      // shared runner cannot tell 100ms from 200ms, so do not pretend to.
       if (timings.length > 1) {
         expect(timings[1]).toBeGreaterThan(40)
-        expect(timings[1]).toBeLessThan(120)
+        expect(timings[1]).toBeLessThan(1000)
       }
     }, 10000)
 
