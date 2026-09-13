@@ -7,7 +7,7 @@ in-development package.
 
 Repairs `bun run test:memory-leaks` (#283), which pointed at a file that no
 longer exists and so could not run at all (#229; the other three missing paths
-belong to `test:long`, which this leaves alone). It now runs through
+belonged to `test:long`, which this leaves alone). It now runs through
 `vitest.memory.config.ts`, which globs the memory suites rather than naming
 them — the naming is what rotted last time — and covers the component and
 modifier-lifecycle suites plus a new retention tier for `@tachui/query`.
@@ -60,4 +60,6 @@ Detaching also leaves the entry in its detached state before the abort fires.
 the outer one is still working through, so anything read back from the entry
 afterwards is whatever that nested call left.
 
-`test:long` is still broken and stays with #229.
+`test:long` was still broken here and stayed with #229, which settled it by
+removing the tier outright: measured, its suites cost nine seconds of a
+thirty-four second `test:ci` run, so they gate every PR now instead.
