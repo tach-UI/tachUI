@@ -80,3 +80,17 @@ the retained accessors are bounded and the bound is the developer's to set:
 `trackedRows` on the list options, `trackedKeys` on the core primitive, 256 by
 default. `createAsyncStreamList` gets the same treatment, having carried the
 identical lookup.
+
+Three more from review, each reproduced first:
+
+- Two observers of one key both asking for the next page loaded two pages
+  rather than joining one request. Neither can see the other's bookkeeping, so
+  the entry decides: an append joins whatever append is already running in the
+  same direction.
+- A `fetchPreviousPage()` parked behind an in-flight `fetchNextPage()` started
+  after `cancel()` released it, loading the page the cancel existed to stop.
+  Waiters now notice that the ground moved while they waited.
+- `client.observe(key, undefined, { maxPages: 0 })` claimed a zero cap through
+  the public policy path, and the next append spliced the whole set away and
+  left it successful, empty and unextendable. The bound is validated where it is
+  claimed, so every path that can set one is covered.

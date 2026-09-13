@@ -461,6 +461,110 @@ describe('an append racing something else', () => {
   })
 })
 
+describe('two observers of one key', () => {
+  it('join a next-page request instead of loading two pages', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    let release!: (page: Page) => void
+    let holding = false
+    const request = {
+      key: () => ['feed'],
+      load: ({ pageParam }: { pageParam: number }) => {
+        asked.push(pageParam)
+        return holding
+          ? new Promise<Page>((resolve) => {
+              release = resolve
+            })
+          : pages(9)({ pageParam })
+      },
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      client,
+    }
+    const first = withOwner(() => createInfiniteQuery<Page, number>(request))
+    const second = withOwner(() => createInfiniteQuery<Page, number>(request))
+    await settle()
+    asked.length = 0
+
+    holding = true
+    const a = first.value.fetchNextPage()
+    await settle()
+    // Neither observer can see the other's bookkeeping; the entry is all they
+    // share, so the entry is what has to recognise this as the same work.
+    const b = second.value.fetchNextPage()
+    await settle()
+    expect(asked).toEqual([1])
+    expect(second.value.isFetchingNextPage()).toBe(true)
+
+    holding = false
+    release(await pages(9)({ pageParam: 1 }))
+    await a
+    await b
+    await settle()
+
+    // One request, one page. Waiting the append out and then appending would
+    // have loaded the page after it instead of the same one.
+    expect(asked).toEqual([1])
+    expect(
+      (first.value.data() as InfiniteData<Page, number>).pageParams
+    ).toEqual([0, 1])
+    second.dispose()
+    first.dispose()
+    client.dispose()
+  })
+})
+
+describe('cancelling while a second request waits', () => {
+  it('stands the waiter down instead of letting it start', async () => {
+    const client = createQueryClient()
+    const asked: number[] = []
+    let release!: (page: Page) => void
+    let holding = false
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: ({ pageParam }) => {
+          asked.push(pageParam)
+          return holding
+            ? new Promise<Page>((resolve) => {
+                release = resolve
+              })
+            : pages(9)({ pageParam })
+        },
+        initialPageParam: 3,
+        getNextPageParam: nextParam,
+        getPreviousPageParam: previousParam,
+        client,
+      })
+    )
+    await settle()
+    asked.length = 0
+
+    holding = true
+    const forward = value.fetchNextPage()
+    await settle()
+    // Parks behind the forward append, owning no slot of its own yet.
+    const backward = value.fetchPreviousPage()
+    await settle()
+
+    value.cancel()
+    await settle()
+
+    // The cancel released the waiter, and without a way to tell that the
+    // ground had moved it went on to fetch the previous page — the request the
+    // cancel existed to stop.
+    expect(asked).toEqual([4])
+
+    // Settle the abandoned request so neither promise is left pending.
+    holding = false
+    release(await pages(9)({ pageParam: 4 }))
+    await Promise.allSettled([forward, backward])
+    expect(asked).toEqual([4])
+    dispose()
+    client.dispose()
+  })
+})
+
 describe('maxPages', () => {
   it('trims the far end on append and lets fetchPreviousPage recover the head', async () => {
     const client = createQueryClient()
