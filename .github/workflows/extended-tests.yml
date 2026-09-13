@@ -11,11 +11,6 @@ on:
     # 07:00 UTC daily — after the working day in every timezone the repo sees.
     - cron: '0 7 * * *'
   workflow_dispatch:
-  # TEMPORARY — verification only, removed before merge. `workflow_dispatch`
-  # cannot be triggered until this file is on the default branch, so this is
-  # the only way to prove the tiers pass on a runner before #229 closes.
-  pull_request:
-    branches: [main]
 
 env:
   NODE_VERSION: '24'
