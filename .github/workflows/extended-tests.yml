@@ -1,7 +1,11 @@
 name: Extended Tests
 
-# The tiers `vitest.ci.config.ts` excludes from PR CI. They exist in the repo
-# but ran nowhere automated until #229; a green PR said nothing about them.
+# The test tiers PR CI does not fully cover. They ran nowhere automated until
+# #229; a green PR said nothing about them.
+#
+# Coverage differs per tier, and only stress is exclusive to this workflow:
+# memory's ungated suites run in `test:ci` too and the gated ones only here,
+# and `packages/cli` runs in a local `test` but in no other CI job.
 #
 # Nightly rather than per-PR, because these cost minutes rather than the nine
 # seconds that bought the slow integration suites a place in `test:ci`. Each
@@ -21,9 +25,8 @@ jobs:
   extended:
     name: ${{ matrix.tier }}
     runs-on: ubuntu-latest
-    # One red tier should not hide the others.
-    continue-on-error: false
     strategy:
+      # One red tier should not cancel the others.
       fail-fast: false
       matrix:
         include:

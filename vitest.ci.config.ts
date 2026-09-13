@@ -37,7 +37,9 @@ export default defineConfig({
       // second run, so they gate every PR now instead — a tier nobody looks
       // at is worth less than nine seconds.
       'packages/cli/', // has its own vitest config; the `cli` job runs it
-      '**/*stress.test.ts', // the stress tier; `test:stress` globs the same shape
+      // Matches `test:stress`'s own glob exactly. Narrower here (`*stress.`)
+      // would let a `stress-helpers.test.ts` run in both.
+      '**/*stress*.test.ts',
       '.github/demos/**',
       'demos/**',
     ],

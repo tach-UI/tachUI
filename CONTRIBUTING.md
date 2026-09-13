@@ -281,16 +281,16 @@ export { MyComponent } from './components/MyComponent'
 
 ### Test Tiers
 
-Not every suite runs on every command. `bun run test` is the default tier; the
-rest are slow enough that PR CI excludes them, and they run nightly instead.
+Not every suite runs on every command, and the tiers overlap — a nightly tier is
+usually a *complement* to the default run, not the only place its suites run.
 
 | Tier | Command | Covers | Where it runs |
 | --- | --- | --- | --- |
-| default | `bun run test` | everything not listed below, plus the tool suites | locally |
-| ci | `bun run test:ci` | the default tier minus the stress suites and `packages/cli`, plus tree-shaking verification | every PR, and the pre-push hook |
-| stress | `bun run test:stress` | `*stress*.test.ts` — high-volume DOM and modifier application | nightly |
-| memory | `bun run test:memory-leaks` | a `memory/` directory or `memory` in the filename; sets `FORCE_MEMORY_TESTS` for the heap-growth suites that gate on it | nightly |
-| cli | `bun run --filter @tachui/cli test:ci` | `packages/cli`, which has its own vitest config and scaffolds from built `dist` | nightly |
+| default | `bun run test` | everything except `*stress*.test.ts`, plus the tool suites (`test:tools`) | locally |
+| ci | `bun run test:ci` | the default tier minus the stress suites and `packages/cli`, plus `test:tools` and tree-shaking verification | every PR, and the pre-push hook |
+| stress | `bun run test:stress` | `*stress*.test.ts` — high-volume DOM and modifier application. The one tier excluded from both of the above, so nightly is its only run | nightly |
+| memory | `bun run test:memory-leaks` | a `memory/` directory or `memory` in the filename, with `FORCE_MEMORY_TESTS` set. The ungated suites here also run in `test` and `test:ci`; the nightly run is what reaches the gated ones | nightly, and partly in both of the above |
+| cli | `bun run --filter @tachui/cli test:ci` | `packages/cli`, which has its own vitest config and scaffolds from built `dist`. Runs in `test` locally, but is excluded from `test:ci`, so nightly is its only CI coverage | nightly, and locally in `test` |
 | types | `bun run test:types` | `*.test-d.ts`, resolved against built declarations | CI only — needs a build, so neither `test` nor `test:ci` reaches it |
 
 The nightly tiers live in `.github/workflows/extended-tests.yml`, which is also
@@ -305,8 +305,9 @@ running anywhere.
 
 Prefer not excluding it at all. The slow integration and benchmark suites had a
 `test:long` tier of their own until it was measured: 94 tests for 9 seconds of a
-34 second run. They gate every PR now. A tier is worth adding only when the cost
-is minutes, not seconds — a suite nobody watches is barely a suite.
+34 second run locally, about 33 seconds of a runner's longer one. They gate every
+PR now. A tier is worth adding only when the cost is minutes, not seconds — a
+suite nobody watches is barely a suite.
 
 ### Workspace Package Aliases in Tests
 

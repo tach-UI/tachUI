@@ -785,8 +785,9 @@ describe('Phase 5.1: Performance Baseline Benchmarks', () => {
       // assumption that CI is the controlled machine — but a hosted runner is
       // a shared, throttled VM, and the ratio there measures the neighbours.
       // The gate had never run (#229); its first run read 1.36 against 0.5,
-      // while a developer machine reads ~0.55. 4 is an order of magnitude
-      // clear of both and still catches a proxy path gone pathological.
+      // while a developer machine reads ~0.55. 4 is roughly 3x the worst
+      // reading observed on a runner — not an order of magnitude, so say so —
+      // and still catches a proxy path gone pathological.
       const maxAllowedOverhead = 4
 
       console.log('Proxy Overhead Benchmark:', {
@@ -799,9 +800,12 @@ describe('Phase 5.1: Performance Baseline Benchmarks', () => {
         maxAllowedOverhead,
       })
 
-      // The real boundary, reported rather than enforced: crossing it is worth
-      // a look, but on unknown hardware it is not worth failing a build over.
-      if (medianOverhead > 0.65) {
+      // Reported rather than enforced: worth a look, not worth failing a build
+      // over on unknown hardware. Set above the runner band (readings of 1.36
+      // and 1.42) rather than at the 0.65 a developer machine suggests — this
+      // suite gates every PR now, and a warning that fires on every run is not
+      // a warning.
+      if (medianOverhead > 2) {
         console.warn(`Proxy overhead is elevated for this run: ${medianOverhead.toFixed(3)}`)
       }
 
