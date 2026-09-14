@@ -189,6 +189,75 @@ describe('track', () => {
     expect(first()?.label).toBe('one')
   })
 
+  it('keeps the departed count straight as rows come and go', () => {
+    // The bound is enforced off a running count of tracked-but-absent keys.
+    // A count that drifts is invisible until the bound silently stops holding,
+    // so walk the transitions that move it: tracked-then-absent, back again,
+    // removed once, removed twice, and tracked while already present.
+    const [, list] = createSignalList<{ id: number; label: string }, number>(
+      [],
+      item => item.id,
+      { trackedKeys: 2 }
+    )
+
+    list.update(1, { id: 1, label: 'one' })
+    list.track(1) // tracked while present — not a candidate
+    list.update(2, { id: 2, label: 'two' })
+    list.track(2)
+    list.remove(1) // now a candidate
+    list.remove(2) // two candidates, exactly at the bound
+    list.update(1, { id: 1, label: 'one again' }) // back: one candidate
+    list.remove(1) // two again
+
+    // Two candidates and room for two, so nothing has been dropped yet: the
+    // count says so, and a count drifting high would already have evicted.
+    const stale = list.track(1)
+    list.update(1, { id: 1, label: 'one back' })
+    expect(stale()?.label).toBe('one back')
+    list.remove(1)
+
+    // Each further key asked for is one candidate over the bound, so each
+    // costs the least recently asked-for one.
+    const older = list.track(2)
+    const newer = list.track(3)
+    list.track(4)
+
+    // Keys 3 and 4 were asked for last and survive; key 2 went, and its cell
+    // with it — so the accessor taken before is deaf to the row returning.
+    list.update(2, { id: 2, label: 'two back' })
+    expect(older()).toBeUndefined()
+    list.update(3, { id: 3, label: 'three' })
+    expect(newer()?.label).toBe('three')
+  })
+
+  it('does not rescan its whole tracked set for every released row', () => {
+    // `clear()` releases each row, and each release used to rescan the entire
+    // tracked map to recount candidates — O(n^2), which for a long feed's
+    // `dispose()` meant blocking the main thread. Measured at this size: 2311ms
+    // before, 58ms after.
+    //
+    // The budget is a pathological-regression guard, not a target. 1500ms is
+    // roughly 26x the real duration, and the quadratic it guards against comes
+    // in above it by a wide margin at this n — a machine slow enough to fail
+    // this honestly is one where nothing else would pass either.
+    const rows = 16000
+    const [, list] = createSignalList<{ id: number }, number>(
+      Array.from({ length: rows }, (_, index) => ({ id: index })),
+      item => item.id,
+      { trackedKeys: 50 }
+    )
+    for (let index = 0; index < rows; index += 1) {
+      list.track(index)
+    }
+
+    const started = performance.now()
+    list.clear()
+    const elapsed = performance.now() - started
+
+    expect(list.getAll()).toHaveLength(0)
+    expect(elapsed).toBeLessThan(1500)
+  })
+
   it('does not retain a key nobody tracked', () => {
     const [, list] = createSignalList(makeItems(), item => item.id)
     const before = list.getAll().length
