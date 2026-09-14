@@ -3,6 +3,7 @@
 "@tachui/grid": patch
 "@tachui/viewport": patch
 "@tachui/eslint-plugin": patch
+"@tachui/mobile": patch
 ---
 
 `@tachui/grid` and `@tachui/viewport` shipped 0.11.0 with no type declarations
@@ -36,3 +37,23 @@ build chain.
 That is also why `ci:check-declared-types` runs in the build job: checked
 against a stale local `dist` it passes, which is how this went unnoticed here
 before CI ran it on a clean tree.
+
+Every entry point the packages advertise now exists. `@tachui/mobile`'s main
+entry pointed at `dist/index.js` while vite, given a bare entry, named the
+output after the package — `dist/mobile.js`. Its types resolved and importing
+the package did not. `@tachui/grid`'s `./components` and `./modifiers`, and
+`@tachui/viewport`'s `./modifiers`, were advertised with nothing building them;
+grid needed the index files written as well. `@tachui/core` listed six subpaths
+whose JavaScript was never built — the declarations existed because tsc walks
+the whole tree, so they type-checked and then failed to resolve. Four of those
+are build-plugin and type-generator entries importing `node:` builtins, which
+rollup could not resolve until they were externalised; they are Node-side
+tooling, not browser code.
+
+`@tachui/core`'s `./viewport` subpath is removed rather than repaired. It has no
+source behind it at all: viewport moved to `@tachui/viewport`, and the export
+was left behind pointing at nothing.
+
+`ci:check-declared-types` now checks `import`, `types`, `require` and `default`
+on every exports entry rather than declarations alone — 258 entry points. The
+known-gaps list it carried is gone, because the gaps are.

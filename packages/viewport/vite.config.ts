@@ -6,6 +6,8 @@ export default defineConfig(({ mode }) => ({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
+        // Advertised by the manifest; nothing built it until now.
+        'modifiers/index': resolve(__dirname, 'src/modifiers/index.ts'),
       },
       formats: ['es'],
     },

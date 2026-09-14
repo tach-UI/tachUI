@@ -4,9 +4,14 @@ import { resolve } from 'path'
 export default defineConfig(({ mode }) => ({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      // Object form: the manifest advertises ./components and ./modifiers, and
+      // a single entry built neither of them.
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        'components/index': resolve(__dirname, 'src/components/index.ts'),
+        'modifiers/index': resolve(__dirname, 'src/modifiers/index.ts'),
+      },
       name: '@tachui/grid',
-      fileName: format => `index.${format === 'es' ? 'js' : format}`,
       formats: ['es'],
     },
     emptyOutDir: false, // Don't clean the dist directory to preserve .d.ts files

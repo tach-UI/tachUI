@@ -117,10 +117,6 @@
       "types": "./dist/validation/index.d.ts",
       "import": "./dist/validation/index.js"
     },
-    "./viewport": {
-      "types": "./dist/viewport/index.d.ts",
-      "import": "./dist/viewport/index.js"
-    },
     "./assets": {
       "types": "./dist/assets/index.d.ts",
       "import": "./dist/assets/index.js"
