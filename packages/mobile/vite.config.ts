@@ -4,7 +4,15 @@ import { defineConfig } from 'vite'
 export default defineConfig(({ mode }) => ({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      // Object form, for two reasons. A bare entry made vite name the output
+      // after the package — `dist/mobile.js` — while the manifest pointed at
+      // `dist/index.js`, so importing @tachui/mobile failed at runtime even
+      // though its types resolved. And ./modifiers was advertised with nothing
+      // building it.
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        'modifiers/index': resolve(__dirname, 'src/modifiers/index.ts'),
+      },
       name: 'TachUIMobilePatterns',
       formats: ['es'],
     },
