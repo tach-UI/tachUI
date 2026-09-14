@@ -76,6 +76,28 @@ describe('README opening examples', () => {
     expect(host.textContent).toContain('Item 3')
   })
 
+  it('grid: template areas take effect from styling, not the top level', () => {
+    // `ComponentProps` carries `[key: string]: any`, so a misplaced prop is not
+    // a type error anywhere in the framework — it is silently dropped. The grid
+    // README documented `templateAreas` at the top level, which renders nothing
+    // at all, and no compiler would have said so.
+    const areas = ['header header', 'stats chart']
+
+    const styled = render(() =>
+      Grid({ styling: { templateAreas: areas }, children: [Text('x')] })
+    )
+    expect(
+      (styled.querySelector('*') as HTMLElement).style.gridTemplateAreas
+    ).toBe('"header header" "stats chart"')
+
+    const topLevel = render(() =>
+      Grid({ templateAreas: areas, children: [Text('x')] } as any)
+    )
+    expect(
+      (topLevel.querySelector('*') as HTMLElement).style.gridTemplateAreas
+    ).toBe('')
+  })
+
   it('data: the list renders a row per item', () => {
     const items = [
       { id: 1, name: 'Item 1' },

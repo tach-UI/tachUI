@@ -57,3 +57,10 @@ was left behind pointing at nothing.
 `ci:check-declared-types` now checks `import`, `types`, `require` and `default`
 on every exports entry rather than declarations alone — 258 entry points. The
 known-gaps list it carried is gone, because the gaps are.
+
+`@tachui/eslint-plugin` needed a second repair. Putting it in the build chain
+got it to publish a `dist`; the entry still threw `ERR_MODULE_NOT_FOUND` on
+load, because `"type": "module"` requires extensioned relative specifiers and
+the source imported `./rules/prefer-direct-modifiers`. It went from publishing
+nothing to publishing something unusable, and every existence check passed
+throughout. `ci:check-entry-imports` now loads what the manifests advertise.

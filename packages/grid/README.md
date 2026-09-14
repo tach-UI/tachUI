@@ -127,16 +127,18 @@ Grid({
 
 ### Dashboard Layout
 
-`Grid` takes CSS grid template areas directly; children claim an area with the
-`gridArea` modifier.
+Template areas are a styling option — `styling.templateAreas` — and children
+claim one with the `gridArea` modifier.
 
 ```typescript
 Grid({
-  templateAreas: [
-    'header header header',
-    'stats chart chart',
-    'footer footer footer',
-  ],
+  styling: {
+    templateAreas: [
+      'header header header',
+      'stats chart chart',
+      'footer footer footer',
+    ],
+  },
   children: [
     DashboardHeader().gridArea('header'),
     StatsPanel().gridArea('stats'),

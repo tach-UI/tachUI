@@ -24,16 +24,17 @@ Built-in breakpoint system with customizable breakpoints:
 import { useBreakpoint, DEFAULT_BREAKPOINTS } from '@tachui/responsive'
 
 // Default breakpoints
-const currentBreakpoint = useBreakpoint()
-// Returns: 'mobile' | 'tablet' | 'desktop' | 'wide'
+const breakpoint = useBreakpoint()
 
-// Breakpoint values
+// The exported defaults are CSS lengths, keyed base | sm | md | lg | xl | 2xl
 console.log(DEFAULT_BREAKPOINTS)
 // {
-//   mobile: 0,
-//   tablet: 768,
-//   desktop: 1024,
-//   wide: 1440
+//   base: '0px',
+//   sm: '640px',
+//   md: '768px',
+//   lg: '1024px',
+//   xl: '1280px',
+//   '2xl': '1536px',
 // }
 ```
 
@@ -180,20 +181,21 @@ import {
   getBreakpointsAbove,
 } from '@tachui/responsive'
 
-// Which breakpoint is active right now
-const current = getCurrentBreakpoint()
+// `getCurrentBreakpoint()` hands back a Signal, so call it to read the key
+const currentBreakpoint = getCurrentBreakpoint()
+const current = currentBreakpoint()
 
-// Comparisons are between two breakpoint keys, not device names
-if (isBreakpointAbove(current, 'tablet')) {
-  // wider than tablet
+// Comparisons take two breakpoint keys — base | sm | md | lg | xl | 2xl
+if (isBreakpointAbove(current, 'md')) {
+  // wider than the md breakpoint
 }
 
-if (isBreakpointBelow(current, 'desktop')) {
-  // narrower than desktop
+if (isBreakpointBelow(current, 'lg')) {
+  // narrower than the lg breakpoint
 }
 
 // Every breakpoint wider than the given one
-const wider = getBreakpointsAbove('tablet')
+const wider = getBreakpointsAbove('md')
 ```
 
 ## Performance Optimization

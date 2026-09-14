@@ -57,11 +57,12 @@ const MyComponent = () => {
         isPresented,
         title: 'Choose an action',
         message: 'What would you like to do?',
-        actions: [
-          { title: 'Share', role: 'default', onPress: () => share() },
-          { title: 'Edit', role: 'default', onPress: () => edit() },
-          { title: 'Delete', role: 'destructive', onPress: () => remove() },
-          { title: 'Cancel', role: 'cancel' },
+        // `buttons`, and each one needs a `label` and an `onPress`.
+        buttons: [
+          { label: 'Share', onPress: () => share() },
+          { label: 'Edit', onPress: () => edit() },
+          { label: 'Delete', role: 'destructive', onPress: () => remove() },
+          { label: 'Cancel', role: 'cancel', onPress: () => {} },
         ],
       }),
     ],
@@ -92,9 +93,11 @@ const MyComponent = () => {
         isPresented,
         title: 'Confirm Action',
         message: 'Are you sure you want to delete this item?',
-        actions: [
+        // Alert buttons differ from ActionSheet's: `title`, and the callback
+        // is `action`.
+        buttons: [
           { title: 'Cancel', role: 'cancel' },
-          { title: 'Delete', role: 'destructive', onPress: () => remove() },
+          { title: 'Delete', role: 'destructive', action: () => remove() },
         ],
       }),
     ],

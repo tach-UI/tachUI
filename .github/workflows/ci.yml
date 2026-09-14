@@ -247,12 +247,18 @@ jobs:
             exit 1
           fi
 
-      # Both run here rather than in the quality job because they resolve
+      # Both run here rather than in the Changeset Policy job because they resolve
       # against built declarations. @tachui/grid and @tachui/viewport shipped
       # 0.11.0 advertising types they did not build, and @tachui/eslint-plugin
       # shipped with no code at all — it was missing from the build chain.
       - name: Enforce declared type entry points exist
         run: bun run ci:check-declared-types
+
+      # Existing is not working: eslint-plugin was repaired from publishing
+      # nothing to publishing a dist whose entry threw ERR_MODULE_NOT_FOUND,
+      # and every existence check passed the whole time.
+      - name: Enforce published entry points actually import
+        run: bun run ci:check-entry-imports
 
       # Every `import { … } from '@tachui/…'` in a package README, resolved
       # against what that entry point actually exports. The READMEs told people
