@@ -1,11 +1,10 @@
-import { Layout, Text } from '@tachui/core'
 import { State } from '@tachui/core/state'
-import { Button } from '@tachui/primitives'
+import { Button, HStack, Text, VStack } from '@tachui/primitives'
 
 export function App() {
   const count = State(0)
 
-  return Layout.VStack({
+  return VStack({
     children: [
       Text('TachUI Advanced Starter')
         .fontSize(30)
@@ -16,18 +15,18 @@ export function App() {
         .fontSize(20)
         .margin({ bottom: 20 }),
 
-      Layout.HStack({
+      HStack({
         children: [
           Button('-', () => {
             count.wrappedValue -= 1
           })
-            .padding(10, 14)
+            .padding({ vertical: 10, horizontal: 14 })
             .cornerRadius(8),
 
           Button('+', () => {
             count.wrappedValue += 1
           })
-            .padding(10, 14)
+            .padding({ vertical: 10, horizontal: 14 })
             .cornerRadius(8),
         ],
         spacing: 12,
@@ -40,4 +39,5 @@ export function App() {
     .frame(undefined, '100vh')
     .justifyContent('center')
     .alignItems('center')
+    .build()
 }

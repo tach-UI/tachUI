@@ -1,8 +1,7 @@
-import { Layout, Text } from '@tachui/core'
-import { Button } from '@tachui/primitives'
+import { Button, Text, VStack } from '@tachui/primitives'
 
 export function App() {
-  return Layout.VStack({
+  return VStack({
     children: [
       Text('Welcome to TachUI')
         .fontSize(30)
@@ -17,7 +16,7 @@ export function App() {
       Button('Get Started', () => console.log('TachUI starter ready'))
         .backgroundColor('#0a84ff')
         .foregroundColor('#fff')
-        .padding(12, 20)
+        .padding({ vertical: 12, horizontal: 20 })
         .cornerRadius(10),
     ],
     spacing: 0,
@@ -26,4 +25,5 @@ export function App() {
     .frame(undefined, '100vh')
     .justifyContent('center')
     .alignItems('center')
+    .build()
 }

@@ -64,6 +64,12 @@ jobs:
       - name: Enforce explicit sideEffects declarations
         run: bun run ci:check-side-effects
 
+      # The starter templates cannot be imported by a test, so their bodies are
+      # copied into one. A copy that drifts is a test proving something nobody
+      # ships — which is how 0.11.0 scaffolded an app that threw on render.
+      - name: Enforce starter template render tests stay in step
+        run: bun run ci:check-template-apps
+
   readme-version-policy:
     name: README Version Policy
     if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'

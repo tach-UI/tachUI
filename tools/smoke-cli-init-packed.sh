@@ -158,6 +158,14 @@ if (!hasModifier('frame')) {
 }
 NODE
 
+# Before the build, because Vite builds with esbuild: it strips types without
+# checking them, and it never executes App(). Both starter templates shipped in
+# 0.11.0 importing `Text` and `Layout.VStack` from `@tachui/core`, where neither
+# exists, and this smoke test went green on every one of them. A generated
+# project that does not type-check is not a working starter.
+echo "[smoke-cli-init-packed] type-checking generated project"
+npm run typecheck
+
 echo "[smoke-cli-init-packed] building generated project"
 npm run build
 

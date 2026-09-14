@@ -58,7 +58,7 @@ ZStack({
   children: [
     Image('/hero-background.jpg'),
     Text('Overlay Text')
-      .modifier.padding(16)
+      .padding(16)
       .backgroundColor('rgba(0,0,0,0.7)')
       .foregroundColor('white')
       ,
@@ -98,7 +98,7 @@ Displays text content with full typography control.
 
 ```typescript
 Text('Hello, tachUI!')
-  .modifier.font({ family: 'San Francisco', size: 18, weight: 600 })
+  .font({ family: 'San Francisco', size: 18, weight: 600 })
   .foregroundColor('#007AFF')
   .textAlign('center')
   
@@ -108,7 +108,7 @@ Text('Hello, tachUI!')
 
 ```typescript
 // Multiline text with line clamping
-Text(longContent).modifier.lineClamp(3).wordBreak('break-word')
+Text(longContent).lineClamp(3).wordBreak('break-word')
 
 // Reactive text content
 const [count, setCount] = createSignal(0)
@@ -121,7 +121,7 @@ Displays images with loading states and aspect ratio control.
 
 ```typescript
 Image('/path/to/image.jpg')
-  .modifier.size({ width: 200, height: 150 })
+  .size({ width: 200, height: 150 })
   .cornerRadius(8)
   .aspectRatio('cover')
   
@@ -133,7 +133,7 @@ Image('/path/to/image.jpg')
 import { Assets } from '@tachui/core'
 
 Image(Assets.profilePicture)
-  .modifier.size({ width: 60, height: 60 })
+  .size({ width: 60, height: 60 })
   .cornerRadius(30)
   
 ```
@@ -159,7 +159,7 @@ Interactive button component with full customization support.
 Button('Click Me', () => {
   console.log('Button clicked!')
 })
-  .modifier.padding({ horizontal: 16, vertical: 8 })
+  .padding({ horizontal: 16, vertical: 8 })
   .backgroundColor('#007AFF')
   .foregroundColor('white')
   .cornerRadius(8)
@@ -170,7 +170,7 @@ Button('Click Me', () => {
 
 ```typescript
 Button('Stateful Button', handleClick)
-  .modifier.backgroundColor('#007AFF')
+  .backgroundColor('#007AFF')
   .hover({ backgroundColor: '#0051D5' })
   .active({ transform: 'scale(0.95)' })
   .disabled({ opacity: 0.5 })
@@ -188,7 +188,7 @@ Toggle({
   isOn: () => isEnabled(),
   onToggle: setIsEnabled,
 })
-  .modifier.accentColor('#007AFF')
+  .accentColor('#007AFF')
   
 ```
 
@@ -222,7 +222,7 @@ BasicInput({
   onInput: setText,
   placeholder: 'Enter your name',
 })
-  .modifier.padding(12)
+  .padding(12)
   .border(1, '#E5E5EA')
   .cornerRadius(8)
   
@@ -269,8 +269,8 @@ VStack({
     HStack({
       alignment: 'center',
       children: [
-        Image(Assets.logo).modifier.size({ width: 40, height: 40 }),
-        Text('My App').modifier.font({ size: 24, weight: 'bold' }),
+        Image(Assets.logo).size({ width: 40, height: 40 }),
+        Text('My App').font({ size: 24, weight: 'bold' }),
         Spacer(),
         Button('Menu', toggleMenu),
       ],
@@ -281,7 +281,7 @@ VStack({
       spacing: 16,
       children: [
         Text('Welcome to tachUI!')
-          .modifier.font({ size: 18 })
+          .font({ size: 18 })
           .textAlign('center')
           ,
 
@@ -292,7 +292,7 @@ VStack({
           children: [
             Button('Get Started', startOnboarding),
             Button('Learn More', openDocs)
-              .modifier.backgroundColor('transparent')
+              .backgroundColor('transparent')
               .foregroundColor('#007AFF')
               ,
           ],
@@ -312,7 +312,7 @@ VStack({
       spacing: { mobile: 8, desktop: 16 },
       children: [
         Image(item.image)
-          .modifier.size({ mobile: 40, desktop: 60 })
+          .size({ mobile: 40, desktop: 60 })
           .cornerRadius({ mobile: 4, desktop: 8 })
           ,
 
@@ -320,11 +320,11 @@ VStack({
           alignment: 'leading',
           children: [
             Text(item.title)
-              .modifier.font({ size: { mobile: 16, desktop: 18 } })
+              .font({ size: { mobile: 16, desktop: 18 } })
               ,
 
             Text(item.description)
-              .modifier.font({ size: { mobile: 14, desktop: 16 } })
+              .font({ size: { mobile: 14, desktop: 16 } })
               .opacity(0.7)
               ,
           ],
@@ -347,7 +347,7 @@ All primitive components include comprehensive accessibility support:
 
 ```typescript
 Button('Accessible Button', handleClick)
-  .modifier.accessibilityLabel('Save document')
+  .accessibilityLabel('Save document')
   .accessibilityRole('button')
   .accessibilityHint('Saves the current document')
   
@@ -361,7 +361,7 @@ Primitives work seamlessly with the modifier system:
 import { padding, margin, backgroundColor } from '@tachui/modifiers'
 
 Text('Styled with modifiers')
-  .modifier.apply(padding(16))
+  .apply(padding(16))
   .apply(margin({ vertical: 8 }))
   .apply(backgroundColor('#F2F2F7'))
   
@@ -431,7 +431,7 @@ VStack({
           Image(userAvatar),
           Text(userName),
           Spacer(),
-          Text('>').modifier.opacity(0.5),
+          Text('>').opacity(0.5),
         ],
       }),
     }),

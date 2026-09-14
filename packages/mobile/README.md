@@ -73,7 +73,7 @@ const MyComponent = () => {
     })
   }
 
-  return Button('Show Options', showOptions).modifier.padding(16)
+  return Button('Show Options', showOptions).padding(16)
 }
 ```
 
@@ -106,7 +106,7 @@ const MyComponent = () => {
   }
 
   return Button('Delete Item', showAlert)
-    .modifier.backgroundColor('#ff3b30')
+    .backgroundColor('#ff3b30')
     .foregroundColor('white')
     
 }
@@ -284,7 +284,7 @@ const app = SafeAreaView({
     // Your app content
   ],
 })
-  .modifier.backgroundColor('#ffffff')
+  .backgroundColor('#ffffff')
   
 ```
 
@@ -326,7 +326,7 @@ IOSActionSheet({
   title: 'Options',
   actions: actions,
 })
-  .modifier.iosStyle(true)
+  .iosStyle(true)
   
 ```
 
@@ -341,7 +341,7 @@ MaterialActionSheet({
   title: 'Choose action',
   actions: actions,
 })
-  .modifier.materialStyle(true)
+  .materialStyle(true)
   
 ```
 
@@ -358,7 +358,7 @@ const slideUpTransition = createMobileTransition({
 })
 
 ActionSheet({ actions })
-  .modifier.presentationTransition(slideUpTransition)
+  .presentationTransition(slideUpTransition)
   
 ```
 

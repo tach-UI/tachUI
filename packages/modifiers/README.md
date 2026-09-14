@@ -38,7 +38,7 @@ import { VStack, Text } from '@tachui/primitives'
 VStack({
   children: [
     Text('Padded Text')
-      .modifier.padding(16)
+      .padding(16)
       .margin({ vertical: 8 })
       .size({ width: 200, height: 50 })
       .position('relative')
@@ -61,7 +61,7 @@ Visual styling and theming:
 
 ```typescript
 Text('Styled Text')
-  .modifier.backgroundColor('#007AFF')
+  .backgroundColor('#007AFF')
   .foregroundColor('white')
   .cornerRadius(8)
   .border(1, '#E5E5EA')
@@ -82,7 +82,7 @@ Text styling and formatting:
 
 ```typescript
 Text('Styled Text')
-  .modifier.font({ family: 'San Francisco', size: 18, weight: 600 })
+  .font({ family: 'San Francisco', size: 18, weight: 600 })
   .textAlign('center')
   .lineHeight(1.4)
   .letterSpacing(0.5)
@@ -102,7 +102,7 @@ User interaction and behavior:
 
 ```typescript
 Button('Interactive Button')
-  .modifier.focusable(true)
+  .focusable(true)
   .hover({ backgroundColor: '#0051D5' })
   .onTap(() => console.log('Tapped!'))
   .keyboardShortcut('Enter')
@@ -124,7 +124,7 @@ Grid, flexbox, and advanced layout:
 VStack({
   children: items,
 })
-  .modifier.flexbox({
+  .flexbox({
     direction: 'column',
     justify: 'space-between',
     align: 'center',
@@ -149,7 +149,7 @@ import { createSignal } from '@tachui/core'
 const [isActive, setIsActive] = createSignal(false)
 
 Text('Conditional Style')
-  .modifier.backgroundColor(() => (isActive() ? '#007AFF' : '#F2F2F7'))
+  .backgroundColor(() => (isActive() ? '#007AFF' : '#F2F2F7'))
   .foregroundColor(() => (isActive() ? 'white' : 'black'))
   .scale(() => (isActive() ? 1.05 : 1.0))
   
@@ -180,7 +180,7 @@ const myCard = cardStyle(
 
 ```typescript
 Text('Responsive Text')
-  .modifier.fontSize({ mobile: 14, tablet: 16, desktop: 18 })
+  .fontSize({ mobile: 14, tablet: 16, desktop: 18 })
   .padding({ mobile: 8, tablet: 12, desktop: 16 })
   .textAlign({ mobile: 'left', desktop: 'center' })
   
@@ -237,7 +237,7 @@ From `@tachui/modifiers/utility`:
 ```typescript
 // Modifiers are automatically cached for performance
 const buttonStyle = Button('Example')
-  .modifier.padding(16)
+  .padding(16)
   .backgroundColor('#007AFF')
    // Cached modifier chain
 ```
@@ -247,7 +247,7 @@ const buttonStyle = Button('Example')
 ```typescript
 // Multiple modifiers are batched into single DOM update
 Text('Optimized')
-  .modifier.padding(16) // \
+  .padding(16) // \
   .backgroundColor() // | Batched
   .cornerRadius(8) // | together
   .shadow() // /
@@ -275,18 +275,18 @@ import { VStack, HStack, Text, Button } from '@tachui/primitives'
 
 VStack({
   children: [
-    Text('Title').modifier.font({ size: 24, weight: 'bold' }),
+    Text('Title').font({ size: 24, weight: 'bold' }),
     HStack({
       children: [
-        Button('Cancel').modifier.backgroundColor('#8E8E93'),
-        Button('Save').modifier.backgroundColor('#007AFF'),
+        Button('Cancel').backgroundColor('#8E8E93'),
+        Button('Save').backgroundColor('#007AFF'),
       ],
     })
-      .modifier.gap(12)
+      .gap(12)
       ,
   ],
 })
-  .modifier.padding(20)
+  .padding(20)
   
 ```
 
@@ -296,7 +296,7 @@ VStack({
 import { shadow, blur } from '@tachui/modifiers/effects'
 
 Text('Enhanced')
-  .modifier.padding(20)
+  .padding(20)
   .backgroundColor('white')
   .cornerRadius(12)
   .apply(shadow({ x: 0, y: 4, radius: 12, color: 'rgba(0,0,0,0.1)' }))
@@ -311,7 +311,7 @@ Full TypeScript support with intelligent autocomplete:
 ```typescript
 // TypeScript will provide autocomplete and type checking
 Text('Type Safe')
-  .modifier.padding(16) // ✓ number | PaddingConfig
+  .padding(16) // ✓ number | PaddingConfig
   .backgroundColor() // ✓ string | ColorAsset
   .opacity() // ✓ number (0-1)
    // ✓ ComponentInstance
