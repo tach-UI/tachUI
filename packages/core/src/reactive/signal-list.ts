@@ -322,11 +322,9 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
 
   // Expose getIds without the custom wrapper for external use.
   //
-  // Named as the signal it is. `createSignal` attaches the brand and `peek` to
-  // its accessor at runtime but declares only `() => T`, so both are invisible
-  // here; widening that declaration is a core-wide change and belongs on its
-  // own rather than inside a consumer's.
-  const getIds = _getIds as Signal<K[]>
+  // `createSignal` declares `Signal<T>` now (#372), so this no longer needs the
+  // assertion it once did to recover what the accessor always carried.
+  const getIds: Signal<K[]> = _getIds
 
   // Type assertion to access peek() method
   const peekIds = () => (_getIds as any).peek()

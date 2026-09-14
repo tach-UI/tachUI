@@ -16,7 +16,7 @@
  */
 
 import { describe, it } from 'vitest'
-import type { Signal } from '@tachui/core'
+import { createSignal } from '@tachui/core'
 import { Text } from '@tachui/primitives'
 import { ActionSheet, Alert } from '@tachui/mobile'
 import { globalDevTools } from '@tachui/devtools'
@@ -31,15 +31,10 @@ import {
 } from '@tachui/responsive'
 
 describe('README examples type-check', () => {
-  // `createSignal` returns an accessor carrying `peek` at runtime but declares
-  // only `() => T`, so it does not satisfy `Signal<T>` and the READMEs' natural
-  // `const [isPresented] = createSignal(false)` will not type-check against
-  // these props. That is a core declaration gap, noted in signal-list.ts as
-  // deliberately deferred, and not this file's subject — so the signal is built
-  // explicitly here and the button contracts are what get asserted.
-  const isPresented: Signal<boolean> = Object.assign(() => false, {
-    peek: () => false,
-  })
+  // Exactly what the READMEs show. This needed a hand-built `Signal` until
+  // #372: `createSignal` attached `peek` at runtime and declared only
+  // `() => T`, so the natural form did not satisfy a `Signal<boolean>` prop.
+  const [isPresented] = createSignal(false)
 
   it('mobile: ActionSheet quick start', () => {
     ActionSheet({
