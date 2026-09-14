@@ -254,10 +254,6 @@ export interface QueryInternals<TRaw, TData, E> {
   readonly inFlightIntent: () => string | undefined
   /** Resolves when the observed entry's current execution is over. */
   readonly whenSettled: () => Promise<void>
-  /** The policy claimed on the entry being observed, or nothing. */
-  readonly entryPolicy: () => CacheEntryPolicy | undefined
-  /** The entry's claimed policy, or nothing while not observing one. */
-  readonly policy: () => CacheEntryPolicy | undefined
   /**
    * Reloads with a loader of the caller's choosing, for this execution only.
    *
@@ -864,16 +860,6 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
     result,
     raw: () => state().data,
     project,
-    policy: () => {
-      if (observation === undefined) {
-        return undefined
-      }
-      try {
-        return observation.entry().options
-      } catch {
-        return undefined
-      }
-    },
     whenSettled: async () => {
       if (observation === undefined) {
         return
@@ -882,28 +868,6 @@ export function createQueryInternals<TRaw, TData = TRaw, E = Error>(
         await observation.whenSettled()
       } catch {
         // The client went away while waiting; there is nothing left to wait on.
-      }
-    },
-    entryPolicy: () => {
-      const resolvedKey = untrack(key)
-      if (observation !== undefined) {
-        try {
-          return observation.entry().options
-        } catch {
-          return undefined
-        }
-      }
-      // Gated, or between keys: the entry is still the authority on a policy
-      // claimed for it, and this observer may hold none of its own.
-      try {
-        const transient = client.observe(resolvedKey)
-        try {
-          return transient.entry().options
-        } finally {
-          transient.release({ keepInFlight: true })
-        }
-      } catch {
-        return undefined
       }
     },
     inFlightIntent: () => {

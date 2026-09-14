@@ -221,10 +221,14 @@ export type FetchQueryOptions<TRaw, E = Error> = Omit<
   placeholderData?: never
   enabled?: never
   /**
-   * The discriminator `prefetchQueries` reads to tell a plain request from an
-   * infinite one. Declared absent here so the union is sound: without it a
-   * plain request would be assignable to both halves and the narrowing would
-   * be a guess.
+   * Declared absent so the union is sound: without it a plain request would be
+   * assignable to both halves and the narrowing would be a guess.
+   *
+   * Not the discriminator, though it reads like one. `prefetchQueries`
+   * branches on `typeof getNextPageParam === 'function'`, because without
+   * `exactOptionalPropertyTypes` a plain request may carry `initialPageParam`
+   * explicitly set to `undefined` — which `in` reports as present, routing a
+   * plain fetch to the infinite one.
    */
   initialPageParam?: never
   /**
