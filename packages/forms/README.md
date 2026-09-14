@@ -23,7 +23,7 @@ import { Form, TextField, DatePicker, validation } from '@tachui/forms'
 // Or use granular imports for optimal bundle size
 import { TextField } from '@tachui/forms/text-input'
 import { DatePicker } from '@tachui/forms/date-picker'
-import { required, email } from '@tachui/forms/validation'
+import { validateValue, ValidationPresets } from '@tachui/forms/validation'
 ```
 
 ## Components (27 total)
@@ -79,7 +79,7 @@ import * as Validation from '@tachui/forms/validation'
 
 // Import individual components (~20-30KB each)
 import { TextField } from '@tachui/forms/text-input'
-import { required, email } from '@tachui/forms/validation'
+import { validateValue, ValidationPresets } from '@tachui/forms/validation'
 ```
 
 ## Migration from v1.x
@@ -94,8 +94,10 @@ import { DatePicker, Stepper } from '@tachui/forms'
 // New unified approach (390KB total)
 import { TextField, Form, DatePicker, Stepper } from '@tachui/forms'
 
-// Or with tree-shaking (as needed)
-import { TextField, Form } from '@tachui/forms/text-input'
+// Or with tree-shaking (as needed). `Form` is a root export — only the field
+// components are split across subpaths.
+import { Form } from '@tachui/forms'
+import { TextField } from '@tachui/forms/text-input'
 import { DatePicker } from '@tachui/forms/date-picker'
 import { Stepper } from '@tachui/forms/advanced'
 ```

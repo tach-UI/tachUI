@@ -67,6 +67,8 @@
     "ci:check-version-line": "node ./tools/check-version-line.mjs",
     "ci:check-side-effects": "node ./tools/check-side-effects.mjs",
     "ci:check-template-apps": "node ./tools/check-template-apps.mjs",
+    "ci:check-readme-imports": "node ./tools/check-readme-imports.mjs",
+    "ci:check-declared-types": "node ./tools/check-declared-types.mjs",
     "ci:check-size-budget": "node ./tools/check-size-budget.mjs",
     "lint": "oxlint packages --import-plugin --ignore-pattern='**/__tests__/**' --ignore-pattern='**/*.test.*' --ignore-pattern='**/*.spec.*'",
     "lint:fix": "oxlint packages --import-plugin --ignore-pattern='**/__tests__/**' --ignore-pattern='**/*.test.*' --ignore-pattern='**/*.spec.*' --fix",

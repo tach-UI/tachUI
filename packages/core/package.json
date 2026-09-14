@@ -18,19 +18,19 @@
       "import": "./dist/full.js"
     },
     "./minimal": {
-      "types": "./dist/minimal.d.ts",
+      "types": "./dist/bundles/minimal.d.ts",
       "import": "./dist/minimal.js"
     },
     "./common": {
-      "types": "./dist/common.d.ts",
+      "types": "./dist/bundles/common.d.ts",
       "import": "./dist/common.js"
     },
     "./essential": {
-      "types": "./dist/essential.d.ts",
+      "types": "./dist/bundles/essential.d.ts",
       "import": "./dist/essential.js"
     },
     "./minimal-prod": {
-      "types": "./dist/minimal-prod.d.ts",
+      "types": "./dist/bundles/production-minimal.d.ts",
       "import": "./dist/minimal-prod.js"
     },
     "./reactive": {

@@ -38,39 +38,6 @@ Grid({
 })
 ```
 
-### GridResponsive
-
-Responsive grid that adapts to different screen sizes automatically.
-
-```typescript
-import { GridResponsive } from '@tachui/grid'
-
-GridResponsive({
-  columns: {
-    mobile: 1,
-    tablet: 2,
-    desktop: 3,
-  },
-  spacing: {
-    mobile: 8,
-    tablet: 12,
-    desktop: 16,
-  },
-  children: gridItems,
-})
-```
-
-## Features
-
-- **CSS Grid Integration**: Full CSS Grid support with tachUI's declarative syntax
-- **Responsive Design**: Automatic breakpoint handling and adaptive layouts
-- **SwiftUI-Inspired API**: Familiar grid syntax for SwiftUI developers
-- **Accessibility**: Built-in ARIA support and keyboard navigation
-- **Performance Optimized**: Efficient rendering with minimal layout thrashing
-- **TypeScript Support**: Complete type safety with excellent IntelliSense
-
-## Grid Properties
-
 ### Basic Layout
 
 ```typescript
@@ -123,19 +90,19 @@ Grid({
 The grid system includes specialized modifiers for precise control:
 
 ```typescript
-import { gridColumn, gridRow, gridArea } from '@tachui/grid'
+import { gridColumnSpan, gridRowSpan, gridArea } from '@tachui/grid'
 
 // Span multiple columns/rows
 Text('Wide Item')
-  .gridColumn('1 / 3') // Span from column 1 to 3
-  .gridRow('2 / 4') // Span from row 2 to 4
+  .gridColumnSpan(2) // Span two columns
+  .gridRowSpan(2) // Span two rows
   
 
 // Named grid areas
 Text('Header').gridArea('header')
 
 // Positioning with line numbers
-Text('Positioned Item').gridColumn(2).gridRow(1)
+Text('Positioned Item').gridArea('header')
 ```
 
 ## Responsive Grid Patterns
@@ -146,24 +113,30 @@ Text('Positioned Item').gridColumn(2).gridRow(1)
 Grid({
   columns: 'repeat(auto-fit, minmax(250px, 1fr))',
   spacing: 16,
+  // There is no Card primitive; a card is a stack you style.
   children: cardItems.map(item =>
-    Card({ title: item.title, content: item.content })
+    VStack({
+      children: [Text(item.title).fontWeight('bold'), Text(item.content)],
+      spacing: 4,
+    })
+      .padding(16)
+      .cornerRadius(8)
   ),
 })
 ```
 
 ### Dashboard Layout
 
+`Grid` takes CSS grid template areas directly; children claim an area with the
+`gridArea` modifier.
+
 ```typescript
-GridResponsive({
-  templateAreas: {
-    mobile: ['header', 'stats', 'chart', 'footer'],
-    desktop: [
-      'header header header',
-      'stats chart chart',
-      'footer footer footer',
-    ],
-  },
+Grid({
+  templateAreas: [
+    'header header header',
+    'stats chart chart',
+    'footer footer footer',
+  ],
   children: [
     DashboardHeader().gridArea('header'),
     StatsPanel().gridArea('stats'),
@@ -172,6 +145,9 @@ GridResponsive({
   ],
 })
 ```
+
+> There is no `GridResponsive`. Per-breakpoint template areas are not
+> implemented; drive them with `@tachui/responsive`'s modifiers instead.
 
 ## Accessibility Features
 
@@ -193,7 +169,7 @@ Works seamlessly with the tachUI ecosystem:
 
 ```typescript
 import { Grid } from '@tachui/grid'
-import { Card, Text, Button } from '@tachui/primitives'
+import { Text, VStack } from '@tachui/primitives'
 import { Show } from '@tachui/flow-control'
 import { createSignal } from '@tachui/core'
 
@@ -208,14 +184,16 @@ VStack({
         columns: 'repeat(auto-fill, minmax(300px, 1fr))',
         spacing: 20,
         children: items().map(item =>
-          Card({
-            title: item.title,
-            content: item.description,
+          VStack({
+            children: [
+              Text(item.title).fontWeight('bold'),
+              Text(item.description),
+            ],
+            spacing: 4,
           })
             .padding(16)
             .cornerRadius(8)
             .shadow({ x: 0, y: 2, radius: 8, color: 'rgba(0,0,0,0.1)' })
-            
         ),
       }),
     }),
