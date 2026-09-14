@@ -10,7 +10,7 @@ import {
   isBatchingUpdates,
   setFlushFunction,
 } from './context'
-import type { Computation, SignalImpl as ISignal } from './types'
+import type { Computation, Signal, SignalImpl as ISignal } from './types'
 import { ComputationState } from './types'
 
 let signalIdCounter = 0
@@ -179,10 +179,12 @@ function flushUpdates(): void {
  * console.log(count()) // 6
  * ```
  */
-export function createSignal<T>(initialValue: T): [() => T, SignalSetter<T>] {
+export function createSignal<T>(initialValue: T): [Signal<T>, SignalSetter<T>] {
   const signal = new SignalImpl(initialValue)
 
-  const getter = signal.getValue.bind(signal) as (() => T) & { peek: () => T }
+  // Spelled as the type it is, which is what the signature now returns. The
+  // accessor has always carried `peek`; only the declaration disagreed.
+  const getter = signal.getValue.bind(signal) as Signal<T>
   getter.peek = signal.peek.bind(signal)
 
   const setter: SignalSetter<T> = signal.set.bind(signal)
