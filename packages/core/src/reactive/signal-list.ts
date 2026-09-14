@@ -203,10 +203,54 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
     )
   }
 
+  /**
+   * How many tracked keys the list no longer holds — the eviction candidates.
+   *
+   * Kept as a running count rather than recomputed, because `evictTracked` ran
+   * on every release and its scan was the whole tracked map each time: tearing
+   * down an n-row list cost O(n^2), and a long feed's `dispose()` blocked the
+   * main thread for it. Every mutation of `tracked` or `present` maintains it,
+   * which is why both sets are only ever written through the four helpers
+   * below.
+   */
+  let departed = 0
+
   /** Marks a tracked key as most recently asked for. */
   const touch = (key: K): void => {
+    if (!tracked.has(key) && !present.has(key)) {
+      departed += 1
+    }
     tracked.delete(key)
     tracked.set(key, true)
+  }
+
+  /** Records a key as tracked without disturbing recency. */
+  const trackPresent = (key: K): void => {
+    if (!tracked.has(key)) {
+      // Present, so tracked-but-departed does not apply and the count stands.
+      tracked.set(key, true)
+    }
+  }
+
+  /** Marks a key as held by the list. */
+  const addPresent = (key: K): void => {
+    if (present.has(key)) {
+      return
+    }
+    present.add(key)
+    if (tracked.has(key)) {
+      departed -= 1
+    }
+  }
+
+  /** Marks a key as no longer held by the list. */
+  const removePresent = (key: K): void => {
+    if (!present.delete(key)) {
+      return
+    }
+    if (tracked.has(key)) {
+      departed += 1
+    }
   }
 
   /**
@@ -216,16 +260,15 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
    * live data, and its cell is the list's own, not a retained accessor.
    */
   const evictTracked = (): void => {
-    let departed = 0
-    for (const key of tracked.keys()) {
-      if (!present.has(key)) {
-        departed += 1
-      }
-    }
     if (departed <= trackedKeys) {
+      // The common case, and the one that used to cost a full scan anyway.
       return
     }
-    for (const key of [...tracked.keys()]) {
+    // Iterated live rather than through a copy: deleting the key the iterator
+    // is sitting on is defined for a Map, and the copy was another O(n) per
+    // call. `tracked` is in least-recently-asked-for order, so the candidates
+    // are at the front and the walk stops as soon as the bound is met.
+    for (const key of tracked.keys()) {
       if (departed <= trackedKeys) {
         return
       }
@@ -311,9 +354,7 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
       // matter and there is nothing to reorder. Recorded once, so a later
       // removal knows to keep the cell — and repeated reads of a row that is
       // on screen, which is the hot path a render takes, mutate nothing.
-      if (!tracked.has(key)) {
-        tracked.set(key, true)
-      }
+      trackPresent(key)
       return cell[0]
     }
     // A key asked for before its row exists, or after it left, is retained —
@@ -326,7 +367,7 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
   // Update a single item
   const update = (key: K, item: T): void => {
     const known = present.has(key)
-    present.add(key)
+    addPresent(key)
     cellFor(key)[1](item)
     if (!known) {
       // Add to IDs array - use peek() to avoid tracking
@@ -345,14 +386,14 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
     // Update existing items and create new ones
     items.forEach(item => {
       const key = keyFn(item)
-      present.add(key)
+      addPresent(key)
       cellFor(key)[1](item)
     })
 
     // Remove items that no longer exist
     currentKeys.forEach((key: K) => {
       if (!newKeySet.has(key)) {
-        present.delete(key)
+        removePresent(key)
         release(key)
       }
     })
@@ -383,7 +424,7 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
   // Clear all items
   const clear = (): void => {
     for (const key of [...present]) {
-      present.delete(key)
+      removePresent(key)
       release(key)
     }
     setIds([])
@@ -391,7 +432,7 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
 
   // Remove a specific item
   const remove = (key: K): void => {
-    present.delete(key)
+    removePresent(key)
     release(key)
     // Use peek() to avoid tracking
     const currentIds = peekIds()
