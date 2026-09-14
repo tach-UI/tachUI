@@ -20,10 +20,19 @@ the whole tracked map, on every released row. `clear()` releases every row, so
 tearing down an n-row list cost O(n^2): 16,000 rows took 2311ms, which for a
 long feed's `dispose()` is the main thread blocked for two seconds.
 `createInfiniteQueryList.get` tracks every rendered row, so a real feed reaches
-that size. The count is now maintained as rows come and go — every write to
-`present` or `tracked` goes through one of four helpers that keep it — and the
-same teardown takes 58ms. The common case, where nothing needs evicting, used
-to pay for a full scan too and is now a single comparison.
+that size. The count is now maintained as rows come and go — every site that changes
+membership of either set keeps it — and the same teardown takes 58ms. The
+common case, where nothing needs evicting, used to pay for a full scan too and
+is now a single comparison.
+
+One order is not fixed by this and the comment says so. The eviction walk skips
+present keys, so when rows are asked for in the reverse of the order they are
+released, every call walks the whole held set and the teardown is quadratic
+again — 2.0s against 56ms at 16,000 rows. Rendering and tearing down a feed top
+to bottom, which is what `createInfiniteQueryList` does, is the aligned case.
+Making the reversed one linear means ordering candidates separately from
+`tracked`, which costs the least-recently-asked-for eviction order the bound is
+specified in terms of; that is a behaviour change and is not made here.
 
 `QueryInternals.policy` and `entryPolicy` were two near-identical accessors
 with no callers anywhere; loaders read `ctx.policy`. Being properties of a
