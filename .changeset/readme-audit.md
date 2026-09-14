@@ -2,6 +2,7 @@
 "@tachui/core": patch
 "@tachui/grid": patch
 "@tachui/viewport": patch
+"@tachui/eslint-plugin": patch
 ---
 
 `@tachui/grid` and `@tachui/viewport` shipped 0.11.0 with no type declarations
@@ -24,3 +25,14 @@ advertises declarations it did not produce. Three entry points are recorded as
 known gaps rather than hidden: `@tachui/core`'s `./viewport` and
 `@tachui/grid`'s `./components` and `./modifiers` have no build output at all,
 which is a build fix rather than a manifest fix.
+
+`@tachui/eslint-plugin@0.11.0` published with no code in it — `package.json` and
+`README.md`, nothing else. It has a build script and is not private, but it was
+absent from `build:packages`, and the release workflow builds by running exactly
+that. With no `prepack` hook either, `changeset publish` packed a directory that
+had never been written. Installing it got you an empty package. It joins the
+build chain.
+
+That is also why `ci:check-declared-types` runs in the build job: checked
+against a stale local `dist` it passes, which is how this went unnoticed here
+before CI ran it on a clean tree.
