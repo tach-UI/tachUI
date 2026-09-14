@@ -882,6 +882,23 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       let held: InfiniteData<TPage, TPageParam> | undefined
       try {
         ensureUsable('fetchInfiniteQuery')
+        if (options.client !== undefined && options.client !== client) {
+          // Before anything reads `entries`. The shortfall below decides
+          // whether the cached set is long enough to serve and what the run
+          // should extend, and both answers belong to whichever cache will
+          // actually serve the call — `fetchQuery` forwards to `options.client`
+          // a few lines down, so measuring here read one client and wrote
+          // another. Three pages held here against one there answered with the
+          // short set this logic exists to refuse; the reverse handed that
+          // client a set seeded with pages it never loaded.
+          //
+          // Strip the forwarder for the same reason `fetchQuery` does: a
+          // decorated client delegating back here would recurse.
+          return options.client.fetchInfiniteQuery({
+            ...options,
+            client: undefined,
+          })
+        }
         assertPageCount(count, 'fetchInfiniteQuery')
         assertPageParam(options.initialPageParam, 'fetchInfiniteQuery')
         // What the cache holds for this key right now, if it is servable.
@@ -898,8 +915,9 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
       }
       const shortfall = held !== undefined && held.pages.length < count
       // Through `client.fetchQuery` rather than the closure-local one, so a
-      // decorated client's override is honoured here the way `prefetchQueries`
-      // honours it two functions below.
+      // decorated client's override of this client is honoured the way
+      // `prefetchQueries` honours it two functions below. A *different*
+      // client was already forwarded to above.
       //
       // The set is one ordinary cache entry under the base key: dedup,
       // freshness, retention, dehydration and the generation guard all apply to
@@ -935,7 +953,6 @@ function buildClient(disposeClientRoot: () => void, onDispose?: () => void): Que
         staleTime: options.staleTime,
         gcTime: options.gcTime,
         snapshot: options.snapshot,
-        client: options.client,
       })
     },
 

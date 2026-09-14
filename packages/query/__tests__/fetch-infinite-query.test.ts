@@ -408,3 +408,96 @@ describe('a prefetch nothing else is waiting on', () => {
     client.dispose()
   })
 })
+
+describe('an explicit client owns the whole decision', () => {
+  it('measures the shortfall against the client that will serve it', async () => {
+    const holder = createQueryClient()
+    const target = createQueryClient()
+
+    // Three pages here, one there. The call goes to `target`, so `target`'s
+    // single page is what the run has to top up.
+    await holder.fetchInfiniteQuery<Page, number>({
+      key: () => ['feed'],
+      load: pageSource(9),
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      pages: 3,
+    })
+    await target.fetchInfiniteQuery<Page, number>({
+      key: () => ['feed'],
+      load: pageSource(9),
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+    })
+
+    const set = await holder.fetchInfiniteQuery<Page, number>({
+      key: () => ['feed'],
+      load: pageSource(9),
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      pages: 3,
+      client: target,
+    })
+
+    // Reading the caller's cache made this a silent short set: three pages
+    // held here, so no shortfall, so the one page cached there was served.
+    expect(set.pages).toHaveLength(3)
+    expect(
+      (inspectQueryEntry(target, ['feed'])?.data as InfiniteData<Page, number>)
+        .pages
+    ).toHaveLength(3)
+
+    holder.dispose()
+    target.dispose()
+  })
+
+  it('never seeds one client set with another client pages', async () => {
+    const holder = createQueryClient()
+    const target = createQueryClient()
+
+    // The reverse arrangement: one page here, three there.
+    await holder.fetchInfiniteQuery<Page, number>({
+      key: () => ['feed'],
+      load: async ({ pageParam }) => ({
+        items: [`holder-${pageParam}`],
+        next: pageParam + 1 < 9 ? pageParam + 1 : undefined,
+      }),
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+    })
+    await target.fetchInfiniteQuery<Page, number>({
+      key: () => ['feed'],
+      load: async ({ pageParam }) => ({
+        items: [`target-${pageParam}`],
+        next: pageParam + 1 < 9 ? pageParam + 1 : undefined,
+      }),
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      pages: 3,
+    })
+
+    const set = await holder.fetchInfiniteQuery<Page, number>({
+      key: () => ['feed'],
+      load: async ({ pageParam }) => ({
+        items: [`holder-${pageParam}`],
+        next: pageParam + 1 < 9 ? pageParam + 1 : undefined,
+      }),
+      initialPageParam: 0,
+      getNextPageParam: nextParam,
+      pages: 3,
+      client: target,
+    })
+
+    // A shortfall computed here (1 < 3) forced a run there and handed it this
+    // client's page as the set to extend, so `target` ended up holding a page
+    // it never loaded.
+    expect(set.pages.flatMap((page) => page.items)).toEqual([
+      'target-0',
+      'target-1',
+      'target-2',
+    ])
+
+    holder.dispose()
+    target.dispose()
+  })
+})
