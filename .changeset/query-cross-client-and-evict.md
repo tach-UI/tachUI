@@ -2,8 +2,8 @@
 
 ---
 
-No release. `@tachui/query` is private and in development; `@tachui/core`'s
-change is a fix to an internal list primitive.
+No release for the changes described here: `@tachui/query` is private and in
+development.
 
 `fetchInfiniteQuery` measured its shortfall against the wrong cache. It read
 `entries` — the client the method was called on — to decide whether the held
@@ -15,24 +15,8 @@ arrangement forced a run on the target seeded with the caller's page objects.
 It now forwards before reading anything, the way `fetchQuery` already did, so
 the cache that decides is the cache that serves.
 
-`createSignalList`'s tracked-key eviction recounted its candidates by scanning
-the whole tracked map, on every released row. `clear()` releases every row, so
-tearing down an n-row list cost O(n^2): 16,000 rows took 2311ms, which for a
-long feed's `dispose()` is the main thread blocked for two seconds.
-`createInfiniteQueryList.get` tracks every rendered row, so a real feed reaches
-that size. The count is now maintained as rows come and go — every site that changes
-membership of either set keeps it — and the same teardown takes 58ms. The
-common case, where nothing needs evicting, used to pay for a full scan too and
-is now a single comparison.
-
-One order is not fixed by this and the comment says so. The eviction walk skips
-present keys, so when rows are asked for in the reverse of the order they are
-released, every call walks the whole held set and the teardown is quadratic
-again — 2.0s against 56ms at 16,000 rows. Rendering and tearing down a feed top
-to bottom, which is what `createInfiniteQueryList` does, is the aligned case.
-Making the reversed one linear means ordering candidates separately from
-`tracked`, which costs the least-recently-asked-for eviction order the bound is
-specified in terms of; that is a behaviour change and is not made here.
+The `@tachui/core` half of this — `createSignalList`'s quadratic eviction —
+is released separately, since `createSignalList` is public API.
 
 `QueryInternals.policy` and `entryPolicy` were two near-identical accessors
 with no callers anywhere; loaders read `ctx.policy`. Being properties of a
