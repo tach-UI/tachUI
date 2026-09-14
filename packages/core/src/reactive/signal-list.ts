@@ -209,9 +209,12 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
    * Kept as a running count rather than recomputed, because `evictTracked` ran
    * on every release and its scan was the whole tracked map each time: tearing
    * down an n-row list cost O(n^2), and a long feed's `dispose()` blocked the
-   * main thread for it. Every mutation of `tracked` or `present` maintains it,
-   * which is why both sets are only ever written through the four helpers
-   * below.
+   * main thread for it.
+   *
+   * Every site that changes membership of `tracked` or `present` maintains it:
+   * the four helpers below, and `evictTracked`, which is the only other place
+   * that deletes from `tracked`. A count that drifts is invisible until the
+   * bound quietly stops holding, so nothing else may write either set.
    */
   let departed = 0
 
@@ -266,8 +269,21 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
     }
     // Iterated live rather than through a copy: deleting the key the iterator
     // is sitting on is defined for a Map, and the copy was another O(n) per
-    // call. `tracked` is in least-recently-asked-for order, so the candidates
-    // are at the front and the walk stops as soon as the bound is met.
+    // call.
+    //
+    // `tracked` is in least-recently-asked-for order and holds present keys
+    // alongside candidates, so this skips the present ones. When rows are
+    // asked for in the order they are later released — a feed rendered and
+    // then torn down top to bottom, which is what `createInfiniteQueryList`
+    // does — the candidates are at the front and each call stops almost at
+    // once. Anti-aligned, every call walks the present keys ahead of them and
+    // the teardown is quadratic again: measured at 16,000 rows, 56ms aligned
+    // against 2.0s reversed. Making that case linear too means ordering the
+    // candidates separately from `tracked`, which would cost the
+    // least-recently-*asked-for* eviction order this relies on — a candidate
+    // would have to be placed by when it departed instead. Not worth the
+    // change in behaviour for an order nothing here produces, but it is the
+    // reason this is a skip rather than a walk over candidates alone.
     for (const key of tracked.keys()) {
       if (departed <= trackedKeys) {
         return
