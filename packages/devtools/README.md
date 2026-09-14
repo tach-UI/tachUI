@@ -42,27 +42,27 @@ pnpm add @tachui/devtools
 
 ### Component Inspector
 
+There is no `ComponentInspector` overlay component. Inspection is a singleton
+you enable and query — `globalDevTools`, or `getDevTools()`.
+
 ```typescript
-import { ComponentInspector } from '@tachui/devtools'
+import { globalDevTools } from '@tachui/devtools'
 
-const App = () => {
-  return VStack().children([
-    MainContent(),
-
-    // Only in development
-    Show(() => import.meta.env.DEV).children([
-      ComponentInspector()
-        .position('bottom-left')
-        .features([
-          'component-tree',
-          'props-inspection',
-          'state-inspection',
-          'modifier-inspection',
-        ])
-        .hotkey('Cmd+Shift+I'),
-    ]),
-  ])
+if (import.meta.env.DEV) {
+  globalDevTools.configure({ trackReactiveOperations: true })
+  globalDevTools.enable()
 }
+
+// The component tree, as a snapshot or as a signal you can observe
+const tree = globalDevTools.getComponentTree()
+const roots = globalDevTools.getRootComponents()
+const live = globalDevTools.getComponentTreeSignal()
+
+// Find something specific
+const buttons = globalDevTools.findComponentsByName('Button')
+
+// What it has recorded
+const events = globalDevTools.getDebugEvents()
 ```
 
 ### Performance Profiler
@@ -89,35 +89,11 @@ if (import.meta.env.DEV) {
 }
 ```
 
-### Development Panel
+### 🚧 Development Panel (planned)
 
-```typescript
-import { DevPanel } from '@tachui/devtools'
-
-const App = () => {
-  return VStack().children([
-    AppContent(),
-
-    // Development panel overlay
-    Show(() => import.meta.env.DEV).children([
-      DevPanel()
-        .position('bottom-right')
-        .collapsible(true)
-        .hotkey('Cmd+Shift+D')
-        .tabs([
-          'component-inspector',
-          'performance-profiler',
-          'memory-monitor',
-          'network-inspector',
-          'console-logger',
-          'accessibility-checker',
-        ]),
-    ]),
-  ])
-}
-```
-
-## API Reference
+`DevPanel` — a docked overlay with tabs for the inspector, profiler, memory and
+network — is not implemented. `globalDevTools` above is the programmatic
+equivalent of its component-inspector tab.
 
 ### Component Inspector
 

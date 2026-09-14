@@ -52,7 +52,7 @@ Symbol('heart').padding(16).foregroundColor('#ff0000')
 
 ```typescript
 import '@tachui/modifiers' // Required for modifier support
-import { VStack, HStack, Text } from '@tachui/core'
+import { HStack, Text, VStack } from '@tachui/primitives'
 import { Symbol } from '@tachui/symbols'
 
 const iconDemo = VStack({
@@ -118,38 +118,6 @@ Symbol('heart.slash')
 Symbol('arrow.up.circle.fill')
 Symbol('magnifyingglass')
 Symbol('gearshape.fill')
-```
-
-### Lucide Icons
-
-Access the full Lucide icon library:
-
-```typescript
-import { LucideIcon } from '@tachui/symbols'
-
-// Direct Lucide icon usage
-LucideIcon('user-circle')
-LucideIcon('home')
-LucideIcon('search')
-LucideIcon('settings')
-```
-
-### Custom Symbol Sets
-
-```typescript
-import { createSymbolSet, registerSymbolSet } from '@tachui/symbols'
-
-const customIcons = createSymbolSet('custom', {
-  logo: '<svg>...</svg>',
-  'brand-icon': '<svg>...</svg>',
-  'custom-arrow': '<svg>...</svg>',
-})
-
-registerSymbolSet('custom', customIcons)
-
-// Use custom symbols
-Symbol('custom.logo')
-Symbol('custom.brand-icon')
 ```
 
 ## Symbol Modifiers
@@ -251,46 +219,6 @@ Symbol('video.circle.fill')
 
 ## Advanced Features
 
-### Dynamic Symbols
-
-```typescript
-import { createDynamicSymbol } from '@tachui/symbols'
-
-const batterySymbol = createDynamicSymbol({
-  base: 'battery',
-  variants: {
-    0: 'battery.0percent',
-    25: 'battery.25percent',
-    50: 'battery.50percent',
-    75: 'battery.75percent',
-    100: 'battery.100percent',
-  },
-})
-
-const [batteryLevel, setBatteryLevel] = createSignal(75)
-
-batterySymbol(() => batteryLevel())
-  .size(24)
-  .foregroundColor(() => (batteryLevel() < 25 ? 'red' : 'green'))
-  
-```
-
-### Symbol Collections
-
-```typescript
-import { SymbolCollection } from '@tachui/symbols'
-
-const toolbarSymbols = SymbolCollection({
-  symbols: [
-    { name: 'square.and.pencil', action: () => edit() },
-    { name: 'trash.fill', action: () => delete() },
-    { name: 'square.and.arrow.up', action: () => share() }
-  ],
-  spacing: 16,
-  size: 20
-})
-```
-
 ### Accessibility
 
 Built-in accessibility features:
@@ -303,36 +231,21 @@ Symbol('heart.fill')
   
 ```
 
-## Icon Search and Discovery
+## Not implemented yet
 
-### Available Icons
+These were documented here before they existed, and the examples did not run.
+They are listed so the gap is visible rather than discovered at the import:
 
-```typescript
-import { getAvailableSymbols, searchSymbols } from '@tachui/symbols'
-
-// Get all available symbols
-const allSymbols = getAvailableSymbols()
-
-// Search for specific symbols
-const heartIcons = searchSymbols('heart')
-const circleIcons = searchSymbols('circle')
-const systemIcons = searchSymbols('system', { category: 'ui' })
-```
-
-### Icon Preview
-
-```typescript
-import { SymbolGrid } from '@tachui/symbols'
-
-const iconBrowser = SymbolGrid({
-  symbols: searchSymbols('star'),
-  columns: 6,
-  symbolSize: 32,
-  onSymbolTap: symbolName => {
-    console.log(`Selected: ${symbolName}`)
-  },
-})
-```
+- `LucideIcon(name)` — use `Symbol(name)`, which resolves Lucide names already.
+- `createSymbolSet` / `registerSymbolSet` — the registry is `IconSetRegistry`,
+  and custom sets are built with `createIconSetFromJSON` or
+  `createIconSetFromSprite`.
+- `createDynamicSymbol` — no equivalent.
+- `SymbolCollection` — `generateSymbolCollection` exists and is not the same
+  shape.
+- `getAvailableSymbols` / `searchSymbols` — see `getAllSupportedSFSymbols`,
+  `getSymbolsByCategory`, `searchSymbolsByCategory` and `getRecommendedSymbols`.
+- `SymbolGrid` — no equivalent.
 
 ## Styling and Theming
 

@@ -21,14 +21,14 @@ pnpm add @tachui/responsive
 Built-in breakpoint system with customizable breakpoints:
 
 ```typescript
-import { useBreakpoint, breakpoints } from '@tachui/responsive'
+import { useBreakpoint, DEFAULT_BREAKPOINTS } from '@tachui/responsive'
 
 // Default breakpoints
 const currentBreakpoint = useBreakpoint()
 // Returns: 'mobile' | 'tablet' | 'desktop' | 'wide'
 
 // Breakpoint values
-console.log(breakpoints)
+console.log(DEFAULT_BREAKPOINTS)
 // {
 //   mobile: 0,
 //   tablet: 768,
@@ -124,127 +124,7 @@ Text('Responsive Typography')
   
 ```
 
-## Responsive Components
-
-### ResponsiveContainer
-
-A container that applies responsive behavior to its children:
-
-```typescript
-import { ResponsiveContainer } from '@tachui/responsive'
-
-ResponsiveContainer({
-  breakpoints: {
-    mobile: 320,
-    tablet: 768,
-    desktop: 1024,
-  },
-  children: [Text('This content adapts to container size')],
-})
-```
-
-### MediaQuery
-
-Component for conditional rendering based on media queries:
-
-```typescript
-import { MediaQuery } from '@tachui/responsive'
-
-VStack({
-  children: [
-    MediaQuery({
-      query: 'min-width: 768px',
-      children: Text('Only visible on tablet and up'),
-    }),
-
-    MediaQuery({
-      query: 'max-width: 767px',
-      children: Text('Only visible on mobile'),
-    }),
-  ],
-})
-```
-
-### ViewportSize
-
-Hook and component for viewport-based logic:
-
-```typescript
-import { useViewportSize, ViewportSize } from '@tachui/responsive'
-
-// As a hook
-const viewportSize = useViewportSize()
-const isMobile = () => viewportSize().width < 768
-
-// As a component
-ViewportSize({
-  render: size => Text(`Viewport: ${size.width}x${size.height}`),
-})
-```
-
-## Device Detection
-
-### Device Type Detection
-
-```typescript
-import { useDeviceType, DeviceType } from '@tachui/responsive'
-
-const deviceType = useDeviceType()
-
-VStack({
-  children: [
-    Show({
-      when: () => deviceType() === 'mobile',
-      children: MobileNavigation(),
-    }),
-
-    Show({
-      when: () => deviceType() === 'desktop',
-      children: DesktopNavigation(),
-    }),
-  ],
-})
-```
-
-### Orientation Support
-
-```typescript
-import { useOrientation } from '@tachui/responsive'
-
-const orientation = useOrientation()
-
-HStack({
-  direction: () => (orientation() === 'landscape' ? 'horizontal' : 'vertical'),
-  children: [
-    Text('Adapts to orientation'),
-    Text('Portrait: vertical, Landscape: horizontal'),
-  ],
-})
-```
-
 ## Advanced Responsive Patterns
-
-### Container Queries
-
-Use container-based responsive design:
-
-```typescript
-import { ContainerQuery } from '@tachui/responsive'
-
-ContainerQuery({
-  container: 'cardContainer',
-  query: 'min-width: 300px',
-  children: VStack({
-    children: [
-      Text('Card expands when container is wide enough')
-        .fontSize(18)
-        ,
-    ],
-  })
-    .container('cardContainer')
-    ,
-})
-```
 
 ### Responsive Grid
 
@@ -294,61 +174,26 @@ Show({
 
 ```typescript
 import {
-  isMobile,
-  isTablet,
-  isDesktop,
-  atLeast,
-  atMost,
-  between,
+  getCurrentBreakpoint,
+  isBreakpointAbove,
+  isBreakpointBelow,
+  getBreakpointsAbove,
 } from '@tachui/responsive'
 
-// Simple checks
-if (isMobile()) {
-  // Mobile-specific logic
+// Which breakpoint is active right now
+const current = getCurrentBreakpoint()
+
+// Comparisons are between two breakpoint keys, not device names
+if (isBreakpointAbove(current, 'tablet')) {
+  // wider than tablet
 }
 
-// Range checks
-if (atLeast('tablet')) {
-  // Tablet and above
+if (isBreakpointBelow(current, 'desktop')) {
+  // narrower than desktop
 }
 
-if (between('tablet', 'desktop')) {
-  // Only tablet and desktop, not mobile or wide
-}
-```
-
-### Responsive Values Helper
-
-```typescript
-import { responsive } from '@tachui/responsive'
-
-const spacing = responsive({
-  mobile: 8,
-  tablet: 12,
-  desktop: 16,
-})
-
-// Use in components
-VStack({ spacing })
-```
-
-### CSS-in-JS Integration
-
-```typescript
-import { createResponsiveStyles } from '@tachui/responsive'
-
-const buttonStyles = createResponsiveStyles({
-  mobile: {
-    fontSize: 14,
-    padding: '8px 16px',
-  },
-  desktop: {
-    fontSize: 16,
-    padding: '12px 24px',
-  },
-})
-
-Button('Responsive Button').css(buttonStyles())
+// Every breakpoint wider than the given one
+const wider = getBreakpointsAbove('tablet')
 ```
 
 ## Performance Optimization
@@ -372,18 +217,6 @@ const fontSize = createMemo(() => {
 })
 
 Text('Optimized Text').fontSize(fontSize)
-```
-
-### Lazy Loading
-
-```typescript
-import { LazyBreakpoint } from '@tachui/responsive'
-
-LazyBreakpoint({
-  breakpoint: 'desktop',
-  children: ExpensiveDesktopComponent,
-  fallback: MobileComponent,
-})
 ```
 
 ## Integration Examples
@@ -432,49 +265,21 @@ Form({
 })
 ```
 
-## Custom Breakpoints
+## Not implemented yet
 
-Define custom breakpoints for your application:
+Documented here before they existed; the examples did not run. Listed so the
+gap is visible rather than found at the import, with the nearest real thing:
 
-```typescript
-import { createBreakpoints } from '@tachui/responsive'
-
-const customBreakpoints = createBreakpoints({
-  xs: 0,
-  sm: 576,
-  md: 768,
-  lg: 992,
-  xl: 1200,
-  xxl: 1400,
-})
-
-// Use custom breakpoints
-Text('Custom responsive')
-  .fontSize({
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    xxl: 24,
-  })
-  
-```
-
-## Server-Side Rendering (SSR)
-
-SSR-safe responsive utilities:
-
-```typescript
-import { ServerResponsiveProvider } from '@tachui/responsive'
-
-// On the server
-ServerResponsiveProvider({
-  userAgent: request.userAgent,
-  viewport: { width: 1024, height: 768 },
-  children: App(),
-})
-```
+| Documented | Actually available |
+| --- | --- |
+| `breakpoints` | `DEFAULT_BREAKPOINTS`, `configureBreakpoints` |
+| `ResponsiveContainer`, `ContainerQuery` | `Container`, `ResponsiveContainerPatterns` |
+| `MediaQuery` | `useMediaQuery`, `MediaQueries`, `generateMediaQuery` |
+| `useViewportSize`, `ViewportSize` | `getViewportDimensions` |
+| `useDeviceType`, `DeviceType`, `useOrientation` | `useBreakpoint` is the closest; no device or orientation API |
+| `responsive()`, `createResponsiveStyles` | `withResponsive`, `createResponsiveModifier`, `createResponsiveCSSVariables` |
+| `createBreakpoints` | `configureBreakpoints` |
+| `LazyBreakpoint`, `ServerResponsiveProvider` | no equivalent |
 
 ## Accessibility Considerations
 

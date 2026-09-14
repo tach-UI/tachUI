@@ -70,6 +70,12 @@ jobs:
       - name: Enforce starter template render tests stay in step
         run: bun run ci:check-template-apps
 
+      # Every `import { … } from '@tachui/…'` in a package README, resolved
+      # against what that entry point actually exports. The READMEs told people
+      # to import components from `@tachui/core`, which has never had them.
+      - name: Enforce README imports resolve
+        run: bun run ci:check-readme-imports
+
   readme-version-policy:
     name: README Version Policy
     if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'
@@ -246,6 +252,12 @@ jobs:
             echo "Core package build failed"
             exit 1
           fi
+
+      # Runs here rather than in the quality job because it needs dist to exist.
+      # @tachui/grid and @tachui/viewport both shipped 0.11.0 advertising type
+      # declarations they did not build.
+      - name: Enforce declared type entry points exist
+        run: bun run ci:check-declared-types
 
       - name: Enforce bundle size budgets
         run: bun run ci:check-size-budget

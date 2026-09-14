@@ -1,10 +1,25 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    // The root config sets `noEmit: true`, and it wins over
+    // `emitDeclarationOnly` — so without this the declaration build produced a
+    // .tsbuildinfo and nothing else, and the package shipped no types at all
+    // while its manifest pointed at `dist/index.d.ts`.
+    // Incremental state belongs beside the output it describes. At the package
+    // root it survived the build script's `rm -rf dist`, so tsc believed the
+    // declarations were current and emitted nothing — a clean build produced no
+    // types at all, silently and with exit code 0.
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo",
+    "noEmit": false,
     "declaration": true,
     "declarationMap": true,
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": true,
+    // Without an explicit root TypeScript infers one from whatever is included
+    // and the declarations land in `dist/src/`, which is not where the manifest
+    // says they are.
+    "rootDir": "./src"
   },
+  "include": ["src/**/*"],
   "exclude": [
     "__tests__/**/*",
     "**/*.test.ts",

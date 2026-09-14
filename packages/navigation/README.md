@@ -60,18 +60,22 @@ Use root `@tachui/navigation` when you intentionally want the full legacy surfac
 
 ```typescript
 import { NavigationView, NavigationLink } from '@tachui/navigation'
-import { Text, VStack, Button } from '@tachui/core'
+import { Text, VStack } from '@tachui/primitives'
 
 // Root view
 const ContentView = () =>
-  VStack([Text('Home'), NavigationLink(() => DetailView(), 'Go to Detail')])
+  VStack({
+    children: [Text('Home'), NavigationLink(() => DetailView(), 'Go to Detail')],
+  })
 
 // Detail view
 const DetailView = () =>
-  VStack([
-    Text('Detail View'),
-    NavigationLink(() => AnotherView(), 'Go Further'),
-  ])
+  VStack({
+    children: [
+      Text('Detail View'),
+      NavigationLink(() => AnotherView(), 'Go Further'),
+    ],
+  })
 
 // App with navigation
 const App = NavigationView(() => ContentView(), {
@@ -83,23 +87,20 @@ const App = NavigationView(() => ContentView(), {
 ### Tab Navigation
 
 ```typescript
-import { TabView } from '@tachui/navigation'
-import { Text, VStack } from '@tachui/core'
+import { SimpleTabView, tabItem } from '@tachui/navigation'
+import { Text, VStack } from '@tachui/primitives'
 
-const App = TabView(
+// Tabs are components carrying a `tabItem` description, not a list of
+// configuration objects: `tabItem(component, id, label, icon?)`.
+const App = SimpleTabView(
   [
-    {
-      id: 'home',
-      title: 'Home',
-      icon: '🏠',
-      view: () => VStack([Text('Home Content')]),
-    },
-    {
-      id: 'profile',
-      title: 'Profile',
-      icon: '👤',
-      view: () => VStack([Text('Profile Content')]),
-    },
+    tabItem(VStack({ children: [Text('Home Content')] }), 'home', 'Home', '🏠'),
+    tabItem(
+      VStack({ children: [Text('Profile Content')] }),
+      'profile',
+      'Profile',
+      '👤'
+    ),
   ],
   {
     tabPlacement: 'bottom',

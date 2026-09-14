@@ -38,77 +38,67 @@ pnpm add @tachui/core @tachui/mobile
 
 ### ActionSheet
 
+`ActionSheet` is a component driven by an `isPresented` signal — there is no
+`useActionSheet` hook. `ActionSheetUtils` builds the common shapes for you.
+
 ```typescript
-import { VStack, Button } from '@tachui/primitives'
-import { ActionSheet, useActionSheet } from '@tachui/mobile'
+import { createSignal } from '@tachui/core'
+import { Button, VStack } from '@tachui/primitives'
+import { ActionSheet, ActionSheetUtils } from '@tachui/mobile'
 
 const MyComponent = () => {
-  const actionSheet = useActionSheet()
+  const [isPresented, setPresented] = createSignal(false)
 
-  const showOptions = () => {
-    actionSheet.present({
-      title: 'Choose an action',
-      message: 'What would you like to do?',
-      actions: [
-        {
-          title: 'Share',
-          style: 'default',
-          action: () => console.log('Share tapped'),
-        },
-        {
-          title: 'Edit',
-          style: 'default',
-          action: () => console.log('Edit tapped'),
-        },
-        {
-          title: 'Delete',
-          style: 'destructive',
-          action: () => console.log('Delete tapped'),
-        },
-        {
-          title: 'Cancel',
-          style: 'cancel',
-        },
-      ],
-    })
-  }
+  return VStack({
+    children: [
+      Button('Show Options', () => setPresented(true)).padding(16),
 
-  return Button('Show Options', showOptions).padding(16)
+      ActionSheet({
+        isPresented,
+        title: 'Choose an action',
+        message: 'What would you like to do?',
+        actions: [
+          { title: 'Share', role: 'default', onPress: () => share() },
+          { title: 'Edit', role: 'default', onPress: () => edit() },
+          { title: 'Delete', role: 'destructive', onPress: () => remove() },
+          { title: 'Cancel', role: 'cancel' },
+        ],
+      }),
+    ],
+  })
 }
 ```
 
 ### Alert
 
+Same shape — a component, not a hook. `AlertUtils` covers confirmation and
+destructive patterns.
+
 ```typescript
-import { Alert, useAlert } from '@tachui/mobile'
+import { createSignal } from '@tachui/core'
+import { Button, VStack } from '@tachui/primitives'
+import { Alert, AlertUtils } from '@tachui/mobile'
 
 const MyComponent = () => {
-  const alert = useAlert()
+  const [isPresented, setPresented] = createSignal(false)
 
-  const showAlert = () => {
-    alert.present({
-      title: 'Confirm Action',
-      message: 'Are you sure you want to delete this item?',
-      actions: [
-        {
-          title: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          title: 'Delete',
-          style: 'destructive',
-          action: () => {
-            console.log('Item deleted')
-          },
-        },
-      ],
-    })
-  }
+  return VStack({
+    children: [
+      Button('Delete Item', () => setPresented(true))
+        .backgroundColor('#ff3b30')
+        .foregroundColor('white'),
 
-  return Button('Delete Item', showAlert)
-    .backgroundColor('#ff3b30')
-    .foregroundColor('white')
-    
+      Alert({
+        isPresented,
+        title: 'Confirm Action',
+        message: 'Are you sure you want to delete this item?',
+        actions: [
+          { title: 'Cancel', role: 'cancel' },
+          { title: 'Delete', role: 'destructive', onPress: () => remove() },
+        ],
+      }),
+    ],
+  })
 }
 ```
 
@@ -195,7 +185,7 @@ Pull-down-to-refresh functionality:
 ```typescript
 // Planned for v0.2.0
 import { PullToRefresh } from '@tachui/mobile'
-import { ScrollView } from '@tachui/core'
+import { ScrollView } from '@tachui/primitives'
 
 PullToRefresh({
   onRefresh: async () => {
@@ -345,7 +335,10 @@ MaterialActionSheet({
   
 ```
 
-## Animation and Transitions
+## 🚧 Animation and Transitions (planned)
+
+`createMobileTransition` is not implemented; this is the intended shape.
+
 
 ```typescript
 import { createMobileTransition } from '@tachui/mobile'
