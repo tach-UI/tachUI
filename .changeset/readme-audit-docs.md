@@ -29,3 +29,16 @@ against the package's own declarations, skipping sections that say up front they
 are planned. And the opening example of every README that builds UI is now
 mounted in a test — resolving is not running, which is exactly how the CLI
 starter shipped broken.
+
+Four of the rewritten examples resolved their imports and still did not
+compile. `ActionSheet` takes `buttons` of `{ label, onPress }`, not `actions`;
+`AlertButton`'s callback is `action`; `DevToolsConfig` has no
+`trackReactiveOperations`; `Grid` reads template areas from
+`styling.templateAreas`; and `getCurrentBreakpoint()` returns a Signal whose
+keys are `base | sm | md | lg | xl | 2xl` rather than device names, which the
+`DEFAULT_BREAKPOINTS` comment also had wrong. They are type-checked now.
+
+Worth knowing for anything relying on types to catch this: `ComponentProps`
+declares `[key: string]: any`, so no component rejects an unknown prop. The
+grid example's misplaced `templateAreas` compiled perfectly and rendered
+nothing, which is why that one is asserted against mounted output instead.

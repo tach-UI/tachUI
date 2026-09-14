@@ -4,7 +4,7 @@ import type {
   RuleModule,
   RuleContext,
   Token,
-} from '../types'
+} from '../types.js'
 
 type ExtendedMemberExpression = MemberExpressionNode & {
   property: IdentifierNode | any

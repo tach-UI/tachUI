@@ -36,7 +36,13 @@ export default defineConfig({
       // behind a `test:long` tier. Measured, they cost 9 seconds of a 34
       // second run, so they gate every PR now instead — a tier nobody looks
       // at is worth less than nine seconds.
-      'packages/cli/', // has its own vitest config; the `cli` job runs it
+      // The CLI package has its own vitest config and the nightly `cli` job
+      // runs it — except the starter-template render suite, which has to gate
+      // every PR. A template that type-checks and then throws on mount is
+      // exactly what shipped in 0.11.0, and a nightly catches that the morning
+      // after it merges. 34ms of tests.
+      'packages/cli/!(__tests__)/**',
+      'packages/cli/__tests__/!(templates)/**',
       // Matches `test:stress`'s own glob exactly. Narrower here (`*stress.`)
       // would let a `stress-helpers.test.ts` run in both.
       '**/*stress*.test.ts',

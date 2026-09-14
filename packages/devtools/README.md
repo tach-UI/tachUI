@@ -49,7 +49,7 @@ you enable and query — `globalDevTools`, or `getDevTools()`.
 import { globalDevTools } from '@tachui/devtools'
 
 if (import.meta.env.DEV) {
-  globalDevTools.configure({ trackReactiveOperations: true })
+  globalDevTools.configure({ trackAllComponents: true, trackMemoryUsage: true })
   globalDevTools.enable()
 }
 
