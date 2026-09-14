@@ -46,7 +46,7 @@ const app = VStack({
       data: items,
       renderItem: item => Text(item.name),
     })
-      .modifier.padding(16)
+      .padding(16)
       ,
   ],
 })
@@ -72,7 +72,7 @@ const sectionedList = List({
   ],
   renderItem: item => Text(item.name),
   renderSectionHeader: section =>
-    Text(section.header).modifier.fontWeight('bold'),
+    Text(section.header).fontWeight('bold'),
 })
 ```
 
@@ -152,9 +152,9 @@ const sectionedList = List({
   ],
   renderItem: item => Text(item.name),
   renderSectionHeader: section =>
-    Text(section.header).modifier.fontWeight('bold'),
+    Text(section.header).fontWeight('bold'),
   renderSectionFooter: section =>
-    section.footer ? Text(section.footer).modifier.fontSize(12) : undefined,
+    section.footer ? Text(section.footer).fontSize(12) : undefined,
 })
 ```
 

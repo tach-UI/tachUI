@@ -34,7 +34,7 @@ Sub-millisecond updates, automatic batching, and memory-safe cleanup.
 ### Basic Counter App
 
 ```typescript
-import { createSignal } from '@tachui/core'
+import { createSignal, mountRoot } from '@tachui/core'
 import { VStack, Text, Button } from '@tachui/primitives'
 import '@tachui/modifiers/preload/basic' // Load modifiers
 
@@ -42,25 +42,27 @@ import '@tachui/modifiers/preload/basic' // Load modifiers
 const [count, setCount] = createSignal(0)
 
 // Build SwiftUI-style component with direct modifier calls
-const counterApp = VStack({
-  children: [
-    Text(() => `Count: ${count()}`)
-      .fontSize(24)
-      .fontWeight('bold')
-      .foregroundColor('#007AFF'),
+const counterApp = () =>
+  VStack({
+    children: [
+      Text(() => `Count: ${count()}`)
+        .fontSize(24)
+        .fontWeight('bold')
+        .foregroundColor('#007AFF'),
 
-    Button('Increment', () => setCount(count() + 1))
-      .backgroundColor('#007AFF')
-      .foregroundColor('white')
-      .padding({ horizontal: 24, vertical: 12 })
-      .cornerRadius(8),
-  ],
-  spacing: 16,
-  alignment: 'center',
-})
+      Button('Increment', () => setCount(count() + 1))
+        .backgroundColor('#007AFF')
+        .foregroundColor('white')
+        .padding({ vertical: 12, horizontal: 24 })
+        .cornerRadius(8),
+    ],
+    spacing: 16,
+    alignment: 'center',
+  }).build()
 
-// Mount to DOM
-document.body.appendChild(counterApp)
+// Mount to DOM: `mountRoot` renders into `#app`. A component is not a DOM node,
+// so it cannot be handed to `appendChild`.
+mountRoot(counterApp)
 ```
 
 ### Reactive Data Display

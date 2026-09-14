@@ -651,14 +651,14 @@ Text("3D Move")
 
 ```typescript
 // Individual scale functions
-Text("Scale X").modifier.scaleX(1.5)
-Text("Scale Y").modifier.scaleY(0.8)
-Text("Scale Z").modifier.scaleZ(2.0)
+Text("Scale X").scaleX(1.5)
+Text("Scale Y").scaleY(0.8)
+Text("Scale Z").scaleZ(2.0)
 
 // Individual translate functions
-Text("Move X").modifier.translateX(50)
-Text("Move Y").modifier.translateY('2rem')
-Text("Move Z").modifier.translateZ(10)
+Text("Move X").translateX(50)
+Text("Move Y").translateY('2rem')
+Text("Move Z").translateZ(10)
 ```
 
 ### 3D Properties

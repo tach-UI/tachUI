@@ -32,36 +32,46 @@ pnpm add @tachui/core
 ### Basic Example
 
 ```typescript
-import { Text, Button, VStack, createSignal } from '@tachui/core'
+import { createSignal, mountRoot } from '@tachui/core'
+import { Button, Text, VStack } from '@tachui/primitives'
+// Registers the modifiers used below. Without it the chained calls are absent.
+import '@tachui/modifiers/preload/basic'
 
 // Create reactive state
 const [count, setCount] = createSignal(0)
 
 // Build SwiftUI-style components
-const counterApp = VStack({
-  children: [
-    Text(() => `Count: ${count()}`)
-      .modifier.fontSize(24)
-      .fontWeight('bold')
-      .foregroundColor('#007AFF')
-      ,
+const counterApp = () =>
+  VStack({
+    children: [
+      Text(() => `Count: ${count()}`)
+        .fontSize(24)
+        .fontWeight('bold')
+        .foregroundColor('#007AFF'),
 
-    Button('Increment', () => setCount(count() + 1))
-      .modifier.backgroundColor('#007AFF')
-      .foregroundColor('white')
-      .padding({ horizontal: 24, vertical: 12 })
-      .cornerRadius(8)
-      ,
-  ],
-  spacing: 16,
-  alignment: 'center',
-})
+      Button('Increment', () => setCount(count() + 1))
+        .backgroundColor('#007AFF')
+        .foregroundColor('white')
+        .padding({ vertical: 12, horizontal: 24 })
+        .cornerRadius(8),
+    ],
+    spacing: 16,
+    alignment: 'center',
+  }).build()
 
-// Mount to DOM
-counterApp.mount('#app')
+// Mount to DOM: `mountRoot` renders into `#app`.
+mountRoot(counterApp)
 ```
 
-## Core Components
+Components come from `@tachui/primitives`; `@tachui/core` provides the
+reactivity, the runtime and `mountRoot`. `.build()` closes a modifier chain and
+hands back the component that `mountRoot` expects.
+
+## Components
+
+These ship in [`@tachui/primitives`](../primitives), not in this package —
+`@tachui/core` provides the reactive system, the runtime and the modifier
+infrastructure they are built on.
 
 ### Layout
 
@@ -90,7 +100,7 @@ Chain modifiers just like SwiftUI:
 
 ```typescript
 Text('Hello tachUI')
-  .modifier.fontSize(18)
+  .fontSize(18)
   .fontWeight('semibold')
   .foregroundColor('#007AFF')
   .padding(16)
@@ -152,7 +162,7 @@ interface MyComponentProps extends ComponentProps {
 // Custom components with modifiers
 const MyComponent = createComponent<MyComponentProps>('MyComponent', props => {
   return Text(props.title)
-    .modifier.fontSize(props.count > 10 ? 20 : 16)
+    .fontSize(props.count > 10 ? 20 : 16)
     
 })
 ```

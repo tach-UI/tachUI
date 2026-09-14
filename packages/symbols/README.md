@@ -43,7 +43,7 @@ import '@tachui/modifiers' // Registers all modifiers
 import { Symbol } from '@tachui/symbols'
 
 // Now you can use modifiers
-Symbol('heart').modifier.padding(16).foregroundColor('#ff0000')
+Symbol('heart').padding(16).foregroundColor('#ff0000')
 ```
 
 ## Quick Start
@@ -59,16 +59,16 @@ const iconDemo = VStack({
   children: [
     HStack({
       children: [
-        Symbol('heart.fill').modifier.foregroundColor('red').size(24),
+        Symbol('heart.fill').foregroundColor('red').size(24),
 
-        Text('Favorite').modifier.fontSize(16),
+        Text('Favorite').fontSize(16),
       ],
       spacing: 8,
       alignment: 'center',
     }),
 
     Symbol('star.circle')
-      .modifier.size(48)
+      .size(48)
       .foregroundColor('#FFD700')
       .symbolRenderingMode('palette')
       ,
@@ -86,16 +86,16 @@ import { Symbol } from '@tachui/symbols'
 const iconStyles = VStack({
   children: [
     // Outlined (default)
-    Symbol('heart').modifier.size(32),
+    Symbol('heart').size(32),
 
     // Filled
-    Symbol('heart.fill').modifier.size(32).foregroundColor('#ff4757'),
+    Symbol('heart.fill').size(32).foregroundColor('#ff4757'),
 
     // Circle variants
-    Symbol('heart.circle').modifier.size(32),
+    Symbol('heart.circle').size(32),
 
     Symbol('heart.circle.fill')
-      .modifier.size(32)
+      .size(32)
       .foregroundColor('#3742fa')
       ,
   ],
@@ -158,7 +158,7 @@ Symbol('custom.brand-icon')
 
 ```typescript
 Symbol('star.fill')
-  .modifier.size(24) // Fixed size
+  .size(24) // Fixed size
   .symbolScale('small') // 'small' | 'medium' | 'large'
   .symbolWeight('regular') // 'ultralight' | 'thin' | 'light' | 'regular' | 'medium' | 'semibold' | 'bold' | 'heavy' | 'black'
   
@@ -168,13 +168,13 @@ Symbol('star.fill')
 
 ```typescript
 Symbol('heart.fill')
-  .modifier.foregroundColor('#ff4757')
+  .foregroundColor('#ff4757')
   .symbolRenderingMode('monochrome') // 'monochrome' | 'multicolor' | 'hierarchical' | 'palette'
   
 
 // Multi-color symbols
 Symbol('flag.fill')
-  .modifier.symbolRenderingMode('palette')
+  .symbolRenderingMode('palette')
   .primaryColor('#ff4757')
   .secondaryColor('#3742fa')
   .tertiaryColor('#2ed573')
@@ -185,7 +185,7 @@ Symbol('flag.fill')
 
 ```typescript
 Symbol('heart')
-  .modifier.size(32)
+  .size(32)
   .symbolEffect('bounce') // 'bounce' | 'pulse' | 'variable' | 'scale'
   .symbolEffectOptions({
     repeating: true,
@@ -270,7 +270,7 @@ const batterySymbol = createDynamicSymbol({
 const [batteryLevel, setBatteryLevel] = createSignal(75)
 
 batterySymbol(() => batteryLevel())
-  .modifier.size(24)
+  .size(24)
   .foregroundColor(() => (batteryLevel() < 25 ? 'red' : 'green'))
   
 ```
@@ -297,7 +297,7 @@ Built-in accessibility features:
 
 ```typescript
 Symbol('heart.fill')
-  .modifier.accessibilityLabel('Add to favorites')
+  .accessibilityLabel('Add to favorites')
   .accessibilityHint('Double tap to add this item to your favorites')
   .accessibilityRole('button')
   
@@ -340,7 +340,7 @@ Symbols inherit tachUI's modifier system:
 
 ```typescript
 Symbol('star.fill')
-  .modifier.size(24)
+  .size(24)
   .foregroundColor('#FFD700')
   .padding(8)
   .backgroundColor('#f8f9fa')
