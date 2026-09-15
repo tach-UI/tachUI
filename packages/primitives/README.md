@@ -90,6 +90,22 @@ VStack({
 })
 ```
 
+### Shapes
+
+#### Circle
+
+A circle that fills its frame. Shapes are styled with `.fill()`, `.stroke()`,
+`.strokeBorder()` and `.inset()`, which chain with modifiers in either order.
+
+```typescript
+Circle().fill('#007AFF').frame({ width: 12, height: 12 })
+
+Image(source)
+  .frame({ width: 40, height: 40 })
+  .clipShape('circle')
+  .overlay(Circle().inset(1).stroke('#007AFF', 2)) // a ring 1px inside the edge
+```
+
 ### Display Components
 
 #### Text
