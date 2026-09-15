@@ -31,6 +31,16 @@ class SampleComponent
     return [h('div', {}, text('sample'))]
   }
 
+  /** A builder-style instance method, as shape methods such as `fill` are. */
+  configure(label: string): this {
+    this.props = { ...this.props, label }
+    return this
+  }
+
+  label(): string | undefined {
+    return (this.props as { label?: string }).label
+  }
+
   clone(options: CloneOptions = {}): this {
     return options.deep ? this.deepClone() : this.shallowClone()
   }
@@ -144,6 +154,32 @@ describe('modifier proxy integration', () => {
     const chained = proxy[modifierName]()[modifierName]()
 
     expect(chained).toBe(proxy)
+  })
+
+  // An instance method that returns its instance would otherwise hand the
+  // raw component back and strand every modifier applied so far on the
+  // proxy's wrapper; the caller would then render a bare component.
+  it('hands back the proxy when an instance method returns the instance', () => {
+    configureCore({ proxyModifiers: true })
+
+    if (!globalModifierRegistry.has(modifierName)) {
+      globalModifierRegistry.register(modifierName, () => ({
+        type: 'appearance',
+        priority: 100,
+        properties: {},
+        apply: node => node,
+      }))
+    }
+
+    const proxy = withModifiers(new SampleComponent()) as ComponentInstance & {
+      [modifierName]: () => any
+      configure: (label: string) => any
+      label: () => string | undefined
+    }
+
+    expect(proxy.configure('a')).toBe(proxy)
+    expect(proxy[modifierName]().configure('b')[modifierName]()).toBe(proxy)
+    expect(proxy.label()).toBe('b')
   })
 
   it('maintains method binding when functions are extracted from the proxy', () => {

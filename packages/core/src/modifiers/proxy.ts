@@ -233,7 +233,16 @@ export function createComponentProxy<T extends ComponentInstance>(
           }
 
           if (!methodCache.has(prop)) {
-            methodCache.set(prop, value.bind(target))
+            // A method that returns its instance (`return this`, the
+            // builder convention shape methods such as `fill`/`stroke`
+            // use) hands back the proxy instead, so the modifier chain
+            // continues from it. Returning the raw instance would strand
+            // every modifier applied so far on the proxy's modifiable
+            // wrapper, and the caller would render a bare component.
+            methodCache.set(prop, (...args: any[]) => {
+              const result = value.apply(target, args)
+              return result === target ? proxy : result
+            })
           }
           return methodCache.get(prop)
         }
