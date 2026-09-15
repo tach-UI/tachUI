@@ -364,19 +364,6 @@ export interface AnimationModifierProps {
       | 'leading'
       | 'trailing'
   }
-  overlay?: {
-    content: any // ComponentInstance or function that returns ComponentInstance
-    alignment?:
-      | 'center'
-      | 'top'
-      | 'bottom'
-      | 'leading'
-      | 'trailing'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-  }
 }
 
 /**
@@ -606,6 +593,7 @@ export interface ModifierBuilder<
     content: any,
     alignmentOrOptions?:
       | OverlayAlignment
+      | Signal<OverlayAlignment>
       | {
           alignment?: OverlayAlignment | Signal<OverlayAlignment>
           side?: OverlaySide | Signal<OverlaySide>

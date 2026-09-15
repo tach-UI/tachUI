@@ -166,84 +166,120 @@ describe('Overlay Modifier', () => {
       modifier.apply({} as DOMNode, mockContext)
 
       const overlayContainer = mockElement.children[0]
-      expect(overlayContainer.style.top).toBe('50%')
-      expect(overlayContainer.style.left).toBe('50%')
-      expect(overlayContainer.style.transform).toBe('translate(-50%, -50%)')
+      expect(overlayContainer.style.justifyItems).toBe('center')
+      expect(overlayContainer.style.alignItems).toBe('center')
+    })
+
+    // The container covers the host's box so its content is proposed the
+    // host's bounds, as SwiftUI's `.overlay(alignment:)` proposes them. A
+    // child sized `100%` x `100%` then measures the host; under the previous
+    // shrink-to-fit container it resolved to 0x0. The cell is definite so
+    // that percentage resolves, and it is a grid rather than a flexbox so a
+    // fixed-size child wider than the host overflows instead of being
+    // compressed by `flex-shrink` — jsdom does no layout, so that part is
+    // asserted by construction here and was measured in a browser.
+    it('covers the host with one definite cell', () => {
+      const modifier = overlay(mockComponent, 'bottomTrailing')
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.position).toBe('absolute')
+      expect(overlayContainer.style.top).toBe('0px')
+      expect(overlayContainer.style.right).toBe('0px')
+      expect(overlayContainer.style.bottom).toBe('0px')
+      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.display).toBe('grid')
+      expect(overlayContainer.style.gridTemplateColumns).toBe('100%')
+      expect(overlayContainer.style.gridTemplateRows).toBe('100%')
+      // The content is a direct grid item of that cell.
+      expect(overlayContainer.children).toHaveLength(1)
+      expect(overlayContainer.children[0].className).toBe('overlay-content')
+    })
+
+    // A component may render more than one root, and `ForEach` and `Show`
+    // reach here the same way through their `display: contents` shells.
+    // Auto-placement would drop the second root into an implicit row below
+    // the 100% one, outside the host; they share the one cell instead, which
+    // layers them as SwiftUI layers them.
+    it('layers multi-root content in the single cell', () => {
+      const multiRoot = {
+        type: 'component' as const,
+        id: 'multi-root',
+        props: {},
+        render: vi.fn(() => [
+          h('span', { class: 'first' }, textNode('a')),
+          h('span', { class: 'second' }, textNode('b')),
+        ]),
+      }
+      const modifier = overlay(multiRoot)
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      const roots = childrenOf(overlayContainer)
+      expect(roots).toHaveLength(2)
+      for (const root of roots) {
+        expect((root as HTMLElement).style.gridArea).toBe('1 / 1')
+      }
+    })
+
+    it('defaults an alignment that names an inherited key to center', () => {
+      for (const alignment of ['constructor', '__proto__', 'toString']) {
+        const element = document.createElement('div')
+        const modifier = overlay(mockComponent, alignment as any)
+
+        modifier.apply({} as DOMNode, { ...mockContext, element })
+
+        const overlayContainer = element.children[0]
+        expect(overlayContainer.style.justifyItems).toBe('center')
+        expect(overlayContainer.style.alignItems).toBe('center')
+      }
     })
   })
 
   describe('Alignment Positioning', () => {
+    // Alignment is the grid item's placement in the layer's one cell; the
+    // layer itself never moves, so it keeps covering the host.
     const alignmentTests: Array<{
       alignment: OverlayAlignment
       expectedStyles: Record<string, string>
     }> = [
       {
         alignment: 'center',
-        expectedStyles: {
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        },
+        expectedStyles: { justifyItems: 'center', alignItems: 'center' },
       },
       {
         alignment: 'top',
-        expectedStyles: {
-          top: '0px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-        },
+        expectedStyles: { justifyItems: 'center', alignItems: 'start' },
       },
       {
         alignment: 'bottom',
-        expectedStyles: {
-          bottom: '0px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-        },
+        expectedStyles: { justifyItems: 'center', alignItems: 'end' },
       },
       {
         alignment: 'leading',
-        expectedStyles: {
-          top: '50%',
-          left: '0px',
-          transform: 'translateY(-50%)',
-        },
+        expectedStyles: { justifyItems: 'start', alignItems: 'center' },
       },
       {
         alignment: 'trailing',
-        expectedStyles: {
-          top: '50%',
-          right: '0px',
-          transform: 'translateY(-50%)',
-        },
+        expectedStyles: { justifyItems: 'end', alignItems: 'center' },
       },
       {
         alignment: 'topLeading',
-        expectedStyles: {
-          top: '0px',
-          left: '0px',
-        },
+        expectedStyles: { justifyItems: 'start', alignItems: 'start' },
       },
       {
         alignment: 'topTrailing',
-        expectedStyles: {
-          top: '0px',
-          right: '0px',
-        },
+        expectedStyles: { justifyItems: 'end', alignItems: 'start' },
       },
       {
         alignment: 'bottomLeading',
-        expectedStyles: {
-          bottom: '0px',
-          left: '0px',
-        },
+        expectedStyles: { justifyItems: 'start', alignItems: 'end' },
       },
       {
         alignment: 'bottomTrailing',
-        expectedStyles: {
-          bottom: '0px',
-          right: '0px',
-        },
+        expectedStyles: { justifyItems: 'end', alignItems: 'end' },
       },
     ]
 
@@ -619,13 +655,13 @@ describe('Overlay Modifier', () => {
 
       // First overlay
       const overlay1 = mockElement.children[0]
-      expect(overlay1.style.top).toBe('0px')
-      expect(overlay1.style.left).toBe('0px')
+      expect(overlay1.style.justifyItems).toBe('start')
+      expect(overlay1.style.alignItems).toBe('start')
 
       // Second overlay
       const overlay2 = mockElement.children[1]
-      expect(overlay2.style.bottom).toBe('0px')
-      expect(overlay2.style.right).toBe('0px')
+      expect(overlay2.style.justifyItems).toBe('end')
+      expect(overlay2.style.alignItems).toBe('end')
     })
 
     it('should handle overlays with different alignments efficiently', () => {
@@ -723,9 +759,8 @@ describe('Overlay Modifier', () => {
       modifier.apply({} as DOMNode, mockContext)
 
       const overlayContainer = mockElement.children[0]
-      expect(overlayContainer.style.top).toBe('50%')
-      expect(overlayContainer.style.left).toBe('50%')
-      expect(overlayContainer.style.transform).toBe('translate(-50%, -50%)')
+      expect(overlayContainer.style.justifyItems).toBe('center')
+      expect(overlayContainer.style.alignItems).toBe('center')
     })
   })
 
@@ -834,16 +869,81 @@ describe('Overlay Modifier', () => {
       disposers.add(dispose)
 
       const overlayContainer = mockElement.children[0]
-      expect(overlayContainer.style.top).toBe('0px')
-      expect(overlayContainer.style.left).toBe('50%')
+      expect(overlayContainer.style.alignItems).toBe('start')
+      expect(overlayContainer.style.justifyItems).toBe('center')
 
       setSide('bottom')
       flushSync()
       await flushReactiveUpdates()
 
-      expect(overlayContainer.style.top).toBe('')
-      expect(overlayContainer.style.bottom).toBe('0px')
-      expect(overlayContainer.style.left).toBe('50%')
+      expect(overlayContainer.style.alignItems).toBe('end')
+      expect(overlayContainer.style.justifyItems).toBe('center')
+    })
+
+    it('tracks an alignment signal passed in the direct form', async () => {
+      const [alignment, setAlignment] = createSignal<OverlayAlignment>('top')
+      const modifier = overlay(mockComponent, alignment)
+
+      const dispose = createRoot(dispose => {
+        modifier.apply({} as DOMNode, mockContext)
+        return dispose
+      })
+      disposers.add(dispose)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.alignItems).toBe('start')
+
+      setAlignment('bottomTrailing')
+      flushSync()
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.style.alignItems).toBe('end')
+      expect(overlayContainer.style.justifyItems).toBe('end')
+    })
+
+    it('ignores a null offset from a loosely typed signal', () => {
+      const [offset] = createSignal<any>(null)
+      const modifier = new OverlayModifier({
+        content: mockComponent,
+        alignment: 'topLeading',
+        offset,
+      })
+
+      const dispose = createRoot(dispose => {
+        modifier.apply({} as DOMNode, mockContext)
+        return dispose
+      })
+      disposers.add(dispose)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.display).toBe('grid')
+      expect(overlayContainer.style.justifyItems).toBe('start')
+      expect(overlayContainer.style.top).toBe('0px')
+    })
+
+    it('moves a side offset with the side when both are signals', async () => {
+      const [side, setSide] = createSignal<'top' | 'trailing'>('top')
+      const modifier = new OverlayModifier({
+        content: mockComponent,
+        side,
+        offset: 6,
+      })
+
+      const dispose = createRoot(dispose => {
+        modifier.apply({} as DOMNode, mockContext)
+        return dispose
+      })
+      disposers.add(dispose)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.top).toBe('6px')
+
+      setSide('trailing')
+      flushSync()
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.style.top).toBe('0px')
+      expect(overlayContainer.style.right).toBe('6px')
     })
 
     it('updates side offset when offset signal changes', async () => {
@@ -861,13 +961,142 @@ describe('Overlay Modifier', () => {
       disposers.add(dispose)
 
       const overlayContainer = mockElement.children[0]
+      // A numeric offset insets the layer from the anchored side, moving
+      // the content inward; the other edges stay on the host.
       expect(overlayContainer.style.top).toBe('8px')
+      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.right).toBe('0px')
+      expect(overlayContainer.style.bottom).toBe('0px')
 
       setOffset(24)
       flushSync()
       await flushReactiveUpdates()
 
       expect(overlayContainer.style.top).toBe('24px')
+
+      // Negative moves outward. Padding would have rejected it.
+      setOffset(-8)
+      flushSync()
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.style.top).toBe('-8px')
+    })
+
+    it('insets an end-anchored side inward for a numeric offset', () => {
+      const modifier = new OverlayModifier({
+        content: mockComponent,
+        side: 'bottom',
+        offset: 5,
+      })
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.bottom).toBe('5px')
+      expect(overlayContainer.style.top).toBe('0px')
+    })
+
+    // The badge recipe: a numeric offset on a corner insets both of the
+    // corner's edges, not only the vertical one.
+    it('insets both edges of a corner for a numeric offset', () => {
+      const modifier = overlay(mockComponent, {
+        alignment: 'topTrailing',
+        offset: 4,
+      })
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.top).toBe('4px')
+      expect(overlayContainer.style.right).toBe('4px')
+      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.bottom).toBe('0px')
+    })
+
+    it('applies no numeric offset to a centered alignment', () => {
+      const modifier = overlay(mockComponent, { alignment: 'center', offset: 4 })
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.top).toBe('0px')
+      expect(overlayContainer.style.left).toBe('0px')
+    })
+
+    // An x/y offset moves the alignment point by adjusting the layer's
+    // edges rather than translating it: a translated host-sized layer would
+    // create scrollable overflow on a scrolling host. On a centered axis the
+    // far edge shrinks by twice the offset, which moves the center by the
+    // offset exactly; on an anchored axis the anchored edge moves.
+    it('moves a centered alignment by shrinking the far edge', async () => {
+      const [offset, setOffset] = createSignal<{ x?: number; y?: number }>({
+        x: 4,
+        y: -2,
+      })
+      const modifier = new OverlayModifier({
+        content: mockComponent,
+        alignment: 'center',
+        offset,
+      })
+
+      const dispose = createRoot(dispose => {
+        modifier.apply({} as DOMNode, mockContext)
+        return dispose
+      })
+      disposers.add(dispose)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.left).toBe('8px')
+      expect(overlayContainer.style.right).toBe('0px')
+      expect(overlayContainer.style.bottom).toBe('4px')
+      expect(overlayContainer.style.top).toBe('0px')
+      expect(overlayContainer.style.transform).toBe('')
+
+      setOffset({ y: 10 })
+      flushSync()
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.top).toBe('20px')
+      expect(overlayContainer.style.bottom).toBe('0px')
+
+      setOffset({})
+      flushSync()
+      await flushReactiveUpdates()
+
+      expect(overlayContainer.style.top).toBe('0px')
+      expect(overlayContainer.style.left).toBe('0px')
+    })
+
+    it('moves an anchored alignment by its anchored edges', () => {
+      const modifier = new OverlayModifier({
+        content: mockComponent,
+        alignment: 'topTrailing',
+        offset: { x: 8, y: 8 },
+      })
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      // Right and down: outward on the trailing edge, inward from the top.
+      expect(overlayContainer.style.right).toBe('-8px')
+      expect(overlayContainer.style.top).toBe('8px')
+      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.bottom).toBe('0px')
+    })
+
+    it('ignores a non-finite offset', () => {
+      const modifier = new OverlayModifier({
+        content: mockComponent,
+        alignment: 'topLeading',
+        offset: { x: Number.NaN, y: 3 },
+      })
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.top).toBe('3px')
     })
 
     it('toggles overlay visibility when enabled signal changes', async () => {
@@ -884,7 +1113,7 @@ describe('Overlay Modifier', () => {
       disposers.add(dispose)
 
       const overlayContainer = mockElement.children[0]
-      expect(overlayContainer.style.display).toBe('')
+      expect(overlayContainer.style.display).toBe('grid')
 
       setEnabled(false)
       flushSync()
@@ -896,7 +1125,7 @@ describe('Overlay Modifier', () => {
       flushSync()
       await flushReactiveUpdates()
 
-      expect(overlayContainer.style.display).toBe('')
+      expect(overlayContainer.style.display).toBe('grid')
     })
   })
 })

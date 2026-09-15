@@ -115,6 +115,34 @@ Overlays stack: apply `.overlay()` more than once and each container layers in
 the order applied, which is how multi-layer compositions (a ring, then a badge,
 then a status dot) are built.
 
+The overlay is proposed the host's bounds, as in SwiftUI. Content with an
+intrinsic size (a badge) sits at the alignment and keeps its size, overflowing
+the host if it is larger; content sized to `100%` fills the host without
+repeating the host's size in a `.frame()`. The options form takes an `offset`:
+a number insets the content from every edge it is anchored to (both edges of
+a corner), negative moving it outward, and `{ x, y }` moves the content by
+that many pixels, positive `x` rightward and positive `y` downward:
+
+```typescript
+.overlay(Text('3'), { alignment: 'topTrailing', offset: 4 })       // 4px in from the top and trailing edges
+.overlay(Text('3'), { alignment: 'center', offset: { x: 0, y: -8 } })  // nudged up 8px
+```
+
+An offset moves the content by adjusting the overlay's edges rather than
+translating a host-sized box, so an inward or centered move never extends the
+overlay past the host. Only a move outward past the trailing or bottom edge
+can add scrollable overflow to a scrolling host, as it would for any element.
+Because the offset moves those edges, it also shrinks the area the content is
+offered, so content sized to `100%` stops covering the host once an offset
+applies to it.
+
+Alignment follows the writing direction, so a `trailing` badge lands on the
+right in a left-to-right document and on the left in a right-to-left one.
+Offsets are physical: `x` is always rightward, whatever the direction.
+
+Content with more than one root layers in place, each root filling the same
+area, rather than stacking.
+
 ### Advanced Gesture & Interaction Modifiers
 
 Comprehensive interaction system beyond basic events:
