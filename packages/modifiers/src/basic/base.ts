@@ -1692,111 +1692,11 @@ export class AnimationModifier extends BaseModifier {
       }
     }
 
-    // Overlay modifier (SwiftUI .overlay())
-    if (props.overlay && isHTMLElementRuntimeElement(context.element)) {
-      this.applyOverlay(context.element, props.overlay, context)
-    }
-
     return undefined
   }
 
   override getStaticCSS(selector: string): string[] {
     return collectStaticAnimationCSSRules(selector, this.properties as any)
-  }
-
-  private applyOverlay(
-    element: HTMLElement,
-    overlay: { content: any; alignment?: string },
-    _context: ModifierContext
-  ): void {
-    const { content, alignment = 'center' } = overlay
-
-    // Make the element a positioned container
-    if (element.style.position === '' || element.style.position === 'static') {
-      element.style.position = 'relative'
-    }
-
-    // Create overlay container
-    if (!canUseDocument()) return
-    const overlayContainer = document.createElement('div')
-    overlayContainer.style.position = 'absolute'
-    overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
-
-    // Apply alignment positioning
-    const alignmentStyles = this.getOverlayAlignment(alignment)
-    Object.assign(overlayContainer.style, alignmentStyles)
-
-    // Render content
-    if (typeof content === 'function') {
-      // If content is a function, call it to get component
-      const contentComponent = content()
-      if (contentComponent && typeof contentComponent.render === 'function') {
-        const contentNode = contentComponent.render()
-        if (contentNode.element) {
-          overlayContainer.appendChild(contentNode.element)
-        }
-      }
-    } else if (content && typeof content.render === 'function') {
-      // If content is a component instance
-      const contentNode = content.render()
-      if (contentNode.element) {
-        overlayContainer.appendChild(contentNode.element)
-      }
-    } else if (isHTMLElementRuntimeElement(content)) {
-      // If content is already a DOM element
-      overlayContainer.appendChild(content)
-    }
-
-    // Add overlay to the element
-    element.appendChild(overlayContainer)
-  }
-
-  private getOverlayAlignment(alignment: string): Record<string, string> {
-    const alignments: Record<string, Record<string, string>> = {
-      center: {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      },
-      top: {
-        top: '0',
-        left: '50%',
-        transform: 'translateX(-50%)',
-      },
-      bottom: {
-        bottom: '0',
-        left: '50%',
-        transform: 'translateX(-50%)',
-      },
-      leading: {
-        top: '50%',
-        left: '0',
-        transform: 'translateY(-50%)',
-      },
-      trailing: {
-        top: '50%',
-        right: '0',
-        transform: 'translateY(-50%)',
-      },
-      topLeading: {
-        top: '0',
-        left: '0',
-      },
-      topTrailing: {
-        top: '0',
-        right: '0',
-      },
-      bottomLeading: {
-        bottom: '0',
-        left: '0',
-      },
-      bottomTrailing: {
-        bottom: '0',
-        right: '0',
-      },
-    }
-
-    return alignments[alignment] || alignments.center
   }
 }
 
