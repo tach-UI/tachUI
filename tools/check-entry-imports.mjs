@@ -51,10 +51,21 @@ for (const dir of readdirSync(join(ROOT, 'packages'))) {
   const entries = new Map()
   if (typeof manifest.main === 'string') entries.set('main', manifest.main)
   const collect = (label, node) => {
+    // String shorthand — `"./x": "./dist/x.js"` — is a runtime entry like any
+    // other. No package here uses the shape today, and silently skipping it is
+    // how the next one that does would go unchecked. `check-declared-types`
+    // handles it; so does this now.
+    if (typeof node === 'string') {
+      entries.set(label, node)
+      return
+    }
     if (!node || typeof node !== 'object') return
     if (typeof node.import === 'string') entries.set(label, node.import)
     for (const [key, child] of Object.entries(node)) {
-      if (child && typeof child === 'object') collect(`${label} (${key})`, child)
+      if (child && (typeof child === 'object' || typeof child === 'string')) {
+        if (typeof child === 'string' && ['import', 'types', 'require', 'default'].includes(key)) continue
+        collect(`${label} (${key})`, child)
+      }
     }
   }
   for (const [subpath, node] of Object.entries(manifest.exports ?? {})) collect(subpath, node)
