@@ -21,6 +21,17 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const TEST_PATH = join(ROOT, 'packages/cli/__tests__/templates/starter-apps.test.ts')
 
+/**
+ * Lines `main.ts.template` must keep. The render test mounts `App()` directly,
+ * so nothing executes the scaffold's own entry — drop the modifier preload
+ * there and every test still passes while a scaffolded app renders unstyled.
+ */
+const MAIN_REQUIRED = [
+  "import { mountRoot } from '@tachui/core'",
+  "import '@tachui/modifiers/preload/basic'",
+  'mountRoot(() => App())',
+]
+
 const TEMPLATES = [
   { id: 'basic', fn: 'BasicApp', path: 'packages/cli/templates/basic/src/App.ts.template' },
   { id: 'advanced', fn: 'AdvancedApp', path: 'packages/cli/templates/advanced/src/App.ts.template' },
@@ -92,6 +103,22 @@ describe('scaffolded starter apps', () => {
   })
 })
 `
+
+const mainProblems = []
+for (const { id } of TEMPLATES) {
+  const mainPath = join(ROOT, `packages/cli/templates/${id}/src/main.ts.template`)
+  const source = readFileSync(mainPath, 'utf8')
+  for (const line of MAIN_REQUIRED) {
+    if (!source.includes(line)) {
+      mainProblems.push(`templates/${id}/src/main.ts.template no longer contains: ${line}`)
+    }
+  }
+}
+if (mainProblems.length) {
+  console.error('Starter entry points have lost something nothing executes:\n')
+  for (const p of mainProblems) console.error(`  ${p}`)
+  process.exit(1)
+}
 
 if (process.argv.includes('--write')) {
   writeFileSync(TEST_PATH, GENERATED)

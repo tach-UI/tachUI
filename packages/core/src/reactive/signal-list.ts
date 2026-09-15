@@ -326,8 +326,7 @@ export function createSignalList<T, K extends PropertyKey = PropertyKey>(
   // assertion it once did to recover what the accessor always carried.
   const getIds: Signal<K[]> = _getIds
 
-  // Type assertion to access peek() method
-  const peekIds = () => (_getIds as any).peek()
+  const peekIds = () => _getIds.peek()
 
   const setIds = (newIds: K[]) => {
     // Use peek() to avoid tracking the signal during comparison
