@@ -197,6 +197,33 @@ describe('Overlay Modifier', () => {
       expect(overlayContainer.children[0].className).toBe('overlay-content')
     })
 
+    // A component may render more than one root, and `ForEach` and `Show`
+    // reach here the same way through their `display: contents` shells.
+    // Auto-placement would drop the second root into an implicit row below
+    // the 100% one, outside the host; they share the one cell instead, which
+    // layers them as SwiftUI layers them.
+    it('layers multi-root content in the single cell', () => {
+      const multiRoot = {
+        type: 'component' as const,
+        id: 'multi-root',
+        props: {},
+        render: vi.fn(() => [
+          h('span', { class: 'first' }, textNode('a')),
+          h('span', { class: 'second' }, textNode('b')),
+        ]),
+      }
+      const modifier = overlay(multiRoot)
+
+      modifier.apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0]
+      const roots = childrenOf(overlayContainer)
+      expect(roots).toHaveLength(2)
+      for (const root of roots) {
+        expect((root as HTMLElement).style.gridArea).toBe('1 / 1')
+      }
+    })
+
     it('defaults an alignment that names an inherited key to center', () => {
       for (const alignment of ['constructor', '__proto__', 'toString']) {
         const element = document.createElement('div')

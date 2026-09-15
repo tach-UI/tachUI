@@ -132,6 +132,16 @@ An offset moves the content by adjusting the overlay's edges rather than
 translating a host-sized box, so an inward or centered move never extends the
 overlay past the host. Only a move outward past the trailing or bottom edge
 can add scrollable overflow to a scrolling host, as it would for any element.
+Because the offset moves those edges, it also shrinks the area the content is
+offered, so content sized to `100%` stops covering the host once an offset
+applies to it.
+
+Alignment follows the writing direction, so a `trailing` badge lands on the
+right in a left-to-right document and on the left in a right-to-left one.
+Offsets are physical: `x` is always rightward, whatever the direction.
+
+Content with more than one root layers in place, each root filling the same
+area, rather than stacking.
 
 ### Advanced Gesture & Interaction Modifiers
 

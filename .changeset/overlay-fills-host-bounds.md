@@ -12,8 +12,12 @@ repeated with `.frame()`. The container is now a layer covering the host: a
 grid with one definite `100%` x `100%` cell, with the alignment expressed as
 the item's placement in that cell. Content with an intrinsic size sits where it
 did before and keeps its size, overflowing the host if larger, as a SwiftUI
-proposal is advisory; content sized to `100%` fills the host. Multi-root
-content falls into further rows rather than onto one line.
+proposal is advisory; content sized to `100%` fills the host. Content with
+more than one root layers in that one cell, as SwiftUI layers it, instead of
+each root taking a row of its own.
+
+Alignment follows the writing direction, so a `trailing` badge lands on the
+inline end rather than always on the right. Offsets stay physical.
 
 Offset semantics are pinned down at the same time, and both forms move the
 content by adjusting the layer's edges rather than translating it, so a
