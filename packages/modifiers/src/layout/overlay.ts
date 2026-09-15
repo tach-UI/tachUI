@@ -230,8 +230,7 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     // is advisory, as SwiftUI's is: a grid item keeps a fixed `.frame()` width
     // wider than the host and overflows it, where a flex item would be
     // compressed by `flex-shrink`. A definite cell is what lets a child's
-    // `100%` resolve to the host's size, and multi-root content falls into
-    // further rows rather than onto one line.
+    // `100%` resolve to the host's size.
     const overlayContainer = document.createElement('div')
     overlayContainer.style.position = 'absolute'
     overlayContainer.style.top = '0px'
@@ -255,6 +254,8 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     const disposeContent = this.renderContent(overlayContainer, content)
     if (disposeContent) cleanup.push(disposeContent)
 
+    this.layerContent(overlayContainer)
+
     // The overlay container is DOM this modifier added, so it goes when the
     // modifier does — after the content's own disposers have run.
     cleanup.push(() => {
@@ -262,6 +263,28 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     })
 
     return cleanup
+  }
+
+  /**
+   * Put every root the content rendered in the layer's single cell.
+   *
+   * A component's `render()` may return more than one root, and `ForEach` and
+   * `Show` reach here the same way through their `display: contents` shells.
+   * Auto-placement would put the second root in an implicit row *below* the
+   * `100%` one, outside the host. Stacking them in the one cell layers them
+   * as SwiftUI does, and keeps each one's `100%` resolving against the host.
+   *
+   * A single root already lands in that cell on its own, so nothing is
+   * written in the common case and the content's markup is left alone.
+   */
+  private layerContent(overlayContainer: HTMLElement): void {
+    const roots = Array.from(overlayContainer.children)
+    if (roots.length < 2) return
+
+    for (const root of roots) {
+      const style = (root as HTMLElement).style
+      if (style) style.gridArea = '1 / 1'
+    }
   }
 
   private applyOverlayPositioning(
