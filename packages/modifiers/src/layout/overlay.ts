@@ -110,6 +110,25 @@ interface OverlayElementState {
  */
 const overlayStates = new WeakMap<Element, OverlayElementState>()
 
+type AxisAnchor = 'start' | 'center' | 'end'
+
+interface AxisAnchors {
+  x: AxisAnchor
+  y: AxisAnchor
+}
+
+const ALIGNMENT_ANCHORS: Record<OverlayAlignment, AxisAnchors> = {
+  center: { x: 'center', y: 'center' },
+  top: { x: 'center', y: 'start' },
+  bottom: { x: 'center', y: 'end' },
+  leading: { x: 'start', y: 'center' },
+  trailing: { x: 'end', y: 'center' },
+  topLeading: { x: 'start', y: 'start' },
+  topTrailing: { x: 'end', y: 'start' },
+  bottomLeading: { x: 'start', y: 'end' },
+  bottomTrailing: { x: 'end', y: 'end' },
+}
+
 function disposeMounts(state: OverlayElementState): void {
   // Copy first: each disposer removes itself from the set as it runs.
   for (const dispose of Array.from(state.mounts)) dispose()
@@ -202,17 +221,26 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
 
     // The container is a layer covering the host's box, so the content is
     // proposed the host's bounds the way SwiftUI's `.overlay(alignment:)`
-    // proposes them: content that expands to fill (a shape, a ZStack) fills
-    // the host, and content with an intrinsic size sits at the alignment.
-    // A shrink-to-fit container centered with 50%/translate cannot do the
-    // first, and a box-filling child inside it would resolve to 0x0.
+    // proposes them: content sized to 100% fills the host, and content with
+    // an intrinsic size sits at the alignment. A shrink-to-fit container
+    // centered with 50%/translate cannot do the first — a box-filling child
+    // inside it resolves to 0x0.
+    //
+    // A grid with one definite 100% x 100% cell, not a flexbox. The proposal
+    // is advisory, as SwiftUI's is: a grid item keeps a fixed `.frame()` width
+    // wider than the host and overflows it, where a flex item would be
+    // compressed by `flex-shrink`. A definite cell is what lets a child's
+    // `100%` resolve to the host's size, and multi-root content falls into
+    // further rows rather than onto one line.
     const overlayContainer = document.createElement('div')
     overlayContainer.style.position = 'absolute'
     overlayContainer.style.top = '0px'
     overlayContainer.style.right = '0px'
     overlayContainer.style.bottom = '0px'
     overlayContainer.style.left = '0px'
-    overlayContainer.style.display = 'flex'
+    overlayContainer.style.display = 'grid'
+    overlayContainer.style.gridTemplateColumns = '100%'
+    overlayContainer.style.gridTemplateRows = '100%'
     overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
 
     const cleanup: (() => void)[] = []
@@ -251,14 +279,12 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
       this.clearPositionStyles(overlayContainer)
 
       const effectiveSide = sideValue ?? alignmentValue
-      const effectiveAlignment =
-        sideValue !== undefined ? effectiveSide : alignmentValue
-      const alignmentStyles = this.getOverlayAlignment(effectiveAlignment)
+      const alignmentStyles = this.getOverlayAlignment(effectiveSide)
       Object.assign(overlayContainer.style, alignmentStyles)
 
       this.applyOffset(overlayContainer, effectiveSide, offsetValue)
 
-      overlayContainer.style.display = enabledValue ? 'flex' : 'none'
+      overlayContainer.style.display = enabledValue ? 'grid' : 'none'
     }
 
     const hasReactivePositioning =
@@ -279,61 +305,107 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   }
 
   /**
-   * A numeric offset is an inset from the anchored side, as padding on the
-   * layer. An `{ x, y }` offset translates the whole layer, so content that
-   * fills the host moves with it, the way SwiftUI's `.offset(x:y:)` would.
+   * Offsets move the layer's edges rather than translating it, so a negative
+   * value is honoured (padding would reject it) and an inward move never
+   * pushes a host-sized box past the host, which on a scrolling host would
+   * have produced scrollable overflow.
+   *
+   * A numeric offset is an inset from the anchored side, negative moving
+   * outward. An `{ x, y }` offset moves the content right and down, negative
+   * left and up: an inward move shrinks the layer from that edge, an outward
+   * move extends it, and on a centered axis the far edge shrinks by twice
+   * the offset so the alignment point moves by exactly the offset.
    */
   private applyOffset(
     overlayContainer: HTMLElement,
     side: OverlayAlignment | OverlaySide,
     offset: OverlayOffset | undefined
   ): void {
-    if (offset === undefined) return
+    const anchors = this.getAnchors(side)
 
     if (typeof offset === 'number') {
-      this.applyNumericOffset(overlayContainer, side, offset)
+      // Inward from every anchored edge, so a corner is inset on both axes.
+      // On an end-anchored axis inward is the negative direction.
+      if (anchors.x !== 'center') {
+        this.applyAxisOffset(
+          overlayContainer,
+          'x',
+          anchors.x,
+          anchors.x === 'start' ? offset : -offset
+        )
+      }
+      if (anchors.y !== 'center') {
+        this.applyAxisOffset(
+          overlayContainer,
+          'y',
+          anchors.y,
+          anchors.y === 'start' ? offset : -offset
+        )
+      }
       return
     }
 
-    const x = typeof offset.x === 'number' ? offset.x : 0
-    const y = typeof offset.y === 'number' ? offset.y : 0
-    if (x === 0 && y === 0) return
-    overlayContainer.style.transform = `translate(${x}px, ${y}px)`
+    // `null` is outside the type but reachable from a loosely typed signal;
+    // it is ignored like `undefined` rather than thrown from the effect.
+    if (typeof offset !== 'object' || offset === null) return
+
+    if (typeof offset.x === 'number') {
+      this.applyAxisOffset(overlayContainer, 'x', anchors.x, offset.x)
+    }
+    if (typeof offset.y === 'number') {
+      this.applyAxisOffset(overlayContainer, 'y', anchors.y, offset.y)
+    }
   }
 
-  private applyNumericOffset(
+  /**
+   * Move the content along one axis by `offset` (positive toward the end of
+   * the axis) by adjusting the layer's edges on that axis.
+   */
+  private applyAxisOffset(
     overlayContainer: HTMLElement,
-    side: OverlayAlignment | OverlaySide,
+    axis: 'x' | 'y',
+    anchor: 'start' | 'center' | 'end',
     offset: number
   ): void {
-    switch (side) {
-      case 'top':
-      case 'topLeading':
-      case 'topTrailing':
-        overlayContainer.style.paddingTop = `${offset}px`
+    if (!Number.isFinite(offset) || offset === 0) return
+
+    const startEdge = axis === 'x' ? 'left' : 'top'
+    const endEdge = axis === 'x' ? 'right' : 'bottom'
+
+    switch (anchor) {
+      case 'start':
+        overlayContainer.style[startEdge] = `${offset}px`
         break
-      case 'bottom':
-      case 'bottomLeading':
-      case 'bottomTrailing':
-        overlayContainer.style.paddingBottom = `${offset}px`
+      case 'end':
+        overlayContainer.style[endEdge] = `${-offset}px`
         break
-      case 'leading':
-        overlayContainer.style.paddingLeft = `${offset}px`
-        break
-      case 'trailing':
-        overlayContainer.style.paddingRight = `${offset}px`
-        break
-      default:
+      case 'center':
+        if (offset > 0) {
+          overlayContainer.style[startEdge] = `${offset * 2}px`
+        } else {
+          overlayContainer.style[endEdge] = `${-offset * 2}px`
+        }
         break
     }
   }
 
+  /**
+   * The anchored end of each axis for an alignment. Looked up with an own
+   * property check: a string that happens to name an inherited key
+   * (`'constructor'`) would otherwise read through `Object.prototype` and
+   * dodge the center fallback.
+   */
+  private getAnchors(side: OverlayAlignment | OverlaySide): AxisAnchors {
+    return Object.prototype.hasOwnProperty.call(ALIGNMENT_ANCHORS, side)
+      ? ALIGNMENT_ANCHORS[side as OverlayAlignment]
+      : ALIGNMENT_ANCHORS.center
+  }
+
   private clearPositionStyles(overlayContainer: HTMLElement): void {
-    overlayContainer.style.paddingTop = ''
-    overlayContainer.style.paddingRight = ''
-    overlayContainer.style.paddingBottom = ''
-    overlayContainer.style.paddingLeft = ''
-    overlayContainer.style.transform = ''
+    overlayContainer.style.top = '0px'
+    overlayContainer.style.right = '0px'
+    overlayContainer.style.bottom = '0px'
+    overlayContainer.style.left = '0px'
   }
 
   private isReactive<T>(value: T | Signal<T> | undefined): value is Signal<T> {
@@ -414,25 +486,14 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   }
 
   /**
-   * Alignment is expressed on the layer's flex axes rather than by moving the
-   * layer itself, so the layer always covers the host.
+   * Alignment is expressed as the grid item's placement in the layer's one
+   * cell, so the layer itself never moves and keeps covering the host.
    */
   private getOverlayAlignment(
-    alignment: OverlayAlignment
+    alignment: OverlayAlignment | OverlaySide
   ): Record<string, string> {
-    const alignments: Record<OverlayAlignment, Record<string, string>> = {
-      center: { justifyContent: 'center', alignItems: 'center' },
-      top: { justifyContent: 'center', alignItems: 'flex-start' },
-      bottom: { justifyContent: 'center', alignItems: 'flex-end' },
-      leading: { justifyContent: 'flex-start', alignItems: 'center' },
-      trailing: { justifyContent: 'flex-end', alignItems: 'center' },
-      topLeading: { justifyContent: 'flex-start', alignItems: 'flex-start' },
-      topTrailing: { justifyContent: 'flex-end', alignItems: 'flex-start' },
-      bottomLeading: { justifyContent: 'flex-start', alignItems: 'flex-end' },
-      bottomTrailing: { justifyContent: 'flex-end', alignItems: 'flex-end' },
-    }
-
-    return alignments[alignment] || alignments.center
+    const anchors = this.getAnchors(alignment)
+    return { justifyItems: anchors.x, alignItems: anchors.y }
   }
 }
 
@@ -443,14 +504,12 @@ export function overlay(
   content: OverlayContent,
   alignmentOrOptions:
     | OverlayAlignment
+    | Signal<OverlayAlignment>
     | Omit<OverlayOptions, 'content'> = 'center'
 ): OverlayModifier {
-  if (
-    typeof alignmentOrOptions === 'object' &&
-    alignmentOrOptions !== null &&
-    !isSignal(alignmentOrOptions) &&
-    !isComputed(alignmentOrOptions)
-  ) {
+  // A signal is a function, so the object check alone tells the options
+  // form apart from both the string and the signal forms.
+  if (typeof alignmentOrOptions === 'object' && alignmentOrOptions !== null) {
     return new OverlayModifier({
       content,
       ...alignmentOrOptions,
@@ -459,6 +518,6 @@ export function overlay(
 
   return new OverlayModifier({
     content,
-    alignment: alignmentOrOptions as OverlayAlignment,
+    alignment: alignmentOrOptions,
   })
 }
