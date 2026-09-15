@@ -233,7 +233,32 @@ export function createComponentProxy<T extends ComponentInstance>(
           }
 
           if (!methodCache.has(prop)) {
-            methodCache.set(prop, value.bind(target))
+            // A method that returns its instance (`return this`, the
+            // builder convention shape methods such as `fill`/`stroke`
+            // use) hands back the proxy instead, so the modifier chain
+            // continues from it. Returning the raw instance would strand
+            // every modifier applied so far on the proxy's modifiable
+            // wrapper, and the caller would render a bare component.
+            //
+            // This is the one behavioural difference from the `bind` this
+            // replaced, and it is deliberate: such a method now yields the
+            // proxy, which is not `===` the instance. Every other result
+            // passes through untouched. `length` is restored below because
+            // `bind` preserves it and an arrow does not, so anything
+            // reading a method's arity keeps seeing the declared one.
+            const wrapper = (...args: any[]) => {
+              const result = value.apply(target, args)
+              return result === target ? proxy : result
+            }
+            Object.defineProperty(wrapper, 'length', {
+              value: value.length,
+              configurable: true,
+            })
+            Object.defineProperty(wrapper, 'name', {
+              value: value.name,
+              configurable: true,
+            })
+            methodCache.set(prop, wrapper)
           }
           return methodCache.get(prop)
         }

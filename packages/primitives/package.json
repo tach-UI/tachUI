@@ -28,6 +28,10 @@
     "./forms": {
       "types": "./dist/forms/index.d.ts",
       "import": "./dist/forms/index.js"
+    },
+    "./shapes": {
+      "types": "./dist/shapes/index.d.ts",
+      "import": "./dist/shapes/index.js"
     }
   },
   "files": [
@@ -49,7 +53,8 @@
   },
   "dependencies": {
     "@tachui/core": "0.11.1",
-    "@tachui/modifiers": "0.11.1"
+    "@tachui/modifiers": "0.11.1",
+    "@tachui/types": "0.11.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

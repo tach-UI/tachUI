@@ -33,6 +33,10 @@
     "./assets": {
       "types": "./dist/assets.d.ts",
       "import": "./dist/assets.js"
+    },
+    "./shapes": {
+      "types": "./dist/shapes.d.ts",
+      "import": "./dist/shapes.js"
     }
   },
   "files": [
