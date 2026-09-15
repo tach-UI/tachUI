@@ -6,8 +6,9 @@
  * does no layout; the stub reports a size the way the browser would.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSignal, flushSync } from '@tachui/core'
+import { configureCore } from '@tachui/core/config'
 import { renderComponent } from '@tachui/core/runtime'
 import { Circle, ShapeComponent, circleShape } from '../../src/shapes'
 import {
@@ -408,7 +409,116 @@ describe('Circle', () => {
     })
   })
 
+  describe('review fixes', () => {
+    // `paint()` used to add strokeBorder's half-line inset itself while
+    // `path()` did not, so a shape reported geometry it did not draw. That
+    // matters because `Shape` exists for `clipShape` to consume.
+    it('reports the geometry it actually draws', async () => {
+      const shape: any = Circle().strokeBorder('red', 4)
+      const { path } = mount(shape)
+
+      resizeAll(40, 40)
+      await flushReactiveUpdates()
+
+      expect(shape.path({ x: 0, y: 0, width: 40, height: 40 })).toBe(
+        path.getAttribute('d')
+      )
+    })
+
+    // `.stroke()` promises a line centered on the edge, so it has to clear
+    // an inset a previous `.strokeBorder()` asked for.
+    it('clears strokeBorder inset when a plain stroke replaces it', async () => {
+      const { path } = mount(Circle().strokeBorder('red', 4).stroke('blue', 4))
+
+      resizeAll(40, 40)
+      await flushReactiveUpdates()
+
+      expect(path.getAttribute('stroke')).toBe('blue')
+      expect(path.getAttribute('d')).toBe(CIRCLE_40)
+    })
+
+    it('keeps the inset when strokeBorder follows a plain stroke', async () => {
+      const { path } = mount(Circle().stroke('blue', 4).strokeBorder('red', 4))
+
+      resizeAll(40, 40)
+      await flushReactiveUpdates()
+
+      expect(path.getAttribute('d')).toBe(
+        'M 38 20 A 18 18 0 1 1 2 20 A 18 18 0 1 1 38 20 Z'
+      )
+    })
+
+    // `ModifierBuilder.build()` clones the component and renders the clone,
+    // so the styling has to survive a clone or the chain would render bare.
+    // This is also why the methods are chain-time only: the instance a caller
+    // holds is never the one on screen.
+    it('carries styling across the clone that build() renders', async () => {
+      const original: any = Circle().inset(1).stroke('tint', 2)
+      const built = original.build()
+
+      expect(built).not.toBe(original)
+
+      const { path } = mount(built)
+      resizeAll(40, 40)
+      await flushReactiveUpdates()
+
+      expect(path.getAttribute('stroke')).toBe('tint')
+      expect(path.getAttribute('stroke-width')).toBe('2')
+      expect(path.getAttribute('d')).toBe(
+        'M 39 20 A 19 19 0 1 1 1 20 A 19 19 0 1 1 39 20 Z'
+      )
+    })
+
+    it('formats a computed line width without float noise', () => {
+      const { path } = mount(Circle().stroke('red', 0.1 + 0.2))
+      expect(path.getAttribute('stroke-width')).toBe('0.3')
+    })
+
+    it('warns and draws nothing for a style that is not a color', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      try {
+        const { path } = mount(Circle().fill({ nonsense: true } as any))
+        expect(path.getAttribute('fill')).toBe('none')
+        expect(warn).toHaveBeenCalled()
+      } finally {
+        warn.mockRestore()
+      }
+    })
+
+    // `fill` and `stroke` are not modifiers, so with the proxy disabled they
+    // exist nowhere else and the shape API would be unusable.
+    it('keeps shape methods with the modifier proxy disabled', async () => {
+      configureCore({ proxyModifiers: false })
+      try {
+        const shape: any = Circle()
+        expect(typeof shape.fill).toBe('function')
+        expect(typeof shape.stroke).toBe('function')
+        expect(typeof shape.strokeBorder).toBe('function')
+        expect(typeof shape.inset).toBe('function')
+        expect(shape.clipPath()).toBe('circle()')
+
+        // Chainable, and the chain still renders.
+        const chained = shape.inset(1).stroke('red', 2)
+        const { path } = mount(chained)
+
+        resizeAll(40, 40)
+        await flushReactiveUpdates()
+
+        expect(path.getAttribute('stroke')).toBe('red')
+        expect(path.getAttribute('d')).toBe(
+          'M 39 20 A 19 19 0 1 1 1 20 A 19 19 0 1 1 39 20 Z'
+        )
+      } finally {
+        configureCore({ proxyModifiers: true })
+      }
+    })
+  })
+
   describe('without a ResizeObserver', () => {
+    // A `getBoundingClientRect` fallback runs on a microtask after mount, so
+    // this is not the dead end it would otherwise be. jsdom does no layout
+    // and reports a zero box, which the engine treats as "no measurement"
+    // rather than a measurement of zero, so nothing is drawn here.
     it('still mounts, with nothing drawn', () => {
       uninstallResizeObserverStub()
       const originalObserver = globalThis.ResizeObserver
