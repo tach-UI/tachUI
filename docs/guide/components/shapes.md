@@ -54,6 +54,8 @@ Circle().inset(1).stroke('#8E8E93', 2)  // the edge 1px in, the line centered on
 
 Every style and length accepts a signal or a color asset, and a change updates the drawn shape in place. The shape keeps one element for its lifetime, so a CSS transition on it survives the update.
 
+Signals are the way to change a shape after it is on screen. The shape methods apply while you build the chain, not afterwards, because the modifier builder renders a clone of the component. Calling `.fill()` on a shape you already mounted changes nothing visible.
+
 ```typescript
 const [tint, setTint] = createSignal('#007AFF')
 const [progress, setProgress] = createSignal(0)

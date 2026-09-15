@@ -44,7 +44,7 @@ import type {
   CloneOptions,
 } from '@tachui/core/runtime/types'
 import type { Shape, ShapeRect } from '@tachui/types/shapes'
-import { insetRect } from './geometry'
+import { formatLength, insetRect } from './geometry'
 
 /**
  * A fill or stroke style: a CSS color, a signal of one, or a color asset.
@@ -83,9 +83,17 @@ function resolveStyle(style: ShapeStyle): string {
   const value = isSignal(style) ? style() : style
   if (typeof value === 'string') return value
   const asset = value as { resolve?: () => string; value?: unknown }
-  if (typeof asset.resolve === 'function') return asset.resolve()
-  if (typeof asset.value === 'string') return asset.value
-  return String(value)
+  if (typeof asset?.resolve === 'function') return asset.resolve()
+  if (typeof asset?.value === 'string') return asset.value
+  // Neither a color string, a signal of one, nor an asset. Stringifying it
+  // would paint `[object Object]` and look like a rendering bug, so say what
+  // happened and draw nothing.
+  console.warn(
+    '[tachUI/primitives] A shape style must be a CSS color string, a signal ' +
+      'of one, or a color asset. Received:',
+    value
+  )
+  return 'none'
 }
 
 function setAttributeIfChanged(
@@ -122,6 +130,7 @@ export class ShapeComponent
   private svg: SVGSVGElement | undefined
   private pathElement: SVGPathElement | undefined
   private observer: ResizeObserver | undefined
+  private measurePending = false
 
   constructor(
     public readonly shape: Shape,
@@ -141,6 +150,19 @@ export class ShapeComponent
   // on SwiftUI's `Shape` rather than on `View`. The component proxy resolves a
   // name that is not a modifier to the instance's own method, so they chain
   // with modifiers in either order.
+  //
+  // The proxy resolves a *modifier* of the same name first, so registering a
+  // `fill`, `stroke`, `strokeBorder`, `inset` or `trim` modifier would shadow
+  // the method here. None are registered, and these are exactly the names a
+  // future SwiftUI-shaped modifier would reach for, so the collision is worth
+  // knowing about before adding one.
+  //
+  // These record styling and are **chain-time only**. `ModifierBuilder.build()`
+  // clones the component and renders the clone, so the instance a caller holds
+  // is never the one on screen and a call after mount changes nothing visible.
+  // `clone()` carries the styling across, which is what makes the chain work at
+  // all. Drive anything that changes after mount with a signal instead: every
+  // style and length accepts one.
 
   /** Fill the shape. Without `fill` or `stroke`, a shape fills with `currentColor`. */
   fill(style: ShapeStyle): this {
@@ -156,6 +178,9 @@ export class ShapeComponent
   stroke(style: ShapeStyle, lineWidth: ShapeLength = 1): this {
     this.styling.stroke = style
     this.styling.lineWidth = lineWidth
+    // A plain stroke is centered on the edge, so it clears any inset a
+    // previous `strokeBorder` asked for rather than inheriting it.
+    this.styling.strokeInside = false
     return this
   }
 
@@ -164,8 +189,9 @@ export class ShapeComponent
    * width first. SwiftUI's `strokeBorder`.
    */
   strokeBorder(style: ShapeStyle, lineWidth: ShapeLength = 1): this {
+    this.stroke(style, lineWidth)
     this.styling.strokeInside = true
-    return this.stroke(style, lineWidth)
+    return this
   }
 
   /** Shrink the shape by `by` on every side. Repeated calls accumulate. */
@@ -176,10 +202,29 @@ export class ShapeComponent
 
   // ---- Shape contract -----------------------------------------------------
 
-  /** Path data for this shape, with its insets applied, drawn in `rect`. */
+  /**
+   * Path data for this shape drawn in `rect`.
+   *
+   * This is the path the shape actually draws, so a consumer such as
+   * `clipShape` sees the same geometry as the rendered `<path>`. `paint()`
+   * routes through here rather than computing its own rect.
+   */
   path(rect: ShapeRect): string {
-    return this.shape.path(insetRect(rect, this.totalInset()))
+    return this.shape.path(this.drawRect(rect))
   }
+
+  /**
+   * The rect the shape draws into: every `.inset()`, plus half the line width
+   * when `strokeBorder` asked for the stroke to stay inside the frame.
+   */
+  private drawRect(rect: ShapeRect): ShapeRect {
+    let inset = this.totalInset()
+    if (this.styling.stroke !== undefined && this.styling.strokeInside) {
+      inset += resolveLength(this.styling.lineWidth) / 2
+    }
+    return insetRect(rect, inset)
+  }
+
 
   clipPath(): string {
     return this.shape.clipPath()
@@ -235,6 +280,7 @@ export class ShapeComponent
   private readonly contentElement = (): Element => {
     const svg = this.svg ?? this.buildSvg()
     if (!this.observer) this.observe(svg)
+    this.scheduleFirstMeasure()
     this.paint()
     return svg
   }
@@ -242,6 +288,40 @@ export class ShapeComponent
   private readonly teardown = (): void => {
     this.observer?.disconnect()
     this.observer = undefined
+    this.measurePending = false
+  }
+
+  /**
+   * Measure once as soon as the element is in the document.
+   *
+   * This accessor runs during the render pass, before the renderer inserts
+   * the element, so measuring here would read a detached box of zeros. A
+   * microtask lands after the synchronous render that mounts it.
+   *
+   * ResizeObserver's first delivery is also asynchronous, so without this the
+   * shape would paint empty once before its real path arrived. It is the only
+   * measurement at all where `ResizeObserver` is missing.
+   */
+  private scheduleFirstMeasure(): void {
+    if (this.measurePending || this.frame().width > 0) return
+    this.measurePending = true
+    queueMicrotask(() => {
+      if (!this.measurePending) return
+      this.measurePending = false
+      this.measureFromBox()
+    })
+  }
+
+  private measureFromBox(): void {
+    const svg = this.svg
+    if (typeof svg?.getBoundingClientRect !== 'function') return
+    const box = svg.getBoundingClientRect()
+    // A zero box means the element is not laid out — detached, `display:
+    // none`, or an environment that does no layout at all, as jsdom does.
+    // That is the absence of a measurement rather than a measurement of
+    // zero, so it must not overwrite a size the observer already reported.
+    if (box.width <= 0 && box.height <= 0) return
+    this.measured(box.width, box.height)
   }
 
   private buildSvg(): SVGSVGElement {
@@ -292,19 +372,18 @@ export class ShapeComponent
     const path = this.pathElement
     if (!path) return
 
-    const { fill, stroke, strokeInside } = this.styling
+    const { fill, stroke } = this.styling
     const lineWidth = resolveLength(this.styling.lineWidth)
     const strokeValue = stroke === undefined ? undefined : resolveStyle(stroke)
     const fillValue = fill === undefined ? undefined : resolveStyle(fill)
 
-    let inset = this.totalInset()
-    if (strokeValue !== undefined && strokeInside) inset += lineWidth / 2
-    const rect = insetRect(this.frame(), inset)
-
+    // Through `path()`, so the geometry drawn here and the geometry a `Shape`
+    // consumer reads are the same by construction.
+    const frame = this.frame()
     setAttributeIfChanged(
       path,
       'd',
-      rect.width > 0 && rect.height > 0 ? this.shape.path(rect) : ''
+      frame.width > 0 && frame.height > 0 ? this.path(frame) : ''
     )
     setAttributeIfChanged(
       path,
@@ -315,7 +394,7 @@ export class ShapeComponent
     setAttributeIfChanged(
       path,
       'stroke-width',
-      strokeValue === undefined ? undefined : String(lineWidth)
+      strokeValue === undefined ? undefined : formatLength(lineWidth)
     )
   }
 
@@ -356,11 +435,55 @@ export class ShapeComponent
   }
 }
 
+/** Chainable shape methods, which hand back the wrapper so modifiers follow. */
+const CHAINABLE_SHAPE_METHODS = [
+  'fill',
+  'stroke',
+  'strokeBorder',
+  'inset',
+] as const
+
+/** Shape methods that return a value rather than the shape. */
+const SHAPE_CONTRACT_METHODS = ['path', 'clipPath'] as const
+
 /**
  * Wrap a shape in the modifier chain.
+ *
+ * Under the default component proxy the instance's own methods resolve
+ * through it, so nothing more is needed. With `proxyModifiers: false`
+ * `withModifiers` returns a plain wrapper that carries neither the modifier
+ * chain nor the prototype, which for an ordinary component only costs the
+ * chainable modifier form — `.modifier.frame()` still works. A shape has no
+ * such fallback, because `fill` and `stroke` are not modifiers and exist
+ * nowhere else, so the methods are forwarded onto the wrapper explicitly.
  */
 export function createShape(shape: Shape, kind: string): ShapeInstance {
-  return withModifiers(
-    new ShapeComponent(shape, kind)
-  ) as unknown as ShapeInstance
+  const component = new ShapeComponent(shape, kind)
+  const wrapper = withModifiers(component) as unknown as ShapeInstance
+
+  if (typeof (wrapper as { fill?: unknown }).fill === 'function') {
+    return wrapper
+  }
+
+  for (const name of CHAINABLE_SHAPE_METHODS) {
+    Object.defineProperty(wrapper, name, {
+      configurable: true,
+      enumerable: false,
+      value: (...args: unknown[]) => {
+        ;(component[name] as (...a: unknown[]) => unknown)(...args)
+        return wrapper
+      },
+    })
+  }
+
+  for (const name of SHAPE_CONTRACT_METHODS) {
+    Object.defineProperty(wrapper, name, {
+      configurable: true,
+      enumerable: false,
+      value: (...args: unknown[]) =>
+        (component[name] as (...a: unknown[]) => unknown)(...args),
+    })
+  }
+
+  return wrapper
 }
