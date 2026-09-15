@@ -28,6 +28,7 @@ Every entry below comes directly from `design-docs/components-0.9.md`. Tables us
 | `Spacer` | Layout | Flexible spacing element | `@tachui/primitives/layout` |
 | `Divider` | Layout | Visual separator | `@tachui/primitives/layout` |
 | `Grid`, `GridRow` | Layout | Experimental grid primitives | `@tachui/primitives/layout` |
+| `Circle` | Shapes | Circle that fills its frame; `.fill()`, `.stroke()`, `.strokeBorder()`, `.inset()` | `@tachui/primitives/shapes` |
 | `Text`, `EnhancedText` | Display | Typography primitives | `@tachui/primitives/display` |
 | `Image`, `EnhancedImage` | Display | Image components with loading states | `@tachui/primitives/display` |
 | `ScrollView`, `EnhancedScrollView` | Display | Scroll containers (basic + advanced) | `@tachui/primitives/display` |

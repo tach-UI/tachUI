@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => ({
         'display/index': resolve(__dirname, 'src/display/index.ts'),
         'controls/index': resolve(__dirname, 'src/controls/index.ts'),
         'forms/index': resolve(__dirname, 'src/forms/index.ts'),
+        'shapes/index': resolve(__dirname, 'src/shapes/index.ts'),
       },
       name: 'TachUIPrimitives',
       formats: ['es'],
