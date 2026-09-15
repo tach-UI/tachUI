@@ -606,6 +606,7 @@ export interface ModifierBuilder<
     content: any,
     alignmentOrOptions?:
       | OverlayAlignment
+      | Signal<OverlayAlignment>
       | {
           alignment?: OverlayAlignment | Signal<OverlayAlignment>
           side?: OverlaySide | Signal<OverlaySide>

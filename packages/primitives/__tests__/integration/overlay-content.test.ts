@@ -94,8 +94,8 @@ describe('overlay() content rendering (#302)', () => {
     )
 
     const overlayEl = overlayContainerOf(container)
-    expect(overlayEl.style.justifyContent).toBe('flex-end')
-    expect(overlayEl.style.alignItems).toBe('flex-end')
+    expect(overlayEl.style.justifyItems).toBe('end')
+    expect(overlayEl.style.alignItems).toBe('end')
     expect(overlayEl.textContent).toBe('D')
   })
 
