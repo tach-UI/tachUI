@@ -79,3 +79,12 @@ Verified by installing core, modifiers, registry and types into a scratch
 project as copies rather than links and running the documented
 `modifierTypesPlugin()`: it reports hydrating via `@tachui/modifiers` and writes
 into the project's `src/types/`.
+
+It still generates zero modifiers, and that is a different fault (#373): nothing
+registers metadata for it to describe. `@tachui/modifiers` exports
+`registerModifiers` without a `registerModifierMetadata` beside it, and the hook
+that does exist is in a devtools module that is neither built as an entry nor
+exported, so it is reachable from the source tree and nowhere else. The count is
+0 in this repository too, where resolution has always worked, and the committed
+declaration has said so since October 2025. Resolving when installed is
+necessary and not sufficient; the rest belongs to #373.
