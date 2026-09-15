@@ -160,8 +160,24 @@ describe('README opening examples', () => {
  * changing, which is what happened, rather than every edit that could be made.
  */
 describe('README examples have not drifted from the tests pinning them', () => {
-  const readme = (path: string) =>
+  const repoFile = (path: string) =>
     readFileSync(resolve(__dirname, '../../../..', path), 'utf8')
+
+  // Both sides of the copy. Reading only the README leaves the other direction
+  // open: weaken a test and it stays green while the README is still right.
+  //
+  // Everything from this describe onwards is cut out first. The tokens are
+  // written in the table below, so searching the whole file finds them in the
+  // table and passes whatever the tests above it actually do — a check that
+  // satisfies itself.
+  const DRIFT_BLOCK = "describe('README examples have not drifted"
+  const ownSource = repoFile(
+    'packages/primitives/__tests__/readme/readme-intros.test.ts'
+  )
+  const testSources = [
+    ownSource.slice(0, ownSource.indexOf(DRIFT_BLOCK)),
+    repoFile('packages/primitives/__tests__/readme/readme-examples.test-d.ts'),
+  ].join('\n')
 
   const cases: Array<[string, string, string[]]> = [
     [
@@ -187,19 +203,41 @@ describe('README examples have not drifted from the tests pinning them', () => {
     [
       'core counter',
       'packages/core/README.md',
-      ['mountRoot(counterApp)', '.build()', "from '@tachui/primitives'"],
+      // Not `mountRoot(counterApp)`: the harness here mounts into a scoped
+      // host, so no test pins that call. The starter templates' own `mountRoot`
+      // line is held by `check-template-apps` instead — matched, not executed.
+      ['.build()', "from '@tachui/primitives'", 'createSignal(0)'],
     ],
     [
       'primitives stack',
       'packages/primitives/README.md',
       ["alignment: 'leading'", 'children: [Text('],
     ],
+    [
+      'data list',
+      'packages/data/README.md',
+      ['renderItem:', 'Text(item.name)'],
+    ],
+    [
+      'flow-control Show',
+      'packages/flow-control/README.md',
+      ['when: () =>', 'children: Text('],
+    ],
+    [
+      'symbols',
+      'packages/symbols/README.md',
+      ["Symbol('heart')", '.foregroundColor('],
+    ],
   ]
 
   it.each(cases)('%s', (_name, path, tokens) => {
-    const source = readme(path)
+    const source = repoFile(path)
     for (const token of tokens) {
       expect(source, `${path} no longer contains ${JSON.stringify(token)}`).toContain(token)
+      expect(
+        testSources,
+        `no test pins ${JSON.stringify(token)} any more, so ${path} is unguarded`
+      ).toContain(token)
     }
   })
 })

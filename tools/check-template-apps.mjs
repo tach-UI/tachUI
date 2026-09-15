@@ -107,9 +107,15 @@ describe('scaffolded starter apps', () => {
 const mainProblems = []
 for (const { id } of TEMPLATES) {
   const mainPath = join(ROOT, `packages/cli/templates/${id}/src/main.ts.template`)
-  const source = readFileSync(mainPath, 'utf8')
+  // Compared line by line with comments stripped: a substring match passes a
+  // commented-out preload, which is exactly the edit that would leave every
+  // test green and every scaffolded app unstyled.
+  const active = readFileSync(mainPath, 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('//') && !line.startsWith('*'))
   for (const line of MAIN_REQUIRED) {
-    if (!source.includes(line)) {
+    if (!active.includes(line)) {
       mainProblems.push(`templates/${id}/src/main.ts.template no longer contains: ${line}`)
     }
   }
