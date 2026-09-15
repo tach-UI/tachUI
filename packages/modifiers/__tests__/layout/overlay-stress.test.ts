@@ -386,8 +386,8 @@ describe('Overlay Modifier Stress Tests', () => {
 
         // Should default to center alignment
         const overlayContainer = freshElement.children[0]
-        expect(overlayContainer.style.top).toBe('50%')
-        expect(overlayContainer.style.left).toBe('50%')
+        expect(overlayContainer.style.justifyContent).toBe('center')
+        expect(overlayContainer.style.alignItems).toBe('center')
       }
 
       const duration = performance.now() - start
