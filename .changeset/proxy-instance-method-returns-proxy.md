@@ -11,3 +11,8 @@ applied so far on the proxy's wrapper: `Circle().frame(…).stroke(…)` rendere
 a bare circle with no frame. The proxy already re-wrapped `clone()`'s result;
 it now does the same for any method whose result is the instance, so the
 chain continues from it in either order.
+
+The wrapper keeps the method's declared `length` and `name`, which `bind`
+preserved and an arrow does not, so anything reading a method's arity is
+unaffected. The one deliberate difference is that a method returning its own
+instance now yields the proxy, which is not `===` the instance.
