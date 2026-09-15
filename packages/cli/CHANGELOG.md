@@ -1,5 +1,42 @@
 # @tachui/cli
 
+## 0.11.1
+
+### Patch Changes
+
+- [#371](https://github.com/tach-UI/tachUI/pull/371) [`c9a9b6b`](https://github.com/tach-UI/tachUI/commit/c9a9b6b3fee96eea7ac2327645b5f90c6b2db031) Thanks [@whoughton](https://github.com/whoughton)! - The scaffolded starter apps crashed on first render. Both templates imported
+  `Text` from `@tachui/core` and called `Layout.VStack(...)`, and neither exists:
+  components live in `@tachui/primitives`, and core's `Layout` is the constants
+  export — `fullWidthButton`, `sidebar`, `header`, `content`, `card`, `overlay`.
+  Every project created by `tacho init` on 0.11.0 threw `Text is not a function`
+  the moment it mounted.
+
+  `release:smoke` scaffolded a project and ran `npm run build` on it, and passed
+  every time. Vite builds with esbuild, which strips types without checking them,
+  and a build never executes `App()` — so the check proved the package graph
+  resolved and the bundle emitted, and nothing about whether the app runs. It now
+  runs the generated project's own `typecheck` script first, which reports both
+  errors precisely; verified by putting the broken template back and watching it
+  fail.
+
+  Two more faults the templates carried. `.padding(10, 14)` silently dropped its
+  second argument — `padding` takes one value or an object, so every one of those
+  rendered `10px` on all four sides instead of the `10px 14px` intended; they are
+  objects now. And `App()` ended on a modifier chain, which yields a
+  `ModifierBuilder` rather than the `ComponentInstance` `mountRoot` accepts, so
+  the generated project had never type-checked at all. The chains close with
+  `.build()`.
+
+  The templates are also rendered in a real test now, mounted and clicked, since
+  neither type-checking nor building would have caught a template that compiles
+  and then throws. Their bodies have to be copied into that test — a test module
+  cannot import a `.ts.template` — so `ci:check-template-apps` keeps the copies in
+  step and fails the build when they drift.
+
+- Updated dependencies [[`23c5c26`](https://github.com/tach-UI/tachUI/commit/23c5c26e90085bb665d3e18b75b5763dbf2709fa), [`e58bce2`](https://github.com/tach-UI/tachUI/commit/e58bce248829451c8e89a9af5ab19705dd806f57)]:
+  - @tachui/core@0.11.1
+  - @tachui/devtools@0.11.1
+
 ## 0.11.0
 
 ### Patch Changes
