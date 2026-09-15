@@ -8,6 +8,9 @@
  * do not do what they look like. So the openings that build UI get mounted.
  */
 
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 import { createSignal, flushSync, mount } from '@tachui/core'
 import { Button, HStack, Text, VStack } from '@tachui/primitives'
@@ -138,5 +141,65 @@ describe('README opening examples', () => {
       })
     )
     expect(host.querySelector('*')).not.toBeNull()
+  })
+})
+
+/**
+ * The tests above and in `readme-examples.test-d.ts` are hand-copies of README
+ * fences, and a copy that drifts proves something nobody ships — the same rot
+ * `check-template-apps` exists to stop for the starter templates.
+ *
+ * A byte-for-byte check is not available here: fences are not modules and the
+ * type-test bodies are reformatted. So this pins the part that actually went
+ * wrong — the shape of each documented call. Every contract these tests assert
+ * has to still be the contract the README teaches.
+ *
+ * What it does not catch, stated plainly: a token appearing in several places
+ * loses only one of them. `buttons: [` occurs three times in the mobile README,
+ * so rewriting one back to `actions: [` still passes. It catches a contract
+ * changing, which is what happened, rather than every edit that could be made.
+ */
+describe('README examples have not drifted from the tests pinning them', () => {
+  const readme = (path: string) =>
+    readFileSync(resolve(__dirname, '../../../..', path), 'utf8')
+
+  const cases: Array<[string, string, string[]]> = [
+    [
+      'mobile ActionSheet/Alert',
+      'packages/mobile/README.md',
+      ['buttons: [', "label: 'Share'", 'onPress: () =>', 'action: () =>'],
+    ],
+    [
+      'devtools inspector',
+      'packages/devtools/README.md',
+      ['globalDevTools.configure({', 'trackAllComponents: true', 'getComponentTreeSignal()'],
+    ],
+    [
+      'grid template areas',
+      'packages/grid/README.md',
+      ['styling: {', 'templateAreas: [', "gridArea('header')"],
+    ],
+    [
+      'responsive breakpoints',
+      'packages/responsive/README.md',
+      ['DEFAULT_BREAKPOINTS', 'getCurrentBreakpoint()', "isBreakpointAbove(current, 'md')"],
+    ],
+    [
+      'core counter',
+      'packages/core/README.md',
+      ['mountRoot(counterApp)', '.build()', "from '@tachui/primitives'"],
+    ],
+    [
+      'primitives stack',
+      'packages/primitives/README.md',
+      ["alignment: 'leading'", 'children: [Text('],
+    ],
+  ]
+
+  it.each(cases)('%s', (_name, path, tokens) => {
+    const source = readme(path)
+    for (const token of tokens) {
+      expect(source, `${path} no longer contains ${JSON.stringify(token)}`).toContain(token)
+    }
   })
 })

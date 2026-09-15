@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Every ESM entry point a publishable package advertises must actually import.
+ * Every ESM entry point a publishable package advertises must be resolvable.
  *
  * `ci:check-declared-types` proves the files exist, and existing is not
  * working: `@tachui/eslint-plugin` was repaired from publishing nothing to
@@ -45,28 +45,50 @@ for (const dir of readdirSync(join(ROOT, 'packages'))) {
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
   if (manifest.private || manifest.type !== 'module') continue
 
-  const entry = manifest.exports?.['.']?.import ?? manifest.main
-  if (typeof entry !== 'string') continue
-  const abs = join(ROOT, 'packages', dir, entry.replace(/^\.\//, ''))
-  if (!existsSync(abs)) continue // check-declared-types owns that failure
-
-  scanned++
-  const bad = extensionlessRelativeImports(abs)
-  if (bad.length) {
-    problems.push(
-      `${manifest.name} — ${entry} imports ${bad.join(', ')} without a file extension; Node ESM will not resolve it`
-    )
-    continue
+  // Every advertised subpath, not just the main entry: a bad specifier in
+  // `./modifiers` is as unloadable as one in `.`, and there are far more of
+  // them.
+  const entries = new Map()
+  if (typeof manifest.main === 'string') entries.set('main', manifest.main)
+  const collect = (label, node) => {
+    if (!node || typeof node !== 'object') return
+    if (typeof node.import === 'string') entries.set(label, node.import)
+    for (const [key, child] of Object.entries(node)) {
+      if (child && typeof child === 'object') collect(`${label} (${key})`, child)
+    }
   }
+  for (const [subpath, node] of Object.entries(manifest.exports ?? {})) collect(subpath, node)
 
-  // Self-contained packages get actually loaded.
   const deps = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies })
-  if (deps.some((d) => d.startsWith('@tachui/'))) continue
-  try {
-    await import(pathToFileURL(abs).href)
-    loaded++
-  } catch (error) {
-    problems.push(`${manifest.name} — ${entry} failed to import: ${error.code ?? error.message}`)
+  const selfContained = !deps.some((d) => d.startsWith('@tachui/'))
+
+  for (const [label, entry] of entries) {
+    // Declaration files are never loaded by Node, and extensionless specifiers
+    // are legal in them under the resolution this repo uses.
+    if (entry.endsWith('.d.ts')) continue
+
+    const abs = join(ROOT, 'packages', dir, entry.replace(/^\.\//, ''))
+    if (!existsSync(abs)) continue // check-declared-types owns that failure
+
+    scanned++
+    const bad = extensionlessRelativeImports(abs)
+    if (bad.length) {
+      problems.push(
+        `${manifest.name} — ${label} → ${entry} imports ${bad.join(', ')} without a file extension; Node ESM will not resolve it`
+      )
+      continue
+    }
+
+    // Only self-contained packages can be loaded here; anything importing
+    // another @tachui package needs the installed graph, which release:smoke
+    // exercises instead.
+    if (!selfContained) continue
+    try {
+      await import(pathToFileURL(abs).href)
+      loaded++
+    } catch (error) {
+      problems.push(`${manifest.name} — ${label} failed to import: ${error.code ?? error.message}`)
+    }
   }
 }
 
