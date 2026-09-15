@@ -115,6 +115,18 @@ Overlays stack: apply `.overlay()` more than once and each container layers in
 the order applied, which is how multi-layer compositions (a ring, then a badge,
 then a status dot) are built.
 
+The overlay is proposed the host's bounds, as in SwiftUI. Content with an
+intrinsic size (a badge) sits at the alignment; content that expands to fill
+(a shape, a `ZStack`) covers the host without repeating its size in a
+`.frame()`. The options form takes an `offset`: a number insets the content
+from the side it is anchored to, and `{ x, y }` moves the whole overlay by that
+many pixels, positive `x` rightward and positive `y` downward:
+
+```typescript
+.overlay(Text('3'), { alignment: 'topTrailing', offset: 4 })       // 4px in from the top edge
+.overlay(Text('3'), { alignment: 'center', offset: { x: 0, y: -8 } })  // nudged up 8px
+```
+
 ### Advanced Gesture & Interaction Modifiers
 
 Comprehensive interaction system beyond basic events:

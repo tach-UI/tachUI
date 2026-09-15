@@ -200,9 +200,19 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
       element.style.position = 'relative'
     }
 
-    // Create overlay container
+    // The container is a layer covering the host's box, so the content is
+    // proposed the host's bounds the way SwiftUI's `.overlay(alignment:)`
+    // proposes them: content that expands to fill (a shape, a ZStack) fills
+    // the host, and content with an intrinsic size sits at the alignment.
+    // A shrink-to-fit container centered with 50%/translate cannot do the
+    // first, and a box-filling child inside it would resolve to 0x0.
     const overlayContainer = document.createElement('div')
     overlayContainer.style.position = 'absolute'
+    overlayContainer.style.top = '0px'
+    overlayContainer.style.right = '0px'
+    overlayContainer.style.bottom = '0px'
+    overlayContainer.style.left = '0px'
+    overlayContainer.style.display = 'flex'
     overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
 
     const cleanup: (() => void)[] = []
@@ -248,7 +258,7 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
 
       this.applyOffset(overlayContainer, effectiveSide, offsetValue)
 
-      overlayContainer.style.display = enabledValue ? '' : 'none'
+      overlayContainer.style.display = enabledValue ? 'flex' : 'none'
     }
 
     const hasReactivePositioning =
@@ -268,6 +278,11 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     return undefined
   }
 
+  /**
+   * A numeric offset is an inset from the anchored side, as padding on the
+   * layer. An `{ x, y }` offset translates the whole layer, so content that
+   * fills the host moves with it, the way SwiftUI's `.offset(x:y:)` would.
+   */
   private applyOffset(
     overlayContainer: HTMLElement,
     side: OverlayAlignment | OverlaySide,
@@ -280,33 +295,10 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
       return
     }
 
-    const { x, y } = offset
-    if (typeof x === 'number') {
-      if (overlayContainer.style.left) {
-        overlayContainer.style.left = this.addPixelOffset(
-          overlayContainer.style.left,
-          x
-        )
-      } else if (overlayContainer.style.right) {
-        overlayContainer.style.right = this.addPixelOffset(
-          overlayContainer.style.right,
-          x
-        )
-      }
-    }
-    if (typeof y === 'number') {
-      if (overlayContainer.style.top) {
-        overlayContainer.style.top = this.addPixelOffset(
-          overlayContainer.style.top,
-          y
-        )
-      } else if (overlayContainer.style.bottom) {
-        overlayContainer.style.bottom = this.addPixelOffset(
-          overlayContainer.style.bottom,
-          y
-        )
-      }
-    }
+    const x = typeof offset.x === 'number' ? offset.x : 0
+    const y = typeof offset.y === 'number' ? offset.y : 0
+    if (x === 0 && y === 0) return
+    overlayContainer.style.transform = `translate(${x}px, ${y}px)`
   }
 
   private applyNumericOffset(
@@ -318,33 +310,29 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
       case 'top':
       case 'topLeading':
       case 'topTrailing':
-        overlayContainer.style.top = `${offset}px`
+        overlayContainer.style.paddingTop = `${offset}px`
         break
       case 'bottom':
       case 'bottomLeading':
       case 'bottomTrailing':
-        overlayContainer.style.bottom = `${offset}px`
+        overlayContainer.style.paddingBottom = `${offset}px`
         break
       case 'leading':
-        overlayContainer.style.left = `${offset}px`
+        overlayContainer.style.paddingLeft = `${offset}px`
         break
       case 'trailing':
-        overlayContainer.style.right = `${offset}px`
+        overlayContainer.style.paddingRight = `${offset}px`
         break
       default:
         break
     }
   }
 
-  private addPixelOffset(base: string, offset: number): string {
-    return `calc(${base} + ${offset}px)`
-  }
-
   private clearPositionStyles(overlayContainer: HTMLElement): void {
-    overlayContainer.style.top = ''
-    overlayContainer.style.right = ''
-    overlayContainer.style.bottom = ''
-    overlayContainer.style.left = ''
+    overlayContainer.style.paddingTop = ''
+    overlayContainer.style.paddingRight = ''
+    overlayContainer.style.paddingBottom = ''
+    overlayContainer.style.paddingLeft = ''
     overlayContainer.style.transform = ''
   }
 
@@ -425,51 +413,23 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     return undefined
   }
 
+  /**
+   * Alignment is expressed on the layer's flex axes rather than by moving the
+   * layer itself, so the layer always covers the host.
+   */
   private getOverlayAlignment(
     alignment: OverlayAlignment
   ): Record<string, string> {
     const alignments: Record<OverlayAlignment, Record<string, string>> = {
-      center: {
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      },
-      top: {
-        top: '0px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-      },
-      bottom: {
-        bottom: '0px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-      },
-      leading: {
-        top: '50%',
-        left: '0px',
-        transform: 'translateY(-50%)',
-      },
-      trailing: {
-        top: '50%',
-        right: '0px',
-        transform: 'translateY(-50%)',
-      },
-      topLeading: {
-        top: '0px',
-        left: '0px',
-      },
-      topTrailing: {
-        top: '0px',
-        right: '0px',
-      },
-      bottomLeading: {
-        bottom: '0px',
-        left: '0px',
-      },
-      bottomTrailing: {
-        bottom: '0px',
-        right: '0px',
-      },
+      center: { justifyContent: 'center', alignItems: 'center' },
+      top: { justifyContent: 'center', alignItems: 'flex-start' },
+      bottom: { justifyContent: 'center', alignItems: 'flex-end' },
+      leading: { justifyContent: 'flex-start', alignItems: 'center' },
+      trailing: { justifyContent: 'flex-end', alignItems: 'center' },
+      topLeading: { justifyContent: 'flex-start', alignItems: 'flex-start' },
+      topTrailing: { justifyContent: 'flex-end', alignItems: 'flex-start' },
+      bottomLeading: { justifyContent: 'flex-start', alignItems: 'flex-end' },
+      bottomTrailing: { justifyContent: 'flex-end', alignItems: 'flex-end' },
     }
 
     return alignments[alignment] || alignments.center
