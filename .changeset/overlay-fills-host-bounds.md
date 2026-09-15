@@ -30,3 +30,7 @@ past the host.
 `overlay(content, alignmentSignal)` is now accepted by the types; it already
 worked at runtime. An alignment string that names an inherited object key no
 longer bypasses the center fallback.
+
+The unused `overlay` prop on `AnimationModifierProps` is removed, along with
+the two private copies of the old container logic behind it. Nothing
+constructed it, and the copies never rendered their content.
