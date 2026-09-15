@@ -52,8 +52,14 @@ export const DEFAULT_HYDRATORS: HydratorCandidate[] = [
     hooks: ['registerModifiers', 'registerModifierMetadata'],
   },
   {
+    // No specifier, because there is nothing to point one at. The hook lives in
+    // `packages/devtools/src/modifier-metadata.ts`, which devtools neither
+    // builds as an entry nor lists in its exports map — so it is reachable from
+    // the source tree and from nowhere else. That, not the path handling, is
+    // why the generated declaration has been empty since October 2025 (#373): no
+    // hydrator registers metadata, and `@tachui/modifiers` exports
+    // `registerModifiers` without a `registerModifierMetadata` beside it.
     name: '@tachui/devtools/modifier-metadata',
-    specifier: '@tachui/devtools',
     relativePath: '../../devtools/src/modifier-metadata.ts',
     hooks: ['registerModifierMetadata'],
     optional: true,
