@@ -42,3 +42,8 @@ Worth knowing for anything relying on types to catch this: `ComponentProps`
 declares `[key: string]: any`, so no component rejects an unknown prop. The
 grid example's misplaced `templateAreas` compiled perfectly and rendered
 nothing, which is why that one is asserted against mounted output instead.
+
+`@tachui/core`'s quick start told readers to `npm install @tachui/core` and then
+imported `@tachui/primitives` and `@tachui/modifiers`. Core neither depends on
+nor re-exports either, so the example could not run from the install it
+documents. All three are in the command now, with a line on what each provides.

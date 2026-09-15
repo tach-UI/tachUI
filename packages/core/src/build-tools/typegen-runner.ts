@@ -16,6 +16,12 @@ import type { GeneratedModifierArtifacts } from '../modifiers/type-generator'
 
 export interface HydratorCandidate {
   name: string
+  /**
+   * Package specifier to try first. Set for anything shipped: installed from
+   * npm there is no source tree beside us, only the dependency graph.
+   */
+  specifier?: string
+  /** Fallback for running inside this repository, where `src/` does exist. */
   relativePath: string
   hooks?: string[]
   optional?: boolean
@@ -28,14 +34,26 @@ export interface HydrationOptions {
 
 const MODULE_DIR = dirname(fileURLToPath(import.meta.url))
 
+/**
+ * Sources the generator hydrates from, package specifier first.
+ *
+ * The relative paths reach `packages/modifiers/src` from this module inside the
+ * repository. Installed, the same relative walk lands on
+ * `node_modules/@tachui/modifiers/src`, which published packages do not
+ * contain — so the plugin resolved nothing and generated an empty declaration
+ * without complaining. The specifier is what works for a consumer; the relative
+ * path is what works here.
+ */
 export const DEFAULT_HYDRATORS: HydratorCandidate[] = [
   {
     name: '@tachui/modifiers',
+    specifier: '@tachui/modifiers',
     relativePath: '../../modifiers/src/index.ts',
     hooks: ['registerModifiers', 'registerModifierMetadata'],
   },
   {
     name: '@tachui/devtools/modifier-metadata',
+    specifier: '@tachui/devtools',
     relativePath: '../../devtools/src/modifier-metadata.ts',
     hooks: ['registerModifierMetadata'],
     optional: true,
@@ -64,6 +82,18 @@ export async function hydrateRegistry(
   }> = []
 
   for (const candidate of candidates) {
+    // Installed, this is the only branch that can succeed.
+    if (candidate.specifier) {
+      try {
+        const module = await import(candidate.specifier)
+        await invokeHooks(module, candidate.hooks)
+        results.push({ name: candidate.name, status: 'loaded' })
+        continue
+      } catch {
+        // Fall through to the in-repository source path.
+      }
+    }
+
     const isRelative =
       candidate.relativePath.startsWith('.') ||
       candidate.relativePath.startsWith('/')
@@ -127,7 +157,12 @@ export interface ResolvePathsOptions {
 export function resolveOutputPaths(
   options: ResolvePathsOptions = {},
 ): { declarationFile: string; snapshotFile: string } {
-  const projectRoot = resolve(MODULE_DIR, '..', '..')
+  // Inside this repository the defaults belong beside the source they describe.
+  // Installed, the same walk lands in `node_modules/@tachui/core/src`, where
+  // writing generated types helps nobody and is erased by the next install — so
+  // a consumer gets them in their own project instead.
+  const installed = MODULE_DIR.includes(`${sep}node_modules${sep}`)
+  const projectRoot = installed ? process.cwd() : resolve(MODULE_DIR, '..', '..')
 
   const defaultDeclaration = resolve(
     projectRoot,

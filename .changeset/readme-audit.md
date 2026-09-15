@@ -64,3 +64,18 @@ load, because `"type": "module"` requires extensioned relative specifiers and
 the source imported `./rules/prefer-direct-modifiers`. It went from publishing
 nothing to publishing something unusable, and every existence check passed
 throughout. `ci:check-entry-imports` now loads what the manifests advertise.
+
+Making `@tachui/core/build-plugins` build exposed a plugin that assumed the
+repository layout. Its default hydrator walked a relative path to
+`../../modifiers/src/index.ts` — correct beside the source, and in
+`node_modules` a path into `@tachui/modifiers/src`, which published packages do
+not contain, so it resolved nothing and said nothing. The hydrators carry a
+package specifier now and try it first, falling back to the relative source for
+running inside this repository. Its default output moved likewise: from
+`node_modules/@tachui/core/src`, where generated types help nobody and the next
+install erases them, to the consumer's own project.
+
+Verified by installing core, modifiers, registry and types into a scratch
+project as copies rather than links and running the documented
+`modifierTypesPlugin()`: it reports hydrating via `@tachui/modifiers` and writes
+into the project's `src/types/`.

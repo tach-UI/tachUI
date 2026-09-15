@@ -24,10 +24,15 @@ tachUI core provides a SwiftUI-inspired declarative framework for building web a
 ### Installation
 
 ```bash
-npm install @tachui/core
+npm install @tachui/core @tachui/primitives @tachui/modifiers
 # or
-pnpm add @tachui/core
+pnpm add @tachui/core @tachui/primitives @tachui/modifiers
 ```
+
+`@tachui/core` is the reactive system, the runtime and the modifier
+infrastructure. Components come from `@tachui/primitives` and the modifiers
+themselves from `@tachui/modifiers` — core neither depends on nor re-exports
+them, so the example below needs all three.
 
 ### Basic Example
 
