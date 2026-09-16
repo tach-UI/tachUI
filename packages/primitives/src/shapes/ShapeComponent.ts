@@ -82,7 +82,7 @@ const EMPTY_RECT: ShapeRect = { x: 0, y: 0, width: 0, height: 0 }
  * path data, which renders as nothing with no error anywhere — the silent
  * failure `resolveStyle` avoids for colors.
  */
-function resolveLength(value: ShapeLength): number {
+export function resolveLength(value: ShapeLength): number {
   const resolved = isSignal(value) ? value() : value
   return Number.isFinite(resolved) ? resolved : 0
 }

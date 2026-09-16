@@ -27,6 +27,45 @@ Circle().inset(1).stroke('#007AFF', 2)
 | Shape | Geometry |
 | --- | --- |
 | `Circle()` | Inscribed in the short side of its frame, centered |
+| `Rectangle()` | The frame itself, square corners |
+| `RoundedRectangle(cornerRadius)` | Circular corners, clamped to half the short side |
+| `Ellipse()` | Fills the frame, one radius per axis |
+| `Capsule()` | Semicircular caps on the short axis, either orientation |
+
+```typescript
+import { Capsule, Ellipse, Rectangle, RoundedRectangle } from '@tachui/primitives'
+
+Rectangle().fill('#F2F2F7')
+RoundedRectangle(12).strokeBorder('#E5E5EA', 1)
+Ellipse().fill('#34C759')
+Capsule().fill('#007AFF')
+```
+
+### Circle and Ellipse
+
+`Circle()` inscribes in the short side and centers; `Ellipse()` fills the frame with a radius per axis. In a square frame they draw the same path.
+
+### RoundedRectangle
+
+The radius takes either form, and the options object is what per-corner radii will extend later:
+
+```typescript
+RoundedRectangle(12)
+RoundedRectangle({ cornerRadius: 12 })
+```
+
+It is clamped to half the short side, as in SwiftUI, so a radius larger than the frame draws a capsule rather than stretching into elliptical corners. That clamp is why shapes emit a `<path>`: an SVG `<rect rx ry>` clamps each axis against its own dimension and would distort instead.
+
+`.inset()` moves the edges in without changing the corner radius, so an inset `RoundedRectangle` is not concentric with the one it sits inside. Subtract the inset yourself where you want concentric corners:
+
+```typescript
+RoundedRectangle(12).inset(4)       // corners still 12
+RoundedRectangle(8).inset(4)        // concentric with a radius-12 host
+```
+
+### Capsule
+
+`Capsule()` is `RoundedRectangle` with the largest radius the frame allows, in either orientation. It is the shape with no percentage form in SVG or CSS — a 50% radius resolves per axis and gives an ellipse in a non-square box — which is why the engine measures the frame rather than expressing geometry in percentages.
 
 ## Sizing
 
