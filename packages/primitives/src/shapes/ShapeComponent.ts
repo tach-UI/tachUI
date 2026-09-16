@@ -133,8 +133,13 @@ export class ShapeComponent
     strokeInside: false,
   }
 
-  private readonly frame: Signal<ShapeRect>
-  private readonly setFrame: (rect: ShapeRect) => void
+  // Named to stay clear of the `frame` modifier. A *private* member whose
+  // name collides with a public one on the intersected modifier surface
+  // reduces the whole intersection to `never`, which nothing inside this
+  // package would notice — only a typed consumer, for whom `Circle()` then
+  // has no usable type at all. `Circle.test-d.ts` pins it.
+  private readonly measuredFrame: Signal<ShapeRect>
+  private readonly setMeasuredFrame: (rect: ShapeRect) => void
   private svg: SVGSVGElement | undefined
   private pathElement: SVGPathElement | undefined
   private observer: ResizeObserver | undefined
@@ -148,8 +153,8 @@ export class ShapeComponent
     this.props = props
     this.id = `shape-${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
     const [frame, setFrame] = createSignal<ShapeRect>(EMPTY_RECT)
-    this.frame = frame
-    this.setFrame = setFrame
+    this.measuredFrame = frame
+    this.setMeasuredFrame = setFrame
   }
 
   // ---- Shape-only methods -------------------------------------------------
@@ -318,7 +323,7 @@ export class ShapeComponent
    * measurement at all where `ResizeObserver` is missing.
    */
   private scheduleFirstMeasure(): void {
-    if (this.measurePending || this.frame().width > 0) return
+    if (this.measurePending || this.measuredFrame().width > 0) return
     this.measurePending = true
     queueMicrotask(() => {
       if (!this.measurePending) return
@@ -372,9 +377,9 @@ export class ShapeComponent
   }
 
   private measured(width: number, height: number): void {
-    const current = this.frame()
+    const current = this.measuredFrame()
     if (current.width === width && current.height === height) return
-    this.setFrame({ x: 0, y: 0, width, height })
+    this.setMeasuredFrame({ x: 0, y: 0, width, height })
   }
 
   private totalInset(): number {
@@ -396,7 +401,7 @@ export class ShapeComponent
 
     // Through `path()`, so the geometry drawn here and the geometry a `Shape`
     // consumer reads are the same by construction.
-    const frame = this.frame()
+    const frame = this.measuredFrame()
     setAttributeIfChanged(
       path,
       'd',

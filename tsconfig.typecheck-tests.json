@@ -47,6 +47,7 @@
       "@tachui/primitives/display": ["./packages/primitives/dist/display/index.d.ts"],
       "@tachui/primitives/controls": ["./packages/primitives/dist/controls/index.d.ts"],
       "@tachui/primitives/forms": ["./packages/primitives/dist/forms/index.d.ts"],
+      "@tachui/primitives/shapes": ["./packages/primitives/dist/shapes/index.d.ts"],
       // Added for the README example type tests. Without a mapping the import
       // does not resolve, tsc stops at that line, and everything below it goes
       // unchecked — a type test that reports "no errors" having checked
