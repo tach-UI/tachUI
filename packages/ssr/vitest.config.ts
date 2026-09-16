@@ -32,6 +32,14 @@ export default defineConfig({
         find: /^@tachui\/core$/,
         replacement: resolve(__dirname, '../core/src/index.ts'),
       },
+      // A directory subpath: the wildcard below appends `.ts` and would miss
+      // it. Needed because the primitives barrel reaches it through `Stack`,
+      // so without this `@tachui/primitives` resolves to source that cannot
+      // load, and only the subpaths that avoid it work.
+      {
+        find: /^@tachui\/core\/components$/,
+        replacement: resolve(__dirname, '../core/src/components/index.ts'),
+      },
       {
         find: /^@tachui\/core\/(.*)$/,
         replacement: resolve(__dirname, '../core/src/$1.ts'),
@@ -60,7 +68,8 @@ export default defineConfig({
       // `@tachui/core` alone. `shape-shell.test.ts` needs a real shape to
       // prove the serializer emits its shell, and the root config already
       // aliases primitives — without this the file would pass at the root and
-      // fail the package-local run.
+      // fail the package-local run. The barrel resolves too, not only the
+      // subpaths that happen to avoid `@tachui/core/components`.
       {
         find: /^@tachui\/primitives\/(.*)$/,
         replacement: resolve(__dirname, '../primitives/src/$1'),

@@ -16,7 +16,7 @@ const alias = {
  * That file replaces `global.document` with a hand-rolled mock whose
  * `appendChild` is a no-op spy and which has no `children` at all. The overlay
  * modifier builds a layer element and walks the resulting tree, so it cannot
- * work against a mock of that shape — under it, 77 of these tests fail.
+ * work against a mock of that shape — under it, 82 of these tests fail.
  *
  * They run on the shared jsdom setup instead, which is what the root runner
  * has always given them; splitting them out is what makes the package-local
@@ -35,7 +35,13 @@ export default mergeConfig(
           extends: true,
           test: {
             name: 'modifiers',
-            exclude: ['**/node_modules/**', '**/dist/**', ...OVERLAY_SUITES],
+            // Spread, not replaced: the shared list carries the Playwright
+            // specs, benchmarks and coverage output, none of which this
+            // project should collect.
+            exclude: [
+              ...(sharedConfig.test?.exclude ?? []),
+              ...OVERLAY_SUITES,
+            ],
             setupFiles: ['./__tests__/setup-enhanced.ts'],
             silent: true,
           },

@@ -472,7 +472,40 @@ function createSSRVirtualElement(initialStyle: unknown): {
       writeStyle(name, `${value}${suffix}`)
     },
   }
+  // Reads have to work, not just writes. A modifier that asks what a property
+  // already is — `overlay` checks whether its host is positioned before making
+  // it so — would otherwise see nothing on the server and nothing only, since
+  // `styleState` is seeded from the node's own `props.style`. It would then
+  // write a value the client, reading a real element, never writes, and the
+  // two would disagree about the very thing this shim exists to reproduce.
+  const toKebab = (name: string): string =>
+    name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`)
+  const toCamel = (name: string): string =>
+    name.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
+
+  const readStyle = (property: string): string => {
+    // Writes arrive in whichever casing the caller used — `setProperty`
+    // kebab-cases, a property assignment does not — so a read tries both.
+    const stored =
+      styleState[property] ??
+      styleState[toKebab(property)] ??
+      styleState[toCamel(property)]
+    if (stored === undefined) return ''
+    // A property written more than once holds every write; the cascade keeps
+    // the last, and so does a read. CSSOM reports the empty string for a
+    // property that was never set, which is what the client's guards compare
+    // against.
+    return Array.isArray(stored) ? String(stored[stored.length - 1]) : String(stored)
+  }
+
   const styleTarget = new Proxy(styleTargetBase, {
+    get(target, property) {
+      if (typeof property !== 'string') {
+        return (target as Record<string, unknown>)[property as unknown as string]
+      }
+      if (property === 'setProperty') return target.setProperty
+      return readStyle(property)
+    },
     set(target, property, value) {
       if (typeof property === 'string' && property !== 'setProperty') {
         writeStyle(property, String(value))

@@ -237,20 +237,17 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     element: HTMLElement,
     content: OverlayContent
   ): DOMNode {
-    // The host has to be a positioned container for the layer to cover it.
-    // The stand-in reports nothing for an unset property, which is the same
-    // "not positioned" case as `static` or the empty string.
-    const position = element.style.position
-    if (!position || position === 'static') {
-      element.style.position = 'relative'
-    }
+    this.ensurePositionedHost(element)
 
     const layerStyle: Record<string, string> = {}
     // Only `.style` is ever touched by either method, so a bare object stands
     // in for the element.
     const layer = { style: layerStyle } as unknown as HTMLElement
     this.styleLayer(layer)
-    this.applyResolvedPositioning(layer)
+    // Untracked for the same reason the content read is: nothing here updates
+    // after serialization, and a tracked read would subscribe whatever is
+    // serializing. The serializer untracks its own reads on the same grounds.
+    untrack(() => this.applyResolvedPositioning(layer))
 
     const children = this.describeContent(content)
     this.layerDescribedContent(children)
@@ -265,6 +262,22 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     return { ...node, children: [...(node.children ?? []), layerNode] }
   }
 
+  /**
+   * Make the host a positioned container, so the layer covers it.
+   *
+   * Shared by both paths rather than written twice: a host that already
+   * positions itself must be left alone, and the server getting that wrong
+   * would move it out of its parent's layout until the client took over.
+   * `undefined` is here for a stand-in element with no read support of its
+   * own; CSSOM and the SSR shim both report the empty string.
+   */
+  private ensurePositionedHost(element: HTMLElement): void {
+    const position = element.style.position
+    if (position === undefined || position === '' || position === 'static') {
+      element.style.position = 'relative'
+    }
+  }
+
   /** `renderContent`'s counterpart: content as nodes rather than as DOM. */
   private describeContent(content: OverlayContent): DOMNode[] {
     if (content === null || content === undefined) return []
@@ -276,9 +289,11 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
       return [{ type: 'text', text: String(value ?? '') } as DOMNode]
     }
 
+    // A content closure can read signals of its own, so its call is untracked
+    // with the rest.
     if (typeof content === 'function') {
       return this.describeContent(
-        (content as () => OverlayContentValue)()
+        untrack(() => (content as () => OverlayContentValue)())
       )
     }
 
@@ -297,7 +312,12 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
       const instance =
         typeof candidate.build === 'function' ? candidate.build() : candidate
       const rendered = (instance as ComponentInstance).render()
-      return Array.isArray(rendered) ? rendered : [rendered]
+      // `render()` may hand back another component, as the serializer's own
+      // component path allows; recurse so the nesting is followed rather than
+      // emitted as an opaque node.
+      return (Array.isArray(rendered) ? rendered : [rendered]).flatMap(entry =>
+        isComponentContent(entry) ? this.describeContent(entry) : [entry]
+      )
     }
 
     // A raw DOM element. There is no DOM server-side, so there is nothing to
@@ -326,10 +346,7 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     element: HTMLElement,
     content: OverlayContent
   ): (() => void)[] {
-    // Make the element a positioned container
-    if (element.style.position === '' || element.style.position === 'static') {
-      element.style.position = 'relative'
-    }
+    this.ensurePositionedHost(element)
 
     // The container is a layer covering the host's box, so the content is
     // proposed the host's bounds the way SwiftUI's `.overlay(alignment:)`
