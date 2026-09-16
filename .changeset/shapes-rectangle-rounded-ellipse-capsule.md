@@ -19,6 +19,8 @@ in either order, and implement the `Shape` contract's `clipPath()`.
   inscribes in the short side. The two agree in a square frame.
 - `Capsule()` — the largest radius the frame allows, in either orientation.
 
-`.inset()` moves a `RoundedRectangle`'s edges without changing its corner
-radius, so an inset rounded rect is not concentric with its host. Subtract the
-inset from the radius where concentric corners are wanted.
+`.inset()` and `.strokeBorder()` move a `RoundedRectangle`'s edges without
+changing its corner radius, so neither is concentric with a host of the same
+radius: `RoundedRectangle(12).strokeBorder(tint, 4)` has an outer stroke edge
+of radius 14. Subtract from the radius to land flush. Every other shape
+recomputes its curvature from the inset rect and needs no such help.

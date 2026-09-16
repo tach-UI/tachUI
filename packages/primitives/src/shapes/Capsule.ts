@@ -20,8 +20,18 @@ import { createShape, type ShapeInstance } from './ShapeComponent'
  * corners by one factor until they stop overlapping, which lands on
  * `min(w, h) / 2` on both axes — the capsule, and the same clamp
  * `capsulePath` draws.
+ *
+ * A *fixed* radius only holds while it overlaps, so the value has to beat
+ * half the short side of any box it might clip, or the corners stay at the
+ * literal radius while the path keeps drawing a capsule. `clipPath()` takes
+ * no rect by contract, so this cannot be derived from the box; instead it is
+ * put out of reach. Browsers cap an element at roughly 33.5 million pixels
+ * (Chromium's layout unit is 32-bit fixed point at 1/64px), so half a short
+ * side tops out near 16.8 million and 20 million always overlaps — while
+ * staying inside that same layout range, which a still larger value would
+ * not.
  */
-const CAPSULE_CLIP_RADIUS = '9999px'
+const CAPSULE_CLIP_RADIUS = '20000000px'
 
 export const capsuleShape: Shape = {
   path: capsulePath,

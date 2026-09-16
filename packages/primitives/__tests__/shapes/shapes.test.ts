@@ -119,6 +119,12 @@ describe('built-in shapes', () => {
         'inset(0 round 8px)'
       )
     })
+
+    // `clampCornerRadius` floors the drawn radius at zero; the clip has to
+    // floor with it rather than emit a negative CSS length.
+    it('floors a negative radius on the clip side too', () => {
+      expect(RoundedRectangle(-4).clipPath()).toBe('inset(0 round 0px)')
+    })
   })
 
   describe('Ellipse', () => {
@@ -168,7 +174,18 @@ describe('built-in shapes', () => {
     // a wide box. An over-large radius makes CSS scale all four corners by one
     // factor, landing on `min(w, h) / 2` — the capsule the path draws.
     it('clips with a radius CSS scales down to the capsule', () => {
-      expect(Capsule().clipPath()).toBe('inset(0 round 9999px)')
+      expect(Capsule().clipPath()).toBe('inset(0 round 20000000px)')
+    })
+
+    // The scale-down only happens while the radius overlaps, so a radius
+    // under half the short side would clip the literal rounded rect while the
+    // path drew a capsule. `clipPath()` takes no rect, so the radius cannot be
+    // derived from the box; it has to out-reach every box instead. Browsers
+    // cap an element near 33.5 million pixels, so half a short side tops out
+    // near 16.8 million.
+    it('clips with a radius past half the short side of any renderable frame', () => {
+      const radius = Number(/round (\d+)px/.exec(Capsule().clipPath())?.[1])
+      expect(radius).toBeGreaterThan(33_554_428 / 2)
     })
   })
 
@@ -226,5 +243,50 @@ describe('built-in shapes', () => {
       expect(path.getAttribute('fill')).toBe('blue')
       expect(path.getAttribute('stroke')).toBe('red')
     })
+  })
+})
+
+describe('border curvature against the frame corner', () => {
+  beforeEach(() => {
+    installResizeObserverStub()
+  })
+
+  afterEach(() => {
+    uninstallResizeObserverStub()
+  })
+
+  /** The radius of the first arc in the drawn path. */
+  function arcRadius(path: SVGPathElement): number {
+    return Number(/A (\S+) /.exec(path.getAttribute('d') ?? '')?.[1])
+  }
+
+  // Every shape but RoundedRectangle recomputes its curvature from the inset
+  // rect, so a strokeBorder's outer edge lands on the frame's own corner.
+  it('lands a Capsule border flush with the frame corner', async () => {
+    const path = await draw(Capsule().strokeBorder('red', 4), 100, 50)
+    expect(arcRadius(path)).toBe(23)
+    expect(arcRadius(path) + 4 / 2).toBe(Math.min(100, 50) / 2)
+  })
+
+  // A RoundedRectangle keeps the radius it was given, so its border sits
+  // proud of a host with the same corner radius by half the line width. This
+  // is the inset-does-not-reduce-the-radius behaviour where it actually bites.
+  it('leaves a RoundedRectangle border proud by half the line width', async () => {
+    const path = await draw(
+      RoundedRectangle(12).strokeBorder('red', 4),
+      100,
+      50
+    )
+    expect(arcRadius(path)).toBe(12)
+    expect(arcRadius(path) + 4 / 2).toBe(14)
+  })
+
+  it('lands it flush once half the line width is subtracted', async () => {
+    const path = await draw(
+      RoundedRectangle(12 - 4 / 2).strokeBorder('red', 4),
+      100,
+      50
+    )
+    expect(arcRadius(path) + 4 / 2).toBe(12)
   })
 })

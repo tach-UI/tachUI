@@ -63,6 +63,14 @@ RoundedRectangle(12).inset(4)       // corners still 12
 RoundedRectangle(8).inset(4)        // concentric with a radius-12 host
 ```
 
+`.strokeBorder()` insets by half the line width the same way, so this is where you are most likely to meet it: `RoundedRectangle(12).strokeBorder(tint, 4)` draws radius-12 corners whose outer stroke edge is radius **14**, two pixels proud of a `cornerRadius: 12` host. Subtract half the line width to land flush:
+
+```typescript
+RoundedRectangle(12 - 4 / 2).strokeBorder(tint, 4)   // outer edge back at 12
+```
+
+Every other shape here recomputes its curvature from the inset rect, so `Capsule()`, `Circle()` and `Ellipse()` self-correct and their borders sit flush without help.
+
 ### Capsule
 
 `Capsule()` is `RoundedRectangle` with the largest radius the frame allows, in either orientation. It is the shape with no percentage form in SVG or CSS — a 50% radius resolves per axis and gives an ellipse in a non-square box — which is why the engine measures the frame rather than expressing geometry in percentages.
