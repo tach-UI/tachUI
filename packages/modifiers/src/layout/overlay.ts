@@ -256,6 +256,9 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
 
     this.layerContent(overlayContainer)
 
+    const disposeObserver = this.observeContent(overlayContainer)
+    if (disposeObserver) cleanup.push(disposeObserver)
+
     // The overlay container is DOM this modifier added, so it goes when the
     // modifier does — after the content's own disposers have run.
     cleanup.push(() => {
@@ -266,25 +269,93 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   }
 
   /**
-   * Put every root the content rendered in the layer's single cell.
+   * Put every item the content rendered in the layer's single cell.
    *
-   * A component's `render()` may return more than one root, and `ForEach` and
-   * `Show` reach here the same way through their `display: contents` shells.
-   * Auto-placement would put the second root in an implicit row *below* the
-   * `100%` one, outside the host. Stacking them in the one cell layers them
-   * as SwiftUI does, and keeps each one's `100%` resolving against the host.
+   * Auto-placement would put the second item in an implicit row *below* the
+   * `100%` one, outside the host. Sharing the one cell layers them the way
+   * SwiftUI layers an overlay's views, and keeps each one's `100%` resolving
+   * against the host. Content that wants a list puts a stack inside the
+   * overlay, exactly as it would in SwiftUI.
    *
-   * A single root already lands in that cell on its own, so nothing is
-   * written in the common case and the content's markup is left alone.
+   * The items are not always the layer's own children. `ForEach` and `Show`
+   * mount a single `display: contents` shell, which generates no box of its
+   * own, so *its* children are the grid items and placing the shell would do
+   * nothing. The walk therefore descends through shells and stops at the
+   * first element that generates a box.
+   *
+   * A lone item already lands in that cell, so nothing is written in the
+   * common case and the content's markup is left alone.
    */
   private layerContent(overlayContainer: HTMLElement): void {
-    const roots = Array.from(overlayContainer.children)
-    if (roots.length < 2) return
+    const items: HTMLElement[] = []
+    this.collectGridItems(overlayContainer, items)
+    if (items.length < 2) return
 
-    for (const root of roots) {
-      const style = (root as HTMLElement).style
-      if (style) style.gridArea = '1 / 1'
+    for (const item of items) {
+      if (item.style) item.style.gridArea = '1 / 1'
     }
+  }
+
+  private collectGridItems(parent: Element, items: HTMLElement[]): void {
+    for (const child of Array.from(parent.children)) {
+      if (this.isContentsShell(child)) {
+        this.collectGridItems(child, items)
+      } else {
+        items.push(child as HTMLElement)
+      }
+    }
+  }
+
+  /**
+   * Whether the layer holds content whose item count can change: a shell that
+   * fills itself later, or more than one item already.
+   */
+  private contentCanGrow(overlayContainer: HTMLElement): boolean {
+    const children = Array.from(overlayContainer.children)
+    if (children.length !== 1) return children.length > 1
+    return this.isContentsShell(children[0]!)
+  }
+
+  /**
+   * An element that generates no box, so its children are the grid items.
+   *
+   * Read from the inline style rather than the computed one. The shells this
+   * exists for set `display: contents` inline — that is how `OwnedContainer`
+   * styles itself — and `getComputedStyle` is expensive enough per element to
+   * show up in the overlay stress suite. A shell that took its `contents`
+   * from a stylesheet would be missed, which is the price of not paying that
+   * cost on every overlay.
+   */
+  private isContentsShell(element: Element): boolean {
+    return (element as HTMLElement).style?.display === 'contents'
+  }
+
+  /**
+   * Keep the layering current as the content changes.
+   *
+   * A `ForEach` that grows from one row to two produces its new items long
+   * after the modifier ran, and nothing about that reaches this modifier —
+   * the shell is filled by its own owner. Watching the layer is the only
+   * handle on it. The walk stops at the first boxed element, so this stays
+   * cheap however deep the content is.
+   */
+  private observeContent(
+    overlayContainer: HTMLElement
+  ): (() => void) | undefined {
+    if (typeof MutationObserver === 'undefined') return undefined
+    // Only content that can grow needs watching, and in this framework
+    // content grows through `Show` and `ForEach`, which mount a shell. A
+    // lone plain element is the overwhelmingly common case and is left
+    // unobserved, so the ordinary overlay costs nothing extra.
+    if (!this.contentCanGrow(overlayContainer)) return undefined
+
+    const observer = new MutationObserver(() => {
+      this.layerContent(overlayContainer)
+    })
+    // Style writes are attribute mutations, which are not observed, so
+    // re-layering cannot retrigger this.
+    observer.observe(overlayContainer, { childList: true, subtree: true })
+    return () => observer.disconnect()
   }
 
   private applyOverlayPositioning(

@@ -45,6 +45,11 @@ const mockConsole = {
   error: vi.fn(),
 }
 
+/** MutationObserver delivers on a microtask, as the reactive system does. */
+async function flushMutations(): Promise<void> {
+  await new Promise<void>(resolve => queueMicrotask(resolve))
+}
+
 async function flushReactiveUpdates(): Promise<void> {
   await new Promise<void>(resolve => queueMicrotask(resolve))
 }
@@ -195,13 +200,16 @@ describe('Overlay Modifier', () => {
       // The content is a direct grid item of that cell.
       expect(overlayContainer.children).toHaveLength(1)
       expect(overlayContainer.children[0].className).toBe('overlay-content')
+      // A lone item needs no placement, so its markup is left untouched.
+      expect(
+        (overlayContainer.children[0] as HTMLElement).style.gridArea
+      ).toBe('')
     })
 
-    // A component may render more than one root, and `ForEach` and `Show`
-    // reach here the same way through their `display: contents` shells.
-    // Auto-placement would drop the second root into an implicit row below
-    // the 100% one, outside the host; they share the one cell instead, which
-    // layers them as SwiftUI layers them.
+    // A component may render more than one root. Auto-placement would drop
+    // the second into an implicit row below the 100% one, outside the host;
+    // they share the one cell instead, which layers them as SwiftUI layers
+    // an overlay's views. The shell case is covered separately below.
     it('layers multi-root content in the single cell', () => {
       const multiRoot = {
         type: 'component' as const,
@@ -222,6 +230,74 @@ describe('Overlay Modifier', () => {
       for (const root of roots) {
         expect((root as HTMLElement).style.gridArea).toBe('1 / 1')
       }
+    })
+
+    // `ForEach` and `Show` mount one `display: contents` shell, so the layer
+    // has a single child and the items are a level down. The shell generates
+    // no box, so placing it would do nothing — the walk has to reach its
+    // children, which are the real grid items.
+    it('layers items inside a display:contents shell', () => {
+      const shellComponent = {
+        type: 'component' as const,
+        id: 'shell',
+        props: {},
+        render: vi.fn(() => [
+          h(
+            'div',
+            { style: { display: 'contents' } },
+            h('span', { class: 'item-a' }, textNode('a')),
+            h('span', { class: 'item-b' }, textNode('b'))
+          ),
+        ]),
+      }
+
+      overlay(shellComponent).apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0] as HTMLElement
+      expect(overlayContainer.children).toHaveLength(1)
+
+      const shell = overlayContainer.children[0] as HTMLElement
+      expect(shell.style.display).toBe('contents')
+      // Meaningless on a boxless element, so it is left alone.
+      expect(shell.style.gridArea).toBe('')
+
+      const items = childrenOf(shell)
+      expect(items).toHaveLength(2)
+      for (const item of items) {
+        expect((item as HTMLElement).style.gridArea).toBe('1 / 1')
+      }
+    })
+
+    // A list that grows produces its items long after the modifier ran, and
+    // nothing about that reaches the modifier on its own.
+    it('layers items that arrive after mount', async () => {
+      const shellComponent = {
+        type: 'component' as const,
+        id: 'growing',
+        props: {},
+        render: vi.fn(() => [
+          h(
+            'div',
+            { style: { display: 'contents' } },
+            h('span', { class: 'first' }, textNode('a'))
+          ),
+        ]),
+      }
+
+      overlay(shellComponent).apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0] as HTMLElement
+      const shell = overlayContainer.children[0] as HTMLElement
+
+      // One item needs no placement.
+      expect((shell.children[0] as HTMLElement).style.gridArea).toBe('')
+
+      const added = document.createElement('span')
+      shell.appendChild(added)
+      await flushMutations()
+
+      expect((shell.children[0] as HTMLElement).style.gridArea).toBe('1 / 1')
+      expect(added.style.gridArea).toBe('1 / 1')
     })
 
     it('defaults an alignment that names an inherited key to center', () => {

@@ -140,8 +140,10 @@ Alignment follows the writing direction, so a `trailing` badge lands on the
 right in a left-to-right document and on the left in a right-to-left one.
 Offsets are physical: `x` is always rightward, whatever the direction.
 
-Content with more than one root layers in place, each root filling the same
-area, rather than stacking.
+Content with more than one item layers in place, each item filling the same
+area, rather than stacking. That holds for a `ForEach` or a `Show` inside an
+overlay too, and it is what SwiftUI does with an overlay's views. Put a stack
+inside the overlay when you want a list.
 
 ### Advanced Gesture & Interaction Modifiers
 

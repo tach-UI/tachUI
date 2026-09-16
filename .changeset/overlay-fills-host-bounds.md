@@ -13,8 +13,11 @@ grid with one definite `100%` x `100%` cell, with the alignment expressed as
 the item's placement in that cell. Content with an intrinsic size sits where it
 did before and keeps its size, overflowing the host if larger, as a SwiftUI
 proposal is advisory; content sized to `100%` fills the host. Content with
-more than one root layers in that one cell, as SwiftUI layers it, instead of
-each root taking a row of its own.
+more than one item layers in that one cell, as SwiftUI layers an overlay's
+views, instead of each item taking a row of its own and the later ones
+landing outside the host. That includes a `ForEach` or `Show`, whose items
+sit inside a `display: contents` shell that generates no box of its own, and
+it keeps up with a list that changes size after it is mounted.
 
 Alignment follows the writing direction, so a `trailing` badge lands on the
 inline end rather than always on the right. Offsets stay physical.
