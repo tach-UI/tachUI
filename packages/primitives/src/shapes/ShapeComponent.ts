@@ -20,8 +20,10 @@
  *
  * Modifiers land on a wrapper `div`, never on the owned node (see
  * `DOMNode.owned`), so `.frame()`, `.opacity()` and the rest behave as on any
- * element. The wrapper also serializes server-side; the svg is drawn on
- * hydration, since there is no DOM to build it into and no size to measure.
+ * element. Server-side the wrapper serializes with an `<svg>` shell inside it
+ * — everything about the element that does not depend on a measurement, with
+ * an empty `<path>` — so the shape has its layout box in the first paint. The
+ * geometry arrives when the client renders and measures.
  */
 
 import type {
@@ -74,6 +76,29 @@ interface ShapeStyling {
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 const EMPTY_RECT: ShapeRect = { x: 0, y: 0, width: 0, height: 0 }
+
+/**
+ * The `<svg>` shell: everything about the element that does not depend on a
+ * measurement.
+ *
+ * Declared once because it is built twice — with `createElementNS` on the
+ * client, and described as a plain node for the server — and the two must
+ * agree, or the server's box and the client's would differ.
+ */
+const SVG_SHELL_ATTRS: Record<string, string> = {
+  class: 'tachui-shape__svg',
+  width: '100%',
+  height: '100%',
+  // Decorative: the shape carries no meaning of its own.
+  'aria-hidden': 'true',
+  focusable: 'false',
+}
+
+const SVG_SHELL_STYLE: Record<string, string> = {
+  display: 'block',
+  // The viewport would otherwise clip the outer half of a centered stroke.
+  overflow: 'visible',
+}
 
 /**
  * A length, with anything that is not a finite number treated as zero.
@@ -289,9 +314,7 @@ export class ShapeComponent
   }
 
   private contentChildren(): DOMNode[] {
-    // No DOM to build into server-side, and nothing to measure: the wrapper
-    // serializes alone and the svg is drawn when the component hydrates.
-    if (typeof document === 'undefined') return []
+    if (typeof document === 'undefined') return this.shellChildren()
 
     return [
       {
@@ -307,6 +330,34 @@ export class ShapeComponent
         // when that element is removed. A stable reference, so re-registering
         // it on every render is a no-op.
         dispose: this.teardown,
+      },
+    ]
+  }
+
+  /**
+   * The `<svg>` shell, described rather than built, for the server.
+   *
+   * There is no DOM to build into and no layout to measure, so the path's `d`
+   * is unknowable here — but everything else about the element is known, and
+   * emitting it gives the shape its layout box in the very first paint
+   * instead of leaving a hole until scripts run. An ordinary node, not an
+   * owned one: an owned node's element *is* its markup, so it needs a DOM to
+   * serialize, while this shell is fully describable without one.
+   *
+   * The `<path>` is left bare. Its fill and stroke would resolve server-side,
+   * but with no `d` there is nothing for them to paint, so emitting them
+   * would run a caller's signals and assets during serialization to no
+   * visible end.
+   */
+  private shellChildren(): DOMNode[] {
+    return [
+      {
+        type: 'element',
+        tag: 'svg',
+        props: { ...SVG_SHELL_ATTRS, style: { ...SVG_SHELL_STYLE } },
+        children: [
+          { type: 'element', tag: 'path', props: {}, children: [] },
+        ],
       },
     ]
   }
@@ -372,15 +423,12 @@ export class ShapeComponent
 
   private buildSvg(): SVGSVGElement {
     const svg = document.createElementNS(SVG_NAMESPACE, 'svg')
-    svg.setAttribute('class', 'tachui-shape__svg')
-    svg.setAttribute('width', '100%')
-    svg.setAttribute('height', '100%')
-    // Decorative: the shape carries no meaning of its own.
-    svg.setAttribute('aria-hidden', 'true')
-    svg.setAttribute('focusable', 'false')
-    svg.style.display = 'block'
-    // The viewport would otherwise clip the outer half of a centered stroke.
-    svg.style.overflow = 'visible'
+    for (const [name, value] of Object.entries(SVG_SHELL_ATTRS)) {
+      svg.setAttribute(name, value)
+    }
+    for (const [name, value] of Object.entries(SVG_SHELL_STYLE)) {
+      svg.style.setProperty(name, value)
+    }
 
     const path = document.createElementNS(SVG_NAMESPACE, 'path')
     svg.appendChild(path)

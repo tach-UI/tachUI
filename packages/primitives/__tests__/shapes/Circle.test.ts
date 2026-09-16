@@ -409,23 +409,82 @@ describe('Circle', () => {
   })
 
   describe('without a DOM', () => {
-    it('renders the wrapper alone so the svg is drawn on hydration', () => {
-      const component = new ShapeComponent(circleShape, 'circle')
+    /** Render as the server does, with no `document` to build into. */
+    function renderWithoutDOM(component: ShapeComponent) {
       const originalDocument = globalThis.document
       Object.defineProperty(globalThis, 'document', {
         configurable: true,
         value: undefined,
       })
       try {
-        const node = component.render()
-        expect(node.tag).toBe('div')
-        expect(node.children).toEqual([])
+        return component.render()
       } finally {
         Object.defineProperty(globalThis, 'document', {
           configurable: true,
           value: originalDocument,
         })
       }
+    }
+
+    // The shell gives the shape its layout box in the first paint rather than
+    // leaving a hole until scripts run. Only `d` needs a measurement.
+    it('describes the svg shell inside the wrapper', () => {
+      const node = renderWithoutDOM(new ShapeComponent(circleShape, 'circle'))
+
+      expect(node.tag).toBe('div')
+      expect(node.children).toHaveLength(1)
+
+      const svg = node.children![0]
+      expect(svg.tag).toBe('svg')
+      expect(svg.props).toMatchObject({
+        class: 'tachui-shape__svg',
+        width: '100%',
+        height: '100%',
+        'aria-hidden': 'true',
+        focusable: 'false',
+      })
+      expect(svg.props.style).toMatchObject({
+        display: 'block',
+        overflow: 'visible',
+      })
+    })
+
+    it('leaves the path bare, since d needs a measurement', () => {
+      const node = renderWithoutDOM(new ShapeComponent(circleShape, 'circle'))
+      const path = node.children![0].children![0]
+
+      expect(path.tag).toBe('path')
+      expect(path.props).toEqual({})
+      expect(path.children).toEqual([])
+    })
+
+    // An owned node's element *is* its markup, so it needs a DOM to
+    // serialize. The shell is describable without one, which is the whole
+    // reason it can be emitted server-side at all.
+    it('describes the shell as an ordinary node, not an owned one', () => {
+      const svg = renderWithoutDOM(
+        new ShapeComponent(circleShape, 'circle')
+      ).children![0]
+
+      expect(svg.owned).toBeUndefined()
+      expect(svg.reactiveElement).toBeUndefined()
+    })
+
+    // The client builds the same element with createElementNS; if the two
+    // drifted, the box the server reserved would not be the box the client
+    // renders into.
+    it('matches the element the client builds', () => {
+      const shell = renderWithoutDOM(
+        new ShapeComponent(circleShape, 'circle')
+      ).children![0]
+      const { svg } = mount(Circle())
+
+      for (const [name, value] of Object.entries(shell.props)) {
+        if (name === 'style') continue
+        expect(svg.getAttribute(name)).toBe(value)
+      }
+      expect(svg.style.display).toBe(shell.props.style.display)
+      expect(svg.style.overflow).toBe(shell.props.style.overflow)
     })
   })
 

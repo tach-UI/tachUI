@@ -56,6 +56,19 @@ export default defineConfig({
         find: /^@tachui\/modifiers$/,
         replacement: resolve(__dirname, '../modifiers/src/index.ts'),
       },
+      // Test-only, and not a package dependency: this package depends on
+      // `@tachui/core` alone. `shape-shell.test.ts` needs a real shape to
+      // prove the serializer emits its shell, and the root config already
+      // aliases primitives — without this the file would pass at the root and
+      // fail the package-local run.
+      {
+        find: /^@tachui\/primitives\/(.*)$/,
+        replacement: resolve(__dirname, '../primitives/src/$1'),
+      },
+      {
+        find: /^@tachui\/primitives$/,
+        replacement: resolve(__dirname, '../primitives/src/index.ts'),
+      },
     ],
   },
   test: {
