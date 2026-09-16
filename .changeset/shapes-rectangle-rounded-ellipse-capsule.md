@@ -22,5 +22,8 @@ in either order, and implement the `Shape` contract's `clipPath()`.
 `.inset()` and `.strokeBorder()` move a `RoundedRectangle`'s edges without
 changing its corner radius, so neither is concentric with a host of the same
 radius: `RoundedRectangle(12).strokeBorder(tint, 4)` has an outer stroke edge
-of radius 14. Subtract from the radius to land flush. Every other shape
-recomputes its curvature from the inset rect and needs no such help.
+of radius 14. Subtract from the radius to land flush. `Capsule` and `Circle`
+recompute their curvature from the inset rect and need no such help. `Ellipse`
+stays inside its frame but is not flush with an elliptical host either: the
+parallel curve of an ellipse is not an ellipse, so its border bulges between
+the axis extremes.

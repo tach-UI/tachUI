@@ -185,7 +185,8 @@ describe('built-in shapes', () => {
     // near 16.8 million.
     it('clips with a radius past half the short side of any renderable frame', () => {
       const radius = Number(/round (\d+)px/.exec(Capsule().clipPath())?.[1])
-      expect(radius).toBeGreaterThan(33_554_428 / 2)
+      // Chromium's layout unit is 32-bit fixed point at 1/64px.
+      expect(radius).toBeGreaterThan(2 ** 31 / 64 / 2)
     })
   })
 
@@ -288,5 +289,68 @@ describe('border curvature against the frame corner', () => {
       50
     )
     expect(arcRadius(path) + 4 / 2).toBe(12)
+  })
+
+  // An Ellipse's border stays inside the frame. The stroke's outer edge is
+  // the drawn ellipse grown by half the line width in every direction, and a
+  // Minkowski sum with a disc of radius d has support function h(u) + d, so
+  // its extent is exactly (a + d) x (b + d) — the frame, touched at the four
+  // axis extremes.
+  it('keeps an Ellipse border inside the frame, touching at the axis extremes', async () => {
+    const path = await draw(Ellipse().strokeBorder('red', 12), 200, 40)
+    const match = /A (\S+) (\S+)/.exec(path.getAttribute('d') ?? '')
+    expect(match).not.toBeNull()
+    expect(Number(match?.[1]) + 12 / 2).toBe(200 / 2)
+    expect(Number(match?.[2]) + 12 / 2).toBe(40 / 2)
+  })
+
+  // It is still not flush with an *elliptical* host, because the parallel
+  // curve of an ellipse is not an ellipse: between the extremes the outer
+  // edge bulges past the ellipse filling the frame. Pinned so the bulge is
+  // not mistaken for a bug and "fixed" into a surprise, and so the flush
+  // claim in the docs stays narrowed to Capsule and Circle.
+  describe('an Ellipse border against an elliptical host', () => {
+    /** How far the stroke's outer edge escapes each boundary, sampled. */
+    function escape(width: number, height: number, lineWidth: number) {
+      const d = lineWidth / 2
+      const a = (width - lineWidth) / 2
+      const b = (height - lineWidth) / 2
+      let pastFrame = 0
+      let pastHostEllipse = 0
+      for (let i = 0; i <= 2000; i++) {
+        const t = (Math.PI / 2) * (i / 2000)
+        const gx = Math.cos(t) / a
+        const gy = Math.sin(t) / b
+        const g = Math.hypot(gx, gy)
+        const x = a * Math.cos(t) + (d * gx) / g
+        const y = b * Math.sin(t) + (d * gy) / g
+        pastFrame = Math.max(pastFrame, x - width / 2, y - height / 2)
+        const reach = Math.hypot(x, y)
+        const toHost = reach / Math.hypot(x / (width / 2), y / (height / 2))
+        pastHostEllipse = Math.max(pastHostEllipse, reach - toHost)
+      }
+      return { pastFrame, pastHostEllipse }
+    }
+
+    it('never crosses the frame, however flat', () => {
+      for (const [w, h, lw] of [
+        [100, 50, 4],
+        [100, 25, 8],
+        [200, 40, 12],
+      ] as const) {
+        expect(escape(w, h, lw).pastFrame).toBeCloseTo(0, 9)
+      }
+    })
+
+    it('bulges past the host ellipse, the more the flatter the frame', () => {
+      expect(escape(100, 50, 4).pastHostEllipse).toBeCloseTo(0.15, 2)
+      expect(escape(200, 40, 12).pastHostEllipse).toBeCloseTo(3.91, 2)
+    })
+
+    // A circle is the case where the parallel curve *is* the same family, so
+    // Circle's border is flush and Ellipse agrees with it in a square frame.
+    it('is flush in a square frame, where the ellipse is a circle', () => {
+      expect(escape(100, 100, 20).pastHostEllipse).toBeCloseTo(0, 9)
+    })
   })
 })
