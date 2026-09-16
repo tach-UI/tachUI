@@ -69,7 +69,9 @@ RoundedRectangle(8).inset(4)        // concentric with a radius-12 host
 RoundedRectangle(12 - 4 / 2).strokeBorder(tint, 4)   // outer edge back at 12
 ```
 
-Every other shape here recomputes its curvature from the inset rect, so `Capsule()`, `Circle()` and `Ellipse()` self-correct and their borders sit flush without help.
+`Capsule()` and `Circle()` recompute their curvature from the inset rect, so their borders sit flush without help: offsetting a circular arc outward by `d` gives radius `r + d` exactly.
+
+`Ellipse()` is the in-between case. Its border stays inside the frame — the outer edge touches the frame at the four axis extremes and nowhere crosses it — but it is not flush with an *elliptical* host, because the parallel curve of an ellipse is not an ellipse. Between the extremes the outer edge bulges past the ellipse filling the frame, by a little in a near-square frame and more in a flat one (about 3.9px for a 200x40 frame with a 12px line). Overlay an `Ellipse` border on an ellipse-clipped host and the two will not trace the same curve.
 
 ### Capsule
 

@@ -125,8 +125,11 @@ corners.
 yourself where you want corners concentric with the host:
 `RoundedRectangle(12).strokeBorder(tint, 4)` has an outer stroke edge of radius
 14, two pixels proud of a `cornerRadius: 12` host, while
-`RoundedRectangle(10).strokeBorder(tint, 4)` lands flush. Every other shape
-recomputes its curvature from the inset rect and needs no such help.
+`RoundedRectangle(10).strokeBorder(tint, 4)` lands flush. `Capsule` and `Circle`
+recompute their curvature from the inset rect and need no such help. `Ellipse`
+stays inside its frame but is not flush with an elliptical host: the parallel
+curve of an ellipse is not an ellipse, so the border bulges between the axis
+extremes.
 
 ### Display Components
 
