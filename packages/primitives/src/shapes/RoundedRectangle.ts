@@ -32,6 +32,13 @@ function cornerRadiusOf(
  *
  * A radius is read at draw time rather than captured, so a signal stays live
  * the way `.inset()` and a stroke's line width do.
+ *
+ * That holds for `path` because `paint()` calls it inside the renderer's
+ * subscription. Nothing gives `clipPath()` the same guarantee: it reads the
+ * radius when it is called, so a caller that clips with a signal radius has
+ * to call it in a tracked scope, or the clip freezes at the first value
+ * while the drawn path keeps moving. This is the first shape whose
+ * `clipPath()` depends on state at all.
  */
 export function roundedRectangleShape(cornerRadius: ShapeLength): Shape {
   return {

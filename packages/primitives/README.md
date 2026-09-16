@@ -119,8 +119,14 @@ Image(source)
 
 `RoundedRectangle`'s radius is clamped to half the short side, as in SwiftUI, so
 an over-large radius draws a capsule instead of distorting into elliptical
-corners. `.inset()` leaves the radius alone, so subtract it yourself where you
-want corners concentric with the host.
+corners.
+
+`.inset()` and `.strokeBorder()` leave that radius alone, so subtract from it
+yourself where you want corners concentric with the host:
+`RoundedRectangle(12).strokeBorder(tint, 4)` has an outer stroke edge of radius
+14, two pixels proud of a `cornerRadius: 12` host, while
+`RoundedRectangle(10).strokeBorder(tint, 4)` lands flush. Every other shape
+recomputes its curvature from the inset rect and needs no such help.
 
 ### Display Components
 
