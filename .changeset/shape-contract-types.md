@@ -1,5 +1,5 @@
 ---
-'@tachui/types': minor
+'@tachui/types': patch
 ---
 
 Add the `Shape` contract and `ShapeRect` under `@tachui/types/shapes`.

@@ -1,5 +1,5 @@
 ---
-'@tachui/primitives': minor
+'@tachui/primitives': patch
 ---
 
 Add `Circle`, the first shape primitive, and the engine behind it.
