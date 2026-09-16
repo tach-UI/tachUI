@@ -119,7 +119,7 @@ describe('Appearance Modifiers Stress Tests', () => {
       const mockElement = mockContext.element as any
 
       expect(duration).toBeLessThan(2000)
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
     })
 
     it('should handle many ellipse clipShape applications with parameters', () => {
@@ -355,7 +355,7 @@ describe('Appearance Modifiers Stress Tests', () => {
         if (modifierType === 0) {
           expect(element.style.overflow).toBe('hidden')
         } else if (modifierType === 1) {
-          expect(element.style.clipPath).toBe('circle(50%)')
+          expect(element.style.clipPath).toBe('circle()')
         } else {
           expect(element.style.clipPath).toBe('ellipse(70% 50% at center)')
         }

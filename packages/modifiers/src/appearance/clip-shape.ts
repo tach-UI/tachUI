@@ -1,15 +1,35 @@
 /**
  * Clip Shape Modifier
  *
- * SwiftUI-inspired modifier for clipping content to various shapes
+ * SwiftUI-inspired modifier for clipping content to various shapes.
+ *
+ * Two forms: the original string names, and any `Shape` — the contract in
+ * `@tachui/types`, which the built-in shapes in `@tachui/primitives`
+ * implement. A shape serializes itself to a CSS basic shape through
+ * `clipPath()`, so this modifier stays ignorant of shape kinds and needs no
+ * SVG `<clipPath>` machinery. That indirection is also what keeps the
+ * dependency edge pointing the right way: `@tachui/primitives` depends on
+ * `@tachui/modifiers`, so there is no shape class here to import.
  */
 
 import { BaseModifier } from '../basic/base'
 import type { ModifierContext } from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/types/runtime'
+import type { Shape } from '@tachui/types/shapes'
+import {
+  clipPathFor,
+  type ClipShapeName,
+} from './clip-path'
+
+export {
+  clipPathFor,
+  clipPathForName,
+  isShapeInstance,
+  type ClipShapeName,
+} from './clip-path'
 
 export interface ClipShapeOptions {
-  shape: 'circle' | 'ellipse' | 'rect' | 'polygon'
+  shape: ClipShapeName | Shape
   parameters?: Record<string, any>
 }
 
@@ -24,50 +44,26 @@ export class ClipShapeModifier extends BaseModifier<ClipShapeOptions> {
     if (!element.style) return
     const { shape, parameters = {} } = this.properties
 
-    const clipPath = this.generateClipPath(shape, parameters)
+    const clipPath = clipPathFor(shape, parameters)
     if (clipPath) {
       element.style.clipPath = clipPath
     }
 
     return undefined
   }
-
-  private generateClipPath(
-    shape: ClipShapeOptions['shape'],
-    parameters: Record<string, any>
-  ): string {
-    switch (shape) {
-      case 'circle':
-        return 'circle(50%)'
-
-      case 'ellipse': {
-        const radiusX = (parameters && parameters.radiusX) || '50%'
-        const radiusY = (parameters && parameters.radiusY) || '50%'
-        return `ellipse(${radiusX} ${radiusY} at center)`
-      }
-
-      case 'rect': {
-        const inset = (parameters && parameters.inset) || 0
-        return `inset(${inset}px)`
-      }
-
-      case 'polygon': {
-        const points = parameters && parameters.points
-        if (!points) return ''
-        return `polygon(${points})`
-      }
-
-      default:
-        return ''
-    }
-  }
 }
 
 /**
- * Creates a clip shape modifier that clips content to the specified shape
+ * Creates a clip shape modifier that clips content to the specified shape.
+ *
+ * ```ts
+ * view.clipShape('circle')
+ * view.clipShape(Circle())
+ * view.clipShape(RoundedRectangle(12))
+ * ```
  */
 export function clipShape(
-  shape: 'circle' | 'ellipse' | 'rect' | 'polygon',
+  shape: ClipShapeName | Shape,
   parameters?: Record<string, any>
 ): ClipShapeModifier {
   return new ClipShapeModifier({ shape, parameters: parameters || {} })

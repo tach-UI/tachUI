@@ -124,6 +124,34 @@ Image(source)
   .overlay(Circle().inset(1).stroke(verificationTint, 2))
 ```
 
+## Clipping to a shape
+
+`.clipShape()` takes a shape instance as well as the original string names, so the SwiftUI spelling works as written:
+
+```typescript
+Image(source).clipShape(Circle())
+Card().clipShape(RoundedRectangle(12))
+Badge().clipShape(Capsule())
+```
+
+Each shape serializes itself to a CSS `clip-path`, so there is no SVG clip machinery involved:
+
+| Shape | `clip-path` |
+| --- | --- |
+| `Circle()` | `circle()` |
+| `Rectangle()` | `inset(0)` |
+| `RoundedRectangle(12)` | `inset(0 round 12px)` |
+| `Ellipse()` | `ellipse()` |
+| `Capsule()` | `inset(0 round 20000000px)` |
+
+`Capsule`'s radius looks odd on purpose: a percentage radius resolves per axis and would clip an ellipse, so the value is large enough that CSS's own rule scales all four corners down to half the short side.
+
+**Insets do not apply to the clip.** `.clipShape(Circle().inset(4))` clips the same as `.clipShape(Circle())`, because CSS basic shapes have no "closest-side minus N" form. The inset still applies to the shape when it is *drawn*; it is only the clip that ignores it. A signal-driven `RoundedRectangle` radius is likewise read once when the clip is applied, while the drawn path keeps following it.
+
+::: warning `clipShape('circle')` changed
+It now emits `circle()` rather than `circle(50%)`. CSS resolves a percentage circle radius against the box's normalized diagonal, not its short side, so the old value overshot in any box that was not square. Square boxes are unaffected, which is why the difference went unnoticed.
+:::
+
 ## How shapes render
 
 Shapes render as inline SVG: a wrapper element that takes modifiers, and inside it an `<svg>` with a single `<path>` computed from the shape's measured frame. That is what makes strokes independent of the layout box, insets exact, and a non-square frame draw the right geometry. The SVG is marked `aria-hidden`; a shape is decorative, so give meaning to the view it decorates.
