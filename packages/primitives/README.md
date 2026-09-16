@@ -92,19 +92,35 @@ VStack({
 
 ### Shapes
 
-#### Circle
+`Circle`, `Rectangle`, `RoundedRectangle`, `Ellipse` and `Capsule` fill their
+frame and are styled with `.fill()`, `.stroke()`, `.strokeBorder()` and
+`.inset()`, which chain with modifiers in either order.
 
-A circle that fills its frame. Shapes are styled with `.fill()`, `.stroke()`,
-`.strokeBorder()` and `.inset()`, which chain with modifiers in either order.
+| Shape | Geometry |
+| --- | --- |
+| `Circle()` | Inscribed in the short side of its frame, centered |
+| `Rectangle()` | The frame itself, square corners |
+| `RoundedRectangle(cornerRadius)` | Circular corners, clamped to half the short side |
+| `Ellipse()` | Fills the frame, one radius per axis |
+| `Capsule()` | Semicircular caps on the short axis, either orientation |
 
 ```typescript
 Circle().fill('#007AFF').frame({ width: 12, height: 12 })
+
+RoundedRectangle(12).strokeBorder('#E5E5EA', 1)
+RoundedRectangle({ cornerRadius: 12 }).fill('#F2F2F7')
+Capsule().fill('#007AFF').frame({ width: 64, height: 24 })
 
 Image(source)
   .frame({ width: 40, height: 40 })
   .clipShape('circle')
   .overlay(Circle().inset(1).stroke('#007AFF', 2)) // a ring 1px inside the edge
 ```
+
+`RoundedRectangle`'s radius is clamped to half the short side, as in SwiftUI, so
+an over-large radius draws a capsule instead of distorting into elliptical
+corners. `.inset()` leaves the radius alone, so subtract it yourself where you
+want corners concentric with the host.
 
 ### Display Components
 
