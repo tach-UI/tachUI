@@ -146,7 +146,7 @@ Each shape serializes itself to a CSS `clip-path`, so there is no SVG clip machi
 
 `Capsule`'s radius looks odd on purpose: a percentage radius resolves per axis and would clip an ellipse, so the value is large enough that CSS's own rule scales all four corners down to half the short side.
 
-**Insets do not apply to the clip.** `.clipShape(Circle().inset(4))` clips the same as `.clipShape(Circle())`, because CSS basic shapes have no "closest-side minus N" form. The inset still applies to the shape when it is *drawn*; it is only the clip that ignores it. A signal-driven `RoundedRectangle` radius is likewise read once when the clip is applied, while the drawn path keeps following it.
+**Insets do not apply to the clip.** `.clipShape(Circle().inset(4))` clips the same as `.clipShape(Circle())`, because CSS basic shapes have no "closest-side minus N" form. The inset still applies to the shape when it is *drawn*; it is only the clip that ignores it. A signal-driven `RoundedRectangle` radius does drive the clip, though: the modifier is applied in a tracked scope, so changing the radius restyles the clipped element, and the clip and the drawn path stay in step.
 
 ::: warning `clipShape('circle')` changed
 It now emits `circle()` rather than `circle(50%)`. CSS resolves a percentage circle radius against the box's normalized diagonal, not its short side, so the old value overshot in any box that was not square. Square boxes are unaffected, which is why the difference went unnoticed.

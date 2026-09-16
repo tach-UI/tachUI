@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { createSignal } from '@tachui/core'
+import { createSignal, flushSync } from '@tachui/core'
 import { renderComponent } from '@tachui/core/runtime'
 import { Text } from '../../src'
 import {
@@ -61,13 +61,27 @@ describe('clipShape with a shape instance', () => {
     )
   })
 
-  // A shape reads its radius when asked, so a signal is a snapshot here while
-  // the drawn path stays live. `roundedRectangleShape` documents it.
-  it('takes a signal radius at the value it has when the clip is built', () => {
+  // The clip follows a signal radius, because the modifier is applied inside
+  // a tracked scope and `clipPath()` reads the signal there. One host and one
+  // shape throughout: rebuilding either per assertion would pass whether the
+  // clip were live or a snapshot, which is the distinction being drawn.
+  it('follows a signal radius on the host it already clipped', () => {
     const [radius, setRadius] = createSignal(6)
-    expect(clipPathOf(RoundedRectangle(radius))).toBe('inset(0 round 6px)')
+    const container = document.createElement('div')
+    renderComponent(
+      Text('host')
+        .frame({ width: 100, height: 50 })
+        .clipShape(RoundedRectangle(radius) as any) as any,
+      container
+    )
+    const host = container.querySelector('.tachui-text') as HTMLElement
+    expect(host.style.clipPath).toBe('inset(0 round 6px)')
 
     setRadius(10)
-    expect(clipPathOf(RoundedRectangle(radius))).toBe('inset(0 round 10px)')
+    flushSync()
+
+    expect(host.style.clipPath).toBe('inset(0 round 10px)')
+    // The same element, restyled — not a re-render that happened to look right.
+    expect(container.querySelector('.tachui-text')).toBe(host)
   })
 })

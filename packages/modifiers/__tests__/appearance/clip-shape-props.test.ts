@@ -14,7 +14,8 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest'
-import { AppearanceModifier } from '../../src/basic/base'
+import { AppearanceModifier as BasicAppearanceModifier } from '../../src/basic/base'
+import { AppearanceModifier as RootAppearanceModifier } from '../../src/base'
 import { clipShape } from '../../src/appearance/clip-shape'
 import type { ModifierContext } from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/types/runtime'
@@ -50,7 +51,13 @@ function clipOf(element: HTMLElement): string {
   return element.style.clipPath || element.style.getPropertyValue('clip-path')
 }
 
-describe('clipShape as an appearance prop', () => {
+// Two live copies of `AppearanceModifier`, and `./base` is a published
+// subpath, so `@tachui/modifiers/base` reaches the root one. The claim is that
+// both share one serializer, so both have to be held to it.
+describe.each([
+  ['basic/base', BasicAppearanceModifier],
+  ['base', RootAppearanceModifier],
+])('clipShape as an appearance prop (%s)', (_name, AppearanceModifier) => {
   let element: HTMLElement
   let context: ModifierContext
 

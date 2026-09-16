@@ -9,8 +9,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ClipShapeModifier,
   clipShape,
-  isShapeInstance,
 } from '../../src/appearance/clip-shape'
+import { isShapeInstance } from '../../src/appearance/clip-path'
 import type { ModifierContext } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 import type { Shape } from '@tachui/types/shapes'
