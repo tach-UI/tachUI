@@ -427,7 +427,11 @@ export class ShapeComponent
       svg.setAttribute(name, value)
     }
     for (const [name, value] of Object.entries(SVG_SHELL_STYLE)) {
-      svg.style.setProperty(name, value)
+      // Assigned, not `setProperty`: the keys are camelCase because the
+      // server description hands them to the serializer, which kebab-cases
+      // them. `setProperty` would need kebab-case and silently ignore any
+      // key of more than one word.
+      ;(svg.style as unknown as Record<string, string>)[name] = value
     }
 
     const path = document.createElementNS(SVG_NAMESPACE, 'path')

@@ -217,8 +217,16 @@ describe('the described layer and the built one agree', () => {
     )
     const built = host.lastElementChild as HTMLElement
 
+    // Both directions. `described ⊆ built` alone would miss a style the DOM
+    // path writes and the described one forgets, which is the more likely way
+    // for the two to grow apart.
     for (const [property, value] of Object.entries(described)) {
       expect(built.style[property as any]).toBe(value)
+    }
+    for (const property of Object.keys(built.style)
+      .filter(key => Number.isNaN(Number(key)))
+      .filter(key => built.style[key as any])) {
+      expect(described[property]).toBe(built.style[property as any])
     }
   })
 })
