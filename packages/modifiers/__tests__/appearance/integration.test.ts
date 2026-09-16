@@ -57,7 +57,7 @@ describe('Appearance Modifiers Integration', () => {
       clipShapeMod.apply({} as DOMNode, mockContext)
 
       expect(mockElement.style.overflow).toBe('hidden')
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
     })
 
     it('should handle clipShape overriding clipped overflow', () => {
@@ -77,7 +77,7 @@ describe('Appearance Modifiers Integration', () => {
 
     it('should support different clipShape types with clipped', () => {
       const shapes = [
-        { shape: 'circle' as const, expected: 'circle(50%)' },
+        { shape: 'circle' as const, expected: 'circle()' },
         {
           shape: 'rect' as const,
           params: { inset: 5 },
@@ -131,7 +131,7 @@ describe('Appearance Modifiers Integration', () => {
       mockElement.style.backgroundColor = 'rgba(255, 0, 0, 0.8)'
       mockElement.style.border = '2px dashed blue'
 
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
       expect(mockElement.style.backgroundColor).toBe('rgba(255, 0, 0, 0.8)')
       expect(mockElement.style.border).toBe('2px dashed blue')
     })
@@ -194,7 +194,7 @@ describe('Appearance Modifiers Integration', () => {
       const clipShape3 = clipShape('rect', { inset: 5 })
 
       clipShape1.apply({} as DOMNode, mockContext)
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
 
       clipShape2.apply({} as DOMNode, mockContext)
       expect(mockElement.style.clipPath).toBe('ellipse(60% 40% at center)')

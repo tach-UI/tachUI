@@ -82,7 +82,7 @@ VStack({ children })
 
 Advanced shape clipping and overlay system:
 
-- **`.clipShape(shape, parameters?)`** - Custom shape clipping
+- **`.clipShape(shape, parameters?)`** - Custom shape clipping, by name (`'circle'`, `'ellipse'`, `'rect'`, `'polygon'`) or with a shape instance such as `Circle()` or `RoundedRectangle(12)`
 - **`.overlay(content, alignment?)`** - Content layering with alignment
 - **`.cornerRadius(radius)`** - Rounded corners
 - **`.shadow(options)`** - Drop shadows
@@ -91,7 +91,7 @@ Advanced shape clipping and overlay system:
 
 ```typescript
 VStack({ children })
-  .clipShape('circle')           // Circular clipping
+  .clipShape('circle')           // Circular clipping; Circle() is equivalent
   .overlay(
     Text("Badge").foregroundColor('white'),
     'topTrailing'

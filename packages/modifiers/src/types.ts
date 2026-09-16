@@ -21,6 +21,8 @@ import type {
   OverlayOffset,
   OverlaySide,
 } from './layout/overlay'
+import type { ClipShapeName } from './appearance/clip-path'
+import type { Shape } from '@tachui/types/shapes'
 
 // Re-export for convenience
 export type { DOMNode } from '@tachui/types/runtime'
@@ -221,7 +223,7 @@ export interface AppearanceModifierProps {
   }
   clipped?: boolean
   clipShape?: {
-    shape: 'circle' | 'ellipse' | 'rect' | 'polygon'
+    shape: ClipShapeName | Shape
     parameters?: Record<string, any>
   }
   // Visual Effects (Phase 2 - Epic: Butternut)
@@ -586,7 +588,7 @@ export interface ModifierBuilder<
   ): ModifierBuilder<T>
   fixedSize(horizontal?: boolean, vertical?: boolean): ModifierBuilder<T>
   clipShape(
-    shape: 'circle' | 'ellipse' | 'rect' | 'polygon',
+    shape: ClipShapeName | Shape,
     parameters?: Record<string, any>
   ): ModifierBuilder<T>
   overlay(

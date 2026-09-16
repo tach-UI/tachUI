@@ -47,7 +47,7 @@ Every modifier listed below comes directly from `design-docs/modifiers-0.9.md`, 
 
 | Modifier | Category | Description | Package / Import |
 | --- | --- | --- | --- |
-| `backgroundColor`, `border`, `clipShape`, `clipped`, `foregroundColor`, `gradientText` | Appearance | Visual styling helpers | `@tachui/modifiers/appearance` |
+| `backgroundColor`, `border`, `clipShape`, `clipped`, `foregroundColor`, `gradientText` | Appearance | Visual styling helpers; `clipShape` takes a name or a shape instance | `@tachui/modifiers/appearance` |
 
 ### Typography
 

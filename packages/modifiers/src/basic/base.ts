@@ -32,6 +32,7 @@ import {
   dimensionToCSS,
   shouldExpandForInfinity,
 } from '@tachui/core/constants/layout'
+import { clipPathFor } from '../appearance/clip-path'
 
 const modifierInstanceIdSymbol = Symbol.for('tachui.modifier.instanceId')
 const updaterScope = 'package'
@@ -966,29 +967,13 @@ export class AppearanceModifier extends BaseModifier {
     // Clip Shape modifier (SwiftUI .clipShape())
     if (props.clipShape) {
       const { shape, parameters } = props.clipShape
-
-      switch (shape) {
-        case 'circle':
-          styles.clipPath = 'circle(50%)'
-          break
-        case 'ellipse': {
-          const radiusX = parameters?.radiusX || '50%'
-          const radiusY = parameters?.radiusY || '50%'
-          styles.clipPath = `ellipse(${radiusX} ${radiusY} at center)`
-          break
-        }
-        case 'rect': {
-          const inset = parameters?.inset || 0
-          styles.clipPath = `inset(${inset}px)`
-          break
-        }
-        case 'polygon': {
-          const points =
-            parameters?.points || '0% 0%, 100% 0%, 100% 100%, 0% 100%'
-          styles.clipPath = `polygon(${points})`
-          break
-        }
-      }
+      // Through the same serializer `ClipShapeModifier` uses, so the props
+      // form and the modifier form cannot drift. A polygon with no points is
+      // the one difference: this path has always fallen back to the full box.
+      const clipPath =
+        clipPathFor(shape, parameters) ||
+        (shape === 'polygon' ? 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)' : '')
+      if (clipPath) styles.clipPath = clipPath
     }
 
     // Visual Effects (Phase 2 - Epic: Butternut)

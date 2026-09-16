@@ -6,9 +6,14 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ClipShapeModifier, clipShape } from '../../src/appearance/clip-shape'
+import {
+  ClipShapeModifier,
+  clipShape,
+  isShapeInstance,
+} from '../../src/appearance/clip-shape'
 import type { ModifierContext } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
+import type { Shape } from '@tachui/types/shapes'
 
 // Mock DOM element that matches HTMLElement.style interface
 class MockElement {
@@ -87,12 +92,18 @@ describe('Clip Shape Modifier', () => {
   })
 
   describe('Circle Shape', () => {
+    // `circle()` is `closest-side` — the circle inscribed in the short side,
+    // which is what SwiftUI's `Circle` clips to and what `Circle()` draws.
+    // This used to emit `circle(50%)`, whose radius CSS resolves against the
+    // box's normalized diagonal, overshooting the short side in any box that
+    // is not square. The two agree in a square box, which is why it went
+    // unnoticed.
     it('should apply circle clip path with default radius', () => {
       const modifier = clipShape('circle')
 
       modifier.apply({} as DOMNode, mockContext)
 
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
     })
 
     it('should apply circle clip path with empty parameters', () => {
@@ -100,7 +111,7 @@ describe('Clip Shape Modifier', () => {
 
       modifier.apply({} as DOMNode, mockContext)
 
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
     })
 
     it('should ignore extra parameters for circle shape', () => {
@@ -108,7 +119,52 @@ describe('Clip Shape Modifier', () => {
 
       modifier.apply({} as DOMNode, mockContext)
 
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
+    })
+  })
+
+  // A shape instance serializes itself. These stubs implement the `Shape`
+  // contract structurally, which is the whole point: this package cannot
+  // import `@tachui/primitives` (the dependency runs the other way), and the
+  // modifier is meant to be ignorant of shape kinds. The real shapes are
+  // checked end-to-end in `@tachui/primitives`.
+  describe('Shape instances', () => {
+    const stub = (clip: string): Shape => ({
+      path: () => '',
+      clipPath: () => clip,
+    })
+
+    it('takes the clip-path from the shape itself', () => {
+      clipShape(stub('circle()')).apply({} as DOMNode, mockContext)
+      expect(mockElement.style.clipPath).toBe('circle()')
+    })
+
+    it('carries whatever the shape reports, without interpreting it', () => {
+      clipShape(stub('inset(0 round 12px)')).apply({} as DOMNode, mockContext)
+      expect(mockElement.style.clipPath).toBe('inset(0 round 12px)')
+    })
+
+    it('ignores parameters, which belong to the string forms', () => {
+      clipShape(stub('ellipse()'), { radiusX: '30%' }).apply(
+        {} as DOMNode,
+        mockContext
+      )
+      expect(mockElement.style.clipPath).toBe('ellipse()')
+    })
+
+    it('sets nothing when a shape reports no clip', () => {
+      mockElement.style.clipPath = 'none'
+      clipShape(stub('')).apply({} as DOMNode, mockContext)
+      expect(mockElement.style.clipPath).toBe('none')
+    })
+
+    // The string names are plain values, so nothing should mistake one for a
+    // shape, and an object without `clipPath` is not a shape either.
+    it('tells a shape from a name', () => {
+      expect(isShapeInstance('circle')).toBe(false)
+      expect(isShapeInstance(null as any)).toBe(false)
+      expect(isShapeInstance({} as any)).toBe(false)
+      expect(isShapeInstance(stub('circle()'))).toBe(true)
     })
   })
 
@@ -301,11 +357,11 @@ describe('Clip Shape Modifier', () => {
       const modifier = clipShape('circle')
 
       modifier.apply({} as DOMNode, mockContext)
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
 
       // Apply again
       modifier.apply({} as DOMNode, mockContext)
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
     })
 
     it('should override existing clipPath', () => {
@@ -369,7 +425,7 @@ describe('Clip Shape Modifier', () => {
       const duration = performance.now() - start
 
       expect(duration).toBeLessThan(1000)
-      expect(mockElement.style.clipPath).toBe('circle(50%)')
+      expect(mockElement.style.clipPath).toBe('circle()')
     })
 
     it('should handle complex polygon efficiently', () => {
