@@ -21,7 +21,10 @@ draws and what `Circle()` itself renders.
 
 Insets do not carry into the clip: `.clipShape(Circle().inset(4))` clips as
 though uninset, because CSS basic shapes have no inset form. `Shape.clipPath`
-records why and how to add it later.
+records why and how to add it later. A signal-driven radius does carry, though
+— the modifier applies in a tracked scope, so `.clipShape(RoundedRectangle(r))`
+restyles the clipped element when `r` changes, keeping the clip in step with
+the drawn path.
 
 The props form (`{ clipShape: { shape } }`) accepts an instance too, and both
 paths now share one serializer rather than carrying a copy of the switch each.

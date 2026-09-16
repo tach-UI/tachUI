@@ -21,12 +21,11 @@ import {
   type ClipShapeName,
 } from './clip-path'
 
-export {
-  clipPathFor,
-  clipPathForName,
-  isShapeInstance,
-  type ClipShapeName,
-} from './clip-path'
+// Only the name union is re-exported: `appearance/index.ts` star-exports this
+// module, so anything named here becomes public API of a published package.
+// `clipPathFor` and friends are implementation shared with `BaseModifier`,
+// and are imported from `./clip-path` directly by the code that needs them.
+export type { ClipShapeName } from './clip-path'
 
 export interface ClipShapeOptions {
   shape: ClipShapeName | Shape
