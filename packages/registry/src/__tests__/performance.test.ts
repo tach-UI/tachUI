@@ -180,7 +180,10 @@ describe('Performance Characteristics', () => {
       const health = (globalModifierRegistry as any).validateRegistry()
       const duration = performance.now() - start
 
-      expect(duration).toBeLessThan(20) // Should be under 20ms
+      // ~1ms of work. The budget is a guard against a superlinear
+      // regression, not a target, so it clears a loaded machine by an order
+      // of magnitude rather than sitting on the real duration.
+      expect(duration).toBeLessThan(200)
       expect(health.totalModifiers).toBe(1000)
     })
   })
