@@ -191,9 +191,9 @@ describe('Overlay Modifier', () => {
       const overlayContainer = mockElement.children[0]
       expect(overlayContainer.style.position).toBe('absolute')
       expect(overlayContainer.style.top).toBe('0px')
-      expect(overlayContainer.style.right).toBe('0px')
+      expect(overlayContainer.style.insetInlineEnd).toBe('0px')
       expect(overlayContainer.style.bottom).toBe('0px')
-      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.insetInlineStart).toBe('0px')
       expect(overlayContainer.style.display).toBe('grid')
       expect(overlayContainer.style.gridTemplateColumns).toBe('100%')
       expect(overlayContainer.style.gridTemplateRows).toBe('100%')
@@ -298,6 +298,44 @@ describe('Overlay Modifier', () => {
 
       expect((shell.children[0] as HTMLElement).style.gridArea).toBe('1 / 1')
       expect(added.style.gridArea).toBe('1 / 1')
+    })
+
+    // A shell is not the only way content grows. A component whose
+    // `render()` returns one root and later two appends the second straight
+    // to the layer, with nothing to mark it out in advance.
+    it('layers a second direct root that arrives after mount', async () => {
+      overlay(mockComponent).apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0] as HTMLElement
+      expect((overlayContainer.children[0] as HTMLElement).style.gridArea).toBe(
+        ''
+      )
+
+      const added = document.createElement('span')
+      overlayContainer.appendChild(added)
+      await flushMutations()
+
+      expect((overlayContainer.children[0] as HTMLElement).style.gridArea).toBe(
+        '1 / 1'
+      )
+      expect(added.style.gridArea).toBe('1 / 1')
+    })
+
+    // Alignment is logical, so the edges an offset moves have to be logical
+    // too. A physical `right` would move the far edge in a right-to-left
+    // host, where `justify-items: end` puts the content on the physical left.
+    it('moves inline-axis offsets on logical edges', () => {
+      overlay(mockComponent, {
+        alignment: 'topTrailing',
+        offset: 4,
+      }).apply({} as DOMNode, mockContext)
+
+      const overlayContainer = mockElement.children[0] as HTMLElement
+      expect(overlayContainer.style.insetInlineEnd).toBe('4px')
+      expect(overlayContainer.style.top).toBe('4px')
+      // The physical edges are left for the writing direction to resolve.
+      expect(overlayContainer.style.right).toBe('')
+      expect(overlayContainer.style.left).toBe('')
     })
 
     it('defaults an alignment that names an inherited key to center', () => {
@@ -1019,7 +1057,7 @@ describe('Overlay Modifier', () => {
       await flushReactiveUpdates()
 
       expect(overlayContainer.style.top).toBe('0px')
-      expect(overlayContainer.style.right).toBe('6px')
+      expect(overlayContainer.style.insetInlineEnd).toBe('6px')
     })
 
     it('updates side offset when offset signal changes', async () => {
@@ -1040,8 +1078,8 @@ describe('Overlay Modifier', () => {
       // A numeric offset insets the layer from the anchored side, moving
       // the content inward; the other edges stay on the host.
       expect(overlayContainer.style.top).toBe('8px')
-      expect(overlayContainer.style.left).toBe('0px')
-      expect(overlayContainer.style.right).toBe('0px')
+      expect(overlayContainer.style.insetInlineStart).toBe('0px')
+      expect(overlayContainer.style.insetInlineEnd).toBe('0px')
       expect(overlayContainer.style.bottom).toBe('0px')
 
       setOffset(24)
@@ -1084,8 +1122,8 @@ describe('Overlay Modifier', () => {
 
       const overlayContainer = mockElement.children[0]
       expect(overlayContainer.style.top).toBe('4px')
-      expect(overlayContainer.style.right).toBe('4px')
-      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.insetInlineEnd).toBe('4px')
+      expect(overlayContainer.style.insetInlineStart).toBe('0px')
       expect(overlayContainer.style.bottom).toBe('0px')
     })
 
@@ -1096,7 +1134,7 @@ describe('Overlay Modifier', () => {
 
       const overlayContainer = mockElement.children[0]
       expect(overlayContainer.style.top).toBe('0px')
-      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.insetInlineStart).toBe('0px')
     })
 
     // An x/y offset moves the alignment point by adjusting the layer's
@@ -1122,8 +1160,8 @@ describe('Overlay Modifier', () => {
       disposers.add(dispose)
 
       const overlayContainer = mockElement.children[0]
-      expect(overlayContainer.style.left).toBe('8px')
-      expect(overlayContainer.style.right).toBe('0px')
+      expect(overlayContainer.style.insetInlineStart).toBe('8px')
+      expect(overlayContainer.style.insetInlineEnd).toBe('0px')
       expect(overlayContainer.style.bottom).toBe('4px')
       expect(overlayContainer.style.top).toBe('0px')
       expect(overlayContainer.style.transform).toBe('')
@@ -1132,7 +1170,7 @@ describe('Overlay Modifier', () => {
       flushSync()
       await flushReactiveUpdates()
 
-      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.insetInlineStart).toBe('0px')
       expect(overlayContainer.style.top).toBe('20px')
       expect(overlayContainer.style.bottom).toBe('0px')
 
@@ -1141,7 +1179,7 @@ describe('Overlay Modifier', () => {
       await flushReactiveUpdates()
 
       expect(overlayContainer.style.top).toBe('0px')
-      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.insetInlineStart).toBe('0px')
     })
 
     it('moves an anchored alignment by its anchored edges', () => {
@@ -1155,9 +1193,9 @@ describe('Overlay Modifier', () => {
 
       const overlayContainer = mockElement.children[0]
       // Right and down: outward on the trailing edge, inward from the top.
-      expect(overlayContainer.style.right).toBe('-8px')
+      expect(overlayContainer.style.insetInlineEnd).toBe('-8px')
       expect(overlayContainer.style.top).toBe('8px')
-      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.insetInlineStart).toBe('0px')
       expect(overlayContainer.style.bottom).toBe('0px')
     })
 
@@ -1171,7 +1209,7 @@ describe('Overlay Modifier', () => {
       modifier.apply({} as DOMNode, mockContext)
 
       const overlayContainer = mockElement.children[0]
-      expect(overlayContainer.style.left).toBe('0px')
+      expect(overlayContainer.style.insetInlineStart).toBe('0px')
       expect(overlayContainer.style.top).toBe('3px')
     })
 

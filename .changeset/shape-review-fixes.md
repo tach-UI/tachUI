@@ -2,7 +2,7 @@
 '@tachui/primitives': patch
 ---
 
-Shape review follow-ups.
+Shape rendering and API corrections.
 
 - A shape measures its own box once on a microtask after mount, so it draws on
   the first frame instead of waiting for the observer's first asynchronous

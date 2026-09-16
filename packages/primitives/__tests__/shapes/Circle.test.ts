@@ -474,6 +474,39 @@ describe('Circle', () => {
       expect(path.getAttribute('stroke-width')).toBe('0.3')
     })
 
+    // A NaN length used to reach `Math.max(0, NaN)` and put NaN in the path
+    // data, which renders as nothing with no error to follow.
+    it('treats a non-finite inset as zero rather than drawing nothing', async () => {
+      const { path } = mount(Circle().inset(Number.NaN))
+
+      resizeAll(40, 40)
+      await flushReactiveUpdates()
+
+      expect(path.getAttribute('d')).toBe(CIRCLE_40)
+    })
+
+    it('treats a non-finite line width as zero', () => {
+      const { path } = mount(Circle().stroke('red', Number.NaN))
+      expect(path.getAttribute('stroke-width')).toBe('0')
+    })
+
+    // SVG ignores a negative stroke-width, so writing one through would be
+    // dropped by the renderer with nothing to show for it.
+    it('floors a negative line width', () => {
+      const { path } = mount(Circle().stroke('red', -4))
+      expect(path.getAttribute('stroke-width')).toBe('0')
+    })
+
+    // `path()` honours insets; `clipPath()` cannot, since CSS basic shapes
+    // have no inset form. Pinned so #380 designs around it knowingly.
+    it('clips to the uninset shape while drawing inset', () => {
+      const shape: any = Circle().inset(4)
+      expect(shape.clipPath()).toBe('circle()')
+      expect(shape.path({ x: 0, y: 0, width: 40, height: 40 })).toBe(
+        'M 36 20 A 16 16 0 1 1 4 20 A 16 16 0 1 1 36 20 Z'
+      )
+    })
+
     it('warns and draws nothing for a style that is not a color', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
       try {

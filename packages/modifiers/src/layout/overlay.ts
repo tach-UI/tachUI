@@ -234,9 +234,11 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     const overlayContainer = document.createElement('div')
     overlayContainer.style.position = 'absolute'
     overlayContainer.style.top = '0px'
-    overlayContainer.style.right = '0px'
     overlayContainer.style.bottom = '0px'
-    overlayContainer.style.left = '0px'
+    // Logical on the inline axis, so the layer's edges track the writing
+    // direction the same way the alignment does.
+    overlayContainer.style.insetInlineStart = '0px'
+    overlayContainer.style.insetInlineEnd = '0px'
     overlayContainer.style.display = 'grid'
     overlayContainer.style.gridTemplateColumns = '100%'
     overlayContainer.style.gridTemplateRows = '100%'
@@ -307,16 +309,6 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   }
 
   /**
-   * Whether the layer holds content whose item count can change: a shell that
-   * fills itself later, or more than one item already.
-   */
-  private contentCanGrow(overlayContainer: HTMLElement): boolean {
-    const children = Array.from(overlayContainer.children)
-    if (children.length !== 1) return children.length > 1
-    return this.isContentsShell(children[0]!)
-  }
-
-  /**
    * An element that generates no box, so its children are the grid items.
    *
    * Read from the inline style rather than the computed one. The shells this
@@ -336,18 +328,18 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
    * A `ForEach` that grows from one row to two produces its new items long
    * after the modifier ran, and nothing about that reaches this modifier —
    * the shell is filled by its own owner. Watching the layer is the only
-   * handle on it. The walk stops at the first boxed element, so this stays
-   * cheap however deep the content is.
+   * handle on it.
+   *
+   * Unconditional, because a shell is not the only way content grows: a
+   * component whose `render()` returns one root and later two appends its
+   * second item straight to the layer, with nothing to distinguish it in
+   * advance. The walk stops at the first boxed element, so this stays cheap
+   * however deep the content is.
    */
   private observeContent(
     overlayContainer: HTMLElement
   ): (() => void) | undefined {
     if (typeof MutationObserver === 'undefined') return undefined
-    // Only content that can grow needs watching, and in this framework
-    // content grows through `Show` and `ForEach`, which mount a shell. A
-    // lone plain element is the overwhelmingly common case and is left
-    // unobserved, so the ordinary overlay costs nothing extra.
-    if (!this.contentCanGrow(overlayContainer)) return undefined
 
     const observer = new MutationObserver(() => {
       this.layerContent(overlayContainer)
@@ -405,10 +397,12 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
    * have produced scrollable overflow.
    *
    * A numeric offset is an inset from the anchored side, negative moving
-   * outward. An `{ x, y }` offset moves the content right and down, negative
-   * left and up: an inward move shrinks the layer from that edge, an outward
-   * move extends it, and on a centered axis the far edge shrinks by twice
-   * the offset so the alignment point moves by exactly the offset.
+   * outward. An `{ x, y }` offset moves the content along the inline axis and
+   * down, negative the other way: an inward move shrinks the layer from that
+   * edge, an outward move extends it, and on a centered axis the far edge
+   * shrinks by twice the offset so the alignment point moves by exactly the
+   * offset. Positive `x` is rightward in a left-to-right host and leftward in
+   * a right-to-left one, matching the alignment rather than fighting it.
    */
   private applyOffset(
     overlayContainer: HTMLElement,
@@ -454,6 +448,11 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   /**
    * Move the content along one axis by `offset` (positive toward the end of
    * the axis) by adjusting the layer's edges on that axis.
+   *
+   * The inline axis is addressed logically, so an offset lands on the same
+   * edge the alignment anchored to whatever the writing direction. Writing
+   * `right` for an `end` anchor would move the far edge in a right-to-left
+   * host, where `justify-items: end` puts the content on the physical left.
    */
   private applyAxisOffset(
     overlayContainer: HTMLElement,
@@ -463,8 +462,8 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   ): void {
     if (!Number.isFinite(offset) || offset === 0) return
 
-    const startEdge = axis === 'x' ? 'left' : 'top'
-    const endEdge = axis === 'x' ? 'right' : 'bottom'
+    const startEdge = axis === 'x' ? 'insetInlineStart' : 'top'
+    const endEdge = axis === 'x' ? 'insetInlineEnd' : 'bottom'
 
     switch (anchor) {
       case 'start':
@@ -497,9 +496,9 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
 
   private clearPositionStyles(overlayContainer: HTMLElement): void {
     overlayContainer.style.top = '0px'
-    overlayContainer.style.right = '0px'
     overlayContainer.style.bottom = '0px'
-    overlayContainer.style.left = '0px'
+    overlayContainer.style.insetInlineStart = '0px'
+    overlayContainer.style.insetInlineEnd = '0px'
   }
 
   private isReactive<T>(value: T | Signal<T> | undefined): value is Signal<T> {

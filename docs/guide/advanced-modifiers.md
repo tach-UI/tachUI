@@ -138,7 +138,9 @@ applies to it.
 
 Alignment follows the writing direction, so a `trailing` badge lands on the
 right in a left-to-right document and on the left in a right-to-left one.
-Offsets are physical: `x` is always rightward, whatever the direction.
+Offsets follow it too: positive `x` is rightward in a left-to-right document
+and leftward in a right-to-left one, so an offset always moves the content
+away from the edge it is anchored to rather than across the box.
 
 Content with more than one item layers in place, each item filling the same
 area, rather than stacking. That holds for a `ForEach` or a `Show` inside an

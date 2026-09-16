@@ -75,8 +75,16 @@ interface ShapeStyling {
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 const EMPTY_RECT: ShapeRect = { x: 0, y: 0, width: 0, height: 0 }
 
+/**
+ * A length, with anything that is not a finite number treated as zero.
+ *
+ * A `NaN` inset would otherwise reach `Math.max(0, NaN)` and put `NaN` in the
+ * path data, which renders as nothing with no error anywhere — the silent
+ * failure `resolveStyle` avoids for colors.
+ */
 function resolveLength(value: ShapeLength): number {
-  return isSignal(value) ? value() : value
+  const resolved = isSignal(value) ? value() : value
+  return Number.isFinite(resolved) ? resolved : 0
 }
 
 function resolveStyle(style: ShapeStyle): string {
@@ -226,6 +234,13 @@ export class ShapeComponent
   }
 
 
+  /**
+   * The CSS `clip-path` for this shape filling its box.
+   *
+   * Insets do not apply, unlike `path`, because CSS basic shapes cannot
+   * express an inset circle. See `Shape.clipPath` for why, and for the way
+   * to add it if a consumer ever needs it.
+   */
   clipPath(): string {
     return this.shape.clipPath()
   }
@@ -373,7 +388,9 @@ export class ShapeComponent
     if (!path) return
 
     const { fill, stroke } = this.styling
-    const lineWidth = resolveLength(this.styling.lineWidth)
+    // SVG ignores a negative `stroke-width`, so it is floored rather than
+    // written out and silently dropped by the renderer.
+    const lineWidth = Math.max(0, resolveLength(this.styling.lineWidth))
     const strokeValue = stroke === undefined ? undefined : resolveStyle(stroke)
     const fillValue = fill === undefined ? undefined : resolveStyle(fill)
 
