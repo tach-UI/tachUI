@@ -13,6 +13,7 @@ import {
   isSignal,
   isComputed,
   onCleanup,
+  untrack,
 } from '@tachui/core/reactive'
 import { renderComponent } from '@tachui/core/runtime'
 
@@ -151,6 +152,15 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
 
     const { content } = this.properties
 
+    // No DOM to build the layer in: the SSR serializer hands modifiers a
+    // style-collecting stand-in with no child API at all. Describe the layer
+    // as nodes instead, so server markup carries the overlay rather than
+    // leaving the host bare until scripts run. Taken before any of the mount
+    // bookkeeping below, none of which has a server meaning.
+    if (!canBuildLayer(element)) {
+      return { node: this.describeOverlay(node, element, content) }
+    }
+
     let state = overlayStates.get(element)
     const firstMount = state === undefined
 
@@ -210,6 +220,108 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     return { node, cleanup: [teardown] }
   }
 
+  /**
+   * The layer, and the host's positioning, described rather than built.
+   *
+   * Shares `styleLayer` and `applyResolvedPositioning` with the client path,
+   * which is what keeps the two from disagreeing about alignment, offset or
+   * writing direction — a disagreement would show as the overlay jumping when
+   * the client takes over.
+   *
+   * What is deliberately absent: the content observer, which watches for
+   * items appearing later and has nothing to watch here, and the mount
+   * bookkeeping, which exists to tear DOM down.
+   */
+  private describeOverlay(
+    node: DOMNode,
+    element: HTMLElement,
+    content: OverlayContent
+  ): DOMNode {
+    // The host has to be a positioned container for the layer to cover it.
+    // The stand-in reports nothing for an unset property, which is the same
+    // "not positioned" case as `static` or the empty string.
+    const position = element.style.position
+    if (!position || position === 'static') {
+      element.style.position = 'relative'
+    }
+
+    const layerStyle: Record<string, string> = {}
+    // Only `.style` is ever touched by either method, so a bare object stands
+    // in for the element.
+    const layer = { style: layerStyle } as unknown as HTMLElement
+    this.styleLayer(layer)
+    this.applyResolvedPositioning(layer)
+
+    const children = this.describeContent(content)
+    this.layerDescribedContent(children)
+
+    const layerNode: DOMNode = {
+      type: 'element',
+      tag: 'div',
+      props: { style: layerStyle },
+      children,
+    }
+
+    return { ...node, children: [...(node.children ?? []), layerNode] }
+  }
+
+  /** `renderContent`'s counterpart: content as nodes rather than as DOM. */
+  private describeContent(content: OverlayContent): DOMNode[] {
+    if (content === null || content === undefined) return []
+
+    // Read once and untracked. There is no client here to update the text,
+    // and a tracked read would subscribe whatever is serializing.
+    if (isSignal(content) || isComputed(content)) {
+      const value = untrack(() => (content as Signal<string | number>)())
+      return [{ type: 'text', text: String(value ?? '') } as DOMNode]
+    }
+
+    if (typeof content === 'function') {
+      return this.describeContent(
+        (content as () => OverlayContentValue)()
+      )
+    }
+
+    if (typeof content === 'string' || typeof content === 'number') {
+      return [{ type: 'text', text: String(content) } as DOMNode]
+    }
+
+    if (isComponentContent(content)) {
+      // As the serializer does for a top-level component: build the chain if
+      // it is still a builder, then render it to nodes. The modifiers travel
+      // on those nodes' metadata, so the serializer still applies them.
+      const candidate = content as {
+        build?: () => ComponentInstance
+        render?: () => DOMNode | DOMNode[]
+      }
+      const instance =
+        typeof candidate.build === 'function' ? candidate.build() : candidate
+      const rendered = (instance as ComponentInstance).render()
+      return Array.isArray(rendered) ? rendered : [rendered]
+    }
+
+    // A raw DOM element. There is no DOM server-side, so there is nothing to
+    // describe and nothing sensible to invent.
+    return []
+  }
+
+  /**
+   * `layerContent`'s counterpart over nodes: share the one cell once there is
+   * more than one item, descending through `display: contents` shells exactly
+   * as the DOM walk does.
+   */
+  private layerDescribedContent(children: DOMNode[]): void {
+    const items: DOMNode[] = []
+    collectDescribedGridItems(children, items)
+    if (items.length < 2) return
+
+    for (const item of items) {
+      const props = (item.props ?? {}) as Record<string, unknown>
+      const style = (props.style ?? {}) as Record<string, unknown>
+      item.props = { ...props, style: { ...style, gridArea: '1 / 1' } }
+    }
+  }
+
   private applyOverlay(
     element: HTMLElement,
     content: OverlayContent
@@ -232,17 +344,7 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     // compressed by `flex-shrink`. A definite cell is what lets a child's
     // `100%` resolve to the host's size.
     const overlayContainer = document.createElement('div')
-    overlayContainer.style.position = 'absolute'
-    overlayContainer.style.top = '0px'
-    overlayContainer.style.bottom = '0px'
-    // Logical on the inline axis, so the layer's edges track the writing
-    // direction the same way the alignment does.
-    overlayContainer.style.insetInlineStart = '0px'
-    overlayContainer.style.insetInlineEnd = '0px'
-    overlayContainer.style.display = 'grid'
-    overlayContainer.style.gridTemplateColumns = '100%'
-    overlayContainer.style.gridTemplateRows = '100%'
-    overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
+    this.styleLayer(overlayContainer)
 
     const cleanup: (() => void)[] = []
 
@@ -350,28 +452,57 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     return () => observer.disconnect()
   }
 
+  /**
+   * The layer's fixed styles: everything that does not depend on alignment,
+   * offset or the enabled flag.
+   *
+   * Written through `.style` alone, so it applies equally to a real element
+   * and to the plain style-collecting stand-in the server path uses.
+   */
+  private styleLayer(overlayContainer: HTMLElement): void {
+    overlayContainer.style.position = 'absolute'
+    overlayContainer.style.top = '0px'
+    overlayContainer.style.bottom = '0px'
+    // Logical on the inline axis, so the layer's edges track the writing
+    // direction the same way the alignment does.
+    overlayContainer.style.insetInlineStart = '0px'
+    overlayContainer.style.insetInlineEnd = '0px'
+    overlayContainer.style.display = 'grid'
+    overlayContainer.style.gridTemplateColumns = '100%'
+    overlayContainer.style.gridTemplateRows = '100%'
+    overlayContainer.style.pointerEvents = 'none' // Allow clicks to pass through by default
+  }
+
+  /**
+   * Alignment, offset and the enabled flag, resolved once and written to the
+   * layer. The client wraps this in an effect when any of them is reactive;
+   * the server calls it once, since there is nothing to update.
+   */
+  private applyResolvedPositioning(overlayContainer: HTMLElement): void {
+    const alignmentValue = this.resolveReactive(
+      this.properties.alignment,
+      'center'
+    )
+    const sideValue = this.resolveReactive(this.properties.side, undefined)
+    const offsetValue = this.resolveReactive(this.properties.offset, undefined)
+    const enabledValue = this.resolveReactive(this.properties.enabled, true)
+
+    this.clearPositionStyles(overlayContainer)
+
+    const effectiveSide = sideValue ?? alignmentValue
+    const alignmentStyles = this.getOverlayAlignment(effectiveSide)
+    Object.assign(overlayContainer.style, alignmentStyles)
+
+    this.applyOffset(overlayContainer, effectiveSide, offsetValue)
+
+    overlayContainer.style.display = enabledValue ? 'grid' : 'none'
+  }
+
   private applyOverlayPositioning(
     overlayContainer: HTMLElement
   ): (() => void) | undefined {
-    const applyResolvedPositioning = () => {
-      const alignmentValue = this.resolveReactive(
-        this.properties.alignment,
-        'center'
-      )
-      const sideValue = this.resolveReactive(this.properties.side, undefined)
-      const offsetValue = this.resolveReactive(this.properties.offset, undefined)
-      const enabledValue = this.resolveReactive(this.properties.enabled, true)
-
-      this.clearPositionStyles(overlayContainer)
-
-      const effectiveSide = sideValue ?? alignmentValue
-      const alignmentStyles = this.getOverlayAlignment(effectiveSide)
-      Object.assign(overlayContainer.style, alignmentStyles)
-
-      this.applyOffset(overlayContainer, effectiveSide, offsetValue)
-
-      overlayContainer.style.display = enabledValue ? 'grid' : 'none'
-    }
+    const applyResolvedPositioning = () =>
+      this.applyResolvedPositioning(overlayContainer)
 
     const hasReactivePositioning =
       this.isReactive(this.properties.alignment) ||
@@ -587,6 +718,41 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   ): Record<string, string> {
     const anchors = this.getAnchors(alignment)
     return { justifyItems: anchors.x, alignItems: anchors.y }
+  }
+}
+
+/**
+ * Whether the layer can be built as DOM in this element.
+ *
+ * Both halves matter: there is no `document` to create the layer with on a
+ * bare server, and the SSR serializer's stand-in element has no `appendChild`
+ * to put it in even where a DOM shim exists.
+ */
+function canBuildLayer(element: unknown): boolean {
+  return (
+    typeof document !== 'undefined' &&
+    typeof (element as { appendChild?: unknown })?.appendChild === 'function'
+  )
+}
+
+/** A node that generates no box, so its children are the grid items. */
+function isDescribedContentsShell(node: DOMNode): boolean {
+  const style = (node.props as { style?: Record<string, unknown> } | undefined)
+    ?.style
+  return style?.display === 'contents'
+}
+
+function collectDescribedGridItems(
+  children: DOMNode[],
+  items: DOMNode[]
+): void {
+  for (const child of children) {
+    if (child.type !== 'element') continue
+    if (isDescribedContentsShell(child)) {
+      collectDescribedGridItems(child.children ?? [], items)
+    } else {
+      items.push(child)
+    }
   }
 }
 

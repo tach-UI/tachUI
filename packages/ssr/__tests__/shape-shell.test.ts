@@ -75,6 +75,26 @@ describe('a shape serialized without a DOM', () => {
     expect(markup).not.toContain(' d=')
     expect(markup).not.toContain('M ')
   })
+  // The composition the shape engine exists for: a ring drawn over a host.
+  // The overlay layer is described server-side too, so the shape inside it
+  // reaches the markup rather than waiting for scripts.
+  it('emits the shell for a shape inside an overlay', () => {
+    const markup = renderToString(
+      Rectangle()
+        .frame({ width: 40, height: 40 })
+        .overlay(Circle().inset(1).stroke('red', 2))
+        .build() as any
+    )
+
+    expect(markup).toContain('tachui-shape-rectangle')
+    expect(markup).toContain('tachui-shape-circle')
+    // Both shells: the host's and the overlay content's.
+    expect(markup.match(/class="tachui-shape__svg"/g)).toHaveLength(2)
+    // The layer that covers the host.
+    expect(markup).toMatch(/position:\s*absolute/)
+    expect(markup).toMatch(/grid-template-rows:\s*100%/)
+    expect(markup).not.toContain(' d=')
+  })
 })
 
 // With a DOM shim the owner's element is the only source of truth for its
