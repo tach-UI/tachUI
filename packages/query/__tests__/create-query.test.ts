@@ -635,7 +635,10 @@ describe('retryDelay', () => {
         client,
       })
     )
-    await new Promise((resolve) => setTimeout(resolve, 20))
+    // Two 1ms backoffs and three loads. A fixed sleep long enough for that on
+    // an idle machine is not long enough on a loaded one, and the test is
+    // that the retries happen, not that they finish inside a given window.
+    await waitUntil(() => value.data() === 'recovered')
 
     expect(attempts).toBe(3)
     expect(delays).toEqual([0, 1])
