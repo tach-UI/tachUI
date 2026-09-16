@@ -29,6 +29,17 @@ export interface Shape {
   /**
    * The CSS `clip-path` basic shape for this shape filling its box, e.g.
    * `circle()` for a circle inscribed in the short side.
+   *
+   * **Insets do not apply.** This clips to the shape filling its box, while
+   * `path` honours every `.inset()` and the half-line `strokeBorder` adds, so
+   * an inset shape draws inset and clips uninset. The two cannot agree here:
+   * CSS basic shapes have no syntax for "closest-side minus N", and a
+   * percentage radius resolves against the box's diagonal rather than its
+   * short side, which is the same reason the drawn path is measured rather
+   * than expressed in percentages.
+   *
+   * A consumer that needs an inset clip wants the measured rect, so the way
+   * to add it later is an optional rect parameter rather than a change here.
    */
   clipPath(): string
 }
