@@ -1,7 +1,7 @@
 /**
  * The worked example from the shapes design: a verification ring drawn as a
  * stroked, inset Circle in an overlay, the composition the DSAvatar port
- * needs (#302).
+ * needs.
  *
  * jsdom does no layout, so the ResizeObserver is stubbed and reports the
  * host's size the way the browser would once the overlay layer has sized the

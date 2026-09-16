@@ -43,6 +43,26 @@ function mount(component: unknown): {
   return { container, wrapper, svg, path, dispose }
 }
 
+function pathIn(container: HTMLElement): SVGPathElement {
+  const path = container.querySelector('path') as SVGPathElement
+  expect(path).not.toBeNull()
+  return path
+}
+
+/**
+ * Give the fallback measurement a box to read. jsdom does no layout and
+ * reports zeros, which the engine treats as "not measured" rather than as a
+ * measurement of zero.
+ */
+function reportBox(
+  container: HTMLElement,
+  width: number,
+  height: number
+): void {
+  const svg = container.querySelector('svg') as SVGSVGElement
+  svg.getBoundingClientRect = () => ({ width, height }) as DOMRect
+}
+
 describe('Circle', () => {
   beforeEach(() => {
     installResizeObserverStub()
@@ -203,7 +223,7 @@ describe('Circle', () => {
       )
     })
 
-    it('is the #302 verification ring when combined with a stroke', async () => {
+    it('draws the verification ring when combined with a stroke', async () => {
       const { path } = mount(Circle().inset(1).stroke('tint', 2))
 
       resizeAll(40, 40)
@@ -497,8 +517,39 @@ describe('Circle', () => {
       expect(path.getAttribute('stroke-width')).toBe('0')
     })
 
+    // `strokeBorder`'s inset comes from that same floored width. A raw
+    // negative one would *outset* the path — the fill spilling outside the
+    // frame `strokeBorder` promises to stay inside, with no stroke drawn to
+    // hint at why.
+    it('keeps a negative strokeBorder inside the frame', async () => {
+      const { path } = mount(Circle().fill('red').strokeBorder('blue', -4))
+
+      resizeAll(40, 40)
+      await flushReactiveUpdates()
+
+      expect(path.getAttribute('d')).toBe(CIRCLE_40)
+      expect(path.getAttribute('stroke-width')).toBe('0')
+    })
+
+    it('keeps a negative signal-driven strokeBorder inside the frame', async () => {
+      const [lineWidth, setLineWidth] = createSignal(4)
+      const { path } = mount(Circle().fill('red').strokeBorder('blue', lineWidth))
+
+      resizeAll(40, 40)
+      await flushReactiveUpdates()
+      expect(path.getAttribute('d')).toBe(
+        'M 38 20 A 18 18 0 1 1 2 20 A 18 18 0 1 1 38 20 Z'
+      )
+
+      setLineWidth(-4)
+      await flushReactiveUpdates()
+
+      expect(path.getAttribute('d')).toBe(CIRCLE_40)
+    })
+
     // `path()` honours insets; `clipPath()` cannot, since CSS basic shapes
-    // have no inset form. Pinned so #380 designs around it knowingly.
+    // have no inset form. Pinned so a future `clipShape` designs around it
+    // knowingly.
     it('clips to the uninset shape while drawing inset', () => {
       const shape: any = Circle().inset(4)
       expect(shape.clipPath()).toBe('circle()')
@@ -563,6 +614,67 @@ describe('Circle', () => {
         const { path } = mount(Circle().fill('red'))
         expect(path.getAttribute('d')).toBe('')
         expect(path.getAttribute('fill')).toBe('red')
+      } finally {
+        Object.defineProperty(globalThis, 'ResizeObserver', {
+          configurable: true,
+          value: originalObserver,
+        })
+      }
+    })
+
+    it('measures from the box once the element is in the document', async () => {
+      uninstallResizeObserverStub()
+      const originalObserver = globalThis.ResizeObserver
+      Object.defineProperty(globalThis, 'ResizeObserver', {
+        configurable: true,
+        value: undefined,
+      })
+      try {
+        const container = document.createElement('div')
+        renderComponent(Circle() as any, container)
+        reportBox(container, 40, 40)
+
+        await flushReactiveUpdates()
+
+        expect(pathIn(container).getAttribute('d')).toBe(CIRCLE_40)
+      } finally {
+        Object.defineProperty(globalThis, 'ResizeObserver', {
+          configurable: true,
+          value: originalObserver,
+        })
+      }
+    })
+
+    // A shape unmounted and remounted — through a toggled `Show`, say —
+    // lands in a host that may be a different size. The frame it kept from
+    // the last mount is not a measurement of that host, and here there is no
+    // observer to correct it, so the fallback has to run a second time.
+    it('re-measures a remounted shape', async () => {
+      uninstallResizeObserverStub()
+      const originalObserver = globalThis.ResizeObserver
+      Object.defineProperty(globalThis, 'ResizeObserver', {
+        configurable: true,
+        value: undefined,
+      })
+      try {
+        const component = new ShapeComponent(circleShape, 'circle')
+
+        const first = document.createElement('div')
+        const dispose = renderComponent(component as any, first)
+        reportBox(first, 40, 40)
+        await flushReactiveUpdates()
+        expect(pathIn(first).getAttribute('d')).toBe(CIRCLE_40)
+
+        dispose()
+
+        const second = document.createElement('div')
+        renderComponent(component as any, second)
+        reportBox(second, 20, 20)
+        await flushReactiveUpdates()
+
+        expect(pathIn(second).getAttribute('d')).toBe(
+          'M 20 10 A 10 10 0 1 1 0 10 A 10 10 0 1 1 20 10 Z'
+        )
       } finally {
         Object.defineProperty(globalThis, 'ResizeObserver', {
           configurable: true,

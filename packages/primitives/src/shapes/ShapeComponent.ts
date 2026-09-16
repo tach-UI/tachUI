@@ -144,6 +144,12 @@ export class ShapeComponent
   private pathElement: SVGPathElement | undefined
   private observer: ResizeObserver | undefined
   private measurePending = false
+  /**
+   * Whether a real measurement has landed for the element as currently
+   * mounted. Cleared on teardown, because the frame kept from the last mount
+   * is no evidence about the new host's size.
+   */
+  private hasMeasured = false
 
   constructor(
     public readonly shape: Shape,
@@ -233,9 +239,22 @@ export class ShapeComponent
   private drawRect(rect: ShapeRect): ShapeRect {
     let inset = this.totalInset()
     if (this.styling.stroke !== undefined && this.styling.strokeInside) {
-      inset += resolveLength(this.styling.lineWidth) / 2
+      inset += this.strokeWidth() / 2
     }
     return insetRect(rect, inset)
+  }
+
+  /**
+   * The line width as drawn, floored at zero.
+   *
+   * SVG ignores a negative `stroke-width`, so it is floored rather than
+   * written out and silently dropped by the renderer. The same floored width
+   * is what `strokeBorder`'s inset is taken from: a raw negative one would
+   * *outset* the path, pushing the fill outside the frame that
+   * `strokeBorder` promises to stay inside, while no stroke is drawn at all.
+   */
+  private strokeWidth(): number {
+    return Math.max(0, resolveLength(this.styling.lineWidth))
   }
 
 
@@ -309,6 +328,7 @@ export class ShapeComponent
     this.observer?.disconnect()
     this.observer = undefined
     this.measurePending = false
+    this.hasMeasured = false
   }
 
   /**
@@ -321,9 +341,15 @@ export class ShapeComponent
    * ResizeObserver's first delivery is also asynchronous, so without this the
    * shape would paint empty once before its real path arrived. It is the only
    * measurement at all where `ResizeObserver` is missing.
+   *
+   * It runs again for a shape that is unmounted and remounted — through a
+   * toggled `Show`, say. The previous frame is kept so the shape repaints
+   * with its old path rather than flashing empty, but it does not count as
+   * having measured the new host; without `ResizeObserver` there is nothing
+   * else to correct it.
    */
   private scheduleFirstMeasure(): void {
-    if (this.measurePending || this.measuredFrame().width > 0) return
+    if (this.measurePending || this.hasMeasured) return
     this.measurePending = true
     queueMicrotask(() => {
       if (!this.measurePending) return
@@ -377,6 +403,7 @@ export class ShapeComponent
   }
 
   private measured(width: number, height: number): void {
+    this.hasMeasured = true
     const current = this.measuredFrame()
     if (current.width === width && current.height === height) return
     this.setMeasuredFrame({ x: 0, y: 0, width, height })
@@ -393,9 +420,7 @@ export class ShapeComponent
     if (!path) return
 
     const { fill, stroke } = this.styling
-    // SVG ignores a negative `stroke-width`, so it is floored rather than
-    // written out and silently dropped by the renderer.
-    const lineWidth = Math.max(0, resolveLength(this.styling.lineWidth))
+    const lineWidth = this.strokeWidth()
     const strokeValue = stroke === undefined ? undefined : resolveStyle(stroke)
     const fillValue = fill === undefined ? undefined : resolveStyle(fill)
 
