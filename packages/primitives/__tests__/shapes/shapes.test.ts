@@ -310,11 +310,25 @@ describe('border curvature against the frame corner', () => {
   // not mistaken for a bug and "fixed" into a surprise, and so the flush
   // claim in the docs stays narrowed to Capsule and Circle.
   describe('an Ellipse border against an elliptical host', () => {
-    /** How far the stroke's outer edge escapes each boundary, sampled. */
-    function escape(width: number, height: number, lineWidth: number) {
+    /**
+     * How far the stroke's outer edge escapes each boundary, sampled.
+     *
+     * The semi-axes are read off the mounted `<path>` rather than recomputed
+     * here, so this measures the geometry the engine drew. Recomputing them
+     * would make these assertions about a model of the shape, and they would
+     * survive any change to `ellipsePath` or `drawRect`.
+     */
+    async function escape(width: number, height: number, lineWidth: number) {
+      const path = await draw(
+        Ellipse().strokeBorder('red', lineWidth),
+        width,
+        height
+      )
+      const match = /A (\S+) (\S+)/.exec(path.getAttribute('d') ?? '')
+      expect(match).not.toBeNull()
+      const a = Number(match?.[1])
+      const b = Number(match?.[2])
       const d = lineWidth / 2
-      const a = (width - lineWidth) / 2
-      const b = (height - lineWidth) / 2
       let pastFrame = 0
       let pastHostEllipse = 0
       for (let i = 0; i <= 2000; i++) {
@@ -332,25 +346,26 @@ describe('border curvature against the frame corner', () => {
       return { pastFrame, pastHostEllipse }
     }
 
-    it('never crosses the frame, however flat', () => {
+    it('never crosses the frame, however flat', async () => {
       for (const [w, h, lw] of [
         [100, 50, 4],
         [100, 25, 8],
         [200, 40, 12],
+        [400, 20, 16],
       ] as const) {
-        expect(escape(w, h, lw).pastFrame).toBeCloseTo(0, 9)
+        expect((await escape(w, h, lw)).pastFrame).toBeCloseTo(0, 9)
       }
     })
 
-    it('bulges past the host ellipse, the more the flatter the frame', () => {
-      expect(escape(100, 50, 4).pastHostEllipse).toBeCloseTo(0.15, 2)
-      expect(escape(200, 40, 12).pastHostEllipse).toBeCloseTo(3.91, 2)
+    it('bulges past the host ellipse, the more the flatter the frame', async () => {
+      expect((await escape(100, 50, 4)).pastHostEllipse).toBeCloseTo(0.15, 2)
+      expect((await escape(200, 40, 12)).pastHostEllipse).toBeCloseTo(3.91, 2)
     })
 
     // A circle is the case where the parallel curve *is* the same family, so
     // Circle's border is flush and Ellipse agrees with it in a square frame.
-    it('is flush in a square frame, where the ellipse is a circle', () => {
-      expect(escape(100, 100, 20).pastHostEllipse).toBeCloseTo(0, 9)
+    it('is flush in a square frame, where the ellipse is a circle', async () => {
+      expect((await escape(100, 100, 20)).pastHostEllipse).toBeCloseTo(0, 9)
     })
   })
 })
