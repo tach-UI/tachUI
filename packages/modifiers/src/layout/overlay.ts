@@ -249,8 +249,7 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     // serializing. The serializer untracks its own reads on the same grounds.
     untrack(() => this.applyResolvedPositioning(layer))
 
-    const children = this.describeContent(content)
-    this.layerDescribedContent(children)
+    const children = this.layerDescribedContent(this.describeContent(content))
 
     const layerNode: DOMNode = {
       type: 'element',
@@ -278,8 +277,18 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     }
   }
 
-  /** `renderContent`'s counterpart: content as nodes rather than as DOM. */
-  private describeContent(content: OverlayContent): DOMNode[] {
+  /**
+   * `renderContent`'s counterpart: content as nodes rather than as DOM.
+   *
+   * `seen` guards the builder/component recursion the way the serializer
+   * guards its own: a self-referential builder fails with the same kind of
+   * error at top level, and should not stack-overflow merely for arriving as
+   * overlay content instead.
+   */
+  private describeContent(
+    content: OverlayContent,
+    seen: Set<object> = new Set()
+  ): DOMNode[] {
     if (content === null || content === undefined) return []
 
     // Read once and untracked. There is no client here to update the text,
@@ -293,7 +302,8 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     // with the rest.
     if (typeof content === 'function') {
       return this.describeContent(
-        untrack(() => (content as () => OverlayContentValue)())
+        untrack(() => (content as () => OverlayContentValue)()),
+        seen
       )
     }
 
@@ -309,6 +319,13 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
         build?: () => ComponentInstance
         render?: () => DOMNode | DOMNode[]
       }
+      if (seen.has(candidate as object)) {
+        throw new TypeError(
+          'Unsupported TachUI SSR input. Detected cyclic overlay content and cannot be serialized.'
+        )
+      }
+      seen.add(candidate as object)
+
       const instance =
         typeof candidate.build === 'function' ? candidate.build() : candidate
       const rendered = (instance as ComponentInstance).render()
@@ -316,7 +333,7 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
       // component path allows; recurse so the nesting is followed rather than
       // emitted as an opaque node.
       return (Array.isArray(rendered) ? rendered : [rendered]).flatMap(entry =>
-        isComponentContent(entry) ? this.describeContent(entry) : [entry]
+        isComponentContent(entry) ? this.describeContent(entry, seen) : [entry]
       )
     }
 
@@ -329,17 +346,17 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
    * `layerContent`'s counterpart over nodes: share the one cell once there is
    * more than one item, descending through `display: contents` shells exactly
    * as the DOM walk does.
+   *
+   * Returns copies rather than writing to the nodes it was handed. The DOM
+   * path styles elements it built; these nodes came from a component's own
+   * `render()`, and one that returned a cached or shared node would otherwise
+   * carry `gridArea` away with it.
    */
-  private layerDescribedContent(children: DOMNode[]): void {
+  private layerDescribedContent(children: DOMNode[]): DOMNode[] {
     const items: DOMNode[] = []
     collectDescribedGridItems(children, items)
-    if (items.length < 2) return
-
-    for (const item of items) {
-      const props = (item.props ?? {}) as Record<string, unknown>
-      const style = (props.style ?? {}) as Record<string, unknown>
-      item.props = { ...props, style: { ...style, gridArea: '1 / 1' } }
-    }
+    if (items.length < 2) return children
+    return placeDescribedGridItems(children)
   }
 
   private applyOverlay(
@@ -736,6 +753,22 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     const anchors = this.getAnchors(alignment)
     return { justifyItems: anchors.x, alignItems: anchors.y }
   }
+}
+
+/** Copies of `children`, with every grid item placed in the layer's one cell. */
+function placeDescribedGridItems(children: DOMNode[]): DOMNode[] {
+  return children.map(child => {
+    if (child.type !== 'element') return child
+    if (isDescribedContentsShell(child)) {
+      return {
+        ...child,
+        children: placeDescribedGridItems(child.children ?? []),
+      }
+    }
+    const props = (child.props ?? {}) as Record<string, unknown>
+    const style = (props.style ?? {}) as Record<string, unknown>
+    return { ...child, props: { ...props, style: { ...style, gridArea: '1 / 1' } } }
+  })
 }
 
 /**

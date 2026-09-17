@@ -20,5 +20,9 @@ no-ops, and it snapped back when the client re-rendered.
 
 Reads now serve the collected styles, reporting the empty string for a property
 that was never set, as CSSOM does, and matching kebab- and camel-case spellings
-so a `setProperty` write reads back through either. This fixes reads for every
+so a `setProperty` write reads back through either. A priority stays out of the
+value, as `getPropertyValue` keeps it out, so `blue !important` reads as `blue`
+while the markup still carries the priority. Only the shim's own members and
+collected styles answer a read, so `toString` and the rest of `Object.prototype`
+are not stringified out from under a caller. This fixes reads for every
 modifier, not only `overlay`.

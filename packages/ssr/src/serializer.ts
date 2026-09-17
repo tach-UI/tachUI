@@ -483,28 +483,40 @@ function createSSRVirtualElement(initialStyle: unknown): {
   const toCamel = (name: string): string =>
     name.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
 
-  const readStyle = (property: string): string => {
-    // Writes arrive in whichever casing the caller used — `setProperty`
-    // kebab-cases, a property assignment does not — so a read tries both.
-    const stored =
-      styleState[property] ??
-      styleState[toKebab(property)] ??
-      styleState[toCamel(property)]
-    if (stored === undefined) return ''
+  // Own properties only. `styleState` is a plain object, so a bare lookup
+  // would resolve `toString`, `hasOwnProperty` and the rest through the
+  // prototype chain and hand each one back stringified — which clobbers the
+  // primitive fallbacks and makes `String(element.style)` throw, where before
+  // it returned `[object Object]`. No CSS property collides with those names,
+  // so the cost is robustness rather than markup.
+  const ownStyleKey = (property: string): string | undefined =>
+    [property, toKebab(property), toCamel(property)].find(candidate =>
+      Object.prototype.hasOwnProperty.call(styleState, candidate)
+    )
+
+  const readStyle = (key: string): string => {
+    const stored = styleState[key]
     // A property written more than once holds every write; the cascade keeps
-    // the last, and so does a read. CSSOM reports the empty string for a
-    // property that was never set, which is what the client's guards compare
-    // against.
-    return Array.isArray(stored) ? String(stored[stored.length - 1]) : String(stored)
+    // the last, and so does a read.
+    const value = Array.isArray(stored)
+      ? String(stored[stored.length - 1])
+      : String(stored)
+    // CSSOM keeps the priority out of the value — `getPropertyValue` returns
+    // `blue` for `blue !important`, with the priority behind
+    // `getPropertyPriority`. A modifier comparing against a plain value would
+    // otherwise branch differently here than on a real element.
+    return value.replace(/\s*!important\s*$/i, '')
   }
 
   const styleTarget = new Proxy(styleTargetBase, {
     get(target, property) {
-      if (typeof property !== 'string') {
-        return (target as Record<string, unknown>)[property as unknown as string]
-      }
+      if (typeof property !== 'string') return Reflect.get(target, property)
       if (property === 'setProperty') return target.setProperty
-      return readStyle(property)
+      const key = ownStyleKey(property)
+      if (key !== undefined) return readStyle(key)
+      // Anything the shim itself defines stays itself; everything else is an
+      // unset CSS property, which CSSOM reports as the empty string.
+      return property in target ? Reflect.get(target, property) : ''
     },
     set(target, property, value) {
       if (typeof property === 'string' && property !== 'setProperty') {
