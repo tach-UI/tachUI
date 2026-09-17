@@ -43,7 +43,9 @@ the 4 where before it reset to 1.
 
 Trim and a dash pattern are exclusive. Both are `stroke-dasharray`, and trim
 rescales the units a dash length is measured in, so a shape carrying both draws
-the trim, ignores the dash, and warns once. A full-range `trim(0, 1)` is not
-trimming and sets no `pathLength`, so a dash still applies there and nothing is
-warned about. Dashing a trimmed path means
+the trim, ignores the dash, and warns once — `dashPhase` included, since the
+trim owns `stroke-dashoffset` as much as `stroke-dasharray`. An empty
+`dash: []` is no pattern and so conflicts with nothing. A full-range
+`trim(0, 1)` is not trimming and sets no `pathLength`, so a dash still applies
+there and nothing is warned about. Dashing a trimmed path means
 computing the dash sequence for the trimmed segment, which is not implemented.
