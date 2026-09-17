@@ -135,17 +135,23 @@ Circle().trim(0, 0.75).stroke('#007AFF', 4)            // a 270° arc
 Circle().trim(0, progress).stroke('#007AFF', 4)        // driven by a signal
 ```
 
-The path starts where SwiftUI's does — a circle at its trailing edge, three o'clock, running clockwise. A ring that fills from the top wants a quarter turn on top, exactly as in SwiftUI:
+The path starts where SwiftUI's does — a circle at its trailing edge, three o'clock, running clockwise. A ring that fills from the top wants a quarter turn on top, as it does in SwiftUI:
 
 ```typescript
 Circle()
   .trim(0, progress)
   .strokeStyle({ lineWidth: 4, lineCap: 'round' })
   .stroke(tint)
-  .rotationEffect(-90)
+  .transform('rotate(-90deg)')
 ```
 
-Both fractions are clamped to `0`–`1`. A `to` at or below `from` draws nothing rather than wrapping, so a progress value arriving out of order shows an empty ring instead of a full one. `.trim(0, 1)` is the whole path and emits no dash attributes at all.
+Use `.transform()` for that turn, not `.rotationEffect()`: the latter is typed but not yet implemented at runtime, so it throws.
+
+Both fractions are clamped to `0`–`1`. A `to` at or below `from` draws nothing rather than wrapping, so a progress value arriving out of order shows an empty ring instead of a full one — with one exception, which is SVG's for any dashed path: `lineCap: 'round'` renders a zero-length dash as a dot rather than as nothing. `.trim(0, 1)` is the whole path and emits no dash attributes at all.
+
+::: warning Trim strokes; it does not trim the path
+`.trim()` is drawn with dash attributes on the stroke, not by shortening the path. SVG ignores a dash pattern when filling, so `Circle().trim(0, 0.5).fill(color)` fills the **whole** circle, and `.clipShape(Circle().trim(0, 0.5))` clips to the whole circle too. SwiftUI's `trim` returns a shape whose path really is trimmed, so there it applies to fill and clipping as well. Progress rings — what this is for — are stroked.
+:::
 
 Because the shape keeps one element for its lifetime, a signal-driven trim updates attributes in place — so a CSS transition on `stroke-dasharray` runs rather than restarting.
 

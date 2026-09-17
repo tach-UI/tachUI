@@ -199,6 +199,47 @@ describe('trim', () => {
   })
 })
 
+// The docs shipped `.rotationEffect(-90)`, which is typed but throws at
+// runtime — a copy-pasteable crash that no test would have caught, because
+// nothing exercised the documented chain. This does.
+describe('the documented progress ring', () => {
+  beforeEach(() => {
+    installResizeObserverStub()
+  })
+
+  afterEach(() => {
+    uninstallResizeObserverStub()
+  })
+
+  it('builds and draws end to end', async () => {
+    const [progress] = createSignal(0.4)
+
+    const path = await draw(
+      Circle()
+        .trim(0, progress)
+        .strokeStyle({ lineWidth: 4, lineCap: 'round' })
+        .stroke('#007AFF')
+        .transform('rotate(-90deg)')
+    )
+
+    expect(path.getAttribute('stroke-dasharray')).toBe('0.4 0.6')
+    expect(path.getAttribute('stroke-width')).toBe('4')
+    expect(path.getAttribute('stroke-linecap')).toBe('round')
+    expect(path.getAttribute('stroke')).toBe('#007AFF')
+  })
+
+  it('puts the quarter turn on the wrapper', async () => {
+    const container = document.createElement('div')
+    renderComponent(
+      Circle().trim(0, 0.4).stroke('red', 4).transform('rotate(-90deg)') as any,
+      container
+    )
+    const wrapper = container.querySelector('.tachui-shape') as HTMLElement
+
+    expect(wrapper.style.transform).toContain('rotate(-90deg)')
+  })
+})
+
 describe('strokeStyle', () => {
   beforeEach(() => {
     installResizeObserverStub()
@@ -274,6 +315,47 @@ describe('strokeStyle', () => {
     await flushReactiveUpdates()
 
     expect(path.getAttribute('stroke-linecap')).toBe('round')
+  })
+
+  it('emits nothing for an empty dash array', async () => {
+    const path = await draw(Circle().strokeStyle({ dash: [] }).stroke('red', 2))
+    expect(path.hasAttribute('stroke-dasharray')).toBe(false)
+  })
+
+  // A full-range trim draws the whole path and sets no `pathLength`, so there
+  // is nothing for a dash to collide with — it applies, and no warning fires.
+  it('lets a dash through a full-range trim', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const path = await draw(
+        Circle().trim(0, 1).strokeStyle({ dash: [4, 2] }).stroke('red', 2)
+      )
+
+      expect(path.getAttribute('stroke-dasharray')).toBe('4 2')
+      expect(path.hasAttribute('pathLength')).toBe(false)
+      expect(warn).not.toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  // `build()` renders a clone, so a flag that did not carry across would let
+  // the shape actually on screen warn a second time.
+  it('warns once across the clone that build() renders', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const shape: any = Circle()
+        .trim(0, 0.5)
+        .strokeStyle({ dash: [4, 2] })
+        .stroke('red', 2)
+
+      await draw(shape)
+      await draw(shape.build ? shape.build() : shape)
+
+      expect(warn).toHaveBeenCalledTimes(1)
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   // Both want `stroke-dasharray`, and `pathLength` would rescale the dash
