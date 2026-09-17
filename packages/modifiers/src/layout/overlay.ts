@@ -817,11 +817,15 @@ function withGridArea(props: Record<string, unknown>): Record<string, unknown> {
 /**
  * Copies of `children`, with every grid item placed in the layer's one cell.
  *
- * An owned node is the exception, and deliberately: the serializer emits its
- * element's `outerHTML` and never reads `props`, so a placement written here
- * would not reach the markup. Two owned nodes in one overlay therefore layer
- * only once the client takes over. Reachable only under a DOM-shimmed server
- * render, since without a DOM an owner emits no owned node at all.
+ * An owned node is treated like any other — there is no check for one here,
+ * and there should not be. It counts towards the item total exactly as the
+ * client's `.children` walk counts it, so skipping it would change *whether*
+ * the other items get placed and diverge from the DOM path. Its own placement
+ * is simply inert: the serializer emits an owned node's `outerHTML` and never
+ * reads `props`, so the copy written here is discarded, and two owned nodes in
+ * one overlay layer only once the client takes over. Reachable only under a
+ * DOM-shimmed server render, since without a DOM an owner emits no owned node
+ * at all.
  */
 function placeDescribedGridItems(children: DOMNode[]): DOMNode[] {
   return children.map(child => {
