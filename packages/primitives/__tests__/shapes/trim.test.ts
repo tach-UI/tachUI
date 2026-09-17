@@ -317,6 +317,46 @@ describe('strokeStyle', () => {
     expect(path.getAttribute('stroke-linecap')).toBe('round')
   })
 
+  // The warning has to agree with what the paint actually does with a dash:
+  // an empty array contributes no pattern, so there is nothing for a trim to
+  // conflict with and nothing to say.
+  it('says nothing about an empty dash array under a trim', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const path = await draw(
+        Circle().trim(0, 0.5).strokeStyle({ dash: [] }).stroke('red', 2)
+      )
+
+      expect(path.getAttribute('stroke-dasharray')).toBe('0.5 0.5')
+      expect(warn).not.toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  // The trim owns `stroke-dashoffset` as much as `stroke-dasharray`, so a
+  // phase is dropped under one — which should be said, not done quietly.
+  it('warns about a dashPhase the trim will drop', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const path = await draw(
+        Circle().trim(0, 0.5).strokeStyle({ dashPhase: 3 }).stroke('red', 2)
+      )
+
+      expect(path.getAttribute('stroke-dashoffset')).toBe('0')
+      expect(warn).toHaveBeenCalledTimes(1)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('applies a dashPhase when nothing is trimmed', async () => {
+    const path = await draw(
+      Circle().strokeStyle({ dashPhase: 3 }).stroke('red', 2)
+    )
+    expect(path.getAttribute('stroke-dashoffset')).toBe('3')
+  })
+
   it('emits nothing for an empty dash array', async () => {
     const path = await draw(Circle().strokeStyle({ dash: [] }).stroke('red', 2))
     expect(path.hasAttribute('stroke-dasharray')).toBe(false)

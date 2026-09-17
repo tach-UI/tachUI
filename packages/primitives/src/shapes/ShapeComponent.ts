@@ -653,6 +653,13 @@ export class ShapeComponent
   private paintStroke(path: SVGPathElement): void {
     const { lineCap, lineJoin, dash, dashPhase, trim } = this.styling
 
+    // What the dash half actually contributes. An empty array is no pattern —
+    // the same reading the paint below takes — so it is nothing for a trim to
+    // conflict with. `dashPhase` counts on its own, because the trim owns
+    // `stroke-dashoffset` just as much as `stroke-dasharray`.
+    const hasDashPattern = dash !== undefined && dash.length > 0
+    const hasDashStyling = hasDashPattern || dashPhase !== undefined
+
     setAttributeIfChanged(
       path,
       'stroke-linecap',
@@ -673,13 +680,13 @@ export class ShapeComponent
     // and sets no `pathLength`, so there is nothing for a dash to collide
     // with and no reason to drop it.
     if (trimmed !== undefined) {
-      if (dash !== undefined && !this.warnings.dashWithTrim) {
+      if (hasDashStyling && !this.warnings.dashWithTrim) {
         this.warnings.dashWithTrim = true
         console.warn(
-          '[tachUI/primitives] A shape cannot carry both `trim()` and a ' +
-            '`strokeStyle({ dash })`: they are the same SVG attributes, and ' +
-            'trim rescales the units a dash is measured in. The trim is ' +
-            'drawn and the dash ignored.'
+          '[tachUI/primitives] A shape cannot carry both `trim()` and ' +
+            '`strokeStyle({ dash })` or `{ dashPhase }`: they are the same ' +
+            'two SVG attributes, and trim rescales the units a dash length ' +
+            'is measured in. The trim is drawn and the dash ignored.'
         )
       }
 
@@ -697,9 +704,9 @@ export class ShapeComponent
       'stroke-dasharray',
       // An empty array is no dash pattern, so it emits nothing rather than an
       // empty attribute — the same rule `trim(0, 1)` follows.
-      dash === undefined || dash.length === 0
-        ? undefined
-        : dash.map(entry => formatLength(resolveLength(entry))).join(' ')
+      hasDashPattern
+        ? dash.map(entry => formatLength(resolveLength(entry))).join(' ')
+        : undefined
     )
     setAttributeIfChanged(
       path,
