@@ -1,5 +1,192 @@
 # @tachui/primitives
 
+## 0.11.2
+
+### Patch Changes
+
+- [#385](https://github.com/tach-UI/tachUI/pull/385) [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c) Thanks [@whoughton](https://github.com/whoughton)! - Add `Circle`, the first shape primitive, and the engine behind it.
+
+  A shape fills its frame and is styled with methods on the shape rather than
+  general modifiers: `.fill(style)`, `.stroke(style, lineWidth)`,
+  `.strokeBorder(style, lineWidth)` and `.inset(by)`. Every style and length
+  accepts a signal or a color asset. Shape methods chain with modifiers in
+  either order.
+
+  ```ts
+  import { Circle } from "@tachui/primitives";
+
+  Circle().fill(color);
+  Circle().inset(1).stroke(tint, 2); // a ring 1px inside the edge
+  Circle().strokeBorder(tint, 2); // a stroke fully inside the frame
+  ```
+
+  Shapes render as inline SVG: a wrapper that takes modifiers, and inside it an
+  `<svg>` with one `<path>` computed from the shape's measured frame, so a
+  circle in a non-square frame is inscribed in the short side and a stroke is
+  independent of the layout box. The svg is updated in place when a signal
+  changes, never replaced, so a CSS transition on it survives the update. It is
+  `aria-hidden`; a shape is decorative.
+
+  New subpath `@tachui/primitives/shapes`. Server-side the wrapper is emitted
+  and the shape is drawn on hydration.
+
+- [#385](https://github.com/tach-UI/tachUI/pull/385) [`0dbe5ac`](https://github.com/tach-UI/tachUI/commit/0dbe5acab11b9597ffa9a3926b5bc66472f1769f) Thanks [@whoughton](https://github.com/whoughton)! - Two shape geometry corrections.
+
+  - A negative `strokeBorder` line width no longer pushes the shape outside its
+    frame. The width was floored at zero for painting but used raw for the
+    inset, so `Circle().fill('red').strokeBorder('blue', -4)` _outset_ the path
+    by 2px — the fill spilling past the frame `strokeBorder` promises to stay
+    inside, with no stroke drawn to hint at why. The inset now comes from the
+    same floored width the stroke does.
+  - A shape that is unmounted and remounted measures its new host. The frame
+    kept from the previous mount suppressed the fallback measurement, so a
+    shape brought back by a toggled `Show` kept its old path. `ResizeObserver`
+    corrected that where it exists; in the explicitly supported path where it
+    does not, the stale geometry was permanent.
+
+- [#385](https://github.com/tach-UI/tachUI/pull/385) [`5d89ea0`](https://github.com/tach-UI/tachUI/commit/5d89ea017b43cb890d8cd6f7d838d88cc1d889f1) Thanks [@whoughton](https://github.com/whoughton)! - `Circle()` has a usable type again for TypeScript consumers.
+
+  The component held its measured rect in a private field named `frame`, which
+  collides with the public `frame()` modifier on the surface the shape's type is
+  intersected with. TypeScript reduces an intersection to `never` when a private
+  member meets a public one of the same name, so a consumer's `Circle()` had no
+  usable type at all and even `Circle().fill('red')` failed to compile. Nothing
+  inside the package saw it, because the collapse only happens where the two
+  halves are intersected.
+
+  The field is renamed, and a type test now asserts the public surface is
+  neither `never` nor `any`. The `@tachui/primitives/shapes` subpath is mapped
+  in the type-test config, without which such a test resolves to `any` and
+  passes having checked nothing.
+
+- [#385](https://github.com/tach-UI/tachUI/pull/385) [`e8ae51c`](https://github.com/tach-UI/tachUI/commit/e8ae51ca35ea0dc5dd7c2be5dc14e0a17a671cdf) Thanks [@whoughton](https://github.com/whoughton)! - Shape rendering and API corrections.
+
+  - A shape measures its own box once on a microtask after mount, so it draws on
+    the first frame instead of waiting for the observer's first asynchronous
+    delivery. It is also the only measurement where `ResizeObserver` is missing,
+    which previously meant the shape never drew at all. A zero box is treated as
+    the absence of a measurement rather than a measurement of zero, so it never
+    overwrites a real size.
+  - `path()` now reports the geometry the shape actually draws. It applied only
+    the explicit insets while the renderer additionally applied half the line
+    width for `strokeBorder`, so a bordered shape reported a path larger than the
+    one on screen. Both go through one code path now, which matters because the
+    `Shape` contract exists for `clipShape` to consume.
+  - `.stroke()` clears an inset left by an earlier `.strokeBorder()`. Replacing a
+    border stroke with a plain one kept the half-line inset, so the new stroke was
+    drawn inside the edge rather than centered on it.
+  - Shape methods work with `configureCore({ proxyModifiers: false })`. `fill` and
+    `stroke` are not modifiers, so with the proxy disabled they existed nowhere
+    and the shape API was unusable there.
+  - A line width goes through the same formatter as the path data, so a computed
+    width no longer serializes as `0.30000000000000004`.
+  - A style that is neither a color string, a signal of one, nor a color asset
+    warns and draws nothing, instead of painting `[object Object]`.
+
+  Shape methods are documented as chain-time: the modifier builder renders a
+  clone of the component, so calling `.fill()` on an already-mounted shape changes
+  nothing visible. Signals are the supported way to change a shape after mount.
+
+- [#398](https://github.com/tach-UI/tachUI/pull/398) [`360ef97`](https://github.com/tach-UI/tachUI/commit/360ef973b8abd879f9cc0485d283d7866edeee95) Thanks [@whoughton](https://github.com/whoughton)! - `trim()` and `strokeStyle()` on shapes.
+
+  `.trim(from, to)` draws only the part of the path between two fractions of its
+  length, which is what progress rings and spinners are made of — and the reason
+  the engine emits an SVG `<path>` rather than CSS. It works through
+  `pathLength="1"`, so the browser rescales every path to the same length and the
+  same fractions give the same result on any shape.
+
+  ```ts
+  Circle().trim(0, 0.75).stroke(tint, 4);
+  Circle()
+    .trim(0, progress)
+    .strokeStyle({ lineWidth: 4, lineCap: "round" })
+    .stroke(tint);
+  ```
+
+  The path starts where SwiftUI's does — a circle at three o'clock, running
+  clockwise — so a ring that fills from the top wants a quarter turn on top, as
+  it does in SwiftUI. Use `.transform('rotate(-90deg)')`: the `rotationEffect`
+  modifier is typed but not implemented at runtime.
+
+  Fractions are clamped to 0...1, and a `to` at or below `from` draws nothing
+  rather than wrapping, so a progress value arriving out of order shows an empty
+  ring instead of a full one — except under `lineCap: 'round'`, where a
+  zero-length dash renders as a dot, which is SVG's behaviour for any dashed
+  path. A signal-driven trim updates attributes on the element the shape already
+  has, so a CSS transition on `stroke-dasharray` runs rather than restarting.
+
+  **Trim strokes; it does not shorten the path.** SVG ignores a dash pattern when
+  filling, so `Circle().trim(0, 0.5).fill(color)` fills the whole circle, and
+  `path()` — what `clipShape` reads — is the untrimmed one. SwiftUI's `trim`
+  returns a shape whose path really is trimmed and so applies to fill and
+  clipping too. Closing that gap means trimming the path itself; progress rings,
+  which is what this is for, are stroked.
+
+  `.strokeStyle({ lineWidth, lineCap, lineJoin, dash, dashPhase })` is SwiftUI's
+  `StrokeStyle`. Only the keys passed are changed, so repeated calls accumulate.
+  Its `lineWidth` does the same job as `stroke()`'s second argument, and the two
+  now combine in either order: `stroke()` only sets a width it was actually
+  given, so a bare `.stroke(tint)` after `.strokeStyle({ lineWidth: 4 })` keeps
+  the 4 where before it reset to 1.
+
+  Trim and a dash pattern are exclusive. Both are `stroke-dasharray`, and trim
+  rescales the units a dash length is measured in, so a shape carrying both draws
+  the trim, ignores the dash, and warns once — `dashPhase` included, since the
+  trim owns `stroke-dashoffset` as much as `stroke-dasharray`. An empty
+  `dash: []` is no pattern and so conflicts with nothing. A full-range
+  `trim(0, 1)` is not trimming and sets no `pathLength`, so a dash still applies
+  there and nothing is warned about. Dashing a trimmed path means
+  computing the dash sequence for the trimmed segment, which is not implemented.
+
+- [#393](https://github.com/tach-UI/tachUI/pull/393) [`f66f716`](https://github.com/tach-UI/tachUI/commit/f66f71610a5feac66a3cd5a29e8abf9cb458821c) Thanks [@whoughton](https://github.com/whoughton)! - `Rectangle`, `RoundedRectangle`, `Ellipse` and `Capsule` on the shape engine.
+
+  Each is a path-in-rect function on the existing engine, so all four take
+  `.fill()`, `.stroke()`, `.strokeBorder()` and `.inset()`, chain with modifiers
+  in either order, and implement the `Shape` contract's `clipPath()`.
+
+  - `Rectangle()` — the frame itself.
+  - `RoundedRectangle(cornerRadius)`, also `RoundedRectangle({ cornerRadius })`.
+    The radius accepts a signal, and is clamped to half the short side as SwiftUI
+    clamps it: an over-large radius draws a capsule rather than the elliptical
+    corners an SVG `<rect rx ry>` would give, which is one of the reasons shapes
+    are drawn as a `<path>`. Per-corner radii are a later addition; the options
+    form is what will carry them.
+  - `Ellipse()` — fills the frame, one radius per axis, where `Circle()`
+    inscribes in the short side. The two agree in a square frame.
+  - `Capsule()` — the largest radius the frame allows, in either orientation.
+
+  `.inset()` and `.strokeBorder()` move a `RoundedRectangle`'s edges without
+  changing its corner radius, so neither is concentric with a host of the same
+  radius: `RoundedRectangle(12).strokeBorder(tint, 4)` has an outer stroke edge
+  of radius 14. Subtract from the radius to land flush. `Capsule` and `Circle`
+  recompute their curvature from the inset rect and need no such help. `Ellipse`
+  stays inside its frame but is not flush with an elliptical host either: the
+  parallel curve of an ellipse is not an ellipse, so its border bulges between
+  the axis extremes.
+
+- [#397](https://github.com/tach-UI/tachUI/pull/397) [`4cbcb15`](https://github.com/tach-UI/tachUI/commit/4cbcb15c19eacfb9b50f7b77509cafa4904296a6) Thanks [@whoughton](https://github.com/whoughton)! - Shapes serialize as an `<svg>` shell instead of nothing.
+
+  A shape's geometry comes from measuring its frame, which no server can do, so
+  the server used to emit the wrapper alone and leave a hole until scripts ran.
+  Everything else about the element is known ahead of time, and is now emitted:
+  the `<svg>` with its sizing, `display: block`, `overflow: visible` and
+  `aria-hidden`, wrapping an empty `<path>`. The shape has its layout box in the
+  first paint, and only the path data arrives with the client.
+
+  The shell is described as an ordinary node rather than an owned one, so no DOM
+  shim is needed to serialize it — an owned node's element _is_ its markup, and
+  needs a DOM to exist. Where a shim is present the owned path still runs and
+  emits the built element, which carries the same shell.
+
+  The `<path>` is left bare. Its fill and stroke would resolve server-side, but
+  with no `d` there is nothing for them to paint, so emitting them would run a
+  caller's signals and assets during serialization to no visible end.
+
+- Updated dependencies [[`42e2555`](https://github.com/tach-UI/tachUI/commit/42e2555028b3bb8d9b121da8a849e4c06dd3b258), [`2593ced`](https://github.com/tach-UI/tachUI/commit/2593ced011ce4148199028edf401156888865660), [`e8607d0`](https://github.com/tach-UI/tachUI/commit/e8607d02a149147226c38d4545c432fa34624693), [`3242516`](https://github.com/tach-UI/tachUI/commit/3242516a36ef4456652791e1d27f33a87a972b11), [`1f9de1f`](https://github.com/tach-UI/tachUI/commit/1f9de1fc374c166668b73575c244e565f6a0fb7d), [`51cee06`](https://github.com/tach-UI/tachUI/commit/51cee060d97f5172bf2f00888cef2570efbb7171), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c)]:
+  - @tachui/modifiers@0.11.2
+  - @tachui/core@0.11.2
+  - @tachui/types@0.11.2
+
 ## 0.11.1
 
 ### Patch Changes

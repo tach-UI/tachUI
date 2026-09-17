@@ -1,5 +1,155 @@
 # @tachui/modifiers
 
+## 0.11.2
+
+### Patch Changes
+
+- [#394](https://github.com/tach-UI/tachUI/pull/394) [`42e2555`](https://github.com/tach-UI/tachUI/commit/42e2555028b3bb8d9b121da8a849e4c06dd3b258) Thanks [@whoughton](https://github.com/whoughton)! - `clipShape()` accepts a shape instance, and `'circle'` clips to the inscribed
+  circle.
+
+  `.clipShape(Circle())` now works as written in SwiftUI, alongside the existing
+  string names. A shape serializes itself through the `Shape` contract's
+  `clipPath()`, so the modifier stays ignorant of shape kinds and no SVG clip
+  machinery is involved — and the dependency edge keeps pointing the right way,
+  since `@tachui/primitives` depends on `@tachui/modifiers` rather than the
+  reverse. Anything implementing `Shape` clips, including a user-supplied one.
+
+  `clipShape('circle')` emits `circle()` where it used to emit `circle(50%)`.
+  CSS resolves a percentage circle radius against the box's normalized diagonal
+  rather than its short side, so the old value overshot in any box that was not
+  square; the two agree in a square box, which is why it went unnoticed. This is
+  a visual change for a non-square clipped box, in the direction of what SwiftUI
+  draws and what `Circle()` itself renders.
+
+  Insets do not carry into the clip: `.clipShape(Circle().inset(4))` clips as
+  though uninset, because CSS basic shapes have no inset form. `Shape.clipPath`
+  records why and how to add it later. A signal-driven radius does carry, though
+  — the modifier applies in a tracked scope, so `.clipShape(RoundedRectangle(r))`
+  restyles the clipped element when `r` changes, keeping the clip in step with
+  the drawn path.
+
+  The props form (`{ clipShape: { shape } }`) accepts an instance too, and both
+  paths now share one serializer rather than carrying a copy of the switch each.
+
+- [#397](https://github.com/tach-UI/tachUI/pull/397) [`2593ced`](https://github.com/tach-UI/tachUI/commit/2593ced011ce4148199028edf401156888865660) Thanks [@whoughton](https://github.com/whoughton)! - Test-only: the overlay suites run against a real DOM in the package's own
+  runner.
+
+  `__tests__/setup-enhanced.ts` replaces `global.document` with a hand-rolled
+  mock whose `appendChild` is a no-op spy and which exposes no `children`. The
+  overlay modifier builds a layer element and walks the resulting tree, so it
+  cannot work against a mock of that shape: `bun run --filter @tachui/modifiers
+test` failed 82 of 1128, and the package's `valid` script with it, while the
+  root runner — which uses the shared jsdom setup — passed all of them.
+
+  The overlay suites now run as their own project on that shared setup, so the
+  package-local run agrees with the root one. No source or behaviour change.
+
+- [#384](https://github.com/tach-UI/tachUI/pull/384) [`e8607d0`](https://github.com/tach-UI/tachUI/commit/e8607d02a149147226c38d4545c432fa34624693) Thanks [@whoughton](https://github.com/whoughton)! - `overlay()` now proposes the host's bounds to its content, as SwiftUI's
+  `.overlay(alignment:)` does.
+
+  The overlay container used to shrink to fit its content and was centered with
+  `top: 50%; left: 50%; transform: translate(-50%, -50%)`. A child sized to
+  `100%` resolved to 0x0 inside it and drew nothing unless the host's size was
+  repeated with `.frame()`. The container is now a layer covering the host: a
+  grid with one definite `100%` x `100%` cell, with the alignment expressed as
+  the item's placement in that cell. Content with an intrinsic size sits where it
+  did before and keeps its size, overflowing the host if larger, as a SwiftUI
+  proposal is advisory; content sized to `100%` fills the host. Content with
+  more than one item layers in that one cell, as SwiftUI layers an overlay's
+  views, instead of each item taking a row of its own and the later ones
+  landing outside the host. That includes a `ForEach` or `Show`, whose items
+  sit inside a `display: contents` shell that generates no box of its own, and
+  it keeps up with a list that changes size after it is mounted.
+
+  Alignment follows the writing direction, so a `trailing` badge lands on the
+  inline end rather than always on the right. Offsets stay physical.
+
+  Offset semantics are pinned down at the same time, and both forms move the
+  content by adjusting the layer's edges rather than translating it, so a
+  negative value is honoured and an inward move never pushes a host-sized box
+  past the host.
+
+  - A numeric offset insets the content from every edge it is anchored to, so a
+    corner alignment is inset on both axes; previously only the vertical edge
+    moved. Negative moves outward.
+  - An `{ x, y }` offset moves the content right and down, negative left and up.
+    Previously it was added to whichever of `left` or `right` happened to be
+    set, so its direction depended on the alignment.
+
+  `overlay(content, alignmentSignal)` is now accepted by the types; it already
+  worked at runtime. An alignment string that names an inherited object key no
+  longer bypasses the center fallback.
+
+  The unused `overlay` prop on `AnimationModifierProps` is removed, along with
+  the two private copies of the old container logic behind it. Nothing
+  constructed it, and the copies never rendered their content.
+
+- [#385](https://github.com/tach-UI/tachUI/pull/385) [`3242516`](https://github.com/tach-UI/tachUI/commit/3242516a36ef4456652791e1d27f33a87a972b11) Thanks [@whoughton](https://github.com/whoughton)! - Two corrections to the overlay layer.
+
+  **Items that arrive after mount are layered however they arrive.** The layer
+  watched its content only when that content could obviously grow, meaning a
+  `Show` or `ForEach` shell, or more than one item already present. A component
+  whose `render()` returns one root and later two appends its second item
+  straight to the layer, which the check could not see coming, so that item
+  auto-placed into a row below the host instead of layering. The layer is
+  watched unconditionally now. The saving the check bought was illusory: the
+  cost that had prompted it was a `getComputedStyle` call, since removed.
+
+  **Inline-axis offsets follow the writing direction, as alignment already
+  did.** Alignment is expressed logically, so `trailing` lands on the physical
+  left in a right-to-left host, but offsets were written to the physical `left`
+  and `right`. A numeric inset therefore moved the opposite edge from the one
+  the content was anchored to, and an `{ x }` offset moved it the wrong way.
+  Both now use logical inset properties, so positive `x` is rightward in a
+  left-to-right host and leftward in a right-to-left one. Nothing changes for
+  left-to-right content.
+
+- [#397](https://github.com/tach-UI/tachUI/pull/397) [`1f9de1f`](https://github.com/tach-UI/tachUI/commit/1f9de1fc374c166668b73575c244e565f6a0fb7d) Thanks [@whoughton](https://github.com/whoughton)! - The server overlay keeps a content node's declared style whatever shape it is
+  in.
+
+  Placing two or more overlay items in the layer's one cell spread
+  `props.style` as though it were always an object. It is not: the serializer
+  and the client renderer both accept a CSS string or a signal of either, and
+  core ships string-styled nodes. Spreading a string enumerated its character
+  indices and spreading a signal enumerated its own properties, so the
+  declaration was replaced with garbage:
+
+  ```html
+  <span style="0:c;1:o;2:l;3:o;4:r;5::;6:r;7:e;8:d;grid-area:1 / 1"></span>
+  ```
+
+  A string style is now kept and the placement appended to it, and a signal is
+  resolved with the same untracked read the rest of the path uses. The
+  `display: contents` shell check reads the declared style the same way, so a
+  shell styled with a string is recognised — missing it left the items unlayered
+  on the server while the client, reading `display` off the applied element,
+  still descended into them.
+
+- [#397](https://github.com/tach-UI/tachUI/pull/397) [`51cee06`](https://github.com/tach-UI/tachUI/commit/51cee060d97f5172bf2f00888cef2570efbb7171) Thanks [@whoughton](https://github.com/whoughton)! - `overlay()` serializes its layer and content server-side.
+
+  The overlay built its layer as DOM, so on a server it emitted nothing at all —
+  for every content form, not just components. Static markup carried the host
+  with no overlay, and the overlay appeared only once scripts ran.
+
+  With no DOM to build into, the modifier now describes the layer as nodes
+  instead: the host is marked a positioned container, and the layer, its
+  alignment and offset styles, and the content are appended as children. The
+  base styles and the alignment/offset resolution are shared with the DOM path
+  rather than restated, so the two cannot disagree about placement, writing
+  direction or an offset — a disagreement would show as the overlay jumping when
+  the client takes over. Multiple items still share the layer's one grid cell,
+  descending through a `display: contents` shell as the DOM walk does.
+
+  What the server path leaves out: the content observer, which watches for items
+  appearing later and has nothing to watch here, and the mount bookkeeping,
+  which exists to tear DOM down. A raw DOM element as content describes as
+  nothing, since there is no DOM server-side to describe.
+
+- Updated dependencies [[`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`5a6ac09`](https://github.com/tach-UI/tachUI/commit/5a6ac0904f6e4b22af8239a1ebbac8395708db74)]:
+  - @tachui/core@0.11.2
+  - @tachui/types@0.11.2
+  - @tachui/registry@0.11.2
+
 ## 0.11.1
 
 ### Patch Changes

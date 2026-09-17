@@ -1,5 +1,16 @@
 # @tachui/types
 
+## 0.11.2
+
+### Patch Changes
+
+- [#385](https://github.com/tach-UI/tachUI/pull/385) [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c) Thanks [@whoughton](https://github.com/whoughton)! - Add the `Shape` contract and `ShapeRect` under `@tachui/types/shapes`.
+
+  A shape is a function from a rectangle to SVG path data, plus the CSS
+  `clip-path` basic shape for it filling its box. The built-in shapes in
+  `@tachui/primitives` implement it; it lives here so `@tachui/modifiers` can
+  accept a shape instance in `clipShape` without importing a component.
+
 ## 0.11.1
 
 ## 0.11.0

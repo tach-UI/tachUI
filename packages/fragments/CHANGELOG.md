@@ -1,5 +1,13 @@
 # @tachui/fragments
 
+## 0.11.2
+
+### Patch Changes
+
+- Updated dependencies [[`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`23ab336`](https://github.com/tach-UI/tachUI/commit/23ab3367b98c038f2486b6cb35780a52006291e7)]:
+  - @tachui/core@0.11.2
+  - @tachui/ssr@0.11.2
+
 ## 0.11.1
 
 ### Patch Changes
