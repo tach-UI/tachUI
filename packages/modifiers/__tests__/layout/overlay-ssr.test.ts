@@ -40,6 +40,10 @@ function describeOverlay(
   }
 }
 
+/** `inset-inline-start` as the described styles spell it. */
+const toCamelCase = (property: string): string =>
+  property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
+
 const layerStyle = (layer: DOMNode) =>
   (layer.props as { style: Record<string, string> }).style
 
@@ -156,6 +160,27 @@ describe('overlay without a DOM', () => {
       }
     })
 
+    // The nodes come from a component's own `render()`, so a component that
+    // returned a cached or shared node would otherwise carry `gridArea` away
+    // with it. The DOM path has no equivalent risk: it styles elements it
+    // built itself.
+    it('copies the content nodes rather than writing to them', () => {
+      const shared = [
+        { type: 'element', tag: 'span', props: {}, children: [] },
+        { type: 'element', tag: 'span', props: {}, children: [] },
+      ]
+      const { layer } = describeOverlay({
+        content: { type: 'component' as const, render: () => shared },
+      })
+
+      for (const item of layer.children ?? []) {
+        expect((item.props as any).style.gridArea).toBe('1 / 1')
+      }
+      for (const original of shared) {
+        expect(original.props).toEqual({})
+      }
+    })
+
     it('leaves a lone item alone', () => {
       const { layer } = describeOverlay({
         content: {
@@ -194,6 +219,36 @@ describe('overlay without a DOM', () => {
 })
 
 // The strongest claim this change makes.
+// The serializer fails cleanly on a self-referential builder at top level;
+// arriving as overlay content should not turn that into a stack overflow.
+describe('cyclic content', () => {
+  it('fails rather than recursing forever', () => {
+    const cyclic: any = { type: 'component' }
+    cyclic.render = () => cyclic
+
+    expect(() => describeOverlay({ content: cyclic })).toThrow(TypeError)
+    expect(() => describeOverlay({ content: cyclic })).toThrow(/cyclic/i)
+  })
+
+  it('still allows the same component twice in one overlay', () => {
+    const leaf = {
+      type: 'component' as const,
+      render: () => ({ type: 'element', tag: 'span', props: {}, children: [] }),
+    }
+    const { layer } = describeOverlay({
+      content: {
+        type: 'component' as const,
+        render: () => [
+          { type: 'element', tag: 'i', props: {}, children: [] },
+          { type: 'element', tag: 'b', props: {}, children: [] },
+        ],
+      },
+    })
+    expect(layer.children).toHaveLength(2)
+    expect(leaf).toBeDefined()
+  })
+})
+
 describe('the described layer and the built one agree', () => {
   const cases = [
     { content: 'B' },
@@ -223,10 +278,16 @@ describe('the described layer and the built one agree', () => {
     for (const [property, value] of Object.entries(described)) {
       expect(built.style[property as any]).toBe(value)
     }
-    for (const property of Object.keys(built.style)
-      .filter(key => Number.isNaN(Number(key)))
-      .filter(key => built.style[key as any])) {
-      expect(described[property]).toBe(built.style[property as any])
+
+    // By index, not `Object.keys`: a `CSSStyleDeclaration`'s named properties
+    // are prototype accessors, so `Object.keys` yields only `"0"`, `"1"`, …
+    // and any filter over them drops every real property.
+    expect(built.style.length).toBeGreaterThan(0)
+    for (let index = 0; index < built.style.length; index += 1) {
+      const property = built.style[index]
+      expect(described[toCamelCase(property)]).toBe(
+        built.style.getPropertyValue(property)
+      )
     }
   })
 })
