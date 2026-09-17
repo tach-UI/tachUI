@@ -15,6 +15,7 @@ import { describe, expect, it } from 'vitest'
 import { OverlayModifier } from '../../src/layout/overlay'
 import type { DOMNode } from '@tachui/types/runtime'
 import type { ModifierContext } from '@tachui/types/modifiers'
+import { createEffect, createSignal, flushSync } from '@tachui/core'
 
 /** An element that can be styled but not built into, as SSR's stand-in is. */
 function styleOnlyElement(): { style: Record<string, string> } {
@@ -114,20 +115,35 @@ describe('overlay without a DOM', () => {
       expect(layer.children).toEqual([{ type: 'text', text: '7' }])
     })
 
-    // Read once and untracked: there is no client here to update it.
-    it('reads a signal once', () => {
-      let reads = 0
-      const signal = Object.assign(
-        () => {
-          reads += 1
-          return 'LIVE'
-        },
-        { isSignal: true as const }
-      )
-      const { layer } = describeOverlay({ content: signal })
+    // A real signal, not a stand-in: `isSignal` tests for
+    // `Symbol.for('tachui.signal')`, so a plain function with an `isSignal`
+    // property takes the thunk branch instead and proves nothing about
+    // signals.
+    it('reads a signal', () => {
+      const [content] = createSignal('LIVE')
+      const { layer } = describeOverlay({ content })
 
       expect(layer.children).toEqual([{ type: 'text', text: 'LIVE' }])
-      expect(reads).toBe(1)
+    })
+
+    // Untracked, so serializing inside a computation does not subscribe it to
+    // the caller's signals — the serializer untracks its own reads for the
+    // same reason.
+    it('does not subscribe the computation that serializes it', () => {
+      const [content, setContent] = createSignal('FIRST')
+      let runs = 0
+
+      const effect = createEffect(() => {
+        runs += 1
+        describeOverlay({ content })
+      })
+      expect(runs).toBe(1)
+
+      setContent('SECOND')
+      flushSync()
+
+      expect(runs).toBe(1)
+      effect.dispose?.()
     })
 
     it('calls a content closure', () => {
@@ -189,6 +205,74 @@ describe('overlay without a DOM', () => {
         },
       })
       expect((layer.children?.[0].props as any).style).toBeUndefined()
+    })
+
+    // `props.style` is not always an object — the serializer and the client
+    // renderer both take a CSS string or a signal, and core ships
+    // string-styled nodes. Spreading one enumerates a string's character
+    // indices, or a signal's own properties, and throws the declaration away.
+    describe('a style that is not an object', () => {
+      const twoItems = (first: unknown) => ({
+        type: 'component' as const,
+        render: () => [
+          { type: 'element', tag: 'span', props: { style: first }, children: [] },
+          { type: 'element', tag: 'span', props: {}, children: [] },
+        ],
+      })
+
+      it('keeps a string style and appends the placement', () => {
+        const { layer } = describeOverlay({ content: twoItems('color:red') })
+        expect((layer.children?.[0].props as any).style).toBe(
+          'color:red;grid-area:1 / 1'
+        )
+      })
+
+      it('does not leave a trailing semicolon doubled', () => {
+        const { layer } = describeOverlay({ content: twoItems('color:red;') })
+        expect((layer.children?.[0].props as any).style).toBe(
+          'color:red;grid-area:1 / 1'
+        )
+      })
+
+      it('resolves a signal style rather than spreading the signal', () => {
+        const [signal] = createSignal('color:blue')
+        const { layer } = describeOverlay({ content: twoItems(signal) })
+        expect((layer.children?.[0].props as any).style).toBe(
+          'color:blue;grid-area:1 / 1'
+        )
+      })
+
+      it('places an item that declares no style at all', () => {
+        const { layer } = describeOverlay({ content: twoItems(undefined) })
+        expect((layer.children?.[1].props as any).style).toEqual({
+          gridArea: '1 / 1',
+        })
+      })
+
+      // Missing this would leave the items unlayered here while the client,
+      // reading `display` off the applied element, still descended.
+      it('recognises a shell styled with a string', () => {
+        const { layer } = describeOverlay({
+          content: {
+            type: 'component' as const,
+            render: () => ({
+              type: 'element',
+              tag: 'div',
+              props: { style: 'display:contents' },
+              children: [
+                { type: 'element', tag: 'i', props: {}, children: [] },
+                { type: 'element', tag: 'b', props: {}, children: [] },
+              ],
+            }),
+          },
+        })
+
+        const shell = layer.children?.[0] as DOMNode
+        expect((shell.props as any).style).toBe('display:contents')
+        for (const item of shell.children ?? []) {
+          expect((item.props as any).style.gridArea).toBe('1 / 1')
+        }
+      })
     })
 
     // A `ForEach` or `Show` mounts a `display: contents` shell that generates

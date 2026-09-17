@@ -769,7 +769,60 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   }
 }
 
-/** Copies of `children`, with every grid item placed in the layer's one cell. */
+/**
+ * A node's declared style, as one of the shapes a `DOMNode` may carry.
+ *
+ * `props.style` is not always an object: the serializer and the client
+ * renderer both accept a CSS string or a signal of either, and core ships
+ * string-styled nodes today. Spreading one of those would enumerate a
+ * string's character indices, or a signal's own properties, and throw the
+ * declaration away.
+ */
+function readDeclaredStyle(
+  props: unknown
+): string | Record<string, unknown> | undefined {
+  const declared = (props as { style?: unknown } | undefined)?.style
+  // Resolved untracked, as every other read on this path is. The resolved
+  // value replaces the signal in the copy, which costs nothing server-side —
+  // there is no later update to miss — and is confined to the copy.
+  const resolved =
+    isSignal(declared) || isComputed(declared)
+      ? untrack(() => (declared as Signal<unknown>)())
+      : declared
+
+  if (typeof resolved === 'string') return resolved
+  if (resolved && typeof resolved === 'object') {
+    return resolved as Record<string, unknown>
+  }
+  return undefined
+}
+
+/** `style` with the grid placement added, in whichever shape it arrived. */
+function withGridArea(props: Record<string, unknown>): Record<string, unknown> {
+  const style = readDeclaredStyle(props)
+
+  if (typeof style === 'string') {
+    const declarations = style.trim().replace(/;\s*$/, '')
+    return {
+      ...props,
+      style: declarations
+        ? `${declarations};grid-area:1 / 1`
+        : 'grid-area:1 / 1',
+    }
+  }
+
+  return { ...props, style: { ...style, gridArea: '1 / 1' } }
+}
+
+/**
+ * Copies of `children`, with every grid item placed in the layer's one cell.
+ *
+ * An owned node is the exception, and deliberately: the serializer emits its
+ * element's `outerHTML` and never reads `props`, so a placement written here
+ * would not reach the markup. Two owned nodes in one overlay therefore layer
+ * only once the client takes over. Reachable only under a DOM-shimmed server
+ * render, since without a DOM an owner emits no owned node at all.
+ */
 function placeDescribedGridItems(children: DOMNode[]): DOMNode[] {
   return children.map(child => {
     if (child.type !== 'element') return child
@@ -779,9 +832,10 @@ function placeDescribedGridItems(children: DOMNode[]): DOMNode[] {
         children: placeDescribedGridItems(child.children ?? []),
       }
     }
-    const props = (child.props ?? {}) as Record<string, unknown>
-    const style = (props.style ?? {}) as Record<string, unknown>
-    return { ...child, props: { ...props, style: { ...style, gridArea: '1 / 1' } } }
+    return {
+      ...child,
+      props: withGridArea((child.props ?? {}) as Record<string, unknown>),
+    }
   })
 }
 
@@ -799,10 +853,19 @@ function canBuildLayer(element: unknown): boolean {
   )
 }
 
-/** A node that generates no box, so its children are the grid items. */
+/**
+ * A node that generates no box, so its children are the grid items.
+ *
+ * Reads the declared style in any of its shapes: a shell styled with a CSS
+ * string is still a shell, and missing it would leave the items unlayered
+ * here while the client — reading `display` off the applied element — still
+ * descended.
+ */
 function isDescribedContentsShell(node: DOMNode): boolean {
-  const style = (node.props as { style?: Record<string, unknown> } | undefined)
-    ?.style
+  const style = readDeclaredStyle(node.props)
+  if (typeof style === 'string') {
+    return /(^|;)\s*display\s*:\s*contents\s*(;|$)/i.test(style)
+  }
   return style?.display === 'contents'
 }
 

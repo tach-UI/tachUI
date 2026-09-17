@@ -103,9 +103,12 @@ describe('a shape serialized without a DOM', () => {
 // route. Pinned because the two paths are easy to confuse when reading the
 // serializer.
 describe('a shape serialized with a DOM shim', () => {
-  it('emits the built element, which already carries the shell', () => {
-    if (typeof document === 'undefined') return
-
+  // This package's runner is a `node` environment, so this only runs under
+  // the root jsdom runner. Skipped rather than returned early, so it reports
+  // as skipped instead of passing without asserting anything.
+  it.skipIf(typeof document === 'undefined')(
+    'emits the built element, which already carries the shell',
+    () => {
     const markup = renderToString(Circle().fill('red') as any)
 
     expect(markup).toContain('class="tachui-shape__svg"')
@@ -114,5 +117,6 @@ describe('a shape serialized with a DOM shim', () => {
     // Built, so `paint()` has run — but with no frame measured there is still
     // no geometry.
     expect(markup).toContain('d=""')
-  })
+    }
+  )
 })
