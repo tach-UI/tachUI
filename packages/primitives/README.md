@@ -125,8 +125,11 @@ Circle()
   .trim(0, progress)
   .strokeStyle({ lineWidth: 4, lineCap: 'round' })
   .stroke('#007AFF')
-  .rotationEffect(-90) // the path starts at three o'clock, as in SwiftUI
+  .transform('rotate(-90deg)') // the path starts at three o'clock, as in SwiftUI
 ```
+
+`.trim()` strokes; it does not shorten the path. SVG ignores a dash pattern
+when filling, so a trimmed shape still fills — and clips — as the whole shape.
 
 Trim and `strokeStyle`'s `dash` are exclusive — both use `stroke-dasharray`,
 so a shape carrying both draws the trim and warns once.

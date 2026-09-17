@@ -132,13 +132,14 @@ const SVG_SHELL_STYLE: Record<string, string> = {
  * path data, which renders as nothing with no error anywhere — the silent
  * failure `resolveStyle` avoids for colors.
  */
-function resolveEnum<T extends string>(value: T | Signal<T>): T {
-  return isSignal(value) ? (value() as T) : value
-}
-
 export function resolveLength(value: ShapeLength): number {
   const resolved = isSignal(value) ? value() : value
   return Number.isFinite(resolved) ? resolved : 0
+}
+
+/** A keyword, or a signal of one. Unlike a length, there is nothing to clamp. */
+function resolveEnum<T extends string>(value: T | Signal<T>): T {
+  return isSignal(value) ? (value() as T) : value
 }
 
 function clampFraction(value: number): number {
@@ -236,8 +237,15 @@ export class ShapeComponent
   private pathElement: SVGPathElement | undefined
   private observer: ResizeObserver | undefined
   private measurePending = false
-  /** Said once per shape, not once per repaint. */
-  private warnedDashWithTrim = false
+  /**
+   * Said once per shape, not once per repaint — and not once per clone.
+   *
+   * `ModifierBuilder.build()` renders a clone, so the instance that paints is
+   * never the one the caller configured. A flag copied by value would let
+   * each clone warn afresh; one cell shared by reference across the lineage
+   * says it once for the shape the caller wrote.
+   */
+  private warnings: { dashWithTrim: boolean } = { dashWithTrim: false }
   /**
    * Whether a real measurement has landed for the element as currently
    * mounted. Cleared on teardown, because the frame kept from the last mount
@@ -328,11 +336,23 @@ export class ShapeComponent
    *
    * The path starts where SwiftUI's does — a circle at the trailing edge,
    * three o'clock, running clockwise — so a ring that fills from the top
-   * wants `.rotationEffect(-90)` on top, exactly as in SwiftUI.
+   * wants a quarter turn on top, as it does in SwiftUI. Use
+   * `.transform('rotate(-90deg)')`; the `rotationEffect` modifier is typed
+   * but not yet implemented at runtime.
+   *
+   * **Stroke only.** This is dash geometry, not a trimmed path: SVG ignores
+   * a dash pattern when filling, so `.trim(0, 0.5).fill(color)` fills the
+   * whole shape, and `path()` — what `clipShape` reads — is the untrimmed
+   * one. SwiftUI's `trim` returns a shape whose path really is trimmed and
+   * so applies to fill and clipping too. Trimming the path itself is the
+   * work that would close the gap; progress rings, which is what this is
+   * for, are stroked.
    *
    * Both fractions are clamped to 0...1. `to` at or below `from` draws
    * nothing rather than wrapping, so a progress value arriving out of order
-   * shows an empty ring instead of a full one.
+   * shows an empty ring instead of a full one — though with
+   * `lineCap: 'round'` a zero-length dash still renders as a dot, which is
+   * SVG's behaviour for any dashed path.
    */
   trim(from: ShapeLength = 0, to: ShapeLength = 1): this {
     this.styling.trim = { from, to }
@@ -371,6 +391,10 @@ export class ShapeComponent
    * This is the path the shape actually draws, so a consumer such as
    * `clipShape` sees the same geometry as the rendered `<path>`. `paint()`
    * routes through here rather than computing its own rect.
+   *
+   * `trim()` is the one exception, and deliberately: it is drawn with stroke
+   * dash attributes rather than by shortening the path, so it does not appear
+   * here. A trimmed shape therefore clips, and fills, as the whole shape.
    */
   path(rect: ShapeRect): string {
     return this.shape.path(this.drawRect(rect))
@@ -645,22 +669,25 @@ export class ShapeComponent
         ? undefined
         : trimDashes(resolveLength(trim.from), resolveLength(trim.to))
 
-    if (trim !== undefined && dash !== undefined && !this.warnedDashWithTrim) {
-      this.warnedDashWithTrim = true
-      console.warn(
-        '[tachUI/primitives] A shape cannot carry both `trim()` and a ' +
-          '`strokeStyle({ dash })`: they are the same SVG attributes, and ' +
-          'trim rescales the units a dash is measured in. The trim is drawn ' +
-          'and the dash ignored.'
-      )
-    }
+    // `trimmed`, not `trim`: a full-range `trim(0, 1)` draws the whole path
+    // and sets no `pathLength`, so there is nothing for a dash to collide
+    // with and no reason to drop it.
+    if (trimmed !== undefined) {
+      if (dash !== undefined && !this.warnings.dashWithTrim) {
+        this.warnings.dashWithTrim = true
+        console.warn(
+          '[tachUI/primitives] A shape cannot carry both `trim()` and a ' +
+            '`strokeStyle({ dash })`: they are the same SVG attributes, and ' +
+            'trim rescales the units a dash is measured in. The trim is ' +
+            'drawn and the dash ignored.'
+        )
+      }
 
-    if (trim !== undefined) {
       // Only while trimming: `pathLength` renormalizes the path's length, so
       // leaving it set would silently reinterpret an ordinary dash pattern.
-      setAttributeIfChanged(path, 'pathLength', trimmed ? '1' : undefined)
-      setAttributeIfChanged(path, 'stroke-dasharray', trimmed?.dashArray)
-      setAttributeIfChanged(path, 'stroke-dashoffset', trimmed?.dashOffset)
+      setAttributeIfChanged(path, 'pathLength', '1')
+      setAttributeIfChanged(path, 'stroke-dasharray', trimmed.dashArray)
+      setAttributeIfChanged(path, 'stroke-dashoffset', trimmed.dashOffset)
       return
     }
 
@@ -668,7 +695,9 @@ export class ShapeComponent
     setAttributeIfChanged(
       path,
       'stroke-dasharray',
-      dash === undefined
+      // An empty array is no dash pattern, so it emits nothing rather than an
+      // empty attribute — the same rule `trim(0, 1)` follows.
+      dash === undefined || dash.length === 0
         ? undefined
         : dash.map(entry => formatLength(resolveLength(entry))).join(' ')
     )
@@ -710,6 +739,9 @@ export class ShapeComponent
   /** The clone carries the shape's styling; the element and observer are not shared. */
   private cloneWith(props: ShapeProps): this {
     const clone = new ShapeComponent(this.shape, this.kind, props)
+    // Shared, not copied: the clone is the instance that actually paints, so
+    // whichever of them warns first has to mark the other.
+    clone.warnings = this.warnings
     clone.styling = {
       ...this.styling,
       insets: [...this.styling.insets],
