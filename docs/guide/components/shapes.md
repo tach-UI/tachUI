@@ -10,6 +10,8 @@ A shape has no content of its own. It is styled with a small set of methods that
 - **`.stroke(style, lineWidth?)`** strokes the edge, centered on it.
 - **`.strokeBorder(style, lineWidth?)`** strokes entirely inside the frame.
 - **`.inset(by)`** shrinks the shape on every side.
+- **`.trim(from, to)`** draws only part of the path.
+- **`.strokeStyle({ … })`** sets the cap, join and dash.
 
 With none of them a shape fills with `currentColor`. Shape methods chain with modifiers in either order.
 
@@ -123,6 +125,44 @@ Image(source)
   .clipShape('circle')
   .overlay(Circle().inset(1).stroke(verificationTint, 2))
 ```
+
+## Trim
+
+`.trim(from, to)` draws only the part of the path between two fractions of its length — SwiftUI's `trim(from:to:)`, and the reason shapes render as SVG rather than CSS. A progress ring is a trimmed, stroked circle:
+
+```typescript
+Circle().trim(0, 0.75).stroke('#007AFF', 4)            // a 270° arc
+Circle().trim(0, progress).stroke('#007AFF', 4)        // driven by a signal
+```
+
+The path starts where SwiftUI's does — a circle at its trailing edge, three o'clock, running clockwise. A ring that fills from the top wants a quarter turn on top, exactly as in SwiftUI:
+
+```typescript
+Circle()
+  .trim(0, progress)
+  .strokeStyle({ lineWidth: 4, lineCap: 'round' })
+  .stroke(tint)
+  .rotationEffect(-90)
+```
+
+Both fractions are clamped to `0`–`1`. A `to` at or below `from` draws nothing rather than wrapping, so a progress value arriving out of order shows an empty ring instead of a full one. `.trim(0, 1)` is the whole path and emits no dash attributes at all.
+
+Because the shape keeps one element for its lifetime, a signal-driven trim updates attributes in place — so a CSS transition on `stroke-dasharray` runs rather than restarting.
+
+## Stroke style
+
+`.strokeStyle({ lineWidth, lineCap, lineJoin, dash, dashPhase })` is SwiftUI's `StrokeStyle`. Only the keys you pass are changed, so repeated calls accumulate.
+
+```typescript
+Circle().strokeStyle({ lineWidth: 4, lineCap: 'round' }).stroke(tint)
+Circle().strokeStyle({ dash: [6, 3], dashPhase: 2 }).stroke(tint, 2)
+```
+
+`lineWidth` here does the same job as the second argument to `.stroke()`, so the two combine in either order — a bare `.stroke(tint)` after `.strokeStyle({ lineWidth: 4 })` keeps the 4, because `.stroke()` only sets a width it was actually given.
+
+::: warning Trim and dash are exclusive
+Both use `stroke-dasharray`, and trim additionally rescales the units a dash length is measured in. A shape carrying both draws the trim, ignores the dash, and warns once. Dashing a trimmed path means computing the dash sequence for the trimmed segment, which is not implemented yet.
+:::
 
 ## Clipping to a shape
 

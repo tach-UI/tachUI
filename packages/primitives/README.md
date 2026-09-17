@@ -93,8 +93,9 @@ VStack({
 ### Shapes
 
 `Circle`, `Rectangle`, `RoundedRectangle`, `Ellipse` and `Capsule` fill their
-frame and are styled with `.fill()`, `.stroke()`, `.strokeBorder()` and
-`.inset()`, which chain with modifiers in either order.
+frame and are styled with `.fill()`, `.stroke()`, `.strokeBorder()`,
+`.inset()`, `.trim()` and `.strokeStyle()`, which chain with modifiers in
+either order.
 
 | Shape | Geometry |
 | --- | --- |
@@ -116,6 +117,19 @@ Image(source)
   .clipShape('circle')
   .overlay(Circle().inset(1).stroke('#007AFF', 2)) // a ring 1px inside the edge
 ```
+
+`.trim(from, to)` draws part of the path, for progress rings and spinners:
+
+```typescript
+Circle()
+  .trim(0, progress)
+  .strokeStyle({ lineWidth: 4, lineCap: 'round' })
+  .stroke('#007AFF')
+  .rotationEffect(-90) // the path starts at three o'clock, as in SwiftUI
+```
+
+Trim and `strokeStyle`'s `dash` are exclusive — both use `stroke-dasharray`,
+so a shape carrying both draws the trim and warns once.
 
 `RoundedRectangle`'s radius is clamped to half the short side, as in SwiftUI, so
 an over-large radius draws a capsule instead of distorting into elliptical

@@ -55,6 +55,25 @@ export type ShapeStyle = string | Signal<string> | ColorAssetProxy
 
 export type ShapeLength = number | Signal<number>
 
+export type ShapeLineCap = 'butt' | 'round' | 'square'
+export type ShapeLineJoin = 'miter' | 'round' | 'bevel'
+
+/**
+ * SwiftUI's `StrokeStyle`, as far as SVG expresses it.
+ *
+ * `lineWidth` here replaces the one `stroke()` takes, so the two forms can be
+ * combined in either order: `.strokeStyle({ lineWidth: 4 }).stroke(tint)`
+ * keeps the 4, because `stroke()` only writes a width it was actually given.
+ */
+export interface StrokeStyleOptions {
+  lineWidth?: ShapeLength
+  lineCap?: ShapeLineCap | Signal<ShapeLineCap>
+  lineJoin?: ShapeLineJoin | Signal<ShapeLineJoin>
+  /** Dash and gap lengths, in pixels. */
+  dash?: ShapeLength[]
+  dashPhase?: ShapeLength
+}
+
 export interface ShapeProps extends ComponentProps {}
 
 /**
@@ -72,6 +91,12 @@ interface ShapeStyling {
   insets: ShapeLength[]
   /** `strokeBorder`: inset by half the line width so the stroke stays inside. */
   strokeInside: boolean
+  lineCap: ShapeLineCap | Signal<ShapeLineCap> | undefined
+  lineJoin: ShapeLineJoin | Signal<ShapeLineJoin> | undefined
+  dash: ShapeLength[] | undefined
+  dashPhase: ShapeLength | undefined
+  /** `trim`: the fractions of the path to draw between. */
+  trim: { from: ShapeLength; to: ShapeLength } | undefined
 }
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
@@ -107,9 +132,46 @@ const SVG_SHELL_STYLE: Record<string, string> = {
  * path data, which renders as nothing with no error anywhere — the silent
  * failure `resolveStyle` avoids for colors.
  */
+function resolveEnum<T extends string>(value: T | Signal<T>): T {
+  return isSignal(value) ? (value() as T) : value
+}
+
 export function resolveLength(value: ShapeLength): number {
   const resolved = isSignal(value) ? value() : value
   return Number.isFinite(resolved) ? resolved : 0
+}
+
+function clampFraction(value: number): number {
+  return Math.min(1, Math.max(0, value))
+}
+
+/**
+ * The dash attributes that draw only `from`...`to` of the path.
+ *
+ * With `pathLength="1"` the browser rescales the path's own length to 1, so a
+ * dash of `L` followed by a gap of `1 - L` draws exactly that fraction, and a
+ * negative offset slides the visible run to start at `from`. That is the whole
+ * reason the engine emits a `<path>`: `pathLength` is reliable there, where on
+ * the basic shape elements it is not.
+ *
+ * `undefined` means the full path — no attributes at all, so an untrimmed
+ * shape carries none of this.
+ */
+function trimDashes(
+  from: number,
+  to: number
+): { dashArray: string; dashOffset: string } | undefined {
+  const start = clampFraction(from)
+  const end = clampFraction(to)
+  if (start === 0 && end === 1) return undefined
+
+  // `to` at or below `from` draws nothing rather than wrapping: a progress
+  // value arriving out of order should show an empty ring, not a full one.
+  const length = Math.max(0, end - start)
+  return {
+    dashArray: `${formatLength(length)} ${formatLength(1 - length)}`,
+    dashOffset: formatLength(-start),
+  }
 }
 
 function resolveStyle(style: ShapeStyle): string {
@@ -156,6 +218,11 @@ export class ShapeComponent
     lineWidth: 1,
     insets: [],
     strokeInside: false,
+    lineCap: undefined,
+    lineJoin: undefined,
+    dash: undefined,
+    dashPhase: undefined,
+    trim: undefined,
   }
 
   // Named to stay clear of the `frame` modifier. A *private* member whose
@@ -169,6 +236,8 @@ export class ShapeComponent
   private pathElement: SVGPathElement | undefined
   private observer: ResizeObserver | undefined
   private measurePending = false
+  /** Said once per shape, not once per repaint. */
+  private warnedDashWithTrim = false
   /**
    * Whether a real measurement has landed for the element as currently
    * mounted. Cleared on teardown, because the frame kept from the last mount
@@ -219,9 +288,13 @@ export class ShapeComponent
    * path, so half of it lies outside the frame as in SwiftUI. Without `fill`
    * the interior is left empty.
    */
-  stroke(style: ShapeStyle, lineWidth: ShapeLength = 1): this {
+  stroke(style: ShapeStyle, lineWidth?: ShapeLength): this {
     this.styling.stroke = style
-    this.styling.lineWidth = lineWidth
+    // Only when given one. `.strokeStyle({ lineWidth: 4 }).stroke(tint)` has
+    // to keep the 4, so a bare `.stroke()` must not quietly reset it; the
+    // initial value is already 1, which is what a bare `.stroke()` means on
+    // its own.
+    if (lineWidth !== undefined) this.styling.lineWidth = lineWidth
     // A plain stroke is centered on the edge, so it clears any inset a
     // previous `strokeBorder` asked for rather than inheriting it.
     this.styling.strokeInside = false
@@ -232,7 +305,7 @@ export class ShapeComponent
    * Stroke entirely inside the frame: the shape is inset by half the line
    * width first. SwiftUI's `strokeBorder`.
    */
-  strokeBorder(style: ShapeStyle, lineWidth: ShapeLength = 1): this {
+  strokeBorder(style: ShapeStyle, lineWidth?: ShapeLength): this {
     this.stroke(style, lineWidth)
     this.styling.strokeInside = true
     return this
@@ -241,6 +314,52 @@ export class ShapeComponent
   /** Shrink the shape by `by` on every side. Repeated calls accumulate. */
   inset(by: ShapeLength): this {
     this.styling.insets.push(by)
+    return this
+  }
+
+  /**
+   * Draw only the part of the path between `from` and `to`, as fractions of
+   * its length. SwiftUI's `trim(from:to:)`.
+   *
+   * ```ts
+   * Circle().trim(0, 0.75).stroke(tint, 4)   // a 270° arc
+   * Circle().trim(0, progress).stroke(tint, 4)
+   * ```
+   *
+   * The path starts where SwiftUI's does — a circle at the trailing edge,
+   * three o'clock, running clockwise — so a ring that fills from the top
+   * wants `.rotationEffect(-90)` on top, exactly as in SwiftUI.
+   *
+   * Both fractions are clamped to 0...1. `to` at or below `from` draws
+   * nothing rather than wrapping, so a progress value arriving out of order
+   * shows an empty ring instead of a full one.
+   */
+  trim(from: ShapeLength = 0, to: ShapeLength = 1): this {
+    this.styling.trim = { from, to }
+    return this
+  }
+
+  /**
+   * Cap, join and dash for the stroke. SwiftUI's `StrokeStyle`.
+   *
+   * ```ts
+   * Circle().strokeStyle({ lineWidth: 4, lineCap: 'round' }).stroke(tint)
+   * Circle().strokeStyle({ dash: [6, 3] }).stroke(tint, 2)
+   * ```
+   *
+   * Only the keys present are changed, so repeated calls accumulate the way
+   * `.inset()` does rather than resetting what an earlier one set.
+   */
+  strokeStyle(options: StrokeStyleOptions): this {
+    if (options.lineWidth !== undefined) {
+      this.styling.lineWidth = options.lineWidth
+    }
+    if (options.lineCap !== undefined) this.styling.lineCap = options.lineCap
+    if (options.lineJoin !== undefined) this.styling.lineJoin = options.lineJoin
+    if (options.dash !== undefined) this.styling.dash = [...options.dash]
+    if (options.dashPhase !== undefined) {
+      this.styling.dashPhase = options.dashPhase
+    }
     return this
   }
 
@@ -495,6 +614,69 @@ export class ShapeComponent
       'stroke-width',
       strokeValue === undefined ? undefined : formatLength(lineWidth)
     )
+    this.paintStroke(path)
+  }
+
+  /**
+   * Cap, join, and whichever of trim or a dash pattern is in play.
+   *
+   * The two cannot both be: they are the same two SVG attributes, and
+   * `pathLength` rescales the units a dash length is measured in. Composing
+   * them would mean computing the dash sequence for the trimmed segment,
+   * which SwiftUI does and this does not yet. Trim wins, since it is the more
+   * specific request, and says so once rather than silently.
+   */
+  private paintStroke(path: SVGPathElement): void {
+    const { lineCap, lineJoin, dash, dashPhase, trim } = this.styling
+
+    setAttributeIfChanged(
+      path,
+      'stroke-linecap',
+      lineCap === undefined ? undefined : resolveEnum(lineCap)
+    )
+    setAttributeIfChanged(
+      path,
+      'stroke-linejoin',
+      lineJoin === undefined ? undefined : resolveEnum(lineJoin)
+    )
+
+    const trimmed =
+      trim === undefined
+        ? undefined
+        : trimDashes(resolveLength(trim.from), resolveLength(trim.to))
+
+    if (trim !== undefined && dash !== undefined && !this.warnedDashWithTrim) {
+      this.warnedDashWithTrim = true
+      console.warn(
+        '[tachUI/primitives] A shape cannot carry both `trim()` and a ' +
+          '`strokeStyle({ dash })`: they are the same SVG attributes, and ' +
+          'trim rescales the units a dash is measured in. The trim is drawn ' +
+          'and the dash ignored.'
+      )
+    }
+
+    if (trim !== undefined) {
+      // Only while trimming: `pathLength` renormalizes the path's length, so
+      // leaving it set would silently reinterpret an ordinary dash pattern.
+      setAttributeIfChanged(path, 'pathLength', trimmed ? '1' : undefined)
+      setAttributeIfChanged(path, 'stroke-dasharray', trimmed?.dashArray)
+      setAttributeIfChanged(path, 'stroke-dashoffset', trimmed?.dashOffset)
+      return
+    }
+
+    setAttributeIfChanged(path, 'pathLength', undefined)
+    setAttributeIfChanged(
+      path,
+      'stroke-dasharray',
+      dash === undefined
+        ? undefined
+        : dash.map(entry => formatLength(resolveLength(entry))).join(' ')
+    )
+    setAttributeIfChanged(
+      path,
+      'stroke-dashoffset',
+      dashPhase === undefined ? undefined : formatLength(resolveLength(dashPhase))
+    )
   }
 
   // ---- Lifecycle ----------------------------------------------------------
@@ -528,7 +710,12 @@ export class ShapeComponent
   /** The clone carries the shape's styling; the element and observer are not shared. */
   private cloneWith(props: ShapeProps): this {
     const clone = new ShapeComponent(this.shape, this.kind, props)
-    clone.styling = { ...this.styling, insets: [...this.styling.insets] }
+    clone.styling = {
+      ...this.styling,
+      insets: [...this.styling.insets],
+      dash: this.styling.dash ? [...this.styling.dash] : undefined,
+      trim: this.styling.trim ? { ...this.styling.trim } : undefined,
+    }
     resetLifecycleState(clone)
     return clone as this
   }
@@ -540,6 +727,8 @@ const CHAINABLE_SHAPE_METHODS = [
   'stroke',
   'strokeBorder',
   'inset',
+  'trim',
+  'strokeStyle',
 ] as const
 
 /** Shape methods that return a value rather than the shape. */

@@ -29,7 +29,19 @@ describe('Circle public type surface', () => {
     expectTypeOf(Circle().stroke).not.toBeNever()
     expectTypeOf(Circle().strokeBorder).not.toBeNever()
     expectTypeOf(Circle().inset).not.toBeNever()
+    expectTypeOf(Circle().trim).not.toBeNever()
+    expectTypeOf(Circle().strokeStyle).not.toBeNever()
     expectTypeOf(Circle().clipPath).not.toBeNever()
+  })
+
+  it('takes a trim and a stroke style through the chain', () => {
+    expectTypeOf(Circle().trim(0, 0.75).stroke('red', 4)).not.toBeNever()
+    expectTypeOf(
+      Circle().strokeStyle({ lineWidth: 4, lineCap: 'round' }).stroke('red')
+    ).not.toBeNever()
+    expectTypeOf(
+      Circle().strokeStyle({ dash: [6, 3], dashPhase: 2 })
+    ).not.toBeNever()
   })
 
   it('chains shape methods and modifiers in both orders', () => {
