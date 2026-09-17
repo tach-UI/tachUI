@@ -9,6 +9,9 @@ export {
   type ShapeProps,
   type ShapeStyle,
   type ShapeLength,
+  type ShapeLineCap,
+  type ShapeLineJoin,
+  type StrokeStyleOptions,
 } from './ShapeComponent'
 export {
   circlePath,
