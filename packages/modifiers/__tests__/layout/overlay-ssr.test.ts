@@ -230,22 +230,38 @@ describe('cyclic content', () => {
     expect(() => describeOverlay({ content: cyclic })).toThrow(/cyclic/i)
   })
 
-  it('still allows the same component twice in one overlay', () => {
+  // Beside itself, not inside itself. The guard tracks the current path, as
+  // the serializer's does, so one component used twice as a sibling is fine —
+  // and has to be, since `renderToString([leaf, leaf])` serializes both at top
+  // level. Getting this wrong costs the whole overlay, because the pipeline
+  // swallows the throw.
+  it('allows the same component beside itself', () => {
     const leaf = {
       type: 'component' as const,
-      render: () => ({ type: 'element', tag: 'span', props: {}, children: [] }),
+      render: () => ({ type: 'element', tag: 'i', props: {}, children: [] }),
     }
     const { layer } = describeOverlay({
       content: {
         type: 'component' as const,
-        render: () => [
-          { type: 'element', tag: 'i', props: {}, children: [] },
-          { type: 'element', tag: 'b', props: {}, children: [] },
-        ],
+        render: () => [leaf, leaf],
       },
     })
+
     expect(layer.children).toHaveLength(2)
-    expect(leaf).toBeDefined()
+    expect(layer.children?.map(child => child.tag)).toEqual(['i', 'i'])
+  })
+
+  it('allows the same component at two depths', () => {
+    const leaf = {
+      type: 'component' as const,
+      render: () => ({ type: 'element', tag: 'i', props: {}, children: [] }),
+    }
+    const middle = { type: 'component' as const, render: () => leaf }
+    const { layer } = describeOverlay({
+      content: { type: 'component' as const, render: () => [middle, leaf] },
+    })
+
+    expect(layer.children?.map(child => child.tag)).toEqual(['i', 'i'])
   })
 })
 

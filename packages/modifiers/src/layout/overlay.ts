@@ -280,14 +280,21 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
   /**
    * `renderContent`'s counterpart: content as nodes rather than as DOM.
    *
-   * `seen` guards the builder/component recursion the way the serializer
-   * guards its own: a self-referential builder fails with the same kind of
-   * error at top level, and should not stack-overflow merely for arriving as
-   * overlay content instead.
+   * `active` guards the builder/component recursion the way the serializer
+   * guards its own — and, like the serializer's `activeBuilders`, it tracks
+   * the current *path* rather than everything ever seen. A component removed
+   * again on the way out is free to appear beside itself; only one that
+   * contains itself is cyclic. Without that, `[leaf, leaf]` would be rejected
+   * here while serializing happily at top level.
+   *
+   * The throw does not reach the caller through the serializer: the modifier
+   * pipeline catches it and the overlay is dropped from the markup. That
+   * swallow is the pipeline's, not this method's, but it is why this guard
+   * has to be exact — a false positive here costs the whole overlay silently.
    */
   private describeContent(
     content: OverlayContent,
-    seen: Set<object> = new Set()
+    active: Set<object> = new Set()
   ): DOMNode[] {
     if (content === null || content === undefined) return []
 
@@ -303,7 +310,7 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
     if (typeof content === 'function') {
       return this.describeContent(
         untrack(() => (content as () => OverlayContentValue)()),
-        seen
+        active
       )
     }
 
@@ -319,22 +326,29 @@ export class OverlayModifier extends BaseModifier<OverlayOptions> {
         build?: () => ComponentInstance
         render?: () => DOMNode | DOMNode[]
       }
-      if (seen.has(candidate as object)) {
+      if (active.has(candidate as object)) {
         throw new TypeError(
           'Unsupported TachUI SSR input. Detected cyclic overlay content and cannot be serialized.'
         )
       }
-      seen.add(candidate as object)
-
-      const instance =
-        typeof candidate.build === 'function' ? candidate.build() : candidate
-      const rendered = (instance as ComponentInstance).render()
-      // `render()` may hand back another component, as the serializer's own
-      // component path allows; recurse so the nesting is followed rather than
-      // emitted as an opaque node.
-      return (Array.isArray(rendered) ? rendered : [rendered]).flatMap(entry =>
-        isComponentContent(entry) ? this.describeContent(entry, seen) : [entry]
-      )
+      active.add(candidate as object)
+      try {
+        const instance =
+          typeof candidate.build === 'function' ? candidate.build() : candidate
+        const rendered = (instance as ComponentInstance).render()
+        // `render()` may hand back another component, as the serializer's own
+        // component path allows; recurse so the nesting is followed rather
+        // than emitted as an opaque node.
+        return (Array.isArray(rendered) ? rendered : [rendered]).flatMap(
+          entry =>
+            isComponentContent(entry)
+              ? this.describeContent(entry, active)
+              : [entry]
+        )
+      } finally {
+        // Off the path again, so a sibling may reuse it.
+        active.delete(candidate as object)
+      }
     }
 
     // A raw DOM element. There is no DOM server-side, so there is nothing to
