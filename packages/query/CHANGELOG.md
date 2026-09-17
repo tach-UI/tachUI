@@ -1,5 +1,23 @@
 # @tachui/query
 
+## 0.8.35
+
+### Patch Changes
+
+- [#393](https://github.com/tach-UI/tachUI/pull/393) [`5a6ac09`](https://github.com/tach-UI/tachUI/commit/5a6ac0904f6e4b22af8239a1ebbac8395708db74) Thanks [@whoughton](https://github.com/whoughton)! - Two test-only timing assertions no longer fail on a loaded machine.
+
+  `retryDelay > waits between attempts` allowed a flat 20ms sleep for three
+  loads and two 1ms backoffs, then asserted all three had run; under load it saw
+  two. It now polls through the helper the file already has for this, so it waits
+  on the retries happening rather than on a window elapsing.
+
+  `should validate large registry quickly` budgeted 20ms for about 1ms of work
+  and was seen at 22.6ms. Widened to 200ms, which still catches a superlinear
+  regression over 1000 modifiers without measuring the machine.
+
+- Updated dependencies [[`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c)]:
+  - @tachui/core@0.11.2
+
 ## 0.8.34
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @tachui/data
 
+## 0.11.2
+
+### Patch Changes
+
+- Updated dependencies [[`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`0dbe5ac`](https://github.com/tach-UI/tachUI/commit/0dbe5acab11b9597ffa9a3926b5bc66472f1769f), [`5d89ea0`](https://github.com/tach-UI/tachUI/commit/5d89ea017b43cb890d8cd6f7d838d88cc1d889f1), [`e8ae51c`](https://github.com/tach-UI/tachUI/commit/e8ae51ca35ea0dc5dd7c2be5dc14e0a17a671cdf), [`360ef97`](https://github.com/tach-UI/tachUI/commit/360ef973b8abd879f9cc0485d283d7866edeee95), [`f66f716`](https://github.com/tach-UI/tachUI/commit/f66f71610a5feac66a3cd5a29e8abf9cb458821c), [`4cbcb15`](https://github.com/tach-UI/tachUI/commit/4cbcb15c19eacfb9b50f7b77509cafa4904296a6)]:
+  - @tachui/core@0.11.2
+  - @tachui/primitives@0.11.2
+  - @tachui/mobile@0.11.2
+  - @tachui/flow-control@0.11.2
+
 ## 0.11.1
 
 ### Patch Changes

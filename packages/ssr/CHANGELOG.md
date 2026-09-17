@@ -1,5 +1,39 @@
 # @tachui/ssr
 
+## 0.11.2
+
+### Patch Changes
+
+- [#397](https://github.com/tach-UI/tachUI/pull/397) [`23ab336`](https://github.com/tach-UI/tachUI/commit/23ab3367b98c038f2486b6cb35780a52006291e7) Thanks [@whoughton](https://github.com/whoughton)! - The server-render style stand-in answers reads, not only writes.
+
+  `createSSRVirtualElement` collected every style a modifier wrote but reported
+  nothing for any read, so a modifier that asks what a property already is saw an
+  unset value however the node declared itself. `overlay()` asks exactly that
+  before making its host a positioned container, so a host that positioned itself
+  — every `ZStack` child does — had `position: relative` appended on the server
+  and won the cascade:
+
+  ```html
+  <span
+    style="position:absolute;position:relative;top:0;left:0;right:0;bottom:0"
+  ></span>
+  ```
+
+  The child dropped out of the stack in static markup, its offsets became
+  no-ops, and it snapped back when the client re-rendered.
+
+  Reads now serve the collected styles, reporting the empty string for a property
+  that was never set, as CSSOM does, and matching kebab- and camel-case spellings
+  so a `setProperty` write reads back through either. A priority stays out of the
+  value, as `getPropertyValue` keeps it out, so `blue !important` reads as `blue`
+  while the markup still carries the priority. Only the shim's own members and
+  collected styles answer a read, so `toString` and the rest of `Object.prototype`
+  are not stringified out from under a caller. This fixes reads for every
+  modifier, not only `overlay`.
+
+- Updated dependencies [[`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c)]:
+  - @tachui/core@0.11.2
+
 ## 0.11.1
 
 ### Patch Changes

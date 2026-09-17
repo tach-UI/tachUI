@@ -1,5 +1,28 @@
 # @tachui/core
 
+## 0.11.2
+
+### Patch Changes
+
+- [#385](https://github.com/tach-UI/tachUI/pull/385) [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c) Thanks [@whoughton](https://github.com/whoughton)! - The component proxy hands back itself when an instance method returns its
+  instance.
+
+  A builder-style method (`return this`, as shape methods such as `fill` and
+  `stroke` use) returned the raw component, which stranded every modifier
+  applied so far on the proxy's wrapper: `Circle().frame(…).stroke(…)` rendered
+  a bare circle with no frame. The proxy already re-wrapped `clone()`'s result;
+  it now does the same for any method whose result is the instance, so the
+  chain continues from it in either order.
+
+  The wrapper keeps the method's declared `length` and `name`, which `bind`
+  preserved and an arrow does not, so anything reading a method's arity is
+  unaffected. The one deliberate difference is that a method returning its own
+  instance now yields the proxy, which is not `===` the instance.
+
+- Updated dependencies [[`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`5a6ac09`](https://github.com/tach-UI/tachUI/commit/5a6ac0904f6e4b22af8239a1ebbac8395708db74)]:
+  - @tachui/types@0.11.2
+  - @tachui/registry@0.11.2
+
 ## 0.11.1
 
 ### Patch Changes

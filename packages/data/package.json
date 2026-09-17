@@ -1,6 +1,6 @@
 {
   "name": "@tachui/data",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "description": "Data display and organization components for tachUI framework",
   "homepage": "https://tachui.dev/",
   "type": "module",
@@ -40,10 +40,10 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "0.11.1",
-    "@tachui/flow-control": "0.11.1",
-    "@tachui/mobile": "0.11.1",
-    "@tachui/primitives": "0.11.1"
+    "@tachui/core": "0.11.2",
+    "@tachui/flow-control": "0.11.2",
+    "@tachui/mobile": "0.11.2",
+    "@tachui/primitives": "0.11.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
