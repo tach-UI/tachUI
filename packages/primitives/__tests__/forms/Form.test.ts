@@ -205,14 +205,9 @@ describe('BasicForm interaction', () => {
   })
 
   it('validates on input when validateOnChange is set', async () => {
-    // Rendered from the implementation rather than `BasicForm()`, because the
-    // modifier builder clones the component on every render and each clone's
-    // constructor effect is owned by that render — so `onValidationChange`
-    // only reports through the builder for as long as its clone is current.
     const onValidationChange = vi.fn()
     const host = mount(
-      new BasicFormImplementation({
-        children: [],
+      BasicForm([], {
         onSubmit: vi.fn(),
         validateOnChange: true,
         onValidationChange,
@@ -232,6 +227,12 @@ describe('BasicForm interaction', () => {
       false,
       expect.arrayContaining([expect.objectContaining({ field: 'email' })])
     )
+
+    field.value = 'someone@example.com'
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(onValidationChange).toHaveBeenLastCalledWith(true, [])
   })
 
   it('does not leave a ref callback on the rendered form', () => {
