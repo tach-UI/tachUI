@@ -2,7 +2,7 @@
  * Tests for BasicInput Component (Phase 1)
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type {
   BasicInputProps,
   BasicInputType,
@@ -12,7 +12,7 @@ import {
   BasicInputStyles,
   BasicInputUtils,
 } from '../../src/forms/BasicInput'
-import { createSignal } from '@tachui/core'
+import { createSignal, renderComponent } from '@tachui/core'
 
 // Mock the reactive system for testing
 vi.mock('@tachui/core', async () => {
@@ -502,5 +502,77 @@ describe('BasicInput Component', () => {
         blurHandler?.()
       }).not.toThrow()
     })
+  })
+})
+
+describe('BasicInput form participation', () => {
+  const mounted: Array<() => void> = []
+
+  function mount(component: unknown) {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const dispose = renderComponent(component as never, host)
+    mounted.push(() => {
+      dispose()
+      host.remove()
+    })
+    return host
+  }
+
+  afterEach(() => {
+    while (mounted.length > 0) mounted.pop()!()
+  })
+
+  it('renders the name it submits under', () => {
+    const [text] = createSignal('someone@example.com')
+    const host = mount(BasicInput({ text, name: 'email' }))
+
+    const input = host.querySelector('input')!
+    expect(input.name).toBe('email')
+
+    // The name is what carries the value into a form's data.
+    const form = document.createElement('form')
+    form.appendChild(input)
+    expect(Object.fromEntries(new FormData(form))).toEqual({
+      email: 'someone@example.com',
+    })
+  })
+
+  it('leaves the name off when none is given', () => {
+    const [text] = createSignal('')
+    const host = mount(BasicInput({ text }))
+
+    expect(host.querySelector('input')!.hasAttribute('name')).toBe(false)
+  })
+
+  it('renders required so constraint validation sees it', () => {
+    const [text] = createSignal('')
+    const host = mount(BasicInput({ text, name: 'email', required: true }))
+
+    const input = host.querySelector('input')!
+    expect(input.required).toBe(true)
+    expect(input.checkValidity()).toBe(false)
+  })
+
+  it('is not required by default', () => {
+    const [text] = createSignal('')
+    const host = mount(BasicInput({ text }))
+
+    const input = host.querySelector('input')!
+    expect(input.required).toBe(false)
+    expect(input.checkValidity()).toBe(true)
+  })
+
+  it('follows a reactive required', async () => {
+    const [text] = createSignal('')
+    const [required, setRequired] = createSignal(false)
+    const host = mount(BasicInput({ text, name: 'email', required }))
+
+    expect(host.querySelector('input')!.required).toBe(false)
+
+    setRequired(true)
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(host.querySelector('input')!.required).toBe(true)
   })
 })

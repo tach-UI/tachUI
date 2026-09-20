@@ -39,6 +39,12 @@ export interface BasicInputProps extends ComponentProps, CSSClassesProps {
   disabled?: boolean | Signal<boolean>
   readonly?: boolean | Signal<boolean>
 
+  // Form participation. `name` is the key the field submits under — a form
+  // reads its fields through `FormData`, which skips anything unnamed — and
+  // `required` is what constraint validation checks.
+  name?: string
+  required?: boolean | Signal<boolean>
+
   // Behavior
   onChange?: (text: string) => void
   onSubmit?: (text: string) => void
@@ -146,6 +152,10 @@ export class BasicInputComponent
     return this.resolveValue(this.props.readonly || false)
   }
 
+  private isRequired(): boolean {
+    return this.resolveValue(this.props.required || false)
+  }
+
   private handleInput = (e: Event): void => {
     const target = e.target as HTMLInputElement
     const value = target.value
@@ -214,6 +224,7 @@ export class BasicInputComponent
     const inputType = this.getInputType()
     const disabled = this.isDisabled()
     const readonly = this.isReadonly()
+    const required = this.isRequired()
 
     // Process CSS classes for this component
     const baseClasses = ['tachui-basic-input']
@@ -223,10 +234,12 @@ export class BasicInputComponent
       id: this.id,
       className: classString,
       type: inputType,
+      name: this.props.name,
       value: currentText,
       placeholder: placeholder,
       disabled: disabled,
       readonly: readonly,
+      required: required,
       'aria-label': this.props.accessibilityLabel,
       'aria-describedby': this.props.accessibilityHint
         ? `${this.id}-hint`

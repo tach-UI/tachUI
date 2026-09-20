@@ -239,9 +239,10 @@ describe('BasicForm interaction', () => {
   it('validates on input from a framework control, not just a raw field', async () => {
     // A TachUI control registers its own `input` handler, so this only works
     // if the delegated dispatch carries on to the handlers above the target.
+    const [text] = createSignal('')
     const onValidationChange = vi.fn()
     const host = mount(
-      BasicForm([BasicInput({ name: 'email' }) as never], {
+      BasicForm([BasicInput({ text, name: 'email', required: true }) as never], {
         onSubmit: vi.fn(),
         validateOnChange: true,
         onValidationChange,
@@ -249,9 +250,6 @@ describe('BasicForm interaction', () => {
     )
 
     const field = host.querySelector('input')!
-    field.name = 'email'
-    field.setAttribute('required', '')
-
     field.dispatchEvent(new Event('input', { bubbles: true }))
     await new Promise(resolve => setTimeout(resolve, 0))
 
@@ -262,9 +260,10 @@ describe('BasicForm interaction', () => {
   })
 
   it("does not swallow the control's own handler on the way up", async () => {
+    const [text] = createSignal('')
     const onChange = vi.fn()
     const host = mount(
-      BasicForm([BasicInput({ name: 'email', onChange }) as never], {
+      BasicForm([BasicInput({ text, name: 'email', onChange }) as never], {
         onSubmit: vi.fn(),
         validateOnChange: true,
         onValidationChange: vi.fn(),
@@ -278,6 +277,42 @@ describe('BasicForm interaction', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1)
     expect(onChange).toHaveBeenCalledWith('someone@example.com')
+  })
+
+  it('submits the values of framework controls, not only raw fields', async () => {
+    const [text] = createSignal('someone@example.com')
+    const onSubmit = vi.fn()
+    const host = mount(
+      BasicForm([BasicInput({ text, name: 'email' }) as never], { onSubmit })
+    )
+
+    submit(host)
+    await Promise.resolve()
+
+    expect(onSubmit).toHaveBeenCalledWith({ email: 'someone@example.com' })
+  })
+
+  it('blocks submission while a required framework control is empty', async () => {
+    const [text, setText] = createSignal('')
+    const onSubmit = vi.fn()
+    const host = mount(
+      BasicForm([BasicInput({ text, name: 'email', required: true }) as never], {
+        onSubmit,
+      })
+    )
+
+    submit(host)
+    await Promise.resolve()
+
+    expect(onSubmit).not.toHaveBeenCalled()
+
+    setText('someone@example.com')
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    submit(host)
+    await Promise.resolve()
+
+    expect(onSubmit).toHaveBeenCalledWith({ email: 'someone@example.com' })
   })
 
   it('does not leave a ref callback on the rendered form', () => {
