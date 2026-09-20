@@ -6,7 +6,7 @@
  */
 
 import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
-import { createEffect, createSignal, isSignal } from '@tachui/core'
+import { isSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h, text } from '@tachui/core'
 import type { ComponentInstance, ComponentProps } from '@tachui/core'
@@ -70,26 +70,9 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
   public readonly id: string
   public mounted = false
   public cleanup: (() => void)[] = []
-  private sliderElement: HTMLInputElement | null = null
-  private isDragging: () => boolean
-  private setIsDragging: (dragging: boolean) => boolean
 
   constructor(public props: SliderProps) {
     this.id = `slider-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-
-    // Initialize internal state
-    const [dragging, setDragging] = createSignal(false)
-    this.isDragging = dragging
-    this.setIsDragging = setDragging
-
-    // Handle value changes reactively
-    createEffect(() => {
-      const currentValue = this.getValue()
-      if (this.sliderElement && !this.isDragging()) {
-        this.sliderElement.value = String(currentValue)
-        this.updateTrackFill()
-      }
-    })
   }
 
   /**
@@ -150,22 +133,19 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
     if (this.props.onValueChange) {
       this.props.onValueChange(clampedValue)
     }
-
-    this.updateTrackFill()
   }
 
   /**
-   * Update track fill visual
+   * How far along the track the fill reaches, as the percentage the styles
+   * read through `--slider-progress`. Derived from the current value on every
+   * render, so it follows the binding the same way the thumb does.
    */
-  private updateTrackFill() {
-    if (!this.sliderElement) return
-
+  private getTrackFillPercentage(): number {
     const { min = 0, max = 100 } = this.props
-    const value = this.getValue()
-    const percentage = ((value - min) / (max - min)) * 100
+    if (max === min) return 0
 
-    // Update CSS custom property for track fill
-    this.sliderElement.style.setProperty('--slider-progress', `${percentage}%`)
+    const percentage = ((this.getValue() - min) / (max - min)) * 100
+    return Math.max(0, Math.min(100, percentage))
   }
 
   /**
@@ -178,22 +158,6 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
     if (!Number.isNaN(value)) {
       this.handleValueChange(value)
     }
-  }
-
-  /**
-   * Handle mouse/touch start
-   */
-  private handleStart = () => {
-    if (!this.isDisabled()) {
-      this.setIsDragging(true)
-    }
-  }
-
-  /**
-   * Handle mouse/touch end
-   */
-  private handleEnd = () => {
-    this.setIsDragging(false)
   }
 
   /**
@@ -399,6 +363,7 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
 
     // Slider CSS styles
     const sliderStyles = {
+      '--slider-progress': `${this.getTrackFillPercentage()}%`,
       appearance: 'none' as const,
       width: vertical ? '6px' : '100%',
       height: vertical ? '200px' : 'var(--slider-height)',
@@ -487,30 +452,7 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
         },
         // Slider input
         h('input', {
-          ref: (el: HTMLInputElement) => {
-            this.sliderElement = el
-
-            if (el && !this.mounted) {
-              // Set up event listeners
-              el.addEventListener('input', this.handleInput)
-              el.addEventListener('mousedown', this.handleStart)
-              el.addEventListener('mouseup', this.handleEnd)
-              el.addEventListener('touchstart', this.handleStart)
-              el.addEventListener('touchend', this.handleEnd)
-
-              this.cleanup.push(() => {
-                el.removeEventListener('input', this.handleInput)
-                el.removeEventListener('mousedown', this.handleStart)
-                el.removeEventListener('mouseup', this.handleEnd)
-                el.removeEventListener('touchstart', this.handleStart)
-                el.removeEventListener('touchend', this.handleEnd)
-              })
-
-              // Initial setup
-              this.updateTrackFill()
-              this.mounted = true
-            }
-          },
+          onInput: this.handleInput,
           type: 'range',
           min: String(min),
           max: String(max),

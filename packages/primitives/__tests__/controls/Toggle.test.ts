@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Toggle } from '../../src/controls/Toggle'
-import { createSignal } from '@tachui/core'
+import { createSignal, renderComponent } from '@tachui/core'
 import { configureCore } from '@tachui/core'
 
 function findElementByTag(node: any, tag: string): any | null {
@@ -241,5 +241,147 @@ describe('Toggle Component', () => {
 
     const rendered = toggle.render()
     expect(rendered).toBeDefined()
+  })
+})
+
+describe('Toggle interaction', () => {
+  const mounted: Array<() => void> = []
+
+  function mount(component: any) {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const dispose = renderComponent(component, host)
+    mounted.push(() => {
+      dispose()
+      host.remove()
+    })
+    return host
+  }
+
+  // Render happens inside a reactive effect, and effects are flushed on a
+  // microtask, so a state change only reaches the DOM after a tick.
+  const flush = () => new Promise(resolve => setTimeout(resolve, 0))
+
+  beforeEach(() => {
+    configureCore({ proxyModifiers: true })
+  })
+
+  afterEach(() => {
+    while (mounted.length > 0) mounted.pop()!()
+  })
+
+  it('calls onToggle when the hidden checkbox is clicked', () => {
+    const [isOn, setIsOn] = createSignal(false)
+    const onToggle = vi.fn((value: boolean) => setIsOn(value))
+    const host = mount(Toggle(isOn, { onToggle }))
+
+    host.querySelector('input')!.click()
+
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(onToggle).toHaveBeenCalledWith(true)
+    expect(isOn()).toBe(true)
+  })
+
+  it('calls onToggle once when the wrapping label is clicked', () => {
+    const [isOn, setIsOn] = createSignal(false)
+    const onToggle = vi.fn((value: boolean) => setIsOn(value))
+    const host = mount(Toggle(isOn, { onToggle, label: 'Enable notifications' }))
+
+    host.querySelector('label')!.click()
+
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(isOn()).toBe(true)
+  })
+
+  it('calls onToggle for a synthetic change event', () => {
+    const [isOn] = createSignal(false)
+    const onToggle = vi.fn()
+    const host = mount(Toggle(isOn, { onToggle }))
+
+    host
+      .querySelector('input')!
+      .dispatchEvent(new Event('change', { bubbles: true }))
+
+    expect(onToggle).toHaveBeenCalledWith(true)
+  })
+
+  it('toggles back off from an on state', () => {
+    const [isOn, setIsOn] = createSignal(true)
+    const onToggle = vi.fn((value: boolean) => setIsOn(value))
+    const host = mount(Toggle(isOn, { onToggle }))
+
+    host.querySelector('input')!.click()
+
+    expect(onToggle).toHaveBeenCalledWith(false)
+    expect(isOn()).toBe(false)
+  })
+
+  it('calls onToggle for the checkbox variant', () => {
+    const [isOn, setIsOn] = createSignal(false)
+    const onToggle = vi.fn((value: boolean) => setIsOn(value))
+    const host = mount(Toggle(isOn, { onToggle, variant: 'checkbox' }))
+
+    host.querySelector('input')!.click()
+
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(isOn()).toBe(true)
+  })
+
+  it('calls onToggle for the button variant', () => {
+    const [isOn, setIsOn] = createSignal(false)
+    const onToggle = vi.fn((value: boolean) => setIsOn(value))
+    const host = mount(Toggle(isOn, { onToggle, variant: 'button' }))
+
+    host.querySelector('button')!.click()
+
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(isOn()).toBe(true)
+  })
+
+  it('does not call onToggle while disabled', () => {
+    const [isOn] = createSignal(false)
+    const onToggle = vi.fn()
+    const host = mount(Toggle(isOn, { onToggle, disabled: true }))
+
+    host
+      .querySelector('input')!
+      .dispatchEvent(new Event('change', { bubbles: true }))
+
+    expect(onToggle).not.toHaveBeenCalled()
+  })
+
+  it('does not leave a ref callback on the rendered input', () => {
+    const [isOn] = createSignal(false)
+    const host = mount(Toggle(isOn, {}))
+
+    expect(host.querySelector('input')!.hasAttribute('ref')).toBe(false)
+  })
+
+  it('reflects an external state change in the input and the track', async () => {
+    const [isOn, setIsOn] = createSignal(false)
+    const host = mount(Toggle(isOn, { onToggle: setIsOn, color: '#34c759' }))
+    const track = host.querySelector('input')!
+      .nextElementSibling as HTMLElement
+
+    expect(host.querySelector('input')!.checked).toBe(false)
+    expect(track.style.backgroundColor).toBe('rgb(226, 232, 240)')
+
+    setIsOn(true)
+    await flush()
+
+    expect(host.querySelector('input')!.checked).toBe(true)
+    expect(track.style.backgroundColor).toBe('rgb(52, 199, 89)')
+  })
+
+  it('restores the hidden checkbox when the state does not follow the click', () => {
+    const [isOn] = createSignal(false)
+    const onToggle = vi.fn()
+    const host = mount(Toggle(isOn, { onToggle }))
+    const input = host.querySelector('input')!
+
+    input.click()
+
+    expect(onToggle).toHaveBeenCalledWith(true)
+    expect(input.checked).toBe(false)
   })
 })

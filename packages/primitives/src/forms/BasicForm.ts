@@ -104,6 +104,22 @@ export class BasicFormImplementation
   }
 
   /**
+   * Resolve the form element from the event that reached a handler. `FormData`
+   * and the validation sweep both need the element, and a component gets no
+   * handle on its own DOM, so the event is what supplies one: a submit targets
+   * the form itself, while a change or input targets the field inside it.
+   */
+  private captureFormElement(event: Event): void {
+    const target = event.target
+
+    if (target instanceof HTMLFormElement) {
+      this.formElement = target
+    } else if (target instanceof Element) {
+      this.formElement = target.closest('form')
+    }
+  }
+
+  /**
    * Extract form data from form elements
    */
   private extractFormData(): FormData {
@@ -173,6 +189,7 @@ export class BasicFormImplementation
    */
   private handleSubmit = async (event: Event) => {
     event.preventDefault()
+    this.captureFormElement(event)
 
     if (this.props.validateOnSubmit !== false) {
       const errors = this.validateForm()
@@ -192,7 +209,9 @@ export class BasicFormImplementation
   /**
    * Handle form input changes
    */
-  private handleChange = () => {
+  private handleChange = (event: Event) => {
+    this.captureFormElement(event)
+
     if (this.props.validateOnChange) {
       const errors = this.validateForm()
       this.setValidationErrors(errors)
@@ -306,24 +325,9 @@ export class BasicFormImplementation
       h(
         'form',
         {
-          ref: (el: HTMLFormElement) => {
-            this.formElement = el
-
-            // Add event listeners when mounted
-            if (el && !this.mounted) {
-              el.addEventListener('submit', this.handleSubmit)
-              el.addEventListener('change', this.handleChange)
-              el.addEventListener('input', this.handleChange)
-
-              this.cleanup.push(() => {
-                el.removeEventListener('submit', this.handleSubmit)
-                el.removeEventListener('change', this.handleChange)
-                el.removeEventListener('input', this.handleChange)
-              })
-
-              this.mounted = true
-            }
-          },
+          onSubmit: this.handleSubmit,
+          onChange: this.handleChange,
+          onInput: this.handleChange,
           style: this.getFormStyles(),
           'aria-label': accessibilityLabel,
           role: accessibilityRole,

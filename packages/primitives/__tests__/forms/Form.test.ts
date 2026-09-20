@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BasicForm, BasicFormImplementation } from '../../src/forms/BasicForm'
-import { createSignal } from '@tachui/core'
+import { createSignal, renderComponent } from '@tachui/core'
 
 // Mock console.warn to suppress any deprecation warnings in tests
 vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -129,5 +129,114 @@ describe('BasicBasicForm Component', () => {
 
     expect(clone.props.children).toEqual(form.props.children)
     expect(clone.props.children).not.toBe(form.props.children)
+  })
+})
+
+describe('BasicForm interaction', () => {
+  const mounted: Array<() => void> = []
+
+  function mount(component: any) {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const dispose = renderComponent(component, host)
+    mounted.push(() => {
+      dispose()
+      host.remove()
+    })
+    return host
+  }
+
+  function submit(host: HTMLElement) {
+    host
+      .querySelector('form')!
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+  }
+
+  afterEach(() => {
+    while (mounted.length > 0) mounted.pop()!()
+  })
+
+  it('calls onSubmit when the form is submitted', async () => {
+    const onSubmit = vi.fn()
+    const host = mount(BasicForm([], { onSubmit }))
+
+    submit(host)
+    await Promise.resolve()
+
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+  })
+
+  it('submits the values of the fields inside the form', async () => {
+    const onSubmit = vi.fn()
+    const host = mount(BasicForm([], { onSubmit }))
+    const form = host.querySelector('form')!
+
+    const field = document.createElement('input')
+    field.name = 'email'
+    field.value = 'someone@example.com'
+    form.appendChild(field)
+
+    submit(host)
+    await Promise.resolve()
+
+    expect(onSubmit).toHaveBeenCalledWith({ email: 'someone@example.com' })
+  })
+
+  it('blocks submission while a required field is empty', async () => {
+    const onSubmit = vi.fn()
+    const host = mount(BasicForm([], { onSubmit }))
+    const form = host.querySelector('form')!
+
+    const field = document.createElement('input')
+    field.name = 'email'
+    field.setAttribute('required', '')
+    form.appendChild(field)
+
+    submit(host)
+    await Promise.resolve()
+
+    expect(onSubmit).not.toHaveBeenCalled()
+
+    field.value = 'someone@example.com'
+    submit(host)
+    await Promise.resolve()
+
+    expect(onSubmit).toHaveBeenCalledWith({ email: 'someone@example.com' })
+  })
+
+  it('validates on input when validateOnChange is set', async () => {
+    // Rendered from the implementation rather than `BasicForm()`, because the
+    // modifier builder clones the component on every render and each clone's
+    // constructor effect is owned by that render — so `onValidationChange`
+    // only reports through the builder for as long as its clone is current.
+    const onValidationChange = vi.fn()
+    const host = mount(
+      new BasicFormImplementation({
+        children: [],
+        onSubmit: vi.fn(),
+        validateOnChange: true,
+        onValidationChange,
+      })
+    )
+    const form = host.querySelector('form')!
+
+    const field = document.createElement('input')
+    field.name = 'email'
+    field.setAttribute('required', '')
+    form.appendChild(field)
+
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(onValidationChange).toHaveBeenLastCalledWith(
+      false,
+      expect.arrayContaining([expect.objectContaining({ field: 'email' })])
+    )
+  })
+
+  it('does not leave a ref callback on the rendered form', () => {
+    const host = mount(BasicForm([], { onSubmit: vi.fn() }))
+
+    expect(host.querySelector('form')!.hasAttribute('ref')).toBe(false)
   })
 })
