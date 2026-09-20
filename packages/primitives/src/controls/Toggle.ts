@@ -6,7 +6,7 @@
  */
 
 import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
-import { createEffect, createSignal, isSignal } from '@tachui/core'
+import { createSignal, isSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h, text } from '@tachui/core'
 import type { ComponentInstance, ComponentProps, DOMNode } from '@tachui/core'
@@ -51,7 +51,6 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
   public readonly id: string
   public mounted = false
   public cleanup: (() => void)[] = []
-  private toggleElement: HTMLInputElement | null = null
   // isAnimating state removed - not used in current implementation
   private setIsAnimating: (animating: boolean) => boolean
 
@@ -62,14 +61,6 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
     const [, setAnimating] = createSignal(false)
     // this.isAnimating = animating - removed unused accessor
     this.setIsAnimating = setAnimating
-
-    // Handle value changes reactively
-    createEffect(() => {
-      const currentValue = this.getIsOn()
-      if (this.toggleElement && this.toggleElement.checked !== currentValue) {
-        this.toggleElement.checked = currentValue
-      }
-    })
   }
 
   /**
@@ -187,6 +178,27 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
     if (this.props.onToggle) {
       this.props.onToggle(newValue)
     }
+
+    this.syncHiddenInput(event)
+  }
+
+  /**
+   * The hidden checkbox is what a form submits, and the browser has already
+   * flipped it by the time `change` runs. The toggle is controlled by `isOn`,
+   * so put the input back on whatever the state says now: unchanged when
+   * `onToggle` wrote the new value straight through, back to the old value
+   * when the binding is constant or the handler declined the change. Without
+   * this a declined toggle still submits as checked while the track reads off.
+   */
+  private syncHiddenInput(event: Event): void {
+    const target = event.target
+    if (
+      target instanceof HTMLInputElement &&
+      target.type === 'checkbox' &&
+      target.checked !== this.getIsOn()
+    ) {
+      target.checked = this.getIsOn()
+    }
   }
 
   /**
@@ -250,17 +262,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
       },
       // Hidden input for form integration
       h('input', {
-        ref: (el: HTMLInputElement) => {
-          this.toggleElement = el
-
-          if (el && !this.mounted) {
-            el.addEventListener('change', this.handleToggle)
-
-            this.cleanup.push(() => {
-              el.removeEventListener('change', this.handleToggle)
-            })
-          }
-        },
+        onChange: this.handleToggle,
         type: 'checkbox',
         id: inputAccessibilityProps.id,
         checked: isOn,
@@ -334,17 +336,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
       },
       // Hidden input
       h('input', {
-        ref: (el: HTMLInputElement) => {
-          this.toggleElement = el
-
-          if (el && !this.mounted) {
-            el.addEventListener('change', this.handleToggle)
-
-            this.cleanup.push(() => {
-              el.removeEventListener('change', this.handleToggle)
-            })
-          }
-        },
+        onChange: this.handleToggle,
         type: 'checkbox',
         id: inputAccessibilityProps.id,
         checked: isOn,
@@ -413,15 +405,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
     return h(
       'button',
       {
-        ref: (el: HTMLButtonElement) => {
-          if (el && !this.mounted) {
-            el.addEventListener('click', this.handleToggle)
-
-            this.cleanup.push(() => {
-              el.removeEventListener('click', this.handleToggle)
-            })
-          }
-        },
+        onClick: this.handleToggle,
         type: 'button',
         disabled: isDisabled,
         style: {
