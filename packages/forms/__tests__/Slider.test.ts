@@ -137,4 +137,61 @@ describe('Slider interaction', () => {
     expect(input.style.getPropertyValue('--slider-progress')).toBe('75%')
     expect(input.value).toBe('75')
   })
+  it('puts the thumb back when the binding is a plain number', () => {
+    const onValueChange = vi.fn()
+    const host = mount(Slider(10, { onValueChange, min: 0, max: 100 }))
+    const input = host.querySelector('input') as HTMLInputElement
+
+    input.value = '42'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+
+    // The handler was told, and the value did not move, so neither does the
+    // control: thumb and track fill agree on the value the binding holds.
+    expect(onValueChange).toHaveBeenCalledWith(42)
+    expect(input.value).toBe('10')
+    expect(input.style.getPropertyValue('--slider-progress')).toBe('10%')
+  })
+
+  it('puts the thumb back when the handler declines the change', () => {
+    const [value] = createSignal(10)
+    const host = mount(Slider(value, { onValueChange: () => {}, min: 0, max: 100 }))
+    const input = host.querySelector('input') as HTMLInputElement
+
+    input.value = '80'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+
+    expect(input.value).toBe('10')
+    expect(input.style.getPropertyValue('--slider-progress')).toBe('10%')
+  })
+
+  it('snaps the thumb to the step it reported, without waiting for a render', () => {
+    const [value, setValue] = createSignal(0)
+    const host = mount(
+      Slider(value, { onValueChange: setValue, min: 0, max: 100, step: 10 })
+    )
+    const input = host.querySelector('input') as HTMLInputElement
+
+    input.value = '47'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+
+    expect(input.value).toBe('50')
+  })
+
+  it('leaves the thumb where the binding follows it to', async () => {
+    const [value, setValue] = createSignal(10)
+    const host = mount(
+      Slider(value, { onValueChange: setValue, min: 0, max: 100 })
+    )
+    const input = host.querySelector('input') as HTMLInputElement
+
+    input.value = '42'
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+
+    expect(input.value).toBe('42')
+
+    await flush()
+
+    expect(input.value).toBe('42')
+    expect(input.style.getPropertyValue('--slider-progress')).toBe('42%')
+  })
 })
