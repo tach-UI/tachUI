@@ -32,6 +32,8 @@ import {
   resetLifecycleState,
 } from '../utils/clone-helpers'
 import { isProxyEnabled } from '../config'
+import { getOwner, runWithOwner } from '../reactive'
+import type { Owner } from '../reactive/types'
 import { createComponentProxy } from '../modifiers/proxy'
 import type { Concatenatable } from '../concatenation/types'
 // Debug functionality moved to @tachui/devtools package
@@ -200,6 +202,18 @@ export class LayoutComponent
     ComponentInstance,
     ComponentInstance
   >()
+  /**
+   * Who owns the effects a child opens while being built.
+   *
+   * Captured here rather than taken from whatever is running at build time,
+   * because the first render is what asks for a child first — and a render
+   * pass disposes everything it owns the moment it runs again. The child
+   * instance is cached and would survive that, so the failure is silent: it
+   * keeps rendering and quietly stops reacting. Normally this is the mount's
+   * root, since the instance the renderer draws is the clone `build()` makes
+   * inside it, and the children then live exactly as long as the mount.
+   */
+  private readonly buildOwner: Owner | null = getOwner()
 
   constructor(
     public props: ComponentProps & ElementOverrideProps & CSSClassesProps,
@@ -398,7 +412,10 @@ export class LayoutComponent
     const existing = this.builtChildren.get(child)
     if (existing) return existing
 
-    const built = (child as any).build() as ComponentInstance
+    const built = runWithOwner(
+      this.buildOwner,
+      () => (child as any).build() as ComponentInstance
+    )
     this.builtChildren.set(child, built)
     return built
   }

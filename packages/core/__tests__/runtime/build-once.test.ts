@@ -215,3 +215,122 @@ describe('a layout container builds each child once', () => {
     }
   }
 })
+
+/**
+ * Building a child once is only half of it: the effects that child opens
+ * while being built must outlive the render pass that asked for it. A render
+ * disposes everything it owns as soon as it runs again, and the cached child
+ * instance survives that — so the failure is silent, the child still
+ * rendering and quietly no longer reacting.
+ */
+describe('a layout child keeps the effects it was built with', () => {
+  const flush = () => new Promise(resolve => setTimeout(resolve, 0))
+
+  class ChildWithConstructorEffect implements ComponentInstance {
+    public readonly type = 'component' as const
+    public readonly id = 'child'
+    public mounted = false
+    public cleanup: (() => void)[] = []
+
+    private readonly step: () => number
+    private readonly setStep: (value: number) => number
+
+    constructor(public props: { reported: number[]; all: ComponentInstance[] }) {
+      props.all.push(this)
+
+      const [step, setStep] = createSignal(0)
+      this.step = step
+      this.setStep = setStep
+
+      createEffect(() => {
+        props.reported.push(this.step())
+      })
+    }
+
+    advance() {
+      this.setStep(this.step() + 1)
+    }
+
+    build() {
+      return new ChildWithConstructorEffect(this.props)
+    }
+
+    render() {
+      return h('span', {}, text(String(this.step())))
+    }
+  }
+
+  it('reports through its constructor effect after the stack re-renders', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+
+    const reported: number[] = []
+    const all: ComponentInstance[] = []
+    const [sibling, setSibling] = createSignal('one')
+
+    const stack = Layout.VStack({
+      children: [
+        new ChildWithConstructorEffect({ reported, all }) as ComponentInstance,
+        {
+          type: 'component',
+          id: 'sibling',
+          props: {},
+          mounted: false,
+          cleanup: [],
+          render: () => h('p', {}, text(sibling())),
+        } as ComponentInstance,
+      ],
+    })
+
+    const dispose = renderComponent(stack as ComponentInstance, host)
+    await flush()
+
+    const built = all[1] as ChildWithConstructorEffect
+
+    // Re-render the stack for a reason that has nothing to do with the child.
+    setSibling('two')
+    await flush()
+
+    built.advance()
+    await flush()
+    built.advance()
+    await flush()
+
+    // Both instances report 0 at construction; only the built one goes on.
+    expect(reported).toEqual([0, 0, 1, 2])
+    expect(host.textContent).toContain('2')
+    expect(host.textContent).toContain('two')
+
+    dispose()
+    host.remove()
+  })
+
+  it('stops reporting once the mount is disposed', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+
+    const reported: number[] = []
+    const all: ComponentInstance[] = []
+
+    const stack = Layout.VStack({
+      children: [
+        new ChildWithConstructorEffect({ reported, all }) as ComponentInstance,
+      ],
+    })
+
+    const dispose = renderComponent(stack as ComponentInstance, host)
+    await flush()
+
+    const built = all[1] as ChildWithConstructorEffect
+    dispose()
+
+    const afterUnmount = reported.length
+    built.advance()
+    await flush()
+
+    // The child's effects belong to the mount, so unmounting releases them.
+    expect(reported).toHaveLength(afterUnmount)
+
+    host.remove()
+  })
+})

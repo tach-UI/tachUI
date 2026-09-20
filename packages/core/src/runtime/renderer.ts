@@ -1663,7 +1663,7 @@ export function renderComponent(
   instance: ComponentInstance,
   container: Element
 ): () => void {
-  return createRoot(() => {
+  return createRoot(disposeRoot => {
     let currentNodes: DOMNode[] = []
     // Key-based element cache for structural node reuse across renders
     const keyToNodeCache = new Map<unknown, DOMNode>()
@@ -1890,6 +1890,11 @@ export function renderComponent(
       keyToNodeCache.clear()
       // Cleanup event delegation for this container
       globalEventDelegator.cleanupContainer(container)
+      // Everything the mount owns goes with the mount: the effects the built
+      // component opened in its constructor hang off this root, not off the
+      // render effect, so disposing the effect alone would leave them running
+      // against detached DOM.
+      disposeRoot()
     }
   })
 }

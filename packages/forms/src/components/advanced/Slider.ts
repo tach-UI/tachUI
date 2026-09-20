@@ -149,6 +149,24 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
   }
 
   /**
+   * Put the thumb back on whatever the value says now.
+   *
+   * The browser has already moved it by the time this runs, and the slider is
+   * controlled by `value`: unchanged when `onValueChange` wrote the reported
+   * value straight through, snapped to the step when it rounded, and back
+   * where it started when the binding is a plain number or the handler
+   * declined the change. Only the thumb needs this — the track fill is drawn
+   * from the value on every render, so leaving the thumb where the pointer
+   * dropped it is what would put the two out of step.
+   */
+  private syncThumb(target: HTMLInputElement): void {
+    const value = String(this.getValue())
+    if (target.value !== value) {
+      target.value = value
+    }
+  }
+
+  /**
    * Handle input events
    */
   private handleInput = (event: Event) => {
@@ -158,6 +176,8 @@ export class EnhancedSlider implements ComponentInstance<SliderProps> {
     if (!Number.isNaN(value)) {
       this.handleValueChange(value)
     }
+
+    this.syncThumb(target)
   }
 
   /**
