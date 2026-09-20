@@ -196,6 +196,10 @@ export class LayoutComponent
   public cleanup: (() => void)[] = []
   private effectiveTag: string
   private validationResult: any
+  private readonly builtChildren = new WeakMap<
+    ComponentInstance,
+    ComponentInstance
+  >()
 
   constructor(
     public props: ComponentProps & ElementOverrideProps & CSSClassesProps,
@@ -375,6 +379,30 @@ export class LayoutComponent
     return allChildren
   }
 
+  /**
+   * A child in its built form, built once and kept.
+   *
+   * `build()` clones the base component, so building on each render would
+   * hand back a fresh instance every time this container re-rendered —
+   * discarding whatever state the child holds and disposing the effects its
+   * constructor opened, since the render that ran them owns them. A child
+   * without a `build()` is already what it will be rendered as.
+   *
+   * `renderComponent` builds once for the same reason.
+   */
+  private buildChild(child: ComponentInstance): ComponentInstance {
+    if (!('build' in child) || typeof (child as any).build !== 'function') {
+      return child
+    }
+
+    const existing = this.builtChildren.get(child)
+    if (existing) return existing
+
+    const built = (child as any).build() as ComponentInstance
+    this.builtChildren.set(child, built)
+    return built
+  }
+
   render() {
     const { spacing = 0, debugLabel } = this.layoutProps
     // Explicitly handle alignment to avoid default override
@@ -397,11 +425,7 @@ export class LayoutComponent
       case 'vstack': {
         // Render children normally but also make them available for DOM bridge processing
         const vstackRenderedChildren = this.children.map(child => {
-          // Auto-build if it's a ModifierBuilder
-          let componentToRender = child
-          if ('build' in child && typeof child.build === 'function') {
-            componentToRender = child.build()
-          }
+          const componentToRender = this.buildChild(child)
 
           const childResult = componentToRender.render()
           const resultArray = Array.isArray(childResult)
@@ -448,11 +472,7 @@ export class LayoutComponent
 
       case 'hstack': {
         const hstackRenderedChildren = this.children.map(child => {
-          // Auto-build if it's a ModifierBuilder
-          let componentToRender = child
-          if ('build' in child && typeof child.build === 'function') {
-            componentToRender = child.build()
-          }
+          const componentToRender = this.buildChild(child)
 
           const childResult = componentToRender.render()
           const resultArray = Array.isArray(childResult)
@@ -530,11 +550,7 @@ export class LayoutComponent
 
         if (sizingMode === 'priority') {
           this.children.forEach(child => {
-            // Auto-build if it's a ModifierBuilder for priority check
-            let componentToCheck = child
-            if ('build' in child && typeof child.build === 'function') {
-              componentToCheck = child.build()
-            }
+            const componentToCheck = this.buildChild(child)
 
             if ('modifiers' in componentToCheck && Array.isArray(componentToCheck.modifiers)) {
               const layoutMod = componentToCheck.modifiers.find(
@@ -587,11 +603,7 @@ export class LayoutComponent
 
         // Apply absolute positioning to children for z-stack
         const renderedChildren = this.children.flatMap((child, index) => {
-          // Auto-build if it's a ModifierBuilder
-          let componentToRender = child
-          if ('build' in child && typeof child.build === 'function') {
-            componentToRender = child.build()
-          }
+          const componentToRender = this.buildChild(child)
 
           const childNodes = componentToRender.render()
           const nodeArray = Array.isArray(childNodes)

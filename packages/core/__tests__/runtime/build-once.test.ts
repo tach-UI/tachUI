@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createEffect, createSignal } from '../../src/reactive'
+import { Layout } from '../../src/components/wrapper'
 import { h, renderComponent, text } from '../../src/runtime/renderer'
 import type { ComponentInstance } from '../../src/runtime/types'
 
@@ -123,4 +124,94 @@ describe('renderComponent builds a component once', () => {
 
     teardown()
   })
+})
+
+/**
+ * A layout container builds each child once too, for the same reason
+ * `renderComponent` does — its `render()` re-runs whenever the container
+ * re-renders, and a child rebuilt there would be a fresh clone each time.
+ */
+describe('a layout container builds each child once', () => {
+  const flush = () => new Promise(resolve => setTimeout(resolve, 0))
+
+  class StatefulChild implements ComponentInstance {
+    public readonly type = 'component' as const
+    public readonly id: string
+    public mounted = false
+    public cleanup: (() => void)[] = []
+
+    public readonly label: () => string
+    private readonly setLabel: (value: string) => string
+
+    constructor(
+      public props: Record<string, never>,
+      private readonly built: StatefulChild[],
+      id: string
+    ) {
+      this.id = id
+      built.push(this)
+
+      const [label, setLabel] = createSignal('initial')
+      this.label = label
+      this.setLabel = setLabel
+    }
+
+    rename(value: string) {
+      this.setLabel(value)
+    }
+
+    build() {
+      return new StatefulChild(this.props, this.built, this.id)
+    }
+
+    render() {
+      return h('span', {}, text(this.label()))
+    }
+  }
+
+  it("keeps a stack child's state across a re-render of the stack", async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+
+    const built: StatefulChild[] = []
+    const [heading, setHeading] = createSignal('one')
+
+    const child = new StatefulChild({}, built, 'stateful-child')
+    const stack = Layout.VStack({
+      children: [child as ComponentInstance, ReactiveHeading(heading)],
+    })
+
+    const dispose = renderComponent(stack as ComponentInstance, host)
+    await flush()
+
+    // The container under test, plus the one build at mount.
+    expect(built).toHaveLength(2)
+    const rendered = built[1]
+
+    rendered.rename('renamed')
+    await flush()
+    expect(host.textContent).toContain('renamed')
+
+    // Re-render the stack for a reason that has nothing to do with the child.
+    setHeading('two')
+    await flush()
+
+    expect(host.textContent).toContain('two')
+    expect(host.textContent).toContain('renamed')
+    expect(built).toHaveLength(2)
+
+    dispose()
+    host.remove()
+  })
+
+  function ReactiveHeading(heading: () => string): ComponentInstance {
+    return {
+      type: 'component',
+      id: 'heading',
+      props: {},
+      mounted: false,
+      cleanup: [],
+      render: () => h('h1', {}, text(heading())),
+    }
+  }
 })

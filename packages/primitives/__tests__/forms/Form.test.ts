@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BasicForm, BasicFormImplementation } from '../../src/forms/BasicForm'
+import { BasicInput } from '../../src/forms/BasicInput'
 import { createSignal, renderComponent } from '@tachui/core'
 
 // Mock console.warn to suppress any deprecation warnings in tests
@@ -233,6 +234,50 @@ describe('BasicForm interaction', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(onValidationChange).toHaveBeenLastCalledWith(true, [])
+  })
+
+  it('validates on input from a framework control, not just a raw field', async () => {
+    // A TachUI control registers its own `input` handler, so this only works
+    // if the delegated dispatch carries on to the handlers above the target.
+    const onValidationChange = vi.fn()
+    const host = mount(
+      BasicForm([BasicInput({ name: 'email' }) as never], {
+        onSubmit: vi.fn(),
+        validateOnChange: true,
+        onValidationChange,
+      })
+    )
+
+    const field = host.querySelector('input')!
+    field.name = 'email'
+    field.setAttribute('required', '')
+
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(onValidationChange).toHaveBeenLastCalledWith(
+      false,
+      expect.arrayContaining([expect.objectContaining({ field: 'email' })])
+    )
+  })
+
+  it("does not swallow the control's own handler on the way up", async () => {
+    const onChange = vi.fn()
+    const host = mount(
+      BasicForm([BasicInput({ name: 'email', onChange }) as never], {
+        onSubmit: vi.fn(),
+        validateOnChange: true,
+        onValidationChange: vi.fn(),
+      })
+    )
+
+    const field = host.querySelector('input')!
+    field.value = 'someone@example.com'
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith('someone@example.com')
   })
 
   it('does not leave a ref callback on the rendered form', () => {

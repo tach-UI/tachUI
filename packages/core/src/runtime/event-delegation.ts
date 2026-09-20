@@ -177,7 +177,15 @@ export class EventDelegator {
   }
 
   /**
-   * Handle delegated event by finding target handler
+   * Handle delegated event by dispatching to every registered handler between
+   * the target and the container, innermost first.
+   *
+   * This walk stands in for the bubbling the browser would have done if each
+   * handler were attached to its own element, so it does not stop at the first
+   * handler it finds: a form listening for `input` has to hear a field inside
+   * it even when that field registered an `input` handler of its own. A
+   * handler ends the walk the same way it would end real bubbling, by calling
+   * `stopPropagation()` — which is what `cancelBubble` reports.
    */
   private handleDelegatedEvent(
     container: Element,
@@ -187,25 +195,27 @@ export class EventDelegator {
     const target = event.target as Element | null
     if (!target) return
 
-    // Traverse from target up to container to find handler
+    // Traverse from target up to container, dispatching along the way
     let currentElement: Element | null = target
 
     while (currentElement && currentElement !== container) {
-      const elementMap = this.elementHandlers.get(currentElement)
-      if (elementMap) {
-        const handlerData = elementMap.get(eventType)
-        if (handlerData) {
-          // Found handler - execute it
-          try {
-            handlerData.handler(event)
-          } catch (error) {
-            console.error(`Delegated event handler error for ${eventType}:`, error)
-          }
+      const handlerData = this.elementHandlers.get(currentElement)?.get(eventType)
 
-          // Stop propagation if handler was found (prevent duplicate handling)
-          // Note: This allows event to bubble to parent handlers if needed
-          return
+      if (handlerData) {
+        // The handler may move or remove its own element, so the next step up
+        // is read before it runs.
+        const parent: Element | null = currentElement.parentElement
+
+        try {
+          handlerData.handler(event)
+        } catch (error) {
+          console.error(`Delegated event handler error for ${eventType}:`, error)
         }
+
+        if (event.cancelBubble) return
+
+        currentElement = parent
+        continue
       }
 
       currentElement = currentElement.parentElement

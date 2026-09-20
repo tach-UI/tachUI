@@ -9,7 +9,7 @@
  * 5. Cleanup properly removes handlers
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { h, renderComponent, resetRendererMetrics } from '../../src/runtime/renderer'
 import { createSignal } from '../../src/reactive'
 import { globalEventDelegator } from '../../src/runtime/event-delegation'
@@ -454,6 +454,152 @@ describe('Event Delegation System (Phase 3)', () => {
       // re-registers the same element must neither stack handlers nor lose
       // the one it just installed.
       expect(calls).toEqual([4])
+    })
+  })
+  describe('Bubbling through nested handlers', () => {
+    it('reaches an ancestor handler when the target has one of its own', () => {
+      const calls: string[] = []
+
+      const component = {
+        render() {
+          return h(
+            'form',
+            { onInput: () => calls.push('form') },
+            h('input', { onInput: () => calls.push('input') })
+          )
+        },
+      }
+
+      const unmount = renderComponent(component, container)
+
+      container
+        .querySelector('input')!
+        .dispatchEvent(new Event('input', { bubbles: true }))
+
+      // The delegated walk stands in for real bubbling, so both hear it,
+      // innermost first.
+      expect(calls).toEqual(['input', 'form'])
+
+      unmount()
+    })
+
+    it('carries on past an element with no handler for that event type', () => {
+      const calls: string[] = []
+
+      const component = {
+        render() {
+          return h(
+            'form',
+            { onInput: () => calls.push('form') },
+            h(
+              'div',
+              { onClick: () => calls.push('div-click') },
+              h('input', { onInput: () => calls.push('input') })
+            )
+          )
+        },
+      }
+
+      const unmount = renderComponent(component, container)
+
+      container
+        .querySelector('input')!
+        .dispatchEvent(new Event('input', { bubbles: true }))
+
+      expect(calls).toEqual(['input', 'form'])
+
+      unmount()
+    })
+
+    it('stops at a handler that calls stopPropagation', () => {
+      const calls: string[] = []
+
+      const component = {
+        render() {
+          return h(
+            'form',
+            { onInput: () => calls.push('form') },
+            h(
+              'input',
+              {
+                onInput: (event: Event) => {
+                  calls.push('input')
+                  event.stopPropagation()
+                },
+              }
+            )
+          )
+        },
+      }
+
+      const unmount = renderComponent(component, container)
+
+      container
+        .querySelector('input')!
+        .dispatchEvent(new Event('input', { bubbles: true }))
+
+      expect(calls).toEqual(['input'])
+
+      unmount()
+    })
+
+    it('reaches the ancestor when a handler throws', () => {
+      const calls: string[] = []
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
+
+      const component = {
+        render() {
+          return h(
+            'form',
+            { onInput: () => calls.push('form') },
+            h('input', {
+              onInput: () => {
+                calls.push('input')
+                throw new Error('handler blew up')
+              },
+            })
+          )
+        },
+      }
+
+      const unmount = renderComponent(component, container)
+
+      container
+        .querySelector('input')!
+        .dispatchEvent(new Event('input', { bubbles: true }))
+
+      expect(calls).toEqual(['input', 'form'])
+      expect(consoleError).toHaveBeenCalled()
+
+      consoleError.mockRestore()
+      unmount()
+    })
+
+    it('still routes a click to only the button that was clicked', () => {
+      const calls: string[] = []
+
+      const component = {
+        render() {
+          return h(
+            'div',
+            null,
+            h('button', { onClick: () => calls.push('one') }, 'One'),
+            h('button', { onClick: () => calls.push('two') }, 'Two')
+          )
+        },
+      }
+
+      const unmount = renderComponent(component, container)
+
+      const buttons = container.querySelectorAll('button')
+      ;(buttons[0] as HTMLButtonElement).click()
+
+      // Siblings are not ancestors; bubbling must not turn into broadcast.
+      expect(calls).toEqual(['one'])
+
+      unmount()
     })
   })
 })
