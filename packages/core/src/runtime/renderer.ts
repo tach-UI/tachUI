@@ -1700,15 +1700,22 @@ export function renderComponent(
       }
     }
 
+    // Auto-build if it's a ModifierBuilder that has not been built yet.
+    //
+    // This happens once, outside the render effect, because `build()` clones
+    // the base component: inside the effect, every re-render would hand back a
+    // fresh instance and throw away the one that holds the component's own
+    // state — while disposing the effects that instance opened in its
+    // constructor, since the render effect owns whatever runs inside it. A
+    // component whose state drives its own render (a form recording validation
+    // errors, say) would lose that state on the very render the change caused.
+    let componentToRender = instance
+    if ('build' in instance && typeof instance.build === 'function') {
+      componentToRender = instance.build()
+    }
+
     // Create reactive effect for component re-rendering
     const effect = createEffect(() => {
-      // Auto-build if it's a ModifierBuilder
-      let componentToRender = instance
-      if ('build' in instance && typeof instance.build === 'function') {
-        // This is a ModifierBuilder that hasn't been built yet - build it automatically
-        componentToRender = instance.build()
-      }
-
       const renderResult = componentToRender.render()
       const nodes = Array.isArray(renderResult) ? renderResult : [renderResult]
 
