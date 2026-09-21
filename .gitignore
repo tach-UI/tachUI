@@ -76,6 +76,7 @@ packages/core/benchmarks/results/
 # AI-related tools
 .serena
 .claude
+.worktrees
 
 # Planning docs
 planning/
