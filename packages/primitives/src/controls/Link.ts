@@ -16,6 +16,7 @@ import type {
   ConcatenationMetadata,
 } from '@tachui/core'
 import { ConcatenatedComponent } from '@tachui/core'
+import { ComponentWithCSSClasses, type CSSClassesProps } from '@tachui/core'
 import { Text } from '../display/Text'
 
 /**
@@ -31,7 +32,7 @@ export type LinkRoutingMode = 'auto' | 'external' | 'internal' | 'spa'
 /**
  * Enhanced Link Properties (combines SwiftUI API with web-specific features)
  */
-export interface EnhancedLinkProps extends ComponentProps {
+export interface EnhancedLinkProps extends ComponentProps, CSSClassesProps {
   /** The destination URL - matches SwiftUI's destination parameter */
   destination: string | URL | Signal<string | URL>
 
@@ -89,6 +90,7 @@ export interface EnhancedLinkProps extends ComponentProps {
  * Enhanced Link Component Implementation
  */
 export class EnhancedLinkComponent
+  extends ComponentWithCSSClasses
   implements
     ComponentInstance<EnhancedLinkProps>,
     Concatenatable<EnhancedLinkProps>
@@ -98,6 +100,7 @@ export class EnhancedLinkComponent
   public readonly props: EnhancedLinkProps
 
   constructor(props: EnhancedLinkProps) {
+    super()
     this.props = props
     this.id = `enhanced-link-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }
@@ -352,9 +355,14 @@ export class EnhancedLinkComponent
     const content = this.renderContent()
     const disabled = this.isDisabled()
 
+    // Process CSS classes for this component
+    const baseClasses = ['tachui-link']
+    const classString = this.createClassString(this.props, baseClasses)
+
     // Build props object
     const props: Record<string, any> = {
       id: this.id,
+      className: classString,
       'data-component': 'enhanced-link',
     }
 
