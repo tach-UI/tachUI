@@ -612,6 +612,8 @@ export class DOMRenderer {
       // back the identical node objects across renders, which skips straight
       // to updating rather than re-creating (see DOMNode.owned).
       if (node.owned) {
+        // Deliberately do not treat assignment to `node.element` as a swap.
+        // Replacements use a fresh node or the `reactiveElement` binding.
         // Identical node objects are exactly the case where a binding can
         // outlive its own render pass, so this is where it gets checked.
         this.rebindIfStale(node)
