@@ -12,7 +12,7 @@ import {
   ImageStates,
   ImageUtils,
 } from '../../src/display/Image'
-import { createSignal, mountComponentTree } from '@tachui/core'
+import { createSignal, mountComponentTree, renderComponent } from '@tachui/core'
 
 // Mock DOM environment
 function createMockImage(): HTMLImageElement {
@@ -895,5 +895,138 @@ describe('ImageUtils', () => {
 
       expect(image).toBeDefined()
     })
+  })
+})
+
+describe('Image sizing and presentation props', () => {
+  const mounted: Array<() => void> = []
+
+  function mount(component: unknown) {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const dispose = renderComponent(component as never, host)
+    mounted.push(() => {
+      dispose()
+      host.remove()
+    })
+    return host
+  }
+
+  const flush = () => new Promise(resolve => setTimeout(resolve, 0))
+
+  afterEach(() => {
+    while (mounted.length > 0) mounted.pop()!()
+  })
+
+  it('renders the dimensions it was given', () => {
+    const host = mount(
+      Image('/x.jpg', { alt: 't', width: '100%', height: 246 })
+    )
+
+    const img = host.querySelector('img') as HTMLImageElement
+    expect(img.style.width).toBe('100%')
+    // A bare number is pixels; a string is whatever the caller wrote.
+    expect(img.style.height).toBe('246px')
+  })
+
+  it('maps each content mode to its object-fit', () => {
+    const cases: Array<[ImageProps['contentMode'], string]> = [
+      ['fit', 'contain'],
+      ['fill', 'cover'],
+      ['stretch', 'fill'],
+      ['center', 'none'],
+      ['scaleDown', 'scale-down'],
+    ]
+
+    for (const [contentMode, expected] of cases) {
+      const host = mount(Image('/x.jpg', { alt: 't', contentMode }))
+      const img = host.querySelector('img') as HTMLImageElement
+      expect(img.style.objectFit).toBe(expected)
+    }
+  })
+
+  it('takes resizeMode as the object-fit value it names', () => {
+    const host = mount(Image('/x.jpg', { alt: 't', resizeMode: 'contain' }))
+
+    expect((host.querySelector('img') as HTMLImageElement).style.objectFit).toBe(
+      'contain'
+    )
+  })
+
+  it('lets resizeMode win over contentMode, being the more specific of the two', () => {
+    const host = mount(
+      Image('/x.jpg', { alt: 't', contentMode: 'fit', resizeMode: 'cover' })
+    )
+
+    expect((host.querySelector('img') as HTMLImageElement).style.objectFit).toBe(
+      'cover'
+    )
+  })
+
+  it('renders aspectRatio, opacity and the filter props', () => {
+    const host = mount(
+      Image('/x.jpg', {
+        alt: 't',
+        aspectRatio: 1.5,
+        opacity: 0.5,
+        blur: 2,
+        grayscale: true,
+        sepia: true,
+      })
+    )
+
+    const img = host.querySelector('img') as HTMLImageElement
+    expect(img.style.aspectRatio).toBe('1.5')
+    expect(img.style.opacity).toBe('0.5')
+    expect(img.style.filter).toBe('blur(2px) grayscale(1) sepia(1)')
+  })
+
+  it('writes no styles for props that were not given', () => {
+    const host = mount(Image('/x.jpg', { alt: 't' }))
+
+    const img = host.querySelector('img') as HTMLImageElement
+    expect(img.getAttribute('style')).toBeNull()
+  })
+
+  it('follows a reactive dimension', async () => {
+    const [width, setWidth] = createSignal<number | string>(100)
+    const host = mount(Image('/x.jpg', { alt: 't', width }))
+    const img = host.querySelector('img') as HTMLImageElement
+
+    expect(img.style.width).toBe('100px')
+
+    setWidth('50%')
+    await flush()
+
+    expect(img.style.width).toBe('50%')
+  })
+
+  it('sizes a template-mode image too, where object-fit has nothing to act on', () => {
+    const host = mount(
+      Image('/x.svg', {
+        alt: 't',
+        renderingMode: 'template',
+        width: 24,
+        height: 24,
+      })
+    )
+
+    const span = host.querySelector('span') as HTMLSpanElement
+    expect(span.style.width).toBe('24px')
+    expect(span.style.height).toBe('24px')
+  })
+
+  it('lets a modifier override a prop it conflicts with', async () => {
+    const host = mount(
+      Image('/x.jpg', { alt: 't', width: '100%', height: 246 })
+        .css({ height: '400px' })
+        .build()
+    )
+    await flush()
+
+    const img = host.querySelector('img') as HTMLImageElement
+    // The modifier wins where they collide, and the prop stands where it does not.
+    expect(img.style.height).toBe('400px')
+    expect(img.style.width).toBe('100%')
   })
 })

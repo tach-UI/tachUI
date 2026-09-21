@@ -153,6 +153,28 @@ async function loadTemplateSVG(
   return request
 }
 
+/**
+ * `object-fit` for each content mode. `stretch` is CSS `fill`, which is the
+ * one name the two vocabularies disagree on: SwiftUI's "fill" keeps the
+ * aspect ratio and crops, which CSS calls `cover`.
+ */
+const CONTENT_MODE_OBJECT_FIT: Record<ImageContentMode, string> = {
+  fit: 'contain',
+  fill: 'cover',
+  stretch: 'fill',
+  center: 'none',
+  scaleDown: 'scale-down',
+}
+
+/**
+ * A CSS length from a dimension prop: a bare number is pixels, a string is
+ * whatever the caller wrote — `100%`, `12rem`, `calc(...)`.
+ */
+function toCssLength(value: number | string | undefined): string | undefined {
+  if (value === undefined) return undefined
+  return typeof value === 'number' ? `${value}px` : value
+}
+
 export interface ImageProps
   extends ComponentProps,
     ElementOverrideProps,
@@ -299,6 +321,61 @@ export class EnhancedImage
   /**
    * Render the image component with reactive content handling
    */
+  /**
+   * The styles the declared props ask for.
+   *
+   * Written as a style prop rather than `width`/`height` attributes, because
+   * the props are typed to take a CSS length — `100%` is as valid as `246` —
+   * and an attribute takes only a bare pixel count. A modifier writing the
+   * same property wins, which is the precedence `.css()` already has over a
+   * component's own styles.
+   */
+  private getDeclaredStyles(): Record<string, string> {
+    const styles: Record<string, string> = {}
+
+    const width = toCssLength(resolveMaybeSignal(this.props.width))
+    if (width !== undefined) styles.width = width
+
+    const height = toCssLength(resolveMaybeSignal(this.props.height))
+    if (height !== undefined) styles.height = height
+
+    const aspectRatio = resolveMaybeSignal(this.props.aspectRatio)
+    if (aspectRatio !== undefined) styles.aspectRatio = String(aspectRatio)
+
+    const opacity = resolveMaybeSignal(this.props.opacity)
+    if (opacity !== undefined) styles.opacity = String(opacity)
+
+    const filter = this.getFilter()
+    if (filter !== undefined) styles.filter = filter
+
+    return styles
+  }
+
+  /**
+   * How the image sits in the box it was given. `resizeMode` is named for the
+   * CSS values themselves, so where both are set it is the more specific of
+   * the two and wins.
+   */
+  private getObjectFit(): string | undefined {
+    const { contentMode, resizeMode } = this.props
+
+    if (resizeMode !== undefined) return resizeMode
+    if (contentMode !== undefined) return CONTENT_MODE_OBJECT_FIT[contentMode]
+    return undefined
+  }
+
+  private getFilter(): string | undefined {
+    const filters: string[] = []
+
+    const blur = resolveMaybeSignal(this.props.blur)
+    if (blur !== undefined) filters.push(`blur(${blur}px)`)
+
+    if (resolveMaybeSignal(this.props.grayscale)) filters.push('grayscale(1)')
+    if (resolveMaybeSignal(this.props.sepia)) filters.push('sepia(1)')
+
+    return filters.length > 0 ? filters.join(' ') : undefined
+  }
+
   render() {
     // Use reactive loading state
     const loadingState = this.loadingStateSignal()
@@ -343,6 +420,11 @@ export class EnhancedImage
     const classString = this.createClassString(this.props, baseClasses)
 
     const renderingMode = this.props.renderingMode ?? 'original'
+    // `object-fit` is left to the image branch: template mode paints an inline
+    // SVG into a span, where there is no replaced content for it to act on,
+    // and `warnTemplateUnsupportedProps` already says as much.
+    const declaredStyles = this.getDeclaredStyles()
+    const objectFit = this.getObjectFit()
     let element
 
     if (renderingMode === 'template') {
@@ -353,6 +435,7 @@ export class EnhancedImage
 
       element = h('span', {
         className: `${classString} tachui-image-template`,
+        style: declaredStyles,
         role: 'img',
         ...(isDecorative
           ? { 'aria-hidden': 'true' }
@@ -365,6 +448,7 @@ export class EnhancedImage
       // Create main image element - pass reactive props directly to DOM renderer
       element = h(this.effectiveTag, {
         className: classString,
+        style: objectFit ? { ...declaredStyles, objectFit } : declaredStyles,
         src: initialSrc, // Pass resolved src for initial render
         alt: this.props.alt, // Pass reactive alt directly
         loading: this.props.loadingStrategy || 'lazy',
