@@ -132,6 +132,72 @@ describe('Event Delegation System (Phase 3)', () => {
 
       unmount()
     })
+
+    it('reports currentTarget as the element the handler was registered on', () => {
+      const seen: Array<Element | null> = []
+
+      const component = {
+        render() {
+          return h(
+            'div',
+            null,
+            h(
+              'button',
+              {
+                'data-id': 'test-button',
+                onClick: (e: Event) => seen.push(e.currentTarget as Element),
+              },
+              h('span', { 'data-id': 'test-span' }, 'Click me')
+            )
+          )
+        },
+      }
+
+      const unmount = renderComponent(component, container)
+
+      const button = container.querySelector(
+        '[data-id="test-button"]'
+      ) as HTMLButtonElement
+      const span = container.querySelector(
+        '[data-id="test-span"]'
+      ) as HTMLSpanElement
+      span.click()
+
+      // Not the container the delegating listener happens to sit on.
+      expect(seen).toEqual([button])
+      expect(seen[0]).not.toBe(container)
+
+      unmount()
+    })
+
+    it('leaves currentTarget as the browser had it once the handler returns', () => {
+      let capturedEvent: Event | null = null
+
+      const component = {
+        render() {
+          return h('button', {
+            onClick: (e: Event) => {
+              capturedEvent = e
+            },
+          })
+        },
+      }
+
+      const unmount = renderComponent(component, container)
+
+      const event = new Event('click', { bubbles: true })
+      container.querySelector('button')!.dispatchEvent(event)
+
+      expect(capturedEvent).toBe(event)
+      // The override is an own property put on for the call and taken off
+      // after, so nothing of it outlives the dispatch.
+      expect(
+        Object.prototype.hasOwnProperty.call(event, 'currentTarget')
+      ).toBe(false)
+      expect(event.currentTarget).toBeNull()
+
+      unmount()
+    })
   })
 
   describe('Multiple Event Types', () => {
@@ -507,6 +573,40 @@ describe('Event Delegation System (Phase 3)', () => {
         .dispatchEvent(new Event('input', { bubbles: true }))
 
       expect(calls).toEqual(['input', 'form'])
+
+      unmount()
+    })
+
+    it('gives each handler on the path its own currentTarget', () => {
+      const seen: string[] = []
+
+      const component = {
+        render() {
+          return h(
+            'form',
+            {
+              onInput: (e: Event) =>
+                seen.push((e.currentTarget as Element).tagName),
+            },
+            h(
+              'div',
+              null,
+              h('input', {
+                onInput: (e: Event) =>
+                  seen.push((e.currentTarget as Element).tagName),
+              })
+            )
+          )
+        },
+      }
+
+      const unmount = renderComponent(component, container)
+
+      container
+        .querySelector('input')!
+        .dispatchEvent(new Event('input', { bubbles: true }))
+
+      expect(seen).toEqual(['INPUT', 'FORM'])
 
       unmount()
     })
