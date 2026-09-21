@@ -206,11 +206,7 @@ export class EventDelegator {
         // is read before it runs.
         const parent: Element | null = currentElement.parentElement
 
-        try {
-          handlerData.handler(event)
-        } catch (error) {
-          console.error(`Delegated event handler error for ${eventType}:`, error)
-        }
+        this.dispatchTo(handlerData, eventType, event)
 
         if (event.cancelBubble) return
 
@@ -219,6 +215,49 @@ export class EventDelegator {
       }
 
       currentElement = currentElement.parentElement
+    }
+  }
+
+  /**
+   * Run one handler with `currentTarget` reading as the element the handler
+   * was registered on.
+   *
+   * The listener doing the work sits on the container, so without this every
+   * delegated handler sees the container — the mount root — where an ordinary
+   * listener would see its own element. A handler reaching for its form or
+   * its parent node through `currentTarget` would get the wrong one, and
+   * delegated and directly attached handlers would not agree.
+   *
+   * `currentTarget` lives on `Event.prototype` as an accessor and is only
+   * meaningful during dispatch, so the override is an own property put on for
+   * the call and removed after, leaving the event as the browser made it.
+   */
+  private dispatchTo(
+    handlerData: DelegatedEventData,
+    eventType: string,
+    event: Event
+  ): void {
+    let overridden = false
+
+    try {
+      Object.defineProperty(event, 'currentTarget', {
+        configurable: true,
+        get: () => handlerData.element,
+      })
+      overridden = true
+    } catch {
+      // A non-configurable `currentTarget` is not worth failing the dispatch
+      // over; the handler still runs, just without the correction.
+    }
+
+    try {
+      handlerData.handler(event)
+    } catch (error) {
+      console.error(`Delegated event handler error for ${eventType}:`, error)
+    } finally {
+      if (overridden) {
+        delete (event as { currentTarget?: unknown }).currentTarget
+      }
     }
   }
 
