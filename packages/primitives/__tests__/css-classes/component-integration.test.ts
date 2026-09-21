@@ -12,6 +12,7 @@ import {
   Spacer,
   Image,
   BasicInput,
+  Link,
   VStack,
   HStack,
   ZStack,
@@ -166,6 +167,51 @@ describe('CSS Classes Enhancement - Component Integration', () => {
       expect(elements[0].props?.className).toBe(
         'tachui-image rounded-lg shadow-md'
       )
+    })
+
+    it('should render Link with CSS classes', () => {
+      const link = Link({
+        destination: '/somewhere',
+        text: 'Go',
+        css: 'rounded-lg underline',
+      })
+      const elements = link.render()
+
+      expect(elements[0].props?.className).toBe('tachui-link rounded-lg underline')
+    })
+
+    it('should render Link with array CSS classes', () => {
+      const link = Link({
+        destination: '/somewhere',
+        text: 'Go',
+        css: ['rounded-lg', 'underline'],
+      })
+      const elements = link.render()
+
+      expect(elements[0].props?.className).toBe('tachui-link rounded-lg underline')
+    })
+
+    it('should render Link with reactive CSS classes', () => {
+      const [isActive] = createSignal(false)
+      const dynamicClasses = createComputed(() =>
+        isActive() ? 'is-active' : 'is-idle'
+      )
+
+      const link = Link({
+        destination: '/somewhere',
+        text: 'Go',
+        css: dynamicClasses,
+      })
+      const elements = link.render()
+
+      expect(typeof elements[0].props?.className).toBe('function')
+    })
+
+    it('should handle Link without CSS classes', () => {
+      const link = Link({ destination: '/somewhere', text: 'Go' })
+      const elements = link.render()
+
+      expect(elements[0].props?.className).toBe('tachui-link')
     })
 
     it('should render BasicInput with CSS classes', () => {
