@@ -1001,7 +1001,7 @@ describe('Image sizing and presentation props', () => {
     expect(img.style.width).toBe('50%')
   })
 
-  it('sizes a template-mode image too, where object-fit has nothing to act on', () => {
+  it('sizes a template-mode image, making a box of the span so it can be', () => {
     const host = mount(
       Image('/x.svg', {
         alt: 't',
@@ -1014,6 +1014,83 @@ describe('Image sizing and presentation props', () => {
     const span = host.querySelector('span') as HTMLSpanElement
     expect(span.style.width).toBe('24px')
     expect(span.style.height).toBe('24px')
+    // A span is display:inline, where a width is simply ignored — writing the
+    // dimensions without this leaves the markup right and the image unsized.
+    expect(span.style.display).toBe('inline-block')
+  })
+
+  it('leaves a template-mode image inline when it was given no size', () => {
+    const host = mount(
+      Image('/x.svg', { alt: 't', renderingMode: 'template', opacity: 0.5 })
+    )
+
+    const span = host.querySelector('span') as HTMLSpanElement
+    expect(span.style.opacity).toBe('0.5')
+    // Opacity needs no box, so the span's own display is left alone.
+    expect(span.style.display).toBe('')
+  })
+
+  it('keeps a reactive css prop reactive in template mode', async () => {
+    const [state, setState] = createSignal('is-idle')
+    const host = mount(
+      Image('/x.svg', { alt: 't', renderingMode: 'template', css: state })
+    )
+
+    const span = host.querySelector('span') as HTMLSpanElement
+    expect(span.classList.contains('is-idle')).toBe(true)
+    expect(span.classList.contains('tachui-image-template')).toBe(true)
+    expect(span.classList.contains('tachui-image')).toBe(true)
+
+    setState('is-active')
+    await flush()
+
+    expect(span.classList.contains('is-active')).toBe(true)
+    expect(span.classList.contains('is-idle')).toBe(false)
+    expect(span.classList.contains('tachui-image-template')).toBe(true)
+  })
+
+  it('sizes the placeholder standing in for the image', () => {
+    const [loadingState] = createSignal<ImageLoadingState>('loading')
+    const host = mount(
+      Image('/x.jpg', {
+        alt: 't',
+        width: 24,
+        height: 24,
+        resizeMode: 'cover',
+        placeholder: '/spinner.svg',
+        loadingState,
+      })
+    )
+
+    // Otherwise the placeholder renders at its natural size and the box jumps
+    // the moment the real image loads.
+    const placeholder = host.querySelector(
+      'img.tachui-image-placeholder'
+    ) as HTMLImageElement
+    expect(placeholder).not.toBeNull()
+    expect(placeholder.style.width).toBe('24px')
+    expect(placeholder.style.height).toBe('24px')
+    expect(placeholder.style.objectFit).toBe('cover')
+  })
+
+  it('sizes the error placeholder, which is what stays on screen', () => {
+    const [loadingState] = createSignal<ImageLoadingState>('error')
+    const host = mount(
+      Image('/x.jpg', {
+        alt: 't',
+        width: 24,
+        height: 24,
+        errorPlaceholder: '/broken.svg',
+        loadingState,
+      })
+    )
+
+    const errorImage = host.querySelector(
+      'img.tachui-image-error'
+    ) as HTMLImageElement
+    expect(errorImage).not.toBeNull()
+    expect(errorImage.style.width).toBe('24px')
+    expect(errorImage.style.height).toBe('24px')
   })
 
   it('lets a modifier override a prop it conflicts with', async () => {

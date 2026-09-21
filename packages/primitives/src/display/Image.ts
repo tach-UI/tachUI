@@ -167,6 +167,22 @@ const CONTENT_MODE_OBJECT_FIT: Record<ImageContentMode, string> = {
 }
 
 /**
+ * Whether these styles ask the element to take a size.
+ *
+ * A `<span>` is `display: inline`, where `width`, `height` and `aspect-ratio`
+ * do nothing at all — so template mode has to make a box of it before a
+ * dimension means anything. Only the properties that need a box count:
+ * `opacity` and `filter` apply to an inline element as they are.
+ */
+function needsSizingBox(styles: Record<string, string>): boolean {
+  return (
+    styles.width !== undefined ||
+    styles.height !== undefined ||
+    styles.aspectRatio !== undefined
+  )
+}
+
+/**
  * A CSS length from a dimension prop: a bare number is pixels, a string is
  * whatever the caller wrote — `100%`, `12rem`, `calc(...)`.
  */
@@ -319,9 +335,6 @@ export class EnhancedImage
   }
 
   /**
-   * Render the image component with reactive content handling
-   */
-  /**
    * The styles the declared props ask for.
    *
    * Written as a style prop rather than `width`/`height` attributes, because
@@ -376,9 +389,22 @@ export class EnhancedImage
     return filters.length > 0 ? filters.join(' ') : undefined
   }
 
+  /**
+   * Render the image component with reactive content handling
+   */
   render() {
     // Use reactive loading state
     const loadingState = this.loadingStateSignal()
+
+    // Worked out before the loading-state branches, because a placeholder
+    // standing in for the image should stand in at its size: sizing only the
+    // final image makes the box jump the moment it loads, and leaves an error
+    // placeholder unsized for good.
+    const declaredStyles = this.getDeclaredStyles()
+    const objectFit = this.getObjectFit()
+    const imageStyles = objectFit
+      ? { ...declaredStyles, objectFit }
+      : declaredStyles
 
     // Handle different loading states
     if (loadingState === 'loading' && this.props.placeholder) {
@@ -388,6 +414,7 @@ export class EnhancedImage
           class: 'tachui-image-placeholder',
           src: this.props.placeholder,
           alt: 'Loading...',
+          style: imageStyles,
         })
         return [placeholderElement]
       } else if (
@@ -405,6 +432,7 @@ export class EnhancedImage
           class: 'tachui-image-error',
           src: this.props.errorPlaceholder,
           alt: 'Error loading image',
+          style: imageStyles,
         })
         return [errorElement]
       } else if (
@@ -420,11 +448,6 @@ export class EnhancedImage
     const classString = this.createClassString(this.props, baseClasses)
 
     const renderingMode = this.props.renderingMode ?? 'original'
-    // `object-fit` is left to the image branch: template mode paints an inline
-    // SVG into a span, where there is no replaced content for it to act on,
-    // and `warnTemplateUnsupportedProps` already says as much.
-    const declaredStyles = this.getDeclaredStyles()
-    const objectFit = this.getObjectFit()
     let element
 
     if (renderingMode === 'template') {
@@ -433,9 +456,20 @@ export class EnhancedImage
       const resolvedAlt = resolveMaybeSignal(this.props.alt)
       const isDecorative = Boolean(resolveMaybeSignal(this.props.decorative)) || resolvedAlt === ''
 
+      // `object-fit` is left to the image branch: template mode paints an
+      // inline SVG into the span, where there is no replaced content for it to
+      // act on, and `warnTemplateUnsupportedProps` already says as much.
       element = h('span', {
-        className: `${classString} tachui-image-template`,
-        style: declaredStyles,
+        // Built through `createClassString` rather than interpolated, so a
+        // reactive `css` prop stays a computed instead of being flattened into
+        // the text of its own accessor.
+        className: this.createClassString(this.props, [
+          ...baseClasses,
+          'tachui-image-template',
+        ]),
+        style: needsSizingBox(declaredStyles)
+          ? { display: 'inline-block', ...declaredStyles }
+          : declaredStyles,
         role: 'img',
         ...(isDecorative
           ? { 'aria-hidden': 'true' }
@@ -448,7 +482,7 @@ export class EnhancedImage
       // Create main image element - pass reactive props directly to DOM renderer
       element = h(this.effectiveTag, {
         className: classString,
-        style: objectFit ? { ...declaredStyles, objectFit } : declaredStyles,
+        style: imageStyles,
         src: initialSrc, // Pass resolved src for initial render
         alt: this.props.alt, // Pass reactive alt directly
         loading: this.props.loadingStrategy || 'lazy',
