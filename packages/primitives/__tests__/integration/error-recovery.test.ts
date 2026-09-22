@@ -56,7 +56,16 @@ describe('Phase 2.4: Error Recovery and Retry Mechanisms Tests', () => {
       expect(result.success).toBe(true)
       expect(result.result).toBe('success')
       expect(result.attempts).toBe(3)
-      expect(duration).toBeGreaterThanOrEqual(30) // 10ms + 20ms delays minimum
+      // The two delays are 10ms and 20ms by construction, and the old floor
+      // of 30 sat exactly on that sum — no slack at all, so a timer firing a
+      // millisecond early failed it. `setTimeout` is entitled to do that, and
+      // this run measured 29. Same lesson as the jittered case below (#229):
+      // a budget level with the work it measures tests the clock, not the code.
+      //
+      // What this can still honestly separate is backoff from no backoff at
+      // all — without the delays the whole operation lands in a millisecond or
+      // two. The attempt count two lines up is what pins the retry behaviour.
+      expect(duration).toBeGreaterThanOrEqual(20)
       expect(attemptCount).toBe(3)
     })
 
