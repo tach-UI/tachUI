@@ -446,7 +446,10 @@ function createSSRVirtualElement(initialStyle: unknown): {
     // A `transform` write is the element's whole composed transform — core's
     // `setTransformPart` rewrites every part on each write — so an earlier
     // write is a partial value, not a fallback for this one. Keeping them all
-    // would emit one declaration per transform modifier.
+    // would emit one declaration per transform modifier. The trade-off: a
+    // hand-written transform set twice, the second unparseable, renders
+    // nothing here where the client would keep the first. Composer output is
+    // always well-formed.
     if (existing === undefined || name === 'transform') {
       styleState[name] = declaration
       return

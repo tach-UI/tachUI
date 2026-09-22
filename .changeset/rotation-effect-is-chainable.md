@@ -36,7 +36,11 @@ scale around `topLeading` and a rotation around `bottomTrailing` both hold.
 
 A transform already on the element when an effect is first applied is kept,
 except functions of the same kind: an offset still replaces an existing
-translate, a scale an existing scale, as before.
+translate, a scale an existing scale, as before. An existing `none` is
+treated as no transform. A raw `.transform()` string is kept as written, so a
+function inside it is not replaced by an effect of the same kind:
+`.transform('rotate(10deg)').rotationEffect(20)` applies both rotations,
+where before whichever wrote last replaced the other.
 
 The composer lives in `@tachui/core/modifiers` (`setTransformPart`,
 `anchorTransform`), so every writer shares one record per element. That

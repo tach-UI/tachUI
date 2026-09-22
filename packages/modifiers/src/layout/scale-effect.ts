@@ -8,20 +8,14 @@
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
 import { anchorTransform, setTransformPart } from '@tachui/core/modifiers'
-import type { ModifierContext } from '@tachui/types/modifiers'
+import type {
+  ModifierContext,
+  TransformAnchor,
+} from '@tachui/types/modifiers'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 import type { Signal } from '@tachui/types/reactive'
 
-export type ScaleAnchor =
-  | 'center'
-  | 'top'
-  | 'topLeading'
-  | 'topTrailing'
-  | 'bottom'
-  | 'bottomLeading'
-  | 'bottomTrailing'
-  | 'leading'
-  | 'trailing'
+export type ScaleAnchor = TransformAnchor
 
 export interface ScaleEffectOptions {
   x: number | Signal<number>

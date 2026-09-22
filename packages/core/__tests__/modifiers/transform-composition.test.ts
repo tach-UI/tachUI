@@ -82,6 +82,28 @@ describe('setTransformPart', () => {
     expect(target.style.transform).toBe('scale(3) rotate(1deg) translate(1px, 2px)')
   })
 
+  // `none` is the identity, not a function to keep: carried along it would
+  // make `none rotate(90deg)`, an invalid list the browser drops entirely.
+  it('treats an existing none as no transform', () => {
+    const setting = element('none')
+    setTransformPart(setting, 'rotation', 'rotate(90deg)')
+    expect(setting.style.transform).toBe('rotate(90deg)')
+
+    const clearing = element('none')
+    setTransformPart(clearing, 'raw', null)
+    setTransformPart(clearing, 'raw', 'skewX(3deg)')
+    expect(clearing.style.transform).toBe('skewX(3deg)')
+  })
+
+  it('stacks a raw function with an effect of the same kind', () => {
+    const target = element()
+
+    setTransformPart(target, 'raw', 'scale(2)')
+    setTransformPart(target, 'scale', 'scale(3, 3)')
+
+    expect(target.style.transform).toBe('scale(3, 3) scale(2)')
+  })
+
   it('keeps the translateZ(0) compositing hint when an offset is set', () => {
     const target = element('translateZ(0)')
 

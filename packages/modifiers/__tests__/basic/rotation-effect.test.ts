@@ -125,6 +125,16 @@ describe('.rotationEffect()', () => {
     expect(element.style.transform).toBe('rotate(90deg) translateY(4px)')
   })
 
+  // A raw transform is opaque, so a rotate inside it is not replaced by the
+  // effect: both apply, the effect outermost.
+  it('stacks with a rotate inside a raw transform', () => {
+    const element = render(
+      (Text('x') as any).transform('rotate(10deg)').rotationEffect(20)
+    )
+
+    expect(element.style.transform).toBe('rotate(20deg) rotate(10deg)')
+  })
+
   it('keeps an anchor of its own beside a scale anchored elsewhere', () => {
     const element = render(
       (Text('x') as any)
