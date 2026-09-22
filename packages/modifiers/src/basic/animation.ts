@@ -4,6 +4,7 @@
  * Factory functions for creating animation and transition modifiers
  */
 
+import type { Signal } from '@tachui/types/reactive'
 import { AnimationModifier } from './base'
 
 /**
@@ -76,4 +77,37 @@ export function transition(
       delay: delay || 0,
     },
   })
+}
+
+/**
+ * Anchor point a rotation turns around
+ */
+export type RotationAnchor =
+  | 'center'
+  | 'top'
+  | 'topLeading'
+  | 'topTrailing'
+  | 'bottom'
+  | 'bottomLeading'
+  | 'bottomTrailing'
+  | 'leading'
+  | 'trailing'
+
+/**
+ * Rotate an element by an angle in degrees around an anchor point
+ *
+ * Composes with other transforms on the element, such as `scaleEffect`,
+ * replacing only a previous rotation.
+ *
+ * @example
+ * ```ts
+ * Text('Hello').rotationEffect(45)
+ * HStack({ children }).rotationEffect(angle, 'topLeading')
+ * ```
+ */
+export function rotationEffect(
+  angle: number | Signal<number>,
+  anchor: RotationAnchor = 'center'
+): AnimationModifier {
+  return new AnimationModifier({ rotationEffect: { angle, anchor } })
 }

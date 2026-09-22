@@ -199,9 +199,9 @@ describe('trim', () => {
   })
 })
 
-// The docs shipped `.rotationEffect(-90)`, which is typed but throws at
-// runtime — a copy-pasteable crash that no test would have caught, because
-// nothing exercised the documented chain. This does.
+// The documented chain, end to end, so a copy-pasteable example cannot crash
+// without a test noticing. Either turn, `.rotationEffect(-90)` or
+// `.transform('rotate(-90deg)')`, lands on the wrapper.
 describe('the documented progress ring', () => {
   beforeEach(() => {
     installResizeObserverStub()
@@ -237,6 +237,18 @@ describe('the documented progress ring', () => {
     const wrapper = container.querySelector('.tachui-shape') as HTMLElement
 
     expect(wrapper.style.transform).toContain('rotate(-90deg)')
+  })
+
+  it('takes the quarter turn from rotationEffect too', () => {
+    const container = document.createElement('div')
+    renderComponent(
+      (Circle().trim(0, 0.4).stroke('red', 4) as any).rotationEffect(-90),
+      container
+    )
+    const wrapper = container.querySelector('.tachui-shape') as HTMLElement
+
+    expect(wrapper.style.transform).toBe('rotate(-90deg)')
+    expect(wrapper.style.transformOrigin).toBe('50% 50%')
   })
 })
 

@@ -42,7 +42,7 @@ import {
   minWidth,
   minHeight,
 } from './size'
-import { transition } from './animation'
+import { transition, rotationEffect } from './animation'
 import {
   animation as animationModifier,
   transform as transformModifier,
@@ -377,6 +377,7 @@ export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]
   ['animation', animationModifier],
   ['transform', transformModifier],
   ['transition', transition],
+  ['rotationEffect', rotationEffect],
 
   // Attributes
   ['aria', aria],

@@ -336,9 +336,8 @@ export class ShapeComponent
    *
    * The path starts where SwiftUI's does — a circle at the trailing edge,
    * three o'clock, running clockwise — so a ring that fills from the top
-   * wants a quarter turn on top, as it does in SwiftUI. Use
-   * `.transform('rotate(-90deg)')`; the `rotationEffect` modifier is typed
-   * but not yet implemented at runtime.
+   * wants a quarter turn on top, as it does in SwiftUI:
+   * `.rotationEffect(-90)`, or `.transform('rotate(-90deg)')`.
    *
    * **Stroke only.** This is dash geometry, not a trimmed path: SVG ignores
    * a dash pattern when filling, so `.trim(0, 0.5).fill(color)` fills the
