@@ -354,7 +354,7 @@ export interface AnimationModifierProps {
   }
   transform?: string | Signal<string>
   rotationEffect?: {
-    angle: number
+    angle: number | Signal<number>
     anchor?:
       | 'center'
       | 'top'

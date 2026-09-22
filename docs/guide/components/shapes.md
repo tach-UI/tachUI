@@ -142,10 +142,10 @@ Circle()
   .trim(0, progress)
   .strokeStyle({ lineWidth: 4, lineCap: 'round' })
   .stroke(tint)
-  .transform('rotate(-90deg)')
+  .rotationEffect(-90)
 ```
 
-Use `.transform()` for that turn, not `.rotationEffect()`: the latter is typed but not yet implemented at runtime, so it throws.
+`.transform('rotate(-90deg)')` does the same.
 
 Both fractions are clamped to `0`–`1`. A `to` at or below `from` draws nothing rather than wrapping, so a progress value arriving out of order shows an empty ring instead of a full one — with one exception, which is SVG's for any dashed path: `lineCap: 'round'` renders a zero-length dash as a dot rather than as nothing. `.trim(0, 1)` is the whole path and emits no dash attributes at all.
 

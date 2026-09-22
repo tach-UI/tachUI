@@ -1,0 +1,101 @@
+/**
+ * `.rotationEffect()`
+ *
+ * The builder type declared it and `AnimationModifier` could apply it, but no
+ * factory was registered, so the chain had nothing to resolve: code that
+ * typechecked threw "rotationEffect is not a function". These tests go
+ * through the component chain, which is where that failure showed.
+ */
+
+import { JSDOM } from 'jsdom'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { HStack, Text } from '@tachui/primitives'
+import { createSignal, flushSync, renderComponent } from '@tachui/core'
+import '../../src/preload/basic'
+
+beforeEach(() => {
+  const dom = new JSDOM('<!doctype html><html><body></body></html>', {
+    url: 'http://localhost',
+  })
+  for (const k of [
+    'document', 'window', 'Element', 'HTMLElement', 'DocumentFragment', 'Node',
+  ]) {
+    ;(globalThis as any)[k] =
+      k === 'document' ? dom.window.document
+      : k === 'window' ? dom.window
+      : (dom.window as any)[k]
+  }
+})
+
+function render(component: unknown): HTMLElement {
+  const host = document.createElement('div')
+  renderComponent(component as any, host)
+  return host.firstElementChild as HTMLElement
+}
+
+describe('.rotationEffect()', () => {
+  it('is registered as a modifier', async () => {
+    const { globalModifierRegistry } = await import('@tachui/registry')
+
+    expect(globalModifierRegistry.has('rotationEffect')).toBe(true)
+  })
+
+  it('rotates by degrees around the center by default', () => {
+    const element = render((Text('x') as any).rotationEffect(90))
+
+    expect(element.style.transform).toBe('rotate(90deg)')
+    expect(element.style.transformOrigin).toBe('50% 50%')
+  })
+
+  it('rotates a stack around the anchor it is given', () => {
+    const element = render(
+      (HStack({ children: [Text('x')] }) as any).rotationEffect(
+        -45,
+        'bottomTrailing'
+      )
+    )
+
+    expect(element.style.transform).toBe('rotate(-45deg)')
+    expect(element.style.transformOrigin).toBe('100% 100%')
+  })
+
+  it('follows a signal', () => {
+    const [angle, setAngle] = createSignal(10)
+    const element = render((Text('x') as any).rotationEffect(angle))
+
+    expect(element.style.transform).toBe('rotate(10deg)')
+
+    setAngle(30)
+    flushSync()
+
+    expect(element.style.transform).toBe('rotate(30deg)')
+  })
+
+  it('composes with scaleEffect in either order', () => {
+    const rotatedFirst = render(
+      (Text('x') as any).rotationEffect(90).scaleEffect(2)
+    )
+    const scaledFirst = render(
+      (Text('x') as any).scaleEffect(2).rotationEffect(90)
+    )
+
+    for (const element of [rotatedFirst, scaledFirst]) {
+      expect(element.style.transform).toContain('rotate(90deg)')
+      expect(element.style.transform).toContain('scale(2, 2)')
+    }
+  })
+
+  it('replaces a previous rotation rather than stacking it', () => {
+    const [angle, setAngle] = createSignal(10)
+    const element = render(
+      (Text('x') as any).scaleEffect(2).rotationEffect(angle)
+    )
+
+    setAngle(20)
+    flushSync()
+
+    expect(element.style.transform).not.toContain('rotate(10deg)')
+    expect(element.style.transform).toContain('rotate(20deg)')
+    expect(element.style.transform).toContain('scale(2, 2)')
+  })
+})
