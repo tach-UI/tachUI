@@ -76,7 +76,7 @@ describe('Scale Effect Modifier', () => {
       modifier.apply({} as DOMNode, mockContext)
 
       expect(mockElement.style.transform).toBe('scale(2, 2)')
-      expect(mockElement.style.transformOrigin).toBe('center center')
+      expect(mockElement.style.transformOrigin).toBe('')
     })
 
     it('should apply non-uniform scaling', () => {
@@ -84,7 +84,7 @@ describe('Scale Effect Modifier', () => {
       modifier.apply({} as DOMNode, mockContext)
 
       expect(mockElement.style.transform).toBe('scale(1.5, 0.8)')
-      expect(mockElement.style.transformOrigin).toBe('center center')
+      expect(mockElement.style.transformOrigin).toBe('')
     })
 
     it('should handle zero scaling', () => {
@@ -136,34 +136,49 @@ describe('Scale Effect Modifier', () => {
     })
   })
 
+  // The anchor travels inside the transform, around the element's center,
+  // rather than through `transform-origin`: that is one value per element, so
+  // a scale and a rotation with different anchors could not both keep theirs.
   describe('Anchor Point Support', () => {
     const anchorTests = [
-      { anchor: 'center' as const, expected: 'center center' },
-      { anchor: 'top' as const, expected: 'center top' },
-      { anchor: 'topLeading' as const, expected: 'left top' },
-      { anchor: 'topTrailing' as const, expected: 'right top' },
-      { anchor: 'bottom' as const, expected: 'center bottom' },
-      { anchor: 'bottomLeading' as const, expected: 'left bottom' },
-      { anchor: 'bottomTrailing' as const, expected: 'right bottom' },
-      { anchor: 'leading' as const, expected: 'left center' },
-      { anchor: 'trailing' as const, expected: 'right center' },
+      { anchor: 'top' as const, offset: ['0%', '-50%'] },
+      { anchor: 'topLeading' as const, offset: ['-50%', '-50%'] },
+      { anchor: 'topTrailing' as const, offset: ['50%', '-50%'] },
+      { anchor: 'bottom' as const, offset: ['0%', '50%'] },
+      { anchor: 'bottomLeading' as const, offset: ['-50%', '50%'] },
+      { anchor: 'bottomTrailing' as const, offset: ['50%', '50%'] },
+      { anchor: 'leading' as const, offset: ['-50%', '0%'] },
+      { anchor: 'trailing' as const, offset: ['50%', '0%'] },
     ]
 
-    anchorTests.forEach(({ anchor, expected }) => {
-      it(`should set transform-origin for ${anchor} anchor`, () => {
+    anchorTests.forEach(({ anchor, offset: [x, y] }) => {
+      it(`should scale around the ${anchor} anchor`, () => {
         const modifier = scaleEffect(1.5, 1.5, anchor)
         modifier.apply({} as DOMNode, mockContext)
 
-        expect(mockElement.style.transformOrigin).toBe(expected)
-        expect(mockElement.style.transform).toBe('scale(1.5, 1.5)')
+        const back = (value: string) =>
+          value === '0%' ? '0%' : value.startsWith('-') ? value.slice(1) : `-${value}`
+        expect(mockElement.style.transform).toBe(
+          `translate(${x}, ${y}) scale(1.5, 1.5) translate(${back(x)}, ${back(y)})`
+        )
+        expect(mockElement.style.transformOrigin).toBe('')
       })
+    })
+
+    it('should scale around the center without wrapping', () => {
+      const modifier = scaleEffect(1.5, 1.5, 'center')
+      modifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.transform).toBe('scale(1.5, 1.5)')
+      expect(mockElement.style.transformOrigin).toBe('')
     })
 
     it('should default to center anchor', () => {
       const modifier = scaleEffect(1.2)
       modifier.apply({} as DOMNode, mockContext)
 
-      expect(mockElement.style.transformOrigin).toBe('center center')
+      expect(mockElement.style.transform).toBe('scale(1.2, 1.2)')
+      expect(mockElement.style.transformOrigin).toBe('')
     })
   })
 

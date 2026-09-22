@@ -226,7 +226,7 @@ describe('Layout Modifiers Stress Tests', () => {
       const scaleModifier = scaleEffect(1.5, 1.0, 'center')
       scaleModifier.apply({} as DOMNode, mockContext)
 
-      // Should update transform and transformOrigin
+      // Transform only: the anchor travels inside it, not in transformOrigin
       expect(mockElement._styleUpdates).toBeLessThanOrEqual(4)
     })
 

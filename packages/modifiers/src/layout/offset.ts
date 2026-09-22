@@ -7,6 +7,7 @@
 
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
+import { setTransformPart } from '../basic/transform-composition'
 import type { ModifierContext } from '@tachui/types/modifiers'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 
@@ -43,20 +44,7 @@ export class OffsetModifier extends BaseModifier<OffsetOptions> {
   private applyOffset(element: HTMLElement, x: number, y: number): void {
     const offsetX = this.toCSSValue(x)
     const offsetY = this.toCSSValue(y)
-    const translateValue = `translate(${offsetX}, ${offsetY})`
-
-    // Preserve existing transforms but replace any existing translate functions
-    const existingTransform = element.style.transform || ''
-    const existingTransforms = existingTransform
-      .replace(/\s*translate(?!Z\(0\))[XYZ3d]*\([^)]*\)\s*/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    const newTransform = existingTransforms
-      ? `${existingTransforms} ${translateValue}`
-      : translateValue
-
-    element.style.transform = newTransform
+    setTransformPart(element, 'offset', `translate(${offsetX}, ${offsetY})`)
   }
 
   /**

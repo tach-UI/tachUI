@@ -7,6 +7,10 @@
 
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
+import {
+  anchorTransform,
+  setTransformPart,
+} from '../basic/transform-composition'
 import type { ModifierContext } from '@tachui/types/modifiers'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 import type { Signal } from '@tachui/types/reactive'
@@ -79,39 +83,13 @@ export class ScaleEffectModifier extends BaseModifier<ScaleEffectOptions> {
     y: number,
     anchor: ScaleAnchor
   ): void {
-    const scaleValue = `scale(${x}, ${y})`
-
-    // Set transform-origin based on anchor
-    element.style.transformOrigin = this.getTransformOrigin(anchor)
-
-    // Preserve existing transforms but replace any existing scale functions
-    const existingTransform = element.style.transform || ''
-    const existingTransforms = existingTransform
-      .replace(/\s*scale[XYZ3d]*\([^)]*\)\s*/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    const newTransform = existingTransforms
-      ? `${existingTransforms} ${scaleValue}`.trim()
-      : scaleValue
-
-    element.style.transform = newTransform
-  }
-
-  private getTransformOrigin(anchor: ScaleAnchor): string {
-    const anchorMap: Record<ScaleAnchor, string> = {
-      center: 'center center',
-      top: 'center top',
-      topLeading: 'left top',
-      topTrailing: 'right top',
-      bottom: 'center bottom',
-      bottomLeading: 'left bottom',
-      bottomTrailing: 'right bottom',
-      leading: 'left center',
-      trailing: 'right center',
-    }
-
-    return anchorMap[anchor]
+    // The anchor travels inside the part rather than through
+    // `transform-origin`, so a rotation can keep an anchor of its own.
+    setTransformPart(
+      element,
+      'scale',
+      anchorTransform(`scale(${x}, ${y})`, anchor)
+    )
   }
 
   /**

@@ -197,6 +197,10 @@ VStack()
   
 ```
 
+`offset`, `rotationEffect`, `scaleEffect` and a raw `.transform()` string compose into one CSS `transform` rather than overwriting each other, so chaining `.transform()` after an effect adds to it, and a signal-driven one updating later does not erase it. They apply in a fixed order whatever the chain order: the view rotates and scales in place, then the offset moves it by the amount given, unscaled.
+
+Each effect keeps its own anchor — a scale around `topLeading` and a rotation around `bottomTrailing` both hold. The anchor is expressed inside the transform, relative to the element's center, so leave `transform-origin` at its default when using anchored effects.
+
 ## Transform with Transitions
 
 Animate transforms smoothly with transition modifiers:
