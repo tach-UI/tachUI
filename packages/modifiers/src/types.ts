@@ -28,6 +28,21 @@ import type { Shape } from '@tachui/types/shapes'
 export type { DOMNode } from '@tachui/types/runtime'
 // Temporary type definitions until we migrate all types
 export type Dimension = number | string | 'infinity'
+
+/**
+ * Anchor point a rotation turns around
+ */
+export type RotationAnchor =
+  | 'center'
+  | 'top'
+  | 'topLeading'
+  | 'topTrailing'
+  | 'bottom'
+  | 'bottomLeading'
+  | 'bottomTrailing'
+  | 'leading'
+  | 'trailing'
+
 export interface StatefulBackgroundValue {
   default: any
   hover?: any
@@ -355,16 +370,7 @@ export interface AnimationModifierProps {
   transform?: string | Signal<string>
   rotationEffect?: {
     angle: number | Signal<number>
-    anchor?:
-      | 'center'
-      | 'top'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottom'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-      | 'leading'
-      | 'trailing'
+    anchor?: RotationAnchor
   }
 }
 
@@ -569,16 +575,7 @@ export interface ModifierBuilder<
   clipped(): ModifierBuilder<T>
   rotationEffect(
     angle: number | Signal<number>,
-    anchor?:
-      | 'center'
-      | 'top'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottom'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-      | 'leading'
-      | 'trailing'
+    anchor?: RotationAnchor
   ): ModifierBuilder<T>
 
   // Phase 2 SwiftUI modifiers

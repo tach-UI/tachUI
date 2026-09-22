@@ -5,7 +5,10 @@
  */
 
 import type { Signal } from '@tachui/types/reactive'
+import type { RotationAnchor } from '../types'
 import { AnimationModifier } from './base'
+
+export type { RotationAnchor }
 
 /**
  * Transition configuration options
@@ -78,20 +81,6 @@ export function transition(
     },
   })
 }
-
-/**
- * Anchor point a rotation turns around
- */
-export type RotationAnchor =
-  | 'center'
-  | 'top'
-  | 'topLeading'
-  | 'topTrailing'
-  | 'bottom'
-  | 'bottomLeading'
-  | 'bottomTrailing'
-  | 'leading'
-  | 'trailing'
 
 /**
  * Rotate an element by an angle in degrees around an anchor point
