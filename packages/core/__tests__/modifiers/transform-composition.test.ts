@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import {
   anchorTransform,
   setTransformPart,
-} from '../../src/basic/transform-composition'
+} from '../../src/modifiers/transform-composition'
 
 function element(transform = '') {
   return { style: { transform } }

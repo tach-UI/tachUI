@@ -16,7 +16,7 @@ import {
 } from '@tachui/core/modifiers/base'
 import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
-import type { ModifierResult } from '@tachui/types/modifiers'
+import type { ModifierResult, TransformAnchor } from '@tachui/types/modifiers'
 import type {
   CSSStyleProperties,
   LifecycleModifierProps,
@@ -32,6 +32,7 @@ import {
   shouldExpandForInfinity,
 } from '@tachui/core/constants/layout'
 import { clipPathFor } from './appearance/clip-path'
+import { anchorTransform, setTransformPart } from '@tachui/core/modifiers'
 
 function isHTMLElementRuntimeElement(element: unknown): element is HTMLElement {
   return typeof HTMLElement !== 'undefined' && element instanceof HTMLElement
@@ -380,51 +381,22 @@ export class LayoutModifier extends BaseModifier {
     offset: { x?: any; y?: any }
   ): void {
     const { x, y } = offset
+    const write = (currentX: any, currentY: any) =>
+      setTransformPart(
+        element,
+        'offset',
+        `translate(${this.toCSSValue(currentX)}, ${this.toCSSValue(currentY)})`
+      )
 
-    // Handle reactive values
     if (isSignal(x) || isComputed(x) || isSignal(y) || isComputed(y)) {
       createEffect(() => {
-        const currentX = isSignal(x) || isComputed(x) ? x() : (x ?? 0)
-        const currentY = isSignal(y) || isComputed(y) ? y() : (y ?? 0)
-
-        const offsetX = this.toCSSValue(currentX)
-        const offsetY = this.toCSSValue(currentY)
-        const translateValue = `translate(${offsetX}, ${offsetY})`
-
-        // Preserve existing transforms but replace any existing translate
-        const existingTransform = element.style.transform || ''
-        const existingTransforms = existingTransform
-          .split(' ')
-          .filter(t => t && !t.startsWith('translate('))
-          .join(' ')
-
-        const newTransform = existingTransforms
-          ? `${existingTransforms} ${translateValue}`
-          : translateValue
-
-        element.style.transform = newTransform
+        write(
+          isSignal(x) || isComputed(x) ? x() : (x ?? 0),
+          isSignal(y) || isComputed(y) ? y() : (y ?? 0)
+        )
       })
     } else {
-      // Handle static values
-      const currentX = x ?? 0
-      const currentY = y ?? 0
-
-      const offsetX = this.toCSSValue(currentX)
-      const offsetY = this.toCSSValue(currentY)
-      const translateValue = `translate(${offsetX}, ${offsetY})`
-
-      // Preserve existing transforms but replace any existing translate
-      const existingTransform = element.style.transform || ''
-      const existingTransforms = existingTransform
-        .split(' ')
-        .filter(t => t && !t.startsWith('translate('))
-        .join(' ')
-
-      const newTransform = existingTransforms
-        ? `${existingTransforms} ${translateValue}`
-        : translateValue
-
-      element.style.transform = newTransform
+      write(x ?? 0, y ?? 0)
     }
   }
 
@@ -463,8 +435,18 @@ export class LayoutModifier extends BaseModifier {
     const { x, y, anchor } = scaleEffect
     const scaleX = x ?? 1
     const scaleY = y ?? scaleX // Default to uniform scaling if y not provided
+    // The anchor travels inside the part rather than through
+    // `transform-origin`, so another effect can keep an anchor of its own.
+    const write = (currentX: any, currentY: any) =>
+      setTransformPart(
+        element,
+        'scale',
+        anchorTransform(
+          `scale(${currentX}, ${currentY})`,
+          anchor as TransformAnchor | undefined
+        )
+      )
 
-    // Handle reactive values
     if (
       isSignal(scaleX) ||
       isComputed(scaleX) ||
@@ -472,52 +454,13 @@ export class LayoutModifier extends BaseModifier {
       isComputed(scaleY)
     ) {
       createEffect(() => {
-        const currentX =
-          isSignal(scaleX) || isComputed(scaleX) ? scaleX() : scaleX
-        const currentY =
+        write(
+          isSignal(scaleX) || isComputed(scaleX) ? scaleX() : scaleX,
           isSignal(scaleY) || isComputed(scaleY) ? scaleY() : scaleY
-
-        const scaleValue = `scale(${currentX}, ${currentY})`
-
-        // Set transform-origin based on anchor
-        element.style.transformOrigin = this.getTransformOrigin(
-          anchor || 'center'
         )
-
-        // Preserve existing transforms but replace any existing scale
-        const existingTransform = element.style.transform || ''
-        const existingTransforms = existingTransform
-          .replace(/\s*scale\([^)]*\)\s*/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-
-        const newTransform = existingTransforms
-          ? `${existingTransforms} ${scaleValue}`
-          : scaleValue
-
-        element.style.transform = newTransform
       })
     } else {
-      // Handle static values
-      const scaleValue = `scale(${scaleX}, ${scaleY})`
-
-      // Set transform-origin based on anchor
-      element.style.transformOrigin = this.getTransformOrigin(
-        anchor || 'center'
-      )
-
-      // Preserve existing transforms but replace any existing scale
-      const existingTransform = element.style.transform || ''
-      const existingTransforms = existingTransform
-        .replace(/\s*scale\([^)]*\)\s*/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-
-      const newTransform = existingTransforms
-        ? `${existingTransforms} ${scaleValue}`
-        : scaleValue
-
-      element.style.transform = newTransform
+      write(scaleX, scaleY)
     }
   }
 
@@ -560,22 +503,6 @@ export class LayoutModifier extends BaseModifier {
       // Handle static values
       element.style.zIndex = String(zIndex)
     }
-  }
-
-  private getTransformOrigin(anchor: string): string {
-    const anchorMap: Record<string, string> = {
-      center: 'center center',
-      top: 'center top',
-      topLeading: 'left top',
-      topTrailing: 'right top',
-      bottom: 'center bottom',
-      bottomLeading: 'left bottom',
-      bottomTrailing: 'right bottom',
-      leading: 'left center',
-      trailing: 'right center',
-    }
-
-    return anchorMap[anchor] || 'center center'
   }
 
   private computeLayoutStyles(
@@ -1788,84 +1715,35 @@ export class AnimationModifier extends BaseModifier {
       }
     }
 
-    // Transform
-    if (props.transform && hasStyleTarget(context.element)) {
-      if (isSignal(props.transform) || isComputed(props.transform)) {
-        // Create reactive effect for transform
+    // Transform and rotation each own a part of the element's transform, so
+    // neither erases the other, or an offset or scale, whichever writes last.
+    if (props.transform !== undefined && hasStyleTarget(context.element)) {
+      const element = context.element
+      const { transform } = props
+      if (isSignal(transform) || isComputed(transform)) {
         createEffect(() => {
-          const transformValue = props.transform()
-          if (hasStyleTarget(context.element)) {
-            context.element.style.transform = transformValue
-          }
+          setTransformPart(element, 'raw', transform())
         })
       } else {
-        context.element.style.transform = props.transform
+        setTransformPart(element, 'raw', transform)
       }
     }
 
-    // Rotation Effect (SwiftUI .rotationEffect(angle))
+    // Rotation Effect (SwiftUI .rotationEffect(angle, anchor))
     if (props.rotationEffect && hasStyleTarget(context.element)) {
+      const element = context.element
       const { angle, anchor } = props.rotationEffect
-
-      // Convert anchor to CSS transform-origin
-      const anchorOrigins: Record<string, string> = {
-        center: '50% 50%',
-        top: '50% 0%',
-        topLeading: '0% 0%',
-        topTrailing: '100% 0%',
-        bottom: '50% 100%',
-        bottomLeading: '0% 100%',
-        bottomTrailing: '100% 100%',
-        leading: '0% 50%',
-        trailing: '100% 50%',
-      }
-
-      const transformOrigin = anchorOrigins[anchor || 'center'] || '50% 50%'
-
-      // Create rotation transform
-      const rotationTransform = `rotate(${angle}deg)`
+      const rotate = (degrees: number) =>
+        setTransformPart(
+          element,
+          'rotation',
+          anchorTransform(`rotate(${degrees}deg)`, anchor)
+        )
 
       if (isSignal(angle) || isComputed(angle)) {
-        // Reactive rotation
-        createEffect(() => {
-          const currentAngle = typeof angle === 'function' ? angle() : angle
-          const currentRotation = `rotate(${currentAngle}deg)`
-
-          if (hasStyleTarget(context.element)) {
-            context.element.style.transformOrigin = transformOrigin
-
-            // Combine with existing transforms if any
-            const existingTransform = context.element.style.transform || ''
-            const existingTransforms = existingTransform
-              .split(' ')
-              .filter(t => t && !t.startsWith('rotate('))
-              .join(' ')
-
-            const newTransform = existingTransforms
-              ? `${existingTransforms} ${currentRotation}`
-              : currentRotation
-
-            context.element.style.transform = newTransform
-          }
-        })
+        createEffect(() => rotate(angle()))
       } else {
-        // Static rotation
-        if (hasStyleTarget(context.element)) {
-          context.element.style.transformOrigin = transformOrigin
-
-          // Combine with existing transforms if any
-          const existingTransform = context.element.style.transform || ''
-          const existingTransforms = existingTransform
-            .split(' ')
-            .filter(t => t && !t.startsWith('rotate('))
-            .join(' ')
-
-          const newTransform = existingTransforms
-            ? `${existingTransforms} ${rotationTransform}`
-            : rotationTransform
-
-          context.element.style.transform = newTransform
-        }
+        rotate(angle)
       }
     }
 

@@ -443,7 +443,11 @@ function createSSRVirtualElement(initialStyle: unknown): {
 
   const writeStyle = (name: string, declaration: string): void => {
     const existing = styleState[name]
-    if (existing === undefined) {
+    // A `transform` write is the element's whole composed transform — core's
+    // `setTransformPart` rewrites every part on each write — so an earlier
+    // write is a partial value, not a fallback for this one. Keeping them all
+    // would emit one declaration per transform modifier.
+    if (existing === undefined || name === 'transform') {
       styleState[name] = declaration
       return
     }

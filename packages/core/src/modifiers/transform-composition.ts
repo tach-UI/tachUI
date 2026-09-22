@@ -19,6 +19,11 @@
  * ever honor one effect's anchor. This relies on `transform-origin` keeping
  * its HTML default of the center.
  *
+ * The record lives here, in core, so every writer shares it: the modifiers
+ * package's factories, and core's own `AnimationModifier` constructed directly.
+ * A second copy of this module would keep a second record and overwrite the
+ * first's work.
+ *
  * Anything else on the element's `transform` — written directly by a
  * component, or by a modifier outside this set — is kept, ahead of the parts,
  * except functions of the kind a part replaces: setting an offset drops a
@@ -26,9 +31,7 @@
  * `translateZ(0)`, the compositing hint `position` writes, is kept.
  */
 
-import type { RotationAnchor } from '../types'
-
-export type TransformAnchor = RotationAnchor
+import type { TransformAnchor } from './types'
 
 export type TransformPart = 'offset' | 'rotation' | 'scale' | 'raw'
 

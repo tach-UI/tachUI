@@ -16,6 +16,12 @@ export {
   ResizableModifier,
 } from './base'
 
+export {
+  anchorTransform,
+  setTransformPart,
+  type TransformPart,
+} from './transform-composition'
+
 export type {
   AnimationModifierProps,
   AppearanceModifierProps,
@@ -37,6 +43,7 @@ export type {
   ModifierResult,
   ReactiveModifierProps,
   StyleComputationContext,
+  TransformAnchor,
 } from './types'
 export { ModifierPriority } from './types'
 

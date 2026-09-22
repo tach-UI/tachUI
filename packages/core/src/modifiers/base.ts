@@ -27,6 +27,7 @@ import {
   shouldExpandForInfinity,
 } from '../constants/layout'
 import { bindReactiveStyle } from './reactive-style-bindings'
+import { anchorTransform, setTransformPart } from './transform-composition'
 export {
   bindReactiveStyle,
   setReactiveStyleUpdaterErrorHandler,
@@ -1458,57 +1459,46 @@ export class AnimationModifier extends BaseModifier {
       }
     }
 
-    // Transform
-    if (props.transform && hasStyleTarget(context.element)) {
-      if (isSignal(props.transform) || isComputed(props.transform)) {
-        // Create reactive effect for transform
+    // Transform, scale and rotation each own a part of the element's
+    // transform, so none erases another, whichever writes last.
+    if (props.transform !== undefined && hasStyleTarget(context.element)) {
+      const element = context.element
+      const { transform } = props
+      if (isSignal(transform) || isComputed(transform)) {
         createEffect(() => {
-          const transformValue = props.transform()
-          if (hasStyleTarget(context.element)) {
-            context.element.style.transform = transformValue
-          }
+          setTransformPart(element, 'raw', transform())
         })
       } else {
-        context.element.style.transform = props.transform
+        setTransformPart(element, 'raw', transform)
       }
     }
 
     // Scale Effect (SwiftUI .scaleEffect(x, y, anchor))
     if (props.scaleEffect && hasStyleTarget(context.element)) {
       const { x, y, anchor } = props.scaleEffect
-      const scaleY = y ?? x // Default to uniform scaling if y not provided
+      setTransformPart(
+        context.element,
+        'scale',
+        anchorTransform(`scale(${x}, ${y ?? x})`, anchor)
+      )
+    }
 
-      // Convert anchor to CSS transform-origin
-      const anchorOrigins: Record<string, string> = {
-        center: '50% 50%',
-        top: '50% 0%',
-        topLeading: '0% 0%',
-        topTrailing: '100% 0%',
-        bottom: '50% 100%',
-        bottomLeading: '0% 100%',
-        bottomTrailing: '100% 100%',
-        leading: '0% 50%',
-        trailing: '100% 50%',
+    // Rotation Effect (SwiftUI .rotationEffect(angle, anchor))
+    if (props.rotationEffect && hasStyleTarget(context.element)) {
+      const element = context.element
+      const { angle, anchor } = props.rotationEffect
+      const rotate = (degrees: number) =>
+        setTransformPart(
+          element,
+          'rotation',
+          anchorTransform(`rotate(${degrees}deg)`, anchor)
+        )
+
+      if (isSignal(angle) || isComputed(angle)) {
+        createEffect(() => rotate(angle()))
+      } else {
+        rotate(angle)
       }
-
-      const transformOrigin = anchorOrigins[anchor || 'center'] || '50% 50%'
-      context.element.style.transformOrigin = transformOrigin
-
-      // Create scale transform
-      const scaleTransform = `scale(${x}, ${scaleY})`
-
-      // Preserve existing transforms but replace any existing scale functions
-      const existingTransform = context.element.style.transform || ''
-      const existingTransforms = existingTransform
-        .replace(/\s*scale[XYZ3d]*\([^)]*\)\s*/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-
-      const newTransform = existingTransforms
-        ? `${existingTransforms} ${scaleTransform}`.trim()
-        : scaleTransform
-
-      context.element.style.transform = newTransform
     }
 
     // Overlay modifier moved to @tachui/modifiers package

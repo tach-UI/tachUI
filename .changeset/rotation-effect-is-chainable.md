@@ -1,6 +1,9 @@
 ---
+'@tachui/core': patch
 '@tachui/modifiers': patch
 '@tachui/primitives': patch
+'@tachui/ssr': patch
+'@tachui/types': patch
 ---
 
 `.rotationEffect(angle, anchor?)` works on the component chain.
@@ -34,6 +37,21 @@ scale around `topLeading` and a rotation around `bottomTrailing` both hold.
 A transform already on the element when an effect is first applied is kept,
 except functions of the same kind: an offset still replaces an existing
 translate, a scale an existing scale, as before.
+
+The composer lives in `@tachui/core/modifiers` (`setTransformPart`,
+`anchorTransform`), so every writer shares one record per element. That
+includes the `AnimationModifier` and `LayoutModifier` classes constructed
+directly, from core or from either `@tachui/modifiers` entry: their
+`transform`, `offset` and `scaleEffect` branches compose the same way, and
+core's `AnimationModifier` now applies `rotationEffect`, which it ignored.
+`AnimationModifierProps` in `@tachui/types` declares `rotationEffect`, and the
+nine anchor names are one `TransformAnchor` type there.
+
+Server rendering emits a composed transform as one declaration. Each
+transform modifier writes the whole composed value, and the SSR style shim
+kept every write, so an element with four transform modifiers carried four
+`transform` declarations. The result was right, since the last wins, but three
+were dead weight; a `transform` write now replaces the previous one.
 
 The shape docs now show `.rotationEffect(-90)` for the quarter turn a progress
 ring wants, which `.transform('rotate(-90deg)')` still does equally well.
