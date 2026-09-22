@@ -1044,6 +1044,20 @@ Apply raw CSS properties for advanced styling.
 })
 ```
 
+Any value can be a signal or memo, and that property updates in place when it changes. This suits values with no typed modifier, such as a layered `background`:
+
+```typescript
+const background = createMemo(() =>
+  theme() === 'dark'
+    ? 'linear-gradient(#1a1a1a, #2d2d2d)'
+    : 'linear-gradient(#ffffff, #f0f0f0)'
+)
+
+.css({ background, cursor: 'pointer' })
+```
+
+A number becomes pixels, except on unitless properties such as `opacity`, `z-index` and `line-height`. `.cssProperty()` and `.cssVariable()` take signals the same way.
+
 ### `.cssProperty(property, value)`
 Set individual CSS property.
 

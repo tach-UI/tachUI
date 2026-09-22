@@ -9,31 +9,27 @@
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
 import type {
+  CSSStyleProperties,
   ModifierContext,
-  ReactiveModifierProps,
 } from '@tachui/types/modifiers'
+import type { Signal } from '@tachui/types/reactive'
+
+export type CSSValue = string | number | Signal<string> | Signal<number>
 
 export interface CSSOptions {
-  [property: string]: string | number | undefined
+  [property: string]: CSSValue | undefined
 }
 
-export type ReactiveCSSOptions = ReactiveModifierProps<CSSOptions>
+export type ReactiveCSSOptions = CSSOptions
 
 export class CSSModifier extends BaseModifier<CSSOptions> {
   readonly type = 'css'
   readonly priority = 5 // Very low priority so raw CSS doesn't override specific modifiers
 
-  constructor(options: ReactiveCSSOptions) {
-    // Convert reactive options to regular options for immediate use
-    const resolvedOptions: CSSOptions = {}
-    for (const [key, value] of Object.entries(options)) {
-      if (typeof value === 'function' && 'peek' in value) {
-        ;(resolvedOptions as any)[key] = (value as any).peek()
-      } else {
-        ;(resolvedOptions as any)[key] = value
-      }
-    }
-    super(resolvedOptions)
+  // Signals are kept as they are: `applyStyles` binds each one and updates the
+  // property in place. Reading them here would freeze them at their first value.
+  constructor(options: CSSOptions) {
+    super(options)
   }
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
@@ -45,14 +41,17 @@ export class CSSModifier extends BaseModifier<CSSOptions> {
     return undefined
   }
 
-  private computeCSSStyles(props: CSSOptions) {
-    const styles: Record<string, string> = {}
+  // Values pass through unconverted: `applyStyles` turns each into CSS the
+  // same way whether it is static or a signal's current value, which keeps a
+  // number unitless where the property is (`opacity`, `z-index`) instead of
+  // making it `0.5px`.
+  private computeCSSStyles(props: CSSOptions): CSSStyleProperties {
+    const styles: CSSStyleProperties = {}
 
     for (const [property, value] of Object.entries(props)) {
       if (value !== undefined) {
         // Convert camelCase to kebab-case for CSS properties
-        const cssProperty = this.toCSSProperty(property)
-        styles[cssProperty] = this.toCSSValue(value)
+        styles[this.toCSSProperty(property)] = value
       }
     }
 
@@ -104,10 +103,7 @@ export function css(properties: ReactiveCSSOptions): CSSModifier {
  * .cssProperty('aspectRatio', '16/9')
  * ```
  */
-export function cssProperty(
-  property: string,
-  value: string | number
-): CSSModifier {
+export function cssProperty(property: string, value: CSSValue): CSSModifier {
   return new CSSModifier({ [property]: value })
 }
 
@@ -121,7 +117,7 @@ export function cssProperty(
  * .cssVariable('border-radius', '12px')
  * ```
  */
-export function cssVariable(name: string, value: string | number): CSSModifier {
+export function cssVariable(name: string, value: CSSValue): CSSModifier {
   // Ensure the property starts with --
   const propertyName = name.startsWith('--') ? name : `--${name}`
   return new CSSModifier({ [propertyName]: value })
