@@ -28,7 +28,14 @@
  * component, or by a modifier outside this set — is kept, ahead of the parts,
  * except functions of the kind a part replaces: setting an offset drops a
  * translate already there, a scale drops a scale, a rotation a rotate.
- * `translateZ(0)`, the compositing hint `position` writes, is kept.
+ * `translateZ(0)`, the compositing hint `position` writes, is kept. A raw
+ * part is opaque, so a raw `scale()` and a `scaleEffect` both apply rather
+ * than one replacing the other.
+ *
+ * Known limitation: the composer tells its own functions from someone else's
+ * by comparing strings, so an outside writer that appends an exact copy of a
+ * function the composer wrote has that copy treated as the composer's own
+ * preserved one, and it renders twice. No writer in the repo does this.
  */
 
 import type { TransformAnchor } from './types'
@@ -99,7 +106,11 @@ export function setTransformPart(
   let state = compositions.get(element)
 
   if (!state) {
-    state = { parts: new Map(), foreign: current, written: current }
+    // Keep only the functions. `none` is the identity rather than a function,
+    // and left in place it would make `none rotate(90deg)`, which is not a
+    // transform list at all, so the browser would drop the whole value.
+    const foreign = splitFunctions(current).join(' ')
+    state = { parts: new Map(), foreign, written: current }
     compositions.set(element, state)
   } else if (current !== state.written) {
     // Someone else wrote since we did. Keep what they wrote, minus our own

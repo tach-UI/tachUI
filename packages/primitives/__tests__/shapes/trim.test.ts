@@ -248,6 +248,7 @@ describe('the documented progress ring', () => {
     const wrapper = container.querySelector('.tachui-shape') as HTMLElement
 
     expect(wrapper.style.transform).toBe('rotate(-90deg)')
+    expect(wrapper.style.transformOrigin).toBe('')
   })
 })
 
