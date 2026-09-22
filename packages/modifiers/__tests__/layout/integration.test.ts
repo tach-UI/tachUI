@@ -298,7 +298,7 @@ describe('Layout Modifiers Integration', () => {
       expect(mockElement.style.transform).toBe(
         'translateZ(0) scale(0.95, 0.95)'
       )
-      expect(mockElement.style.transformOrigin).toBe('center center')
+      expect(mockElement.style.transformOrigin).toBe('')
       expect(mockElement.style.aspectRatio).toBe(String(3 / 2))
       expect(mockElement.style.objectFit).toBe('contain')
     })
@@ -340,7 +340,7 @@ describe('Layout Modifiers Integration', () => {
       expect(mockElement.style.width).toBe('100%')
       expect(mockElement.style.height).toBe('100%')
       expect(mockElement.style.transform).toBe('scale(1, 1)')
-      expect(mockElement.style.transformOrigin).toBe('center center')
+      expect(mockElement.style.transformOrigin).toBe('')
       expect(mockElement.style.position).toBe('relative')
       expect(mockElement.style.zIndex).toBe('1')
     })
@@ -372,10 +372,12 @@ describe('Layout Modifiers Integration', () => {
       expect(mockElement.style.alignSelf).toBe('flex-start')
 
       // Transforms
+      // The bottom anchor travels inside the scale's part, so it cannot be
+      // overwritten by another effect's anchor.
       expect(mockElement.style.transform).toBe(
-        'translate(0px, -10px) scale(1.05, 1)'
+        'translate(0px, -10px) translate(0%, 50%) scale(1.05, 1) translate(0%, -50%)'
       )
-      expect(mockElement.style.transformOrigin).toBe('center bottom')
+      expect(mockElement.style.transformOrigin).toBe('')
 
       // Z-index (no position change for flex items)
       expect(mockElement.style.zIndex).toBe('10')
@@ -400,8 +402,10 @@ describe('Layout Modifiers Integration', () => {
       zIndexModifier.apply({} as DOMNode, mockContext)
       aspectRatioModifier.apply({} as DOMNode, mockContext)
 
+      // Offset is outermost whatever the apply order, so it moves the view by
+      // the amount asked rather than a scaled amount.
       expect(mockElement.style.transform).toBe(
-        'scale(1, 1) translate(0px, 5px)'
+        'translate(0px, 5px) scale(1, 1)'
       )
       expect(mockElement.style.zIndex).toBe('1')
       expect(mockElement.style.aspectRatio).toBe('1')
@@ -415,7 +419,7 @@ describe('Layout Modifiers Integration', () => {
       flushSync() // Trigger pending effects
 
       expect(mockElement.style.transform).toBe(
-        'scale(1.2, 1.2) translate(15px, 5px)'
+        'translate(15px, 5px) scale(1.2, 1.2)'
       )
       expect(mockElement.style.zIndex).toBe('50')
       expect(mockElement.style.aspectRatio).toBe(String(16 / 9))

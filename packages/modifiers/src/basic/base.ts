@@ -33,6 +33,7 @@ import {
   shouldExpandForInfinity,
 } from '@tachui/core/constants/layout'
 import { clipPathFor } from '../appearance/clip-path'
+import { anchorTransform, setTransformPart } from './transform-composition'
 
 const modifierInstanceIdSymbol = Symbol.for('tachui.modifier.instanceId')
 const updaterScope = 'package'
@@ -1596,84 +1597,35 @@ export class AnimationModifier extends BaseModifier {
       }
     }
 
-    // Transform
-    if (props.transform && hasStyleTarget(context.element)) {
-      if (isSignal(props.transform) || isComputed(props.transform)) {
-        // Create reactive effect for transform
+    // Transform and rotation each own a part of the element's transform, so
+    // neither erases the other, or an offset or scale, whichever writes last.
+    if (props.transform !== undefined && hasStyleTarget(context.element)) {
+      const element = context.element
+      const { transform } = props
+      if (isSignal(transform) || isComputed(transform)) {
         createEffect(() => {
-          const transformValue = props.transform()
-          if (hasStyleTarget(context.element)) {
-            context.element.style.transform = transformValue
-          }
+          setTransformPart(element, 'raw', transform())
         })
       } else {
-        context.element.style.transform = props.transform
+        setTransformPart(element, 'raw', transform)
       }
     }
 
-    // Rotation Effect (SwiftUI .rotationEffect(angle))
+    // Rotation Effect (SwiftUI .rotationEffect(angle, anchor))
     if (props.rotationEffect && hasStyleTarget(context.element)) {
+      const element = context.element
       const { angle, anchor } = props.rotationEffect
-
-      // Convert anchor to CSS transform-origin
-      const anchorOrigins: Record<string, string> = {
-        center: '50% 50%',
-        top: '50% 0%',
-        topLeading: '0% 0%',
-        topTrailing: '100% 0%',
-        bottom: '50% 100%',
-        bottomLeading: '0% 100%',
-        bottomTrailing: '100% 100%',
-        leading: '0% 50%',
-        trailing: '100% 50%',
-      }
-
-      const transformOrigin = anchorOrigins[anchor || 'center'] || '50% 50%'
-
-      // Create rotation transform
-      const rotationTransform = `rotate(${angle}deg)`
+      const rotate = (degrees: number) =>
+        setTransformPart(
+          element,
+          'rotation',
+          anchorTransform(`rotate(${degrees}deg)`, anchor)
+        )
 
       if (isSignal(angle) || isComputed(angle)) {
-        // Reactive rotation
-        createEffect(() => {
-          const currentAngle = typeof angle === 'function' ? angle() : angle
-          const currentRotation = `rotate(${currentAngle}deg)`
-
-          if (hasStyleTarget(context.element)) {
-            context.element.style.transformOrigin = transformOrigin
-
-            // Combine with existing transforms if any
-            const existingTransform = context.element.style.transform || ''
-            const existingTransforms = existingTransform
-              .split(' ')
-              .filter(t => t && !t.startsWith('rotate('))
-              .join(' ')
-
-            const newTransform = existingTransforms
-              ? `${existingTransforms} ${currentRotation}`
-              : currentRotation
-
-            context.element.style.transform = newTransform
-          }
-        })
+        createEffect(() => rotate(angle()))
       } else {
-        // Static rotation
-        if (hasStyleTarget(context.element)) {
-          context.element.style.transformOrigin = transformOrigin
-
-          // Combine with existing transforms if any
-          const existingTransform = context.element.style.transform || ''
-          const existingTransforms = existingTransform
-            .split(' ')
-            .filter(t => t && !t.startsWith('rotate('))
-            .join(' ')
-
-          const newTransform = existingTransforms
-            ? `${existingTransforms} ${rotationTransform}`
-            : rotationTransform
-
-          context.element.style.transform = newTransform
-        }
+        rotate(angle)
       }
     }
 
