@@ -66,6 +66,7 @@ export type MarginOptions =
       left?: never
     }
 
+import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from './base'
 import type {
@@ -99,7 +100,7 @@ export class MarginModifier extends BaseModifier<MarginOptions> {
 
     // Enhanced value formatter with comprehensive CSS unit support
     // Now handles reactive signals properly by passing them through unchanged
-    const formatValue = (value: MarginValue): any => {
+    const formatValue = (value: MarginValue | Signal<MarginValue>): any => {
       // Pass reactive signals through directly to applyStyles
       if (isSignal(value) || isComputed(value)) {
         return value
@@ -194,15 +195,31 @@ export class MarginModifier extends BaseModifier<MarginOptions> {
  * ```
  */
 export function margin(options: ReactiveMarginOptions): MarginModifier
-export function margin(all: MarginValue): MarginModifier
+export function margin(all: MarginValue | Signal<MarginValue>): MarginModifier
 export function margin(
-  optionsOrAll: ReactiveMarginOptions | MarginValue
+  optionsOrAll: ReactiveMarginOptions | MarginValue | Signal<MarginValue>
 ): MarginModifier {
+  // A signal is a function, so without this it would be read as the options
+  // object and no margin would be set.
+  if (isSignal(optionsOrAll) || isComputed(optionsOrAll)) {
+    return new MarginModifier({ all: optionsOrAll as unknown as MarginValue })
+  }
+
   if (typeof optionsOrAll === 'number' || typeof optionsOrAll === 'string') {
     return new MarginModifier({ all: optionsOrAll })
   }
   return new MarginModifier(optionsOrAll)
 }
+
+/**
+ * The builder form of `margin`'s overloads. Deriving builder methods from a
+ * factory keeps only its last overload, so these are written out.
+ */
+export interface MarginBuilderMethods {
+  margin(options: ReactiveMarginOptions): this
+  margin(all: MarginValue | Signal<MarginValue>): this
+}
+
 
 /**
  * Convenience function for top margin only
@@ -214,7 +231,7 @@ export function margin(
  * .marginTop('2vh')
  * ```
  */
-export function marginTop(value: MarginValue): MarginModifier {
+export function marginTop(value: MarginValue | Signal<MarginValue>): MarginModifier {
   return new MarginModifier({ top: value })
 }
 
@@ -227,7 +244,7 @@ export function marginTop(value: MarginValue): MarginModifier {
  * .marginBottom('2rem')
  * ```
  */
-export function marginBottom(value: MarginValue): MarginModifier {
+export function marginBottom(value: MarginValue | Signal<MarginValue>): MarginModifier {
   return new MarginModifier({ bottom: value })
 }
 
@@ -240,7 +257,7 @@ export function marginBottom(value: MarginValue): MarginModifier {
  * .marginLeft('1rem')
  * ```
  */
-export function marginLeft(value: MarginValue): MarginModifier {
+export function marginLeft(value: MarginValue | Signal<MarginValue>): MarginModifier {
   return new MarginModifier({ left: value })
 }
 
@@ -253,7 +270,7 @@ export function marginLeft(value: MarginValue): MarginModifier {
  * .marginRight('1rem')
  * ```
  */
-export function marginRight(value: MarginValue): MarginModifier {
+export function marginRight(value: MarginValue | Signal<MarginValue>): MarginModifier {
   return new MarginModifier({ right: value })
 }
 
@@ -266,7 +283,7 @@ export function marginRight(value: MarginValue): MarginModifier {
  * .marginLeading('1rem')
  * ```
  */
-export function marginLeading(value: MarginValue): MarginModifier {
+export function marginLeading(value: MarginValue | Signal<MarginValue>): MarginModifier {
   return new MarginModifier({ leading: value })
 }
 
@@ -279,7 +296,7 @@ export function marginLeading(value: MarginValue): MarginModifier {
  * .marginTrailing('0.5rem')
  * ```
  */
-export function marginTrailing(value: MarginValue): MarginModifier {
+export function marginTrailing(value: MarginValue | Signal<MarginValue>): MarginModifier {
   return new MarginModifier({ trailing: value })
 }
 
@@ -294,7 +311,7 @@ export function marginTrailing(value: MarginValue): MarginModifier {
  * .marginHorizontal('5vw')
  * ```
  */
-export function marginHorizontal(value: MarginValue): MarginModifier {
+export function marginHorizontal(value: MarginValue | Signal<MarginValue>): MarginModifier {
   return new MarginModifier({ horizontal: value })
 }
 
@@ -308,7 +325,7 @@ export function marginHorizontal(value: MarginValue): MarginModifier {
  * .marginVertical('3vh')
  * ```
  */
-export function marginVertical(value: MarginValue): MarginModifier {
+export function marginVertical(value: MarginValue | Signal<MarginValue>): MarginModifier {
   return new MarginModifier({ vertical: value })
 }
 

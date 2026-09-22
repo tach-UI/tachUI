@@ -20,6 +20,7 @@ import {
   marginVertical,
 } from '../../src/basic/margin'
 import type { ModifierContext } from '@tachui/core/modifiers/types'
+import { createSignal, flushSync } from '@tachui/core/reactive'
 import type { DOMNode } from '@tachui/core/runtime/types'
 
 // Mock DOM element that matches HTMLElement.style interface
@@ -163,6 +164,21 @@ describe('Enhanced Margin Modifier System', () => {
   })
 
   describe('Convenience Functions', () => {
+    // A signal is a function, and `margin` used to read it as the options
+    // object, so no margin was set at all.
+    it('should follow a signal passed as the shorthand value', () => {
+      const [space, setSpace] = createSignal(8)
+      const modifier = margin(space)
+      modifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.margin).toBe('8px')
+
+      setSpace(12)
+      flushSync()
+
+      expect(mockElement.style.margin).toBe('12px')
+    })
+
     it('should create margin with shorthand numeric value', () => {
       const modifier = margin(24)
       modifier.apply({} as DOMNode, mockContext)

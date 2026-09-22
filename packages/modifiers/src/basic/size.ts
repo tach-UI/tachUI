@@ -7,6 +7,7 @@
 
 import type { DOMNode } from '@tachui/types/runtime'
 import type { Dimension } from '@tachui/core/constants/layout'
+import type { Signal } from '@tachui/types/reactive'
 import {
   dimensionToCSS,
   isInfinity,
@@ -139,7 +140,7 @@ export function size(options: ReactiveSizeOptions): SizeModifier {
  * .width(infinity) // Fill available space
  * ```
  */
-export function width(value: Dimension): SizeModifier {
+export function width(value: Dimension | Signal<Dimension>): SizeModifier {
   return new SizeModifier({ width: value })
 }
 
@@ -154,7 +155,7 @@ export function width(value: Dimension): SizeModifier {
  * .height(infinity) // Fill available space
  * ```
  */
-export function height(value: Dimension): SizeModifier {
+export function height(value: Dimension | Signal<Dimension>): SizeModifier {
   return new SizeModifier({ height: value })
 }
 
@@ -169,7 +170,7 @@ export function height(value: Dimension): SizeModifier {
  * .maxWidth(infinity) // Remove width constraints
  * ```
  */
-export function maxWidth(value: Dimension): SizeModifier {
+export function maxWidth(value: Dimension | Signal<Dimension>): SizeModifier {
   return new SizeModifier({ maxWidth: value })
 }
 
@@ -182,7 +183,7 @@ export function maxWidth(value: Dimension): SizeModifier {
  * .minWidth('50%')
  * ```
  */
-export function minWidth(value: Dimension): SizeModifier {
+export function minWidth(value: Dimension | Signal<Dimension>): SizeModifier {
   return new SizeModifier({ minWidth: value })
 }
 
@@ -197,7 +198,7 @@ export function minWidth(value: Dimension): SizeModifier {
  * .maxHeight(infinity) // Remove height constraints
  * ```
  */
-export function maxHeight(value: Dimension): SizeModifier {
+export function maxHeight(value: Dimension | Signal<Dimension>): SizeModifier {
   return new SizeModifier({ maxHeight: value })
 }
 
@@ -210,6 +211,6 @@ export function maxHeight(value: Dimension): SizeModifier {
  * .minHeight('30vh')
  * ```
  */
-export function minHeight(value: Dimension): SizeModifier {
+export function minHeight(value: Dimension | Signal<Dimension>): SizeModifier {
   return new SizeModifier({ minHeight: value })
 }

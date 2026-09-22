@@ -8,6 +8,13 @@
  */
 
 // Registry registration for effects
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type {
+  ModifierFactoriesOf,
+  ModifierMethodsOf,
+  ModifierRegistrationList,
+} from '@tachui/types/modifiers'
+import type { BackdropFilterBuilderMethods } from './backdrop'
 import { globalModifierRegistry } from '@tachui/registry'
 
 // Import specific factory functions to register them
@@ -109,7 +116,7 @@ import {
 import { backdropFilter, glassmorphism, customGlassmorphism } from './backdrop'
 
 // Register all effects factories synchronously
-const effectRegistrations: Array<[string, (...args: any[]) => any]> = [
+const effectRegistrations = [
   // Filter system
   ['blur', blur],
   ['brightness', brightness],
@@ -209,7 +216,18 @@ const effectRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['backdropFilter', backdropFilter],
   ['glassmorphism', glassmorphism],
   ['customGlassmorphism', customGlassmorphism],
-]
+] as const satisfies ModifierRegistrationList
+
+// Type the effect modifiers on the builder, from the factories registered
+// here, so they typecheck exactly when this module has run.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends BackdropFilterBuilderMethods,
+      ModifierMethodsOf<
+        ModifierFactoriesOf<typeof effectRegistrations>,
+        'backdropFilter'
+      > {}
+}
 
 /**
  * Register every effect modifier on the global registry.

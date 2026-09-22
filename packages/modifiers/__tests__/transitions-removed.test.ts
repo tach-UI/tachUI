@@ -69,14 +69,15 @@ describe('.transitions() removal (#297)', () => {
   })
 
   /**
-   * `ModifierBuilder` is declared twice — `@tachui/modifiers/types` is a
-   * published entry point in its own right, so a declaration left behind in
-   * either file lets a consumer compile a call that is undefined at runtime.
-   * Read as source because neither file is covered by `type-check` from here
-   * and `@ts-expect-error` would be inert inside `__tests__`.
+   * `ModifierBuilder` is declared once, in `@tachui/types/modifiers`, where
+   * core's own methods live; a declaration left there lets a consumer compile
+   * a call that is undefined at runtime. Read as source because that file is
+   * not covered by `type-check` from here and `@ts-expect-error` would be
+   * inert inside `__tests__`. `@tachui/modifiers/types` re-exports the same
+   * interface, and `builder-types.test-d.ts` checks there, at the type level,
+   * that `transitions()` is rejected and `transition()` is not.
    */
   describe.each([
-    ['@tachui/modifiers/types', '../src/types.ts'],
     ['@tachui/types/modifiers', '../../types/src/modifiers.ts'],
   ])('%s', (_entry, relativePath) => {
     const source = readFileSync(

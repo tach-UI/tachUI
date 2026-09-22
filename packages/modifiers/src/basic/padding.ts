@@ -5,6 +5,7 @@
  * CSS-in-JS support, reactive values, design system presets, and RTL awareness.
  */
 
+import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from './base'
 import type {
@@ -99,7 +100,7 @@ export class PaddingModifier extends BaseModifier<PaddingOptions> {
 
     // Enhanced value formatter with comprehensive CSS unit support
     // Now handles reactive signals properly by passing them through unchanged
-    const formatValue = (value: PaddingValue): any => {
+    const formatValue = (value: PaddingValue | Signal<PaddingValue>): any => {
       // Pass reactive signals through directly to applyStyles
       if (isSignal(value) || isComputed(value)) {
         return value
@@ -192,9 +193,9 @@ export class PaddingModifier extends BaseModifier<PaddingOptions> {
  * ```
  */
 export function padding(options: ReactivePaddingOptions): PaddingModifier
-export function padding(all: PaddingValue): PaddingModifier
+export function padding(all: PaddingValue | Signal<PaddingValue>): PaddingModifier
 export function padding(
-  optionsOrAll: ReactivePaddingOptions | PaddingValue
+  optionsOrAll: ReactivePaddingOptions | PaddingValue | Signal<PaddingValue>
 ): PaddingModifier {
   if (isSignal(optionsOrAll) || isComputed(optionsOrAll)) {
     return new PaddingModifier({ all: optionsOrAll as unknown as PaddingValue })
@@ -207,6 +208,16 @@ export function padding(
 }
 
 /**
+ * The builder form of `padding`'s overloads. Deriving builder methods from a
+ * factory keeps only its last overload, so these are written out.
+ */
+export interface PaddingBuilderMethods {
+  padding(options: ReactivePaddingOptions): this
+  padding(all: PaddingValue | Signal<PaddingValue>): this
+}
+
+
+/**
  * Convenience function for top padding only
  *
  * @example
@@ -216,7 +227,7 @@ export function padding(
  * .paddingTop('2vh')
  * ```
  */
-export function paddingTop(value: PaddingValue): PaddingModifier {
+export function paddingTop(value: PaddingValue | Signal<PaddingValue>): PaddingModifier {
   return new PaddingModifier({ top: value })
 }
 
@@ -229,7 +240,7 @@ export function paddingTop(value: PaddingValue): PaddingModifier {
  * .paddingBottom('2rem')
  * ```
  */
-export function paddingBottom(value: PaddingValue): PaddingModifier {
+export function paddingBottom(value: PaddingValue | Signal<PaddingValue>): PaddingModifier {
   return new PaddingModifier({ bottom: value })
 }
 
@@ -242,7 +253,7 @@ export function paddingBottom(value: PaddingValue): PaddingModifier {
  * .paddingLeft('1rem')
  * ```
  */
-export function paddingLeft(value: PaddingValue): PaddingModifier {
+export function paddingLeft(value: PaddingValue | Signal<PaddingValue>): PaddingModifier {
   return new PaddingModifier({ left: value })
 }
 
@@ -255,7 +266,7 @@ export function paddingLeft(value: PaddingValue): PaddingModifier {
  * .paddingRight('1rem')
  * ```
  */
-export function paddingRight(value: PaddingValue): PaddingModifier {
+export function paddingRight(value: PaddingValue | Signal<PaddingValue>): PaddingModifier {
   return new PaddingModifier({ right: value })
 }
 
@@ -268,7 +279,7 @@ export function paddingRight(value: PaddingValue): PaddingModifier {
  * .paddingLeading('1rem')
  * ```
  */
-export function paddingLeading(value: PaddingValue): PaddingModifier {
+export function paddingLeading(value: PaddingValue | Signal<PaddingValue>): PaddingModifier {
   return new PaddingModifier({ leading: value })
 }
 
@@ -281,7 +292,7 @@ export function paddingLeading(value: PaddingValue): PaddingModifier {
  * .paddingTrailing('0.5rem')
  * ```
  */
-export function paddingTrailing(value: PaddingValue): PaddingModifier {
+export function paddingTrailing(value: PaddingValue | Signal<PaddingValue>): PaddingModifier {
   return new PaddingModifier({ trailing: value })
 }
 
@@ -295,7 +306,7 @@ export function paddingTrailing(value: PaddingValue): PaddingModifier {
  * .paddingHorizontal('5vw')
  * ```
  */
-export function paddingHorizontal(value: PaddingValue): PaddingModifier {
+export function paddingHorizontal(value: PaddingValue | Signal<PaddingValue>): PaddingModifier {
   return new PaddingModifier({ horizontal: value })
 }
 
@@ -309,7 +320,7 @@ export function paddingHorizontal(value: PaddingValue): PaddingModifier {
  * .paddingVertical('3vh')
  * ```
  */
-export function paddingVertical(value: PaddingValue): PaddingModifier {
+export function paddingVertical(value: PaddingValue | Signal<PaddingValue>): PaddingModifier {
   return new PaddingModifier({ vertical: value })
 }
 

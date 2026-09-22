@@ -5,6 +5,10 @@
  * with inheritance support and automatic state management.
  */
 
+// Chains basic modifiers such as `.padding()`, so they must be registered,
+// and typed, wherever this module loads.
+// oxlint-disable-next-line import/no-unassigned-import -- loaded for its registration
+import '@tachui/modifiers/preload/basic'
 import {
   createEffect,
   getSignalImpl,

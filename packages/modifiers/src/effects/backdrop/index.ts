@@ -251,6 +251,19 @@ export function backdropFilter(
   })
 }
 
+/**
+ * The builder form of `backdropFilter`'s overloads. Deriving builder methods
+ * from a factory keeps only its last overload, so these are written out.
+ */
+export interface BackdropFilterBuilderMethods {
+  backdropFilter(
+    config: BackdropFilterConfig,
+    fallbackColor?: ColorValue
+  ): this
+  backdropFilter(cssValue: string, fallbackColor?: ColorValue): this
+}
+
+
 // ============================================================================
 // Enhanced Glassmorphism Presets
 // ============================================================================

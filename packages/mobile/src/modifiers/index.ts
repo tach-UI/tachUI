@@ -5,6 +5,8 @@
  * touch gestures, pull-to-refresh, and mobile interactions.
  */
 
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type { ModifierMethodsOf } from '@tachui/types/modifiers'
 import { registerModifierWithMetadata } from '@tachui/modifiers'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { TACHUI_PACKAGE_VERSION } from '../version'
@@ -62,6 +64,13 @@ export function registerMobileModifiers(
 }
 
 registerMobileModifiers()
+
+// Type the mobile modifiers on the builder, from their factories, so they
+// typecheck exactly when this module has registered them.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<{ refreshable: typeof refreshable }> {}
+}
 
 if (typeof import.meta !== 'undefined' && (import.meta as any).hot) {
   ;(import.meta as any).hot.accept(() => {

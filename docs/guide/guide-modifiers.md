@@ -111,29 +111,42 @@ export function myModifierSmall(): MyModifier {
 
 ### Step 3: Add TypeScript Declarations
 
-Extend the `ModifierBuilder` interface to add your modifier methods:
+A chain method is typed only if something declares it: the builder has no catch-all, so a misspelled or unregistered modifier is a type error. Add your methods to `ModifierBuilder` by augmenting `@tachui/types/modifiers`, in the module that registers them, so they are typed exactly when that module has loaded. Your package needs `@tachui/types` as a dependency.
+
+`ModifierMethodsOf` derives each method from its factory: the same parameters, returning whatever it was called on. A chain on a component returns the component; a chain on `.modifier` returns the builder.
 
 ```typescript
-// In your package's types.ts file
-declare module '@tachui/core' {
-  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance> {
-    /**
-     * Apply my custom modifier
-     * @param value The value to apply
-     * @param color Optional color override
-     */
-    myModifier(value: number | string, color?: string): ModifierBuilder<T>
+// In the module that registers your modifiers
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type { ModifierMethodsOf } from '@tachui/types/modifiers'
+import { myModifier, myModifierLarge, myModifierSmall } from './my-modifier'
 
-    /**
-     * Apply large preset
-     */
-    myModifierLarge(): ModifierBuilder<T>
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<{
+      myModifier: typeof myModifier
+      myModifierLarge: typeof myModifierLarge
+      myModifierSmall: typeof myModifierSmall
+    }> {}
+}
+```
 
-    /**
-     * Apply small preset
-     */
-    myModifierSmall(): ModifierBuilder<T>
-  }
+Augment `@tachui/types/modifiers` rather than `@tachui/core`: core re-exports `ModifierBuilder` through `export *`, which an augmentation cannot reach, so it would declare a separate interface that nothing uses.
+
+If a factory is overloaded, derivation keeps only its last overload. Write those methods out instead, returning `this`, and pass their names as the second argument so they are not derived as well:
+
+```typescript
+const myFactories = { myModifier, myModifierLarge, myModifierSmall }
+
+interface MyOverloadedMethods {
+  myModifier(value: number): this
+  myModifier(options: { value: number; color?: string }): this
+}
+
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends MyOverloadedMethods,
+      ModifierMethodsOf<typeof myFactories, 'myModifier'> {}
 }
 ```
 

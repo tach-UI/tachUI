@@ -49,7 +49,8 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@tachui/modifiers": "0.11.1"
+    "@tachui/modifiers": "0.11.1",
+    "@tachui/types": "0.11.1"
   },
   "keywords": [
     "ui",

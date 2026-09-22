@@ -1,3 +1,4 @@
+import type { ModifierMethodsOf } from '@tachui/types/modifiers'
 import type { DOMNode } from '@tachui/core/runtime/types'
 import type { ComponentInstance } from '@tachui/core/runtime/types'
 import type { FragmentMarker } from '@tachui/core/runtime/types'
@@ -98,4 +99,11 @@ export function registerFragmentModifiers(): void {
       snapshot(props as unknown as FragmentSnapshotHandlers)
     registry.register('snapshot', snapshotFactory)
   }
+}
+
+// Type the fragment modifiers on the builder, from their factories, so they
+// typecheck exactly when this module has registered them.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<{ interactive: typeof interactive; snapshot: typeof snapshot }> {}
 }

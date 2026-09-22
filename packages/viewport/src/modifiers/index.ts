@@ -5,6 +5,8 @@
  * visibility detection and responsive behavior.
  */
 
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type { ModifierMethodsOf } from '@tachui/types/modifiers'
 import { registerModifierWithMetadata } from '@tachui/modifiers'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { TACHUI_PACKAGE_VERSION } from '../version'
@@ -78,6 +80,13 @@ export function registerViewportModifiers(
 }
 
 registerViewportModifiers()
+
+// Type the viewport modifiers on the builder, from their factories, so they
+// typecheck exactly when this module has registered them.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<{ onAppear: typeof onAppear; onDisappear: typeof onDisappear }> {}
+}
 
 if (typeof import.meta !== 'undefined' && (import.meta as any).hot) {
   ;(import.meta as any).hot.accept(() => {

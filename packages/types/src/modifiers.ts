@@ -377,22 +377,27 @@ export type ModifierFactory<TProps = {}> = (
 ) => Modifier<TProps>
 
 /**
- * Modifier builder interface for creating chainable modifiers
+ * The builder methods core declares itself.
+ *
+ * `ModifierBuilder` extends this, and each package that registers modifiers
+ * extends `ModifierBuilder` with its own methods through module augmentation,
+ * from the module that registers them, so a method is typed exactly when
+ * importing its package makes it exist at runtime. See `ModifierMethodsOf`.
  */
-export interface ModifierBuilder<
+export interface ModifierBuilderBase<
   T extends ComponentInstance = ComponentInstance,
 > {
   // Layout modifiers
-  frame(width?: Dimension, height?: Dimension): ModifierBuilder<T>
-  frame(options: LayoutModifierProps['frame']): ModifierBuilder<T>
+  frame(width?: Dimension, height?: Dimension): this
+  frame(options: LayoutModifierProps['frame']): this
 
   // Typography modifiers
   textTransform(
     value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
-  ): ModifierBuilder<T>
-  letterSpacing(value: number | string): ModifierBuilder<T>
-  lineHeight(value: number | string): ModifierBuilder<T>
-  gradientText(gradient: string): ModifierBuilder<T>
+  ): this
+  letterSpacing(value: number | string): this
+  lineHeight(value: number | string): this
+  gradientText(gradient: string): this
 
   // Border modifiers
   borderTop(
@@ -407,7 +412,7 @@ export interface ModifierBuilder<
       | 'ridge'
       | 'inset'
       | 'outset'
-  ): ModifierBuilder<T>
+  ): this
   borderRight(
     width: number | Signal<number>,
     color: ColorValue,
@@ -420,7 +425,7 @@ export interface ModifierBuilder<
       | 'ridge'
       | 'inset'
       | 'outset'
-  ): ModifierBuilder<T>
+  ): this
   borderBottom(
     width: number | Signal<number>,
     color: ColorValue,
@@ -433,7 +438,7 @@ export interface ModifierBuilder<
       | 'ridge'
       | 'inset'
       | 'outset'
-  ): ModifierBuilder<T>
+  ): this
   borderLeft(
     width: number | Signal<number>,
     color: ColorValue,
@@ -446,11 +451,11 @@ export interface ModifierBuilder<
       | 'ridge'
       | 'inset'
       | 'outset'
-  ): ModifierBuilder<T>
+  ): this
 
   // Flexbox modifiers
-  flexGrow(value: number): ModifierBuilder<T>
-  flexShrink(value: number): ModifierBuilder<T>
+  flexGrow(value: number): this
+  flexShrink(value: number): this
   justifyContent(
     value:
       | 'flex-start'
@@ -459,15 +464,15 @@ export interface ModifierBuilder<
       | 'space-between'
       | 'space-around'
       | 'space-evenly'
-  ): ModifierBuilder<T>
+  ): this
   alignItems(
     value: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'
-  ): ModifierBuilder<T>
-  gap(value: number | string): ModifierBuilder<T>
+  ): this
+  gap(value: number | string): this
   flexDirection(
     value: 'row' | 'row-reverse' | 'column' | 'column-reverse'
-  ): ModifierBuilder<T>
-  flexWrap(value: 'nowrap' | 'wrap' | 'wrap-reverse'): ModifierBuilder<T>
+  ): this
+  flexWrap(value: 'nowrap' | 'wrap' | 'wrap-reverse'): this
 
   // Utility modifiers
   cursor(
@@ -481,9 +486,9 @@ export interface ModifierBuilder<
       | 'not-allowed'
       | 'grab'
       | 'grabbing'
-  ): ModifierBuilder<T>
-  overflowY(value: 'visible' | 'hidden' | 'scroll' | 'auto'): ModifierBuilder<T>
-  overflowX(value: 'visible' | 'hidden' | 'scroll' | 'auto'): ModifierBuilder<T>
+  ): this
+  overflowY(value: 'visible' | 'hidden' | 'scroll' | 'auto'): this
+  overflowX(value: 'visible' | 'hidden' | 'scroll' | 'auto'): this
   display(
     value:
       | 'block'
@@ -493,62 +498,62 @@ export interface ModifierBuilder<
       | 'inline-flex'
       | 'grid'
       | 'none'
-  ): ModifierBuilder<T>
-  transform(value: string | Signal<string>): ModifierBuilder<T>
+  ): this
+  transform(value: string | Signal<string>): this
 
   // Note: SwiftUI-style position for absolute positioning (different from CSS position)
   absolutePosition(
     x: number | Signal<number>,
     y: number | Signal<number>
-  ): ModifierBuilder<T>
+  ): this
 
   // Appearance modifiers
-  foregroundColor(color: ColorValue): ModifierBuilder<T>
-  backgroundColor(color: ColorValue): ModifierBuilder<T>
+  foregroundColor(color: ColorValue): this
+  backgroundColor(color: ColorValue): this
   background(
     value: StatefulBackgroundValue | Signal<string>
-  ): ModifierBuilder<T>
+  ): this
   backgroundImage(
     source: ImageAssetProxy | string,
     options?: BackgroundImageOptions
-  ): ModifierBuilder<T>
-  blendMode(mode: BlendMode): ModifierBuilder<T>
-  backgroundBlendMode(mode: BlendMode): ModifierBuilder<T>
-  compositingGroup(): ModifierBuilder<T>
-  font(options: AppearanceModifierProps['font']): ModifierBuilder<T>
-  font(size: number | string): ModifierBuilder<T>
+  ): this
+  blendMode(mode: BlendMode): this
+  backgroundBlendMode(mode: BlendMode): this
+  compositingGroup(): this
+  font(options: AppearanceModifierProps['font']): this
+  font(size: number | string): this
   fontWeight(
     weight: NonNullable<AppearanceModifierProps['font']>['weight']
-  ): ModifierBuilder<T>
+  ): this
   fontSize(
     size: number | string | Signal<number> | Signal<string>
-  ): ModifierBuilder<T>
-  opacity(value: number | Signal<number>): ModifierBuilder<T>
-  cornerRadius(radius: number | Signal<number>): ModifierBuilder<T>
-  border(width: number | Signal<number>, color?: ColorValue): ModifierBuilder<T>
-  border(options: AppearanceModifierProps['border']): ModifierBuilder<T>
-  borderWidth(width: number | Signal<number>): ModifierBuilder<T>
+  ): this
+  opacity(value: number | Signal<number>): this
+  cornerRadius(radius: number | Signal<number>): this
+  border(width: number | Signal<number>, color?: ColorValue): this
+  border(options: AppearanceModifierProps['border']): this
+  borderWidth(width: number | Signal<number>): this
 
   // Gesture Priority System (Phase 4 - Epic: Butternut)
   highPriorityGesture(
     gesture: any,
     including?: ('all' | 'subviews' | 'none')[]
-  ): ModifierBuilder<T>
+  ): this
   simultaneousGesture(
     gesture: any,
     including?: ('all' | 'subviews' | 'none')[]
-  ): ModifierBuilder<T>
+  ): this
 
   // Text Modifiers
-  lineClamp(lines: number): ModifierBuilder<T>
+  lineClamp(lines: number): this
   wordBreak(
     value: 'normal' | 'break-all' | 'keep-all' | 'break-word'
-  ): ModifierBuilder<T>
-  overflowWrap(value: 'normal' | 'break-word' | 'anywhere'): ModifierBuilder<T>
-  hyphens(value: 'none' | 'manual' | 'auto'): ModifierBuilder<T>
+  ): this
+  overflowWrap(value: 'normal' | 'break-word' | 'anywhere'): this
+  hyphens(value: 'none' | 'manual' | 'auto'): this
 
   // State modifiers
-  disabled(isDisabled?: boolean | Signal<boolean>): ModifierBuilder<T>
+  disabled(isDisabled?: boolean | Signal<boolean>): this
 
   // Animation modifiers
   transition(
@@ -556,27 +561,27 @@ export interface ModifierBuilder<
     duration?: number,
     easing?: string,
     delay?: number
-  ): ModifierBuilder<T>
-  animation(options?: AnimationModifierProps['animation']): ModifierBuilder<T>
+  ): this
+  animation(options?: AnimationModifierProps['animation']): this
 
   // Transition presets
-  fadeTransition(duration?: number): ModifierBuilder<T>
-  transformTransition(duration?: number): ModifierBuilder<T>
-  colorTransition(duration?: number): ModifierBuilder<T>
-  layoutTransition(duration?: number): ModifierBuilder<T>
-  buttonTransition(): ModifierBuilder<T>
-  cardTransition(): ModifierBuilder<T>
-  modalTransition(): ModifierBuilder<T>
-  smoothTransition(duration?: number): ModifierBuilder<T>
-  quickTransition(duration?: number): ModifierBuilder<T>
-  slowTransition(duration?: number): ModifierBuilder<T>
+  fadeTransition(duration?: number): this
+  transformTransition(duration?: number): this
+  colorTransition(duration?: number): this
+  layoutTransition(duration?: number): this
+  buttonTransition(): this
+  cardTransition(): this
+  modalTransition(): this
+  smoothTransition(duration?: number): this
+  quickTransition(duration?: number): this
+  slowTransition(duration?: number): this
 
   // Scroll modifiers
-  scroll(config: any): ModifierBuilder<T>
-  scrollBehavior(value: 'auto' | 'smooth'): ModifierBuilder<T>
-  overscrollBehavior(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T>
-  overscrollBehaviorX(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T>
-  overscrollBehaviorY(value: 'auto' | 'contain' | 'none'): ModifierBuilder<T>
+  scroll(config: any): this
+  scrollBehavior(value: 'auto' | 'smooth'): this
+  overscrollBehavior(value: 'auto' | 'contain' | 'none'): this
+  overscrollBehaviorX(value: 'auto' | 'contain' | 'none'): this
+  overscrollBehaviorY(value: 'auto' | 'contain' | 'none'): this
   scrollMargin(
     margin:
       | number
@@ -587,7 +592,7 @@ export interface ModifierBuilder<
           bottom?: number | string
           left?: number | string
         }
-  ): ModifierBuilder<T>
+  ): this
   scrollPadding(
     padding:
       | number
@@ -598,7 +603,7 @@ export interface ModifierBuilder<
           bottom?: number | string
           left?: number | string
         }
-  ): ModifierBuilder<T>
+  ): this
   scrollSnap(
     type:
       | 'none'
@@ -610,7 +615,7 @@ export interface ModifierBuilder<
       | 'both proximity',
     align?: 'start' | 'end' | 'center',
     stop?: 'normal' | 'always'
-  ): ModifierBuilder<T>
+  ): this
 
   // Lifecycle modifiers
   task(
@@ -619,44 +624,98 @@ export interface ModifierBuilder<
       id?: string
       priority?: 'background' | 'userInitiated' | 'utility' | 'default'
     }
-  ): ModifierBuilder<T>
+  ): this
 
   // Custom modifier application
-  modifier(modifier: Modifier): ModifierBuilder<T>
+  modifier(modifier: Modifier): this
 
   // Resizable modifier for images
-  resizable(): ModifierBuilder<T>
+  resizable(): this
 
   // Text case alias for textTransform
   textCase(
     value: 'none' | 'uppercase' | 'lowercase' | 'capitalize'
-  ): ModifierBuilder<T>
+  ): this
 
   // Interaction modifiers
-  onTap(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T>
-  onBlur(handler: (isFocused: boolean) => void): ModifierBuilder<T>
-  onKeyDown(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
-  onScroll(handler: (event: Event) => void): ModifierBuilder<T>
-  onKeyPress(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
-  onKeyUp(handler: (event: KeyboardEvent) => void): ModifierBuilder<T>
-  onDoubleClick(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onContextMenu(handler: (event: MouseEvent) => void): ModifierBuilder<T>
-  onWheel(handler: (event: WheelEvent) => void): ModifierBuilder<T>
-  onInput(handler: (event: InputEvent) => void): ModifierBuilder<T>
-  onChange(handler: (value: any, event?: Event) => void): ModifierBuilder<T>
-  onCopy(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
-  onCut(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
-  onPaste(handler: (event: ClipboardEvent) => void): ModifierBuilder<T>
-  onSelect(handler: (event: Event) => void): ModifierBuilder<T>
+  onTap(handler: (event: MouseEvent) => void): this
+  onFocus(handler: (isFocused: boolean) => void): this
+  onBlur(handler: (isFocused: boolean) => void): this
+  onKeyDown(handler: (event: KeyboardEvent) => void): this
+  onScroll(handler: (event: Event) => void): this
+  onKeyPress(handler: (event: KeyboardEvent) => void): this
+  onKeyUp(handler: (event: KeyboardEvent) => void): this
+  onDoubleClick(handler: (event: MouseEvent) => void): this
+  onContextMenu(handler: (event: MouseEvent) => void): this
+  onWheel(handler: (event: WheelEvent) => void): this
+  onInput(handler: (event: InputEvent) => void): this
+  onChange(handler: (value: any, event?: Event) => void): this
+  onCopy(handler: (event: ClipboardEvent) => void): this
+  onCut(handler: (event: ClipboardEvent) => void): this
+  onPaste(handler: (event: ClipboardEvent) => void): this
+  onSelect(handler: (event: Event) => void): this
 
   addModifier(modifier: Modifier): void
 
   // Build the final component with all modifiers applied
   build(): T
+}
 
-  // Dynamic modifier access from registry
-  [key: string]: any
+/**
+ * Modifier builder interface for creating chainable modifiers
+ *
+ * There is no index signature: a method exists on this type only if core
+ * declares it or a package that registers it adds it by augmentation.
+ */
+export interface ModifierBuilder<
+  T extends ComponentInstance = ComponentInstance,
+> extends ModifierBuilderBase<T> {}
+
+/**
+ * A modifier registration list: `[name, factory]` entries, optionally followed
+ * by metadata, declared `as const` so each name keeps its literal type.
+ */
+export type ModifierRegistrationList = readonly (readonly [
+  string,
+  (...args: any[]) => any,
+  ...unknown[],
+])[]
+
+/**
+ * The factories of a registration list, keyed by registered name.
+ */
+export type ModifierFactoriesOf<L extends ModifierRegistrationList> = {
+  [Entry in L[number] as Entry[0]]: Entry[1]
+}
+
+/**
+ * Builder methods for a set of factories: each takes its factory's parameters
+ * and returns whatever it was called on, as the runtime does. Chained on a
+ * component it returns that component, so the result can be a child; chained
+ * on `.modifier` it returns the builder, which `build()` turns into one.
+ *
+ * Names core already declares are left to `ModifierBuilderBase`, and so are
+ * names in `Declared`: methods a package writes out by hand, typically
+ * because the factory is overloaded and only its last overload would be
+ * inferred here.
+ *
+ * ```ts
+ * declare module '@tachui/types/modifiers' {
+ *   interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+ *     extends ModifierMethodsOf<ModifierFactoriesOf<typeof registrations>> {}
+ * }
+ * ```
+ */
+export type ModifierMethodsOf<
+  Factories,
+  Declared extends PropertyKey = never,
+> = {
+  [Name in Exclude<
+    keyof Factories,
+    keyof ModifierBuilderBase<any> | Declared
+  >]: Factories[Name] extends (...args: infer Args) => any
+    ? <Self>(this: Self, ...args: Args) => Self
+    : never
 }
 
 /**
