@@ -553,11 +553,15 @@ export interface ModifierBuilder<
   transform(value: string | Signal<string>): ModifierBuilder<T>
 
   // Raw CSS modifiers
-  css(properties: {
-    [property: string]: string | number | undefined
-  }): ModifierBuilder<T>
-  cssProperty(property: string, value: string | number): ModifierBuilder<T>
-  cssVariable(name: string, value: string | number): ModifierBuilder<T>
+  css(properties: CSSStyleProperties): ModifierBuilder<T>
+  cssProperty(
+    property: string,
+    value: string | number | Signal<string> | Signal<number>
+  ): ModifierBuilder<T>
+  cssVariable(
+    name: string,
+    value: string | number | Signal<string> | Signal<number>
+  ): ModifierBuilder<T>
 
   // Phase 1 SwiftUI modifiers
   offset(
