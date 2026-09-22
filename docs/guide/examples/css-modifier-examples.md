@@ -1,189 +1,218 @@
 # CSS Modifier Examples
 
-The CSS modifier provides an escape hatch for using cutting-edge CSS features, experimental properties, and any CSS that doesn't have dedicated TachUI modifiers yet. This guide showcases practical examples of leveraging the CSS modifier for modern web development.
+`.css()`, `.cssProperty()` and `.cssVariable()` are the escape hatch for CSS that has no dedicated TachUI modifier: newer properties, vendor-prefixed ones, and custom properties.
 
-## Basic CSS Modifier Usage
+## What the CSS modifiers do
 
-### Single Properties
+They set **inline styles** on the component's element. That determines what they can and can't express:
+
+- **Property names** can be camelCase (`backdropFilter`) or kebab-case (`'backdrop-filter'`). Custom properties keep their `--` prefix.
+- **Numbers** become pixels (`marginTop: 4` is `4px`), except on unitless properties such as `opacity`, `z-index`, `line-height` and `flex`.
+- **Any value can be a signal or memo.** The property updates in place when it changes.
+- **Only declarations, never rules.** An inline style can't hold at-rules (`@media`, `@supports`, `@container`), pseudo-classes (`:hover`, `:focus-visible`), pseudo-elements (`::before`) or nested selectors. Such keys are not applied. For those, see [Beyond inline styles](#beyond-inline-styles).
+
+All examples assume the basic modifiers are loaded:
 
 ```typescript
-import { Text, VStack, Button } from '@tachui/core'
+import '@tachui/modifiers/preload/basic'
+import { Text, VStack } from '@tachui/primitives'
+import { createMemo, createSignal } from '@tachui/core'
+```
 
-// Apply single CSS properties
-const modernText = Text('Backdrop filtered text')
-  .cssProperty('backdrop-filter', 'blur(10px)')
+## Basic usage
+
+### Single properties
+
+```typescript
+const scrollingText = Text('Smooth scrolling')
   .cssProperty('scroll-behavior', 'smooth')
-  .cssProperty('container-type', 'inline-size')
+  .cssProperty('containerType', 'inline-size')
   .padding(16)
-  .backgroundColor('rgba(255, 255, 255, 0.8)')
-  
+```
 
-// Multiple properties at once
-const advancedCard = VStack({ children: [] })
+### Several properties at once
+
+```typescript
+const glassCard = VStack({ children: [] })
   .css({
     backdropFilter: 'blur(10px) saturate(180%)',
     border: '1px solid rgba(255, 255, 255, 0.3)',
     boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
     borderRadius: '16px',
-    background: 'rgba(255, 255, 255, 0.1)'
+    background: 'rgba(255, 255, 255, 0.1)',
   })
-  
 ```
 
-## Modern CSS Features
+## Modern layout properties
 
-### Container Queries
+### Container setup
+
+A component can declare itself a query container inline. The queries that respond to it are rules, so they belong in a stylesheet (see [Beyond inline styles](#beyond-inline-styles)).
 
 ```typescript
-// Responsive component using container queries
-const containerQueryComponent = VStack({
-  children: [
-    Text('Container Query Demo')
-      .typography({ size: 16, weight: '600' })
-      
-  ]
-})
-.padding({ all: 16 })
-.backgroundColor('#f0f8ff')
-.css({
-  containerType: 'inline-size',
-  containerName: 'card-container',
-  
-  // Responsive behavior based on container size
-  '@container card-container (min-width: 300px)': {
-    padding: '24px',
-    borderRadius: '12px'
-  },
-  
-  '@container card-container (min-width: 500px)': {
-    padding: '32px',
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '20px'
-  },
-  
-  '@container card-container (min-width: 700px)': {
-    gridTemplateColumns: '1fr 1fr 1fr',
-    gap: '24px'
-  }
-})
-
+const cardContainer = VStack({ children: [] })
+  .css({
+    containerType: 'inline-size',
+    containerName: 'card',
+  })
 ```
 
-### CSS Grid Advanced Features
+### Grid
 
 ```typescript
-// Modern CSS Grid with advanced features
-const advancedGrid = VStack({ children: [] })
+const autoGrid = VStack({ children: [] })
   .css({
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(200px, 30vw, 300px), 1fr))',
-    gridTemplateRows: 'masonry', // Future CSS feature
     gap: 'clamp(1rem, 3vw, 2rem)',
     gridAutoFlow: 'dense',
-    
-    // Subgrid support (when available)
-    gridTemplateColumns: 'subgrid',
-    
-    // Aspect ratio for consistent sizing
-    aspectRatio: 'auto',
-    
-    // Container intrinsic sizing
-    containIntrinsicSize: 'auto 500px'
   })
-  
 
-// Individual grid items with modern placement
-const gridItem = VStack({ children: [] })
+const wideItem = VStack({ children: [] })
   .css({
     gridColumn: 'span 2',
-    gridRow: 'span auto',
-    aspectRatio: '16/9',
-    
-    // Modern alignment
+    aspectRatio: '16 / 9',
     placeSelf: 'center',
-    justifySelf: 'stretch',
-    alignSelf: 'start'
   })
-  
 ```
 
-### Scroll and Animation Features
+### Scroll snapping
 
 ```typescript
-// Advanced scroll behaviors
-const scrollContainer = VStack({ children: [] })
+const snapContainer = VStack({ children: [] })
   .css({
-    // Scroll snapping
     scrollSnapType: 'y mandatory',
     scrollBehavior: 'smooth',
     scrollPadding: '2rem',
-    
-    // Overscroll behavior
     overscrollBehavior: 'contain',
-    overscrollBehaviorY: 'none',
-    
-    // Scroll timeline (future CSS)
-    scrollTimeline: '--scroll-timeline',
-    
-    // Custom scrollbars
     scrollbarWidth: 'thin',
-    scrollbarColor: '#007AFF #f0f0f0'
+    scrollbarColor: '#007AFF #f0f0f0',
   })
-  
 
-// Scroll snap items
 const snapItem = VStack({ children: [] })
   .css({
     scrollSnapAlign: 'start',
     scrollSnapStop: 'always',
-    scrollMargin: '1rem'
+    scrollMargin: '1rem',
   })
-  
-
-// View transitions (future CSS)
-const transitionElement = Text('Smooth transitions')
-  .css({
-    viewTransitionName: 'main-content',
-    containIntrinsicSize: 'auto 200px'
-  })
-  
 ```
 
-## CSS Custom Properties and Theming
+## Custom properties and theming
 
-### Design Token System
+### Design tokens
+
+`.cssVariable()` adds the `--` prefix if it is missing. Descendants read the variables with `var()`.
 
 ```typescript
-import { createSignal, createMemo } from '@tachui/core'
+const tokens = VStack({ children: [] })
+  .cssVariable('color-primary', '#007AFF')
+  .cssVariable('space-md', '16px')
+  .cssVariable('radius-lg', '12px')
 
-// Design token component
-function DesignSystemComponent() {
-  const [theme, setTheme] = createSignal<'light' | 'dark' | 'auto'>('light')
-  
-  // Design tokens as CSS variables
-  const designTokens = VStack({ children: [] })
-    .cssVariable('color-primary', '#007AFF')
-    .cssVariable('color-secondary', '#34C759')
-    .cssVariable('color-danger', '#FF3B30')
-    .cssVariable('color-warning', '#FF9500')
-    
-    .cssVariable('space-xs', '4px')
-    .cssVariable('space-sm', '8px')
-    .cssVariable('space-md', '16px')
-    .cssVariable('space-lg', '24px')
-    .cssVariable('space-xl', '32px')
-    
-    .cssVariable('radius-sm', '4px')
-    .cssVariable('radius-md', '8px')
-    .cssVariable('radius-lg', '12px')
-    .cssVariable('radius-xl', '16px')
-    
-    .cssVariable('font-xs', '12px')
-    .cssVariable('font-sm', '14px')
-    .cssVariable('font-md', '16px')
-    .cssVariable('font-lg', '18px')
-    .cssVariable('font-xl', '24px')
-    
-    // Theme-aware variables
-    .cssVariable('bg-primary', () => {\n      const t = theme()\n      return t === 'dark' ? '#1a1a1a' : t === 'light' ? '#ffffff' : 'Canvas'\n    })\n    .cssVariable('text-primary', () => {\n      const t = theme()\n      return t === 'dark' ? '#ffffff' : t === 'light' ? '#1a1a1a' : 'CanvasText'\n    })\n    \n  \n  return designTokens\n}\n\n// Usage with design tokens\nconst tokenBasedCard = VStack({\n  children: [\n    Text('Design Token Example')\n      \n      .css({\n        fontSize: 'var(--font-lg)',\n        color: 'var(--text-primary)',\n        marginBottom: 'var(--space-md)'\n      })\n      \n  ]\n})\n\n.css({\n  backgroundColor: 'var(--bg-primary)',\n  padding: 'var(--space-lg)',\n  borderRadius: 'var(--radius-lg)',\n  border: '1px solid var(--color-primary)',\n  color: 'var(--text-primary)'\n})\n\n```\n\n### Dynamic Theming\n\n```typescript\n// Advanced theming with CSS custom properties\nfunction ThemeProvider(props: { children: any[] }) {\n  const [colorScheme, setColorScheme] = createSignal<'light' | 'dark'>('light')\n  const [accentColor, setAccentColor] = createSignal('#007AFF')\n  const [density, setDensity] = createSignal<'compact' | 'normal' | 'comfortable'>('normal')\n  \n  const themeVariables = createMemo(() => {\n    const scheme = colorScheme()\n    const accent = accentColor()\n    const d = density()\n    \n    return {\n      // Color scheme\n      '--color-bg-primary': scheme === 'dark' ? '#1a1a1a' : '#ffffff',\n      '--color-bg-secondary': scheme === 'dark' ? '#2d2d2d' : '#f8f9fa',\n      '--color-text-primary': scheme === 'dark' ? '#ffffff' : '#1a1a1a',\n      '--color-text-secondary': scheme === 'dark' ? '#a0a0a0' : '#666666',\n      \n      // Accent colors\n      '--color-accent': accent,\n      '--color-accent-light': `${accent}20`, // 20% opacity\n      '--color-accent-dark': adjustColor(accent, -20),\n      \n      // Density-based spacing\n      '--space-component': d === 'compact' ? '8px' : d === 'normal' ? '12px' : '16px',\n      '--space-section': d === 'compact' ? '16px' : d === 'normal' ? '24px' : '32px',\n      \n      // Animation preferences\n      '--duration-fast': '150ms',\n      '--duration-normal': '300ms',\n      '--duration-slow': '500ms',\n      '--easing-standard': 'cubic-bezier(0.4, 0.0, 0.2, 1)'\n    }\n  })\n  \n  return VStack({ children: props.children })\n    \n    .css(() => themeVariables())\n    .css({\n      // System preference support\n      '@media (prefers-color-scheme: dark)': {\n        '--color-bg-primary': '#1a1a1a',\n        '--color-text-primary': '#ffffff'\n      },\n      \n      '@media (prefers-reduced-motion: reduce)': {\n        '--duration-fast': '0ms',\n        '--duration-normal': '0ms',\n        '--duration-slow': '0ms'\n      },\n      \n      '@media (prefers-contrast: high)': {\n        '--color-text-primary': scheme === 'dark' ? '#ffffff' : '#000000'\n      }\n    })\n    \n}\n\nfunction adjustColor(color: string, amount: number): string {\n  // Color adjustment utility (implementation would adjust lightness)\n  return color // Simplified for example\n}\n```\n\n## Browser Compatibility and Vendor Prefixes\n\n### Cross-Browser Support\n\n```typescript\n// Component with comprehensive browser support\nconst crossBrowserCard = VStack({ children: [] })\n  \n  .css({\n    // Standard properties\n    backdropFilter: 'blur(10px)',\n    maskImage: 'linear-gradient(black, transparent)',\n    clipPath: 'polygon(0 0, 100% 0, 100% 90%, 0 100%)',\n    \n    // Webkit prefixes\n    WebkitBackdropFilter: 'blur(10px)',\n    WebkitMaskImage: 'linear-gradient(black, transparent)',\n    WebkitClipPath: 'polygon(0 0, 100% 0, 100% 90%, 0 100%)',\n    \n    // Mozilla prefixes\n    MozUserSelect: 'none',\n    MozAppearance: 'none',\n    \n    // Microsoft prefixes\n    msFilter: 'blur(5px)',\n    msTransform: 'scale(1.1)',\n    \n    // Fallbacks\n    background: 'rgba(255, 255, 255, 0.9)', // Fallback for backdrop-filter\n    border: '1px solid #e0e0e0' // Fallback for advanced borders\n  })\n  \n\n// Feature detection with CSS\nconst featureDetectionCard = VStack({ children: [] })\n  \n  .css({\n    // Default styles\n    background: '#f0f0f0',\n    \n    // Enhanced styles with feature detection\n    '@supports (backdrop-filter: blur(10px))': {\n      background: 'rgba(255, 255, 255, 0.1)',\n      backdropFilter: 'blur(10px)'\n    },\n    \n    '@supports (display: grid)': {\n      display: 'grid',\n      gridTemplateColumns: '1fr 1fr'\n    },\n    \n    '@supports not (display: grid)': {\n      display: 'flex',\n      flexWrap: 'wrap'\n    },\n    \n    '@supports (aspect-ratio: 1)': {\n      aspectRatio: '16/9'\n    },\n    \n    '@supports not (aspect-ratio: 1)': {\n      '&::before': {\n        content: '\"\"',\n        display: 'block',\n        paddingTop: '56.25%' // 16:9 aspect ratio fallback\n      }\n    }\n  })\n  \n```\n\n## Performance and Optimization\n\n### GPU Acceleration and Performance\n\n```typescript\n// Performance-optimized component\nconst performantCard = VStack({ children: [] })\n  \n  .css({\n    // GPU acceleration\n    willChange: 'transform, opacity',\n    transform: 'translateZ(0)', // Force GPU layer\n    \n    // Containment for performance\n    contain: 'layout style paint',\n    contentVisibility: 'auto',\n    containIntrinsicSize: 'auto 200px',\n    \n    // Efficient transitions\n    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',\n    \n    // Optimized rendering\n    backfaceVisibility: 'hidden',\n    perspective: '1000px',\n    \n    // Intersection observer optimization\n    '&[data-intersecting=\"false\"]': {\n      contentVisibility: 'hidden'\n    }\n  })\n  \n\n// Critical path optimization\nconst criticalPathCard = VStack({ children: [] })\n  \n  .css({\n    // Above-the-fold optimization\n    '&[data-critical=\"true\"]': {\n      contentVisibility: 'visible',\n      contain: 'none'\n    },\n    \n    // Below-the-fold optimization\n    '&[data-critical=\"false\"]': {\n      contentVisibility: 'auto',\n      contain: 'layout style paint',\n      containIntrinsicSize: 'auto 300px'\n    }\n  })\n  \n```\n\n## Accessibility and User Preferences\n\n### Accessibility-First Styling\n\n```typescript\n// Comprehensive accessibility support\nconst accessibleComponent = VStack({ children: [] })\n  \n  .css({\n    // High contrast support\n    '@media (prefers-contrast: high)': {\n      borderWidth: '2px',\n      borderStyle: 'solid',\n      outline: '2px solid transparent',\n      outlineOffset: '2px'\n    },\n    \n    // Reduced motion support\n    '@media (prefers-reduced-motion: reduce)': {\n      animation: 'none',\n      transition: 'none',\n      transform: 'none'\n    },\n    \n    // Dark mode support\n    '@media (prefers-color-scheme: dark)': {\n      backgroundColor: '#1a1a1a',\n      color: '#ffffff',\n      borderColor: '#404040'\n    },\n    \n    // Focus management\n    '&:focus-visible': {\n      outline: '2px solid #007AFF',\n      outlineOffset: '2px',\n      borderRadius: '4px'\n    },\n    \n    // Screen reader optimization\n    '@media (prefers-reduced-data: reduce)': {\n      backgroundImage: 'none',\n      boxShadow: 'none'\n    },\n    \n    // Print styles\n    '@media print': {\n      backgroundColor: 'white !important',\n      color: 'black !important',\n      boxShadow: 'none !important'\n    }\n  })\n  \n```\n\n## Migration and Future-Proofing\n\n### Graceful Enhancement\n\n```typescript\n// Progressive enhancement pattern\nconst progressiveCard = VStack({ children: [] })\n  \n  // Base TachUI modifiers (always work)\n  .padding({ all: 16 })\n  .backgroundColor('#ffffff')\n  .cornerRadius(8)\n  .border(1, '#e0e0e0')\n  \n  // Enhanced styles with CSS modifier\n  .css({\n    // Modern enhancements\n    containerType: 'inline-size',\n    backdropFilter: 'blur(10px)',\n    \n    // Future CSS features (gracefully ignored if unsupported)\n    anchorName: '--card-anchor',\n    scrollTimeline: '--card-scroll',\n    viewTransitionName: 'card-transition'\n  })\n  \n\n// Migration helper for new CSS features\nfunction withModernCSS(baseModifier: any, modernStyles: Record<string, any>) {\n  return baseModifier.css({\n    ...modernStyles,\n    \n    // Feature detection wrapper\n    '@supports not (backdrop-filter: blur(1px))': {\n      // Fallback styles for older browsers\n      background: 'rgba(255, 255, 255, 0.95)',\n      border: '1px solid rgba(0, 0, 0, 0.1)'\n    }\n  })\n}\n\n// Usage\nconst futureProofCard = withModernCSS(\n  Text('Future-proof styling')\n    \n    .padding({ all: 20 }),\n  {\n    backdropFilter: 'blur(10px)',\n    containerType: 'inline-size',\n    aspectRatio: '16/9'\n  }\n)\n```\n\n## Best Practices Summary\n\n### When to Use CSS Modifier\n\n✅ **Good use cases:**\n- Experimental CSS features not yet in TachUI\n- Browser-specific properties and vendor prefixes\n- Complex CSS Grid layouts\n- Modern CSS features (container queries, backdrop filters)\n- CSS custom properties for theming\n- Performance optimizations (containment, will-change)\n- Accessibility enhancements\n\n❌ **Avoid for:**\n- Properties covered by existing TachUI modifiers\n- Simple styling that can be done with specific modifiers\n- Styles that don't need the flexibility of raw CSS\n\n### Performance Tips\n\n1. **Group related properties** in single `.css()` calls\n2. **Use CSS containment** for performance isolation\n3. **Leverage CSS custom properties** for theming\n4. **Implement progressive enhancement** with feature detection\n5. **Consider accessibility** in all custom CSS\n\nThe CSS modifier bridges the gap between TachUI's declarative API and the full power of modern CSS, ensuring your applications can leverage cutting-edge web technologies while maintaining the clean, SwiftUI-inspired development experience.
+const tokenCard = VStack({ children: [] })
+  .css({
+    color: 'var(--color-primary)',
+    padding: 'var(--space-md)',
+    borderRadius: 'var(--radius-lg)',
+  })
+```
+
+### Theme-aware values
+
+Pass a memo, and the variable or property follows it.
+
+```typescript
+function ThemedPanel() {
+  const [scheme, setScheme] = createSignal<'light' | 'dark'>('light')
+
+  const background = createMemo(() =>
+    scheme() === 'dark' ? '#1a1a1a' : '#ffffff'
+  )
+  const text = createMemo(() =>
+    scheme() === 'dark' ? '#ffffff' : '#1a1a1a'
+  )
+
+  return VStack({ children: [] })
+    .cssVariable('bg-primary', background)
+    .cssVariable('text-primary', text)
+    .css({
+      backgroundColor: 'var(--bg-primary)',
+      color: 'var(--text-primary)',
+    })
+}
+```
+
+A layered background is a good fit for `.css()`, since gradients are not valid in `backgroundColor`:
+
+```typescript
+const [dark, setDark] = createSignal(false)
+
+const layered = createMemo(() =>
+  dark()
+    ? 'linear-gradient(#1a1a1a, #2d2d2d), #000'
+    : 'linear-gradient(#ffffff, #f0f0f0), #fff'
+)
+
+const hero = VStack({ children: [] }).css({ background: layered })
+```
+
+## Vendor prefixes
+
+A camelCase name starting with a capital gets a leading dash, so `WebkitBackdropFilter` becomes `-webkit-backdrop-filter`. The kebab-case form works too.
+
+```typescript
+const frosted = VStack({ children: [] })
+  .css({
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    '-webkit-mask-image': 'linear-gradient(black, transparent)',
+    maskImage: 'linear-gradient(black, transparent)',
+  })
+```
+
+## Rendering hints
+
+```typescript
+const offscreenSection = VStack({ children: [] })
+  .css({
+    contain: 'layout style paint',
+    contentVisibility: 'auto',
+    containIntrinsicSize: 'auto 500px',
+  })
+
+const animatedLayer = VStack({ children: [] })
+  .css({
+    willChange: 'transform, opacity',
+    backfaceVisibility: 'hidden',
+  })
+```
+
+## Beyond inline styles
+
+Media queries, feature queries, container queries, pseudo-classes and pseudo-elements are rules, not declarations, so no inline style can hold them. Put them in a stylesheet and give the component a class with the `css` prop:
+
+```typescript
+const card = VStack({ children: [], css: 'card' })
+```
+
+```css
+.card:focus-visible {
+  outline: 2px solid #007aff;
+  outline-offset: 2px;
+}
+
+@container card (min-width: 500px) {
+  .card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}
+```
+
+For breakpoint-driven values without a stylesheet, see `@tachui/responsive`.
