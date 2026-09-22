@@ -153,12 +153,14 @@ export interface DOMNode {
    * To replace the mounted element, supply a *different* element on a **fresh
    * node object**: the reconciler pairs it with its predecessor and swaps,
    * disposing the element it replaced. Assigning `element` on an already
-   * mounted node object is not a supported replacement operation. This is a
-   * deliberate contract: replacements use either a fresh node during parent
-   * reconciliation or `reactiveElement`, which the renderer subscribes to
-   * directly. Use the accessor when the owner must swap independently of a
-   * parent render, including when reusing the same node object. Updating the
-   * contents of the owned element itself remains the owner's responsibility.
+   * mounted node object is not a supported replacement operation, and does
+   * nothing: that node reaches `updateExistingNode`, which leaves an owned
+   * element alone. This is a deliberate contract — replacements use either a
+   * fresh node during parent reconciliation or `reactiveElement`, which the
+   * renderer subscribes to directly. Use the accessor when the owner must
+   * swap independently of a parent render, including when reusing the same
+   * node object. Updating the contents of the owned element itself remains
+   * the owner's responsibility.
    *
    * `tag`, `props` and `children` describe an empty shell, so the element is
    * the only description of the subtree. Server-side rendering therefore reads

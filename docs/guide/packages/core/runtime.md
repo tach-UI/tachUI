@@ -38,13 +38,21 @@ reactive binding paths. The framework's Symbol, shape, and flow-control
 components use `reactiveElement`; none requires an additional replacement path
 based on mutating the node object.
 
-Apply modifiers to a wrapper node: modifiers on an owned node do not transfer
-to replacements made by its accessor. Owned elements must contain trusted or
-sanitized content. Server rendering requires a supplied DOM element (or an
-accessor that can produce one); components that cannot create one on the server
-must omit the owned node there.
+Apply modifiers to a wrapper node rather than to the owned node itself.
+Modifiers on an owned node are client-only — server rendering reads the
+element's `outerHTML` and never runs the modifier pass, so appearance that
+depends on them will not match after hydration — and client-side they land on
+whichever element is mounted first, so they do not transfer to replacements
+made by an accessor.
 
-### Key files
+Owned elements must contain trusted or sanitized content: nothing between the
+owner and the DOM escapes them.
+
+Server rendering requires a supplied DOM element, or an accessor that can
+produce one. A component that cannot build one without a DOM must omit the
+owned node server-side rather than emit an elementless one.
+
+## Key files
 
 | File | Purpose |
 | --- | --- |
