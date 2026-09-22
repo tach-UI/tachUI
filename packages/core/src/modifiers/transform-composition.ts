@@ -110,7 +110,8 @@ export function setTransformPart(
     // and left in place it would make `none rotate(90deg)`, which is not a
     // transform list at all, so the browser would drop the whole value.
     const foreign = splitFunctions(current).join(' ')
-    state = { parts: new Map(), foreign, written: current }
+    // `written` is set below, after the first write.
+    state = { parts: new Map(), foreign, written: '' }
     compositions.set(element, state)
   } else if (current !== state.written) {
     // Someone else wrote since we did. Keep what they wrote, minus our own
@@ -140,10 +141,37 @@ export function setTransformPart(
   state.written = element.style.transform || ''
 }
 
-// Split a transform into its functions, keeping one level of nested
-// parentheses so a `calc()` argument stays inside its function.
+// Split a transform into its top-level functions, matching parentheses to any
+// depth so a `calc()`, `max()` or `var()` argument stays inside the function
+// that holds it. Anything that is not a function, such as `none`, is dropped,
+// as is an unclosed function, which the browser would reject anyway.
 function splitFunctions(transform: string): string[] {
-  return transform.match(/[a-zA-Z0-9-]+\((?:[^()]|\([^()]*\))*\)/g) ?? []
+  const functions: string[] = []
+  let depth = 0
+  let start = -1
+
+  for (let index = 0; index < transform.length; index += 1) {
+    const char = transform[index]
+
+    if (char === '(') {
+      if (depth === 0) {
+        let nameStart = index
+        while (nameStart > 0 && /[a-zA-Z0-9-]/.test(transform[nameStart - 1])) {
+          nameStart -= 1
+        }
+        start = nameStart < index ? nameStart : -1
+      }
+      depth += 1
+    } else if (char === ')' && depth > 0) {
+      depth -= 1
+      if (depth === 0 && start !== -1) {
+        functions.push(transform.slice(start, index + 1))
+        start = -1
+      }
+    }
+  }
+
+  return functions
 }
 
 // Remove each of `remove` once from `from`, as a multiset.
