@@ -15,6 +15,7 @@ import type {
   TextAlign,
   BlendMode,
   BackgroundImageOptions,
+  TransformAnchor,
 } from '@tachui/types/modifiers'
 import type {
   OverlayAlignment,
@@ -32,16 +33,7 @@ export type Dimension = number | string | 'infinity'
 /**
  * Anchor point a rotation turns around
  */
-export type RotationAnchor =
-  | 'center'
-  | 'top'
-  | 'topLeading'
-  | 'topTrailing'
-  | 'bottom'
-  | 'bottomLeading'
-  | 'bottomTrailing'
-  | 'leading'
-  | 'trailing'
+export type RotationAnchor = TransformAnchor
 
 export interface StatefulBackgroundValue {
   default: any

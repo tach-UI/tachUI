@@ -7,7 +7,7 @@
 
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
-import { setTransformPart } from '../basic/transform-composition'
+import { setTransformPart } from '@tachui/core/modifiers'
 import type { ModifierContext } from '@tachui/types/modifiers'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 

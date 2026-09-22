@@ -18,6 +18,9 @@ import { animation, transform } from '@tachui/modifiers/animation'
 import { BackgroundModifier } from '@tachui/modifiers/appearance/background'
 import { blendMode } from '@tachui/modifiers/appearance/blend-mode'
 import { zIndex } from '@tachui/modifiers/layout/z-index'
+import { offset } from '@tachui/modifiers/layout/offset'
+import { scaleEffect } from '@tachui/modifiers/layout/scale-effect'
+import { rotationEffect } from '@tachui/modifiers/basic/animation'
 import { describe, expect, it, vi } from 'vitest'
 import { HoverModifier } from '../../modifiers/src/effects/effects/index'
 import { ResponsiveModifier } from '../../responsive/src/modifiers/responsive/responsive-modifier'
@@ -589,6 +592,34 @@ describe('renderToString', () => {
     } finally {
       errorSpy.mockRestore()
     }
+  })
+
+  // Each transform modifier writes the whole composed value, so server output
+  // should carry that value once rather than one partial declaration per
+  // modifier, and a signal-driven part should render at its current value.
+  it('renders composed transform modifiers as one declaration', () => {
+    const [angle] = createSignal(30)
+    const node = h('div', { style: { display: 'block' } }) as DOMNode & {
+      modifiers: unknown[]
+    }
+
+    node.modifiers = [
+      offset(4, 5),
+      rotationEffect(angle, 'bottomTrailing'),
+      scaleEffect(2, undefined, 'topLeading'),
+      transform('skewX(3deg)'),
+    ]
+
+    const html = renderToString(node)
+
+    expect(html.match(/transform:/g)).toHaveLength(1)
+    expect(html).toContain(
+      'transform:translate(4px, 5px) ' +
+        'translate(50%, 50%) rotate(30deg) translate(-50%, -50%) ' +
+        'translate(-50%, -50%) scale(2, 2) translate(50%, 50%) ' +
+        'skewX(3deg)'
+    )
+    expect(html).not.toContain('transform-origin')
   })
 
   it('collects SSR head entries from assets via context', () => {

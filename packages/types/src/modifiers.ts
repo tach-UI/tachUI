@@ -11,6 +11,20 @@ import type { Dimension } from './layout'
 import type { StatefulBackgroundValue } from './gradients'
 import type { AssetValue, ColorAssetProxy, ImageAssetProxy, FontAssetProxy, Asset } from './assets'
 
+/**
+ * A named point on an element's box that a transform effect is anchored to
+ */
+export type TransformAnchor =
+  | 'center'
+  | 'top'
+  | 'topLeading'
+  | 'topTrailing'
+  | 'bottom'
+  | 'bottomLeading'
+  | 'bottomTrailing'
+  | 'leading'
+  | 'trailing'
+
 // Re-export asset types for convenience
 export type { AssetValue, ColorAssetProxy, ImageAssetProxy, FontAssetProxy, Asset }
 
@@ -206,16 +220,7 @@ export interface LayoutModifierProps {
   scaleEffect?: {
     x?: number
     y?: number
-    anchor?:
-      | 'center'
-      | 'top'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottom'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-      | 'leading'
-      | 'trailing'
+    anchor?: TransformAnchor
   }
   position?: {
     x?: number
@@ -343,16 +348,11 @@ export interface AnimationModifierProps {
   scaleEffect?: {
     x: number
     y?: number
-    anchor?:
-      | 'center'
-      | 'top'
-      | 'bottom'
-      | 'leading'
-      | 'trailing'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottomLeading'
-      | 'bottomTrailing'
+    anchor?: TransformAnchor
+  }
+  rotationEffect?: {
+    angle: number | Signal<number>
+    anchor?: TransformAnchor
   }
 }
 
