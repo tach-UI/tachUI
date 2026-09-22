@@ -4,6 +4,10 @@
  * Two-column master/detail layout with responsive collapse behavior.
  */
 
+// Chains basic modifiers such as `.padding()`, so they must be registered,
+// and typed, wherever this module loads.
+// oxlint-disable-next-line import/no-unassigned-import -- loaded for its registration
+import '@tachui/modifiers/preload/basic'
 import { h, mountComponentTree } from '@tachui/core'
 import type { ComponentInstance } from '@tachui/core'
 import { Button, HTML, Text, VStack, HStack } from '@tachui/primitives'
@@ -358,7 +362,7 @@ export function NavigationSplitView<TSelection = unknown>(
           })
             .minWidth(detailColumnWidth.minWidth ?? '0')
             .width(detailColumnWidth.width ?? '100%')
-            .maxWidth(detailColumnWidth.maxWidth)
+            .maxWidth(detailColumnWidth.maxWidth ?? 'none')
             .build(),
         ],
         spacing: 0,
@@ -412,7 +416,7 @@ export function NavigationSplitView<TSelection = unknown>(
           })
             .minWidth(detailColumnWidth.minWidth ?? '0')
             .width(detailColumnWidth.width ?? '100%')
-            .maxWidth(detailColumnWidth.maxWidth)
+            .maxWidth(detailColumnWidth.maxWidth ?? 'none')
             .build(),
         ],
         spacing: 0,

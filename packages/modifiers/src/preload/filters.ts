@@ -3,6 +3,12 @@
  * teams need a narrow portion of the effects suite.
  */
 
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type {
+  ModifierFactoriesOf,
+  ModifierMethodsOf,
+  ModifierRegistrationList,
+} from '@tachui/types/modifiers'
 import { globalModifierRegistry } from '@tachui/registry'
 import {
   blackAndWhite,
@@ -32,7 +38,7 @@ import {
   warmTone,
 } from '../effects/filters'
 
-const filterRegistrations: Array<[string, (...args: any[]) => any]> = [
+const filterRegistrations = [
   ['blur', blur],
   ['brightness', brightness],
   ['contrast', contrast],
@@ -58,7 +64,14 @@ const filterRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['colorInvert', colorInvert],
   ['saturation', saturation],
   ['hueRotation', hueRotation],
-]
+] as const satisfies ModifierRegistrationList
+
+// Type the filter modifiers on the builder, from the factories registered
+// here, so they typecheck exactly when this module has run.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<ModifierFactoriesOf<typeof filterRegistrations>> {}
+}
 
 filterRegistrations.forEach(([name, factory]) => {
   if (!globalModifierRegistry.has(name)) {

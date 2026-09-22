@@ -180,6 +180,7 @@
         "@tachui/modifiers": "0.11.1",
         "@tachui/primitives": "0.11.1",
         "@tachui/registry": "0.11.1",
+        "@tachui/types": "0.11.1",
       },
       "devDependencies": {
         "@types/node": "^20.10.0",
@@ -195,8 +196,9 @@
       "name": "@tachui/fragments",
       "version": "0.11.1",
       "dependencies": {
-        "@tachui/core": "workspace:*",
-        "@tachui/ssr": "workspace:*",
+        "@tachui/core": "0.11.1",
+        "@tachui/ssr": "0.11.1",
+        "@tachui/types": "0.11.1",
       },
       "devDependencies": {
         "@types/node": "^20.0.0",
@@ -209,10 +211,11 @@
       "name": "@tachui/grid",
       "version": "0.11.1",
       "dependencies": {
-        "@tachui/core": "workspace:*",
-        "@tachui/modifiers": "workspace:*",
-        "@tachui/registry": "workspace:*",
-        "@tachui/responsive": "workspace:*",
+        "@tachui/core": "0.11.1",
+        "@tachui/modifiers": "0.11.1",
+        "@tachui/registry": "0.11.1",
+        "@tachui/responsive": "0.11.1",
+        "@tachui/types": "0.11.1",
       },
       "devDependencies": {
         "@types/jsdom": "^21.1.6",
@@ -235,6 +238,7 @@
       "version": "0.11.1",
       "dependencies": {
         "@tachui/modifiers": "0.11.1",
+        "@tachui/types": "0.11.1",
       },
       "devDependencies": {
         "@tachui/core": "workspace:*",
@@ -279,6 +283,7 @@
       "version": "0.11.1",
       "dependencies": {
         "@tachui/modifiers": "0.11.1",
+        "@tachui/types": "0.11.1",
       },
       "devDependencies": {
         "@playwright/test": "^1.40.0",
@@ -344,9 +349,10 @@
       "name": "@tachui/responsive",
       "version": "0.11.1",
       "dependencies": {
-        "@tachui/core": "workspace:*",
-        "@tachui/modifiers": "workspace:*",
-        "@tachui/registry": "workspace:*",
+        "@tachui/core": "0.11.1",
+        "@tachui/modifiers": "0.11.1",
+        "@tachui/registry": "0.11.1",
+        "@tachui/types": "0.11.1",
       },
       "devDependencies": {
         "@types/jsdom": "^21.1.6",
@@ -368,7 +374,7 @@
       "name": "@tachui/ssr",
       "version": "0.11.1",
       "dependencies": {
-        "@tachui/core": "workspace:*",
+        "@tachui/core": "0.11.1",
       },
       "devDependencies": {
         "@types/node": "^20.0.0",
@@ -409,8 +415,9 @@
       "name": "@tachui/viewport",
       "version": "0.11.1",
       "dependencies": {
-        "@tachui/core": "workspace:*",
-        "@tachui/modifiers": "workspace:*",
+        "@tachui/core": "0.11.1",
+        "@tachui/modifiers": "0.11.1",
+        "@tachui/types": "0.11.1",
       },
       "devDependencies": {
         "@types/jsdom": "^21.1.6",

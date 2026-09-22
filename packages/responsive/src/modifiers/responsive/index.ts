@@ -5,6 +5,11 @@
  * Provides mobile-first responsive modifiers with TypeScript support.
  */
 
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type {
+  ModifierFactoriesOf,
+  ModifierMethodsOf,
+} from '@tachui/types/modifiers'
 import { registerModifierWithMetadata } from '@tachui/core/modifiers'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { TACHUI_PACKAGE_VERSION } from '../../version'
@@ -132,7 +137,7 @@ const RESPONSIVE_PLUGIN_INFO: PluginInfo = {
   verified: true,
 }
 
-type ResponsiveRegistration = [
+type ResponsiveRegistration = readonly [
   name: string,
   factory: (...args: any[]) => any,
   metadata: {
@@ -145,7 +150,7 @@ type ResponsiveRegistration = [
 
 const RESPONSIVE_PRIORITY = 80
 
-const responsiveRegistrations: ResponsiveRegistration[] = [
+const responsiveRegistrations = [
   [
     'responsive',
     createResponsiveModifier,
@@ -190,7 +195,14 @@ const responsiveRegistrations: ResponsiveRegistration[] = [
         'Configures responsive flexbox layout properties such as direction, wrap, and gap.',
     },
   ],
-]
+] as const satisfies readonly ResponsiveRegistration[]
+
+// Type the responsive modifiers on the builder, from the factories registered
+// here, so they typecheck exactly when this module is loaded.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<ModifierFactoriesOf<typeof responsiveRegistrations>> {}
+}
 
 let responsiveRegistered = false
 

@@ -1,3 +1,8 @@
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type { ModifierMethodsOf } from '@tachui/types/modifiers'
+import type { validation } from './validation'
+import type { placeholder } from './placeholder'
+import type { required } from './required'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { registerValidationModifier } from './validation'
 import { registerPlaceholderModifier } from './placeholder'
@@ -52,6 +57,13 @@ export function registerFormsModifiers(
 }
 
 registerFormsModifiers()
+
+// Type the forms modifiers on the builder, from their factories, so they
+// typecheck exactly when this module has registered them.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<{ validation: typeof validation; placeholder: typeof placeholder; required: typeof required }> {}
+}
 
 export {
   validation,

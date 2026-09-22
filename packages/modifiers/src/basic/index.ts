@@ -8,6 +8,14 @@
 // Registry registration for basic modifiers
 import { globalModifierRegistry } from '@tachui/registry'
 import type { ModifierRegistry } from '@tachui/registry'
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type {
+  ModifierFactoriesOf,
+  ModifierMethodsOf,
+  ModifierRegistrationList,
+} from '@tachui/types/modifiers'
+import type { PaddingBuilderMethods } from './padding'
+import type { MarginBuilderMethods } from './margin'
 import { TACHUI_PACKAGE_VERSION } from '../version'
 
 // Import specific factory functions to register them
@@ -216,7 +224,7 @@ import {
   spinner,
 } from '../elements'
 
-export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]> = [
+export const basicModifierRegistrations = [
   // Padding
   ['padding', padding],
   ['paddingTop', paddingTop],
@@ -411,7 +419,21 @@ export const basicModifierRegistrations: Array<[string, (...args: any[]) => any]
   ['spinner', spinner],
   // Lifecycle
   ['task', taskModifier],
-]
+] as const satisfies ModifierRegistrationList
+
+// Type every basic modifier on the builder, from the factories registered
+// above, so a chain method typechecks only if it exists once this module has
+// run. `padding` and `margin` are overloaded, which derivation would collapse
+// to the last overload, so they come from their own interfaces.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends PaddingBuilderMethods,
+      MarginBuilderMethods,
+      ModifierMethodsOf<
+        ModifierFactoriesOf<typeof basicModifierRegistrations>,
+        'padding' | 'margin'
+      > {}
+}
 
 type RegisterOptions = {
   registry?: ModifierRegistry

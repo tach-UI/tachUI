@@ -2,6 +2,12 @@
  * Preload entry for transform-style effects (rotations, scaling, perspective).
  */
 
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type {
+  ModifierFactoriesOf,
+  ModifierMethodsOf,
+  ModifierRegistrationList,
+} from '@tachui/types/modifiers'
 import { globalModifierRegistry } from '@tachui/registry'
 import {
   advancedTransform,
@@ -30,7 +36,7 @@ import {
   translateZ,
 } from '../effects/transforms'
 
-const transformRegistrations: Array<[string, (...args: any[]) => any]> = [
+const transformRegistrations = [
   ['transform', transform],
   ['scale', scale],
   ['rotate', rotate],
@@ -55,7 +61,14 @@ const transformRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['perspectiveOrigin', perspectiveOrigin],
   ['transformStyle', transformStyle],
   ['backfaceVisibility', backfaceVisibility],
-]
+] as const satisfies ModifierRegistrationList
+
+// Type the transform modifiers on the builder, from the factories registered
+// here, so they typecheck exactly when this module has run.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<ModifierFactoriesOf<typeof transformRegistrations>> {}
+}
 
 transformRegistrations.forEach(([name, factory]) => {
   if (!globalModifierRegistry.has(name)) {

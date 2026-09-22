@@ -5,6 +5,10 @@
  * with customizable tab bars, selection binding, and tab item management.
  */
 
+// Chains basic modifiers such as `.padding()`, so they must be registered,
+// and typed, wherever this module loads.
+// oxlint-disable-next-line import/no-unassigned-import -- loaded for its registration
+import '@tachui/modifiers/preload/basic'
 import type { ComponentInstance } from '@tachui/core'
 import {
   createEffect,
@@ -250,8 +254,9 @@ export function TabView(
         render: () => {
           const isActive = activeTabId() === tab.id
           const rendered = button.render()
+          const nodes = Array.isArray(rendered) ? rendered : [rendered]
 
-          return rendered.map((node: any) => {
+          return nodes.map((node: any) => {
             if (node.type !== 'element' || node.tag !== 'button') {
               return node
             }

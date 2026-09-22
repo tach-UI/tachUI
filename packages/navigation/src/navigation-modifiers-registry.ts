@@ -55,69 +55,69 @@ import type {
 } from './navigation-modifiers'
 import { tabItem } from './simple-tab-view'
 
-declare module '@tachui/core' {
+declare module '@tachui/types/modifiers' {
   interface ModifierBuilder<T extends ComponentInstance = ComponentInstance> {
-    navigationTitle(title: string): ModifierBuilder<T>
-    navigationBarTitleDisplayMode(mode: 'automatic' | 'inline' | 'large'): ModifierBuilder<T>
-    navigationBarHidden(hidden?: boolean): ModifierBuilder<T>
+    navigationTitle(title: string): this
+    navigationBarTitleDisplayMode(mode: 'automatic' | 'inline' | 'large'): this
+    navigationBarHidden(hidden?: boolean): this
     navigationBarItems(options: {
       leading?: ComponentInstance | ComponentInstance[]
       trailing?: ComponentInstance | ComponentInstance[]
-    }): ModifierBuilder<T>
-    navigationBarBackButtonHidden(hidden?: boolean): ModifierBuilder<T>
-    navigationBarBackButtonTitle(title: string): ModifierBuilder<T>
-    toolbarBackground(background: string): ModifierBuilder<T>
-    toolbarForegroundColor(color: string): ModifierBuilder<T>
+    }): this
+    navigationBarBackButtonHidden(hidden?: boolean): this
+    navigationBarBackButtonTitle(title: string): this
+    toolbarBackground(background: string): this
+    toolbarForegroundColor(color: string): this
     toolbarBackgroundVisibility(
       visibility: ToolbarBackgroundVisibility,
       target?: ToolbarBackgroundVisibilityTarget
-    ): ModifierBuilder<T>
-    presentationDetents(detents: PresentationDetent[]): ModifierBuilder<T>
-    toolbar(items: ToolbarItemConfig[]): ModifierBuilder<T>
-    toolbarItems(items: ToolbarItemConfig[]): ModifierBuilder<T>
+    ): this
+    presentationDetents(detents: PresentationDetent[]): this
+    toolbar(items: ToolbarItemConfig[]): this
+    toolbarItems(items: ToolbarItemConfig[]): this
     sheet(
       isPresented: Accessor<boolean> | Binding<boolean>,
       content: () => ComponentInstance,
       options?: SheetPresentationOptions
-    ): ModifierBuilder<T>
+    ): this
     fullScreenCover(
       isPresented: Accessor<boolean> | Binding<boolean>,
       content: () => ComponentInstance,
       options?: FullScreenCoverOptions
-    ): ModifierBuilder<T>
+    ): this
     popover(
       isPresented: Accessor<boolean> | Binding<boolean>,
       arrowEdge: PopoverArrowEdge,
       content: () => ComponentInstance,
       options?: PopoverPresentationOptions
-    ): ModifierBuilder<T>
+    ): this
     searchable(
       text: Accessor<string> | Binding<string>,
       placement?: SearchablePlacement
-    ): ModifierBuilder<T>
-    searchSuggestions(suggestions: SearchSuggestionsInput): ModifierBuilder<T>
+    ): this
+    searchSuggestions(suggestions: SearchSuggestionsInput): this
     searchScopes(
       scope: SearchScopeState,
       scopes: SearchScopeOption[]
-    ): ModifierBuilder<T>
+    ): this
     confirmationDialog(
       title: string,
       isPresented: Accessor<boolean> | Binding<boolean>,
       actions: ConfirmationDialogAction[]
-    ): ModifierBuilder<T>
+    ): this
     inspector(
       isPresented: Accessor<boolean> | Binding<boolean>,
       content: () => ComponentInstance,
       options?: InspectorPresentationOptions
-    ): ModifierBuilder<T>
-    inspectorColumnWidth(config: InspectorColumnWidthConfig): ModifierBuilder<T>
+    ): this
+    inspectorColumnWidth(config: InspectorColumnWidthConfig): this
     tabItem(
       id: string,
       label: string,
       icon?: string,
       badge?: string | number | boolean,
       disabled?: boolean
-    ): ModifierBuilder<T>
+    ): this
   }
 }
 

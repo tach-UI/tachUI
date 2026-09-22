@@ -5,6 +5,10 @@
  * with automatic navigation management and programmatic control.
  */
 
+// Chains basic modifiers such as `.padding()`, so they must be registered,
+// and typed, wherever this module loads.
+// oxlint-disable-next-line import/no-unassigned-import -- loaded for its registration
+import '@tachui/modifiers/preload/basic'
 import type { Binding, ComponentInstance } from '@tachui/core'
 import { createEffect, createSignal, isBinding } from '@tachui/core'
 import { HStack, HTML, Text, Button, VStack } from '@tachui/primitives'

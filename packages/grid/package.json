@@ -42,9 +42,10 @@
   },
   "dependencies": {
     "@tachui/core": "0.11.1",
-    "@tachui/responsive": "0.11.1",
     "@tachui/modifiers": "0.11.1",
-    "@tachui/registry": "0.11.1"
+    "@tachui/responsive": "0.11.1",
+    "@tachui/registry": "0.11.1",
+    "@tachui/types": "0.11.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

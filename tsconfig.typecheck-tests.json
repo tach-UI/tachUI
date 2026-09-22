@@ -55,7 +55,14 @@
       "@tachui/mobile": ["./packages/mobile/dist/index.d.ts"],
       "@tachui/devtools": ["./packages/devtools/dist/index.d.ts"],
       "@tachui/grid": ["./packages/grid/dist/index.d.ts"],
-      "@tachui/responsive": ["./packages/responsive/dist/index.d.ts"]
+      "@tachui/responsive": ["./packages/responsive/dist/index.d.ts"],
+      // Added for the builder type tests: each registers modifiers and adds
+      // their methods to the builder, which those tests check package by
+      // package.
+      "@tachui/viewport": ["./packages/viewport/dist/index.d.ts"],
+      "@tachui/forms": ["./packages/forms/dist/index.d.ts"],
+      "@tachui/navigation": ["./packages/navigation/dist/index.d.ts"],
+      "@tachui/fragments": ["./packages/fragments/dist/index.d.ts"]
     }
   },
   "include": ["packages/**/__tests__/**/*.test-d.ts"],

@@ -2,6 +2,12 @@
  * Preload entry focused on shadow effects (drop shadows, text shadows, etc.).
  */
 
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type {
+  ModifierFactoriesOf,
+  ModifierMethodsOf,
+  ModifierRegistrationList,
+} from '@tachui/types/modifiers'
 import { globalModifierRegistry } from '@tachui/registry'
 import {
   animatedShadow,
@@ -26,7 +32,7 @@ import {
   textShadowSubtle,
 } from '../effects/shadows'
 
-const shadowRegistrations: Array<[string, (...args: any[]) => any]> = [
+const shadowRegistrations = [
   ['shadows', shadows],
   ['shadowPreset', shadowPreset],
   ['shadow', shadow],
@@ -47,7 +53,14 @@ const shadowRegistrations: Array<[string, (...args: any[]) => any]> = [
   ['swiftUIShadow', swiftUIShadow],
   ['reactiveShadow', reactiveShadow],
   ['animatedShadow', animatedShadow],
-]
+] as const satisfies ModifierRegistrationList
+
+// Type the shadow modifiers on the builder, from the factories registered
+// here, so they typecheck exactly when this module has run.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<ModifierFactoriesOf<typeof shadowRegistrations>> {}
+}
 
 shadowRegistrations.forEach(([name, factory]) => {
   if (!globalModifierRegistry.has(name)) {

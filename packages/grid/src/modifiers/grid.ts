@@ -5,6 +5,11 @@
  * Provides comprehensive grid item control with CSS Grid integration.
  */
 
+import type { ComponentInstance } from '@tachui/types/runtime'
+import type {
+  ModifierFactoriesOf,
+  ModifierMethodsOf,
+} from '@tachui/types/modifiers'
 import { BaseModifier } from '@tachui/modifiers'
 import type { ModifierContext } from '@tachui/modifiers'
 import { registerModifierWithMetadata } from '@tachui/core/modifiers'
@@ -323,7 +328,7 @@ const GRID_PLUGIN_INFO: PluginInfo = {
   verified: true,
 }
 
-type GridModifierRegistration = [
+type GridModifierRegistration = readonly [
   name: string,
   factory: (...args: any[]) => any,
   metadata: {
@@ -336,7 +341,7 @@ type GridModifierRegistration = [
 
 const GRID_MODIFIER_PRIORITY = 180
 
-const gridModifierRegistrations: GridModifierRegistration[] = [
+const gridModifierRegistrations = [
   [
     'gridColumnSpan',
     gridColumnSpan,
@@ -419,7 +424,14 @@ const gridModifierRegistrations: GridModifierRegistration[] = [
       description: 'SwiftUI compatibility alias for gridCellAlignment.',
     },
   ],
-]
+] as const satisfies readonly GridModifierRegistration[]
+
+// Type the grid modifiers on the builder, from the factories registered
+// here, so they typecheck exactly when this module is loaded.
+declare module '@tachui/types/modifiers' {
+  interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
+    extends ModifierMethodsOf<ModifierFactoriesOf<typeof gridModifierRegistrations>> {}
+}
 
 let gridModifiersRegistered = false
 
