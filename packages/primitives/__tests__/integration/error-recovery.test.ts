@@ -46,27 +46,26 @@ describe('Phase 2.4: Error Recovery and Retry Mechanisms Tests', () => {
         return 'success'
       }
 
-      const startTime = Date.now()
-      const result = await manager.executeWithRecovery(flakyOperation, {
-        operation: 'flaky-test',
-      })
+      // Assert the schedule the manager asks for rather than the wall clock.
+      // A floor on elapsed time can only sit at or below the sum of the
+      // delays, and `setTimeout` may fire a millisecond early, so a floor
+      // tight enough to tell 10ms + 20ms from 10ms + 10ms fails on the clock.
+      // The spy passes through, so the retries still wait for real.
+      const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
 
-      const duration = Date.now() - startTime
+      try {
+        const result = await manager.executeWithRecovery(flakyOperation, {
+          operation: 'flaky-test',
+        })
 
-      expect(result.success).toBe(true)
-      expect(result.result).toBe('success')
-      expect(result.attempts).toBe(3)
-      // The two delays are 10ms and 20ms by construction, and the old floor
-      // of 30 sat exactly on that sum — no slack at all, so a timer firing a
-      // millisecond early failed it. `setTimeout` is entitled to do that, and
-      // this run measured 29. Same lesson as the jittered case below (#229):
-      // a budget level with the work it measures tests the clock, not the code.
-      //
-      // What this can still honestly separate is backoff from no backoff at
-      // all — without the delays the whole operation lands in a millisecond or
-      // two. The attempt count two lines up is what pins the retry behaviour.
-      expect(duration).toBeGreaterThanOrEqual(20)
-      expect(attemptCount).toBe(3)
+        expect(result.success).toBe(true)
+        expect(result.result).toBe('success')
+        expect(result.attempts).toBe(3)
+        expect(attemptCount).toBe(3)
+        expect(setTimeoutSpy.mock.calls.map(call => call[1])).toEqual([10, 20])
+      } finally {
+        setTimeoutSpy.mockRestore()
+      }
     })
 
     it('should respect maximum retry attempts', async () => {
