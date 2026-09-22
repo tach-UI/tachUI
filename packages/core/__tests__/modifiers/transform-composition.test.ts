@@ -135,6 +135,29 @@ describe('setTransformPart', () => {
     )
   })
 
+  // One level of nesting was all a regex could hold; `calc()` around `max()`
+  // around `var()` split the outer function apart and left an invalid list.
+  it('keeps a function whose arguments nest to any depth', () => {
+    const nested = 'translate(calc(100% - max(1px, var(--x))), 0px)'
+    const target = element(`${nested} skewX(2deg)`)
+
+    setTransformPart(target, 'rotation', 'rotate(90deg)')
+    target.style.transform = `${target.style.transform} perspective(50px)`
+    setTransformPart(target, 'rotation', 'rotate(20deg)')
+
+    expect(target.style.transform).toBe(
+      `${nested} skewX(2deg) perspective(50px) rotate(20deg)`
+    )
+  })
+
+  it('drops an unclosed function rather than guessing where it ends', () => {
+    const target = element('skewX(2deg) translate(calc(1px, 0px)')
+
+    setTransformPart(target, 'rotation', 'rotate(90deg)')
+
+    expect(target.style.transform).toBe('skewX(2deg) rotate(90deg)')
+  })
+
   it('keeps separate state per element', () => {
     const first = element()
     const second = element()
