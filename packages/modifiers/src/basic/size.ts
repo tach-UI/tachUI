@@ -5,7 +5,8 @@
  * with support for SwiftUI-style infinity constants.
  */
 
-import { createEffect, isComputed, isSignal } from '@tachui/core/reactive'
+import { isComputed, isSignal } from '@tachui/core/reactive'
+import { bindReactiveStyle } from '@tachui/core/modifiers/base'
 import type { DOMNode } from '@tachui/types/runtime'
 import type { Dimension } from '@tachui/core/constants/layout'
 import type { Signal } from '@tachui/types/reactive'
@@ -47,6 +48,25 @@ export class SizeModifier extends BaseModifier<SizeOptions> {
   readonly type = 'size'
   readonly priority = 80 // Priority 80 for layout
 
+  // The style keys the last reactive update wrote, per element, so the next
+  // update can clear the ones it no longer sets.
+  private readonly appliedKeys = new WeakMap<Element, string[]>()
+
+  // One accessor per modifier, so `bindReactiveStyle` recognises a repeat
+  // application to the same element. It resolves every signal to its current
+  // value; a signal yielding `null` is unset, as `undefined` is, rather than a
+  // value to write.
+  private readonly resolvedSizes = (): SizeOptions => {
+    const resolved: SizeOptions = {}
+    for (const key of SIZE_KEYS) {
+      const value: unknown = this.properties[key]
+      resolved[key] = isReactive(value)
+        ? (value() ?? undefined)
+        : (value as Dimension)
+    }
+    return resolved
+  }
+
   constructor(options: ReactiveSizeOptions) {
     // Preserve reactive values; BaseModifier.applyStyles will create effects.
     // Copied, so changing the object after the call does not change this.
@@ -68,28 +88,28 @@ export class SizeModifier extends BaseModifier<SizeOptions> {
     // having the sentinel written as a CSS value. Each run also clears what
     // the previous values set and these do not, such as that expansion once
     // the signal leaves `infinity`.
-    let applied: string[] = []
-    createEffect(() => {
-      const resolved: SizeOptions = {}
-      for (const key of SIZE_KEYS) {
-        const value: unknown = props[key]
-        // A signal yielding `null` is unset, as `undefined` is, rather than a
-        // value to write.
-        resolved[key] = isReactive(value)
-          ? (value() ?? undefined)
-          : (value as Dimension)
-      }
-
-      const styles = this.computeSizeStyles(resolved)
-      const cleared = applied.filter(key => !(key in styles))
-      if (cleared.length > 0) {
-        this.applyStyles(
-          element,
-          Object.fromEntries(cleared.map(key => [key, '']))
-        )
-      }
-      this.applyStyles(element, styles)
-      applied = Object.keys(styles)
+    //
+    // It runs through `bindReactiveStyle`, as every other reactive style
+    // does, so it is disposed with its owner or when the element leaves the
+    // document, and applying it again to the same element reuses the binding
+    // rather than adding a second effect.
+    bindReactiveStyle({
+      element,
+      accessor: this.resolvedSizes,
+      updaterId: 'size',
+      updater: resolved => {
+        const styles = this.computeSizeStyles(resolved as SizeOptions)
+        const previous = this.appliedKeys.get(element) ?? []
+        const cleared = previous.filter(key => !(key in styles))
+        if (cleared.length > 0) {
+          this.applyStyles(
+            element,
+            Object.fromEntries(cleared.map(key => [key, '']))
+          )
+        }
+        this.applyStyles(element, styles)
+        this.appliedKeys.set(element, Object.keys(styles))
+      },
     })
 
     return undefined

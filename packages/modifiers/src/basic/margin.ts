@@ -77,6 +77,24 @@ import { isSignal, isComputed } from '@tachui/core/reactive'
 
 export type ReactiveMarginOptions = ReactiveModifierProps<MarginOptions>
 
+function isDevelopment(): boolean {
+  return (
+    typeof process !== 'undefined' && process.env.NODE_ENV === 'development'
+  )
+}
+
+// A number is pixels, but a string is CSS as written, so `'16'` has no unit
+// and the browser ignores it. It used to have `px` appended; say so while
+// developing rather than let the margin vanish.
+function warnIfUnitless(value: unknown): void {
+  if (typeof value !== 'string' || !/^-?\d*\.?\d+$/.test(value.trim())) return
+  if (Number(value) === 0) return
+  console.warn(
+    `margin: '${value}' has no unit, so the browser ignores it. Pass the ` +
+      `number ${Number(value)} for pixels, or a string with its unit.`
+  )
+}
+
 export class MarginModifier extends BaseModifier<MarginOptions> {
   readonly type = 'margin'
   readonly priority = 50 // Optimized priority for external spacing (after padding at 45)
@@ -113,6 +131,7 @@ export class MarginModifier extends BaseModifier<MarginOptions> {
       if (typeof value === 'number') {
         return `${value}px`
       }
+      if (isDevelopment()) warnIfUnitless(value)
       return String(value)
     }
 

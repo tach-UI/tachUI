@@ -60,6 +60,7 @@
     "clean": "rm -rf dist",
     "valid": "clear && vitest run && bun run type-check && bun run lint && bun run build",
     "test": "vitest run",
+    "verify:dist": "node scripts/verify-dist.mjs",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit",
     "bench": "vitest bench",
