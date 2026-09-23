@@ -70,12 +70,15 @@ describe('unregistered modifiers', () => {
   })
 
   it('knows only the modifiers it lists', () => {
-    expect(unregisteredModifierMethod('shadow')).toBeTypeOf('function')
-    expect(unregisteredModifierMethod('backdropFilter')).toBeTypeOf('function')
-    expect(unregisteredModifierMethod('paddin')).toBeUndefined()
-    expect(unregisteredModifierMethod('then')).toBeUndefined()
+    const standIn = (name: string) =>
+      unregisteredModifierMethod(name, () => false, () => undefined)
 
-    expect(isUnregisteredModifierMethod(unregisteredModifierMethod('shadow'))).toBe(true)
+    expect(standIn('shadow')).toBeTypeOf('function')
+    expect(standIn('backdropFilter')).toBeTypeOf('function')
+    expect(standIn('paddin')).toBeUndefined()
+    expect(standIn('then')).toBeUndefined()
+
+    expect(isUnregisteredModifierMethod(standIn('shadow'))).toBe(true)
     expect(isUnregisteredModifierMethod(() => {})).toBe(false)
     expect(isUnregisteredModifierMethod(undefined)).toBe(false)
   })
@@ -99,6 +102,20 @@ describe('unregistered modifiers', () => {
 
       expect(isUnregisteredModifierMethod(builder.shadow)).toBe(false)
       expect(builder.shadow({ x: 0, y: 6, blur: 18, color: 'red' })).toBe(builder)
+      expect(builder.build().modifiers).toHaveLength(1)
+    })
+
+    // Read before the import ran, called after: the reference must not keep
+    // throwing once the modifier is there.
+    it('applies a reference taken before the modifier was registered', () => {
+      hideFromRegistry('shadow')
+      const builder = createModifierBuilder(new SampleComponent()) as any
+      const shadow = builder.shadow
+
+      expect(() => shadow({ x: 0, y: 6, blur: 18, color: 'red' })).toThrow(IMPORT_ERROR)
+
+      vi.restoreAllMocks()
+      expect(shadow({ x: 0, y: 6, blur: 18, color: 'red' })).toBe(builder)
       expect(builder.build().modifiers).toHaveLength(1)
     })
 
@@ -135,6 +152,18 @@ describe('unregistered modifiers', () => {
       const component = withModifiers(new SampleComponent()) as any
 
       expect(component.focus()).toBe('own focus')
+    })
+
+    it('applies a reference taken before the modifier was registered', () => {
+      hideFromRegistry('shadow')
+      const component = withModifiers(new SampleComponent()) as any
+      const shadow = component.shadow
+
+      expect(() => shadow({ x: 0, y: 6, blur: 18, color: 'red' })).toThrow(IMPORT_ERROR)
+
+      vi.restoreAllMocks()
+      expect(shadow({ x: 0, y: 6, blur: 18, color: 'red' })).toBe(component)
+      expect(component.build().modifiers).toHaveLength(1)
     })
 
     it('uses the modifier once it is registered', () => {
