@@ -1,5 +1,97 @@
 # @tachui/responsive
 
+## 0.11.2
+
+### Patch Changes
+
+- [#408](https://github.com/tach-UI/tachUI/pull/408) [`6a5f04a`](https://github.com/tach-UI/tachUI/commit/6a5f04a175e853c9924bdd791f554c4a7265b209) Thanks [@whoughton](https://github.com/whoughton)! - Chain methods are now type-checked. `ModifierBuilder` ended in
+  `[key: string]: any`, so every chain call typechecked as `any`, including a
+  misspelled method, wrong arguments, or a modifier no package had typed. That
+  fallback is gone.
+
+  A method is now typed if core declares it or if the package that registers it
+  adds it. Each registering module adds its modifiers to `ModifierBuilder` by
+  augmenting `@tachui/types/modifiers`, with signatures derived from the
+  registered factories through the new `ModifierMethodsOf` and
+  `ModifierFactoriesOf` helpers. A method is therefore typed exactly when
+  importing its package registers it, and its parameters can't drift from its
+  factory. About 150 registered modifiers had no declaration anywhere, including
+  the aria helpers, `role`, most padding and margin sides, the touch handlers,
+  and the whole effects set. They are all typed now. The separate
+  `ModifierBuilder` that `@tachui/modifiers/types` declared is replaced by a
+  re-export of the one interface.
+
+  A chain on a component returns that component, as the runtime does, so a
+  modified component can be a child: `VStack({ children: [Text('a').padding(4)] })`.
+  A chain on `.modifier` returns the builder until `.build()`.
+
+  Typing them exposed some runtime bugs:
+
+  - `margin(signal)` treated the signal as its options object and set no margin.
+    It now follows the signal, as `padding(signal)` does.
+  - Navigation's tab views, stacks, links and split view called basic modifiers
+    without loading them, so they only worked if the app had. They now import
+    `@tachui/modifiers/preload/basic`, and navigation's build keeps every
+    `@tachui/*` import external. It used to bundle what it imported beyond
+    `@tachui/core` and `@tachui/primitives`, which would have given it a private
+    registry that the app's builder never reads.
+  - Navigation's builder methods (`.navigationTitle()`, `.toolbarBackground()`
+    and the rest) were missing from the published build: they were a module
+    side effect, and the bundler dropped them. They are now installed by an
+    explicit call from the package's entry points, on the app's builder from
+    `@tachui/core/modifiers`. A `dist` check in `test:ci` covers all of this.
+
+  Typing also required two small changes in navigation. A tab view now
+  normalizes a tab button's render result to an array before mapping it, as the
+  declared return type requires. The split view now applies the detail column's
+  `maxWidth` only when one is configured, so an unset width still writes nothing
+  inline.
+
+  Navigation's own builder augmentation targeted `@tachui/core`, which re-exports
+  the interface through `export *`, a path augmentation cannot reach. It now
+  targets `@tachui/types/modifiers`. Grid, responsive, viewport, mobile, forms,
+  fragments and navigation now depend on `@tachui/types` directly, because their
+  published declarations reference it.
+
+  The size modifiers (`width`, `height`, `minWidth`, `maxWidth`, `minHeight`,
+  `maxHeight`) and the `padding` and `margin` families accept a signal in their
+  types, as they already did at runtime.
+
+  Some typed signatures change where the old ones were wrong:
+
+  - `refreshable` takes its options object, `{ onRefresh, … }`. The old type
+    took a bare function, which failed at runtime on the first pull.
+  - `transition` also takes its object form, `{ property, duration, easing,
+delay }`, which the runtime always accepted.
+  - `.transform()` is typed for a string. The basic and effects modifiers both
+    register `transform`, and whichever loads first is what the chain calls. The
+    effects version now also takes a string (it used to throw during render),
+    so a string works in either order. Its configuration form is available by
+    calling the factory directly, or through `.scale()`, `.rotate()` and the
+    other transform modifiers.
+  - `.asHTML()` is written out, not derived, so its security notice appears
+    where it is called.
+
+  The error for a modifier missing from the registry now names the right
+  imports: it used to suggest `@tachui/modifiers` even for grid, navigation or
+  forms modifiers.
+
+  Six chain methods that are registered, and now typed, used to throw when
+  called: `.onAppear()`, `.onDisappear()`, `.refreshable()`,
+  `.customProperty()`, `.customProperties()` and `.cssVariables()`. Each had a
+  leftover "moved to another package" stub on the builder, which the chain
+  finds before the registry. The stubs are gone, so these resolve from the
+  registry like every other registered modifier. Ten transition presets
+  (`fadeTransition`, `buttonTransition` and the rest) were declared on the
+  builder but never implemented anywhere, so calling one threw a `TypeError`.
+  They are no longer declared.
+
+- Updated dependencies [[`3c7d240`](https://github.com/tach-UI/tachUI/commit/3c7d24003bac08f32d1131620c5320dea3448d4a), [`42e2555`](https://github.com/tach-UI/tachUI/commit/42e2555028b3bb8d9b121da8a849e4c06dd3b258), [`59a1495`](https://github.com/tach-UI/tachUI/commit/59a149583c907d37954f557921e9634f17c874db), [`0597547`](https://github.com/tach-UI/tachUI/commit/0597547f699efab16648906a4c8132b02093df36), [`adb81be`](https://github.com/tach-UI/tachUI/commit/adb81be8830ba8de02d4c53d02689ff3a2d97280), [`0597547`](https://github.com/tach-UI/tachUI/commit/0597547f699efab16648906a4c8132b02093df36), [`6a5f04a`](https://github.com/tach-UI/tachUI/commit/6a5f04a175e853c9924bdd791f554c4a7265b209), [`2593ced`](https://github.com/tach-UI/tachUI/commit/2593ced011ce4148199028edf401156888865660), [`e8607d0`](https://github.com/tach-UI/tachUI/commit/e8607d02a149147226c38d4545c432fa34624693), [`3242516`](https://github.com/tach-UI/tachUI/commit/3242516a36ef4456652791e1d27f33a87a972b11), [`1f9de1f`](https://github.com/tach-UI/tachUI/commit/1f9de1fc374c166668b73575c244e565f6a0fb7d), [`51cee06`](https://github.com/tach-UI/tachUI/commit/51cee060d97f5172bf2f00888cef2570efbb7171), [`818d1aa`](https://github.com/tach-UI/tachUI/commit/818d1aac5e3f0e68e073ca9fe5930ffcef5ff8b2), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`6d787ba`](https://github.com/tach-UI/tachUI/commit/6d787ba6658cc640548133dac94938a1d7d75a49), [`5c4eddb`](https://github.com/tach-UI/tachUI/commit/5c4eddbb5a1af5a0283268249a20f093c6dc0b11), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`ecf7ed0`](https://github.com/tach-UI/tachUI/commit/ecf7ed02d0a7b8708e7eba04cb2bfe6ca267f5a9), [`9d47ded`](https://github.com/tach-UI/tachUI/commit/9d47dedfcffe259abd1d07407512761e29dca0a3), [`5a6ac09`](https://github.com/tach-UI/tachUI/commit/5a6ac0904f6e4b22af8239a1ebbac8395708db74)]:
+  - @tachui/core@0.11.2
+  - @tachui/modifiers@0.11.2
+  - @tachui/types@0.11.2
+  - @tachui/registry@0.11.2
+
 ## 0.11.1
 
 ### Patch Changes

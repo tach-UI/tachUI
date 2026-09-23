@@ -1,5 +1,147 @@
 # @tachui/forms
 
+## 0.11.2
+
+### Patch Changes
+
+- [#402](https://github.com/tach-UI/tachUI/pull/402) [`2a74331`](https://github.com/tach-UI/tachUI/commit/2a7433188cdab609639baff45c665d871aa9f35a) Thanks [@whoughton](https://github.com/whoughton)! - `Toggle`, `Slider` and `BasicForm` respond to interaction again.
+
+  All three wired their DOM listeners from inside a `ref` callback on an
+  intrinsic element. The renderer has no `ref` support for intrinsic elements —
+  it treats the prop like any other and stringifies the function into a `ref`
+  attribute — so the callback never ran, no listener was ever attached, and the
+  components rendered correctly but were inert. `Toggle`'s `onToggle` never
+  fired for a click, a label click, a keyboard Space or a dispatched `change`;
+  `Slider`'s `onValueChange` never fired, so the value could not be dragged and
+  the track fill stayed at zero; `BasicForm` never saw `submit`, `change` or
+  `input`, so `onSubmit`, `validateOnSubmit` and `validateOnChange` all did
+  nothing. The stray `ref="(el) => {...}"` attribute is gone from the rendered
+  markup as well.
+
+  Each component now declares its handlers in element props the way
+  `BasicInput` and `Picker` already do. Two pieces of state that the ref
+  callback existed to capture went with it:
+
+  `Slider`'s track fill is a style rather than an imperative write —
+  `--slider-progress` is derived from the current value on every render, so it
+  follows the binding the way the thumb does. The drag-tracking signal that
+  guarded the old write is gone with the write it guarded; the input is
+  controlled by `value`, and a value written back mid-drag is the value the
+  handler just reported.
+
+  `BasicForm` resolves its form element from the event that reaches a handler,
+  which is what `FormData` and the validation sweep read.
+
+  `Toggle` also puts its hidden checkbox back in step with `isOn` after a
+  change. The browser flips that checkbox before the handler runs, so a toggle
+  whose binding is constant, or whose `onToggle` declines the change, used to
+  submit as checked while the track read off.
+
+- [#408](https://github.com/tach-UI/tachUI/pull/408) [`6a5f04a`](https://github.com/tach-UI/tachUI/commit/6a5f04a175e853c9924bdd791f554c4a7265b209) Thanks [@whoughton](https://github.com/whoughton)! - Chain methods are now type-checked. `ModifierBuilder` ended in
+  `[key: string]: any`, so every chain call typechecked as `any`, including a
+  misspelled method, wrong arguments, or a modifier no package had typed. That
+  fallback is gone.
+
+  A method is now typed if core declares it or if the package that registers it
+  adds it. Each registering module adds its modifiers to `ModifierBuilder` by
+  augmenting `@tachui/types/modifiers`, with signatures derived from the
+  registered factories through the new `ModifierMethodsOf` and
+  `ModifierFactoriesOf` helpers. A method is therefore typed exactly when
+  importing its package registers it, and its parameters can't drift from its
+  factory. About 150 registered modifiers had no declaration anywhere, including
+  the aria helpers, `role`, most padding and margin sides, the touch handlers,
+  and the whole effects set. They are all typed now. The separate
+  `ModifierBuilder` that `@tachui/modifiers/types` declared is replaced by a
+  re-export of the one interface.
+
+  A chain on a component returns that component, as the runtime does, so a
+  modified component can be a child: `VStack({ children: [Text('a').padding(4)] })`.
+  A chain on `.modifier` returns the builder until `.build()`.
+
+  Typing them exposed some runtime bugs:
+
+  - `margin(signal)` treated the signal as its options object and set no margin.
+    It now follows the signal, as `padding(signal)` does.
+  - Navigation's tab views, stacks, links and split view called basic modifiers
+    without loading them, so they only worked if the app had. They now import
+    `@tachui/modifiers/preload/basic`, and navigation's build keeps every
+    `@tachui/*` import external. It used to bundle what it imported beyond
+    `@tachui/core` and `@tachui/primitives`, which would have given it a private
+    registry that the app's builder never reads.
+  - Navigation's builder methods (`.navigationTitle()`, `.toolbarBackground()`
+    and the rest) were missing from the published build: they were a module
+    side effect, and the bundler dropped them. They are now installed by an
+    explicit call from the package's entry points, on the app's builder from
+    `@tachui/core/modifiers`. A `dist` check in `test:ci` covers all of this.
+
+  Typing also required two small changes in navigation. A tab view now
+  normalizes a tab button's render result to an array before mapping it, as the
+  declared return type requires. The split view now applies the detail column's
+  `maxWidth` only when one is configured, so an unset width still writes nothing
+  inline.
+
+  Navigation's own builder augmentation targeted `@tachui/core`, which re-exports
+  the interface through `export *`, a path augmentation cannot reach. It now
+  targets `@tachui/types/modifiers`. Grid, responsive, viewport, mobile, forms,
+  fragments and navigation now depend on `@tachui/types` directly, because their
+  published declarations reference it.
+
+  The size modifiers (`width`, `height`, `minWidth`, `maxWidth`, `minHeight`,
+  `maxHeight`) and the `padding` and `margin` families accept a signal in their
+  types, as they already did at runtime.
+
+  Some typed signatures change where the old ones were wrong:
+
+  - `refreshable` takes its options object, `{ onRefresh, … }`. The old type
+    took a bare function, which failed at runtime on the first pull.
+  - `transition` also takes its object form, `{ property, duration, easing,
+delay }`, which the runtime always accepted.
+  - `.transform()` is typed for a string. The basic and effects modifiers both
+    register `transform`, and whichever loads first is what the chain calls. The
+    effects version now also takes a string (it used to throw during render),
+    so a string works in either order. Its configuration form is available by
+    calling the factory directly, or through `.scale()`, `.rotate()` and the
+    other transform modifiers.
+  - `.asHTML()` is written out, not derived, so its security notice appears
+    where it is called.
+
+  The error for a modifier missing from the registry now names the right
+  imports: it used to suggest `@tachui/modifiers` even for grid, navigation or
+  forms modifiers.
+
+  Six chain methods that are registered, and now typed, used to throw when
+  called: `.onAppear()`, `.onDisappear()`, `.refreshable()`,
+  `.customProperty()`, `.customProperties()` and `.cssVariables()`. Each had a
+  leftover "moved to another package" stub on the builder, which the chain
+  finds before the registry. The stubs are gone, so these resolve from the
+  registry like every other registered modifier. Ten transition presets
+  (`fadeTransition`, `buttonTransition` and the rest) were declared on the
+  builder but never implemented anywhere, so calling one threw a `TypeError`.
+  They are no longer declared.
+
+- [#402](https://github.com/tach-UI/tachUI/pull/402) [`3c7d240`](https://github.com/tach-UI/tachUI/commit/3c7d24003bac08f32d1131620c5320dea3448d4a) Thanks [@whoughton](https://github.com/whoughton)! - `Slider`'s thumb and track fill no longer disagree.
+
+  The fill is drawn from `value` on every render, but the browser moves the
+  thumb on its own before the handler runs. With a plain-number `value`, or an
+  `onValueChange` that does not write the value back, nothing re-renders — so
+  the thumb sat where the pointer dropped it while the fill stayed where the
+  binding was. Dragging from 10 to 42 left the thumb at 42 and the track drawn
+  at 10%.
+
+  The thumb is now put back on whatever the value says once the handler has
+  run, which is what `Toggle` does with its hidden checkbox. Unchanged when
+  `onValueChange` wrote the reported value straight through; snapped to the step
+  when it rounded, without waiting for the render; and back where it started
+  when the binding cannot follow. The slider is controlled by `value` in fact
+  and not just in intent.
+
+- Updated dependencies [[`1022871`](https://github.com/tach-UI/tachUI/commit/10228719ef36ad902f73b0034bc9f7e74cbef02f), [`3c7d240`](https://github.com/tach-UI/tachUI/commit/3c7d24003bac08f32d1131620c5320dea3448d4a), [`42e2555`](https://github.com/tach-UI/tachUI/commit/42e2555028b3bb8d9b121da8a849e4c06dd3b258), [`59a1495`](https://github.com/tach-UI/tachUI/commit/59a149583c907d37954f557921e9634f17c874db), [`0597547`](https://github.com/tach-UI/tachUI/commit/0597547f699efab16648906a4c8132b02093df36), [`adb81be`](https://github.com/tach-UI/tachUI/commit/adb81be8830ba8de02d4c53d02689ff3a2d97280), [`a312f2e`](https://github.com/tach-UI/tachUI/commit/a312f2eb5fcdae20aea4206adb83f13640a62fcf), [`2a74331`](https://github.com/tach-UI/tachUI/commit/2a7433188cdab609639baff45c665d871aa9f35a), [`0597547`](https://github.com/tach-UI/tachUI/commit/0597547f699efab16648906a4c8132b02093df36), [`b182031`](https://github.com/tach-UI/tachUI/commit/b1820313170287eac33dbab3b0a9078a3aebdbd5), [`6a5f04a`](https://github.com/tach-UI/tachUI/commit/6a5f04a175e853c9924bdd791f554c4a7265b209), [`2593ced`](https://github.com/tach-UI/tachUI/commit/2593ced011ce4148199028edf401156888865660), [`e8607d0`](https://github.com/tach-UI/tachUI/commit/e8607d02a149147226c38d4545c432fa34624693), [`3242516`](https://github.com/tach-UI/tachUI/commit/3242516a36ef4456652791e1d27f33a87a972b11), [`1f9de1f`](https://github.com/tach-UI/tachUI/commit/1f9de1fc374c166668b73575c244e565f6a0fb7d), [`51cee06`](https://github.com/tach-UI/tachUI/commit/51cee060d97f5172bf2f00888cef2570efbb7171), [`818d1aa`](https://github.com/tach-UI/tachUI/commit/818d1aac5e3f0e68e073ca9fe5930ffcef5ff8b2), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`6d787ba`](https://github.com/tach-UI/tachUI/commit/6d787ba6658cc640548133dac94938a1d7d75a49), [`5c4eddb`](https://github.com/tach-UI/tachUI/commit/5c4eddbb5a1af5a0283268249a20f093c6dc0b11), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`0dbe5ac`](https://github.com/tach-UI/tachUI/commit/0dbe5acab11b9597ffa9a3926b5bc66472f1769f), [`5d89ea0`](https://github.com/tach-UI/tachUI/commit/5d89ea017b43cb890d8cd6f7d838d88cc1d889f1), [`e8ae51c`](https://github.com/tach-UI/tachUI/commit/e8ae51ca35ea0dc5dd7c2be5dc14e0a17a671cdf), [`360ef97`](https://github.com/tach-UI/tachUI/commit/360ef973b8abd879f9cc0485d283d7866edeee95), [`f66f716`](https://github.com/tach-UI/tachUI/commit/f66f71610a5feac66a3cd5a29e8abf9cb458821c), [`ecf7ed0`](https://github.com/tach-UI/tachUI/commit/ecf7ed02d0a7b8708e7eba04cb2bfe6ca267f5a9), [`4cbcb15`](https://github.com/tach-UI/tachUI/commit/4cbcb15c19eacfb9b50f7b77509cafa4904296a6), [`9d47ded`](https://github.com/tach-UI/tachUI/commit/9d47dedfcffe259abd1d07407512761e29dca0a3), [`5a6ac09`](https://github.com/tach-UI/tachUI/commit/5a6ac0904f6e4b22af8239a1ebbac8395708db74)]:
+  - @tachui/primitives@0.11.2
+  - @tachui/core@0.11.2
+  - @tachui/modifiers@0.11.2
+  - @tachui/types@0.11.2
+  - @tachui/registry@0.11.2
+
 ## 0.11.1
 
 ### Patch Changes

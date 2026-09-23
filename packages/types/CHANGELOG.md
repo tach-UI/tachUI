@@ -1,5 +1,160 @@
 # @tachui/types
 
+## 0.11.2
+
+### Patch Changes
+
+- [#408](https://github.com/tach-UI/tachUI/pull/408) [`6a5f04a`](https://github.com/tach-UI/tachUI/commit/6a5f04a175e853c9924bdd791f554c4a7265b209) Thanks [@whoughton](https://github.com/whoughton)! - Chain methods are now type-checked. `ModifierBuilder` ended in
+  `[key: string]: any`, so every chain call typechecked as `any`, including a
+  misspelled method, wrong arguments, or a modifier no package had typed. That
+  fallback is gone.
+
+  A method is now typed if core declares it or if the package that registers it
+  adds it. Each registering module adds its modifiers to `ModifierBuilder` by
+  augmenting `@tachui/types/modifiers`, with signatures derived from the
+  registered factories through the new `ModifierMethodsOf` and
+  `ModifierFactoriesOf` helpers. A method is therefore typed exactly when
+  importing its package registers it, and its parameters can't drift from its
+  factory. About 150 registered modifiers had no declaration anywhere, including
+  the aria helpers, `role`, most padding and margin sides, the touch handlers,
+  and the whole effects set. They are all typed now. The separate
+  `ModifierBuilder` that `@tachui/modifiers/types` declared is replaced by a
+  re-export of the one interface.
+
+  A chain on a component returns that component, as the runtime does, so a
+  modified component can be a child: `VStack({ children: [Text('a').padding(4)] })`.
+  A chain on `.modifier` returns the builder until `.build()`.
+
+  Typing them exposed some runtime bugs:
+
+  - `margin(signal)` treated the signal as its options object and set no margin.
+    It now follows the signal, as `padding(signal)` does.
+  - Navigation's tab views, stacks, links and split view called basic modifiers
+    without loading them, so they only worked if the app had. They now import
+    `@tachui/modifiers/preload/basic`, and navigation's build keeps every
+    `@tachui/*` import external. It used to bundle what it imported beyond
+    `@tachui/core` and `@tachui/primitives`, which would have given it a private
+    registry that the app's builder never reads.
+  - Navigation's builder methods (`.navigationTitle()`, `.toolbarBackground()`
+    and the rest) were missing from the published build: they were a module
+    side effect, and the bundler dropped them. They are now installed by an
+    explicit call from the package's entry points, on the app's builder from
+    `@tachui/core/modifiers`. A `dist` check in `test:ci` covers all of this.
+
+  Typing also required two small changes in navigation. A tab view now
+  normalizes a tab button's render result to an array before mapping it, as the
+  declared return type requires. The split view now applies the detail column's
+  `maxWidth` only when one is configured, so an unset width still writes nothing
+  inline.
+
+  Navigation's own builder augmentation targeted `@tachui/core`, which re-exports
+  the interface through `export *`, a path augmentation cannot reach. It now
+  targets `@tachui/types/modifiers`. Grid, responsive, viewport, mobile, forms,
+  fragments and navigation now depend on `@tachui/types` directly, because their
+  published declarations reference it.
+
+  The size modifiers (`width`, `height`, `minWidth`, `maxWidth`, `minHeight`,
+  `maxHeight`) and the `padding` and `margin` families accept a signal in their
+  types, as they already did at runtime.
+
+  Some typed signatures change where the old ones were wrong:
+
+  - `refreshable` takes its options object, `{ onRefresh, … }`. The old type
+    took a bare function, which failed at runtime on the first pull.
+  - `transition` also takes its object form, `{ property, duration, easing,
+delay }`, which the runtime always accepted.
+  - `.transform()` is typed for a string. The basic and effects modifiers both
+    register `transform`, and whichever loads first is what the chain calls. The
+    effects version now also takes a string (it used to throw during render),
+    so a string works in either order. Its configuration form is available by
+    calling the factory directly, or through `.scale()`, `.rotate()` and the
+    other transform modifiers.
+  - `.asHTML()` is written out, not derived, so its security notice appears
+    where it is called.
+
+  The error for a modifier missing from the registry now names the right
+  imports: it used to suggest `@tachui/modifiers` even for grid, navigation or
+  forms modifiers.
+
+  Six chain methods that are registered, and now typed, used to throw when
+  called: `.onAppear()`, `.onDisappear()`, `.refreshable()`,
+  `.customProperty()`, `.customProperties()` and `.cssVariables()`. Each had a
+  leftover "moved to another package" stub on the builder, which the chain
+  finds before the registry. The stubs are gone, so these resolve from the
+  registry like every other registered modifier. Ten transition presets
+  (`fadeTransition`, `buttonTransition` and the rest) were declared on the
+  builder but never implemented anywhere, so calling one threw a `TypeError`.
+  They are no longer declared.
+
+- [#403](https://github.com/tach-UI/tachUI/pull/403) [`818d1aa`](https://github.com/tach-UI/tachUI/commit/818d1aac5e3f0e68e073ca9fe5930ffcef5ff8b2) Thanks [@whoughton](https://github.com/whoughton)! - Document the deliberate owned-element replacement contract: use a fresh node
+  or `reactiveElement`, rather than assigning `element` on a mounted node object.
+  No runtime behavior or public type signatures change.
+
+  The prose lands in the published `.d.ts`, so it ships as a patch on
+  `@tachui/types`. `@tachui/core` is untouched by comparison: its half of the
+  change is an inline comment, which the bundler strips.
+
+- [#405](https://github.com/tach-UI/tachUI/pull/405) [`5c4eddb`](https://github.com/tach-UI/tachUI/commit/5c4eddbb5a1af5a0283268249a20f093c6dc0b11) Thanks [@whoughton](https://github.com/whoughton)! - `.rotationEffect(angle, anchor?)` works on the component chain.
+
+  It was declared on the modifier builder and documented, and
+  `AnimationModifier` already knew how to apply it, but no factory was
+  registered under the name, so every component threw
+  `rotationEffect is not a function` at the call. It is now registered next to
+  `transition`.
+
+  The angle is in degrees and may be a signal. The anchor is one of the nine
+  named points and defaults to `center`. A new angle replaces the previous
+  rotation rather than stacking on it.
+
+  `offset`, `rotationEffect`, `scaleEffect` and a raw `.transform()` string now
+  compose into one `transform`. Each owns a part of it, recorded per element, so
+  none erases another: a raw `.transform()` used to replace the whole value, so
+  `.scaleEffect(2).transform('translateX(10px)')` lost the scale, and a
+  signal-driven transform erased it again on every update. The
+  parts apply in a fixed order, since modifiers run in priority order rather
+  than chain order: the view rotates and scales in place, then the offset moves
+  it by the amount given, unscaled. Previously a scale followed by an offset
+  scaled the offset too.
+
+  Each effect keeps its own anchor. The anchor is written into the effect's own
+  part, around the element's center, rather than into `transform-origin`, which
+  holds one value per element and so could honor only one effect's anchor: a
+  scale around `topLeading` and a rotation around `bottomTrailing` both hold.
+  `scaleEffect` therefore no longer sets `transform-origin`.
+
+  A transform already on the element when an effect is first applied is kept,
+  except functions of the same kind: an offset still replaces an existing
+  translate, a scale an existing scale, as before. An existing `none` is
+  treated as no transform. A raw `.transform()` string is kept as written, so a
+  function inside it is not replaced by an effect of the same kind:
+  `.transform('rotate(10deg)').rotationEffect(20)` applies both rotations,
+  where before whichever wrote last replaced the other.
+
+  The composer lives in `@tachui/core/modifiers` (`setTransformPart`,
+  `anchorTransform`), so every writer shares one record per element. That
+  includes the `AnimationModifier` and `LayoutModifier` classes constructed
+  directly, from core or from either `@tachui/modifiers` entry: their
+  `transform`, `offset` and `scaleEffect` branches compose the same way, and
+  core's `AnimationModifier` now applies `rotationEffect`, which it ignored.
+  `AnimationModifierProps` in `@tachui/types` declares `rotationEffect`, and the
+  nine anchor names are one `TransformAnchor` type there.
+
+  Server rendering emits a composed transform as one declaration. Each
+  transform modifier writes the whole composed value, and the SSR style shim
+  kept every write, so an element with four transform modifiers carried four
+  `transform` declarations. The result was right, since the last wins, but three
+  were dead weight; a `transform` write now replaces the previous one.
+
+  The shape docs now show `.rotationEffect(-90)` for the quarter turn a progress
+  ring wants, which `.transform('rotate(-90deg)')` still does equally well.
+
+- [#385](https://github.com/tach-UI/tachUI/pull/385) [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c) Thanks [@whoughton](https://github.com/whoughton)! - Add the `Shape` contract and `ShapeRect` under `@tachui/types/shapes`.
+
+  A shape is a function from a rectangle to SVG path data, plus the CSS
+  `clip-path` basic shape for it filling its box. The built-in shapes in
+  `@tachui/primitives` implement it; it lives here so `@tachui/modifiers` can
+  accept a shape instance in `clipShape` without importing a component.
+
 ## 0.11.1
 
 ## 0.11.0

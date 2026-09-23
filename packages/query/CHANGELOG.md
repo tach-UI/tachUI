@@ -1,5 +1,23 @@
 # @tachui/query
 
+## 0.8.35
+
+### Patch Changes
+
+- [#393](https://github.com/tach-UI/tachUI/pull/393) [`5a6ac09`](https://github.com/tach-UI/tachUI/commit/5a6ac0904f6e4b22af8239a1ebbac8395708db74) Thanks [@whoughton](https://github.com/whoughton)! - Two test-only timing assertions no longer fail on a loaded machine.
+
+  `retryDelay > waits between attempts` allowed a flat 20ms sleep for three
+  loads and two 1ms backoffs, then asserted all three had run; under load it saw
+  two. It now polls through the helper the file already has for this, so it waits
+  on the retries happening rather than on a window elapsing.
+
+  `should validate large registry quickly` budgeted 20ms for about 1ms of work
+  and was seen at 22.6ms. Widened to 200ms, which still catches a superlinear
+  regression over 1000 modifiers without measuring the machine.
+
+- Updated dependencies [[`3c7d240`](https://github.com/tach-UI/tachUI/commit/3c7d24003bac08f32d1131620c5320dea3448d4a), [`59a1495`](https://github.com/tach-UI/tachUI/commit/59a149583c907d37954f557921e9634f17c874db), [`0597547`](https://github.com/tach-UI/tachUI/commit/0597547f699efab16648906a4c8132b02093df36), [`adb81be`](https://github.com/tach-UI/tachUI/commit/adb81be8830ba8de02d4c53d02689ff3a2d97280), [`0597547`](https://github.com/tach-UI/tachUI/commit/0597547f699efab16648906a4c8132b02093df36), [`6a5f04a`](https://github.com/tach-UI/tachUI/commit/6a5f04a175e853c9924bdd791f554c4a7265b209), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`6d787ba`](https://github.com/tach-UI/tachUI/commit/6d787ba6658cc640548133dac94938a1d7d75a49), [`5c4eddb`](https://github.com/tach-UI/tachUI/commit/5c4eddbb5a1af5a0283268249a20f093c6dc0b11), [`9d47ded`](https://github.com/tach-UI/tachUI/commit/9d47dedfcffe259abd1d07407512761e29dca0a3)]:
+  - @tachui/core@0.11.2
+
 ## 0.8.34
 
 ### Patch Changes
