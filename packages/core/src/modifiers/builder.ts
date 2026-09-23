@@ -67,6 +67,8 @@ import { globalModifierRegistry } from '@tachui/registry'
 import { createModifiableComponent } from './registry'
 import { unregisteredModifierMethod } from './unregistered'
 
+type BorderStyleValue = NonNullable<AppearanceModifierProps['border']>['style']
+
 // AsHTMLOptions type - keeping the type import for API surface
 export type AsHTMLOptions = {
   sanitize?: boolean
@@ -372,11 +374,16 @@ export class ModifierBuilderImpl<
     return this as unknown as ModifierBuilder<T>
   }
 
-  border(width: number | Signal<number>, color?: ColorValue): ModifierBuilder<T>
+  border(
+    width: number | Signal<number>,
+    color?: ColorValue,
+    style?: BorderStyleValue
+  ): ModifierBuilder<T>
   border(options: AppearanceModifierProps['border']): ModifierBuilder<T>
   border(
     widthOrOptions: number | Signal<number> | AppearanceModifierProps['border'],
-    color?: ColorValue
+    color?: ColorValue,
+    style?: BorderStyleValue
   ): ModifierBuilder<T> {
     let borderProps: AppearanceModifierProps['border']
 
@@ -384,7 +391,7 @@ export class ModifierBuilderImpl<
       borderProps = widthOrOptions
     } else {
       borderProps = {
-        style: 'solid',
+        style: style ?? 'solid',
         ...(widthOrOptions !== undefined && { width: widthOrOptions }),
         ...(color !== undefined && { color }),
       }

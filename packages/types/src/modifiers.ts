@@ -530,7 +530,11 @@ export interface ModifierBuilderBase<
   ): this
   opacity(value: number | Signal<number>): this
   cornerRadius(radius: number | Signal<number>): this
-  border(width: number | Signal<number>, color?: ColorValue): this
+  border(
+    width: number | Signal<number>,
+    color?: ColorValue,
+    style?: NonNullable<AppearanceModifierProps['border']>['style']
+  ): this
   border(options: AppearanceModifierProps['border']): this
   borderWidth(width: number | Signal<number>): this
 

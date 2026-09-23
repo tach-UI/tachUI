@@ -17,7 +17,7 @@ import { createSignal } from '@tachui/core'
 import { Text, VStack } from '@tachui/primitives'
 import '@tachui/modifiers/preload/basic'
 import '@tachui/modifiers/preload/effects'
-import { basicModifierRegistrations } from '@tachui/modifiers'
+import { basicModifierRegistrations, border } from '@tachui/modifiers'
 import type { ModifierBuilder } from '@tachui/modifiers/types'
 import { Grid } from '@tachui/grid'
 import '@tachui/viewport'
@@ -93,6 +93,41 @@ describe('modifier builder types', () => {
 
     // @ts-expect-error the builder is not a component
     VStack({ children: [Text('a').modifier.padding(4)] })
+  })
+
+  // `.border(width, color, style)` was typed at no chain position, although
+  // the standalone factory declared it.
+  it('takes .border() with a style at every chain position', () => {
+    const [width] = createSignal(1)
+    const [color] = createSignal('blue')
+
+    VStack({ children: [
+      Text('a').border(1, 'blue', 'dashed'),
+      Text('b').modifier.border(1, 'blue', 'dashed').build(),
+      Text('c').modifier.backgroundColor('red').border(1, 'blue', 'dashed').build(),
+      Text('d').modifier.css({}).backgroundColor('red').border(1, 'blue', 'dashed').build(),
+      Text('e').modifier.padding(4).border(1, 'blue', 'dashed').build(),
+      Text('f').modifier.cornerRadius(4).border(1, 'blue', 'dashed').build(),
+      Text('g').modifier.border(width, color, 'dotted').build(),
+    ] })
+
+    // @ts-expect-error not a border style
+    Text('x').modifier.backgroundColor('red').border(1, 'blue', 'wavy')
+    // @ts-expect-error not a border style
+    Text('x').border(1, 'blue', 'wavy')
+  })
+
+  it('keeps the two-argument and options forms of .border()', () => {
+    const [color] = createSignal('blue')
+
+    Text('a').border(1, 'blue').border({ width: 1.5, color, style: 'dashed' })
+    Text('b').modifier.backgroundColor('red').border(1, 'blue').build()
+    Text('c').modifier.border({ width: 1.5, color, style: 'dashed' }).build()
+  })
+
+  it('takes the same three arguments on the standalone border factory', () => {
+    border(1, 'blue', 'dashed')
+    border({ width: 1, color: 'blue', style: 'dashed' })
   })
 
   it('types every basic modifier the package registers', () => {
