@@ -14,6 +14,7 @@ import {
   bindReactiveStyle,
   collectStaticAnimationCSSRules,
   ensureAnimationKeyframes,
+  UNITLESS_CSS_PROPERTIES,
 } from '@tachui/core/modifiers/base'
 import type { Signal } from '@tachui/types/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
@@ -202,21 +203,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    */
   protected toCSSValueForProperty(property: string, value: any): string {
     if (typeof value === 'number') {
-      // Properties that should be unitless
-      const unitlessProperties = [
-        'opacity',
-        'z-index',
-        'line-height',
-        // Numeric `flex` is shorthand for flex-grow and must stay unitless.
-        'flex',
-        'flex-grow',
-        'flex-shrink',
-        'order',
-        'column-count',
-        'font-weight',
-      ]
-
-      if (unitlessProperties.includes(property)) {
+      if (UNITLESS_CSS_PROPERTIES.has(property)) {
         return String(value)
       }
 

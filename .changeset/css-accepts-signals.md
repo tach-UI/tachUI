@@ -17,7 +17,10 @@ a layered `background`, `text-decoration`, `outline`, `box-shadow`.
 Numbers are also converted the same way for static and reactive values: a
 number becomes pixels except on unitless properties. Before, `.css()` turned
 every static number into pixels itself, so `.css({ opacity: 0.5 })` wrote
-`0.5px`, which the browser ignores.
+`0.5px`, which the browser ignores. The list of unitless properties is now
+complete and shared by every modifier. It covers the grid lines (`gridRow: 2`),
+`scale`, `zoom`, `aspect-ratio`, `animation-iteration-count`, the SVG
+opacities and the rest, which used to get `px` and be dropped.
 
 A signal of `string | number` is accepted too, for values such as `16` that
 become `'1rem'`, and so is one that can be empty. A signal that yields `null`

@@ -77,6 +77,53 @@ function getModifierInstanceId(modifier: object): number {
  * animation's name. `BaseModifier.toCSSProperty` delegates here so there is one
  * spelling rule rather than two that must be kept in step.
  */
+/**
+ * CSS properties whose numeric value is unitless, so a number given for one
+ * is written as is rather than as pixels. Anything else gets `px`: writing
+ * `px` onto one of these makes an invalid declaration the browser drops, as
+ * `grid-row: 2px` and `scale: 2px` are.
+ */
+export const UNITLESS_CSS_PROPERTIES: ReadonlySet<string> = new Set([
+  'animation-iteration-count',
+  'aspect-ratio',
+  'border-image-outset',
+  'border-image-slice',
+  'border-image-width',
+  'column-count',
+  'columns',
+  'fill-opacity',
+  'flex',
+  'flex-grow',
+  'flex-shrink',
+  'flood-opacity',
+  'font-size-adjust',
+  'font-weight',
+  'grid-area',
+  'grid-column',
+  'grid-column-end',
+  'grid-column-start',
+  'grid-row',
+  'grid-row-end',
+  'grid-row-start',
+  'initial-letter',
+  'line-clamp',
+  '-webkit-line-clamp',
+  'line-height',
+  'math-depth',
+  'opacity',
+  'order',
+  'orphans',
+  'scale',
+  'shape-image-threshold',
+  'stop-opacity',
+  'stroke-miterlimit',
+  'stroke-opacity',
+  'tab-size',
+  'widows',
+  'z-index',
+  'zoom',
+])
+
 function toCSSPropertyName(property: string): string {
   // `WebkitFilter` gets its leading dash from the capital. The lowercase
   // forms — `webkitLineClamp`, `msFilter`, `oTransition`, the CSSOM spelling
@@ -471,19 +518,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    */
   protected toCSSValueForProperty(property: string, value: any): string {
     if (typeof value === 'number') {
-      // Properties that should be unitless
-      const unitlessProperties = [
-        'opacity',
-        'z-index',
-        'line-height',
-        'flex-grow',
-        'flex-shrink',
-        'order',
-        'column-count',
-        'font-weight',
-      ]
-
-      if (unitlessProperties.includes(property)) {
+      if (UNITLESS_CSS_PROPERTIES.has(property)) {
         return String(value)
       }
 
