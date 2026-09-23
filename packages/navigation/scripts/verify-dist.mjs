@@ -16,10 +16,19 @@
  *   a module side effect that the build dropped.
  */
 
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 const dist = path.resolve(import.meta.dirname, '../dist')
+
+if (!existsSync(dist)) {
+  console.error(
+    '@tachui/navigation dist check: no build to check. Run ' +
+      '`bun run --filter @tachui/navigation build` first.'
+  )
+  process.exit(1)
+}
+
 const chunks = readdirSync(dist)
   .filter(file => file.endsWith('.js'))
   .map(file => ({ file, source: readFileSync(path.join(dist, file), 'utf8') }))

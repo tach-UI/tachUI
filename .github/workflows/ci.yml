@@ -202,6 +202,8 @@ jobs:
           bun run build:primitives
           bun run build:responsive
           bun run --filter @tachui/fragments build
+          # test:ci ends with navigation's dist check, which reads its build.
+          bun run build:navigation
 
       - name: Run tests
         run: bun run test:ci
