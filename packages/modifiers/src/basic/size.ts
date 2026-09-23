@@ -5,6 +5,7 @@
  * with support for SwiftUI-style infinity constants.
  */
 
+import { createEffect, isComputed, isSignal } from '@tachui/core/reactive'
 import type { DOMNode } from '@tachui/types/runtime'
 import type { Dimension } from '@tachui/core/constants/layout'
 import type { Signal } from '@tachui/types/reactive'
@@ -30,6 +31,18 @@ export interface SizeOptions {
 
 export type ReactiveSizeOptions = ReactiveModifierProps<SizeOptions>
 
+const SIZE_KEYS = [
+  'width',
+  'height',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
+] as const satisfies readonly (keyof SizeOptions)[]
+
+const isReactive = (value: unknown): value is () => Dimension =>
+  isSignal(value) || isComputed(value)
+
 export class SizeModifier extends BaseModifier<SizeOptions> {
   readonly type = 'size'
   readonly priority = 80 // Priority 80 for layout
@@ -41,9 +54,38 @@ export class SizeModifier extends BaseModifier<SizeOptions> {
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
     if (!context.element) return
+    const element = context.element
+    const props = this.properties
 
-    const styles = this.computeSizeStyles(this.properties)
-    this.applyStyles(context.element, styles)
+    if (!SIZE_KEYS.some(key => isReactive(props[key]))) {
+      this.applyStyles(element, this.computeSizeStyles(props))
+      return undefined
+    }
+
+    // Resolve every signal before computing styles, so a signal that becomes
+    // `infinity` gets the flex expansion a static `infinity` does rather than
+    // having the sentinel written as a CSS value. Each run also clears what
+    // the previous values set and these do not, such as that expansion once
+    // the signal leaves `infinity`.
+    let applied: string[] = []
+    createEffect(() => {
+      const resolved: SizeOptions = {}
+      for (const key of SIZE_KEYS) {
+        const value: unknown = props[key]
+        resolved[key] = isReactive(value) ? value() : (value as Dimension)
+      }
+
+      const styles = this.computeSizeStyles(resolved)
+      const cleared = applied.filter(key => !(key in styles))
+      if (cleared.length > 0) {
+        this.applyStyles(
+          element,
+          Object.fromEntries(cleared.map(key => [key, '']))
+        )
+      }
+      this.applyStyles(element, styles)
+      applied = Object.keys(styles)
+    })
 
     return undefined
   }

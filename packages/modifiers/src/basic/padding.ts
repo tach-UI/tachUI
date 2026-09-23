@@ -106,14 +106,11 @@ export class PaddingModifier extends BaseModifier<PaddingOptions> {
         return value
       }
 
+      // A number is pixels. A string is CSS as written, as it is for a
+      // signal's value and for `.css()`: guessing a unit for it turned
+      // `'0 auto'` into `'0 autopx'` and `calc(...)` into `calc(...)px`.
       if (typeof value === 'number') {
         return `${value}px`
-      }
-      if (value === 'auto') return value
-      if (typeof value === 'string') {
-        // Validate and normalize CSS values
-        const cssValueRegex = /^-?\d*\.?\d+(px|rem|em|%|vw|vh|vmin|vmax)$/
-        return cssValueRegex.test(value) ? value : `${value}px`
       }
       return String(value)
     }

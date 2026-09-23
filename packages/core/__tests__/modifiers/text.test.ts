@@ -57,7 +57,10 @@ describe('Text Modifiers', () => {
       mockElement.style[property] = value
 
       // Also store as camelCase for JavaScript access
-      const camelCase = property.replace(/-([a-z])/g, g => g[1].toUpperCase())
+      // As CSSOM does: `-webkit-line-clamp` is `webkitLineClamp`.
+      const camelCase = property
+        .replace(/^-/, '')
+        .replace(/-([a-z])/g, g => g[1].toUpperCase())
       mockElement.style[camelCase] = value
     })
 

@@ -8,8 +8,8 @@ They set **inline styles** on the component's element. That determines what they
 
 - **Property names** can be camelCase (`backdropFilter`) or kebab-case (`'backdrop-filter'`). Custom properties keep their `--` prefix.
 - **Numbers** become pixels (`marginTop: 4` is `4px`), except on unitless properties such as `opacity`, `z-index`, `line-height` and `flex`.
-- **Any value can be a signal or memo.** The property updates in place when it changes.
-- **Only declarations, never rules.** An inline style can't hold at-rules (`@media`, `@supports`, `@container`), pseudo-classes (`:hover`, `:focus-visible`), pseudo-elements (`::before`) or nested selectors. Such keys are not applied. For those, see [Beyond inline styles](#beyond-inline-styles).
+- **Any value can be a signal or memo.** The property updates in place when it changes. A signal that yields `null` or `undefined` clears the property.
+- **Only declarations, never rules.** An inline style can't hold at-rules (`@media`, `@supports`, `@container`), pseudo-classes (`:hover`, `:focus-visible`), pseudo-elements (`::before`) or nested selectors. Such keys are not applied, and in development `.css()` warns about them. For those, see [Beyond inline styles](#beyond-inline-styles).
 
 All examples assume the basic modifiers are loaded:
 
@@ -158,7 +158,7 @@ const hero = VStack({ children: [] }).css({ background: layered })
 
 ## Vendor prefixes
 
-A camelCase name starting with a capital gets a leading dash, so `WebkitBackdropFilter` becomes `-webkit-backdrop-filter`. The kebab-case form works too.
+A camelCase vendor name gets its leading dash: `WebkitBackdropFilter` becomes `-webkit-backdrop-filter`, and `msFilter` becomes `-ms-filter`. The kebab-case form works too.
 
 ```typescript
 const frosted = VStack({ children: [] })

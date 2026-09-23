@@ -6,7 +6,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest'
-import { paddingPresets } from '../../src/basic/padding'
+import { padding, paddingPresets } from '../../src/basic/padding'
 import type { ModifierContext } from '@tachui/core/modifiers/types'
 import type { DOMNode } from '@tachui/core/runtime/types'
 
@@ -241,6 +241,27 @@ describe('Enhanced Padding Presets', () => {
         expect(preset.type).toBe('padding')
         expect(preset.priority).toBe(45)
       })
+    })
+  })
+
+  // A unit was appended to any string that was not a single length, so a
+  // shorthand or a function came out invalid: '8px 16pxpx', 'calc(...)px'.
+  describe('String values', () => {
+    it('passes shorthand and function values through unchanged', () => {
+      padding('8px 16px').apply({} as DOMNode, mockContext)
+      expect(mockElement.style.padding).toBe('8px 16px')
+
+      padding({ top: 'calc(1rem + 2px)', left: 'max(4px, 1vw)' }).apply(
+        {} as DOMNode,
+        mockContext
+      )
+      expect(mockElement.style.paddingTop).toBe('calc(1rem + 2px)')
+      expect(mockElement.style.paddingLeft).toBe('max(4px, 1vw)')
+    })
+
+    it('still gives a number pixels', () => {
+      padding(12).apply({} as DOMNode, mockContext)
+      expect(mockElement.style.padding).toBe('12px')
     })
   })
 })

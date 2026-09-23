@@ -259,3 +259,32 @@ export class AsHTMLModifier extends BaseModifier<AsHTMLOptions> {
 export function asHTML(options: AsHTMLOptions = {}): AsHTMLModifier {
   return new AsHTMLModifier(options)
 }
+
+/**
+ * The builder form of `asHTML`, written out rather than derived from the
+ * factory so its security notice shows where the method is called.
+ */
+export interface AsHTMLBuilderMethods {
+  /**
+   * Render component content as HTML instead of plain text
+   *
+   * ⚠️ **SECURITY NOTICE**: this treats content as HTML.
+   * - Default: basic sanitization removes common XSS vectors
+   * - Use `skipSanitizer: true` only with fully trusted content
+   * - Consider DOMPurify, through `customSanitizer`, for comprehensive
+   *   sanitization
+   * - Non-reactive: content is processed once
+   *
+   * Only Text components accept it; on any other component it throws when
+   * applied.
+   *
+   * @example
+   * ```typescript
+   * Text('<p>Hello <strong>world</strong></p>').asHTML()
+   *
+   * // Dangerous: skip sanitization
+   * Text(serverTemplate).asHTML({ skipSanitizer: true })
+   * ```
+   */
+  asHTML(options?: AsHTMLOptions): this
+}

@@ -556,6 +556,12 @@ export interface ModifierBuilderBase<
   disabled(isDisabled?: boolean | Signal<boolean>): this
 
   // Animation modifiers
+  transition(options: {
+    property?: string
+    duration?: number
+    easing?: string
+    delay?: number
+  }): this
   transition(
     property?: string,
     duration?: number,
@@ -749,6 +755,7 @@ export interface CSSStyleProperties {
     | number
     | Signal<string>
     | Signal<number>
+    | Signal<string | number>
     | undefined
 }
 

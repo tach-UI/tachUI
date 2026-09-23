@@ -409,6 +409,7 @@ export interface CSSStyleProperties {
     | number
     | Signal<string>
     | Signal<number>
+    | Signal<string | number>
     | undefined
 }
 

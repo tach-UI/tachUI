@@ -152,6 +152,14 @@ export function NavigationSplitView<TSelection = unknown>(
   const sidebarColumnWidth = resolveColumnWidth(props.columnWidths?.sidebar)
   const contentColumnWidth = resolveColumnWidth(props.columnWidths?.content)
   const detailColumnWidth = resolveColumnWidth(props.columnWidths?.detail)
+  // Constrain the detail column's max width only when one is configured, so an
+  // unset width writes nothing inline and a stylesheet can still set it.
+  const constrainDetailMaxWidth = <Column extends { maxWidth(value: string): Column }>(
+    column: Column,
+  ): Column =>
+    detailColumnWidth.maxWidth === undefined
+      ? column
+      : column.maxWidth(detailColumnWidth.maxWidth)
 
   const splitContext: NavigationSplitViewContext<TSelection> = {
     selectDetail: (value: TSelection) => {
@@ -355,15 +363,15 @@ export function NavigationSplitView<TSelection = unknown>(
             .maxWidth(contentColumnWidth.maxWidth ?? '420px')
             .border({ width: 1, color: '#e5e7eb' })
             .build(),
-          VStack({
-            children: [buildDetailMountHost()],
-            spacing: 0,
-            alignment: 'leading',
-          })
-            .minWidth(detailColumnWidth.minWidth ?? '0')
-            .width(detailColumnWidth.width ?? '100%')
-            .maxWidth(detailColumnWidth.maxWidth ?? 'none')
-            .build(),
+          constrainDetailMaxWidth(
+            VStack({
+              children: [buildDetailMountHost()],
+              spacing: 0,
+              alignment: 'leading',
+            })
+              .minWidth(detailColumnWidth.minWidth ?? '0')
+              .width(detailColumnWidth.width ?? '100%')
+          ).build(),
         ],
         spacing: 0,
         alignment: 'leading',
@@ -391,33 +399,33 @@ export function NavigationSplitView<TSelection = unknown>(
                   .build(),
               ]
             : []),
-          VStack({
-            children: [
-              ...(hasContentColumn
-                ? [
-                    Button(
-                      shouldRenderSidebar() ? 'Hide Sidebar' : 'Show Sidebar',
-                      () => {
-                        mediumSidebarVisible = !mediumSidebarVisible
-                        renderShellIntoHost()
-                      }
-                    )
-                      .backgroundColor('transparent')
-                      .foregroundColor('#007AFF')
-                      .border(0)
-                      .padding({ top: 8, right: 12, bottom: 8, left: 12 })
-                      .build(),
-                  ]
-                : []),
-              buildDetailMountHost(),
-            ],
-            spacing: 0,
-            alignment: 'leading',
-          })
-            .minWidth(detailColumnWidth.minWidth ?? '0')
-            .width(detailColumnWidth.width ?? '100%')
-            .maxWidth(detailColumnWidth.maxWidth ?? 'none')
-            .build(),
+          constrainDetailMaxWidth(
+            VStack({
+              children: [
+                ...(hasContentColumn
+                  ? [
+                      Button(
+                        shouldRenderSidebar() ? 'Hide Sidebar' : 'Show Sidebar',
+                        () => {
+                          mediumSidebarVisible = !mediumSidebarVisible
+                          renderShellIntoHost()
+                        }
+                      )
+                        .backgroundColor('transparent')
+                        .foregroundColor('#007AFF')
+                        .border(0)
+                        .padding({ top: 8, right: 12, bottom: 8, left: 12 })
+                        .build(),
+                    ]
+                  : []),
+                buildDetailMountHost(),
+              ],
+              spacing: 0,
+              alignment: 'leading',
+            })
+              .minWidth(detailColumnWidth.minWidth ?? '0')
+              .width(detailColumnWidth.width ?? '100%')
+          ).build(),
         ],
         spacing: 0,
         alignment: 'leading',
