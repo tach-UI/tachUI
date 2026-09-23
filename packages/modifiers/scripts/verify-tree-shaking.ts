@@ -4,13 +4,22 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+// Core lists the effect modifier names, to say which import registers one
+// that is called before it is registered. Any bundle that includes core
+// therefore contains those names whether or not the effects code survived, so
+// a fixture that pulls in core (basic, or both) is checked for a string only
+// the effects implementation emits: `backdrop-filter`, from the backdrop
+// factory, and `drop-shadow`, from the filter and shadow factories. Each is
+// shaken out with its factory when nothing registers it.
+const EFFECTS_ONLY = ['backdrop-filter', 'drop-shadow']
+
 const preloadChecks: Array<{ fixture: string; registryKeys: string[] }> = [
-  { fixture: 'tree-shake-effects.ts', registryKeys: ['transformStyle'] },
+  { fixture: 'tree-shake-effects.ts', registryKeys: EFFECTS_ONLY },
   { fixture: 'tree-shake-filters.ts', registryKeys: ['blur'] },
   { fixture: 'tree-shake-shadows.ts', registryKeys: ['shadow'] },
   { fixture: 'tree-shake-transforms.ts', registryKeys: ['transformStyle'] },
   { fixture: 'tree-shake-backdrop.ts', registryKeys: ['backdropFilter'] },
-  { fixture: 'tree-shake-both.ts', registryKeys: ['padding', 'transformStyle'] },
+  { fixture: 'tree-shake-both.ts', registryKeys: ['padding', ...EFFECTS_ONLY] },
 ]
 
 async function buildFixtureOutput(fixture: string): Promise<string> {
@@ -30,9 +39,10 @@ async function buildFixtureOutput(fixture: string): Promise<string> {
 }
 
 // The preload entries register on import. `registerBasicModifiers` announces
-// itself to the registry as a plugin named '@tachui/modifiers', and the
-// effects registration lists modifier names directly — both are string
-// literals that only survive if the registration code itself survives.
+// itself to the registry as a plugin named '@tachui/modifiers', a string
+// literal that only survives if the registration code itself survives. The
+// effect modifier names are in core too, so the effects registration is
+// detected by what its factories emit instead (see EFFECTS_ONLY).
 // Bundling the DIST (not src) is the point: #260 was invisible to every other
 // fixture here because src/preload/*.ts is covered by the package's
 // sideEffects globs while the hashed dist chunks the build emits are not.
@@ -44,7 +54,7 @@ const distChecks: Array<{ fixture: string; sentinel: string; label: string }> = 
   },
   {
     fixture: 'tree-shake-dist-effects.ts',
-    sentinel: 'glassmorphism',
+    sentinel: 'backdrop-filter',
     label: 'effect modifier registration',
   },
 ]
@@ -52,7 +62,7 @@ const distChecks: Array<{ fixture: string; sentinel: string; label: string }> = 
 async function verify() {
   const output = await buildFixtureOutput('tree-shake-basic.ts')
 
-  if (output.includes('Glassmorphism') || output.includes('DropShadow')) {
+  if (EFFECTS_ONLY.some(sentinel => output.includes(sentinel))) {
     console.error('❌ Tree-shaking failed: effects code detected in basic preload bundle')
     process.exit(1)
   }

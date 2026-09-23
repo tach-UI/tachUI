@@ -12,19 +12,52 @@ import sharedConfig from './vitest.shared.config'
  *
  * Kept in its own config because typecheck mode is markedly slower than the
  * runtime suites and has a different include pattern (`*.test-d.ts`).
+ *
+ * Each project is compiled as its own program. A module augmentation, such as
+ * the one a modifier package makes to the builder, applies to the whole
+ * program once any file imports that module. A test that checks what is
+ * declared without such an import therefore goes under `isolated-types/`,
+ * which the `isolated` project compiles apart from the rest. Each project
+ * needs its own tsconfig for that: `tsc` compiles what the tsconfig includes,
+ * whatever the project's own `include` says.
  */
+const ISOLATED = 'packages/**/__tests__/isolated-types/**/*.test-d.ts'
+
 export default mergeConfig(
   sharedConfig,
   defineConfig({
     test: {
-      include: [],
-      typecheck: {
-        enabled: true,
-        include: ['packages/**/__tests__/**/*.test-d.ts'],
-        tsconfig: './tsconfig.typecheck-tests.json',
-      },
-      environment: 'node',
-      exclude: ['node_modules/**', 'dist/**', 'coverage/**'],
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: 'types',
+            include: [],
+            typecheck: {
+              enabled: true,
+              include: ['packages/**/__tests__/**/*.test-d.ts'],
+              exclude: ['**/node_modules/**', ISOLATED],
+              tsconfig: './tsconfig.typecheck-tests.json',
+            },
+            environment: 'node',
+            exclude: ['node_modules/**', 'dist/**', 'coverage/**'],
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'isolated',
+            include: [],
+            typecheck: {
+              enabled: true,
+              include: [ISOLATED],
+              tsconfig: './tsconfig.typecheck-isolated.json',
+            },
+            environment: 'node',
+            exclude: ['node_modules/**', 'dist/**', 'coverage/**'],
+          },
+        },
+      ],
     },
   })
 )
