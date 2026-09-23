@@ -82,4 +82,29 @@ describe('reactive size modifiers', () => {
 
     expect(element.style.maxWidth).toBe('none')
   })
+
+  // `null` is the usual "not loaded yet" value. It unsets the size, as
+  // `undefined` does, rather than being written.
+  it('clears the size when a signal yields null or undefined', () => {
+    const [width, setWidth] = createSignal<Dimension | null | undefined>(120)
+    const element = render((Text('x') as any).width(width))
+
+    setWidth(null)
+    flushSync()
+    expect(element.style.width).toBe('')
+
+    setWidth(60)
+    flushSync()
+    setWidth(undefined)
+    flushSync()
+    expect(element.style.width).toBe('')
+  })
+
+  it('copies its options, so a later change has no effect', () => {
+    const options: { width: Dimension } = { width: 40 }
+    const component = (Text('x') as any).size(options)
+    options.width = 90
+
+    expect(render(component).style.width).toBe('40px')
+  })
 })

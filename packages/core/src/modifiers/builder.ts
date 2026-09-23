@@ -650,28 +650,6 @@ export class ModifierBuilderImpl<
   // Available via Proxy when @tachui/modifiers is imported:
   // - id(), data(), aria(), tabIndex()
 
-  customProperties(_options: {
-    properties: Record<string, string | number>
-  }): ModifierBuilder<T> {
-    throw new Error(
-      'CSS property modifiers have been moved to @tachui/modifiers. Please import { customProperties } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
-  customProperty(_name: string, _value: string | number): ModifierBuilder<T> {
-    throw new Error(
-      'CSS property modifiers have been moved to @tachui/modifiers. Please import { customProperty } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
-  cssVariables(
-    _variables: Record<string, string | number>
-  ): ModifierBuilder<T> {
-    throw new Error(
-      'CSS property modifiers have been moved to @tachui/modifiers. Please import { cssVariables } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
   themeColors(_colors: Record<string, string>): ModifierBuilder<T> {
     throw new Error(
       'Theme modifiers have been moved to @tachui/modifiers. Please import { themeColors } from "@tachui/modifiers" and use it directly instead of chaining it on components.'
@@ -1071,31 +1049,10 @@ export class ModifierBuilderImpl<
   // MIGRATED MODIFIERS - NOW IN SPECIALIZED PACKAGES
   // ============================================================================
 
-  // Viewport lifecycle modifiers - moved to @tachui/viewport
-  onAppear(_handler: () => void): ModifierBuilder<T> {
-    throw new Error(
-      'onAppear modifier has been moved to @tachui/viewport. Please import { onAppear } from "@tachui/viewport/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
-  onDisappear(_handler: () => void): ModifierBuilder<T> {
-    throw new Error(
-      'onDisappear modifier has been moved to @tachui/viewport. Please import { onDisappear } from "@tachui/viewport/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
-  // Mobile gesture modifiers - moved to @tachui/mobile
-  refreshable(
-    _onRefresh: () => Promise<void>,
-    _isRefreshing?: boolean | Signal<boolean>
-  ): ModifierBuilder<T> {
-    throw new Error(
-      'refreshable modifier has been moved to @tachui/mobile. Please import { refreshable } from "@tachui/mobile/modifiers" and use it directly instead of chaining it on components.'
-    )
-  }
-
-  // onAppear and onDisappear have been moved to @tachui/viewport/modifiers
-  // to maintain proper architectural boundaries
+  // onAppear and onDisappear (@tachui/viewport), refreshable (@tachui/mobile)
+  // and the CSS custom-property modifiers (@tachui/modifiers) have no method
+  // here: the proxy resolves them from the registry once their package has
+  // registered them. A method of the same name here would shadow that.
 
   // Transform modifiers
   scaleEffect(

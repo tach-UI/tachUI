@@ -74,3 +74,13 @@ Some typed signatures change where the old ones were wrong:
 The error for a modifier missing from the registry now names the right
 imports: it used to suggest `@tachui/modifiers` even for grid, navigation or
 forms modifiers.
+
+Six chain methods that are registered, and now typed, used to throw when
+called: `.onAppear()`, `.onDisappear()`, `.refreshable()`,
+`.customProperty()`, `.customProperties()` and `.cssVariables()`. Each had a
+leftover "moved to another package" stub on the builder, which the chain
+finds before the registry. The stubs are gone, so these resolve from the
+registry like every other registered modifier. Ten transition presets
+(`fadeTransition`, `buttonTransition` and the rest) were declared on the
+builder but never implemented anywhere, so calling one threw a `TypeError`.
+They are no longer declared.

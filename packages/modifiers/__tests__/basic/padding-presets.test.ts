@@ -259,6 +259,15 @@ describe('Enhanced Padding Presets', () => {
       expect(mockElement.style.paddingLeft).toBe('max(4px, 1vw)')
     })
 
+    it('copies its options, so a later change has no effect', () => {
+      const options = { top: 8 }
+      const modifier = padding(options)
+      options.top = 16
+      modifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.paddingTop).toBe('8px')
+    })
+
     it('still gives a number pixels', () => {
       padding(12).apply({} as DOMNode, mockContext)
       expect(mockElement.style.padding).toBe('12px')

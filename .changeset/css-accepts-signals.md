@@ -20,16 +20,18 @@ every static number into pixels itself, so `.css({ opacity: 0.5 })` wrote
 `0.5px`, which the browser ignores.
 
 A signal of `string | number` is accepted too, for values such as `16` that
-become `'1rem'`. A signal that yields `null` or `undefined` clears the
-property instead of writing the text `"undefined"`. That text is stored by a
+become `'1rem'`, and so is one that can be empty. A signal that yields `null`
+or `undefined` clears the property instead of writing the text `"undefined"`. That text is stored by a
 custom property, which passes it to every `var()` that reads it, and ignored
 by a standard one, which leaves the old value in place. This applies to every
 modifier's reactive styles, not only `.css()`.
 
 `.css()` copies the object it is given, so changing the object afterwards no
-longer changes the modifier. In development it warns when a key is a rule
-(`@media`, `@supports`, `:hover`, `&::before`) or a value is an object: no
-inline style can hold either, and both were dropped without a word.
+longer changes the modifier. It skips a key that is a rule (`@media`,
+`@supports`, `:hover`, `&::before`) and a value that is an object or an array,
+since no inline style can hold either, and warns about them in development.
+A browser dropped the rules anyway. A custom property would have stored an
+object as `[object Object]`.
 A vendor-prefixed name written in lowercase, the usual CSSOM spelling, now gets
 its leading dash: `webkitLineClamp` becomes `-webkit-line-clamp`, and
 `msFilter` becomes `-ms-filter`. Only a capital (`WebkitFilter`) used to add

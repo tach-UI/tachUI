@@ -44,6 +44,17 @@ describe('css() type surface', () => {
     expectTypeOf(cssVendor('webkit', 'line-clamp', size)).not.toBeNever()
   })
 
+  // A signal that can be empty clears the property when it is, so it has to
+  // be accepted without a cast.
+  it('takes a signal that can be empty', () => {
+    const [token] = createSignal<string | undefined>('red')
+    const [size] = createSignal<number | null>(null)
+
+    expectTypeOf(builder.css({ color: token, width: size })).not.toBeNever()
+    expectTypeOf(builder.cssProperty('color', token)).not.toBeNever()
+    expectTypeOf(builder.cssVariable('accent', token)).not.toBeNever()
+  })
+
   it('still rejects a value that is not CSS', () => {
     // @ts-expect-error a boolean is not a CSS value
     builder.css({ display: true })

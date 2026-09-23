@@ -194,6 +194,23 @@ describe('Enhanced Margin Modifier System', () => {
       expect(mockElement.style.margin).toBe('12px')
     })
 
+    it('should copy its options, so a later change has no effect', () => {
+      const options = { top: 8 }
+      const modifier = margin(options)
+      options.top = 16
+      modifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.marginTop).toBe('8px')
+    })
+
+    // A string is CSS as written, units included: only a number is pixels.
+    // `'16'` is not a valid margin, and no unit is guessed for it.
+    it('should pass a unitless numeric string through unchanged', () => {
+      margin('16').apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.margin).toBe('16')
+    })
+
     it('should create margin with shorthand numeric value', () => {
       const modifier = margin(24)
       modifier.apply({} as DOMNode, mockContext)
