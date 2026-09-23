@@ -1,6 +1,6 @@
 {
   "name": "@tachui/types",
-  "version": "0.11.2",
+  "version": "0.11.5",
   "description": "Type definitions for tachUI framework",
   "type": "module",
   "main": "./dist/index.d.ts",
