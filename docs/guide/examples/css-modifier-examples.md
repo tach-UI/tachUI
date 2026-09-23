@@ -7,7 +7,7 @@
 They set **inline styles** on the component's element. That determines what they can and can't express:
 
 - **Property names** can be camelCase (`backdropFilter`) or kebab-case (`'backdrop-filter'`). Custom properties keep their `--` prefix.
-- **Numbers** become pixels (`marginTop: 4` is `4px`), except on unitless properties such as `opacity`, `z-index`, `line-height` and `flex`.
+- **Numbers** become pixels (`marginTop: 4` is `4px`), except on unitless properties such as `opacity`, `z-index`, `line-height`, `flex`, `scale` and the grid lines (`gridRow: 2`).
 - **Any value can be a signal or memo.** The property updates in place when it changes. A signal that yields `null` or `undefined` clears the property.
 - **Only declarations, never rules.** An inline style can't hold at-rules (`@media`, `@supports`, `@container`), pseudo-classes (`:hover`, `:focus-visible`), pseudo-elements (`::before`) or nested selectors. Such keys are not applied, and in development `.css()` warns about them. For those, see [Beyond inline styles](#beyond-inline-styles).
 

@@ -199,6 +199,63 @@ function writtenProperties(options: Record<string, string>): string[] {
   return names
 }
 
+// The declarations `.css()` writes, recorded as name and value.
+function writtenDeclarations(
+  options: Record<string, string | number>
+): Record<string, string> {
+  const declarations: Record<string, string> = {}
+  const element = {
+    style: {
+      setProperty: (name: string, value: string) => {
+        declarations[name] = value
+      },
+    },
+  }
+  css(options).apply({} as any, { element } as any)
+  return declarations
+}
+
+// A number becomes pixels unless its property is unitless. `grid-row: 2px`
+// and `scale: 2px` are invalid, so the browser drops them and the value is
+// lost.
+describe('.css() numbers', () => {
+  it('leaves a number unitless on a unitless property', () => {
+    expect(
+      writtenDeclarations({
+        gridRow: 2,
+        gridColumnStart: 3,
+        scale: 2,
+        zoom: 1.5,
+        aspectRatio: 1.5,
+        animationIterationCount: 3,
+        fillOpacity: 0.5,
+        WebkitLineClamp: 2,
+        flex: 1,
+        opacity: 0.5,
+        zIndex: 3,
+      })
+    ).toEqual({
+      'grid-row': '2',
+      'grid-column-start': '3',
+      scale: '2',
+      zoom: '1.5',
+      'aspect-ratio': '1.5',
+      'animation-iteration-count': '3',
+      'fill-opacity': '0.5',
+      '-webkit-line-clamp': '2',
+      flex: '1',
+      opacity: '0.5',
+      'z-index': '3',
+    })
+  })
+
+  it('gives a number pixels on any other property', () => {
+    expect(
+      writtenDeclarations({ marginTop: 4, gap: 8, borderRadius: 6 })
+    ).toEqual({ 'margin-top': '4px', gap: '8px', 'border-radius': '6px' })
+  })
+})
+
 describe('.css() property names', () => {
   it('gives every vendor prefix its leading dash', () => {
     expect(
