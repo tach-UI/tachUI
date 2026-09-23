@@ -1,6 +1,6 @@
 # @tachui/core
 
-## 0.11.2
+## 0.11.5
 
 ### Patch Changes
 
@@ -303,8 +303,8 @@ delay }`, which the runtime always accepted.
 component` stays `false` until the modifier is registered.
 
 - Updated dependencies [[`6a5f04a`](https://github.com/tach-UI/tachUI/commit/6a5f04a175e853c9924bdd791f554c4a7265b209), [`818d1aa`](https://github.com/tach-UI/tachUI/commit/818d1aac5e3f0e68e073ca9fe5930ffcef5ff8b2), [`5c4eddb`](https://github.com/tach-UI/tachUI/commit/5c4eddbb5a1af5a0283268249a20f093c6dc0b11), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`5a6ac09`](https://github.com/tach-UI/tachUI/commit/5a6ac0904f6e4b22af8239a1ebbac8395708db74)]:
-  - @tachui/types@0.11.2
-  - @tachui/registry@0.11.2
+  - @tachui/types@0.11.5
+  - @tachui/registry@0.11.5
 
 ## 0.11.1
 
