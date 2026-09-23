@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // The type tests that must not share a program with the rest, because they
+  // check what is declared without a module whose augmentation would
+  // otherwise apply to every file. See `vitest.typecheck.config.ts`.
+  "extends": "./tsconfig.typecheck-tests.json",
+  "include": ["packages/**/__tests__/isolated-types/**/*.test-d.ts"],
+  "exclude": ["node_modules", "**/node_modules"]
+}

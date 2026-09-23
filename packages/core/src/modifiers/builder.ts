@@ -65,6 +65,7 @@ import type {
 // Responsive functionality moved to @tachui/responsive package
 import { globalModifierRegistry } from '@tachui/registry'
 import { createModifiableComponent } from './registry'
+import { unregisteredModifierMethod } from './unregistered'
 
 // AsHTMLOptions type - keeping the type import for API surface
 export type AsHTMLOptions = {
@@ -1148,6 +1149,12 @@ export function createModifierBuilder<T extends ComponentInstance>(
               return receiver
             }
           }
+
+          // A modifier whose package has not been imported throws naming
+          // the import, rather than reading as undefined and failing with
+          // "is not a function".
+          const unregistered = unregisteredModifierMethod(prop)
+          if (unregistered) return unregistered
        }
 
       // Return undefined for unknown properties

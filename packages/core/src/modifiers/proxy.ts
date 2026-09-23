@@ -1,6 +1,7 @@
 import type { ComponentInstance } from '../runtime/types'
 import { isProxyEnabled } from '../config'
 import { globalModifierRegistry, createModifiableComponent } from './registry'
+import { isUnregisteredModifierMethod } from './unregistered'
 
 let proxyCache = new WeakMap<ComponentInstance, any>()
 let modifierFnCache = new WeakMap<
@@ -166,7 +167,12 @@ export function createComponentProxy<T extends ComponentInstance>(
         if (modifierApi) {
           const builderMember = (modifierApi as any)[prop]
 
-          if (typeof builderMember === 'function') {
+          // The builder's stand-in for an unregistered modifier must not
+          // hide a method of the component's own, so it is returned last.
+          if (
+            typeof builderMember === 'function' &&
+            !isUnregisteredModifierMethod(builderMember)
+          ) {
             if (!modifierCache.has(prop)) {
               const applyBuilderModifier = (...args: any[]) => {
                 const currentModifiable = ensureModifiable(target)
@@ -191,7 +197,10 @@ export function createComponentProxy<T extends ComponentInstance>(
             return modifierCache.get(prop)
           }
 
-          if (builderMember !== undefined) {
+          if (
+            builderMember !== undefined &&
+            !isUnregisteredModifierMethod(builderMember)
+          ) {
             return builderMember
           }
         }
@@ -265,6 +274,16 @@ export function createComponentProxy<T extends ComponentInstance>(
         return value
       }
 
+      // Nothing on the component or the registry: a modifier whose package
+      // has not been imported throws naming the import when called.
+      if (typeof prop === 'string') {
+        const modifiable = ensureModifiable(target)
+        const modifierApi =
+          modifiable.modifierBuilder || (modifiable as any).modifier
+        const standIn = modifierApi?.[prop]
+        if (isUnregisteredModifierMethod(standIn)) return standIn
+      }
+
       return undefined
     },
     has(target, prop) {
@@ -282,9 +301,10 @@ export function createComponentProxy<T extends ComponentInstance>(
           ensureModifiable(target)
         const modifierApi =
           modifiable?.modifierBuilder || (modifiable as any)?.modifier
+        const member = modifierApi && (modifierApi as any)[prop]
         if (
-          modifierApi &&
-          typeof (modifierApi as any)[prop] === 'function'
+          typeof member === 'function' &&
+          !isUnregisteredModifierMethod(member)
         ) {
           return true
         }

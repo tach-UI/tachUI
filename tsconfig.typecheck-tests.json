@@ -66,5 +66,10 @@
     }
   },
   "include": ["packages/**/__tests__/**/*.test-d.ts"],
-  "exclude": ["node_modules", "**/node_modules"]
+  // `isolated-types/` is compiled on its own by `tsconfig.typecheck-isolated.json`.
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "packages/**/__tests__/isolated-types/**"
+  ]
 }
