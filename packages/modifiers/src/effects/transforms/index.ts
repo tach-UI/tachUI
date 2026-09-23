@@ -482,10 +482,17 @@ export function transform(
 export function transform(
   value: TransformConfig | Transform3DConfig | string | Signal<string>
 ): Modifier {
-  if (typeof value === 'string' || isSignal(value) || isComputed(value)) {
+  // A signal is routed by what it holds: a string goes the raw way, and a
+  // signal of a configuration stays with `TransformModifier`, which resolves
+  // it. `peek()` reads without subscribing.
+  const isStringSignal =
+    (isSignal(value) || isComputed(value)) &&
+    typeof (value as Signal<unknown>).peek() === 'string'
+
+  if (typeof value === 'string' || isStringSignal) {
     return rawTransform(value as string | Signal<string>)
   }
-  return new TransformModifier({ transform: value })
+  return new TransformModifier({ transform: value } as ReactiveTransformOptions)
 }
 
 /**

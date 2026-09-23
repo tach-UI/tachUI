@@ -82,8 +82,9 @@ export class MarginModifier extends BaseModifier<MarginOptions> {
   readonly priority = 50 // Optimized priority for external spacing (after padding at 45)
 
   constructor(options: ReactiveMarginOptions) {
-    // Enhanced reactive value handling
-    super(options as unknown as MarginOptions)
+    // Enhanced reactive value handling. Copied, so changing the object after
+    // the call does not change this modifier.
+    super({ ...options } as unknown as MarginOptions)
   }
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {

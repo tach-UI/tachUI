@@ -110,6 +110,21 @@ describe('Transform Effects', () => {
       expect(element.style.transform).toBe('skewX(4deg)')
     })
 
+    // A signal of a configuration is not a string: it stays with
+    // `TransformModifier`, which resolves it, rather than being written as
+    // "[object Object]".
+    it('keeps a signal of a configuration on the configuration path', () => {
+      const { element, context } = createContext()
+      const [config, setConfig] = createSignal<any>({ scale: 2 })
+
+      applyModifier(transform(config), context)
+      expect(element.style.transform).toContain('scale(2)')
+
+      setConfig({ scale: 3 })
+      flushSync()
+      expect(element.style.transform).toContain('scale(3)')
+    })
+
     it('composes with a rotation rather than replacing it', async () => {
       const { rotationEffect } = await import('../../src/basic/animation')
       const { element, context } = createContext()

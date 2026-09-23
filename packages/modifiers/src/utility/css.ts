@@ -14,12 +14,12 @@ import type {
 } from '@tachui/types/modifiers'
 import type { Signal } from '@tachui/types/reactive'
 
+// A signal of any narrower type is assignable to the one signal member. When
+// it yields `null` or `undefined`, the property is cleared.
 export type CSSValue =
   | string
   | number
-  | Signal<string>
-  | Signal<number>
-  | Signal<string | number>
+  | Signal<string | number | null | undefined>
 
 export interface CSSOptions {
   [property: string]: CSSValue | undefined
@@ -59,7 +59,13 @@ export class CSSModifier extends BaseModifier<CSSOptions> {
 
     for (const [property, value] of Object.entries(props)) {
       if (value === undefined) continue
-      if (isDevelopment()) warnIfNotADeclaration(property, value)
+      // Skip what cannot be an inline declaration, so the warning's "not
+      // applied" holds: a browser drops a rule anyway, but a custom property
+      // would store an object's "[object Object]".
+      if (!isDeclaration(property, value)) {
+        if (isDevelopment()) warnNotADeclaration(property)
+        continue
+      }
       // Convert camelCase to kebab-case for CSS properties
       styles[this.toCSSProperty(property)] = value
     }
@@ -74,21 +80,23 @@ function isDevelopment(): boolean {
   )
 }
 
-// Inline styles hold declarations only. A rule — an at-rule, a pseudo-class,
-// a nested selector — or an object value is dropped by the browser without a
-// word, so say so while developing.
-function warnIfNotADeclaration(property: string, value: unknown): void {
-  const isRule = /^[@&:]/.test(property) || /[{}\s]/.test(property.trim())
-  const isObject =
-    typeof value === 'object' && value !== null && !Array.isArray(value)
+// Inline styles hold declarations only: a property name and a string, number
+// or signal. A rule — an at-rule, a pseudo-class, a nested selector — and an
+// object or array value are not declarations.
+function isDeclaration(property: string, value: unknown): boolean {
+  const name = property.trim()
+  const isRule = /^[@&:]/.test(name) || /[{}\s]/.test(name)
+  const isStructured = typeof value === 'object' && value !== null
+  return !isRule && !isStructured
+}
 
-  if (isRule || isObject) {
-    console.warn(
-      `.css(): "${property}" is not an inline style declaration, so it was ` +
-        'not applied. Rules such as @media, @supports and :hover belong in a ' +
-        'stylesheet; give the component a class with the `css` prop.'
-    )
-  }
+// The browser would drop these without a word, so say so while developing.
+function warnNotADeclaration(property: string): void {
+  console.warn(
+    `.css(): "${property}" is not an inline style declaration, so it was ` +
+      'not applied. Rules such as @media, @supports and :hover belong in a ' +
+      'stylesheet; give the component a class with the `css` prop.'
+  )
 }
 
 /**

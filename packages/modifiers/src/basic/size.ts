@@ -48,8 +48,9 @@ export class SizeModifier extends BaseModifier<SizeOptions> {
   readonly priority = 80 // Priority 80 for layout
 
   constructor(options: ReactiveSizeOptions) {
-    // Preserve reactive values; BaseModifier.applyStyles will create effects
-    super(options as unknown as SizeOptions)
+    // Preserve reactive values; BaseModifier.applyStyles will create effects.
+    // Copied, so changing the object after the call does not change this.
+    super({ ...options } as unknown as SizeOptions)
   }
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
@@ -72,7 +73,11 @@ export class SizeModifier extends BaseModifier<SizeOptions> {
       const resolved: SizeOptions = {}
       for (const key of SIZE_KEYS) {
         const value: unknown = props[key]
-        resolved[key] = isReactive(value) ? value() : (value as Dimension)
+        // A signal yielding `null` is unset, as `undefined` is, rather than a
+        // value to write.
+        resolved[key] = isReactive(value)
+          ? (value() ?? undefined)
+          : (value as Dimension)
       }
 
       const styles = this.computeSizeStyles(resolved)

@@ -82,8 +82,9 @@ export class PaddingModifier extends BaseModifier<PaddingOptions> {
   readonly priority = 45 // Optimized priority for internal spacing (before margin at 50)
 
   constructor(options: ReactivePaddingOptions) {
-    // Enhanced reactive value handling
-    super(options as unknown as PaddingOptions)
+    // Enhanced reactive value handling. Copied, so changing the object after
+    // the call does not change this modifier.
+    super({ ...options } as unknown as PaddingOptions)
   }
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {

@@ -157,6 +157,23 @@ describe('.css()', () => {
     expect(element.style.color).toBe('red')
   })
 
+  // What the warning says was not applied must not be: a custom property
+  // would otherwise store an object as "[object Object]", and an array as its
+  // joined items.
+  it('writes no structured value, even outside development', () => {
+    const element = render(
+      (Text('x') as any).css({
+        '--theme': { mode: 'dark' },
+        '--tokens': ['a', 'b'],
+        color: 'red',
+      })
+    )
+
+    expect(element.style.getPropertyValue('--theme')).toBe('')
+    expect(element.style.getPropertyValue('--tokens')).toBe('')
+    expect(element.style.color).toBe('red')
+  })
+
   it('takes a signal through cssVendor', () => {
     const [lines, setLines] = createSignal('2')
     const element = document.createElement('div')
@@ -240,16 +257,20 @@ describe('.css() in development', () => {
       (Text('x') as any).css({
         '@media (prefers-reduced-motion: reduce)': 'transition: none',
         '&:focus-visible': 'outline: 2px solid',
+        ' @supports(display:grid)': 'display: grid',
         outline: { width: 2 },
+        '--tokens': ['a', 'b'],
         color: 'red',
       })
     )
 
     const warned = warn.mock.calls.map(call => String(call[0]))
-    expect(warned).toHaveLength(3)
+    expect(warned).toHaveLength(5)
     expect(warned[0]).toContain('@media (prefers-reduced-motion: reduce)')
     expect(warned[1]).toContain('&:focus-visible')
-    expect(warned[2]).toContain('"outline"')
+    expect(warned[2]).toContain('@supports(display:grid)')
+    expect(warned[3]).toContain('"outline"')
+    expect(warned[4]).toContain('"--tokens"')
   })
 
   it('does not warn about declarations', () => {
