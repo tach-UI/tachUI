@@ -26,9 +26,11 @@ export default defineConfig({
       // gitignored but sit inside the checkout, and this config's default
       // include walks them: the pre-push gate then runs another checkout's
       // tests against this one's sources and fails on whatever differs
-      // between the two.
+      // between the two. `.review-artifacts` holds the same kind of
+      // checkout, made to review a pull request.
       '.claude/**',
       '.worktrees/**',
+      '.review-artifacts/**',
       'node_modules/**',
       '**/node_modules/**',
       '**/packages/**/node_modules/**',
