@@ -208,15 +208,15 @@ export function createComponentProxy<T extends ComponentInstance>(
         if (globalModifierRegistry.has(prop)) {
           if (!modifierCache.has(prop)) {
             const applyModifier = (...args: any[]) => {
-              const modifiableInstance = ensureModifiable(target)
-              const modifierApi =
-                modifiableInstance.modifierBuilder ||
-                (modifiableInstance as any).modifier
-              const modifierFn = modifierApi?.[prop]
+              const currentModifiable = ensureModifiable(target)
+              const currentApi =
+                currentModifiable.modifierBuilder ||
+                (currentModifiable as any).modifier
+              const modifierFn = currentApi?.[prop]
               if (typeof modifierFn !== 'function') {
                 throw new Error(`Modifier '${String(prop)}' is not callable`)
               }
-              modifierFn.apply(modifierApi, args)
+              modifierFn.apply(currentApi, args)
               return proxy
             }
             modifierCache.set(prop, applyModifier)
