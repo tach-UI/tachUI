@@ -281,7 +281,14 @@ export function createComponentProxy<T extends ComponentInstance>(
         const modifierApi =
           modifiable.modifierBuilder || (modifiable as any).modifier
         const standIn = modifierApi?.[prop]
-        if (isUnregisteredModifierMethod(standIn)) return standIn
+        if (isUnregisteredModifierMethod(standIn)) {
+          // Continue the chain from the component, as a registered modifier
+          // does, once the stand-in applies.
+          return (...args: unknown[]) => {
+            standIn(...args)
+            return proxy
+          }
+        }
       }
 
       return undefined

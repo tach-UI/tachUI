@@ -5,7 +5,8 @@
  * which nothing imports for you. Without it, the chain used to find no
  * `.shadow` at all, and calling it failed with "shadow is not a function",
  * which names neither the cause nor the fix. For these names the chain
- * instead returns a method that throws saying which import registers it.
+ * instead returns a method that throws saying which import registers it, and
+ * applies the modifier once that import has run.
  *
  * Core cannot import `@tachui/modifiers`, so the names are listed here. A
  * test in `@tachui/modifiers` checks this list against the names
@@ -123,16 +124,23 @@ const importFor = new Map<string, string>(
 const unregisteredMethods = new WeakSet<Function>()
 
 /**
- * A method that throws naming the import that registers `name`, or
- * `undefined` if `name` is not a modifier this list knows.
+ * A method standing in for `name`, or `undefined` if `name` is not a modifier
+ * this list knows.
+ *
+ * It checks the registry each time it is called, not once when it is read:
+ * a reference taken before the import ran still works after it has. Until
+ * then it throws naming the import; from then on it calls `apply`.
  */
-export function unregisteredModifierMethod(
-  name: string
-): ((...args: unknown[]) => never) | undefined {
+export function unregisteredModifierMethod<R>(
+  name: string,
+  isRegistered: () => boolean,
+  apply: (...args: unknown[]) => R
+): ((...args: unknown[]) => R) | undefined {
   const source = importFor.get(name)
   if (!source) return undefined
 
-  const method = (): never => {
+  const method = (...args: unknown[]): R => {
+    if (isRegistered()) return apply(...args)
     throw new Error(
       `Modifier '${name}' is not registered. It is registered by ` +
         `${source}: add \`import '${source}'\` before this runs.`

@@ -1152,8 +1152,15 @@ export function createModifierBuilder<T extends ComponentInstance>(
 
           // A modifier whose package has not been imported throws naming
           // the import, rather than reading as undefined and failing with
-          // "is not a function".
-          const unregistered = unregisteredModifierMethod(prop)
+          // "is not a function". Once the import has run, it applies.
+          const unregistered = unregisteredModifierMethod(
+            prop,
+            () => getActiveRegistry().has(prop),
+            (...args) => {
+              target.addModifierInternal(createRegistryModifier(prop, ...args))
+              return receiver
+            }
+          )
           if (unregistered) return unregistered
        }
 
