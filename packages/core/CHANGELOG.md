@@ -1,5 +1,311 @@
 # @tachui/core
 
+## 0.11.2
+
+### Patch Changes
+
+- [#402](https://github.com/tach-UI/tachUI/pull/402) [`3c7d240`](https://github.com/tach-UI/tachUI/commit/3c7d24003bac08f32d1131620c5320dea3448d4a) Thanks [@whoughton](https://github.com/whoughton)! - A layout child keeps the effects it was built with, and a mount releases them
+  when it unmounts.
+
+  Building each child once was only half of it. The first build still happened
+  inside the container's render, and a render pass disposes everything it owns
+  the moment it runs again — so the effects a child opened in its constructor
+  were torn down by the next render of its parent, while the cached child
+  instance carried on. That is a silent failure: the child keeps rendering and
+  quietly stops reacting. A `BasicForm` inside a `VStack` lost
+  `onValidationChange` as soon as anything else in the stack changed.
+
+  Children are now built under the owner the container itself was created in —
+  the mount's root, normally, since the instance the renderer draws is the
+  clone `build()` makes inside it. They live exactly as long as the mount.
+
+  `renderComponent`'s unmount now disposes that root too. It only disposed the
+  render effect, so the effects the built component opened in its constructor
+  went on running against detached DOM.
+
+- [#408](https://github.com/tach-UI/tachUI/pull/408) [`59a1495`](https://github.com/tach-UI/tachUI/commit/59a149583c907d37954f557921e9634f17c874db) Thanks [@whoughton](https://github.com/whoughton)! - `.css()` takes a `Signal` for any value and updates that property in place,
+  as `CSSStyleProperties` already declared. `.cssProperty()` and
+  `.cssVariable()` take one too.
+
+  The builder published at `@tachui/modifiers/types` typed each `.css()` value
+  as `string | number | undefined`, so a reactive value was a type error, and
+  the modifier read every signal once in its constructor, so one passed anyway
+  froze at its first value. Signals are now kept and bound like the typed
+  modifiers bind theirs. That matters most for values with no typed modifier:
+  a layered `background`, `text-decoration`, `outline`, `box-shadow`.
+
+  Numbers are also converted the same way for static and reactive values: a
+  number becomes pixels except on unitless properties. Before, `.css()` turned
+  every static number into pixels itself, so `.css({ opacity: 0.5 })` wrote
+  `0.5px`, which the browser ignores. The list of unitless properties is now
+  complete and shared by every modifier. It covers the grid lines (`gridRow: 2`),
+  `scale`, `zoom`, `aspect-ratio`, `animation-iteration-count`, the SVG
+  opacities and the rest, which used to get `px` and be dropped.
+
+  A signal of `string | number` is accepted too, for values such as `16` that
+  become `'1rem'`, and so is one that can be empty. A signal that yields `null`
+  or `undefined` clears the property instead of writing the text `"undefined"`. That text is stored by a
+  custom property, which passes it to every `var()` that reads it, and ignored
+  by a standard one, which leaves the old value in place. This applies to every
+  modifier's reactive styles, not only `.css()`.
+
+  `.css()` copies the object it is given, so changing the object afterwards no
+  longer changes the modifier. It skips a key that is a rule (`@media`,
+  `@supports`, `:hover`, `&::before`) and a value that is an object or an array,
+  since no inline style can hold either, and warns about them in development.
+  A browser dropped the rules anyway. A custom property would have stored an
+  object as `[object Object]`.
+  A vendor-prefixed name written in lowercase, the usual CSSOM spelling, now gets
+  its leading dash: `webkitLineClamp` becomes `-webkit-line-clamp`, and
+  `msFilter` becomes `-ms-filter`. Only a capital (`WebkitFilter`) used to add
+  it, and a browser drops a prefixed property that has no dash. Every modifier
+  converts names this way, and several write lowercase `webkit` names
+  themselves. Those declarations never reached the element:
+  `.lineClamp()`'s `-webkit-line-clamp` and `-webkit-box-orient`, gradient text's
+  `-webkit-background-clip` and `-webkit-text-fill-color`, Safari's
+  `-webkit-backdrop-filter`, and `-webkit-hyphens`.
+  `cssVendor()` takes a signal like the other CSS modifiers.
+
+- [#402](https://github.com/tach-UI/tachUI/pull/402) [`0597547`](https://github.com/tach-UI/tachUI/commit/0597547f699efab16648906a4c8132b02093df36) Thanks [@whoughton](https://github.com/whoughton)! - A delegated event reaches every handler between the target and the container,
+  not just the innermost one.
+
+  `EventDelegator` walks up from the event target looking for registered
+  handlers, and it returned at the first one it found — so a handler on an
+  ancestor never ran if anything nearer the target listened for the same event
+  type. The comment beside the `return` claimed the opposite of what the code
+  did.
+
+  This is how a form loses its own fields. `BasicForm` listens for `input` and
+  `change` to drive `validateOnChange`; any TachUI control inside it —
+  `BasicInput`, `Slider`, `Toggle` — registers a handler for the same event,
+  and the form never heard from it. Validation worked for a raw `<input>` and
+  for nothing the framework builds.
+
+  The walk now carries on to the container, innermost handler first, which is
+  the bubbling it stands in for. A handler ends it the same way it would end
+  real bubbling, by calling `stopPropagation()`. Siblings are unaffected: only
+  ancestors of the target are on the path.
+
+- [#402](https://github.com/tach-UI/tachUI/pull/402) [`adb81be`](https://github.com/tach-UI/tachUI/commit/adb81be8830ba8de02d4c53d02689ff3a2d97280) Thanks [@whoughton](https://github.com/whoughton)! - A delegated handler reads its own element from `event.currentTarget`.
+
+  The listener doing the work sits on the mount container, so `currentTarget`
+  was the container for every delegated handler, where an ordinary listener
+  would report the element it was attached to. A handler reaching for its form
+  or its parent node through `currentTarget` got the mount root instead, and
+  delegated and directly attached handlers disagreed about the same event.
+
+  Each handler now runs with `currentTarget` reading as the element it was
+  registered on. `currentTarget` lives on `Event.prototype` and is only
+  meaningful during dispatch, so the override is an own property put on for the
+  call and taken off after, leaving the event as the browser made it.
+
+  This was already true of the one handler delegation used to run; it only
+  became easy to hit now that an event reaches the handlers above the target
+  too.
+
+- [#402](https://github.com/tach-UI/tachUI/pull/402) [`0597547`](https://github.com/tach-UI/tachUI/commit/0597547f699efab16648906a4c8132b02093df36) Thanks [@whoughton](https://github.com/whoughton)! - A layout container builds each child once instead of on every render.
+
+  `VStack`, `HStack` and `ZStack` called `child.build()` inside their `render()`,
+  which the render effect re-runs. `build()` clones the base component, so a
+  child holding state of its own was replaced by a fresh clone whenever its
+  parent re-rendered for any reason — losing that state and disposing the
+  effects its constructor opened.
+
+  This is the same defect as the one fixed in `renderComponent`, one level down:
+  a stateful component was safe at the root of a mount and not inside a stack.
+  `ZStack` built its children twice per render besides, once to read layout
+  priority and once to render, so the instance it measured was never the
+  instance it drew.
+
+- [#408](https://github.com/tach-UI/tachUI/pull/408) [`6a5f04a`](https://github.com/tach-UI/tachUI/commit/6a5f04a175e853c9924bdd791f554c4a7265b209) Thanks [@whoughton](https://github.com/whoughton)! - Chain methods are now type-checked. `ModifierBuilder` ended in
+  `[key: string]: any`, so every chain call typechecked as `any`, including a
+  misspelled method, wrong arguments, or a modifier no package had typed. That
+  fallback is gone.
+
+  A method is now typed if core declares it or if the package that registers it
+  adds it. Each registering module adds its modifiers to `ModifierBuilder` by
+  augmenting `@tachui/types/modifiers`, with signatures derived from the
+  registered factories through the new `ModifierMethodsOf` and
+  `ModifierFactoriesOf` helpers. A method is therefore typed exactly when
+  importing its package registers it, and its parameters can't drift from its
+  factory. About 150 registered modifiers had no declaration anywhere, including
+  the aria helpers, `role`, most padding and margin sides, the touch handlers,
+  and the whole effects set. They are all typed now. The separate
+  `ModifierBuilder` that `@tachui/modifiers/types` declared is replaced by a
+  re-export of the one interface.
+
+  A chain on a component returns that component, as the runtime does, so a
+  modified component can be a child: `VStack({ children: [Text('a').padding(4)] })`.
+  A chain on `.modifier` returns the builder until `.build()`.
+
+  Typing them exposed some runtime bugs:
+
+  - `margin(signal)` treated the signal as its options object and set no margin.
+    It now follows the signal, as `padding(signal)` does.
+  - Navigation's tab views, stacks, links and split view called basic modifiers
+    without loading them, so they only worked if the app had. They now import
+    `@tachui/modifiers/preload/basic`, and navigation's build keeps every
+    `@tachui/*` import external. It used to bundle what it imported beyond
+    `@tachui/core` and `@tachui/primitives`, which would have given it a private
+    registry that the app's builder never reads.
+  - Navigation's builder methods (`.navigationTitle()`, `.toolbarBackground()`
+    and the rest) were missing from the published build: they were a module
+    side effect, and the bundler dropped them. They are now installed by an
+    explicit call from the package's entry points, on the app's builder from
+    `@tachui/core/modifiers`. A `dist` check in `test:ci` covers all of this.
+
+  Typing also required two small changes in navigation. A tab view now
+  normalizes a tab button's render result to an array before mapping it, as the
+  declared return type requires. The split view now applies the detail column's
+  `maxWidth` only when one is configured, so an unset width still writes nothing
+  inline.
+
+  Navigation's own builder augmentation targeted `@tachui/core`, which re-exports
+  the interface through `export *`, a path augmentation cannot reach. It now
+  targets `@tachui/types/modifiers`. Grid, responsive, viewport, mobile, forms,
+  fragments and navigation now depend on `@tachui/types` directly, because their
+  published declarations reference it.
+
+  The size modifiers (`width`, `height`, `minWidth`, `maxWidth`, `minHeight`,
+  `maxHeight`) and the `padding` and `margin` families accept a signal in their
+  types, as they already did at runtime.
+
+  Some typed signatures change where the old ones were wrong:
+
+  - `refreshable` takes its options object, `{ onRefresh, … }`. The old type
+    took a bare function, which failed at runtime on the first pull.
+  - `transition` also takes its object form, `{ property, duration, easing,
+delay }`, which the runtime always accepted.
+  - `.transform()` is typed for a string. The basic and effects modifiers both
+    register `transform`, and whichever loads first is what the chain calls. The
+    effects version now also takes a string (it used to throw during render),
+    so a string works in either order. Its configuration form is available by
+    calling the factory directly, or through `.scale()`, `.rotate()` and the
+    other transform modifiers.
+  - `.asHTML()` is written out, not derived, so its security notice appears
+    where it is called.
+
+  The error for a modifier missing from the registry now names the right
+  imports: it used to suggest `@tachui/modifiers` even for grid, navigation or
+  forms modifiers.
+
+  Six chain methods that are registered, and now typed, used to throw when
+  called: `.onAppear()`, `.onDisappear()`, `.refreshable()`,
+  `.customProperty()`, `.customProperties()` and `.cssVariables()`. Each had a
+  leftover "moved to another package" stub on the builder, which the chain
+  finds before the registry. The stubs are gone, so these resolve from the
+  registry like every other registered modifier. Ten transition presets
+  (`fadeTransition`, `buttonTransition` and the rest) were declared on the
+  builder but never implemented anywhere, so calling one threw a `TypeError`.
+  They are no longer declared.
+
+- [#385](https://github.com/tach-UI/tachUI/pull/385) [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c) Thanks [@whoughton](https://github.com/whoughton)! - The component proxy hands back itself when an instance method returns its
+  instance.
+
+  A builder-style method (`return this`, as shape methods such as `fill` and
+  `stroke` use) returned the raw component, which stranded every modifier
+  applied so far on the proxy's wrapper: `Circle().frame(…).stroke(…)` rendered
+  a bare circle with no frame. The proxy already re-wrapped `clone()`'s result;
+  it now does the same for any method whose result is the instance, so the
+  chain continues from it in either order.
+
+  The wrapper keeps the method's declared `length` and `name`, which `bind`
+  preserved and an arrow does not, so anything reading a method's arity is
+  unaffected. The one deliberate difference is that a method returning its own
+  instance now yields the proxy, which is not `===` the instance.
+
+- [#402](https://github.com/tach-UI/tachUI/pull/402) [`6d787ba`](https://github.com/tach-UI/tachUI/commit/6d787ba6658cc640548133dac94938a1d7d75a49) Thanks [@whoughton](https://github.com/whoughton)! - `renderComponent` builds a component once instead of on every render.
+
+  `build()` clones the base component, and the renderer was calling it inside
+  the render effect. So a component that renders from state it holds itself
+  destroyed that state on the very render the change caused: the effect re-ran,
+  built a fresh clone, rendered the clone's empty state, and disposed the
+  effects the previous instance opened in its constructor — the render effect
+  owns whatever runs inside it. The live DOM handlers still belonged to the
+  instance that had recorded the change, and nothing was left listening to it.
+
+  `BasicForm` is where this showed: `validateOnChange` collected errors, the
+  render effect woke because the validation summary reads them, and the rebuild
+  threw them away before `onValidationChange` could report them. Any component
+  holding its own signal state and rendering from it had the same hole.
+
+  Building once, before the effect, is what the code already meant by "a
+  ModifierBuilder that hasn't been built yet". Components without a `build()`
+  were never affected.
+
+- [#405](https://github.com/tach-UI/tachUI/pull/405) [`5c4eddb`](https://github.com/tach-UI/tachUI/commit/5c4eddbb5a1af5a0283268249a20f093c6dc0b11) Thanks [@whoughton](https://github.com/whoughton)! - `.rotationEffect(angle, anchor?)` works on the component chain.
+
+  It was declared on the modifier builder and documented, and
+  `AnimationModifier` already knew how to apply it, but no factory was
+  registered under the name, so every component threw
+  `rotationEffect is not a function` at the call. It is now registered next to
+  `transition`.
+
+  The angle is in degrees and may be a signal. The anchor is one of the nine
+  named points and defaults to `center`. A new angle replaces the previous
+  rotation rather than stacking on it.
+
+  `offset`, `rotationEffect`, `scaleEffect` and a raw `.transform()` string now
+  compose into one `transform`. Each owns a part of it, recorded per element, so
+  none erases another: a raw `.transform()` used to replace the whole value, so
+  `.scaleEffect(2).transform('translateX(10px)')` lost the scale, and a
+  signal-driven transform erased it again on every update. The
+  parts apply in a fixed order, since modifiers run in priority order rather
+  than chain order: the view rotates and scales in place, then the offset moves
+  it by the amount given, unscaled. Previously a scale followed by an offset
+  scaled the offset too.
+
+  Each effect keeps its own anchor. The anchor is written into the effect's own
+  part, around the element's center, rather than into `transform-origin`, which
+  holds one value per element and so could honor only one effect's anchor: a
+  scale around `topLeading` and a rotation around `bottomTrailing` both hold.
+  `scaleEffect` therefore no longer sets `transform-origin`.
+
+  A transform already on the element when an effect is first applied is kept,
+  except functions of the same kind: an offset still replaces an existing
+  translate, a scale an existing scale, as before. An existing `none` is
+  treated as no transform. A raw `.transform()` string is kept as written, so a
+  function inside it is not replaced by an effect of the same kind:
+  `.transform('rotate(10deg)').rotationEffect(20)` applies both rotations,
+  where before whichever wrote last replaced the other.
+
+  The composer lives in `@tachui/core/modifiers` (`setTransformPart`,
+  `anchorTransform`), so every writer shares one record per element. That
+  includes the `AnimationModifier` and `LayoutModifier` classes constructed
+  directly, from core or from either `@tachui/modifiers` entry: their
+  `transform`, `offset` and `scaleEffect` branches compose the same way, and
+  core's `AnimationModifier` now applies `rotationEffect`, which it ignored.
+  `AnimationModifierProps` in `@tachui/types` declares `rotationEffect`, and the
+  nine anchor names are one `TransformAnchor` type there.
+
+  Server rendering emits a composed transform as one declaration. Each
+  transform modifier writes the whole composed value, and the SSR style shim
+  kept every write, so an element with four transform modifiers carried four
+  `transform` declarations. The result was right, since the last wins, but three
+  were dead weight; a `transform` write now replaces the previous one.
+
+  The shape docs now show `.rotationEffect(-90)` for the quarter turn a progress
+  ring wants, which `.transform('rotate(-90deg)')` still does equally well.
+
+- [#409](https://github.com/tach-UI/tachUI/pull/409) [`9d47ded`](https://github.com/tach-UI/tachUI/commit/9d47dedfcffe259abd1d07407512761e29dca0a3) Thanks [@whoughton](https://github.com/whoughton)! - Calling an effect modifier before its package is imported now says which
+  import is missing. The effect modifiers, `.shadow()`, `.backdropFilter()`,
+  `.blur()` and the rest, are registered by `@tachui/modifiers/preload/effects`,
+  which nothing imports for you. Without it, the chain read `.shadow` as
+  undefined and the call failed with "shadow is not a function". It now throws
+  "Modifier 'shadow' is not registered", naming the import to add. This applies
+  on a component chain and on `.modifier`. A reference to the method taken
+  before the import ran applies the modifier once it has, so the import can be
+  loaded lazily.
+
+  The types already reject these calls when the preload is not imported, so this
+  is what plain JavaScript, or code that casts past the types, sees. A component
+  method with the same name as an effect modifier still wins, and `'shadow' in
+component` stays `false` until the modifier is registered.
+
+- Updated dependencies [[`6a5f04a`](https://github.com/tach-UI/tachUI/commit/6a5f04a175e853c9924bdd791f554c4a7265b209), [`818d1aa`](https://github.com/tach-UI/tachUI/commit/818d1aac5e3f0e68e073ca9fe5930ffcef5ff8b2), [`5c4eddb`](https://github.com/tach-UI/tachUI/commit/5c4eddbb5a1af5a0283268249a20f093c6dc0b11), [`3f061b5`](https://github.com/tach-UI/tachUI/commit/3f061b54bb6096fb4555282ece8f5dd9e7fb495c), [`5a6ac09`](https://github.com/tach-UI/tachUI/commit/5a6ac0904f6e4b22af8239a1ebbac8395708db74)]:
+  - @tachui/types@0.11.2
+  - @tachui/registry@0.11.2
+
 ## 0.11.1
 
 ### Patch Changes
