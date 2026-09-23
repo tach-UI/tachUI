@@ -148,7 +148,11 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
    * Convert camelCase property to CSS kebab-case
    */
   protected toCSSProperty(property: string): string {
-    return property.replace(/([A-Z])/g, '-$1').toLowerCase()
+    // `WebkitFilter` gets its leading dash from the capital. The lowercase
+    // forms — `webkitLineClamp`, `msFilter`, `oTransition`, the CSSOM spelling
+    // for most prefixes — are vendor-prefixed too, so add it.
+    const kebab = property.replace(/([A-Z])/g, '-$1').toLowerCase()
+    return /^(webkit|moz|ms|o)[A-Z]/.test(property) ? `-${kebab}` : kebab
   }
 
   /**
@@ -240,6 +244,16 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
                       return value.resolve()
                     })()
                   : value()
+              // A signal with no value clears the property rather than
+              // writing the text "undefined" or "null".
+              if (currentValue === undefined || currentValue === null) {
+                if (styleTarget.removeProperty) {
+                  styleTarget.removeProperty(cssProperty)
+                } else {
+                  ;(styleTarget as any)[cssProperty] = ''
+                }
+                return
+              }
               const cssValue = this.toCSSValueForProperty(
                 cssProperty,
                 currentValue

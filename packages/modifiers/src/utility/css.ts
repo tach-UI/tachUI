@@ -14,7 +14,12 @@ import type {
 } from '@tachui/types/modifiers'
 import type { Signal } from '@tachui/types/reactive'
 
-export type CSSValue = string | number | Signal<string> | Signal<number>
+export type CSSValue =
+  | string
+  | number
+  | Signal<string>
+  | Signal<number>
+  | Signal<string | number>
 
 export interface CSSOptions {
   [property: string]: CSSValue | undefined
@@ -28,8 +33,10 @@ export class CSSModifier extends BaseModifier<CSSOptions> {
 
   // Signals are kept as they are: `applyStyles` binds each one and updates the
   // property in place. Reading them here would freeze them at their first value.
+  // The object itself is copied, so changing it after the call does not change
+  // this modifier.
   constructor(options: CSSOptions) {
-    super(options)
+    super({ ...options })
   }
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
@@ -46,16 +53,41 @@ export class CSSModifier extends BaseModifier<CSSOptions> {
   // number unitless where the property is (`opacity`, `z-index`) instead of
   // making it `0.5px`.
   private computeCSSStyles(props: CSSOptions): CSSStyleProperties {
-    const styles: CSSStyleProperties = {}
+    // No prototype, so a `__proto__` key is an ordinary (ignored) entry
+    // rather than a write to the accumulator's prototype.
+    const styles: CSSStyleProperties = Object.create(null)
 
     for (const [property, value] of Object.entries(props)) {
-      if (value !== undefined) {
-        // Convert camelCase to kebab-case for CSS properties
-        styles[this.toCSSProperty(property)] = value
-      }
+      if (value === undefined) continue
+      if (isDevelopment()) warnIfNotADeclaration(property, value)
+      // Convert camelCase to kebab-case for CSS properties
+      styles[this.toCSSProperty(property)] = value
     }
 
     return styles
+  }
+}
+
+function isDevelopment(): boolean {
+  return (
+    typeof process !== 'undefined' && process.env.NODE_ENV === 'development'
+  )
+}
+
+// Inline styles hold declarations only. A rule — an at-rule, a pseudo-class,
+// a nested selector — or an object value is dropped by the browser without a
+// word, so say so while developing.
+function warnIfNotADeclaration(property: string, value: unknown): void {
+  const isRule = /^[@&:]/.test(property) || /[{}\s]/.test(property.trim())
+  const isObject =
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+
+  if (isRule || isObject) {
+    console.warn(
+      `.css(): "${property}" is not an inline style declaration, so it was ` +
+        'not applied. Rules such as @media, @supports and :hover belong in a ' +
+        'stylesheet; give the component a class with the `css` prop.'
+    )
   }
 }
 
@@ -136,7 +168,7 @@ export function cssVariable(name: string, value: CSSValue): CSSModifier {
 export function cssVendor(
   prefix: 'webkit' | 'moz' | 'ms' | 'o',
   property: string,
-  value: string | number
+  value: CSSValue
 ): CSSModifier {
   // Convert to proper vendor prefix format
   const capitalizedPrefix = prefix.charAt(0).toUpperCase() + prefix.slice(1)

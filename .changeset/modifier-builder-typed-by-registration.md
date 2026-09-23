@@ -42,10 +42,9 @@ Typing them exposed some runtime bugs:
 
 Typing also required two small changes in navigation. A tab view now
 normalizes a tab button's render result to an array before mapping it, as the
-declared return type requires. The split view now passes `'none'` for an
-unset `maxWidth` rather than `undefined`, which the size modifier skipped. That
-renders the same unless a stylesheet also sets the detail column's
-`max-width`.
+declared return type requires. The split view now applies the detail column's
+`maxWidth` only when one is configured, so an unset width still writes nothing
+inline.
 
 Navigation's own builder augmentation targeted `@tachui/core`, which re-exports
 the interface through `export *`, a path augmentation cannot reach. It now
@@ -56,3 +55,22 @@ published declarations reference it.
 The size modifiers (`width`, `height`, `minWidth`, `maxWidth`, `minHeight`,
 `maxHeight`) and the `padding` and `margin` families accept a signal in their
 types, as they already did at runtime.
+
+Some typed signatures change where the old ones were wrong:
+
+- `refreshable` takes its options object, `{ onRefresh, … }`. The old type
+  took a bare function, which failed at runtime on the first pull.
+- `transition` also takes its object form, `{ property, duration, easing,
+  delay }`, which the runtime always accepted.
+- `.transform()` is typed for a string. The basic and effects modifiers both
+  register `transform`, and whichever loads first is what the chain calls. The
+  effects version now also takes a string (it used to throw during render),
+  so a string works in either order. Its configuration form is available by
+  calling the factory directly, or through `.scale()`, `.rotate()` and the
+  other transform modifiers.
+- `.asHTML()` is written out, not derived, so its security notice appears
+  where it is called.
+
+The error for a modifier missing from the registry now names the right
+imports: it used to suggest `@tachui/modifiers` even for grid, navigation or
+forms modifiers.

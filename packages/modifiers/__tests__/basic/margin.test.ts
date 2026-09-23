@@ -152,14 +152,29 @@ describe('Enhanced Margin Modifier System', () => {
         top: '2rem',
         right: '10%',
         bottom: '3vh',
-        left: 'invalid-value', // Should fall back to px
+        left: 'invalid-value', // Passed through as written
       })
       modifier.apply({} as DOMNode, mockContext)
 
       expect(mockElement.style.marginTop).toBe('2rem')
       expect(mockElement.style.marginRight).toBe('10%')
       expect(mockElement.style.marginBottom).toBe('3vh')
-      expect(mockElement.style.marginLeft).toBe('invalid-valuepx') // fallback
+      // A string is CSS as written; appending px only ever made it invalid.
+      expect(mockElement.style.marginLeft).toBe('invalid-value')
+    })
+
+    // A unit was appended to any string that was not a single length, so a
+    // shorthand or a function came out invalid: '0 autopx', 'calc(...)px'.
+    it('should pass shorthand and function values through unchanged', () => {
+      margin('0 auto').apply({} as DOMNode, mockContext)
+      expect(mockElement.style.margin).toBe('0 auto')
+
+      margin({ top: 'calc(100% - 8px)', left: 'inherit' }).apply(
+        {} as DOMNode,
+        mockContext
+      )
+      expect(mockElement.style.marginTop).toBe('calc(100% - 8px)')
+      expect(mockElement.style.marginLeft).toBe('inherit')
     })
   })
 

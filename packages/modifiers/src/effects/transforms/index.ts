@@ -7,7 +7,12 @@
 
 import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '@tachui/core/modifiers/base'
-import type { ModifierContext, ReactiveModifierProps } from '@tachui/types/modifiers'
+import type {
+  Modifier,
+  ModifierContext,
+  ReactiveModifierProps,
+} from '@tachui/types/modifiers'
+import { transform as rawTransform } from '../../animation'
 import { createEffect, isComputed, isSignal } from '@tachui/core/reactive'
 import type { Signal } from '@tachui/core/reactive/types'
 
@@ -454,19 +459,33 @@ export class AdvancedTransformModifier extends BaseModifier<ModifierAdvancedTran
 /**
  * General transform modifier with flexible configuration
  *
+ * Registered as `transform`, as the basic modifiers' raw-string `transform`
+ * is, and whichever loads first is the one the chain calls. So a string (or a
+ * signal of one) is accepted here too and handled exactly as the basic one
+ * handles it, and the chain's `.transform()` is typed for strings, the form
+ * that works in either order. For the configuration form, call this factory
+ * directly or use `.scale()`, `.rotate()` and the other transform modifiers.
+ *
  * @example
  * ```typescript
- * .transform({
+ * transform({
  *   scale: 1.1,
  *   rotate: '45deg',
  *   translate: { x: 10, y: 20 }
  * })
  * ```
  */
+export function transform(value: string | Signal<string>): Modifier
 export function transform(
   config: TransformConfig | Transform3DConfig
-): TransformModifier {
-  return new TransformModifier({ transform: config })
+): TransformModifier
+export function transform(
+  value: TransformConfig | Transform3DConfig | string | Signal<string>
+): Modifier {
+  if (typeof value === 'string' || isSignal(value) || isComputed(value)) {
+    return rawTransform(value as string | Signal<string>)
+  }
+  return new TransformModifier({ transform: value })
 }
 
 /**

@@ -207,6 +207,34 @@ describe('NavigationSplitView', () => {
     cleanup()
   })
 
+  // An unset detail max width must write nothing inline: an inline value,
+  // even `none`, would override a stylesheet rule on the column.
+  it('writes no inline max width on the detail column unless configured', () => {
+    for (const [width, layout, split] of [
+      [1024, 'two-column', createSampleSplitView()],
+      [1200, 'three-column', createThreeColumnSplitView()],
+    ] as const) {
+      setViewportWidth(width)
+      const { cleanup } = mountSplitView(split)
+
+      const shell = document.querySelector(
+        `[aria-label="NavigationSplitView ${layout}"]`
+      ) as HTMLElement | null
+      const detail = document.querySelector(
+        '[aria-label="NavigationSplitView detail"]'
+      )
+      const column = shell
+        ? (Array.from(shell.children) as HTMLElement[]).find(child =>
+            child.contains(detail)
+          )
+        : undefined
+      expect(column).toBeTruthy()
+      expect(column?.style.maxWidth).toBe('')
+
+      cleanup()
+    }
+  })
+
   it('supports column selection flow in medium mode via sidebar toggle', async () => {
     setViewportWidth(900)
     const split = createThreeColumnSplitView()

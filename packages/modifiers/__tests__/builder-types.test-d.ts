@@ -53,6 +53,27 @@ describe('modifier builder types', () => {
     builder.transitions({ opacity: 200 })
   })
 
+  it('takes transition() as arguments or as an object', () => {
+    Text('x').transition('opacity', 200).transition({ property: 'opacity', delay: 50 })
+  })
+
+  // The basic and effects modifiers both register `transform`, and whichever
+  // loads first is what the chain calls. Only a string works in either, so
+  // that is what the chain is typed for.
+  it('types .transform() for the string form both factories accept', () => {
+    Text('x').transform('rotate(4deg)')
+
+    // @ts-expect-error the configuration form is the effects factory's alone
+    Text('x').transform({ scale: 2 })
+  })
+
+  it('types .asHTML() with its options', () => {
+    Text('x').asHTML({ skipSanitizer: false })
+
+    // @ts-expect-error not an asHTML option
+    Text('x').asHTML({ sanitize: true })
+  })
+
   it('keeps overloaded factories overloaded', () => {
     const [space] = createSignal(4)
 

@@ -86,6 +86,41 @@ describe('Transform Effects', () => {
     })
   })
 
+  // `transform` is registered by both the basic and the effects modifiers, and
+  // whichever loads first is what `.transform()` calls. The chain is typed for
+  // a string, so this factory has to take one too: it used to probe a string
+  // with `in` and throw during render when the effects loaded first.
+  describe('transform() given a string', () => {
+    it('applies it as a raw transform', () => {
+      const { element, context } = createContext()
+
+      applyModifier(transform('rotate(10deg)'), context)
+
+      expect(element.style.transform).toBe('rotate(10deg)')
+    })
+
+    it('follows a signal', () => {
+      const { element, context } = createContext()
+      const [value, setValue] = createSignal('rotate(10deg)')
+
+      applyModifier(transform(value), context)
+      setValue('skewX(4deg)')
+      flushSync()
+
+      expect(element.style.transform).toBe('skewX(4deg)')
+    })
+
+    it('composes with a rotation rather than replacing it', async () => {
+      const { rotationEffect } = await import('../../src/basic/animation')
+      const { element, context } = createContext()
+
+      applyModifier(rotationEffect(90), context)
+      applyModifier(transform('skewX(3deg)'), context)
+
+      expect(element.style.transform).toBe('rotate(90deg) skewX(3deg)')
+    })
+  })
+
   describe('Basic Transform Functions', () => {
     it('should create scale transform', () => {
       const modifier = scale(1.2)

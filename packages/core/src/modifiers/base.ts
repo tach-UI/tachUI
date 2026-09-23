@@ -78,7 +78,11 @@ function getModifierInstanceId(modifier: object): number {
  * spelling rule rather than two that must be kept in step.
  */
 function toCSSPropertyName(property: string): string {
-  return property.replace(/([A-Z])/g, '-$1').toLowerCase()
+  // `WebkitFilter` gets its leading dash from the capital. The lowercase
+  // forms — `webkitLineClamp`, `msFilter`, `oTransition`, the CSSOM spelling
+  // for most prefixes — are vendor-prefixed too, so add it.
+  const kebab = property.replace(/([A-Z])/g, '-$1').toLowerCase()
+  return /^(webkit|moz|ms|o)[A-Z]/.test(property) ? `-${kebab}` : kebab
 }
 
 /**
@@ -512,6 +516,14 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
       const styleTarget =
         isHTMLElement ? element.style : (element as any).style
 
+      const clearStyleValue = (propertyName: string): void => {
+        if (styleTarget.removeProperty) {
+          styleTarget.removeProperty(propertyName)
+        } else {
+          ;(styleTarget as any)[propertyName] = ''
+        }
+      }
+
       const applyStyleValue = (propertyName: string, cssValue: string): void => {
         if (styleTarget.setProperty) {
           if (
@@ -541,6 +553,14 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
               accessor: signalValue,
               updaterId: `${updaterScope}:${modifierInstanceId}:${cssProperty}`,
               updater: currentValue => {
+                // A signal with no value clears the property; converting it
+                // would write the text "undefined" or "null", which a custom
+                // property stores and a standard one ignores, leaving the old
+                // value in place.
+                if (currentValue === undefined || currentValue === null) {
+                  clearStyleValue(cssProperty)
+                  return
+                }
                 const cssValue = this.toCSSValueForProperty(cssProperty, currentValue)
                 applyStyleValue(cssProperty, cssValue)
               },

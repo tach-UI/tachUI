@@ -145,7 +145,10 @@ function createRegistryModifier(name: string, ..._args: any[]): Modifier {
 
   throw new Error(
     `Modifier '${name}' not found in registry. ` +
-    `Import @tachui/modifiers or @tachui/modifiers/effects to register modifiers.`
+    `Import the package that provides it before this runs: the basic ` +
+    `modifiers come from @tachui/modifiers/preload/basic and the effects from ` +
+    `@tachui/modifiers/preload/effects, and packages such as @tachui/grid, ` +
+    `@tachui/navigation and @tachui/forms register their own when imported.`
   )
 }
 

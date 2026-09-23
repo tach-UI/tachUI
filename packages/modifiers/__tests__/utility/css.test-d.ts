@@ -16,6 +16,7 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import { createMemo, createSignal } from '@tachui/core'
 import type { ModifierBuilder } from '@tachui/modifiers/types'
+import { cssVendor } from '@tachui/modifiers/utility'
 
 declare const builder: ModifierBuilder
 
@@ -30,6 +31,17 @@ describe('css() type surface', () => {
     ).not.toBeNever()
     expectTypeOf(builder.cssProperty('outline', background)).not.toBeNever()
     expectTypeOf(builder.cssVariable('accent', background)).not.toBeNever()
+  })
+
+  // A signal that switches between a number and a string, such as `16` and
+  // `'1rem'`, is neither `Signal<string>` nor `Signal<number>`.
+  it('takes a signal of a number or a string', () => {
+    const [size] = createSignal<string | number>(16)
+
+    expectTypeOf(builder.css({ width: size })).not.toBeNever()
+    expectTypeOf(builder.cssProperty('width', size)).not.toBeNever()
+    expectTypeOf(builder.cssVariable('gap', size)).not.toBeNever()
+    expectTypeOf(cssVendor('webkit', 'line-clamp', size)).not.toBeNever()
   })
 
   it('still rejects a value that is not CSS', () => {

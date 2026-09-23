@@ -8,7 +8,7 @@
  */
 
 import { JSDOM } from 'jsdom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Text } from '@tachui/primitives'
 import {
   createMemo,
@@ -17,6 +17,7 @@ import {
   renderComponent,
 } from '@tachui/core'
 import '../../src/preload/basic'
+import { css, cssVendor } from '../../src/utility/css'
 
 beforeEach(() => {
   const dom = new JSDOM('<!doctype html><html><body></body></html>', {
@@ -121,5 +122,141 @@ describe('.css()', () => {
 
     expect(element.style.textDecoration).toBe('line-through')
     expect(element.style.getPropertyValue('--accent')).toBe('blue')
+  })
+
+  // A signal with no value clears the property. Converting it would write the
+  // text "undefined", which a custom property stores and passes to every
+  // `var()` that reads it.
+  it('clears a property when its signal has no value', () => {
+    const [accent, setAccent] = createSignal<string | undefined>('red')
+    const [outline, setOutline] = createSignal<string | null>('1px solid red')
+    const element = render(
+      (Text('x') as any).cssVariable('accent', accent).css({ outline })
+    )
+
+    setAccent(undefined)
+    setOutline(null)
+    flushSync()
+
+    expect(element.style.getPropertyValue('--accent')).toBe('')
+    expect(element.style.outline).toBe('')
+  })
+
+  it('copies its options, so a later change to the object has no effect', () => {
+    const theme = { color: 'red' }
+    const component = (Text('x') as any).css(theme)
+    theme.color = 'blue'
+
+    expect(render(component).style.color).toBe('red')
+  })
+
+  it('ignores a __proto__ key and applies the rest', () => {
+    const options = JSON.parse('{"__proto__": "x", "color": "red"}')
+    const element = render((Text('x') as any).css(options))
+
+    expect(element.style.color).toBe('red')
+  })
+
+  it('takes a signal through cssVendor', () => {
+    const [lines, setLines] = createSignal('2')
+    const element = document.createElement('div')
+    cssVendor('webkit', 'line-clamp', lines).apply({} as any, {
+      element,
+    } as any)
+
+    setLines('3')
+    flushSync()
+
+    expect(element.style.getPropertyValue('-webkit-line-clamp')).toBe('3')
+  })
+})
+
+// The property names `.css()` writes, recorded rather than read back from
+// JSDOM, which drops the prefixed properties it does not implement.
+function writtenProperties(options: Record<string, string>): string[] {
+  const names: string[] = []
+  const element = {
+    style: { setProperty: (name: string) => names.push(name) },
+  }
+  css(options).apply({} as any, { element } as any)
+  return names
+}
+
+describe('.css() property names', () => {
+  it('gives every vendor prefix its leading dash', () => {
+    expect(
+      writtenProperties({
+        WebkitBackdropFilter: 'blur(1px)',
+        webkitLineClamp: '2',
+        MozAppearance: 'none',
+        mozUserSelect: 'none',
+        msFilter: 'none',
+        oTransition: 'none',
+      })
+    ).toEqual([
+      '-webkit-backdrop-filter',
+      '-webkit-line-clamp',
+      '-moz-appearance',
+      '-moz-user-select',
+      '-ms-filter',
+      '-o-transition',
+    ])
+  })
+
+  // The modifiers themselves write lowercase CSSOM names such as
+  // `webkitLineClamp`. Without the leading dash the browser drops the
+  // declaration, so `.lineClamp()` never clamped.
+  it('lets .lineClamp() write its -webkit- declarations', () => {
+    const element = render((Text('x') as any).lineClamp(3))
+
+    // JSDOM implements -webkit-line-clamp but not -webkit-box-orient, so
+    // only the first can be read back here.
+    expect(element.style.getPropertyValue('-webkit-line-clamp')).toBe('3')
+  })
+
+  it('leaves kebab-case and custom properties as written', () => {
+    expect(
+      writtenProperties({ 'text-decoration': 'underline', '--accent': 'red' })
+    ).toEqual(['text-decoration', '--accent'])
+  })
+})
+
+describe('.css() in development', () => {
+  const originalEnv = process.env.NODE_ENV
+
+  beforeEach(() => {
+    process.env.NODE_ENV = 'development'
+  })
+
+  afterEach(() => {
+    process.env.NODE_ENV = originalEnv
+    vi.restoreAllMocks()
+  })
+
+  it('warns about a rule, which no inline style can hold', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    render(
+      (Text('x') as any).css({
+        '@media (prefers-reduced-motion: reduce)': 'transition: none',
+        '&:focus-visible': 'outline: 2px solid',
+        outline: { width: 2 },
+        color: 'red',
+      })
+    )
+
+    const warned = warn.mock.calls.map(call => String(call[0]))
+    expect(warned).toHaveLength(3)
+    expect(warned[0]).toContain('@media (prefers-reduced-motion: reduce)')
+    expect(warned[1]).toContain('&:focus-visible')
+    expect(warned[2]).toContain('"outline"')
+  })
+
+  it('does not warn about declarations', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    render((Text('x') as any).css({ color: 'red', '--accent': 'blue' }))
+
+    expect(warn).not.toHaveBeenCalled()
   })
 })

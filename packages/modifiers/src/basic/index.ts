@@ -16,6 +16,7 @@ import type {
 } from '@tachui/types/modifiers'
 import type { PaddingBuilderMethods } from './padding'
 import type { MarginBuilderMethods } from './margin'
+import type { AsHTMLBuilderMethods } from '../utility/as-html'
 import { TACHUI_PACKAGE_VERSION } from '../version'
 
 // Import specific factory functions to register them
@@ -424,14 +425,16 @@ export const basicModifierRegistrations = [
 // Type every basic modifier on the builder, from the factories registered
 // above, so a chain method typechecks only if it exists once this module has
 // run. `padding` and `margin` are overloaded, which derivation would collapse
-// to the last overload, so they come from their own interfaces.
+// to the last overload, and `asHTML` carries a security notice that derivation
+// would drop, so those three come from their own interfaces.
 declare module '@tachui/types/modifiers' {
   interface ModifierBuilder<T extends ComponentInstance = ComponentInstance>
     extends PaddingBuilderMethods,
       MarginBuilderMethods,
+      AsHTMLBuilderMethods,
       ModifierMethodsOf<
         ModifierFactoriesOf<typeof basicModifierRegistrations>,
-        'padding' | 'margin'
+        'padding' | 'margin' | 'asHTML'
       > {}
 }
 
