@@ -168,9 +168,6 @@ The system supports 70+ valid HTML elements including:
 The system provides helpful warnings in development:
 
 ```typescript
-// Warning: Interactive tag on layout component
-HStack({ element: "button" }) // ⚠️ May cause accessibility issues
-
 // Warning: Heading tag on layout  
 VStack({ element: "h1" }) // ℹ️ Consider using Text component instead
 
@@ -231,9 +228,6 @@ VStack({ element: "section", children: sidebar })
 ```typescript
 // May break image functionality
 Image({ element: "figure", src: "..." })
-
-// Interactive tags on layouts (accessibility concerns)
-HStack({ element: "button", children: [...] })
 ```
 
 ### ❌ Avoid

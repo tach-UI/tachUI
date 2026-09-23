@@ -76,7 +76,7 @@ export const VALID_HTML_TAGS = new Set([
   'dl',
   'dt',
   'dd',
-  // Interactive tags (with warnings)
+  // Interactive tags
   'button',
   'a',
   'input',
@@ -336,18 +336,9 @@ export class ElementTagValidator {
   ): Warning[] {
     const warnings: Warning[] = []
 
-    // Warn about interactive tags on layout components
-    if (['button', 'a', 'input', 'select', 'textarea'].includes(tag)) {
-      if (['HStack', 'VStack', 'ZStack'].includes(componentType)) {
-        const message = `Using interactive tag '${tag}' on layout component ${componentType} may cause accessibility issues.`
-        warnings.push({ message, severity: 'warning' })
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn(
-            `Interactive tag '${tag}' on layout component '${componentType}' may cause unexpected behavior`
-          )
-        }
-      }
-    }
+    // Interactive tags on layout components (e.g. HStack as a button) are a
+    // documented override and render correctly, so the tag alone is no reason
+    // to warn. Only concrete problems below produce warnings.
 
     // Warn about structural violations
     if (tag === 'li' && !['VStack', 'HStack'].includes(componentType)) {
