@@ -34,7 +34,7 @@
     "dev": "bun run --filter '*' --parallel dev",
     "test": "vitest run && bun run test:tools",
     "test:stress": "vitest run --config vitest.stress.config.ts",
-    "test:ci": "vitest run --config=vitest.ci.config.ts && bun run test:tools && bun run --filter @tachui/modifiers verify:tree-shaking",
+    "test:ci": "vitest run --config=vitest.ci.config.ts && bun run test:tools && bun run --filter @tachui/modifiers verify:tree-shaking && bun run --filter @tachui/navigation verify:dist",
     "test:tools": "vitest run --config vitest.tools.config.ts",
     "test:coverage": "vitest run --coverage",
     "bench": "bun run --filter '*' bench",

@@ -5,7 +5,7 @@
  * including SwiftUI compatibility, CSS units, presets, and edge cases.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   MarginModifier,
   margin,
@@ -445,6 +445,40 @@ describe('Enhanced Margin Modifier System', () => {
       expect(() =>
         margin({ leading: 16, trailing: 24, vertical: 12 })
       ).not.toThrow()
+    })
+  })
+
+  // A string is CSS as written, so a unitless '16' is ignored by the browser.
+  // It used to become 16px; while developing, that is said out loud.
+  describe('unitless numeric strings in development', () => {
+    const originalEnv = process.env.NODE_ENV
+
+    beforeEach(() => {
+      process.env.NODE_ENV = 'development'
+    })
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalEnv
+      vi.restoreAllMocks()
+    })
+
+    it('warns about a non-zero unitless string', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      margin('16').apply({} as DOMNode, mockContext)
+
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(String(warn.mock.calls[0][0])).toContain("'16' has no unit")
+    })
+
+    it('does not warn about zero, a unit, or a number', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      margin('0').apply({} as DOMNode, mockContext)
+      margin('16px').apply({} as DOMNode, mockContext)
+      margin(16).apply({} as DOMNode, mockContext)
+
+      expect(warn).not.toHaveBeenCalled()
     })
   })
 })

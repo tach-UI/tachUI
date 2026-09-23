@@ -21,12 +21,12 @@ export default defineConfig(({ mode }) => ({
       formats: ['es'],
     },
     rollupOptions: {
-      // External dependencies that shouldn't be bundled
-      external: [
-        '@tachui/core',
-        '@tachui/core/validation',
-        '@tachui/primitives',
-      ],
+      // Every tachUI package stays external. Bundling one gives this package
+      // a private copy: `@tachui/modifiers/preload/basic` would register the
+      // basic modifiers into a registry of its own that the app's builder never
+      // reads, and `@tachui/core/modifiers` would give it a builder of its own
+      // to patch `.navigationTitle()` and the rest onto.
+      external: (id: string) => id.startsWith('@tachui/'),
       output: {
         globals: {
           '@tachui/core': 'TachUICore',

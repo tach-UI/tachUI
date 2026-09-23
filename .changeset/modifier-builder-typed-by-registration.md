@@ -38,7 +38,15 @@ Typing them exposed some runtime bugs:
   It now follows the signal, as `padding(signal)` does.
 - Navigation's tab views, stacks, links and split view called basic modifiers
   without loading them, so they only worked if the app had. They now import
-  `@tachui/modifiers/preload/basic`.
+  `@tachui/modifiers/preload/basic`, and navigation's build keeps every
+  `@tachui/*` import external. It used to bundle what it imported beyond
+  `@tachui/core` and `@tachui/primitives`, which would have given it a private
+  registry that the app's builder never reads.
+- Navigation's builder methods (`.navigationTitle()`, `.toolbarBackground()`
+  and the rest) were missing from the published build: they were a module
+  side effect, and the bundler dropped them. They are now installed by an
+  explicit call from the package's entry points, on the app's builder from
+  `@tachui/core/modifiers`. A `dist` check in `test:ci` covers all of this.
 
 Typing also required two small changes in navigation. A tab view now
 normalizes a tab button's render result to an array before mapping it, as the

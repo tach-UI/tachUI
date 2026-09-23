@@ -4,7 +4,8 @@
  * Import this when you need ModifierBuilder chain methods like
  * `.navigationTitle(...)` to be patched globally without importing root.
  */
-// eslint-disable-next-line import/no-unassigned-import
-import './navigation-modifiers-registry'
+import { installNavigationModifierMethods } from './navigation-modifiers-registry'
+
+installNavigationModifierMethods()
 
 export * from './modifiers'
