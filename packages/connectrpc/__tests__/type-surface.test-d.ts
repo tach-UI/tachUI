@@ -22,7 +22,7 @@ import type {
   MessageShape,
 } from '@bufbuild/protobuf'
 import type { GenMessage } from '@bufbuild/protobuf/codegenv2'
-import type { CallOptions, ConnectError } from '@connectrpc/connect'
+import type { CallOptions, ConnectError, Transport } from '@connectrpc/connect'
 import type { Signal } from '@tachui/core'
 import type { InfiniteData, QueryKey } from '@tachui/query'
 
@@ -48,7 +48,12 @@ import type {
   ConnectTransportName,
   ProvideConnectTransportOptions,
 } from '@tachui/connectrpc'
-import { DEFAULT_TRANSPORT_NAME, isRetryableCode } from '@tachui/connectrpc'
+import {
+  DEFAULT_TRANSPORT_NAME,
+  isRetryableCode,
+  provideConnectTransport,
+  useConnectTransport,
+} from '@tachui/connectrpc'
 
 import type { Assert, Assignable, Equals } from '../../../tools/testing/type-asserts'
 
@@ -659,4 +664,21 @@ export type StreamListRowsAreMessages = Assert<
     ReturnType<ConnectStreamListResult<UserSchema, string>['get']>,
     () => User | undefined
   >
+>
+
+// Transport provision takes Connect's generic `Transport`, never a
+// browser-specific one, and hands the same interface back.
+export type ProvideTakesGenericTransport = Assert<
+  Equals<
+    Parameters<typeof provideConnectTransport>,
+    [transport: Transport, options?: ProvideConnectTransportOptions]
+  >
+>
+
+export type UseReturnsGenericTransport = Assert<
+  Equals<ReturnType<typeof useConnectTransport>, Transport>
+>
+
+export type UseTakesOptionalName = Assert<
+  Equals<Parameters<typeof useConnectTransport>, [name?: ConnectTransportName]>
 >

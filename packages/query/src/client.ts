@@ -77,6 +77,11 @@ import type {
  * No default value: resolution without a provider falls through to
  * {@link useQueryClient}, which refuses a global fallback on the server.
  *
+ * Exported so an adapter can read the *provided* client alone, without
+ * {@link useQueryClient}'s ambient browser fallback: `@tachui/connectrpc` binds
+ * transport names to a client, and a binding against the ambient client would
+ * be shared with every subtree that fell back to it.
+ *
  * Annotated through `createEnvironmentKey` because the key's own interface is
  * not exported from any `@tachui/core` entry point. Left to inference, the
  * emitted declaration names it by a deep path outside core's exports map, and

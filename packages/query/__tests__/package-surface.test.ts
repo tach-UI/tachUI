@@ -28,6 +28,7 @@ describe('@tachui/query barrel', () => {
       'DEFAULT_RETRY',
       'DEFAULT_SNAPSHOT',
       'DEFAULT_STALE_TIME',
+      'QueryClientKey',
       'QueryError',
       'createAsyncStream',
       'createAsyncStreamList',
