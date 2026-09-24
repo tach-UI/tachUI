@@ -9,11 +9,12 @@ import type { DOMNode } from '@tachui/types/runtime'
 import { BaseModifier } from '../basic/base'
 import { setTransformPart } from '@tachui/core/modifiers'
 import type { ModifierContext } from '@tachui/types/modifiers'
+import type { Signal } from '@tachui/types/reactive'
 import { createEffect, isSignal, isComputed } from '@tachui/core/reactive'
 
 export interface OffsetOptions {
-  x: number
-  y?: number
+  x: number | Signal<number>
+  y?: number | Signal<number>
 }
 
 export class OffsetModifier extends BaseModifier<OffsetOptions> {
@@ -116,11 +117,14 @@ export class OffsetModifier extends BaseModifier<OffsetOptions> {
  * offset(20)
  *
  * // With reactive values
- * const xOffset = signal(0)
+ * const [xOffset] = createSignal(0)
  * offset(xOffset, -10)
  * ```
  */
-export function offset(x: number, y?: number): OffsetModifier {
+export function offset(
+  x: number | Signal<number>,
+  y?: number | Signal<number>
+): OffsetModifier {
   const modifier = new OffsetModifier({ x, y: y ?? 0 })
 
   // Validate in development
