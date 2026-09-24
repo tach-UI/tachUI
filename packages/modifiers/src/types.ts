@@ -207,6 +207,7 @@ export interface AppearanceModifierProps {
       | '700'
       | '800'
       | '900'
+      | number
     style?: 'normal' | 'italic' | 'oblique'
   }
   cornerRadius?: number
