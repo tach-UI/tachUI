@@ -598,6 +598,24 @@ export type StreamFoldNeedsInitial = Assert<
   >
 >
 
+/**
+ * The pairing holds with the default accumulator too, where the no-fold
+ * branch also exists and a union collapsed into its common keys would let
+ * half a fold through.
+ */
+export type DefaultStreamFoldNeedsReduce = Assert<
+  Equals<Assignable<{ initial: () => undefined }, ConnectStreamOptions<UserSchema>>, false>
+>
+export type DefaultStreamFoldNeedsInitial = Assert<
+  Equals<
+    Assignable<
+      { reduce: (acc: undefined, user: User) => undefined },
+      ConnectStreamOptions<UserSchema>
+    >,
+    false
+  >
+>
+
 export type StreamValueIsTheFold = Assert<
   Equals<ConnectStreamResult<UserSchema, number>['value'], Signal<number>>
 >
