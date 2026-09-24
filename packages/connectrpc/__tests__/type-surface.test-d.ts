@@ -68,6 +68,11 @@ type ListUsersRequest = Message<'acme.users.v1.ListUsersRequest'> & {
   pageToken: string
   query?: UserQuery
   tags: string[]
+  labels: { [key: string]: string }
+  choice:
+    | { case: 'cursor'; value: string }
+    | { case: 'offset'; value: number }
+    | { case: undefined; value?: undefined }
 }
 
 type User = Message<'acme.users.v1.User'> & {
@@ -280,6 +285,31 @@ export type PathsDoNotDescendArrays = Assert<
   Equals<Extract<ConnectPageParamKey<RequestInit>, `tags.${string}`>, never>
 >
 
+/** A map field is not descended into: an entry key is not a field. */
+export type PathsDoNotDescendMaps = Assert<
+  Equals<Extract<ConnectPageParamKey<RequestInit>, `labels.${string}`>, never>
+>
+
+/** A oneof is not descended into: `case` and `value` are its wrapper, not fields. */
+export type PathsDoNotDescendOneofs = Assert<
+  Equals<Extract<ConnectPageParamKey<RequestInit>, `choice.${string}`>, never>
+>
+
+type Level4 = { token: string }
+type Level3 = { token: string; l4: Level4 }
+type Level2 = { l3: Level3 }
+type Level1 = { l2: Level2 }
+type DeepRequest = { l1: Level1 }
+
+/** Paths are bounded at four segments, as documented. */
+export type PathsReachFourSegments = Assert<
+  Equals<Assignable<'l1.l2.l3.token', ConnectPageParamKey<DeepRequest>>, true>
+>
+
+export type PathsStopBeforeFiveSegments = Assert<
+  Equals<Assignable<'l1.l2.l3.l4.token', ConnectPageParamKey<DeepRequest>>, false>
+>
+
 export type TopLevelParamIsOptional = Assert<
   Equals<ConnectPageParamAt<RequestInit, 'pageToken'>, string | undefined>
 >
@@ -316,6 +346,10 @@ export const nestedInfiniteQuery: ConnectInfiniteQueryOptions<
 export type InfiniteRejectsUnknownField = Assert<
   Equals<Assignable<'nope', ConnectPageParamKey<RequestInit>>, false>
 >
+
+/** Nor can a map entry: the key's type parameter is constrained to field paths. */
+// @ts-expect-error a map entry is not a request field
+export type MapPathRejected = ConnectInfiniteQueryOptions<ListUsersRequestSchema, ListUsersResponseSchema, 'labels.anything'>
 
 /** The page param is the field's type; the cache holds pages of the output message. */
 export type InfiniteDataIsTyped = Assert<

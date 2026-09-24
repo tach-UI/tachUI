@@ -181,8 +181,12 @@ export type ConnectQueryOptions<
 /** The result of `createConnectQuery`. Errors are `ConnectError`, never flattened. */
 export type ConnectQueryResult<TData> = QueryResult<TData, ConnectError>
 
-/** Bounds the recursion in {@link ConnectPageParamKey}. */
-type PathDepth = [never, 0, 1, 2, 3]
+/**
+ * Bounds the recursion in {@link ConnectPageParamKey}: each level indexes the
+ * next, and `never` ends the path. The default depth of 3 emits at 3, 2, 1 and
+ * 0, so a path has at most four segments.
+ */
+type PathDepth = [never, 0, 1, 2]
 
 /**
  * Fields a page param can never live in: Protobuf bookkeeping, and values whose
@@ -190,7 +194,11 @@ type PathDepth = [never, 0, 1, 2, 3]
  */
 type NonFieldKey = '$typeName' | '$unknown'
 
-/** A message initializer the path can descend into. */
+/**
+ * A message initializer the path can descend into. A map field is an index
+ * signature and a oneof is a `{ case, value }` wrapper: neither has fields, so
+ * a path into one would write the token into a map entry or the discriminator.
+ */
 type IsDescendable<T> = T extends
   | readonly unknown[]
   | Uint8Array
@@ -198,7 +206,11 @@ type IsDescendable<T> = T extends
   | ((...args: never[]) => unknown)
   ? false
   : T extends object
-    ? true
+    ? string extends keyof T
+      ? false
+      : T extends { case: unknown }
+        ? false
+        : true
     : false
 
 /**
@@ -208,7 +220,7 @@ type IsDescendable<T> = T extends
  * Bounded at four levels. Protobuf messages can recurse, and an unbounded path
  * type would never finish expanding.
  */
-export type ConnectPageParamKey<T, Depth extends number = 4> = [Depth] extends [
+export type ConnectPageParamKey<T, Depth extends number = 3> = [Depth] extends [
   never,
 ]
   ? never
