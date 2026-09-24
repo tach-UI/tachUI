@@ -3,12 +3,27 @@
 /**
  * Workspace Alias Validator
  *
- * This script validates that all workspace packages have proper aliases configured
- * in vitest.config.ts files. Missing aliases can cause test import failures.
+ * The shared vitest config is the single source of truth for `@tachui/*`
+ * import aliases: most package configs are just
+ * `mergeConfig(sharedConfig, ...)`, and a handful define their own aliases.
+ * This script checks the two gaps that arrangement can develop:
+ *
+ * 1. Every workspace package imported by any test suite is covered by the
+ *    shared config's aliases. A new package with tests but no shared alias
+ *    breaks every consumer suite that imports it.
+ * 2. Every package vitest config whose tests import other workspace packages
+ *    either merges the shared config or defines its own aliases. A config
+ *    doing neither resolves those imports against node_modules (stale dist
+ *    output) instead of the workspace sources. Configs whose tests import
+ *    nothing cross-package are exempt — there is nothing to misresolve.
+ *
+ * Genuinely missing aliases already fail loudly — the importing suite cannot
+ * even collect — so this is an early, fast pointer at the fix, not a gate
+ * that proves anything the test run does not.
  *
  * Usage:
  *   bunx tsx tools/validate-workspace-aliases.ts
- *   bunx tsx tools/validate-workspace-aliases.ts --fix  # Auto-add missing aliases
+ *   bunx tsx tools/validate-workspace-aliases.ts --fix  # add missing shared aliases
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs'
@@ -19,345 +34,307 @@ import { globSync } from 'glob'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const REPO_ROOT = resolve(__dirname, '..')
+const SHARED_CONFIG = 'vitest.shared.config.ts'
 
-interface PackageInfo {
-  name: string
-  path: string
-  srcPath: string
+export interface SharedAliasEntry {
+  find: string
+  replacementSource: string
 }
 
-interface VitestConfig {
-  path: string
-  content: string
-  aliases: Map<string, string>
-  hasResolveAlias: boolean
+/** Extract string `find` values from a resolve.alias array. Regex finds are skipped. */
+export function extractStringFinds(configContent: string): string[] {
+  const finds: string[] = []
+  const findPattern = /find:\s*['"]([^'"]+)['"]/g
+  let match: RegExpExecArray | null
+
+  while ((match = findPattern.exec(configContent)) !== null) {
+    finds.push(match[1])
+  }
+
+  return finds
 }
 
-/** Get all workspace packages from package.json workspaces field */
-function getWorkspacePackages(): PackageInfo[] {
-  const rootManifest = JSON.parse(readFileSync(resolve(REPO_ROOT, 'package.json'), 'utf-8'))
-  const patterns: string[] = rootManifest.workspaces || []
-
-  const packages: PackageInfo[] = []
-
-  for (const pattern of patterns) {
-    const paths = globSync(pattern, { cwd: REPO_ROOT })
-
-    for (const pkgPath of paths) {
-      const fullPath = resolve(REPO_ROOT, pkgPath)
-      const packageJsonPath = resolve(fullPath, 'package.json')
-
-      if (existsSync(packageJsonPath)) {
-        const pkgJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
-        const name = pkgJson.name
-
-        if (name && name.startsWith('@tachui/')) {
-          // Determine src path (prefer src/, fallback to dist/)
-          const srcPath = existsSync(resolve(fullPath, 'src'))
-            ? resolve(fullPath, 'src')
-            : resolve(fullPath, 'dist')
-
-          packages.push({
-            name,
-            path: pkgPath,
-            srcPath: srcPath.replace(REPO_ROOT + '/', '')
-          })
-        }
-      }
-    }
-  }
-
-  return packages.toSorted((a, b) => a.name.localeCompare(b.name))
+/** A find covers a package when it names the package or a path under it. */
+export function packageCoveredByFinds(packageName: string, finds: string[]): boolean {
+  return finds.some(raw => {
+    const find = raw.endsWith('/') ? raw.slice(0, -1) : raw
+    return find === packageName || find.startsWith(`${packageName}/`)
+  })
 }
 
-/** Parse vitest config to extract aliases */
-function parseVitestConfig(configPath: string): VitestConfig | null {
-  if (!existsSync(configPath)) {
-    return null
-  }
-
-  const content = readFileSync(configPath, 'utf-8')
-  const aliases = new Map<string, string>()
-
-  // Check if config has resolve.alias section
-  const hasResolveAlias = /resolve:\s*{[\s\S]*?alias:\s*{/.test(content)
-
-  // Extract existing aliases using regex
-  const aliasPattern = /'(@tachui\/[\w-]+)':\s*resolve\(__dirname,\s*'([^']+)'\)/g
-  let match
-
-  while ((match = aliasPattern.exec(content)) !== null) {
-    aliases.set(match[1], match[2])
-  }
-
-  return {
-    path: configPath,
-    content,
-    aliases,
-    hasResolveAlias
-  }
+/** True when the config merges the shared config. */
+export function mergesSharedConfig(configContent: string): boolean {
+  return /mergeConfig\s*\(\s*sharedConfig\b/.test(configContent)
 }
 
-/** Check if a package needs to alias dependencies (has tests that might import other packages) */
-function shouldValidateAliases(packagePath: string): boolean {
-  const testDirs = ['__tests__', 'test', 'tests']
-
-  for (const testDir of testDirs) {
-    const testPath = resolve(REPO_ROOT, packagePath, testDir)
-    if (existsSync(testPath)) {
-      return true
-    }
-  }
-
-  return false
+/** True when the config defines a resolve.alias section of its own. */
+export function definesOwnAliases(configContent: string): boolean {
+  return /alias\s*:/.test(configContent)
 }
 
-/** Get actual imports from test files */
-function getActualImports(packagePath: string): Set<string> {
+/** Extract base `@tachui/*` package names imported by a source file. */
+export function extractTachuiImports(fileContent: string): string[] {
   const imports = new Set<string>()
-  const testDirs = ['__tests__', 'test', 'tests']
+  const importPattern = /from\s+['"](@tachui\/[\w-]+)(?:\/.*)?['"]/g
+  let match: RegExpExecArray | null
 
-  for (const testDir of testDirs) {
-    const testPath = resolve(REPO_ROOT, packagePath, testDir)
-    if (!existsSync(testPath)) continue
+  while ((match = importPattern.exec(fileContent)) !== null) {
+    imports.add(match[1])
+  }
 
-    // Find all test files
-    const testFiles = globSync(`${testDir}/**/*.{ts,tsx,js,jsx}`, {
-      cwd: resolve(REPO_ROOT, packagePath)
-    })
+  return [...imports]
+}
 
-    for (const testFile of testFiles) {
-      const fullPath = resolve(REPO_ROOT, packagePath, testFile)
-      const content = readFileSync(fullPath, 'utf-8')
+interface CharPosition {
+  index: number
+}
 
-      // Extract @tachui imports
-      const importPattern = /from\s+['"](@tachui\/[\w-]+)(?:\/.*)?['"]/g
-      let match
+/** Advance past a quoted string starting at the quote character. */
+function skipString(content: string, state: CharPosition): void {
+  const quote = content[state.index]
+  state.index += 1
 
-      while ((match = importPattern.exec(content)) !== null) {
-        imports.add(match[1])
+  while (state.index < content.length) {
+    const current = content[state.index]
+    if (current === '\\') {
+      state.index += 2
+      continue
+    }
+    state.index += 1
+    if (current === quote) return
+  }
+}
+
+/** Advance past a // or block comment starting at the opening slash. */
+function skipComment(content: string, state: CharPosition): void {
+  if (content[state.index + 1] === '/') {
+    const end = content.indexOf('\n', state.index)
+    state.index = end === -1 ? content.length : end + 1
+    return
+  }
+
+  const end = content.indexOf('*/', state.index + 2)
+  state.index = end === -1 ? content.length : end + 2
+}
+
+/**
+ * Locate the `alias: [ ... ]` array and return the entry indentation plus the
+ * index of the closing bracket. Strings and comments are skipped so brackets
+ * inside them do not confuse the scan.
+ */
+function locateAliasArray(content: string): { entryIndent: string; closeIndex: number } | null {
+  const state: CharPosition = { index: 0 }
+  const opener = /alias:\s*\[/y
+  let arrayStart = -1
+
+  while (state.index < content.length) {
+    const current = content[state.index]
+
+    if (current === "'" || current === '"' || current === '`') {
+      skipString(content, state)
+      continue
+    }
+
+    if (current === '/' && (content[state.index + 1] === '/' || content[state.index + 1] === '*')) {
+      skipComment(content, state)
+      continue
+    }
+
+    const preceding = state.index === 0 ? '' : content[state.index - 1]
+    opener.lastIndex = state.index
+    const openMatch = opener.exec(content)
+    if (openMatch && !/[\w$]/.test(preceding)) {
+      arrayStart = state.index + openMatch[0].length - 1
+      break
+    }
+
+    state.index += 1
+  }
+
+  if (arrayStart === -1) return null
+
+  state.index = arrayStart
+  let depth = 0
+
+  while (state.index < content.length) {
+    const current = content[state.index]
+
+    if (current === "'" || current === '"' || current === '`') {
+      skipString(content, state)
+      continue
+    }
+
+    if (current === '/' && (content[state.index + 1] === '/' || content[state.index + 1] === '*')) {
+      skipComment(content, state)
+      continue
+    }
+
+    if (current === '[') depth += 1
+    if (current === ']') {
+      depth -= 1
+      if (depth === 0) {
+        const lineStart = content.lastIndexOf('\n', state.index) + 1
+        const closeIndent = content.slice(lineStart, state.index).match(/^\s*/)?.[0] ?? ''
+        return { entryIndent: `${closeIndent}  `, closeIndex: state.index }
       }
     }
+
+    state.index += 1
   }
 
-  return imports
+  return null
 }
 
-/** Validate a single vitest config */
-function validateConfig(
-  config: VitestConfig,
-  allPackages: PackageInfo[],
-  packagePath: string,
-  actualImports?: Set<string>
-): { missing: PackageInfo[], extra: string[] } {
-  const missing: PackageInfo[] = []
-  const extra: string[] = []
-
-  // If we have actual imports, only check those
-  const packagesToCheck = actualImports
-    ? allPackages.filter(pkg => actualImports.has(pkg.name))
-    : allPackages
-
-  // Calculate relative path from this package to other packages
-  const packageDir = dirname(config.path)
-  const relativeToPackages = resolve(packageDir, '../')
-
-  // Check each workspace package
-  for (const pkg of packagesToCheck) {
-    // Skip self-reference
-    const packageName = packagePath.split('/').pop()
-    if (pkg.path.includes(packageName!)) {
-      continue
-    }
-
-    // Skip demo apps unless specifically imported
-    if (pkg.name.includes('-app') && !actualImports?.has(pkg.name)) {
-      continue
-    }
-
-    // Calculate expected alias path
-    const pkgDir = pkg.path.split('/').pop()
-    const expectedPath = `../${pkgDir}/src`
-
-    // Check if alias exists
-    const existingAlias = config.aliases.get(pkg.name)
-
-    if (!existingAlias) {
-      missing.push(pkg)
-    } else if (existingAlias !== expectedPath && !existingAlias.includes(pkgDir!)) {
-      // Alias exists but might be pointing to wrong location
-      console.warn(`  ⚠️  ${pkg.name}: points to '${existingAlias}' instead of '${expectedPath}'`)
-    }
+/**
+ * Insert alias entries at the end of the shared config's alias array,
+ * matching the existing entry style and indentation.
+ */
+export function insertSharedAliases(content: string, entries: SharedAliasEntry[]): string {
+  const located = locateAliasArray(content)
+  if (!located) {
+    throw new Error('no resolve.alias array found in shared config')
   }
 
-  // Check for extra aliases (not in workspace)
-  const workspaceNames = new Set(allPackages.map(p => p.name))
-  for (const [aliasName] of config.aliases) {
-    if (!workspaceNames.has(aliasName)) {
-      extra.push(aliasName)
-    }
-  }
+  const { entryIndent, closeIndex } = located
+  const propIndent = `${entryIndent}  `
+  const rendered = entries
+    .map(
+      entry =>
+        `${entryIndent}{\n` +
+        `${propIndent}find: '${entry.find}',\n` +
+        `${propIndent}replacement: ${entry.replacementSource},\n` +
+        `${entryIndent}},`
+    )
+    .join('\n')
 
-  return { missing, extra }
+  const before = content.slice(0, closeIndex).trimEnd()
+  const after = content.slice(closeIndex)
+  const closeIndent = entryIndent.slice(0, -2)
+  return `${before}\n${rendered}\n${closeIndent}${after}`
 }
 
-/** Generate alias code for missing packages */
-function generateAliasCode(packages: PackageInfo[], currentPackagePath: string): string {
-  const lines: string[] = []
-
-  for (const pkg of packages) {
-    const pkgName = pkg.path.split('/').pop()
-    lines.push(`      '${pkg.name}': resolve(__dirname, '../${pkgName}/src'),`)
-  }
-
-  return lines.join('\n')
+/** Short workspace dir (e.g. `packages/query`) for a package name, if it has sources. */
+function resolvePackageDir(packageName: string): string | null {
+  const dirName = packageName.replace('@tachui/', '')
+  const candidate = resolve(REPO_ROOT, 'packages', dirName)
+  if (!existsSync(resolve(candidate, 'package.json'))) return null
+  if (!existsSync(resolve(candidate, 'src'))) return null
+  return `packages/${dirName}`
 }
 
-/** Auto-fix a vitest config by adding missing aliases */
-function autoFixConfig(config: VitestConfig, missing: PackageInfo[]): string {
-  let { content } = config
+/** `@tachui/*` packages imported by test files, grouped by package dir. */
+function collectTestImportsByPackage(): Map<string, Set<string>> {
+  const byPackage = new Map<string, Set<string>>()
+  const testFiles = globSync('packages/*/{__tests__,test,tests}/**/*.{ts,tsx,js,jsx}', {
+    cwd: REPO_ROOT,
+  })
 
-  if (!config.hasResolveAlias) {
-    console.error(`  ❌ Cannot auto-fix: config doesn't have resolve.alias section`)
-    return content
+  for (const testFile of testFiles) {
+    const packageDir = testFile.split('/').slice(0, 2).join('/')
+    const content = readFileSync(resolve(REPO_ROOT, testFile), 'utf-8')
+    const imports = byPackage.get(packageDir) ?? new Set<string>()
+    for (const imported of extractTachuiImports(content)) {
+      imports.add(imported)
+    }
+    byPackage.set(packageDir, imports)
   }
 
-  // Find the alias object
-  const aliasMatch = content.match(/(resolve:\s*{[\s\S]*?alias:\s*{)([\s\S]*?)(}\s*,?\s*})/m)
-
-  if (!aliasMatch) {
-    console.error(`  ❌ Cannot auto-fix: could not parse alias section`)
-    return content
-  }
-
-  const [fullMatch, before, existingAliases, after] = aliasMatch
-
-  // Generate new alias entries
-  const newAliases = generateAliasCode(missing, config.path)
-
-  // Insert new aliases before the closing brace
-  const updatedAliases = existingAliases.trimEnd() + '\n' + newAliases + '\n    '
-
-  // Replace in content
-  content = content.replace(fullMatch, before + updatedAliases + after)
-
-  return content
+  return byPackage
 }
 
 /** Main validation logic */
 function main() {
   const args = process.argv.slice(2)
   const shouldFix = args.includes('--fix')
-  const verbose = args.includes('--verbose')
 
-  console.log('🔍 Validating workspace aliases in vitest configs...\n')
+  console.log('Validating workspace aliases...\n')
 
-  // Get all workspace packages
-  const allPackages = getWorkspacePackages()
-  console.log(`Found ${allPackages.length} workspace packages:\n`)
-
-  if (verbose) {
-    allPackages.forEach(pkg => {
-      console.log(`  - ${pkg.name.padEnd(30)} (${pkg.srcPath})`)
-    })
-    console.log()
+  const sharedPath = resolve(REPO_ROOT, SHARED_CONFIG)
+  if (!existsSync(sharedPath)) {
+    console.error(`Shared config not found: ${SHARED_CONFIG}`)
+    process.exit(1)
   }
 
-  // Find all vitest configs
-  const vitestConfigs = globSync('packages/*/vitest.config.{ts,js}', { cwd: REPO_ROOT })
-  console.log(`Checking ${vitestConfigs.length} vitest configs...\n`)
+  const sharedContent = readFileSync(sharedPath, 'utf-8')
+  const finds = extractStringFinds(sharedContent)
+  console.log(`Shared config declares ${finds.length} alias finds.`)
 
-  let totalMissing = 0
-  let totalFixed = 0
-  let hasErrors = false
+  let failures = 0
 
-  // Validate each config
-  for (const configPath of vitestConfigs) {
-    const fullConfigPath = resolve(REPO_ROOT, configPath)
-    const packagePath = configPath.replace('/vitest.config.ts', '').replace('/vitest.config.js', '')
+  // Check 1: every test-imported package is covered by the shared config.
+  const importsByPackage = collectTestImportsByPackage()
+  const imported = [...new Set([...importsByPackage.values()].flatMap(set => [...set]))].toSorted()
+  const uncovered = imported.filter(name => !packageCoveredByFinds(name, finds))
 
-    // Skip packages without tests
-    if (!shouldValidateAliases(packagePath)) {
-      if (verbose) {
-        console.log(`⏭️  ${packagePath} (no tests, skipping)`)
+  if (uncovered.length > 0) {
+    failures += uncovered.length
+    console.log(`\nTest suites import ${uncovered.length} package(s) the shared config does not cover:`)
+    for (const name of uncovered) {
+      console.log(`  - ${name}`)
+    }
+
+    if (shouldFix) {
+      const entries: SharedAliasEntry[] = []
+      for (const name of uncovered) {
+        const dir = resolvePackageDir(name)
+        if (!dir) {
+          console.log(`  Cannot fix ${name}: no packages/<name>/src found; add it by hand.`)
+          continue
+        }
+        entries.push({
+          find: name,
+          replacementSource: `path.resolve(__dirname, '${dir}/src')`,
+        })
       }
-      continue
-    }
 
-    const config = parseVitestConfig(fullConfigPath)
-
-    if (!config) {
-      console.log(`⏭️  ${packagePath} (no config found)`)
-      continue
-    }
-
-    // Get actual imports from test files
-    const actualImports = getActualImports(packagePath)
-
-    const { missing, extra } = validateConfig(config, allPackages, packagePath, actualImports)
-
-    if (missing.length === 0 && extra.length === 0) {
-      console.log(`✅ ${packagePath} (${config.aliases.size} aliases configured)`)
-      continue
-    }
-
-    console.log(`\n❌ ${packagePath}`)
-
-    if (missing.length > 0) {
-      console.log(`   Missing ${missing.length} aliases:`)
-      missing.forEach(pkg => {
-        console.log(`      - ${pkg.name}`)
-      })
-      totalMissing += missing.length
-
-      // Auto-fix if requested
-      if (shouldFix) {
-        console.log(`   🔧 Auto-fixing...`)
-        const fixedContent = autoFixConfig(config, missing)
-
-        if (fixedContent !== config.content) {
-          writeFileSync(config.path, fixedContent, 'utf-8')
-          console.log(`   ✅ Added ${missing.length} missing aliases`)
-          totalFixed += missing.length
+      if (entries.length > 0) {
+        try {
+          writeFileSync(sharedPath, insertSharedAliases(sharedContent, entries), 'utf-8')
+          console.log(`Added ${entries.length} alias(es) to ${SHARED_CONFIG}.`)
+          failures -= entries.length
+        } catch (error) {
+          console.log(`Cannot fix: ${(error as Error).message}`)
         }
       }
     }
-
-    if (extra.length > 0 && verbose) {
-      console.log(`   Extra aliases (not in workspace):`)
-      extra.forEach(name => {
-        console.log(`      - ${name}`)
-      })
-    }
-
-    hasErrors = true
-  }
-
-  // Summary
-  console.log(`\n${'='.repeat(60)}`)
-  console.log(`Summary:`)
-  console.log(`  Total missing aliases: ${totalMissing}`)
-
-  if (shouldFix) {
-    console.log(`  Aliases fixed: ${totalFixed}`)
-  }
-
-  if (hasErrors && !shouldFix) {
-    console.log(`\n💡 Run with --fix to automatically add missing aliases`)
-    process.exit(1)
-  } else if (hasErrors && shouldFix && totalFixed < totalMissing) {
-    console.log(`\n⚠️  Some configs could not be auto-fixed. Please fix manually.`)
-    process.exit(1)
-  } else if (!hasErrors) {
-    console.log(`\n✅ All vitest configs have proper workspace aliases!`)
-    process.exit(0)
   } else {
-    console.log(`\n✅ All missing aliases have been fixed!`)
-    process.exit(0)
+    console.log(`All ${imported.length} test-imported packages are covered by the shared config.`)
   }
+
+  // Check 2: configs with cross-package test imports merge shared or define aliases.
+  const packageConfigs = globSync('packages/*/vitest.config.{ts,js}', { cwd: REPO_ROOT })
+  const orphaned: string[] = []
+
+  for (const configPath of packageConfigs) {
+    const packageDir = configPath.split('/').slice(0, 2).join('/')
+    if ((importsByPackage.get(packageDir) ?? new Set()).size === 0) continue
+    const content = readFileSync(resolve(REPO_ROOT, configPath), 'utf-8')
+    if (!mergesSharedConfig(content) && !definesOwnAliases(content)) {
+      orphaned.push(configPath)
+    }
+  }
+
+  if (orphaned.length > 0) {
+    failures += orphaned.length
+    console.log(`\n${orphaned.length} config(s) with cross-package test imports have no aliases:`)
+    for (const configPath of orphaned) {
+      console.log(`  - ${configPath}`)
+    }
+    console.log('Add mergeConfig(sharedConfig, ...) or a local resolve.alias section by hand.')
+  } else {
+    console.log(
+      `All ${packageConfigs.length} package configs with cross-package test imports resolve via aliases.`
+    )
+  }
+
+  if (failures > 0) {
+    console.log(`\n${failures} problem(s) found.${shouldFix ? '' : ' Run with --fix to add missing shared aliases.'}`)
+    process.exit(1)
+  }
+
+  console.log('\nAll workspace aliases check out.')
 }
 
-// Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   main()
 }
