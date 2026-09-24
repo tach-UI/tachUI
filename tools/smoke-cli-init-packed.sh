@@ -116,32 +116,23 @@ if [[ -z "${CORE_VERSION:-}" ]]; then
   exit 1
 fi
 
-echo "[smoke-cli-init-packed] verifying a single @tachui/core runtime version is installed"
-EXPECTED_CORE_VERSION="$CORE_VERSION" node <<'NODE'
-const { execSync } = require('node:child_process')
+echo "[smoke-cli-init-packed] verifying a single @tachui/core runtime copy is installed"
+EXPECTED_CORE_VERSION="$CORE_VERSION" \
+INSTALLED_COPIES_HELPER="$ROOT_DIR/tools/npm-installed-copies.mjs" \
+node --input-type=module <<'NODE'
+import { execSync } from 'node:child_process'
+import { pathToFileURL } from 'node:url'
 
-function collectCoreVersions(tree, versions) {
-  if (!tree || typeof tree !== 'object') return
-  const deps = tree.dependencies
-  if (!deps || typeof deps !== 'object') return
-
-  for (const [name, dep] of Object.entries(deps)) {
-    if (name === '@tachui/core' && dep && typeof dep === 'object' && typeof dep.version === 'string') {
-      versions.add(dep.version)
-    }
-    collectCoreVersions(dep, versions)
-  }
-}
+const { collectInstalledPaths } = await import(pathToFileURL(process.env.INSTALLED_COPIES_HELPER).href)
 
 const expectedVersion = process.env.EXPECTED_CORE_VERSION
-const lsOutput = execSync('npm ls @tachui/core --all --json', { encoding: 'utf8' })
-const tree = JSON.parse(lsOutput)
-const versions = new Set()
-collectCoreVersions(tree, versions)
+const lsOutput = execSync('npm ls @tachui/core --all --json --long', { encoding: 'utf8' })
+const copies = collectInstalledPaths(JSON.parse(lsOutput), '@tachui/core')
 
-if (versions.size !== 1 || !versions.has(expectedVersion)) {
+if (copies.size !== 1 || ![...copies.values()].includes(expectedVersion)) {
+  const found = [...copies].map(([path, version]) => `${version} at ${path}`).join(', ')
   console.error(
-    `[smoke-cli-init-packed] expected exactly one @tachui/core version (${expectedVersion}), found: ${Array.from(versions).join(', ')}`
+    `[smoke-cli-init-packed] expected exactly one @tachui/core copy (${expectedVersion}), found: ${found || 'none'}`
   )
   process.exit(1)
 }

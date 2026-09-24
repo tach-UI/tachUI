@@ -197,7 +197,10 @@ export function createOnceCleanup(fn: CleanupFunction): CleanupFunction {
  * @param delay Delay in milliseconds
  * @returns Timeout ID
  */
-export function createTimeout(fn: () => void, delay: number): NodeJS.Timeout {
+export function createTimeout(
+  fn: () => void,
+  delay: number
+): ReturnType<typeof setTimeout> {
   const id = setTimeout(fn, delay)
   onCleanup(() => clearTimeout(id))
   return id
@@ -210,7 +213,10 @@ export function createTimeout(fn: () => void, delay: number): NodeJS.Timeout {
  * @param delay Delay in milliseconds
  * @returns Interval ID
  */
-export function createInterval(fn: () => void, delay: number): NodeJS.Timeout {
+export function createInterval(
+  fn: () => void,
+  delay: number
+): ReturnType<typeof setInterval> {
   const id = setInterval(fn, delay)
   onCleanup(() => clearInterval(id))
   return id

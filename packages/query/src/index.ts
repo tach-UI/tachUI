@@ -65,4 +65,5 @@ export type {
   QueryResult,
   QueryStatus,
   RetryPolicy,
+  SelectRequirement,
 } from './types'

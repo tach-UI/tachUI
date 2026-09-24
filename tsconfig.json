@@ -73,6 +73,12 @@
       ],
       "@tachui/query/*": [
         "./packages/query/dist/*"
+      ],
+      "@tachui/connectrpc": [
+        "./packages/connectrpc/dist/index.d.ts"
+      ],
+      "@tachui/connectrpc/*": [
+        "./packages/connectrpc/dist/*"
       ]
     }
   },

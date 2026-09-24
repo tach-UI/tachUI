@@ -56,6 +56,7 @@ import type {
   QueryResult,
   QueryStatus,
   RetryPolicy,
+  SelectRequirement,
 } from '@tachui/query'
 import {
   createAsyncStream,
@@ -65,13 +66,7 @@ import {
   createMutation,
 } from '@tachui/query'
 
-type Assert<T extends true> = T
-
-type Equals<A, B> =
-  (<G>() => G extends A ? 1 : 2) extends <G>() => G extends B ? 1 : 2 ? true : false
-
-/** Whether `From` satisfies `To`, so a deliberate rejection can be asserted as `false`. */
-type Assignable<From, To> = [From] extends [To] ? true : false
+import type { Assert, Assignable, Equals } from '../../../tools/testing/type-asserts'
 
 interface Message {
   body: string
@@ -123,6 +118,7 @@ export type PublicTypeSurface = {
   QueryResult: QueryResult<RawUser>
   QueryStatus: QueryStatus
   RetryPolicy: RetryPolicy
+  SelectRequirement: SelectRequirement<RawUser, string>
 }
 
 /** Keys stay structured arrays so prefix invalidation can match a prefix of one. */
