@@ -15,7 +15,8 @@
     "./packages/responsive/src/index.ts",
     "./packages/viewport/src/index.ts",
     "./packages/devtools/src/index.ts",
-    "./packages/query/src/index.ts"
+    "./packages/query/src/index.ts",
+    "./packages/connectrpc/src/index.ts"
   ],
   "out": "./docs/api",
   "name": "tachUI API Documentation",

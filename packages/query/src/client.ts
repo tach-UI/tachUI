@@ -76,8 +76,14 @@ import type {
  *
  * No default value: resolution without a provider falls through to
  * {@link useQueryClient}, which refuses a global fallback on the server.
+ *
+ * Annotated through `createEnvironmentKey` because the key's own interface is
+ * not exported from any `@tachui/core` entry point. Left to inference, the
+ * emitted declaration names it by a deep path outside core's exports map, and
+ * a consumer type-checking its dependencies cannot resolve it.
  */
-export const QueryClientKey = createEnvironmentKey<QueryClient>('QueryClient')
+export const QueryClientKey: ReturnType<typeof createEnvironmentKey<QueryClient>> =
+  createEnvironmentKey<QueryClient>('QueryClient')
 
 /**
  * Names what an execution is doing, so dedup can tell two of them apart.

@@ -171,6 +171,10 @@ export default defineConfig({
         find: '@tachui/query',
         replacement: path.resolve(__dirname, 'packages/query/src'),
       },
+      {
+        find: '@tachui/connectrpc',
+        replacement: path.resolve(__dirname, 'packages/connectrpc/src'),
+      },
     ],
   },
 })

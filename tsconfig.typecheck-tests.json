@@ -27,9 +27,10 @@
     // so a test could import something no consumer can reach and quietly stop
     // covering the barrel and the export map.
     //
-    // `@tachui/query` is wildcard-free for the same reason, and needs no
-    // wildcard anyway: its declarations import only relatively. It, like
-    // `@tachui/primitives`, is a surface these tests assert against.
+    // `@tachui/query` and `@tachui/connectrpc` are wildcard-free for the same
+    // reason, and need no wildcard anyway: their declarations import only
+    // relatively or by package name. Both, like `@tachui/primitives`, are
+    // surfaces these tests assert against.
     //
     // The wildcards on `@tachui/types`, `@tachui/core` and `@tachui/modifiers`
     // exist solely so the declarations under test can resolve their own
@@ -40,6 +41,7 @@
       "@tachui/core": ["./packages/core/dist/index.d.ts"],
       "@tachui/core/*": ["./packages/core/dist/*"],
       "@tachui/query": ["./packages/query/dist/index.d.ts"],
+      "@tachui/connectrpc": ["./packages/connectrpc/dist/index.d.ts"],
       "@tachui/modifiers": ["./packages/modifiers/dist/index.d.ts"],
       "@tachui/modifiers/*": ["./packages/modifiers/dist/*"],
       "@tachui/primitives": ["./packages/primitives/dist/index.d.ts"],

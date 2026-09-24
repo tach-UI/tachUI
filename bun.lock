@@ -40,7 +40,7 @@
     },
     "packages/cli": {
       "name": "@tachui/cli",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "bin": {
         "tacho": "./bin/tacho.js",
       },
@@ -65,12 +65,31 @@
         "vitest": "^3.2.4",
       },
     },
+    "packages/connectrpc": {
+      "name": "@tachui/connectrpc",
+      "version": "0.11.6",
+      "dependencies": {
+        "@tachui/query": "0.8.36",
+      },
+      "devDependencies": {
+        "@bufbuild/protobuf": "^2.15.0",
+        "@connectrpc/connect": "^2.2.0",
+        "@types/node": "^20.0.0",
+        "typescript": "^5.8.0",
+        "vite": "^7.1.1",
+        "vitest": "^3.2.4",
+      },
+      "peerDependencies": {
+        "@bufbuild/protobuf": "^2.2.0",
+        "@connectrpc/connect": "^2.0.0",
+      },
+    },
     "packages/core": {
       "name": "@tachui/core",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
-        "@tachui/registry": "0.11.5",
-        "@tachui/types": "0.11.5",
+        "@tachui/registry": "0.11.6",
+        "@tachui/types": "0.11.6",
       },
       "devDependencies": {
         "@playwright/test": "^1.55.0",
@@ -95,7 +114,7 @@
     },
     "packages/data": {
       "name": "@tachui/data",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
         "@tachui/core": "workspace:*",
         "@tachui/flow-control": "workspace:*",
@@ -120,7 +139,7 @@
     },
     "packages/devtools": {
       "name": "@tachui/devtools",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
         "@tachui/core": "workspace:*",
         "@tachui/primitives": "workspace:*",
@@ -140,7 +159,7 @@
     },
     "packages/eslint-plugin-tachui": {
       "name": "@tachui/eslint-plugin",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "devDependencies": {
         "@types/node": "^20.0.0",
         "typescript": "^5.8.0",
@@ -152,7 +171,7 @@
     },
     "packages/flow-control": {
       "name": "@tachui/flow-control",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
         "@tachui/core": "workspace:*",
       },
@@ -174,13 +193,13 @@
     },
     "packages/forms": {
       "name": "@tachui/forms",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
-        "@tachui/core": "0.11.5",
-        "@tachui/modifiers": "0.11.5",
-        "@tachui/primitives": "0.11.5",
-        "@tachui/registry": "0.11.5",
-        "@tachui/types": "0.11.5",
+        "@tachui/core": "0.11.6",
+        "@tachui/modifiers": "0.11.6",
+        "@tachui/primitives": "0.11.6",
+        "@tachui/registry": "0.11.6",
+        "@tachui/types": "0.11.6",
       },
       "devDependencies": {
         "@types/node": "^20.10.0",
@@ -194,7 +213,7 @@
     },
     "packages/fragments": {
       "name": "@tachui/fragments",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
         "@tachui/core": "0.11.1",
         "@tachui/ssr": "0.11.1",
@@ -209,7 +228,7 @@
     },
     "packages/grid": {
       "name": "@tachui/grid",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
         "@tachui/core": "0.11.1",
         "@tachui/modifiers": "0.11.1",
@@ -235,10 +254,10 @@
     },
     "packages/mobile": {
       "name": "@tachui/mobile",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
-        "@tachui/modifiers": "0.11.5",
-        "@tachui/types": "0.11.5",
+        "@tachui/modifiers": "0.11.6",
+        "@tachui/types": "0.11.6",
       },
       "devDependencies": {
         "@tachui/core": "workspace:*",
@@ -256,11 +275,11 @@
     },
     "packages/modifiers": {
       "name": "@tachui/modifiers",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
-        "@tachui/core": "0.11.5",
-        "@tachui/registry": "0.11.5",
-        "@tachui/types": "0.11.5",
+        "@tachui/core": "0.11.6",
+        "@tachui/registry": "0.11.6",
+        "@tachui/types": "0.11.6",
       },
       "devDependencies": {
         "@types/jsdom": "^21.1.6",
@@ -280,10 +299,10 @@
     },
     "packages/navigation": {
       "name": "@tachui/navigation",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
-        "@tachui/modifiers": "0.11.5",
-        "@tachui/types": "0.11.5",
+        "@tachui/modifiers": "0.11.6",
+        "@tachui/types": "0.11.6",
       },
       "devDependencies": {
         "@playwright/test": "^1.40.0",
@@ -300,11 +319,11 @@
     },
     "packages/primitives": {
       "name": "@tachui/primitives",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
-        "@tachui/core": "0.11.5",
-        "@tachui/modifiers": "0.11.5",
-        "@tachui/types": "0.11.5",
+        "@tachui/core": "0.11.6",
+        "@tachui/modifiers": "0.11.6",
+        "@tachui/types": "0.11.6",
       },
       "devDependencies": {
         "@types/jsdom": "^21.1.6",
@@ -324,9 +343,9 @@
     },
     "packages/query": {
       "name": "@tachui/query",
-      "version": "0.8.35",
+      "version": "0.8.36",
       "dependencies": {
-        "@tachui/core": "0.8.32",
+        "@tachui/core": "0.11.6",
       },
       "devDependencies": {
         "@types/node": "^20.0.0",
@@ -337,7 +356,7 @@
     },
     "packages/registry": {
       "name": "@tachui/registry",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "devDependencies": {
         "@types/node": "^20.0.0",
         "typescript": "^5.2.0",
@@ -347,7 +366,7 @@
     },
     "packages/responsive": {
       "name": "@tachui/responsive",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
         "@tachui/core": "0.11.1",
         "@tachui/modifiers": "0.11.1",
@@ -372,7 +391,7 @@
     },
     "packages/ssr": {
       "name": "@tachui/ssr",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
         "@tachui/core": "0.11.1",
       },
@@ -385,10 +404,10 @@
     },
     "packages/symbols": {
       "name": "@tachui/symbols",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
-        "@tachui/core": "0.11.5",
-        "@tachui/modifiers": "0.11.5",
+        "@tachui/core": "0.11.6",
+        "@tachui/modifiers": "0.11.6",
         "lucide": "^0.447.0",
       },
       "devDependencies": {
@@ -406,14 +425,14 @@
     },
     "packages/types": {
       "name": "@tachui/types",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "devDependencies": {
         "typescript": "^5.8.0",
       },
     },
     "packages/viewport": {
       "name": "@tachui/viewport",
-      "version": "0.11.5",
+      "version": "0.11.6",
       "dependencies": {
         "@tachui/core": "0.11.1",
         "@tachui/modifiers": "0.11.1",
@@ -491,6 +510,8 @@
 
     "@bcoe/v8-coverage": ["@bcoe/v8-coverage@1.0.2", "", {}, "sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA=="],
 
+    "@bufbuild/protobuf": ["@bufbuild/protobuf@2.15.0", "", {}, "sha512-DAheWUkVr/SJTWCc+lg9dhY0eN4SaWlf4+bG1KzHeXbnqt0AfB/NX0Z+VunGlM1ki1B4zVvye27MpKh/svySUA=="],
+
     "@changesets/apply-release-plan": ["@changesets/apply-release-plan@7.1.0", "", { "dependencies": { "@changesets/config": "^3.1.3", "@changesets/get-version-range-type": "^0.4.0", "@changesets/git": "^3.0.4", "@changesets/should-skip-package": "^0.1.2", "@changesets/types": "^6.1.0", "@manypkg/get-packages": "^1.1.3", "detect-indent": "^6.0.0", "fs-extra": "^7.0.1", "lodash.startcase": "^4.4.0", "outdent": "^0.5.0", "prettier": "^2.7.1", "resolve-from": "^5.0.0", "semver": "^7.5.3" } }, "sha512-yq8ML3YS7koKQ/9bk1PqO0HMzApIFNwjlwCnwFEXMzNe8NpzeeYYKCmnhWJGkN8g7E51MnWaSbqRcTcdIxUgnQ=="],
 
     "@changesets/assemble-release-plan": ["@changesets/assemble-release-plan@6.0.9", "", { "dependencies": { "@changesets/errors": "^0.2.0", "@changesets/get-dependents-graph": "^2.1.3", "@changesets/should-skip-package": "^0.1.2", "@changesets/types": "^6.1.0", "@manypkg/get-packages": "^1.1.3", "semver": "^7.5.3" } }, "sha512-tPgeeqCHIwNo8sypKlS3gOPmsS3wP0zHt67JDuL20P4QcXiw/O4Hl7oXiuLnP9yg+rXLQ2sScdV1Kkzde61iSQ=="],
@@ -530,6 +551,8 @@
     "@changesets/write": ["@changesets/write@0.4.0", "", { "dependencies": { "@changesets/types": "^6.1.0", "fs-extra": "^7.0.1", "human-id": "^4.1.1", "prettier": "^2.7.1" } }, "sha512-CdTLvIOPiCNuH71pyDu3rA+Q0n65cmAbXnwWH84rKGiFumFzkmHNT8KHTMEchcxN+Kl8I54xGUhJ7l3E7X396Q=="],
 
     "@colors/colors": ["@colors/colors@1.5.0", "", {}, "sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ=="],
+
+    "@connectrpc/connect": ["@connectrpc/connect@2.2.0", "", { "peerDependencies": { "@bufbuild/protobuf": "^2.7.0" } }, "sha512-M63OQ1ZFcPUm85CuewJ9G9CMV8LjzGR9935xOnXNQGSazAbwMb3x2W7vXBYM1zqrP7XFD8uxp/dUAhirclgwnQ=="],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
@@ -788,6 +811,8 @@
     "@shikijs/vscode-textmate": ["@shikijs/vscode-textmate@10.0.2", "", {}, "sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg=="],
 
     "@tachui/cli": ["@tachui/cli@workspace:packages/cli"],
+
+    "@tachui/connectrpc": ["@tachui/connectrpc@workspace:packages/connectrpc"],
 
     "@tachui/core": ["@tachui/core@workspace:packages/core"],
 

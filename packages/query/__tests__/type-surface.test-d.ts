@@ -56,6 +56,7 @@ import type {
   QueryResult,
   QueryStatus,
   RetryPolicy,
+  SelectRequirement,
 } from '@tachui/query'
 import {
   createAsyncStream,
@@ -123,6 +124,7 @@ export type PublicTypeSurface = {
   QueryResult: QueryResult<RawUser>
   QueryStatus: QueryStatus
   RetryPolicy: RetryPolicy
+  SelectRequirement: SelectRequirement<RawUser, string>
 }
 
 /** Keys stay structured arrays so prefix invalidation can match a prefix of one. */
