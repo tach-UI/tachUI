@@ -1,5 +1,13 @@
 # @tachui/navigation
 
+## 0.11.6
+
+### Patch Changes
+
+- Updated dependencies [[`a5016c8`](https://github.com/tach-UI/tachUI/commit/a5016c8f94ad4409e439600c6ba538d8707a63c8), [`25c07ae`](https://github.com/tach-UI/tachUI/commit/25c07ae8bb15bb3bc35e786dd2ee5bfbfc70b83a), [`68dfd91`](https://github.com/tach-UI/tachUI/commit/68dfd9177f417ea11265574c230c82b7e2f009a8)]:
+  - @tachui/types@0.11.6
+  - @tachui/modifiers@0.11.6
+
 ## 0.11.5
 
 ### Patch Changes

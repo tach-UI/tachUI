@@ -1,5 +1,36 @@
 # @tachui/core
 
+## 0.11.6
+
+### Patch Changes
+
+- [#412](https://github.com/tach-UI/tachUI/pull/412) [`a5016c8`](https://github.com/tach-UI/tachUI/commit/a5016c8f94ad4409e439600c6ba538d8707a63c8) Thanks [@whoughton](https://github.com/whoughton)! - `.border(width, color, style)` typechecks and draws the style at every chain
+  position.
+
+  The standalone `border()` factory took a third `style` argument, but the chain
+  method took two. The builder's type declared `border(width, color?)` and
+  `border(options)` only, and its runtime method discarded a third argument, so
+  `.border(1, 'blue', 'dashed')` was a type error and, cast past it, drew a solid
+  border — on a component and on `.modifier` alike.
+
+  The chain now takes `style` as its third argument, `'solid'`, `'dashed'` or
+  `'dotted'`, the same set the options form takes. Left out, it is `'solid'` as
+  before, and the options form is unchanged.
+
+- [#414](https://github.com/tach-UI/tachUI/pull/414) [`cdc34b2`](https://github.com/tach-UI/tachUI/commit/cdc34b2be48a3979da71d40c18756e467b932b07) Thanks [@whoughton](https://github.com/whoughton)! - A layout stack with an interactive `element` override, such as
+  `HStack({ element: 'button' })` or `VStack({ element: 'a', href })`, no longer
+  warns.
+
+  The override is documented and renders correctly, but every construction logged
+  `Interactive tag 'button' on layout component 'HStack' may cause unexpected
+behavior`, and validation returned a matching warning. The tag alone was the
+  only trigger, so both are gone. Warnings for invalid tags, heading and form tags,
+  and problematic overrides on `Button` and `Link` are unchanged.
+
+- Updated dependencies [[`a5016c8`](https://github.com/tach-UI/tachUI/commit/a5016c8f94ad4409e439600c6ba538d8707a63c8), [`25c07ae`](https://github.com/tach-UI/tachUI/commit/25c07ae8bb15bb3bc35e786dd2ee5bfbfc70b83a), [`68dfd91`](https://github.com/tach-UI/tachUI/commit/68dfd9177f417ea11265574c230c82b7e2f009a8)]:
+  - @tachui/types@0.11.6
+  - @tachui/registry@0.11.6
+
 ## 0.11.5
 
 ### Patch Changes
