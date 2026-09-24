@@ -176,7 +176,7 @@ describe('scoping', () => {
 
     expect(inScope(left, () => useConnectTransport('left'))).toBe(leftTransport)
     expect(() => inScope(right, () => useConnectTransport('left'))).toThrowError(
-      /No provider for transport 'left'/
+      /No provider for transport "left"/
     )
   })
 
@@ -207,7 +207,7 @@ describe('duplicate provision in one scope', () => {
 
     expect(() =>
       inScope(root, () => provideConnectTransport(fakeTransport(), { name: 'account' }))
-    ).toThrowError(/transport 'account' is already provided in this scope/)
+    ).toThrowError(/transport "account" is already provided in this scope/)
     expect(inScope(root, () => useConnectTransport('account'))).toBe(first)
   })
 
@@ -295,6 +295,47 @@ describe('client bindings', () => {
       inScope(right, () => provideConnectTransport(fakeTransport(), { name: 'tenant' }))
     ).toThrowError(ConnectAdapterError)
   })
+
+  /**
+   * root (client A, default transport A)
+   *   mid (client B)
+   *     left  — provides default transport B
+   *     right — provides nothing, so would inherit transport A from root
+   */
+  function siblingsUnderNestedClient() {
+    const transportA = fakeTransport()
+    const transportB = fakeTransport()
+    const root = rootWithClient('root')
+    inScope(root, () => provideConnectTransport(transportA))
+    const mid = createComponentContext('mid', root)
+    inScope(mid, () => provideQueryClient(newClient()))
+    const left = createComponentContext('left', mid)
+    const right = createComponentContext('right', mid)
+    return { transportA, transportB, left, right }
+  }
+
+  it('refuses a lookup that would give its client a second transport for a name', () => {
+    const { transportB, left, right } = siblingsUnderNestedClient()
+    inScope(left, () => provideConnectTransport(transportB))
+
+    expect(inScope(left, () => useConnectTransport())).toBe(transportB)
+    expect(() => inScope(right, () => useConnectTransport())).toThrowError(
+      ConnectAdapterError
+    )
+    expect(() => inScope(right, () => useConnectTransport())).toThrowError(
+      /the default transport \('default'\) resolves here to a different Transport.*Provide the transport where that QueryClient is provided.*its own QueryClient/
+    )
+  })
+
+  it('refuses the sibling provision when the inherited lookup came first', () => {
+    const { transportA, transportB, left, right } = siblingsUnderNestedClient()
+
+    expect(inScope(right, () => useConnectTransport())).toBe(transportA)
+    expect(() => inScope(left, () => provideConnectTransport(transportB))).toThrowError(
+      /already bound to a different Transport for this QueryClient/
+    )
+    expect(inScope(left, () => useConnectTransport())).toBe(transportA)
+  })
 })
 
 describe('a missing QueryClient', () => {
@@ -333,7 +374,15 @@ describe('diagnostics', () => {
     const root = rootWithClient('root')
 
     expect(() => inScope(root, () => useConnectTransport('account'))).toThrowError(
-      "No provider for transport 'account'. Call provideConnectTransport(transport, { name: 'account' })"
+      'No provider for transport "account". Call provideConnectTransport(transport, { name: "account" })'
+    )
+  })
+
+  it('escapes a name containing quotes in the message and the suggested call', () => {
+    const root = rootWithClient('root')
+
+    expect(() => inScope(root, () => useConnectTransport("a'b"))).toThrowError(
+      `No provider for transport "a'b". Call provideConnectTransport(transport, { name: "a'b" })`
     )
   })
 
@@ -356,6 +405,25 @@ describe('diagnostics', () => {
     ).toThrowError(/not a Connect Transport/)
     expect(() => inScope(root, () => useConnectTransport())).toThrowError(
       ConnectAdapterError
+    )
+  })
+
+  it.each([
+    ['an empty name', ''],
+    ['a whitespace-only name', '  '],
+    ['a non-string name', 42],
+  ])('refuses %s without binding it', (_label, name) => {
+    const root = rootWithClient('root')
+
+    expect(() =>
+      inScope(root, () =>
+        provideConnectTransport(fakeTransport(), {
+          name: name as unknown as string,
+        })
+      )
+    ).toThrowError(/as a transport name\. A name must be a non-empty string/)
+    expect(() => inScope(root, () => useConnectTransport(''))).toThrowError(
+      /No provider for transport ""/
     )
   })
 

@@ -12,7 +12,9 @@
  * records its binding against the nearest provided client, and a different
  * `Transport` under a name that client has already bound is refused for the
  * client's lifetime — otherwise a rebind after an account change would serve
- * entries cached for the previous backend.
+ * entries cached for the previous backend. Lookup holds the consuming scope's
+ * client to the same binding, so sibling subtrees under one client cannot
+ * resolve one name to two transports through different ancestors.
  */
 
 import type { Transport } from '@connectrpc/connect'
@@ -67,7 +69,42 @@ function isTransport(value: unknown): value is Transport {
 function describeName(name: ConnectTransportName): string {
   return name === DEFAULT_TRANSPORT_NAME
     ? `the default transport ('${DEFAULT_TRANSPORT_NAME}')`
-    : `transport '${name}'`
+    : `transport ${JSON.stringify(name)}`
+}
+
+/**
+ * The name is cache identity, so it must be one a diagnostic can show and a
+ * reader can tell apart from `'default'`.
+ */
+function assertValidName(name: unknown): asserts name is ConnectTransportName {
+  if (typeof name !== 'string' || name.trim() === '') {
+    const given = typeof name === 'string' ? JSON.stringify(name) : typeof name
+    throw new ConnectAdapterError(
+      `provideConnectTransport() was given ${given} as a transport name. A name must be a non-empty string; omit it to provide the default transport.`
+    )
+  }
+}
+
+/**
+ * Records `transport` as the one `client` means by `name`, or throws with
+ * `conflict()` if the client has already bound a different one.
+ */
+function bindToClient(
+  client: QueryClient,
+  name: ConnectTransportName,
+  transport: Transport,
+  conflict: () => string
+): void {
+  let bindings = clientBindings.get(client)
+  const bound = bindings?.get(name)
+  if (bound !== undefined && bound !== transport) {
+    throw new ConnectAdapterError(conflict())
+  }
+  if (bindings === undefined) {
+    bindings = new Map()
+    clientBindings.set(client, bindings)
+  }
+  bindings.set(name, transport)
 }
 
 /**
@@ -83,6 +120,7 @@ export function provideConnectTransport(
   options?: ProvideConnectTransportOptions
 ): void {
   const name = options?.name ?? DEFAULT_TRANSPORT_NAME
+  assertValidName(name)
   const context = getCurrentComponentContextOrNull()
   if (context === null) {
     throw new ConnectAdapterError(
@@ -118,18 +156,13 @@ export function provideConnectTransport(
     )
   }
 
-  let bindings = clientBindings.get(client)
-  const bound = bindings?.get(name)
-  if (bound !== undefined && bound !== transport) {
-    throw new ConnectAdapterError(
+  bindToClient(
+    client,
+    name,
+    transport,
+    () =>
       `${describeName(name)} is already bound to a different Transport for this QueryClient. A transport name identifies one backend within a client, so rebinding it — including after an account change — could serve entries cached for the previous one. Use a new QueryClient for the new backend or account, or provide the transport under a different name.`
-    )
-  }
-  if (bindings === undefined) {
-    bindings = new Map()
-    clientBindings.set(client, bindings)
-  }
-  bindings.set(name, transport)
+  )
 
   if (own === undefined) {
     context.provide(ConnectTransportsKey.symbol, new Map([[name, transport]]))
@@ -161,6 +194,19 @@ export function resolveConnectTransport(
       | undefined
     const transport = own?.get(name)
     if (transport !== undefined) {
+      // The consuming scope's client caches under this name and may be nearer
+      // than the provider's, so it is the client that must agree. Binding here
+      // too means a sibling that provides later is refused, whatever the order.
+      const client = context.consume<QueryClient>(QueryClientKey.symbol)
+      if (client !== undefined) {
+        bindToClient(
+          client,
+          name,
+          transport,
+          () =>
+            `${describeName(name)} resolves here to a different Transport than the one this scope's QueryClient has bound to that name, so one client would cache two backends under it. Provide the transport where that QueryClient is provided, so every scope under the client resolves the same one, or give the scope that shadows it its own QueryClient.`
+        )
+      }
       return { name, transport }
     }
     scope = scope.parent
@@ -169,7 +215,7 @@ export function resolveConnectTransport(
   const call =
     name === DEFAULT_TRANSPORT_NAME
       ? 'provideConnectTransport(transport)'
-      : `provideConnectTransport(transport, { name: '${name}' })`
+      : `provideConnectTransport(transport, { name: ${JSON.stringify(name)} })`
   throw new ConnectAdapterError(
     `No provider for ${describeName(name)}. Call ${call} in this component or an ancestor, below provideQueryClient().`
   )

@@ -107,7 +107,13 @@ a `ConnectAdapterError` rather than returning `undefined`:
 - a different transport under a name the client has already bound, in any scope and
   for the client's lifetime. Switching accounts or backends under a fixed name would
   otherwise serve entries cached for the previous one: use a new `QueryClient`, or a
-  different name.
+  different name;
+- a lookup that would resolve a name to a different transport than the consuming
+  scope's client has already bound — for example, one child of a nested client
+  shadowing an ancestor's transport while its sibling inherits it. A lookup binds
+  what it resolves to that client too, so the order does not matter. Provide the
+  transport where the client is provided, or give the shadowing scope its own client;
+- an empty, whitespace-only, or non-string name.
 
 tachUI cannot see a target or credentials change inside one `Transport`; isolate that
 with `keyExtension`, a new client, or a new transport.
