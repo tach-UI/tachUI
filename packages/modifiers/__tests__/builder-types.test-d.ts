@@ -20,10 +20,14 @@ import '@tachui/modifiers/preload/effects'
 import { basicModifierRegistrations, border, offset } from '@tachui/modifiers'
 import type { OffsetOptions } from '@tachui/modifiers'
 import type {
+  AppearanceModifierProps as ModifiersAppearanceProps,
   LayoutModifierProps as ModifiersLayoutProps,
   ModifierBuilder,
 } from '@tachui/modifiers/types'
-import type { LayoutModifierProps as TypesLayoutProps } from '@tachui/types/modifiers'
+import type {
+  AppearanceModifierProps as TypesAppearanceProps,
+  LayoutModifierProps as TypesLayoutProps,
+} from '@tachui/types/modifiers'
 import { Grid } from '@tachui/grid'
 import '@tachui/viewport'
 import '@tachui/mobile'
@@ -172,6 +176,27 @@ describe('modifier builder types', () => {
     // @ts-expect-error the layout props take numeric signals only
     const badProps: TypesLayoutProps['offset'] = { x: '1px' }
     void [badOptions, badProps]
+  })
+
+  // CSS takes any number from 1 to 1000 and the factory already did, but the
+  // chain and the font options were typed for the named set and the hundreds.
+  it('takes any numeric font weight', () => {
+    Text('a').fontWeight(590).fontWeight(600).fontWeight('bold').fontWeight('normal')
+    Text('b').font({ weight: 590 }).font({ weight: 'bold', size: 12 })
+
+    const typesFont: NonNullable<TypesAppearanceProps['font']> = { weight: 590 }
+    const modifiersFont: NonNullable<ModifiersAppearanceProps['font']> = { weight: 590 }
+    void [typesFont, modifiersFont]
+
+    // @ts-expect-error not a named weight
+    Text('x').fontWeight('heavy')
+    // @ts-expect-error not a weight
+    Text('x').fontWeight(true)
+    // @ts-expect-error not a named weight
+    Text('x').font({ weight: 'heavy' })
+    // @ts-expect-error not a named weight
+    const badFont: NonNullable<ModifiersAppearanceProps['font']> = { weight: 'heavy' }
+    void badFont
   })
 
   it('types every basic modifier the package registers', () => {

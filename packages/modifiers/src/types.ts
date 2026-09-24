@@ -12,6 +12,7 @@ import type {
   DOMNode,
 } from '@tachui/types/runtime'
 import type {
+  FontWeight,
   TransformAnchor,
   ModifierBuilder,
 } from '@tachui/types/modifiers'
@@ -195,18 +196,7 @@ export interface AppearanceModifierProps {
   font?: {
     family?: string
     size?: number | string | Signal<number> | Signal<string>
-    weight?:
-      | 'normal'
-      | 'bold'
-      | '100'
-      | '200'
-      | '300'
-      | '400'
-      | '500'
-      | '600'
-      | '700'
-      | '800'
-      | '900'
+    weight?: FontWeight | number
     style?: 'normal' | 'italic' | 'oblique'
   }
   cornerRadius?: number

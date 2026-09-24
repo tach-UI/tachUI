@@ -240,7 +240,7 @@ export interface AppearanceModifierProps {
   font?: {
     family?: string | AssetValue
     size?: number | string | Signal<number> | Signal<string>
-    weight?: FontWeight
+    weight?: FontWeight | number
     style?: FontStyle
   }
   cornerRadius?: number
