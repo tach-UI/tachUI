@@ -1,5 +1,40 @@
 # @tachui/types
 
+## 0.11.6
+
+### Patch Changes
+
+- [#412](https://github.com/tach-UI/tachUI/pull/412) [`a5016c8`](https://github.com/tach-UI/tachUI/commit/a5016c8f94ad4409e439600c6ba538d8707a63c8) Thanks [@whoughton](https://github.com/whoughton)! - `.border(width, color, style)` typechecks and draws the style at every chain
+  position.
+
+  The standalone `border()` factory took a third `style` argument, but the chain
+  method took two. The builder's type declared `border(width, color?)` and
+  `border(options)` only, and its runtime method discarded a third argument, so
+  `.border(1, 'blue', 'dashed')` was a type error and, cast past it, drew a solid
+  border — on a component and on `.modifier` alike.
+
+  The chain now takes `style` as its third argument, `'solid'`, `'dashed'` or
+  `'dotted'`, the same set the options form takes. Left out, it is `'solid'` as
+  before, and the options form is unchanged.
+
+- [#416](https://github.com/tach-UI/tachUI/pull/416) [`25c07ae`](https://github.com/tach-UI/tachUI/commit/25c07ae8bb15bb3bc35e786dd2ee5bfbfc70b83a) Thanks [@whoughton](https://github.com/whoughton)! - `.fontWeight()` and `.font({ weight })` typecheck with any numeric weight, such
+  as `590`.
+
+  CSS `font-weight` takes any number from 1 to 1000, and the `fontWeight` factory
+  and the runtime already did, but the chain and the font options were typed for
+  the named weights and the hundreds, so a variable-font weight needed a cast.
+  The `weight` field of the font options, in `@tachui/types` and in
+  `@tachui/modifiers/types`, now takes `FontWeight | number`. The `FontWeight`
+  alias itself is unchanged, and unknown string weights are still rejected.
+
+- [#415](https://github.com/tach-UI/tachUI/pull/415) [`68dfd91`](https://github.com/tach-UI/tachUI/commit/68dfd9177f417ea11265574c230c82b7e2f009a8) Thanks [@whoughton](https://github.com/whoughton)! - `.offset(x, y)` typechecks with a numeric signal on either axis.
+
+  The runtime already followed a signal, and the factory's own example showed
+  one, but the factory, `OffsetOptions` and the layout `offset` prop were typed
+  for numbers only, so `Text('x').offset(xSignal, 0)` needed a cast. Each now
+  takes `number | Signal<number>`. Strings and non-numeric signals are still
+  rejected, and the `offset(x, y)` factory in `effects/transforms` is unchanged.
+
 ## 0.11.5
 
 ### Patch Changes

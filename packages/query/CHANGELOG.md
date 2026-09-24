@@ -1,5 +1,12 @@
 # @tachui/query
 
+## 0.8.36
+
+### Patch Changes
+
+- Updated dependencies [[`a5016c8`](https://github.com/tach-UI/tachUI/commit/a5016c8f94ad4409e439600c6ba538d8707a63c8), [`cdc34b2`](https://github.com/tach-UI/tachUI/commit/cdc34b2be48a3979da71d40c18756e467b932b07)]:
+  - @tachui/core@0.11.6
+
 ## 0.8.35
 
 ### Patch Changes
