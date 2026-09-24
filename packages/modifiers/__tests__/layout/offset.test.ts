@@ -175,6 +175,18 @@ describe('Offset Modifier', () => {
       expect(mockElement.style.transform).toBe('translate(10px, 25px)')
     })
 
+    it('should resolve an omitted y to 0px with a reactive x', () => {
+      const [xOffset, setXOffset] = createSignal(14)
+      const modifier = offset(xOffset)
+      modifier.apply({} as DOMNode, mockContext)
+
+      expect(mockElement.style.transform).toBe('translate(14px, 0px)')
+
+      setXOffset(-8)
+      flushSync()
+      expect(mockElement.style.transform).toBe('translate(-8px, 0px)')
+    })
+
     it('should handle both reactive values', () => {
       const [xOffset, setXOffset] = createSignal(5)
       const [yOffset, setYOffset] = createSignal(15)

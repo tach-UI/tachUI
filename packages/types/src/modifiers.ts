@@ -205,8 +205,8 @@ export interface LayoutModifierProps {
   alignment?: 'leading' | 'center' | 'trailing' | 'top' | 'bottom'
   layoutPriority?: number
   offset?: {
-    x?: number
-    y?: number
+    x?: number | Signal<number>
+    y?: number | Signal<number>
   }
   aspectRatio?: {
     ratio?: number

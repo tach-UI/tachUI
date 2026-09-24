@@ -17,8 +17,13 @@ import { createSignal } from '@tachui/core'
 import { Text, VStack } from '@tachui/primitives'
 import '@tachui/modifiers/preload/basic'
 import '@tachui/modifiers/preload/effects'
-import { basicModifierRegistrations, border } from '@tachui/modifiers'
-import type { ModifierBuilder } from '@tachui/modifiers/types'
+import { basicModifierRegistrations, border, offset } from '@tachui/modifiers'
+import type { OffsetOptions } from '@tachui/modifiers'
+import type {
+  LayoutModifierProps as ModifiersLayoutProps,
+  ModifierBuilder,
+} from '@tachui/modifiers/types'
+import type { LayoutModifierProps as TypesLayoutProps } from '@tachui/types/modifiers'
 import { Grid } from '@tachui/grid'
 import '@tachui/viewport'
 import '@tachui/mobile'
@@ -128,6 +133,45 @@ describe('modifier builder types', () => {
   it('takes the same three arguments on the standalone border factory', () => {
     border(1, 'blue', 'dashed')
     border({ width: 1, color: 'blue', style: 'dashed' })
+  })
+
+  // The runtime follows a signal on either axis, and the docs show one, but
+  // the factory and the prop shapes were typed for numbers only.
+  it('takes numbers or numeric signals for .offset()', () => {
+    const [x] = createSignal(14)
+    const [y] = createSignal(-2)
+    const [label] = createSignal('14')
+
+    VStack({ children: [
+      Text('a').offset(x, y),
+      Text('b').offset(x, 0),
+      Text('c').offset(4, y),
+      Text('d').offset(x),
+      Text('e').offset(10, 5).offset(20),
+    ] })
+
+    offset(x, y)
+    offset(x)
+    offset(3, y)
+    offset(10, 5)
+
+    const options: OffsetOptions = { x, y }
+    const numericOptions: OffsetOptions = { x: 1 }
+    const typesProps: TypesLayoutProps['offset'] = { x, y }
+    const modifiersProps: ModifiersLayoutProps['offset'] = { y }
+    void [options, numericOptions, typesProps, modifiersProps]
+
+    // @ts-expect-error offset takes numbers, not strings
+    Text('x').offset('14px', 0)
+    // @ts-expect-error offset takes numeric signals only
+    Text('x').offset(label)
+    // @ts-expect-error offset takes numeric signals only
+    offset(1, label)
+    // @ts-expect-error offset options take numeric signals only
+    const badOptions: OffsetOptions = { x: label }
+    // @ts-expect-error the layout props take numeric signals only
+    const badProps: TypesLayoutProps['offset'] = { x: '1px' }
+    void [badOptions, badProps]
   })
 
   it('types every basic modifier the package registers', () => {
