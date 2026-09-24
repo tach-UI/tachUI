@@ -33,6 +33,8 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import semver from 'semver'
 
+import { collectInstalledPaths } from './npm-installed-copies.mjs'
+
 const ROOT_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const TAG = '[smoke-connectrpc-packed]'
 
@@ -78,9 +80,12 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'))
 }
 
+/**
+ * Throws rather than exiting, so `main()`'s `finally` still removes the temp
+ * directory; the top-level handler reports the message and sets the exit code.
+ */
 function fail(message) {
-  console.error(`${TAG} ${message}`)
-  process.exit(1)
+  throw new Error(message)
 }
 
 /**
@@ -149,25 +154,29 @@ function main() {
 
 function checkPeers(appDir, ranges, specifiers, mode) {
   for (const [name, range] of Object.entries(ranges)) {
-    const tree = JSON.parse(run('npm', ['ls', name, '--all', '--json'], appDir))
-    const versions = new Set()
-    const walk = node => {
-      for (const [depName, dep] of Object.entries(node?.dependencies ?? {})) {
-        if (depName === name && dep.version) versions.add(dep.version)
-        walk(dep)
-      }
-    }
-    walk(tree)
-    if (versions.size !== 1) {
-      fail(`expected one installed copy of ${name}, found: ${[...versions].join(', ') || 'none'}`)
-    }
-    const [installed] = versions
-    if (!semver.satisfies(installed, range)) fail(`${name}@${installed} is outside ${range}`)
-    if (mode === 'floor' && installed !== specifiers[name]) {
-      fail(`expected ${name}@${specifiers[name]} at the floor, installed ${installed}`)
-    }
+    const tree = JSON.parse(run('npm', ['ls', name, '--all', '--json', '--long'], appDir))
+    const installed = checkPeerTree(tree, name, range, specifiers[name], mode)
     console.log(`${TAG} ${name}@${installed}`)
   }
+}
+
+/**
+ * Checks one peer in an `npm ls --all --json --long` tree: exactly one
+ * installed copy, inside the declared range, and at the floor on a floor run.
+ * Returns the installed version.
+ */
+export function checkPeerTree(tree, name, range, specifier, mode) {
+  const copies = collectInstalledPaths(tree, name)
+  if (copies.size !== 1) {
+    const found = [...copies].map(([path, version]) => `${version} at ${path}`).join(', ')
+    fail(`expected one installed copy of ${name}, found: ${found || 'none'}`)
+  }
+  const [installed] = copies.values()
+  if (!semver.satisfies(installed, range)) fail(`${name}@${installed} is outside ${range}`)
+  if (mode === 'floor' && installed !== specifier) {
+    fail(`expected ${name}@${specifier} at the floor, installed ${installed}`)
+  }
+  return installed
 }
 
 function checkRuntime(appDir) {
@@ -176,7 +185,9 @@ function checkRuntime(appDir) {
     import { Code } from '@connectrpc/connect'
     const retryable = Object.values(Code).filter(code => typeof code === 'number' && isRetryableCode(code))
     if (DEFAULT_TRANSPORT_NAME !== 'default') throw new Error('unexpected DEFAULT_TRANSPORT_NAME')
-    if (JSON.stringify(retryable) !== JSON.stringify([Code.ResourceExhausted, Code.Unavailable])) {
+    // Sorted, so the check does not depend on the order Connect declares its codes in.
+    const expected = [Code.ResourceExhausted, Code.Unavailable].sort((a, b) => a - b)
+    if (JSON.stringify(retryable.sort((a, b) => a - b)) !== JSON.stringify(expected)) {
       throw new Error('isRetryableCode disagrees with the installed Connect codes')
     }
   `
@@ -298,6 +309,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     main()
   } catch (error) {
-    fail(error instanceof Error ? error.message : String(error))
+    console.error(`${TAG} ${error instanceof Error ? error.message : String(error)}`)
+    process.exitCode = 1
   }
 }

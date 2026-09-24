@@ -198,6 +198,10 @@ type NonFieldKey = '$typeName' | '$unknown'
  * A message initializer the path can descend into. A map field is an index
  * signature and a oneof is a `{ case, value }` wrapper: neither has fields, so
  * a path into one would write the token into a map entry or the discriminator.
+ *
+ * A oneof is recognized by both keys, so a message that merely has a field
+ * named `case` stays descendable. `value` is tested as a key rather than a
+ * property because the unset branch declares it optional.
  */
 type IsDescendable<T> = T extends
   | readonly unknown[]
@@ -209,7 +213,9 @@ type IsDescendable<T> = T extends
     ? string extends keyof T
       ? false
       : T extends { case: unknown }
-        ? false
+        ? 'value' extends keyof T
+          ? false
+          : true
         : true
     : false
 
@@ -218,9 +224,12 @@ type IsDescendable<T> = T extends
  * or `'query.cursor'` for a token nested in a request sub-message.
  *
  * Bounded at four levels. Protobuf messages can recurse, and an unbounded path
- * type would never finish expanding.
+ * type would never finish expanding. `Depth` can only lower the bound: past 3,
+ * {@link PathDepth} has no next index and the recursion would never end.
  */
-export type ConnectPageParamKey<T, Depth extends number = 3> = [Depth] extends [
+export type ConnectPageParamKey<T, Depth extends 0 | 1 | 2 | 3 = 3> = [
+  Depth,
+] extends [
   never,
 ]
   ? never

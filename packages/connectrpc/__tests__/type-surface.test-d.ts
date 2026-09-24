@@ -50,13 +50,7 @@ import type {
 } from '@tachui/connectrpc'
 import { DEFAULT_TRANSPORT_NAME, isRetryableCode } from '@tachui/connectrpc'
 
-type Assert<T extends true> = T
-
-type Equals<A, B> =
-  (<G>() => G extends A ? 1 : 2) extends <G>() => G extends B ? 1 : 2 ? true : false
-
-/** Whether `From` satisfies `To`, so a deliberate rejection can be asserted as `false`. */
-type Assignable<From, To> = [From] extends [To] ? true : false
+import type { Assert, Assignable, Equals } from '../../../tools/testing/type-asserts'
 
 type UserQuery = Message<'acme.users.v1.UserQuery'> & {
   cursor: string
@@ -310,6 +304,31 @@ export type PathsStopBeforeFiveSegments = Assert<
   Equals<Assignable<'l1.l2.l3.l4.token', ConnectPageParamKey<DeepRequest>>, false>
 >
 
+type RecursiveRequest = { token: string; child?: RecursiveRequest }
+
+/** A recursive message still expands, to the same four segments. */
+export type PathsBoundRecursiveMessages = Assert<
+  Equals<
+    Extract<ConnectPageParamKey<RecursiveRequest>, `${string}.token`>,
+    'child.token' | 'child.child.token' | 'child.child.child.token'
+  >
+>
+
+/**
+ * The bound can be lowered but not raised: past 3 the recursion has no end.
+ * Checked on a non-recursive message, where the constraint is the only error;
+ * a recursive one fails at depth 4 whatever the constraint says.
+ */
+// @ts-expect-error a depth past 3 is not a bound
+export type DepthPastThreeRejected = ConnectPageParamKey<DeepRequest, 4>
+
+/** A field named `case` does not make a message a oneof; only `case` with `value` does. */
+type CaseFieldRequest = { outer: { case: string; nested: { token: string } } }
+
+export type PathsDescendMessagesWithACaseField = Assert<
+  Equals<Assignable<'outer.nested.token', ConnectPageParamKey<CaseFieldRequest>>, true>
+>
+
 export type TopLevelParamIsOptional = Assert<
   Equals<ConnectPageParamAt<RequestInit, 'pageToken'>, string | undefined>
 >
@@ -395,6 +414,42 @@ export type InfiniteRejectsBackwardPagination = Assert<
   >
 >
 
+type ListUsersInfiniteOptions = ConnectInfiniteQueryOptions<
+  ListUsersRequestSchema,
+  ListUsersResponseSchema,
+  'pageToken'
+>
+type InfiniteRequired = { pageParamKey: 'pageToken'; getNextPageParam: () => undefined }
+
+/** The control: without the rejected field, each shape below is accepted. */
+export type InfiniteRequiredIsAccepted = Assert<
+  Assignable<InfiniteRequired, ListUsersInfiniteOptions>
+>
+
+/** Nor is there a page to drop once the window is full. */
+export type InfiniteRejectsMaxPages = Assert<
+  Equals<Assignable<InfiniteRequired & { maxPages: 3 }, ListUsersInfiniteOptions>, false>
+>
+
+/** The adapter owns the key and the loader, as for a unary query. */
+export type InfiniteRejectsKey = Assert<
+  Equals<Assignable<InfiniteRequired & { key: () => QueryKey }, ListUsersInfiniteOptions>, false>
+>
+export type InfiniteRejectsLoad = Assert<
+  Equals<
+    Assignable<InfiniteRequired & { load: () => Promise<ListUsersResponse> }, ListUsersInfiniteOptions>,
+    false
+  >
+>
+
+/** Retry is a count here too. */
+export type InfiniteRejectsRetryPredicate = Assert<
+  Equals<Assignable<InfiniteRequired & { retry: () => boolean }, ListUsersInfiniteOptions>, false>
+>
+export type InfiniteRejectsRetryDelay = Assert<
+  Equals<Assignable<InfiniteRequired & { retryDelay: () => number }, ListUsersInfiniteOptions>, false>
+>
+
 /** A projection over the set is required once `TData` differs from it. */
 export const projectedInfiniteQuery: ConnectInfiniteQueryOptions<
   ListUsersRequestSchema,
@@ -407,6 +462,16 @@ export const projectedInfiniteQuery: ConnectInfiniteQueryOptions<
   select: (data: InfiniteData<ListUsersResponse, string | undefined>) =>
     data.pages.flatMap(page => page.users),
 }
+
+export type InfiniteProjectionRequiresSelect = Assert<
+  Equals<
+    Assignable<
+      InfiniteRequired,
+      ConnectInfiniteQueryOptions<ListUsersRequestSchema, ListUsersResponseSchema, 'pageToken', User[]>
+    >,
+    false
+  >
+>
 
 export type InfiniteErrorIsConnectError = Assert<
   Equals<ConnectInfiniteQueryResult<string>['error'], Signal<ConnectError | undefined>>
@@ -506,6 +571,33 @@ export type StreamRejectsOpen = Assert<
   >
 >
 
+export type StreamRejectsKey = Assert<
+  Equals<
+    Assignable<{ autoConnect: false; key: () => QueryKey }, ConnectStreamOptions<UserSchema>>,
+    false
+  >
+>
+
+/**
+ * A fold is `initial` and `reduce` together, and required once the value type
+ * leaves out `undefined`: nothing else could ever populate it.
+ */
+export type StreamFoldIsRequired = Assert<
+  Equals<Assignable<{ autoConnect: false }, ConnectStreamOptions<UserSchema, number>>, false>
+>
+export type StreamFoldNeedsReduce = Assert<
+  Equals<Assignable<{ initial: () => number }, ConnectStreamOptions<UserSchema, number>>, false>
+>
+export type StreamFoldNeedsInitial = Assert<
+  Equals<
+    Assignable<
+      { reduce: (count: number, user: User) => number },
+      ConnectStreamOptions<UserSchema, number>
+    >,
+    false
+  >
+>
+
 export type StreamValueIsTheFold = Assert<
   Equals<ConnectStreamResult<UserSchema, number>['value'], Signal<number>>
 >
@@ -524,6 +616,16 @@ export type StreamListRejectsOpen = Assert<
   Equals<
     Assignable<
       { itemKey: (user: User) => string; open: () => AsyncIterable<User> },
+      ConnectStreamListOptions<UserSchema, string>
+    >,
+    false
+  >
+>
+
+export type StreamListRejectsKey = Assert<
+  Equals<
+    Assignable<
+      { itemKey: (user: User) => string; key: () => QueryKey },
       ConnectStreamListOptions<UserSchema, string>
     >,
     false

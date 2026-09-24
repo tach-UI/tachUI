@@ -66,13 +66,7 @@ import {
   createMutation,
 } from '@tachui/query'
 
-type Assert<T extends true> = T
-
-type Equals<A, B> =
-  (<G>() => G extends A ? 1 : 2) extends <G>() => G extends B ? 1 : 2 ? true : false
-
-/** Whether `From` satisfies `To`, so a deliberate rejection can be asserted as `false`. */
-type Assignable<From, To> = [From] extends [To] ? true : false
+import type { Assert, Assignable, Equals } from '../../../tools/testing/type-asserts'
 
 interface Message {
   body: string
