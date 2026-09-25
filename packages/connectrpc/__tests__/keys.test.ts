@@ -10,7 +10,7 @@
 import { clone, create, isMessage, setExtension } from '@bufbuild/protobuf'
 import type { DescMethod } from '@bufbuild/protobuf'
 import { BinaryWriter, WireType } from '@bufbuild/protobuf/wire'
-import { AnySchema, StructSchema } from '@bufbuild/protobuf/wkt'
+import { AnySchema, StringValueSchema, StructSchema } from '@bufbuild/protobuf/wkt'
 import { createContextKey, createContextValues } from '@connectrpc/connect'
 import type { Transport } from '@connectrpc/connect'
 import {
@@ -678,6 +678,36 @@ describe('infinite keys', () => {
         expect(build({}, { pageParamKey }).key[4]).toBe('infinite')
       }
     )
+
+    /** Options whose pageParamKey getter answers `first` twice, then `later`. */
+    function shiftingOptions(
+      first: string | undefined,
+      later: string | undefined
+    ): ConnectKeyBuildOptions {
+      let reads = 0
+      return {
+        get pageParamKey() {
+          reads += 1
+          return reads <= 2 ? first : later
+        },
+      }
+    }
+
+    it('shape the key and omit the token from one read of pageParamKey', () => {
+      setUp()
+      const init = { pageSize: 50, pageToken: 'abc' }
+      const unary = build({ pageSize: 50 }).key
+
+      const infinite = build(init, shiftingOptions('pageToken', undefined)).key
+      expect(infinite).toEqual(build({ pageSize: 50 }, { pageParamKey: 'pageToken' }).key)
+      expect(infinite[5]).toBe('{"pageSize":50}')
+      expect(infinite).not.toEqual(unary)
+
+      const plain = build(init, shiftingOptions(undefined, 'pageToken')).key
+      expect(plain).toEqual(build(init).key)
+      expect(plain[4]).toBe('{"pageSize":50,"pageToken":"abc"}')
+      expect(plain).not.toEqual(unary)
+    })
   })
 })
 
@@ -835,6 +865,14 @@ describe('wrapper and Struct fields', () => {
       ).toThrow(/request\.selector\.value is string, but google\.protobuf\.StringValue is a message/)
     })
 
+    it.each([
+      ['a generated message', () => ({ nickname: create(StringValueSchema, { value: 'x' }) })],
+      ['an initializer', () => ({ nickname: { value: 'x' } })],
+    ])('refuses a wrapper held as %s outside a oneof', (_label, init) => {
+      setUp()
+      expect(() => build(init())).toThrow(ConnectAdapterError)
+    })
+
     // `fields` is the Struct message's own field name, and must key like any other.
     const json = { fields: 1, b: [true, null, 'x'], a: { z: 2, y: {} } }
     const jsonText = '{"a":{"y":{},"z":2},"b":[true,null,"x"],"fields":1}'
@@ -924,6 +962,27 @@ describe('wrapper and Struct fields', () => {
       expect(attempt).toThrow(ConnectAdapterError)
       expect(attempt).toThrow(position)
       expect(attempt).toThrow(/takes a plain JSON object/)
+    })
+
+    it.each([
+      ['undefined as a direct member', { metadata: { a: undefined } }, /request\.metadata\["a"\] is undefined/],
+      ['undefined as a nested member', { metadata: { a: { b: undefined } } }, /request\.metadata\["a"\]\["b"\] is undefined/],
+      ['undefined as a list element', { metadata: { a: [undefined] } }, /request\.metadata\["a"\]\[0\] is undefined/],
+      ['a bigint as a direct member', { metadata: { id: 1n } }, /request\.metadata\["id"\] is bigint/],
+      ['a bigint as a nested member', { metadata: { a: { id: 1n } } }, /request\.metadata\["a"\]\["id"\] is bigint/],
+      ['a bigint as a list element', { metadata: { a: [1n] } }, /request\.metadata\["a"\]\[0\] is bigint/],
+    ])('refuses %s of Struct JSON, naming the position', (_label, init, position) => {
+      setUp()
+      const attempt = () => build(init)
+      expect(attempt).toThrow(ConnectAdapterError)
+      expect(attempt).toThrow(position)
+      expect(attempt).toThrow(/holds only JSON values/)
+    })
+
+    it('refuses distinct bigint Struct members rather than keying them alike', () => {
+      setUp()
+      expect(() => build({ metadata: { id: 1n } })).toThrow(ConnectAdapterError)
+      expect(() => build({ metadata: { id: 2n } })).toThrow(ConnectAdapterError)
     })
 
     it('keys and sends a $typeName member naming no request message type as data', () => {

@@ -446,6 +446,18 @@ class RequestChecker {
   }
 
   private json(value: unknown, path: string): void {
+    // Copying the request writes these as null, so distinct values would key
+    // and send alike.
+    if (
+      value === undefined ||
+      typeof value === 'bigint' ||
+      typeof value === 'function' ||
+      typeof value === 'symbol'
+    ) {
+      this.fail(
+        `${path} is ${describeValue(value)}, but a ${STRUCT_TYPE_NAME} holds only JSON values (string, finite number, boolean, null, array, plain object).`
+      )
+    }
     if (typeof value !== 'object' || value === null) {
       return
     }
@@ -751,6 +763,8 @@ export function buildConnectKey<M extends DescMethod>(
     `The query for ${described}`,
     'use'
   )
+  // Read once, so the key's shape and the token's omission always agree.
+  const pageParamKey = options?.pageParamKey
   if (typeof input !== 'function') {
     throw new ConnectAdapterError(
       `Cannot build a query key for ${described}: its input is ${describeValue(input)}, not a function returning the request.`
@@ -799,8 +813,8 @@ export function buildConnectKey<M extends DescMethod>(
     // The key is written from a second copy, so the request keeps what the
     // caller wrote where only the key is normalized.
     const keyed = clone(schema, request) as MessageShape<DescMessage>
-    if (options?.pageParamKey !== undefined) {
-      omitPageParam(schema, keyed, options.pageParamKey, described)
+    if (pageParamKey !== undefined) {
+      omitPageParam(schema, keyed, pageParamKey, described)
     }
     normalizeIntegerZeros(schema, keyed)
     json = toJson(schema, keyed, JSON_WRITE_OPTIONS)
@@ -820,7 +834,7 @@ export function buildConnectKey<M extends DescMethod>(
     method.parent.typeName,
     method.name,
   ]
-  if (options?.pageParamKey !== undefined) {
+  if (pageParamKey !== undefined) {
     key.push(INFINITE_SEGMENT)
   }
   key.push(stableStringify(json))
