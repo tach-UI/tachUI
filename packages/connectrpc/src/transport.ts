@@ -22,7 +22,7 @@ import {
   createEnvironmentKey,
   getCurrentComponentContextOrNull,
 } from '@tachui/core'
-import { QueryClientKey } from '@tachui/query'
+import { QueryClientKey, useQueryClient } from '@tachui/query'
 import type { QueryClient } from '@tachui/query'
 
 import { DEFAULT_TRANSPORT_NAME } from './defaults'
@@ -55,6 +55,11 @@ const clientBindings = new WeakMap<
 export interface ResolvedConnectTransport {
   name: ConnectTransportName
   transport: Transport
+  /**
+   * The consuming scope's client, which now holds the name to this transport.
+   * Always present below a provider, which cannot be provided without one.
+   */
+  client: QueryClient | undefined
 }
 
 function isTransport(value: unknown): value is Transport {
@@ -249,7 +254,7 @@ export function resolveConnectTransport(
             `${describeName(name)} resolves here to a different Transport than the one this scope's QueryClient has bound to that name, so one client would cache two backends under it. Provide the transport where that QueryClient is provided, so every scope under the client resolves the same one, or give the scope that shadows it its own QueryClient.`
         )
       }
-      return { name, transport }
+      return { name, transport, client }
     }
     scope = scope.parent
   }
@@ -261,6 +266,43 @@ export function resolveConnectTransport(
   throw new ConnectAdapterError(
     `No provider for ${describeName(name)}. Call ${call} in this component or an ancestor, below provideQueryClient().`
   )
+}
+
+/**
+ * Resolves the transport an adapter calls through, and the client it caches in.
+ *
+ * An explicit `client` option has to be the client the scope's name binding
+ * belongs to. The binding is what makes the name mean one backend within that
+ * client; caching this transport's responses in another client would file them
+ * under a name that client may bind to a different backend. Refused here, before
+ * anything executes or writes to a cache.
+ */
+export function resolveAdapterTransport(
+  caller: string,
+  name: unknown,
+  explicitClient: QueryClient | undefined
+): ResolvedConnectTransport & { client: QueryClient } {
+  // Only an omitted name means the default, as everywhere else.
+  if (name !== undefined) {
+    assertValidName(name, caller, 'use')
+  }
+  const resolved = resolveConnectTransport(name as ConnectTransportName | undefined)
+  if (
+    explicitClient !== undefined &&
+    resolved.client !== undefined &&
+    explicitClient !== resolved.client
+  ) {
+    throw new ConnectAdapterError(
+      `${caller} was given a client option that is not the QueryClient ${describeName(resolved.name)} is bound to in this scope. A transport name is cache identity within one client, so calls through it must cache in that client: omit the client option, or provide the transport below provideQueryClient() for the client you meant.`
+    )
+  }
+  return {
+    name: resolved.name,
+    transport: resolved.transport,
+    // A provider always has a client above it, so the ambient fallback is
+    // only ever the type's, never a scope's.
+    client: explicitClient ?? resolved.client ?? useQueryClient(),
+  }
 }
 
 /**

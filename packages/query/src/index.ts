@@ -30,6 +30,7 @@ export { createInfiniteQueryList } from './create-infinite-query-list'
 export { createMutation } from './create-mutation'
 export { createQuery } from './create-query'
 export { isDevelopment, isServer, QueryError } from './errors'
+export { hashQueryKey } from './keys'
 export type {
   AsyncStreamBaseOptions,
   AsyncStreamListOptions,

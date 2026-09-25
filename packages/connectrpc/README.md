@@ -26,11 +26,43 @@ install below will not resolve.
 
 The package currently ships its public type surface, `DEFAULT_TRANSPORT_NAME`,
 `isRetryableCode`, `ConnectAdapterError`, transport provision
-(`provideConnectTransport`, `useConnectTransport`), and deterministic query keys with
-`connectQueryPrefix`. The adapters themselves — `createConnectQuery`, `createConnectMutation`,
-`createConnectInfiniteQuery`, `createConnectStream`, and `createConnectStreamList` —
-land across the 0.12.0 milestone. As with `@tachui/query`, the option and result
-types are declared first because they are what every call site is written against.
+(`provideConnectTransport`, `useConnectTransport`), deterministic query keys with
+`connectQueryPrefix`, and the unary adapters `createConnectQuery` and
+`createConnectMutation`. The remaining adapters — `createConnectInfiniteQuery`,
+`createConnectStream`, and `createConnectStreamList` — land across the 0.12.0
+milestone. As with `@tachui/query`, the option and result types are declared first
+because they are what every call site is written against.
+
+## Usage
+
+```ts
+import { connectQueryPrefix, createConnectMutation, createConnectQuery } from '@tachui/connectrpc'
+
+// In a component, below provideQueryClient() and provideConnectTransport().
+const user = createConnectQuery(UserService.method.getUser, () => ({ id: userId() }), {
+  transport: 'account',
+  staleTime: 30_000,
+  retry: 2,
+  callOptions: { timeoutMs: 5_000 },
+})
+user.data()   // the GetUserResponse message, or undefined
+user.error()  // unknown: narrow with `instanceof ConnectError`
+
+const rename = createConnectMutation(UserService.method.renameUser, {
+  transport: 'account',
+  invalidates: [connectQueryPrefix(UserService.method.getUser, { transport: 'account' })],
+})
+await rename.mutate({ id: userId(), name: 'Ada' })
+```
+
+Both resolve their transport when they are created, so a missing provider, a name
+bound to another transport, or a `client` option that is not the client the transport
+is bound to throws a `ConnectAdapterError` before anything is called or cached. Only
+unary methods are accepted; a server-streaming descriptor is a type error.
+
+The input function is reactive, and each time it runs it produces both the key and
+the request sent for it: every attempt for that key, retries included, sends that
+request, whatever happens to the caller's object or its signals afterwards.
 
 ## Installation
 
@@ -166,12 +198,48 @@ a `ConnectAdapterError` rather than returning `undefined`:
 tachUI cannot see a target or credentials change inside one `Transport`; isolate that
 with `keyExtension`, a new client, or a new transport.
 
+### A query's call is shared; its signal and deadline are not
+
+Observers of one key share one call, so a query's `callOptions.signal` and
+`callOptions.timeoutMs` bound only that observer's wait on it. When either ends the
+wait, that observer's `error` and pending `refetch()` settle with a `ConnectError` —
+`canceled` or `deadline_exceeded` — while any other observer keeps waiting. The
+deadline covers the whole wait, retries and backoff included. The call itself stops
+only once no observer is waiting any longer, and no retry starts after that. A
+query's `timeoutMs` is therefore never handed to the transport, where it would cut
+the call off for everyone; a mutation's call is its own, so its `timeoutMs` is.
+
+`headers` and `contextValues` travel with the call of whichever observer started it
+and never enter the key. **If a header or context value changes what the server
+returns — a tenant, an account, a locale — the application must put an identifier
+for it in `keyExtension`**, or observers with different values share one entry. Put
+identifiers there, never credentials: keys are visible in devtools and can travel in
+a server-rendered snapshot. Authentication belongs in the transport's interceptors,
+which the adapter never reads.
+
+`cancel()` and owner disposal also settle with `canceled`, promptly, even when a
+transport ignores its signal. `cancel()` stops the entry's call for every observer,
+as it does in `@tachui/query`.
+
+### Errors keep their identity, and are typed `unknown`
+
+A `ConnectError` the transport rejects with reaches `error`, the rejected
+`refetch()` or `mutate()`, and a mutation's `onError` as the same instance, code and
+all. Only what the adapter decides itself — a cancellation, a local deadline — is a
+new `ConnectError`. Other failures keep their own values: a request that cannot be
+keyed is a `ConnectAdapterError`, and a throwing `onSuccess` or `optimisticUpdate`
+surfaces whatever it threw. So the error types are `unknown`, and a consumer narrows
+with `instanceof ConnectError` before reading a code.
+
 ### Retry is a count, and only two codes qualify
 
 Nothing retries by default. When `retry` is set, only `unavailable` and
-`resource_exhausted` are retried, with capped exponential backoff; the option takes an
-attempt count rather than a predicate, so no call site can opt `unauthenticated` or
-`deadline_exceeded` back in. Mutations never retry. `isRetryableCode` is that
+`resource_exhausted` are retried, up to that many times; the option takes an attempt
+count rather than a predicate, so no call site can opt `unauthenticated` or
+`deadline_exceeded` back in, and anything but a whole number of 0 or more is refused.
+The delay before retry *n* is drawn uniformly (full jitter) from 0 up to
+`min(2000, 100 × 2^(n-1))` ms. Retry exhaustion exposes the final attempt's error.
+Mutations never retry. `isRetryableCode` is that
 allowlist, and is a function rather than an array of codes: a top-level array built
 from Connect's `Code` members is an expression a bundler must keep, and it would pull
 the Connect runtime into every bundle that imports anything from this package.
@@ -180,7 +248,9 @@ the Connect runtime into every bundle that imports anything from this package.
 
 Mutation options reuse `@tachui/query`'s pairing: `optimisticUpdate` and `onError` are
 supplied together, and `onError` receives whatever `optimisticUpdate` returned to roll
-back with. Framework-managed cache writes are not part of the surface.
+back with — after a failure, a cancellation, a `reset()`, or a newer call superseding
+it. The adapter never writes query cache data itself and offers no `rollbackOnError`;
+a successful write refreshes what it changed through `invalidates`.
 
 ## Verifying a packed install
 

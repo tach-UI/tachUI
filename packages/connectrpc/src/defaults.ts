@@ -13,6 +13,12 @@ import { Code } from '@connectrpc/connect'
  */
 export const DEFAULT_TRANSPORT_NAME = 'default'
 
+/** The cap on the delay before a query's first retry, in milliseconds. */
+export const RETRY_BASE_DELAY_MS = 100
+
+/** The cap on the delay before any retry, however many came before it. */
+export const RETRY_MAX_DELAY_MS = 2_000
+
 /**
  * Whether a failure with this code may be retried, when `retry` asks for it.
  *
