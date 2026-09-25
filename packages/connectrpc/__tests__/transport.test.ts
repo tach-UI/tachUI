@@ -476,6 +476,7 @@ describe('diagnostics', () => {
   it.each([
     ['a string', 'account'],
     ['a number', 42],
+    ['an array', ['account']],
   ])('refuses %s as options rather than providing the default', (_label, options) => {
     const root = rootWithClient('root')
     const provide = () =>

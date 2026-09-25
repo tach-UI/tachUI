@@ -129,9 +129,15 @@ export function provideConnectTransport(
   transport: Transport,
   options?: ProvideConnectTransportOptions
 ): void {
-  if (options !== undefined && options !== null && typeof options !== 'object') {
+  // An array is an object too, and having no `name` it would otherwise
+  // provide the default transport under a name nobody chose.
+  if (
+    options !== undefined &&
+    options !== null &&
+    (typeof options !== 'object' || Array.isArray(options))
+  ) {
     throw new ConnectAdapterError(
-      `provideConnectTransport() was given ${typeof options} as its options. Pass { name } to provide a named transport, or omit the options to provide the default transport.`
+      `provideConnectTransport() was given ${Array.isArray(options) ? 'an array' : typeof options} as its options. Pass { name } to provide a named transport, or omit the options to provide the default transport.`
     )
   }
   // Only an omitted name means the default: a null one is malformed
