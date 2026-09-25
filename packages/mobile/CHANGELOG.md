@@ -1,5 +1,13 @@
 # @tachui/mobile
 
+## 0.11.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/modifiers@0.11.7
+  - @tachui/types@0.11.7
+
 ## 0.11.6
 
 ### Patch Changes

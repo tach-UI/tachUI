@@ -1,6 +1,6 @@
 {
   "name": "@tachui/responsive",
-  "version": "0.11.6",
+  "version": "0.11.7",
   "description": "Advanced responsive design patterns and utilities for tachUI framework",
   "homepage": "https://tachui.dev/",
   "main": "./dist/index.js",
@@ -36,10 +36,10 @@
     "lint": "oxlint src"
   },
   "dependencies": {
-    "@tachui/core": "0.11.6",
-    "@tachui/modifiers": "0.11.6",
-    "@tachui/registry": "0.11.6",
-    "@tachui/types": "0.11.6"
+    "@tachui/core": "0.11.7",
+    "@tachui/modifiers": "0.11.7",
+    "@tachui/registry": "0.11.7",
+    "@tachui/types": "0.11.7"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
