@@ -143,6 +143,22 @@ function assertMethod(
   }
 }
 
+/** Reads one option, so a throwing getter fails as an adapter error. */
+function readOption<O extends object, K extends keyof O & string>(
+  options: O | undefined,
+  name: K,
+  caller: string
+): O[K] | undefined {
+  try {
+    return options?.[name]
+  } catch (error) {
+    throw new ConnectAdapterError(
+      `${caller} could not read its ${name} option, because reading it threw.`,
+      { cause: error }
+    )
+  }
+}
+
 /** Only an omitted name means the default; anything else must be valid. */
 function transportNameFrom(
   name: unknown,
@@ -175,7 +191,11 @@ export function connectQueryPrefix(
     caller,
     'Pass { transport } to target a named transport, or omit the options to target the default transport.'
   )
-  const transport = transportNameFrom(options?.transport, caller, 'target')
+  const transport = transportNameFrom(
+    readOption(options, 'transport', caller),
+    caller,
+    'target'
+  )
   assertMethod(method, caller)
   return [KEY_ROOT, transport, method.parent.typeName, method.name]
 }
@@ -758,13 +778,14 @@ export function buildConnectKey<M extends DescMethod>(
     `The query options for ${described}`,
     'Pass an options object, or omit it.'
   )
+  const caller = `The query for ${described}`
   const transport = transportNameFrom(
-    options?.transport,
-    `The query for ${described}`,
+    readOption(options, 'transport', caller),
+    caller,
     'use'
   )
   // Read once, so the key's shape and the token's omission always agree.
-  const pageParamKey = options?.pageParamKey
+  const pageParamKey = readOption(options, 'pageParamKey', caller)
   if (typeof input !== 'function') {
     throw new ConnectAdapterError(
       `Cannot build a query key for ${described}: its input is ${describeValue(input)}, not a function returning the request.`
@@ -789,8 +810,9 @@ export function buildConnectKey<M extends DescMethod>(
   let request: MessageShape<M['input']>
   let json: JsonValue
   try {
-    // A Promise has no own fields, so it would key and send as an empty request.
-    if (typeof init.then === 'function') {
+    // A Promise would key and send as whatever own fields it carries. Only a
+    // real Promise is refused: a request with a `then` property is a request.
+    if (init instanceof Promise) {
       throw new ConnectAdapterError(
         `Cannot build a query key for ${described}: its input function returned a Promise. The input function must return the request, not a Promise: load what the request depends on first, and return the request itself.`
       )
@@ -839,7 +861,7 @@ export function buildConnectKey<M extends DescMethod>(
   }
   key.push(stableStringify(json))
 
-  const keyExtension = options?.keyExtension
+  const keyExtension = readOption(options, 'keyExtension', caller)
   if (keyExtension !== undefined) {
     if (typeof keyExtension !== 'function') {
       throw new ConnectAdapterError(

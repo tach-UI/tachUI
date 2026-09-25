@@ -1193,6 +1193,10 @@ describe('malformed input', () => {
     it.each([
       ['a Promise', () => Promise.resolve({ pageSize: 1 })],
       ['an async function', async () => ({ pageSize: 1 })],
+      [
+        'a Promise carrying request fields',
+        () => Object.assign(Promise.resolve(), { pageSize: 1 }),
+      ],
     ])('refuses %s as the input, rather than keying an empty request', (_label, input) => {
       setUp()
       const attempt = () => buildConnectKey(ListUsers, input as never)
@@ -1208,6 +1212,21 @@ describe('malformed input', () => {
       }
       expect(canonical({})).toBe('{}')
       expect(canonical(new Request())).toBe('{"pageSize":5,"pageToken":"t"}')
+    })
+
+    it('keys a class instance with a then method by its own fields', () => {
+      setUp()
+      class Request {
+        pageSize = 5
+        pageToken = 't'
+        then(): number {
+          return 1
+        }
+      }
+      const built = build(new Request())
+      expect(built.key).toEqual(build({ pageSize: 5, pageToken: 't' }).key)
+      expect(built.key[4]).toBe('{"pageSize":5,"pageToken":"t"}')
+      expect(built.request).toEqual(build({ pageSize: 5, pageToken: 't' }).request)
     })
 
     it('refuses a throwing input function, keeping the cause', () => {
@@ -1244,26 +1263,6 @@ describe('malformed input', () => {
         /the request is not a valid acme\.users\.v1\.ListUsersRequest \(unreadable\)/
       )
       expect((thrown as Error).cause).toBe('unreadable')
-    })
-
-    it('refuses a request whose then read throws, keeping the cause', () => {
-      setUp()
-      const failure = new Error('then unreadable')
-      let thrown: unknown
-      try {
-        build({
-          get then(): unknown {
-            throw failure
-          },
-        })
-      } catch (error) {
-        thrown = error
-      }
-      expect(thrown).toBeInstanceOf(ConnectAdapterError)
-      expect((thrown as Error).message).toMatch(
-        /the request is not a valid acme\.users\.v1\.ListUsersRequest \(then unreadable\)/
-      )
-      expect((thrown as Error).cause).toBe(failure)
     })
 
     it('refuses an input that is not a function', () => {
@@ -1348,6 +1347,24 @@ describe('malformed input', () => {
         {},
         /request\.selector is string, but selector is a oneof/,
       ],
+      [
+        'a then property',
+        { pageSize: 50, then: () => 1 },
+        { pageSize: 50 },
+        /request\.then is not a field of acme\.users\.v1\.ListUsersRequest/,
+      ],
+      [
+        // Never read: in production a throwing getter cannot fail the build.
+        'a throwing then getter',
+        {
+          pageSize: 50,
+          get then(): unknown {
+            throw new Error('then unreadable')
+          },
+        },
+        { pageSize: 50 },
+        /request\.then is not a field of acme\.users\.v1\.ListUsersRequest/,
+      ],
     ]
 
     it.each(cases)('fail explicitly in development for %s', (_label, init, _clean, message) => {
@@ -1366,5 +1383,65 @@ describe('malformed input', () => {
         expect(withExtra.request).toEqual(without.request)
       }
     )
+  })
+})
+
+describe('throwing option reads', () => {
+  /** Options whose `name` getter throws `failure`. */
+  function throwingOption(name: string, failure: Error): object {
+    return Object.defineProperty({}, name, {
+      enumerable: true,
+      get(): never {
+        throw failure
+      },
+    })
+  }
+
+  function thrownBy(attempt: () => unknown): unknown {
+    try {
+      attempt()
+    } catch (error) {
+      return error
+    }
+    return undefined
+  }
+
+  describe.each([
+    ['development', () => {}],
+    ['production', inProduction],
+  ])('in %s', (_environment, setUp) => {
+    it.each(['transport', 'pageParamKey', 'keyExtension'])(
+      'refuses a query whose %s getter throws, keeping the cause',
+      name => {
+        setUp()
+        const failure = new Error(`${name} unreadable`)
+        const thrown = thrownBy(() =>
+          build({ pageSize: 50 }, throwingOption(name, failure) as never)
+        )
+        expect(thrown).toBeInstanceOf(ConnectAdapterError)
+        expect((thrown as Error).message).toMatch(
+          new RegExp(
+            `The query for .*ListUsers could not read its ${name} option, because reading it threw\\.`
+          )
+        )
+        expect((thrown as Error).cause).toBe(failure)
+      }
+    )
+
+    it('refuses a prefix whose transport getter throws, keeping the cause', () => {
+      setUp()
+      const failure = new Error('transport unreadable')
+      const thrown = thrownBy(() =>
+        connectQueryPrefix(
+          ListUsers,
+          throwingOption('transport', failure) as never
+        )
+      )
+      expect(thrown).toBeInstanceOf(ConnectAdapterError)
+      expect((thrown as Error).message).toBe(
+        '[@tachui/connectrpc] connectQueryPrefix() could not read its transport option, because reading it threw.'
+      )
+      expect((thrown as Error).cause).toBe(failure)
+    })
   })
 })
