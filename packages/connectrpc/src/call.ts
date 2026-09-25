@@ -47,7 +47,7 @@ export function assertUnaryMethod(
   }
   if (candidate.methodKind !== 'unary') {
     throw new ConnectAdapterError(
-      `${caller} was given ${describeMethod(candidate as DescMethod)}, a ${String(candidate.methodKind)} method. Only unary methods have one response to cache; a server stream belongs to createConnectStream.`
+      `${caller} was given ${describeMethod(candidate as DescMethod)}, a ${String(candidate.methodKind)} method. Only unary methods are supported; streaming methods are not available yet.`
     )
   }
 }
@@ -69,9 +69,15 @@ export function retryCountFrom(retry: unknown, caller: string): number {
 }
 
 /**
+ * The longest delay a timer holds. A longer one fires at once, turning a
+ * deadline weeks away into one already passed.
+ */
+const MAX_TIMEOUT_MS = 2_147_483_647
+
+/**
  * Reads call options once, at creation. A malformed deadline is refused rather
  * than passed on: a NaN one would mean no deadline to one layer and an expired
- * one to another.
+ * one to another, and a finite one past the longest timer would expire at once.
  */
 export function callOptionsFrom(
   callOptions: unknown,
@@ -90,6 +96,11 @@ export function callOptionsFrom(
   ) {
     throw new ConnectAdapterError(
       `${caller} was given ${typeof timeoutMs === 'number' ? 'NaN' : typeof timeoutMs} as callOptions.timeoutMs. Pass a number of milliseconds, or omit it for no deadline.`
+    )
+  }
+  if (timeoutMs !== undefined && Number.isFinite(timeoutMs) && timeoutMs > MAX_TIMEOUT_MS) {
+    throw new ConnectAdapterError(
+      `${caller} was given ${timeoutMs} as callOptions.timeoutMs, longer than the ${MAX_TIMEOUT_MS} ms a timer can hold. Pass a shorter deadline, or omit it for no deadline.`
     )
   }
   return options
@@ -180,7 +191,12 @@ export function startDeadline(
  * aborts. A transport is asked to respect its signal and nothing can make it;
  * racing the two ends the wait whatever the transport does.
  */
-function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+export function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) {
+    // Observed and dropped: nothing is waiting for the work any longer.
+    work.catch(() => undefined)
+    return Promise.reject(signal.reason)
+  }
   return new Promise<T>((resolve, reject) => {
     const onAbort = (): void => reject(signal.reason)
     signal.addEventListener('abort', onAbort, { once: true })

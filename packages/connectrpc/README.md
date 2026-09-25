@@ -210,7 +210,8 @@ query's `timeoutMs` is therefore never handed to the transport, where it would c
 the call off for everyone; a mutation's call is its own, so its `timeoutMs` is.
 
 `headers` and `contextValues` travel with the call of whichever observer started it
-and never enter the key. **If a header or context value changes what the server
+and never enter the key. So does `retry`: observers that join a running call share its
+attempts, which follow the retry count of the observer that started it. **If a header or context value changes what the server
 returns — a tenant, an account, a locale — the application must put an identifier
 for it in `keyExtension`**, or observers with different values share one entry. Put
 identifiers there, never credentials: keys are visible in devtools and can travel in
@@ -239,7 +240,9 @@ count rather than a predicate, so no call site can opt `unauthenticated` or
 `deadline_exceeded` back in, and anything but a whole number of 0 or more is refused.
 The delay before retry *n* is drawn uniformly (full jitter) from 0 up to
 `min(2000, 100 × 2^(n-1))` ms. Retry exhaustion exposes the final attempt's error.
-Mutations never retry. `isRetryableCode` is that
+A query's call is shared, so observers of one key that ask for different counts get
+the count of whichever observer started the call. Mutations never retry.
+`isRetryableCode` is that
 allowlist, and is a function rather than an array of codes: a top-level array built
 from Connect's `Code` members is an expression a bundler must keep, and it would pull
 the Connect runtime into every bundle that imports anything from this package.

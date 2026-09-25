@@ -149,6 +149,10 @@ export interface ConnectKeyOptions {
  * exponential backoff, whatever the count. A predicate could opt an
  * `unauthenticated` or `deadline_exceeded` failure back in; a deadline is the
  * caller's, and retrying past it compounds latency. Defaults to `0`.
+ *
+ * A query's call is shared by every observer of its key, so its attempts
+ * follow the count of the observer that started it, as its headers do; an
+ * observer that joins a running call with another count shares its attempts.
  */
 export type ConnectRetry = number
 

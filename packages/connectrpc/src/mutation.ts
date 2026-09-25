@@ -73,23 +73,37 @@ export function createConnectMutation<
       ? (cancellations.get(error) ?? error)
       : error
   }
+  function cancelled(reason: unknown): ConnectError {
+    const known =
+      typeof reason === 'object' && reason !== null
+        ? cancellations.get(reason)
+        : undefined
+    if (known !== undefined) {
+      return known
+    }
+    const failure = canceledError('the mutation was cancelled', reason)
+    if (typeof reason === 'object' && reason !== null) {
+      cancellations.set(reason, failure)
+    }
+    return failure
+  }
 
   async function run(
     input: MessageInitShape<I>,
     { signal }: { signal: AbortSignal }
   ): Promise<MessageShape<O>> {
+    // Mapped whichever source stops the call first: a cancel() or disposal
+    // after the application's signal or the deadline still settles the
+    // mutation with the mutation signal's reason. The signal is this call's
+    // alone, so the listener goes with it.
+    if (!signal.aborted) {
+      signal.addEventListener('abort', () => cancelled(signal.reason), {
+        once: true,
+      })
+    }
     const deadline = startDeadline(callOptions.timeoutMs)
     const link = linkSignals([
-      {
-        signal,
-        failure: reason => {
-          const failure = canceledError('the mutation was cancelled', reason)
-          if (typeof reason === 'object' && reason !== null) {
-            cancellations.set(reason, failure)
-          }
-          return failure
-        },
-      },
+      { signal, failure: cancelled },
       {
         signal: callOptions.signal,
         failure: reason =>
@@ -103,7 +117,8 @@ export function createConnectMutation<
         method,
         input,
         link.signal,
-        callOptions.timeoutMs,
+        // Infinity is no deadline here, and absent is how Connect says so.
+        callOptions.timeoutMs === Infinity ? undefined : callOptions.timeoutMs,
         callOptions
       )
     } finally {

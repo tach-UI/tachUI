@@ -12,6 +12,11 @@
  * Executions are announced by the adapter's own loader rather than inferred
  * from entry state: an invalidation replaces a running execution with another
  * inside one notification, and nothing in the entry's state shows the seam.
+ *
+ * A stopped execution stays announced until its loader returns, since the
+ * query layer still holds its flight and a refetch or a new observer joins
+ * that flight rather than starting another. Whoever joins it in that window is
+ * waiting again, so the loader starts the call over for them.
  */
 
 import { hashQueryKey } from '@tachui/query'
@@ -22,10 +27,18 @@ import { canceledError, linkSignals, startDeadline } from './call'
 /** One run of the adapter's loader for one cache entry. */
 export interface Execution {
   readonly hash: QueryKeyHash
-  /** Aborted once nobody is waiting for this run any longer. */
-  readonly stop: AbortController
+  /**
+   * Aborted once nobody is waiting for this run any longer, and replaced if
+   * somebody joins it again before it has settled.
+   */
+  stop: AbortController
   readonly waits: Set<Wait>
   settled: boolean
+  /**
+   * Set while the execution is being announced to its entry's watchers. One
+   * that gives up at once must not stop it before the rest have joined.
+   */
+  announcing: boolean
 }
 
 /** An observer of one entry, told as each execution for it starts and ends. */
@@ -109,12 +122,56 @@ export function beginExecution(client: QueryClient, key: QueryKey): Execution {
     stop: new AbortController(),
     waits: new Set(),
     settled: false,
+    announcing: true,
   }
   calls.execution = execution
-  for (const watcher of [...calls.watchers]) {
-    watcher.begin(execution)
+  const watchers = [...calls.watchers]
+  try {
+    for (const watcher of watchers) {
+      watcher.begin(execution)
+    }
+  } finally {
+    execution.announcing = false
+  }
+  // With nobody watching, a refetch joins once this returns; otherwise every
+  // watcher has had its say, and if all of them gave up the run is abandoned.
+  if (watchers.length > 0) {
+    stopIfAbandoned(execution)
   }
   return execution
+}
+
+/**
+ * Starts a stopped execution over when somebody joined it after the stop, so
+ * a call abandoned by one set of observers still answers the next. True when
+ * `failure` is the stop and the execution may go on.
+ */
+export function resumeIfJoined(execution: Execution, failure: unknown): boolean {
+  const { signal } = execution.stop
+  if (
+    !signal.aborted ||
+    failure !== signal.reason ||
+    execution.settled ||
+    execution.waits.size === 0
+  ) {
+    return false
+  }
+  execution.stop = new AbortController()
+  return true
+}
+
+/** Nobody is waiting any longer, so no further attempt should start. */
+function stopIfAbandoned(execution: Execution): void {
+  if (
+    !execution.announcing &&
+    !execution.settled &&
+    execution.waits.size === 0 &&
+    !execution.stop.signal.aborted
+  ) {
+    execution.stop.abort(
+      canceledError('no observer is still waiting for this call')
+    )
+  }
 }
 
 /** Ends every wait on an execution and tells its entry's watchers. */
@@ -207,7 +264,7 @@ export class Wait {
     this.failure = { error: failure }
     this.onGiveUp(failure)
     this.rejectPending(failure)
-    this.stopIfAbandoned()
+    stopIfAbandoned(this.execution)
   }
 
   /**
@@ -224,7 +281,7 @@ export class Wait {
       this.failure = { error: failure }
       this.rejectPending(failure)
     }
-    this.stopIfAbandoned()
+    stopIfAbandoned(this.execution)
   }
 
   /** The execution settled: its own outcome reaches everyone. */
@@ -270,14 +327,5 @@ export class Wait {
       reject(failure)
     }
     this.rejecters.clear()
-  }
-
-  /** Nobody is waiting any longer, so no further attempt should start. */
-  private stopIfAbandoned(): void {
-    if (!this.execution.settled && this.execution.waits.size === 0) {
-      this.execution.stop.abort(
-        canceledError('no observer is still waiting for this call')
-      )
-    }
   }
 }

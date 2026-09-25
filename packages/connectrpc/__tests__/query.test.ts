@@ -139,6 +139,27 @@ describe('calls and results', () => {
     ).toThrowError(/server_streaming method/)
   })
 
+  it('names no streaming adapter the package does not have when refusing a stream', () => {
+    const { transport } = scriptedTransport()
+    const root = scope({ default: transport })
+
+    let failure: unknown
+    try {
+      root.mount(() =>
+        createConnectQuery(
+          WatchUsers as unknown as DescMethodUnary<DescMessage, DescMessage>,
+          () => ({})
+        )
+      )
+    } catch (error) {
+      failure = error
+    }
+
+    expect(failure).toBeInstanceOf(ConnectAdapterError)
+    expect((failure as Error).message).toMatch(/Only unary methods are supported/)
+    expect((failure as Error).message).not.toMatch(/createConnectStream/)
+  })
+
   it('refuses something that is not a method descriptor', () => {
     const { transport } = scriptedTransport()
     const root = scope({ default: transport })
@@ -492,6 +513,44 @@ describe('call options', () => {
       ).toThrowError(ConnectAdapterError)
     }
   })
+
+  it('refuses a finite deadline longer than a timer can hold, rather than expiring at once', () => {
+    const { transport, calls } = scriptedTransport()
+    const root = scope({ default: transport })
+
+    for (const timeoutMs of [2_147_483_648, Number.MAX_SAFE_INTEGER]) {
+      expect(() =>
+        root.mount(() =>
+          createConnectQuery(getUser, () => ({ id: 1n }), {
+            callOptions: { timeoutMs },
+          })
+        )
+      ).toThrowError(/longer than the 2147483647 ms a timer can hold/)
+    }
+    expect(calls).toHaveLength(0)
+  })
+
+  it('accepts the longest deadline a timer can hold, and Infinity', async () => {
+    vi.useFakeTimers()
+    const { transport, calls } = scriptedTransport()
+    const root = scope({ default: transport })
+
+    const queries = [2_147_483_647, Infinity].map(
+      timeoutMs =>
+        root.mount(() =>
+          createConnectQuery(getUser, () => ({ id: 1n }), {
+            callOptions: { timeoutMs },
+          })
+        ).value
+    )
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    expect(calls).toHaveLength(1)
+    for (const query of queries) {
+      expect(query.error()).toBeUndefined()
+      expect(query.fetchStatus()).toBe('fetching')
+    }
+  })
 })
 
 describe('cancellation and deadlines', () => {
@@ -704,6 +763,110 @@ describe('cancellation and deadlines', () => {
 
     await vi.advanceTimersByTimeAsync(10_000)
     expect(calls).toHaveLength(2)
+  })
+
+  describe.each([
+    ['a signal aborted in advance', { signal: AbortSignal.abort() }],
+    ['a deadline of zero', { timeoutMs: 0 }],
+  ])('an observer with %s sharing a key', (_name, doomedCallOptions) => {
+    const doomedCode =
+      'signal' in doomedCallOptions ? Code.Canceled : Code.DeadlineExceeded
+
+    it.each([
+      ['mounted first', true],
+      ['mounted second', false],
+    ])('settles only its own wait when %s', async (_order, doomedFirst) => {
+      const { transport, calls } = scriptedTransport()
+      const root = scope({ default: transport })
+      const mountDoomed = () =>
+        root.mount(() =>
+          createConnectQuery(getUser, () => ({ id: 1n }), {
+            callOptions: doomedCallOptions,
+          })
+        ).value
+      const mountHealthy = () =>
+        root.mount(() => createConnectQuery(getUser, () => ({ id: 1n }))).value
+
+      const doomed = doomedFirst ? mountDoomed() : undefined
+      const healthy = mountHealthy()
+      const late = doomed ?? mountDoomed()
+      await settle()
+
+      // The call went out for the healthy observer; the doomed one gave up
+      // on its own.
+      expect(calls).toHaveLength(1)
+      expect(calls[0].signal?.aborted).toBe(false)
+      expect((late.error() as ConnectError).code).toBe(doomedCode)
+      expect(healthy.error()).toBeUndefined()
+      expect(healthy.fetchStatus()).toBe('fetching')
+
+      calls[0].respond({ name: 'v1' })
+      await settle()
+      expect(nameOf(healthy.data())).toBe('v1')
+      expect(healthy.error()).toBeUndefined()
+
+      // Nothing was poisoned: the doomed observer's refetch settles on its
+      // own, and the healthy one refetches as usual.
+      const failure = await late.refetch().catch((error: unknown) => error)
+      expect((failure as ConnectError).code).toBe(doomedCode)
+      const refetched = healthy.refetch()
+      expect(calls).toHaveLength(2)
+      calls[1].respond({ name: 'v2' })
+      expect(nameOf(await refetched)).toBe('v2')
+    })
+  })
+
+  it("starts the call again for a refetch issued as the sole observer's deadline expires", async () => {
+    vi.useFakeTimers()
+    const { transport, calls } = scriptedTransport()
+    const root = scope({ default: transport })
+    const { value: query } = root.mount(() =>
+      createConnectQuery(getUser, () => ({ id: 1n }), {
+        callOptions: { timeoutMs: 100 },
+      })
+    )
+    await vi.advanceTimersByTimeAsync(0)
+    expect(calls).toHaveLength(1)
+
+    // Synchronously: the deadline stops the call, and before its rejection
+    // lands, a refetch joins the flight it belongs to.
+    vi.advanceTimersByTime(100)
+    expect(calls[0].signal?.aborted).toBe(true)
+    const refetched = query.refetch()
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(calls).toHaveLength(2)
+    expect(calls[1].signal?.aborted).toBe(false)
+    calls[1].respond({ name: 'restarted' })
+    expect(nameOf(await refetched)).toBe('restarted')
+    expect(query.error()).toBeUndefined()
+    expect(nameOf(query.data())).toBe('restarted')
+  })
+
+  it("answers an observer mounted as the sole observer's deadline expires", async () => {
+    vi.useFakeTimers()
+    const { transport, calls } = scriptedTransport()
+    const root = scope({ default: transport })
+    const { value: hurried } = root.mount(() =>
+      createConnectQuery(getUser, () => ({ id: 1n }), {
+        callOptions: { timeoutMs: 100 },
+      })
+    )
+    await vi.advanceTimersByTimeAsync(0)
+
+    vi.advanceTimersByTime(100)
+    const { value: newcomer } = root.mount(() =>
+      createConnectQuery(getUser, () => ({ id: 1n }))
+    )
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect((hurried.error() as ConnectError).code).toBe(Code.DeadlineExceeded)
+    expect(newcomer.error()).toBeUndefined()
+    expect(calls).toHaveLength(2)
+    calls[1].respond({ name: 'for the newcomer' })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(newcomer.error()).toBeUndefined()
+    expect(nameOf(newcomer.data())).toBe('for the newcomer')
   })
 
   it('applies a deadline of zero at once', async () => {
@@ -1075,6 +1238,33 @@ describe('retry', () => {
     expect(calls).toHaveLength(3)
     expect((patient.error() as ConnectError).code).toBe(Code.Unavailable)
   })
+
+  it.each([
+    ['no retries', 0, 3, 1],
+    ['three retries', 3, 0, 4],
+  ])(
+    'follows the retry count of the observer that started the call (%s)',
+    async (_name, starterRetry, joinerRetry, expectedCalls) => {
+      vi.spyOn(Math, 'random').mockReturnValue(0)
+      const { transport, calls } = scriptedTransport(call =>
+        call.fail(new ConnectError('busy', Code.Unavailable))
+      )
+      const root = scope({ default: transport })
+
+      const { value: starter } = root.mount(() =>
+        createConnectQuery(getUser, () => ({ id: 1n }), { retry: starterRetry })
+      )
+      const { value: joiner } = root.mount(() =>
+        createConnectQuery(getUser, () => ({ id: 1n }), { retry: joinerRetry })
+      )
+      await vi.advanceTimersByTimeAsync(60_000)
+
+      expect(calls).toHaveLength(expectedCalls)
+      for (const query of [starter, joiner]) {
+        expect((query.error() as ConnectError).code).toBe(Code.Unavailable)
+      }
+    }
+  )
 
   it.each([-1, 1.5, Number.NaN, Infinity, '2'])('refuses %s as a retry count', retry => {
     const { transport } = scriptedTransport()

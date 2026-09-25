@@ -100,6 +100,25 @@ describe('calls and results', () => {
     ).toThrowError(ConnectAdapterError)
   })
 
+  it('names no streaming adapter the package does not have when refusing a stream', () => {
+    const root = scope({ default: scriptedTransport().transport })
+
+    let failure: unknown
+    try {
+      root.mount(() =>
+        createConnectMutation(
+          WatchUsers as unknown as DescMethodUnary<DescMessage, DescMessage>
+        )
+      )
+    } catch (error) {
+      failure = error
+    }
+
+    expect(failure).toBeInstanceOf(ConnectAdapterError)
+    expect((failure as Error).message).toMatch(/Only unary methods are supported/)
+    expect((failure as Error).message).not.toMatch(/createConnectStream/)
+  })
+
   it('refuses a client option that is not the one the transport is bound to', () => {
     const { transport, calls } = scriptedTransport(call => call.respond({}))
     const root = scope({ default: transport })
@@ -256,6 +275,19 @@ describe('call options', () => {
     expect(calls[0].contextValues).toBeUndefined()
     expect(calls[0].timeoutMs).toBeUndefined()
   })
+
+  it('passes no deadline to the transport for a timeoutMs of Infinity', async () => {
+    const { transport, calls } = scriptedTransport(call => call.respond({}))
+    const root = scope({ default: transport })
+
+    const { value: mutation } = root.mount(() =>
+      createConnectMutation(getUser, { callOptions: { timeoutMs: Infinity } })
+    )
+    await mutation.mutate({ id: 1n })
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0].timeoutMs).toBeUndefined()
+  })
 })
 
 describe('errors', () => {
@@ -393,6 +425,88 @@ describe('errors', () => {
     expect(onError.mock.calls[0][0]).toBe(failure)
   })
 
+  describe('cancel() or disposal just after another source stopped the call', () => {
+    function expectCanceledEverywhere(
+      failure: unknown,
+      mutation: { error: () => unknown } | undefined,
+      onError: ReturnType<typeof vi.fn>,
+      onSettled: ReturnType<typeof vi.fn>
+    ): void {
+      expect(failure).toBeInstanceOf(ConnectError)
+      expect((failure as ConnectError).code).toBe(Code.Canceled)
+      if (mutation !== undefined) {
+        expect(mutation.error()).toBe(failure)
+      }
+      expect(onError.mock.calls[0][0]).toBe(failure)
+      expect(onSettled.mock.calls[0][1]).toBe(failure)
+    }
+
+    it("settles with canceled when cancel() follows the application's signal", async () => {
+      const { transport } = scriptedTransport()
+      const root = scope({ default: transport })
+      const controller = new AbortController()
+      const onError = vi.fn()
+      const onSettled = vi.fn()
+      const { value: mutation } = root.mount(() =>
+        createConnectMutation(getUser, {
+          callOptions: { signal: controller.signal },
+          onError,
+          onSettled,
+        })
+      )
+      const pending = mutation.mutate({ id: 1n }).catch((error: unknown) => error)
+
+      controller.abort()
+      mutation.cancel()
+
+      expectCanceledEverywhere(await pending, mutation, onError, onSettled)
+    })
+
+    it("settles with canceled when disposal follows the application's signal", async () => {
+      const { transport } = scriptedTransport()
+      const root = scope({ default: transport })
+      const controller = new AbortController()
+      const onError = vi.fn()
+      const onSettled = vi.fn()
+      const { value: mutation, dispose } = root.mount(() =>
+        createConnectMutation(getUser, {
+          callOptions: { signal: controller.signal },
+          onError,
+          onSettled,
+        })
+      )
+      const pending = mutation.mutate({ id: 1n }).catch((error: unknown) => error)
+
+      controller.abort()
+      dispose()
+
+      // The owner's state went with it; the promise and hooks remain.
+      expectCanceledEverywhere(await pending, undefined, onError, onSettled)
+    })
+
+    it('settles with canceled when cancel() follows an expired deadline', async () => {
+      vi.useFakeTimers()
+      const { transport } = scriptedTransport()
+      const root = scope({ default: transport })
+      const onError = vi.fn()
+      const onSettled = vi.fn()
+      const { value: mutation } = root.mount(() =>
+        createConnectMutation(getUser, {
+          callOptions: { timeoutMs: 1_000 },
+          onError,
+          onSettled,
+        })
+      )
+      const pending = mutation.mutate({ id: 1n }).catch((error: unknown) => error)
+      await vi.advanceTimersByTimeAsync(0)
+
+      vi.advanceTimersByTime(1_000)
+      mutation.cancel()
+
+      expectCanceledEverywhere(await pending, mutation, onError, onSettled)
+    })
+  })
+
   it('keeps a transport error that wins before the cancellation', async () => {
     const failure = new ConnectError('first', Code.AlreadyExists)
     const { transport, calls } = scriptedTransport()
@@ -522,5 +636,17 @@ describe('the scope it needs', () => {
         createConnectMutation(getUser, { callOptions: { timeoutMs: Number.NaN } })
       )
     ).toThrowError(ConnectAdapterError)
+  })
+
+  it('refuses a finite deadline longer than a timer can hold, rather than expiring at once', () => {
+    const { transport, calls } = scriptedTransport()
+    const root = scope({ default: transport })
+
+    for (const timeoutMs of [2_147_483_648, Number.MAX_SAFE_INTEGER]) {
+      expect(() =>
+        root.mount(() => createConnectMutation(getUser, { callOptions: { timeoutMs } }))
+      ).toThrowError(/longer than the 2147483647 ms a timer can hold/)
+    }
+    expect(calls).toHaveLength(0)
   })
 })

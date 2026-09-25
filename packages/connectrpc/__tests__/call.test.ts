@@ -7,7 +7,7 @@
 import { Code, ConnectError } from '@connectrpc/connect'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { linkSignals, retryDelay, startDeadline } from '../src/call'
+import { linkSignals, raceAbort, retryDelay, startDeadline } from '../src/call'
 import { RETRY_BASE_DELAY_MS, RETRY_MAX_DELAY_MS } from '../src/defaults'
 
 afterEach(() => {
@@ -95,5 +95,28 @@ describe('startDeadline', () => {
   it('has already passed at zero or less', () => {
     expect(startDeadline(0)!.signal.aborted).toBe(true)
     expect(startDeadline(-5)!.signal.aborted).toBe(true)
+  })
+})
+
+describe('raceAbort', () => {
+  it('rejects with the reason of a signal that has already aborted, whatever the work does', async () => {
+    const reason = new Error('already')
+
+    await expect(
+      raceAbort(Promise.resolve('value'), AbortSignal.abort(reason))
+    ).rejects.toBe(reason)
+    // A rejection the race no longer waits for is observed, not left unhandled.
+    await expect(
+      raceAbort(Promise.reject(new Error('orphaned')), AbortSignal.abort(reason))
+    ).rejects.toBe(reason)
+  })
+
+  it('settles as the work does, or with the reason once the signal aborts', async () => {
+    const controller = new AbortController()
+    await expect(raceAbort(Promise.resolve('value'), controller.signal)).resolves.toBe('value')
+
+    const pending = raceAbort(new Promise(() => undefined), controller.signal)
+    controller.abort('late')
+    await expect(pending).rejects.toBe('late')
   })
 })

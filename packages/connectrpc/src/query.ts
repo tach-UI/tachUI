@@ -56,6 +56,7 @@ import type {
 import {
   beginExecution,
   currentExecution,
+  resumeIfJoined,
   settleExecution,
   Wait,
   watchEntry,
@@ -242,6 +243,36 @@ export function createConnectQuery<
       )
     }
     const execution = beginExecution(client, key)
+    let succeeded = false
+    try {
+      for (;;) {
+        try {
+          const message = await callWithRetries(
+            request as MessageInitShape<I>,
+            signal,
+            execution
+          )
+          succeeded = true
+          return message
+        } catch (error) {
+          // Everyone left and somebody has joined since: they are waiting
+          // for an answer, so the call starts over for them.
+          if (signal.aborted || !resumeIfJoined(execution, error)) {
+            throw error
+          }
+        }
+      }
+    } finally {
+      settleExecution(client, execution, succeeded)
+    }
+  }
+
+  /** Calls, retrying as allowed, until the call succeeds or has to stop. */
+  async function callWithRetries(
+    request: MessageInitShape<I>,
+    signal: AbortSignal,
+    execution: Execution
+  ): Promise<MessageShape<O>> {
     const link = linkSignals([
       {
         signal,
@@ -249,22 +280,19 @@ export function createConnectQuery<
       },
       { signal: execution.stop.signal, failure: reason => reason },
     ])
-    let succeeded = false
     try {
       for (let attempt = 0; ; attempt += 1) {
         try {
           // No transport deadline: the call is shared, and each observer's
           // deadline is enforced on its own wait instead.
-          const message = await callUnary(
+          return await callUnary(
             transport,
             method,
-            request as MessageInitShape<I>,
+            request,
             link.signal,
             undefined,
             callOptions
           )
-          succeeded = true
-          return message
         } catch (error) {
           if (
             attempt >= retry ||
@@ -280,7 +308,6 @@ export function createConnectQuery<
       }
     } finally {
       link.release()
-      settleExecution(client, execution, succeeded)
     }
   }
 
