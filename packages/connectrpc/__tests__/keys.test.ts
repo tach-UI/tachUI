@@ -748,6 +748,105 @@ describe('Any and extensions', () => {
   })
 })
 
+describe('wrapper and Struct fields', () => {
+  describe.each([
+    ['development', () => {}],
+    ['production', inProduction],
+  ])('in %s', (_environment, setUp) => {
+    it.each([
+      ['a StringValue', { nickname: 'Ada' }, '{"nickname":"Ada"}'],
+      ['an Int64Value', { sinceId: 9007199254740993n }, '{"sinceId":"9007199254740993"}'],
+    ])('key %s as its bare scalar, as initializer or generated message', (_label, init, segment) => {
+      setUp()
+      expect(canonical(init)).toBe(segment)
+      expect(canonical(listUsers(init))).toBe(segment)
+      expect(build(init).request).toEqual(listUsers(init))
+    })
+
+    it('keeps a present wrapper zero distinct from omission', () => {
+      setUp()
+      expect(canonical({ nickname: '' })).toBe('{"nickname":""}')
+      expect(canonical({ sinceId: 0n })).toBe('{"sinceId":"0"}')
+      expect(canonical(listUsers({ nickname: '' }))).toBe('{"nickname":""}')
+      expect(canonical({ nickname: '' })).not.toBe(canonical({}))
+    })
+
+    it('still checks a wrapper in a oneof as a message', () => {
+      setUp()
+      const init = { selector: { case: 'byNickname', value: { value: 'Ada' } } }
+      expect(canonical(init)).toBe('{"byNickname":"Ada"}')
+      expect(canonical(listUsers(init))).toBe('{"byNickname":"Ada"}')
+      expect(() =>
+        build({ selector: { case: 'byNickname', value: 'Ada' } })
+      ).toThrow(/request\.selector\.value is string, but google\.protobuf\.StringValue is a message/)
+    })
+
+    // `fields` is the Struct message's own field name, and must key like any other.
+    const json = { fields: 1, b: [true, null, 'x'], a: { z: 2, y: {} } }
+    const jsonText = '{"a":{"y":{},"z":2},"b":[true,null,"x"],"fields":1}'
+
+    it.each([
+      ['a singular field', { metadata: json }, `{"metadata":${jsonText}}`],
+      ['a list element', { metadataList: [json] }, `{"metadataList":[${jsonText}]}`],
+      ['a map value', { metadataByName: { main: json } }, `{"metadataByName":{"main":${jsonText}}}`],
+      [
+        'a oneof member',
+        { selector: { case: 'byMetadata', value: json } },
+        `{"byMetadata":${jsonText}}`,
+      ],
+    ])('key a Struct in %s as its JSON object, keys sorted', (_label, init, segment) => {
+      setUp()
+      expect(canonical(init)).toBe(segment)
+      expect(canonical(listUsers(init))).toBe(segment)
+    })
+
+    it('refuses something other than a JSON object where a Struct belongs', () => {
+      setUp()
+      expect(() => build({ metadata: 'x' })).toThrow(
+        /request\.metadata is string, but google\.protobuf\.Struct is a JSON object/
+      )
+    })
+  })
+})
+
+describe('map keys', () => {
+  const protoKey = () => JSON.parse('{"__proto__":1,"a":2}') as Record<string, unknown>
+
+  describe.each([
+    ['development', () => {}],
+    ['production', inProduction],
+  ])('in %s', (_environment, setUp) => {
+    it.each([
+      ['a scalar map', () => ({ quotas: protoKey() }), /request\.quotas\["__proto__"\]/],
+      [
+        'a nested map',
+        () => ({ filter: { labels: JSON.parse('{"__proto__":"x"}') } }),
+        /request\.filter\.labels\["__proto__"\]/,
+      ],
+      [
+        'a message map',
+        () => ({ namedFilters: JSON.parse('{"__proto__":{}}') }),
+        /request\.namedFilters\["__proto__"\]/,
+      ],
+      [
+        'a Struct',
+        () => ({ metadata: { a: protoKey() } }),
+        /request\.metadata\["a"\]\["__proto__"\]/,
+      ],
+    ])('refuses a "__proto__" key in %s, naming it', (_label, init, path) => {
+      setUp()
+      const attempt = () => build(init())
+      expect(attempt).toThrow(ConnectAdapterError)
+      expect(attempt).toThrow(path)
+    })
+
+    it('keys an empty map as its omission', () => {
+      setUp()
+      expect(canonical({ quotas: {} })).toBe('{}')
+    })
+  })
+})
+
 describe('malformed input', () => {
   describe.each([
     ['development', () => {}],

@@ -19,8 +19,9 @@
  *   request across two entries, and the result stays readable in devtools.
  *
  * Anything JSON cannot carry faithfully is refused rather than keyed: a
- * populated `google.protobuf.Any` or extension data (no registry is taken), and
- * unknown fields preserved from a binary parse, which `toJson` would drop.
+ * populated `google.protobuf.Any` or extension data (no registry is taken),
+ * unknown fields preserved from a binary parse, which `toJson` would drop, and a
+ * map or Struct key named `__proto__`, which the request copy would drop too.
  *
  * See ADR 0001: `docs/reference/adr/0001-data-and-communications-architecture.md`.
  */
@@ -35,6 +36,7 @@ import type {
   MessageInitShape,
   MessageShape,
 } from '@bufbuild/protobuf'
+import { isWrapperDesc } from '@bufbuild/protobuf/wkt'
 import { isDevelopment } from '@tachui/query'
 
 import { DEFAULT_TRANSPORT_NAME } from './defaults'
@@ -66,6 +68,14 @@ const JSON_WRITE_OPTIONS = {
 } as const
 
 const ANY_TYPE_NAME = 'google.protobuf.Any'
+const STRUCT_TYPE_NAME = 'google.protobuf.Struct'
+const VALUE_TYPE_NAME = 'google.protobuf.Value'
+
+/**
+ * Assigning this name sets an object's prototype instead of adding an entry,
+ * so the request copy and Protobuf JSON both lose a map entry by that name.
+ */
+const PROTO_KEY = '__proto__'
 
 /** Protobuf bookkeeping on a message, never a field name. */
 const TYPE_NAME_PROPERTY = '$typeName'
@@ -179,6 +189,17 @@ function hasContent(value: unknown): boolean {
     value !== undefined &&
     value !== null &&
     (value as { length?: unknown }).length !== 0
+  )
+}
+
+/**
+ * Whether protobuf-es holds this field's `google.protobuf.Struct` values as
+ * JSON objects, as it does everywhere but inside `google.protobuf.Value`.
+ */
+function holdsStructAsJson(field: DescField, desc: DescMessage): boolean {
+  return (
+    desc.typeName === STRUCT_TYPE_NAME &&
+    field.parent.typeName !== VALUE_TYPE_NAME
   )
 }
 
@@ -301,23 +322,38 @@ class RequestChecker {
   private field(field: DescField, value: unknown, path: string): void {
     switch (field.fieldKind) {
       case 'message':
-        this.message(field.message, value, path)
+        // protobuf-es holds a singular wrapper outside a oneof as its bare
+        // scalar, which normalization checks as it would any scalar.
+        if (field.oneof === undefined && isWrapperDesc(field.message)) {
+          return
+        }
+        this.messageValue(field, field.message, value, path)
         return
       case 'list':
         if (field.listKind === 'message' && Array.isArray(value)) {
           value.forEach((element: unknown, index) => {
             if (element !== undefined && element !== null) {
-              this.message(field.message, element, `${path}[${index}]`)
+              this.messageValue(
+                field,
+                field.message,
+                element,
+                `${path}[${index}]`
+              )
             }
           })
         }
         return
       case 'map':
-        if (field.mapKind === 'message' && isObjectValue(value)) {
+        if (!isObjectValue(value)) {
+          return
+        }
+        this.mapKeys(value, path)
+        if (field.mapKind === 'message') {
           for (const entry of Object.keys(value)) {
             const element = value[entry]
             if (element !== undefined && element !== null) {
-              this.message(
+              this.messageValue(
+                field,
                 field.message,
                 element,
                 `${path}[${JSON.stringify(entry)}]`
@@ -328,6 +364,67 @@ class RequestChecker {
         return
       default:
         return
+    }
+  }
+
+  /** A value of a message-typed field, walked as protobuf-es holds it. */
+  private messageValue(
+    field: DescField,
+    desc: DescMessage,
+    value: unknown,
+    path: string
+  ): void {
+    if (holdsStructAsJson(field, desc)) {
+      this.struct(value, path)
+    } else {
+      this.message(desc, value, path)
+    }
+  }
+
+  /**
+   * A Struct held as a JSON object. Its keys are the caller's, not field
+   * names, so only what a copy would lose is refused.
+   */
+  private struct(value: unknown, path: string): void {
+    if (!isObjectValue(value)) {
+      this.fail(
+        `${path} is ${describeValue(value)}, but ${STRUCT_TYPE_NAME} is a JSON object. Pass a plain object.`
+      )
+    }
+    this.json(value, path)
+  }
+
+  private json(value: unknown, path: string): void {
+    if (typeof value !== 'object' || value === null) {
+      return
+    }
+    if (this.open.has(value)) {
+      this.fail(`${path} refers back to an object that contains it.`)
+    }
+    this.open.add(value)
+    try {
+      if (Array.isArray(value)) {
+        value.forEach((element: unknown, index) => {
+          this.json(element, `${path}[${index}]`)
+        })
+        return
+      }
+      const members = value as Record<string, unknown>
+      this.mapKeys(members, path)
+      for (const name of Object.keys(members)) {
+        this.json(members[name], `${path}[${JSON.stringify(name)}]`)
+      }
+    } finally {
+      this.open.delete(value)
+    }
+  }
+
+  /** Refused everywhere: the key and the request would both lose the entry. */
+  private mapKeys(value: Record<string, unknown>, path: string): void {
+    if (Object.hasOwn(value, PROTO_KEY)) {
+      this.fail(
+        `${path}[${JSON.stringify(PROTO_KEY)}] cannot be keyed. Copying the request sets an object's prototype for that name instead of adding an entry, so both the key and the request sent would drop it and match a request without it. Use another key.`
+      )
     }
   }
 
@@ -362,7 +459,7 @@ class RequestChecker {
       selectedValue !== undefined &&
       selectedValue !== null
     ) {
-      this.message(field.message, selectedValue, `${path}.value`)
+      this.messageValue(field, field.message, selectedValue, `${path}.value`)
     }
   }
 }

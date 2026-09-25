@@ -110,8 +110,9 @@ returns, `keyExtension` appends segments after the request:
 
 What Protobuf JSON cannot carry faithfully is refused with a `ConnectAdapterError`
 rather than keyed: a populated `google.protobuf.Any` or extension data (registries are
-not yet supported), unknown fields preserved from a binary parse, a message of the
-wrong type, and an input that is not an object or throws. A property that is not a
+not yet supported), unknown fields preserved from a binary parse, a map or
+`google.protobuf.Struct` key named `__proto__`, a message of the wrong type, and an
+input that is not an object or throws. A property that is not a
 field of the request is refused in development; in production it is dropped from the
 key and the request alike.
 

@@ -6,8 +6,11 @@
  *
  * `users.proto` is proto3 and covers every field shape the canonical request
  * has to handle — int64, bytes, oneof, maps, enums, nested, repeated, and
- * recursive messages, `google.protobuf.Any`, and a proto3 `optional`. `legacy.proto` is
- * proto2, for explicit presence and extensions.
+ * recursive messages, `google.protobuf.Any`, and a proto3 `optional` — and the
+ * well-known types protobuf-es does not hold as messages: wrappers, which a
+ * singular field outside a oneof holds as the bare scalar, and
+ * `google.protobuf.Struct`, which a field holds as a JSON object. `legacy.proto`
+ * is proto2, for explicit presence and extensions.
  */
 
 import { create, createFileRegistry } from '@bufbuild/protobuf'
@@ -23,6 +26,8 @@ import {
   FieldDescriptorProto_Type,
   FileDescriptorProtoSchema,
   file_google_protobuf_any,
+  file_google_protobuf_struct,
+  file_google_protobuf_wrappers,
 } from '@bufbuild/protobuf/wkt'
 
 // Named as protoc spells them; protobuf-es drops the prefixes.
@@ -85,7 +90,11 @@ const usersFile = create(FileDescriptorProtoSchema, {
   name: 'acme/users/v1/users.proto',
   package: 'acme.users.v1',
   syntax: 'proto3',
-  dependency: ['google/protobuf/any.proto'],
+  dependency: [
+    'google/protobuf/any.proto',
+    'google/protobuf/struct.proto',
+    'google/protobuf/wrappers.proto',
+  ],
   enumType: [
     {
       name: 'Role',
@@ -213,12 +222,60 @@ const usersFile = create(FileDescriptorProtoSchema, {
           typeName: '.acme.users.v1.Query',
         }),
         field({ name: 'ids', number: 18, type: TYPE_INT64, repeated: true }),
+        field({
+          name: 'nickname',
+          number: 19,
+          type: TYPE_MESSAGE,
+          typeName: '.google.protobuf.StringValue',
+        }),
+        field({
+          name: 'since_id',
+          number: 20,
+          type: TYPE_MESSAGE,
+          typeName: '.google.protobuf.Int64Value',
+        }),
+        // A wrapper in a oneof stays a message.
+        field({
+          name: 'by_nickname',
+          number: 21,
+          type: TYPE_MESSAGE,
+          typeName: '.google.protobuf.StringValue',
+          oneofIndex: 0,
+        }),
+        field({
+          name: 'metadata',
+          number: 22,
+          type: TYPE_MESSAGE,
+          typeName: '.google.protobuf.Struct',
+        }),
+        field({
+          name: 'metadata_list',
+          number: 23,
+          type: TYPE_MESSAGE,
+          typeName: '.google.protobuf.Struct',
+          repeated: true,
+        }),
+        field({
+          name: 'metadata_by_name',
+          number: 24,
+          type: TYPE_MESSAGE,
+          typeName: `${REQUEST}.MetadataByNameEntry`,
+          repeated: true,
+        }),
+        field({
+          name: 'by_metadata',
+          number: 25,
+          type: TYPE_MESSAGE,
+          typeName: '.google.protobuf.Struct',
+          oneofIndex: 0,
+        }),
       ],
       oneofDecl: [{ name: 'selector' }, { name: '_max_age' }],
       nestedType: [
         mapEntry('QuotasEntry', TYPE_INT64),
         mapEntry('NamedFiltersEntry', TYPE_MESSAGE, '.acme.users.v1.Filter'),
         mapEntry('AttachmentsByNameEntry', TYPE_MESSAGE, '.google.protobuf.Any'),
+        mapEntry('MetadataByNameEntry', TYPE_MESSAGE, '.google.protobuf.Struct'),
       ],
     },
     {
@@ -293,10 +350,14 @@ const legacyFile = create(FileDescriptorProtoSchema, {
   ],
 })
 
+const wellKnownFiles = new Map([
+  ['google/protobuf/any.proto', file_google_protobuf_any],
+  ['google/protobuf/struct.proto', file_google_protobuf_struct],
+  ['google/protobuf/wrappers.proto', file_google_protobuf_wrappers],
+])
+
 const registry = createFileRegistry(
-  createFileRegistry(usersFile, (name) =>
-    name === 'google/protobuf/any.proto' ? file_google_protobuf_any : undefined
-  ),
+  createFileRegistry(usersFile, (name) => wellKnownFiles.get(name)),
   createFileRegistry(legacyFile, () => undefined)
 )
 
