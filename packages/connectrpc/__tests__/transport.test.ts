@@ -223,6 +223,24 @@ describe('duplicate provision in one scope', () => {
     ).not.toThrow()
     expect(inScope(root, () => useConnectTransport())).toBe(transport)
   })
+
+  it('binds a repeated provision to the client the scope holds now', () => {
+    const transport = fakeTransport()
+    const root = rootWithClient('root')
+    inScope(root, () => provideConnectTransport(transport))
+
+    // The scope's client is replaced, then the render provides again.
+    inScope(root, () => {
+      provideQueryClient(newClient())
+      provideConnectTransport(transport)
+    })
+    const child = createComponentContext('child', root)
+
+    expect(() => inScope(child, () => provideConnectTransport(fakeTransport()))).toThrowError(
+      /already bound to a different Transport/
+    )
+    expect(inScope(root, () => useConnectTransport())).toBe(transport)
+  })
 })
 
 describe('client bindings', () => {
@@ -384,6 +402,12 @@ describe('diagnostics', () => {
     expect(() => inScope(root, () => useConnectTransport("a'b"))).toThrowError(
       `No provider for transport "a'b". Call provideConnectTransport(transport, { name: "a'b" })`
     )
+    expect(() => inScope(root, () => useConnectTransport('a"b'))).toThrowError(
+      'No provider for transport "a\\"b". Call provideConnectTransport(transport, { name: "a\\"b" })'
+    )
+    expect(() => inScope(root, () => useConnectTransport('a\nb'))).toThrowError(
+      'No provider for transport "a\\nb". Call provideConnectTransport(transport, { name: "a\\nb" })'
+    )
   })
 
   it('refuses lookup and provision outside a component context', () => {
@@ -412,18 +436,63 @@ describe('diagnostics', () => {
     ['an empty name', ''],
     ['a whitespace-only name', '  '],
     ['a non-string name', 42],
+    ['a null name', null],
   ])('refuses %s without binding it', (_label, name) => {
     const root = rootWithClient('root')
-
-    expect(() =>
+    const provide = () =>
       inScope(root, () =>
         provideConnectTransport(fakeTransport(), {
           name: name as unknown as string,
         })
       )
-    ).toThrowError(/as a transport name\. A name must be a non-empty string/)
-    expect(() => inScope(root, () => useConnectTransport(''))).toThrowError(
-      /No provider for transport ""/
+
+    expect(provide).toThrowError(/as a transport name\. A name must be a non-empty string/)
+    // A second, different transport would be refused as already bound had the
+    // first been recorded against the client.
+    expect(provide).toThrowError(/as a transport name\. A name must be a non-empty string/)
+    expect(() =>
+      inScope(root, () => useConnectTransport(name as unknown as string))
+    ).toThrowError(ConnectAdapterError)
+    expect(() => inScope(root, () => useConnectTransport())).toThrowError(
+      /No provider for the default transport/
+    )
+  })
+
+  it.each([
+    ['an empty name', '', /given "" as a transport name/],
+    ['a whitespace-only name', '  ', /given " {2}" as a transport name/],
+    ['a symbol', Symbol('account'), /given symbol as a transport name/],
+    ['null', null, /given null as a transport name/],
+  ])('refuses a lookup of %s as an invalid name, not a missing provider', (_label, name, given) => {
+    const root = rootWithClient('root')
+    const lookup = () =>
+      inScope(root, () => useConnectTransport(name as unknown as string))
+
+    expect(lookup).toThrowError(given)
+    expect(lookup).toThrowError(/A transport lookup was given .* A name must be a non-empty string/)
+    expect(lookup).not.toThrowError(/No provider|transport undefined/)
+  })
+
+  it.each([
+    ['a string', 'account'],
+    ['a number', 42],
+  ])('refuses %s as options rather than providing the default', (_label, options) => {
+    const root = rootWithClient('root')
+    const provide = () =>
+      inScope(root, () =>
+        provideConnectTransport(
+          fakeTransport(),
+          options as unknown as { name: string }
+        )
+      )
+
+    expect(provide).toThrowError(ConnectAdapterError)
+    expect(provide).toThrowError(/was given .* as its options/)
+    expect(() => inScope(root, () => useConnectTransport())).toThrowError(
+      /No provider for the default transport/
+    )
+    expect(() => inScope(root, () => useConnectTransport('account'))).toThrowError(
+      /No provider for transport "account"/
     )
   })
 

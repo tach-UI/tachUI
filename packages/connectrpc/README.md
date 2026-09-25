@@ -113,7 +113,8 @@ a `ConnectAdapterError` rather than returning `undefined`:
   shadowing an ancestor's transport while its sibling inherits it. A lookup binds
   what it resolves to that client too, so the order does not matter. Provide the
   transport where the client is provided, or give the shadowing scope its own client;
-- an empty, whitespace-only, or non-string name.
+- an empty, whitespace-only, or non-string name, `null` included, whether provided or
+  looked up; or options that are not an object.
 
 tachUI cannot see a target or credentials change inside one `Transport`; isolate that
 with `keyExtension`, a new client, or a new transport.

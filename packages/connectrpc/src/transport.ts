@@ -74,13 +74,23 @@ function describeName(name: ConnectTransportName): string {
 
 /**
  * The name is cache identity, so it must be one a diagnostic can show and a
- * reader can tell apart from `'default'`.
+ * reader can tell apart from `'default'`. `caller` and `action` complete the
+ * message for provision or lookup.
  */
-function assertValidName(name: unknown): asserts name is ConnectTransportName {
+function assertValidName(
+  name: unknown,
+  caller: string,
+  action: string
+): asserts name is ConnectTransportName {
   if (typeof name !== 'string' || name.trim() === '') {
-    const given = typeof name === 'string' ? JSON.stringify(name) : typeof name
+    const given =
+      typeof name === 'string'
+        ? JSON.stringify(name)
+        : name === null
+          ? 'null'
+          : typeof name
     throw new ConnectAdapterError(
-      `provideConnectTransport() was given ${given} as a transport name. A name must be a non-empty string; omit it to provide the default transport.`
+      `${caller} was given ${given} as a transport name. A name must be a non-empty string; omit it to ${action} the default transport.`
     )
   }
 }
@@ -119,8 +129,16 @@ export function provideConnectTransport(
   transport: Transport,
   options?: ProvideConnectTransportOptions
 ): void {
-  const name = options?.name ?? DEFAULT_TRANSPORT_NAME
-  assertValidName(name)
+  if (options !== undefined && options !== null && typeof options !== 'object') {
+    throw new ConnectAdapterError(
+      `provideConnectTransport() was given ${typeof options} as its options. Pass { name } to provide a named transport, or omit the options to provide the default transport.`
+    )
+  }
+  // Only an omitted name means the default: a null one is malformed
+  // configuration, and would otherwise surface under a name nobody chose.
+  const name =
+    options?.name === undefined ? DEFAULT_TRANSPORT_NAME : options.name
+  assertValidName(name, 'provideConnectTransport()', 'provide')
   const context = getCurrentComponentContextOrNull()
   if (context === null) {
     throw new ConnectAdapterError(
@@ -147,15 +165,14 @@ export function provideConnectTransport(
     | Map<ConnectTransportName, Transport>
     | undefined
   const existing = own?.get(name)
-  if (existing === transport) {
-    return
-  }
-  if (existing !== undefined) {
+  if (existing !== undefined && existing !== transport) {
     throw new ConnectAdapterError(
       `${describeName(name)} is already provided in this scope. Provide each name once per scope; to use a different transport, provide it in a nested scope under its own QueryClient, or give it a different name.`
     )
   }
 
+  // A repeat provision still binds: the scope's client may have been replaced
+  // since the first, and the new one must hold the name to this transport too.
   bindToClient(
     client,
     name,
@@ -164,6 +181,9 @@ export function provideConnectTransport(
       `${describeName(name)} is already bound to a different Transport for this QueryClient. A transport name identifies one backend within a client, so rebinding it — including after an account change — could serve entries cached for the previous one. Use a new QueryClient for the new backend or account, or provide the transport under a different name.`
   )
 
+  if (existing !== undefined) {
+    return
+  }
   if (own === undefined) {
     context.provide(ConnectTransportsKey.symbol, new Map([[name, transport]]))
   } else {
@@ -180,6 +200,7 @@ export function provideConnectTransport(
 export function resolveConnectTransport(
   name: ConnectTransportName = DEFAULT_TRANSPORT_NAME
 ): ResolvedConnectTransport {
+  assertValidName(name, 'A transport lookup', 'look up')
   const context = getCurrentComponentContextOrNull()
   if (context === null) {
     throw new ConnectAdapterError(
