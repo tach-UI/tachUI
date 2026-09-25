@@ -526,6 +526,55 @@ describe('call options', () => {
     }
   })
 
+  it('reads call options once, so headers changed afterwards change no later execution', async () => {
+    const { transport, calls } = scriptedTransport(call => call.respond({}))
+    const root = scope({ default: transport })
+    const headers = { 'x-trace': 'abc' }
+    const contextValues = { get: () => undefined, set: () => contextValues, delete: () => contextValues } as never
+    const held: { headers: HeadersInit; contextValues: never } = { headers, contextValues }
+
+    const { value: query } = root.mount(() =>
+      createConnectQuery(getUser, () => ({ id: 1n }), { callOptions: held })
+    )
+    await settle()
+    held.headers = { 'x-trace': 'changed' }
+    held.contextValues = {} as never
+    await query.refetch()
+
+    expect(calls).toHaveLength(2)
+    for (const call of calls) {
+      expect(call.header).toBe(headers)
+      expect(call.contextValues).toBe(contextValues)
+    }
+  })
+
+  it('reads call options once, so headers changed during backoff change no retry', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0.999)
+    const { transport, calls } = scriptedTransport(call =>
+      call.fail(new ConnectError('busy', Code.Unavailable))
+    )
+    const root = scope({ default: transport })
+    const headers = { 'x-trace': 'abc' }
+    const held: { headers: HeadersInit } = { headers }
+
+    root.mount(() =>
+      createConnectQuery(getUser, () => ({ id: 1n }), {
+        retry: 1,
+        callOptions: held,
+      })
+    )
+    await vi.advanceTimersByTimeAsync(0)
+    expect(calls).toHaveLength(1)
+    held.headers = { 'x-trace': 'changed' }
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(calls).toHaveLength(2)
+    for (const call of calls) {
+      expect(call.header).toBe(headers)
+    }
+  })
+
   it('passes absent values when no call options are given', async () => {
     const { transport, calls } = scriptedTransport()
     const root = scope({ default: transport })

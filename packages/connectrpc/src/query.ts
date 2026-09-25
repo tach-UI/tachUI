@@ -125,7 +125,11 @@ export function createConnectQuery<
     'Pass an options object, or omit it.'
   )
   const retry = retryCountFrom(options?.retry, caller)
-  const callOptions = callOptionsFrom(options?.callOptions, caller)
+  // Read once: changing the options object afterwards changes no call, a
+  // retry included, and cannot slip past the checks made on it here.
+  const { signal: applicationSignal, timeoutMs, headers, contextValues } =
+    callOptionsFrom(options?.callOptions, caller)
+  const callOptions = { headers, contextValues }
   const { name, transport, client } = resolveAdapterTransport(
     caller,
     options?.transport,
@@ -162,7 +166,7 @@ export function createConnectQuery<
   let watching: QueryKeyHash | undefined
   let unwatch: (() => void) | undefined
   let disposed = false
-  const bounds = { signal: callOptions.signal, timeoutMs: callOptions.timeoutMs }
+  const bounds = { signal: applicationSignal, timeoutMs }
 
   /** Waits on `execution`, reporting a give-up only while watching its entry. */
   function waitOn(execution: Execution): Wait {
