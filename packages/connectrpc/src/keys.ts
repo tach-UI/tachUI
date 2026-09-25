@@ -26,7 +26,13 @@
  * See ADR 0001: `docs/reference/adr/0001-data-and-communications-architecture.md`.
  */
 
-import { clearField, clone, create, toJson } from '@bufbuild/protobuf'
+import {
+  clearField,
+  clone,
+  create,
+  isFieldSet,
+  toJson,
+} from '@bufbuild/protobuf'
 import type {
   DescField,
   DescMessage,
@@ -180,6 +186,9 @@ function memberNamed(
   return desc.members.find(member => member.localName === localName)
 }
 
+/** A singular message field, as opposed to a list or map of messages. */
+type DescMessageField = DescField & { fieldKind: 'message' }
+
 function isObjectValue(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -190,6 +199,14 @@ function hasContent(value: unknown): boolean {
     value !== null &&
     (value as { length?: unknown }).length !== 0
   )
+}
+
+/**
+ * Whether protobuf-es holds this message field as its wrapper's bare scalar,
+ * as it does for a singular wrapper outside a oneof.
+ */
+function holdsWrapperAsScalar(field: DescMessageField): boolean {
+  return field.oneof === undefined && isWrapperDesc(field.message)
 }
 
 /**
@@ -324,7 +341,7 @@ class RequestChecker {
       case 'message':
         // protobuf-es holds a singular wrapper outside a oneof as its bare
         // scalar, which normalization checks as it would any scalar.
-        if (field.oneof === undefined && isWrapperDesc(field.message)) {
+        if (holdsWrapperAsScalar(field)) {
           return
         }
         this.messageValue(field, field.message, value, path)
@@ -383,12 +400,18 @@ class RequestChecker {
 
   /**
    * A Struct held as a JSON object. Its keys are the caller's, not field
-   * names, so only what a copy would lose is refused.
+   * names, so only what a copy would lose is refused — and a Struct message,
+   * whose bookkeeping would otherwise be keyed and sent as the caller's data.
    */
   private struct(value: unknown, path: string): void {
     if (!isObjectValue(value)) {
       this.fail(
         `${path} is ${describeValue(value)}, but ${STRUCT_TYPE_NAME} is a JSON object. Pass a plain object.`
+      )
+    }
+    if (value[TYPE_NAME_PROPERTY] === STRUCT_TYPE_NAME) {
+      this.fail(
+        `${path} is a ${STRUCT_TYPE_NAME} message, but this field takes a plain JSON object. Pass the object the Struct describes, for example { name: 'Ada' }.`
       )
     }
     this.json(value, path)
@@ -468,7 +491,13 @@ class RequestChecker {
  * Removes the page param from a copy of the request, so every page of one
  * list keys alike. The path is resolved against the schema even where the
  * request leaves it unset, so a misspelled `pageParamKey` fails on the first
- * page rather than keying each token separately.
+ * page rather than keying each token separately. A path may pass only through
+ * fields protobuf-es holds as messages, not a wrapper's bare scalar or a
+ * Struct's JSON object.
+ *
+ * A parent message the path passes through is dropped from the copy once
+ * nothing is left in it, so a parent absent, present but empty, or holding
+ * only the token keys alike.
  */
 function omitPageParam(
   schema: DescMessage,
@@ -489,15 +518,27 @@ function omitPageParam(
   const last = segments.pop()!
   let desc = schema
   let target: Record<string, unknown> | undefined = request
+  const parents: {
+    holder: Record<string, unknown>
+    field: DescMessageField
+  }[] = []
   for (const segment of segments) {
     const member = memberNamed(desc, segment)
-    if (member?.kind !== 'field' || member.fieldKind !== 'message') {
+    if (
+      member?.kind !== 'field' ||
+      member.fieldKind !== 'message' ||
+      holdsWrapperAsScalar(member) ||
+      holdsStructAsJson(member, member.message)
+    ) {
       throw invalid(
         `${JSON.stringify(pageParamKey)} passes through ${JSON.stringify(segment)}, which is not a singular message field of ${desc.typeName}.`
       )
     }
     desc = member.message
     const next: unknown = target?.[segment]
+    if (target !== undefined && isObjectValue(next)) {
+      parents.push({ holder: target, field: member })
+    }
     target = isObjectValue(next) ? next : undefined
   }
   const member = memberNamed(desc, last)
@@ -506,13 +547,20 @@ function omitPageParam(
       `${JSON.stringify(pageParamKey)} names no field of ${desc.typeName} (${JSON.stringify(last)}).`
     )
   }
-  if (target === undefined) {
-    return
+  if (target !== undefined) {
+    if (member.kind === 'oneof') {
+      target[last] = { case: undefined }
+    } else {
+      clearField(target as MessageShape<DescMessage>, member)
+    }
   }
-  if (member.kind === 'oneof') {
-    target[last] = { case: undefined }
-  } else {
-    clearField(target as MessageShape<DescMessage>, member)
+  for (let index = parents.length - 1; index >= 0; index--) {
+    const { holder, field } = parents[index]
+    const parent = holder[field.localName] as MessageShape<DescMessage>
+    if (field.message.fields.some(child => isFieldSet(parent, child))) {
+      return
+    }
+    clearField(holder as MessageShape<DescMessage>, field)
   }
 }
 
@@ -522,6 +570,10 @@ function omitPageParam(
  * every engine.
  */
 function stableStringify(value: JsonValue): string {
+  // JSON.stringify writes -0 as 0, but the two differ on the binary wire.
+  if (Object.is(value, -0)) {
+    return '-0'
+  }
   if (Array.isArray(value)) {
     return `[${value.map(stableStringify).join(',')}]`
   }

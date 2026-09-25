@@ -10,7 +10,7 @@
 import { clone, create, isMessage, setExtension } from '@bufbuild/protobuf'
 import type { DescMethod } from '@bufbuild/protobuf'
 import { BinaryWriter, WireType } from '@bufbuild/protobuf/wire'
-import { AnySchema } from '@bufbuild/protobuf/wkt'
+import { AnySchema, StructSchema } from '@bufbuild/protobuf/wkt'
 import { createContextKey, createContextValues } from '@connectrpc/connect'
 import type { Transport } from '@connectrpc/connect'
 import {
@@ -614,16 +614,70 @@ describe('infinite keys', () => {
     expect(build({}, { pageParamKey: 'query.cursor' }).key[5]).toBe('{}')
   })
 
+  it('key a parent alike whether absent, present but empty, or holding only the token', () => {
+    const options = { pageParamKey: 'query.cursor' }
+    const absent = build({}, options)
+    const empty = build({ query: {} }, options)
+    const tokenOnly = build({ query: { cursor: 'abc' } }, options)
+    expect(absent.key[5]).toBe('{}')
+    expect(empty.key).toEqual(absent.key)
+    expect(tokenOnly.key).toEqual(absent.key)
+    expect(
+      (tokenOnly.request as unknown as { query: { cursor: string } }).query.cursor
+    ).toBe('abc')
+    expect(
+      build({ query: { cursor: 'abc', filter: { name: 'Ada' } } }, options).key[5]
+    ).toBe('{"query":{"filter":{"name":"Ada"}}}')
+  })
+
+  it('drop every parent the token leaves empty, and stop at one it does not', () => {
+    const options = { pageParamKey: 'query.filter.name' }
+    const absent = build({}, options).key
+    expect(absent[5]).toBe('{}')
+    expect(build({ query: {} }, options).key).toEqual(absent)
+    expect(build({ query: { filter: {} } }, options).key).toEqual(absent)
+    expect(build({ query: { filter: { name: 'Ada' } } }, options).key).toEqual(absent)
+    expect(
+      build({ query: { cursor: 'c', filter: { name: 'Ada' } } }, options).key[5]
+    ).toBe('{"query":{"cursor":"c"}}')
+  })
+
   it.each([
     ['names no field', 'pageTokn', /names no field/],
     ['ends in no field', 'query.cursr', /names no field/],
     ['passes through a scalar', 'pageToken.more', /not a singular message field/],
     ['passes through a list', 'filters.name', /not a singular message field/],
     ['passes through a oneof', 'selector.value', /not a singular message field/],
+    ['passes through a wrapper', 'nickname.value', /not a singular message field/],
+    ['passes through a Struct', 'metadata.fields', /not a singular message field/],
     ['is empty', '', /must be a request field name/],
     ['is not a string', 7, /must be a request field name/],
   ])('refuse a pageParamKey that %s', (_label, pageParamKey, message) => {
     expect(() => build({}, { pageParamKey: pageParamKey as never })).toThrow(message)
+  })
+
+  describe.each([
+    ['development', () => {}],
+    ['production', inProduction],
+  ])('in %s', (_environment, setUp) => {
+    it.each([
+      ['a wrapper, set', { nickname: 'a' }, 'nickname.value'],
+      ['a Struct, set', { metadata: { x: 1 } }, 'metadata.fields'],
+      ['a wrapper, unset', {}, 'nickname.value'],
+    ])('refuse a path through %s', (_label, init, pageParamKey) => {
+      setUp()
+      const attempt = () => build(init, { pageParamKey })
+      expect(attempt).toThrow(ConnectAdapterError)
+      expect(attempt).toThrow(/not a singular message field/)
+    })
+
+    it.each(['pageToken', 'query.cursor', 'nickname', 'selector'])(
+      'accept %s',
+      pageParamKey => {
+        setUp()
+        expect(build({}, { pageParamKey }).key[4]).toBe('infinite')
+      }
+    )
   })
 })
 
@@ -804,6 +858,34 @@ describe('wrapper and Struct fields', () => {
       setUp()
       expect(() => build({ metadata: 'x' })).toThrow(
         /request\.metadata is string, but google\.protobuf\.Struct is a JSON object/
+      )
+    })
+
+    it.each([
+      [
+        'a singular field',
+        () => ({ metadata: create(StructSchema, {}) }),
+        /request\.metadata is a google\.protobuf\.Struct message/,
+      ],
+      [
+        'a list element',
+        () => ({ metadataList: [{}, create(StructSchema, {})] }),
+        /request\.metadataList\[1\] is a google\.protobuf\.Struct message/,
+      ],
+    ])('refuses a Struct message in %s, naming the field', (_label, init, field) => {
+      setUp()
+      const attempt = () => build(init())
+      expect(attempt).toThrow(ConnectAdapterError)
+      expect(attempt).toThrow(field)
+      expect(attempt).toThrow(/takes a plain JSON object/)
+    })
+
+    it('keys a negative zero apart from zero', () => {
+      setUp()
+      expect(canonical({ metadata: { a: 0 } })).toBe('{"metadata":{"a":0}}')
+      expect(canonical({ metadata: { a: -0 } })).toBe('{"metadata":{"a":-0}}')
+      expect(canonical({ metadataList: [{ a: [-0] }] })).toBe(
+        '{"metadataList":[{"a":[-0]}]}'
       )
     })
   })
