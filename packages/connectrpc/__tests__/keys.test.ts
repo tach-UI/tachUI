@@ -880,6 +880,52 @@ describe('wrapper and Struct fields', () => {
       expect(attempt).toThrow(/takes a plain JSON object/)
     })
 
+    it.each([
+      [
+        'another message where a Struct belongs',
+        () => ({ metadata: create(FilterSchema, { name: 'x' } as never) }),
+        /request\.metadata is a acme\.users\.v1\.Filter message/,
+      ],
+      [
+        'a Struct message inside Struct JSON',
+        () => ({ metadata: { a: create(StructSchema, {}) } }),
+        /request\.metadata\["a"\] is a google\.protobuf\.Struct message/,
+      ],
+      [
+        'an Any message inside Struct JSON',
+        () => ({
+          metadataByName: {
+            main: {
+              a: [
+                create(AnySchema, {
+                  typeUrl: 'type.googleapis.com/acme.users.v1.Filter',
+                  value: new Uint8Array([10, 1, 120]),
+                }),
+              ],
+            },
+          },
+        }),
+        /request\.metadataByName\["main"\]\["a"\]\[0\] is a google\.protobuf\.Any message/,
+      ],
+      [
+        'a message carrying unknown fields inside Struct JSON',
+        () => {
+          const filter = create(FilterSchema, { name: 'x' } as never) as unknown as {
+            $unknown?: unknown
+          }
+          filter.$unknown = [{ no: 50, wireType: WireType.Varint, data: new Uint8Array([1]) }]
+          return { metadataList: [{ inner: filter }] }
+        },
+        /request\.metadataList\[0\]\["inner"\] is a acme\.users\.v1\.Filter message/,
+      ],
+    ])('refuses %s, naming the position', (_label, init, position) => {
+      setUp()
+      const attempt = () => build(init())
+      expect(attempt).toThrow(ConnectAdapterError)
+      expect(attempt).toThrow(position)
+      expect(attempt).toThrow(/takes a plain JSON object/)
+    })
+
     it('keys a negative zero apart from zero', () => {
       setUp()
       expect(canonical({ metadata: { a: 0 } })).toBe('{"metadata":{"a":0}}')
@@ -887,6 +933,41 @@ describe('wrapper and Struct fields', () => {
       expect(canonical({ metadataList: [{ a: [-0] }] })).toBe(
         '{"metadataList":[{"a":[-0]}]}'
       )
+    })
+  })
+})
+
+describe('negative zero', () => {
+  describe.each([
+    ['development', () => {}],
+    ['production', inProduction],
+  ])('in %s', (_environment, setUp) => {
+    it.each([
+      ['a proto3 optional int32', { maxAge: -0 }, { maxAge: 0 }, '{"maxAge":0}'],
+      ['a repeated int32', { pageSizes: [-0, 1] }, { pageSizes: [0, 1] }, '{"pageSizes":[0,1]}'],
+      ['an int32 map value', { limits: { a: -0 } }, { limits: { a: 0 } }, '{"limits":{"a":0}}'],
+      ['an Int32Value', { minAge: -0 }, { minAge: 0 }, '{"minAge":0}'],
+    ])('keys %s -0 as 0, which the wire encodes alike', (_label, negative, zero, segment) => {
+      setUp()
+      expect(canonical(zero)).toBe(segment)
+      expect(canonical(negative)).toBe(segment)
+      expect(canonical(listUsers(negative))).toBe(segment)
+    })
+
+    it('keeps a double and a Struct -0 apart from 0', () => {
+      setUp()
+      expect(canonical({ score: -0 })).toBe('{"score":-0}')
+      expect(canonical({ score: 0 })).toBe('{}')
+      expect(canonical({ metadata: { a: -0 } })).toBe('{"metadata":{"a":-0}}')
+      expect(canonical({ metadata: { a: 0 } })).toBe('{"metadata":{"a":0}}')
+    })
+
+    it('sends the -0 the caller wrote, normalizing only the key', () => {
+      setUp()
+      const { request } = build({ maxAge: -0, pageSizes: [-0] })
+      const sent = request as unknown as { maxAge: number; pageSizes: number[] }
+      expect(Object.is(sent.maxAge, -0)).toBe(true)
+      expect(Object.is(sent.pageSizes[0], -0)).toBe(true)
     })
   })
 })
@@ -991,6 +1072,26 @@ describe('malformed input', () => {
       const attempt = () => build(init)
       expect(attempt).toThrow(ConnectAdapterError)
       expect(attempt).toThrow(/its input function returned/)
+    })
+
+    it.each([
+      ['a Promise', () => Promise.resolve({ pageSize: 1 })],
+      ['an async function', async () => ({ pageSize: 1 })],
+    ])('refuses %s as the input, rather than keying an empty request', (_label, input) => {
+      setUp()
+      const attempt = () => buildConnectKey(ListUsers, input as never)
+      expect(attempt).toThrow(ConnectAdapterError)
+      expect(attempt).toThrow(/its input function returned a Promise/)
+    })
+
+    it('keys an empty request, and a class instance by its own fields', () => {
+      setUp()
+      class Request {
+        pageSize = 5
+        pageToken = 't'
+      }
+      expect(canonical({})).toBe('{}')
+      expect(canonical(new Request())).toBe('{"pageSize":5,"pageToken":"t"}')
     })
 
     it('refuses a throwing input function, keeping the cause', () => {

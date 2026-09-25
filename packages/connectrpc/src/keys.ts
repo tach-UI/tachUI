@@ -31,6 +31,8 @@ import {
   clone,
   create,
   isFieldSet,
+  isMessage,
+  ScalarType,
   toJson,
 } from '@bufbuild/protobuf'
 import type {
@@ -400,18 +402,14 @@ class RequestChecker {
 
   /**
    * A Struct held as a JSON object. Its keys are the caller's, not field
-   * names, so only what a copy would lose is refused — and a Struct message,
-   * whose bookkeeping would otherwise be keyed and sent as the caller's data.
+   * names, so only what a copy would lose is refused — and a message at any
+   * depth, whose bookkeeping would otherwise be keyed and sent as the caller's
+   * data, past the Any and unknown-field checks a message field gets.
    */
   private struct(value: unknown, path: string): void {
     if (!isObjectValue(value)) {
       this.fail(
         `${path} is ${describeValue(value)}, but ${STRUCT_TYPE_NAME} is a JSON object. Pass a plain object.`
-      )
-    }
-    if (value[TYPE_NAME_PROPERTY] === STRUCT_TYPE_NAME) {
-      this.fail(
-        `${path} is a ${STRUCT_TYPE_NAME} message, but this field takes a plain JSON object. Pass the object the Struct describes, for example { name: 'Ada' }.`
       )
     }
     this.json(value, path)
@@ -431,6 +429,12 @@ class RequestChecker {
           this.json(element, `${path}[${index}]`)
         })
         return
+      }
+      // protobuf-es takes any object with a string $typeName for a message.
+      if (isMessage(value)) {
+        this.fail(
+          `${path} is a ${value.$typeName} message, but a ${STRUCT_TYPE_NAME} position takes a plain JSON object. Pass the plain JSON the message describes, for example { name: 'Ada' }.`
+        )
       }
       const members = value as Record<string, unknown>
       this.mapKeys(members, path)
@@ -565,12 +569,109 @@ function omitPageParam(
 }
 
 /**
+ * A -0 where the wire encodes it as 0. Only float and double carry the sign;
+ * `scalar` is undefined for an enum.
+ */
+function unsignedZero(value: unknown, scalar: ScalarType | undefined): unknown {
+  return Object.is(value, -0) &&
+    scalar !== ScalarType.FLOAT &&
+    scalar !== ScalarType.DOUBLE
+    ? 0
+    : value
+}
+
+/** One value at a field's position, with integer -0s made 0 in place. */
+function normalizedFieldValue(field: DescField, value: unknown): unknown {
+  switch (field.fieldKind) {
+    case 'message':
+      if (holdsWrapperAsScalar(field)) {
+        const [wrapped] = field.message.fields
+        return unsignedZero(value, wrapped?.scalar)
+      }
+      normalizeMessageValue(field, field.message, value)
+      return value
+    case 'list':
+      if (Array.isArray(value)) {
+        for (let index = 0; index < value.length; index++) {
+          if (field.listKind === 'message') {
+            normalizeMessageValue(field, field.message, value[index])
+          } else {
+            value[index] = unsignedZero(value[index], field.scalar)
+          }
+        }
+      }
+      return value
+    case 'map':
+      if (isObjectValue(value)) {
+        for (const entry of Object.keys(value)) {
+          if (field.mapKind === 'message') {
+            normalizeMessageValue(field, field.message, value[entry])
+          } else {
+            value[entry] = unsignedZero(value[entry], field.scalar)
+          }
+        }
+      }
+      return value
+    default:
+      return unsignedZero(value, field.scalar)
+  }
+}
+
+/** A Struct's JSON numbers are doubles, so they keep their sign. */
+function normalizeMessageValue(
+  field: DescField,
+  desc: DescMessage,
+  value: unknown
+): void {
+  if (!holdsStructAsJson(field, desc) && isObjectValue(value)) {
+    normalizeIntegerZeros(desc, value)
+  }
+}
+
+/**
+ * Makes every -0 at an integer or enum position of the keyed copy 0, since
+ * the wire encodes the two alike there, while a float, double, or Struct -0
+ * keeps its own key. Only own members are written, so a proto2 default on the
+ * prototype never becomes present.
+ */
+function normalizeIntegerZeros(
+  desc: DescMessage,
+  message: Record<string, unknown>
+): void {
+  for (const member of desc.members) {
+    let holder: Record<string, unknown> = message
+    let field: DescField | undefined
+    let slot = member.localName
+    if (member.kind === 'oneof') {
+      const selected = message[member.localName]
+      if (!isObjectValue(selected)) {
+        continue
+      }
+      holder = selected
+      field = member.fields.find(candidate => candidate.localName === selected.case)
+      slot = 'value'
+    } else {
+      field = member
+    }
+    if (field === undefined || !Object.hasOwn(holder, slot)) {
+      continue
+    }
+    const value = holder[slot]
+    const normalized = normalizedFieldValue(field, value)
+    if (!Object.is(normalized, value)) {
+      holder[slot] = normalized
+    }
+  }
+}
+
+/**
  * Canonical JSON text: object members sorted at every depth, arrays in order.
  * Sorting by UTF-16 code unit, as `Array.prototype.sort` does, is the same in
  * every engine.
  */
 function stableStringify(value: JsonValue): string {
-  // JSON.stringify writes -0 as 0, but the two differ on the binary wire.
+  // JSON.stringify writes -0 as 0, but a float, double, or Struct -0 differs
+  // from 0 on the binary wire. Integer positions are made 0 before this.
   if (Object.is(value, -0)) {
     return '-0'
   }
@@ -639,6 +740,12 @@ export function buildConnectKey<M extends DescMethod>(
       `Cannot build a query key for ${described}: its input function returned ${describeValue(init)}. Return a ${schema.typeName} initializer object or message.`
     )
   }
+  // A Promise has no own fields, so it would key and send as an empty request.
+  if (typeof init.then === 'function') {
+    throw new ConnectAdapterError(
+      `Cannot build a query key for ${described}: its input function returned a Promise. The input function must return the request, not a Promise: load what the request depends on first, and return the request itself.`
+    )
+  }
   let request: MessageShape<M['input']>
   let json: JsonValue
   try {
@@ -653,11 +760,13 @@ export function buildConnectKey<M extends DescMethod>(
       schema,
       create(schema, init as MessageInitShape<M['input']>)
     ) as MessageShape<M['input']>
-    let keyed = request as MessageShape<DescMessage>
+    // The key is written from a second copy, so the request keeps what the
+    // caller wrote where only the key is normalized.
+    const keyed = clone(schema, request) as MessageShape<DescMessage>
     if (options?.pageParamKey !== undefined) {
-      keyed = clone(schema, keyed)
       omitPageParam(schema, keyed, options.pageParamKey, described)
     }
+    normalizeIntegerZeros(schema, keyed)
     json = toJson(schema, keyed, JSON_WRITE_OPTIONS)
   } catch (error) {
     if (error instanceof ConnectAdapterError) {

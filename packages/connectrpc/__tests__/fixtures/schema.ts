@@ -32,6 +32,7 @@ import {
 
 // Named as protoc spells them; protobuf-es drops the prefixes.
 const {
+  DOUBLE: TYPE_DOUBLE,
   INT32: TYPE_INT32,
   INT64: TYPE_INT64,
   STRING: TYPE_STRING,
@@ -269,6 +270,21 @@ const usersFile = create(FileDescriptorProtoSchema, {
           typeName: '.google.protobuf.Struct',
           oneofIndex: 0,
         }),
+        field({ name: 'page_sizes', number: 26, type: TYPE_INT32, repeated: true }),
+        field({
+          name: 'limits',
+          number: 27,
+          type: TYPE_MESSAGE,
+          typeName: `${REQUEST}.LimitsEntry`,
+          repeated: true,
+        }),
+        field({
+          name: 'min_age',
+          number: 28,
+          type: TYPE_MESSAGE,
+          typeName: '.google.protobuf.Int32Value',
+        }),
+        field({ name: 'score', number: 29, type: TYPE_DOUBLE }),
       ],
       oneofDecl: [{ name: 'selector' }, { name: '_max_age' }],
       nestedType: [
@@ -276,6 +292,7 @@ const usersFile = create(FileDescriptorProtoSchema, {
         mapEntry('NamedFiltersEntry', TYPE_MESSAGE, '.acme.users.v1.Filter'),
         mapEntry('AttachmentsByNameEntry', TYPE_MESSAGE, '.google.protobuf.Any'),
         mapEntry('MetadataByNameEntry', TYPE_MESSAGE, '.google.protobuf.Struct'),
+        mapEntry('LimitsEntry', TYPE_INT32),
       ],
     },
     {
