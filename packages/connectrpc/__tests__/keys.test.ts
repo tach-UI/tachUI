@@ -926,6 +926,14 @@ describe('wrapper and Struct fields', () => {
       expect(attempt).toThrow(/takes a plain JSON object/)
     })
 
+    it('keys and sends a $typeName member naming no request message type as data', () => {
+      setUp()
+      const init = { metadata: { a: { $typeName: 'order', total: 3 } } }
+      expect(canonical(init)).toBe('{"metadata":{"a":{"$typeName":"order","total":3}}}')
+      const sent = build(init).request as unknown as { metadata: unknown }
+      expect(sent.metadata).toEqual({ a: { $typeName: 'order', total: 3 } })
+    })
+
     it('keys a negative zero apart from zero', () => {
       setUp()
       expect(canonical({ metadata: { a: 0 } })).toBe('{"metadata":{"a":0}}')
@@ -947,6 +955,42 @@ describe('negative zero', () => {
       ['a repeated int32', { pageSizes: [-0, 1] }, { pageSizes: [0, 1] }, '{"pageSizes":[0,1]}'],
       ['an int32 map value', { limits: { a: -0 } }, { limits: { a: 0 } }, '{"limits":{"a":0}}'],
       ['an Int32Value', { minAge: -0 }, { minAge: 0 }, '{"minAge":0}'],
+      [
+        'a nested message int32',
+        { filter: { rank: -0 } },
+        { filter: { rank: 0 } },
+        '{"filter":{"rank":0}}',
+      ],
+      [
+        'a list-of-messages int32',
+        { filters: [{ rank: -0 }] },
+        { filters: [{ rank: 0 }] },
+        '{"filters":[{"rank":0}]}',
+      ],
+      [
+        'a map-of-messages int32',
+        { namedFilters: { a: { rank: -0 } } },
+        { namedFilters: { a: { rank: 0 } } },
+        '{"namedFilters":{"a":{"rank":0}}}',
+      ],
+      [
+        'a oneof int32 case',
+        { selector: { case: 'byRank', value: -0 } },
+        { selector: { case: 'byRank', value: 0 } },
+        '{"byRank":0}',
+      ],
+      [
+        'a oneof message case int32',
+        { selector: { case: 'byFilter', value: { rank: -0 } } },
+        { selector: { case: 'byFilter', value: { rank: 0 } } },
+        '{"byFilter":{"rank":0}}',
+      ],
+      [
+        'a oneof Int32Value case',
+        { selector: { case: 'byMinAge', value: { value: -0 } } },
+        { selector: { case: 'byMinAge', value: { value: 0 } } },
+        '{"byMinAge":0}',
+      ],
     ])('keys %s -0 as 0, which the wire encodes alike', (_label, negative, zero, segment) => {
       setUp()
       expect(canonical(zero)).toBe(segment)
@@ -960,6 +1004,19 @@ describe('negative zero', () => {
       expect(canonical({ score: 0 })).toBe('{}')
       expect(canonical({ metadata: { a: -0 } })).toBe('{"metadata":{"a":-0}}')
       expect(canonical({ metadata: { a: 0 } })).toBe('{"metadata":{"a":0}}')
+    })
+
+    it('keeps a nested double and Struct -0 apart from 0', () => {
+      setUp()
+      expect(canonical({ filter: { weight: -0 } })).toBe('{"filter":{"weight":-0}}')
+      expect(canonical({ filter: { weight: 0 } })).toBe('{"filter":{}}')
+      expect(canonical({ filters: [{ weight: -0 }] })).toBe('{"filters":[{"weight":-0}]}')
+      expect(canonical({ selector: { case: 'byMetadata', value: { a: -0 } } })).toBe(
+        '{"byMetadata":{"a":-0}}'
+      )
+      expect(canonical({ selector: { case: 'byMetadata', value: { a: 0 } } })).toBe(
+        '{"byMetadata":{"a":0}}'
+      )
     })
 
     it('sends the -0 the caller wrote, normalizing only the key', () => {
@@ -1128,6 +1185,26 @@ describe('malformed input', () => {
         /the request is not a valid acme\.users\.v1\.ListUsersRequest \(unreadable\)/
       )
       expect((thrown as Error).cause).toBe('unreadable')
+    })
+
+    it('refuses a request whose then read throws, keeping the cause', () => {
+      setUp()
+      const failure = new Error('then unreadable')
+      let thrown: unknown
+      try {
+        build({
+          get then(): unknown {
+            throw failure
+          },
+        })
+      } catch (error) {
+        thrown = error
+      }
+      expect(thrown).toBeInstanceOf(ConnectAdapterError)
+      expect((thrown as Error).message).toMatch(
+        /the request is not a valid acme\.users\.v1\.ListUsersRequest \(then unreadable\)/
+      )
+      expect((thrown as Error).cause).toBe(failure)
     })
 
     it('refuses an input that is not a function', () => {

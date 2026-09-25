@@ -31,7 +31,6 @@ import {
   clone,
   create,
   isFieldSet,
-  isMessage,
   ScalarType,
   toJson,
 } from '@bufbuild/protobuf'
@@ -228,6 +227,35 @@ function isExtensionNumber(desc: DescMessage, fieldNumber: number): boolean {
   )
 }
 
+const reachableTypesBySchema = new WeakMap<DescMessage, ReadonlySet<string>>()
+
+/**
+ * The type names of every message a request of `schema` can hold, `schema`
+ * included: singular, list, map, and oneof message fields, followed through
+ * each message they name.
+ */
+function reachableMessageTypes(schema: DescMessage): ReadonlySet<string> {
+  const cached = reachableTypesBySchema.get(schema)
+  if (cached !== undefined) {
+    return cached
+  }
+  const typeNames = new Set<string>()
+  const pending = [schema]
+  for (let desc = pending.pop(); desc !== undefined; desc = pending.pop()) {
+    if (typeNames.has(desc.typeName)) {
+      continue
+    }
+    typeNames.add(desc.typeName)
+    for (const field of desc.fields) {
+      if (field.message !== undefined) {
+        pending.push(field.message)
+      }
+    }
+  }
+  reachableTypesBySchema.set(schema, typeNames)
+  return typeNames
+}
+
 /**
  * Walks an initializer against its schema before anything is created from it.
  *
@@ -240,7 +268,8 @@ class RequestChecker {
 
   constructor(
     private readonly method: string,
-    private readonly development: boolean
+    private readonly development: boolean,
+    private readonly messageTypes: ReadonlySet<string>
   ) {}
 
   private fail(message: string): never {
@@ -402,9 +431,10 @@ class RequestChecker {
 
   /**
    * A Struct held as a JSON object. Its keys are the caller's, not field
-   * names, so only what a copy would lose is refused — and a message at any
-   * depth, whose bookkeeping would otherwise be keyed and sent as the caller's
-   * data, past the Any and unknown-field checks a message field gets.
+   * names, so only what a copy would lose is refused — and, at any depth, a
+   * message of a type the request can hold, whose bookkeeping would otherwise
+   * be keyed and sent as the caller's data, past the Any and unknown-field
+   * checks a message field gets.
    */
   private struct(value: unknown, path: string): void {
     if (!isObjectValue(value)) {
@@ -430,13 +460,15 @@ class RequestChecker {
         })
         return
       }
-      // protobuf-es takes any object with a string $typeName for a message.
-      if (isMessage(value)) {
+      // A $typeName naming a message type the request can hold marks a
+      // smuggled message; any other $typeName is the caller's JSON data.
+      const members = value as Record<string, unknown>
+      const typeName = members[TYPE_NAME_PROPERTY]
+      if (typeof typeName === 'string' && this.messageTypes.has(typeName)) {
         this.fail(
-          `${path} is a ${value.$typeName} message, but a ${STRUCT_TYPE_NAME} position takes a plain JSON object. Pass the plain JSON the message describes, for example { name: 'Ada' }.`
+          `${path} is a ${typeName} message, but a ${STRUCT_TYPE_NAME} position takes a plain JSON object. Pass the plain JSON the message describes, for example { name: 'Ada' }.`
         )
       }
-      const members = value as Record<string, unknown>
       this.mapKeys(members, path)
       for (const name of Object.keys(members)) {
         this.json(members[name], `${path}[${JSON.stringify(name)}]`)
@@ -740,16 +772,20 @@ export function buildConnectKey<M extends DescMethod>(
       `Cannot build a query key for ${described}: its input function returned ${describeValue(init)}. Return a ${schema.typeName} initializer object or message.`
     )
   }
-  // A Promise has no own fields, so it would key and send as an empty request.
-  if (typeof init.then === 'function') {
-    throw new ConnectAdapterError(
-      `Cannot build a query key for ${described}: its input function returned a Promise. The input function must return the request, not a Promise: load what the request depends on first, and return the request itself.`
-    )
-  }
   let request: MessageShape<M['input']>
   let json: JsonValue
   try {
-    new RequestChecker(described, isDevelopment()).message(
+    // A Promise has no own fields, so it would key and send as an empty request.
+    if (typeof init.then === 'function') {
+      throw new ConnectAdapterError(
+        `Cannot build a query key for ${described}: its input function returned a Promise. The input function must return the request, not a Promise: load what the request depends on first, and return the request itself.`
+      )
+    }
+    new RequestChecker(
+      described,
+      isDevelopment(),
+      reachableMessageTypes(schema)
+    ).message(
       schema,
       init,
       'request'

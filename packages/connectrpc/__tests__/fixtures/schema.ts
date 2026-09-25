@@ -125,7 +125,16 @@ const usersFile = create(FileDescriptorProtoSchema, {
           type: TYPE_MESSAGE,
           typeName: '.acme.users.v1.Filter',
         }),
+        field({
+          name: 'rank',
+          number: 4,
+          type: TYPE_INT32,
+          oneofIndex: 0,
+          proto3Optional: true,
+        }),
+        field({ name: 'weight', number: 5, type: TYPE_DOUBLE }),
       ],
+      oneofDecl: [{ name: '_rank' }],
       nestedType: [mapEntry('LabelsEntry', TYPE_STRING)],
     },
     {
@@ -285,6 +294,14 @@ const usersFile = create(FileDescriptorProtoSchema, {
           typeName: '.google.protobuf.Int32Value',
         }),
         field({ name: 'score', number: 29, type: TYPE_DOUBLE }),
+        field({ name: 'by_rank', number: 30, type: TYPE_INT32, oneofIndex: 0 }),
+        field({
+          name: 'by_min_age',
+          number: 31,
+          type: TYPE_MESSAGE,
+          typeName: '.google.protobuf.Int32Value',
+          oneofIndex: 0,
+        }),
       ],
       oneofDecl: [{ name: 'selector' }, { name: '_max_age' }],
       nestedType: [
