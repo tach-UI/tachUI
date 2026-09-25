@@ -163,6 +163,9 @@ export function createConnectQuery<
   }
 
   let wait: Wait | undefined
+  // Waits a refetch took on an entry this observer does not watch, as a gated
+  // query's do, so disposal can still withdraw them.
+  const refetchWaits = new Set<Wait>()
   let watching: QueryKeyHash | undefined
   let unwatch: (() => void) | undefined
   let disposed = false
@@ -204,6 +207,12 @@ export function createConnectQuery<
     watching = undefined
     wait?.leave(failure)
     wait = undefined
+    if (failure !== undefined) {
+      for (const refetchWait of [...refetchWaits]) {
+        refetchWait.leave(failure)
+      }
+      refetchWaits.clear()
+    }
   }
 
   // Created before the query, so a watcher is in place when its first
@@ -382,8 +391,12 @@ export function createConnectQuery<
         const joined = waitOn(execution)
         if (watching === execution.hash) {
           wait = joined
+          return joined.race(pending)
         }
-        return joined.race(pending)
+        refetchWaits.add(joined)
+        return joined
+          .race(pending)
+          .finally(() => refetchWaits.delete(joined))
       }
       return wait.race(pending)
     },

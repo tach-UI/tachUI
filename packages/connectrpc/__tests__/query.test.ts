@@ -1251,6 +1251,41 @@ describe("the result's methods", () => {
     expect(calls.some(call => (call.input as { id: bigint }).id === 2n)).toBe(false)
   })
 
+  it.each<
+    [string, (mounted: { value: ConnectQueryResult<unknown>; dispose: () => void }) => void]
+  >([
+    ['disposed', mounted => mounted.value.dispose()],
+    ['unmounted', mounted => mounted.dispose()],
+  ])('cancels a gated query\'s pending refetches and its call when %s', async (_name, end) => {
+    const { transport, calls } = scriptedTransport()
+    const root = scope({ default: transport })
+    const mounted = root.mount(() =>
+      createConnectQuery(getUser, () => ({ id: 1n }), { enabled: false })
+    )
+    await settle()
+
+    const outcomes: unknown[] = []
+    const record = (promise: Promise<unknown>): void => {
+      promise.then(
+        value => outcomes.push({ value }),
+        (error: unknown) => outcomes.push({ error })
+      )
+    }
+    record(mounted.value.refetch())
+    record(mounted.value.refetch())
+    expect(calls).toHaveLength(1)
+
+    end(mounted)
+    await microtasks(5)
+
+    // Settled by the disposal itself, with nothing from the transport.
+    expect(outcomes).toHaveLength(2)
+    for (const outcome of outcomes) {
+      expect((outcome as { error: ConnectError }).error.code).toBe(Code.Canceled)
+    }
+    expect(calls[0].signal?.aborted).toBe(true)
+  })
+
   it('leaves a key the query layer refuses to that layer', async () => {
     const { transport, calls } = scriptedTransport()
     const root = scope({ default: transport })
