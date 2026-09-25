@@ -12,6 +12,7 @@ import type { DescMessage, DescMethodUnary } from '@bufbuild/protobuf'
 import { Code, ConnectError } from '@connectrpc/connect'
 import {
   createComponentContext,
+  createEffect,
   createRoot,
   createSignal,
   runWithComponentContext,
@@ -23,6 +24,7 @@ import { ConnectAdapterError } from '../src/errors'
 import { buildConnectKey } from '../src/keys'
 import { createConnectQuery } from '../src/query'
 import { provideConnectTransport, useConnectTransport } from '../src/transport'
+import type { ConnectQueryResult } from '../src/types'
 import {
   GetUserRequestSchema,
   ListUsersRequestSchema,
@@ -37,6 +39,7 @@ import {
   scriptedTransport,
   settle,
 } from './support/harness'
+import type { Scope } from './support/harness'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -47,6 +50,43 @@ afterEach(() => {
 /** The name a user response carries, for comparing messages briefly. */
 function nameOf(message: unknown): unknown {
   return fieldOf(message, 'name')
+}
+
+/** Lets exactly `count` microtasks run. */
+async function microtasks(count: number): Promise<void> {
+  for (let turn = 0; turn < count; turn += 1) {
+    await Promise.resolve()
+  }
+}
+
+/** Whether `error` is the adapter's own record of a call nobody waited for. */
+function isAbandonment(error: unknown): boolean {
+  return (
+    error instanceof ConnectError &&
+    error.message.includes('no observer is still waiting')
+  )
+}
+
+/**
+ * Mounts a query and records every status and error its signals hold, so a
+ * test can say what an observer never showed.
+ */
+function mountRecorded(
+  root: Scope,
+  create: () => ConnectQueryResult<unknown>
+): {
+  query: ConnectQueryResult<unknown>
+  seen: { status: string; error: unknown }[]
+} {
+  const seen: { status: string; error: unknown }[] = []
+  const { value: query } = root.mount(() => {
+    const observed = create()
+    createEffect(() => {
+      seen.push({ status: observed.status(), error: observed.error() })
+    })
+    return observed
+  })
+  return { query, seen }
 }
 
 describe('calls and results', () => {
@@ -514,6 +554,43 @@ describe('call options', () => {
     }
   })
 
+  it.each([
+    ['null', null],
+    ['a string', 'abort'],
+    ['an object shaped like a signal', { aborted: false }],
+  ])(
+    'refuses %s as the signal before any call, leaving a sharer of the key unharmed',
+    async (_name, signal) => {
+      const { transport, calls } = scriptedTransport()
+      const root = scope({ default: transport })
+      const { value: healthy } = root.mount(() =>
+        createConnectQuery(getUser, () => ({ id: 1n }))
+      )
+      await settle()
+      expect(calls).toHaveLength(1)
+
+      expect(() =>
+        root.mount(() =>
+          createConnectQuery(getUser, () => ({ id: 1n }), {
+            callOptions: { signal: signal as never },
+          })
+        )
+      ).toThrowError(ConnectAdapterError)
+      await settle()
+
+      expect(calls).toHaveLength(1)
+      expect(calls[0].signal?.aborted).toBe(false)
+      calls[0].respond({ name: 'v1' })
+      await settle()
+      expect(healthy.error()).toBeUndefined()
+      expect(nameOf(healthy.data())).toBe('v1')
+
+      const refetched = healthy.refetch()
+      calls[1].respond({ name: 'v2' })
+      expect(nameOf(await refetched)).toBe('v2')
+    }
+  )
+
   it('refuses a finite deadline longer than a timer can hold, rather than expiring at once', () => {
     const { transport, calls } = scriptedTransport()
     const root = scope({ default: transport })
@@ -867,6 +944,143 @@ describe('cancellation and deadlines', () => {
     await vi.advanceTimersByTimeAsync(0)
     expect(newcomer.error()).toBeUndefined()
     expect(nameOf(newcomer.data())).toBe('for the newcomer')
+  })
+
+  it.each([3, 4, 5, 6])(
+    "starts a new call for a refetch %i microtasks after the sole observer's deadline expires",
+    async turns => {
+      vi.useFakeTimers()
+      const { transport, calls } = scriptedTransport()
+      const root = scope({ default: transport })
+      const { value: query } = root.mount(() =>
+        createConnectQuery(getUser, () => ({ id: 1n }), {
+          callOptions: { timeoutMs: 100 },
+        })
+      )
+      await vi.advanceTimersByTimeAsync(0)
+
+      vi.advanceTimersByTime(100)
+      await microtasks(turns)
+      const refetched = query.refetch().catch((error: unknown) => error)
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(calls).toHaveLength(2)
+      calls[1].respond({ name: 'restarted' })
+      expect(nameOf(await refetched)).toBe('restarted')
+      expect(query.error()).toBeUndefined()
+    }
+  )
+
+  it.each([3, 4, 5, 6])(
+    "starts a new call for an observer mounted %i microtasks after the sole observer's deadline expires",
+    async turns => {
+      vi.useFakeTimers()
+      const { transport, calls } = scriptedTransport()
+      const root = scope({ default: transport })
+      root.mount(() =>
+        createConnectQuery(getUser, () => ({ id: 1n }), {
+          callOptions: { timeoutMs: 100 },
+        })
+      )
+      await vi.advanceTimersByTimeAsync(0)
+
+      vi.advanceTimersByTime(100)
+      await microtasks(turns)
+      const { query: newcomer, seen } = mountRecorded(root, () =>
+        createConnectQuery(getUser, () => ({ id: 1n }))
+      )
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(calls).toHaveLength(2)
+      calls[1].respond({ name: 'for the newcomer' })
+      await vi.advanceTimersByTimeAsync(0)
+      expect(nameOf(newcomer.data())).toBe('for the newcomer')
+      expect(seen.some(({ error }) => error !== undefined)).toBe(false)
+    }
+  )
+
+  describe('a call every observer gave up on', () => {
+    it("never shows a later observer the adapter's own cancellation", async () => {
+      vi.useFakeTimers()
+      const { transport, calls } = scriptedTransport()
+      const root = scope({ default: transport })
+      const { value: hurried } = root.mount(() =>
+        createConnectQuery(getUser, () => ({ id: 1n }), {
+          callOptions: { timeoutMs: 100 },
+        })
+      )
+      await vi.advanceTimersByTimeAsync(100)
+      expect((hurried.error() as ConnectError).code).toBe(Code.DeadlineExceeded)
+      expect(calls[0].signal?.aborted).toBe(true)
+      await vi.advanceTimersByTimeAsync(1_000)
+
+      const { query: later, seen } = mountRecorded(root, () =>
+        createConnectQuery(getUser, () => ({ id: 1n }))
+      )
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(calls).toHaveLength(2)
+      calls[1].respond({ name: 'fresh' })
+      await vi.advanceTimersByTimeAsync(0)
+      expect(nameOf(later.data())).toBe('fresh')
+      expect(seen.some(({ error }) => isAbandonment(error))).toBe(false)
+      expect(seen.some(({ status }) => status === 'error')).toBe(false)
+    })
+
+    it('leaves cached data showing as success to a later observer', async () => {
+      vi.useFakeTimers()
+      const { transport, calls } = scriptedTransport()
+      const root = scope({ default: transport })
+      const { value: hurried } = root.mount(() =>
+        createConnectQuery(getUser, () => ({ id: 1n }), {
+          staleTime: 60_000,
+          callOptions: { timeoutMs: 100 },
+        })
+      )
+      await vi.advanceTimersByTimeAsync(0)
+      calls[0].respond({ name: 'cached' })
+      await vi.advanceTimersByTimeAsync(0)
+
+      const expired = hurried.refetch().catch((error: unknown) => error)
+      await vi.advanceTimersByTimeAsync(100)
+      expect(((await expired) as ConnectError).code).toBe(Code.DeadlineExceeded)
+      await vi.advanceTimersByTimeAsync(1_000)
+
+      const { query: later, seen } = mountRecorded(root, () =>
+        createConnectQuery(getUser, () => ({ id: 1n }), { staleTime: 60_000 })
+      )
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(nameOf(later.data())).toBe('cached')
+      expect(later.status()).toBe('success')
+      expect(seen.every(({ status }) => status === 'success')).toBe(true)
+      expect(seen.some(({ error }) => error !== undefined)).toBe(false)
+    })
+
+    it('never shows a later observer the cancellation of a signal aborted in advance', async () => {
+      const { transport, calls } = scriptedTransport()
+      const root = scope({ default: transport })
+      const { value: doomed } = root.mount(() =>
+        createConnectQuery(getUser, () => ({ id: 1n }), {
+          callOptions: { signal: AbortSignal.abort() },
+        })
+      )
+      await settle()
+      expect((doomed.error() as ConnectError).code).toBe(Code.Canceled)
+      expect(calls).toHaveLength(0)
+
+      const { query: later, seen } = mountRecorded(root, () =>
+        createConnectQuery(getUser, () => ({ id: 1n }))
+      )
+      await settle()
+
+      expect(calls).toHaveLength(1)
+      calls[0].respond({ name: 'fresh' })
+      await settle()
+      expect(nameOf(later.data())).toBe('fresh')
+      expect(seen.some(({ error }) => isAbandonment(error))).toBe(false)
+      expect(seen.some(({ status }) => status === 'error')).toBe(false)
+    })
   })
 
   it('applies a deadline of zero at once', async () => {
@@ -1265,6 +1479,38 @@ describe('retry', () => {
       }
     }
   )
+
+  it('keeps the retry count across a restart for somebody who joined', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.999)
+    const failures: ConnectError[] = []
+    const { transport, calls } = scriptedTransport(call => {
+      const failure = new ConnectError(`attempt ${failures.length + 1}`, Code.Unavailable)
+      failures.push(failure)
+      call.fail(failure)
+    })
+    const root = scope({ default: transport })
+
+    root.mount(() =>
+      createConnectQuery(getUser, () => ({ id: 1n }), {
+        retry: 1,
+        callOptions: { timeoutMs: 50 },
+      })
+    )
+    // The first attempt fails at once, and the deadline lands in the ~100 ms
+    // backoff before the one retry allowed. The joiner joins that execution
+    // as it stops, so the retry it makes is the starter's one.
+    await vi.advanceTimersByTimeAsync(49)
+    vi.advanceTimersByTime(1)
+    expect(calls).toHaveLength(1)
+
+    const { value: joiner } = root.mount(() =>
+      createConnectQuery(getUser, () => ({ id: 1n }))
+    )
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    expect(calls).toHaveLength(2)
+    expect(joiner.error()).toBe(failures[1])
+  })
 
   it.each([-1, 1.5, Number.NaN, Infinity, '2'])('refuses %s as a retry count', retry => {
     const { transport } = scriptedTransport()

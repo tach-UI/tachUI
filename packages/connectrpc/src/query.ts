@@ -56,7 +56,7 @@ import type {
 import {
   beginExecution,
   currentExecution,
-  resumeIfJoined,
+  resumeWhenJoined,
   settleExecution,
   Wait,
   watchEntry,
@@ -243,6 +243,9 @@ export function createConnectQuery<
       )
     }
     const execution = beginExecution(client, key)
+    // Carried across restarts, so one key evaluation never retries more than
+    // the count allows however often everyone leaves and somebody joins.
+    const progress = { retries: 0 }
     let succeeded = false
     try {
       for (;;) {
@@ -250,16 +253,15 @@ export function createConnectQuery<
           const message = await callWithRetries(
             request as MessageInitShape<I>,
             signal,
-            execution
+            execution,
+            progress
           )
           succeeded = true
           return message
         } catch (error) {
-          // Everyone left and somebody has joined since: they are waiting
-          // for an answer, so the call starts over for them.
-          if (signal.aborted || !resumeIfJoined(execution, error)) {
-            throw error
-          }
+          // Everyone left: the call waits for somebody to join, and starts
+          // over for them.
+          await resumeWhenJoined(client, key, execution, error, signal)
         }
       }
     } finally {
@@ -271,7 +273,8 @@ export function createConnectQuery<
   async function callWithRetries(
     request: MessageInitShape<I>,
     signal: AbortSignal,
-    execution: Execution
+    execution: Execution,
+    progress: { retries: number }
   ): Promise<MessageShape<O>> {
     const link = linkSignals([
       {
@@ -281,7 +284,7 @@ export function createConnectQuery<
       { signal: execution.stop.signal, failure: reason => reason },
     ])
     try {
-      for (let attempt = 0; ; attempt += 1) {
+      for (;;) {
         try {
           // No transport deadline: the call is shared, and each observer's
           // deadline is enforced on its own wait instead.
@@ -295,15 +298,17 @@ export function createConnectQuery<
           )
         } catch (error) {
           if (
-            attempt >= retry ||
+            progress.retries >= retry ||
             !(error instanceof ConnectError) ||
             !isRetryableCode(error.code)
           ) {
             throw error
           }
+          progress.retries += 1
           // Rejects with the stop reason if everyone leaves meanwhile, so no
-          // later attempt starts for nobody.
-          await sleep(retryDelay(attempt + 1), link.signal)
+          // later attempt starts for nobody. A restart then makes this retry
+          // rather than another.
+          await sleep(retryDelay(progress.retries), link.signal)
         }
       }
     } finally {

@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   beginExecution,
-  resumeIfJoined,
+  resumeWhenJoined,
   settleExecution,
   Wait,
   watchEntry,
@@ -95,7 +95,9 @@ describe('beginExecution', () => {
   })
 })
 
-describe('resumeIfJoined', () => {
+describe('resumeWhenJoined', () => {
+  const noBounds = { signal: undefined, timeoutMs: undefined, onGiveUp: () => undefined }
+
   function stopped(): { client: QueryClient; execution: Execution; reason: unknown } {
     const client = newClient()
     watch(client, watcher(AbortSignal.abort()).watcher)
@@ -103,29 +105,106 @@ describe('resumeIfJoined', () => {
     return { client, execution, reason: execution.stop.signal.reason }
   }
 
-  it('starts a stopped execution over for somebody who joined it', () => {
-    const { execution, reason } = stopped()
-    new Wait(execution, { signal: undefined, timeoutMs: undefined, onGiveUp: () => undefined })
+  function outcome(pending: Promise<void>): { settled: unknown } {
+    const seen: { settled: unknown } = { settled: 'pending' }
+    pending.then(
+      () => (seen.settled = 'resumed'),
+      (error: unknown) => (seen.settled = error)
+    )
+    return seen
+  }
 
-    expect(resumeIfJoined(execution, reason)).toBe(true)
+  it('starts a stopped execution over for somebody who joined it', async () => {
+    const { client, execution, reason } = stopped()
+    new Wait(execution, noBounds)
+
+    await resumeWhenJoined(client, key, execution, reason, new AbortController().signal)
+
     expect(execution.stop.signal.aborted).toBe(false)
   })
 
-  it('leaves it stopped with nobody waiting, for another failure, or once settled', () => {
+  it('holds a watched execution nobody waits on until somebody joins', async () => {
     const { client, execution, reason } = stopped()
-    expect(resumeIfJoined(execution, reason)).toBe(false)
+    const held = outcome(
+      resumeWhenJoined(client, key, execution, reason, new AbortController().signal)
+    )
+    await Promise.resolve()
+    expect(held.settled).toBe('pending')
 
-    new Wait(execution, { signal: undefined, timeoutMs: undefined, onGiveUp: () => undefined })
-    expect(resumeIfJoined(execution, new ConnectError('other', Code.Canceled))).toBe(false)
+    new Wait(execution, noBounds)
+    await Promise.resolve()
 
-    settleExecution(client, execution, false)
-    expect(resumeIfJoined(execution, reason)).toBe(false)
+    expect(held.settled).toBe('resumed')
+    expect(execution.stop.signal.aborted).toBe(false)
+  })
+
+  it('is not woken by a joiner that gives up at once', async () => {
+    const { client, execution, reason } = stopped()
+    const held = outcome(
+      resumeWhenJoined(client, key, execution, reason, new AbortController().signal)
+    )
+
+    new Wait(execution, { ...noBounds, signal: AbortSignal.abort() })
+    await Promise.resolve()
+
+    expect(held.settled).toBe('pending')
+  })
+
+  it("lets go with the stop once the loader's own signal aborts", async () => {
+    const { client, execution, reason } = stopped()
+    const loader = new AbortController()
+    const held = outcome(resumeWhenJoined(client, key, execution, reason, loader.signal))
+
+    loader.abort()
+    await Promise.resolve()
+
+    expect(held.settled).toBe(reason)
+    new Wait(execution, noBounds)
     expect(execution.stop.signal.aborted).toBe(true)
   })
 
-  it('does nothing for an execution that was never stopped', () => {
-    const execution = beginExecution(newClient(), key)
+  it('rejects with the failure for another failure, once settled, or never stopped', async () => {
+    const live = new AbortController().signal
+    const { client, execution, reason } = stopped()
+    new Wait(execution, noBounds)
+    const other = new ConnectError('other', Code.Canceled)
+    await expect(resumeWhenJoined(client, key, execution, other, live)).rejects.toBe(other)
 
-    expect(resumeIfJoined(execution, undefined)).toBe(false)
+    settleExecution(client, execution, false)
+    await expect(resumeWhenJoined(client, key, execution, reason, live)).rejects.toBe(reason)
+    expect(execution.stop.signal.aborted).toBe(true)
+
+    const running = beginExecution(newClient(), key)
+    await expect(
+      resumeWhenJoined(newClient(), key, running, undefined, live)
+    ).rejects.toBeUndefined()
+  })
+
+  it("detaches the query layer's flight, recording nothing, when nobody watches the entry", async () => {
+    const client = newClient()
+    let loaderSignal: AbortSignal | undefined
+    void client
+      .fetchQuery({
+        key: () => key,
+        load: ({ signal }) => {
+          loaderSignal = signal
+          return new Promise(() => undefined)
+        },
+      })
+      .catch(() => undefined)
+    const execution = beginExecution(client, key)
+    new Wait(execution, noBounds).giveUp(new ConnectError('gone', Code.Canceled))
+    const reason = execution.stop.signal.reason
+
+    await expect(
+      resumeWhenJoined(client, key, execution, reason, loaderSignal!)
+    ).rejects.toBe(reason)
+
+    expect(loaderSignal?.aborted).toBe(true)
+    const observation = client.observe(key)
+    expect(observation.entry().fetchStatus).toBe('idle')
+    expect(observation.entry().status).toBe('idle')
+    expect(observation.entry().error).toBeUndefined()
+    observation.release({ keepInFlight: true })
   })
 })

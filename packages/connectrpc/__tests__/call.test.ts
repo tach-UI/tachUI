@@ -5,9 +5,10 @@
  */
 
 import { Code, ConnectError } from '@connectrpc/connect'
+import { raceAbort } from '@tachui/query'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { linkSignals, raceAbort, retryDelay, startDeadline } from '../src/call'
+import { linkSignals, retryDelay, startDeadline } from '../src/call'
 import { RETRY_BASE_DELAY_MS, RETRY_MAX_DELAY_MS } from '../src/defaults'
 
 afterEach(() => {
@@ -98,6 +99,7 @@ describe('startDeadline', () => {
   })
 })
 
+// The adapter's calls race through the one implementation @tachui/query has.
 describe('raceAbort', () => {
   it('rejects with the reason of a signal that has already aborted, whatever the work does', async () => {
     const reason = new Error('already')

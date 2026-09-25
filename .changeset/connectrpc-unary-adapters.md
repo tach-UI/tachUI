@@ -17,4 +17,5 @@ failures keep their own values. A `client` option that is not the client the
 transport is bound to is refused with a `ConnectAdapterError`.
 
 `@tachui/query` exports `hashQueryKey`, so an adapter can tell when its observers
-share an entry.
+share an entry, and `raceAbort`, so an adapter races its calls against their signals
+with the same implementation the package uses.

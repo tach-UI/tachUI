@@ -41,6 +41,7 @@ describe('@tachui/query barrel', () => {
       'isDevelopment',
       'isServer',
       'provideQueryClient',
+      'raceAbort',
       'useQueryClient',
     ])
   })

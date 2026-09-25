@@ -13,10 +13,13 @@
  * from entry state: an invalidation replaces a running execution with another
  * inside one notification, and nothing in the entry's state shows the seam.
  *
- * A stopped execution stays announced until its loader returns, since the
- * query layer still holds its flight and a refetch or a new observer joins
- * that flight rather than starting another. Whoever joins it in that window is
- * waiting again, so the loader starts the call over for them.
+ * A stopped execution stays announced, and its loader stays pending, for as
+ * long as somebody still watches its entry. The query layer holds its flight
+ * meanwhile, so a refetch or a new observer joins that flight rather than
+ * starting another, and whoever joins is waiting again: the loader starts the
+ * call over for them. Settling the loader with the stop instead would record
+ * an internal cancellation as the entry's error, and leave a flight settling
+ * a few microtasks later that a joiner could adopt with nobody to answer it.
  */
 
 import { hashQueryKey } from '@tachui/query'
@@ -39,6 +42,8 @@ export interface Execution {
    * that gives up at once must not stop it before the rest have joined.
    */
   announcing: boolean
+  /** Starts a stopped execution over, while its loader is held for a joiner. */
+  rejoin: (() => void) | undefined
 }
 
 /** An observer of one entry, told as each execution for it starts and ends. */
@@ -123,6 +128,7 @@ export function beginExecution(client: QueryClient, key: QueryKey): Execution {
     waits: new Set(),
     settled: false,
     announcing: true,
+    rejoin: undefined,
   }
   calls.execution = execution
   const watchers = [...calls.watchers]
@@ -142,22 +148,70 @@ export function beginExecution(client: QueryClient, key: QueryKey): Execution {
 }
 
 /**
- * Starts a stopped execution over when somebody joined it after the stop, so
- * a call abandoned by one set of observers still answers the next. True when
- * `failure` is the stop and the execution may go on.
+ * Holds a stopped execution's loader until somebody joins it, then starts it
+ * over, so a call abandoned by one set of observers still answers the next.
+ * Resolves when the execution may go on. Rejects with `failure` when it is not
+ * this execution's stop, or once the loader's own `signal` aborts meanwhile:
+ * the query layer has let go of the flight, and nobody can join it any longer.
+ *
+ * With nobody watching the entry nobody would ever join, so the flight is
+ * detached instead of held, and the stop is not recorded as the entry's error.
  */
-export function resumeIfJoined(execution: Execution, failure: unknown): boolean {
-  const { signal } = execution.stop
+export function resumeWhenJoined(
+  client: QueryClient,
+  key: QueryKey,
+  execution: Execution,
+  failure: unknown,
+  signal: AbortSignal
+): Promise<void> {
+  const stop = execution.stop.signal
   if (
-    !signal.aborted ||
-    failure !== signal.reason ||
+    !stop.aborted ||
+    failure !== stop.reason ||
     execution.settled ||
-    execution.waits.size === 0
+    signal.aborted
   ) {
-    return false
+    return Promise.reject(failure)
   }
-  execution.stop = new AbortController()
-  return true
+  const watched =
+    (callsByClient.get(client)?.get(execution.hash)?.watchers.size ?? 0) > 0
+  if (execution.waits.size === 0 && !watched) {
+    detachFlight(client, key)
+    return Promise.reject(failure)
+  }
+  return new Promise<void>((resolve, reject) => {
+    const onAbort = (): void => {
+      execution.rejoin = undefined
+      reject(failure)
+    }
+    const restart = (): void => {
+      execution.rejoin = undefined
+      signal.removeEventListener('abort', onAbort)
+      execution.stop = new AbortController()
+      resolve()
+    }
+    if (execution.waits.size > 0) {
+      restart()
+      return
+    }
+    execution.rejoin = restart
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
+/**
+ * Ends the query layer's flight for `key` without recording anything on its
+ * entry, through an observation taken just long enough to reach it.
+ */
+function detachFlight(client: QueryClient, key: QueryKey): void {
+  const observation = client.observe(key)
+  try {
+    observation.abortInFlight()
+  } finally {
+    // The abort is the whole point; releasing must not repeat it against
+    // whatever starts next.
+    observation.release({ keepInFlight: true })
+  }
 }
 
 /** Nobody is waiting any longer, so no further attempt should start. */
@@ -247,6 +301,8 @@ export class Wait {
       this.giveUp(link.signal.reason)
     } else {
       link.signal.addEventListener('abort', onAbort, { once: true })
+      // Somebody is waiting again on an execution held for a joiner.
+      execution.rejoin?.()
     }
   }
 

@@ -205,9 +205,13 @@ Observers of one key share one call, so a query's `callOptions.signal` and
 wait, that observer's `error` and pending `refetch()` settle with a `ConnectError` —
 `canceled` or `deadline_exceeded` — while any other observer keeps waiting. The
 deadline covers the whole wait, retries and backoff included. The call itself stops
-only once no observer is waiting any longer, and no retry starts after that. A
-query's `timeoutMs` is therefore never handed to the transport, where it would cut
-the call off for everyone; a mutation's call is its own, so its `timeoutMs` is.
+only once no observer is waiting any longer, and no retry starts after that. Nothing
+about that stop is written to the entry: it keeps what it held, and an observer that
+refetches or mounts afterwards starts the call over, with only the retries the first
+run had left, rather than reading a cancellation that was never its own. A query's
+`timeoutMs` is therefore never handed to the transport, where it would cut the call
+off for everyone; a mutation's call is its own, so its `timeoutMs` is. Call options
+are read once, when the query or mutation is created.
 
 `headers` and `contextValues` travel with the call of whichever observer started it
 and never enter the key. So does `retry`: observers that join a running call share its

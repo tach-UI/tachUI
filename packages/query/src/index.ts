@@ -31,6 +31,7 @@ export { createMutation } from './create-mutation'
 export { createQuery } from './create-query'
 export { isDevelopment, isServer, QueryError } from './errors'
 export { hashQueryKey } from './keys'
+export { raceAbort } from './abort'
 export type {
   AsyncStreamBaseOptions,
   AsyncStreamListOptions,

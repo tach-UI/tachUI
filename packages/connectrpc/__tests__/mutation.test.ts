@@ -288,6 +288,34 @@ describe('call options', () => {
     expect(calls).toHaveLength(1)
     expect(calls[0].timeoutMs).toBeUndefined()
   })
+
+  it.each([
+    ['past the longest timer', 2_147_483_648],
+    ['NaN', Number.NaN],
+  ])(
+    'reads call options once, so a deadline changed to %s afterwards changes no call',
+    async (_name, changed) => {
+      const { transport, calls } = scriptedTransport(call => call.respond({}))
+      const root = scope({ default: transport })
+      const headers = { 'x-trace': 'abc' }
+      const held: { timeoutMs: number; headers: HeadersInit } = {
+        timeoutMs: 5_000,
+        headers,
+      }
+
+      const { value: mutation } = root.mount(() =>
+        createConnectMutation(getUser, { callOptions: held })
+      )
+      held.timeoutMs = changed
+      held.headers = { 'x-trace': 'changed' }
+      await mutation.mutate({ id: 1n })
+
+      expect(calls).toHaveLength(1)
+      expect(calls[0].timeoutMs).toBe(5_000)
+      expect(calls[0].header).toBe(headers)
+      expect(mutation.error()).toBeUndefined()
+    }
+  )
 })
 
 describe('errors', () => {
@@ -636,6 +664,25 @@ describe('the scope it needs', () => {
         createConnectMutation(getUser, { callOptions: { timeoutMs: Number.NaN } })
       )
     ).toThrowError(ConnectAdapterError)
+  })
+
+  it.each([
+    ['null', null],
+    ['a string', 'abort'],
+    ['an object shaped like a signal', { aborted: false }],
+  ])('refuses %s as the signal, before any call', async (_name, signal) => {
+    const { transport, calls } = scriptedTransport(call => call.respond({ name: 'Ada' }))
+    const root = scope({ default: transport })
+
+    expect(() =>
+      root.mount(() =>
+        createConnectMutation(getUser, { callOptions: { signal: signal as never } })
+      )
+    ).toThrowError(ConnectAdapterError)
+    expect(calls).toHaveLength(0)
+
+    const { value: healthy } = root.mount(() => createConnectMutation(getUser))
+    expect(nameOf(await healthy.mutate({ id: 1n }))).toBe('Ada')
   })
 
   it('refuses a finite deadline longer than a timer can hold, rather than expiring at once', () => {

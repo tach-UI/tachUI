@@ -54,7 +54,11 @@ export function createConnectMutation<
   assertUnaryMethod(method, 'createConnectMutation()')
   const caller = `createConnectMutation() for ${describeMethod(method)}`
   assertOptionsObject(options, caller, 'Pass an options object, or omit it.')
-  const callOptions = callOptionsFrom(options?.callOptions, caller)
+  // Read once: changing the options object afterwards changes no call, and
+  // cannot slip a deadline past the checks made on it here.
+  const { signal: applicationSignal, timeoutMs, headers, contextValues } =
+    callOptionsFrom(options?.callOptions, caller)
+  const callOptions = { headers, contextValues }
   const { transport, client } = resolveAdapterTransport(
     caller,
     options?.transport,
@@ -101,11 +105,11 @@ export function createConnectMutation<
         once: true,
       })
     }
-    const deadline = startDeadline(callOptions.timeoutMs)
+    const deadline = startDeadline(timeoutMs)
     const link = linkSignals([
       { signal, failure: cancelled },
       {
-        signal: callOptions.signal,
+        signal: applicationSignal,
         failure: reason =>
           canceledError('the mutation was cancelled by its signal', reason),
       },
@@ -118,7 +122,7 @@ export function createConnectMutation<
         input,
         link.signal,
         // Infinity is no deadline here, and absent is how Connect says so.
-        callOptions.timeoutMs === Infinity ? undefined : callOptions.timeoutMs,
+        timeoutMs === Infinity ? undefined : timeoutMs,
         callOptions
       )
     } finally {

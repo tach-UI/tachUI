@@ -19,6 +19,7 @@ import type {
 } from '@bufbuild/protobuf'
 import { Code, ConnectError } from '@connectrpc/connect'
 import type { Transport } from '@connectrpc/connect'
+import { raceAbort } from '@tachui/query'
 
 import { RETRY_BASE_DELAY_MS, RETRY_MAX_DELAY_MS } from './defaults'
 import { ConnectAdapterError } from './errors'
@@ -89,7 +90,13 @@ export function callOptionsFrom(
     'Pass an object with signal, timeoutMs, headers, or contextValues, or omit it.'
   )
   const options = (callOptions ?? {}) as ConnectCallOptions
-  const { timeoutMs } = options
+  const { signal, timeoutMs } = options
+  // Refused here rather than failing inside a call other observers share.
+  if (signal !== undefined && !(signal instanceof AbortSignal)) {
+    throw new ConnectAdapterError(
+      `${caller} was given ${signal === null ? 'null' : typeof signal} as callOptions.signal. Pass an AbortSignal, or omit it.`
+    )
+  }
   if (
     timeoutMs !== undefined &&
     (typeof timeoutMs !== 'number' || Number.isNaN(timeoutMs))
@@ -187,35 +194,6 @@ export function startDeadline(
 }
 
 /**
- * Settles as `work` does, or rejects with the signal's reason the moment it
- * aborts. A transport is asked to respect its signal and nothing can make it;
- * racing the two ends the wait whatever the transport does.
- */
-export function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
-  if (signal.aborted) {
-    // Observed and dropped: nothing is waiting for the work any longer.
-    work.catch(() => undefined)
-    return Promise.reject(signal.reason)
-  }
-  return new Promise<T>((resolve, reject) => {
-    const onAbort = (): void => reject(signal.reason)
-    signal.addEventListener('abort', onAbort, { once: true })
-    // Both handlers attached, so a rejection that loses the race is still
-    // handled rather than surfacing as an unhandled rejection.
-    work.then(
-      value => {
-        signal.removeEventListener('abort', onAbort)
-        resolve(value)
-      },
-      (error: unknown) => {
-        signal.removeEventListener('abort', onAbort)
-        reject(error)
-      }
-    )
-  })
-}
-
-/**
  * Makes one unary call and resolves with the response message.
  *
  * Nothing is sent once the signal has aborted. Headers and context values are
@@ -247,6 +225,8 @@ export async function callUnary<I extends DescMessage, O extends DescMessage>(
     // A transport that throws instead of rejecting still fails this call only.
     work = Promise.reject(error)
   }
+  // A transport is asked to respect its signal and nothing can make it; the
+  // race ends the wait whatever the transport does.
   const response = await raceAbort(Promise.resolve(work), signal)
   return response.message as MessageShape<O>
 }
