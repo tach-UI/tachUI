@@ -15,7 +15,12 @@ export {
   DEFAULT_SNAPSHOT,
   DEFAULT_STALE_TIME,
 } from './defaults'
-export { createQueryClient, provideQueryClient, useQueryClient } from './client'
+export {
+  createQueryClient,
+  provideQueryClient,
+  QueryClientKey,
+  useQueryClient,
+} from './client'
 export {
   createAsyncStream,
   createAsyncStreamList,

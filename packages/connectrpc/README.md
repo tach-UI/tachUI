@@ -24,9 +24,10 @@ Connect interceptors. See
 workspace `@tachui/query`. It reaches npm at the 0.12.0 line move; until then the
 install below will not resolve.
 
-The package currently ships its public type surface and two runtime values:
-`DEFAULT_TRANSPORT_NAME` and `isRetryableCode`. The adapters themselves — transport
-provision, `connectQueryPrefix`, `createConnectQuery`, `createConnectMutation`,
+The package currently ships its public type surface, `DEFAULT_TRANSPORT_NAME`,
+`isRetryableCode`, `ConnectAdapterError`, and transport provision
+(`provideConnectTransport`, `useConnectTransport`). The adapters themselves —
+`connectQueryPrefix`, `createConnectQuery`, `createConnectMutation`,
 `createConnectInfiniteQuery`, `createConnectStream`, and `createConnectStreamList` —
 land across the 0.12.0 milestone. As with `@tachui/query`, the option and result
 types are declared first because they are what every call site is written against.
@@ -44,7 +45,12 @@ dependencies. The adapter accepts Connect's generic `Transport` interface, so it
 independent of which transport package an application uses.
 
 ```ts
-import { DEFAULT_TRANSPORT_NAME, isRetryableCode } from '@tachui/connectrpc'
+import {
+  DEFAULT_TRANSPORT_NAME,
+  isRetryableCode,
+  provideConnectTransport,
+  useConnectTransport,
+} from '@tachui/connectrpc'
 import type { ConnectQueryKey, ConnectQueryOptions } from '@tachui/connectrpc'
 ```
 
@@ -73,6 +79,45 @@ derived from object identity would miss on every hydrated entry. The name defaul
 Within one `QueryClient`, a name identifies one logical backend and security scope.
 Where headers or context values change what the server returns — a tenant, an
 account — `keyExtension` adds them to the key.
+
+### Transports are provided through the environment
+
+The application constructs its transports and provides them to a component subtree;
+there is no global transport. Provide a `QueryClient` first, then each transport once
+per scope:
+
+```ts
+provideQueryClient(client)
+provideConnectTransport(publicTransport)                      // 'default'
+provideConnectTransport(accountTransport, { name: 'account' })
+
+useConnectTransport()          // publicTransport
+useConnectTransport('account') // accountTransport
+```
+
+A lookup resolves the nearest provider in the component's ancestry, so separate
+subtrees and concurrent server renders never see each other's transports. Misuse throws
+a `ConnectAdapterError` rather than returning `undefined`:
+
+- no transport provided under the name looked up;
+- no `QueryClient` provided above `provideConnectTransport` — the browser's ambient
+  client does not count, because a name is cache identity within an explicit client;
+- a different transport under a name already provided in the same scope (the same
+  transport again is a no-op, so a render can run twice);
+- a different transport under a name the client has already bound, in any scope and
+  for the client's lifetime. Switching accounts or backends under a fixed name would
+  otherwise serve entries cached for the previous one: use a new `QueryClient`, or a
+  different name;
+- a lookup that would resolve a name to a different transport than the consuming
+  scope's client has already bound — for example, one child of a nested client
+  shadowing an ancestor's transport while its sibling inherits it. A lookup binds
+  what it resolves to that client too, so the order does not matter. Provide the
+  transport where the client is provided, or give the shadowing scope its own client;
+- an empty, whitespace-only, or non-string name, `null` included, whether provided or
+  looked up; or options that are not an object.
+
+tachUI cannot see a target or credentials change inside one `Transport`; isolate that
+with `keyExtension`, a new client, or a new transport.
 
 ### Retry is a count, and only two codes qualify
 

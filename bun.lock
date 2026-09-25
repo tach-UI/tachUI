@@ -69,6 +69,7 @@
       "name": "@tachui/connectrpc",
       "version": "0.11.6",
       "dependencies": {
+        "@tachui/core": "0.11.6",
         "@tachui/query": "0.8.36",
       },
       "devDependencies": {

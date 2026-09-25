@@ -10,6 +10,8 @@
  */
 
 export { DEFAULT_TRANSPORT_NAME, isRetryableCode } from './defaults'
+export { ConnectAdapterError } from './errors'
+export { provideConnectTransport, useConnectTransport } from './transport'
 export type {
   ConnectCallOptions,
   ConnectInfiniteQueryOptions,

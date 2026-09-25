@@ -24,8 +24,11 @@ import viteConfig from '../vite.config'
 describe('@tachui/connectrpc barrel', () => {
   it('exports exactly the runtime surface the package documents', () => {
     expect(Object.keys(connectrpc).sort()).toEqual([
+      'ConnectAdapterError',
       'DEFAULT_TRANSPORT_NAME',
       'isRetryableCode',
+      'provideConnectTransport',
+      'useConnectTransport',
     ])
   })
 })
@@ -82,8 +85,14 @@ describe('package manifest', () => {
     expect(manifest.private).toBe(true)
   })
 
-  it('carries @tachui/query as its only runtime dependency, pinned exactly', () => {
-    expect(Object.keys(manifest.dependencies ?? {})).toEqual(['@tachui/query'])
+  // Core for the component environment transports are provided through;
+  // query for the client whose cache a transport name identifies.
+  it('carries @tachui/core and @tachui/query as its only runtime dependencies, pinned exactly', () => {
+    expect(Object.keys(manifest.dependencies ?? {})).toEqual([
+      '@tachui/core',
+      '@tachui/query',
+    ])
+    expect(manifest.dependencies?.['@tachui/core']).toMatch(/^\d+\.\d+\.\d+$/)
     expect(manifest.dependencies?.['@tachui/query']).toMatch(/^\d+\.\d+\.\d+$/)
   })
 
