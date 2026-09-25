@@ -1,5 +1,18 @@
 # @tachui/core
 
+## 0.11.7
+
+### Patch Changes
+
+- [#417](https://github.com/tach-UI/tachUI/pull/417) [`1e8bf73`](https://github.com/tach-UI/tachUI/commit/1e8bf73780e3ae779ca4e6d679409b98f1cd619d) Thanks [@whoughton](https://github.com/whoughton)! - `createTimeout` and `createInterval` return `ReturnType<typeof setTimeout>` and
+  `ReturnType<typeof setInterval>` instead of `NodeJS.Timeout`, so a consumer
+  without `@types/node` that type-checks its dependencies no longer fails on
+  `Cannot find namespace 'NodeJS'`. In an environment with Node's types the
+  returned value's type is unchanged.
+- Updated dependencies []:
+  - @tachui/registry@0.11.7
+  - @tachui/types@0.11.7
+
 ## 0.11.6
 
 ### Patch Changes

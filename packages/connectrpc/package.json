@@ -1,6 +1,6 @@
 {
   "name": "@tachui/connectrpc",
-  "version": "0.11.6",
+  "version": "0.11.7",
   "private": true,
   "description": "Optional ConnectRPC adapter for tachUI: maps generated Connect service methods onto @tachui/query",
   "homepage": "https://tachui.dev/",
@@ -31,8 +31,8 @@
     }
   },
   "dependencies": {
-    "@tachui/core": "0.11.6",
-    "@tachui/query": "0.8.36"
+    "@tachui/core": "0.11.7",
+    "@tachui/query": "0.8.37"
   },
   "peerDependencies": {
     "@bufbuild/protobuf": "^2.2.0",
