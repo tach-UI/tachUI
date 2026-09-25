@@ -68,8 +68,10 @@ export interface ProvideConnectTransportOptions {
  * ['connect', 'account', 'acme.users.v1.UserService', 'ListUsers', 'infinite', '{"pageSize":50}']
  * ```
  *
- * The canonical request is always a JSON object, so it can never be mistaken
- * for the `'infinite'` segment.
+ * The canonical request is the request's Protobuf JSON with object members
+ * sorted at every depth. It is always JSON text, and the bare word `infinite`
+ * is not, so the two can never be mistaken for each other. An infinite key's
+ * request omits the `pageParamKey` field, so every page shares one entry.
  */
 export type ConnectQueryKey = readonly [
   'connect',

@@ -3,14 +3,16 @@
  *
  * Maps generated Connect service methods onto `@tachui/query`. Applications
  * construct and configure their own transports; authentication, tracing, and
- * metadata stay in Connect interceptors. Nothing here serializes Protobuf,
- * speaks a Connect protocol, or builds a transport.
+ * metadata stay in Connect interceptors. Nothing here speaks a Connect
+ * protocol or builds a transport, and Protobuf JSON is written only to key a
+ * request, never to send one.
  *
  * @packageDocumentation
  */
 
 export { DEFAULT_TRANSPORT_NAME, isRetryableCode } from './defaults'
 export { ConnectAdapterError } from './errors'
+export { connectQueryPrefix } from './keys'
 export { provideConnectTransport, useConnectTransport } from './transport'
 export type {
   ConnectCallOptions,
