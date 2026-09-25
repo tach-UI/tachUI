@@ -37,9 +37,11 @@ describe('@tachui/query barrel', () => {
       'createMutation',
       'createQuery',
       'createQueryClient',
+      'hashQueryKey',
       'isDevelopment',
       'isServer',
       'provideQueryClient',
+      'raceAbort',
       'useQueryClient',
     ])
   })

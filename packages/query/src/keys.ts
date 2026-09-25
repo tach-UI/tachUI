@@ -803,6 +803,10 @@ export function decodeSnapshotData(encoded: unknown, path = 'data'): unknown {
 /**
  * The deterministic hash used as the cache map key. Equal keys always produce
  * it; property order, `Date` identity, and `bigint` width never change it.
+ *
+ * Public so a transport adapter can tell when two of its observers share one
+ * entry: two keys name the same entry exactly when their hashes are equal. It
+ * throws for a key the cache would refuse.
  */
 export function hashQueryKey(key: QueryKey): QueryKeyHash {
   return hashEncodedKey(encodeQueryKey(key))

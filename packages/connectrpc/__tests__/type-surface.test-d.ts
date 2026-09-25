@@ -50,6 +50,8 @@ import type {
 } from '@tachui/connectrpc'
 import {
   connectQueryPrefix,
+  createConnectMutation,
+  createConnectQuery,
   DEFAULT_TRANSPORT_NAME,
   isRetryableCode,
   provideConnectTransport,
@@ -269,9 +271,12 @@ export type QueryRejectsRetryDelay = Assert<
   >
 >
 
-/** Errors reach the consumer as `ConnectError`, never flattened. */
-export type QueryErrorIsConnectError = Assert<
-  Equals<ConnectQueryResult<string>['error'], Signal<ConnectError | undefined>>
+/**
+ * A failed call's `ConnectError` reaches the consumer unflattened, but so do
+ * local failures with their own values, so the error is narrowed before use.
+ */
+export type QueryErrorMustBeNarrowed = Assert<
+  Equals<ConnectQueryResult<string>['error'], Signal<unknown>>
 >
 
 // ---------------------------------------------------------------------------
@@ -534,8 +539,19 @@ export const mutation: ConnectMutationOptions<ListUsersRequestSchema, UserSchema
   transport: 'account',
   invalidates: [['connect', 'account', 'acme.users.v1.UserService', 'ListUsers']],
   onSuccess: (user, input) => void [user.id, input.pageSize],
-  onError: (error, input) => void [error.code, input.pageSize],
+  onError: (error, input) =>
+    void [error instanceof Error ? error.message : error, input.pageSize],
 }
+
+/** A hook's failure keeps its own value, so `onError` narrows before reading a code. */
+export type MutationOnErrorMustNarrow = Assert<
+  Equals<
+    Parameters<
+      NonNullable<ConnectMutationOptions<ListUsersRequestSchema, UserSchema>['onError']>
+    >[0],
+    unknown
+  >
+>
 
 /** Optimistic state stays the application's, paired with its rollback. */
 export const optimisticMutation: ConnectMutationOptions<
@@ -557,12 +573,15 @@ export type OptimisticRequiresRollback = Assert<
   >
 >
 
-export type MutationErrorIsConnectError = Assert<
-  Equals<
-    ConnectMutationResult<ListUsersRequestSchema, UserSchema>['error'],
-    Signal<ConnectError | undefined>
-  >
+export type MutationErrorMustBeNarrowed = Assert<
+  Equals<ConnectMutationResult<ListUsersRequestSchema, UserSchema>['error'], Signal<unknown>>
 >
+
+/** Optimistic rollback is the application's; there is no framework option for it. */
+export const noFrameworkRollback: ConnectMutationOptions<ListUsersRequestSchema, UserSchema> = {
+  // @ts-expect-error rollbackOnError is not an option
+  rollbackOnError: true,
+}
 
 // ---------------------------------------------------------------------------
 // Server streams
@@ -696,3 +715,60 @@ export type UseReturnsGenericTransport = Assert<
 export type UseTakesOptionalName = Assert<
   Equals<Parameters<typeof useConnectTransport>, [name?: ConnectTransportName]>
 >
+
+// ---------------------------------------------------------------------------
+// Adapters
+// ---------------------------------------------------------------------------
+
+declare const listUsers: ListUsers
+declare const watchUsers: WatchUsers
+
+/** The input function returns the method's request initializer. */
+export const queryOverRequest = createConnectQuery(listUsers, () => ({
+  pageSize: 50,
+  query: { cursor: 'abc' },
+}))
+
+/** The response message is what the query holds. */
+export type QueryHoldsTheResponse = Assert<
+  Equals<typeof queryOverRequest, ConnectQueryResult<ListUsersResponse>>
+>
+
+// @ts-expect-error a request field of the wrong type is refused
+export const queryWithWrongField = createConnectQuery(listUsers, () => ({ pageSize: 'fifty' }))
+
+/** `select` projects the response, and the result is typed from it. */
+export const projectedAdapterQuery = createConnectQuery(listUsers, () => ({}), {
+  select: response => response.users.length,
+})
+
+export type SelectedQueryIsProjected = Assert<
+  Equals<typeof projectedAdapterQuery, ConnectQueryResult<number>>
+>
+
+/** Naming a projection type without a projection is refused. */
+export const projectionWithoutSelect = createConnectQuery<
+  ListUsersRequestSchema,
+  ListUsersResponseSchema,
+  number
+  // @ts-expect-error select is required once the data type differs from the response
+>(listUsers, () => ({}), { staleTime: 1 })
+
+// @ts-expect-error a server-streaming method has no single response to cache
+export const streamingQuery = createConnectQuery(watchUsers, () => ({}))
+
+/** A mutation takes the request initializer and resolves with the response. */
+export const adapterMutation = createConnectMutation(listUsers, {
+  onSuccess: (response, input) => void [response.nextPageToken, input.pageSize],
+})
+
+export type MutationTakesTheRequest = Assert<
+  Equals<Parameters<typeof adapterMutation.mutate>[0], MessageInitShape<ListUsersRequestSchema>>
+>
+
+export type MutationResolvesWithTheResponse = Assert<
+  Equals<ReturnType<typeof adapterMutation.mutate>, Promise<ListUsersResponse>>
+>
+
+// @ts-expect-error a server-streaming method is not a mutation
+export const streamingMutation = createConnectMutation(watchUsers)

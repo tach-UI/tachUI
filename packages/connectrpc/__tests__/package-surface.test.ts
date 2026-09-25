@@ -27,6 +27,8 @@ describe('@tachui/connectrpc barrel', () => {
       'ConnectAdapterError',
       'DEFAULT_TRANSPORT_NAME',
       'connectQueryPrefix',
+      'createConnectMutation',
+      'createConnectQuery',
       'isRetryableCode',
       'provideConnectTransport',
       'useConnectTransport',

@@ -342,6 +342,12 @@ const usersFile = create(FileDescriptorProtoSchema, {
           inputType: '.acme.users.v1.GetUserRequest',
           outputType: '.acme.users.v1.GetUserResponse',
         },
+        {
+          name: 'WatchUsers',
+          inputType: REQUEST,
+          outputType: '.acme.users.v1.GetUserResponse',
+          serverStreaming: true,
+        },
       ],
     },
   ],
@@ -416,6 +422,7 @@ export const LegacyService = service('acme.legacy.v1.LegacyService')
 
 export const ListUsers: DescMethod = UserService.method.listUsers!
 export const GetUser: DescMethod = UserService.method.getUser!
+export const WatchUsers: DescMethod = UserService.method.watchUsers!
 export const Lookup: DescMethod = LegacyService.method.lookup!
 
 export const ListUsersRequestSchema = message('acme.users.v1.ListUsersRequest')

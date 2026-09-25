@@ -114,7 +114,8 @@ export interface ConnectKeyedRequest<M extends DescMethod> {
   readonly request: MessageShape<M['input']>
 }
 
-function describeMethod(method: DescMethod): string {
+/** Names a method for a diagnostic by its fully qualified service. */
+export function describeMethod(method: DescMethod): string {
   return `${method.parent.typeName}.${method.name}`
 }
 

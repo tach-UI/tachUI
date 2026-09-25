@@ -15,6 +15,9 @@
  * aborted controller and a promise pending for good. Racing the two ends the
  * wait whatever the source does, and leaves the source to finish into a result
  * nobody holds, which is the most anyone can do about work already started.
+ *
+ * Public so a transport adapter races its calls with this one implementation
+ * rather than a copy that can drift from it.
  */
 export function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   if (signal.aborted) {

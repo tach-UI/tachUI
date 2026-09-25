@@ -8,9 +8,8 @@
  * and a loader, and the lifecycle, cache, and result signals are query's.
  *
  * What is deliberately *not* declared yet belongs to the issue that decides it:
- * a transport-key handle, stream `reset()`, framework-managed optimistic cache
- * writes, and how call options behave when one request is shared by several
- * observers. Each is additive, so leaving it out now costs nothing later.
+ * a transport-key handle, stream `reset()`, and framework-managed optimistic
+ * cache writes. Each is additive, so leaving it out now costs nothing later.
  *
  * See ADR 0001: `docs/reference/adr/0001-data-and-communications-architecture.md`.
  */
@@ -98,6 +97,16 @@ export interface ConnectQueryPrefixOptions {
  * `signal` with an owner-bound one; an application's signal and deadline stay
  * effective alongside it.
  *
+ * A mutation's call is its own, so every option reaches `Transport.unary`
+ * as given. A query's call is shared by every observer of its key, so `signal`
+ * and `timeoutMs` bound only this observer's wait: when either ends it, this
+ * observer settles with `canceled` or `deadline_exceeded` while any other keeps
+ * waiting, and the call stops only once nobody is. The transport is never
+ * given a query's `timeoutMs`, which would cut the call off for everyone.
+ * `headers` and `contextValues` travel with the call of whichever observer
+ * started it, which is why anything in them that changes the response belongs
+ * in {@link ConnectKeyOptions.keyExtension} too.
+ *
  * `onHeader` and `onTrailer` are left out: a cached response is served to
  * observers that never made a call, so a callback on the call would fire for
  * some observers and not others.
@@ -126,7 +135,9 @@ export interface ConnectKeyOptions {
    *
    * Headers and context values never enter the key on their own. When one of
    * them changes what the server returns — a tenant, an account, a locale —
-   * put it here, or two different responses share one cache entry.
+   * put it here, or two different responses share one cache entry. Put an
+   * identifier here, never a credential: a key is visible in devtools and can
+   * travel in a server-rendered snapshot.
    */
   keyExtension?: () => QueryKey
 }
@@ -138,6 +149,10 @@ export interface ConnectKeyOptions {
  * exponential backoff, whatever the count. A predicate could opt an
  * `unauthenticated` or `deadline_exceeded` failure back in; a deadline is the
  * caller's, and retrying past it compounds latency. Defaults to `0`.
+ *
+ * A query's call is shared by every observer of its key, so its attempts
+ * follow the count of the observer that started it, as its headers do; an
+ * observer that joins a running call with another count shares its attempts.
  */
 export type ConnectRetry = number
 
@@ -171,7 +186,7 @@ export type ConnectQueryOptions<
   O extends DescMessage,
   TData = MessageShape<O>,
 > = Omit<
-  QueryOptionsBase<MessageShape<O>, TData, ConnectError>,
+  QueryOptionsBase<MessageShape<O>, TData, unknown>,
   AdapterOwnedQueryOptions
 > &
   ConnectRequestOptions &
@@ -180,8 +195,18 @@ export type ConnectQueryOptions<
     retry?: ConnectRetry
   } & SelectRequirement<MessageShape<O>, TData>
 
-/** The result of `createConnectQuery`. Errors are `ConnectError`, never flattened. */
-export type ConnectQueryResult<TData> = QueryResult<TData, ConnectError>
+/**
+ * The result of `createConnectQuery`.
+ *
+ * A failed call surfaces the `ConnectError` the transport rejected with, never
+ * flattened; a cancellation or an expired deadline is a `ConnectError` with
+ * `canceled` or `deadline_exceeded`. But not every failure is a call's: a
+ * request that cannot be keyed is a `ConnectAdapterError`, and the query layer
+ * can refuse a key of its own. Those keep their own values, so `error` is
+ * `unknown` and is narrowed with `instanceof ConnectError` before reading a
+ * code.
+ */
+export type ConnectQueryResult<TData> = QueryResult<TData, unknown>
 
 /**
  * Bounds the recursion in {@link ConnectPageParamKey}: each level indexes the
@@ -332,13 +357,17 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
  * client takes it. Optimistic state is the application's, exactly as in
  * `@tachui/query`: `optimisticUpdate` and `onError` are paired, and `onError`
  * receives what `optimisticUpdate` returned. Mutations never retry.
+ *
+ * Errors are `unknown` for the reason given on {@link ConnectQueryResult}, and
+ * more so here: a throwing `optimisticUpdate` reaches `onError`, and a throwing
+ * `onSuccess` rejects `mutate`, each with whatever it threw.
  */
 export type ConnectMutationOptions<
   I extends DescMessage,
   O extends DescMessage,
   TContext = unknown,
 > = DistributiveOmit<
-  MutationOptions<MessageInitShape<I>, MessageShape<O>, ConnectError, TContext>,
+  MutationOptions<MessageInitShape<I>, MessageShape<O>, unknown, TContext>,
   'run'
 > &
   ConnectRequestOptions & {
@@ -350,7 +379,7 @@ export type ConnectMutationOptions<
 export type ConnectMutationResult<
   I extends DescMessage,
   O extends DescMessage,
-> = MutationResult<MessageInitShape<I>, MessageShape<O>, ConnectError>
+> = MutationResult<MessageInitShape<I>, MessageShape<O>, unknown>
 
 /** A stream's key and iterable come from the method descriptor. */
 interface AdapterOwnedStreamFields {

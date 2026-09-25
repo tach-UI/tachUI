@@ -195,16 +195,17 @@ function checkRuntime(appDir) {
 }
 
 /**
- * The built entry must import its peers by name. `Canceled` is a member of
- * Connect's `Code` enum the adapter never names, so it can only appear in the
- * built entry if the enum itself was inlined.
+ * The built entry must import its peers by name. `DataLoss` is a member of
+ * Connect's `Code` enum the adapter never names — it does name `Canceled` and
+ * `DeadlineExceeded`, for the failures it raises itself — so it can only appear
+ * in the built entry if the enum itself was inlined.
  */
 function checkExternals(appDir) {
   const entry = readFileSync(join(appDir, 'node_modules/@tachui/connectrpc/dist/index.js'), 'utf8')
   if (!/from\s*["']@connectrpc\/connect["']/.test(entry)) {
     fail('the built entry does not import @connectrpc/connect by name')
   }
-  if (entry.includes('Canceled')) fail('the built entry carries its own copy of Connect')
+  if (entry.includes('DataLoss')) fail('the built entry carries its own copy of Connect')
 }
 
 function bundledInputs(appDir, outDir, name, source) {
