@@ -474,10 +474,10 @@ describe('diagnostics', () => {
   })
 
   it.each([
-    ['a string', 'account'],
-    ['a number', 42],
-    ['an array', ['account']],
-  ])('refuses %s as options rather than providing the default', (_label, options) => {
+    ['a string', 'account', /was given string as its options/],
+    ['a number', 42, /was given number as its options/],
+    ['an array', ['account'], /was given an array as its options/],
+  ])('refuses %s as options rather than providing the default', (_label, options, message) => {
     const root = rootWithClient('root')
     const provide = () =>
       inScope(root, () =>
@@ -488,7 +488,7 @@ describe('diagnostics', () => {
       )
 
     expect(provide).toThrowError(ConnectAdapterError)
-    expect(provide).toThrowError(/was given .* as its options/)
+    expect(provide).toThrowError(message)
     expect(() => inScope(root, () => useConnectTransport())).toThrowError(
       /No provider for the default transport/
     )
