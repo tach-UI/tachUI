@@ -49,6 +49,7 @@ import type {
   ProvideConnectTransportOptions,
 } from '@tachui/connectrpc'
 import {
+  connectQueryPrefix,
   DEFAULT_TRANSPORT_NAME,
   isRetryableCode,
   provideConnectTransport,
@@ -173,6 +174,19 @@ export type KeyNeedsTheConnectRoot = Assert<
 
 /** A Connect key is still a query key, so it works with every query-level API. */
 export type ConnectKeyIsAQueryKey = Assert<Assignable<ConnectQueryKey, QueryKey>>
+
+/** A prefix is itself a Connect key, so `invalidate` and `invalidates` take it. */
+export type PrefixIsAConnectKey = Assert<
+  Equals<ReturnType<typeof connectQueryPrefix>, ConnectQueryKey>
+>
+
+/** Any generated method is accepted, unary or streaming. */
+export type PrefixTakesAnyMethod = Assert<
+  Assignable<
+    [ListUsers, ConnectQueryPrefixOptions] | [WatchUsers],
+    Parameters<typeof connectQueryPrefix>
+  >
+>
 
 /** Key extension is reactive, like the key it extends. */
 export type KeyExtensionIsReactive = Assert<

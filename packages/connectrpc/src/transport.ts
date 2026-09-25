@@ -75,9 +75,9 @@ function describeName(name: ConnectTransportName): string {
 /**
  * The name is cache identity, so it must be one a diagnostic can show and a
  * reader can tell apart from `'default'`. `caller` and `action` complete the
- * message for provision or lookup.
+ * message for provision, lookup, or a key prefix.
  */
-function assertValidName(
+export function assertValidName(
   name: unknown,
   caller: string,
   action: string
@@ -91,6 +91,27 @@ function assertValidName(
           : typeof name
     throw new ConnectAdapterError(
       `${caller} was given ${given} as a transport name. A name must be a non-empty string; omit it to ${action} the default transport.`
+    )
+  }
+}
+
+/**
+ * Refuses options that are not an object. An array is an object too, and
+ * having no name it would otherwise stand for the default transport under a
+ * name nobody chose. `usage` completes the message with what to pass instead.
+ */
+export function assertOptionsObject(
+  options: unknown,
+  caller: string,
+  usage: string
+): void {
+  if (
+    options !== undefined &&
+    options !== null &&
+    (typeof options !== 'object' || Array.isArray(options))
+  ) {
+    throw new ConnectAdapterError(
+      `${caller} was given ${Array.isArray(options) ? 'an array' : typeof options} as its options. ${usage}`
     )
   }
 }
@@ -129,17 +150,11 @@ export function provideConnectTransport(
   transport: Transport,
   options?: ProvideConnectTransportOptions
 ): void {
-  // An array is an object too, and having no `name` it would otherwise
-  // provide the default transport under a name nobody chose.
-  if (
-    options !== undefined &&
-    options !== null &&
-    (typeof options !== 'object' || Array.isArray(options))
-  ) {
-    throw new ConnectAdapterError(
-      `provideConnectTransport() was given ${Array.isArray(options) ? 'an array' : typeof options} as its options. Pass { name } to provide a named transport, or omit the options to provide the default transport.`
-    )
-  }
+  assertOptionsObject(
+    options,
+    'provideConnectTransport()',
+    'Pass { name } to provide a named transport, or omit the options to provide the default transport.'
+  )
   // Only an omitted name means the default: a null one is malformed
   // configuration, and would otherwise surface under a name nobody chose.
   const name =

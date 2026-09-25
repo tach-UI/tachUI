@@ -26,6 +26,7 @@ describe('@tachui/connectrpc barrel', () => {
     expect(Object.keys(connectrpc).sort()).toEqual([
       'ConnectAdapterError',
       'DEFAULT_TRANSPORT_NAME',
+      'connectQueryPrefix',
       'isRetryableCode',
       'provideConnectTransport',
       'useConnectTransport',

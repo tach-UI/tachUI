@@ -25,9 +25,9 @@ workspace `@tachui/query`. It reaches npm at the 0.12.0 line move; until then th
 install below will not resolve.
 
 The package currently ships its public type surface, `DEFAULT_TRANSPORT_NAME`,
-`isRetryableCode`, `ConnectAdapterError`, and transport provision
-(`provideConnectTransport`, `useConnectTransport`). The adapters themselves —
-`connectQueryPrefix`, `createConnectQuery`, `createConnectMutation`,
+`isRetryableCode`, `ConnectAdapterError`, transport provision
+(`provideConnectTransport`, `useConnectTransport`), and deterministic query keys with
+`connectQueryPrefix`. The adapters themselves — `createConnectQuery`, `createConnectMutation`,
 `createConnectInfiniteQuery`, `createConnectStream`, and `createConnectStreamList` —
 land across the 0.12.0 milestone. As with `@tachui/query`, the option and result
 types are declared first because they are what every call site is written against.
@@ -46,6 +46,7 @@ independent of which transport package an application uses.
 
 ```ts
 import {
+  connectQueryPrefix,
   DEFAULT_TRANSPORT_NAME,
   isRetryableCode,
   provideConnectTransport,
@@ -79,6 +80,52 @@ derived from object identity would miss on every hydrated entry. The name defaul
 Within one `QueryClient`, a name identifies one logical backend and security scope.
 Where headers or context values change what the server returns — a tenant, an
 account — `keyExtension` adds them to the key.
+
+### Keys are the request's Protobuf JSON, stably stringified
+
+Equivalent requests share one entry. The request — a partial initializer or a
+generated message — is normalized through the method's input schema, written with
+`toJson` under pinned options (camelCase names, enum names, implicit zeros omitted),
+and stringified with object members sorted at every depth:
+
+```ts
+['connect', 'default', 'acme.users.v1.UserService', 'ListUsers', '{"filter":{"labels":{"a":"1","b":"2"}},"pageSize":50}']
+```
+
+So field construction order and map insertion order never split an entry, int64 and
+bytes take their Protobuf JSON forms, and an explicit implicit zero keys exactly as
+its omission, while an explicitly present `optional` or proto2 zero stays distinct. A
+generated message never reaches `@tachui/query`'s generic hasher.
+
+An infinite query adds `'infinite'` after the method name and leaves the
+`pageParamKey` field out of the request, so every page of one list shares one entry
+and none collides with the unary entry for the same request.
+
+Headers and context values never enter the key. When they change what the server
+returns, `keyExtension` appends segments after the request:
+
+```ts
+{ keyExtension: () => [tenantId()] }
+```
+
+What Protobuf JSON cannot carry faithfully is refused with a `ConnectAdapterError`
+rather than keyed: a populated `google.protobuf.Any` or extension data (registries are
+not yet supported), unknown fields preserved from a binary parse, a map or
+`google.protobuf.Struct` key named `__proto__`, a message of the wrong type, and an
+input that is not an object or throws. A property that is not a
+field of the request is refused in development; in production it is dropped from the
+key and the request alike.
+
+### Prefixes target one transport
+
+`connectQueryPrefix(method)` matches every unary and infinite entry for a method on
+the default transport; `connectQueryPrefix(method, { transport: 'account' })` matches
+them on that transport only. The transport name precedes the method in a key, so no
+single prefix reaches two transports' entries: invalidate each by name.
+
+```ts
+client.invalidate(connectQueryPrefix(UserService.method.listUsers, { transport: 'account' }))
+```
 
 ### Transports are provided through the environment
 
