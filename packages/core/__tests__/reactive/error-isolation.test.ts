@@ -202,6 +202,53 @@ describe('reactive error isolation (#217)', () => {
     expect(runs).toBe(3)
   })
 
+  it('isolates a dependent computed that throws when its source computed changes', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const failure = new Error('dependent boom')
+
+    const [source, setSource] = createSignal(1)
+    const upstream = createComputed(() => source() * 2)
+    const dependent = createComputed(() => {
+      if (upstream() === 4) {
+        throw failure
+      }
+      return upstream()
+    })
+    const seen: unknown[] = []
+    createEffect(() => {
+      try {
+        seen.push(dependent())
+      } catch (error) {
+        seen.push(error)
+      }
+    })
+    expect(seen).toEqual([2])
+
+    // The upstream recompute succeeds and re-runs the dependent on a deferred
+    // microtask. The dependent throws there; that must reach its readers, not
+    // escape as an uncaught exception.
+    setSource(2)
+    flushSync()
+    await Promise.resolve()
+    await Promise.resolve()
+    flushSync()
+
+    expect(seen).toContain(failure)
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Error in computation during deferred update:',
+      failure
+    )
+
+    // Recovery: success-path notifications are microtask-deferred at each
+    // level of the chain, so a macrotask turn lets all of them land.
+    setSource(3)
+    flushSync()
+    await new Promise(resolve => setTimeout(resolve, 0))
+    flushSync()
+    expect(seen.at(-1)).toBe(6)
+  })
+
   it('a disposed computation stays disposed (explicit dispose path unaffected)', () => {
     const [value, setValue] = createSignal(0)
     let runs = 0
