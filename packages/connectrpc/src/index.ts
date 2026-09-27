@@ -15,6 +15,7 @@ export { ConnectAdapterError } from './errors'
 export { connectQueryPrefix } from './keys'
 export { createConnectMutation } from './mutation'
 export { createConnectQuery } from './query'
+export { createConnectStream, createConnectStreamList } from './stream'
 export { provideConnectTransport, useConnectTransport } from './transport'
 export type {
   ConnectCallOptions,

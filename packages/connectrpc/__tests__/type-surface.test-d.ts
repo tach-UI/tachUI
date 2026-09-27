@@ -15,6 +15,8 @@
  */
 
 import type {
+  DescMethodBiDiStreaming,
+  DescMethodClientStreaming,
   DescMethodServerStreaming,
   DescMethodUnary,
   Message,
@@ -52,6 +54,8 @@ import {
   connectQueryPrefix,
   createConnectMutation,
   createConnectQuery,
+  createConnectStream,
+  createConnectStreamList,
   DEFAULT_TRANSPORT_NAME,
   isRetryableCode,
   provideConnectTransport,
@@ -658,8 +662,26 @@ export type StreamValueIsTheFold = Assert<
   Equals<ConnectStreamResult<UserSchema, number>['value'], Signal<number>>
 >
 
-export type StreamErrorIsConnectError = Assert<
-  Equals<ConnectStreamResult<UserSchema>['error'], Signal<ConnectError | undefined>>
+/**
+ * A failed call keeps its `ConnectError`, but a request that cannot be keyed
+ * or a throwing `reduce` keeps its own value, so `error` is narrowed first.
+ */
+export type StreamErrorMustBeNarrowed = Assert<
+  Equals<ConnectStreamResult<UserSchema>['error'], Signal<unknown>>
+>
+export type StreamListErrorMustBeNarrowed = Assert<
+  Equals<ConnectStreamListResult<UserSchema, string>['error'], Signal<unknown>>
+>
+
+/** Restarting is `connect()`, which starts fresh; there is no `reset()`. */
+export type StreamHasNoReset = Assert<
+  Equals<'reset' extends keyof ConnectStreamResult<UserSchema> ? true : false, false>
+>
+export type StreamListHasNoReset = Assert<
+  Equals<
+    'reset' extends keyof ConnectStreamListResult<UserSchema, string> ? true : false,
+    false
+  >
 >
 
 /** Collection mode needs row identity. */
@@ -772,3 +794,79 @@ export type MutationResolvesWithTheResponse = Assert<
 
 // @ts-expect-error a server-streaming method is not a mutation
 export const streamingMutation = createConnectMutation(watchUsers)
+
+declare const uploadUsers: DescMethodClientStreaming<ListUsersRequestSchema, UserSchema>
+declare const chatUsers: DescMethodBiDiStreaming<ListUsersRequestSchema, UserSchema>
+
+/** A stream takes the request initializer and holds the output message. */
+export const adapterStream = createConnectStream(watchUsers, () => ({
+  pageSize: 50,
+  query: { cursor: 'abc' },
+}))
+
+export type StreamHoldsTheMessage = Assert<
+  Equals<typeof adapterStream, ConnectStreamResult<UserSchema>>
+>
+
+export type StreamLatestIsTheMessage = Assert<
+  Equals<typeof adapterStream.latest, Signal<User | undefined>>
+>
+
+/** A fold's accumulator is inferred from `initial`, and `reduce` is typed by it. */
+export const foldedAdapterStream = createConnectStream(watchUsers, () => ({}), {
+  transport: 'account',
+  initial: () => 0,
+  reduce: (count, user) => count + user.displayName.length,
+})
+
+export type FoldedStreamValue = Assert<
+  Equals<typeof foldedAdapterStream, ConnectStreamResult<UserSchema, number>>
+>
+
+/** A list's row key is inferred from `itemKey`. */
+export const adapterStreamList = createConnectStreamList(watchUsers, () => ({}), {
+  itemKey: user => user.id,
+  limit: 100,
+  insert: 'prepend',
+})
+
+export type StreamListKeysAreItemKeys = Assert<
+  Equals<typeof adapterStreamList, ConnectStreamListResult<UserSchema, string>>
+>
+
+// @ts-expect-error a request field of the wrong type is refused
+export const streamWithWrongField = createConnectStream(watchUsers, () => ({ pageSize: 'fifty' }))
+
+// @ts-expect-error a unary method is not a server stream
+export const unaryStream = createConnectStream(listUsers, () => ({}))
+
+// @ts-expect-error a client-streaming method is not a server stream
+export const clientStream = createConnectStream(uploadUsers, () => ({}))
+
+export const bidiStreamList = createConnectStreamList(
+  // @ts-expect-error a bidirectional method is not a server stream
+  chatUsers,
+  () => ({}),
+  { itemKey: (user: User) => user.id }
+)
+
+export const streamWithOpen = createConnectStream(watchUsers, () => ({}), {
+  // @ts-expect-error the adapter opens the call from the method descriptor
+  open: () => ({}) as AsyncIterable<User>,
+})
+
+export const streamListWithKey = createConnectStreamList(watchUsers, () => ({}), {
+  itemKey: user => user.id,
+  // @ts-expect-error the adapter builds the key from the request
+  key: () => ['mine'],
+})
+
+export const streamWithHeaderCallback = createConnectStream(watchUsers, () => ({}), {
+  callOptions: {
+    // @ts-expect-error header callbacks are not accepted through call options
+    onHeader: () => undefined,
+  },
+})
+
+// @ts-expect-error collection mode needs row identity
+export const streamListWithoutItemKey = createConnectStreamList(watchUsers, () => ({}), {})

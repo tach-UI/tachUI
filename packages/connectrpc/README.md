@@ -27,11 +27,11 @@ install below will not resolve.
 The package currently ships its public type surface, `DEFAULT_TRANSPORT_NAME`,
 `isRetryableCode`, `ConnectAdapterError`, transport provision
 (`provideConnectTransport`, `useConnectTransport`), deterministic query keys with
-`connectQueryPrefix`, and the unary adapters `createConnectQuery` and
-`createConnectMutation`. The remaining adapters — `createConnectInfiniteQuery`,
-`createConnectStream`, and `createConnectStreamList` — land across the 0.12.0
-milestone. As with `@tachui/query`, the option and result types are declared first
-because they are what every call site is written against.
+`connectQueryPrefix`, the unary adapters `createConnectQuery` and
+`createConnectMutation`, and the server-stream adapters `createConnectStream` and
+`createConnectStreamList`. The remaining adapter, `createConnectInfiniteQuery`,
+lands within the 0.12.0 milestone. As with `@tachui/query`, the option and result
+types are declared first because they are what every call site is written against.
 
 ## Usage
 
@@ -58,7 +58,33 @@ await rename.mutate({ id: userId(), name: 'Ada' })
 Both resolve their transport when they are created, so a missing provider, a name
 bound to another transport, or a `client` option that is not the client the transport
 is bound to throws a `ConnectAdapterError` before anything is called or cached. Only
-unary methods are accepted; a server-streaming descriptor is a type error.
+unary methods are accepted; a server-streaming descriptor is a type error, and is
+refused at runtime with a pointer to the stream adapters.
+
+```ts
+import { createConnectStream, createConnectStreamList } from '@tachui/connectrpc'
+
+// Collection mode: the right choice whenever the messages feed a List.
+const feed = createConnectStreamList(
+  NotificationService.method.watchNotifications,
+  () => ({ accountId: accountId() }),
+  { transport: 'account', itemKey: notification => notification.id, limit: 200 }
+)
+feed.ids()           // ordered row keys
+feed.get(id)()       // one row, updated in place when its key repeats
+feed.status()        // 'idle' | 'connecting' | 'open' | 'completed' | 'error' | 'cancelled'
+
+// Reduction mode: counters, a latest reading, small derived state.
+const unread = createConnectStream(
+  NotificationService.method.watchNotifications,
+  () => ({ accountId: accountId() }),
+  { transport: 'account', initial: () => 0, reduce: count => count + 1 }
+)
+unread.value()       // the fold
+unread.latest()      // the most recent message
+```
+
+The stream adapters are covered under [Server streams](#server-streams) below.
 
 The input function is reactive, and each time it runs it produces both the key and
 the request sent for it: every attempt for that key, retries included, sends that
@@ -250,6 +276,107 @@ the count of whichever observer started the call. Mutations never retry.
 allowlist, and is a function rather than an array of codes: a top-level array built
 from Connect's `Code` members is an expression a bundler must keep, and it would pull
 the Connect runtime into every bundle that imports anything from this package.
+
+### Server streams
+
+`createConnectStream(method, input, options)` and
+`createConnectStreamList(method, input, options)` take a generated server-streaming
+method and feed its response messages into `@tachui/query`'s `createAsyncStream` and
+`createAsyncStreamList`. They resolve their transport and check the method when they
+are created, as the unary adapters do. A stream has no cache entry: nothing a message
+says is written to the query cache, and nothing about a stream is serialized for a
+server-rendered snapshot.
+
+**Use `createConnectStreamList` whenever the messages feed a List.** Each message is
+a row identified by `itemKey`: a repeat key updates that one row in place, `limit`
+evicts the oldest row, and `insert: 'prepend'` puts new rows first. The reduction
+mode, `createConnectStream`, folds messages with `initial` and `reduce` into one
+value; supply `bufferSize` whenever the fold accumulates an array. A fold like
+`(items, message) => [...items, message]` copies the whole array per message and
+grows without bound, which is what collection mode exists to avoid.
+
+**Keys and requests.** The input function is reactive. The stream's key is built as
+a query's is, from the request's Protobuf JSON, the transport name, and
+`keyExtension`, and each connection sends the request its key was built from. A
+change to the request or to `keyExtension` that changes the key replaces the call; a
+change to an equivalent request does not. A request that cannot be keyed makes the
+stream's `error` a `ConnectAdapterError`, whose `cause` is what the input threw,
+and ends any call the previous key had open.
+
+**Lifecycle.** A result's `status` is `idle`, `connecting`, `open`, `completed`,
+`error`, or `cancelled`. `connecting` lasts until the transport has opened the call;
+`connect()` resolves at that point, and rejects if opening fails. A failure after
+that has no promise left to reject, so it appears in `status` and `error`. A stream
+that ends normally is `completed`, with or without messages.
+
+- **In the browser**, `autoConnect` (the default) opens the stream when it is
+  created, and a changed key replaces the call. The subscription belongs to the
+  owner that created it and ends when that owner is disposed. With
+  `autoConnect: false` the stream stays `idle` until `connect()`, and a key change
+  only ends a call that is open.
+- **In a server render** nothing opens on its own, whatever `autoConnect` says: a
+  component can create either result during a server render without starting a
+  stream. `connect()` is still available for code that means to.
+
+**No automatic retry or reconnect.** A stream that completed or failed stays that
+way. `connect()` starts a fresh call and clears everything the last one retained
+(`latest`, the fold or the rows); there is no `reset()`. A key change starts a new
+subscription, too, rather than recovering the old call. Resuming from a cursor or
+replaying missed messages is not offered.
+
+**Cancellation and failure are kept apart.** `cancel()` and owner disposal are a
+local hang-up: they abort the Connect call, end a pending message wait even if the
+transport ignores its signal, and report `cancelled`. `cancel()` reports that only
+while the stream is connecting or open, so it never overwrites a `completed` or
+`error` ending. An explicit `dispose()` of an open stream reports `cancelled`, as
+`@tachui/query` defines. Nothing from a cancelled, disposed, or replaced call reaches
+the result afterwards, messages and failures alike. An application's
+`callOptions.signal` or `callOptions.timeoutMs` ending the call is different: that
+is a failure of the call, reported as `error` with a `ConnectError` whose code is
+`canceled` or `deadline_exceeded`.
+
+**Call options.** The call is the stream's own, so `headers`, `contextValues`,
+`signal`, and `timeoutMs` all reach `Transport.stream`, with the adapter's own
+cancellation linked in. The deadline covers the whole call, not each message.
+Authentication and tracing stay in the transport's interceptors. `onHeader` and
+`onTrailer` are not accepted.
+
+**Errors.** A `ConnectError` from the call, while opening or mid-stream, reaches
+`error` as the transport raised it, code included. Local failures keep their own
+values: a request that cannot be keyed is a `ConnectAdapterError`, and a throwing
+`reduce`, `initial`, or `itemKey` ends the stream with whatever it threw. So `error`
+is typed `unknown`; narrow with `instanceof ConnectError` before reading a code.
+
+**Cardinality.** In 0.12, the package offers unary and server-streaming adapters
+only, and declares no transport capabilities. A unary, client-streaming, or
+bidirectional descriptor is a type error for the stream adapters. One that arrives
+through `any` is refused before any transport call, with a `ConnectAdapterError`
+naming the method, the selected transport, and the server-streaming cardinality the
+adapter requires.
+
+#### Incremental delivery in the browser
+
+A stream is only as live as the network path under it. Connect's own protocol over
+`fetch` (`createConnectTransport` from `@connectrpc/connect-web`) delivers each
+message as its bytes arrive, provided nothing between the browser and the server
+buffers the response body.
+
+gRPC-Web through a proxy is where this most often breaks. A proxy that translates
+gRPC-Web and buffers the response, whether because of its configuration, an HTTP/1.1
+hop, compression, or response buffering at a load balancer, holds every message
+until the call ends. The stream then reads `connecting` or `open` with nothing in
+it, and receives everything at once at completion, which looks like a stalled
+subscription rather than an error. If messages arrive late or all together:
+
+- prefer a Connect-protocol transport (`createConnectTransport`) to the server
+  directly, where the server supports it;
+- otherwise configure the proxy to stream: turn off response buffering for these
+  routes, keep the upstream connection streaming (HTTP/2 or chunked HTTP/1.1), and
+  do not compress or rewrite the streaming response.
+
+The package's tests drive Connect's protocol message by message over a controlled
+HTTP client and an in-memory router; they cannot prove anything about a particular
+proxy.
 
 ### Optimistic state belongs to the application
 

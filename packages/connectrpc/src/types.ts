@@ -8,8 +8,9 @@
  * and a loader, and the lifecycle, cache, and result signals are query's.
  *
  * What is deliberately *not* declared yet belongs to the issue that decides it:
- * a transport-key handle, stream `reset()`, and framework-managed optimistic
- * cache writes. Each is additive, so leaving it out now costs nothing later.
+ * a transport-key handle and framework-managed optimistic cache writes. Each
+ * is additive, so leaving it out now costs nothing later. Streams have no
+ * `reset()`: `connect()` starts a fresh call with fresh state.
  *
  * See ADR 0001: `docs/reference/adr/0001-data-and-communications-architecture.md`.
  */
@@ -97,8 +98,8 @@ export interface ConnectQueryPrefixOptions {
  * `signal` with an owner-bound one; an application's signal and deadline stay
  * effective alongside it.
  *
- * A mutation's call is its own, so every option reaches `Transport.unary`
- * as given. A query's call is shared by every observer of its key, so `signal`
+ * A mutation's or a stream's call is its own, so every option reaches
+ * `Transport.unary` or `Transport.stream` as given. A query's call is shared by every observer of its key, so `signal`
  * and `timeoutMs` bound only this observer's wait: when either ends it, this
  * observer settles with `canceled` or `deadline_exceeded` while any other keeps
  * waiting, and the call stops only once nobody is. The transport is never
@@ -391,7 +392,14 @@ interface AdapterOwnedStreamFields {
  * Options for `createConnectStream`, the reduction mode over a server stream.
  *
  * No automatic reconnection: a stream that fails stays failed until it is
- * connected again explicitly.
+ * connected again explicitly, and `connect()` starts a fresh call with fresh
+ * state. `autoConnect` opens the stream when it is created in the browser; a
+ * server render never opens one on its own.
+ *
+ * Every call option reaches `Transport.stream`, as a mutation's do: the call is
+ * this stream's own. An application `signal` or a `timeoutMs` deadline that
+ * ends it is a failure of the call, reported as `error`; only `cancel()` and
+ * owner disposal are a local hang-up, reported as `cancelled`.
  */
 export type ConnectStreamOptions<
   O extends DescMessage,
@@ -401,15 +409,26 @@ export type ConnectStreamOptions<
   ConnectKeyOptions &
   AdapterOwnedStreamFields
 
-/** The result of `createConnectStream`. */
+/**
+ * The result of `createConnectStream`.
+ *
+ * A failed call surfaces the `ConnectError` it failed with, never flattened;
+ * an application signal or deadline that ended it is a `ConnectError` with
+ * `canceled` or `deadline_exceeded`. But not every failure is a call's: a
+ * request that cannot be keyed is a `ConnectAdapterError`, and a throwing
+ * `reduce` or `initial` ends the stream with whatever it threw. So `error` is
+ * `unknown`, and is narrowed with `instanceof ConnectError` before reading a
+ * code.
+ */
 export type ConnectStreamResult<
   O extends DescMessage,
   A = undefined,
-> = AsyncStreamResult<MessageShape<O>, A, ConnectError>
+> = AsyncStreamResult<MessageShape<O>, A, unknown>
 
 /**
  * Options for `createConnectStreamList`, the collection mode over a server
- * stream. The right choice whenever the messages feed a List.
+ * stream. The right choice whenever the messages feed a List. Lifecycle and
+ * call options are as for {@link ConnectStreamOptions}.
  */
 export type ConnectStreamListOptions<
   O extends DescMessage,
@@ -419,8 +438,12 @@ export type ConnectStreamListOptions<
   ConnectKeyOptions &
   AdapterOwnedStreamFields
 
-/** The result of `createConnectStreamList`. */
+/**
+ * The result of `createConnectStreamList`. `error` is `unknown` for the reason
+ * given on {@link ConnectStreamResult}; a throwing `itemKey` ends the stream
+ * with whatever it threw.
+ */
 export type ConnectStreamListResult<
   O extends DescMessage,
   K extends PropertyKey = PropertyKey,
-> = AsyncStreamListResult<MessageShape<O>, K, ConnectError>
+> = AsyncStreamListResult<MessageShape<O>, K, unknown>

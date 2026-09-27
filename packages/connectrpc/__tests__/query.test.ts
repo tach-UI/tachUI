@@ -179,7 +179,7 @@ describe('calls and results', () => {
     ).toThrowError(/server_streaming method/)
   })
 
-  it('names no streaming adapter the package does not have when refusing a stream', () => {
+  it('points a server-streaming method at the stream adapters when refusing it', () => {
     const { transport } = scriptedTransport()
     const root = scope({ default: transport })
 
@@ -197,7 +197,9 @@ describe('calls and results', () => {
 
     expect(failure).toBeInstanceOf(ConnectAdapterError)
     expect((failure as Error).message).toMatch(/Only unary methods are supported/)
-    expect((failure as Error).message).not.toMatch(/createConnectStream/)
+    expect((failure as Error).message).toMatch(
+      /use createConnectStream or createConnectStreamList/
+    )
   })
 
   it('refuses something that is not a method descriptor', () => {
