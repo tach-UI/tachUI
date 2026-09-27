@@ -26,9 +26,10 @@ import type {
 import type { GenMessage } from '@bufbuild/protobuf/codegenv2'
 import type { CallOptions, ConnectError, Transport } from '@connectrpc/connect'
 import type { Signal } from '@tachui/core'
-import type { InfiniteData, QueryKey } from '@tachui/query'
+import type { InfiniteData, QueryError, QueryKey } from '@tachui/query'
 
 import type {
+  ConnectAdapterError,
   ConnectCallOptions,
   ConnectInfiniteQueryOptions,
   ConnectInfiniteQueryResult,
@@ -52,6 +53,7 @@ import type {
 } from '@tachui/connectrpc'
 import {
   connectQueryPrefix,
+  createConnectInfiniteQuery,
   createConnectMutation,
   createConnectQuery,
   createConnectStream,
@@ -394,6 +396,55 @@ export type InfiniteRejectsUnknownField = Assert<
   Equals<Assignable<'nope', ConnectPageParamKey<RequestInit>>, false>
 >
 
+/** A token is a single value, so a path ends at a scalar or enum field. */
+type TokenRequest = {
+  token: string
+  maxAge?: number
+  role: 0 | 1 | 2
+  sinceId: bigint
+  fingerprint: Uint8Array
+  nickname?: string
+  child?: { cursor: string; grandchild?: { rank?: number } }
+  tags: string[]
+  labels: { [key: string]: string }
+  choice:
+    | { case: 'email'; value: string }
+    | { case: undefined; value?: undefined }
+}
+
+export type PathsEndAtTokenFields = Assert<
+  Equals<
+    ConnectPageParamKey<TokenRequest>,
+    | 'token'
+    | 'maxAge'
+    | 'role'
+    | 'sinceId'
+    | 'fingerprint'
+    | 'nickname'
+    | 'child.cursor'
+    | 'child.grandchild.rank'
+  >
+>
+
+/** Neither a message, a list, a map, nor a oneof can carry the token. */
+export type PathsRejectNonTokenLeaves = Assert<
+  Equals<
+    Extract<ConnectPageParamKey<RequestInit>, 'query' | 'tags' | 'labels' | 'choice'>,
+    never
+  >
+>
+
+/** An optional token field is typed as optional, and an enum as its values. */
+export type OptionalAndEnumTokensAreTyped = Assert<
+  Equals<
+    [ConnectPageParamAt<TokenRequest, 'maxAge'>, ConnectPageParamAt<TokenRequest, 'role'>],
+    [number | undefined, 0 | 1 | 2]
+  >
+>
+
+// @ts-expect-error a message field cannot carry the token
+export type MessagePathRejected = ConnectInfiniteQueryOptions<ListUsersRequestSchema, ListUsersResponseSchema, 'query'>
+
 /** Nor can a map entry: the key's type parameter is constrained to field paths. */
 // @ts-expect-error a map entry is not a request field
 export type MapPathRejected = ConnectInfiniteQueryOptions<ListUsersRequestSchema, ListUsersResponseSchema, 'labels.anything'>
@@ -501,8 +552,33 @@ export type InfiniteProjectionRequiresSelect = Assert<
   >
 >
 
-export type InfiniteErrorIsConnectError = Assert<
-  Equals<ConnectInfiniteQueryResult<string>['error'], Signal<ConnectError | undefined>>
+/**
+ * A transport failure stays a `ConnectError`; a throwing `getNextPageParam`
+ * is a `QueryError` and an adapter refusal a `ConnectAdapterError`.
+ */
+export type InfiniteErrorKeepsItsKinds = Assert<
+  Equals<
+    ConnectInfiniteQueryResult<string>['error'],
+    Signal<ConnectError | ConnectAdapterError | QueryError | undefined>
+  >
+>
+
+/** The set grows forward only, so the backward controls are absent. */
+export type InfiniteResultOmitsBackwardControls = Assert<
+  Equals<
+    Extract<
+      keyof ConnectInfiniteQueryResult<string>,
+      'hasPreviousPage' | 'isFetchingPreviousPage' | 'fetchPreviousPage'
+    >,
+    never
+  >
+>
+
+export type InfiniteResultGrowsForward = Assert<
+  Equals<
+    Pick<ConnectInfiniteQueryResult<string>, 'hasNextPage' | 'isFetchingNextPage'>,
+    { readonly hasNextPage: Signal<boolean>; readonly isFetchingNextPage: Signal<boolean> }
+  >
 >
 
 // ---------------------------------------------------------------------------
@@ -870,3 +946,77 @@ export const streamWithHeaderCallback = createConnectStream(watchUsers, () => ({
 
 // @ts-expect-error collection mode needs row identity
 export const streamListWithoutItemKey = createConnectStreamList(watchUsers, () => ({}), {})
+
+/**
+ * An infinite query takes the request initializer, and its pages are the
+ * response messages, keyed by the named field's type.
+ */
+export const adapterInfiniteQuery = createConnectInfiniteQuery(
+  listUsers,
+  () => ({ pageSize: 50, pageToken: '' }),
+  {
+    pageParamKey: 'pageToken',
+    getNextPageParam: page => page.nextPageToken || undefined,
+  }
+)
+
+export type InfinitePagesAreResponses = Assert<
+  Equals<
+    typeof adapterInfiniteQuery,
+    ConnectInfiniteQueryResult<InfiniteData<ListUsersResponse, string | undefined>>
+  >
+>
+
+/** A nested token is typed from the nested field. */
+export const nestedAdapterInfiniteQuery = createConnectInfiniteQuery(
+  listUsers,
+  () => ({ query: { filter: 'active' } }),
+  { pageParamKey: 'query.cursor', getNextPageParam: page => page.nextPageToken || undefined }
+)
+
+export type NestedInfinitePagesAreResponses = Assert<
+  Equals<
+    typeof nestedAdapterInfiniteQuery,
+    ConnectInfiniteQueryResult<InfiniteData<ListUsersResponse, string | undefined>>
+  >
+>
+
+/** `select` projects the set, and the result is typed from it. */
+export const projectedAdapterInfiniteQuery = createConnectInfiniteQuery(
+  listUsers,
+  () => ({}),
+  {
+    pageParamKey: 'pageToken',
+    getNextPageParam: page => page.nextPageToken || undefined,
+    select: data => data.pages.flatMap(page => page.users),
+  }
+)
+
+export type ProjectedInfiniteIsProjected = Assert<
+  Equals<typeof projectedAdapterInfiniteQuery, ConnectInfiniteQueryResult<User[]>>
+>
+
+export const infiniteWithMessagePath = createConnectInfiniteQuery(listUsers, () => ({}), {
+  // @ts-expect-error a message field cannot carry the token
+  pageParamKey: 'query',
+  getNextPageParam: () => undefined,
+})
+
+export const infiniteWithWrongTokenType = createConnectInfiniteQuery(listUsers, () => ({}), {
+  pageParamKey: 'pageToken',
+  // @ts-expect-error the next token has the named field's type
+  getNextPageParam: () => 42,
+})
+
+// @ts-expect-error a server-streaming method has no pages to ask for
+export const streamingInfinite = createConnectInfiniteQuery(watchUsers, () => ({}), {
+  pageParamKey: 'pageToken',
+  getNextPageParam: () => undefined,
+})
+
+export const infiniteWithInitialPageParam = createConnectInfiniteQuery(listUsers, () => ({}), {
+  pageParamKey: 'pageToken',
+  getNextPageParam: () => undefined,
+  // @ts-expect-error the first token is read from the input
+  initialPageParam: 'first',
+})

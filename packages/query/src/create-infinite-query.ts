@@ -30,6 +30,7 @@ import {
   loadPageRun,
 } from './pagination'
 import { createQueryInternals } from './create-query'
+import { QueryError } from './errors'
 import type {
   InternalLoadContext,
   InternalQueryOptions,
@@ -42,6 +43,7 @@ import type {
   InfiniteQueryOptions,
   InfiniteQueryOptionsBase,
   InfiniteQueryResult,
+  QueryKey,
 } from './types'
 
 /** A query that has never loaded, so that "no pages" needs no special case. */
@@ -57,6 +59,7 @@ type ResolvedOptions<TPage, TPageParam, TData, E> = InfiniteQueryOptionsBase<
   getPreviousPageParam?: GetPageParam<TPage, TPageParam>
   maxPages?: number
   select?: (data: InfiniteData<TPage, TPageParam>) => TData
+  initialPageParamFor?: (key: QueryKey) => TPageParam
 }
 
 function emptySet<TPage, TPageParam>(): InfiniteData<TPage, TPageParam> {
@@ -111,7 +114,33 @@ export function createInfiniteQuery<
   // Alongside the cap, and for the same reason: a configuration mistake should
   // be a throw where it was written, not an error state a component has to
   // render its way into once a load has already been dispatched.
-  assertPageParam(base.initialPageParam, 'createInfiniteQuery')
+  const deriveInitial = base.initialPageParamFor
+  if (deriveInitial === undefined) {
+    assertPageParam(base.initialPageParam, 'createInfiniteQuery')
+  } else if (typeof deriveInitial !== 'function') {
+    throw new QueryError(
+      `createInfiniteQuery: initialPageParamFor must be a function of the key, received ${typeof deriveInitial}.`
+    )
+  } else if (base.initialPageParam !== undefined) {
+    throw new QueryError(
+      'createInfiniteQuery: pass initialPageParam or initialPageParamFor, not both. ' +
+        'Each says where the first page comes from, and only one can.'
+    )
+  }
+
+  /**
+   * Where an entry that holds no pages starts. A derived param is checked as
+   * it is asked for, since there is no key to ask about until then; a fault
+   * fails the load it was asked for rather than taking down a render.
+   */
+  function initialParamFor(key: QueryKey): TPageParam {
+    if (deriveInitial === undefined) {
+      return base.initialPageParam
+    }
+    const param = deriveInitial(key)
+    assertPageParam(param, 'createInfiniteQuery')
+    return param
+  }
 
   /**
    * Which direction *this observer* asked for, if any.
@@ -153,7 +182,7 @@ export function createInfiniteQuery<
       ),
       held.pageParams.length > 0
         ? (held.pageParams[0] as TPageParam)
-        : base.initialPageParam,
+        : initialParamFor(ctx.key),
       ctx.withRetry
     )
   }
@@ -184,7 +213,7 @@ export function createInfiniteQuery<
       // nothing to extend from.
       const param =
         held.pages.length === 0
-          ? base.initialPageParam
+          ? initialParamFor(ctx.key)
           : paramBeyond(
               held,
               towards === 'forward'

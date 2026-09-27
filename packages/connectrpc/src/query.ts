@@ -18,61 +18,31 @@ import type {
   MessageInitShape,
   MessageShape,
 } from '@bufbuild/protobuf'
-import { ConnectError } from '@connectrpc/connect'
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  onCleanup,
-  untrack,
-} from '@tachui/core'
-import { createQuery, hashQueryKey } from '@tachui/query'
-import type {
-  QueryKey,
-  QueryKeyHash,
-  QueryLoadContext,
-  QueryOptions,
-} from '@tachui/query'
+import { createMemo, onCleanup, untrack } from '@tachui/core'
+import { createQuery } from '@tachui/query'
+import type { QueryKey, QueryLoadContext, QueryOptions } from '@tachui/query'
 
 import {
   assertUnaryMethod,
   callOptionsFrom,
-  callUnary,
   canceledError,
-  linkSignals,
   retryCountFrom,
-  retryDelay,
-  sleep,
 } from './call'
-import { isRetryableCode } from './defaults'
 import { ConnectAdapterError } from './errors'
 import { buildConnectKey, describeMethod } from './keys'
+import { createSharedCalls, overlayState } from './observer'
+import type { LocalFailure } from './observer'
 import { assertOptionsObject, resolveAdapterTransport } from './transport'
 import type {
   ConnectQueryKey,
   ConnectQueryOptions,
   ConnectQueryResult,
 } from './types'
-import {
-  beginExecution,
-  currentExecution,
-  resumeWhenJoined,
-  settleExecution,
-  Wait,
-  watchEntry,
-} from './waits'
-import type { Execution, Watcher } from './waits'
 
 /** A key evaluation: the key and its request, or why there is neither. */
 type Keyed<I extends DescMessage> =
   | { readonly key: ConnectQueryKey; readonly request: MessageShape<I> }
   | { readonly failure: unknown }
-
-/** An observer-local failure, and the execution it gave up on, if any. */
-interface LocalFailure {
-  readonly error: unknown
-  readonly execution?: Execution
-}
 
 /**
  * What the query layer is handed while the request cannot be keyed. Never
@@ -127,9 +97,7 @@ export function createConnectQuery<
   const retry = retryCountFrom(options?.retry, caller)
   // Read once: changing the options object afterwards changes no call, a
   // retry included, and cannot slip past the checks made on it here.
-  const { signal: applicationSignal, timeoutMs, headers, contextValues } =
-    callOptionsFrom(options?.callOptions, caller)
-  const callOptions = { headers, contextValues }
+  const callOptions = callOptionsFrom(options?.callOptions, caller)
   const { name, transport, client } = resolveAdapterTransport(
     caller,
     options?.transport,
@@ -154,95 +122,16 @@ export function createConnectQuery<
     }
   })
 
-  const [local, setLocal] = createSignal<LocalFailure | undefined>(undefined)
-  // Mirrored outside the graph, for the callbacks that compare against it.
-  let localFailure: LocalFailure | undefined
-  function report(failure: LocalFailure | undefined): void {
-    localFailure = failure
-    setLocal(() => failure)
-  }
-
-  let wait: Wait | undefined
-  // Waits a refetch took on an entry this observer does not watch, as a gated
-  // query's do, so disposal can still withdraw them.
-  const refetchWaits = new Set<Wait>()
-  let watching: QueryKeyHash | undefined
-  let unwatch: (() => void) | undefined
-  let disposed = false
-  const bounds = { signal: applicationSignal, timeoutMs }
-
-  /** Waits on `execution`, reporting a give-up only while watching its entry. */
-  function waitOn(execution: Execution): Wait {
-    return new Wait(execution, {
-      ...bounds,
-      onGiveUp: error => {
-        if (watching === execution.hash) {
-          report({ error, execution })
-        }
-      },
-    })
-  }
-
-  const watcher: Watcher = {
-    begin(execution) {
-      wait?.leave()
-      report(undefined)
-      wait = waitOn(execution)
+  const calls = createSharedCalls({
+    method,
+    transport,
+    client,
+    retry,
+    callOptions,
+    watched: () => {
+      const current = keyed()
+      return gateOpen() && 'key' in current ? current.key : undefined
     },
-    settled(execution, succeeded) {
-      if (wait?.execution === execution) {
-        wait = undefined
-      }
-      // The response arrived after all, for someone still waiting: it is in
-      // the cache now, so this observer shows it rather than why it stopped.
-      if (succeeded && localFailure?.execution === execution) {
-        report(undefined)
-      }
-    },
-  }
-
-  function stopWatching(failure?: unknown): void {
-    unwatch?.()
-    unwatch = undefined
-    watching = undefined
-    wait?.leave(failure)
-    wait = undefined
-    if (failure !== undefined) {
-      for (const refetchWait of [...refetchWaits]) {
-        refetchWait.leave(failure)
-      }
-      refetchWaits.clear()
-    }
-  }
-
-  // Created before the query, so a watcher is in place when its first
-  // execution starts and a signal aborted in advance stops it before a call.
-  createEffect(() => {
-    const current = keyed()
-    const open = gateOpen()
-    untrack(() => {
-      if (disposed) {
-        return
-      }
-      let hash: QueryKeyHash | undefined
-      if (open && 'key' in current) {
-        try {
-          hash = hashQueryKey(current.key)
-        } catch {
-          // The query surfaces an unhashable key itself.
-          hash = undefined
-        }
-      }
-      if (hash === watching) {
-        return
-      }
-      stopWatching()
-      report(undefined)
-      if (hash !== undefined) {
-        watching = hash
-        unwatch = watchEntry(client, hash, watcher)
-      }
-    })
   })
 
   async function load({
@@ -255,78 +144,7 @@ export function createConnectQuery<
         `${caller} was asked to load a key it did not build, so it has no request to send.`
       )
     }
-    const execution = beginExecution(client, key)
-    // Carried across restarts, so one key evaluation never retries more than
-    // the count allows however often everyone leaves and somebody joins.
-    const progress = { retries: 0 }
-    let succeeded = false
-    try {
-      for (;;) {
-        try {
-          const message = await callWithRetries(
-            request as MessageInitShape<I>,
-            signal,
-            execution,
-            progress
-          )
-          succeeded = true
-          return message
-        } catch (error) {
-          // Everyone left: the call waits for somebody to join, and starts
-          // over for them.
-          await resumeWhenJoined(client, key, execution, error, signal)
-        }
-      }
-    } finally {
-      settleExecution(client, execution, succeeded)
-    }
-  }
-
-  /** Calls, retrying as allowed, until the call succeeds or has to stop. */
-  async function callWithRetries(
-    request: MessageInitShape<I>,
-    signal: AbortSignal,
-    execution: Execution,
-    progress: { retries: number }
-  ): Promise<MessageShape<O>> {
-    const link = linkSignals([
-      {
-        signal,
-        failure: reason => canceledError('the query was cancelled', reason),
-      },
-      { signal: execution.stop.signal, failure: reason => reason },
-    ])
-    try {
-      for (;;) {
-        try {
-          // No transport deadline: the call is shared, and each observer's
-          // deadline is enforced on its own wait instead.
-          return await callUnary(
-            transport,
-            method,
-            request,
-            link.signal,
-            undefined,
-            callOptions
-          )
-        } catch (error) {
-          if (
-            progress.retries >= retry ||
-            !(error instanceof ConnectError) ||
-            !isRetryableCode(error.code)
-          ) {
-            throw error
-          }
-          progress.retries += 1
-          // Rejects with the stop reason if everyone leaves meanwhile, so no
-          // later attempt starts for nobody. A restart then makes this retry
-          // rather than another.
-          await sleep(retryDelay(progress.retries), link.signal)
-        }
-      }
-    } finally {
-      link.release()
-    }
+    return calls.call(key, request as MessageInitShape<DescMessage>, signal)
   }
 
   const query = createQuery<MessageShape<O>, TData, unknown>({
@@ -344,34 +162,17 @@ export function createConnectQuery<
   })
 
   onCleanup(() => {
-    disposed = true
-    stopWatching(canceledError('the query observer was disposed'))
+    calls.dispose(canceledError('the query observer was disposed'))
   })
 
   const overlay = createMemo<LocalFailure | undefined>(() => {
     const current = keyed()
-    return 'failure' in current ? { error: current.failure } : local()
+    return 'failure' in current ? { error: current.failure } : calls.local()
   })
-  const status = createMemo(() =>
-    overlay() === undefined ? query.status() : 'error'
-  )
-  const fetchStatus = createMemo(() =>
-    overlay() === undefined ? query.fetchStatus() : 'idle'
-  )
 
   return {
     data: query.data,
-    error: createMemo(() => {
-      const failure = overlay()
-      return failure === undefined ? query.error() : failure.error
-    }),
-    status,
-    fetchStatus,
-    isLoading: createMemo(() => status() === 'loading'),
-    isFetching: createMemo(() => fetchStatus() === 'fetching'),
-    isRefreshing: createMemo(
-      () => fetchStatus() === 'fetching' && status() === 'success'
-    ),
+    ...overlayState(query, overlay),
     isStale: query.isStale,
     updatedAt: query.updatedAt,
 
@@ -380,25 +181,8 @@ export function createConnectQuery<
       if ('failure' in current) {
         return Promise.reject(current.failure)
       }
-      report(undefined)
-      const pending = query.refetch()
-      // The refetch has started or joined its execution synchronously.
-      const execution = currentExecution(client, current.key)
-      if (execution === undefined) {
-        return pending
-      }
-      if (wait === undefined || wait.done || wait.execution !== execution) {
-        const joined = waitOn(execution)
-        if (watching === execution.hash) {
-          wait = joined
-          return joined.race(pending)
-        }
-        refetchWaits.add(joined)
-        return joined
-          .race(pending)
-          .finally(() => refetchWaits.delete(joined))
-      }
-      return wait.race(pending)
+      calls.clear()
+      return calls.follow(current.key, query.refetch())
     },
     invalidate: () => {
       if (!('failure' in untrack(keyed))) {
@@ -407,11 +191,10 @@ export function createConnectQuery<
     },
     cancel: () => {
       query.cancel()
-      wait?.giveUp(canceledError('the query was cancelled'))
+      calls.giveUp(canceledError('the query was cancelled'))
     },
     dispose: () => {
-      disposed = true
-      stopWatching(canceledError('the query observer was disposed'))
+      calls.dispose(canceledError('the query observer was disposed'))
       query.dispose()
     },
   }

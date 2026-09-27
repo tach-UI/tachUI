@@ -1505,3 +1505,157 @@ describe('waiting without asking for work', () => {
     client.dispose()
   })
 })
+
+describe('a first page derived from the key', () => {
+  it('starts each newly selected key from the param its key yields', async () => {
+    const client = createQueryClient()
+    const [list, setList] = createSignal('a')
+    const asked: [string, number][] = []
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed', list()],
+        load: async ({ key, pageParam }) => {
+          asked.push([key[1] as string, pageParam])
+          return pages(9)({ pageParam })
+        },
+        initialPageParamFor: (key) => (key[1] === 'a' ? 2 : 5),
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+    await value.fetchNextPage()
+    expect(heldSet(client, ['feed', 'a'])?.pageParams).toEqual([2, 3])
+
+    setList('b')
+    await settle()
+
+    expect(heldSet(client, ['feed', 'b'])?.pageParams).toEqual([5])
+    expect(asked).toEqual([
+      ['a', 2],
+      ['a', 3],
+      ['b', 5],
+    ])
+    dispose()
+    client.dispose()
+  })
+
+  it('reloads a held set from its own first param, never asking the key again', async () => {
+    const client = createQueryClient()
+    const derive = vi.fn(() => 4)
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: pages(9),
+        initialPageParamFor: derive,
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+    await value.fetchNextPage()
+    derive.mockReturnValue(0)
+
+    await value.refetch()
+
+    expect(heldSet(client, ['feed'])?.pageParams).toEqual([4, 5])
+    expect(derive).toHaveBeenCalledTimes(1)
+    dispose()
+    client.dispose()
+  })
+
+  it('asks the key again for an append onto an entry that holds nothing', async () => {
+    const client = createQueryClient()
+    const derive = vi.fn(() => 3)
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: pages(9),
+        initialPageParamFor: derive,
+        getNextPageParam: nextParam,
+        enabled: false,
+        client,
+      })
+    )
+
+    await value.fetchNextPage()
+
+    expect(heldSet(client, ['feed'])?.pageParams).toEqual([3])
+    expect(derive).toHaveBeenCalledWith(['feed'])
+    dispose()
+    client.dispose()
+  })
+
+  it.each([
+    ['undefined', undefined],
+    ['null', null],
+  ])('fails the load, without calling it, when the key yields %s', async (_label, param) => {
+    const client = createQueryClient()
+    const load = vi.fn(pages(9))
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load,
+        initialPageParamFor: () => param as unknown as number,
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+
+    expect(load).not.toHaveBeenCalled()
+    expect(value.status()).toBe('error')
+    expect(String(value.error())).toMatch(/initialPageParam cannot be/)
+    dispose()
+    client.dispose()
+  })
+
+  it('fails the load with what the derivation threw', async () => {
+    const client = createQueryClient()
+    const failure = new Error('no cursor for this key')
+    const { value, dispose } = withOwner(() =>
+      createInfiniteQuery<Page, number>({
+        key: () => ['feed'],
+        load: pages(9),
+        initialPageParamFor: () => {
+          throw failure
+        },
+        getNextPageParam: nextParam,
+        client,
+      })
+    )
+    await settle()
+
+    expect(value.error()).toBe(failure)
+    dispose()
+    client.dispose()
+  })
+
+  it('refuses both forms at once, and a derivation that is not a function', () => {
+    const client = createQueryClient()
+    expect(() =>
+      withOwner(() =>
+        createInfiniteQuery<Page, number>({
+          key: () => ['feed'],
+          load: pages(9),
+          initialPageParam: 0,
+          initialPageParamFor: () => 0,
+          getNextPageParam: nextParam,
+          client,
+        } as never)
+      )
+    ).toThrow(/not both/)
+    expect(() =>
+      withOwner(() =>
+        createInfiniteQuery<Page, number>({
+          key: () => ['feed'],
+          load: pages(9),
+          initialPageParamFor: 0,
+          getNextPageParam: nextParam,
+          client,
+        } as never)
+      )
+    ).toThrow(/must be a function of the key/)
+    client.dispose()
+  })
+})

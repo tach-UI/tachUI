@@ -12,6 +12,7 @@
 
 export { DEFAULT_TRANSPORT_NAME, isRetryableCode } from './defaults'
 export { ConnectAdapterError } from './errors'
+export { createConnectInfiniteQuery } from './infinite'
 export { connectQueryPrefix } from './keys'
 export { createConnectMutation } from './mutation'
 export { createConnectQuery } from './query'

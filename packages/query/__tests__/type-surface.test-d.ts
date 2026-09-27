@@ -820,6 +820,37 @@ export type PlainInfiniteAccepted = Assert<
   Assignable<InfiniteBase, InfiniteQueryOptions<RawUser, string>>
 >
 
+type DerivedInfiniteBase = Omit<InfiniteBase, 'initialPageParam'> & {
+  initialPageParamFor: (key: QueryKey) => string
+}
+
+/** The first page may come from the key instead of one fixed param. */
+export type DerivedInitialPageParamAccepted = Assert<
+  Assignable<DerivedInfiniteBase, InfiniteQueryOptions<RawUser, string>>
+>
+
+/** But not both: each says where the first page comes from. */
+export type BothInitialPageParamsRejected = Assert<
+  Equals<
+    Assignable<
+      DerivedInfiniteBase & { initialPageParam: string },
+      InfiniteQueryOptions<RawUser, string>
+    >,
+    false
+  >
+>
+
+/** Nor neither. */
+export type NoInitialPageParamRejected = Assert<
+  Equals<
+    Assignable<
+      Omit<InfiniteBase, 'initialPageParam'>,
+      InfiniteQueryOptions<RawUser, string>
+    >,
+    false
+  >
+>
+
 /**
  * `maxPages` without `getPreviousPageParam` is rejected. A cap drops pages from
  * the far end, and with no way to ask for the page before the new head, what
