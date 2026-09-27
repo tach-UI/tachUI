@@ -295,6 +295,13 @@ value; supply `bufferSize` whenever the fold accumulates an array. A fold like
 `(items, message) => [...items, message]` copies the whole array per message and
 grows without bound, which is what collection mode exists to avoid.
 
+Collection mode is bounded only by `limit`. Omitting it retains every message the
+server ever sends, one row per distinct item key, without bound, which is unsafe for
+any feed the application does not fully control: a flooding or hostile server can
+exhaust the tab's memory. Set `limit`, as the `limit: 200` example above does, and
+tune `trackedRows` (how many evicted rows stay addressable) for a feed that revisits
+keys.
+
 **Keys and requests.** The input function is reactive. The stream's key is built as
 a query's is, from the request's Protobuf JSON, the transport name, and
 `keyExtension`, and each connection sends the request its key was built from. A
@@ -333,7 +340,11 @@ while the stream is connecting or open, so it never overwrites a `completed` or
 the result afterwards, messages and failures alike. An application's
 `callOptions.signal` or `callOptions.timeoutMs` ending the call is different: that
 is a failure of the call, reported as `error` with a `ConnectError` whose code is
-`canceled` or `deadline_exceeded`.
+`canceled` or `deadline_exceeded`. A deadline applies to each call, so `connect()`
+starts a fresh one after it. The signal does not: `callOptions.signal` is read once,
+at creation, and bound for the result's lifetime. Once it aborts, every later
+`connect()` on that result fails with a `ConnectError` coded `canceled`, without a
+transport call; to stream again, create a new result with a new options object.
 
 **Call options.** The call is the stream's own, so `headers`, `contextValues`,
 `signal`, and `timeoutMs` all reach `Transport.stream`, with the adapter's own

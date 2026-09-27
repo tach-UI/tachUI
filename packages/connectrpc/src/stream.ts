@@ -323,6 +323,7 @@ export function createConnectStream<
   )
   return createAsyncStream<MessageShape<O>, A, unknown>({
     ...(options as AsyncStreamOptions<MessageShape<O>, A>),
+    // Last, so a key or open slipped past the types never replaces the call.
     ...source,
   })
 }
@@ -353,6 +354,7 @@ export function createConnectStreamList<
   )
   return createAsyncStreamList<MessageShape<O>, K, unknown>({
     ...(options as unknown as AsyncStreamListOptions<MessageShape<O>, K>),
+    // Last, so a key or open slipped past the types never replaces the call.
     ...source,
   })
 }

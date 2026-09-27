@@ -130,6 +130,46 @@ describe('transport and request', () => {
     ).toThrowError(/an array as its options/)
   })
 
+  it('keeps its own key and open over ones a caller slips past the types', async () => {
+    const { transport, streams } = streamingTransport(stream => stream.open())
+    const root = scope({ default: transport })
+    const callerOpen = vi.fn(() => Promise.reject(new Error('caller open')))
+    const callerKey = vi.fn(() => ['caller'])
+
+    const { value: stream } = root.mount(() =>
+      createConnectStream(watchUsers, () => ({}), {
+        key: callerKey,
+        open: callerOpen,
+      } as never)
+    )
+    const { value: list } = root.mount(() =>
+      createConnectStreamList(watchUsers, () => ({}), {
+        itemKey: (message: unknown) => String(nameOf(message)),
+        key: callerKey,
+        open: callerOpen,
+      } as never)
+    )
+    await settle()
+
+    expect(streams).toHaveLength(2)
+    expect(callerOpen).not.toHaveBeenCalled()
+    expect(callerKey).not.toHaveBeenCalled()
+    expect(stream.status()).toBe('open')
+    expect(list.status()).toBe('open')
+
+    streams[0]!.send({ name: 'a' })
+    streams[1]!.send({ name: 'b' })
+    await settle()
+    expect(nameOf(stream.latest())).toBe('a')
+    expect(list.ids()).toEqual(['b'])
+
+    streams[0]!.finish()
+    streams[1]!.finish()
+    await settle()
+    expect(stream.status()).toBe('completed')
+    expect(list.status()).toBe('completed')
+  })
+
   it('replaces the call when the request changes, and the old one publishes nothing', async () => {
     const { transport, streams } = streamingTransport(stream => stream.open())
     const root = scope({ default: transport })
@@ -456,6 +496,32 @@ describe('lifecycle and errors', () => {
     expect((error as ConnectError).cause).toBe(reason)
     expect(streams[0]!.signal?.aborted).toBe(true)
     expect(streams[0]!.returned()).toBeGreaterThan(0)
+  })
+
+  it('binds the application signal for the result, so connect after its abort fails without a call', async () => {
+    const { transport, streams } = streamingTransport(stream => stream.open())
+    const root = scope({ default: transport })
+    const controller = new AbortController()
+
+    const { value: stream } = root.mount(() =>
+      createConnectStream(watchUsers, () => ({}), {
+        callOptions: { signal: controller.signal },
+      })
+    )
+    await settle()
+    streams[0]!.send({ name: 'a' })
+    await settle()
+
+    controller.abort()
+    await settle()
+    expect(stream.status()).toBe('error')
+    expect((stream.error() as ConnectError).code).toBe(Code.Canceled)
+
+    const reconnect = stream.connect()
+    await expect(reconnect).rejects.toBeInstanceOf(ConnectError)
+    await expect(reconnect).rejects.toHaveProperty('code', Code.Canceled)
+    expect(streams).toHaveLength(1)
+    expect(stream.status()).toBe('error')
   })
 
   it('makes no call when the application signal aborted in advance', async () => {

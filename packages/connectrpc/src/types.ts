@@ -400,6 +400,11 @@ interface AdapterOwnedStreamFields {
  * this stream's own. An application `signal` or a `timeoutMs` deadline that
  * ends it is a failure of the call, reported as `error`; only `cancel()` and
  * owner disposal are a local hang-up, reported as `cancelled`.
+ *
+ * `callOptions.signal` is read once, at creation, and bound for the result's
+ * lifetime: once it aborts, every later `connect()` on that result fails with
+ * a `ConnectError` coded `canceled`, without a transport call. To stream again,
+ * create a new result with a new options object.
  */
 export type ConnectStreamOptions<
   O extends DescMessage,
@@ -429,6 +434,17 @@ export type ConnectStreamResult<
  * Options for `createConnectStreamList`, the collection mode over a server
  * stream. The right choice whenever the messages feed a List. Lifecycle and
  * call options are as for {@link ConnectStreamOptions}.
+ *
+ * `callOptions.signal` is read once, at creation, and bound for the result's
+ * lifetime: once it aborts, every later `connect()` on that result fails with
+ * a `ConnectError` coded `canceled`, without a transport call. To stream again,
+ * create a new result with a new options object.
+ *
+ * Omitting `limit` retains every message the server ever sends, one row per
+ * distinct item key, without bound. That is unsafe for any feed the
+ * application does not fully control. Set `limit` to bound the rows, and tune
+ * `trackedRows`, how many evicted rows stay addressable, for a feed that
+ * revisits keys.
  */
 export type ConnectStreamListOptions<
   O extends DescMessage,
