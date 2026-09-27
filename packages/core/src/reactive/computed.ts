@@ -147,7 +147,18 @@ class ComputedImpl<T> extends ComputationImpl implements ReactiveNode {
           if ('execute' in observer && typeof observer.execute === 'function') {
             queueMicrotask(() => {
               if (observer.state === ComputationState.Dirty) {
-                observer.execute()
+                try {
+                  observer.execute()
+                } catch (error) {
+                  // Isolated as flushUpdates isolates it: a dependent that
+                  // throws has already re-established a recoverable state and
+                  // invalidated its own dependents in execute(). Rethrown from
+                  // a bare microtask it would be an uncaught exception that no
+                  // reader of the dependent could ever catch.
+                  if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
+                    console.error('Error in computation during deferred update:', error)
+                  }
+                }
               }
             })
           }

@@ -29,6 +29,8 @@ describe('@tachui/connectrpc barrel', () => {
       'connectQueryPrefix',
       'createConnectMutation',
       'createConnectQuery',
+      'createConnectStream',
+      'createConnectStreamList',
       'isRetryableCode',
       'provideConnectTransport',
       'useConnectTransport',

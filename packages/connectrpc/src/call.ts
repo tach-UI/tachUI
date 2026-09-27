@@ -13,6 +13,7 @@
 import type {
   DescMessage,
   DescMethod,
+  DescMethodServerStreaming,
   DescMethodUnary,
   MessageInitShape,
   MessageShape,
@@ -27,14 +28,12 @@ import { describeMethod } from './keys'
 import { assertOptionsObject } from './transport'
 import type { ConnectCallOptions } from './types'
 
-/**
- * Refuses anything but a unary method descriptor. The types already reject a
- * streaming one; this catches the call sites that reached here through `any`.
- */
-export function assertUnaryMethod(
+/** Refuses anything that is not a method descriptor at all. */
+function assertMethodDescriptor(
   method: unknown,
-  caller: string
-): asserts method is DescMethodUnary<DescMessage, DescMessage> {
+  caller: string,
+  example: string
+): asserts method is DescMethod {
   const candidate = method as Partial<DescMethod> | null
   if (
     typeof method !== 'object' ||
@@ -43,12 +42,58 @@ export function assertUnaryMethod(
     candidate.parent?.kind !== 'service'
   ) {
     throw new ConnectAdapterError(
-      `${caller} was given ${method === null ? 'null' : typeof method}, not a method descriptor. Pass a generated unary method, for example UserService.method.getUser.`
+      `${caller} was given ${method === null ? 'null' : typeof method}, not a method descriptor. Pass ${example}.`
     )
   }
-  if (candidate.methodKind !== 'unary') {
+}
+
+/**
+ * Refuses anything but a unary method descriptor. The types already reject a
+ * streaming one; this catches the call sites that reached here through `any`.
+ */
+export function assertUnaryMethod(
+  method: unknown,
+  caller: string
+): asserts method is DescMethodUnary<DescMessage, DescMessage> {
+  assertMethodDescriptor(
+    method,
+    caller,
+    'a generated unary method, for example UserService.method.getUser'
+  )
+  if (method.methodKind !== 'unary') {
+    const instead =
+      method.methodKind === 'server_streaming'
+        ? 'use createConnectStream or createConnectStreamList for a server-streaming method'
+        : 'client-streaming and bidirectional methods are not supported'
     throw new ConnectAdapterError(
-      `${caller} was given ${describeMethod(candidate as DescMethod)}, a ${String(candidate.methodKind)} method. Only unary methods are supported; streaming methods are not available yet.`
+      `${caller} was given ${describeMethod(method)}, a ${String(method.methodKind)} method. Only unary methods are supported here; ${instead}.`
+    )
+  }
+}
+
+/**
+ * Refuses anything but a server-streaming method descriptor, before any
+ * transport is called. The types already reject every other cardinality; this
+ * catches the call sites that reached here through `any`. `transport` is the
+ * selected name, so the diagnostic says where the call would have gone.
+ */
+export function assertServerStreamingMethod(
+  method: unknown,
+  caller: string,
+  transport: string
+): asserts method is DescMethodServerStreaming<DescMessage, DescMessage> {
+  assertMethodDescriptor(
+    method,
+    caller,
+    'a generated server-streaming method, for example UserService.method.watchUsers'
+  )
+  if (method.methodKind !== 'server_streaming') {
+    const instead =
+      method.methodKind === 'unary'
+        ? 'use createConnectQuery or createConnectMutation for a unary method'
+        : 'client-streaming and bidirectional methods are not supported'
+    throw new ConnectAdapterError(
+      `${caller} was given ${describeMethod(method)}, a ${String(method.methodKind)} method, for transport ${JSON.stringify(transport)}. It requires a server_streaming method; ${instead}.`
     )
   }
 }
