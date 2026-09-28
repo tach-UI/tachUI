@@ -332,9 +332,14 @@ The practical effect on consumers:
 - **An application that does not reconnect** writes nothing new. `error` means the stream
   is over, which is what #289 already documents.
 - **An application that reconnects** counts its own attempts. It can tell a retry apart from
-  the first connection because it made the call. It narrows `error()` with
-  `instanceof ConnectError` and checks `isRetryableCode(error.code)`, which this package
-  already exports as ADR 0001's allowlist, before scheduling anything. It shows its own
+  the first connection because it made the call. It first checks that the failure came after
+  the stream reached `open` in the current sequence: its `connect()` resolved and `status()`
+  then read `open`, or an effect saw `open` before `error`. Only then does it narrow
+  `error()` with `instanceof ConnectError` and check `isRetryableCode(error.code)`, which
+  this package already exports as ADR 0001's allowlist, before scheduling anything. A
+  `connect()` that rejects failed while opening, and that failure stays terminal under
+  decision 2, even when it carries `unavailable` from an HTTP 429, 502, 503, or 504: the
+  application must not schedule a retry for it. It shows its own
   "reconnecting" state, since the stream reads `error` while the application waits. It keeps
   its own copy of whatever must survive the clear that `connect()` performs.
 
