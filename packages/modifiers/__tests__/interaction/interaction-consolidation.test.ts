@@ -21,7 +21,13 @@ import type { ModifierContext } from '@tachui/types/modifiers'
 import { InteractionModifier as CoreInteractionModifier } from '@tachui/core/modifiers/base'
 import { createModifierBuilder } from '@tachui/core/modifiers'
 import { applyModifiersToNode } from '@tachui/core/modifiers/registry'
-import { createComputed, createRoot, createSignal, flushSync } from '@tachui/core/reactive'
+import {
+  createComputed,
+  createRoot,
+  createSignal,
+  flushSync,
+  getSignalImpl,
+} from '@tachui/core/reactive'
 import { createComponent, h } from '@tachui/core/runtime'
 import { InteractionModifier as SubpathInteractionModifier } from '../../src/base'
 import { InteractionModifier as BasicInteractionModifier } from '../../src/basic/base'
@@ -168,6 +174,73 @@ describe.each(entries)('touch and swipe from %s', (_name, Interaction) => {
     expect(onSwipeRightHandler).not.toHaveBeenCalled()
   })
 
+  it('ignores touch events that carry no touch lists', () => {
+    const context = makeContext()
+    const onSwipeLeftHandler = vi.fn()
+    const onSwipeRightHandler = vi.fn()
+    new Interaction({
+      onSwipeLeft: onSwipeLeftHandler,
+      onSwipeRight: onSwipeRightHandler,
+    }).apply(makeNode(), context)
+
+    // jsdom reports a listener's exception on the element's window.
+    const view = context.element.ownerDocument.defaultView!
+    const errors: unknown[] = []
+    const onError = (event: ErrorEvent) => errors.push(event.error)
+    view.addEventListener('error', onError)
+    try {
+      context.element.dispatchEvent(new Event('touchstart'))
+      context.element.dispatchEvent(new Event('touchend'))
+      const empty = new Event('touchend') as Event & { changedTouches: unknown[] }
+      empty.changedTouches = []
+      context.element.dispatchEvent(
+        touchEvent('touchstart', { clientX: 200, clientY: 100 })
+      )
+      context.element.dispatchEvent(empty)
+    } finally {
+      view.removeEventListener('error', onError)
+    }
+
+    expect(errors).toEqual([])
+    expect(onSwipeLeftHandler).not.toHaveBeenCalled()
+    expect(onSwipeRightHandler).not.toHaveBeenCalled()
+  })
+
+  it('fires no swipe for a touchend without a touchstart', () => {
+    const context = makeContext()
+    const onSwipeLeftHandler = vi.fn()
+    const onSwipeRightHandler = vi.fn()
+    new Interaction({
+      onSwipeLeft: onSwipeLeftHandler,
+      onSwipeRight: onSwipeRightHandler,
+    }).apply(makeNode(), context)
+
+    context.element.dispatchEvent(touchEvent('touchend', { clientX: 100, clientY: 5 }))
+    // A completed swipe does not leave its start behind for the next touchend.
+    swipe(context.element, 100, 200)
+    context.element.dispatchEvent(touchEvent('touchend', { clientX: 400, clientY: 100 }))
+
+    expect(onSwipeLeftHandler).not.toHaveBeenCalled()
+    expect(onSwipeRightHandler).toHaveBeenCalledTimes(1)
+  })
+
+  it('fires no swipe for a touchend after a touchcancel', () => {
+    const context = makeContext()
+    const onSwipeLeftHandler = vi.fn()
+    const onSwipeRightHandler = vi.fn()
+    new Interaction({
+      onSwipeLeft: onSwipeLeftHandler,
+      onSwipeRight: onSwipeRightHandler,
+    }).apply(makeNode(), context)
+
+    context.element.dispatchEvent(touchEvent('touchstart', { clientX: 100, clientY: 100 }))
+    context.element.dispatchEvent(touchEvent('touchcancel', { clientX: 100, clientY: 100 }))
+    context.element.dispatchEvent(touchEvent('touchend', { clientX: 300, clientY: 100 }))
+
+    expect(onSwipeLeftHandler).not.toHaveBeenCalled()
+    expect(onSwipeRightHandler).not.toHaveBeenCalled()
+  })
+
   it('removes the touch and swipe listeners on cleanup, twice safely', () => {
     const context = makeContext()
     const onTouchStartHandler = vi.fn()
@@ -250,6 +323,28 @@ describe.each(entries)('disabled from %s', (_name, Interaction) => {
     context.element.setAttribute('disabled', 'true')
     new Interaction({ disabled: value }).apply(makeNode(), context)
     expectDisabled(context.element, value)
+  })
+
+  it('stops following the signal after cleanup, twice safely', () => {
+    const context = makeContext(document.createElement('button'))
+    const [isDisabled, setDisabled] = createSignal(true)
+    const observers = (): number =>
+      (getSignalImpl(isDisabled as never) as unknown as {
+        observers: Set<unknown>
+      }).observers.size
+    let result: any
+    createRoot(() => {
+      result = new Interaction({ disabled: isDisabled }).apply(makeNode(), context)
+    })
+    expect(observers()).toBe(1)
+
+    result.cleanup[0]()
+    expect(() => result.cleanup[0]()).not.toThrow()
+    expect(observers()).toBe(0)
+
+    setDisabled(false)
+    flushSync()
+    expectDisabled(context.element, true)
   })
 
   it('ignores an element that is not an HTMLElement', () => {

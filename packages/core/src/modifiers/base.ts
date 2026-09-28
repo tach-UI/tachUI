@@ -1239,6 +1239,9 @@ export class InteractionModifier extends BaseModifier {
       listeners.push({ target, type, handler, options })
     }
 
+    // Effects the modifier created, disposed with its listeners.
+    const disposers: (() => void)[] = []
+
     // Event handlers
     if (props.onTap) {
       addListener(element, 'click', props.onTap)
@@ -1340,17 +1343,25 @@ export class InteractionModifier extends BaseModifier {
 
     // Swipe gestures (simplified implementation)
     if (props.onSwipeLeft || props.onSwipeRight) {
-      let startX = 0
-      let startY = 0
+      // Set by touchstart and cleared by touchend or touchcancel, so a touchend
+      // without a start of its own is not read as a swipe.
+      let start: { x: number; y: number } | null = null
 
       addListener(
         element,
         'touchstart',
         (e: Event) => {
-          const touchEvent = e as TouchEvent
-          const touch = touchEvent.touches[0]
-          startX = touch.clientX
-          startY = touch.clientY
+          const touch = (e as TouchEvent).touches?.[0]
+          start = touch ? { x: touch.clientX, y: touch.clientY } : null
+        },
+        { passive: true }
+      )
+
+      addListener(
+        element,
+        'touchcancel',
+        () => {
+          start = null
         },
         { passive: true }
       )
@@ -1359,10 +1370,13 @@ export class InteractionModifier extends BaseModifier {
         element,
         'touchend',
         (e: Event) => {
-          const touchEvent = e as TouchEvent
-          const touch = touchEvent.changedTouches[0]
-          const deltaX = touch.clientX - startX
-          const deltaY = touch.clientY - startY
+          const origin = start
+          start = null
+          const touch = (e as TouchEvent).changedTouches?.[0]
+          if (!origin || !touch) return
+
+          const deltaX = touch.clientX - origin.x
+          const deltaY = touch.clientY - origin.y
           const minSwipeDistance = 50
 
           // Only register as swipe if horizontal movement is greater than vertical
@@ -1441,9 +1455,10 @@ export class InteractionModifier extends BaseModifier {
         }
 
         if (isSignal(props.disabled) || isComputed(props.disabled)) {
-          createEffect(() => {
+          const disabledEffect = createEffect(() => {
             applyDisabledState(Boolean((props.disabled as () => unknown)()))
           })
+          disposers.push(() => disabledEffect.dispose())
         } else {
           applyDisabledState(Boolean(props.disabled))
         }
@@ -1467,13 +1482,17 @@ export class InteractionModifier extends BaseModifier {
     }
 
     // Teardown removes every registered listener from the same target it was
-    // added to. Double-dispose is safe: removeEventListener is a no-op for
-    // already-removed handlers.
+    // added to, and disposes the modifier's effects. Double-dispose is safe:
+    // both lists are emptied on the first run.
     const teardown = () => {
       for (const { target, type, handler, options } of listeners) {
         target.removeEventListener(type, handler, options)
       }
       listeners.length = 0
+      for (const dispose of disposers) {
+        dispose()
+      }
+      disposers.length = 0
     }
 
     return { node, cleanup: [teardown] }
