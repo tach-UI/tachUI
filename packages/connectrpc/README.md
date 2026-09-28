@@ -28,10 +28,10 @@ The package currently ships its public type surface, `DEFAULT_TRANSPORT_NAME`,
 `isRetryableCode`, `ConnectAdapterError`, transport provision
 (`provideConnectTransport`, `useConnectTransport`), deterministic query keys with
 `connectQueryPrefix`, the unary adapters `createConnectQuery` and
-`createConnectMutation`, and the server-stream adapters `createConnectStream` and
-`createConnectStreamList`. The remaining adapter, `createConnectInfiniteQuery`,
-lands within the 0.12.0 milestone. As with `@tachui/query`, the option and result
-types are declared first because they are what every call site is written against.
+`createConnectMutation`, the infinite-query adapter `createConnectInfiniteQuery`, and
+the server-stream adapters `createConnectStream` and `createConnectStreamList`. As
+with `@tachui/query`, the option and result types were declared first because they
+are what every call site is written against.
 
 ## Usage
 
@@ -84,7 +84,27 @@ unread.value()       // the fold
 unread.latest()      // the most recent message
 ```
 
-The stream adapters are covered under [Server streams](#server-streams) below.
+```ts
+import { createConnectInfiniteQuery } from '@tachui/connectrpc'
+
+// A list method whose request carries its continuation token in `page_token`.
+const users = createConnectInfiniteQuery(
+  UserService.method.listUsers,
+  () => ({ pageSize: 50, filter: filter() }),
+  {
+    transport: 'account',
+    pageParamKey: 'pageToken',
+    // AIP-158: an empty next_page_token means there is no next page.
+    getNextPageParam: page => page.nextPageToken || undefined,
+  }
+)
+users.data()?.pages   // every ListUsersResponse loaded so far, in order
+users.hasNextPage()
+await users.fetchNextPage()
+```
+
+The infinite adapter is covered under [Infinite queries](#infinite-queries), and the
+stream adapters under [Server streams](#server-streams), below.
 
 The input function is reactive, and each time it runs it produces both the key and
 the request sent for it: every attempt for that key, retries included, sends that
@@ -262,6 +282,9 @@ keyed is a `ConnectAdapterError`, and a throwing `onSuccess` or `optimisticUpdat
 surfaces whatever it threw. So the error types are `unknown`, and a consumer narrows
 with `instanceof ConnectError` before reading a code.
 
+An infinite query names its kinds instead, since each of its local failures is one
+of two known ones; see [Infinite queries](#infinite-queries).
+
 ### Retry is a count, and only two codes qualify
 
 Nothing retries by default. When `retry` is set, only `unavailable` and
@@ -276,6 +299,79 @@ the count of whichever observer started the call. Mutations never retry.
 allowlist, and is a function rather than an array of codes: a top-level array built
 from Connect's `Code` members is an expression a bundler must keep, and it would pull
 the Connect runtime into every bundle that imports anything from this package.
+
+### Infinite queries
+
+`createConnectInfiniteQuery(method, input, options)` pages through a unary list
+method. Every page of one list lives in one `@tachui/query` entry, under the method's
+key with `'infinite'` after the method name and the token field left out of the
+request, so `connectQueryPrefix(method)` reaches it alongside the method's unary
+entries, and an invalidation reloads the pages held in sequence from the first one.
+
+`pageParamKey` names the request field that carries the continuation token, as a
+dotted path when it is nested: `'pageToken'`, or `'query.cursor'`. The path must end
+at a singular scalar or enum field — an `optional` one included — and is checked by
+the types and again when the query is created, so a misspelled path or one ending at
+a message, repeated, map, or oneof field throws a `ConnectAdapterError` before
+anything is called.
+
+The first page is asked for with the token the input gives at that path, and each
+later page with the token `getNextPageParam` returned, written into a copy of the
+same request; nothing else in the request changes, and the caller's object is never
+written to. An implicit field the input leaves out starts from its default, `''` for
+a string. The input cannot leave the first token unsaid, though: a token given as
+`null`, a message on the path left unset, or an `optional` token field left unset is
+reported through `error` as a `ConnectAdapterError`, without a call.
+
+The input is reactive, as for `createConnectQuery`. A change to any other field is a
+new key, and the new key starts from the token in its own input. A change to the
+token alone is the same key, so the pages already held stay; the new token is used
+only by a new query, or once another key is selected.
+
+`getNextPageParam` alone decides where the list ends: `undefined` or `null` is the
+end, and anything else is the next token, an empty string included. The adapter
+applies no convention of its own. For an API following
+[AIP-158](https://google.aip.dev/158), whose last page carries an empty
+`next_page_token`, the mapping is one line:
+
+```ts
+getNextPageParam: page => page.nextPageToken || undefined
+```
+
+That is AIP-158's rule, not every API's: a list that sends `''` as a real token must
+not use it.
+
+A token equal to its field's default is not transmitted on an implicit-presence
+field. Protobuf sends a plain proto3 `string page_token` holding `''`, or an `int32`
+holding `0`, as no field at all, so the server cannot tell that page's request from
+the first page's. The adapter accepts such a token, since the first page of an
+implicit field starts from exactly that default. An API whose real cursors can equal
+the default must page on a field that tracks presence, a proto3 `optional` or a
+wrapper such as `google.protobuf.StringValue`, where `''` is sent as set.
+
+**Observers whose keys are equal share one set of pages.** A second observer of a key
+reuses the pages held rather than starting over from its own first token, so
+observers of one key must agree on the first token and on `getNextPageParam`. When a
+view needs a different starting point or a different rule for the same request, give
+it its own entry with `keyExtension`:
+
+```ts
+{ pageParamKey: 'pageToken', getNextPageParam, keyExtension: () => ['from-bookmark'] }
+```
+
+Pages are appended forward only; the result has no `fetchPreviousPage`, and
+`maxPages` is not offered, since nothing in a Connect list method says how to ask for
+an earlier page. Calls, call options, and retry follow the unary query's rules, per
+page: observers of a key share each page's call under the call options of whichever
+observer started it, each observer's `signal` and `timeoutMs` bound its own wait on
+each page, and `retry` retries a page only for `unavailable` or `resource_exhausted`
+without replaying the pages before it. An append that fails leaves the pages held in
+place, reports the transport's `ConnectError` through `error` and the rejected
+`fetchNextPage()`, and a later `fetchNextPage()` asks for the same page again.
+
+The error type is `ConnectError | ConnectAdapterError | QueryError`: a
+`getNextPageParam` that throws is a `QueryError` whose `cause` is what it threw, and
+a token of the wrong type is refused as a `ConnectAdapterError` before it is sent.
 
 ### Server streams
 

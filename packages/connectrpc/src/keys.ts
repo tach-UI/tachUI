@@ -119,7 +119,7 @@ export function describeMethod(method: DescMethod): string {
   return `${method.parent.typeName}.${method.name}`
 }
 
-function describeValue(value: unknown): string {
+export function describeValue(value: unknown): string {
   if (value === null) {
     return 'null'
   }
@@ -201,7 +201,7 @@ export function connectQueryPrefix(
   return [KEY_ROOT, transport, method.parent.typeName, method.name]
 }
 
-function memberNamed(
+export function memberNamed(
   desc: DescMessage,
   localName: string
 ): DescField | DescOneof | undefined {
@@ -209,9 +209,9 @@ function memberNamed(
 }
 
 /** A singular message field, as opposed to a list or map of messages. */
-type DescMessageField = DescField & { fieldKind: 'message' }
+export type DescMessageField = DescField & { fieldKind: 'message' }
 
-function isObjectValue(value: unknown): value is Record<string, unknown> {
+export function isObjectValue(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
@@ -227,7 +227,7 @@ function hasContent(value: unknown): boolean {
  * Whether protobuf-es holds this message field as its wrapper's bare scalar,
  * as it does for a singular wrapper outside a oneof.
  */
-function holdsWrapperAsScalar(field: DescMessageField): boolean {
+export function holdsWrapperAsScalar(field: DescMessageField): boolean {
   return field.oneof === undefined && isWrapperDesc(field.message)
 }
 
@@ -235,7 +235,7 @@ function holdsWrapperAsScalar(field: DescMessageField): boolean {
  * Whether protobuf-es holds this field's `google.protobuf.Struct` values as
  * JSON objects, as it does everywhere but inside `google.protobuf.Value`.
  */
-function holdsStructAsJson(field: DescField, desc: DescMessage): boolean {
+export function holdsStructAsJson(field: DescField, desc: DescMessage): boolean {
   return (
     desc.typeName === STRUCT_TYPE_NAME &&
     field.parent.typeName !== VALUE_TYPE_NAME

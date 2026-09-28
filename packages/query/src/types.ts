@@ -316,6 +316,29 @@ type PreviousPageOptions<TPage, TPageParam> =
     }
 
 /**
+ * Where an observer's first page comes from: one param for every key, or one
+ * derived from the key being loaded.
+ *
+ * The derived form is for a source whose starting point is part of what the
+ * key was built from — a request that carries its own cursor — so a key change
+ * starts the new entry where that key says, not where the first key did. It is
+ * asked only when an entry holds no pages; a held set always reloads from its
+ * own first param. Returning `undefined` or `null` fails the load, for the
+ * reason `initialPageParam` refuses them.
+ */
+type InitialPageOptions<TPageParam> =
+  | {
+      /** Where the first page comes from. */
+      initialPageParam: TPageParam
+      initialPageParamFor?: never
+    }
+  | {
+      initialPageParam?: never
+      /** Where the first page of the entry under `key` comes from. */
+      initialPageParamFor: (key: QueryKey) => TPageParam
+    }
+
+/**
  * Options for `createInfiniteQuery`.
  *
  * `select` is required exactly when `TData` differs from `InfiniteData`, by the
@@ -327,7 +350,8 @@ export type InfiniteQueryOptions<
   TPageParam,
   TData = InfiniteData<TPage, TPageParam>,
   E = Error,
-> = InfiniteQueryOptionsBase<TPage, TPageParam, TData, E> &
+> = Omit<InfiniteQueryOptionsBase<TPage, TPageParam, TData, E>, 'initialPageParam'> &
+  InitialPageOptions<TPageParam> &
   PreviousPageOptions<TPage, TPageParam> &
   SelectRequirement<InfiniteData<TPage, TPageParam>, TData>
 

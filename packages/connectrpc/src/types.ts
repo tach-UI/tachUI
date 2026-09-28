@@ -34,9 +34,12 @@ import type {
   MutationResult,
   QueryKey,
   QueryOptionsBase,
+  QueryError,
   QueryResult,
   SelectRequirement,
 } from '@tachui/query'
+
+import type { ConnectAdapterError } from './errors'
 
 /**
  * The name a transport is provided under.
@@ -248,8 +251,23 @@ type IsDescendable<T> = T extends
     : false
 
 /**
- * Every field path in a request initializer, as a dotted string: `'cursor'`,
- * or `'query.cursor'` for a token nested in a request sub-message.
+ * What a continuation token can be: a scalar, an enum's number, or bytes. A
+ * message, list, map, or oneof holds no single value a token could be.
+ */
+type TokenValue = string | number | bigint | boolean | Uint8Array
+
+/** Whether a field's value is one a token can be, `optional` or not. */
+type IsTokenField<T> = [T] extends [never]
+  ? false
+  : T extends TokenValue
+    ? true
+    : false
+
+/**
+ * Every path to a field that can carry a continuation token, as a dotted
+ * string: `'cursor'`, or `'query.cursor'` for a token nested in a request
+ * sub-message. A path passes through singular message fields and ends at a
+ * singular scalar or enum field, `optional` ones included.
  *
  * Bounded at four levels. Protobuf messages can recurse, and an unbounded path
  * type would never finish expanding. `Depth` can only lower the bound: past 3,
@@ -263,7 +281,7 @@ export type ConnectPageParamKey<T, Depth extends 0 | 1 | 2 | 3 = 3> = [
   ? never
   : {
       [K in Exclude<keyof T, NonFieldKey> & string]:
-        | K
+        | (IsTokenField<NonNullable<T[K]>> extends true ? K : never)
         | (IsDescendable<NonNullable<T[K]>> extends true
             ? `${K}.${ConnectPageParamKey<NonNullable<T[K]>, PathDepth[Depth]>}`
             : never)
@@ -285,6 +303,18 @@ export type ConnectPageParamAt<T, P extends string> =
       : never
 
 /**
+ * What a Connect infinite query fails with.
+ *
+ * A call's failure is the `ConnectError` the transport rejected with, never
+ * flattened, or one coded `canceled` or `deadline_exceeded` when a signal or
+ * deadline ended this observer's wait. A `getNextPageParam` that throws is a
+ * `QueryError` whose `cause` is what it threw, and anything the adapter
+ * refuses — a request it cannot key, a missing first token, a token of the
+ * wrong type — is a `ConnectAdapterError`, so neither passes for an RPC error.
+ */
+type ConnectInfiniteQueryError = ConnectError | ConnectAdapterError | QueryError
+
+/**
  * Options for `createConnectInfiniteQuery`.
  *
  * `pageParamKey` names the request field that carries the continuation token.
@@ -292,9 +322,24 @@ export type ConnectPageParamAt<T, P extends string> =
  * one, and it never enters the key, so every page of one list shares one
  * entry. `@tachui/query` sees an opaque page param.
  *
- * For an API following AIP-158, the last page carries an empty
- * `next_page_token`, so `getNextPageParam: page => page.nextPageToken || undefined`
- * is the whole mapping.
+ * `getNextPageParam` decides whether there is another page: `undefined` or
+ * `null` ends the list, and anything else, an empty string included, is the
+ * next page's token. The adapter reads no convention into a response. For an
+ * API following AIP-158, whose last page carries an empty `next_page_token`,
+ * `getNextPageParam: page => page.nextPageToken || undefined` is the whole
+ * mapping.
+ *
+ * A token equal to its field's default — `''` for a string, `0` for a number —
+ * is not transmitted on an implicit-presence field, so its request reads to the
+ * server as the first page's. An API whose real cursors can equal the default
+ * must page on a proto3 `optional` or wrapper field, where the default is sent
+ * as set.
+ *
+ * Observers whose keys are equal share one set of pages: a second observer
+ * reuses the pages held rather than starting over from its own first token.
+ * So observers of one key must agree on the first token and on
+ * `getNextPageParam`; one that needs a different starting point or rule for
+ * the same request adds a `keyExtension` segment to get an entry of its own.
  *
  * Backward pagination and `maxPages` are not offered: nothing in a Connect
  * list method says how to ask for an earlier page.
@@ -312,7 +357,7 @@ export type ConnectInfiniteQueryOptions<
     MessageShape<O>,
     ConnectPageParamAt<MessageInitShape<I>, ParamKey>,
     TData,
-    ConnectError
+    ConnectInfiniteQueryError
   >,
   AdapterOwnedQueryOptions | 'initialPageParam' | 'getNextPageParam'
 > &
@@ -325,8 +370,9 @@ export type ConnectInfiniteQueryOptions<
       ConnectPageParamAt<MessageInitShape<I>, ParamKey>
     >
     retry?: ConnectRetry
-    /** Read from the input at `pageParamKey`. */
+    /** Read from the input at `pageParamKey`, per key. */
     initialPageParam?: never
+    initialPageParamFor?: never
     getPreviousPageParam?: never
     maxPages?: never
   } & SelectRequirement<
@@ -337,10 +383,13 @@ export type ConnectInfiniteQueryOptions<
     TData
   >
 
-/** The result of `createConnectInfiniteQuery`. */
-export type ConnectInfiniteQueryResult<TData> = InfiniteQueryResult<
-  TData,
-  ConnectError
+/**
+ * The result of `createConnectInfiniteQuery`: an infinite query that grows
+ * forward only, so the backward controls are absent rather than inert.
+ */
+export type ConnectInfiniteQueryResult<TData> = Omit<
+  InfiniteQueryResult<TData, ConnectInfiniteQueryError>,
+  'hasPreviousPage' | 'isFetchingPreviousPage' | 'fetchPreviousPage'
 >
 
 /**
