@@ -86,7 +86,7 @@ describe('package manifest', () => {
     scripts?: Record<string, string>
   }
 
-  // Born private: it flips public in the release PR that cuts the 0.12.0 line.
+  // Born private: it stays private until 0.13.0 ships, then is published.
   it('is private until its line move', () => {
     expect(manifest.private).toBe(true)
   })

@@ -22,8 +22,8 @@ for the reasoning.
 ## Status
 
 **Not yet published.** This package is `private` and develops in-tree against the
-workspace `@tachui/core`. It reaches npm at the 0.10.0 line move; until then the
-install below will not resolve.
+workspace `@tachui/core`. It reaches npm together with `@tachui/connectrpc`, after
+0.13.0 ships; until then the install below will not resolve.
 
 The package currently ships its public type surface, shared defaults, and
 `QueryClient` with environment provision (`createQueryClient`,

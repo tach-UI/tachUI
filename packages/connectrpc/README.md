@@ -21,8 +21,8 @@ Connect interceptors. See
 ## Status
 
 **Not yet published.** This package is `private` and develops in-tree against the
-workspace `@tachui/query`. It reaches npm at the 0.12.0 line move; until then the
-install below will not resolve.
+workspace `@tachui/query`. It reaches npm together with `@tachui/query`, after
+0.13.0 ships; until then the install below will not resolve.
 
 The package currently ships its public type surface, `DEFAULT_TRANSPORT_NAME`,
 `isRetryableCode`, `ConnectAdapterError`, transport provision
