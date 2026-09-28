@@ -276,7 +276,18 @@ describe('collectBudgetedPackages', () => {
     expect(pkg.budget.gzipBytes).toBeGreaterThan(0)
   })
 
+  it.each(['@tachui/core', '@tachui/modifiers', '@tachui/primitives'])(
+    'finds the declared budget for %s',
+    name => {
+      const [pkg] = collectBudgetedPackages(name)
+
+      expect(pkg).toBeDefined()
+      expect(pkg.budget.entry).toBe('dist/index.js')
+      expect(pkg.budget.gzipBytes).toBeGreaterThan(0)
+    }
+  )
+
   it('returns nothing for a package that declares no budget', () => {
-    expect(collectBudgetedPackages('@tachui/core')).toEqual([])
+    expect(collectBudgetedPackages('@tachui/grid')).toEqual([])
   })
 })

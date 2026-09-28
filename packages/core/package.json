@@ -189,6 +189,12 @@
     "generate-modifier-types:check": "bun run generate-modifier-types -- --check",
     "generate-modifier-types:monorepo": "tsx --tsconfig ./tsconfig.typegen.json ./scripts/generate-types-monorepo.ts"
   },
+  "tachui": {
+    "sizeBudget": {
+      "entry": "dist/index.js",
+      "gzipBytes": 137216
+    }
+  },
   "dependencies": {
     "@tachui/types": "0.11.7",
     "@tachui/registry": "0.11.7"

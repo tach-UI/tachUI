@@ -51,6 +51,12 @@
     "clean": "rm -rf dist",
     "lint": "oxlint src"
   },
+  "tachui": {
+    "sizeBudget": {
+      "entry": "dist/index.js",
+      "gzipBytes": 44032
+    }
+  },
   "dependencies": {
     "@tachui/core": "0.11.7",
     "@tachui/modifiers": "0.11.7",

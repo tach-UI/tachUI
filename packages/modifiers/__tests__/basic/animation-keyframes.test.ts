@@ -1,10 +1,10 @@
 /**
  * Tests for content-addressed animation keyframes in @tachui/modifiers (#298)
  *
- * `AnimationModifier` is duplicated here — twice — and in `@tachui/core`, and
- * every copy writes to the same `#tachui-animations` element. Both the naming
- * and the deduping now come from core, so these guard that this package's
- * copies really route through it rather than keeping their own scheme.
+ * `AnimationModifier` is exported from both of this package's entries and
+ * from `@tachui/core`, and all of them write to the same `#tachui-animations`
+ * element. Both entries re-export core's class, so these guard that what this
+ * package publishes really routes through core's naming and deduping.
  *
  */
 

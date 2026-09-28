@@ -1,12 +1,13 @@
 /**
- * Every AnimationModifier and LayoutModifier copy composes transforms
+ * Every AnimationModifier and LayoutModifier export composes transforms
  *
  * `AnimationModifier` and `LayoutModifier` are public three times over: in
  * `@tachui/core/modifiers`, in this package's root entry (`basic/base`), and
- * in its `@tachui/modifiers/base` subpath. Any of them constructed directly
- * with `transform`, `offset`, `scaleEffect` or `rotationEffect` writes through
- * core's `setTransformPart`, so none erases another's part on one element —
- * the factories' included.
+ * in its `@tachui/modifiers/base` subpath. `AnimationModifier` is one class
+ * re-exported from core at all three; `LayoutModifier` still has a copy per
+ * entry. Any of them constructed directly with `transform`, `offset`,
+ * `scaleEffect` or `rotationEffect` writes through core's `setTransformPart`,
+ * so none erases another's part on one element — the factories' included.
  */
 
 import { JSDOM } from 'jsdom'

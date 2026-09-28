@@ -69,6 +69,28 @@ function getModifierInstanceId(modifier: object): number {
   return nextId
 }
 
+const themeTrackingAccessors = new WeakMap<object, () => string>()
+
+/**
+ * An accessor that reads the theme signal before resolving the asset, so the
+ * binding that runs it re-resolves on every theme change.
+ *
+ * Cached per asset because `bindReactiveStyle` shares one effect per accessor
+ * on an element: re-applying a modifier with the same asset re-uses the
+ * existing binding instead of stacking another effect.
+ */
+function themeTrackingAccessorFor(asset: { resolve: () => string }): () => string {
+  let accessor = themeTrackingAccessors.get(asset)
+  if (!accessor) {
+    accessor = () => {
+      getThemeSignal()()
+      return asset.resolve()
+    }
+    themeTrackingAccessors.set(asset, accessor)
+  }
+  return accessor
+}
+
 /**
  * Convert a camelCase style property to its CSS kebab-case spelling.
  *
@@ -274,9 +296,9 @@ function adoptKeyframesAlreadyInDocument(injected: Set<string>): void {
  * when the stylesheet is — a test resetting `document.head`, an SPA teardown —
  * so the bookkeeping can never claim a rule is present after the element
  * holding it is gone. And a registered symbol key means every copy of this
- * module shares one registry: `AnimationModifier` is duplicated across
- * `@tachui/core` and both `@tachui/modifiers` builds, all writing to the same
- * element, and a per-module `Set` would let each inject the same rule again.
+ * module shares one registry: an app that ends up with more than one copy of
+ * `@tachui/core` has every copy writing to the same element, and a per-module
+ * `Set` would let each inject the same rule again.
  *
  * Not exported: the dedupe keys on the name alone, so a caller that paired a
  * name with someone else's rule would suppress the real block and leave the
@@ -525,6 +547,18 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
       return `${value}px`
     }
 
+    // Resolve ColorAssets and other assets with a .resolve() method. For
+    // applyStyles this runs inside the reactive binding, so it re-reads the
+    // asset whenever the theme changes.
+    if (this.isAssetValue(value)) {
+      return value.resolve()
+    }
+
+    // Handle assets with a .value property
+    if (typeof value === 'object' && value !== null && 'value' in value) {
+      return value.value
+    }
+
     // Properties that should be passed through as-is (no processing)
     const passthroughProperties = [
       'filter', // CSS filter strings should not be processed
@@ -579,13 +613,17 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
         if (value !== undefined) {
           const cssProperty = this.toCSSProperty(property)
 
-          // Handle reactive values (signals and computed)
-          if (isSignal(value) || isComputed(value)) {
-            const signalValue = value as (() => any)
+          // Handle reactive values: signals, computeds, and assets. An asset
+          // is always re-resolved when the theme changes, so a ColorAsset
+          // follows light/dark without the caller wrapping it in a signal.
+          if (isSignal(value) || isComputed(value) || this.isAssetValue(value)) {
+            const accessor = this.isAssetValue(value)
+              ? themeTrackingAccessorFor(value)
+              : (value as () => any)
             const modifierInstanceId = getModifierInstanceId(this)
             bindReactiveStyle({
               element,
-              accessor: signalValue,
+              accessor,
               updaterId: `${updaterScope}:${modifierInstanceId}:${cssProperty}`,
               updater: currentValue => {
                 // A signal with no value clears the property; converting it
@@ -1469,7 +1507,9 @@ export class InteractionModifier extends BaseModifier {
  * Animation modifier for transitions and animations
  */
 export class AnimationModifier extends BaseModifier {
-  readonly type = 'animation'
+  // Widened so `TransitionModifier` in @tachui/modifiers can narrow it to
+  // 'transition', which the builder copies onto component style props.
+  readonly type: 'animation' | 'transition' = 'animation'
   readonly priority = ModifierPriority.ANIMATION
 
   apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
