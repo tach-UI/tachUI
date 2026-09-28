@@ -341,6 +341,14 @@ getNextPageParam: page => page.nextPageToken || undefined
 That is AIP-158's rule, not every API's: a list that sends `''` as a real token must
 not use it.
 
+A token equal to its field's default is not transmitted on an implicit-presence
+field. Protobuf sends a plain proto3 `string page_token` holding `''`, or an `int32`
+holding `0`, as no field at all, so the server cannot tell that page's request from
+the first page's. The adapter accepts such a token, since the first page of an
+implicit field starts from exactly that default. An API whose real cursors can equal
+the default must page on a field that tracks presence, a proto3 `optional` or a
+wrapper such as `google.protobuf.StringValue`, where `''` is sent as set.
+
 **Observers whose keys are equal share one set of pages.** A second observer of a key
 reuses the pages held rather than starting over from its own first token, so
 observers of one key must agree on the first token and on `getNextPageParam`. When a

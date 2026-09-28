@@ -8,7 +8,7 @@
  * what the adapter adds and what it must keep from the layer beneath it.
  */
 
-import { create } from '@bufbuild/protobuf'
+import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
 import type { DescMessage, DescMethodUnary } from '@bufbuild/protobuf'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { createSignal } from '@tachui/core'
@@ -159,6 +159,8 @@ describe('the public surface', () => {
     ['ends at a repeated field', 'ids', /names a repeated field/],
     ['ends at a map', 'quotas', /names a map field/],
     ['ends at a oneof', 'selector', /names a oneof/],
+    ['ends at a scalar in a oneof', 'email', /names a field in oneof "selector" of acme.users.v1.ListUsersRequest/],
+    ['ends at an int32 in a oneof', 'byRank', /names a field in oneof "selector"/],
     ['is empty', '', /an empty string/],
     ['is not a string', 7, /cannot use pageParamKey number/],
   ])('refuses a pageParamKey that %s, before any call', (_label, pageParamKey, message) => {
@@ -382,6 +384,77 @@ describe('pages and their requests', () => {
     expect((failure as Error).message).toMatch(/handed number as the token for "pageToken", which holds a string/)
     expect(query.error()).toBe(failure)
     expect((query.data() as Pages).pages).toHaveLength(1)
+  })
+
+  it.each([
+    ['int32', 'pageSize', 1.5],
+    ['int32', 'pageSize', Number.NaN],
+    ['int32', 'pageSize', Number.POSITIVE_INFINITY],
+    ['int32', 'pageSize', 2 ** 40],
+    ['int32', 'pageSize', 2 ** 31],
+    ['int32', 'pageSize', -(2 ** 31) - 1],
+    ['int32', 'maxAge', 1.5],
+    ['int32', 'minAge', Number.NaN],
+    ['uint32', 'minRank', -1],
+    ['uint32', 'minRank', 2 ** 32],
+    ['uint32', 'minRank', 0.5],
+  ])('refuses %s token %s = %s as an adapter error, without a call', async (_kind, pageParamKey, token) => {
+    const { transport, calls } = scriptedTransport(call => call.respond({}))
+    const root = scope({ default: transport })
+
+    const { value: query } = mount(root, () => ({ maxAge: 0, minAge: 0 }), {
+      pageParamKey,
+      getNextPageParam: () => token,
+    })
+    await settle()
+    const failure = await query.fetchNextPage().catch((error: unknown) => error)
+
+    expect(calls).toHaveLength(1)
+    expect(failure).toBeInstanceOf(ConnectAdapterError)
+    expect(failure).not.toBeInstanceOf(ConnectError)
+    expect((failure as Error).message).toMatch(`as the token for "${pageParamKey}"`)
+  })
+
+  it.each([
+    ['pageSize', 0],
+    ['pageSize', -1],
+    ['pageSize', -(2 ** 31)],
+    ['pageSize', 2 ** 31 - 1],
+    ['maxAge', -7],
+    ['minAge', 2 ** 31 - 1],
+    ['minRank', 0],
+    ['minRank', 2 ** 32 - 1],
+  ])('sends %s token %s, and it encodes', async (pageParamKey, token) => {
+    const { transport, calls } = scriptedTransport(call => call.respond({}))
+    const root = scope({ default: transport })
+
+    const { value: query } = mount(root, () => ({ maxAge: 0, minAge: 0 }), {
+      pageParamKey,
+      getNextPageParam: (_page: unknown, pages: readonly unknown[]) =>
+        pages.length === 1 ? token : undefined,
+    })
+    await settle()
+    await query.fetchNextPage()
+
+    expect(calls).toHaveLength(2)
+    const sent = fromBinary(
+      ListUsersRequestSchema,
+      toBinary(ListUsersRequestSchema, calls[1].input as never)
+    )
+    expect(fieldOf(sent, pageParamKey)).toBe(token)
+  })
+
+  it("sends an implicit token equal to its default as the field's absence", async () => {
+    const { transport, calls } = threePages()
+    const root = scope({ default: transport })
+
+    mount(root, () => ({ pageSize: 2, pageToken: '' }))
+    await settle()
+
+    // Why an API whose cursors can be '' must page on an optional or wrapper field.
+    expect(toBinary(ListUsersRequestSchema, calls[0].input as never)).toEqual(
+      toBinary(ListUsersRequestSchema, create(ListUsersRequestSchema, { pageSize: 2 }))
+    )
   })
 })
 

@@ -64,6 +64,19 @@ function describeKind(leaf: DescField): string {
   return `a ${ScalarType[scalar ?? ScalarType.STRING].toLowerCase()}`
 }
 
+const INT32_MIN = -0x80000000
+const INT32_MAX = 0x7fffffff
+const UINT32_MAX = 0xffffffff
+
+/**
+ * Whether `value` is an integer the 32-bit field can encode. A fraction, `NaN`,
+ * an infinity, or a number out of range would otherwise fail the call when it
+ * is serialized, as though the server had refused it.
+ */
+function isIntegerWithin(value: unknown, min: number, max: number): boolean {
+  return Number.isInteger(value) && (value as number) >= min && (value as number) <= max
+}
+
 /** Whether `value` is what the token field holds, as protobuf-es holds it. */
 function holdsValue(leaf: DescField, value: unknown): boolean {
   if (leaf.fieldKind === 'enum') {
@@ -88,6 +101,13 @@ function holdsValue(leaf: DescField, value: unknown): boolean {
       return field.longAsString
         ? typeof value === 'string'
         : typeof value === 'bigint'
+    case ScalarType.INT32:
+    case ScalarType.SINT32:
+    case ScalarType.SFIXED32:
+      return isIntegerWithin(value, INT32_MIN, INT32_MAX)
+    case ScalarType.UINT32:
+    case ScalarType.FIXED32:
+      return isIntegerWithin(value, 0, UINT32_MAX)
     default:
       return typeof value === 'number'
   }
@@ -130,16 +150,21 @@ export function resolvePageParamPath(
     parents.push(member)
     desc = member.message
   }
-  const leaf = memberNamed(desc, last)
-  if (leaf === undefined) {
-    throw invalid(
-      `${quoted}: it names no field of ${desc.typeName} (${JSON.stringify(last)}). Field names are the camelCase names from generated code.`
-    )
-  }
   const unusable = (what: string): ConnectAdapterError =>
     invalid(
       `${quoted}: it names ${what} of ${desc.typeName}, which cannot hold a continuation token. Name a singular scalar or enum field.`
     )
+  const leaf = memberNamed(desc, last)
+  if (leaf === undefined) {
+    // A member of a real oneof is reached through the oneof, not by name.
+    const inOneof = desc.fields.find(field => field.localName === last)?.oneof
+    if (inOneof !== undefined) {
+      throw unusable(`a field in oneof ${JSON.stringify(inOneof.localName)}`)
+    }
+    throw invalid(
+      `${quoted}: it names no field of ${desc.typeName} (${JSON.stringify(last)}). Field names are the camelCase names from generated code.`
+    )
+  }
   if (leaf.kind === 'oneof') {
     throw unusable('a oneof')
   }

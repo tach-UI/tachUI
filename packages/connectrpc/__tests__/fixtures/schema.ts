@@ -35,6 +35,7 @@ const {
   DOUBLE: TYPE_DOUBLE,
   INT32: TYPE_INT32,
   INT64: TYPE_INT64,
+  UINT32: TYPE_UINT32,
   STRING: TYPE_STRING,
   BYTES: TYPE_BYTES,
   MESSAGE: TYPE_MESSAGE,
@@ -302,6 +303,7 @@ const usersFile = create(FileDescriptorProtoSchema, {
           typeName: '.google.protobuf.Int32Value',
           oneofIndex: 0,
         }),
+        field({ name: 'min_rank', number: 32, type: TYPE_UINT32 }),
       ],
       oneofDecl: [{ name: 'selector' }, { name: '_max_age' }],
       nestedType: [

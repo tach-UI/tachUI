@@ -329,6 +329,12 @@ type ConnectInfiniteQueryError = ConnectError | ConnectAdapterError | QueryError
  * `getNextPageParam: page => page.nextPageToken || undefined` is the whole
  * mapping.
  *
+ * A token equal to its field's default — `''` for a string, `0` for a number —
+ * is not transmitted on an implicit-presence field, so its request reads to the
+ * server as the first page's. An API whose real cursors can equal the default
+ * must page on a proto3 `optional` or wrapper field, where the default is sent
+ * as set.
+ *
  * Observers whose keys are equal share one set of pages: a second observer
  * reuses the pages held rather than starting over from its own first token.
  * So observers of one key must agree on the first token and on
