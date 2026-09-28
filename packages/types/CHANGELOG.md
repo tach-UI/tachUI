@@ -1,5 +1,7 @@
 # @tachui/types
 
+## 0.11.7
+
 ## 0.11.6
 
 ### Patch Changes
