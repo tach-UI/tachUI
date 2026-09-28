@@ -41,6 +41,9 @@
   "devDependencies": {
     "@bufbuild/protobuf": "^2.15.0",
     "@connectrpc/connect": "^2.2.0",
+    "@connectrpc/connect-web": "^2.2.0",
+    "@tachui/data": "0.11.6",
+    "@tachui/forms": "0.11.6",
     "@types/node": "^20.0.0",
     "typescript": "^5.8.0",
     "vite": "^7.1.1",

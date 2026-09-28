@@ -2,7 +2,12 @@
  * Test support for the adapters: a scriptable transport that records every
  * unary call it receives, and a way to mount an adapter in a component scope
  * that provides a client and transports.
+ *
+ * Importing it also keeps the importing suite off the network (see
+ * `offline.ts`).
  */
+
+import './offline'
 
 import { create } from '@bufbuild/protobuf'
 import type {
