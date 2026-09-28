@@ -329,6 +329,13 @@ const usersFile = create(FileDescriptorProtoSchema, {
       name: 'GetUserResponse',
       field: [field({ name: 'name', number: 1, type: TYPE_STRING })],
     },
+    {
+      name: 'UpdateUserRequest',
+      field: [
+        field({ name: 'id', number: 1, type: TYPE_INT64 }),
+        field({ name: 'name', number: 2, type: TYPE_STRING }),
+      ],
+    },
   ],
   service: [
     {
@@ -349,6 +356,11 @@ const usersFile = create(FileDescriptorProtoSchema, {
           inputType: REQUEST,
           outputType: '.acme.users.v1.GetUserResponse',
           serverStreaming: true,
+        },
+        {
+          name: 'UpdateUser',
+          inputType: '.acme.users.v1.UpdateUserRequest',
+          outputType: '.acme.users.v1.GetUserResponse',
         },
       ],
     },
@@ -425,12 +437,16 @@ export const LegacyService = service('acme.legacy.v1.LegacyService')
 export const ListUsers: DescMethod = UserService.method.listUsers!
 export const GetUser: DescMethod = UserService.method.getUser!
 export const WatchUsers: DescMethod = UserService.method.watchUsers!
+export const UpdateUser: DescMethod = UserService.method.updateUser!
 export const Lookup: DescMethod = LegacyService.method.lookup!
 
 export const ListUsersRequestSchema = message('acme.users.v1.ListUsersRequest')
 export const FilterSchema = message('acme.users.v1.Filter')
 export const QuerySchema = message('acme.users.v1.Query')
 export const GetUserRequestSchema = message('acme.users.v1.GetUserRequest')
+export const GetUserResponseSchema = message('acme.users.v1.GetUserResponse')
+export const ListUsersResponseSchema = message('acme.users.v1.ListUsersResponse')
+export const UpdateUserRequestSchema = message('acme.users.v1.UpdateUserRequest')
 export const LegacyRequestSchema = message('acme.legacy.v1.LegacyRequest')
 
 export const traceTag = registry.getExtension(
