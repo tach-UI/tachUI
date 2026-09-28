@@ -11,7 +11,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { OnHoverModifier } from '../../src/interaction/on-hover'
 import { OnContinuousHoverModifier } from '../../src/interaction/on-continuous-hover'
 import { OnLongPressGestureModifier } from '../../src/interaction/on-long-press-gesture'
+import { KeyboardShortcutModifier } from '../../src/interaction/keyboard-shortcut'
 import { InteractionModifier } from '../../src/base'
+import '../../src/basic'
+import { globalModifierRegistry } from '@tachui/registry'
 import { applyModifiersToNode } from '@tachui/core/modifiers/registry'
 import type { ModifierContext, DOMNode } from '../../src/types'
 
@@ -71,18 +74,15 @@ function getRegistered(element: HTMLElement): RegisteredListener[] {
  * Build a matching down/up event pair for whichever gesture branch
  * (pointer/touch/mouse) the given element selects. jsdom has no pointer
  * support and no TouchEvent constructor, so the touch branch gets a plain
- * Event with a minimal `touches` array attached. Note: InteractionModifier's
- * internal long-press setup registers pointer listeners unconditionally, so
- * pass `forcePointer: true` for it.
+ * Event with a minimal `touches` array attached.
  */
 function makePressEvents(
   el: HTMLElement,
   x: number,
-  y: number,
-  forcePointer = false
+  y: number
 ): { down: Event; up: Event } {
   const candidate = el as unknown as Record<string, unknown>
-  if (forcePointer || 'onpointerdown' in candidate) {
+  if ('onpointerdown' in candidate) {
     return {
       down: new PointerEvent('pointerdown', { clientX: x, clientY: y }),
       up: new PointerEvent('pointerup'),
@@ -226,6 +226,75 @@ describe('listener cleanup (#216)', () => {
     })
   })
 
+  describe('KeyboardShortcutModifier', () => {
+    it('removes document-level keyboard shortcut listeners on cleanup', () => {
+      const action = vi.fn()
+      const removeSpy = vi.spyOn(document, 'removeEventListener')
+
+      const modifier = new KeyboardShortcutModifier({
+        key: 'k',
+        modifiers: ['meta'],
+        action,
+      })
+      const result = modifier.apply(makeNode(), makeContext(element))!
+
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'k', metaKey: true })
+      )
+      expect(action).toHaveBeenCalledTimes(1)
+
+      result.cleanup![0]()
+
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'k', metaKey: true })
+      )
+      expect(action).toHaveBeenCalledTimes(1)
+      expect(
+        removeSpy.mock.calls.filter((call) => call[0] === 'keydown')
+      ).toHaveLength(1)
+      removeSpy.mockRestore()
+    })
+  })
+
+  describe('registered long-press gesture', () => {
+    it('keeps listeners active after a press ends and removes them on dispose', () => {
+      vi.useFakeTimers()
+      try {
+        const perform = vi.fn()
+        const modifier = globalModifierRegistry.get('onLongPressGesture')!({
+          perform,
+          minimumDuration: 100,
+        })
+        const finalNode = applyModifiersToNode(
+          makeNode(),
+          [modifier],
+          makeContext(element)
+        )
+        const first = makePressEvents(element, 10, 10)
+        const second = makePressEvents(element, 10, 10)
+        const third = makePressEvents(element, 10, 10)
+
+        // First press ends with an up event — listeners must stay registered
+        element.dispatchEvent(first.down)
+        element.dispatchEvent(first.up)
+
+        // A later press can still trigger the long press
+        element.dispatchEvent(second.down)
+        vi.advanceTimersByTime(200)
+        expect(perform).toHaveBeenCalledTimes(1)
+
+        // Unmount teardown removes the listeners for real
+        finalNode.dispose!()
+        expect(getRegistered(element)).toHaveLength(0)
+        element.dispatchEvent(third.down)
+        vi.advanceTimersByTime(200)
+        expect(perform).toHaveBeenCalledTimes(1)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
   describe('InteractionModifier', () => {
     it('returns cleanup that removes every listener it registered', () => {
       const onTap = vi.fn()
@@ -259,32 +328,6 @@ describe('listener cleanup (#216)', () => {
       expect(onTap).toHaveBeenCalledTimes(1)
     })
 
-    it('removes document-level keyboard shortcut listeners on cleanup', () => {
-      const action = vi.fn()
-      const removeSpy = vi.spyOn(document, 'removeEventListener')
-
-      const modifier = new InteractionModifier({
-        keyboardShortcut: { key: 'k', modifiers: ['cmd'], action },
-      })
-      const result = modifier.apply(makeNode(), makeContext(element))!
-
-      document.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'k', metaKey: true })
-      )
-      expect(action).toHaveBeenCalledTimes(1)
-
-      result.cleanup![0]()
-
-      document.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'k', metaKey: true })
-      )
-      expect(action).toHaveBeenCalledTimes(1)
-      expect(removeSpy).toHaveBeenCalled()
-      expect(
-        removeSpy.mock.calls.filter((call) => call[0] === 'keydown')
-      ).toHaveLength(1)
-    })
-
     it('does not throw when cleanup runs twice (double-dispose)', () => {
       const onTap = vi.fn()
       const modifier = new InteractionModifier({ onTap })
@@ -296,38 +339,6 @@ describe('listener cleanup (#216)', () => {
       }).not.toThrow()
     })
 
-    it('keeps long-press gesture listeners active after a press ends', () => {
-      vi.useFakeTimers()
-      try {
-        const perform = vi.fn()
-        const modifier = new InteractionModifier({
-          onLongPressGesture: { perform, minimumDuration: 100 },
-        })
-        const result = modifier.apply(makeNode(), makeContext(element))!
-        // InteractionModifier's long-press setup registers pointer listeners
-        // unconditionally, so force the pointer event shapes
-        const first = makePressEvents(element, 10, 10, true)
-        const second = makePressEvents(element, 10, 10, true)
-        const third = makePressEvents(element, 10, 10, true)
-
-        // First press ends with an up event — listeners must stay registered
-        element.dispatchEvent(first.down)
-        element.dispatchEvent(first.up)
-
-        // A later press can still trigger the long press
-        element.dispatchEvent(second.down)
-        vi.advanceTimersByTime(200)
-        expect(perform).toHaveBeenCalledTimes(1)
-
-        // Unmount teardown removes the listeners for real
-        result.cleanup![0]()
-        element.dispatchEvent(third.down)
-        vi.advanceTimersByTime(200)
-        expect(perform).toHaveBeenCalledTimes(1)
-      } finally {
-        vi.useRealTimers()
-      }
-    })
   })
 
   describe('registry integration', () => {

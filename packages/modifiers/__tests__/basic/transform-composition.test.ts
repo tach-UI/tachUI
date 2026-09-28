@@ -4,10 +4,10 @@
  * `AnimationModifier` and `LayoutModifier` are public three times over: in
  * `@tachui/core/modifiers`, in this package's root entry (`basic/base`), and
  * in its `@tachui/modifiers/base` subpath. All three are one class each,
- * re-exported from core. Constructed directly with `transform`, `offset`,
- * `scaleEffect` or `rotationEffect`, each writes through core's
- * `setTransformPart`, so none erases another's part on one element — the
- * factories' included.
+ * re-exported from core. `AnimationModifier` constructed directly with
+ * `transform` or `rotationEffect`, and the `offset` and `scaleEffect`
+ * modifiers, each write through core's `setTransformPart`, so none erases
+ * another's part on one element.
  */
 
 import { JSDOM } from 'jsdom'
@@ -26,6 +26,7 @@ import {
   LayoutModifier as FullLayoutModifier,
 } from '../../src/base'
 import { offset } from '../../src/layout/offset'
+import { scaleEffect } from '../../src/layout/scale-effect'
 import { rotationEffect } from '../../src/basic/animation'
 
 beforeEach(() => {
@@ -62,13 +63,8 @@ describe('transform composition', () => {
   it('keeps offset, scale and rotation when a raw transform follows', () => {
     const context = makeContext()
 
-    apply(new CoreLayoutModifier({ offset: { x: 4, y: 5 } } as any), context)
-    apply(
-      new CoreLayoutModifier({
-        scaleEffect: { x: 2, anchor: 'topLeading' },
-      } as any),
-      context
-    )
+    apply(offset(4, 5), context)
+    apply(scaleEffect(2, undefined, 'topLeading'), context)
     apply(
       new CoreAnimationModifier({
         rotationEffect: { angle: 90, anchor: 'bottomTrailing' },

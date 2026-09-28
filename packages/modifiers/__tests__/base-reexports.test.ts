@@ -3,11 +3,11 @@
  *
  * `src/base.ts` (published as `@tachui/modifiers/base`) and `src/basic/base.ts`
  * (re-exported from the package root) used to hold their own copies of
- * `BaseModifier`, `AnimationModifier`, `LifecycleModifier`, `LayoutModifier`
- * and `AppearanceModifier`. They now hold no class logic at all: the first four
- * come from `@tachui/core/modifiers/base`; `AppearanceModifier` is one subclass
- * of core's that adds the shadow and clip branches; and the interaction class,
- * which still differs from core's, sits in its own file per entry.
+ * `BaseModifier`, `AnimationModifier`, `LifecycleModifier`, `LayoutModifier`,
+ * `AppearanceModifier` and `InteractionModifier`. They now hold no class logic
+ * at all: all but `AppearanceModifier` come from `@tachui/core/modifiers/base`,
+ * and `AppearanceModifier` is one subclass of core's that adds the shadow and
+ * clip branches.
  */
 
 import { readFileSync } from 'node:fs'
@@ -42,8 +42,8 @@ describe.each(entries)('%s', (_name, entry) => {
     )
   })
 
-  it('builds interaction on core BaseModifier', () => {
-    expect(new entry.InteractionModifier({})).toBeInstanceOf(core.BaseModifier)
+  it('exports core InteractionModifier', () => {
+    expect(entry.InteractionModifier).toBe(core.InteractionModifier)
   })
 })
 

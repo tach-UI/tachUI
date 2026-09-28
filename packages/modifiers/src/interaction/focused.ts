@@ -7,6 +7,7 @@
 
 import { BaseModifier } from '../base'
 import type { DOMNode } from '@tachui/types/runtime'
+import type { ModifierResult } from '@tachui/types/modifiers'
 import type { ModifierContext } from '../types'
 
 // Simple signal-like interface for reactive values
@@ -23,17 +24,23 @@ export class FocusedModifier extends BaseModifier<FocusedOptions> {
   readonly type = 'focused'
   readonly priority = 75
 
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+  apply(node: DOMNode, context: ModifierContext): DOMNode | ModifierResult | undefined {
     if (!context.element) return
 
-    this.setupFocusManagement(context.element, this.properties.focused)
-    return undefined
+    const cleanup = this.setupFocusManagement(
+      context.element,
+      this.properties.focused
+    )
+    return cleanup ? { node, cleanup: [cleanup] } : undefined
   }
 
+  /**
+   * Returns a cleanup when there is a subscription to end.
+   */
   private setupFocusManagement(
     element: Element,
     focused: boolean | Signal<boolean>
-  ): void {
+  ): (() => void) | undefined {
     // Check if element has HTMLElement-like properties (for test compatibility)
     if (!element || typeof (element as any).focus !== 'function') return
 
@@ -117,6 +124,8 @@ export class FocusedModifier extends BaseModifier<FocusedOptions> {
     }
 
     ;(element as any)._focusedCleanup = cleanup
+
+    return unsubscribe ? cleanup : undefined
   }
 }
 

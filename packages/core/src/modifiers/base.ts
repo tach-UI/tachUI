@@ -13,13 +13,13 @@ import {
 import type { DOMNode } from '../runtime/types'
 import type {
   CSSStyleProperties,
+  LayoutModifierProps,
   LifecycleModifierProps,
   Modifier,
   ModifierContext,
   ModifierResult,
   ReactiveModifierProps,
   StyleComputationContext,
-  TransformAnchor,
 } from './types'
 import { ModifierPriority } from './types'
 import {
@@ -688,7 +688,7 @@ export abstract class BaseModifier<TProps = {}> implements Modifier<TProps> {
 /**
  * Layout modifier for frame, padding, margin
  */
-export class LayoutModifier extends BaseModifier {
+export class LayoutModifier extends BaseModifier<LayoutModifierProps> {
   readonly type = 'layout'
   readonly priority = ModifierPriority.LAYOUT
 
@@ -709,76 +709,7 @@ export class LayoutModifier extends BaseModifier {
 
     this.applyStyles(element, styles)
 
-    // Offset and scale each own a part of the element's transform, so neither
-    // erases the other or an animation's rotation, whichever writes last.
-    const props = this.properties as any
-    if (props.offset && hasStyleTarget(element)) {
-      this.applyOffsetTransform(element, props.offset)
-    }
-
-    if (props.scaleEffect && hasStyleTarget(element)) {
-      this.applyScaleTransform(element, props.scaleEffect)
-    }
-
     return undefined
-  }
-
-  private applyOffsetTransform(
-    element: { style: Record<string, string> },
-    offset: { x?: any; y?: any }
-  ): void {
-    const { x, y } = offset
-    const write = (currentX: any, currentY: any) =>
-      setTransformPart(
-        element,
-        'offset',
-        `translate(${this.toCSSValue(currentX)}, ${this.toCSSValue(currentY)})`
-      )
-
-    if (isSignal(x) || isComputed(x) || isSignal(y) || isComputed(y)) {
-      createEffect(() => {
-        write(
-          isSignal(x) || isComputed(x) ? x() : (x ?? 0),
-          isSignal(y) || isComputed(y) ? y() : (y ?? 0)
-        )
-      })
-    } else {
-      write(x ?? 0, y ?? 0)
-    }
-  }
-
-  private applyScaleTransform(
-    element: { style: Record<string, string> },
-    scaleEffect: { x?: any; y?: any; anchor?: TransformAnchor }
-  ): void {
-    const { x, y, anchor } = scaleEffect
-    const scaleX = x ?? 1
-    // Uniform scaling when y is not given.
-    const scaleY = y ?? scaleX
-    // The anchor travels inside the part rather than through
-    // `transform-origin`, so another effect can keep an anchor of its own.
-    const write = (currentX: any, currentY: any) =>
-      setTransformPart(
-        element,
-        'scale',
-        anchorTransform(`scale(${currentX}, ${currentY})`, anchor)
-      )
-
-    if (
-      isSignal(scaleX) ||
-      isComputed(scaleX) ||
-      isSignal(scaleY) ||
-      isComputed(scaleY)
-    ) {
-      createEffect(() => {
-        write(
-          isSignal(scaleX) || isComputed(scaleX) ? scaleX() : scaleX,
-          isSignal(scaleY) || isComputed(scaleY) ? scaleY() : scaleY
-        )
-      })
-    } else {
-      write(scaleX, scaleY)
-    }
   }
 
   private computeLayoutStyles(
@@ -954,23 +885,6 @@ export class LayoutModifier extends BaseModifier {
       styles['--layout-priority'] = String(priority)
     }
 
-    // Aspect Ratio modifier (SwiftUI .aspectRatio(ratio, contentMode))
-    if (props.aspectRatio) {
-      const { ratio, contentMode } = props.aspectRatio
-
-      if (ratio !== undefined) {
-        // Apply CSS aspect-ratio property
-        styles.aspectRatio = typeof ratio === 'number' ? String(ratio) : ratio
-
-        // Handle content mode
-        if (contentMode === 'fill') {
-          styles.objectFit = 'cover'
-        } else {
-          styles.objectFit = 'contain'
-        }
-      }
-    }
-
     // Absolute positioning (SwiftUI .position(x, y)). A signal coordinate is
     // bound by applyStyles, so left and top follow it.
     if (props.position) {
@@ -978,12 +892,6 @@ export class LayoutModifier extends BaseModifier {
       styles.position = 'absolute'
       styles.left = isSignal(x) || isComputed(x) ? x : this.toCSSValue(x ?? 0)
       styles.top = isSignal(y) || isComputed(y) ? y : this.toCSSValue(y ?? 0)
-    }
-
-    // An explicit zIndex follows layoutPriority, so it wins over the z-index
-    // that priority maps to.
-    if (props.zIndex !== undefined) {
-      styles.zIndex = props.zIndex
     }
 
     // Fixed Size modifier (SwiftUI .fixedSize())
@@ -1299,6 +1207,9 @@ export class AppearanceModifier extends BaseModifier {
 
 /**
  * Interaction modifier for events and accessibility
+ *
+ * Long press, keyboard shortcuts, focus, continuous hover and hit testing are
+ * separate modifiers registered by `@tachui/modifiers`, not props of this one.
  */
 export class InteractionModifier extends BaseModifier {
   readonly type = 'interaction'
@@ -1327,6 +1238,9 @@ export class InteractionModifier extends BaseModifier {
       target.addEventListener(type, handler, options)
       listeners.push({ target, type, handler, options })
     }
+
+    // Effects the modifier created, disposed with its listeners.
+    const disposers: (() => void)[] = []
 
     // Event handlers
     if (props.onTap) {
@@ -1429,17 +1343,25 @@ export class InteractionModifier extends BaseModifier {
 
     // Swipe gestures (simplified implementation)
     if (props.onSwipeLeft || props.onSwipeRight) {
-      let startX = 0
-      let startY = 0
+      // Set by touchstart and cleared by touchend or touchcancel, so a touchend
+      // without a start of its own is not read as a swipe.
+      let start: { x: number; y: number } | null = null
 
       addListener(
         element,
         'touchstart',
         (e: Event) => {
-          const touchEvent = e as TouchEvent
-          const touch = touchEvent.touches[0]
-          startX = touch.clientX
-          startY = touch.clientY
+          const touch = (e as TouchEvent).touches?.[0]
+          start = touch ? { x: touch.clientX, y: touch.clientY } : null
+        },
+        { passive: true }
+      )
+
+      addListener(
+        element,
+        'touchcancel',
+        () => {
+          start = null
         },
         { passive: true }
       )
@@ -1448,10 +1370,13 @@ export class InteractionModifier extends BaseModifier {
         element,
         'touchend',
         (e: Event) => {
-          const touchEvent = e as TouchEvent
-          const touch = touchEvent.changedTouches[0]
-          const deltaX = touch.clientX - startX
-          const deltaY = touch.clientY - startY
+          const origin = start
+          start = null
+          const touch = (e as TouchEvent).changedTouches?.[0]
+          if (!origin || !touch) return
+
+          const deltaX = touch.clientX - origin.x
+          const deltaY = touch.clientY - origin.y
           const minSwipeDistance = 50
 
           // Only register as swipe if horizontal movement is greater than vertical
@@ -1514,17 +1439,28 @@ export class InteractionModifier extends BaseModifier {
       addListener(element, 'select', props.onSelect)
     }
 
-    // Disabled state
+    // Disabled state, static or following a signal
     if (props.disabled !== undefined) {
       if (isHTMLElementRuntimeElement(element)) {
-        if (props.disabled) {
-          element.setAttribute('disabled', 'true')
-          element.style.pointerEvents = 'none'
-          element.style.opacity = '0.6'
+        const applyDisabledState = (isDisabled: boolean): void => {
+          if (isDisabled) {
+            element.setAttribute('disabled', 'true')
+            element.style.pointerEvents = 'none'
+            element.style.opacity = '0.6'
+          } else {
+            element.removeAttribute('disabled')
+            element.style.pointerEvents = ''
+            element.style.opacity = ''
+          }
+        }
+
+        if (isSignal(props.disabled) || isComputed(props.disabled)) {
+          const disabledEffect = createEffect(() => {
+            applyDisabledState(Boolean((props.disabled as () => unknown)()))
+          })
+          disposers.push(() => disabledEffect.dispose())
         } else {
-          element.removeAttribute('disabled')
-          element.style.pointerEvents = ''
-          element.style.opacity = ''
+          applyDisabledState(Boolean(props.disabled))
         }
       }
     }
@@ -1546,13 +1482,17 @@ export class InteractionModifier extends BaseModifier {
     }
 
     // Teardown removes every registered listener from the same target it was
-    // added to. Double-dispose is safe: removeEventListener is a no-op for
-    // already-removed handlers.
+    // added to, and disposes the modifier's effects. Double-dispose is safe:
+    // both lists are emptied on the first run.
     const teardown = () => {
       for (const { target, type, handler, options } of listeners) {
         target.removeEventListener(type, handler, options)
       }
       listeners.length = 0
+      for (const dispose of disposers) {
+        dispose()
+      }
+      disposers.length = 0
     }
 
     return { node, cleanup: [teardown] }

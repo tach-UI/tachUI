@@ -2,15 +2,18 @@
  * `@tachui/modifiers/base` and the package root publish core's classes
  *
  * Both entries re-export `BaseModifier`, `AnimationModifier`,
- * `LifecycleModifier` and `LayoutModifier` from `@tachui/core/modifiers/base`,
- * so their declared types are core's own, not structurally similar copies.
+ * `LifecycleModifier`, `LayoutModifier` and `InteractionModifier` from
+ * `@tachui/core/modifiers/base`, so their declared types are core's own, not
+ * structurally similar copies.
  */
 
 import { describe, expectTypeOf, it } from 'vitest'
+import { LayoutModifier } from '@tachui/core/modifiers/base'
 import type {
   AnimationModifier as CoreAnimationModifier,
   AppearanceModifier as CoreAppearanceModifier,
   BaseModifier as CoreBaseModifier,
+  InteractionModifier as CoreInteractionModifier,
   LayoutModifier as CoreLayoutModifier,
   LifecycleModifier as CoreLifecycleModifier,
 } from '@tachui/core/modifiers/base'
@@ -55,9 +58,21 @@ describe('base class re-exports', () => {
     expectTypeOf<SubpathAppearanceModifier>().toMatchTypeOf<CoreAppearanceModifier>()
   })
 
-  it('keeps the interaction class on core BaseModifier', () => {
-    expectTypeOf<SubpathInteractionModifier>().toMatchTypeOf<CoreBaseModifier>()
-    expectTypeOf<RootInteractionModifier>().toMatchTypeOf<CoreBaseModifier>()
+  it('publishes core InteractionModifier from both entries', () => {
+    expectTypeOf<SubpathInteractionModifier>().toEqualTypeOf<CoreInteractionModifier>()
+    expectTypeOf<RootInteractionModifier>().toEqualTypeOf<CoreInteractionModifier>()
+  })
+
+  it('rejects the props LayoutModifier no longer handles', () => {
+    new LayoutModifier({ padding: 4, position: { x: 1, y: 2 } })
+    // @ts-expect-error offset is the standalone offset modifier
+    new LayoutModifier({ offset: { x: 1, y: 2 } })
+    // @ts-expect-error aspectRatio is the standalone aspectRatio modifier
+    new LayoutModifier({ aspectRatio: { ratio: 2 } })
+    // @ts-expect-error scaleEffect is the standalone scaleEffect modifier
+    new LayoutModifier({ scaleEffect: { x: 2 } })
+    // @ts-expect-error zIndex is the standalone zIndex modifier
+    new LayoutModifier({ zIndex: 1 })
   })
 
   it('types AnimationModifier as animation or transition', () => {

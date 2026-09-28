@@ -5,8 +5,8 @@
  * the copies disagreed with core. Each test here pins the behavior the merged
  * class settled on:
  *
- * - `offset`, `aspectRatio`, `scaleEffect` and `zIndex` are applied in core,
- *   offset and scale through the shared transform composer.
+ * - `offset`, `aspectRatio`, `scaleEffect` and `zIndex` are not core's: the
+ *   standalone modifiers in `@tachui/modifiers` apply them.
  * - `position` is absolute and follows signal coordinates.
  * - `layoutPriority` writes `--layout-priority` onto the element itself.
  * - Either `context.element` or `node.element` is enough to apply.
@@ -20,7 +20,6 @@ import { describe, expect, it } from 'vitest'
 import { createRoot, createSignal, flushSync } from '../../src/reactive'
 import type { ModifierContext } from '../../src/modifiers/types'
 import {
-  AnimationModifier,
   AppearanceModifier,
   BaseModifier,
   LayoutModifier,
@@ -54,156 +53,25 @@ function applyAppearance(props: object, context: ModifierContext): void {
   })
 }
 
-describe('LayoutModifier offset', () => {
-  it('translates by a static offset', () => {
+describe('LayoutModifier transform and stacking props', () => {
+  // `.offset()`, `.aspectRatio()`, `.scaleEffect()` and `.zIndex()` are the
+  // standalone modifiers in @tachui/modifiers; core's class writes none of them.
+  it('ignores offset, aspectRatio, scaleEffect and zIndex', () => {
     const context = makeContext()
-
-    applyLayout({ offset: { x: 4, y: 5 } }, context)
-
-    expect(context.element.style.transform).toBe('translate(4px, 5px)')
-  })
-
-  it('defaults a missing axis to zero', () => {
-    const context = makeContext()
-
-    applyLayout({ offset: { y: 5 } }, context)
-
-    expect(context.element.style.transform).toBe('translate(0px, 5px)')
-  })
-
-  it('follows signal coordinates', () => {
-    const context = makeContext()
-    const [x, setX] = createSignal(1)
-    const [y, setY] = createSignal(2)
-
-    applyLayout({ offset: { x, y } }, context)
-    expect(context.element.style.transform).toBe('translate(1px, 2px)')
-
-    setX(10)
-    setY(20)
-    flushSync()
-    expect(context.element.style.transform).toBe('translate(10px, 20px)')
-  })
-
-  it('composes with scale and an animation rotation on one element', () => {
-    const context = makeContext()
-
-    applyLayout({ offset: { x: 4, y: 5 } }, context)
-    applyLayout({ scaleEffect: { x: 2, anchor: 'topLeading' } }, context)
-    new AnimationModifier({
-      rotationEffect: { angle: 90, anchor: 'bottomTrailing' },
-    } as any).apply({} as any, context)
-    new AnimationModifier({ transform: 'skewX(3deg)' } as any).apply(
-      {} as any,
+    applyLayout(
+      {
+        offset: { x: 4, y: 5 },
+        aspectRatio: { ratio: 2, contentMode: 'fill' },
+        scaleEffect: { x: 2 },
+        zIndex: 3,
+      },
       context
     )
 
-    expect(context.element.style.transform).toBe(
-      'translate(4px, 5px) ' +
-        'translate(50%, 50%) rotate(90deg) translate(-50%, -50%) ' +
-        'translate(-50%, -50%) scale(2, 2) translate(50%, 50%) ' +
-        'skewX(3deg)'
-    )
-    expect(context.element.style.transformOrigin).toBe('')
-  })
-})
-
-describe('LayoutModifier aspectRatio', () => {
-  it.each([
-    [{ ratio: 1.5 }, '1.5', 'contain'],
-    [{ ratio: 2, contentMode: 'fit' }, '2', 'contain'],
-    [{ ratio: 2, contentMode: 'fill' }, '2', 'cover'],
-    [{ ratio: '16 / 9', contentMode: 'fill' }, '16 / 9', 'cover'],
-  ] as const)('applies %o', (aspectRatio, ratio, objectFit) => {
-    const context = makeContext()
-
-    applyLayout({ aspectRatio }, context)
-
-    expect(context.element.style.aspectRatio).toBe(ratio)
-    expect(context.element.style.objectFit).toBe(objectFit)
-  })
-
-  it('follows a signal ratio', () => {
-    const context = makeContext()
-    const [ratio, setRatio] = createSignal(1)
-
-    applyLayout({ aspectRatio: { ratio } }, context)
-    expect(context.element.style.aspectRatio).toBe('1')
-
-    setRatio(3)
-    flushSync()
-    expect(context.element.style.aspectRatio).toBe('3')
-  })
-
-  it('sets nothing without a ratio', () => {
-    const context = makeContext()
-
-    applyLayout({ aspectRatio: { contentMode: 'fill' } }, context)
-
+    expect(context.element.style.transform).toBe('')
     expect(context.element.style.aspectRatio).toBe('')
     expect(context.element.style.objectFit).toBe('')
-  })
-})
-
-describe('LayoutModifier scaleEffect', () => {
-  it('scales uniformly when y is not given', () => {
-    const context = makeContext()
-
-    applyLayout({ scaleEffect: { x: 2 } }, context)
-
-    expect(context.element.style.transform).toBe('scale(2, 2)')
-  })
-
-  it('scales each axis and turns around the anchor', () => {
-    const context = makeContext()
-
-    applyLayout({ scaleEffect: { x: 2, y: 3, anchor: 'topLeading' } }, context)
-
-    expect(context.element.style.transform).toBe(
-      'translate(-50%, -50%) scale(2, 3) translate(50%, 50%)'
-    )
-  })
-
-  it('follows signal factors', () => {
-    const context = makeContext()
-    const [factor, setFactor] = createSignal(1.5)
-
-    applyLayout({ scaleEffect: { x: factor } }, context)
-    expect(context.element.style.transform).toBe('scale(1.5, 1.5)')
-
-    setFactor(0.5)
-    flushSync()
-    expect(context.element.style.transform).toBe('scale(0.5, 0.5)')
-  })
-})
-
-describe('LayoutModifier zIndex', () => {
-  it('applies a static zIndex unitless', () => {
-    const context = makeContext()
-
-    applyLayout({ zIndex: 7 }, context)
-
-    expect(context.element.style.zIndex).toBe('7')
-  })
-
-  it('follows a signal zIndex', () => {
-    const context = makeContext()
-    const [zIndex, setZIndex] = createSignal(1)
-
-    applyLayout({ zIndex }, context)
-    expect(context.element.style.zIndex).toBe('1')
-
-    setZIndex(9)
-    flushSync()
-    expect(context.element.style.zIndex).toBe('9')
-  })
-
-  it('wins over the z-index layoutPriority maps to', () => {
-    const context = makeContext()
-
-    applyLayout({ layoutPriority: 5, zIndex: 2 }, context)
-
-    expect(context.element.style.zIndex).toBe('2')
+    expect(context.element.style.zIndex).toBe('')
   })
 })
 
