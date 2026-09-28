@@ -6,7 +6,11 @@
  * seamlessly with the existing modifier system.
  */
 
-import type { ModifierBuilder, Modifier } from '@tachui/core'
+import type {
+  InternalModifierBuilder,
+  ModifierBuilder,
+  Modifier,
+} from '@tachui/core'
 import type { ComponentInstance } from '@tachui/core'
 import {
   ResponsiveValue,
@@ -112,9 +116,18 @@ export interface ResponsiveModifierBuilder<
   '2xl': ResponsiveBreakpointBuilder<T>
 
   // Builder methods
-  addModifier(modifier: Modifier): void
   build(): T
 }
+
+/**
+ * The responsive builder as its breakpoint builders see it: the public
+ * surface plus the `addModifier` seam they append through.
+ *
+ * @internal
+ */
+type InternalResponsiveModifierBuilder<
+  T extends ComponentInstance = ComponentInstance,
+> = ResponsiveModifierBuilder<T> & Pick<InternalModifierBuilder<T>, 'addModifier'>
 
 /**
  * Breakpoint-specific builder for shorthand syntax
@@ -195,7 +208,7 @@ export class ResponsiveModifierBuilderImpl<
   T extends ComponentInstance = ComponentInstance,
 > implements ResponsiveModifierBuilder<T>
 {
-  constructor(private baseBuilder: ModifierBuilder<T>) {
+  constructor(private baseBuilder: InternalModifierBuilder<T>) {
     // Return a Proxy that delegates unknown methods to baseBuilder
     return new Proxy(this, {
       get(target, prop) {
@@ -234,6 +247,7 @@ export class ResponsiveModifierBuilderImpl<
   }
 
   // Delegate essential builder methods
+  /** @internal */
   addModifier(modifier: Modifier): void {
     this.baseBuilder.addModifier(modifier)
   }
@@ -510,8 +524,8 @@ class ResponsiveBreakpointBuilderImpl<
 {
   constructor(
     private breakpoint: BreakpointKey,
-    private parentBuilder: ResponsiveModifierBuilder<T>,
-    private baseBuilder: ModifierBuilder<T>
+    private parentBuilder: InternalResponsiveModifierBuilder<T>,
+    private baseBuilder: InternalModifierBuilder<T>
   ) {}
 
   // Layout properties
@@ -847,7 +861,9 @@ class ResponsiveBreakpointBuilderImpl<
 export function withResponsive<T extends ComponentInstance = ComponentInstance>(
   builder: ModifierBuilder<T>
 ): ResponsiveModifierBuilder<T> {
-  return new ResponsiveModifierBuilderImpl(builder)
+  return new ResponsiveModifierBuilderImpl(
+    builder as InternalModifierBuilder<T>
+  )
 }
 
 /**
@@ -856,5 +872,7 @@ export function withResponsive<T extends ComponentInstance = ComponentInstance>(
 export function createResponsiveBuilder<
   T extends ComponentInstance = ComponentInstance,
 >(baseBuilder: ModifierBuilder<T>): ResponsiveModifierBuilder<T> {
-  return new ResponsiveModifierBuilderImpl(baseBuilder)
+  return new ResponsiveModifierBuilderImpl(
+    baseBuilder as InternalModifierBuilder<T>
+  )
 }

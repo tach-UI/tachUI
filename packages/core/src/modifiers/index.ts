@@ -38,6 +38,7 @@ export type {
   CSSClassNames,
   CSSStyleProperties,
   InteractionModifierProps,
+  InternalModifierBuilder,
   LayoutModifierProps,
   LifecycleModifierProps,
   ModifiableComponent,

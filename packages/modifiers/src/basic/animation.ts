@@ -36,13 +36,13 @@ export class TransitionModifier extends AnimationModifier {
  * @example
  * ```ts
  * // Object signature
- * div().modifier(transition({ property: 'opacity', duration: 200 }))
+ * div().transition({ property: 'opacity', duration: 200 })
  *
  * // Parameter signature
- * div().modifier(transition('all', 300, 'ease-in-out'))
+ * div().transition('all', 300, 'ease-in-out')
  *
  * // Disable transitions
- * div().modifier(transition('none'))
+ * div().transition('none')
  * ```
  */
 export function transition(options: TransitionConfig): TransitionModifier

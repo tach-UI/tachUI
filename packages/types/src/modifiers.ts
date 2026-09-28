@@ -609,9 +609,6 @@ export interface ModifierBuilderBase<
     }
   ): this
 
-  // Custom modifier application
-  modifier(modifier: Modifier): this
-
   // Resizable modifier for images
   resizable(): this
 
@@ -638,8 +635,6 @@ export interface ModifierBuilderBase<
   onPaste(handler: (event: ClipboardEvent) => void): this
   onSelect(handler: (event: Event) => void): this
 
-  addModifier(modifier: Modifier): void
-
   // Build the final component with all modifiers applied
   build(): T
 }
@@ -653,6 +648,37 @@ export interface ModifierBuilderBase<
 export interface ModifierBuilder<
   T extends ComponentInstance = ComponentInstance,
 > extends ModifierBuilderBase<T> {}
+
+/**
+ * The builder as framework packages see it: the public surface plus the
+ * methods that append a modifier instance directly.
+ *
+ * These are kept off `ModifierBuilder` so autocomplete steers developers to
+ * direct chaining, and so no `void`-returning method sits in a chain position
+ * on the public type. The runtime builder implements both.
+ *
+ * @internal
+ */
+export interface InternalModifierBuilder<
+  T extends ComponentInstance = ComponentInstance,
+> extends ModifierBuilder<T> {
+  /**
+   * Appends a modifier and syncs the component's `modifiers` array.
+   * Returns nothing, so it cannot continue a chain.
+   *
+   * @internal
+   */
+  addModifier(modifier: Modifier): void
+
+  /**
+   * Appends a modifier instance and continues the chain.
+   *
+   * @internal
+   * @deprecated Use direct modifier methods instead:
+   * `component.padding(16)`, not `component.modifier(padding(16))`.
+   */
+  modifier(modifier: Modifier): this
+}
 
 /**
  * A modifier registration list: `[name, factory]` entries, optionally followed
