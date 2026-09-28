@@ -7,6 +7,7 @@
 
 import { BaseModifier } from '../base'
 import type { DOMNode } from '@tachui/types/runtime'
+import type { ModifierResult } from '@tachui/types/modifiers'
 import type { ModifierContext } from '../types'
 
 export interface FocusableOptions {
@@ -27,20 +28,27 @@ export class FocusableModifier extends BaseModifier<FocusableOptions> {
     super(normalizedOptions)
   }
 
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+  apply(node: DOMNode, context: ModifierContext): DOMNode | ModifierResult | undefined {
     if (!context.element) return
 
-    this.setupFocusable(context.element, this.properties)
-    return undefined
+    const cleanup = this.setupFocusable(context.element, this.properties)
+    return cleanup ? { node, cleanup: [cleanup] } : undefined
   }
 
-  private setupFocusable(element: Element, options: FocusableOptions): void {
+  /**
+   * Returns a cleanup when a keyboard activation listener was added.
+   */
+  private setupFocusable(
+    element: Element,
+    options: FocusableOptions
+  ): (() => void) | undefined {
     // Check if element has HTMLElement-like properties (for test compatibility)
     if (!element || typeof (element as any).focus !== 'function') return
 
     const htmlElement = element as HTMLElement
     const isFocusable = options.isFocusable ?? true
     const interactions = options.interactions ?? []
+    let removeKeyDown: (() => void) | undefined
 
     if (isFocusable) {
       // Make element focusable
@@ -83,6 +91,9 @@ export class FocusableModifier extends BaseModifier<FocusableOptions> {
         }
 
         htmlElement.addEventListener('keydown', handleKeyDown)
+        removeKeyDown = () => {
+          htmlElement.removeEventListener('keydown', handleKeyDown)
+        }
 
         // Store cleanup function
         const existingCleanup =
@@ -121,6 +132,8 @@ export class FocusableModifier extends BaseModifier<FocusableOptions> {
         delete (htmlElement as any)._focusableCleanup
       }
     }
+
+    return removeKeyDown
   }
 }
 

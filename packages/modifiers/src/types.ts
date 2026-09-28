@@ -151,38 +151,14 @@ export interface LayoutModifierProps {
     | string
   alignment?: 'leading' | 'center' | 'trailing' | 'top' | 'bottom'
   layoutPriority?: number
-  offset?: {
-    x?: number | Signal<number>
-    y?: number | Signal<number>
-  }
-  aspectRatio?: {
-    ratio?: number
-    contentMode?: 'fit' | 'fill'
-  }
   fixedSize?: {
     horizontal?: boolean
     vertical?: boolean
   }
-  // Transform Properties (Phase 3 - Epic: Butternut)
-  scaleEffect?: {
-    x?: number
-    y?: number
-    anchor?:
-      | 'center'
-      | 'top'
-      | 'topLeading'
-      | 'topTrailing'
-      | 'bottom'
-      | 'bottomLeading'
-      | 'bottomTrailing'
-      | 'leading'
-      | 'trailing'
-  }
   position?: {
-    x?: number
-    y?: number
+    x?: number | Signal<number>
+    y?: number | Signal<number>
   }
-  zIndex?: number
 }
 
 /**

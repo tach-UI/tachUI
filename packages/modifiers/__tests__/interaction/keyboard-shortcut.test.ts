@@ -147,7 +147,7 @@ describe('KeyboardShortcutModifier', () => {
 
       const result = modifier.apply(mockNode, mockContext)
 
-      expect(result).toBeUndefined()
+      expect(result).toEqual({ node: mockNode, cleanup: [expect.any(Function)] })
       expect(mockDocument.addEventListener).toHaveBeenCalledWith(
         'keydown',
         expect.any(Function)

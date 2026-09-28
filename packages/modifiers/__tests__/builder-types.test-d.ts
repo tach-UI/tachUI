@@ -161,9 +161,13 @@ describe('modifier builder types', () => {
 
     const options: OffsetOptions = { x, y }
     const numericOptions: OffsetOptions = { x: 1 }
-    const typesProps: TypesLayoutProps['offset'] = { x, y }
-    const modifiersProps: ModifiersLayoutProps['offset'] = { y }
-    void [options, numericOptions, typesProps, modifiersProps]
+    void [options, numericOptions]
+
+    // `LayoutModifier` no longer takes an offset; `.offset()` is the way.
+    // @ts-expect-error LayoutModifierProps declares no offset
+    type TypesOffset = TypesLayoutProps['offset']
+    // @ts-expect-error LayoutModifierProps declares no offset
+    type ModifiersOffset = ModifiersLayoutProps['offset']
 
     // @ts-expect-error offset takes numbers, not strings
     Text('x').offset('14px', 0)

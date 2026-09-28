@@ -7,6 +7,7 @@
 
 import { BaseModifier } from '../base'
 import type { DOMNode } from '@tachui/types/runtime'
+import type { ModifierResult } from '@tachui/types/modifiers'
 import type { ModifierContext } from '../types'
 
 export interface KeyboardShortcutOptions {
@@ -28,17 +29,17 @@ export class KeyboardShortcutModifier extends BaseModifier<KeyboardShortcutOptio
     super(normalizedOptions)
   }
 
-  apply(_node: DOMNode, context: ModifierContext): DOMNode | undefined {
+  apply(node: DOMNode, context: ModifierContext): DOMNode | ModifierResult | undefined {
     if (!context.element) return
 
-    this.setupKeyboardShortcut(context.element, this.properties)
-    return undefined
+    const cleanup = this.setupKeyboardShortcut(context.element, this.properties)
+    return { node, cleanup: [cleanup] }
   }
 
   private setupKeyboardShortcut(
     element: Element,
     shortcut: KeyboardShortcutOptions
-  ): void {
+  ): () => void {
     const modifiers = shortcut.modifiers || []
 
     const handleKeyDown = (event: Event) => {
@@ -134,6 +135,8 @@ export class KeyboardShortcutModifier extends BaseModifier<KeyboardShortcutOptio
     }
 
     ;(element as any)._keyboardShortcutCleanup = cleanup
+
+    return cleanup
   }
 }
 

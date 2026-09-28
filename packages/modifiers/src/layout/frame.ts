@@ -16,7 +16,7 @@ export function frame(options: any): LayoutModifier {
 export function layoutPriority(
   priority: number | Signal<number>
 ): LayoutModifier {
-  return new LayoutModifier({ layoutPriority: priority })
+  return new LayoutModifier({ layoutPriority: priority as any })
 }
 
 export function absolutePosition(
