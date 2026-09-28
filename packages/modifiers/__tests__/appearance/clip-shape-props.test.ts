@@ -51,13 +51,13 @@ function clipOf(element: HTMLElement): string {
   return element.style.clipPath || element.style.getPropertyValue('clip-path')
 }
 
-// Two live copies of `AppearanceModifier`, and `./base` is a published
-// subpath, so `@tachui/modifiers/base` reaches the root one. The claim is that
-// both share one serializer, so both have to be held to it.
-describe.each([
-  ['basic/base', BasicAppearanceModifier],
-  ['base', RootAppearanceModifier],
-])('clipShape as an appearance prop (%s)', (_name, AppearanceModifier) => {
+// Both base entries export the one `AppearanceModifier`.
+it('is one class behind both base entries', () => {
+  expect(BasicAppearanceModifier).toBe(RootAppearanceModifier)
+})
+
+describe('clipShape as an appearance prop', () => {
+  const AppearanceModifier = RootAppearanceModifier
   let element: HTMLElement
   let context: ModifierContext
 

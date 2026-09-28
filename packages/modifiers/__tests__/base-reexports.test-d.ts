@@ -1,15 +1,17 @@
 /**
  * `@tachui/modifiers/base` and the package root publish core's classes
  *
- * Both entries re-export `BaseModifier`, `AnimationModifier` and
- * `LifecycleModifier` from `@tachui/core/modifiers/base`, so their declared
- * types are core's own, not structurally similar copies.
+ * Both entries re-export `BaseModifier`, `AnimationModifier`,
+ * `LifecycleModifier` and `LayoutModifier` from `@tachui/core/modifiers/base`,
+ * so their declared types are core's own, not structurally similar copies.
  */
 
 import { describe, expectTypeOf, it } from 'vitest'
 import type {
   AnimationModifier as CoreAnimationModifier,
+  AppearanceModifier as CoreAppearanceModifier,
   BaseModifier as CoreBaseModifier,
+  LayoutModifier as CoreLayoutModifier,
   LifecycleModifier as CoreLifecycleModifier,
 } from '@tachui/core/modifiers/base'
 import type {
@@ -43,12 +45,18 @@ describe('base class re-exports', () => {
     expectTypeOf<RootLifecycleModifier>().toEqualTypeOf<CoreLifecycleModifier>()
   })
 
-  it('keeps the layout, appearance and interaction classes on core BaseModifier', () => {
-    expectTypeOf<SubpathLayoutModifier>().toMatchTypeOf<CoreBaseModifier>()
-    expectTypeOf<SubpathAppearanceModifier>().toMatchTypeOf<CoreBaseModifier>()
+  it('publishes core LayoutModifier from both entries', () => {
+    expectTypeOf<SubpathLayoutModifier>().toEqualTypeOf<CoreLayoutModifier>()
+    expectTypeOf<RootLayoutModifier>().toEqualTypeOf<CoreLayoutModifier>()
+  })
+
+  it('builds AppearanceModifier on core AppearanceModifier', () => {
+    expectTypeOf<SubpathAppearanceModifier>().toEqualTypeOf<RootAppearanceModifier>()
+    expectTypeOf<SubpathAppearanceModifier>().toMatchTypeOf<CoreAppearanceModifier>()
+  })
+
+  it('keeps the interaction class on core BaseModifier', () => {
     expectTypeOf<SubpathInteractionModifier>().toMatchTypeOf<CoreBaseModifier>()
-    expectTypeOf<RootLayoutModifier>().toMatchTypeOf<CoreBaseModifier>()
-    expectTypeOf<RootAppearanceModifier>().toMatchTypeOf<CoreBaseModifier>()
     expectTypeOf<RootInteractionModifier>().toMatchTypeOf<CoreBaseModifier>()
   })
 

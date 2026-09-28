@@ -3,10 +3,11 @@
  *
  * `src/base.ts` (published as `@tachui/modifiers/base`) and `src/basic/base.ts`
  * (re-exported from the package root) used to hold their own copies of
- * `BaseModifier`, `AnimationModifier` and `LifecycleModifier`. They now hold no
- * class logic at all: those three come from `@tachui/core/modifiers/base`, and
- * the layout, appearance and interaction classes, which still differ from
- * core's, sit in their own files on top of core's `BaseModifier`.
+ * `BaseModifier`, `AnimationModifier`, `LifecycleModifier`, `LayoutModifier`
+ * and `AppearanceModifier`. They now hold no class logic at all: the first four
+ * come from `@tachui/core/modifiers/base`; `AppearanceModifier` is one subclass
+ * of core's that adds the shadow and clip branches; and the interaction class,
+ * which still differs from core's, sits in its own file per entry.
  */
 
 import { readFileSync } from 'node:fs'
@@ -16,6 +17,7 @@ import * as core from '@tachui/core/modifiers/base'
 import * as subpath from '../src/base'
 import * as basic from '../src/basic/base'
 import * as root from '../src/index'
+import { AppearanceModifier } from '../src/appearance-modifier'
 import { TransitionModifier, transition } from '../src/basic/animation'
 
 const entries = [
@@ -25,15 +27,22 @@ const entries = [
 ] as const
 
 describe.each(entries)('%s', (_name, entry) => {
-  it('exports core BaseModifier, AnimationModifier and LifecycleModifier', () => {
+  it('exports core BaseModifier, AnimationModifier, LifecycleModifier and LayoutModifier', () => {
     expect(entry.BaseModifier).toBe(core.BaseModifier)
     expect(entry.AnimationModifier).toBe(core.AnimationModifier)
     expect(entry.LifecycleModifier).toBe(core.LifecycleModifier)
+    expect(entry.LayoutModifier).toBe(core.LayoutModifier)
   })
 
-  it('builds layout, appearance and interaction on core BaseModifier', () => {
-    expect(new entry.LayoutModifier({})).toBeInstanceOf(core.BaseModifier)
-    expect(new entry.AppearanceModifier({})).toBeInstanceOf(core.BaseModifier)
+  it('exports the one AppearanceModifier, a subclass of core', () => {
+    expect(entry.AppearanceModifier).toBe(AppearanceModifier)
+    expect(entry.AppearanceModifier).not.toBe(core.AppearanceModifier)
+    expect(new entry.AppearanceModifier({})).toBeInstanceOf(
+      core.AppearanceModifier
+    )
+  })
+
+  it('builds interaction on core BaseModifier', () => {
     expect(new entry.InteractionModifier({})).toBeInstanceOf(core.BaseModifier)
   })
 })

@@ -17,6 +17,13 @@ export {
 } from './base'
 
 export {
+  clipPathFor,
+  clipPathForName,
+  isShapeInstance,
+  type ClipShapeName,
+} from './clip-path'
+
+export {
   anchorTransform,
   setTransformPart,
   type TransformPart,
