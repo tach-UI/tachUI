@@ -147,7 +147,9 @@ and `createAsyncStreamList` avoid colliding with the existing `createResource`, 
 `createInfiniteQueryList` join them for pagination.
 
 **Deferred.** Persistent cache storage does not ship in the first release. Server-stream
-reconnection policy is unresolved. Binding a paginated list to `List` goes through
+reconnection policy was left unresolved here; it is decided in
+[ADR 0002](./0002-server-stream-reconnection.md), which keeps decision 19's default and does
+not add opt-in reconnection to the server-stream adapters. Binding a paginated list to `List` goes through
 `createInfiniteQuery` with a flattening `select` for now, because `List` accepts
 `T[] | Signal<T[]>` only; a signal-list input for `List` is a `@tachui/data` follow-up.
 
