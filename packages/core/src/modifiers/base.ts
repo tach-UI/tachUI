@@ -19,6 +19,7 @@ import type {
   ModifierResult,
   ReactiveModifierProps,
   StyleComputationContext,
+  TransformAnchor,
 } from './types'
 import { ModifierPriority } from './types'
 import {
@@ -708,31 +709,76 @@ export class LayoutModifier extends BaseModifier {
 
     this.applyStyles(element, styles)
 
-    // Layout modifiers (offset, aspectRatio, scaleEffect, zIndex) have been
-    // migrated to @tachui/modifiers/layout for enhanced functionality
-
-    // Handle absolutePosition separately for proper positioning (Phase 3 - Epic: Butternut)
+    // Offset and scale each own a part of the element's transform, so neither
+    // erases the other or an animation's rotation, whichever writes last.
     const props = this.properties as any
-    if (props.position && isHTMLElementRuntimeElement(element)) {
-      this.applyAbsolutePosition(element as HTMLElement, props.position)
+    if (props.offset && hasStyleTarget(element)) {
+      this.applyOffsetTransform(element, props.offset)
+    }
+
+    if (props.scaleEffect && hasStyleTarget(element)) {
+      this.applyScaleTransform(element, props.scaleEffect)
     }
 
     return undefined
   }
 
-  // Layout modifier implementations have been migrated to @tachui/modifiers/layout
-
-  private applyAbsolutePosition(
-    element: HTMLElement,
-    position: { x?: any; y?: any }
+  private applyOffsetTransform(
+    element: { style: Record<string, string> },
+    offset: { x?: any; y?: any }
   ): void {
-    const { x, y } = position
-    const currentX = x ?? 'auto'
-    const currentY = y ?? 'auto'
+    const { x, y } = offset
+    const write = (currentX: any, currentY: any) =>
+      setTransformPart(
+        element,
+        'offset',
+        `translate(${this.toCSSValue(currentX)}, ${this.toCSSValue(currentY)})`
+      )
 
-    // Position-based transform (not a scale or offset, but absolute positioning)
-    element.style.left = this.toCSSValue(currentX)
-    element.style.top = this.toCSSValue(currentY)
+    if (isSignal(x) || isComputed(x) || isSignal(y) || isComputed(y)) {
+      createEffect(() => {
+        write(
+          isSignal(x) || isComputed(x) ? x() : (x ?? 0),
+          isSignal(y) || isComputed(y) ? y() : (y ?? 0)
+        )
+      })
+    } else {
+      write(x ?? 0, y ?? 0)
+    }
+  }
+
+  private applyScaleTransform(
+    element: { style: Record<string, string> },
+    scaleEffect: { x?: any; y?: any; anchor?: TransformAnchor }
+  ): void {
+    const { x, y, anchor } = scaleEffect
+    const scaleX = x ?? 1
+    // Uniform scaling when y is not given.
+    const scaleY = y ?? scaleX
+    // The anchor travels inside the part rather than through
+    // `transform-origin`, so another effect can keep an anchor of its own.
+    const write = (currentX: any, currentY: any) =>
+      setTransformPart(
+        element,
+        'scale',
+        anchorTransform(`scale(${currentX}, ${currentY})`, anchor)
+      )
+
+    if (
+      isSignal(scaleX) ||
+      isComputed(scaleX) ||
+      isSignal(scaleY) ||
+      isComputed(scaleY)
+    ) {
+      createEffect(() => {
+        write(
+          isSignal(scaleX) || isComputed(scaleX) ? scaleX() : scaleX,
+          isSignal(scaleY) || isComputed(scaleY) ? scaleY() : scaleY
+        )
+      })
+    } else {
+      write(scaleX, scaleY)
+    }
   }
 
   private computeLayoutStyles(
@@ -908,14 +954,6 @@ export class LayoutModifier extends BaseModifier {
       styles['--layout-priority'] = String(priority)
     }
 
-    // Offset modifier (SwiftUI .offset(x, y))
-    // Note: Offset handling is done in the apply method with proper reactive support
-    // This is just for setting up the basic structure
-    if (props.offset) {
-      // The actual transform application happens in apply() method
-      // to handle both reactive and static values properly
-    }
-
     // Aspect Ratio modifier (SwiftUI .aspectRatio(ratio, contentMode))
     if (props.aspectRatio) {
       const { ratio, contentMode } = props.aspectRatio
@@ -931,6 +969,21 @@ export class LayoutModifier extends BaseModifier {
           styles.objectFit = 'contain'
         }
       }
+    }
+
+    // Absolute positioning (SwiftUI .position(x, y)). A signal coordinate is
+    // bound by applyStyles, so left and top follow it.
+    if (props.position) {
+      const { x, y } = props.position
+      styles.position = 'absolute'
+      styles.left = isSignal(x) || isComputed(x) ? x : this.toCSSValue(x ?? 0)
+      styles.top = isSignal(y) || isComputed(y) ? y : this.toCSSValue(y ?? 0)
+    }
+
+    // An explicit zIndex follows layoutPriority, so it wins over the z-index
+    // that priority maps to.
+    if (props.zIndex !== undefined) {
+      styles.zIndex = props.zIndex
     }
 
     // Fixed Size modifier (SwiftUI .fixedSize())
@@ -1042,7 +1095,11 @@ export class AppearanceModifier extends BaseModifier {
     )
   }
 
-  private computeAppearanceStyles(props: any): CSSStyleProperties {
+  /**
+   * The styles this modifier writes. Protected so `@tachui/modifiers` can add
+   * the shadow and clip branches on top without core carrying them.
+   */
+  protected computeAppearanceStyles(props: any): CSSStyleProperties {
     const styles: CSSStyleProperties = {}
 
     // Colors (skip Assets - they're handled reactively in applyAssetBasedStyles)
@@ -1101,9 +1158,8 @@ export class AppearanceModifier extends BaseModifier {
       if (border.style) styles.borderStyle = border.style
     }
 
-    // Shadow functionality moved to @tachui/modifiers/effects entry point
-
-    // Clipped and Clip Shape modifiers moved to @tachui/modifiers package
+    // Shadow, clipped and clipShape are added by the AppearanceModifier
+    // subclass in @tachui/modifiers.
 
     // Visual Effects (Phase 2 - Epic: Butternut)
     const filters: string[] = []
