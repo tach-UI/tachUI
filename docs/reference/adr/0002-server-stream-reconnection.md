@@ -22,8 +22,8 @@ reconnects unless something asks it to.
 #289 defines the adapters' contract, and this record treats that contract as its
 dependency. The adapters are in-tree
 ([`packages/connectrpc/src/stream.ts`](../../../packages/connectrpc/src/stream.ts)) but
-`@tachui/connectrpc` is still `private` and has not been published: it reaches npm at the
-0.12.0 line move ([README, Status](../../../packages/connectrpc/README.md#status)). Nothing
+`@tachui/connectrpc` is still `private` and has not been published: it reaches npm after
+0.13.0 ships ([README, Status](../../../packages/connectrpc/README.md#status)). Nothing
 below describes behavior any application has received yet. It describes the contract #289
 settled, and if that contract changes before or after release, this record has to be read
 again against the change.
