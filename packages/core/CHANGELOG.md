@@ -1,5 +1,23 @@
 # @tachui/core
 
+## 0.11.7
+
+### Patch Changes
+
+- [#426](https://github.com/tach-UI/tachUI/pull/426) [`a01d7f9`](https://github.com/tach-UI/tachUI/commit/a01d7f90bf72de84ef448960821b7932fbce81a0) Thanks [@whoughton](https://github.com/whoughton)! - A computed that throws while it is re-evaluated after a computed it reads has
+  changed no longer escapes as an uncaught exception. The failure is isolated the
+  way a throwing computation in an update flush already is: its readers see the
+  error when they read it, and it recovers once its sources change again.
+
+- [#417](https://github.com/tach-UI/tachUI/pull/417) [`1e8bf73`](https://github.com/tach-UI/tachUI/commit/1e8bf73780e3ae779ca4e6d679409b98f1cd619d) Thanks [@whoughton](https://github.com/whoughton)! - `createTimeout` and `createInterval` return `ReturnType<typeof setTimeout>` and
+  `ReturnType<typeof setInterval>` instead of `NodeJS.Timeout`, so a consumer
+  without `@types/node` that type-checks its dependencies no longer fails on
+  `Cannot find namespace 'NodeJS'`. In an environment with Node's types the
+  returned value's type is unchanged.
+- Updated dependencies []:
+  - @tachui/registry@0.11.7
+  - @tachui/types@0.11.7
+
 ## 0.11.6
 
 ### Patch Changes
