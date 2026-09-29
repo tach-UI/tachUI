@@ -1,5 +1,5 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
-// Generated at: 2026-09-29T04:30:01.417Z
+// Generated at: 2026-09-29T16:38:47.299Z
 // Plugins: @tachui/modifiers@0.11.7 (verified), @tachui/responsive@0.11.7 (verified), @tachui/grid@0.11.7 (verified), @tachui/viewport@0.11.7 (verified), @tachui/mobile@0.11.7 (verified), @tachui/forms@0.11.7 (verified), @tachui/fragments@0.11.7 (verified)
 //
 // Run `pnpm --filter @tachui/core generate-modifier-types` to regenerate.
@@ -79,10 +79,10 @@ declare module '@tachui/core/modifiers/types' {
     filterDropShadow(shadow: string): ModifierBuilder<T>;
     focus(styles: HoverStyles): ModifierBuilder<T>;
     font(options: FontOptions | string): ModifierBuilder<T>;
-    fontFamily(family: any): ModifierBuilder<T>;
+    fontFamily(family: string | AssetValue): ModifierBuilder<T>;
     fontPreset(preset: string): ModifierBuilder<T>;
     fontSize(size: any): ModifierBuilder<T>;
-    fontStyle(style: any): ModifierBuilder<T>;
+    fontStyle(style: FontStyle): ModifierBuilder<T>;
     fontWeight(weight: any): ModifierBuilder<T>;
     foregroundColor(color: string | any): ModifierBuilder<T>;
     glassmorphism(intensity?: GlassmorphismIntensity, customFallback?: ColorValue): ModifierBuilder<T>;
@@ -480,10 +480,10 @@ declare module '@tachui/core/modifiers/types' {
     filterDropShadow(shadow: string): this;
     focus(styles: HoverStyles): this;
     font(options: FontOptions | string): this;
-    fontFamily(family: any): this;
+    fontFamily(family: string | AssetValue): this;
     fontPreset(preset: string): this;
     fontSize(size: any): this;
-    fontStyle(style: any): this;
+    fontStyle(style: FontStyle): this;
     fontWeight(weight: any): this;
     foregroundColor(color: string | any): this;
     glassmorphism(intensity?: GlassmorphismIntensity, customFallback?: ColorValue): this;

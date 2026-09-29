@@ -27,7 +27,9 @@ import type {
 import type {
   AppearanceModifierProps as TypesAppearanceProps,
   LayoutModifierProps as TypesLayoutProps,
+  ModifierBuilder as TypesModifierBuilder,
 } from '@tachui/types/modifiers'
+import type { AssetValue } from '@tachui/types/assets'
 import { Grid } from '@tachui/grid'
 import '@tachui/viewport'
 import '@tachui/mobile'
@@ -35,7 +37,38 @@ import '@tachui/forms'
 import '@tachui/navigation'
 import '@tachui/fragments'
 
+type TextComponent = ReturnType<typeof Text>
+
 describe('modifier builder types', () => {
+  // With a string index signature, `string` is a key of the builder and
+  // every name resolves to a method.
+  it('declares no string index signature', () => {
+    expectTypeOf<string extends keyof TypesModifierBuilder ? true : false>()
+      .toEqualTypeOf<false>()
+    expectTypeOf<string extends keyof ModifierBuilder ? true : false>()
+      .toEqualTypeOf<false>()
+    expectTypeOf<string extends keyof TextComponent ? true : false>()
+      .toEqualTypeOf<false>()
+  })
+
+  // `any` takes every argument, so were the component, the builder or a
+  // method `any`, each call this file expects to compile would compile
+  // without checking anything.
+  it('types the chain rather than falling back to any', () => {
+    expectTypeOf(Text('x')).not.toBeAny()
+    expectTypeOf(Text('x').modifier).not.toBeAny()
+
+    expectTypeOf(Text('x').blur).not.toBeAny()
+    expectTypeOf(Text('x').role).not.toBeAny()
+    expectTypeOf(Text('x').overlay).not.toBeAny()
+    expectTypeOf(Text('x').modifier.blur).not.toBeAny()
+    expectTypeOf(Text('x').modifier.role).not.toBeAny()
+    expectTypeOf(Text('x').modifier.overlay).not.toBeAny()
+
+    expectTypeOf<Parameters<TextComponent['blur']>[0]>().not.toBeAny()
+    expectTypeOf<Parameters<TextComponent['role']>[0]>().not.toBeAny()
+  })
+
   it('rejects a method no package registers', () => {
     // @ts-expect-error misspelled
     Text('x').paddin(4)
@@ -215,6 +248,30 @@ describe('modifier builder types', () => {
     // @ts-expect-error not a named weight
     const badFont: NonNullable<ModifiersAppearanceProps['font']> = { weight: 'heavy' }
     void badFont
+  })
+
+  // These took `any`: fontFamily and fontStyle from their factories, and
+  // scroll from a declaration in `@tachui/types` that shadowed its factory.
+  it('types .fontFamily(), .fontStyle() and .scroll() from what they apply', () => {
+    const asset = {} as AssetValue
+
+    expectTypeOf<Parameters<TextComponent['fontFamily']>[0]>().not.toBeAny()
+    expectTypeOf<Parameters<TextComponent['fontStyle']>[0]>().not.toBeAny()
+    expectTypeOf<Parameters<TextComponent['scroll']>[0]>().not.toBeAny()
+
+    Text('a').fontFamily('system-ui, sans-serif').fontFamily(asset)
+    Text('b').fontStyle('italic').fontStyle('oblique').fontStyle('normal')
+    Text('c').scroll({ behavior: 'smooth', margin: { top: 8 } })
+    Text('d').modifier.fontFamily('monospace').fontStyle('italic').build()
+
+    // @ts-expect-error a font family is a string or a font asset
+    Text('x').fontFamily(12)
+    // @ts-expect-error not a font style
+    Text('x').fontStyle('slanted')
+    // @ts-expect-error not a scroll behavior
+    Text('x').scroll({ behavior: 'instant' })
+    // @ts-expect-error scroll takes a configuration
+    Text('x').scroll('smooth')
   })
 
   it('types every basic modifier the package registers', () => {

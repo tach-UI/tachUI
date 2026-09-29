@@ -8,9 +8,8 @@
  * as `string | number | undefined` per value, while the `CSSStyleProperties`
  * interface beside it, and every typed modifier, took a `Signal` too — so the
  * one place without a typed alternative rejected reactive values. The
- * `@ts-expect-error` lines keep this from passing vacuously: the builder in
- * `@tachui/types` has a `[key: string]: any` fallback, so a looser import
- * here would accept anything.
+ * `@ts-expect-error` lines keep this from passing vacuously: were `.css()`
+ * typed `any`, as every builder method once was, it would accept anything.
  */
 
 import { describe, expectTypeOf, it } from 'vitest'

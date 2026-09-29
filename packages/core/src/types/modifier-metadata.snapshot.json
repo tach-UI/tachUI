@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-29T04:30:01.417Z",
+  "generatedAt": "2026-09-29T16:38:47.299Z",
   "totalModifiers": 283,
   "categories": {
     "accessibility": [
@@ -470,7 +470,7 @@
         "nameKind": "string",
         "plugin": "@tachui/modifiers",
         "priority": 120,
-        "signature": "(family: any): this",
+        "signature": "(family: string | AssetValue): this",
         "category": "appearance"
       },
       {
@@ -494,7 +494,7 @@
         "nameKind": "string",
         "plugin": "@tachui/modifiers",
         "priority": 120,
-        "signature": "(style: any): this",
+        "signature": "(style: FontStyle): this",
         "category": "appearance"
       },
       {
@@ -2354,8 +2354,8 @@
     "totalModifiers": 283,
     "duplicateNames": [],
     "orphanedReferences": [],
-    "instanceId": "vxv204bd2",
-    "createdAt": 1790656200471,
+    "instanceId": "fmijlykug",
+    "createdAt": 1790699926280,
     "instanceCount": 1
   }
 }
