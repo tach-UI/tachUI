@@ -46,10 +46,10 @@
     "@tachui/core": ">=0.8.32"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
+    "@types/node": "^20.19.43",
     "typescript": "^5.8.0",
-    "vite": "^7.1.1",
-    "vitest": "^3.2.4"
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7"
   },
   "scripts": {
     "dev": "vite build --watch --mode development",

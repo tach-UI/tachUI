@@ -81,11 +81,11 @@
   "devDependencies": {
     "@tachui/core": "workspace:*",
     "@tachui/primitives": "workspace:*",
-    "@types/node": "^20.0.0",
-    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.19.43",
+    "@playwright/test": "^1.63.0",
     "typescript": "^5.8.0",
-    "vite": "^7.1.1",
-    "vitest": "^3.2.4"
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7"
   },
   "keywords": [
     "tachui",
