@@ -619,6 +619,7 @@ export interface ModifierBuilderBase<
 
   // Interaction modifiers
   onTap(handler: (event: MouseEvent) => void): this
+  onHover(handler: (isHovered: boolean) => void): this
   onFocus(handler: (isFocused: boolean) => void): this
   onBlur(handler: (isFocused: boolean) => void): this
   onKeyDown(handler: (event: KeyboardEvent) => void): this

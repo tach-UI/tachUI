@@ -104,6 +104,20 @@ describe('modifier builder types', () => {
     VStack({ children: [Text('a').modifier.padding(4)] })
   })
 
+  it('chains .onHover() on `.modifier` with a boolean callback', () => {
+    VStack({ children: [
+      Text('a')
+        .modifier.onHover(hovered => {
+          expectTypeOf(hovered).toEqualTypeOf<boolean>()
+        })
+        .onTap(() => {})
+        .build(),
+    ] })
+
+    // @ts-expect-error the callback receives a boolean
+    Text('x').modifier.onHover((hovered: string) => hovered)
+  })
+
   // `.border(width, color, style)` was typed at no chain position, although
   // the standalone factory declared it.
   it('takes .border() with a style at every chain position', () => {

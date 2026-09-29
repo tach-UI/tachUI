@@ -576,6 +576,11 @@ export class ModifierBuilderImpl<
     return this as unknown as ModifierBuilder<T>
   }
 
+  onHover(handler: (isHovered: boolean) => void): ModifierBuilder<T> {
+    this.modifiers.push(createRegistryModifier('onHover', handler))
+    return this as unknown as ModifierBuilder<T>
+  }
+
   onFocus(handler: (isFocused: boolean) => void): ModifierBuilder<T> {
     this.modifiers.push(createRegistryModifier('onFocus', handler))
     return this as unknown as ModifierBuilder<T>
