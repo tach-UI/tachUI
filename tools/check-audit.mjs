@@ -31,8 +31,12 @@ export function parseAuditPaths(reportText) {
   for (const rawLine of reportText.replace(ANSI_PATTERN, '').split('\n')) {
     const header = rawLine.match(GROUP_HEADER)
     if (header) {
-      currentPaths = []
-      pathsByPackage.set(header[1], currentPaths)
+      // A package can head more than one group (one per vulnerable range);
+      // keep every group's paths so none is dropped from the exemption check.
+      if (!pathsByPackage.has(header[1])) {
+        pathsByPackage.set(header[1], [])
+      }
+      currentPaths = pathsByPackage.get(header[1])
       continue
     }
     if (!rawLine.trim()) {

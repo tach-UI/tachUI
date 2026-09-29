@@ -42,6 +42,23 @@ describe('parseAuditPaths', () => {
     ])
     expect(paths.get('ws')).toEqual(['workspace:@tachui/core › jsdom'])
   })
+
+  it('keeps the paths of every group when a package heads more than one', () => {
+    const repeated = [
+      'ws  >=7.0.0 <7.5.10',
+      '  workspace:@tachui/cli › some-server',
+      '  high: ws: Memory exhaustion DoS - https://github.com/advisories/GHSA-old',
+      '',
+      'ws  >=8.0.0 <8.20.1',
+      '  workspace:@tachui/core › jsdom',
+      '  high: ws: Memory exhaustion DoS - https://github.com/advisories/GHSA-96hv-2xvq-fx4p',
+    ].join('\n')
+
+    expect(parseAuditPaths(repeated).get('ws')).toEqual([
+      'workspace:@tachui/cli › some-server',
+      'workspace:@tachui/core › jsdom',
+    ])
+  })
 })
 
 describe('findBlockingAdvisories', () => {
@@ -81,6 +98,21 @@ describe('findBlockingAdvisories', () => {
     const advisories = { ws: [advisory('high', 'GHSA-96hv-2xvq-fx4p')] }
 
     expect(findBlockingAdvisories(advisories, parseAuditPaths(mixed))).toHaveLength(1)
+  })
+
+  it('flags a high advisory when a repeated package group reaches it outside jsdom', () => {
+    const repeated = [
+      'ws  >=7.0.0 <7.5.10',
+      '  workspace:@tachui/cli › some-server',
+      '  high: ws: Memory exhaustion DoS - https://github.com/advisories/GHSA-old',
+      '',
+      'ws  >=8.0.0 <8.20.1',
+      '  workspace:@tachui/core › jsdom',
+      '  high: ws: Memory exhaustion DoS - https://github.com/advisories/GHSA-96hv-2xvq-fx4p',
+    ].join('\n')
+    const advisories = { ws: [advisory('high', 'GHSA-96hv-2xvq-fx4p')] }
+
+    expect(findBlockingAdvisories(advisories, parseAuditPaths(repeated))).toHaveLength(1)
   })
 
   it('flags a high advisory whose paths could not be parsed', () => {
