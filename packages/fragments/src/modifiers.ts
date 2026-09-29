@@ -4,7 +4,13 @@ import type { ComponentInstance } from '@tachui/core/runtime/types'
 import type { FragmentMarker } from '@tachui/core/runtime/types'
 import type { ModifierFactory } from '@tachui/core/modifiers/types'
 import type { FragmentSnapshotHandlers } from './types'
-import { BaseModifier, createModifierRegistry, ModifierPriority } from '@tachui/core/modifiers'
+import {
+  BaseModifier,
+  ModifierPriority,
+  registerModifierWithMetadata,
+} from '@tachui/core/modifiers'
+import { fragmentModifierSignatures } from './modifier-signatures.generated'
+import { TACHUI_PACKAGE_VERSION } from './version'
 
 function resolveComponentName(componentInstance?: ComponentInstance): string {
   if (!componentInstance) return 'Fragment'
@@ -87,18 +93,41 @@ export function snapshot(properties: FragmentSnapshotHandlers): SnapshotModifier
   return new SnapshotModifier(properties)
 }
 
+const FRAGMENTS_PLUGIN_INFO = {
+  name: '@tachui/fragments',
+  version: TACHUI_PACKAGE_VERSION,
+  author: 'TachUI Team',
+  verified: true,
+}
+
 export function registerFragmentModifiers(): void {
-  const registry = createModifierRegistry()
+  registerModifierWithMetadata(
+    'interactive',
+    () => interactive(),
+    {
+      category: 'interaction',
+      priority: ModifierPriority.INTERACTION,
+      signature: fragmentModifierSignatures.interactive,
+      description: 'Marks the component as a fragment that hydrates on the client.',
+    },
+    undefined,
+    FRAGMENTS_PLUGIN_INFO,
+  )
 
-  if (!registry.has('interactive')) {
-    registry.register('interactive', () => interactive())
-  }
-
-  if (!registry.has('snapshot')) {
-    const snapshotFactory: ModifierFactory<FragmentSnapshotHandlers> = props =>
-      snapshot(props as unknown as FragmentSnapshotHandlers)
-    registry.register('snapshot', snapshotFactory)
-  }
+  const snapshotFactory: ModifierFactory<FragmentSnapshotHandlers> = props =>
+    snapshot(props as unknown as FragmentSnapshotHandlers)
+  registerModifierWithMetadata(
+    'snapshot',
+    snapshotFactory,
+    {
+      category: 'interaction',
+      priority: ModifierPriority.INTERACTION,
+      signature: fragmentModifierSignatures.snapshot,
+      description: 'Captures and restores fragment state across hydration.',
+    },
+    undefined,
+    FRAGMENTS_PLUGIN_INFO,
+  )
 }
 
 // Type the fragment modifiers on the builder, from their factories, so they

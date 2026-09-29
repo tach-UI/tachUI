@@ -7,12 +7,7 @@
 
 // Registry registration for basic modifiers
 import { globalModifierRegistry } from '@tachui/registry'
-import type {
-  ModifierMetadata,
-  ModifierRegistry,
-  PluginInfo,
-} from '@tachui/registry'
-import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import type { ModifierRegistry } from '@tachui/registry'
 import type { ComponentInstance } from '@tachui/types/runtime'
 import type {
   ModifierFactoriesOf,
@@ -22,7 +17,15 @@ import type {
 import type { PaddingBuilderMethods } from './padding'
 import type { MarginBuilderMethods } from './margin'
 import type { AsHTMLBuilderMethods } from '../utility/as-html'
-import { TACHUI_PACKAGE_VERSION } from '../version'
+import {
+  MODIFIERS_PLUGIN_INFO,
+  registerModifierList,
+  type ModifierMetadataOverride,
+} from '../registration'
+import {
+  basicModifierCategories,
+  basicModifierSignatures,
+} from './signatures.generated'
 
 // Import specific factory functions to register them
 import {
@@ -447,58 +450,42 @@ type RegisterOptions = {
   registry?: ModifierRegistry
 }
 
-const MODIFIERS_PLUGIN_INFO: PluginInfo = {
-  name: '@tachui/modifiers',
-  version: TACHUI_PACKAGE_VERSION,
-  author: 'tachUI Team',
-  verified: true,
-}
-
 // The gesture modifiers carry their own event wiring and teardown, outside
-// core's InteractionModifier, and register with metadata.
-const gestureModifierMetadata: Record<
-  string,
-  Omit<ModifierMetadata, 'name' | 'plugin'>
-> = {
+// core's InteractionModifier, and describe themselves here. Their signatures
+// are derived like every other entry's.
+const gestureModifierMetadata: Record<string, ModifierMetadataOverride> = {
   onLongPressGesture: {
     category: 'interaction',
     priority: 85,
-    signature: '(options: OnLongPressGestureOptions) => Modifier',
     description:
       'Calls perform after the pointer is held for minimumDuration without moving past maximumDistance.',
   },
   keyboardShortcut: {
     category: 'interaction',
     priority: 80,
-    signature: '(options: KeyboardShortcutOptions) => Modifier',
     description:
       'Calls action when the key is pressed with the given modifier keys.',
   },
   focused: {
     category: 'interaction',
     priority: 75,
-    signature: '(focused: boolean | Signal<boolean>) => Modifier',
     description: 'Focuses or blurs the element, following a signal if given.',
   },
   focusable: {
     category: 'interaction',
     priority: 75,
-    signature:
-      "(isFocusable?: boolean, interactions?: ('activate' | 'edit')[]) => Modifier",
     description:
       'Makes the element focusable, with optional keyboard activation or editing.',
   },
   onContinuousHover: {
     category: 'interaction',
     priority: 70,
-    signature: '(options: OnContinuousHoverOptions) => Modifier',
     description:
       'Reports the pointer location while it hovers the element, and null when it leaves.',
   },
   allowsHitTesting: {
     category: 'interaction',
     priority: 95,
-    signature: '(enabled: boolean) => Modifier',
     description:
       'When false, pointer events pass through the element to what is behind it.',
   },
@@ -509,20 +496,14 @@ export function registerBasicModifiers(options?: RegisterOptions): void {
 
   targetRegistry.registerPlugin?.(MODIFIERS_PLUGIN_INFO)
 
-  basicModifierRegistrations.forEach(([name, factory]) => {
-    const metadata = gestureModifierMetadata[name]
-    if (metadata) {
-      registerModifierWithMetadata(
-        name,
-        factory,
-        metadata,
-        targetRegistry,
-        MODIFIERS_PLUGIN_INFO
-      )
-    } else if (!targetRegistry.has(name)) {
-      targetRegistry.register(name, factory as any)
-    }
-  })
+  registerModifierList(
+    basicModifierRegistrations,
+    {
+      signatures: basicModifierSignatures,
+      categories: basicModifierCategories,
+    },
+    { registry: targetRegistry, overrides: gestureModifierMetadata },
+  )
 }
 
 // Register with global registry on module load

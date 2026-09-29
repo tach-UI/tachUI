@@ -15,7 +15,11 @@ import type {
   ModifierRegistrationList,
 } from '@tachui/types/modifiers'
 import type { BackdropFilterBuilderMethods } from './backdrop'
-import { globalModifierRegistry } from '@tachui/registry'
+import { registerModifierList } from '../registration'
+import {
+  effectModifierCategories,
+  effectModifierSignatures,
+} from './signatures.generated'
 
 // Import specific factory functions to register them
 import {
@@ -240,10 +244,9 @@ declare module '@tachui/types/modifiers' {
  * `has()`.
  */
 export function registerEffectModifiers(): void {
-  effectRegistrations.forEach(([name, factory]) => {
-    if (!globalModifierRegistry.has(name)) {
-      globalModifierRegistry.register(name, factory as any)
-    }
+  registerModifierList(effectRegistrations, {
+    signatures: effectModifierSignatures,
+    categories: effectModifierCategories,
   })
 }
 

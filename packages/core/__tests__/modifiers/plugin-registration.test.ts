@@ -29,4 +29,40 @@ describe('plugin modifier registration', () => {
     const conflicts = registry.getConflicts()
     expect(conflicts.size).toBe(0)
   })
+
+  it('registers every plugin modifier with a signature derived from its factory', () => {
+    const registry = createIsolatedRegistry()
+
+    registerBasicModifiers({ registry })
+    registerFormsModifiers({ registry })
+    registerGridModifiers({ registry })
+    registerResponsiveModifiers({ registry })
+    registerMobileModifiers({ registry })
+    registerViewportModifiers({ registry })
+
+    const metadata = registry.getAllMetadata()
+    expect(metadata.length).toBe(registry.list().length)
+    for (const entry of metadata) {
+      expect(entry.signature, String(entry.name)).toMatch(/^\(.*\): this$/)
+    }
+
+    expect(registry.getMetadata('placeholder')?.signature).toBe(
+      '(value: PlaceholderValue): this',
+    )
+    expect(registry.getMetadata('gridCellColumns')?.signature).toBe(
+      '(span: ReactiveNumber, start?: ReactiveNumber): this',
+    )
+    expect(registry.getMetadata('responsive')?.signature).toBe(
+      '(config: ResponsiveStyleConfig): this',
+    )
+    expect(registry.getMetadata('refreshable')?.signature).toBe(
+      '(options: RefreshableOptions): this',
+    )
+    expect(registry.getMetadata('onAppear')?.signature).toBe(
+      '(handler: () => void): this',
+    )
+    expect(registry.getMetadata('onAppear')?.description).toBe(
+      'Executes a callback when the component enters the viewport.',
+    )
+  })
 })

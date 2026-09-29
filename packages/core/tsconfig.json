@@ -24,7 +24,9 @@
     "src/assets/test-*.ts",
     "src/assets/usage-example.ts",
     "src/modifiers/examples/",
-    "src/components/examples/"
+    "src/components/examples/",
+    // Generator artifact; see tsconfig.build.json.
+    "src/types/generated-modifiers.d.ts"
   ]
   // "references": [
   //   {

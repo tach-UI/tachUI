@@ -47,9 +47,24 @@ function ensurePluginRegistered(registry: ModifierRegistry, plugin: string) {
 }
 
 type ModifierSignature = ReturnType<ModifierParameterRegistry['getAllModifiers']>[number]
-type ModifierParameter = ModifierSignature['parameters'][number]
 
-function buildSignature(parameters: ModifierParameter[] | undefined): string {
+/**
+ * The part of a documented modifier parameter that a signature is built from.
+ * The signature deriver in `packages/core/scripts` produces the same shape
+ * from each registered factory's declaration.
+ */
+export type SignatureParameter = Pick<
+  ModifierSignature['parameters'][number],
+  'name' | 'type' | 'required'
+>
+
+/**
+ * Build the metadata signature for a modifier from its parameters, in the
+ * `(name: Type, other?: Type): this` form the type generator emits.
+ */
+export function buildSignature(
+  parameters: readonly SignatureParameter[] | undefined,
+): string {
   if (!parameters || parameters.length === 0) {
     return '(): this'
   }

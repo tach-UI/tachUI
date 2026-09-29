@@ -11,6 +11,7 @@ import { registerModifierWithMetadata } from '@tachui/modifiers'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { TACHUI_PACKAGE_VERSION } from '../version'
 import { refreshable } from './gestures'
+import { mobileModifierSignatures } from './signatures.generated'
 
 export { refreshable } from './gestures'
 export type { RefreshableOptions } from './types'
@@ -25,7 +26,7 @@ const MOBILE_PLUGIN_INFO: PluginInfo = {
 const refreshableMetadata = {
   category: 'interaction' as const,
   priority: 120,
-  signature: '(options: RefreshableOptions) => Modifier',
+  signature: mobileModifierSignatures.refreshable,
   description:
     'Adds pull-to-refresh gesture support with built-in loading indicator management.',
 }

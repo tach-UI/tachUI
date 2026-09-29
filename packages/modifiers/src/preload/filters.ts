@@ -9,7 +9,11 @@ import type {
   ModifierMethodsOf,
   ModifierRegistrationList,
 } from '@tachui/types/modifiers'
-import { globalModifierRegistry } from '@tachui/registry'
+import { registerModifierList } from '../registration'
+import {
+  filterModifierCategories,
+  filterModifierSignatures,
+} from './filters.signatures.generated'
 import {
   blackAndWhite,
   blur,
@@ -73,10 +77,9 @@ declare module '@tachui/types/modifiers' {
     extends ModifierMethodsOf<ModifierFactoriesOf<typeof filterRegistrations>> {}
 }
 
-filterRegistrations.forEach(([name, factory]) => {
-  if (!globalModifierRegistry.has(name)) {
-    globalModifierRegistry.register(name, factory as any)
-  }
+registerModifierList(filterRegistrations, {
+  signatures: filterModifierSignatures,
+  categories: filterModifierCategories,
 })
 
 export * from '../effects/filters'

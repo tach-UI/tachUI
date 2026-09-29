@@ -4,6 +4,7 @@ import { registerModifierWithMetadata } from '@tachui/core/modifiers'
 import { createEffect, isComputed, isSignal, type Signal } from '@tachui/core'
 import { validateValue } from '../validation'
 import type { ValidationResult, ValidationRule } from '../types'
+import { formsModifierSignatures } from './signatures.generated'
 
 const validationPriority = 74
 
@@ -145,7 +146,7 @@ function createValidationModifier(
 const VALIDATION_METADATA = {
   category: 'interaction' as const,
   priority: validationPriority,
-  signature: '(...rules: ValidationRule[]) => Modifier',
+  signature: formsModifierSignatures.validation,
   description:
     'Attaches validation rules to form inputs, wiring blur/input handlers and ARIA state.',
 }

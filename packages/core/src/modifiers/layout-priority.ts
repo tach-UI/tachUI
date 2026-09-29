@@ -4,13 +4,14 @@ import { ModifierPriority } from './types'
 import type { Modifier } from './types'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { registerModifierWithMetadata } from './registration-utils'
+import { coreModifierSignatures } from './signatures.generated'
 
 type LayoutPriorityValue = number | Signal<number>
 
 const metadata = {
   category: 'layout' as const,
   priority: ModifierPriority.LAYOUT,
-  signature: '(value: number | Signal<number>) => Modifier',
+  signature: coreModifierSignatures.layoutPriority,
   description:
     'Hints layout engines to prefer this component when resolving flexible sizing.',
 }

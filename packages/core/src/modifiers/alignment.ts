@@ -3,11 +3,12 @@ import { ModifierPriority } from './types'
 import type { LayoutModifierProps, Modifier } from './types'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { registerModifierWithMetadata } from './registration-utils'
+import { coreModifierSignatures } from './signatures.generated'
 
 const metadata = {
   category: 'layout' as const,
   priority: ModifierPriority.LAYOUT,
-  signature: '(value: LayoutModifierProps["alignment"]) => Modifier',
+  signature: coreModifierSignatures.alignment,
   description: 'Sets the alignment hint for stack and container layouts.',
 }
 
