@@ -39,6 +39,8 @@ function versionParts(version: string): number[] {
     .map(part => Number.parseInt(part, 10))
 }
 
+// A prerelease sorts below its release, so 8.5.23-alpha.1 is below a floor of
+// 8.5.23 even though its numeric parts match.
 function isBelow(version: string, floor: string): boolean {
   const actual = versionParts(version)
   const minimum = versionParts(floor)
@@ -47,7 +49,7 @@ function isBelow(version: string, floor: string): boolean {
       return actual[index] < minimum[index]
     }
   }
-  return false
+  return version.includes('-')
 }
 
 function unpatchedVersions(lock: string, packageName: string): string[] {
@@ -97,5 +99,15 @@ describe('lockfile toolchain advisories', () => {
     expect(unpatchedVersions(lock, 'postcss')).toEqual(['8.5.22'])
     // A dependency range is not a resolution.
     expect(lockedVersions(lock, 'nanoid')).toEqual([])
+  })
+
+  it('flags a prerelease of a patched floor version', () => {
+    const lock = [
+      '"postcss": ["postcss@8.5.23-alpha.1", "", {}, "sha512-a"],',
+      '"other/postcss": ["postcss@8.5.24-beta.0", "", {}, "sha512-b"],',
+      '"patched/postcss": ["postcss@8.5.23", "", {}, "sha512-c"],',
+    ].join('\n')
+
+    expect(unpatchedVersions(lock, 'postcss')).toEqual(['8.5.23-alpha.1'])
   })
 })
