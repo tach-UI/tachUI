@@ -81,7 +81,7 @@ basis; a new one under a second is almost certainly too tight.
 - **Modifiers**: Chainable `.modifierName()` directly on component instances (e.g. `Text('hi').padding().bold()`); `.modifier()` is an internal method and must not be exposed in public APIs or docs
 - **Reactivity**: Signals/effects from core (SolidJS-like)
 - **Tests**: `__tests__/*.test.ts`, Vitest, high coverage, DOM mocks
-- **Types**: Strict TS, generated modifier types (`generated-modifiers.d.ts`)
+- **Types**: Strict TS; modifier chain methods typed by each registering module's `ModifierBuilder` augmentation
 - **Style**: 2-space indent, meaningful names, no 1-letter vars
 - **Build**: Vite per package, tree-shakable
 

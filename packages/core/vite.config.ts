@@ -20,19 +20,6 @@ export default defineConfig(({ mode }) => ({
 
         // Granular exports (for maximum optimization)
         version: resolve(__dirname, 'src/version.ts'),
-        // Subpaths the manifest advertises. Declarations were emitted for all
-        // of these because tsc walks the whole source tree, but vite only
-        // builds what is listed here — so `@tachui/core/build-plugins` and
-        // friends type-checked and then failed to resolve at runtime.
-        'build-plugins/index': resolve(__dirname, 'src/build-plugins/index.ts'),
-        'build-plugins/modifier-types': resolve(
-          __dirname,
-          'src/build-plugins/modifier-types.ts'
-        ),
-        'modifiers/type-generator': resolve(
-          __dirname,
-          'src/modifiers/type-generator.ts'
-        ),
         'bundles/context': resolve(__dirname, 'src/bundles/context.ts'),
         'reactive/index': resolve(__dirname, 'src/reactive/index.ts'),
         'compiler/index': resolve(__dirname, 'src/compiler/index.ts'),
@@ -75,13 +62,6 @@ export default defineConfig(({ mode }) => ({
         }
         // Externalize @tachui packages to avoid circular dependencies
         if (id.startsWith('@tachui/')) {
-          return true
-        }
-        // The build-plugin and type-generator entries are Node-side tooling
-        // consumed by bundlers, not browser code; they import node:fs and
-        // friends. Leaving builtins in means rollup cannot resolve them and
-        // the whole core build fails.
-        if (id.startsWith('node:')) {
           return true
         }
         return false

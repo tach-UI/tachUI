@@ -45,22 +45,3 @@ declare module '@tachui/devtools' {
     ): { valid: boolean; errors: string[] }
   }
 }
-
-declare module '@tachui/core/modifiers/type-generator' {
-  export interface ModifierMetadataSnapshotEntry {
-    plugin: string
-    priority: number
-    category: string
-  }
-
-  export interface ModifierMetadataSnapshotConflict {
-    name: string
-    entries: ModifierMetadataSnapshotEntry[]
-  }
-
-  export interface ModifierMetadataSnapshot {
-    generatedAt: string
-    totalModifiers: number
-    conflicts: ModifierMetadataSnapshotConflict[]
-  }
-}

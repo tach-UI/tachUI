@@ -14,7 +14,7 @@ TachUI provides multiple layers of tooling—from CLI helpers to DevTools integr
   - Modifier registry inspector (categories, conflicts, metadata).
   - Documentation integration—links back to your modifier metadata/README.
   - Enhanced error panels that display the component tree and last applied modifiers.
-- Check the console: DevTools logs when metadata snapshots are missing or stale.
+- Check the console: DevTools logs when modifier metadata is missing.
 
 ## 3. Inspect Lifecycle Warnings
 
@@ -24,8 +24,8 @@ TachUI provides multiple layers of tooling—from CLI helpers to DevTools integr
 
 ## 4. Verify Metadata & Types
 
-- Run `pnpm --filter @tachui/core generate-modifier-types -- --check` to catch stale declaration files.
-- Examine `packages/core/src/types/generated-modifiers.d.ts` if TypeScript reports missing modifiers. Regenerate and commit the file if necessary.
+- If TypeScript reports a missing modifier method, check that the module registering it augments `ModifierBuilder` in `@tachui/types/modifiers` and is imported ([Step 3 of the Modifier Implementation Guide](./guide-modifiers.md#step-3-add-typescript-declarations)).
+- Run `bun run --filter @tachui/core derive-modifier-signatures:check` to catch stale first-party metadata signatures.
 - ESLint with `@tachui/prefer-direct-modifiers` flags lingering legacy builder usage so TypeScript typings stay accurate.
 
 ## 5. Profile Performance Issues
@@ -43,6 +43,6 @@ TachUI provides multiple layers of tooling—from CLI helpers to DevTools integr
 ## 7. When All Else Fails
 
 - Capture the reproduction as a fixture in `packages/core/__tests__` or `packages/primitives/__tests__`—the test runner makes it easier to debug without the full dev server.
-- File an issue with logs from the CLI/DevTools plus the output of `pnpm --filter @tachui/core generate-modifier-types -- --check --fail-on-conflict`.
+- File an issue with logs from the CLI/DevTools and a minimal reproduction.
 
 Combining these techniques should help you isolate most modifier, cloning, and performance issues without resorting to guesswork.

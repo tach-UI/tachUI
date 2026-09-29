@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process'
+import { resolve } from 'node:path'
 import { beforeAll, describe, expect, it } from 'vitest'
 import type ts from 'typescript'
 import {
@@ -5,6 +7,7 @@ import {
   deriveModifiers,
   deriveSignatureTables,
   formatSignatureTable,
+  REPO_ROOT,
   SIGNATURE_SOURCES,
   type SignatureSource,
 } from '../../scripts/derive-modifier-signatures'
@@ -206,4 +209,28 @@ describe('first-party signature sources', () => {
       '(property: string, value: ResponsiveValue<unknown>): this',
     )
   })
+})
+
+describe('derive-modifier-signatures script', () => {
+  const coreDir = resolve(REPO_ROOT, 'packages/core')
+
+  function runScript(...args: string[]) {
+    return spawnSync('bun', ['./scripts/derive-modifier-signatures.ts', ...args], {
+      cwd: coreDir,
+      encoding: 'utf8',
+    })
+  }
+
+  it('passes --check when every committed table matches its factories', () => {
+    const result = runScript('--check')
+    expect(result.stderr).not.toContain('is stale')
+    expect(result.status).toBe(0)
+  }, 120_000)
+
+  it('points generated tables at the script that regenerates them', () => {
+    const [table] = deriveSignatureTables([fixtureList])
+    expect(table.content).toContain(
+      'Run `bun run --filter @tachui/core derive-modifier-signatures` to regenerate.',
+    )
+  }, 60_000)
 })

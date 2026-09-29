@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // Signatures derived from basicModifierRegistrations in packages/modifiers/src/basic/index.ts
 // by packages/core/scripts/derive-modifier-signatures.ts.
-// Run `bun run --filter @tachui/core generate-modifier-types` to regenerate.
+// Run `bun run --filter @tachui/core derive-modifier-signatures` to regenerate.
 
 export const basicModifierSignatures: Readonly<Record<string, string>> = {
   padding: '(optionsOrAll: ReactivePaddingOptions | PaddingValue | Signal<PaddingValue>): this',

@@ -60,7 +60,7 @@ export type SignatureParameter = Pick<
 
 /**
  * Build the metadata signature for a modifier from its parameters, in the
- * `(name: Type, other?: Type): this` form the type generator emits.
+ * `(name: Type, other?: Type): this` form.
  */
 export function buildSignature(
   parameters: readonly SignatureParameter[] | undefined,

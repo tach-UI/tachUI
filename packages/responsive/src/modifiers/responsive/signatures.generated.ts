@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // Signatures derived from responsiveRegistrations in packages/responsive/src/modifiers/responsive/index.ts
 // by packages/core/scripts/derive-modifier-signatures.ts.
-// Run `bun run --filter @tachui/core generate-modifier-types` to regenerate.
+// Run `bun run --filter @tachui/core derive-modifier-signatures` to regenerate.
 
 export const responsiveModifierSignatures: Readonly<Record<string, string>> = {
   responsive: '(config: ResponsiveStyleConfig): this',

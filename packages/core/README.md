@@ -199,41 +199,11 @@ Text('Hello').concat(Text('World'))
 - **CLI Integration**: Use `tachui analyze --concatenation` for optimization insights
 - **Production Ready**: 27 tests passing, handles 250+ files in <500ms
 
-## Modifier Type Generation
+## Typing Modifier Chains
 
-tachUI ships tooling to keep modifier chaining types in sync with the registry.
+Chain methods are typed by the package that registers each modifier: it augments `ModifierBuilder` in `@tachui/types/modifiers` with methods derived from its factories. There is no type-generation step. To type custom modifiers, see [Step 3 of the Modifier Implementation Guide](../../docs/guide/guide-modifiers.md#step-3-add-typescript-declarations).
 
-### One-off generation
-
-```bash
-pnpm --filter @tachui/core generate-modifier-types
-```
-
-### CI verification / conflict detection
-
-```bash
-# Verifies that generated files are up to date
-pnpm --filter @tachui/core generate-modifier-types -- --check
-
-# Optionally fail when metadata conflicts are detected
-pnpm --filter @tachui/core generate-modifier-types -- --check --fail-on-conflict
-```
-
-### Watch mode
-
-```bash
-pnpm --filter @tachui/core generate-modifier-types -- --watch
-```
-
-### Monorepo generation
-
-Generate declarations for multiple packages at once:
-
-```bash
-pnpm --filter @tachui/core generate-modifier-types:monorepo -- --packages core,forms,navigation
-```
-
-The tooling automatically hydrates modifier metadata via `@tachui/modifiers` (for runtime definitions) and `@tachui/devtools` (for parameter signatures/documentation).
+The former modifier type generator has been removed, along with the `generate-modifier-types` scripts and the `@tachui/core/modifiers/type-generator`, `@tachui/core/build-plugins`, `@tachui/core/build-tools`, `@tachui/core/build-plugins/modifier-types` and `@tachui/core/build-tools/modifier-types` subpaths.
 
 ## Plugin Ecosystem
 

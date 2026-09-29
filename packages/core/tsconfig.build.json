@@ -37,11 +37,6 @@
     "src/assets/usage-example.ts",
     "src/modifiers/examples/",
     "src/components/examples/",
-    "src/plugins/old-backup/",
-    // A generator artifact, not source: builder methods are typed by each
-    // registering package's augmentation. It names types it does not import
-    // and declares methods on `ModifiableComponent` that collide with
-    // component props such as `id`, so it cannot join this program.
-    "src/types/generated-modifiers.d.ts"
+    "src/plugins/old-backup/"
   ]
 }

@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // Signatures derived from transformRegistrations in packages/modifiers/src/preload/transforms.ts
 // by packages/core/scripts/derive-modifier-signatures.ts.
-// Run `bun run --filter @tachui/core generate-modifier-types` to regenerate.
+// Run `bun run --filter @tachui/core derive-modifier-signatures` to regenerate.
 
 export const transformModifierSignatures: Readonly<Record<string, string>> = {
   transform: '(value: TransformConfig | Transform3DConfig | string | Signal<string>): this',
