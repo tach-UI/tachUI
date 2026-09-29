@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // Signatures derived from effectRegistrations in packages/modifiers/src/effects/index.ts
 // by packages/core/scripts/derive-modifier-signatures.ts.
-// Run `bun run --filter @tachui/core generate-modifier-types` to regenerate.
+// Run `bun run --filter @tachui/core derive-modifier-signatures` to regenerate.
 
 export const effectModifierSignatures: Readonly<Record<string, string>> = {
   blur: '(radius: number): this',

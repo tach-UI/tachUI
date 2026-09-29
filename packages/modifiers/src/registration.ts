@@ -1,8 +1,8 @@
 /**
  * Registration with metadata for the lists in this package.
  *
- * Every list registers through `registerModifierWithMetadata`, so the type
- * generator sees each modifier's metadata. The signatures and categories come
+ * Every list registers through `registerModifierWithMetadata`, so the registry
+ * holds each modifier's metadata. The signatures and categories come
  * from the generated table beside each list, derived from the registered
  * factories by `packages/core/scripts/derive-modifier-signatures.ts`.
  * Registration itself is unchanged: a name already in the registry keeps its

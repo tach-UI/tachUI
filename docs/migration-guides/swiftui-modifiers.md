@@ -25,11 +25,8 @@ This guide walks through upgrading projects from the legacy `.modifier.*` chaini
    tacho migrate remove-modifier-trigger --pattern "src/**/*.{ts,tsx,js,jsx}"
    ```
 
-3. **Regenerate modifier types**  
-   ```bash
-   pnpm --filter @tachui/core generate-modifier-types
-   ```
-   Commit the updated declaration and snapshot files to keep IDEs in sync.
+3. **Check modifier types**  
+   Chain methods are typed by the packages that register them, so there is nothing to regenerate. Run `tsc --noEmit` to confirm the migrated chains type-check; for custom modifiers, see [Step 3 of the Modifier Implementation Guide](../guide/guide-modifiers.md#step-3-add-typescript-declarations).
 
 4. **Enable the ESLint rule**  
    ```jsonc

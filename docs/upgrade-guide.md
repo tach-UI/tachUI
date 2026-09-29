@@ -38,15 +38,12 @@ This guide summarises the recommended order of operations when adopting the Phas
 
 ## 3. Refresh Type Information
 
-1. Generate the latest modifier declarations:
-   ```bash
-   pnpm --filter @tachui/core generate-modifier-types
-   ```
-2. For multi-package workspaces, hydrate plugin metadata:
-   ```bash
-   pnpm --filter @tachui/core generate-modifier-types:monorepo -- --packages core,forms,grid
-   ```
-3. Commit the updated declaration and snapshot files.
+Modifier chain methods are typed by the packages that register them, so there is nothing to generate. The modifier type generator has been removed, which is a breaking change for anything that used it:
+
+1. Remove imports from the deleted `@tachui/core` subpaths: `@tachui/core/modifiers/type-generator`, `@tachui/core/build-plugins`, `@tachui/core/build-tools`, `@tachui/core/build-plugins/modifier-types` and `@tachui/core/build-tools/modifier-types`. If your Vite config registers `modifierTypesPlugin`, delete it; nothing replaces it.
+2. Remove any `generate-modifier-types` steps from scripts and CI, and delete committed `generated-modifiers.d.ts` / `modifier-metadata.snapshot.json` files.
+3. `tachui modifier-docs conflicts` has been removed with the snapshot it read.
+4. Type your own modifiers by augmenting `ModifierBuilder`, as in [Step 3 of the Modifier Implementation Guide](./guide/guide-modifiers.md#step-3-add-typescript-declarations).
 
 ## 4. Rebuild & Validate
 

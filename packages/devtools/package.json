@@ -55,7 +55,6 @@
   "dependencies": {
     "@tachui/core": "0.11.7",
     "@tachui/primitives": "0.11.7",
-    "@tachui/registry": "0.11.7",
     "magic-string": "^0.30.0"
   },
   "devDependencies": {

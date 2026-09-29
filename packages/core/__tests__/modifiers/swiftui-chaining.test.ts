@@ -3,7 +3,6 @@ import { globalModifierRegistry } from '@tachui/registry'
 import { configureCore } from '../../src/config'
 import { resetProxyCache } from '../../src/modifiers'
 import { withModifiers } from '../../src/components/wrapper'
-import { generateModifierTypes, createModifierMetadataSnapshot } from '../../src/modifiers/type-generator'
 import { ComponentWithCSSClasses } from '../../src/css-classes'
 import type { ComponentInstance, ComponentProps, DOMNode } from '../../src/runtime/types'
 
@@ -152,8 +151,10 @@ describe('SwiftUI-style modifier chaining', () => {
     )
     expect(appliedNames).toEqual(categoryNames.map(entry => entry.name))
 
-    const snapshot = createModifierMetadataSnapshot()
-    expect(Object.keys(snapshot.categories)).toEqual(
+    const registeredCategories = new Set(
+      globalModifierRegistry.getAllMetadata().map(entry => entry.category),
+    )
+    expect(Array.from(registeredCategories)).toEqual(
       expect.arrayContaining(['layout', 'appearance', 'typography', 'testing']),
     )
   })
@@ -185,16 +186,12 @@ describe('SwiftUI-style modifier chaining', () => {
     expect(typeof proxiedResult.render).toBe('function')
   })
 
-  it('emits registered modifiers in the generated type declarations', () => {
-    const modifierName = `phase4Typegen${Date.now().toString(36)}`
+  it('records registered modifiers and their plugin in the registry metadata', () => {
+    const modifierName = `phase4Metadata${Date.now().toString(36)}`
     registerTestModifier(modifierName)
 
-    const declaration = generateModifierTypes()
-    expect(declaration).toContain(modifierName)
-
-    const snapshot = createModifierMetadataSnapshot()
-    const categories = Object.values(snapshot.categories).flat()
-    const entry = categories.find(item => item.name === modifierName)
+    expect(globalModifierRegistry.has(modifierName)).toBe(true)
+    const entry = globalModifierRegistry.getMetadata(modifierName)
     expect(entry).toBeDefined()
     expect(entry?.plugin).toBe('phase4-tests')
   })

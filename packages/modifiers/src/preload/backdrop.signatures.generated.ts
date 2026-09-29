@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // Signatures derived from backdropRegistrations in packages/modifiers/src/preload/backdrop.ts
 // by packages/core/scripts/derive-modifier-signatures.ts.
-// Run `bun run --filter @tachui/core generate-modifier-types` to regenerate.
+// Run `bun run --filter @tachui/core derive-modifier-signatures` to regenerate.
 
 export const backdropModifierSignatures: Readonly<Record<string, string>> = {
   backdropFilter: '(value: BackdropFilterConfig | string, fallbackColor?: ColorValue): this',

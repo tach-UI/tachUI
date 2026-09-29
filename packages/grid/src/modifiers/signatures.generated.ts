@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // Signatures derived from gridModifierRegistrations in packages/grid/src/modifiers/grid.ts
 // by packages/core/scripts/derive-modifier-signatures.ts.
-// Run `bun run --filter @tachui/core generate-modifier-types` to regenerate.
+// Run `bun run --filter @tachui/core derive-modifier-signatures` to regenerate.
 
 export const gridModifierSignatures: Readonly<Record<string, string>> = {
   gridColumnSpan: '(span: ReactiveNumber, start?: ReactiveNumber): this',

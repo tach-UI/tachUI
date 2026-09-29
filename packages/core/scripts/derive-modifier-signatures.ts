@@ -1,26 +1,29 @@
 /**
  * Derive modifier metadata signatures from the registered factories.
  *
- * Every first-party modifier registers with metadata, and the metadata's
- * `signature` is what the type generator writes into
- * `generated-modifiers.d.ts`. Writing those strings by hand drifted from the
- * factories they described, so they are derived instead: the TypeScript
- * compiler reads each factory's declared parameters, the devtools
- * `buildSignature` turns them into the `(name: Type, other?: Type): this` form
- * the generator emits, and the result is written to a table beside the list
- * that registers the factories. The registration reads its signatures from
- * that table.
+ * Every first-party modifier registers with metadata carrying a `signature`,
+ * which tooling such as devtools and the CLI reads. Writing those strings by
+ * hand drifted from the factories they described, so they are derived
+ * instead: the TypeScript compiler reads each factory's declared parameters,
+ * the devtools `buildSignature` turns them into the
+ * `(name: Type, other?: Type): this` form, and the result is written to a
+ * table beside the list that registers the factories. The registration reads
+ * its signatures from that table.
+ *
+ * Chain methods are not typed from these tables: each registering package
+ * augments `ModifierBuilder` from its factories directly.
  *
  * An overloaded factory is described by its implementation signature, which
  * accepts every overload's arguments.
  *
- * Run through `generate-modifier-types`, which derives the tables before it
- * hydrates the registry; `--check` compares instead of writing.
+ * Run through `derive-modifier-signatures`; `--check` compares instead of
+ * writing and exits non-zero when a table is stale.
  */
 
 import { promises as fs } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import process from 'node:process'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import ts from 'typescript'
 
 import {
@@ -560,7 +563,7 @@ export function formatSignatureTable(
     '// AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.',
     `// Signatures derived from ${origin} in ${entry.source}`,
     '// by packages/core/scripts/derive-modifier-signatures.ts.',
-    '// Run `bun run --filter @tachui/core generate-modifier-types` to regenerate.',
+    '// Run `bun run --filter @tachui/core derive-modifier-signatures` to regenerate.',
     '',
     `export const ${entry.exportName}: Readonly<Record<string, string>> = {`,
   ]
@@ -634,7 +637,7 @@ export async function writeSignatureTables(
 
     if (options.check) {
       console.error(
-        `❌ ${relative(process.cwd(), output)} is stale. Re-run generate-modifier-types.`,
+        `❌ ${relative(process.cwd(), output)} is stale. Re-run derive-modifier-signatures.`,
       )
       stale++
     } else {
@@ -642,4 +645,21 @@ export async function writeSignatureTables(
     }
   }
   return stale
+}
+
+const executedAsScript =
+  typeof process.argv[1] === 'string' &&
+  pathToFileURL(process.argv[1]).href === import.meta.url
+
+if (executedAsScript) {
+  const check = process.argv.includes('--check')
+  writeSignatureTables({ check })
+    .then((stale) => {
+      if (stale > 0) process.exitCode = 1
+    })
+    .catch((error) => {
+      console.error('❌ Failed to derive modifier signatures.')
+      console.error(error)
+      process.exitCode = 1
+    })
 }

@@ -1,66 +1,52 @@
-# Type Generation Workflow
+# Typing Modifier Chains
 
-TachUI ships a dedicated type-generation pipeline so IDEs and CI always see up-to-date modifier signatures. This guide explains the commands to run, how to integrate them into workflows, and how to keep generated files in sync across the monorepo.
+Modifier chain methods are typed by the module that registers them. There is no
+generation step to run and no declaration file to regenerate or commit.
 
-## Why Type Generation Matters
+## How Chain Methods Are Typed
 
-- **Accurate IntelliSense** – Generated declaration files (for example, `packages/core/src/types/generated-modifiers.d.ts`) expose modifier signatures directly to editors.
-- **Safer refactors** – The generator validates new or renamed modifiers against registry metadata, catching conflicts before runtime.
-- **Consistent plugins** – Feature packages (`@tachui/forms`, `@tachui/responsive`, etc.) rely on the same pipeline to contribute their modifiers to shared type snapshots.
+Each package that registers modifiers augments `ModifierBuilder` in
+`@tachui/types/modifiers` with methods derived from its registered factories,
+using `ModifierMethodsOf` (or `ModifierFactoriesOf` for the factory map
+itself). A method is typed exactly when the module that registers it is loaded,
+with the same parameters as its factory.
 
-## Core Commands
+To type your own modifiers, follow
+[Step 3: Add TypeScript Declarations](./guide-modifiers.md#step-3-add-typescript-declarations)
+in the Modifier Implementation Guide.
 
-All commands run from the repo root and rely on the scripts defined in `packages/core/package.json`.
+## The Removed Generator
+
+Earlier releases shipped a modifier type generator in `@tachui/core`. It could
+not type chain methods — its declarations augmented an interface that
+`@tachui/core` only re-exports, so nothing used them — and it has been removed
+along with everything that published it:
+
+- The `generate-modifier-types`, `generate-modifier-types:check` and
+  `generate-modifier-types:monorepo` scripts.
+- The `@tachui/core/modifiers/type-generator`, `@tachui/core/build-plugins`,
+  `@tachui/core/build-tools`, `@tachui/core/build-plugins/modifier-types` and
+  `@tachui/core/build-tools/modifier-types` subpaths, including
+  `modifierTypesPlugin`.
+- `generated-modifiers.d.ts` and `modifier-metadata.snapshot.json`.
+- The `tachui modifier-docs conflicts` command, which read that snapshot.
+
+If your Vite config imports `modifierTypesPlugin`, delete the import and the
+plugin entry; nothing replaces it. If CI runs `generate-modifier-types --check`,
+remove that step.
+
+## Metadata Signatures
+
+First-party modifiers still register with metadata, and the `signature` in that
+metadata is derived from each factory rather than written by hand. After adding
+or changing a first-party modifier factory, refresh the derived tables:
 
 ```bash
-# Regenerate modifier types for core (recommended after adding/modifying modifiers)
-pnpm --filter @tachui/core generate-modifier-types
+bun run --filter @tachui/core derive-modifier-signatures
 
-# Validate without writing changes (ideal for CI)
-pnpm --filter @tachui/core generate-modifier-types -- --check
-
-# Fail CI when conflicts are detected
-pnpm --filter @tachui/core generate-modifier-types -- --check --fail-on-conflict
-
-# Watch mode during active development
-pnpm --filter @tachui/core generate-modifier-types -- --watch
+# Fail when a table is stale, without writing
+bun run --filter @tachui/core derive-modifier-signatures:check
 ```
 
-### Monorepo Packages
-
-When working on feature packages, pass the package list to the monorepo helper:
-
-```bash
-pnpm --filter @tachui/core generate-modifier-types:monorepo -- --packages core,forms,grid
-```
-
-This hydrates metadata from each package’s `register*Modifiers()` helper before emitting the combined type snapshot.
-
-## Keeping CI Fast
-
-1. **Leverage `--check` in pipelines.** Add a step before `pnpm build` to ensure type snapshots are current.
-2. **Cache VitePress output.** The generator emits deterministic files, so CI caches stay valid as long as modifiers do not change.
-3. **Fail fast on conflicts.** The `--fail-on-conflict` flag surfaces duplicated names or category collisions produced by `registerModifierWithMetadata`.
-
-## Working With Generated Files
-
-- Generated files contain a header explaining how to regenerate them. Do not hand-edit these files—run the command instead.
-- The generator validates that every modifier is registered with metadata (name, description, category). Missing metadata results in warnings flagged as part of the CLI output.
-- After regeneration, re-run `pnpm type-check` so downstream packages pick up the refreshed declarations.
-
-## IDE Integration Checklist
-
-| Task | Why it matters |
-| ---- | -------------- |
-| Add `pnpm --filter @tachui/core generate-modifier-types -- --watch` to your dev shell | Keeps local type declarations in sync while editing modifiers. |
-| Run `pnpm --filter @tachui/core generate-modifier-types -- --check` before committing | Prevents stale declaration files from landing in git. |
-| Use the monorepo command when touching feature packages | Ensures plugin modifiers appear in the core declaration map. |
-| Pair with the ESLint rule (`@tachui/prefer-direct-modifiers`) | Guarantees code and types evolve together toward direct modifier calls. |
-
-## Troubleshooting
-
-- **“Snapshot is stale” warnings** – Run the generator; stale snapshots usually mean a modifier signature changed without re-running the command.
-- **Conflicting modifier names** – Resolve the conflict by renaming the modifier or adjusting its priority/metadata before regenerating.
-- **Missing metadata logs** – Ensure the package’s `register*Modifiers()` invokes `registerModifierWithMetadata` with the full descriptor.
-
-For additional details on metadata fields and registry behaviour, see the [Modifier Type Generation deep dive](./modifier-type-generation.md).
+These tables feed registry metadata for tooling such as devtools; they do not
+type chain methods.

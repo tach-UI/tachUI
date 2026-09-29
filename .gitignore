@@ -14,10 +14,6 @@ dist/
 **/src/**/*.d.ts.map
 # Keep hand-written global type definitions
 !**/src/**/globals.d.ts
-# Committed on purpose: type-check reads it from a fresh clone
-!packages/core/src/types/generated-modifiers.d.ts
-# Modifier type generation artifacts
-packages/core/src/types/modifier-metadata.snapshot.json
 
 # Environment variables
 .env

@@ -10,8 +10,8 @@ TachUI is designed to stay responsive even as modifier chains grow. These practi
 
 ## Keep Modifier Metadata Fresh
 
-- Run `pnpm --filter @tachui/core generate-modifier-types -- --check` in CI to catch stale declarations before publishing.
-- After creating or renaming modifiers, regenerate types and commit both the declaration (`generated-modifiers.d.ts`) and snapshot JSON so consumers stay in sync.
+- Chain methods are typed by the module that registers them, so there is no declaration file to regenerate. For custom modifiers, augment `ModifierBuilder` as in [Step 3 of the Modifier Implementation Guide](./guide-modifiers.md#step-3-add-typescript-declarations).
+- After creating or renaming a first-party modifier, run `bun run --filter @tachui/core derive-modifier-signatures` so its metadata signature matches its factory; `derive-modifier-signatures:check` catches stale tables in CI.
 - Enforce the ESLint rule `@tachui/prefer-direct-modifiers` to guarantee code paths use the proxy layer that benefits from metadata caching.
 
 ## Work With the Component Proxy

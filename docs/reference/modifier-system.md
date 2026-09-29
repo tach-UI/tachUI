@@ -76,21 +76,11 @@ The global registry lets you inspect or register modifiers at runtime. Use it to
 
 Avoid writing application logic that depends on the registry contents; prefer static imports when possible.
 
-## Type Generation CLI
+## Typing Modifier Chains
 
-Modifier types are generated via the scripts defined in `@tachui/core`:
+Chain methods are typed by the module that registers them: it augments `ModifierBuilder` in `@tachui/types/modifiers` with methods derived from its factories (`ModifierMethodsOf` / `ModifierFactoriesOf`). There is no generation step. To type custom modifiers, follow [Step 3 of the Modifier Implementation Guide](../guide/guide-modifiers.md#step-3-add-typescript-declarations).
 
-```bash
-pnpm --filter @tachui/core generate-modifier-types
-pnpm --filter @tachui/core generate-modifier-types -- --check
-pnpm --filter @tachui/core generate-modifier-types:monorepo -- --packages core,forms
-```
-
-- Run the generator after adding or renaming modifiers.
-- Use `--check` (and optionally `--fail-on-conflict`) in CI to detect stale snapshots.
-- For multi-package work, use the monorepo helper so plugin modifiers hydrate before emission.
-
-Detailed guidance lives in the [Type Generation Workflow](../guide/type-generation.md).
+The former type generator and its `generate-modifier-types` scripts, `@tachui/core/build-plugins` / `build-tools` / `modifiers/type-generator` subpaths and `tachui modifier-docs conflicts` command have been removed. See [Typing Modifier Chains](../guide/type-generation.md) for what replaced them.
 
 ## Vite Plugin Configuration
 

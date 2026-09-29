@@ -9,7 +9,8 @@ TachUI’s plugin architecture lets teams publish modifiers, components, and too
   - `category` — aligns with the catalog shown in `@tachui/devtools`.
   - `description` and `usage` snippets for documentation.
   - `priority` — choose a value that matches your package tier (Core: 100‑199, Official plugins: 50‑99, Community: 10‑49).
-- Metadata enables type generation and tooling to validate your modifier; missing metadata triggers build-time warnings and fails the `generate-modifier-types --check` task.
+- Metadata lets DevTools and other tooling validate and document your modifier; the registry warns when it is missing.
+- Type your chain methods separately, by augmenting `ModifierBuilder` in the module that registers them ([Step 3 of the Modifier Implementation Guide](./guide-modifiers.md#step-3-add-typescript-declarations)).
 
 ## Respect Reserved Names & Priority Ranges
 
@@ -37,7 +38,7 @@ TachUI’s plugin architecture lets teams publish modifiers, components, and too
 ## Testing Checklist Before Release
 
 - `pnpm --filter <your plugin> test` and `pnpm --filter <your plugin> type-check`.
-- `pnpm --filter @tachui/core generate-modifier-types:monorepo -- --packages core,<your plugin>` to ensure metadata hydrates correctly.
+- A type test that chains your modifiers on a component, to ensure your `ModifierBuilder` augmentation types them.
 - Run the CLI migration command (`tacho migrate remove-modifier-trigger --check`) against your sample apps to confirm they are ready for direct modifier chaining.
 - Enable `SECURITY_DEV_MODE` and review the logs—the registry warns when metadata is missing or suspicious.
 
