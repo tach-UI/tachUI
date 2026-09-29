@@ -39,15 +39,15 @@
     "@connectrpc/connect": "^2.0.0"
   },
   "devDependencies": {
-    "@bufbuild/protobuf": "^2.15.0",
+    "@bufbuild/protobuf": "^2.16.0",
     "@connectrpc/connect": "^2.2.0",
     "@connectrpc/connect-web": "^2.2.0",
     "@tachui/data": "0.11.7",
     "@tachui/forms": "0.11.7",
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.43",
     "typescript": "^5.8.0",
-    "vite": "^7.1.1",
-    "vitest": "^3.2.4"
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7"
   },
   "keywords": [
     "tachui",
