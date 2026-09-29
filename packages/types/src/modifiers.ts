@@ -559,8 +559,8 @@ export interface ModifierBuilderBase<
   ): this
   animation(options?: AnimationModifierProps['animation']): this
 
-  // Scroll modifiers
-  scroll(config: any): this
+  // Scroll modifiers. `scroll()` is typed from its registered factory by
+  // `@tachui/modifiers`, which owns `ScrollConfig`.
   scrollBehavior(value: 'auto' | 'smooth'): this
   overscrollBehavior(value: 'auto' | 'contain' | 'none'): this
   overscrollBehaviorX(value: 'auto' | 'contain' | 'none'): this

@@ -1,5 +1,7 @@
 import { AppearanceModifier } from '@tachui/core/modifiers'
 import type { Signal } from '@tachui/types/reactive'
+import type { AssetValue } from '@tachui/types/assets'
+import type { FontStyle } from '@tachui/types/modifiers'
 
 export function opacity(value: number | Signal<number>) {
   return new AppearanceModifier({ opacity: value })
@@ -41,7 +43,7 @@ export function colorInvert(value: number | Signal<number>) {
   return new AppearanceModifier({ colorInvert: value })
 }
 
-export function fontFamilyModifier(family: any) {
+export function fontFamilyModifier(family: string | AssetValue) {
   return new AppearanceModifier({ font: { family } })
 }
 
@@ -53,7 +55,7 @@ export function fontWeightModifier(weight: any) {
   return new AppearanceModifier({ font: { weight } })
 }
 
-export function fontStyleModifier(style: any) {
+export function fontStyleModifier(style: FontStyle) {
   return new AppearanceModifier({ font: { style } })
 }
 
