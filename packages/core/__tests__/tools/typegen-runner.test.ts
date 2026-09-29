@@ -77,10 +77,17 @@ async function writeOutputs(
 describe('default hydrators', () => {
   it('point at modules that exist in the repository', () => {
     for (const hydrator of DEFAULT_HYDRATORS) {
-      expect(
-        existsSync(resolve(BUILD_TOOLS_DIR, hydrator.relativePath)),
-        hydrator.name,
-      ).toBe(true)
+      const target = resolve(BUILD_TOOLS_DIR, hydrator.relativePath)
+      const [packageRoot, distPath] = target.split('/dist/')
+
+      // A dist bundle only exists once its package is built; before that, the
+      // package's sources are the most that can be checked.
+      if (distPath !== undefined && !existsSync(target)) {
+        expect(existsSync(join(packageRoot!, 'src')), hydrator.name).toBe(true)
+        continue
+      }
+
+      expect(existsSync(target), hydrator.name).toBe(true)
     }
   })
 
