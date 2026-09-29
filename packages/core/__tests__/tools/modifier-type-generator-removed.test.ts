@@ -152,4 +152,14 @@ describe('modifier type generator removal', () => {
     })
     expect(references).toEqual([])
   })
+
+  it('removes the devtools metadata hydrator the generator invoked', () => {
+    const references = sourceFiles(join(REPO_ROOT, 'packages'))
+      .filter((file) => file !== THIS_FILE)
+      .filter((file) =>
+        readFileSync(file, 'utf8').includes('registerModifierMetadata'),
+      )
+      .map((file) => relative(REPO_ROOT, file))
+    expect(references).toEqual([])
+  })
 })
