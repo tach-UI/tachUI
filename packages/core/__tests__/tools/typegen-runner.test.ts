@@ -3,6 +3,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   comparableDeclaration,
@@ -202,5 +203,24 @@ describe('committed modifier artifacts', () => {
     expect(declaration).toMatch(/^ {4}overlay\(content: OverlayContent, /m)
     expect(declaration).toMatch(/^ {4}padding\(optionsOrAll: /m)
     expect(declaration).toMatch(/^ {4}clipShape\(shape: ClipShapeName \| Shape/m)
+  })
+
+  it('parse as TypeScript without syntax errors', () => {
+    // Neither core TypeScript program compiles this file, so parse it here.
+    const declarationPath = join(TYPES_DIR, 'generated-modifiers.d.ts')
+    const program = ts.createProgram([declarationPath], {
+      noLib: true,
+      noResolve: true,
+      types: [],
+    })
+    const diagnostics = program.getSyntacticDiagnostics(
+      program.getSourceFile(declarationPath),
+    )
+
+    expect(
+      diagnostics.map(diagnostic =>
+        ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
+      ),
+    ).toEqual([])
   })
 })
