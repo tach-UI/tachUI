@@ -5,7 +5,7 @@
  * smooth animations, and multiple style variants.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import { createSignal, isSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h, text } from '@tachui/core'
@@ -556,9 +556,7 @@ export class EnhancedToggle implements ComponentInstance<ToggleProps> {
 export function Toggle(
   isOn: boolean | Signal<boolean>,
   props: Omit<ToggleProps, 'isOn'> = {}
-): ModifiableComponent<ToggleProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<ToggleProps>>
-} {
+): ModifiableComponentWithModifiers<ToggleProps> {
   const toggleProps: ToggleProps = { ...props, isOn }
   const component = new EnhancedToggle(toggleProps)
   return withModifiers(component)

@@ -10,7 +10,7 @@
  * multi-step forms), use the Form component from @tachui/forms.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import {
   clonePropsPreservingReactivity,
   createEffect,
@@ -371,9 +371,7 @@ export class BasicFormImplementation
 export function BasicForm(
   children: ComponentInstance[],
   props: Omit<BasicFormProps, 'children'> = {}
-): ModifiableComponent<BasicFormProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<BasicFormProps>>
-} {
+): ModifiableComponentWithModifiers<BasicFormProps> {
   const formProps: BasicFormProps = { ...props, children }
   const component = new BasicFormImplementation(formProps)
   return withModifiers(component)

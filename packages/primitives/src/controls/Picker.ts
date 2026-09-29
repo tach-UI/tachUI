@@ -5,7 +5,7 @@
  * variants for selecting from a list of options.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import { createSignal, isSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h, text } from '@tachui/core'
@@ -596,9 +596,7 @@ export function Picker<T = any>(
   selection: T | Signal<T>,
   options: PickerOption<T>[] | Signal<PickerOption<T>[]>,
   props: Omit<PickerProps<T>, 'selection' | 'options'> = {}
-): ModifiableComponent<PickerProps<T>> & {
-  modifier: ModifierBuilder<ModifiableComponent<PickerProps<T>>>
-} {
+): ModifiableComponentWithModifiers<PickerProps<T>> {
   const pickerProps: PickerProps<T> = { ...props, selection, options }
   const component = new EnhancedPicker(pickerProps)
   return withModifiers(component)

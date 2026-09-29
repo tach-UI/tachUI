@@ -636,6 +636,19 @@ export interface ModifierBuilderBase<
   onPaste(handler: (event: ClipboardEvent) => void): this
   onSelect(handler: (event: Event) => void): this
 
+  /**
+   * Applies a modifier instance made by a factory, and continues the chain.
+   *
+   * The fallback for a factory that has no typed chain method of its own,
+   * such as one an application defines and registers itself. Where a chain
+   * method exists, prefer it:
+   *
+   * ```ts
+   * VStack({ children }).applyModifier(glow('gold')).padding(8)
+   * ```
+   */
+  applyModifier(modifier: Modifier): this
+
   // Build the final component with all modifiers applied
   build(): T
 }

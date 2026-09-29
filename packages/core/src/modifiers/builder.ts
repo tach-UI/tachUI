@@ -535,6 +535,15 @@ export class ModifierBuilderImpl<
     return this as unknown as ModifierBuilder<T>
   }
 
+  /**
+   * Applies a factory-made modifier instance. The public counterpart of
+   * `.modifier()`, for factories with no chain method of their own.
+   */
+  applyModifier(modifier: Modifier): ModifierBuilder<T> {
+    this.modifiers.push(modifier)
+    return this as unknown as ModifierBuilder<T>
+  }
+
   // Public method to add a modifier (used by Proxy)
   addModifierInternal(modifier: Modifier): ModifierBuilder<T> {
     this.modifiers.push(modifier)
