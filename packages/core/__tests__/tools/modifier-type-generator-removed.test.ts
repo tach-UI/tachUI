@@ -162,4 +162,19 @@ describe('modifier type generator removal', () => {
       .map((file) => relative(REPO_ROOT, file))
     expect(references).toEqual([])
   })
+
+  it('drops the registry dependency devtools only needed for the hydrator', () => {
+    const devtoolsDir = join(REPO_ROOT, 'packages/devtools')
+    const imports = sourceFiles(join(devtoolsDir, 'src'))
+      .filter((file) => readFileSync(file, 'utf8').includes('@tachui/registry'))
+      .map((file) => relative(REPO_ROOT, file))
+    expect(imports).toEqual([])
+
+    const devtoolsPackage = JSON.parse(
+      readFileSync(join(devtoolsDir, 'package.json'), 'utf8'),
+    ) as { dependencies?: Record<string, string> }
+    expect(devtoolsPackage.dependencies ?? {}).not.toHaveProperty([
+      '@tachui/registry',
+    ])
+  })
 })

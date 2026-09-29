@@ -147,7 +147,6 @@
       "dependencies": {
         "@tachui/core": "workspace:*",
         "@tachui/primitives": "workspace:*",
-        "@tachui/registry": "workspace:*",
         "magic-string": "^0.30.0",
       },
       "devDependencies": {
