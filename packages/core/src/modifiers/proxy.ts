@@ -14,6 +14,14 @@ let methodBindCache = new WeakMap<
   Map<PropertyKey, Function>
 >()
 
+// Asks only for a registered name, since `get` warns in development about a
+// name it lacks, and builder methods such as `applyModifier` are not modifiers.
+function registeredFactory(prop: string): unknown {
+  return globalModifierRegistry.has(prop)
+    ? globalModifierRegistry.get(prop as any)
+    : undefined
+}
+
 function ensureModifiable(component: ComponentInstance) {
   if (
     Object.prototype.hasOwnProperty.call(component, 'modifiers') &&
@@ -143,7 +151,7 @@ export function createComponentProxy<T extends ComponentInstance>(
       if (typeof prop === 'string') {
         let registryFactory: unknown
         if (modifierCache.has(prop)) {
-          registryFactory = globalModifierRegistry.get(prop as any)
+          registryFactory = registeredFactory(prop)
           if (registryFactory) {
             const cachedFactory = factoryCache.get(prop)
             if (cachedFactory !== undefined && cachedFactory !== registryFactory) {
@@ -189,10 +197,7 @@ export function createComponentProxy<T extends ComponentInstance>(
                 return result && result !== currentApi ? result : proxy
               }
               modifierCache.set(prop, applyBuilderModifier)
-              factoryCache.set(
-                prop,
-                registryFactory ?? globalModifierRegistry.get(prop as any),
-              )
+              factoryCache.set(prop, registryFactory ?? registeredFactory(prop))
             }
             return modifierCache.get(prop)
           }

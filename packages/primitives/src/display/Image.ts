@@ -5,11 +5,7 @@
  * responsive sizing, and advanced image handling capabilities.
  */
 
-import type {
-  ModifiableComponent,
-  ModifierBuilder,
-  ModifiableComponentWithModifiers,
-} from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import { createEffect, createSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { isSignal, isComputed } from '@tachui/core/reactive'
@@ -854,9 +850,7 @@ export const ImageUtils = {
     sources: { src: string; width?: number; media?: string }[],
     fallbackSrc: string,
     props: Omit<ImageProps, 'src' | 'srcSet'> = {}
-  ): ModifiableComponent<ImageProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<ImageProps>>
-  } {
+  ): ImageWithShorthands {
     const srcSet = sources
       .map(source => {
         const parts = [source.src]
@@ -875,9 +869,7 @@ export const ImageUtils = {
     lowQualitySrc: string,
     highQualitySrc: string,
     props: Omit<ImageProps, 'src' | 'lowQualitySrc' | 'highQualitySrc'> = {}
-  ): ModifiableComponent<ImageProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<ImageProps>>
-  } {
+  ): ImageWithShorthands {
     return Image(lowQualitySrc, {
       ...props,
       lowQualitySrc,
@@ -892,9 +884,7 @@ export const ImageUtils = {
     src: string | Signal<string>,
     placeholderSrc: string,
     props: Omit<ImageProps, 'src' | 'placeholder'> = {}
-  ): ModifiableComponent<ImageProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<ImageProps>>
-  } {
+  ): ImageWithShorthands {
     return Image(src, {
       ...props,
       placeholder: placeholderSrc,

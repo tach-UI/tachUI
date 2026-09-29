@@ -830,9 +830,7 @@ export const Layout = {
  */
 export function wrapComponent<P extends ComponentProps>(
   component: ComponentInstance<P>
-): ModifiableComponent<P> & {
-  modifier: ModifierBuilder<ModifiableComponent<P>>
-} {
+): ModifiableComponentWithModifiers<P> {
   return withModifiers(component)
 }
 

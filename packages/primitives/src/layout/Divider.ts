@@ -5,7 +5,7 @@
  * Simple, clean line separator with customizable styling.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import { createEffect, isSignal, withModifiers } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h } from '@tachui/core'
@@ -242,9 +242,7 @@ export class DividerComponent implements CloneableComponent<DividerProps> {
  */
 export function Divider(
   props: DividerProps = {}
-): ModifiableComponent<DividerProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-} {
+): ModifiableComponentWithModifiers<DividerProps> {
   return withModifiers(new DividerComponent(props))
 }
 
@@ -257,9 +255,7 @@ export const DividerUtils = {
    */
   horizontal(
     props: Omit<DividerProps, 'orientation'> = {}
-  ): ModifiableComponent<DividerProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-  } {
+  ): ModifiableComponentWithModifiers<DividerProps> {
     return Divider({ ...props, orientation: 'horizontal' })
   },
 
@@ -269,9 +265,7 @@ export const DividerUtils = {
   vertical(
     lengthOrProps?: number | string | Omit<DividerProps, 'orientation'>,
     thickness?: number
-  ): ModifiableComponent<DividerProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-  } {
+  ): ModifiableComponentWithModifiers<DividerProps> {
     if (typeof lengthOrProps === 'object') {
       return Divider({ ...lengthOrProps, orientation: 'vertical' })
     }
@@ -285,27 +279,21 @@ export const DividerUtils = {
   /**
    * Create a thin divider
    */
-  thin(color?: string): ModifiableComponent<DividerProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-  } {
+  thin(color?: string): ModifiableComponentWithModifiers<DividerProps> {
     return Divider({ thickness: defaultDividerTheme.thickness.thin, color })
   },
 
   /**
    * Create a medium divider
    */
-  medium(color?: string): ModifiableComponent<DividerProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-  } {
+  medium(color?: string): ModifiableComponentWithModifiers<DividerProps> {
     return Divider({ thickness: defaultDividerTheme.thickness.medium, color })
   },
 
   /**
    * Create a thick divider
    */
-  thick(color?: string): ModifiableComponent<DividerProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-  } {
+  thick(color?: string): ModifiableComponentWithModifiers<DividerProps> {
     return Divider({ thickness: defaultDividerTheme.thickness.thick, color })
   },
 
@@ -315,9 +303,7 @@ export const DividerUtils = {
   dashed(
     color?: string,
     thickness?: number
-  ): ModifiableComponent<DividerProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-  } {
+  ): ModifiableComponentWithModifiers<DividerProps> {
     return Divider({ style: 'dashed', color, thickness })
   },
 
@@ -327,18 +313,14 @@ export const DividerUtils = {
   dotted(
     color?: string,
     thickness?: number
-  ): ModifiableComponent<DividerProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-  } {
+  ): ModifiableComponentWithModifiers<DividerProps> {
     return Divider({ style: 'dotted', color, thickness })
   },
 
   /**
    * Create a subtle divider
    */
-  subtle(color?: string): ModifiableComponent<DividerProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-  } {
+  subtle(color?: string): ModifiableComponentWithModifiers<DividerProps> {
     return Divider({
       color: color || defaultDividerTheme.colors.light,
       opacity: 0.6,
@@ -348,9 +330,7 @@ export const DividerUtils = {
   /**
    * Create a prominent divider
    */
-  prominent(color?: string): ModifiableComponent<DividerProps> & {
-    modifier: ModifierBuilder<ModifiableComponent<DividerProps>>
-  } {
+  prominent(color?: string): ModifiableComponentWithModifiers<DividerProps> {
     return Divider({
       color: color || defaultDividerTheme.colors.heavy,
       thickness: defaultDividerTheme.thickness.medium,

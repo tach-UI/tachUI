@@ -6,7 +6,7 @@
  * of the Forms plugin validation and formatting system.
  */
 
-import type { ModifiableComponent, ModifierBuilder } from '@tachui/core'
+import type { ModifiableComponentWithModifiers } from '@tachui/core'
 import { createEffect, isSignal } from '@tachui/core'
 import type { Signal } from '@tachui/core'
 import { h } from '@tachui/core'
@@ -297,9 +297,7 @@ export class BasicInputComponent
  */
 export function BasicInput(
   props: BasicInputProps
-): ModifiableComponent<BasicInputProps> & {
-  modifier: ModifierBuilder<ModifiableComponent<BasicInputProps>>
-} {
+): ModifiableComponentWithModifiers<BasicInputProps> {
   return withModifiers(new BasicInputComponent(props))
 }
 
