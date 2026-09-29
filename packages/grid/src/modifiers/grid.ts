@@ -13,6 +13,7 @@ import type {
 import { BaseModifier } from '@tachui/modifiers'
 import type { ModifierContext } from '@tachui/modifiers'
 import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import { gridModifierSignatures } from './signatures.generated'
 import type {
   ModifierRegistry,
   PluginInfo,
@@ -334,7 +335,6 @@ type GridModifierRegistration = readonly [
   metadata: {
     category: 'layout'
     priority: number
-    signature: string
     description: string
   }
 ]
@@ -348,7 +348,6 @@ const gridModifierRegistrations = [
     {
       category: 'layout',
       priority: GRID_MODIFIER_PRIORITY,
-      signature: '(span: number, start?: number) => Modifier',
       description: 'Spans a grid item across multiple columns with optional starting column.',
     },
   ],
@@ -358,7 +357,6 @@ const gridModifierRegistrations = [
     {
       category: 'layout',
       priority: GRID_MODIFIER_PRIORITY,
-      signature: '(span: number, start?: number) => Modifier',
       description: 'Spans a grid item across multiple rows with optional starting row.',
     },
   ],
@@ -368,7 +366,6 @@ const gridModifierRegistrations = [
     {
       category: 'layout',
       priority: GRID_MODIFIER_PRIORITY,
-      signature: '(area: string) => Modifier',
       description: 'Places a grid item into a named CSS grid area.',
     },
   ],
@@ -378,8 +375,6 @@ const gridModifierRegistrations = [
     {
       category: 'layout',
       priority: GRID_MODIFIER_PRIORITY,
-      signature:
-        "(alignment: 'start' | 'center' | 'end' | 'stretch', axis?: 'horizontal' | 'vertical' | 'both') => Modifier",
       description: 'Aligns a grid item within its cell on horizontal or vertical axes.',
     },
   ],
@@ -389,7 +384,6 @@ const gridModifierRegistrations = [
     {
       category: 'layout',
       priority: GRID_MODIFIER_PRIORITY,
-      signature: '(config: GridSpanConfig) => Modifier',
       description: 'Applies a full grid configuration including span, start, area, and alignment.',
     },
   ],
@@ -399,7 +393,6 @@ const gridModifierRegistrations = [
     {
       category: 'layout',
       priority: GRID_MODIFIER_PRIORITY,
-      signature: '(span: number, start?: number) => Modifier',
       description: 'SwiftUI compatibility alias for gridColumnSpan.',
     },
   ],
@@ -409,7 +402,6 @@ const gridModifierRegistrations = [
     {
       category: 'layout',
       priority: GRID_MODIFIER_PRIORITY,
-      signature: '(span: number, start?: number) => Modifier',
       description: 'SwiftUI compatibility alias for gridRowSpan.',
     },
   ],
@@ -419,8 +411,6 @@ const gridModifierRegistrations = [
     {
       category: 'layout',
       priority: GRID_MODIFIER_PRIORITY,
-      signature:
-        "(alignment: 'start' | 'center' | 'end' | 'stretch', axis?: 'horizontal' | 'vertical' | 'both') => Modifier",
       description: 'SwiftUI compatibility alias for gridCellAlignment.',
     },
   ],
@@ -457,7 +447,7 @@ export function registerGridModifiers(
     registerModifierWithMetadata(
       name,
       factory,
-      metadata,
+      { ...metadata, signature: gridModifierSignatures[name] },
       targetRegistry,
       targetPlugin,
     )

@@ -24,6 +24,7 @@ import {
   verifyOutputs,
   relativePath,
 } from '../src/build-tools/typegen-runner'
+import { writeSignatureTables } from './derive-modifier-signatures'
 
 interface CliOptions {
   check?: boolean
@@ -41,6 +42,13 @@ export async function main(): Promise<void> {
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean)
+
+  // The registrations read their signatures from the derived tables, so the
+  // tables come first: the registry hydrated below is built from them.
+  const staleTables = await writeSignatureTables({ check: options.check })
+  if (staleTables > 0) {
+    process.exitCode = 1
+  }
 
   await hydrateRegistry({
     debug: process.env.TACHUI_DEBUG_TYPES === 'true',
@@ -167,6 +175,7 @@ async function runOnce(options: RunOnceOptions) {
   const { declarationFile, snapshotFile, failOnConflict, reason, extraModules } = options
 
   try {
+    await writeSignatureTables()
     await hydrateRegistry({
       debug: process.env.TACHUI_DEBUG_TYPES === 'true',
       extraModules,

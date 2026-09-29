@@ -35,33 +35,76 @@ export interface HydrationOptions {
 const MODULE_DIR = dirname(fileURLToPath(import.meta.url))
 
 /**
- * Sources the generator hydrates from, package specifier first.
+ * Sources the generator hydrates from, package specifier first: every
+ * first-party module that registers modifiers, each of which registers them
+ * with metadata whose signatures are derived from its factories.
  *
- * The relative paths reach `packages/modifiers/src` from this module inside the
- * repository. Installed, the same relative walk lands on
- * `node_modules/@tachui/modifiers/src`, which published packages do not
- * contain — so the plugin resolved nothing and generated an empty declaration
- * without complaining. The specifier is what works for a consumer; the relative
- * path is what works here.
+ * The relative paths reach `packages/<name>/src` from `src/build-tools` inside
+ * the repository. Installed, the same relative walk lands on
+ * `node_modules/@tachui/<name>/src`, which published packages do not contain,
+ * so there the specifier is what works; the relative path is what works here.
+ *
+ * `@tachui/modifiers` comes first. The other packages import it, and whichever
+ * copy registers a name first is the one the registry keeps, so the source
+ * copy has to get there before any other package brings in the built one.
+ *
+ * The devtools parameter registry is not a hydrator: its hand-written
+ * parameter lists would override the derived metadata with a higher priority.
  */
 export const DEFAULT_HYDRATORS: HydratorCandidate[] = [
   {
     name: '@tachui/modifiers',
     specifier: '@tachui/modifiers',
-    relativePath: '../../modifiers/src/index.ts',
-    hooks: ['registerModifiers', 'registerModifierMetadata'],
+    relativePath: '../../../modifiers/src/index.ts',
+    hooks: ['registerModifiers'],
   },
   {
-    // No specifier, because there is nothing to point one at. The hook lives in
-    // `packages/devtools/src/modifier-metadata.ts`, which devtools neither
-    // builds as an entry nor lists in its exports map — so it is reachable from
-    // the source tree and from nowhere else. That, not the path handling, is
-    // why the generated declaration has been empty since October 2025 (#373): no
-    // hydrator registers metadata, and `@tachui/modifiers` exports
-    // `registerModifiers` without a `registerModifierMetadata` beside it.
-    name: '@tachui/devtools/modifier-metadata',
-    relativePath: '../../devtools/src/modifier-metadata.ts',
-    hooks: ['registerModifierMetadata'],
+    name: '@tachui/modifiers/preload/effects',
+    specifier: '@tachui/modifiers/preload/effects',
+    relativePath: '../../../modifiers/src/effects/index.ts',
+    hooks: ['registerEffectModifiers'],
+    optional: true,
+  },
+  {
+    // Built output rather than source: the package is not `"type": "module"`,
+    // so its source loads as CommonJS, and core's subpath exports only answer
+    // `import`. Run `bun run build` before generating.
+    name: '@tachui/responsive',
+    specifier: '@tachui/responsive',
+    relativePath: '../../../responsive/dist/modifiers/index.mjs',
+    hooks: ['registerResponsiveModifiers'],
+    optional: true,
+  },
+  {
+    name: '@tachui/grid',
+    specifier: '@tachui/grid',
+    relativePath: '../../../grid/src/modifiers/grid.ts',
+    hooks: ['registerGridModifiers'],
+    optional: true,
+  },
+  {
+    name: '@tachui/viewport',
+    specifier: '@tachui/viewport',
+    relativePath: '../../../viewport/src/modifiers/index.ts',
+    optional: true,
+  },
+  {
+    name: '@tachui/mobile',
+    specifier: '@tachui/mobile',
+    relativePath: '../../../mobile/src/modifiers/index.ts',
+    optional: true,
+  },
+  {
+    name: '@tachui/forms',
+    specifier: '@tachui/forms',
+    relativePath: '../../../forms/src/modifiers/index.ts',
+    optional: true,
+  },
+  {
+    name: '@tachui/fragments',
+    specifier: '@tachui/fragments',
+    relativePath: '../../../fragments/src/modifiers.ts',
+    hooks: ['registerFragmentModifiers'],
     optional: true,
   },
 ]
@@ -200,15 +243,30 @@ export async function verifyOutputs(
   ])
 
   let failures = 0
-  if (existingDeclaration?.trim() !== artifacts.declaration.trim()) {
+  if (
+    existingDeclaration === null ||
+    comparableDeclaration(existingDeclaration) !==
+      comparableDeclaration(artifacts.declaration)
+  ) {
     console.error(
       `❌ ${relativePath(declarationFile)} is stale. Re-run generate-modifier-types.`,
     )
     failures++
   }
 
-  const expectedSnapshot = JSON.stringify(artifacts.snapshot, null, 2)
-  if (existingSnapshot?.trim() !== expectedSnapshot.trim()) {
+  const expectedSnapshot = JSON.stringify(
+    comparableSnapshot(artifacts.snapshot),
+  )
+  let actualSnapshot: string | null = null
+  try {
+    actualSnapshot =
+      existingSnapshot === null
+        ? null
+        : JSON.stringify(comparableSnapshot(JSON.parse(existingSnapshot)))
+  } catch {
+    actualSnapshot = null
+  }
+  if (actualSnapshot !== expectedSnapshot) {
     console.error(
       `❌ ${relativePath(snapshotFile)} is stale. Re-run generate-modifier-types.`,
     )
@@ -219,6 +277,40 @@ export async function verifyOutputs(
     console.log('✅ Modifier type declarations are up to date.')
   } else {
     process.exitCode = 1
+  }
+}
+
+/**
+ * The declaration without what changes on every run or every release: the
+ * generation time and the plugin versions in its header.
+ */
+export function comparableDeclaration(declaration: string): string {
+  return declaration
+    .replace(/^\/\/ Generated at: .*$/m, '')
+    .replace(/^\/\/ Plugins: .*$/m, '')
+    .trim()
+}
+
+/**
+ * The snapshot without what changes on every run or every release: the
+ * generation time, the registry instance's identity and creation time, and
+ * the plugin versions.
+ */
+export function comparableSnapshot(
+  snapshot: GeneratedModifierArtifacts['snapshot'],
+): unknown {
+  const { generatedAt: _generatedAt, registryHealth, plugins, ...rest } =
+    snapshot
+  const {
+    instanceId: _instanceId,
+    createdAt: _createdAt,
+    instanceCount: _instanceCount,
+    ...health
+  } = registryHealth
+  return {
+    ...rest,
+    plugins: plugins.map(({ version: _version, ...plugin }) => plugin),
+    registryHealth: health,
   }
 }
 

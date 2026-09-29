@@ -9,7 +9,11 @@ import type {
   ModifierRegistrationList,
 } from '@tachui/types/modifiers'
 import type { BackdropFilterBuilderMethods } from '../effects/backdrop'
-import { globalModifierRegistry } from '@tachui/registry'
+import { registerModifierList } from '../registration'
+import {
+  backdropModifierCategories,
+  backdropModifierSignatures,
+} from './backdrop.signatures.generated'
 import {
   backdropFilter,
   customGlassmorphism,
@@ -33,10 +37,9 @@ declare module '@tachui/types/modifiers' {
       > {}
 }
 
-backdropRegistrations.forEach(([name, factory]) => {
-  if (!globalModifierRegistry.has(name)) {
-    globalModifierRegistry.register(name, factory as any)
-  }
+registerModifierList(backdropRegistrations, {
+  signatures: backdropModifierSignatures,
+  categories: backdropModifierCategories,
 })
 
 export * from '../effects/backdrop'

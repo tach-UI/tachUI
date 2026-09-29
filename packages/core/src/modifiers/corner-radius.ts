@@ -4,13 +4,14 @@ import { ModifierPriority } from './types'
 import type { Modifier } from './types'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { registerModifierWithMetadata } from './registration-utils'
+import { coreModifierSignatures } from './signatures.generated'
 
 type CornerRadiusValue = number | Signal<number>
 
 const metadata = {
   category: 'appearance' as const,
   priority: ModifierPriority.APPEARANCE,
-  signature: '(radius: number | Signal<number>) => Modifier',
+  signature: coreModifierSignatures.cornerRadius,
   description: 'Rounds the corners of the component using border-radius.',
 }
 

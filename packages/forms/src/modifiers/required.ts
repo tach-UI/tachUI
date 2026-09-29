@@ -2,6 +2,7 @@ import type { Modifier, ModifierContext } from '@tachui/core/modifiers/types'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { registerModifierWithMetadata } from '@tachui/core/modifiers'
 import { createEffect, isComputed, isSignal, type Signal } from '@tachui/core'
+import { formsModifierSignatures } from './signatures.generated'
 
 const requiredPriority = 72
 
@@ -131,7 +132,7 @@ function createRequiredModifier(
 const REQUIRED_METADATA = {
   category: 'accessibility' as const,
   priority: requiredPriority,
-  signature: '(options?: boolean | string | { message?: string }) => Modifier',
+  signature: formsModifierSignatures.required,
   description:
     'Marks form inputs as required, wiring ARIA attributes and optional custom messaging.',
 }

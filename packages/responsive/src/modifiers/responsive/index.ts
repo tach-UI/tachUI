@@ -11,6 +11,7 @@ import type {
   ModifierMethodsOf,
 } from '@tachui/types/modifiers'
 import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import { responsiveModifierSignatures } from './signatures.generated'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { TACHUI_PACKAGE_VERSION } from '../../version'
 import {
@@ -143,7 +144,6 @@ type ResponsiveRegistration = readonly [
   metadata: {
     category: 'layout' | 'custom'
     priority: number
-    signature: string
     description: string
   }
 ]
@@ -157,7 +157,6 @@ const responsiveRegistrations = [
     {
       category: 'layout',
       priority: RESPONSIVE_PRIORITY,
-      signature: '(config: ResponsiveStyleConfig) => Modifier',
       description:
         'Applies responsive style mappings across configured breakpoints.',
     },
@@ -168,7 +167,6 @@ const responsiveRegistrations = [
     {
       category: 'layout',
       priority: RESPONSIVE_PRIORITY,
-      signature: '(query: string, styles: Record<string, any>) => Modifier',
       description: 'Attaches custom CSS rules for a media query to a component.',
     },
   ],
@@ -178,8 +176,6 @@ const responsiveRegistrations = [
     {
       category: 'layout',
       priority: RESPONSIVE_PRIORITY,
-      signature:
-        '(property: string, value: ResponsiveValue<any>) => Modifier',
       description:
         'Creates a responsive modifier from a single style property/value map.',
     },
@@ -190,7 +186,6 @@ const responsiveRegistrations = [
     {
       category: 'layout',
       priority: RESPONSIVE_PRIORITY,
-      signature: '(config: ResponsiveLayoutConfig) => Modifier',
       description:
         'Configures responsive flexbox layout properties such as direction, wrap, and gap.',
     },
@@ -228,7 +223,7 @@ export function registerResponsiveModifiers(
     registerModifierWithMetadata(
       name,
       factory,
-      metadata,
+      { ...metadata, signature: responsiveModifierSignatures[name] },
       targetRegistry,
       targetPlugin,
     )

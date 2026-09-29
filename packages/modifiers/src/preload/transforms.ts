@@ -8,7 +8,11 @@ import type {
   ModifierMethodsOf,
   ModifierRegistrationList,
 } from '@tachui/types/modifiers'
-import { globalModifierRegistry } from '@tachui/registry'
+import { registerModifierList } from '../registration'
+import {
+  transformModifierCategories,
+  transformModifierSignatures,
+} from './transforms.signatures.generated'
 import {
   advancedTransform,
   backfaceVisibility,
@@ -70,10 +74,9 @@ declare module '@tachui/types/modifiers' {
     extends ModifierMethodsOf<ModifierFactoriesOf<typeof transformRegistrations>> {}
 }
 
-transformRegistrations.forEach(([name, factory]) => {
-  if (!globalModifierRegistry.has(name)) {
-    globalModifierRegistry.register(name, factory as any)
-  }
+registerModifierList(transformRegistrations, {
+  signatures: transformModifierSignatures,
+  categories: transformModifierCategories,
 })
 
 export * from '../effects/transforms'

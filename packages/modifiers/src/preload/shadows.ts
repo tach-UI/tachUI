@@ -8,7 +8,11 @@ import type {
   ModifierMethodsOf,
   ModifierRegistrationList,
 } from '@tachui/types/modifiers'
-import { globalModifierRegistry } from '@tachui/registry'
+import { registerModifierList } from '../registration'
+import {
+  shadowModifierCategories,
+  shadowModifierSignatures,
+} from './shadows.signatures.generated'
 import {
   animatedShadow,
   dropShadow,
@@ -62,10 +66,9 @@ declare module '@tachui/types/modifiers' {
     extends ModifierMethodsOf<ModifierFactoriesOf<typeof shadowRegistrations>> {}
 }
 
-shadowRegistrations.forEach(([name, factory]) => {
-  if (!globalModifierRegistry.has(name)) {
-    globalModifierRegistry.register(name, factory as any)
-  }
+registerModifierList(shadowRegistrations, {
+  signatures: shadowModifierSignatures,
+  categories: shadowModifierCategories,
 })
 
 export * from '../effects/shadows'

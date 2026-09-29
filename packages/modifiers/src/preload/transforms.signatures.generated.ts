@@ -1,0 +1,58 @@
+// AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
+// Signatures derived from transformRegistrations in packages/modifiers/src/preload/transforms.ts
+// by packages/core/scripts/derive-modifier-signatures.ts.
+// Run `bun run --filter @tachui/core generate-modifier-types` to regenerate.
+
+export const transformModifierSignatures: Readonly<Record<string, string>> = {
+  transform: '(value: TransformConfig | Transform3DConfig | string | Signal<string>): this',
+  scale: '(value: ReactiveTransformValue<number> | { x?: ReactiveTransformValue<number>; y?: ReactiveTransformValue<number>; }): this',
+  rotate: '(angle: ReactiveTransformValue<string | number>): this',
+  translate: '(offset: { x?: ReactiveTransformValue<number | string>; y?: ReactiveTransformValue<number | string>; }): this',
+  skew: '(angles: { x?: ReactiveTransformValue<string | number>; y?: ReactiveTransformValue<string | number>; }): this',
+  rotateX: '(angle: ReactiveTransformValue<string | number>): this',
+  rotateY: '(angle: ReactiveTransformValue<string | number>): this',
+  rotateZ: '(angle: ReactiveTransformValue<string | number>): this',
+  perspective: '(value: ReactiveTransformValue<number>): this',
+  advancedTransform: '(config: Advanced3DTransformConfig | MatrixTransformConfig): this',
+  matrix: '(values: [ number, number, number, number, number, number ]): this',
+  matrix3d: '(values: [ number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number ]): this',
+  rotate3d: '(x: number, y: number, z: number, angle: string): this',
+  scale3d: '(x: number, y: number, z: number): this',
+  translate3d: '(x?: number | string, y?: number | string, z?: number | string): this',
+  scaleX: '(value: number): this',
+  scaleY: '(value: number): this',
+  scaleZ: '(value: number): this',
+  translateX: '(value: number | string): this',
+  translateY: '(value: number | string): this',
+  translateZ: '(value: number | string): this',
+  perspectiveOrigin: '(value: string): this',
+  transformStyle: '(value: \'flat\' | \'preserve-3d\'): this',
+  backfaceVisibility: '(value: \'visible\' | \'hidden\'): this',
+}
+
+export const transformModifierCategories: Readonly<Record<string, 'layout' | 'appearance' | 'interaction' | 'animation' | 'accessibility' | 'custom'>> = {
+  transform: 'appearance',
+  scale: 'appearance',
+  rotate: 'appearance',
+  translate: 'appearance',
+  skew: 'appearance',
+  rotateX: 'appearance',
+  rotateY: 'appearance',
+  rotateZ: 'appearance',
+  perspective: 'appearance',
+  advancedTransform: 'appearance',
+  matrix: 'appearance',
+  matrix3d: 'appearance',
+  rotate3d: 'appearance',
+  scale3d: 'appearance',
+  translate3d: 'appearance',
+  scaleX: 'appearance',
+  scaleY: 'appearance',
+  scaleZ: 'appearance',
+  translateX: 'appearance',
+  translateY: 'appearance',
+  translateZ: 'appearance',
+  perspectiveOrigin: 'appearance',
+  transformStyle: 'appearance',
+  backfaceVisibility: 'appearance',
+}

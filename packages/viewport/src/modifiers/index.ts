@@ -11,6 +11,7 @@ import { registerModifierWithMetadata } from '@tachui/modifiers'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { TACHUI_PACKAGE_VERSION } from '../version'
 import { onAppear, onDisappear } from './lifecycle'
+import { viewportModifierSignatures } from './signatures.generated'
 
 export { onAppear, onDisappear } from './lifecycle'
 export type { ViewportLifecycleOptions } from './types'
@@ -25,7 +26,6 @@ const VIEWPORT_PLUGIN_INFO: PluginInfo = {
 const lifecycleMetadata = {
   category: 'interaction' as const,
   priority: 110,
-  signature: '(handler: () => void) => Modifier',
   description:
     'Triggers handlers when an element appears in or disappears from the viewport.',
 }
@@ -55,6 +55,7 @@ export function registerViewportModifiers(
     onAppear,
     {
       ...lifecycleMetadata,
+      signature: viewportModifierSignatures.onAppear,
       description:
         'Executes a callback when the component enters the viewport.',
     },
@@ -67,6 +68,7 @@ export function registerViewportModifiers(
     onDisappear,
     {
       ...lifecycleMetadata,
+      signature: viewportModifierSignatures.onDisappear,
       description:
         'Executes a callback when the component leaves the viewport.',
     },

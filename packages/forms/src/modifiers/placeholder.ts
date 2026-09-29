@@ -6,6 +6,7 @@ import type {
 } from '@tachui/core/modifiers/types'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { registerModifierWithMetadata } from '@tachui/core/modifiers'
+import { formsModifierSignatures } from './signatures.generated'
 
 const placeholderPriority = 70
 
@@ -83,7 +84,7 @@ function createPlaceholderModifier(value: PlaceholderValue): Modifier {
 const PLACEHOLDER_METADATA = {
   category: 'accessibility' as const,
   priority: placeholderPriority,
-  signature: '(text: string) => Modifier',
+  signature: formsModifierSignatures.placeholder,
   description:
     'Sets placeholder text on form inputs and keeps a data attribute in sync.',
 }

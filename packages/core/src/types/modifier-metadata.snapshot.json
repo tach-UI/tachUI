@@ -1,15 +1,2361 @@
 {
-  "generatedAt": "2025-10-23T00:53:53.458Z",
-  "totalModifiers": 0,
-  "categories": {},
-  "plugins": [],
+  "generatedAt": "2026-09-29T04:30:01.417Z",
+  "totalModifiers": 283,
+  "categories": {
+    "accessibility": [
+      {
+        "name": "aria",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(attributes: AriaAttributes): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "ariaDescribedBy",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: string): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "ariaLabel",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: string): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "ariaLive",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: 'off' | 'polite' | 'assertive'): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "ariaModal",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: boolean): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "cssVariables",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(variables: CSSPropertiesMap): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "customProperties",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: CustomPropertiesOptions): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "customProperty",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(name: string, value: CSSPropertyValue, scope?: 'local' | 'global' | 'root'): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "data",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(attributes: DataAttributes): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "elementId",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: IdValue): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "id",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: IdValue): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "placeholder",
+        "nameKind": "string",
+        "plugin": "@tachui/forms",
+        "priority": 70,
+        "signature": "(value: PlaceholderValue): this",
+        "category": "accessibility",
+        "description": "Sets placeholder text on form inputs and keeps a data attribute in sync."
+      },
+      {
+        "name": "required",
+        "nameKind": "string",
+        "plugin": "@tachui/forms",
+        "priority": 72,
+        "signature": "(options?: RequiredInput): this",
+        "category": "accessibility",
+        "description": "Marks form inputs as required, wiring ARIA attributes and optional custom messaging."
+      },
+      {
+        "name": "role",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: string): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "tabIndex",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: TabIndexValue): this",
+        "category": "accessibility"
+      },
+      {
+        "name": "viewId",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: IdValue): this",
+        "category": "accessibility"
+      }
+    ],
+    "animation": [
+      {
+        "name": "animation",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options?: AnimationModifierProps['animation']): this",
+        "category": "animation"
+      },
+      {
+        "name": "transform",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: string | Signal<string>): this",
+        "category": "animation"
+      }
+    ],
+    "appearance": [
+      {
+        "name": "active",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(styles: HoverStyles): this",
+        "category": "appearance"
+      },
+      {
+        "name": "advancedTransform",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(config: Advanced3DTransformConfig | MatrixTransformConfig): this",
+        "category": "appearance"
+      },
+      {
+        "name": "animatedShadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(_duration?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "backdropFilter",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: BackdropFilterConfig | string, fallbackColor?: ColorValue): this",
+        "category": "appearance"
+      },
+      {
+        "name": "backfaceVisibility",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: 'visible' | 'hidden'): this",
+        "category": "appearance"
+      },
+      {
+        "name": "background",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: string | any): this",
+        "category": "appearance"
+      },
+      {
+        "name": "backgroundBlendMode",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(mode: BlendMode): this",
+        "category": "appearance"
+      },
+      {
+        "name": "backgroundColor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color: string | any): this",
+        "category": "appearance"
+      },
+      {
+        "name": "backgroundImage",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(source: ImageAssetProxy | string, options?: BackgroundImageOptions): this",
+        "category": "appearance"
+      },
+      {
+        "name": "blackAndWhite",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(contrastAmount?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "blendMode",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(mode: BlendMode): this",
+        "category": "appearance"
+      },
+      {
+        "name": "blur",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(radius: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "border",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(optionsOrWidth: BorderOptions | number | string, color?: string, style?: BorderStyle): this",
+        "category": "appearance"
+      },
+      {
+        "name": "borderBottom",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(width: number | string, color: string, style?: BorderStyle): this",
+        "category": "appearance"
+      },
+      {
+        "name": "borderLeft",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(width: number | string, color: string, style?: BorderStyle): this",
+        "category": "appearance"
+      },
+      {
+        "name": "borderRight",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(width: number | string, color: string, style?: BorderStyle): this",
+        "category": "appearance"
+      },
+      {
+        "name": "borderTop",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(width: number | string, color: string, style?: BorderStyle): this",
+        "category": "appearance"
+      },
+      {
+        "name": "brightness",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "buttonHover",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "cardHover",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "clipped",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(enabled?: boolean): this",
+        "category": "appearance"
+      },
+      {
+        "name": "clipShape",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(shape: ClipShapeName | Shape, parameters?: Record<string, any>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "colorInvert",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "compositingGroup",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "conditionalHover",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(effect: SwiftUIHoverEffect, isEnabled: boolean | Signal<boolean>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "contrast",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "coolTone",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(hueShift?: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "cornerRadius",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | Signal<number>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "customGlassmorphism",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(blur: number, saturate?: number, brightness?: number, fallbackColor?: ColorValue): this",
+        "category": "appearance"
+      },
+      {
+        "name": "darkModeInvert",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "disabledCursor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "draggableCursor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "dropShadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(config: DropShadowConfig | DropShadowConfig[] | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "elevationShadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(level: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "faded",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(contrastAmount?: number, saturationAmount?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "filter",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(config: FilterConfig | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "filterDropShadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(shadow: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "focus",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(styles: HoverStyles): this",
+        "category": "appearance"
+      },
+      {
+        "name": "font",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: FontOptions | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "fontFamily",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(family: any): this",
+        "category": "appearance"
+      },
+      {
+        "name": "fontPreset",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(preset: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "fontSize",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(size: any): this",
+        "category": "appearance"
+      },
+      {
+        "name": "fontStyle",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(style: any): this",
+        "category": "appearance"
+      },
+      {
+        "name": "fontWeight",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(weight: any): this",
+        "category": "appearance"
+      },
+      {
+        "name": "foregroundColor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color: string | any): this",
+        "category": "appearance"
+      },
+      {
+        "name": "glassmorphism",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(intensity?: GlassmorphismIntensity, customFallback?: ColorValue): this",
+        "category": "appearance"
+      },
+      {
+        "name": "glowEffect",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color: string, intensity?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "gradientText",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(gradient: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "grayscale",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | boolean): this",
+        "category": "appearance"
+      },
+      {
+        "name": "helpCursor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "highContrastMode",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "highKey",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(brightnessAmount?: number, contrastAmount?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "hover",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(styles: HoverStyles, transition?: string | number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "hoverEffect",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(effect: SwiftUIHoverEffect, isEnabled?: boolean | Signal<boolean>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "hoverWithTransition",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(styles: HoverStyles, duration?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "hueRotate",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(angle: string | number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "hueRotation",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(angle: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "hyphens",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: HyphensValue): this",
+        "category": "appearance"
+      },
+      {
+        "name": "imageHover",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "insetShadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(config: Omit<ShadowConfig, 'inset'>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "interactiveCursor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "invert",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | boolean): this",
+        "category": "appearance"
+      },
+      {
+        "name": "layeredShadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(layers?: number, opacityMultiplier?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "letterSpacing",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "lineClamp",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(lines: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "lineHeight",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "linkHover",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "loadingCursor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "lowKey",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(brightnessAmount?: number, contrastAmount?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "matrix",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(values: [ number, number, number, number, number, number ]): this",
+        "category": "appearance"
+      },
+      {
+        "name": "matrix3d",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(values: [ number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number ]): this",
+        "category": "appearance"
+      },
+      {
+        "name": "neonEffect",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color: string, intensity?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "neumorphism",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(_backgroundColor: string, dark?: boolean): this",
+        "category": "appearance"
+      },
+      {
+        "name": "neumorphismPressed",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(_backgroundColor: string, dark?: boolean): this",
+        "category": "appearance"
+      },
+      {
+        "name": "opacity",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | Signal<number>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "overflow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: 'visible' | 'hidden' | 'scroll' | 'auto'): this",
+        "category": "appearance"
+      },
+      {
+        "name": "overflowWrap",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: OverflowWrapValue): this",
+        "category": "appearance"
+      },
+      {
+        "name": "perspective",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: ReactiveTransformValue<number>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "perspectiveOrigin",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "pressed",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(styles: HoverStyles): this",
+        "category": "appearance"
+      },
+      {
+        "name": "reactiveShadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(condition: Signal<boolean>, trueShadow: ShadowConfig, falseShadow?: ShadowConfig): this",
+        "category": "appearance"
+      },
+      {
+        "name": "rotate",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(angle: ReactiveTransformValue<string | number>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "rotate3d",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(x: number, y: number, z: number, angle: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "rotateX",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(angle: ReactiveTransformValue<string | number>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "rotateY",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(angle: ReactiveTransformValue<string | number>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "rotateZ",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(angle: ReactiveTransformValue<string | number>): this",
+        "category": "appearance"
+      },
+      {
+        "name": "saturate",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "saturation",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(amount: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "scale",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: ReactiveTransformValue<number> | { x?: ReactiveTransformValue<number>; y?: ReactiveTransformValue<number>; }): this",
+        "category": "appearance"
+      },
+      {
+        "name": "scale3d",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(x: number, y: number, z: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "scaleX",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "scaleY",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "scaleZ",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "sepia",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | boolean): this",
+        "category": "appearance"
+      },
+      {
+        "name": "shadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(config: ShadowConfig | ShadowConfig[] | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "shadowPreset",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(preset: ShadowPreset): this",
+        "category": "appearance"
+      },
+      {
+        "name": "shadows",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(configs: ShadowConfig[]): this",
+        "category": "appearance"
+      },
+      {
+        "name": "skew",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(angles: { x?: ReactiveTransformValue<string | number>; y?: ReactiveTransformValue<string | number>; }): this",
+        "category": "appearance"
+      },
+      {
+        "name": "softFocus",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(blurAmount?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "subtleBlur",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "swiftUIShadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(config?: { color?: string; radius?: number; x?: number; y?: number; }): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textAlign",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: TextAlign): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textCase",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: TextTransform): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textCursor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textDecoration",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: TextDecoration): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textEmbossed",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(lightColor?: string, darkColor?: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textEngraved",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(darkColor?: string, lightColor?: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textOutline",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color: string, thickness?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textOverflow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: 'clip' | 'ellipsis' | 'fade' | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textShadow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(config: ReactiveTextShadowConfig | ReactiveTextShadowConfig[] | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textShadowStrong",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color?: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textShadowSubtle",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color?: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "textTransform",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: TextTransform): this",
+        "category": "appearance"
+      },
+      {
+        "name": "transformStyle",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: 'flat' | 'preserve-3d'): this",
+        "category": "appearance"
+      },
+      {
+        "name": "translate",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(offset: { x?: ReactiveTransformValue<number | string>; y?: ReactiveTransformValue<number | string>; }): this",
+        "category": "appearance"
+      },
+      {
+        "name": "translate3d",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(x?: number | string, y?: number | string, z?: number | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "translateX",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "translateY",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "translateZ",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "typography",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: TypographyOptions): this",
+        "category": "appearance"
+      },
+      {
+        "name": "vibrant",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(saturationAmount?: number, contrastAmount?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "vintagePhoto",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(sepiaAmount?: number, contrastAmount?: number): this",
+        "category": "appearance"
+      },
+      {
+        "name": "warmTone",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(hueShift?: string): this",
+        "category": "appearance"
+      },
+      {
+        "name": "whiteSpace",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line' | 'break-spaces'): this",
+        "category": "appearance"
+      },
+      {
+        "name": "wordBreak",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: WordBreakValue): this",
+        "category": "appearance"
+      },
+      {
+        "name": "zoomCursor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(mode?: 'in' | 'out'): this",
+        "category": "appearance"
+      }
+    ],
+    "custom": [
+      {
+        "name": "after",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(styles: PseudoElementStyles): this",
+        "category": "custom"
+      },
+      {
+        "name": "asHTML",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options?: AsHTMLOptions): this",
+        "category": "custom"
+      },
+      {
+        "name": "badge",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color?: string, size?: number, text?: string): this",
+        "category": "custom"
+      },
+      {
+        "name": "before",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(styles: PseudoElementStyles): this",
+        "category": "custom"
+      },
+      {
+        "name": "cornerRibbon",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(text: string, color?: string, textColor?: string): this",
+        "category": "custom"
+      },
+      {
+        "name": "css",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(properties: ReactiveCSSOptions): this",
+        "category": "custom"
+      },
+      {
+        "name": "cssProperty",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(property: string, value: CSSValue): this",
+        "category": "custom"
+      },
+      {
+        "name": "cssVariable",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(name: string, value: CSSValue): this",
+        "category": "custom"
+      },
+      {
+        "name": "cursor",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: UtilityOptions['cursor']): this",
+        "category": "custom"
+      },
+      {
+        "name": "display",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: UtilityOptions['display']): this",
+        "category": "custom"
+      },
+      {
+        "name": "iconAfter",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(icon: string, styles?: Omit<PseudoElementStyles, 'content'>): this",
+        "category": "custom"
+      },
+      {
+        "name": "iconBefore",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(icon: string, styles?: Omit<PseudoElementStyles, 'content'>): this",
+        "category": "custom"
+      },
+      {
+        "name": "lineAfter",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color?: string, thickness?: number, length?: number): this",
+        "category": "custom"
+      },
+      {
+        "name": "lineBefore",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color?: string, thickness?: number, length?: number): this",
+        "category": "custom"
+      },
+      {
+        "name": "navigationBarHidden",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(hidden?: boolean): this",
+        "category": "custom"
+      },
+      {
+        "name": "navigationBarItems",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: { leading?: ComponentInstance | ComponentInstance[]; trailing?: ComponentInstance | ComponentInstance[]; }): this",
+        "category": "custom"
+      },
+      {
+        "name": "navigationTitle",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(title: string): this",
+        "category": "custom"
+      },
+      {
+        "name": "outline",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: string): this",
+        "category": "custom"
+      },
+      {
+        "name": "outlineOffset",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number | string): this",
+        "category": "custom"
+      },
+      {
+        "name": "overflowX",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: UtilityOptions['overflowX']): this",
+        "category": "custom"
+      },
+      {
+        "name": "overflowY",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: UtilityOptions['overflowY']): this",
+        "category": "custom"
+      },
+      {
+        "name": "pseudoElements",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: PseudoElementOptions): this",
+        "category": "custom"
+      },
+      {
+        "name": "quotes",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(openQuote?: string, closeQuote?: string): this",
+        "category": "custom"
+      },
+      {
+        "name": "spinner",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(size?: number, color?: string, borderWidth?: number): this",
+        "category": "custom"
+      },
+      {
+        "name": "task",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: NonNullable<LifecycleModifierProps['task']>): this",
+        "category": "custom"
+      },
+      {
+        "name": "tooltip",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(text: string, position?: 'top' | 'bottom' | 'left' | 'right', backgroundColor?: string, textColor?: string): this",
+        "category": "custom"
+      },
+      {
+        "name": "underline",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(color?: string, thickness?: number, opacity?: number): this",
+        "category": "custom"
+      },
+      {
+        "name": "utility",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: ReactiveUtilityOptions): this",
+        "category": "custom"
+      }
+    ],
+    "interaction": [
+      {
+        "name": "activatable",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "interaction"
+      },
+      {
+        "name": "allowsHitTesting",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 95,
+        "signature": "(enabled: boolean): this",
+        "category": "interaction",
+        "description": "When false, pointer events pass through the element to what is behind it."
+      },
+      {
+        "name": "disabled",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(isDisabled?: boolean | Signal<boolean>): this",
+        "category": "interaction"
+      },
+      {
+        "name": "editable",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "interaction"
+      },
+      {
+        "name": "focusable",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 75,
+        "signature": "(isFocusable?: boolean, interactions?: ('activate' | 'edit')[]): this",
+        "category": "interaction",
+        "description": "Makes the element focusable, with optional keyboard activation or editing."
+      },
+      {
+        "name": "focused",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 75,
+        "signature": "(focusedValue: boolean | Signal<boolean>): this",
+        "category": "interaction",
+        "description": "Focuses or blurs the element, following a signal if given."
+      },
+      {
+        "name": "highPriorityGesture",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(gesture: any, including?: GestureInclusion): this",
+        "category": "interaction"
+      },
+      {
+        "name": "interactive",
+        "nameKind": "string",
+        "plugin": "@tachui/fragments",
+        "priority": 300,
+        "signature": "(): this",
+        "category": "interaction",
+        "description": "Marks the component as a fragment that hydrates on the client."
+      },
+      {
+        "name": "keyboardShortcut",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 80,
+        "signature": "(options: KeyboardShortcutOptions): this",
+        "category": "interaction",
+        "description": "Calls action when the key is pressed with the given modifier keys."
+      },
+      {
+        "name": "onAppear",
+        "nameKind": "string",
+        "plugin": "@tachui/viewport",
+        "priority": 110,
+        "signature": "(handler: () => void): this",
+        "category": "interaction",
+        "description": "Executes a callback when the component enters the viewport."
+      },
+      {
+        "name": "onBlur",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (isFocused: boolean) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onChange",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (value: any, event?: Event) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onContextMenu",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (event: MouseEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onContinuousHover",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 70,
+        "signature": "(options: OnContinuousHoverOptions): this",
+        "category": "interaction",
+        "description": "Reports the pointer location while it hovers the element, and null when it leaves."
+      },
+      {
+        "name": "onCopy",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: ClipboardEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onCut",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: ClipboardEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onDisappear",
+        "nameKind": "string",
+        "plugin": "@tachui/viewport",
+        "priority": 110,
+        "signature": "(handler: () => void): this",
+        "category": "interaction",
+        "description": "Executes a callback when the component leaves the viewport."
+      },
+      {
+        "name": "onDoubleClick",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (event: MouseEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onFocus",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (isFocused: boolean) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onHover",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (isHovered: boolean) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onInput",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: InputEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onKeyDown",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (event: KeyboardEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onKeyPress",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (event: KeyboardEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onKeyUp",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (event: KeyboardEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onLongPressGesture",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 85,
+        "signature": "(options: OnLongPressGestureOptions): this",
+        "category": "interaction",
+        "description": "Calls perform after the pointer is held for minimumDuration without moving past maximumDistance."
+      },
+      {
+        "name": "onMouseDown",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (event: MouseEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onMouseEnter",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (event: MouseEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onMouseLeave",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (event: MouseEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onMouseUp",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(callback: (event: MouseEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onPaste",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: ClipboardEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onScroll",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: Event) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onSelect",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: Event) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onSwipeLeft",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: () => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onSwipeRight",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: () => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onTap",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: MouseEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onTouchEnd",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: TouchEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onTouchMove",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: TouchEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onTouchStart",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: TouchEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "onWheel",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(handler: (event: WheelEvent) => void): this",
+        "category": "interaction"
+      },
+      {
+        "name": "overscrollBehavior",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: OverscrollBehaviorValue): this",
+        "category": "interaction"
+      },
+      {
+        "name": "overscrollBehaviorX",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: OverscrollBehaviorValue): this",
+        "category": "interaction"
+      },
+      {
+        "name": "overscrollBehaviorY",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: OverscrollBehaviorValue): this",
+        "category": "interaction"
+      },
+      {
+        "name": "refreshable",
+        "nameKind": "string",
+        "plugin": "@tachui/mobile",
+        "priority": 120,
+        "signature": "(options: RefreshableOptions): this",
+        "category": "interaction",
+        "description": "Adds pull-to-refresh gesture support with built-in loading indicator management."
+      },
+      {
+        "name": "scroll",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(config: ScrollConfig): this",
+        "category": "interaction"
+      },
+      {
+        "name": "scrollBehavior",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: 'auto' | 'smooth'): this",
+        "category": "interaction"
+      },
+      {
+        "name": "scrollMargin",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(margin: number | string | { top?: number | string; right?: number | string; bottom?: number | string; left?: number | string; }): this",
+        "category": "interaction"
+      },
+      {
+        "name": "scrollPadding",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(padding: number | string | { top?: number | string; right?: number | string; bottom?: number | string; left?: number | string; }): this",
+        "category": "interaction"
+      },
+      {
+        "name": "scrollSnap",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(type: 'none' | 'x mandatory' | 'y mandatory' | 'x proximity' | 'y proximity' | 'both mandatory' | 'both proximity', align?: 'start' | 'end' | 'center', stop?: 'normal' | 'always'): this",
+        "category": "interaction"
+      },
+      {
+        "name": "simultaneousGesture",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(gesture: any, including?: GestureInclusion): this",
+        "category": "interaction"
+      },
+      {
+        "name": "snapshot",
+        "nameKind": "string",
+        "plugin": "@tachui/fragments",
+        "priority": 300,
+        "signature": "(properties: FragmentSnapshotHandlers): this",
+        "category": "interaction",
+        "description": "Captures and restores fragment state across hydration."
+      },
+      {
+        "name": "validation",
+        "nameKind": "string",
+        "plugin": "@tachui/forms",
+        "priority": 74,
+        "signature": "(...rules: ValidationArgs[]): this",
+        "category": "interaction",
+        "description": "Attaches validation rules to form inputs, wiring blur/input handlers and ARIA state."
+      }
+    ],
+    "layout": [
+      {
+        "name": "absolutePosition",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(x: number | Signal<number>, y?: number | Signal<number>): this",
+        "category": "layout"
+      },
+      {
+        "name": "alignItems",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: FlexboxOptions['alignItems']): this",
+        "category": "layout"
+      },
+      {
+        "name": "alignSelf",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: FlexboxOptions['alignSelf']): this",
+        "category": "layout"
+      },
+      {
+        "name": "aspectRatio",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(ratio?: number, contentMode?: ContentMode): this",
+        "category": "layout"
+      },
+      {
+        "name": "fixedSize",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(horizontal?: boolean, vertical?: boolean): this",
+        "category": "layout"
+      },
+      {
+        "name": "flexBasis",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: FlexboxOptions['flexBasis']): this",
+        "category": "layout"
+      },
+      {
+        "name": "flexbox",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: ReactiveFlexboxOptions): this",
+        "category": "layout"
+      },
+      {
+        "name": "flexDirection",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: FlexboxOptions['flexDirection']): this",
+        "category": "layout"
+      },
+      {
+        "name": "flexGrow",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number): this",
+        "category": "layout"
+      },
+      {
+        "name": "flexShrink",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number): this",
+        "category": "layout"
+      },
+      {
+        "name": "flexWrap",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: FlexboxOptions['flexWrap']): this",
+        "category": "layout"
+      },
+      {
+        "name": "frame",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: any): this",
+        "category": "layout"
+      },
+      {
+        "name": "gap",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: FlexValue): this",
+        "category": "layout"
+      },
+      {
+        "name": "gridArea",
+        "nameKind": "string",
+        "plugin": "@tachui/grid",
+        "priority": 180,
+        "signature": "(area: string): this",
+        "category": "layout",
+        "description": "Places a grid item into a named CSS grid area."
+      },
+      {
+        "name": "gridCellAlignment",
+        "nameKind": "string",
+        "plugin": "@tachui/grid",
+        "priority": 180,
+        "signature": "(alignment: 'start' | 'center' | 'end' | 'stretch', axis?: 'horizontal' | 'vertical' | 'both'): this",
+        "category": "layout",
+        "description": "Aligns a grid item within its cell on horizontal or vertical axes."
+      },
+      {
+        "name": "gridCellAnchor",
+        "nameKind": "string",
+        "plugin": "@tachui/grid",
+        "priority": 180,
+        "signature": "(alignment: 'start' | 'center' | 'end' | 'stretch', axis?: 'horizontal' | 'vertical' | 'both'): this",
+        "category": "layout",
+        "description": "SwiftUI compatibility alias for gridCellAlignment."
+      },
+      {
+        "name": "gridCellColumns",
+        "nameKind": "string",
+        "plugin": "@tachui/grid",
+        "priority": 180,
+        "signature": "(span: ReactiveNumber, start?: ReactiveNumber): this",
+        "category": "layout",
+        "description": "SwiftUI compatibility alias for gridColumnSpan."
+      },
+      {
+        "name": "gridCellRows",
+        "nameKind": "string",
+        "plugin": "@tachui/grid",
+        "priority": 180,
+        "signature": "(span: ReactiveNumber, start?: ReactiveNumber): this",
+        "category": "layout",
+        "description": "SwiftUI compatibility alias for gridRowSpan."
+      },
+      {
+        "name": "gridColumnSpan",
+        "nameKind": "string",
+        "plugin": "@tachui/grid",
+        "priority": 180,
+        "signature": "(span: ReactiveNumber, start?: ReactiveNumber): this",
+        "category": "layout",
+        "description": "Spans a grid item across multiple columns with optional starting column."
+      },
+      {
+        "name": "gridItemConfig",
+        "nameKind": "string",
+        "plugin": "@tachui/grid",
+        "priority": 180,
+        "signature": "(config: GridSpanConfig): this",
+        "category": "layout",
+        "description": "Applies a full grid configuration including span, start, area, and alignment."
+      },
+      {
+        "name": "gridRowSpan",
+        "nameKind": "string",
+        "plugin": "@tachui/grid",
+        "priority": 180,
+        "signature": "(span: ReactiveNumber, start?: ReactiveNumber): this",
+        "category": "layout",
+        "description": "Spans a grid item across multiple rows with optional starting row."
+      },
+      {
+        "name": "height",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: Dimension | Signal<Dimension>): this",
+        "category": "layout"
+      },
+      {
+        "name": "justifyContent",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: FlexboxOptions['justifyContent']): this",
+        "category": "layout"
+      },
+      {
+        "name": "layoutPriority",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(priority: number | Signal<number>): this",
+        "category": "layout"
+      },
+      {
+        "name": "margin",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(optionsOrAll: ReactiveMarginOptions | MarginValue | Signal<MarginValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "marginBottom",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: MarginValue | Signal<MarginValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "marginHorizontal",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: MarginValue | Signal<MarginValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "marginLeading",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: MarginValue | Signal<MarginValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "marginLeft",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: MarginValue | Signal<MarginValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "marginRight",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: MarginValue | Signal<MarginValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "marginTop",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: MarginValue | Signal<MarginValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "marginTrailing",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: MarginValue | Signal<MarginValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "marginVertical",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: MarginValue | Signal<MarginValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "maxHeight",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: Dimension | Signal<Dimension>): this",
+        "category": "layout"
+      },
+      {
+        "name": "maxWidth",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: Dimension | Signal<Dimension>): this",
+        "category": "layout"
+      },
+      {
+        "name": "mediaQuery",
+        "nameKind": "string",
+        "plugin": "@tachui/responsive",
+        "priority": 80,
+        "signature": "(query: string, styles: Record<string, any>): this",
+        "category": "layout",
+        "description": "Attaches custom CSS rules for a media query to a component."
+      },
+      {
+        "name": "minHeight",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: Dimension | Signal<Dimension>): this",
+        "category": "layout"
+      },
+      {
+        "name": "minWidth",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: Dimension | Signal<Dimension>): this",
+        "category": "layout"
+      },
+      {
+        "name": "offset",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(x: number | Signal<number>, y?: number | Signal<number>): this",
+        "category": "layout"
+      },
+      {
+        "name": "overlay",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(content: OverlayContent, alignmentOrOptions?: OverlayAlignment | Signal<OverlayAlignment> | Omit<OverlayOptions, 'content'>): this",
+        "category": "layout"
+      },
+      {
+        "name": "padding",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(optionsOrAll: ReactivePaddingOptions | PaddingValue | Signal<PaddingValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "paddingBottom",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: PaddingValue | Signal<PaddingValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "paddingHorizontal",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: PaddingValue | Signal<PaddingValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "paddingLeading",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: PaddingValue | Signal<PaddingValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "paddingLeft",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: PaddingValue | Signal<PaddingValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "paddingRight",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: PaddingValue | Signal<PaddingValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "paddingTop",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: PaddingValue | Signal<PaddingValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "paddingTrailing",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: PaddingValue | Signal<PaddingValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "paddingVertical",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: PaddingValue | Signal<PaddingValue>): this",
+        "category": "layout"
+      },
+      {
+        "name": "position",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: PositionValue | PositionCoordinates): this",
+        "category": "layout"
+      },
+      {
+        "name": "resizable",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(): this",
+        "category": "layout"
+      },
+      {
+        "name": "responsive",
+        "nameKind": "string",
+        "plugin": "@tachui/responsive",
+        "priority": 80,
+        "signature": "(config: ResponsiveStyleConfig): this",
+        "category": "layout",
+        "description": "Applies responsive style mappings across configured breakpoints."
+      },
+      {
+        "name": "responsiveLayout",
+        "nameKind": "string",
+        "plugin": "@tachui/responsive",
+        "priority": 80,
+        "signature": "(config: { direction?: ResponsiveValue<'row' | 'column' | 'row-reverse' | 'column-reverse'>; wrap?: ResponsiveValue<'nowrap' | 'wrap' | 'wrap-reverse'>; justify?: ResponsiveValue<'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly'>; align?: ResponsiveValue<'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'>; gap?: ResponsiveValue<number | string>; }): this",
+        "category": "layout",
+        "description": "Configures responsive flexbox layout properties such as direction, wrap, and gap."
+      },
+      {
+        "name": "responsiveProperty",
+        "nameKind": "string",
+        "plugin": "@tachui/responsive",
+        "priority": 80,
+        "signature": "(property: string, value: ResponsiveValue<unknown>): this",
+        "category": "layout",
+        "description": "Creates a responsive modifier from a single style property/value map."
+      },
+      {
+        "name": "rotationEffect",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(angle: number | Signal<number>, anchor?: RotationAnchor): this",
+        "category": "layout"
+      },
+      {
+        "name": "scaleEffect",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(x: number | Signal<number>, y?: number | Signal<number>, anchor?: ScaleAnchor): this",
+        "category": "layout"
+      },
+      {
+        "name": "size",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(options: ReactiveSizeOptions): this",
+        "category": "layout"
+      },
+      {
+        "name": "transition",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(optionsOrProperty: TransitionConfig | string, duration?: number, easing?: string, delay?: number): this",
+        "category": "layout"
+      },
+      {
+        "name": "width",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: Dimension | Signal<Dimension>): this",
+        "category": "layout"
+      },
+      {
+        "name": "zIndex",
+        "nameKind": "string",
+        "plugin": "@tachui/modifiers",
+        "priority": 120,
+        "signature": "(value: number): this",
+        "category": "layout"
+      }
+    ]
+  },
+  "plugins": [
+    {
+      "name": "@tachui/modifiers",
+      "version": "0.11.7",
+      "author": "tachUI Team",
+      "verified": true
+    },
+    {
+      "name": "@tachui/responsive",
+      "version": "0.11.7",
+      "author": "TachUI Team",
+      "verified": true
+    },
+    {
+      "name": "@tachui/grid",
+      "version": "0.11.7",
+      "author": "TachUI Team",
+      "verified": true
+    },
+    {
+      "name": "@tachui/viewport",
+      "version": "0.11.7",
+      "author": "TachUI Team",
+      "verified": true
+    },
+    {
+      "name": "@tachui/mobile",
+      "version": "0.11.7",
+      "author": "TachUI Team",
+      "verified": true
+    },
+    {
+      "name": "@tachui/forms",
+      "version": "0.11.7",
+      "author": "TachUI Team",
+      "verified": true
+    },
+    {
+      "name": "@tachui/fragments",
+      "version": "0.11.7",
+      "author": "TachUI Team",
+      "verified": true
+    }
+  ],
   "conflicts": [],
   "registryHealth": {
-    "totalModifiers": 0,
+    "totalModifiers": 283,
     "duplicateNames": [],
     "orphanedReferences": [],
-    "instanceId": "b0bu0rskh",
-    "createdAt": 1761180833458,
+    "instanceId": "vxv204bd2",
+    "createdAt": 1790656200471,
     "instanceCount": 1
   }
 }

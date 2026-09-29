@@ -4,13 +4,14 @@ import { ModifierPriority } from './types'
 import type { Modifier } from './types'
 import type { ModifierRegistry, PluginInfo } from '@tachui/registry'
 import { registerModifierWithMetadata } from './registration-utils'
+import { coreModifierSignatures } from './signatures.generated'
 
 type OpacityValue = number | Signal<number>
 
 const metadata = {
   category: 'appearance' as const,
   priority: ModifierPriority.APPEARANCE,
-  signature: '(value: number | Signal<number>) => Modifier',
+  signature: coreModifierSignatures.opacity,
   description: 'Adjusts component opacity while respecting reactive updates.',
 }
 
