@@ -1,5 +1,56 @@
 # @tachui/primitives
 
+## 0.11.8
+
+### Patch Changes
+
+- [#443](https://github.com/tach-UI/tachUI/pull/443) [`4892c0b`](https://github.com/tach-UI/tachUI/commit/4892c0bcd28c60a3d193ae29590d2ce72d5ecb19) Thanks [@whoughton](https://github.com/whoughton)! - `BaseModifier`, `AnimationModifier` and `LifecycleModifier` now have one
+  implementation, in `@tachui/core/modifiers/base`. `@tachui/modifiers/base` and
+  the `@tachui/modifiers` root re-export core's classes under the same names, so
+  existing imports keep working and all three entries export the same class.
+
+  - `applyStyles` re-resolves an asset (a `ColorAsset` or anything with a
+    `resolve()` method) whenever the theme changes, from every entry point.
+    Before, only `@tachui/modifiers/base` did this.
+  - `AnimationModifier.type` is `'animation' | 'transition'` in core too, so
+    `TransitionModifier` extends core's class.
+  - `LifecycleModifier` no longer sets up pull-to-refresh. A `refreshable` prop
+    passed to it through `@tachui/modifiers` or `@tachui/modifiers/base` now does
+    nothing. Use `refreshable` from `@tachui/mobile` instead:
+
+    ```ts
+    import { refreshable } from "@tachui/mobile";
+    ```
+
+  `@tachui/core`, `@tachui/modifiers` and `@tachui/primitives` now emit a Vite
+  manifest and declare a gzip size budget, which `tools/check-size-budget.mjs`
+  enforces.
+
+- [#449](https://github.com/tach-UI/tachUI/pull/449) [`254c1f7`](https://github.com/tach-UI/tachUI/commit/254c1f7564ac5cf48312a0b3fba39df91c9cc61a) Thanks [@whoughton](https://github.com/whoughton)! - `.modifier` is no longer needed to apply a modifier.
+
+  `BasicInput`, `Toggle`, `ToggleWithLabel`, `Divider`, `Picker` and `BasicForm`,
+  along with `ToggleStyles`, `DividerUtils`, `PickerStyles` and `ImageUtils`, now
+  return `ModifiableComponentWithModifiers`, so modifiers chain on them directly
+  as they already did on the other primitives. `wrapComponent` returns the same
+  shape.
+
+  Registered factories chain by name on any component, and the new
+  `.applyModifier()` applies an instance from any factory, including one an
+  application registers itself:
+
+  ```ts
+  BasicInput({ text, setText }).css({ display: "block" }).ariaLabel("Name");
+
+  VStack({ children }).onHover(setHovered).applyModifier(glow("gold"));
+  ```
+
+  `.modifier` keeps working as before.
+
+- Updated dependencies [[`f316a35`](https://github.com/tach-UI/tachUI/commit/f316a35195dca9567e0018916eb28a8fa58288a4), [`ac7d9af`](https://github.com/tach-UI/tachUI/commit/ac7d9af604f65f97c2eafa95bfb6f65a5ba6d9aa), [`4892c0b`](https://github.com/tach-UI/tachUI/commit/4892c0bcd28c60a3d193ae29590d2ce72d5ecb19), [`2d81836`](https://github.com/tach-UI/tachUI/commit/2d81836f1bc179be14a988b4fe1b88bf8abbf3a6), [`1449ed3`](https://github.com/tach-UI/tachUI/commit/1449ed35a10182c8e22bacb6a23020ced13c9f15), [`81250bc`](https://github.com/tach-UI/tachUI/commit/81250bc0b88a4a0f982fddddb8e449575b7872b2), [`254c1f7`](https://github.com/tach-UI/tachUI/commit/254c1f7564ac5cf48312a0b3fba39df91c9cc61a), [`3703507`](https://github.com/tach-UI/tachUI/commit/3703507cfaf67a5636795507687069c8b83ee895), [`b5e4ba1`](https://github.com/tach-UI/tachUI/commit/b5e4ba1a65f8e8a6f876e61db029d439cfcedce3)]:
+  - @tachui/types@0.11.8
+  - @tachui/modifiers@0.11.8
+  - @tachui/core@0.11.8
+
 ## 0.11.7
 
 ### Patch Changes

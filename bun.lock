@@ -40,7 +40,7 @@
     },
     "packages/cli": {
       "name": "@tachui/cli",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "bin": {
         "tacho": "./bin/tacho.js",
       },
@@ -67,7 +67,7 @@
     },
     "packages/connectrpc": {
       "name": "@tachui/connectrpc",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
         "@tachui/core": "0.11.7",
         "@tachui/query": "0.8.37",
@@ -90,10 +90,10 @@
     },
     "packages/core": {
       "name": "@tachui/core",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
-        "@tachui/registry": "0.11.7",
-        "@tachui/types": "0.11.7",
+        "@tachui/registry": "0.11.8",
+        "@tachui/types": "0.11.8",
       },
       "devDependencies": {
         "@playwright/test": "^1.63.0",
@@ -118,7 +118,7 @@
     },
     "packages/data": {
       "name": "@tachui/data",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
         "@tachui/core": "0.11.7",
         "@tachui/flow-control": "0.11.7",
@@ -143,7 +143,7 @@
     },
     "packages/devtools": {
       "name": "@tachui/devtools",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
         "@tachui/core": "0.11.7",
         "@tachui/primitives": "0.11.7",
@@ -162,7 +162,7 @@
     },
     "packages/eslint-plugin-tachui": {
       "name": "@tachui/eslint-plugin",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "devDependencies": {
         "@types/node": "^20.19.43",
         "typescript": "^5.8.0",
@@ -174,7 +174,7 @@
     },
     "packages/flow-control": {
       "name": "@tachui/flow-control",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
         "@tachui/core": "0.11.7",
       },
@@ -196,13 +196,13 @@
     },
     "packages/forms": {
       "name": "@tachui/forms",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
-        "@tachui/core": "0.11.7",
-        "@tachui/modifiers": "0.11.7",
-        "@tachui/primitives": "0.11.7",
-        "@tachui/registry": "0.11.7",
-        "@tachui/types": "0.11.7",
+        "@tachui/core": "0.11.8",
+        "@tachui/modifiers": "0.11.8",
+        "@tachui/primitives": "0.11.8",
+        "@tachui/registry": "0.11.8",
+        "@tachui/types": "0.11.8",
       },
       "devDependencies": {
         "@types/node": "^20.19.43",
@@ -216,7 +216,7 @@
     },
     "packages/fragments": {
       "name": "@tachui/fragments",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
         "@tachui/core": "0.11.7",
         "@tachui/ssr": "0.11.7",
@@ -231,7 +231,7 @@
     },
     "packages/grid": {
       "name": "@tachui/grid",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
         "@tachui/core": "0.11.7",
         "@tachui/modifiers": "0.11.7",
@@ -257,10 +257,10 @@
     },
     "packages/mobile": {
       "name": "@tachui/mobile",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
-        "@tachui/modifiers": "0.11.7",
-        "@tachui/types": "0.11.7",
+        "@tachui/modifiers": "0.11.8",
+        "@tachui/types": "0.11.8",
       },
       "devDependencies": {
         "@tachui/core": "workspace:*",
@@ -278,11 +278,11 @@
     },
     "packages/modifiers": {
       "name": "@tachui/modifiers",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
-        "@tachui/core": "0.11.7",
-        "@tachui/registry": "0.11.7",
-        "@tachui/types": "0.11.7",
+        "@tachui/core": "0.11.8",
+        "@tachui/registry": "0.11.8",
+        "@tachui/types": "0.11.8",
       },
       "devDependencies": {
         "@types/jsdom": "^21.1.6",
@@ -302,10 +302,10 @@
     },
     "packages/navigation": {
       "name": "@tachui/navigation",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
-        "@tachui/modifiers": "0.11.7",
-        "@tachui/types": "0.11.7",
+        "@tachui/modifiers": "0.11.8",
+        "@tachui/types": "0.11.8",
       },
       "devDependencies": {
         "@playwright/test": "^1.63.0",
@@ -322,11 +322,11 @@
     },
     "packages/primitives": {
       "name": "@tachui/primitives",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
-        "@tachui/core": "0.11.7",
-        "@tachui/modifiers": "0.11.7",
-        "@tachui/types": "0.11.7",
+        "@tachui/core": "0.11.8",
+        "@tachui/modifiers": "0.11.8",
+        "@tachui/types": "0.11.8",
       },
       "devDependencies": {
         "@types/jsdom": "^21.1.6",
@@ -346,7 +346,7 @@
     },
     "packages/query": {
       "name": "@tachui/query",
-      "version": "0.8.37",
+      "version": "0.8.38",
       "dependencies": {
         "@tachui/core": "0.11.7",
       },
@@ -359,7 +359,7 @@
     },
     "packages/registry": {
       "name": "@tachui/registry",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "devDependencies": {
         "@types/node": "^20.19.43",
         "typescript": "^5.2.0",
@@ -369,7 +369,7 @@
     },
     "packages/responsive": {
       "name": "@tachui/responsive",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
         "@tachui/core": "0.11.7",
         "@tachui/modifiers": "0.11.7",
@@ -394,7 +394,7 @@
     },
     "packages/ssr": {
       "name": "@tachui/ssr",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
         "@tachui/core": "0.11.7",
       },
@@ -407,10 +407,10 @@
     },
     "packages/symbols": {
       "name": "@tachui/symbols",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
-        "@tachui/core": "0.11.7",
-        "@tachui/modifiers": "0.11.7",
+        "@tachui/core": "0.11.8",
+        "@tachui/modifiers": "0.11.8",
         "lucide": "^0.447.0",
       },
       "devDependencies": {
@@ -428,14 +428,14 @@
     },
     "packages/types": {
       "name": "@tachui/types",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "devDependencies": {
         "typescript": "^5.8.0",
       },
     },
     "packages/viewport": {
       "name": "@tachui/viewport",
-      "version": "0.11.7",
+      "version": "0.11.8",
       "dependencies": {
         "@tachui/core": "0.11.7",
         "@tachui/modifiers": "0.11.7",
