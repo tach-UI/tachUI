@@ -6,7 +6,7 @@ on:
 
 env:
   NODE_VERSION: '24'
-  BUN_VERSION: '1.2.0'
+  BUN_VERSION: '1.3.9'
 
 jobs:
   release-pr-guard:
@@ -379,8 +379,7 @@ jobs:
         run: bun install --frozen-lockfile
       
       - name: Run dependency security audit
-        run: bunx npm audit --audit-level=moderate
-        continue-on-error: true
+        run: bun run ci:check-audit
 
   benchmarks:
     name: Browser Benchmarks

@@ -73,6 +73,7 @@
     "ci:check-declared-types": "node ./tools/check-declared-types.mjs",
     "ci:check-entry-imports": "node ./tools/check-entry-imports.mjs",
     "ci:check-size-budget": "node ./tools/check-size-budget.mjs",
+    "ci:check-audit": "node ./tools/check-audit.mjs",
     "lint": "oxlint packages --import-plugin --ignore-pattern='**/__tests__/**' --ignore-pattern='**/*.test.*' --ignore-pattern='**/*.spec.*'",
     "lint:fix": "oxlint packages --import-plugin --ignore-pattern='**/__tests__/**' --ignore-pattern='**/*.test.*' --ignore-pattern='**/*.spec.*' --fix",
     "type-check": "bun run --filter '*' type-check",
@@ -125,7 +126,7 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "packageManager": "bun@1.2.0",
+  "packageManager": "bun@1.3.9",
   "dependencies": {
     "lucide": "^0.447.0"
   }
