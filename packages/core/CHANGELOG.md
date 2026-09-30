@@ -1,5 +1,180 @@
 # @tachui/core
 
+## 0.11.8
+
+### Patch Changes
+
+- [#451](https://github.com/tach-UI/tachUI/pull/451) [`f316a35`](https://github.com/tach-UI/tachUI/commit/f316a35195dca9567e0018916eb28a8fa58288a4) Thanks [@whoughton](https://github.com/whoughton)! - Three chain methods still accepted anything after the builder lost its
+  `[key: string]: any` fallback, because their own parameters were `any`.
+  `.fontFamily()` now takes a string or a font asset, `.fontStyle()` takes
+  `'normal' | 'italic' | 'oblique'`, and `.scroll()` takes its `ScrollConfig`,
+  which a declaration in `@tachui/types` had shadowed with `any`. The values the
+  runtime applies are unchanged; a call that passed anything else now fails to
+  compile.
+
+  The builder's type tests now also pin that it declares no string index
+  signature and that its chain methods are not `any`.
+
+- [#448](https://github.com/tach-UI/tachUI/pull/448) [`ac7d9af`](https://github.com/tach-UI/tachUI/commit/ac7d9af604f65f97c2eafa95bfb6f65a5ba6d9aa) Thanks [@whoughton](https://github.com/whoughton)! - The modifier builder declares `.onHover(cb)` next to `.onTap()`, so hover
+  chains on `.modifier` like tap does and no longer needs the internal
+  `.modifier()` hatch. It applies the `onHover` modifier registered by
+  `@tachui/modifiers`, calling back with `true` on `mouseenter` and `false` on
+  `mouseleave`.
+
+  ```ts
+  Button("Save")
+    .modifier.onHover((hovered) => setHovered(hovered))
+    .onTap(save)
+    .build();
+  ```
+
+  The `onHover` factory from `@tachui/modifiers` is unchanged.
+
+- [#443](https://github.com/tach-UI/tachUI/pull/443) [`4892c0b`](https://github.com/tach-UI/tachUI/commit/4892c0bcd28c60a3d193ae29590d2ce72d5ecb19) Thanks [@whoughton](https://github.com/whoughton)! - `BaseModifier`, `AnimationModifier` and `LifecycleModifier` now have one
+  implementation, in `@tachui/core/modifiers/base`. `@tachui/modifiers/base` and
+  the `@tachui/modifiers` root re-export core's classes under the same names, so
+  existing imports keep working and all three entries export the same class.
+
+  - `applyStyles` re-resolves an asset (a `ColorAsset` or anything with a
+    `resolve()` method) whenever the theme changes, from every entry point.
+    Before, only `@tachui/modifiers/base` did this.
+  - `AnimationModifier.type` is `'animation' | 'transition'` in core too, so
+    `TransitionModifier` extends core's class.
+  - `LifecycleModifier` no longer sets up pull-to-refresh. A `refreshable` prop
+    passed to it through `@tachui/modifiers` or `@tachui/modifiers/base` now does
+    nothing. Use `refreshable` from `@tachui/mobile` instead:
+
+    ```ts
+    import { refreshable } from "@tachui/mobile";
+    ```
+
+  `@tachui/core`, `@tachui/modifiers` and `@tachui/primitives` now emit a Vite
+  manifest and declare a gzip size budget, which `tools/check-size-budget.mjs`
+  enforces.
+
+- [#446](https://github.com/tach-UI/tachUI/pull/446) [`2d81836`](https://github.com/tach-UI/tachUI/commit/2d81836f1bc179be14a988b4fe1b88bf8abbf3a6) Thanks [@whoughton](https://github.com/whoughton)! - `InteractionModifier` now has one implementation, in
+  `@tachui/core/modifiers/base`, and `@tachui/modifiers/base` and the
+  `@tachui/modifiers` root re-export it. Existing imports keep working.
+
+  - Touch handlers (`onTouchStart`, `onTouchMove`, `onTouchEnd`,
+    `onTouchCancel`) and `onSwipeLeft` / `onSwipeRight` apply from every entry.
+    Before, the `@tachui/modifiers` root's copy dropped them.
+  - `disabled` given as a signal or computed toggles the `disabled` attribute,
+    pointer events and opacity as it changes, from every entry. Before, core's
+    class applied it once.
+  - Long press, keyboard shortcuts, focus, `focusable`, continuous hover and hit
+    testing are the `.onLongPressGesture()`, `.keyboardShortcut()`,
+    `.focused()`, `.focusable()`, `.onContinuousHover()` and
+    `.allowsHitTesting()` modifiers, now registered with metadata by
+    `@tachui/modifiers`. `InteractionModifier` no longer reads those props when
+    constructed directly; use the chain methods instead.
+  - `.keyboardShortcut()`, and `.focused()` with a signal and
+    `.focusable(true, ['activate'])`, return their cleanup, so disposing the
+    component removes their listeners, including the one on `document`.
+  - `LayoutModifier` no longer accepts `offset`, `aspectRatio`, `scaleEffect` or
+    `zIndex`, and `LayoutModifierProps` no longer declares them. Use the
+    `.offset()`, `.aspectRatio()`, `.scaleEffect()` and `.zIndex()` chain
+    methods, which are unchanged. `LayoutModifierProps['position']` accepts
+    signal coordinates, which it already followed.
+
+- [#445](https://github.com/tach-UI/tachUI/pull/445) [`1449ed3`](https://github.com/tach-UI/tachUI/commit/1449ed35a10182c8e22bacb6a23020ced13c9f15) Thanks [@whoughton](https://github.com/whoughton)! - `LayoutModifier` now has one implementation, in `@tachui/core/modifiers/base`,
+  and `@tachui/modifiers/base` and the `@tachui/modifiers` root re-export it.
+  `AppearanceModifier` from both `@tachui/modifiers` entries is now one class:
+  core's, plus the shadow, `clipped` and `clipShape` branches, which stay out of
+  core. Existing imports keep working.
+
+  - Core's `LayoutModifier` applies `offset`, `scaleEffect` and `zIndex`, and
+    `aspectRatio` follows a signal ratio. Offset and scale write through the
+    shared transform composer, so they keep an animation's rotation.
+  - `position` sets `position: absolute`, defaults a missing coordinate to `0`
+    rather than `auto`, and follows signal coordinates.
+  - `layoutPriority` writes `--layout-priority` onto the element from every
+    entry. Before, the `@tachui/modifiers` copies dropped it.
+  - `LayoutModifier` and `AppearanceModifier` apply when the element is on
+    either the context or the node. The `@tachui/modifiers` copies needed both.
+  - Font `size` and `weight` given as signals update the element, and an
+    explicit `0` is written rather than dropped, from every entry.
+  - The `@tachui/modifiers` root's `AppearanceModifier` now applies `role`,
+    ARIA and navigation props, and its `shadow` takes `blur` and `spread` as the
+    `@tachui/modifiers/base` one already did.
+  - `clipPathFor`, `clipPathForName`, `isShapeInstance` and `ClipShapeName` are
+    exported from `@tachui/core/modifiers`.
+
+- [#450](https://github.com/tach-UI/tachUI/pull/450) [`81250bc`](https://github.com/tach-UI/tachUI/commit/81250bc0b88a4a0f982fddddb8e449575b7872b2) Thanks [@whoughton](https://github.com/whoughton)! - Every first-party modifier now registers with metadata, and each signature in
+  that metadata is derived from the factory the modifier registers rather than
+  written by hand. The basic, effects and preload lists in `@tachui/modifiers`
+  and the fragments modifiers used to register without metadata; they now go
+  through `registerModifierWithMetadata`. Which factory a name resolves to is
+  unchanged: a name already in the registry keeps its factory.
+
+  `derive-modifier-signatures` in `@tachui/core` regenerates the signature
+  tables; `derive-modifier-signatures:check` fails when one is stale.
+
+  The derivation builds each signature with the devtools `buildSignature`
+  helper. `@tachui/devtools`'s published entries are unchanged.
+
+- [#449](https://github.com/tach-UI/tachUI/pull/449) [`254c1f7`](https://github.com/tach-UI/tachUI/commit/254c1f7564ac5cf48312a0b3fba39df91c9cc61a) Thanks [@whoughton](https://github.com/whoughton)! - `.modifier` is no longer needed to apply a modifier.
+
+  `BasicInput`, `Toggle`, `ToggleWithLabel`, `Divider`, `Picker` and `BasicForm`,
+  along with `ToggleStyles`, `DividerUtils`, `PickerStyles` and `ImageUtils`, now
+  return `ModifiableComponentWithModifiers`, so modifiers chain on them directly
+  as they already did on the other primitives. `wrapComponent` returns the same
+  shape.
+
+  Registered factories chain by name on any component, and the new
+  `.applyModifier()` applies an instance from any factory, including one an
+  application registers itself:
+
+  ```ts
+  BasicInput({ text, setText }).css({ display: "block" }).ariaLabel("Name");
+
+  VStack({ children }).onHover(setHovered).applyModifier(glow("gold"));
+  ```
+
+  `.modifier` keeps working as before.
+
+- [#447](https://github.com/tach-UI/tachUI/pull/447) [`3703507`](https://github.com/tach-UI/tachUI/commit/3703507cfaf67a5636795507687069c8b83ee895) Thanks [@whoughton](https://github.com/whoughton)! - `addModifier()` and `.modifier()` are no longer on the public
+  `ModifierBuilder` type. Both move to `InternalModifierBuilder`, an internal
+  interface in `@tachui/types` re-exported by `@tachui/core` for framework
+  packages. Autocomplete now offers only chain methods, and the public builder
+  no longer has a `void`-returning method that silently ends a chain.
+
+  Nothing changes at runtime: both methods still exist on the builder,
+  `.modifier()` still warns in development, and `addModifier()` stays silent.
+  Only code that calls them through the public type stops compiling.
+
+  Migration: chain the modifier directly.
+
+  ```ts
+  // Before
+  Text("Hello").modifier.modifier(padding(16)).build();
+
+  // After
+  Text("Hello").padding(16);
+  ```
+
+  `ResponsiveModifierBuilder` from `@tachui/responsive` no longer declares
+  `addModifier()` either; its responsive and breakpoint methods apply modifiers
+  exactly as before.
+
+- [#452](https://github.com/tach-UI/tachUI/pull/452) [`b5e4ba1`](https://github.com/tach-UI/tachUI/commit/b5e4ba1a65f8e8a6f876e61db029d439cfcedce3) Thanks [@whoughton](https://github.com/whoughton)! - The modifier type generator is removed. Its declarations augmented an interface
+  that `@tachui/core` only re-exports, so they never typed a chain method; chain
+  methods are typed by each registering package's `ModifierBuilder` augmentation.
+
+  Breaking: the `@tachui/core/modifiers/type-generator`,
+  `@tachui/core/build-plugins`, `@tachui/core/build-tools`,
+  `@tachui/core/build-plugins/modifier-types` and
+  `@tachui/core/build-tools/modifier-types` subpaths are gone, and with them
+  `modifierTypesPlugin`. The `generate-modifier-types` scripts, the committed
+  `generated-modifiers.d.ts` and metadata snapshot, and the
+  `tachui modifier-docs conflicts` command, which read that snapshot, are removed
+  too. Type custom modifiers by augmenting `ModifierBuilder` in
+  `@tachui/types/modifiers`.
+
+- Updated dependencies [[`f316a35`](https://github.com/tach-UI/tachUI/commit/f316a35195dca9567e0018916eb28a8fa58288a4), [`ac7d9af`](https://github.com/tach-UI/tachUI/commit/ac7d9af604f65f97c2eafa95bfb6f65a5ba6d9aa), [`254c1f7`](https://github.com/tach-UI/tachUI/commit/254c1f7564ac5cf48312a0b3fba39df91c9cc61a), [`3703507`](https://github.com/tach-UI/tachUI/commit/3703507cfaf67a5636795507687069c8b83ee895)]:
+  - @tachui/types@0.11.8
+  - @tachui/registry@0.11.8
+
 ## 0.11.7
 
 ### Patch Changes

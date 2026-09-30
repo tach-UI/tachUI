@@ -1,5 +1,35 @@
 # @tachui/cli
 
+## 0.11.8
+
+### Patch Changes
+
+- [#455](https://github.com/tach-UI/tachUI/pull/455) [`c18d903`](https://github.com/tach-UI/tachUI/commit/c18d903de3256061aa9392875dfa26093f31b8f7) Thanks [@whoughton](https://github.com/whoughton)! - The CLI's `glob` dependency moves from `^10.0.0` to `^13.0.0`. Commands that
+  scan files (`analyze`, `optimize`, `migrate`, `migrate remove-modifier-trigger`
+  and the import optimizer) match the same files for the same patterns and
+  `--ignore` options.
+
+  glob 13 and its dependencies support Node 20 and 22+, but not Node 21, so the
+  CLI's `engines` range narrows from `>=20.0.0` to `^20.0.0 || >=22.0.0` to match.
+
+- [#452](https://github.com/tach-UI/tachUI/pull/452) [`b5e4ba1`](https://github.com/tach-UI/tachUI/commit/b5e4ba1a65f8e8a6f876e61db029d439cfcedce3) Thanks [@whoughton](https://github.com/whoughton)! - The modifier type generator is removed. Its declarations augmented an interface
+  that `@tachui/core` only re-exports, so they never typed a chain method; chain
+  methods are typed by each registering package's `ModifierBuilder` augmentation.
+
+  Breaking: the `@tachui/core/modifiers/type-generator`,
+  `@tachui/core/build-plugins`, `@tachui/core/build-tools`,
+  `@tachui/core/build-plugins/modifier-types` and
+  `@tachui/core/build-tools/modifier-types` subpaths are gone, and with them
+  `modifierTypesPlugin`. The `generate-modifier-types` scripts, the committed
+  `generated-modifiers.d.ts` and metadata snapshot, and the
+  `tachui modifier-docs conflicts` command, which read that snapshot, are removed
+  too. Type custom modifiers by augmenting `ModifierBuilder` in
+  `@tachui/types/modifiers`.
+
+- Updated dependencies [[`f316a35`](https://github.com/tach-UI/tachUI/commit/f316a35195dca9567e0018916eb28a8fa58288a4), [`ac7d9af`](https://github.com/tach-UI/tachUI/commit/ac7d9af604f65f97c2eafa95bfb6f65a5ba6d9aa), [`4892c0b`](https://github.com/tach-UI/tachUI/commit/4892c0bcd28c60a3d193ae29590d2ce72d5ecb19), [`2d81836`](https://github.com/tach-UI/tachUI/commit/2d81836f1bc179be14a988b4fe1b88bf8abbf3a6), [`1449ed3`](https://github.com/tach-UI/tachUI/commit/1449ed35a10182c8e22bacb6a23020ced13c9f15), [`81250bc`](https://github.com/tach-UI/tachUI/commit/81250bc0b88a4a0f982fddddb8e449575b7872b2), [`254c1f7`](https://github.com/tach-UI/tachUI/commit/254c1f7564ac5cf48312a0b3fba39df91c9cc61a), [`3703507`](https://github.com/tach-UI/tachUI/commit/3703507cfaf67a5636795507687069c8b83ee895), [`b5e4ba1`](https://github.com/tach-UI/tachUI/commit/b5e4ba1a65f8e8a6f876e61db029d439cfcedce3)]:
+  - @tachui/core@0.11.8
+  - @tachui/devtools@0.11.8
+
 ## 0.11.7
 
 ### Patch Changes

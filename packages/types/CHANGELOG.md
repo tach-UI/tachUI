@@ -1,5 +1,79 @@
 # @tachui/types
 
+## 0.11.8
+
+### Patch Changes
+
+- [#451](https://github.com/tach-UI/tachUI/pull/451) [`f316a35`](https://github.com/tach-UI/tachUI/commit/f316a35195dca9567e0018916eb28a8fa58288a4) Thanks [@whoughton](https://github.com/whoughton)! - Three chain methods still accepted anything after the builder lost its
+  `[key: string]: any` fallback, because their own parameters were `any`.
+  `.fontFamily()` now takes a string or a font asset, `.fontStyle()` takes
+  `'normal' | 'italic' | 'oblique'`, and `.scroll()` takes its `ScrollConfig`,
+  which a declaration in `@tachui/types` had shadowed with `any`. The values the
+  runtime applies are unchanged; a call that passed anything else now fails to
+  compile.
+
+  The builder's type tests now also pin that it declares no string index
+  signature and that its chain methods are not `any`.
+
+- [#448](https://github.com/tach-UI/tachUI/pull/448) [`ac7d9af`](https://github.com/tach-UI/tachUI/commit/ac7d9af604f65f97c2eafa95bfb6f65a5ba6d9aa) Thanks [@whoughton](https://github.com/whoughton)! - The modifier builder declares `.onHover(cb)` next to `.onTap()`, so hover
+  chains on `.modifier` like tap does and no longer needs the internal
+  `.modifier()` hatch. It applies the `onHover` modifier registered by
+  `@tachui/modifiers`, calling back with `true` on `mouseenter` and `false` on
+  `mouseleave`.
+
+  ```ts
+  Button("Save")
+    .modifier.onHover((hovered) => setHovered(hovered))
+    .onTap(save)
+    .build();
+  ```
+
+  The `onHover` factory from `@tachui/modifiers` is unchanged.
+
+- [#449](https://github.com/tach-UI/tachUI/pull/449) [`254c1f7`](https://github.com/tach-UI/tachUI/commit/254c1f7564ac5cf48312a0b3fba39df91c9cc61a) Thanks [@whoughton](https://github.com/whoughton)! - `.modifier` is no longer needed to apply a modifier.
+
+  `BasicInput`, `Toggle`, `ToggleWithLabel`, `Divider`, `Picker` and `BasicForm`,
+  along with `ToggleStyles`, `DividerUtils`, `PickerStyles` and `ImageUtils`, now
+  return `ModifiableComponentWithModifiers`, so modifiers chain on them directly
+  as they already did on the other primitives. `wrapComponent` returns the same
+  shape.
+
+  Registered factories chain by name on any component, and the new
+  `.applyModifier()` applies an instance from any factory, including one an
+  application registers itself:
+
+  ```ts
+  BasicInput({ text, setText }).css({ display: "block" }).ariaLabel("Name");
+
+  VStack({ children }).onHover(setHovered).applyModifier(glow("gold"));
+  ```
+
+  `.modifier` keeps working as before.
+
+- [#447](https://github.com/tach-UI/tachUI/pull/447) [`3703507`](https://github.com/tach-UI/tachUI/commit/3703507cfaf67a5636795507687069c8b83ee895) Thanks [@whoughton](https://github.com/whoughton)! - `addModifier()` and `.modifier()` are no longer on the public
+  `ModifierBuilder` type. Both move to `InternalModifierBuilder`, an internal
+  interface in `@tachui/types` re-exported by `@tachui/core` for framework
+  packages. Autocomplete now offers only chain methods, and the public builder
+  no longer has a `void`-returning method that silently ends a chain.
+
+  Nothing changes at runtime: both methods still exist on the builder,
+  `.modifier()` still warns in development, and `addModifier()` stays silent.
+  Only code that calls them through the public type stops compiling.
+
+  Migration: chain the modifier directly.
+
+  ```ts
+  // Before
+  Text("Hello").modifier.modifier(padding(16)).build();
+
+  // After
+  Text("Hello").padding(16);
+  ```
+
+  `ResponsiveModifierBuilder` from `@tachui/responsive` no longer declares
+  `addModifier()` either; its responsive and breakpoint methods apply modifiers
+  exactly as before.
+
 ## 0.11.7
 
 ## 0.11.6

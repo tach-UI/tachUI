@@ -1,5 +1,108 @@
 # @tachui/modifiers
 
+## 0.11.8
+
+### Patch Changes
+
+- [#451](https://github.com/tach-UI/tachUI/pull/451) [`f316a35`](https://github.com/tach-UI/tachUI/commit/f316a35195dca9567e0018916eb28a8fa58288a4) Thanks [@whoughton](https://github.com/whoughton)! - Three chain methods still accepted anything after the builder lost its
+  `[key: string]: any` fallback, because their own parameters were `any`.
+  `.fontFamily()` now takes a string or a font asset, `.fontStyle()` takes
+  `'normal' | 'italic' | 'oblique'`, and `.scroll()` takes its `ScrollConfig`,
+  which a declaration in `@tachui/types` had shadowed with `any`. The values the
+  runtime applies are unchanged; a call that passed anything else now fails to
+  compile.
+
+  The builder's type tests now also pin that it declares no string index
+  signature and that its chain methods are not `any`.
+
+- [#443](https://github.com/tach-UI/tachUI/pull/443) [`4892c0b`](https://github.com/tach-UI/tachUI/commit/4892c0bcd28c60a3d193ae29590d2ce72d5ecb19) Thanks [@whoughton](https://github.com/whoughton)! - `BaseModifier`, `AnimationModifier` and `LifecycleModifier` now have one
+  implementation, in `@tachui/core/modifiers/base`. `@tachui/modifiers/base` and
+  the `@tachui/modifiers` root re-export core's classes under the same names, so
+  existing imports keep working and all three entries export the same class.
+
+  - `applyStyles` re-resolves an asset (a `ColorAsset` or anything with a
+    `resolve()` method) whenever the theme changes, from every entry point.
+    Before, only `@tachui/modifiers/base` did this.
+  - `AnimationModifier.type` is `'animation' | 'transition'` in core too, so
+    `TransitionModifier` extends core's class.
+  - `LifecycleModifier` no longer sets up pull-to-refresh. A `refreshable` prop
+    passed to it through `@tachui/modifiers` or `@tachui/modifiers/base` now does
+    nothing. Use `refreshable` from `@tachui/mobile` instead:
+
+    ```ts
+    import { refreshable } from "@tachui/mobile";
+    ```
+
+  `@tachui/core`, `@tachui/modifiers` and `@tachui/primitives` now emit a Vite
+  manifest and declare a gzip size budget, which `tools/check-size-budget.mjs`
+  enforces.
+
+- [#446](https://github.com/tach-UI/tachUI/pull/446) [`2d81836`](https://github.com/tach-UI/tachUI/commit/2d81836f1bc179be14a988b4fe1b88bf8abbf3a6) Thanks [@whoughton](https://github.com/whoughton)! - `InteractionModifier` now has one implementation, in
+  `@tachui/core/modifiers/base`, and `@tachui/modifiers/base` and the
+  `@tachui/modifiers` root re-export it. Existing imports keep working.
+
+  - Touch handlers (`onTouchStart`, `onTouchMove`, `onTouchEnd`,
+    `onTouchCancel`) and `onSwipeLeft` / `onSwipeRight` apply from every entry.
+    Before, the `@tachui/modifiers` root's copy dropped them.
+  - `disabled` given as a signal or computed toggles the `disabled` attribute,
+    pointer events and opacity as it changes, from every entry. Before, core's
+    class applied it once.
+  - Long press, keyboard shortcuts, focus, `focusable`, continuous hover and hit
+    testing are the `.onLongPressGesture()`, `.keyboardShortcut()`,
+    `.focused()`, `.focusable()`, `.onContinuousHover()` and
+    `.allowsHitTesting()` modifiers, now registered with metadata by
+    `@tachui/modifiers`. `InteractionModifier` no longer reads those props when
+    constructed directly; use the chain methods instead.
+  - `.keyboardShortcut()`, and `.focused()` with a signal and
+    `.focusable(true, ['activate'])`, return their cleanup, so disposing the
+    component removes their listeners, including the one on `document`.
+  - `LayoutModifier` no longer accepts `offset`, `aspectRatio`, `scaleEffect` or
+    `zIndex`, and `LayoutModifierProps` no longer declares them. Use the
+    `.offset()`, `.aspectRatio()`, `.scaleEffect()` and `.zIndex()` chain
+    methods, which are unchanged. `LayoutModifierProps['position']` accepts
+    signal coordinates, which it already followed.
+
+- [#445](https://github.com/tach-UI/tachUI/pull/445) [`1449ed3`](https://github.com/tach-UI/tachUI/commit/1449ed35a10182c8e22bacb6a23020ced13c9f15) Thanks [@whoughton](https://github.com/whoughton)! - `LayoutModifier` now has one implementation, in `@tachui/core/modifiers/base`,
+  and `@tachui/modifiers/base` and the `@tachui/modifiers` root re-export it.
+  `AppearanceModifier` from both `@tachui/modifiers` entries is now one class:
+  core's, plus the shadow, `clipped` and `clipShape` branches, which stay out of
+  core. Existing imports keep working.
+
+  - Core's `LayoutModifier` applies `offset`, `scaleEffect` and `zIndex`, and
+    `aspectRatio` follows a signal ratio. Offset and scale write through the
+    shared transform composer, so they keep an animation's rotation.
+  - `position` sets `position: absolute`, defaults a missing coordinate to `0`
+    rather than `auto`, and follows signal coordinates.
+  - `layoutPriority` writes `--layout-priority` onto the element from every
+    entry. Before, the `@tachui/modifiers` copies dropped it.
+  - `LayoutModifier` and `AppearanceModifier` apply when the element is on
+    either the context or the node. The `@tachui/modifiers` copies needed both.
+  - Font `size` and `weight` given as signals update the element, and an
+    explicit `0` is written rather than dropped, from every entry.
+  - The `@tachui/modifiers` root's `AppearanceModifier` now applies `role`,
+    ARIA and navigation props, and its `shadow` takes `blur` and `spread` as the
+    `@tachui/modifiers/base` one already did.
+  - `clipPathFor`, `clipPathForName`, `isShapeInstance` and `ClipShapeName` are
+    exported from `@tachui/core/modifiers`.
+
+- [#450](https://github.com/tach-UI/tachUI/pull/450) [`81250bc`](https://github.com/tach-UI/tachUI/commit/81250bc0b88a4a0f982fddddb8e449575b7872b2) Thanks [@whoughton](https://github.com/whoughton)! - Every first-party modifier now registers with metadata, and each signature in
+  that metadata is derived from the factory the modifier registers rather than
+  written by hand. The basic, effects and preload lists in `@tachui/modifiers`
+  and the fragments modifiers used to register without metadata; they now go
+  through `registerModifierWithMetadata`. Which factory a name resolves to is
+  unchanged: a name already in the registry keeps its factory.
+
+  `derive-modifier-signatures` in `@tachui/core` regenerates the signature
+  tables; `derive-modifier-signatures:check` fails when one is stale.
+
+  The derivation builds each signature with the devtools `buildSignature`
+  helper. `@tachui/devtools`'s published entries are unchanged.
+
+- Updated dependencies [[`f316a35`](https://github.com/tach-UI/tachUI/commit/f316a35195dca9567e0018916eb28a8fa58288a4), [`ac7d9af`](https://github.com/tach-UI/tachUI/commit/ac7d9af604f65f97c2eafa95bfb6f65a5ba6d9aa), [`4892c0b`](https://github.com/tach-UI/tachUI/commit/4892c0bcd28c60a3d193ae29590d2ce72d5ecb19), [`2d81836`](https://github.com/tach-UI/tachUI/commit/2d81836f1bc179be14a988b4fe1b88bf8abbf3a6), [`1449ed3`](https://github.com/tach-UI/tachUI/commit/1449ed35a10182c8e22bacb6a23020ced13c9f15), [`81250bc`](https://github.com/tach-UI/tachUI/commit/81250bc0b88a4a0f982fddddb8e449575b7872b2), [`254c1f7`](https://github.com/tach-UI/tachUI/commit/254c1f7564ac5cf48312a0b3fba39df91c9cc61a), [`3703507`](https://github.com/tach-UI/tachUI/commit/3703507cfaf67a5636795507687069c8b83ee895), [`b5e4ba1`](https://github.com/tach-UI/tachUI/commit/b5e4ba1a65f8e8a6f876e61db029d439cfcedce3)]:
+  - @tachui/types@0.11.8
+  - @tachui/core@0.11.8
+  - @tachui/registry@0.11.8
+
 ## 0.11.7
 
 ### Patch Changes
