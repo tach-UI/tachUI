@@ -14,7 +14,7 @@ interface RemoveModifierOptions {
   ignore?: string[]
 }
 
-const DEFAULT_IGNORE = [
+export const DEFAULT_IGNORE = [
   '**/node_modules/**',
   '**/dist/**',
   '**/build/**',

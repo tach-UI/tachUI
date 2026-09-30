@@ -5,7 +5,7 @@
  * This is the core of Phase 2.1.1 - the plugin foundation for compile-time transformation.
  */
 
-import type { Plugin, TransformResult } from 'vite'
+import type { Plugin, Rollup } from 'vite'
 import * as ts from 'typescript'
 import { generateDOMCode } from './codegen'
 import { parseSwiftUISyntax } from './parser'
@@ -54,7 +54,7 @@ export function createTachUIPlugin(options: TachUIPluginOptions = {}): Plugin {
       return null
     },
 
-    transform(code: string, id: string): TransformResult | null {
+    transform(code: string, id: string): Rollup.TransformResult {
       // Only transform files that match our criteria
       if (!shouldTransform(id, include, exclude)) {
         return null

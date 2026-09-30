@@ -1,8 +1,9 @@
 /**
  * Glob call-site match tests
  *
- * Each case mirrors the pattern and options of one `glob()` call in the CLI
- * and pins the files it matches in a fixture tree. The expected sets were
+ * Each case runs the default pattern and ignore list of one `glob()` call in
+ * the CLI, read from the command itself, and pins the files it matches in a
+ * fixture tree. The expected sets were
  * recorded from the previous glob major, so a dependency bump that changes
  * which files a command picks up (brace expansion, ignore handling, dotfiles,
  * directories, absolute output) fails here instead of in a user's project.
@@ -13,7 +14,15 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import type { Command } from 'commander'
 import { glob } from 'glob'
+import { analyzeCommand } from '../src/commands/analyze'
+import { migrateCommand } from '../src/commands/migrate'
+import {
+  createRemoveModifierTriggerCommand,
+  DEFAULT_IGNORE as REMOVE_TRIGGER_IGNORE,
+} from '../src/commands/migrate/remove-modifier-trigger'
+import { optimizeCommand } from '../src/commands/optimize'
 import { ImportOptimizer } from '../src/import-optimizer'
 
 const FIXTURE_FILES = [
@@ -40,15 +49,10 @@ const FIXTURE_FILES = [
   'lib/skip.d.ts',
 ]
 
-// Mirrors DEFAULT_IGNORE in src/commands/migrate/remove-modifier-trigger.ts.
-const REMOVE_TRIGGER_IGNORE = [
-  '**/node_modules/**',
-  '**/dist/**',
-  '**/build/**',
-  '**/.next/**',
-  '**/.tachui/**',
-  '**/.turbo/**',
-]
+const REMOVE_TRIGGER_PATTERN = defaultPattern(
+  createRemoveModifierTriggerCommand(),
+  '--pattern'
+)
 
 // Default patterns of analyze/optimize match the same files.
 const SOURCE_PATTERN_MATCHES = [
@@ -66,6 +70,14 @@ const SOURCE_PATTERN_MATCHES = [
 ]
 
 let root: string
+
+function defaultPattern(command: Command, flag: string): string {
+  const option = command.options.find(candidate => candidate.long === flag)
+  if (typeof option?.defaultValue !== 'string') {
+    throw new Error(`${command.name()} has no string default for ${flag}`)
+  }
+  return option.defaultValue
+}
 
 function relativeSorted(matches: string[]): string[] {
   return matches
@@ -154,10 +166,13 @@ describe('glob call sites', () => {
     ])
   })
 
-  it.each(['analyze', 'optimize'])(
+  it.each([
+    ['analyze', analyzeCommand],
+    ['optimize', optimizeCommand],
+  ])(
     '%s: default pattern returns absolute paths for the same files',
-    async () => {
-      const matches = await glob('src/**/*.{js,jsx,ts,tsx}', {
+    async (_name, command) => {
+      const matches = await glob(defaultPattern(command, '--pattern'), {
         cwd: root,
         absolute: true,
       })
@@ -168,7 +183,7 @@ describe('glob call sites', () => {
   )
 
   it('migrate: default input pattern also picks up .vue files', async () => {
-    const matches = await glob('src/**/*.{js,jsx,ts,tsx,vue}', {
+    const matches = await glob(defaultPattern(migrateCommand, '--input'), {
       cwd: root,
       absolute: true,
     })
@@ -180,7 +195,7 @@ describe('glob call sites', () => {
   })
 
   it('remove-modifier-trigger: default ignores and nodir drop build output and directories', async () => {
-    const matches = await glob('src/**/*.{ts,tsx,js,jsx}', {
+    const matches = await glob(REMOVE_TRIGGER_PATTERN, {
       cwd: root,
       absolute: true,
       ignore: REMOVE_TRIGGER_IGNORE,
@@ -200,7 +215,7 @@ describe('glob call sites', () => {
   })
 
   it('remove-modifier-trigger: a user --ignore pattern removes its matches', async () => {
-    const matches = await glob('src/**/*.{ts,tsx,js,jsx}', {
+    const matches = await glob(REMOVE_TRIGGER_PATTERN, {
       cwd: root,
       absolute: true,
       ignore: [...REMOVE_TRIGGER_IGNORE, 'src/nested/**'],

@@ -63,7 +63,7 @@
   },
   "bugs": "https://github.com/tach-UI/tachUI/issues",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "^20.0.0 || >=22.0.0"
   },
   "sideEffects": false,
   "publishConfig": {
