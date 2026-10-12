@@ -405,10 +405,25 @@ describe('Phase 5.1: Performance Baseline Benchmarks', () => {
         status: result.status
       })
 
-      // Keep a strict floor while allowing bounded runtime variance in jsdom/Node heaps.
+      // Structural: every cycle removes what it created, so the container must be
+      // empty and only the harness nodes may remain. This is the deterministic
+      // cleanup claim; the heap number below cannot carry it.
+      const container = document.getElementById('memory-benchmark')
+      expect(container).not.toBeNull()
+      expect(container?.children.length ?? 0).toBe(0)
+      expect(result.current.domMetrics.nodes).toBeLessThan(10)
+
+      // Heap growth is a pathological-runaway guard, not a leak detector. The
+      // benchmark creates plain DOM nodes (no product code), CI never exposes
+      // gc, and the same commit read 0.9MB on Node 22 and 30.9MB on Node 24
+      // (base: 9.3MB) — the number measures GC timing, not the code. 100MB is
+      // roughly 3x the worst observed, not an order of magnitude, so say so.
       const positiveLeak = Math.max(0, result.current.memoryUsage.leak)
       const baselineHeap = Math.max(1, result.current.memoryUsage.initial, result.current.memoryUsage.peak)
-      const leakLimit = Math.max(12 * 1024 * 1024, baselineHeap * 0.15)
+      const leakLimit = Math.max(100 * 1024 * 1024, baselineHeap * 1.0)
+      if (positiveLeak > 50 * 1024 * 1024) {
+        console.warn(`Memory growth is elevated for this run: ${positiveLeak}`)
+      }
       expect(positiveLeak).toBeLessThan(leakLimit)
     }, 15000)
 
