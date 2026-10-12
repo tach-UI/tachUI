@@ -287,8 +287,10 @@ describe('numeric flex', () => {
     const { style } = context.element
     expect(style.getPropertyValue('flex-grow')).toBe('3')
     expect(style.getPropertyValue('flex-shrink')).toBe('0')
+    // flex: 2 expands to `2 1 0%`; the later flex-grow and flex-shrink writes
+    // then replace its first two components.
     expect(style.getPropertyValue('flex')).not.toContain('px')
-    expect(style.getPropertyValue('flex')).toMatch(/^2\b/)
+    expect(style.getPropertyValue('flex')).toBe('3 0 0%')
   })
 })
 

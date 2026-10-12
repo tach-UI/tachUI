@@ -1133,10 +1133,15 @@ describe('Shadow Modifiers', () => {
         modifier.apply({} as any, context)
       }).not.toThrow()
 
-      // Should use defaults for invalid values
-      expect(element.style.boxShadow).toBe(
-        'NaNpx 0px -5px 0px rgba(0,0,0,0.25)'
-      )
+      // Missing values fall back to defaults and the rest pass through as
+      // given. NaNpx is not valid CSS, so the DOM drops the declaration.
+      const writes = vi
+        .mocked(element.style.setProperty)
+        .mock.calls.map(call => call.slice(0, 2))
+      expect(writes).toEqual([
+        ['box-shadow', 'NaNpx 0px -5px 0px rgba(0,0,0,0.25)'],
+      ])
+      expect(element.style.boxShadow).toBe('')
     })
   })
 })

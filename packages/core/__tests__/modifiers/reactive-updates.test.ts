@@ -81,10 +81,12 @@ describe('reactive modifier updates', () => {
         { name: 'backgroundColor', args: [bgColor] },
       ])
 
-      expect(element.style.background).toContain('rgb(255, 255, 255)')
+      // backgroundColor writes the background-color longhand; the background
+      // shorthand reads back empty while its other longhands are unset.
+      expect(element.style.backgroundColor).toBe('rgb(255, 255, 255)')
       setBgColor('#111111')
       flushSync()
-      expect(element.style.background).toContain('rgb(17, 17, 17)')
+      expect(element.style.backgroundColor).toBe('rgb(17, 17, 17)')
     })
 
     it('opacity signal toggle applies and removes opacity style', () => {

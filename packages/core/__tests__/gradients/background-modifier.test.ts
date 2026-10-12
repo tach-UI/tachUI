@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { BackgroundModifier } from '@tachui/modifiers/appearance/background'
 import { LinearGradient } from '../../src/gradients/index'
+import { gradientToCSS } from '../../src/gradients/css-generator'
 import { createColorAsset } from '../../src/assets'
 import type { ModifierContext } from '../../src/modifiers/types'
 
@@ -33,6 +34,8 @@ describe('BackgroundModifier', () => {
       startPoint: 'top',
       endPoint: 'bottom',
     })
+    const expected = 'linear-gradient(in oklab to bottom, #FF0000, #00FF00)'
+    const setProperty = vi.spyOn(mockElement.style, 'setProperty')
 
     const modifier = new BackgroundModifier({
       background: gradient,
@@ -40,9 +43,12 @@ describe('BackgroundModifier', () => {
 
     modifier.apply({} as any, mockContext)
 
-    expect(mockElement.style.background).toBe(
-      'linear-gradient(in oklab to bottom, #FF0000, #00FF00)'
-    )
+    // Assert the emitted declaration; the DOM normalizes it on read-back.
+    expect(gradientToCSS(gradient)).toBe(expected)
+    expect(setProperty.mock.calls.at(-1)?.slice(0, 2)).toEqual([
+      'background',
+      expected,
+    ])
   })
 
   it('applies Asset background', () => {

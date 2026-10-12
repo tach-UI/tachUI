@@ -171,12 +171,22 @@ jobs:
         run: bun run test:types
 
   test:
-    name: Test
+    name: ${{ matrix.name }}
     if: github.event_name != 'pull_request' || github.head_ref != 'changeset-release/main'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The default Node keeps the plain "Test" check name; the second row is
+        # the floor of the root engines range, which jsdom 30 sets.
+        include:
+          - name: Test
+            node: '24'
+          - name: Test (Node 22)
+            node: '22'
     steps:
       - uses: actions/checkout@v7
-      
+
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -185,7 +195,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: ${{ matrix.node }}
           # Bun doesn't require cache configuration
       
       - name: Install dependencies
@@ -211,7 +221,9 @@ jobs:
       
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        if: >-
+          matrix.node == env.NODE_VERSION &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info

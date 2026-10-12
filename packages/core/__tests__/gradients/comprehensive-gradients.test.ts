@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import type { MockInstance } from 'vitest'
 import {
   LinearGradient,
   RadialGradient,
@@ -15,15 +16,23 @@ import type { ModifierContext } from '../../src/modifiers/types'
 describe('Comprehensive Gradient Integration', () => {
   let mockElement: HTMLElement
   let mockContext: ModifierContext
+  let setProperty: MockInstance<CSSStyleDeclaration['setProperty']>
 
   beforeEach(() => {
     mockElement = document.createElement('div')
+    setProperty = vi.spyOn(mockElement.style, 'setProperty')
     mockContext = {
       componentId: 'test-component',
       element: mockElement,
       phase: 'creation',
     } as ModifierContext
   })
+
+  // The declaration the modifier emitted, not the value the DOM normalizes it
+  // to on read-back: the last write is the interpolation-hinted gradient.
+  function emittedBackground(): unknown[] | undefined {
+    return setProperty.mock.calls.at(-1)?.slice(0, 2)
+  }
 
   describe('All Gradient Types with Background Modifier', () => {
     it('applies LinearGradient through background modifier', () => {
@@ -32,13 +41,13 @@ describe('Comprehensive Gradient Integration', () => {
         startPoint: 'top',
         endPoint: 'bottom',
       })
+      const expected = 'linear-gradient(in oklab to bottom, #FF0000, #00FF00)'
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe(
-        'linear-gradient(in oklab to bottom, #FF0000, #00FF00)'
-      )
+      expect(gradientToCSS(gradient)).toBe(expected)
+      expect(emittedBackground()).toEqual(['background', expected])
     })
 
     it('applies RadialGradient through background modifier', () => {
@@ -48,13 +57,14 @@ describe('Comprehensive Gradient Integration', () => {
         startRadius: 0,
         endRadius: 100,
       })
+      const expected =
+        'radial-gradient(in oklab circle 100px at center, #FF0000, #00FF00)'
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe(
-        'radial-gradient(in oklab circle 100px at center, #FF0000, #00FF00)'
-      )
+      expect(gradientToCSS(gradient)).toBe(expected)
+      expect(emittedBackground()).toEqual(['background', expected])
     })
 
     it('applies AngularGradient through background modifier', () => {
@@ -64,13 +74,13 @@ describe('Comprehensive Gradient Integration', () => {
         startAngle: 0,
         endAngle: 360,
       })
+      const expected = 'conic-gradient(in oklab from 0deg at center, #FF0000, #00FF00)'
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe(
-        'conic-gradient(in oklab from 0deg at center, #FF0000, #00FF00)'
-      )
+      expect(gradientToCSS(gradient)).toBe(expected)
+      expect(emittedBackground()).toEqual(['background', expected])
     })
 
     it('applies RepeatingLinearGradient through background modifier', () => {
@@ -79,13 +89,14 @@ describe('Comprehensive Gradient Integration', () => {
         direction: '45deg',
         colorStops: ['0px', '20px'],
       })
+      const expected =
+        'repeating-linear-gradient(in oklab 45deg, #FF0000 0px, #00FF00 20px)'
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe(
-        'repeating-linear-gradient(in oklab 45deg, #FF0000 0px, #00FF00 20px)'
-      )
+      expect(gradientToCSS(gradient)).toBe(expected)
+      expect(emittedBackground()).toEqual(['background', expected])
     })
 
     it('applies RepeatingRadialGradient through background modifier', () => {
@@ -94,13 +105,14 @@ describe('Comprehensive Gradient Integration', () => {
         center: 'center',
         colorStops: ['0px', '30px'],
       })
+      const expected =
+        'repeating-radial-gradient(in oklab circle at center, #FF0000 0px, #00FF00 30px)'
 
       const modifier = new BackgroundModifier({ background: gradient })
       modifier.apply({} as any, mockContext)
 
-      expect(mockElement.style.background).toBe(
-        'repeating-radial-gradient(in oklab circle at center, #FF0000 0px, #00FF00 30px)'
-      )
+      expect(gradientToCSS(gradient)).toBe(expected)
+      expect(emittedBackground()).toEqual(['background', expected])
     })
   })
 
