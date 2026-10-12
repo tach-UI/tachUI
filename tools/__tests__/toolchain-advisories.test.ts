@@ -15,6 +15,8 @@ const patchedFloors: Record<string, Record<number, string>> = {
   nanoid: { 3: '3.3.16' },
   postcss: { 8: '8.5.23' },
   'fast-uri': { 3: '3.1.7' },
+  // Reached through vite and @vitest/coverage-v8, among others.
+  'source-map-js': { 1: '1.2.2' },
 }
 
 function escapeRegExp(text: string): string {
