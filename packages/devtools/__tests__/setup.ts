@@ -1,5 +1,6 @@
 // Test setup for @tachui/devtools
 import { JSDOM } from 'jsdom'
+import { vi } from 'vitest'
 
 // Mock DOM environment for tests
 const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
@@ -10,8 +11,8 @@ const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
 
 // Set up global DOM
 global.window = dom.window as any
-global.document = dom.window.document
-global.navigator = dom.window.navigator
+vi.stubGlobal('document', dom.window.document)
+vi.stubGlobal('navigator', dom.window.navigator)
 global.HTMLElement = dom.window.HTMLElement
 global.HTMLDivElement = dom.window.HTMLDivElement
 global.HTMLButtonElement = dom.window.HTMLButtonElement

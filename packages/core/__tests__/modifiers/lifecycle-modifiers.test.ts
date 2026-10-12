@@ -71,20 +71,20 @@ let mockObserver: MockIntersectionObserver
 
 beforeEach(() => {
   // Mock IntersectionObserver
-  global.IntersectionObserver = vi.fn().mockImplementation(callback => {
+  global.IntersectionObserver = vi.fn().mockImplementation(function (callback) {
     mockObserver = new MockIntersectionObserver(callback)
     return mockObserver
   }) as any
 
   // Mock document
-  global.document = {
+  vi.stubGlobal('document', {
     ...global.document,
     createElement: vi.fn((tagName: string) => createMockElement(tagName)),
     querySelector: vi.fn(),
     head: {
       appendChild: vi.fn(),
     } as any,
-  } as any
+  } as any)
 })
 
 afterEach(() => {

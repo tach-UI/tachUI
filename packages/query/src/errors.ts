@@ -47,7 +47,13 @@ export class QueryError extends Error {
  */
 export function isDevelopment(): boolean {
   try {
-    return typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production'
+    if (typeof process === 'undefined') return false
+    // Read through a local, not as `process.env?.NODE_ENV`: Vite defines
+    // `process.env.NODE_ENV` to itself in library builds, and its Oxc define
+    // matches the optional chain too, emitting `process.env.NODE_ENV` - which
+    // throws, and so reads as production, under a `process` with no `env`.
+    const env = process.env
+    return env?.NODE_ENV !== 'production'
   } catch {
     // A hardened runtime can expose `process` and refuse to hand over `env`.
     return false

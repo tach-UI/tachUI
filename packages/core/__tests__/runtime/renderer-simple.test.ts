@@ -3,7 +3,7 @@
  */
 
 import { JSDOM } from 'jsdom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DOMRenderer } from '../../src/runtime/renderer'
 import type { DOMNode } from '../../src/runtime/types'
 
@@ -14,7 +14,7 @@ describe('Simple Renderer Test', () => {
   beforeEach(() => {
     // Create a JSDOM environment
     dom = new JSDOM('<!DOCTYPE html><html><body></body></html>')
-    global.document = dom.window.document
+    vi.stubGlobal('document', dom.window.document)
     global.window = dom.window as any
 
     renderer = new DOMRenderer()

@@ -667,12 +667,12 @@ describe('renderToString', () => {
       set href(_value: string) {},
     }))
 
-    ;(globalThis as any).document = {
+    vi.stubGlobal('document', {
       createElement: createElementSpy,
       head: { appendChild: vi.fn() },
       querySelector: vi.fn(() => null),
       fonts: { ready: Promise.resolve(), check: vi.fn(() => true) },
-    }
+    })
     ;(globalThis as any).window = {}
 
     try {
@@ -689,7 +689,7 @@ describe('renderToString', () => {
       expect(createElementSpy).not.toHaveBeenCalled()
       expect(context.links.some(link => link.includes('fonts.googleapis.com'))).toBe(true)
     } finally {
-      ;(globalThis as any).document = originalDocument
+      vi.stubGlobal('document', originalDocument)
       ;(globalThis as any).window = originalWindow
     }
   })

@@ -16,6 +16,7 @@
  * so it could only ever read a stale `dist`.
  */
 
+import { expectTypeOf, test } from 'vitest'
 import type { Signal } from '@tachui/core'
 
 import type {
@@ -1046,3 +1047,9 @@ export type GetPageParamAcceptsNull = Assert<
     GetPageParam<RawUser, string>
   >
 >
+
+// Vitest fails a typecheck file that declares no test. The assertions above are
+// module-level types, and a type error anywhere in the file still fails it.
+test('the public type surface compiles', () => {
+  expectTypeOf<PublicTypeSurface>().not.toBeNever()
+})

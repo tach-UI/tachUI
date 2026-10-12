@@ -63,13 +63,13 @@ beforeEach(() => {
   })
   for (const key of DOM_GLOBALS) {
     savedGlobals[key] = (globalThis as any)[key]
-    ;(globalThis as any)[key] = (dom.window as any)[key]
+    vi.stubGlobal(key, (dom.window as any)[key])
   }
 })
 
 afterEach(() => {
   for (const key of DOM_GLOBALS) {
-    ;(globalThis as any)[key] = savedGlobals[key]
+    vi.stubGlobal(key, savedGlobals[key])
   }
 })
 

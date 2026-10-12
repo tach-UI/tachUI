@@ -14,7 +14,7 @@ describe('Layout Scheduler', () => {
   beforeEach(() => {
     // Create a JSDOM environment
     dom = new JSDOM('<!DOCTYPE html><html><body></body></html>')
-    global.document = dom.window.document
+    vi.stubGlobal('document', dom.window.document)
     global.window = dom.window as any
     global.requestAnimationFrame = vi.fn((callback) => {
       setTimeout(callback, 16)

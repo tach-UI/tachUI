@@ -53,10 +53,10 @@ vi.mock('../../src/runtime/renderer', () => ({
 }))
 
 beforeEach(() => {
-  global.document = {
+  vi.stubGlobal('document', {
     ...global.document,
     createElement: vi.fn((tagName: string) => createMockElement(tagName)),
-  }
+  })
 })
 
 describe('Layout Priority System (Phase 5.7) - EXPECTED TO FAIL', () => {

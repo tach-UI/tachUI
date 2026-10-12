@@ -122,7 +122,7 @@ class TestComponent implements ComponentInstance<ComponentProps> {
 
 // Mock DOM environment
 beforeEach(() => {
-  global.document = {
+  vi.stubGlobal('document', {
     ...global.document,
     createElement: vi.fn((tagName: string) => ({
       tagName: tagName.toUpperCase(),
@@ -132,7 +132,7 @@ beforeEach(() => {
       setAttribute: vi.fn(),
       getAttribute: vi.fn(),
     })),
-  }
+  })
 })
 
 describe('withModifiers', () => {

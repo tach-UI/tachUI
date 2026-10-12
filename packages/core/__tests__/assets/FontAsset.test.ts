@@ -29,14 +29,16 @@ beforeEach(() => {
   }
 
   // Mock FontFace constructor
-  global.FontFace = vi.fn().mockImplementation((family, source, descriptors) => ({
-    family,
-    source,
-    descriptors,
-    load: vi.fn().mockResolvedValue(undefined),
-  }))
+  global.FontFace = vi.fn().mockImplementation(function (family, source, descriptors) {
+    return {
+      family,
+      source,
+      descriptors,
+      load: vi.fn().mockResolvedValue(undefined),
+    }
+  })
 
-  global.document = {
+  vi.stubGlobal('document', {
     head,
     fonts,
     querySelector: vi.fn(() => null),
@@ -58,7 +60,7 @@ beforeEach(() => {
       }
       return {}
     }),
-  } as any
+  } as any)
 
   global.window = { FontFace: global.FontFace } as any
 })

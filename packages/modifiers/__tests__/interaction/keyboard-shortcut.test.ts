@@ -116,13 +116,13 @@ describe('KeyboardShortcutModifier', () => {
     mockNode = { element: mockElement as unknown as HTMLElement, children: [] }
 
     // Mock global objects
-    global.document = mockDocument as any
-    global.navigator = { platform: 'MacIntel' } as any
+    vi.stubGlobal('document', mockDocument)
+    vi.stubGlobal('navigator', { platform: 'MacIntel' })
   })
 
   afterEach(() => {
-    global.document = originalDocument
-    global.navigator = originalNavigator
+    vi.stubGlobal('document', originalDocument)
+    vi.stubGlobal('navigator', originalNavigator)
     vi.clearAllMocks()
   })
 
@@ -246,7 +246,7 @@ describe('KeyboardShortcutModifier', () => {
     })
 
     it('should handle cmd as ctrl on non-Mac platforms', () => {
-      global.navigator = { platform: 'Win32' } as any
+      vi.stubGlobal('navigator', { platform: 'Win32' })
 
       const action = vi.fn()
       const modifier = new KeyboardShortcutModifier({

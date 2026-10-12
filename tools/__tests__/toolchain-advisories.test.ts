@@ -15,6 +15,8 @@ const patchedFloors: Record<string, Record<number, string>> = {
   nanoid: { 3: '3.3.16' },
   postcss: { 8: '8.5.23' },
   'fast-uri': { 3: '3.1.7' },
+  // Reached through vite and @vitest/coverage-v8, among others.
+  'source-map-js': { 1: '1.2.2' },
 }
 
 function escapeRegExp(text: string): string {
@@ -73,6 +75,36 @@ function isBelow(version: string, floor: string): boolean {
   return version.includes('-')
 }
 
+// The release line semver treats as breaking: the major, or for a 0.x
+// package the minor (esbuild 0.21 to 0.28 is a major move).
+function releaseLine(version: string): string {
+  const [major, minor] = versionParts(version)
+  return major === 0 ? `0.${minor}` : `${major}`
+}
+
+function resolvedLines(lock: string, packageName: string): string[] {
+  return [...new Set(lockedVersions(lock, packageName).map(releaseLine))].sort()
+}
+
+// Every dependency and devDependency range declared for the named packages,
+// keyed by "<manifest path> <package name>". Peer ranges are not pins.
+function declaredRanges(packageNames: string[]): Record<string, string> {
+  const manifestPaths = [
+    'package.json',
+    'docs/guide/package.json',
+    ...readdirSync(resolve(repoRoot, 'packages')).map(dir => `packages/${dir}/package.json`),
+  ].filter(path => existsSync(resolve(repoRoot, path)))
+  const declared: Record<string, string> = {}
+  for (const path of manifestPaths) {
+    const manifest = JSON.parse(readFileSync(resolve(repoRoot, path), 'utf8'))
+    for (const name of packageNames) {
+      const range = manifest.dependencies?.[name] ?? manifest.devDependencies?.[name]
+      if (range !== undefined) declared[`${path} ${name}`] = range
+    }
+  }
+  return declared
+}
+
 function unpatchedVersions(lock: string, packageName: string): string[] {
   const floors = patchedFloors[packageName]
   return lockedVersions(lock, packageName).filter(version => {
@@ -123,18 +155,7 @@ describe('lockfile toolchain advisories', () => {
   })
 
   it('declares jsdom ^30 and @types/jsdom ^30 in every manifest that uses them', () => {
-    const manifestPaths = [
-      'package.json',
-      ...readdirSync(resolve(repoRoot, 'packages')).map(dir => `packages/${dir}/package.json`),
-    ].filter(path => existsSync(resolve(repoRoot, path)))
-    const declared: Record<string, string> = {}
-    for (const path of manifestPaths) {
-      const manifest = JSON.parse(readFileSync(resolve(repoRoot, path), 'utf8'))
-      for (const name of ['jsdom', '@types/jsdom']) {
-        const range = manifest.dependencies?.[name] ?? manifest.devDependencies?.[name]
-        if (range !== undefined) declared[`${path} ${name}`] = range
-      }
-    }
+    const declared = declaredRanges(['jsdom', '@types/jsdom'])
 
     expect(declared['package.json jsdom']).toBeDefined()
     expect(declared['packages/core/package.json @types/jsdom']).toBeDefined()
@@ -192,5 +213,105 @@ describe('lockfile toolchain advisories', () => {
     ].join('\n')
 
     expect(unpatchedVersions(lock, 'postcss')).toEqual(['8.5.23-alpha.1'])
+  })
+})
+
+// Each tool's major moves in every manifest at once. A root range on one major
+// and workspace ranges on another resolve both side by side, and the suite can
+// still pass on whichever copy each package happens to load.
+// `declaredIn` is a manifest the pin must appear in, so a guard cannot pass
+// by the package vanishing from every manifest.
+const lockstepMajors: Record<string, { range: RegExp; line: string; declaredIn: string }> = {
+  vitest: { range: /^\^5\./, line: '5', declaredIn: 'package.json' },
+  '@vitest/coverage-v8': { range: /^\^5\./, line: '5', declaredIn: 'package.json' },
+  vite: { range: /^\^8\./, line: '8', declaredIn: 'package.json' },
+  esbuild: { range: /^\^0\.28\./, line: '0.28', declaredIn: 'package.json' },
+  'vite-plugin-dts': {
+    range: /^\^5\./,
+    line: '5',
+    declaredIn: 'packages/symbols/package.json',
+  },
+  'lint-staged': { range: /^\^17\./, line: '17', declaredIn: 'package.json' },
+}
+
+describe('dev-tooling majors', () => {
+  it.each(Object.entries(lockstepMajors))(
+    'declares %s on one major in every manifest that uses it',
+    (packageName, { range, declaredIn }) => {
+      const declared = declaredRanges([packageName])
+
+      expect(declared[`${declaredIn} ${packageName}`]).toBeDefined()
+      for (const [where, declaredRange] of Object.entries(declared)) {
+        expect(declaredRange, where).toMatch(range)
+      }
+    }
+  )
+
+  it.each(Object.entries(lockstepMajors))(
+    'resolves %s on a single major line',
+    (packageName, { line }) => {
+      expect(resolvedLines(lockText, packageName)).toEqual([line])
+    }
+  )
+
+  it('resolves @vitest/coverage-v8 to the exact vitest release it peers with', () => {
+    expect(lockedVersions(lockText, '@vitest/coverage-v8')).toEqual(
+      lockedVersions(lockText, 'vitest')
+    )
+  })
+
+  // Other tools still bring magic-string 0.30 in transitively (Vue's compiler,
+  // unplugin-dts), so the lockfile holds both lines; what moved is the copy
+  // @tachui/devtools declares and loads.
+  it('declares and installs magic-string 1.x for @tachui/devtools', () => {
+    const declared = declaredRanges(['magic-string'])
+    const installed = JSON.parse(
+      readFileSync(
+        resolve(repoRoot, 'packages/devtools/node_modules/magic-string/package.json'),
+        'utf8'
+      )
+    )
+
+    expect(declared).toEqual({ 'packages/devtools/package.json magic-string': '^1.4.3' })
+    expect(releaseLine(installed.version)).toBe('1')
+  })
+
+  it('keeps every TypeScript pin and resolution on the 5.x line', () => {
+    const declared = declaredRanges(['typescript'])
+
+    expect(declared['package.json typescript']).toBeDefined()
+    for (const [where, range] of Object.entries(declared)) {
+      expect(range, where).toMatch(/^\^5\./)
+    }
+    expect(resolvedLines(lockText, 'typescript')).toEqual(['5'])
+  })
+
+  it('keeps changesets on @changesets/cli 2 and @changesets/changelog-github 0.5', () => {
+    const declared = declaredRanges(['@changesets/cli', '@changesets/changelog-github'])
+
+    expect(declared['package.json @changesets/cli']).toMatch(/^\^2\./)
+    expect(declared['package.json @changesets/changelog-github']).toMatch(/^\^0\.5\./)
+    expect(resolvedLines(lockText, '@changesets/cli')).toEqual(['2'])
+    expect(resolvedLines(lockText, '@changesets/changelog-github')).toEqual(['0.5'])
+  })
+
+  it('reports both majors when a lockfile carries two lines of one tool', () => {
+    const lock = [
+      '"vitest": ["vitest@5.0.4", "", {}, "sha512-a"],',
+      '"@tachui/core/vitest": ["vitest@3.2.7", "", {}, "sha512-b"],',
+      '"other": ["other@1.0.0", "", { "dependencies": { "vitest": "^4.0.0" } }, "sha512-c"],',
+    ].join('\n')
+
+    expect(resolvedLines(lock, 'vitest')).toEqual(['3', '5'])
+  })
+
+  it('reads a 0.x minor move as a change of line', () => {
+    const lock = [
+      '"esbuild": ["esbuild@0.28.2", "", {}, "sha512-a"],',
+      '"vite/esbuild": ["esbuild@0.21.5", "", {}, "sha512-b"],',
+      '"other/esbuild": ["esbuild@0.28.0", "", {}, "sha512-c"],',
+    ].join('\n')
+
+    expect(resolvedLines(lock, 'esbuild')).toEqual(['0.21', '0.28'])
   })
 })

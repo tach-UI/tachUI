@@ -316,7 +316,7 @@ function trackById(element: any) {
 mockHead.appendChild = vi.fn(trackById)
 mockBody.appendChild = vi.fn(trackById)
 
-global.document = {
+vi.stubGlobal('document', {
   createElement: vi.fn((tagName: string) => {
     const element = new MockHTMLElement()
     element.tagName = tagName.toUpperCase()
@@ -361,7 +361,7 @@ global.document = {
     appendChild: vi.fn(),
     childNodes: [],
   })),
-} as any
+} as any)
 
 // Enhanced Window mock with proper timer handling
 global.window = {

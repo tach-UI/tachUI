@@ -285,16 +285,19 @@ describe('SwiftUI State Management (Phase 6.2)', () => {
     })
 
     it('should work with observable class decorator', () => {
-      @observable()
-      class TodoItem {
-        text: string = ''
-        completed: boolean = false
-        
-        toggle() {
-          this.completed = !this.completed
+      // Applied as the call a class decorator makes: Vite's Oxc transform
+      // does not lower standard decorator syntax, and Node cannot run it.
+      const TodoItem = observable()(
+        class TodoItem {
+          text: string = ''
+          completed: boolean = false
+
+          toggle() {
+            this.completed = !this.completed
+          }
         }
-      }
-      
+      )
+
       const todo = new TodoItem()
       expect(isObservableObject(todo)).toBe(true)
       

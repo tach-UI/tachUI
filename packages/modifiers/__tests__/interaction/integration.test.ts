@@ -174,8 +174,8 @@ describe('Interaction Modifiers Integration', () => {
     mockNode = { element: mockElement as unknown as HTMLElement, children: [] }
 
     // Mock globals
-    global.document = mockDocument as any
-    global.navigator = { platform: 'MacIntel' } as any
+    vi.stubGlobal('document', mockDocument)
+    vi.stubGlobal('navigator', { platform: 'MacIntel' })
     global.requestAnimationFrame = vi.fn(callback => {
       callback(0)
       return 0
@@ -185,8 +185,8 @@ describe('Interaction Modifiers Integration', () => {
   })
 
   afterEach(() => {
-    global.document = originalDocument
-    global.navigator = originalNavigator
+    vi.stubGlobal('document', originalDocument)
+    vi.stubGlobal('navigator', originalNavigator)
     global.requestAnimationFrame = originalRequestAnimationFrame
     vi.clearAllTimers()
     vi.useRealTimers()
