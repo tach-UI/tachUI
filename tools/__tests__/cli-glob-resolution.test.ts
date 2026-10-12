@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import semver from 'semver'
 import { describe, expect, it } from 'vitest'
 
 const repoRoot = resolve(__dirname, '../..')
@@ -82,8 +83,8 @@ describe('@tachui/cli glob resolution', () => {
     expect(cliManifest.dependencies.glob).toBe('^13.0.0')
   })
 
-  it('advertises only the Node lines glob 13 supports (20 and 22+, not 21)', () => {
-    expect(cliManifest.engines.node).toBe('^20.0.0 || >=22.0.0')
+  it('advertises only Node lines glob 13 supports (not 21)', () => {
+    expect(semver.subset(cliManifest.engines.node, '^20.0.0 || >=22.0.0')).toBe(true)
   })
 
   it('resolves the CLI runtime glob to 13.x', () => {
@@ -140,5 +141,50 @@ describe('@tachui/cli glob resolution', () => {
       '@tachui/cli/glob/minimatch/brace-expansion',
       'minipass',
     ])
+  })
+})
+
+// The published CLI's runtime dependencies, at the major each one moved to.
+const cliRuntimeMajors: Record<string, number> = {
+  commander: 15,
+  inquirer: 14,
+  ora: 9,
+  chalk: 6,
+}
+
+function installedCliDependency(name: string): { version: string; engines?: { node?: string } } {
+  return JSON.parse(
+    readFileSync(resolve(repoRoot, `packages/cli/node_modules/${name}/package.json`), 'utf8')
+  )
+}
+
+describe('@tachui/cli runtime dependency majors', () => {
+  const resolutions = lockedResolutions(lockText)
+
+  it.each(Object.entries(cliRuntimeMajors))(
+    'declares and resolves %s on its new major',
+    (name, major) => {
+      expect(semver.minVersion(cliManifest.dependencies[name])?.major).toBe(major)
+      expect(majorOf(workspaceResolution(resolutions, '@tachui/cli', name) as string)).toBe(major)
+      expect(semver.major(installedCliDependency(name).version)).toBe(major)
+    }
+  )
+
+  it('drops @types/inquirer, since inquirer ships its own declarations', () => {
+    expect(cliManifest.devDependencies['@types/inquirer']).toBeUndefined()
+  })
+
+  it.each(Object.keys(cliRuntimeMajors))(
+    "advertises no Node line that %s's engines exclude",
+    name => {
+      const engines = installedCliDependency(name).engines?.node
+
+      expect(engines).toBeDefined()
+      expect(semver.subset(cliManifest.engines.node, engines as string)).toBe(true)
+    }
+  )
+
+  it('flags a Node range wider than a dependency supports', () => {
+    expect(semver.subset('^20.0.0 || >=22.0.0', '>=22.12.0')).toBe(false)
   })
 })

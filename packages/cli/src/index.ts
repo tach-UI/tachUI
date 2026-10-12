@@ -65,7 +65,9 @@ export async function main() {
   program.exitOverride()
 
   try {
-    await program.parseAsync()
+    // `from: 'node'` (argv[0] node, argv[1] script) as Commander 11 assumed.
+    // Since 13 it detects `node -e` and reads user arguments from argv[1].
+    await program.parseAsync(process.argv, { from: 'node' })
   } catch (error) {
     console.error(chalk.red('Error:'), (error as Error).message)
     process.exit(1)
