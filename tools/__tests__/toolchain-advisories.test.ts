@@ -38,8 +38,15 @@ function lockedDependencies(lock: string, packageName: string): string[] {
   const pattern = new RegExp(`^\\s*"[^"]+": (\\["${escapeRegExp(packageName)}@.*\\]),$`, 'gm')
   const names = new Set<string>()
   for (const match of lock.matchAll(pattern)) {
-    const [, , metadata] = JSON.parse(match[1]) as [string, string, { dependencies?: object }]
-    for (const name of Object.keys(metadata.dependencies ?? {})) {
+    const [, , metadata] = JSON.parse(match[1]) as [
+      string,
+      string,
+      { dependencies?: object; optionalDependencies?: object },
+    ]
+    for (const name of [
+      ...Object.keys(metadata.dependencies ?? {}),
+      ...Object.keys(metadata.optionalDependencies ?? {}),
+    ]) {
       names.add(name)
     }
   }
@@ -158,6 +165,23 @@ describe('lockfile toolchain advisories', () => {
 
     expect(lockedDependencies(lock, 'jsdom')).toEqual(['parse5', 'ws'])
     expect(lockedVersions(lock, 'jsdom')).toEqual(['23.2.0'])
+  })
+
+  it('reads a ws optional dependency off a jsdom entry', () => {
+    const lock =
+      '    "jsdom": ["jsdom@23.2.0", "", { "dependencies": { "parse5": "^7.1.2" }, "optionalDependencies": { "ws": "^8.16.0" } }, "sha512-a"],'
+
+    expect(lockedDependencies(lock, 'jsdom')).toEqual(['parse5', 'ws'])
+  })
+
+  it('declares the root Node engines range that jsdom requires', () => {
+    const rootManifest = JSON.parse(readFileSync(resolve(repoRoot, 'package.json'), 'utf8'))
+    const jsdomManifest = JSON.parse(
+      readFileSync(resolve(repoRoot, 'node_modules/jsdom/package.json'), 'utf8')
+    )
+
+    expect(jsdomManifest.engines.node).toBeDefined()
+    expect(rootManifest.engines.node).toBe(jsdomManifest.engines.node)
   })
 
   it('flags a prerelease of a patched floor version', () => {
