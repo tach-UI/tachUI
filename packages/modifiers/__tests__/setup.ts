@@ -85,7 +85,7 @@ export class MockBaseModifier<T = any> {
 }
 
 // Mock Document and global DOM APIs
-global.document = {
+vi.stubGlobal('document', {
   createElement: vi.fn(() => new (global.HTMLElement as any)()),
   getElementById: vi.fn(() => null),
   addEventListener: vi.fn(),
@@ -97,7 +97,7 @@ global.document = {
     insertBefore: vi.fn(),
     innerHTML: '',
   } as any,
-} as any
+} as any)
 
 // Store original timers to avoid recursion
 const originalSetTimeout = global.setTimeout

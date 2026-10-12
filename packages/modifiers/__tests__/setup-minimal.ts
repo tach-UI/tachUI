@@ -147,7 +147,7 @@ global.HTMLElement = MockHTMLElement as any
 const mockHead = new MockHTMLElement()
 const mockBody = new MockHTMLElement()
 
-global.document = {
+vi.stubGlobal('document', {
   createElement: vi.fn((tagName: string) => {
     const element = new MockHTMLElement()
     element.tagName = tagName.toUpperCase()
@@ -167,7 +167,7 @@ global.document = {
     appendChild: vi.fn(),
     childNodes: [],
   })),
-} as any
+} as any)
 
 // Enhanced Window mock with proper timer handling
 global.window = {

@@ -47,7 +47,7 @@ function createMockGridElement(): HTMLElement {
 
 // Mock document methods
 beforeEach(() => {
-  global.document = {
+  vi.stubGlobal('document', {
     ...global.document,
     createElement: vi.fn((tagName: string) => {
       if (tagName === 'div') {
@@ -60,7 +60,7 @@ beforeEach(() => {
         setAttribute: vi.fn(),
       }
     }),
-  }
+  })
 })
 
 describe('GridItem', () => {

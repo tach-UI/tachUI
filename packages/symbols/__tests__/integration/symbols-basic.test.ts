@@ -7,22 +7,20 @@ import { createSignal } from '@tachui/core'
 import '@tachui/modifiers/preload/basic' // Auto-register modifiers for Proxy access
 
 // Mock DOM for testing
-Object.assign(global, {
-  document: {
-    createElement: vi.fn(() => ({
-      style: {},
-      textContent: '',
-      id: '',
-      className: '',
-      setAttribute: vi.fn(),
-      appendChild: vi.fn(),
-    })),
-    head: { appendChild: vi.fn() },
-    body: { insertBefore: vi.fn(), firstChild: null },
-    readyState: 'complete',
-    addEventListener: vi.fn(),
-    getElementById: vi.fn(() => null),
-  },
+vi.stubGlobal('document', {
+  createElement: vi.fn(() => ({
+    style: {},
+    textContent: '',
+    id: '',
+    className: '',
+    setAttribute: vi.fn(),
+    appendChild: vi.fn(),
+  })),
+  head: { appendChild: vi.fn() },
+  body: { insertBefore: vi.fn(), firstChild: null },
+  readyState: 'complete',
+  addEventListener: vi.fn(),
+  getElementById: vi.fn(() => null),
 })
 
 // Mock Lucide icons for integration testing

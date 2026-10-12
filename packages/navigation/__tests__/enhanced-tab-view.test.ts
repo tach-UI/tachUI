@@ -38,7 +38,7 @@ const mockDOM = {
 
 // Set up global mocks
 global.window = mockDOM.window as any
-global.document = mockDOM.document as any
+vi.stubGlobal('document', mockDOM.document)
 
 // Sample components for testing - global scope
 const HomeView = () => Text('Home Content')

@@ -221,13 +221,10 @@ describe('Elements Performance Stress Tests', () => {
 
   describe('Memory and Resource Management', () => {
     it('should not create excessive DOM elements under stress', () => {
-      const originalCreateElement = document.createElement
-      let elementCount = 0
-
-      vi.spyOn(document, 'createElement').mockImplementation(tagName => {
-        elementCount++
-        return originalCreateElement.call(document, tagName)
-      })
+      // Spying on a spied method returns the existing spy, so count its calls
+      // rather than wrapping it.
+      const createElementSpy = vi.spyOn(document, 'createElement')
+      createElementSpy.mockClear()
 
       // Create many modifiers
       for (let i = 0; i < 200; i++) {
@@ -237,7 +234,7 @@ describe('Elements Performance Stress Tests', () => {
 
       // Should reuse existing stylesheet, not create excessive style elements
       // In test environment each modifier creates new sheet element, which is expected
-      expect(elementCount).toBeLessThan(250)
+      expect(createElementSpy.mock.calls.length).toBeLessThan(250)
     })
 
     it('should handle stylesheet rule insertion failures gracefully', () => {

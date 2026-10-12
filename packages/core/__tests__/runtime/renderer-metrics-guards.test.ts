@@ -1,4 +1,4 @@
-import { beforeAll, afterAll, describe, expect, it } from 'vitest'
+import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest'
 import { JSDOM } from 'jsdom'
 
 import { createSignal } from '../../src/reactive'
@@ -54,7 +54,7 @@ describe('Renderer metrics regression guards', () => {
   beforeAll(() => {
     const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>')
     globalAny.window = dom.window
-    globalAny.document = dom.window.document
+    vi.stubGlobal('document', dom.window.document)
     globalAny.HTMLElement = dom.window.HTMLElement
     globalAny.Element = dom.window.Element
     globalAny.Node = dom.window.Node
@@ -65,7 +65,7 @@ describe('Renderer metrics regression guards', () => {
 
   afterAll(() => {
     globalAny.window = originalGlobals.window
-    globalAny.document = originalGlobals.document
+    vi.stubGlobal('document', originalGlobals.document)
     globalAny.HTMLElement = originalGlobals.HTMLElement
     globalAny.Element = originalGlobals.Element
     globalAny.Node = originalGlobals.Node

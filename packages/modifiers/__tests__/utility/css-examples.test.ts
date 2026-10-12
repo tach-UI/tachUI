@@ -8,7 +8,7 @@
  */
 
 import { JSDOM } from 'jsdom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Text, VStack } from '@tachui/primitives'
 import {
   createMemo,
@@ -25,10 +25,12 @@ beforeEach(() => {
   for (const k of [
     'document', 'window', 'Element', 'HTMLElement', 'DocumentFragment', 'Node',
   ]) {
-    ;(globalThis as any)[k] =
+    vi.stubGlobal(
+      k,
       k === 'document' ? dom.window.document
       : k === 'window' ? dom.window
       : (dom.window as any)[k]
+    )
   }
 })
 

@@ -31,12 +31,12 @@ function createMockButtonElement(): HTMLElement {
 
 // Mock navigator for haptic feedback
 beforeEach(() => {
-  global.navigator = {
+  vi.stubGlobal('navigator', {
     ...global.navigator,
     vibrate: vi.fn(),
-  }
+  })
 
-  global.document = {
+  vi.stubGlobal('document', {
     ...global.document,
     createElement: vi.fn((tagName: string) => {
       if (tagName === 'button') {
@@ -57,7 +57,7 @@ beforeEach(() => {
       appendChild: vi.fn(),
       removeChild: vi.fn(),
     },
-  }
+  })
 })
 
 describe('EnhancedButton', () => {

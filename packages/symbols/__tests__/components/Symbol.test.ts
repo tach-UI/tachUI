@@ -5,24 +5,22 @@ import { LucideIconSet } from '../../src/icon-sets/lucide.js'
 import { createSignal } from '@tachui/core'
 
 // Mock DOM methods for testing
-Object.assign(global, {
-  document: {
-    createElement: vi.fn(() => ({
-      style: {},
-      textContent: '',
-      appendChild: vi.fn(),
-    })),
-    head: {
-      appendChild: vi.fn(),
-    },
-    body: {
-      insertBefore: vi.fn(),
-      firstChild: null,
-    },
-    readyState: 'complete',
-    addEventListener: vi.fn(),
-    getElementById: vi.fn(() => null),
+vi.stubGlobal('document', {
+  createElement: vi.fn(() => ({
+    style: {},
+    textContent: '',
+    appendChild: vi.fn(),
+  })),
+  head: {
+    appendChild: vi.fn(),
   },
+  body: {
+    insertBefore: vi.fn(),
+    firstChild: null,
+  },
+  readyState: 'complete',
+  addEventListener: vi.fn(),
+  getElementById: vi.fn(() => null),
 })
 
 describe('Symbol Component', () => {

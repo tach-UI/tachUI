@@ -23,13 +23,15 @@ function installDom(): () => void {
   const dom = new JSDOM('<!doctype html><html><body></body></html>')
   const saved = DOM_GLOBALS.map(key => [key, (globalThis as any)[key]] as const)
   for (const key of DOM_GLOBALS) {
-    ;(globalThis as any)[key] =
+    vi.stubGlobal(
+      key,
       key === 'document' ? dom.window.document
       : key === 'window' ? dom.window
       : (dom.window as any)[key]
+    )
   }
   return () => {
-    for (const [key, value] of saved) (globalThis as any)[key] = value
+    for (const [key, value] of saved) vi.stubGlobal(key, value)
   }
 }
 

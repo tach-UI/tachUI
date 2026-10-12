@@ -7,11 +7,13 @@ import type { ModifierContext } from '../../src/modifiers/types'
 // Mock DOM environment
 Object.defineProperty(window, 'MutationObserver', {
   writable: true,
-  value: vi.fn().mockImplementation(callback => ({
-    observe: vi.fn(),
-    disconnect: vi.fn(),
-    takeRecords: vi.fn(),
-  })),
+  value: vi.fn().mockImplementation(function () {
+    return {
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+      takeRecords: vi.fn(),
+    }
+  }),
 })
 
 describe('BackgroundModifier with State Support', () => {

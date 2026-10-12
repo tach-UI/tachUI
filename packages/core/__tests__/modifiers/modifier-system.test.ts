@@ -47,7 +47,7 @@ import { createComponent, h } from '../../src/runtime'
 // Setup DOM environment
 const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>')
 global.window = dom.window as any
-global.document = dom.window.document
+vi.stubGlobal('document', dom.window.document)
 global.HTMLElement = dom.window.HTMLElement
 global.Element = dom.window.Element
 

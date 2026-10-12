@@ -56,7 +56,7 @@ function createMockScrollElement(): HTMLElement {
 
 // Mock document methods
 beforeEach(() => {
-  global.document = {
+  vi.stubGlobal('document', {
     ...global.document,
     createElement: vi.fn((tagName: string) => {
       if (tagName === 'div') {
@@ -76,7 +76,7 @@ beforeEach(() => {
       appendChild: vi.fn(),
       removeChild: vi.fn(),
     },
-  }
+  })
 })
 
 describe('EnhancedScrollView', () => {

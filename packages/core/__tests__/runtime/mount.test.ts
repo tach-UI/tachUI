@@ -9,7 +9,7 @@
  */
 
 import { JSDOM } from 'jsdom'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, mountRoot, unmount } from '../../src/runtime/dom-bridge'
 import { getCurrentComponentContextOrNull } from '../../src/runtime/component-context'
 import { createComponent } from '../../src/runtime/component'
@@ -28,7 +28,7 @@ beforeEach(() => {
     '<!doctype html><html><body><div id="app"></div><div id="root"></div></body></html>',
     { url: 'http://localhost' }
   )
-  globalThis.document = dom.window.document as any
+  vi.stubGlobal('document', dom.window.document)
   globalThis.window = dom.window as any
   globalThis.Element = dom.window.Element as any
   globalThis.HTMLElement = dom.window.HTMLElement as any

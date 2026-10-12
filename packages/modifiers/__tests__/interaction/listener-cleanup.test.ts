@@ -31,14 +31,17 @@ function createElementWithListenerTracking(): HTMLElement {
   const originalAdd = element.addEventListener.bind(element)
   const originalRemove = element.removeEventListener.bind(element)
 
-  vi.spyOn(element, 'addEventListener').mockImplementation(
+  // Assigned rather than spied: the package setup's elements already carry
+  // `vi.fn()` listeners, and spying on a mock returns that same mock, so the
+  // wrapper would call itself.
+  element.addEventListener = vi.fn(
     (type: string, handler: EventListener, options?: AddEventListenerOptions | boolean) => {
       registered.push({ type, handler, options })
       return originalAdd(type, handler, options)
     }
-  )
+  ) as typeof element.addEventListener
 
-  vi.spyOn(element, 'removeEventListener').mockImplementation(
+  element.removeEventListener = vi.fn(
     (type: string, handler: EventListener, options?: AddEventListenerOptions | boolean) => {
       const index = registered.findIndex(
         (l) => l.type === type && l.handler === handler
@@ -48,7 +51,7 @@ function createElementWithListenerTracking(): HTMLElement {
       }
       return originalRemove(type, handler, options)
     }
-  )
+  ) as typeof element.removeEventListener
 
   ;(element as any)._registeredListeners = registered
   return element

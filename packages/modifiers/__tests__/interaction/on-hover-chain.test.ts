@@ -25,10 +25,12 @@ beforeEach(() => {
     'document', 'window', 'Element', 'HTMLElement', 'DocumentFragment', 'Node',
     'Event', 'MouseEvent',
   ]) {
-    ;(globalThis as any)[key] =
+    vi.stubGlobal(
+      key,
       key === 'document' ? dom.window.document
       : key === 'window' ? dom.window
       : (dom.window as any)[key]
+    )
   }
 })
 

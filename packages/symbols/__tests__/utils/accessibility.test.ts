@@ -3,15 +3,13 @@ import { SymbolAccessibility, WCAGCompliance } from '../../src/utils/accessibili
 import { createSignal } from '@tachui/core'
 
 // Mock DOM methods
-Object.assign(global, {
-  document: {
-    createElement: vi.fn(() => ({
-      style: {},
-      textContent: '',
-      id: '',
-      className: '',
-    })),
-  },
+vi.stubGlobal('document', {
+  createElement: vi.fn(() => ({
+    style: {},
+    textContent: '',
+    id: '',
+    className: '',
+  })),
 })
 
 describe('SymbolAccessibility', () => {

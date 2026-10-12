@@ -14,6 +14,7 @@
  * `GenMessage` descriptor. Only their types matter here.
  */
 
+import { expectTypeOf, test } from 'vitest'
 import type {
   DescMethodBiDiStreaming,
   DescMethodClientStreaming,
@@ -1019,4 +1020,10 @@ export const infiniteWithInitialPageParam = createConnectInfiniteQuery(listUsers
   getNextPageParam: () => undefined,
   // @ts-expect-error the first token is read from the input
   initialPageParam: 'first',
+})
+
+// Vitest fails a typecheck file that declares no test. The assertions above are
+// module-level types, and a type error anywhere in the file still fails it.
+test('the public type surface compiles', () => {
+  expectTypeOf<PublicTypeSurface>().not.toBeNever()
 })

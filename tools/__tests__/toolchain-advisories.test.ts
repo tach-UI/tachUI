@@ -73,6 +73,31 @@ function isBelow(version: string, floor: string): boolean {
   return version.includes('-')
 }
 
+function resolvedMajors(lock: string, packageName: string): number[] {
+  return [...new Set(lockedVersions(lock, packageName).map(v => versionParts(v)[0]))].sort(
+    (a, b) => a - b
+  )
+}
+
+// Every dependency and devDependency range declared for the named packages,
+// keyed by "<manifest path> <package name>". Peer ranges are not pins.
+function declaredRanges(packageNames: string[]): Record<string, string> {
+  const manifestPaths = [
+    'package.json',
+    'docs/guide/package.json',
+    ...readdirSync(resolve(repoRoot, 'packages')).map(dir => `packages/${dir}/package.json`),
+  ].filter(path => existsSync(resolve(repoRoot, path)))
+  const declared: Record<string, string> = {}
+  for (const path of manifestPaths) {
+    const manifest = JSON.parse(readFileSync(resolve(repoRoot, path), 'utf8'))
+    for (const name of packageNames) {
+      const range = manifest.dependencies?.[name] ?? manifest.devDependencies?.[name]
+      if (range !== undefined) declared[`${path} ${name}`] = range
+    }
+  }
+  return declared
+}
+
 function unpatchedVersions(lock: string, packageName: string): string[] {
   const floors = patchedFloors[packageName]
   return lockedVersions(lock, packageName).filter(version => {
@@ -123,18 +148,7 @@ describe('lockfile toolchain advisories', () => {
   })
 
   it('declares jsdom ^30 and @types/jsdom ^30 in every manifest that uses them', () => {
-    const manifestPaths = [
-      'package.json',
-      ...readdirSync(resolve(repoRoot, 'packages')).map(dir => `packages/${dir}/package.json`),
-    ].filter(path => existsSync(resolve(repoRoot, path)))
-    const declared: Record<string, string> = {}
-    for (const path of manifestPaths) {
-      const manifest = JSON.parse(readFileSync(resolve(repoRoot, path), 'utf8'))
-      for (const name of ['jsdom', '@types/jsdom']) {
-        const range = manifest.dependencies?.[name] ?? manifest.devDependencies?.[name]
-        if (range !== undefined) declared[`${path} ${name}`] = range
-      }
-    }
+    const declared = declaredRanges(['jsdom', '@types/jsdom'])
 
     expect(declared['package.json jsdom']).toBeDefined()
     expect(declared['packages/core/package.json @types/jsdom']).toBeDefined()
@@ -192,5 +206,71 @@ describe('lockfile toolchain advisories', () => {
     ].join('\n')
 
     expect(unpatchedVersions(lock, 'postcss')).toEqual(['8.5.23-alpha.1'])
+  })
+})
+
+// Each tool's major moves in every manifest at once. A root range on one major
+// and workspace ranges on another resolve both side by side, and the suite can
+// still pass on whichever copy each package happens to load.
+const lockstepMajors: Record<string, { range: RegExp; major: number }> = {
+  vitest: { range: /^\^5\./, major: 5 },
+  '@vitest/coverage-v8': { range: /^\^5\./, major: 5 },
+}
+
+describe('dev-tooling majors', () => {
+  it.each(Object.entries(lockstepMajors))(
+    'declares %s on one major in every manifest that uses it',
+    (packageName, { range }) => {
+      const declared = declaredRanges([packageName])
+
+      expect(declared[`package.json ${packageName}`]).toBeDefined()
+      for (const [where, declaredRange] of Object.entries(declared)) {
+        expect(declaredRange, where).toMatch(range)
+      }
+    }
+  )
+
+  it.each(Object.entries(lockstepMajors))(
+    'resolves %s on a single major line',
+    (packageName, { major }) => {
+      expect(resolvedMajors(lockText, packageName)).toEqual([major])
+    }
+  )
+
+  it('resolves @vitest/coverage-v8 to the exact vitest release it peers with', () => {
+    expect(lockedVersions(lockText, '@vitest/coverage-v8')).toEqual(
+      lockedVersions(lockText, 'vitest')
+    )
+  })
+
+  it('keeps every TypeScript pin and resolution on the 5.x line', () => {
+    const declared = declaredRanges(['typescript'])
+
+    expect(declared['package.json typescript']).toBeDefined()
+    for (const [where, range] of Object.entries(declared)) {
+      expect(range, where).toMatch(/^\^5\./)
+    }
+    expect(resolvedMajors(lockText, 'typescript')).toEqual([5])
+  })
+
+  it('keeps changesets on @changesets/cli 2 and @changesets/changelog-github 0.5', () => {
+    const declared = declaredRanges(['@changesets/cli', '@changesets/changelog-github'])
+
+    expect(declared['package.json @changesets/cli']).toMatch(/^\^2\./)
+    expect(declared['package.json @changesets/changelog-github']).toMatch(/^\^0\.5\./)
+    expect(resolvedMajors(lockText, '@changesets/cli')).toEqual([2])
+    expect(
+      lockedVersions(lockText, '@changesets/changelog-github').map(v => versionParts(v)[1])
+    ).toEqual([5])
+  })
+
+  it('reports both majors when a lockfile carries two lines of one tool', () => {
+    const lock = [
+      '"vitest": ["vitest@5.0.4", "", {}, "sha512-a"],',
+      '"@tachui/core/vitest": ["vitest@3.2.7", "", {}, "sha512-b"],',
+      '"other": ["other@1.0.0", "", { "dependencies": { "vitest": "^4.0.0" } }, "sha512-c"],',
+    ].join('\n')
+
+    expect(resolvedMajors(lock, 'vitest')).toEqual([3, 5])
   })
 })

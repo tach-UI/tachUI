@@ -76,7 +76,7 @@ describe('Position Modifier', () => {
     global.getComputedStyle = mockGetComputedStyle
 
     originalDocument = global.document
-    global.document = { body: mockDocumentBody } as any
+    vi.stubGlobal('document', { body: mockDocumentBody })
 
     vi.clearAllMocks()
     mockGetComputedStyle.mockReturnValue({
@@ -92,7 +92,7 @@ describe('Position Modifier', () => {
     console.warn = originalConsole.warn
     console.info = originalConsole.info
     global.getComputedStyle = originalGetComputedStyle
-    global.document = originalDocument
+    vi.stubGlobal('document', originalDocument)
   })
 
   describe('PositionModifier Class', () => {

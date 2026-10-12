@@ -167,7 +167,7 @@ const originalRequestAnimationFrame = global.requestAnimationFrame
 
 describe('Interaction Modifiers Stress Tests', () => {
   beforeEach(() => {
-    global.document = mockDocument as any
+    vi.stubGlobal('document', mockDocument)
     global.requestAnimationFrame = vi.fn(callback => {
       callback(0)
       return 0
@@ -176,7 +176,7 @@ describe('Interaction Modifiers Stress Tests', () => {
   })
 
   afterEach(() => {
-    global.document = originalDocument
+    vi.stubGlobal('document', originalDocument)
     global.requestAnimationFrame = originalRequestAnimationFrame
     vi.clearAllTimers()
     vi.useRealTimers()

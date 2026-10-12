@@ -28,10 +28,12 @@ beforeEach(() => {
   for (const k of [
     'document', 'window', 'Element', 'HTMLElement', 'DocumentFragment', 'Node',
   ]) {
-    ;(globalThis as any)[k] =
+    vi.stubGlobal(
+      k,
       k === 'document' ? dom.window.document
       : k === 'window' ? dom.window
       : (dom.window as any)[k]
+    )
   }
 })
 

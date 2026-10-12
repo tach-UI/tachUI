@@ -86,7 +86,7 @@ describe('FocusedModifier', () => {
     mockNode = { element: mockElement as unknown as HTMLElement, children: [] }
 
     // Mock globals
-    global.document = mockDocument as any
+    vi.stubGlobal('document', mockDocument)
     global.requestAnimationFrame = vi.fn(callback => {
       callback(0)
       return 0
@@ -94,7 +94,7 @@ describe('FocusedModifier', () => {
   })
 
   afterEach(() => {
-    global.document = originalDocument
+    vi.stubGlobal('document', originalDocument)
     global.requestAnimationFrame = originalRequestAnimationFrame
     vi.clearAllMocks()
   })
