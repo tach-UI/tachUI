@@ -106,11 +106,13 @@ describe('theme DOM bridge', () => {
             .getPropertyValue('--token')
             .trim()
 
+        // jsdom serializes a custom property's computed value without the
+        // whitespace between tokens.
         setTheme('light')
-        expect(read()).toBe('rgb(1, 1, 1)')
+        expect(read()).toBe('rgb(1,1,1)')
 
         setTheme('dark')
-        expect(read()).toBe('rgb(2, 2, 2)')
+        expect(read()).toBe('rgb(2,2,2)')
       } finally {
         style.remove()
       }

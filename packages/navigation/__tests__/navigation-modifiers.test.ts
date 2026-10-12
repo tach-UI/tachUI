@@ -2499,7 +2499,8 @@ describe('Navigation Modifiers - SwiftUI Compatible Modifiers', () => {
       expect(root?.style.position).toBe('fixed')
       expect(root?.style.width).toBe('100vw')
       expect(root?.style.height).toBe('100vh')
-      expect(root?.style.inset).toBe('0')
+      // A unitless zero length serializes with its unit, as browsers do.
+      expect(root?.style.inset).toBe('0px')
 
       cleanup()
       container.remove()

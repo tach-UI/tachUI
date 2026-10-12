@@ -976,7 +976,8 @@ describe('Image sizing and presentation props', () => {
     )
 
     const img = host.querySelector('img') as HTMLImageElement
-    expect(img.style.aspectRatio).toBe('1.5')
+    // A single-number ratio serializes as `<number> / 1`, as browsers do.
+    expect(img.style.aspectRatio).toBe('1.5 / 1')
     expect(img.style.opacity).toBe('0.5')
     expect(img.style.filter).toBe('blur(2px) grayscale(1) sepia(1)')
   })

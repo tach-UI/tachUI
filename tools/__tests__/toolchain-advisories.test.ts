@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -30,6 +30,20 @@ function lockedVersions(lock: string, packageName: string): string[] {
     versions.add(match[1])
   }
   return [...versions].sort()
+}
+
+// Dependency names of every resolution of a package. A bun.lock package entry
+// sits on one line as `"key": ["name@version", "", { "dependencies": ... }, "sha"],`.
+function lockedDependencies(lock: string, packageName: string): string[] {
+  const pattern = new RegExp(`^\\s*"[^"]+": (\\["${escapeRegExp(packageName)}@.*\\]),$`, 'gm')
+  const names = new Set<string>()
+  for (const match of lock.matchAll(pattern)) {
+    const [, , metadata] = JSON.parse(match[1]) as [string, string, { dependencies?: object }]
+    for (const name of Object.keys(metadata.dependencies ?? {})) {
+      names.add(name)
+    }
+  }
+  return [...names].sort()
 }
 
 function versionParts(version: string): number[] {
@@ -99,6 +113,51 @@ describe('lockfile toolchain advisories', () => {
     expect(unpatchedVersions(lock, 'postcss')).toEqual(['8.5.22'])
     // A dependency range is not a resolution.
     expect(lockedVersions(lock, 'nanoid')).toEqual([])
+  })
+
+  it('declares jsdom ^30 and @types/jsdom ^30 in every manifest that uses them', () => {
+    const manifestPaths = [
+      'package.json',
+      ...readdirSync(resolve(repoRoot, 'packages')).map(dir => `packages/${dir}/package.json`),
+    ].filter(path => existsSync(resolve(repoRoot, path)))
+    const declared: Record<string, string> = {}
+    for (const path of manifestPaths) {
+      const manifest = JSON.parse(readFileSync(resolve(repoRoot, path), 'utf8'))
+      for (const name of ['jsdom', '@types/jsdom']) {
+        const range = manifest.dependencies?.[name] ?? manifest.devDependencies?.[name]
+        if (range !== undefined) declared[`${path} ${name}`] = range
+      }
+    }
+
+    expect(declared['package.json jsdom']).toBeDefined()
+    expect(declared['packages/core/package.json @types/jsdom']).toBeDefined()
+    for (const [where, range] of Object.entries(declared)) {
+      expect(range, where).toMatch(/^\^30(\.|$)/)
+    }
+  })
+
+  it('resolves jsdom and @types/jsdom only on the 30.x line', () => {
+    expect(lockedVersions(lockText, 'jsdom').map(v => versionParts(v)[0])).toEqual([30])
+    expect(lockedVersions(lockText, '@types/jsdom').map(v => versionParts(v)[0])).toEqual([
+      30,
+    ])
+  })
+
+  it('resolves no ws through jsdom', () => {
+    const dependencies = lockedDependencies(lockText, 'jsdom')
+
+    expect(dependencies).toContain('parse5')
+    expect(dependencies).not.toContain('ws')
+  })
+
+  it('reads a ws dependency off a jsdom 23 entry', () => {
+    const lock = [
+      '    "jsdom": ["jsdom@23.2.0", "", { "dependencies": { "parse5": "^7.1.2", "ws": "^8.16.0" }, "peerDependencies": { "canvas": "^2.11.2" } }, "sha512-a"],',
+      '    "other": ["other@1.0.0", "", { "dependencies": { "jsdom": "^23.2.0" } }, "sha512-b"],',
+    ].join('\n')
+
+    expect(lockedDependencies(lock, 'jsdom')).toEqual(['parse5', 'ws'])
+    expect(lockedVersions(lock, 'jsdom')).toEqual(['23.2.0'])
   })
 
   it('flags a prerelease of a patched floor version', () => {

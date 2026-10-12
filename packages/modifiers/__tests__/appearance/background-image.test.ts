@@ -36,7 +36,10 @@ describe('backgroundImage modifier', () => {
     )
     expect(element.style.getPropertyValue('background-repeat')).toBe('no-repeat')
     expect(element.style.getPropertyValue('background-size')).toBe('cover')
-    expect(element.style.getPropertyValue('background-position')).toBe('center')
+    // A one-keyword position serializes with both axes, as browsers do.
+    expect(element.style.getPropertyValue('background-position')).toBe(
+      'center center'
+    )
   })
 
   it('maps repeat options to CSS background-repeat values', () => {
