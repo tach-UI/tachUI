@@ -229,6 +229,7 @@ const lockstepMajors: Record<string, { range: RegExp; line: string; declaredIn: 
     line: '5',
     declaredIn: 'packages/symbols/package.json',
   },
+  'lint-staged': { range: /^\^17\./, line: '17', declaredIn: 'package.json' },
 }
 
 describe('dev-tooling majors', () => {
@@ -255,6 +256,22 @@ describe('dev-tooling majors', () => {
     expect(lockedVersions(lockText, '@vitest/coverage-v8')).toEqual(
       lockedVersions(lockText, 'vitest')
     )
+  })
+
+  // Other tools still bring magic-string 0.30 in transitively (Vue's compiler,
+  // unplugin-dts), so the lockfile holds both lines; what moved is the copy
+  // @tachui/devtools declares and loads.
+  it('declares and installs magic-string 1.x for @tachui/devtools', () => {
+    const declared = declaredRanges(['magic-string'])
+    const installed = JSON.parse(
+      readFileSync(
+        resolve(repoRoot, 'packages/devtools/node_modules/magic-string/package.json'),
+        'utf8'
+      )
+    )
+
+    expect(declared).toEqual({ 'packages/devtools/package.json magic-string': '^1.4.3' })
+    expect(releaseLine(installed.version)).toBe('1')
   })
 
   it('keeps every TypeScript pin and resolution on the 5.x line', () => {
