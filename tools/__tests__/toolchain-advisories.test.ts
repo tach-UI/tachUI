@@ -73,10 +73,15 @@ function isBelow(version: string, floor: string): boolean {
   return version.includes('-')
 }
 
-function resolvedMajors(lock: string, packageName: string): number[] {
-  return [...new Set(lockedVersions(lock, packageName).map(v => versionParts(v)[0]))].sort(
-    (a, b) => a - b
-  )
+// The release line semver treats as breaking: the major, or for a 0.x
+// package the minor (esbuild 0.21 to 0.28 is a major move).
+function releaseLine(version: string): string {
+  const [major, minor] = versionParts(version)
+  return major === 0 ? `0.${minor}` : `${major}`
+}
+
+function resolvedLines(lock: string, packageName: string): string[] {
+  return [...new Set(lockedVersions(lock, packageName).map(releaseLine))].sort()
 }
 
 // Every dependency and devDependency range declared for the named packages,
@@ -212,18 +217,27 @@ describe('lockfile toolchain advisories', () => {
 // Each tool's major moves in every manifest at once. A root range on one major
 // and workspace ranges on another resolve both side by side, and the suite can
 // still pass on whichever copy each package happens to load.
-const lockstepMajors: Record<string, { range: RegExp; major: number }> = {
-  vitest: { range: /^\^5\./, major: 5 },
-  '@vitest/coverage-v8': { range: /^\^5\./, major: 5 },
+// `declaredIn` is a manifest the pin must appear in, so a guard cannot pass
+// by the package vanishing from every manifest.
+const lockstepMajors: Record<string, { range: RegExp; line: string; declaredIn: string }> = {
+  vitest: { range: /^\^5\./, line: '5', declaredIn: 'package.json' },
+  '@vitest/coverage-v8': { range: /^\^5\./, line: '5', declaredIn: 'package.json' },
+  vite: { range: /^\^8\./, line: '8', declaredIn: 'package.json' },
+  esbuild: { range: /^\^0\.28\./, line: '0.28', declaredIn: 'package.json' },
+  'vite-plugin-dts': {
+    range: /^\^5\./,
+    line: '5',
+    declaredIn: 'packages/symbols/package.json',
+  },
 }
 
 describe('dev-tooling majors', () => {
   it.each(Object.entries(lockstepMajors))(
     'declares %s on one major in every manifest that uses it',
-    (packageName, { range }) => {
+    (packageName, { range, declaredIn }) => {
       const declared = declaredRanges([packageName])
 
-      expect(declared[`package.json ${packageName}`]).toBeDefined()
+      expect(declared[`${declaredIn} ${packageName}`]).toBeDefined()
       for (const [where, declaredRange] of Object.entries(declared)) {
         expect(declaredRange, where).toMatch(range)
       }
@@ -232,8 +246,8 @@ describe('dev-tooling majors', () => {
 
   it.each(Object.entries(lockstepMajors))(
     'resolves %s on a single major line',
-    (packageName, { major }) => {
-      expect(resolvedMajors(lockText, packageName)).toEqual([major])
+    (packageName, { line }) => {
+      expect(resolvedLines(lockText, packageName)).toEqual([line])
     }
   )
 
@@ -250,7 +264,7 @@ describe('dev-tooling majors', () => {
     for (const [where, range] of Object.entries(declared)) {
       expect(range, where).toMatch(/^\^5\./)
     }
-    expect(resolvedMajors(lockText, 'typescript')).toEqual([5])
+    expect(resolvedLines(lockText, 'typescript')).toEqual(['5'])
   })
 
   it('keeps changesets on @changesets/cli 2 and @changesets/changelog-github 0.5', () => {
@@ -258,10 +272,8 @@ describe('dev-tooling majors', () => {
 
     expect(declared['package.json @changesets/cli']).toMatch(/^\^2\./)
     expect(declared['package.json @changesets/changelog-github']).toMatch(/^\^0\.5\./)
-    expect(resolvedMajors(lockText, '@changesets/cli')).toEqual([2])
-    expect(
-      lockedVersions(lockText, '@changesets/changelog-github').map(v => versionParts(v)[1])
-    ).toEqual([5])
+    expect(resolvedLines(lockText, '@changesets/cli')).toEqual(['2'])
+    expect(resolvedLines(lockText, '@changesets/changelog-github')).toEqual(['0.5'])
   })
 
   it('reports both majors when a lockfile carries two lines of one tool', () => {
@@ -271,6 +283,16 @@ describe('dev-tooling majors', () => {
       '"other": ["other@1.0.0", "", { "dependencies": { "vitest": "^4.0.0" } }, "sha512-c"],',
     ].join('\n')
 
-    expect(resolvedMajors(lock, 'vitest')).toEqual([3, 5])
+    expect(resolvedLines(lock, 'vitest')).toEqual(['3', '5'])
+  })
+
+  it('reads a 0.x minor move as a change of line', () => {
+    const lock = [
+      '"esbuild": ["esbuild@0.28.2", "", {}, "sha512-a"],',
+      '"vite/esbuild": ["esbuild@0.21.5", "", {}, "sha512-b"],',
+      '"other/esbuild": ["esbuild@0.28.0", "", {}, "sha512-c"],',
+    ].join('\n')
+
+    expect(resolvedLines(lock, 'esbuild')).toEqual(['0.21', '0.28'])
   })
 })

@@ -1,5 +1,26 @@
 import { defineConfig } from 'vite'
-import { resolve } from 'path'
+import { relative, resolve } from 'path'
+
+// Basic modifiers bundle - essential layout and styling. Rolldown takes
+// `manualChunks` only as a function, and a chunk it names also takes in the
+// modules its members import. The effect families are left to their own entry
+// chunks for granular imports: a named effects chunk would take them all in,
+// since the effects entry imports each family.
+const BASIC_CHUNK_DIRECTORIES = [
+  'src/basic/',
+  'src/layout/',
+  'src/typography/',
+  'src/appearance/',
+  'src/interaction/',
+  'src/utility/',
+]
+
+function manualChunks(id: string): string | undefined {
+  const path = relative(__dirname, id).split('\\').join('/')
+  return BASIC_CHUNK_DIRECTORIES.some(directory => path.startsWith(directory))
+    ? 'modifiers-basic'
+    : undefined
+}
 
 export default defineConfig(({ mode }) => ({
   build: {
@@ -62,27 +83,7 @@ export default defineConfig(({ mode }) => ({
           '@tachui/core': 'TachUICore',
           '@tachui/registry': 'TachuiRegistry',
         },
-        // Manual chunks for optimal tree-shaking and bundle size control
-        manualChunks: {
-          // Basic modifiers bundle - essential layout and styling
-          'modifiers-basic': [
-            'src/basic/index.ts',
-            'src/layout/index.ts', 
-            'src/typography/index.ts',
-            'src/appearance/index.ts',
-            'src/interaction/index.ts',
-            'src/utility/index.ts',
-          ],
-          // Effects bundle - advanced visual effects (excludes individual families)
-          'modifiers-effects': [
-            'src/effects/index.ts',
-          ],
-          // Individual effect families for granular imports
-          'modifiers-filters': ['src/effects/filters/index.ts'],
-          'modifiers-shadows': ['src/effects/shadows/index.ts'],
-          'modifiers-transforms': ['src/effects/transforms/index.ts'],
-          'modifiers-backdrop': ['src/effects/backdrop/index.ts'],
-        },
+        manualChunks,
       },
     },
     sourcemap: mode !== 'production',

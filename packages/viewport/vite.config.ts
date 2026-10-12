@@ -23,7 +23,10 @@ export default defineConfig(({ mode }) => ({
         id.startsWith('@tachui/modifiers'),
       output: {
         entryFileNames: '[name].js',
-        chunkFileNames: '[name].js',
+        // Hashed: Rolldown names a shared chunk after a module, and a bare
+        // `modifiers.js` beside `modifiers/` is what `./modifiers` resolves to,
+        // hiding `modifiers/index.d.ts` from TypeScript.
+        chunkFileNames: '[name]-[hash].js',
         globals: {
           '@tachui/core': 'TachUICore',
         },

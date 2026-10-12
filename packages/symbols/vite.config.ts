@@ -6,7 +6,10 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     dts({
       insertTypesEntry: true,
-      rollupTypes: false,
+      bundleTypes: false,
+      // Declarations sit beside the built entries (dist/index.d.ts), not
+      // under dist/src/ where the inferred root would put them.
+      entryRoot: 'src',
       include: ['src/**/*'],
       exclude: ['**/__tests__/**'],
       outDir: 'dist',
