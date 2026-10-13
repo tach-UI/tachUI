@@ -22,8 +22,8 @@
     "composite": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
 
-    "baseUrl": ".",
     "paths": {
       "@tachui/types": ["./packages/types/dist/index.d.ts"],
       "@tachui/types/*": ["./packages/types/dist/*"],

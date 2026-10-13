@@ -4,7 +4,6 @@
     "composite": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": ".",
     "paths": {
       "@tachui/query": [
         "../query/dist/index.d.ts"

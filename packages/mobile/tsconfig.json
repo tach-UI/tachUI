@@ -8,7 +8,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "noEmit": false,
-    "baseUrl": ".",
     "paths": {
       "@tachui/core": ["../core/src"],
       "@tachui/primitives": ["../primitives/src"],

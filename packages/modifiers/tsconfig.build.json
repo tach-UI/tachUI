@@ -12,6 +12,7 @@
 
     "strict": true,
     "skipLibCheck": true,
+    "types": ["node"],
     "forceConsistentCasingInFileNames": true,
 
     "declaration": true,
@@ -21,7 +22,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
 
-    "baseUrl": ".",
     "paths": {
       "@tachui/core": ["../core/dist/index.d.ts"],
       "@tachui/core/*": ["../core/dist/*"],

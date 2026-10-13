@@ -12,7 +12,6 @@
     "moduleResolution": "bundler",
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "downlevelIteration": true,
     "skipLibCheck": true
   },
   "include": ["src/**/*", "src/globals.d.ts"],
