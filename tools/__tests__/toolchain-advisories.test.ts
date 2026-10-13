@@ -276,14 +276,14 @@ describe('dev-tooling majors', () => {
     expect(releaseLine(installed.version)).toBe('1')
   })
 
-  it('keeps every TypeScript pin and resolution on the 7.x line', () => {
+  it('keeps every TypeScript pin and resolution on the 6.x line', () => {
     const declared = declaredRanges(['typescript'])
 
     expect(declared['package.json typescript']).toBeDefined()
     for (const [where, range] of Object.entries(declared)) {
-      expect(range, where).toMatch(/^\^7\./)
+      expect(range, where).toMatch(/^\^6\./)
     }
-    expect(resolvedLines(lockText, 'typescript')).toEqual(['7'])
+    expect(resolvedLines(lockText, 'typescript')).toEqual(['6'])
   })
 
   it('keeps changesets on @changesets/cli 3 and @changesets/changelog-github 1', () => {

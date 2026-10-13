@@ -78,15 +78,15 @@ const typescriptPeerDependents = [
   'packages/viewport/package.json',
 ]
 
-describe('compiler line: TypeScript 7', () => {
-  it('declares typescript ^7.0.2 in the root and all 21 workspace manifests', () => {
+describe('compiler line: TypeScript 6', () => {
+  it('declares typescript ^6.0.3 in the root and all 21 workspace manifests', () => {
     expect(typescriptDevDependents).toHaveLength(22)
     for (const path of typescriptDevDependents) {
       const manifest = readManifest(path)
       const range =
         manifest.dependencies?.typescript ?? manifest.devDependencies?.typescript
 
-      expect(range, path).toBe('^7.0.2')
+      expect(range, path).toBe('^6.0.3')
     }
   })
 
@@ -110,9 +110,9 @@ describe('compiler line: TypeScript 7', () => {
     expect(declaring.sort()).toEqual([...typescriptDevDependents].sort())
   })
 
-  it('raises the 8 published typescript peer floors to >=7.0.0', () => {
+  it('raises the 8 published typescript peer floors to >=6.0.0', () => {
     for (const path of typescriptPeerDependents) {
-      expect(readManifest(path).peerDependencies?.typescript, path).toBe('>=7.0.0')
+      expect(readManifest(path).peerDependencies?.typescript, path).toBe('>=6.0.0')
     }
   })
 
@@ -151,8 +151,8 @@ describe('compiler line: TypeScript 7', () => {
     expect(declaring.sort()).toEqual([...typescriptPeerDependents].sort())
   })
 
-  it('resolves typescript to a single 7.0.x release everywhere', () => {
-    expect(lockedVersions(lockText, 'typescript')).toEqual(['7.0.2'])
+  it('resolves typescript to a single 6.0.x release everywhere', () => {
+    expect(lockedVersions(lockText, 'typescript')).toEqual(['6.0.3'])
   })
 
   it('leaves no typescript 5 resolution in the lockfile', () => {
