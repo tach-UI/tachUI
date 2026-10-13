@@ -21,7 +21,6 @@
     "esModuleInterop": true,
 
     /* Path mapping */
-    "baseUrl": ".",
     "paths": {
       "@tachui/core": ["../core/dist"],
       "@tachui/primitives": ["../primitives/dist"]

@@ -9,7 +9,6 @@
     "strict": true,
     "skipLibCheck": true,
     "types": ["node"],
-    "baseUrl": ".",
     // Resolve to built declarations, not source. A type test that reads
     // `src/**` proves the source compiles; it says nothing about what a
     // consumer installing the package actually receives. Declaration emit can

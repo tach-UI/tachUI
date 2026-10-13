@@ -12,6 +12,7 @@
 
     "strict": true,
     "skipLibCheck": true,
+    "types": ["node"],
     "forceConsistentCasingInFileNames": true,
 
     "declaration": true,
@@ -20,7 +21,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
 
-    "baseUrl": ".",
     "paths": {
       "@tachui/core": ["../../core/src"],
       "@tachui/primitives": ["../../primitives/src"]

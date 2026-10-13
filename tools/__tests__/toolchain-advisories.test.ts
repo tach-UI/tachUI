@@ -276,23 +276,23 @@ describe('dev-tooling majors', () => {
     expect(releaseLine(installed.version)).toBe('1')
   })
 
-  it('keeps every TypeScript pin and resolution on the 5.x line', () => {
+  it('keeps every TypeScript pin and resolution on the 6.x line', () => {
     const declared = declaredRanges(['typescript'])
 
     expect(declared['package.json typescript']).toBeDefined()
     for (const [where, range] of Object.entries(declared)) {
-      expect(range, where).toMatch(/^\^5\./)
+      expect(range, where).toMatch(/^\^6\./)
     }
-    expect(resolvedLines(lockText, 'typescript')).toEqual(['5'])
+    expect(resolvedLines(lockText, 'typescript')).toEqual(['6'])
   })
 
-  it('keeps changesets on @changesets/cli 2 and @changesets/changelog-github 0.5', () => {
+  it('keeps changesets on @changesets/cli 3 and @changesets/changelog-github 1', () => {
     const declared = declaredRanges(['@changesets/cli', '@changesets/changelog-github'])
 
-    expect(declared['package.json @changesets/cli']).toMatch(/^\^2\./)
-    expect(declared['package.json @changesets/changelog-github']).toMatch(/^\^0\.5\./)
-    expect(resolvedLines(lockText, '@changesets/cli')).toEqual(['2'])
-    expect(resolvedLines(lockText, '@changesets/changelog-github')).toEqual(['0.5'])
+    expect(declared['package.json @changesets/cli']).toMatch(/^\^3\./)
+    expect(declared['package.json @changesets/changelog-github']).toMatch(/^\^1\./)
+    expect(resolvedLines(lockText, '@changesets/cli')).toEqual(['3'])
+    expect(resolvedLines(lockText, '@changesets/changelog-github')).toEqual(['1'])
   })
 
   it('reports both majors when a lockfile carries two lines of one tool', () => {

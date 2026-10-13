@@ -8,6 +8,7 @@
     "isolatedModules": true,
     "noEmit": false,
     "outDir": "./dist",
+    "rootDir": "./src",
 
     "strict": true,
     "noUnusedLocals": false,
@@ -20,9 +21,8 @@
     "sourceMap": true,
     "composite": false,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-
-    "baseUrl": "."
+    "types": ["node"],
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*", "src/globals.d.ts"],
   "exclude": ["dist", "**/*.test.ts"]
