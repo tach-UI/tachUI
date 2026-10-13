@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       external: id => {
-        if (id === 'typescript' || id.includes('typescript')) {
+        if (id === 'typescript' || id.startsWith('typescript/')) {
           return true
         }
         if (id.startsWith('@tachui/')) {

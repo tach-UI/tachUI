@@ -57,7 +57,7 @@ export default defineConfig(({ mode }) => ({
       // External dependencies (not bundled)
       external: id => {
         // Always externalize TypeScript
-        if (id === 'typescript' || id.includes('typescript')) {
+        if (id === 'typescript' || id.startsWith('typescript/')) {
           return true
         }
         // Externalize @tachui packages to avoid circular dependencies
