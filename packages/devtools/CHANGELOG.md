@@ -1,5 +1,30 @@
 # @tachui/devtools
 
+## 0.12.0
+
+### Patch Changes
+
+- [#450](https://github.com/tach-UI/tachUI/pull/450) [`81250bc`](https://github.com/tach-UI/tachUI/commit/81250bc0b88a4a0f982fddddb8e449575b7872b2) Thanks [@whoughton](https://github.com/whoughton)! - Every first-party modifier now registers with metadata, and each signature in
+  that metadata is derived from the factory the modifier registers rather than
+  written by hand. The basic, effects and preload lists in `@tachui/modifiers`
+  and the fragments modifiers used to register without metadata; they now go
+  through `registerModifierWithMetadata`. Which factory a name resolves to is
+  unchanged: a name already in the registry keeps its factory.
+  
+  `derive-modifier-signatures` in `@tachui/core` regenerates the signature
+  tables; `derive-modifier-signatures:check` fails when one is stale.
+  
+  The derivation builds each signature with the devtools `buildSignature`
+  helper. `@tachui/devtools`'s published entries are unchanged.
+
+- [#457](https://github.com/tach-UI/tachUI/pull/457) [`355d668`](https://github.com/tach-UI/tachUI/commit/355d668dae82f9b62d72184df3e849f75371fc9f) Thanks [@whoughton](https://github.com/whoughton)! - `@tachui/devtools` moves `magic-string` from ^0.30.0 to ^1.4.3; the import
+  optimizer's Vite plugin rewrites import sources and emits its source map as
+  before. The repository's lint-staged pre-commit tool moves from ^15 to ^17
+  (not published).
+- Updated dependencies [[`f316a35`](https://github.com/tach-UI/tachUI/commit/f316a35195dca9567e0018916eb28a8fa58288a4), [`ac7d9af`](https://github.com/tach-UI/tachUI/commit/ac7d9af604f65f97c2eafa95bfb6f65a5ba6d9aa), [`4892c0b`](https://github.com/tach-UI/tachUI/commit/4892c0bcd28c60a3d193ae29590d2ce72d5ecb19), [`2d81836`](https://github.com/tach-UI/tachUI/commit/2d81836f1bc179be14a988b4fe1b88bf8abbf3a6), [`1449ed3`](https://github.com/tach-UI/tachUI/commit/1449ed35a10182c8e22bacb6a23020ced13c9f15), [`81250bc`](https://github.com/tach-UI/tachUI/commit/81250bc0b88a4a0f982fddddb8e449575b7872b2), [`254c1f7`](https://github.com/tach-UI/tachUI/commit/254c1f7564ac5cf48312a0b3fba39df91c9cc61a), [`3703507`](https://github.com/tach-UI/tachUI/commit/3703507cfaf67a5636795507687069c8b83ee895), [`b5e4ba1`](https://github.com/tach-UI/tachUI/commit/b5e4ba1a65f8e8a6f876e61db029d439cfcedce3), [`e85d463`](https://github.com/tach-UI/tachUI/commit/e85d463a455f407f52f8f270e5b1a62cc12e063b)]:
+  - @tachui/core@0.12.0
+  - @tachui/primitives@0.12.0
+
 ## 0.11.7
 
 ### Patch Changes
