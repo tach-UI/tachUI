@@ -1,5 +1,14 @@
 # @tachui/fragments
 
+## 0.12.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/core@0.12.1
+  - @tachui/ssr@0.12.1
+  - @tachui/types@0.12.1
+
 ## 0.12.0
 
 ### Patch Changes
