@@ -1,5 +1,12 @@
 # @tachui/query
 
+## 0.8.39
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/core@0.12.1
+
 ## 0.8.38
 
 ### Patch Changes

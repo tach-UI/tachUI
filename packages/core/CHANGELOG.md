@@ -1,5 +1,13 @@
 # @tachui/core
 
+## 0.12.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/registry@0.12.1
+  - @tachui/types@0.12.1
+
 ## 0.12.0
 
 ### Minor Changes

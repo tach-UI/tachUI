@@ -1,5 +1,13 @@
 # @tachui/connectrpc
 
+## 0.11.9
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/core@0.12.1
+  - @tachui/query@0.8.39
+
 ## 0.11.8
 
 ### Patch Changes

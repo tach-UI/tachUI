@@ -1,5 +1,15 @@
 # @tachui/data
 
+## 0.12.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @tachui/core@0.12.1
+  - @tachui/flow-control@0.12.1
+  - @tachui/mobile@0.12.1
+  - @tachui/primitives@0.12.1
+
 ## 0.12.0
 
 ### Patch Changes
