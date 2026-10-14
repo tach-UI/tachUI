@@ -1,6 +1,6 @@
 ---
-'@tachui/core': patch
-'@tachui/cli': patch
+'@tachui/core': minor
+'@tachui/cli': minor
 ---
 
 The modifier type generator is removed. Its declarations augmented an interface
